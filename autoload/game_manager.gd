@@ -31,6 +31,8 @@ var local_player_surrendered: bool = false
 var opponent_player_surrendered: bool = false
 var is_my_turn: bool:
 	get:
+		if not is_game_active:
+			return false
 		if current_game_type == GameTypes.FEKRBEKR:
 			return true
 		return current_turn == my_player_index

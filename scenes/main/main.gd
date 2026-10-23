@@ -340,10 +340,8 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 	# Connect to real-time game server namespace
 	NetworkManager.join_active_game(game_id)
 	
-	# Start pre-game countdown dialog!
-	base_game_hud.play_start_countdown(func():
-		GameManager.is_game_active = true
-	, 5)
+	# Start pre-game countdown dialog! (Real game stays locked until server sends Start_Game / Current_Turn)
+	base_game_hud.play_start_countdown(Callable(), 5)
 
 func _spawn_board_for_game(game_type: String) -> void:
 	var board_scene = GameRegistry.get_board_packed_scene(game_type)
@@ -370,19 +368,16 @@ var _pending_turn: int = -1
 
 func _on_start_game_received() -> void:
 	print("[Main] Server Start_Game received!")
+	var was_active = GameManager.is_game_active
 	GameManager.is_game_active = true
+	if not was_active:
+		AudioManager.play_sound("bell")
 	if not base_game_hud.is_start_overlay_dismissed:
-		print("[Main] Pre-game countdown is active/pending. Start_Game deferred until countdown finishes.")
-		_pending_start_game = true
-		if not base_game_hud.is_countdown_running:
-			base_game_hud.play_start_countdown(func():
-				GameManager.is_game_active = true
-			, 5)
-		return
+		base_game_hud.force_dismiss_start_overlay(false)
 	_activate_start_game()
 
 func _activate_start_game() -> void:
-	base_game_hud.force_dismiss_start_overlay()
+	base_game_hud.force_dismiss_start_overlay(false)
 	if GameManager.current_game_type == GameTypes.FEKRBEKR:
 		base_game_hud.set_setup_phase()
 	else:
@@ -398,14 +393,15 @@ func _activate_start_game() -> void:
 			board.sync_turn_state()
 
 func _on_start_countdown_finished() -> void:
-	print("[Main] Pre-game countdown finished!")
-	GameManager.is_game_active = true
-	if _pending_start_game or GameManager.is_game_active:
+	print("[Main] Pre-game countdown dialog finished! Waiting for server game start...")
+	if _pending_start_game:
 		_pending_start_game = false
+		GameManager.is_game_active = true
 		_activate_start_game()
 	if _pending_turn != -1:
 		var t = _pending_turn
 		_pending_turn = -1
+		GameManager.is_game_active = true
 		_on_turn_changed(t)
 
 func _on_wait_time_received(wait_sec: int) -> void:
@@ -416,18 +412,14 @@ func _on_wait_time_received(wait_sec: int) -> void:
 		board.on_wait_time(wait_sec)
 
 func _on_turn_changed(turn: int) -> void:
-	# Current_Turn signal proves game is active
+	# Current_Turn signal proves real game has begun on server
+	var was_active = GameManager.is_game_active
 	GameManager.is_game_active = true
 	GameManager.current_turn = turn
+	if not was_active:
+		AudioManager.play_sound("bell")
 	if not base_game_hud.is_start_overlay_dismissed:
-		print("[Main] Pre-game countdown is active/pending. Turn changed to %d deferred." % turn)
-		_pending_turn = turn
-		if not base_game_hud.is_countdown_running:
-			base_game_hud.play_start_countdown(func():
-				GameManager.is_game_active = true
-			, 5)
-		return
-	base_game_hud.force_dismiss_start_overlay()
+		base_game_hud.force_dismiss_start_overlay(false)
 	base_game_hud.update_turn(turn)
 	
 	var board = cafe_table.current_board_node
@@ -486,11 +478,10 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 		var norm = GameRegistry.normalize_type(server_game_type)
 		if norm.to_lower() != GameManager.current_game_type.to_lower():
 			_switch_active_game(norm)
-	base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
-	if not base_game_hud.is_countdown_running and not base_game_hud.is_start_overlay_dismissed:
-		base_game_hud.play_start_countdown(func():
-			GameManager.is_game_active = true
-		, 5)
+	if not GameManager.is_game_active:
+		base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
+		if not base_game_hud.is_countdown_running and not base_game_hud.is_start_overlay_dismissed:
+			base_game_hud.play_start_countdown(Callable(), 5)
 	var board = cafe_table.current_board_node
 	if board and is_instance_valid(board) and board.has_method("sync_turn_state"):
 		board.sync_turn_state()
@@ -500,16 +491,24 @@ func _on_game_play_time_received(time: int) -> void:
 		base_game_hud.update_start_countdown_time(time)
 
 func _on_game_data_received(payload: Dictionary) -> void:
+	# Server sends Game_Data and then counts Start_Game_Time (5s) before starting the real game.
+	# Keep GameManager.is_game_active = false and board locked during this pre-game delay!
+	GameManager.is_game_active = false
 	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 		GameManager.set_match_gamers(payload["gamers"])
 		_update_table_opponent_avatar()
 		base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
-		
-	# Synchronize countdown with server's Start_Game_Time (5s)
+	
+	var board = cafe_table.current_board_node
+	if board and is_instance_valid(board):
+		if board.has_method("set_board_locked"):
+			board.set_board_locked(true)
+		if board.has_method("sync_turn_state"):
+			board.sync_turn_state()
+	
+	base_game_hud.start_pre_game_countdown(5)
 	if not base_game_hud.is_countdown_running and not base_game_hud.is_start_overlay_dismissed:
-		base_game_hud.play_start_countdown(func():
-			GameManager.is_game_active = true
-		, 5)
+		base_game_hud.play_start_countdown(Callable(), 5)
 
 func _on_game_play_navigate_received(payload: Dictionary) -> void:
 	print("[Main] Server Game_Play_Navigate received: %s" % str(payload))
@@ -577,7 +576,10 @@ func _on_user_reconnected(user_id: String, _remaining_time: int) -> void:
 
 func _on_reconnect_data_received(payload: Dictionary) -> void:
 	print("[Main] Received Reconnect_Data from server. Restoring match state...")
+	_pending_start_game = false
+	_pending_turn = -1
 	GameManager.is_game_active = true
+	base_game_hud.handle_reconnect_data(payload)
 	var board = cafe_table.current_board_node
 	if board and is_instance_valid(board):
 		var g_data = payload.get("game_data", {})
@@ -590,7 +592,6 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 				board.sync_board_state(g_data["peaces"])
 		if board.has_method("sync_turn_state"):
 			board.sync_turn_state()
-	base_game_hud.handle_reconnect_data(payload)
 
 func _on_finish_reconnect_time(user_id: String) -> void:
 	print("[Main] Opponent reconnect time expired for user: %s." % user_id)

@@ -271,7 +271,7 @@ func _process(delta: float) -> void:
 		if turn_time_left <= 3.0 and turn_time_left > 0.0:
 			if sec != last_second_ticked:
 				last_second_ticked = sec
-				if GameManager.is_my_turn and not is_game_finished and not is_round_finished:
+				if (GameManager.is_my_turn or not GameManager.is_game_active) and not is_game_finished and not is_round_finished:
 					AudioManager.play_sound("time")
 
 func _setup_card_styles() -> void:
@@ -386,6 +386,9 @@ func _setup_connections() -> void:
 		ActionVFXManager.apply_button_juice(b, "tap_button")
 	
 	btn_surrender.pressed.connect(func():
+		if not GameManager.is_game_active:
+			show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
+			return
 		AudioManager.sfx_button()
 		_open_surrender_dialog()
 	)
@@ -402,6 +405,9 @@ func _setup_connections() -> void:
 	)
 	
 	btn_reactions.pressed.connect(func():
+		if not GameManager.is_game_active:
+			show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
+			return
 		AudioManager.sfx_button()
 		reaction_picker.open()
 	)
@@ -429,18 +435,30 @@ func _setup_connections() -> void:
 			b.pivot_offset = b.custom_minimum_size / 2.0
 			ActionVFXManager.apply_button_juice(b, "tap_button")
 		btn_fekr_submit.pressed.connect(func():
+			if not GameManager.is_game_active:
+				show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
+				return
 			AudioManager.sfx_button()
 			fekrbekr_submit_pressed.emit()
 		)
 		btn_fekr_clear.pressed.connect(func():
+			if not GameManager.is_game_active:
+				show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
+				return
 			AudioManager.sfx_button()
 			fekrbekr_clear_pressed.emit()
 		)
 		btn_fekr_opp.pressed.connect(func():
+			if not GameManager.is_game_active:
+				show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
+				return
 			AudioManager.sfx_button()
 			fekrbekr_opponent_view_pressed.emit()
 		)
 		btn_fekr_dual.pressed.connect(func():
+			if not GameManager.is_game_active:
+				show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
+				return
 			AudioManager.sfx_button()
 			fekrbekr_dual_view_pressed.emit()
 		)
@@ -748,42 +766,27 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 	if on_finished.is_valid():
 		on_finished.call()
 
-# Guarantees the loading overlay is dismissed and board unlocked as soon as match is active
-func force_dismiss_start_overlay() -> void:
-
+# Guarantees the loading overlay is dismissed as soon as the intro countdown finishes or match becomes active
+func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
 	if is_start_overlay_dismissed:
-
 		return
-
 	_stop_loading_pulse()
-
 	is_start_overlay_dismissed = true
-
 	is_countdown_running = false
-
-	is_game_started = true
-
 	start_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
 	if start_overlay.has_node("Dimmer"):
-
 		start_overlay.get_node("Dimmer").mouse_filter = Control.MOUSE_FILTER_IGNORE
-
 	if intro_card:
-
 		intro_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
 	ActionVFXManager.animate_dialog_close(intro_card, start_overlay, func():
-
-		start_countdown_finished.emit()
-
+		if emit_finished:
+			start_countdown_finished.emit()
 	)
-
-	if not is_timer_active and not is_game_finished:
-
-		var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
-
-		start_turn_timer(def_time)
+	if GameManager.is_game_active:
+		is_game_started = true
+		if not is_timer_active and not is_game_finished:
+			var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
+			start_turn_timer(def_time)
 
 func _pulse_countdown_label() -> void:
 	intro_countdown_lbl.scale = Vector2(1.35, 1.35)
@@ -867,10 +870,7 @@ func hide_pause_dialog() -> void:
 func handle_reconnect_data(payload: Dictionary) -> void:
 	visible = true
 	hide_pause_dialog()
-	var g_data_rec = payload.get("game_data", {})
-	var is_play_rec = bool(g_data_rec.get("is_play_phase", false)) if typeof(g_data_rec) == TYPE_DICTIONARY else false
-	set_fekrbekr_hud_buttons(is_play_rec)
-	force_dismiss_start_overlay()
+	force_dismiss_start_overlay(false)
 	
 	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 		GameManager.set_match_gamers(payload["gamers"])
@@ -878,7 +878,9 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 		
 	GameManager.is_game_active = true
 	is_game_started = true
-	force_dismiss_start_overlay()
+	is_round_finished = false
+	is_game_finished = false
+	force_dismiss_start_overlay(false)
 	if pause_dialog and is_instance_valid(pause_dialog):
 		hide_pause_dialog()
 	var game_data = payload.get("game_data", {})
@@ -889,8 +891,19 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 		var r_num = int(game_data.get("current_round", 1))
 		if is_instance_valid(current_top_header) and current_top_header.has_method("set_round"):
 			current_top_header.set_round(r_num, GameManager.max_rounds)
-		var turn = int(game_data.get("current_turn", 1))
-		update_turn(turn)
+		if GameManager.current_game_type == GameTypes.FEKRBEKR:
+			var is_play_rec = bool(game_data.get("is_play_phase", false))
+			var is_waiting = bool(game_data.get("is_turn_played", false)) if is_play_rec else bool(game_data.get("is_player_rdy", false))
+			if is_play_rec:
+				update_turn(max(1, r_num))
+			else:
+				set_setup_phase()
+			set_fekrbekr_hud_buttons(is_play_rec)
+			if is_waiting:
+				set_waiting_opponent("حدس شما ثبت شده است. در انتظار حریف..." if is_play_rec else "رمز شما ثبت شده است. در انتظار حریف...")
+		else:
+			var turn = int(game_data.get("current_turn", 1))
+			update_turn(turn)
 		
 	var max_time = GameRegistry.get_turn_time(GameManager.current_game_type)
 	turn_duration = max_time
@@ -1024,6 +1037,12 @@ func start_wait_timer(wait_sec: int, msg: String = "") -> void:
 
 
 
+func start_pre_game_countdown(wait_sec: int = 5) -> void:
+	if is_game_finished or GameManager.is_game_active:
+		return
+	set_fekrbekr_hud_buttons(false)
+	start_wait_timer(wait_sec, "⏳ بازی تا لحظاتی دیگر آغاز می‌شود...")
+
 func set_setup_phase() -> void:
 	set_fekrbekr_hud_buttons(false)
 	if is_instance_valid(current_top_header) and current_top_header.has_method("set_setup_phase"):
@@ -1054,7 +1073,7 @@ func update_turn(turn: int) -> void:
 	
 	# Current_Turn signal proves match is actively running!
 	if not is_countdown_running:
-		force_dismiss_start_overlay()
+		force_dismiss_start_overlay(false)
 
 	hide_round_finish_banner()
 
@@ -1174,7 +1193,7 @@ func _exit_tree() -> void:
 # Phase 1: Only Checkmark (✓) and Cross (✕) are visible
 # Phase 2: All 4 buttons (✓, ✕, 🎯, 👥) are visible
 func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
-	if GameManager.current_game_type != GameTypes.FEKRBEKR:
+	if GameManager.current_game_type != GameTypes.FEKRBEKR or not GameManager.is_game_active:
 		if is_instance_valid(fekrbekr_actions):
 			fekrbekr_actions.visible = false
 		return

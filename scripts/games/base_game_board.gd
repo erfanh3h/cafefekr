@@ -120,7 +120,13 @@ func _on_internal_reconnect_data(payload: Dictionary) -> void:
 	GameManager.is_game_active = true
 	my_player_index = GameManager.my_player_index
 	var g_data = payload.get("game_data", {})
-	if typeof(g_data) == TYPE_DICTIONARY and g_data.has("current_turn"):
+	if GameManager.current_game_type == GameTypes.FEKRBEKR and typeof(g_data) == TYPE_DICTIONARY:
+		var is_play_rec = bool(g_data.get("is_play_phase", false))
+		var r_num = int(g_data.get("current_round", 1 if is_play_rec else 0))
+		current_turn = max(1, r_num) if is_play_rec else 0
+		GameManager.current_turn = current_turn
+		GameManager.current_round = r_num
+	elif typeof(g_data) == TYPE_DICTIONARY and g_data.has("current_turn"):
 		current_turn = int(g_data["current_turn"])
 		GameManager.current_turn = current_turn
 	else:

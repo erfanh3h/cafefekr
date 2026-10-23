@@ -255,6 +255,9 @@ func _build_scene_hierarchy() -> void:
 
 func set_phase(play_phase: bool) -> void:
 	is_play_phase = play_phase
+	var hud = _get_hud()
+	if hud and hud.has_method("set_fekrbekr_hud_buttons"):
+		hud.set_fekrbekr_hud_buttons(play_phase)
 	if not is_instance_valid(phase1_root) or not is_instance_valid(phase2_root):
 		return
 	if not play_phase:
@@ -329,6 +332,10 @@ func _build_phase1_tray(root: Node3D) -> void:
 	)
 
 func _on_phase1_color_selected(color_id: int) -> void:
+	if not GameManager.is_game_active:
+		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
+		AudioManager.play_sound("miss_turn")
+		return
 	if is_board_locked or is_play_phase:
 		return
 	# Find next empty slot
@@ -342,6 +349,10 @@ func _on_phase1_color_selected(color_id: int) -> void:
 	show_hint("همه ۴ جایگاه رمز پر شده‌اند. برای حذف روی مهره کلیک کنید.")
 
 func _on_phase1_slot_clicked(col_idx: int) -> void:
+	if not GameManager.is_game_active:
+		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
+		AudioManager.play_sound("miss_turn")
+		return
 	if is_board_locked or is_play_phase:
 		return
 	if phase1_selection[col_idx] != 0:
@@ -712,6 +723,10 @@ func _animate_slot_removal(piece_mesh: MeshInstance3D) -> void:
 # ==============================================================================
 
 func _on_phase2_color_selected(color_id: int) -> void:
+	if not GameManager.is_game_active:
+		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
+		AudioManager.play_sound("miss_turn")
+		return
 	if is_board_locked or not is_play_phase:
 		return
 	for i in range(4):
@@ -724,6 +739,10 @@ func _on_phase2_color_selected(color_id: int) -> void:
 	show_hint("همه ۴ مهره حدس انتخاب شده‌اند. برای ارسال دکمه تایید (✓) را بزنید.")
 
 func _on_active_slot_clicked(col_idx: int) -> void:
+	if not GameManager.is_game_active:
+		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
+		AudioManager.play_sound("miss_turn")
+		return
 	if is_board_locked or not is_play_phase:
 		return
 	if active_selection[col_idx] != 0:
@@ -732,6 +751,8 @@ func _on_active_slot_clicked(col_idx: int) -> void:
 		_animate_slot_removal(active_slot_pieces[col_idx])
 
 func _clear_current_selection() -> void:
+	if not GameManager.is_game_active or is_board_locked:
+		return
 	if not is_play_phase:
 		_clear_phase1_selection()
 	else:
@@ -763,6 +784,8 @@ func _on_hud_clear_pressed() -> void:
 	_clear_current_selection()
 
 func _on_hud_opponent_pressed() -> void:
+	if not GameManager.is_game_active:
+		return
 	AudioManager.play_sound("tap_button")
 	if current_view_mode == ViewMode.OPP_BOARD:
 		_apply_view_mode_positions(ViewMode.MY_BOARD, true)
@@ -772,6 +795,8 @@ func _on_hud_opponent_pressed() -> void:
 		show_hint("نمایش حدس‌های حریف")
 
 func _on_hud_dual_pressed() -> void:
+	if not GameManager.is_game_active:
+		return
 	AudioManager.play_sound("tap_button")
 	if current_view_mode == ViewMode.DUAL:
 		_apply_view_mode_positions(ViewMode.MY_BOARD, true)
@@ -781,6 +806,10 @@ func _on_hud_dual_pressed() -> void:
 		show_hint("نمایش همزمان هر دو صفحه")
 
 func _submit_selection() -> void:
+	if not GameManager.is_game_active:
+		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
+		AudioManager.play_sound("miss_turn")
+		return
 	if is_board_locked:
 		return
 
@@ -859,10 +888,11 @@ func _apply_view_mode_positions(mode: ViewMode, animate: bool = true) -> void:
 func setup_board(_game_data: Dictionary) -> void:
 	set_phase(false)
 	current_round_num = 0
-	set_board_locked(false)
-	var hud = _get_hud()
-	if hud and hud.has_method("set_setup_phase"):
-		hud.set_setup_phase()
+	set_board_locked(not GameManager.is_game_active)
+	if GameManager.is_game_active:
+		var hud = _get_hud()
+		if hud and hud.has_method("set_setup_phase"):
+			hud.set_setup_phase()
 
 func on_start_game() -> void:
 	set_phase(false)
@@ -965,12 +995,21 @@ func on_reconnect_data(payload: Dictionary) -> void:
 	_refresh_both_boards()
 	var is_waiting = bool(g_data.get("is_turn_played", false)) if is_play_phase else bool(g_data.get("is_player_rdy", false))
 	set_board_locked(is_waiting)
+	var hud = _get_hud()
+	if hud:
+		if is_play_phase:
+			if hud.has_method("update_turn"):
+				hud.update_turn(max(1, current_round_num))
+		else:
+			if hud.has_method("set_setup_phase"):
+				hud.set_setup_phase()
+		if hud.has_method("set_fekrbekr_hud_buttons"):
+			hud.set_fekrbekr_hud_buttons(is_play_phase)
+		if is_waiting and hud.has_method("set_waiting_opponent"):
+			hud.set_waiting_opponent("حدس شما ثبت شده است. در انتظار حریف..." if is_play_phase else "رمز شما ثبت شده است. در انتظار حریف...")
 	if not is_play_phase and is_waiting:
 		if is_instance_valid(phase1_root):
 			phase1_root.visible = false
-		var hud = _get_hud()
-		if hud and hud.has_method("set_waiting_opponent"):
-			hud.set_waiting_opponent("رمز شما ثبت شده است. در انتظار حریف...")
 
 # ==============================================================================
 # 8. ROW RENDERING & RECONNECT SAFETY
