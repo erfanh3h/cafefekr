@@ -432,7 +432,12 @@ func on_turn_changed(_turn: int, _is_me: bool) -> void:
 		_set_cell_hover(i, false)
 
 func on_round_finished(_payload: Variant) -> void:
-	get_tree().create_timer(1.8).timeout.connect(reset_board)
+	set_board_locked(true)
+	var timer = get_tree().create_timer(1.8)
+	timer.timeout.connect(func():
+		if is_instance_valid(self) and is_inside_tree():
+			reset_board()
+	)
 
 func on_new_round(_round_num: int) -> void:
 	reset_board()
@@ -448,7 +453,10 @@ func reset_board() -> void:
 			var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 			tw.tween_property(piece, "scale", Vector3.ZERO, 0.22)
 			tw.parallel().tween_property(piece, "position:y", piece.position.y + 0.22, 0.22)
-			tw.finished.connect(piece.queue_free)
+			tw.finished.connect(func():
+				if is_instance_valid(piece):
+					piece.queue_free()
+			)
 			
 	pieces_nodes.clear()
 

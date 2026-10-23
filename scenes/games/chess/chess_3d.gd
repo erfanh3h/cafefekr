@@ -248,10 +248,8 @@ func _generate_3d_board() -> void:
 		cell_pads.append(mesh_inst)
 
 		var cell_idx = i
-		area.input_event.connect(func(_cam, event, _pos, _normal, _shape_idx):
-			_on_cell_input(cell_idx, event)
-		)
-
+		# Single Source of Input: Clicks are handled via Camera Raycast in _unhandled_input.
+		# Area3D is strictly reserved for hover feedback to avoid duplicate click race conditions (Rule 4.2).
 		area.mouse_entered.connect(func():
 			_set_cell_hover(cell_idx, true)
 		)
@@ -1710,11 +1708,15 @@ func on_piece_selected(user_id: int, _target_peace: int, extra: Dictionary = {})
 	if extra.is_empty():
 		return
 
-	var s_row = int(extra.get("s_c_index", -1))
-	var s_col = int(extra.get("s_r_index", -1))
-	var t_row = int(extra.get("t_c_index", -1))
-	var t_col = int(extra.get("t_r_index", -1))
-	var move_type = str(extra.get("type", "move"))
+	var data = extra
+	if extra.has("select_data") and typeof(extra["select_data"]) == TYPE_DICTIONARY:
+		data = extra["select_data"]
+
+	var s_row = int(data.get("s_c_index", -1))
+	var s_col = int(data.get("s_r_index", -1))
+	var t_row = int(data.get("t_c_index", -1))
+	var t_col = int(data.get("t_r_index", -1))
+	var move_type = str(data.get("type", "move"))
 
 	if s_row == -1 or s_col == -1 or t_row == -1 or t_col == -1:
 		return

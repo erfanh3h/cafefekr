@@ -1061,6 +1061,31 @@ func _refresh_both_boards() -> void:
 	for r in range(min(opp_choices.size(), NUM_VISIBLE_ROWS)):
 		_render_guess_row_on_board(opp_row_containers, opp_row_pin_nodes, r, opp_choices[r], opp_results[r] if r < opp_results.size() else [])
 
+func reset_board() -> void:
+	my_choices.clear()
+	my_results.clear()
+	opp_choices.clear()
+	opp_results.clear()
+	phase1_selection = [0, 0, 0, 0]
+	active_selection = [0, 0, 0, 0]
+	is_my_board_set = false
+	is_revealed = false
+	current_round_num = 0
+	set_phase(false)
+	_refresh_both_boards()
+	_update_phase1_slots()
+	_update_active_slots()
+
+func on_round_finished(_payload: Variant) -> void:
+	set_board_locked(true)
+
+func on_new_round(round_num: int) -> void:
+	current_round_num = round_num
+	set_phase(true)
+	set_board_locked(false)
+	_clear_current_selection()
+	_update_active_row_pointer(my_row_pointer, current_round_num - 1)
+
 func cleanup_board() -> void:
 	is_play_phase = false
 	current_round_num = 0
