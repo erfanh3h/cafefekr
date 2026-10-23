@@ -348,12 +348,29 @@ func animate_place_piece(user_id: int, target_world_pos: Vector3, piece_node: No
 
 # --- Input Handling for Orbit & Zoom ---
 
+func _is_board_consuming_input() -> bool:
+	if not current_board_node or not is_instance_valid(current_board_node):
+		return false
+	if current_board_node.has_method("is_interacting_with_piece") and current_board_node.is_interacting_with_piece():
+		return true
+	if "is_dragging_piece" in current_board_node and current_board_node.is_dragging_piece:
+		return true
+	return false
+
+func _get_effective_pitch_min() -> float:
+	var p_min = PITCH_MIN
+	if current_board_node and is_instance_valid(current_board_node) and "camera_pitch" in current_board_node:
+		p_min = minf(p_min, float(current_board_node.camera_pitch) - 0.05)
+	return p_min
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_board_view_active or is_transitioning:
 		return
-	if current_board_node and is_instance_valid(current_board_node) and "is_dragging_piece" in current_board_node and current_board_node.is_dragging_piece:
+	if _is_board_consuming_input():
 		_mouse_pressed = false
 		_is_dragging = false
+		_active_touches.clear()
+		_prev_pinch_dist = -1.0
 		return
 		
 	if event is InputEventMouseButton:
@@ -376,8 +393,9 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 			_mouse_start_pos = event.position
 			_is_dragging = false
 		else:
+			var was_pressed = _mouse_pressed
 			_mouse_pressed = false
-			if not _is_dragging:
+			if was_pressed and not _is_dragging:
 				_check_double_tap(event.position)
 			_is_dragging = false
 
@@ -393,7 +411,7 @@ func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
 			target_yaw -= event.relative.x * SENSITIVITY_YAW
 			target_pitch -= event.relative.y * SENSITIVITY_PITCH
 			target_yaw = clampf(target_yaw, YAW_MIN, YAW_MAX)
-			target_pitch = clampf(target_pitch, PITCH_MIN, PITCH_MAX)
+			target_pitch = clampf(target_pitch, _get_effective_pitch_min(), PITCH_MAX)
 
 func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
@@ -405,15 +423,18 @@ func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 			var pts = _active_touches.values()
 			_prev_pinch_dist = pts[0].distance_to(pts[1])
 	else:
+		var had_touch = _active_touches.has(event.index)
 		_active_touches.erase(event.index)
 		if _active_touches.size() < 2:
 			_prev_pinch_dist = -1.0
 		if _active_touches.is_empty():
-			if not _is_dragging:
+			if had_touch and not _is_dragging:
 				_check_double_tap(event.position)
 			_is_dragging = false
 
 func _handle_screen_drag(event: InputEventScreenDrag) -> void:
+	if not _active_touches.has(event.index):
+		return
 	_active_touches[event.index] = event.position
 	if _active_touches.size() >= 2:
 		var pts = _active_touches.values()
@@ -436,7 +457,7 @@ func _handle_screen_drag(event: InputEventScreenDrag) -> void:
 			target_yaw -= event.relative.x * SENSITIVITY_YAW
 			target_pitch -= event.relative.y * SENSITIVITY_PITCH
 			target_yaw = clampf(target_yaw, YAW_MIN, YAW_MAX)
-			target_pitch = clampf(target_pitch, PITCH_MIN, PITCH_MAX)
+			target_pitch = clampf(target_pitch, _get_effective_pitch_min(), PITCH_MAX)
 
 func _check_double_tap(pos: Vector2) -> void:
 	var now = Time.get_ticks_msec() / 1000.0

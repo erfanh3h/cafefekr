@@ -3,21 +3,19 @@ extends "res://scripts/games/base_game_board.gd"
 
 # ==============================================================================
 # FekrBekr (Mastermind / فکر و بکر) 3D Board Implementation
-# Cafe Fekr - Deluxe Royal Vault & 12-Row Mastermind Arena
+# Cafe Fekr - Deluxe Grand Royal Vault (Phase 1) & 12-Row Mastermind Arena (Phase 2)
 #
 # Key Features:
 # 1. Non-Repeating 4-Color Rule (Phase 1 & Phase 2):
 #    - Selecting or dragging a color physically moves the peg out of its palette
 #      pedestal dish into the target slot (preventing duplicate colors).
 #    - Removing a peg from a slot flies it back into its home palette dish.
-# 2. Dual Input: Instant Parabolic Flight on Tap + Full 3D Drag & Drop with VFX:
-#    - Tap a palette peg -> parabolic 3D arc flight into the next empty slot +
-#      expanding golden shockwave ring VFX.
-#    - Drag a palette peg (or a placed slot peg) -> elevated 3D floating peg
-#      with glowing target ring, real-time slot magnetic highlight, and drop/swap.
-# 3. Deluxe 3D Boards for Phase 1 (Secret Vault Tray) & Phase 2 (12-Row Arena):
-#    - Sculpted walnut & obsidian decks, corner brass pillars, 3D Persian row
-#      numbers (۱..۱۲), glowing active row frame, and top Mystery Code Vault.
+# 2. Synchronous 3D Raycast Input (Zero Camera Interference):
+#    - Handles press, drag, and release directly in _input(event) before
+#      cafe_table._unhandled_input runs, and exposes is_interacting_with_piece()
+#      with a post-release cooldown so camera orbit never triggers on peg release.
+# 3. Grand Phase 1 Tray (1.06m x 0.96m) & High-Contrast Large 3D Typography
+#    across both Phase 1 and Phase 2 boards.
 # ==============================================================================
 
 # --- Camera Tuning for Full 12-Row Board ---
@@ -25,9 +23,9 @@ extends "res://scripts/games/base_game_board.gd"
 @export var camera_pitch: float = -1.16
 
 # --- Geometry Constants (Phase 2 Playing Board) ---
-const BOARD_W: float = 0.68
-const BOARD_L: float = 1.76
-const BOARD_H: float = 0.030
+const BOARD_W: float = 0.76
+const BOARD_L: float = 1.80
+const BOARD_H: float = 0.032
 const NUM_VISIBLE_ROWS: int = 12
 const NUM_PEGS: int = 4
 
@@ -36,30 +34,31 @@ const NUM_PEGS: int = 4
 const ROW_Z_BOTTOM: float = 0.37
 const ROW_Z_TOP: float = -0.65
 
-# Peg X offsets (center-left area, shifted slightly right to make room for 3D row numbers)
-const ROW_NUM_X: float = -0.268
-const PEG_X_OFFSETS = [-0.175, -0.085, 0.005, 0.095]
+# Peg X offsets & Row Numbers (generous spacing for large 3D labels)
+const ROW_NUM_X: float = -0.298
+const PEG_X_OFFSETS = [-0.195, -0.095, 0.005, 0.105]
 
 # Pin Pad (large, prominent 2x2 feedback pins on the right)
-const PIN_DIVIDER_X: float = 0.150
-const PIN_GRID_X: float = 0.218
-const PIN_OFFSET: float = 0.020
+const PIN_DIVIDER_X: float = 0.172
+const PIN_GRID_X: float = 0.248
+const PIN_OFFSET: float = 0.021
 
 # Active Input Row & Palette (Phase 2 bottom dock)
-const ACTIVE_ROW_Z: float = 0.505
-const PALETTE_ROW1_Z: float = 0.625
-const PALETTE_ROW2_Z: float = 0.725
-const PALETTE_X_OFFSETS = [-0.18, -0.06, 0.06, 0.18]
+const ACTIVE_ROW_Z: float = 0.508
+const PALETTE_ROW1_Z: float = 0.632
+const PALETTE_ROW2_Z: float = 0.738
+const PALETTE_X_OFFSETS = [-0.21, -0.07, 0.07, 0.21]
 
-# --- Phase 1 Setup Tray Dimensions (Deluxe Royal Vault Tray) ---
-const TRAY_W: float = 0.64
-const TRAY_L: float = 0.56
-const TRAY_H: float = 0.032
-const TRAY_SECRET_Z: float = -0.105
-const TRAY_PALETTE_R1_Z: float = 0.065
-const TRAY_PALETTE_R2_Z: float = 0.175
-const TRAY_SECRET_X_OFFSETS = [-0.18, -0.06, 0.06, 0.18]
-const TRAY_PALETTE_X_OFFSETS = [-0.18, -0.06, 0.06, 0.18]
+# --- Phase 1 Setup Tray Dimensions (Grand Royal Vault Tray - Large & Prominent!) ---
+const TRAY_W: float = 1.06
+const TRAY_L: float = 0.96
+const TRAY_H: float = 0.040
+const TRAY_SECRET_Z: float = -0.175
+const TRAY_PALETTE_R1_Z: float = 0.115
+const TRAY_PALETTE_R2_Z: float = 0.295
+const TRAY_SECRET_X_OFFSETS = [-0.285, -0.095, 0.095, 0.285]
+const TRAY_PALETTE_X_OFFSETS = [-0.285, -0.095, 0.095, 0.285]
+const PHASE1_PEG_SCALE: float = 1.46
 
 # --- Color Definitions (8 Unique Gemstone Marbles) ---
 const COLOR_VALUES: Dictionary = {
@@ -131,13 +130,14 @@ var opp_row_pointer: Node3D = null
 var my_active_row_frame: Node3D = null
 var opp_active_row_frame: Node3D = null
 
-# --- 3D Drag & Drop State ---
+# --- Synchronous 3D Drag & Drop State ---
 var is_dragging_piece: bool = false
 var _pointer_down: bool = false
 var _pointer_start_screen: Vector2 = Vector2.ZERO
 var _drag_color_id: int = 0
 var _drag_source_slot: int = -1 # -1 = from palette, 0..3 = from slot
 var _hovered_slot_idx: int = -1
+var _last_piece_interaction_time: float = -10.0
 var _drag_peg_node: Node3D = null
 var _drag_peg_mesh: MeshInstance3D = null
 var _drag_halo_mesh: MeshInstance3D = null
@@ -162,6 +162,16 @@ var dish_ring_materials: Dictionary = {}
 
 func _init() -> void:
 	game_type = GameTypes.FEKRBEKR
+
+# Called by cafe_table.gd to guarantee camera orbit/tap never triggers during or right after peg interaction
+func is_interacting_with_piece() -> bool:
+	if _pointer_down or is_dragging_piece:
+		return true
+	var now = Time.get_ticks_msec() / 1000.0
+	return (now - _last_piece_interaction_time) < 0.28
+
+func _mark_piece_interaction() -> void:
+	_last_piece_interaction_time = Time.get_ticks_msec() / 1000.0
 
 # ==============================================================================
 # 1. INITIALIZATION & MATERIALS
@@ -289,7 +299,6 @@ func _init_materials() -> void:
 		dish_ring_materials[color_id] = ring_mat
 
 func _connect_hud_signals() -> void:
-	# Signal connections are managed centrally by Main scene to prevent duplicate triggers
 	pass
 
 func _get_hud() -> Control:
@@ -303,7 +312,7 @@ func _get_hud() -> Control:
 # ==============================================================================
 
 func _build_scene_hierarchy() -> void:
-	# Root for Phase 1 (Deluxe Royal Setup Vault Tray)
+	# Root for Phase 1 (Grand Royal Setup Vault Tray)
 	phase1_root = Node3D.new()
 	phase1_root.name = "Phase1Root"
 	add_child(phase1_root)
@@ -333,13 +342,13 @@ func _build_drag_ghost() -> void:
 	add_child(_drag_peg_node)
 
 	_drag_peg_mesh = _create_piece_mesh(1)
-	_drag_peg_mesh.scale = Vector3(1.26, 1.26, 1.26)
+	_drag_peg_mesh.scale = Vector3(1.30, 1.30, 1.30)
 	_drag_peg_node.add_child(_drag_peg_mesh)
 
 	_drag_halo_mesh = MeshInstance3D.new()
 	var torus = TorusMesh.new()
-	torus.inner_radius = 0.026
-	torus.outer_radius = 0.034
+	torus.inner_radius = 0.028
+	torus.outer_radius = 0.038
 	torus.rings = 24
 	torus.ring_segments = 12
 	_drag_halo_mesh.mesh = torus
@@ -367,14 +376,14 @@ func set_phase(play_phase: bool) -> void:
 		_sync_palette_visibility()
 
 # ==============================================================================
-# 3. PHASE 1: DELUXE ROYAL SETUP TRAY (SECRET CODE VAULT)
+# 3. PHASE 1: GRAND ROYAL SETUP TRAY (SECRET CODE VAULT - LARGE & PROMINENT)
 # ==============================================================================
 
 func _build_phase1_tray(root: Node3D) -> void:
-	# 1. Sculpted Stepped Royal Walnut Plinth
+	# 1. Sculpted Stepped Royal Walnut Plinth (1.06m x 0.96m)
 	var outer_plinth = MeshInstance3D.new()
 	var outer_mesh = BoxMesh.new()
-	outer_mesh.size = Vector3(TRAY_W + 0.06, TRAY_H * 0.65, TRAY_L + 0.06)
+	outer_mesh.size = Vector3(TRAY_W + 0.08, TRAY_H * 0.65, TRAY_L + 0.08)
 	outer_mesh.material = mat_wood_rim
 	outer_plinth.mesh = outer_mesh
 	outer_plinth.position = Vector3(0, -TRAY_H * 0.65, 0)
@@ -382,7 +391,7 @@ func _build_phase1_tray(root: Node3D) -> void:
 
 	var plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
-	plinth_mesh.size = Vector3(TRAY_W + 0.036, TRAY_H, TRAY_L + 0.036)
+	plinth_mesh.size = Vector3(TRAY_W + 0.044, TRAY_H, TRAY_L + 0.044)
 	plinth_mesh.material = mat_wood_base
 	plinth.mesh = plinth_mesh
 	plinth.position = Vector3(0, -TRAY_H * 0.5, 0)
@@ -391,72 +400,73 @@ func _build_phase1_tray(root: Node3D) -> void:
 	# 2. Inset Emerald-Obsidian Playing Deck
 	var slab = MeshInstance3D.new()
 	var slab_mesh = BoxMesh.new()
-	slab_mesh.size = Vector3(TRAY_W, 0.014, TRAY_L)
+	slab_mesh.size = Vector3(TRAY_W, 0.016, TRAY_L)
 	slab_mesh.material = mat_slate_player
 	slab.mesh = slab_mesh
-	slab.position = Vector3(0, 0.007, 0)
+	slab.position = Vector3(0, 0.008, 0)
 	root.add_child(slab)
 
 	# 3. Brass Perimeter Bezel & Sculpted Corner Pillars
-	_create_bezel(root, TRAY_W, TRAY_L, 0.014)
-	_create_corner_brackets(root, TRAY_W, TRAY_L, 0.014)
+	_create_bezel(root, TRAY_W, TRAY_L, 0.016)
+	_create_corner_brackets(root, TRAY_W, TRAY_L, 0.016)
 
 	# 4. Top Secret Code Vault Recessed Panel
 	var vault_panel = MeshInstance3D.new()
 	var vp_mesh = BoxMesh.new()
-	vp_mesh.size = Vector3(TRAY_W - 0.06, 0.004, 0.175)
+	vp_mesh.size = Vector3(TRAY_W - 0.08, 0.005, 0.31)
 	vp_mesh.material = mat_vault_recess
 	vault_panel.mesh = vp_mesh
-	vault_panel.position = Vector3(0, 0.015, TRAY_SECRET_Z - 0.012)
+	vault_panel.position = Vector3(0, 0.017, TRAY_SECRET_Z - 0.025)
 	root.add_child(vault_panel)
 
-	_create_zone_frame(root, Vector3(0, 0.017, TRAY_SECRET_Z - 0.012), TRAY_W - 0.056, 0.178, mat_gold_ring)
+	_create_zone_frame(root, Vector3(0, 0.020, TRAY_SECRET_Z - 0.025), TRAY_W - 0.076, 0.315, mat_gold_ring)
 
-	var lbl_vault = _create_3d_label("🔐 رمز ۴ رنگ مخفی برای حریف", 26, Color(1.0, 0.88, 0.36))
-	lbl_vault.position = Vector3(0, 0.019, TRAY_SECRET_Z - 0.072)
+	var lbl_vault = _create_3d_label("🔐 رمز ۴ رنگ مخفی برای حریف", 44, Color(1.0, 0.90, 0.38))
+	lbl_vault.position = Vector3(0, 0.023, TRAY_SECRET_Z - 0.130)
 	root.add_child(lbl_vault)
 
-	# 5. The 4 Secret Code Sockets (Crowned Golden Chalices with Number Badges)
+	# 5. The 4 Secret Code Sockets (Large Crowned Golden Chalices with Bold Number Badges)
 	phase1_slot_nodes.clear()
 	phase1_slot_pieces.clear()
 	phase1_slot_rings.clear()
 	for col in range(NUM_PEGS):
 		var pos_x = TRAY_SECRET_X_OFFSETS[col]
-		var sock_node = _create_chalice_socket_mesh(0.028, 0.009, mat_hole_concave, mat_gold_ring)
-		sock_node.position = Vector3(pos_x, 0.016, TRAY_SECRET_Z + 0.012)
+		var sock_z = TRAY_SECRET_Z + 0.028
+		var sock_node = _create_chalice_socket_mesh(0.039, 0.011, mat_hole_concave, mat_gold_ring)
+		sock_node.position = Vector3(pos_x, 0.018, sock_z)
 		root.add_child(sock_node)
 		phase1_slot_nodes.append(sock_node)
 
-		var hover_ring = _create_slot_hover_ring(0.032, 0.038)
-		hover_ring.position = Vector3(pos_x, 0.018, TRAY_SECRET_Z + 0.012)
+		var hover_ring = _create_slot_hover_ring(0.044, 0.054)
+		hover_ring.position = Vector3(pos_x, 0.021, sock_z)
 		root.add_child(hover_ring)
 		phase1_slot_rings.append(hover_ring)
 
-		var num_lbl = _create_3d_label(FA_DIGITS[col + 1], 20, Color(0.92, 0.78, 0.42))
-		num_lbl.position = Vector3(pos_x, 0.019, TRAY_SECRET_Z - 0.032)
+		var num_lbl = _create_3d_label(FA_DIGITS[col + 1], 36, Color(0.96, 0.84, 0.46))
+		num_lbl.position = Vector3(pos_x, 0.023, sock_z - 0.068)
 		root.add_child(num_lbl)
 
 		var piece = _create_piece_mesh(1)
-		piece.position = Vector3(pos_x, 0.036, TRAY_SECRET_Z + 0.012)
+		piece.scale = Vector3.ONE * PHASE1_PEG_SCALE
+		piece.position = Vector3(pos_x, 0.044, sock_z)
 		piece.visible = false
 		root.add_child(piece)
 		phase1_slot_pieces.append(piece)
 
-		_create_slot_interaction_area(root, Vector3(pos_x, 0.028, TRAY_SECRET_Z + 0.012), 0.034, col, true)
-
 	# 6. Recessed Gemstone Palette Well (Bottom Zone)
+	var pal_center_z = (TRAY_PALETTE_R1_Z + TRAY_PALETTE_R2_Z) * 0.5 - 0.015
 	var pal_panel = MeshInstance3D.new()
 	var pp_mesh = BoxMesh.new()
-	pp_mesh.size = Vector3(TRAY_W - 0.06, 0.004, 0.255)
+	pp_mesh.size = Vector3(TRAY_W - 0.08, 0.005, 0.44)
 	pp_mesh.material = mat_vault_recess
 	pal_panel.mesh = pp_mesh
-	pal_panel.position = Vector3(0, 0.015, (TRAY_PALETTE_R1_Z + TRAY_PALETTE_R2_Z) * 0.5 - 0.008)
+	pal_panel.position = Vector3(0, 0.017, pal_center_z)
 	root.add_child(pal_panel)
 
-	_create_zone_frame(root, Vector3(0, 0.017, (TRAY_PALETTE_R1_Z + TRAY_PALETTE_R2_Z) * 0.5 - 0.008), TRAY_W - 0.056, 0.258, mat_brass_trim)
+	_create_zone_frame(root, Vector3(0, 0.020, pal_center_z), TRAY_W - 0.076, 0.445, mat_brass_trim)
 
-	var lbl_pal = _create_3d_label("🎨 مهره را لمس کنید یا به جایگاه بکشید", 21, Color(0.86, 0.82, 0.72))
-	lbl_pal.position = Vector3(0, 0.019, TRAY_PALETTE_R1_Z - 0.062)
+	var lbl_pal = _create_3d_label("🎨 مهره را لمس کنید یا به جایگاه بکشید", 36, Color(0.92, 0.88, 0.78))
+	lbl_pal.position = Vector3(0, 0.023, TRAY_PALETTE_R1_Z - 0.115)
 	root.add_child(lbl_pal)
 
 	phase1_palette_pegs.clear()
@@ -466,7 +476,7 @@ func _build_phase1_tray(root: Node3D) -> void:
 		TRAY_PALETTE_R1_Z,
 		TRAY_PALETTE_R2_Z,
 		TRAY_PALETTE_X_OFFSETS,
-		0.016,
+		0.018,
 		phase1_palette_pegs,
 		phase1_palette_positions,
 		true
@@ -479,14 +489,12 @@ func _on_phase1_color_selected(color_id: int) -> void:
 		return
 	if is_board_locked or is_play_phase:
 		return
-	# Prevent duplicate colors across the 4 slots
 	var existing_idx = phase1_selection.find(color_id)
 	if existing_idx != -1:
 		AudioManager.play_sound("tap_wrong")
 		_pulse_slot_ring(phase1_slot_rings[existing_idx])
 		show_hint("این رنگ در جایگاه %s قرار دارد؛ رنگ تکراری مجاز نیست." % FA_DIGITS[existing_idx + 1])
 		return
-	# Find next empty slot
 	for i in range(4):
 		if phase1_selection[i] == 0:
 			var from_pos = phase1_palette_positions.get(color_id, phase1_slot_pieces[i].position)
@@ -506,7 +514,7 @@ func _on_phase1_slot_clicked(col_idx: int) -> void:
 	if color_id != 0:
 		AudioManager.play_sound("tap")
 		phase1_selection[col_idx] = 0
-		_animate_slot_return_to_palette(phase1_root, phase1_slot_pieces[col_idx], color_id, phase1_palette_positions.get(color_id, Vector3.ZERO))
+		_animate_slot_return_to_palette(phase1_root, phase1_slot_pieces[col_idx], color_id, phase1_palette_positions.get(color_id, Vector3.ZERO), PHASE1_PEG_SCALE)
 		_sync_palette_visibility()
 
 func _clear_phase1_selection() -> void:
@@ -523,8 +531,8 @@ func _update_phase1_slots() -> void:
 		if c_id > 0 and piece_materials.has(c_id):
 			p_mesh.material_override = piece_materials[c_id]
 			p_mesh.visible = true
-			p_mesh.scale = Vector3.ONE
-			p_mesh.position = Vector3(TRAY_SECRET_X_OFFSETS[i], 0.036, TRAY_SECRET_Z + 0.012)
+			p_mesh.scale = Vector3.ONE * PHASE1_PEG_SCALE
+			p_mesh.position = _get_slot_local_pos(i, true)
 		else:
 			p_mesh.visible = false
 	_sync_palette_visibility()
@@ -537,7 +545,7 @@ func _build_play_board(root: Node3D, slate_mat: Material, is_player_board: bool)
 	# 1. Stepped Royal Walnut Plinth
 	var outer_plinth = MeshInstance3D.new()
 	var outer_mesh = BoxMesh.new()
-	outer_mesh.size = Vector3(BOARD_W + 0.056, BOARD_H * 0.65, BOARD_L + 0.056)
+	outer_mesh.size = Vector3(BOARD_W + 0.06, BOARD_H * 0.65, BOARD_L + 0.06)
 	outer_mesh.material = mat_wood_rim
 	outer_plinth.mesh = outer_mesh
 	outer_plinth.position = Vector3(0, -BOARD_H * 0.65, 0)
@@ -545,7 +553,7 @@ func _build_play_board(root: Node3D, slate_mat: Material, is_player_board: bool)
 
 	var plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
-	plinth_mesh.size = Vector3(BOARD_W + 0.036, BOARD_H, BOARD_L + 0.036)
+	plinth_mesh.size = Vector3(BOARD_W + 0.038, BOARD_H, BOARD_L + 0.038)
 	plinth_mesh.material = mat_wood_base
 	plinth.mesh = plinth_mesh
 	plinth.position = Vector3(0, -BOARD_H * 0.5, 0)
@@ -564,7 +572,7 @@ func _build_play_board(root: Node3D, slate_mat: Material, is_player_board: bool)
 	_create_bezel(root, BOARD_W, BOARD_L, 0.014)
 	_create_corner_brackets(root, BOARD_W, BOARD_L, 0.014)
 
-	# 4. Top Mystery Code Vault Header (z = -0.765)
+	# 4. Top Mystery Code Vault Header (z = -0.775)
 	_build_top_mystery_vault_hood(root, is_player_board)
 
 	# 5. Continuous Vertical Brass Channel Dividing Guess Pegs & 2x2 Feedback Pin Plaque
@@ -621,30 +629,30 @@ func _build_play_board(root: Node3D, slate_mat: Material, is_player_board: bool)
 		root.add_child(opp_active_row_frame)
 
 func _build_top_mystery_vault_hood(root: Node3D, is_player_board: bool) -> void:
-	var hood_z = -0.768
+	var hood_z = -0.775
 	var hood = MeshInstance3D.new()
 	var hood_m = BoxMesh.new()
-	hood_m.size = Vector3(BOARD_W - 0.06, 0.010, 0.095)
+	hood_m.size = Vector3(BOARD_W - 0.06, 0.010, 0.105)
 	hood_m.material = mat_vault_recess
 	hood.mesh = hood_m
 	hood.position = Vector3(0, 0.016, hood_z)
 	root.add_child(hood)
 
-	_create_zone_frame(root, Vector3(0, 0.021, hood_z), BOARD_W - 0.056, 0.098, mat_gold_ring if is_player_board else mat_brass_trim)
+	_create_zone_frame(root, Vector3(0, 0.021, hood_z), BOARD_W - 0.056, 0.108, mat_gold_ring if is_player_board else mat_brass_trim)
 
 	for col in range(NUM_PEGS):
 		var px = PEG_X_OFFSETS[col]
-		var badge = _create_chalice_socket_mesh(0.020, 0.005, mat_hole_concave, mat_gold_ring)
+		var badge = _create_chalice_socket_mesh(0.022, 0.005, mat_hole_concave, mat_gold_ring)
 		badge.position = Vector3(px, 0.021, hood_z)
 		root.add_child(badge)
 
-		var q_lbl = _create_3d_label("؟", 24, Color(1.0, 0.86, 0.32))
-		q_lbl.position = Vector3(px, 0.024, hood_z)
+		var q_lbl = _create_3d_label("؟", 34, Color(1.0, 0.88, 0.35))
+		q_lbl.position = Vector3(px, 0.025, hood_z)
 		root.add_child(q_lbl)
 
 	var title_str = "🔐 رمز مخفی" if is_player_board else "🎯 صفحه حریف"
-	var vault_lbl = _create_3d_label(title_str, 20, Color(0.95, 0.85, 0.45))
-	vault_lbl.position = Vector3(PIN_GRID_X - 0.01, 0.023, hood_z)
+	var vault_lbl = _create_3d_label(title_str, 30, Color(0.98, 0.88, 0.45))
+	vault_lbl.position = Vector3(PIN_GRID_X + 0.005, 0.025, hood_z)
 	root.add_child(vault_lbl)
 
 func _build_12_rows(root: Node3D, containers: Array[Node3D], pin_arrays: Array[Array], row_labels: Array[Label3D]) -> void:
@@ -665,18 +673,16 @@ func _build_12_rows(root: Node3D, containers: Array[Node3D], pin_arrays: Array[A
 		root.add_child(row_node)
 		containers.append(row_node)
 
-		# Dedicated container for guess pieces (keeps sockets & pins intact on refresh)
 		var pieces_container = Node3D.new()
 		pieces_container.name = "PiecesContainer"
 		row_node.add_child(pieces_container)
 
-		# 3D Row Number Badge (۱ .. ۱۲)
-		var r_lbl = _create_3d_label(FA_DIGITS[r + 1], 21, Color(0.68, 0.62, 0.50))
-		r_lbl.position = Vector3(ROW_NUM_X, 0.004, 0)
+		# Large, High-Contrast 3D Row Number Badge (۱ .. ۱۲)
+		var r_lbl = _create_3d_label(FA_DIGITS[r + 1], 32, Color(0.76, 0.70, 0.58))
+		r_lbl.position = Vector3(ROW_NUM_X, 0.006, 0)
 		row_node.add_child(r_lbl)
 		row_labels.append(r_lbl)
 
-		# Inlaid Brass Divider between rows
 		if r < NUM_VISIBLE_ROWS - 1:
 			var div = MeshInstance3D.new()
 			var div_m = BoxMesh.new()
@@ -686,17 +692,15 @@ func _build_12_rows(root: Node3D, containers: Array[Node3D], pin_arrays: Array[A
 			div.position = Vector3(0, 0.002, -step * 0.5)
 			row_node.add_child(div)
 
-		# 4 Concave Peg Sockets
 		for col in range(NUM_PEGS):
 			var pos_x = PEG_X_OFFSETS[col]
-			var sock = _create_chalice_socket_mesh(0.023, 0.007, mat_hole_concave, mat_socket_rim)
+			var sock = _create_chalice_socket_mesh(0.024, 0.007, mat_hole_concave, mat_socket_rim)
 			sock.position = Vector3(pos_x, 0.002, 0)
 			row_node.add_child(sock)
 
-		# 2x2 Feedback Pin Plaque (Obsidian & Brass)
 		var pad = MeshInstance3D.new()
 		var pad_m = BoxMesh.new()
-		pad_m.size = Vector3(0.084, 0.005, 0.076)
+		pad_m.size = Vector3(0.088, 0.005, 0.078)
 		pad_m.material = mat_hole_concave
 		pad.mesh = pad_m
 		pad.position = Vector3(PIN_GRID_X, 0.002, 0)
@@ -704,7 +708,7 @@ func _build_12_rows(root: Node3D, containers: Array[Node3D], pin_arrays: Array[A
 
 		var pad_rim = MeshInstance3D.new()
 		var pad_rim_m = BoxMesh.new()
-		pad_rim_m.size = Vector3(0.088, 0.003, 0.080)
+		pad_rim_m.size = Vector3(0.092, 0.003, 0.082)
 		pad_rim_m.material = mat_brass_trim
 		pad_rim.mesh = pad_rim_m
 		pad_rim.position = Vector3(PIN_GRID_X, 0.001, 0)
@@ -716,13 +720,13 @@ func _build_12_rows(root: Node3D, containers: Array[Node3D], pin_arrays: Array[A
 			var pin_x = PIN_GRID_X + offset.x
 			var pin_z = offset.y
 
-			var p_sock = _create_chalice_socket_mesh(0.012, 0.004, mat_hole_concave, mat_brass_trim)
+			var p_sock = _create_chalice_socket_mesh(0.0125, 0.004, mat_hole_concave, mat_brass_trim)
 			p_sock.position = Vector3(pin_x, 0.004, pin_z)
 			row_node.add_child(p_sock)
 
 			var p_mesh = MeshInstance3D.new()
 			var sph = SphereMesh.new()
-			sph.radius = 0.0145
+			sph.radius = 0.015
 			sph.height = 0.018
 			sph.material = mat_pin_black
 			p_mesh.mesh = sph
@@ -742,29 +746,28 @@ func _build_active_input_row(root: Node3D) -> void:
 	active_slot_pieces.clear()
 	active_slot_rings.clear()
 
-	# Recessed Input Dock Panel
 	var dock_bg = MeshInstance3D.new()
 	var dock_m = BoxMesh.new()
-	dock_m.size = Vector3(BOARD_W - 0.06, 0.004, 0.092)
+	dock_m.size = Vector3(BOARD_W - 0.06, 0.004, 0.096)
 	dock_m.material = mat_vault_recess
 	dock_bg.mesh = dock_m
 	dock_bg.position = Vector3(0, 0.015, ACTIVE_ROW_Z)
 	root.add_child(dock_bg)
 
-	_create_zone_frame(root, Vector3(0, 0.017, ACTIVE_ROW_Z), BOARD_W - 0.056, 0.095, mat_gold_ring)
+	_create_zone_frame(root, Vector3(0, 0.017, ACTIVE_ROW_Z), BOARD_W - 0.056, 0.099, mat_gold_ring)
 
-	var dock_lbl = _create_3d_label("حدس فعلی", 19, Color(1.0, 0.88, 0.36))
-	dock_lbl.position = Vector3(PIN_GRID_X - 0.005, 0.019, ACTIVE_ROW_Z)
+	var dock_lbl = _create_3d_label("حدس فعلی", 30, Color(1.0, 0.90, 0.38))
+	dock_lbl.position = Vector3(PIN_GRID_X + 0.005, 0.021, ACTIVE_ROW_Z)
 	root.add_child(dock_lbl)
 
 	for col in range(NUM_PEGS):
 		var pos_x = PEG_X_OFFSETS[col]
-		var sock = _create_chalice_socket_mesh(0.026, 0.008, mat_hole_concave, mat_gold_ring)
+		var sock = _create_chalice_socket_mesh(0.027, 0.008, mat_hole_concave, mat_gold_ring)
 		sock.position = Vector3(pos_x, 0.016, ACTIVE_ROW_Z)
 		root.add_child(sock)
 		active_slot_nodes.append(sock)
 
-		var hover_ring = _create_slot_hover_ring(0.030, 0.036)
+		var hover_ring = _create_slot_hover_ring(0.031, 0.038)
 		hover_ring.position = Vector3(pos_x, 0.018, ACTIVE_ROW_Z)
 		root.add_child(hover_ring)
 		active_slot_rings.append(hover_ring)
@@ -774,8 +777,6 @@ func _build_active_input_row(root: Node3D) -> void:
 		piece.visible = false
 		root.add_child(piece)
 		active_slot_pieces.append(piece)
-
-		_create_slot_interaction_area(root, Vector3(pos_x, 0.028, ACTIVE_ROW_Z), 0.033, col, false)
 
 func _build_palette(
 	root: Node3D,
@@ -790,12 +791,16 @@ func _build_palette(
 	if not is_phase1:
 		var pal_bg = MeshInstance3D.new()
 		var pal_m = BoxMesh.new()
-		pal_m.size = Vector3(BOARD_W - 0.06, 0.004, 0.215)
+		pal_m.size = Vector3(BOARD_W - 0.06, 0.004, 0.222)
 		pal_m.material = mat_vault_recess
 		pal_bg.mesh = pal_m
 		pal_bg.position = Vector3(0, 0.015, (r1_z + r2_z) * 0.5)
 		root.add_child(pal_bg)
-		_create_zone_frame(root, Vector3(0, 0.017, (r1_z + r2_z) * 0.5), BOARD_W - 0.056, 0.218, mat_brass_trim)
+		_create_zone_frame(root, Vector3(0, 0.017, (r1_z + r2_z) * 0.5), BOARD_W - 0.056, 0.225, mat_brass_trim)
+
+	var dish_radius = 0.038 if is_phase1 else 0.027
+	var peg_scale = PHASE1_PEG_SCALE if is_phase1 else 1.0
+	var peg_y_offset = 0.028 if is_phase1 else 0.022
 
 	for i in range(8):
 		var color_id = i + 1
@@ -804,16 +809,14 @@ func _build_palette(
 		var p_x = x_offsets[col_idx]
 		var p_z = r1_z if is_r1 else r2_z
 
-		# Sculpted Brass Pedestal Dish with Concave Well
-		var dish = _create_chalice_socket_mesh(0.026, 0.006, mat_hole_concave, mat_brass_trim)
+		var dish = _create_chalice_socket_mesh(dish_radius, 0.007, mat_hole_concave, mat_brass_trim)
 		dish.position = Vector3(p_x, slab_y + 0.002, p_z)
 		root.add_child(dish)
 
-		# Subtle Color-Coded Inner Ring (so player sees which color belongs to this dish when peg is in a slot)
 		var color_ring = MeshInstance3D.new()
 		var cr_torus = TorusMesh.new()
-		cr_torus.inner_radius = 0.015
-		cr_torus.outer_radius = 0.020
+		cr_torus.inner_radius = dish_radius * 0.56
+		cr_torus.outer_radius = dish_radius * 0.76
 		cr_torus.rings = 20
 		cr_torus.ring_segments = 10
 		color_ring.mesh = cr_torus
@@ -821,48 +824,14 @@ func _build_palette(
 		color_ring.position = Vector3(p_x, slab_y + 0.003, p_z)
 		root.add_child(color_ring)
 
-		# Physical Gemstone Peg sitting in the palette dish
-		var peg_pos = Vector3(p_x, slab_y + 0.022, p_z)
+		var peg_pos = Vector3(p_x, slab_y + peg_y_offset, p_z)
 		var piece = _create_piece_mesh(color_id)
+		piece.scale = Vector3.ONE * peg_scale
 		piece.position = peg_pos
 		root.add_child(piece)
 
 		pegs_dict[color_id] = piece
 		pos_dict[color_id] = peg_pos
-
-		# Interactive Area3D for both Click and Drag-and-Drop
-		var area = Area3D.new()
-		var col_shape = CollisionShape3D.new()
-		var sph_shape = SphereShape3D.new()
-		sph_shape.radius = 0.034
-		col_shape.shape = sph_shape
-		area.add_child(col_shape)
-		area.position = peg_pos
-		root.add_child(area)
-
-		area.input_event.connect(func(_cam, ev, _pos, _norm, _idx):
-			if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
-				_on_palette_peg_pressed(color_id, is_phase1, ev.position)
-			elif ev is InputEventScreenTouch and ev.pressed:
-				_on_palette_peg_pressed(color_id, is_phase1, ev.position)
-		)
-
-func _create_slot_interaction_area(root: Node3D, pos: Vector3, radius: float, slot_idx: int, is_phase1: bool) -> void:
-	var area = Area3D.new()
-	var col_shape = CollisionShape3D.new()
-	var sph = SphereShape3D.new()
-	sph.radius = radius
-	col_shape.shape = sph
-	area.add_child(col_shape)
-	area.position = pos
-	root.add_child(area)
-
-	area.input_event.connect(func(_cam, ev, _pos, _norm, _idx):
-		if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
-			_on_slot_peg_pressed(slot_idx, is_phase1, ev.position)
-		elif ev is InputEventScreenTouch and ev.pressed:
-			_on_slot_peg_pressed(slot_idx, is_phase1, ev.position)
-	)
 
 # ==============================================================================
 # 5. GEOMETRY & VFX HELPERS
@@ -874,10 +843,10 @@ func _create_3d_label(text_str: String, font_px: int, col: Color) -> Label3D:
 	if _game_font:
 		lbl.font = _game_font
 	lbl.font_size = font_px
-	lbl.pixel_size = 0.0009
+	lbl.pixel_size = 0.00145
 	lbl.modulate = col
-	lbl.outline_modulate = Color(0.0, 0.0, 0.0, 0.88)
-	lbl.outline_size = 6
+	lbl.outline_modulate = Color(0.0, 0.0, 0.0, 0.94)
+	lbl.outline_size = 10
 	lbl.rotation_degrees = Vector3(-90, 0, 0)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -919,7 +888,7 @@ func _create_zone_frame(root: Node3D, center_pos: Vector3, w: float, l: float, m
 func _create_active_row_frame() -> Node3D:
 	var node = Node3D.new()
 	var w = BOARD_W - 0.056
-	var l = 0.082
+	var l = 0.084
 	_create_zone_frame(node, Vector3.ZERO, w, l, mat_active_row_glow)
 	return node
 
@@ -937,11 +906,11 @@ func _create_slot_hover_ring(inner_r: float, outer_r: float) -> MeshInstance3D:
 
 func _create_bezel(root: Node3D, w: float, l: float, y_h: float) -> void:
 	var h_mesh = BoxMesh.new()
-	h_mesh.size = Vector3(w + 0.010, 0.014, 0.010)
+	h_mesh.size = Vector3(w + 0.012, 0.015, 0.012)
 	h_mesh.material = mat_brass_trim
 
 	var v_mesh = BoxMesh.new()
-	v_mesh.size = Vector3(0.010, 0.014, l + 0.010)
+	v_mesh.size = Vector3(0.012, 0.015, l + 0.012)
 	v_mesh.material = mat_brass_trim
 
 	var b_top = MeshInstance3D.new()
@@ -966,17 +935,17 @@ func _create_bezel(root: Node3D, w: float, l: float, y_h: float) -> void:
 
 func _create_corner_brackets(root: Node3D, w: float, l: float, y_h: float) -> void:
 	var offsets = [
-		Vector3(-w * 0.5 + 0.014, y_h + 0.007, -l * 0.5 + 0.014),
-		Vector3(w * 0.5 - 0.014, y_h + 0.007, -l * 0.5 + 0.014),
-		Vector3(-w * 0.5 + 0.014, y_h + 0.007, l * 0.5 - 0.014),
-		Vector3(w * 0.5 - 0.014, y_h + 0.007, l * 0.5 - 0.014)
+		Vector3(-w * 0.5 + 0.016, y_h + 0.008, -l * 0.5 + 0.016),
+		Vector3(w * 0.5 - 0.016, y_h + 0.008, -l * 0.5 + 0.016),
+		Vector3(-w * 0.5 + 0.016, y_h + 0.008, l * 0.5 - 0.016),
+		Vector3(w * 0.5 - 0.016, y_h + 0.008, l * 0.5 - 0.016)
 	]
 	for pos in offsets:
 		var stud = MeshInstance3D.new()
 		var cyl = CylinderMesh.new()
-		cyl.top_radius = 0.016
-		cyl.bottom_radius = 0.019
-		cyl.height = 0.010
+		cyl.top_radius = 0.018
+		cyl.bottom_radius = 0.022
+		cyl.height = 0.011
 		cyl.material = mat_gold_ring
 		stud.mesh = cyl
 		stud.position = pos
@@ -985,8 +954,8 @@ func _create_corner_brackets(root: Node3D, w: float, l: float, y_h: float) -> vo
 func _create_piece_mesh(color_id: int) -> MeshInstance3D:
 	var inst = MeshInstance3D.new()
 	var sph = SphereMesh.new()
-	sph.radius = 0.0235
-	sph.height = 0.0245
+	sph.radius = 0.024
+	sph.height = 0.025
 	sph.radial_segments = 32
 	sph.rings = 16
 	inst.mesh = sph
@@ -1022,7 +991,7 @@ func _create_pointer_mesh() -> Node3D:
 	var node = Node3D.new()
 	var ptr = MeshInstance3D.new()
 	var prism = PrismMesh.new()
-	prism.size = Vector3(0.030, 0.030, 0.016)
+	prism.size = Vector3(0.032, 0.032, 0.016)
 	prism.material = mat_gold_ring
 	ptr.mesh = prism
 	ptr.rotation_degrees = Vector3(0, 0, -90)
@@ -1043,23 +1012,24 @@ func _update_active_row_pointer(pointer: Node3D, frame: Node3D, labels: Array[La
 		if not is_instance_valid(lbl):
 			continue
 		if i == clamped_idx:
-			lbl.modulate = Color(1.0, 0.88, 0.30)
-			lbl.scale = Vector3(1.22, 1.22, 1.22)
+			lbl.modulate = Color(1.0, 0.90, 0.32)
+			lbl.scale = Vector3(1.26, 1.26, 1.26)
 		elif i < clamped_idx:
-			lbl.modulate = Color(0.55, 0.90, 0.65)
+			lbl.modulate = Color(0.55, 0.92, 0.68)
 			lbl.scale = Vector3.ONE
 		else:
-			lbl.modulate = Color(0.65, 0.60, 0.50)
+			lbl.modulate = Color(0.75, 0.70, 0.58)
 			lbl.scale = Vector3.ONE
 
 # Spawns a 3D expanding golden shockwave ring at the target slot when a peg lands
-func _spawn_3d_slot_vfx(parent_root: Node3D, slot_pos: Vector3, color_id: int) -> void:
+func _spawn_3d_slot_vfx(parent_root: Node3D, slot_pos: Vector3, color_id: int, is_p1: bool = false) -> void:
 	if not is_instance_valid(parent_root):
 		return
 	var ring = MeshInstance3D.new()
 	var torus = TorusMesh.new()
-	torus.inner_radius = 0.020
-	torus.outer_radius = 0.027
+	var base_r = 0.030 if is_p1 else 0.021
+	torus.inner_radius = base_r
+	torus.outer_radius = base_r * 1.32
 	torus.rings = 24
 	torus.ring_segments = 10
 	ring.mesh = torus
@@ -1071,12 +1041,12 @@ func _spawn_3d_slot_vfx(parent_root: Node3D, slot_pos: Vector3, color_id: int) -
 	vfx_mat.emission_enabled = true
 	vfx_mat.emission = vfx_mat.albedo_color * 1.4
 	ring.material_override = vfx_mat
-	ring.position = Vector3(slot_pos.x, slot_pos.y - 0.012, slot_pos.z)
+	ring.position = Vector3(slot_pos.x, slot_pos.y - 0.014, slot_pos.z)
 	ring.scale = Vector3(0.75, 1.0, 0.75)
 	parent_root.add_child(ring)
 
 	var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(ring, "scale", Vector3(1.85, 1.0, 1.85), 0.32)
+	tw.tween_property(ring, "scale", Vector3(1.90, 1.0, 1.90), 0.32)
 	tw.tween_property(vfx_mat, "albedo_color:a", 0.0, 0.32)
 	tw.chain().tween_callback(ring.queue_free)
 
@@ -1094,28 +1064,42 @@ func _pulse_slot_ring(ring_mesh: MeshInstance3D) -> void:
 	)
 
 # Animates a peg flying along a parabolic 3D arc from start_pos to target slot
-func _animate_slot_placement_from(parent_root: Node3D, piece_mesh: MeshInstance3D, color_id: int, start_local_pos: Vector3, target_local_pos: Vector3) -> void:
+func _animate_slot_placement_from(
+	parent_root: Node3D,
+	piece_mesh: MeshInstance3D,
+	color_id: int,
+	start_local_pos: Vector3,
+	target_local_pos: Vector3,
+	base_scale: float = 1.0,
+	is_p1: bool = false
+) -> void:
 	if not is_instance_valid(piece_mesh):
 		return
 	piece_mesh.material_override = piece_materials.get(color_id, mat_pin_white)
 	piece_mesh.visible = true
 	piece_mesh.position = start_local_pos
-	piece_mesh.scale = Vector3(0.85, 0.85, 0.85)
+	piece_mesh.scale = Vector3.ONE * (base_scale * 0.85)
 
 	var mid_pos = (start_local_pos + target_local_pos) * 0.5
-	mid_pos.y = maxf(start_local_pos.y, target_local_pos.y) + 0.068
+	mid_pos.y = maxf(start_local_pos.y, target_local_pos.y) + (0.095 if is_p1 else 0.068)
 
 	var tw = create_tween()
 	tw.tween_property(piece_mesh, "position", mid_pos, 0.13).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(piece_mesh, "scale", Vector3(1.22, 1.22, 1.22), 0.13)
+	tw.parallel().tween_property(piece_mesh, "scale", Vector3.ONE * (base_scale * 1.22), 0.13)
 	tw.tween_property(piece_mesh, "position", target_local_pos, 0.15).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(piece_mesh, "scale", Vector3.ONE, 0.15)
+	tw.parallel().tween_property(piece_mesh, "scale", Vector3.ONE * base_scale, 0.15)
 	tw.tween_callback(func():
-		_spawn_3d_slot_vfx(parent_root, target_local_pos, color_id)
+		_spawn_3d_slot_vfx(parent_root, target_local_pos, color_id, is_p1)
 	)
 
 # Animates a removed slot peg flying along a parabolic 3D arc back into its palette dish
-func _animate_slot_return_to_palette(parent_root: Node3D, slot_piece_mesh: MeshInstance3D, color_id: int, palette_local_pos: Vector3) -> void:
+func _animate_slot_return_to_palette(
+	parent_root: Node3D,
+	slot_piece_mesh: MeshInstance3D,
+	color_id: int,
+	palette_local_pos: Vector3,
+	base_scale: float = 1.0
+) -> void:
 	if not is_instance_valid(slot_piece_mesh):
 		return
 	var start_pos = slot_piece_mesh.position
@@ -1126,24 +1110,24 @@ func _animate_slot_return_to_palette(parent_root: Node3D, slot_piece_mesh: MeshI
 		return
 
 	var fly_peg = _create_piece_mesh(color_id)
+	fly_peg.scale = Vector3.ONE * base_scale
 	fly_peg.position = start_pos
 	parent_root.add_child(fly_peg)
 
 	var mid_pos = (start_pos + palette_local_pos) * 0.5
-	mid_pos.y = maxf(start_pos.y, palette_local_pos.y) + 0.055
+	mid_pos.y = maxf(start_pos.y, palette_local_pos.y) + (0.075 if base_scale > 1.1 else 0.055)
 
 	var tw = create_tween()
 	tw.tween_property(fly_peg, "position", mid_pos, 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(fly_peg, "scale", Vector3(1.12, 1.12, 1.12), 0.11)
+	tw.parallel().tween_property(fly_peg, "scale", Vector3.ONE * (base_scale * 1.12), 0.11)
 	tw.tween_property(fly_peg, "position", palette_local_pos, 0.13).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(fly_peg, "scale", Vector3.ONE, 0.13)
+	tw.parallel().tween_property(fly_peg, "scale", Vector3.ONE * base_scale, 0.13)
 	tw.tween_callback(func():
 		if is_instance_valid(fly_peg):
 			fly_peg.queue_free()
 		_sync_palette_visibility()
 	)
 
-# Synchronizes visibility of the 8 palette pegs so any color currently placed in the 4 slots is hidden from its palette dish
 func _sync_palette_visibility() -> void:
 	for c_id in range(1, 9):
 		if phase1_palette_pegs.has(c_id) and is_instance_valid(phase1_palette_pegs[c_id]):
@@ -1156,7 +1140,7 @@ func _sync_palette_visibility() -> void:
 			phase2_palette_pegs[c_id].visible = (not in_p2_slots) and (not dragging_this_p2)
 
 # ==============================================================================
-# 6. UNIFIED SLOT PLACEMENT, TAP FLIGHT & 3D DRAG-AND-DROP
+# 6. SYNCHRONOUS 3D INPUT, TAP FLIGHT & 3D DRAG-AND-DROP (ZERO CAMERA JERK)
 # ==============================================================================
 
 func _place_color_in_slot(slot_idx: int, color_id: int, is_p1: bool, from_local_pos: Vector3) -> void:
@@ -1166,129 +1150,194 @@ func _place_color_in_slot(slot_idx: int, color_id: int, is_p1: bool, from_local_
 	var slot_pieces: Array[MeshInstance3D] = phase1_slot_pieces if is_p1 else active_slot_pieces
 	var parent_root: Node3D = phase1_root if is_p1 else my_board_root
 	var pal_positions: Dictionary = phase1_palette_positions if is_p1 else phase2_palette_positions
+	var p_scale: float = PHASE1_PEG_SCALE if is_p1 else 1.0
 
-	# If color_id is already in another slot, clear that other slot first
 	var prev_slot = sel_arr.find(color_id)
 	if prev_slot != -1 and prev_slot != slot_idx:
 		sel_arr[prev_slot] = 0
 		if prev_slot < slot_pieces.size() and is_instance_valid(slot_pieces[prev_slot]):
 			slot_pieces[prev_slot].visible = false
 
-	# If target slot already has a different color, return that old color to its palette dish
 	var old_color = int(sel_arr[slot_idx])
 	if old_color > 0 and old_color != color_id:
 		if prev_slot != -1:
-			# Swap the displaced color into the source slot!
 			sel_arr[prev_slot] = old_color
 			var swap_target_pos = _get_slot_local_pos(prev_slot, is_p1)
 			var swap_start_pos = _get_slot_local_pos(slot_idx, is_p1)
-			_animate_slot_placement_from(parent_root, slot_pieces[prev_slot], old_color, swap_start_pos, swap_target_pos)
+			_animate_slot_placement_from(parent_root, slot_pieces[prev_slot], old_color, swap_start_pos, swap_target_pos, p_scale, is_p1)
 		else:
-			_animate_slot_return_to_palette(parent_root, slot_pieces[slot_idx], old_color, pal_positions.get(old_color, Vector3.ZERO))
+			_animate_slot_return_to_palette(parent_root, slot_pieces[slot_idx], old_color, pal_positions.get(old_color, Vector3.ZERO), p_scale)
 
 	sel_arr[slot_idx] = color_id
 	_sync_palette_visibility()
 	AudioManager.play_sound("tap")
 
 	var target_local_pos = _get_slot_local_pos(slot_idx, is_p1)
-	_animate_slot_placement_from(parent_root, slot_pieces[slot_idx], color_id, from_local_pos, target_local_pos)
+	_animate_slot_placement_from(parent_root, slot_pieces[slot_idx], color_id, from_local_pos, target_local_pos, p_scale, is_p1)
 
 func _get_slot_local_pos(slot_idx: int, is_p1: bool) -> Vector3:
 	if is_p1:
-		return Vector3(TRAY_SECRET_X_OFFSETS[slot_idx], 0.036, TRAY_SECRET_Z + 0.012)
+		return Vector3(TRAY_SECRET_X_OFFSETS[slot_idx], 0.044, TRAY_SECRET_Z + 0.028)
 	return Vector3(PEG_X_OFFSETS[slot_idx], 0.036, ACTIVE_ROW_Z)
 
-func _on_palette_peg_pressed(color_id: int, is_p1: bool, screen_pos: Vector2) -> void:
-	if not GameManager.is_game_active:
-		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
-		AudioManager.play_sound("miss_turn")
-		return
-	if is_board_locked or (is_p1 and is_play_phase) or (not is_p1 and not is_play_phase):
-		return
-	if is_play_phase and current_view_mode != ViewMode.MY_BOARD:
-		_apply_view_mode_positions(ViewMode.MY_BOARD, true)
+func _is_gui_blocking_at(screen_pos: Vector2) -> bool:
+	var hud = _get_hud()
+	if not hud or not hud.visible:
+		return false
+	for modal_name in ["StartGameOverlay", "DisconnectPauseDialog", "SurrenderDialog", "RoundFinishBanner", "ReactionPicker", "GameResultDialog", "UserProfileDialog"]:
+		var node = hud.get_node_or_null(modal_name)
+		if node and node is Control and node.visible:
+			return true
+	for bar_name in ["BottomBar", "FekrBekrActions", "TopHeaderSlot"]:
+		var bar = hud.get_node_or_null(bar_name)
+		if bar and bar is Control and bar.visible and bar.get_global_rect().has_point(screen_pos):
+			return true
+	return false
 
-	var sel_arr: Array = phase1_selection if is_p1 else active_selection
-	if color_id in sel_arr:
-		# Color is already placed in one of the 4 slots -> pulse that slot
-		var idx = sel_arr.find(color_id)
-		var rings = phase1_slot_rings if is_p1 else active_slot_rings
-		if idx >= 0 and idx < rings.size():
-			_pulse_slot_ring(rings[idx])
-		AudioManager.play_sound("tap_wrong")
-		show_hint("این رنگ در جایگاه %s قرار دارد؛ برای حذف روی مهره کلیک کنید." % FA_DIGITS[idx + 1])
+# Synchronously intercepts pointer press/drag/release in _input BEFORE cafe_table._unhandled_input runs!
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
 		return
 
-	_pointer_down = true
-	_pointer_start_screen = screen_pos
-	_drag_color_id = color_id
-	_drag_source_slot = -1
-	is_dragging_piece = false
-
-func _on_slot_peg_pressed(slot_idx: int, is_p1: bool, screen_pos: Vector2) -> void:
-	if not GameManager.is_game_active:
-		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
-		AudioManager.play_sound("miss_turn")
-		return
-	if is_board_locked or (is_p1 and is_play_phase) or (not is_p1 and not is_play_phase):
-		return
-	var sel_arr: Array = phase1_selection if is_p1 else active_selection
-	var color_id = int(sel_arr[slot_idx])
-	if color_id <= 0:
-		return
-
-	_pointer_down = true
-	_pointer_start_screen = screen_pos
-	_drag_color_id = color_id
-	_drag_source_slot = slot_idx
-	is_dragging_piece = false
-
-func _unhandled_input(event: InputEvent) -> void:
-	if not _pointer_down:
-		return
-
-	if event is InputEventMouseMotion:
-		_handle_pointer_move(event.position)
-		if is_dragging_piece:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			if _try_begin_board_pointer_press(event.position):
+				_mark_piece_interaction()
+				get_viewport().set_input_as_handled()
+		elif _pointer_down:
+			_mark_piece_interaction()
+			_handle_pointer_release(event.position)
 			get_viewport().set_input_as_handled()
-	elif event is InputEventScreenDrag:
-		_handle_pointer_move(event.position)
-		if is_dragging_piece:
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			if _try_begin_board_pointer_press(event.position):
+				_mark_piece_interaction()
+				get_viewport().set_input_as_handled()
+		elif _pointer_down:
+			_mark_piece_interaction()
+			_handle_pointer_release(event.position)
 			get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
-		_handle_pointer_release(event.position)
+	elif event is InputEventMouseMotion and _pointer_down:
+		_mark_piece_interaction()
+		_handle_pointer_move(event.position)
 		get_viewport().set_input_as_handled()
-	elif event is InputEventScreenTouch and not event.pressed:
-		_handle_pointer_release(event.position)
+	elif event is InputEventScreenDrag and _pointer_down:
+		_mark_piece_interaction()
+		_handle_pointer_move(event.position)
 		get_viewport().set_input_as_handled()
+
+func _try_begin_board_pointer_press(screen_pos: Vector2) -> bool:
+	if _is_gui_blocking_at(screen_pos):
+		return false
+
+	var is_p1 = not is_play_phase
+	var local_root: Node3D = phase1_root if is_p1 else my_board_root
+	if not is_instance_valid(local_root) or not local_root.visible:
+		return false
+
+	var hit_world = _project_screen_to_board_plane(screen_pos)
+	var hit_local = local_root.to_local(hit_world)
+
+	var pal_positions: Dictionary = phase1_palette_positions if is_p1 else phase2_palette_positions
+	var pick_radius: float = 0.068 if is_p1 else 0.046
+
+	# 1. Check if pointer pressed on one of the 8 palette dishes
+	var best_color = 0
+	var best_pal_dist = pick_radius
+	for c_id in pal_positions.keys():
+		var p_pos: Vector3 = pal_positions[c_id]
+		var d = Vector2(hit_local.x - p_pos.x, hit_local.z - p_pos.z).length()
+		if d < best_pal_dist:
+			best_pal_dist = d
+			best_color = int(c_id)
+
+	if best_color > 0:
+		if not GameManager.is_game_active:
+			show_hint("لطفاً تا شروع مسابقه صبر کنید...")
+			AudioManager.play_sound("miss_turn")
+			return true
+		if is_board_locked:
+			return true
+		if is_play_phase and current_view_mode != ViewMode.MY_BOARD:
+			_apply_view_mode_positions(ViewMode.MY_BOARD, true)
+
+		var sel_arr: Array = phase1_selection if is_p1 else active_selection
+		if best_color in sel_arr:
+			var idx = sel_arr.find(best_color)
+			var rings = phase1_slot_rings if is_p1 else active_slot_rings
+			if idx >= 0 and idx < rings.size():
+				_pulse_slot_ring(rings[idx])
+			AudioManager.play_sound("tap_wrong")
+			show_hint("این رنگ در جایگاه %s قرار دارد؛ برای حذف روی مهره کلیک کنید." % FA_DIGITS[idx + 1])
+			return true
+
+		_pointer_down = true
+		_pointer_start_screen = screen_pos
+		_drag_color_id = best_color
+		_drag_source_slot = -1
+		is_dragging_piece = false
+		return true
+
+	# 2. Check if pointer pressed on one of the 4 active/secret slots
+	var best_slot = -1
+	var best_slot_dist = pick_radius
+	for i in range(4):
+		var s_pos = _get_slot_local_pos(i, is_p1)
+		var d = Vector2(hit_local.x - s_pos.x, hit_local.z - s_pos.z).length()
+		if d < best_slot_dist:
+			best_slot_dist = d
+			best_slot = i
+
+	if best_slot >= 0:
+		if not GameManager.is_game_active:
+			show_hint("لطفاً تا شروع مسابقه صبر کنید...")
+			AudioManager.play_sound("miss_turn")
+			return true
+		if is_board_locked:
+			return true
+		var sel_arr: Array = phase1_selection if is_p1 else active_selection
+		var slot_color = int(sel_arr[best_slot])
+		if slot_color <= 0:
+			return true
+
+		_pointer_down = true
+		_pointer_start_screen = screen_pos
+		_drag_color_id = slot_color
+		_drag_source_slot = best_slot
+		is_dragging_piece = false
+		return true
+
+	return false
 
 func _handle_pointer_move(screen_pos: Vector2) -> void:
 	if not _pointer_down or _drag_color_id <= 0:
 		return
+	var is_p1 = not is_play_phase
+	var p_scale = PHASE1_PEG_SCALE if is_p1 else 1.0
 	if not is_dragging_piece:
 		if screen_pos.distance_to(_pointer_start_screen) < 10.0:
 			return
-		# Transition into 3D Drag Mode!
 		is_dragging_piece = true
 		AudioManager.play_sound("tap")
 		_drag_peg_mesh.material_override = piece_materials.get(_drag_color_id, mat_pin_white)
+		_drag_peg_mesh.scale = Vector3.ONE * (p_scale * 1.25)
+		_drag_halo_mesh.scale = Vector3.ONE * p_scale
 		_drag_peg_node.visible = true
 		if _drag_source_slot >= 0:
-			var slot_pieces = phase1_slot_pieces if not is_play_phase else active_slot_pieces
+			var slot_pieces = phase1_slot_pieces if is_p1 else active_slot_pieces
 			if _drag_source_slot < slot_pieces.size() and is_instance_valid(slot_pieces[_drag_source_slot]):
 				slot_pieces[_drag_source_slot].visible = false
 		_sync_palette_visibility()
 
 	var hit_world = _project_screen_to_board_plane(screen_pos)
-	var local_root: Node3D = phase1_root if not is_play_phase else my_board_root
+	var local_root: Node3D = phase1_root if is_p1 else my_board_root
 	if is_instance_valid(_drag_peg_node):
-		_drag_peg_node.global_position = hit_world + Vector3(0, 0.045, 0)
+		_drag_peg_node.global_position = hit_world + Vector3(0, 0.055 if is_p1 else 0.045, 0)
 
-	# Check magnetic proximity to the 4 target slots
 	var best_slot = -1
-	var best_dist = 0.085
+	var best_dist = 0.115 if is_p1 else 0.085
 	for i in range(4):
-		var slot_local = _get_slot_local_pos(i, not is_play_phase)
+		var slot_local = _get_slot_local_pos(i, is_p1)
 		var slot_world = local_root.to_global(slot_local)
 		var dist_2d = Vector2(hit_world.x - slot_world.x, hit_world.z - slot_world.z).length()
 		if dist_2d < best_dist:
@@ -1297,7 +1346,7 @@ func _handle_pointer_move(screen_pos: Vector2) -> void:
 
 	if best_slot != _hovered_slot_idx:
 		_hovered_slot_idx = best_slot
-		_update_slot_hover_rings(not is_play_phase, _hovered_slot_idx)
+		_update_slot_hover_rings(is_p1, _hovered_slot_idx)
 
 func _handle_pointer_release(_screen_pos: Vector2) -> void:
 	var was_dragging = is_dragging_piece
@@ -1305,12 +1354,14 @@ func _handle_pointer_release(_screen_pos: Vector2) -> void:
 	var src_slot = _drag_source_slot
 	var target_slot = _hovered_slot_idx
 	var is_p1 = not is_play_phase
+	var p_scale = PHASE1_PEG_SCALE if is_p1 else 1.0
 
 	_pointer_down = false
 	is_dragging_piece = false
 	_drag_color_id = 0
 	_drag_source_slot = -1
 	_hovered_slot_idx = -1
+	_mark_piece_interaction()
 	_update_slot_hover_rings(is_p1, -1)
 
 	var local_root: Node3D = phase1_root if is_p1 else my_board_root
@@ -1319,7 +1370,6 @@ func _handle_pointer_release(_screen_pos: Vector2) -> void:
 		_drag_peg_node.visible = false
 
 	if not was_dragging:
-		# Fast tap/click!
 		if src_slot >= 0:
 			if is_p1:
 				_on_phase1_slot_clicked(src_slot)
@@ -1332,27 +1382,23 @@ func _handle_pointer_release(_screen_pos: Vector2) -> void:
 				_on_phase2_color_selected(color_id)
 		return
 
-	# Completed a 3D Drag-and-Drop!
 	if target_slot >= 0 and target_slot < 4:
 		_place_color_in_slot(target_slot, color_id, is_p1, drag_local_pos)
 	else:
-		# Dropped outside the 4 slots
 		var pal_positions = phase1_palette_positions if is_p1 else phase2_palette_positions
 		var slot_pieces = phase1_slot_pieces if is_p1 else active_slot_pieces
 		var sel_arr = phase1_selection if is_p1 else active_selection
 		if src_slot >= 0 and src_slot < 4:
-			# Clear the source slot and fly the peg back to its palette dish
 			sel_arr[src_slot] = 0
 			AudioManager.play_sound("tap")
 			slot_pieces[src_slot].position = drag_local_pos
-			_animate_slot_return_to_palette(local_root, slot_pieces[src_slot], color_id, pal_positions.get(color_id, Vector3.ZERO))
+			_animate_slot_return_to_palette(local_root, slot_pieces[src_slot], color_id, pal_positions.get(color_id, Vector3.ZERO), p_scale)
 		else:
-			# Return dragged palette peg smoothly back to its palette dish
 			var dummy = slot_pieces[0]
 			var saved_pos = dummy.position
 			var saved_vis = dummy.visible
 			dummy.position = drag_local_pos
-			_animate_slot_return_to_palette(local_root, dummy, color_id, pal_positions.get(color_id, Vector3.ZERO))
+			_animate_slot_return_to_palette(local_root, dummy, color_id, pal_positions.get(color_id, Vector3.ZERO), p_scale)
 			dummy.position = saved_pos
 			dummy.visible = saved_vis
 
@@ -1387,7 +1433,7 @@ func _project_screen_to_board_plane(screen_pos: Vector2) -> Vector3:
 		return global_position
 	var ray_origin = cam.project_ray_origin(screen_pos)
 	var ray_dir = cam.project_ray_normal(screen_pos)
-	var plane_y = global_position.y + 0.025
+	var plane_y = global_position.y + (0.032 if not is_play_phase else 0.025)
 	var plane = Plane(Vector3.UP, plane_y)
 	var hit = plane.intersects_ray(ray_origin, ray_dir)
 	if hit != null:
@@ -1407,7 +1453,6 @@ func _on_phase2_color_selected(color_id: int) -> void:
 		return
 	if current_view_mode != ViewMode.MY_BOARD:
 		_apply_view_mode_positions(ViewMode.MY_BOARD, true)
-	# Prevent duplicate colors across the 4 slots
 	var existing_idx = active_selection.find(color_id)
 	if existing_idx != -1:
 		AudioManager.play_sound("tap_wrong")
@@ -1433,7 +1478,7 @@ func _on_active_slot_clicked(col_idx: int) -> void:
 	if color_id != 0:
 		AudioManager.play_sound("tap")
 		active_selection[col_idx] = 0
-		_animate_slot_return_to_palette(my_board_root, active_slot_pieces[col_idx], color_id, phase2_palette_positions.get(color_id, Vector3.ZERO))
+		_animate_slot_return_to_palette(my_board_root, active_slot_pieces[col_idx], color_id, phase2_palette_positions.get(color_id, Vector3.ZERO), 1.0)
 		_sync_palette_visibility()
 
 func _clear_current_selection() -> void:
@@ -1445,14 +1490,14 @@ func _clear_current_selection() -> void:
 			var c_id = int(phase1_selection[i])
 			if c_id > 0:
 				phase1_selection[i] = 0
-				_animate_slot_return_to_palette(phase1_root, phase1_slot_pieces[i], c_id, phase1_palette_positions.get(c_id, Vector3.ZERO))
+				_animate_slot_return_to_palette(phase1_root, phase1_slot_pieces[i], c_id, phase1_palette_positions.get(c_id, Vector3.ZERO), PHASE1_PEG_SCALE)
 		_clear_phase1_selection()
 	else:
 		for i in range(4):
 			var c_id = int(active_selection[i])
 			if c_id > 0:
 				active_selection[i] = 0
-				_animate_slot_return_to_palette(my_board_root, active_slot_pieces[i], c_id, phase2_palette_positions.get(c_id, Vector3.ZERO))
+				_animate_slot_return_to_palette(my_board_root, active_slot_pieces[i], c_id, phase2_palette_positions.get(c_id, Vector3.ZERO), 1.0)
 		active_selection = [0, 0, 0, 0]
 		_update_active_slots()
 	AudioManager.play_sound("tap")
@@ -1514,7 +1559,6 @@ func _submit_selection() -> void:
 	_cancel_active_drag()
 
 	if not is_play_phase:
-		# Phase 1: Submit Secret Board for Opponent
 		for v in phase1_selection:
 			if v <= 0:
 				show_hint("لطفاً هر ۴ مهره رمز را انتخاب کنید.")
@@ -1540,7 +1584,6 @@ func _submit_selection() -> void:
 		if hud and hud.has_method("set_waiting_opponent"):
 			hud.set_waiting_opponent("🔐 رمز شما ثبت شد — در انتظار انتخاب رمز توسط حریف...")
 	else:
-		# Phase 2: Submit Guess for Active Row (non-repeating colors enforced!)
 		for v in active_selection:
 			if v <= 0:
 				show_hint("لطفاً هر ۴ مهره حدس را در جایگاه قرار دهید.")
@@ -1576,8 +1619,8 @@ func _apply_view_mode_positions(mode: ViewMode, animate: bool = true) -> void:
 			my_pos = Vector3(-3.0, 0, 0)
 			opp_pos = Vector3.ZERO
 		ViewMode.DUAL:
-			my_pos = Vector3(-0.37, 0, 0)
-			opp_pos = Vector3(0.37, 0, 0)
+			my_pos = Vector3(-0.40, 0, 0)
+			opp_pos = Vector3(0.40, 0, 0)
 
 	if animate:
 		var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -1619,7 +1662,6 @@ func on_turn_changed(turn: int, _is_me: bool) -> void:
 				hud.set_setup_phase()
 		return
 
-	# Phase 2: Play Phase
 	set_phase(true)
 	current_round_num = turn
 	set_board_locked(false)
