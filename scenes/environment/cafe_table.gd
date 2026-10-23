@@ -351,6 +351,10 @@ func animate_place_piece(user_id: int, target_world_pos: Vector3, piece_node: No
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_board_view_active or is_transitioning:
 		return
+	if current_board_node and is_instance_valid(current_board_node) and "is_dragging_piece" in current_board_node and current_board_node.is_dragging_piece:
+		_mouse_pressed = false
+		_is_dragging = false
+		return
 		
 	if event is InputEventMouseButton:
 		_handle_mouse_button(event)

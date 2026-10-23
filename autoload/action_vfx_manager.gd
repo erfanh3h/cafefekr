@@ -300,6 +300,13 @@ func spawn_ui_click_burst(screen_pos: Vector2, tint_color: Color = Color(1.0, 0.
 
 # --- 6. 2D DIALOG JUICE & VFX ---
 
+func _kill_control_tween(node: Control) -> void:
+	if is_instance_valid(node) and node.has_meta("_vfx_tween"):
+		var prev_tw = node.get_meta("_vfx_tween")
+		if prev_tw and prev_tw is Tween and prev_tw.is_valid():
+			prev_tw.kill()
+		node.remove_meta("_vfx_tween")
+
 func animate_dialog_open(card_node: Control, overlay_node: Control = null, with_sparkles: bool = true, play_sfx: bool = true) -> void:
 	if not is_instance_valid(card_node):
 		return
@@ -308,23 +315,27 @@ func animate_dialog_open(card_node: Control, overlay_node: Control = null, with_
 		AudioManager.sfx_dialog()
 		
 	if is_instance_valid(overlay_node):
+		_kill_control_tween(overlay_node)
 		overlay_node.visible = true
 		overlay_node.modulate.a = 0.0
 		var o_tw = overlay_node.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		o_tw.tween_property(overlay_node, "modulate:a", 1.0, 0.2)
+		o_tw.tween_property(overlay_node, "modulate:a", 1.0, 0.18)
+		overlay_node.set_meta("_vfx_tween", o_tw)
 		
+	_kill_control_tween(card_node)
 	card_node.visible = true
-	card_node.scale = Vector2(0.78, 0.78)
+	card_node.scale = Vector2(0.82, 0.82)
 	card_node.modulate.a = 0.0
 	card_node.pivot_offset = card_node.size / 2.0
 	
 	var tw = card_node.create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(card_node, "scale", Vector2.ONE, 0.28)
-	tw.tween_property(card_node, "modulate:a", 1.0, 0.18)
+	tw.tween_property(card_node, "scale", Vector2.ONE, 0.24)
+	tw.tween_property(card_node, "modulate:a", 1.0, 0.16)
+	card_node.set_meta("_vfx_tween", tw)
 	
 	if with_sparkles:
-		card_node.get_tree().create_timer(0.08).timeout.connect(func():
-			if is_instance_valid(card_node):
+		card_node.get_tree().create_timer(0.06).timeout.connect(func():
+			if is_instance_valid(card_node) and card_node.visible:
 				spawn_dialog_sparkle_burst(card_node.global_position + card_node.size / 2.0)
 		)
 
@@ -334,14 +345,18 @@ func animate_dialog_close(card_node: Control, overlay_node: Control = null, on_c
 			on_complete.call()
 		return
 		
+	_kill_control_tween(card_node)
 	card_node.pivot_offset = card_node.size / 2.0
 	var tw = card_node.create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.tween_property(card_node, "scale", Vector2(0.8, 0.8), 0.16)
-	tw.tween_property(card_node, "modulate:a", 0.0, 0.16)
+	tw.tween_property(card_node, "scale", Vector2(0.84, 0.84), 0.14)
+	tw.tween_property(card_node, "modulate:a", 0.0, 0.14)
+	card_node.set_meta("_vfx_tween", tw)
 	
 	if is_instance_valid(overlay_node):
+		_kill_control_tween(overlay_node)
 		var o_tw = overlay_node.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		o_tw.tween_property(overlay_node, "modulate:a", 0.0, 0.16)
+		o_tw.tween_property(overlay_node, "modulate:a", 0.0, 0.14)
+		overlay_node.set_meta("_vfx_tween", o_tw)
 		
 	await tw.finished
 	if is_instance_valid(card_node):

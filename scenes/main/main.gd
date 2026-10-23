@@ -564,7 +564,7 @@ func _on_user_disconnected(user_id: String, wait_time: int) -> void:
 	var board = cafe_table.current_board_node
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
 		board.set_board_locked(true)
-	base_game_hud.show_pause_dialog(wait_time, "اتصال بازیکن حریف قطع شد. بازی موقتاً متوقف شد...")
+	base_game_hud.show_pause_dialog(wait_time)
 
 func _on_user_reconnected(user_id: String, _remaining_time: int) -> void:
 	print("[Main] Opponent reconnected (%s). Resuming match..." % user_id)

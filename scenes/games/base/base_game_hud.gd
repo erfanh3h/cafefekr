@@ -171,6 +171,7 @@ var is_countdown_running: bool = false
 var is_pause_active: bool = false
 var pause_time_left: float = 30.0
 var pause_total_time: float = 30.0
+var _last_pause_sec_ticked: int = -1
 
 # Audio icons (White UI)
 var _sound_on_tex = preload("res://assets/icons/General/soundOn_white.png")
@@ -244,7 +245,7 @@ func _ready() -> void:
 	is_game_finished = false
 	is_game_started = false
 	is_timer_active = false
-	lbl_turn_banner.text = "بازی درحال آغاز است..."
+	lbl_turn_banner.text = "بازی درحال آغاز است"
 	lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
 	turn_duration = def_time
@@ -256,7 +257,9 @@ func _process(delta: float) -> void:
 	if is_pause_active:
 		pause_time_left = max(0.0, pause_time_left - delta)
 		var p_sec = int(ceil(pause_time_left))
-		lbl_pause_countdown.text = "مهلت اتصال مجدد: %d ثانیه" % p_sec
+		if p_sec != _last_pause_sec_ticked:
+			_last_pause_sec_ticked = p_sec
+			lbl_pause_countdown.text = "⏳ مهلت بازگشت به بازی: %d ثانیه" % p_sec
 		if pause_total_time > 0:
 			pause_timer_bar.value = (pause_time_left / pause_total_time) * 100.0
 
@@ -497,13 +500,24 @@ func _show_player_profile(player_index: int) -> void:
 	AudioManager.sfx_tap()
 	var my_idx = GameManager.my_player_index
 	var p_data = {}
+	var side_tag = "(شما)" if player_index == my_idx else "(حریف)"
 	var role_str = ""
 	if player_index == 1:
 		p_data = GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data()
-		role_str = "🔴 بازیکن ۱ - مهره ضربدر (شما)" if my_idx == 1 else "🔴 بازیکن ۱ - مهره ضربدر (حریف)"
+		if GameManager.current_game_type == GameTypes.FEKRBEKR:
+			role_str = "🔐 بازیکن ۱ — طراح و کاشف رمز %s" % side_tag
+		elif GameManager.current_game_type == GameTypes.CHESS:
+			role_str = "🔴 بازیکن ۱ — ارتش قرمز %s" % side_tag
+		else:
+			role_str = "🔴 بازیکن ۱ — مهره قرمز %s" % side_tag
 	else:
 		p_data = GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data()
-		role_str = "🔵 بازیکن ۲ - مهره دایره (شما)" if my_idx == 2 else "🔵 بازیکن ۲ - مهره دایره (حریف)"
+		if GameManager.current_game_type == GameTypes.FEKRBEKR:
+			role_str = "🔐 بازیکن ۲ — طراح و کاشف رمز %s" % side_tag
+		elif GameManager.current_game_type == GameTypes.CHESS:
+			role_str = "🔵 بازیکن ۲ — ارتش آبی %s" % side_tag
+		else:
+			role_str = "🔵 بازیکن ۲ — مهره آبی %s" % side_tag
 	user_profile_dialog.open_for_user(p_data, role_str)
 
 func _open_surrender_dialog() -> void:
@@ -599,24 +613,35 @@ func setup_match(game_title: String = "تیک تاک تو", mode_title: String =
 	intro_p1_name.text = p1_name_str
 	intro_p2_name.text = p2_name_str
 	if GameManager.current_game_type == GameTypes.FEKRBEKR:
-		intro_p1_role.visible = false
-		intro_p2_role.visible = false
-		intro_p1_role.text = ""
-		intro_p2_role.text = ""
+		intro_p1_role.text = "🔐 طراح و کاشف رمز"
+		intro_p2_role.text = "🔐 طراح و کاشف رمز"
+		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
+		intro_p2_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
+		intro_p1_role.visible = true
+		intro_p2_role.visible = true
+	elif GameManager.current_game_type == GameTypes.CHESS:
+		intro_p1_role.text = "🔴 ارتش قرمز"
+		intro_p2_role.text = "🔵 ارتش آبی"
+		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
+		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
+		intro_p1_role.visible = true
+		intro_p2_role.visible = true
 	else:
 		intro_p1_role.text = "🔴 مهره قرمز"
 		intro_p2_role.text = "🔵 مهره آبی"
+		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
+		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
 		intro_p1_role.visible = true
 		intro_p2_role.visible = true
 	
-	var av1_id = p1_data.get("image", p1_data.get("user_image", 0))
-	var av1_path = "res://assets/icons/Avatars/%d.png" % av1_id
-	if ResourceLoader.exists(av1_path):
-		intro_p1_avatar.texture = load(av1_path)
-	var av2_id = p2_data.get("image", p2_data.get("user_image", 0))
-	var av2_path = "res://assets/icons/Avatars/%d.png" % av2_id
-	if ResourceLoader.exists(av2_path):
-		intro_p2_avatar.texture = load(av2_path)
+	var av1_id = int(p1_data.get("image", p1_data.get("user_image", 0)))
+	var tex1 = BaseTopHeaderClass._get_cached_avatar(av1_id)
+	if tex1:
+		intro_p1_avatar.texture = tex1
+	var av2_id = int(p2_data.get("image", p2_data.get("user_image", 0)))
+	var tex2 = BaseTopHeaderClass._get_cached_avatar(av2_id)
+	if tex2:
+		intro_p2_avatar.texture = tex2
 
 	# Initial clean state before game actually starts
 	is_game_finished = false
@@ -664,14 +689,14 @@ func _stop_loading_pulse() -> void:
 		intro_countdown_lbl.scale = Vector2.ONE
 
 # Shows the initial match connection loading overlay
-func show_match_loading(status_text: String = "در حال ورود به میز مسابقه...") -> void:
+func show_match_loading(status_text: String = "در حال آماده‌سازی میز مسابقه و همگام‌سازی بازیکنان...") -> void:
 	if is_start_overlay_dismissed or is_game_started:
 		return
 	is_game_finished = false
 	is_game_started = false
 	is_timer_active = false
 	is_countdown_running = false
-	lbl_turn_banner.text = "بازی درحال آغاز است..."
+	lbl_turn_banner.text = "بازی درحال آغاز است"
 	lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	lbl_timer.text = "%02d ثانیه" % int(turn_duration)
 	turn_timer_bar.value = 100.0
@@ -722,27 +747,39 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 	is_countdown_running = true
 	is_game_started = false
 	is_timer_active = false
+	if is_instance_valid(lbl_turn_banner):
+		lbl_turn_banner.text = "بازی درحال آغاز است"
+		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	_stop_loading_pulse()
 	intro_countdown_lbl.add_theme_font_size_override("font_size", 96)
 	start_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	if not start_overlay.visible:
 		ActionVFXManager.animate_dialog_open(intro_card, start_overlay, true)
-	intro_status_lbl.text = "میز بازی آماده است! شروع مسابقه در:"
+	intro_status_lbl.text = "میز مسابقه آماده است! نبرد آغاز می‌شود در:"
 	
-	# Reveal roles without X or O when real countdown begins
+	# Reveal game-specific roles when real countdown begins
 	if GameManager.current_game_type == GameTypes.FEKRBEKR:
-		intro_p1_role.visible = false
-		intro_p2_role.visible = false
+		intro_p1_role.text = "🔐 طراح و کاشف رمز"
+		intro_p2_role.text = "🔐 طراح و کاشف رمز"
+		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
+		intro_p2_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
+	elif GameManager.current_game_type == GameTypes.CHESS:
+		intro_p1_role.text = "🔴 ارتش قرمز"
+		intro_p2_role.text = "🔵 ارتش آبی"
+		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
+		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
 	else:
 		intro_p1_role.text = "🔴 مهره قرمز"
 		intro_p2_role.text = "🔵 مهره آبی"
-		intro_p1_role.visible = true
-		intro_p2_role.visible = true
-		intro_p1_role.modulate.a = 0.0
-		intro_p2_role.modulate.a = 0.0
-		var tw_roles = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tw_roles.tween_property(intro_p1_role, "modulate:a", 1.0, 0.4)
-		tw_roles.tween_property(intro_p2_role, "modulate:a", 1.0, 0.4)
+		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
+		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
+	intro_p1_role.visible = true
+	intro_p2_role.visible = true
+	intro_p1_role.modulate.a = 0.0
+	intro_p2_role.modulate.a = 0.0
+	var tw_roles = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw_roles.tween_property(intro_p1_role, "modulate:a", 1.0, 0.4)
+	tw_roles.tween_property(intro_p2_role, "modulate:a", 1.0, 0.4)
 	
 	for i in range(total_seconds, 0, -1):
 		if not start_overlay.visible or is_start_overlay_dismissed:
@@ -787,6 +824,10 @@ func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
 		if not is_timer_active and not is_game_finished:
 			var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
 			start_turn_timer(def_time)
+	else:
+		if is_instance_valid(lbl_turn_banner):
+			lbl_turn_banner.text = "بازی درحال آغاز است"
+			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 
 func _pulse_countdown_label() -> void:
 	intro_countdown_lbl.scale = Vector2(1.35, 1.35)
@@ -809,8 +850,8 @@ func stop_round_timer() -> void:
 
 func show_round_finish_banner(round_winner: int, current_r: int, p1_s: int, p2_s: int) -> void:
 	stop_round_timer()
-	round_finish_title.text = "✨ پایان راند %d" % current_r
-	round_finish_score.text = "امتیاز راندها: %d - %d" % [p1_s, p2_s]
+	round_finish_title.text = "✨ پایان دست %d" % current_r
+	round_finish_score.text = "📊 نتیجه دست‌ها تا این لحظه: %d - %d  |  آماده‌سازی دست بعدی..." % [p1_s, p2_s]
 	
 	var my_idx = GameManager.my_player_index
 	var p1_data = GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data()
@@ -819,16 +860,24 @@ func show_round_finish_banner(round_winner: int, current_r: int, p1_s: int, p2_s
 	var p2_user = p2_data.get("name", p2_data.get("username", "بازیکن ۲"))
 	
 	if round_winner == 0:
-		round_finish_desc.text = "🤝 این راند با نتیجه مساوی به پایان رسید"
+		round_finish_desc.text = "🤝 این دست بدون برنده (مساوی) به پایان رسید"
 		round_finish_desc.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45))
 		AudioManager.play_sound("draw")
 	elif round_winner == 1:
-		round_finish_desc.text = "🔴 برنده این راند: %s" % p1_user
-		round_finish_desc.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
+		if my_idx == 1:
+			round_finish_desc.text = "🎉 آفرین! شما برنده این دست شدید (%s)" % p1_user
+			round_finish_desc.add_theme_color_override("font_color", Color(0.38, 0.95, 0.50))
+		else:
+			round_finish_desc.text = "🔴 برنده این دست: %s" % p1_user
+			round_finish_desc.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
 		AudioManager.play_sound("win" if my_idx == 1 else "lose")
 	elif round_winner == 2:
-		round_finish_desc.text = "🔵 برنده این راند: %s" % p2_user
-		round_finish_desc.add_theme_color_override("font_color", Color(0.38, 0.75, 1.0))
+		if my_idx == 2:
+			round_finish_desc.text = "🎉 آفرین! شما برنده این دست شدید (%s)" % p2_user
+			round_finish_desc.add_theme_color_override("font_color", Color(0.38, 0.95, 0.50))
+		else:
+			round_finish_desc.text = "🔵 برنده این دست: %s" % p2_user
+			round_finish_desc.add_theme_color_override("font_color", Color(0.45, 0.78, 1.0))
 		AudioManager.play_sound("win" if my_idx == 2 else "lose")
 		
 	ActionVFXManager.animate_dialog_open(round_finish_card, round_finish_banner, true, false)
@@ -842,16 +891,21 @@ func hide_round_finish_banner() -> void:
 # Shows auto-pause overlay when a user disconnects
 func show_pause_dialog(wait_time: int, reason_text: String = "") -> void:
 	is_pause_active = true
+	_last_pause_sec_ticked = -1
 	var actual_time = wait_time if wait_time > 0 else 45
 	pause_total_time = float(actual_time)
 	pause_time_left = pause_total_time
 	
+	if is_instance_valid(lbl_pause_title):
+		lbl_pause_title.text = "📡 وقفه موقت در مسابقه"
+	var opp_data = GameManager.get_opponent_player_data()
+	var opp_name = opp_data.get("name", opp_data.get("username", "حریف"))
 	if not reason_text.is_empty():
 		lbl_pause_desc.text = reason_text
 	else:
-		lbl_pause_desc.text = "اتصال بازیکن مقابل قطع شده است.\nدر انتظار بازگشت به بازی..."
+		lbl_pause_desc.text = "ارتباط اینترنتی «%s» موقتاً قطع شده است.\nلطفاً تا بازگشت حریف شکیبا باشید؛ در صورت پایان مهلت، پیروزی این مسابقه برای شما ثبت خواهد شد." % opp_name
 		
-	lbl_pause_countdown.text = "مهلت اتصال مجدد: %d ثانیه" % int(pause_time_left)
+	lbl_pause_countdown.text = "⏳ مهلت بازگشت به بازی: %d ثانیه" % int(pause_time_left)
 	pause_timer_bar.value = 100.0
 	
 	pause_dialog.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1004,44 +1058,27 @@ func start_turn_timer(duration: float, custom_banner: String = "") -> void:
 
 
 func start_wait_timer(wait_sec: int, msg: String = "") -> void:
-
 	if is_game_finished:
-
 		return
-
-	var banner_text = msg if not msg.is_empty() else "آماده‌سازی راند بعدی..."
-
+	var banner_text = msg if not msg.is_empty() else ("بازی درحال آغاز است" if not GameManager.is_game_active else "⏳ آماده‌سازی مرحله بعدی...")
 	turn_duration = float(wait_sec)
-
 	turn_time_left = float(wait_sec)
-
 	last_second_ticked = -1
-
 	is_timer_active = true
-
 	is_game_started = true
-
-	if is_instance_valid(lbl_turn_banner):
-
-		lbl_turn_banner.text = banner_text
-
-		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-
 	if is_instance_valid(current_top_header):
-
-		if current_top_header.has_method("set_round_wait"):
-
+		if msg.is_empty() and current_top_header.has_method("set_round_wait"):
 			current_top_header.set_round_wait(wait_sec)
-
 		current_top_header.update_timer(turn_time_left, turn_duration, 0)
-
-
+	if is_instance_valid(lbl_turn_banner):
+		lbl_turn_banner.text = banner_text
+		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 
 func start_pre_game_countdown(wait_sec: int = 5) -> void:
 	if is_game_finished or GameManager.is_game_active:
 		return
 	set_fekrbekr_hud_buttons(false)
-	start_wait_timer(wait_sec, "⏳ بازی تا لحظاتی دیگر آغاز می‌شود...")
+	start_wait_timer(wait_sec, "بازی درحال آغاز است")
 
 func set_setup_phase() -> void:
 	set_fekrbekr_hud_buttons(false)

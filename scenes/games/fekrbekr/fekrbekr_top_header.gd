@@ -2,9 +2,9 @@ class_name FekrBekrTopHeader
 extends "res://scenes/games/base/base_top_header.gd"
 
 # FekrBekr Top Header for Cafe Fekr
-# - Phase 1: Setting secret code for the opponent ("چینش رمز برای حریف")
+# - Pre-Game: Shows "بازی درحال آغاز است" until Start_Game arrives
+# - Phase 1: Setting secret code for the opponent ("مرحله ۱: تعیین رمز مخفی")
 # - Phase 2: Guessing opponent's code ("حدس X از ۱۲")
-# - No "مهره قرمز" or "مهره آبی" distinctions (both players use all 8 colors)
 # - Golden amber timer bar (#EAB838), changing to danger red (#FF4747) on low time
 
 var is_setup_phase: bool = true
@@ -28,23 +28,36 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	super.setup_match(game_name_fa, mode_title, round_num, max_rounds, turn_time)
 	is_setup_phase = (round_num == 0)
 	is_guess_submitted = false
+	if not GameManager.is_game_active:
+		if is_instance_valid(lbl_round):
+			lbl_round.text = "%s — %s" % [game_name_fa, mode_title]
+		if is_instance_valid(lbl_turn_banner):
+			lbl_turn_banner.text = "بازی درحال آغاز است"
+			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		_highlight_both_players()
+		return
 	if is_setup_phase:
 		set_setup_phase()
 	else:
 		if is_instance_valid(lbl_round):
 			lbl_round.text = "حدس %s از ۱۲" % _to_fa_num(round_num if round_num > 0 else 1)
 		if is_instance_valid(lbl_turn_banner):
-			lbl_turn_banner.text = "رمز ۴ رقمی حریف را کشف کنید"
+			lbl_turn_banner.text = "🔍 رمز ۴ رنگ حریف را کشف کنید (رنگ‌های غیرتکراری)"
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 		_highlight_both_players()
 
 func set_setup_phase() -> void:
 	is_setup_phase = true
 	is_guess_submitted = false
+	if not GameManager.is_game_active:
+		if is_instance_valid(lbl_turn_banner):
+			lbl_turn_banner.text = "بازی درحال آغاز است"
+			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		return
 	if is_instance_valid(lbl_round):
-		lbl_round.text = "چینش رمز برای حریف"
+		lbl_round.text = "مرحله ۱: تعیین رمز مخفی"
 	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.text = "۴ مهره با رنگ‌های متفاوت انتخاب کنید"
+		lbl_turn_banner.text = "🔐 ۴ مهره با رنگ‌های غیرتکراری برای حریف بچینید"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 	_highlight_both_players()
 
@@ -52,12 +65,17 @@ func set_waiting_opponent(custom_text: String = "حرکت شما ثبت شد. د
 	is_guess_submitted = true
 	if is_instance_valid(lbl_turn_banner):
 		lbl_turn_banner.text = custom_text
-		lbl_turn_banner.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+		lbl_turn_banner.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0))
 
-func set_round_wait(time_sec: int) -> void:
+func set_round_wait(_time_sec: int) -> void:
+	if not GameManager.is_game_active:
+		if is_instance_valid(lbl_turn_banner):
+			lbl_turn_banner.text = "بازی درحال آغاز است"
+			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		return
 	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.text = "آماده‌سازی حدس بعدی..."
-		lbl_turn_banner.add_theme_color_override("font_color", Color(0.9, 0.85, 0.5))
+		lbl_turn_banner.text = "⏳ آماده‌سازی مرحله بعدی..."
+		lbl_turn_banner.add_theme_color_override("font_color", Color(0.95, 0.88, 0.55))
 
 func update_turn(turn: int, my_idx: int, _p1_n: String, _p2_n: String) -> void:
 	_current_turn = turn
@@ -65,6 +83,12 @@ func update_turn(turn: int, my_idx: int, _p1_n: String, _p2_n: String) -> void:
 	_last_critical_sec = -1
 	is_setup_phase = (turn == 0)
 	is_guess_submitted = false
+
+	if not GameManager.is_game_active:
+		if is_instance_valid(lbl_turn_banner):
+			lbl_turn_banner.text = "بازی درحال آغاز است"
+			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		return
 
 	if is_setup_phase:
 		set_setup_phase()
@@ -74,7 +98,7 @@ func update_turn(turn: int, my_idx: int, _p1_n: String, _p2_n: String) -> void:
 		lbl_round.text = "حدس %s از ۱۲" % _to_fa_num(turn)
 
 	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.text = "رمز ۴ رقمی حریف را کشف کنید"
+		lbl_turn_banner.text = "🔍 رمز ۴ رنگ حریف را کشف کنید (رنگ‌های غیرتکراری)"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 
 	_highlight_both_players()
@@ -92,7 +116,9 @@ func _highlight_both_players() -> void:
 func update_timer(remaining_sec: float, total_sec: float, _turn: int) -> void:
 	if is_instance_valid(lbl_timer):
 		var sec_ceil = int(ceil(remaining_sec))
-		lbl_timer.text = "%02d ثانیه" % sec_ceil
+		if sec_ceil != _last_displayed_sec:
+			_last_displayed_sec = sec_ceil
+			lbl_timer.text = "%02d ثانیه" % sec_ceil
 		if remaining_sec <= 5.0 and remaining_sec > 0.0:
 			lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
 			if sec_ceil != _last_critical_sec:

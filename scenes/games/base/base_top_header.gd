@@ -48,6 +48,29 @@ var _timer_style_fill: StyleBoxFlat
 var _current_turn: int = 1
 var _my_player_index: int = 1
 var _last_critical_sec: int = -1
+var _last_displayed_sec: int = -1
+static var _avatar_cache: Dictionary = {}
+static var _reaction_cache: Dictionary = {}
+
+static func _get_cached_avatar(av_id: int) -> Texture2D:
+	if _avatar_cache.has(av_id):
+		return _avatar_cache[av_id]
+	var path = "res://assets/icons/Avatars/%d.png" % av_id
+	if ResourceLoader.exists(path):
+		var tex = load(path)
+		_avatar_cache[av_id] = tex
+		return tex
+	return null
+
+static func _get_cached_reaction(r_id: int) -> Texture2D:
+	if _reaction_cache.has(r_id):
+		return _reaction_cache[r_id]
+	var path = "res://assets/icons/Reactions/%d.png" % r_id
+	if ResourceLoader.exists(path):
+		var tex = load(path)
+		_reaction_cache[r_id] = tex
+		return tex
+	return null
 
 func _ready() -> void:
 	_setup_styles()
@@ -114,13 +137,15 @@ func _setup_styles() -> void:
 		turn_timer_bar.add_theme_stylebox_override("fill", _timer_style_fill)
 
 func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
+	_last_displayed_sec = -1
 	if is_instance_valid(lbl_round):
 		if max_rounds <= 1:
-			lbl_round.text = "%s - %s" % [game_name_fa, mode_title]
+			lbl_round.text = "%s — %s" % [game_name_fa, mode_title]
 		else:
 			lbl_round.text = "راند %d از %d" % [round_num, max_rounds]
 	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.text = "بازی درحال آغاز است..."
+		lbl_turn_banner.text = "بازی درحال آغاز است"
+		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	if is_instance_valid(lbl_timer):
 		lbl_timer.text = "%02d ثانیه" % int(turn_time)
 	if is_instance_valid(turn_timer_bar):
@@ -144,15 +169,15 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 
 	if is_instance_valid(p1_avatar):
 		var p1_img_id = int(p1_data.get("image", p1_data.get("user_image", 0)))
-		var p1_path = "res://assets/icons/Avatars/%d.png" % p1_img_id
-		if ResourceLoader.exists(p1_path):
-			p1_avatar.texture = load(p1_path)
+		var tex1 = _get_cached_avatar(p1_img_id)
+		if tex1:
+			p1_avatar.texture = tex1
 
 	if is_instance_valid(p2_avatar):
 		var p2_img_id = int(p2_data.get("image", p2_data.get("user_image", 0)))
-		var p2_path = "res://assets/icons/Avatars/%d.png" % p2_img_id
-		if ResourceLoader.exists(p2_path):
-			p2_avatar.texture = load(p2_path)
+		var tex2 = _get_cached_avatar(p2_img_id)
+		if tex2:
+			p2_avatar.texture = tex2
 
 	if is_instance_valid(p1_role_badge):
 		p1_role_badge.text = "🔴"
@@ -188,15 +213,18 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 
 	# Turn Banner Text
 	if is_instance_valid(lbl_turn_banner):
-		if is_me:
+		if not GameManager.is_game_active:
+			lbl_turn_banner.text = "بازی درحال آغاز است"
+			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		elif is_me:
 			var color_str = "قرمز" if is_p1 else "آبی"
 			var dot = "🔴" if is_p1 else "🔵"
-			lbl_turn_banner.text = "%s نوبت شماست (%s)! یک خانه انتخاب کنید" % [dot, color_str]
+			lbl_turn_banner.text = "%s نوبت شماست (%s) — یک خانه خالی انتخاب کنید" % [dot, color_str]
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 		else:
 			var opp_name = p1_n if is_p1 else p2_n
 			var opp_color = "قرمز" if is_p1 else "آبی"
-			lbl_turn_banner.text = "نوبت %s است (%s)..." % [opp_name, opp_color]
+			lbl_turn_banner.text = "⏳ نوبت %s (%s) — در انتظار حرکت حریف..." % [opp_name, opp_color]
 			lbl_turn_banner.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 
 	_on_turn_changed(turn)
@@ -212,7 +240,9 @@ func _animate_card_pulse(card: Control) -> void:
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 	if is_instance_valid(lbl_timer):
 		var sec_ceil = int(ceil(remaining_sec))
-		lbl_timer.text = "%02d ثانیه" % sec_ceil
+		if sec_ceil != _last_displayed_sec:
+			_last_displayed_sec = sec_ceil
+			lbl_timer.text = "%02d ثانیه" % sec_ceil
 		if remaining_sec <= 3.0 and remaining_sec > 0.0:
 			lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
 			if sec_ceil != _last_critical_sec:
@@ -251,9 +281,9 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 	if not is_instance_valid(bubble) or not is_instance_valid(icon):
 		return
 
-	var r_path = "res://assets/icons/Reactions/%d.png" % reaction_id
-	if ResourceLoader.exists(r_path):
-		icon.texture = load(r_path)
+	var r_tex = _get_cached_reaction(reaction_id)
+	if r_tex:
+		icon.texture = r_tex
 
 	bubble.visible = true
 	bubble.scale = Vector2(0.1, 0.1)
@@ -289,6 +319,10 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			bubble.rotation_degrees = 0.0
 
 func reset_header() -> void:
+	_last_displayed_sec = -1
+	if is_instance_valid(lbl_turn_banner):
+		lbl_turn_banner.text = "بازی درحال آغاز است"
+		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	if is_instance_valid(p1_score_lbl):
 		p1_score_lbl.text = "0"
 	if is_instance_valid(p2_score_lbl):

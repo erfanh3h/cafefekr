@@ -564,7 +564,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 40
-text = "بازی موقتاً متوقف شد"
+text = "📡 وقفه موقت در مسابقه"
 horizontal_alignment = 1
 
 [node name="Desc" type="Label" parent="DisconnectPauseDialog/Card/VBox"]
@@ -572,7 +572,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "اتصال حریف قطع شده است. در انتظار اتصال مجدد حریف..."
+text = "ارتباط اینترنتی حریف موقتاً قطع شده است. لطفاً تا بازگشت حریف شکیبا باشید..."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -589,7 +589,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.82, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "مهلت اتصال مجدد: ۳۰ ثانیه"
+text = "⏳ مهلت بازگشت به بازی: ۳۰ ثانیه"
 horizontal_alignment = 1
 
 [node name="SurrenderDialog" type="Control" parent="."]
@@ -638,7 +638,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 40
-text = "تسلیم بازی"
+text = "🏳️ واگذاری مسابقه"
 horizontal_alignment = 1
 
 [node name="Desc" type="Label" parent="SurrenderDialog/Card/VBox"]
@@ -646,8 +646,8 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.82, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "آیا مطمئن هستید که می‌خواهید تسلیم شوید؟
-با تسلیم شدن، امتیاز این مسابقه برای شما باخت ثبت می‌شود."
+text = "آیا از واگذاری این مسابقه اطمینان دارید؟
+با تأیید انصراف، بازی به پایان رسیده و پیروزی برای حریف ثبت خواهد شد."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -665,7 +665,7 @@ theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-text = "بله، تسلیم می‌شوم"
+text = "🏳️ بله، واگذار می‌کنم"
 
 [node name="BtnCancelSurrender" type="Button" parent="SurrenderDialog/Card/VBox/BtnHBox"]
 custom_minimum_size = Vector2(340, 84)
@@ -676,7 +676,7 @@ theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-text = "ادامه بازی"
+text = "بازگشت به بازی"
 
 [node name="StartGameOverlay" type="Control" parent="."]
 visible = false
