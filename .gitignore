@@ -1,0 +1,29 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+build/
+export/
+*.translation
+
+# Binaries / Packages
+*.pck
+*.exe
+*.apk
+*.aab
+*.so
+*.dll
+*.dylib
+
+# Mono/C# if any
+.mono/
+*.csproj
+*.sln
+
+# Temporary root screenshots
+/*.png
+/*.png.import
+
+# OS & Editor generated files
+.DS_Store
+Thumbs.db
+*.tmp

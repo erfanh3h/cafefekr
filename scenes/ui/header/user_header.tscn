@@ -1,0 +1,228 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/header/user_header.gd" id="1_header_script"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/frame4.png" id="2_frame4_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button5.png" id="3_button5_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/coin.png" id="4_coin_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/cup.png" id="5_cup_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/level.png" id="6_level_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/add.png" id="7_add_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="8_font_hekayat"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_header"]
+texture = ExtResource("2_frame4_tex")
+texture_margin_left = 70.0
+texture_margin_top = 28.0
+texture_margin_right = 70.0
+texture_margin_bottom = 28.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xp_bg"]
+bg_color = Color(0.12, 0.08, 0.05, 0.85)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xp_fill"]
+bg_color = Color(0.96, 0.78, 0.25, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="UserHeader" type="MarginContainer"]
+custom_minimum_size = Vector2(0, 210)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 210.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 20
+script = ExtResource("1_header_script")
+
+[node name="PanelFrame" type="PanelContainer" parent="."]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_wood_header")
+
+[node name="ContentMargin" type="MarginContainer" parent="PanelFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 26
+
+[node name="HBoxMain" type="HBoxContainer" parent="PanelFrame/ContentMargin"]
+layout_mode = 2
+theme_override_constants/separation = 22
+alignment = 1
+
+[node name="StatsCol" type="VBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="BadgesRow" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="CoinBadge" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="CoinIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4_coin_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinsLabel" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 2
+theme_override_font_sizes/font_size = 24
+text = "50"
+vertical_alignment = 1
+
+[node name="BtnAddCoins" type="TextureButton" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("7_add_tex")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Sep1" type="VSeparator" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
+visible = false
+layout_mode = 2
+
+[node name="ScoreBadge" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="CupIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreBadge"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("5_cup_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScoreLabel" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 2
+theme_override_font_sizes/font_size = 32
+text = "1000"
+vertical_alignment = 1
+
+[node name="Sep2" type="VSeparator" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
+layout_mode = 2
+
+[node name="LevelBadge" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="LevelIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelBadge"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("6_level_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LevelLabel" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.65, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 2
+theme_override_font_sizes/font_size = 32
+text = "سطح ۱"
+vertical_alignment = 1
+
+[node name="XpBar" type="ProgressBar" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_xp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_xp_fill")
+max_value = 100.0
+value = 35.0
+show_percentage = false
+
+[node name="SpacerMiddle" type="Control" parent="PanelFrame/ContentMargin/HBoxMain"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="UserCol" type="VBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Username" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/UserCol"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("8_font_hekayat")
+theme_override_font_sizes/font_size = 38
+text = "کاربر مهمان"
+horizontal_alignment = 2
+
+[node name="UserIdBtn" type="Button" parent="PanelFrame/ContentMargin/HBoxMain/UserCol"]
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.96, 0.88, 0.75, 1)
+theme_override_font_sizes/font_size = 22
+text = "شناسه: -----"
+flat = true
+alignment = 2
+
+[node name="AvatarFrame" type="Control" parent="PanelFrame/ContentMargin/HBoxMain"]
+custom_minimum_size = Vector2(110, 110)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="WoodDisc" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/AvatarFrame"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_button5_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="AvatarBtn" type="TextureButton" parent="PanelFrame/ContentMargin/HBoxMain/AvatarFrame"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -44.0
+offset_top = -44.0
+offset_right = 44.0
+offset_bottom = 44.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AvatarTexture" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/AvatarFrame/AvatarBtn"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5

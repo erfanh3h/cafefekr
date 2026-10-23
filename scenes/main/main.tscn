@@ -1,0 +1,591 @@
+[gd_scene load_steps=24 format=3]
+
+[ext_resource type="Script" path="res://scenes/main/main.gd" id="1_main_script"]
+[ext_resource type="PackedScene" path="res://scenes/environment/cafe_table.tscn" id="2_cafe_table"]
+[ext_resource type="PackedScene" path="res://scenes/ui/header/user_header.tscn" id="3_user_header"]
+[ext_resource type="PackedScene" path="res://scenes/ui/auth/login_dialog.tscn" id="4_login_dialog"]
+[ext_resource type="PackedScene" path="res://scenes/ui/queue/queue_dialog.tscn" id="5_queue_dialog"]
+[ext_resource type="PackedScene" path="res://scenes/ui/lobby/lobby_dialog.tscn" id="6_lobby_dialog"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ranking/ranking_dialog.tscn" id="7_ranking_dialog"]
+[ext_resource type="PackedScene" path="res://scenes/ui/store/store_dialog.tscn" id="8_store_dialog"]
+[ext_resource type="PackedScene" path="res://scenes/ui/rules/rules_dialog.tscn" id="9_rules_dialog"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button5.png" id="10_button5_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/logo_transparent.png" id="11_logo_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="12_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="13_button_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/rank.png" id="14_rank_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/right.png" id="15_right_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/lobby.png" id="16_lobby_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/multi-rank.png" id="17_multi_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button3.png" id="18_button3_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/cup.png" id="19_cup_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/store1.png" id="20_store_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/info.png" id="21_info_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/soundOn.png" id="22_sound_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/exit.png" id="23_exit_tex"]
+[ext_resource type="PackedScene" uid="uid://basehudscene01" path="res://scenes/games/base/base_game_hud.tscn" id="24_base_hud"]
+[ext_resource type="PackedScene" uid="uid://cxprofiledialog01" path="res://scenes/ui/profile/user_profile_dialog.tscn" id="25_profile_dlg"]
+[ext_resource type="Texture2D" uid="uid://bjmon80i1yqbe" path="res://assets/images/background2.png" id="26_menu_bg"]
+[ext_resource type="Shader" path="res://scripts/shaders/solid_white_tint.gdshader" id="27_shader_tint"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_white_icon"]
+shader = ExtResource("27_shader_tint")
+shader_parameter/tint_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_btn"]
+texture = ExtResource("13_button_tex")
+texture_margin_left = 38.0
+texture_margin_top = 26.0
+texture_margin_right = 38.0
+texture_margin_bottom = 26.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_btn_hover"]
+texture = ExtResource("13_button_tex")
+texture_margin_left = 38.0
+texture_margin_top = 26.0
+texture_margin_right = 38.0
+texture_margin_bottom = 26.0
+modulate_color = Color(1.15, 1.1, 1, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_btn_pressed"]
+texture = ExtResource("13_button_tex")
+texture_margin_left = 38.0
+texture_margin_top = 26.0
+texture_margin_right = 38.0
+texture_margin_bottom = 26.0
+modulate_color = Color(0.85, 0.8, 0.75, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_tile"]
+texture = ExtResource("18_button3_tex")
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_tile_hover"]
+texture = ExtResource("18_button3_tex")
+modulate_color = Color(1.15, 1.1, 1, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_tile_pressed"]
+texture = ExtResource("18_button3_tex")
+modulate_color = Color(0.85, 0.8, 0.75, 1)
+
+[node name="Main" type="Node"]
+script = ExtResource("1_main_script")
+
+[node name="CafeTableScene" parent="." instance=ExtResource("2_cafe_table")]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="MenuContainer" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Background" type="TextureRect" parent="CanvasLayer/MenuContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("26_menu_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="VignetteOverlay" type="ColorRect" parent="CanvasLayer/MenuContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.04, 0.02, 0.01, 0.28)
+
+[node name="CenterContent" type="VBoxContainer" parent="CanvasLayer/MenuContainer"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -480.0
+offset_top = -540.0
+offset_right = 480.0
+offset_bottom = 440.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="LogoSection" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="LogoPlate" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection"]
+custom_minimum_size = Vector2(210, 210)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="Disc" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection/LogoPlate"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("10_button5_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Logo" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection/LogoPlate"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -78.0
+offset_top = -78.0
+offset_right = 78.0
+offset_bottom = 78.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("11_logo_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 4
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 64
+text = "کافه فکر"
+horizontal_alignment = 1
+
+[node name="Spacing" type="Control" parent="CanvasLayer/MenuContainer/CenterContent"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="CardsContainer" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent"]
+layout_mode = 2
+theme_override_constants/separation = 28
+alignment = 1
+
+[node name="BtnRanked" type="Button" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer"]
+custom_minimum_size = Vector2(940, 185)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_btn_pressed")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 12
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="Arrow" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("15_right_tex")
+expand_mode = 1
+stretch_mode = 5
+flip_h = true
+
+[node name="TextCol" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+alignment = 1
+
+[node name="CardTitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/TextCol"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 44
+text = "بازی دونفره آنلاین"
+horizontal_alignment = 2
+
+[node name="CardSubtitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/TextCol"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "جستجوی حریف آنلاین و افزایش رتبه و امتیاز"
+horizontal_alignment = 2
+
+[node name="IconControl" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox"]
+custom_minimum_size = Vector2(104, 104)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Disc" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_button5_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -36.0
+offset_top = -36.0
+offset_right = 36.0
+offset_bottom = 36.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("14_rank_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnLobby" type="Button" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer"]
+custom_minimum_size = Vector2(940, 185)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_btn_pressed")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 12
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="Arrow" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin/HBox"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("15_right_tex")
+expand_mode = 1
+stretch_mode = 5
+flip_h = true
+
+[node name="TextCol" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+alignment = 1
+
+[node name="CardTitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin/HBox/TextCol"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 44
+text = "اتاق دوستانه (لابی)"
+horizontal_alignment = 2
+
+[node name="CardSubtitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin/HBox/TextCol"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "ساخت یا ورود به اتاق با شناسه دعوت ۶ رقمی"
+horizontal_alignment = 2
+
+[node name="IconControl" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin/HBox"]
+custom_minimum_size = Vector2(104, 104)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Disc" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_button5_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -36.0
+offset_top = -36.0
+offset_right = 36.0
+offset_bottom = 36.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("16_lobby_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BottomDock" type="MarginContainer" parent="CanvasLayer/MenuContainer"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -480.0
+offset_top = -230.0
+offset_right = 480.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_bottom = 12
+
+[node name="HBoxDock" type="HBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="BtnRanking" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
+custom_minimum_size = Vector2(200, 165)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_tile_pressed")
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking/VBox"]
+material = SubResource("ShaderMaterial_white_icon")
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("19_cup_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "برترین‌ها"
+horizontal_alignment = 1
+
+[node name="BtnRules" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
+custom_minimum_size = Vector2(200, 165)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_tile_pressed")
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules/VBox"]
+material = SubResource("ShaderMaterial_white_icon")
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("21_info_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "راهنما"
+horizontal_alignment = 1
+
+[node name="BtnAudio" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
+custom_minimum_size = Vector2(200, 165)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_tile_pressed")
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio/VBox"]
+material = SubResource("ShaderMaterial_white_icon")
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("22_sound_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "صدا"
+horizontal_alignment = 1
+
+[node name="BtnExit" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
+custom_minimum_size = Vector2(200, 165)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_tile_pressed")
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnExit"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnExit/VBox"]
+material = SubResource("ShaderMaterial_white_icon")
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("23_exit_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnExit/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 24
+text = "خروج"
+horizontal_alignment = 1
+
+[node name="UserHeader" parent="CanvasLayer" instance=ExtResource("3_user_header")]
+
+[node name="DialogBackdrop" type="ColorRect" parent="CanvasLayer"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="BaseGameHUD" parent="CanvasLayer" instance=ExtResource("24_base_hud")]
+visible = false
+
+[node name="QueueDialog" parent="CanvasLayer" instance=ExtResource("5_queue_dialog")]
+visible = false
+
+[node name="LobbyDialog" parent="CanvasLayer" instance=ExtResource("6_lobby_dialog")]
+visible = false
+
+[node name="RankingDialog" parent="CanvasLayer" instance=ExtResource("7_ranking_dialog")]
+visible = false
+
+[node name="StoreDialog" parent="CanvasLayer" instance=ExtResource("8_store_dialog")]
+visible = false
+
+[node name="RulesDialog" parent="CanvasLayer" instance=ExtResource("9_rules_dialog")]
+visible = false
+
+[node name="LoginDialog" parent="CanvasLayer" instance=ExtResource("4_login_dialog")]
+visible = false
+
+[node name="UserProfileDialog" parent="CanvasLayer" instance=ExtResource("25_profile_dlg")]
+visible = false

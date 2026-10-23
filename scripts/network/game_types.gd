@@ -1,0 +1,48 @@
+class_name GameTypes
+extends RefCounted
+
+# Mirror of Entities/Games/game_types.py from kafehfekrbackend
+const TIC_TAC_TOE = "TicTacToe"
+const RPC = "RPC"
+const DOTBOX = "DotBox"
+const TEN = "Ten"
+const MNUMBERS = "MNumbers"
+const MSWEEPER = "MSweeper"
+const FEKRBEKR = "FekrBekr"
+const YATZY = "Yatzy"
+const PENTAGO = "Pentago"
+const FOURINROW = "FourInRow"
+const SUDOKU = "Sudoku"
+const BATTLESHIP = "BattleShip"
+const BOXFOUR = "BoxFour"
+const YINSH = "Yinsh"
+const CHESS = "Chess"
+const CHECKERS = "Checkers"
+const OTHELLO = "Othello"
+const MILL = "Mill"
+const LUDO = "Ludo"
+const BACKGAMMON = "BackGammon"
+
+static func get_display_name_fa(game_type: String) -> String:
+	match game_type:
+		TIC_TAC_TOE: return "تیک تاک تو"
+		RPC: return "سنگ کاغذ قیچی"
+		DOTBOX: return "نقطه خط"
+		TEN: return "ده بساز"
+		MNUMBERS: return "کشف اعداد"
+		MSWEEPER: return "مین یاب"
+		FEKRBEKR: return "فکر بکر"
+		YATZY: return "یاتزی"
+		PENTAGO: return "پنتاگو"
+		FOURINROW: return "دوز چهارتایی"
+		SUDOKU: return "سودوکو"
+		BATTLESHIP: return "نبرد کشتی"
+		BOXFOUR: return "چهارطرفه"
+		YINSH: return "یینش"
+		CHESS: return "شطرنج"
+		CHECKERS: return "چکرز"
+		OTHELLO: return "اتللو"
+		MILL: return "دوز نه تایی"
+		LUDO: return "منچ"
+		BACKGAMMON: return "تخته نرد"
+		_: return game_type

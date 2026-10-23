@@ -1,0 +1,388 @@
+[gd_scene load_steps=10 format=3 uid="uid://basetopheader01"]
+
+[ext_resource type="Script" path="res://scenes/games/base/base_top_header.gd" id="1_header_script"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.14, 0.09, 0.06, 0.88)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.4, 0.3, 0.18, 0.8)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 6
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_score"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_emote_bubble"]
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+bg_color = Color(0.14, 0.09, 0.06, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.96, 0.82, 0.35, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.65)
+shadow_size = 14
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_match_box"]
+content_margin_left = 24.0
+content_margin_top = 10.0
+content_margin_right = 24.0
+content_margin_bottom = 16.0
+bg_color = Color(0.12, 0.08, 0.05, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.72, 0.54, 0.25, 0.85)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 12
+shadow_offset = Vector2(0, 5)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_round"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_turn_timer_bg"]
+content_margin_left = 3.0
+content_margin_top = 3.0
+content_margin_right = 3.0
+content_margin_bottom = 3.0
+bg_color = Color(0.06, 0.04, 0.03, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.48, 0.36, 0.2, 0.75)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer_fill"]
+bg_color = Color(0.25, 0.65, 1, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[node name="BaseTopHeader" type="Control"]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 440.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("1_header_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 46
+theme_override_constants/margin_right = 16
+
+[node name="VBoxMain" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 0
+
+[node name="PlayersRow" type="HBoxContainer" parent="Margin/VBoxMain"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="P1Card" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="HBox" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P1Card"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+
+[node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnP1Profile" type="Button" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+
+[node name="InfoBox" type="VBoxContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Name" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "شما"
+
+[node name="RoleBadge" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "🔴"
+
+[node name="ScoreBadge" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxEmpty_score")
+
+[node name="Score" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/ScoreBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 46
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReactionBubble" type="Control" parent="Margin/VBoxMain/PlayersRow/P1Card"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+
+[node name="BubbleFrame" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/ReactionBubble"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -60.0
+offset_top = -60.0
+offset_right = 60.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_emote_bubble")
+
+[node name="Icon" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P1Card/ReactionBubble/BubbleFrame"]
+custom_minimum_size = Vector2(92, 92)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="P2Card" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="HBox" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P2Card"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+
+[node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnP2Profile" type="Button" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+
+[node name="InfoBox" type="VBoxContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Name" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "حریف"
+
+[node name="RoleBadge" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "🔵"
+
+[node name="ScoreBadge" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxEmpty_score")
+
+[node name="Score" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/ScoreBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 46
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReactionBubble" type="Control" parent="Margin/VBoxMain/PlayersRow/P2Card"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+
+[node name="BubbleFrame" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/ReactionBubble"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -60.0
+offset_top = -60.0
+offset_right = 60.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_emote_bubble")
+
+[node name="Icon" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P2Card/ReactionBubble/BubbleFrame"]
+custom_minimum_size = Vector2(92, 92)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MatchDetailsBox" type="PanelContainer" parent="Margin/VBoxMain"]
+custom_minimum_size = Vector2(740, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_match_box")
+
+[node name="VBox" type="VBoxContainer" parent="Margin/VBoxMain/MatchDetailsBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="RoundPanel" type="PanelContainer" parent="Margin/VBoxMain/MatchDetailsBox/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxEmpty_round")
+
+[node name="LblRound" type="Label" parent="Margin/VBoxMain/MatchDetailsBox/VBox/RoundPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.65, 1)
+theme_override_colors/font_shadow_color = Color(0.12, 0.05, 0.02, 1)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 2
+theme_override_colors/font_outline_color = Color(0.15, 0.06, 0.02, 0.95)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "راند ۱ از ۵"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TurnBanner" type="Label" parent="Margin/VBoxMain/MatchDetailsBox/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "بازی درحال آغاز است..."
+horizontal_alignment = 1
+
+[node name="TimerRow" type="HBoxContainer" parent="Margin/VBoxMain/MatchDetailsBox/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="LblTimer" type="Label" parent="Margin/VBoxMain/MatchDetailsBox/VBox/TimerRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "۱۰ ثانیه"
+horizontal_alignment = 1
+
+[node name="TurnTimerBar" type="ProgressBar" parent="Margin/VBoxMain/MatchDetailsBox/VBox"]
+custom_minimum_size = Vector2(440, 20)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_turn_timer_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_timer_fill")
+value = 100.0
+show_percentage = false

@@ -1,0 +1,165 @@
+[gd_scene load_steps=18 format=3 uid="uid://cx4x28y0pqu7w"]
+
+[ext_resource type="Script" path="res://scenes/games/tictactoe/tictactoe_3d.gd" id="1_ttt_script"]
+[ext_resource type="Texture2D" path="res://assets/images/background2.png" id="2_wood_tex"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_plinth"]
+albedo_color = Color(0.36, 0.22, 0.14, 1)
+albedo_texture = ExtResource("2_wood_tex")
+metallic = 0.02
+roughness = 0.48
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_plinth"]
+material = SubResource("StandardMaterial3D_plinth")
+size = Vector3(1.3, 0.035, 1.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_outer_rim"]
+albedo_color = Color(0.48, 0.30, 0.19, 1)
+albedo_texture = ExtResource("2_wood_tex")
+metallic = 0.03
+roughness = 0.38
+clearcoat_enabled = true
+clearcoat = 0.65
+clearcoat_roughness = 0.2
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_outer_rim"]
+material = SubResource("StandardMaterial3D_outer_rim")
+size = Vector3(1.24, 0.05, 1.24)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_inner_plate"]
+albedo_color = Color(0.58, 0.38, 0.25, 1)
+albedo_texture = ExtResource("2_wood_tex")
+metallic = 0.02
+roughness = 0.65
+uv1_scale = Vector3(1.5, 1.5, 1.5)
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_inner_plate"]
+material = SubResource("StandardMaterial3D_inner_plate")
+size = Vector3(1.12, 0.058, 1.12)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gold_grid"]
+albedo_color = Color(0.94, 0.78, 0.26, 1)
+metallic = 0.92
+roughness = 0.18
+clearcoat_enabled = true
+clearcoat = 0.4
+
+[sub_resource type="BoxMesh" id="BoxMesh_grid_h"]
+material = SubResource("StandardMaterial3D_gold_grid")
+size = Vector3(1.06, 0.018, 0.024)
+
+[sub_resource type="BoxMesh" id="BoxMesh_grid_v"]
+material = SubResource("StandardMaterial3D_gold_grid")
+size = Vector3(0.024, 0.018, 1.06)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_medallion"]
+material = SubResource("StandardMaterial3D_gold_grid")
+top_radius = 0.032
+bottom_radius = 0.032
+height = 0.022
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_brass_corner"]
+albedo_color = Color(0.92, 0.74, 0.26, 1)
+metallic = 0.92
+roughness = 0.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_corner"]
+material = SubResource("StandardMaterial3D_brass_corner")
+size = Vector3(0.12, 0.062, 0.12)
+
+[sub_resource type="SphereMesh" id="SphereMesh_rivet"]
+material = SubResource("StandardMaterial3D_brass_corner")
+radius = 0.02
+height = 0.025
+
+[sub_resource type="BoxMesh" id="BoxMesh_plaque"]
+material = SubResource("StandardMaterial3D_brass_corner")
+size = Vector3(0.24, 0.024, 0.012)
+
+[node name="TicTacToe3D" type="Node3D"]
+script = ExtResource("1_ttt_script")
+
+[node name="PlinthBase" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.015, 0)
+mesh = SubResource("BoxMesh_plinth")
+
+[node name="BoardFrame" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0)
+mesh = SubResource("BoxMesh_outer_rim")
+
+[node name="InnerPlate" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.018, 0)
+mesh = SubResource("BoxMesh_inner_plate")
+
+[node name="GridLineX1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.048, -0.175)
+mesh = SubResource("BoxMesh_grid_h")
+
+[node name="GridLineX2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.048, 0.175)
+mesh = SubResource("BoxMesh_grid_h")
+
+[node name="GridLineZ1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.175, 0.048, 0)
+mesh = SubResource("BoxMesh_grid_v")
+
+[node name="GridLineZ2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.175, 0.048, 0)
+mesh = SubResource("BoxMesh_grid_v")
+
+[node name="Medallion1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.175, 0.05, -0.175)
+mesh = SubResource("CylinderMesh_medallion")
+
+[node name="Medallion2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.175, 0.05, -0.175)
+mesh = SubResource("CylinderMesh_medallion")
+
+[node name="Medallion3" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.175, 0.05, 0.175)
+mesh = SubResource("CylinderMesh_medallion")
+
+[node name="Medallion4" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.175, 0.05, 0.175)
+mesh = SubResource("CylinderMesh_medallion")
+
+[node name="CornerTL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.58, 0.015, -0.58)
+mesh = SubResource("BoxMesh_corner")
+
+[node name="RivetTL" type="MeshInstance3D" parent="CornerTL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.032, 0)
+mesh = SubResource("SphereMesh_rivet")
+
+[node name="CornerTR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.58, 0.015, -0.58)
+mesh = SubResource("BoxMesh_corner")
+
+[node name="RivetTR" type="MeshInstance3D" parent="CornerTR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.032, 0)
+mesh = SubResource("SphereMesh_rivet")
+
+[node name="CornerBL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.58, 0.015, 0.58)
+mesh = SubResource("BoxMesh_corner")
+
+[node name="RivetBL" type="MeshInstance3D" parent="CornerBL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.032, 0)
+mesh = SubResource("SphereMesh_rivet")
+
+[node name="CornerBR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.58, 0.015, 0.58)
+mesh = SubResource("BoxMesh_corner")
+
+[node name="RivetBR" type="MeshInstance3D" parent="CornerBR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.032, 0)
+mesh = SubResource("SphereMesh_rivet")
+
+[node name="FrontPlaque" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0.625)
+mesh = SubResource("BoxMesh_plaque")

@@ -1,0 +1,112 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/queue/queue_dialog.gd" id="1_queue_script"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/logo_transparent.png" id="3_logo_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="4_button_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="5_font_hekayat"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
+texture = ExtResource("2_board_tex")
+texture_margin_left = 60.0
+texture_margin_top = 60.0
+texture_margin_right = 60.0
+texture_margin_bottom = 60.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
+texture = ExtResource("4_button_tex")
+texture_margin_left = 30.0
+texture_margin_top = 20.0
+texture_margin_right = 30.0
+texture_margin_bottom = 20.0
+
+[node name="QueueDialog" type="PanelContainer"]
+custom_minimum_size = Vector2(880, 720)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -440.0
+offset_top = -360.0
+offset_right = 440.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_board")
+script = ExtResource("1_queue_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 40
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 28
+alignment = 1
+
+[node name="LblTitle" type="Label" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("5_font_hekayat")
+theme_override_font_sizes/font_size = 44
+text = "جستجوی حریف آنلاین"
+horizontal_alignment = 1
+
+[node name="SpinnerContainer" type="Control" parent="Margin/VBox"]
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="Spinner" type="TextureRect" parent="Margin/VBox/SpinnerContainer"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -70.0
+offset_top = -70.0
+offset_right = 70.0
+offset_bottom = 70.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(70, 70)
+texture = ExtResource("3_logo_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LblStatus" type="Label" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.88, 0.72, 1)
+theme_override_fonts/font = ExtResource("5_font_hekayat")
+theme_override_font_sizes/font_size = 30
+text = "در حال جستجوی حریف..."
+horizontal_alignment = 1
+
+[node name="LblTimer" type="Label" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("5_font_hekayat")
+theme_override_font_sizes/font_size = 64
+text = "00:00"
+horizontal_alignment = 1
+
+[node name="BtnCancel" type="Button" parent="Margin/VBox"]
+custom_minimum_size = Vector2(380, 84)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.35, 0.05, 0.05, 0.95)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("5_font_hekayat")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+text = "انصراف"

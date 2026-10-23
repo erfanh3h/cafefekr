@@ -1,0 +1,928 @@
+[gd_scene load_steps=32 format=3 uid="uid://basehudscene01"]
+
+[ext_resource type="Script" path="res://scenes/games/base/base_game_hud.gd" id="1_script"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="3_btn_wood"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="3_board_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/bilboard.png" id="4_bilboard"]
+[ext_resource type="PackedScene" uid="uid://d2k1v5l8q0n4w" path="res://scenes/games/base/reaction_picker.tscn" id="5_picker"]
+[ext_resource type="PackedScene" uid="uid://cxresultdialog01" path="res://scenes/games/base/game_result_dialog.tscn" id="6_result"]
+[ext_resource type="PackedScene" uid="uid://cxprofiledialog01" path="res://scenes/ui/profile/user_profile_dialog.tscn" id="7_profile_dlg"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/soundOn_white.png" id="8_sound_on"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/flag_surrender_white.png" id="9_flag_surrender"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/kori.png" id="10_kori"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/refresh.png" id="11_refresh"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/zoom_in_white.png" id="12_zoom_in"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/zoom_out_white.png" id="13_zoom_out"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/check.png" id="14_check"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/cross.png" id="15_cross"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/aim.png" id="16_aim"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/expand.png" id="17_expand"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_score"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_match_box"]
+content_margin_left = 24.0
+content_margin_top = 10.0
+content_margin_right = 24.0
+content_margin_bottom = 16.0
+bg_color = Color(0.12, 0.08, 0.05, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.72, 0.54, 0.25, 0.85)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 12
+shadow_offset = Vector2(0, 5)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_modal_board"]
+texture = ExtResource("3_board_tex")
+texture_margin_left = 60.0
+texture_margin_top = 60.0
+texture_margin_right = 60.0
+texture_margin_bottom = 60.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.14, 0.09, 0.06, 0.88)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.4, 0.3, 0.18, 0.8)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 6
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
+texture = ExtResource("3_btn_wood")
+texture_margin_left = 22.0
+texture_margin_top = 12.0
+texture_margin_right = 22.0
+texture_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_round"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer_bg"]
+bg_color = Color(0.1, 0.07, 0.04, 0.85)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_turn_timer_bg"]
+content_margin_left = 3.0
+content_margin_top = 3.0
+content_margin_right = 3.0
+content_margin_bottom = 3.0
+bg_color = Color(0.06, 0.04, 0.03, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.48, 0.36, 0.2, 0.75)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer_fill"]
+bg_color = Color(0.25, 0.65, 1, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.12, 0.08, 0.05, 0.96)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.85, 0.7, 0.28, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 12
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_intro_card"]
+content_margin_left = 36.0
+content_margin_top = 32.0
+content_margin_right = 36.0
+content_margin_bottom = 32.0
+bg_color = Color(0.14, 0.09, 0.06, 0.98)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.88, 0.75, 0.3, 1)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 30
+corner_radius_bottom_left = 30
+shadow_color = Color(0, 0, 0, 0.75)
+shadow_size = 24
+shadow_offset = Vector2(0, 8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_emote_bubble"]
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+bg_color = Color(0.14, 0.09, 0.06, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.96, 0.82, 0.35, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.65)
+shadow_size = 14
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast"]
+content_margin_left = 32.0
+content_margin_top = 14.0
+content_margin_right = 32.0
+content_margin_bottom = 14.0
+bg_color = Color(0.12, 0.08, 0.05, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.75, 0.3, 0.95)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 14
+shadow_offset = Vector2(0, 5)
+shadow_size = 8
+
+[node name="BaseGameHUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="TopHeaderSlot" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 440.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="BottomBar" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -140.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="BottomBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 28
+
+[node name="HBox" type="HBoxContainer" parent="BottomBar/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="BtnZoomIn" type="Button" parent="BottomBar/Margin/HBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnZoomIn"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 24.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_zoom_in")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnZoomOut" type="Button" parent="BottomBar/Margin/HBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnZoomOut"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 24.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_zoom_out")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnCamTop" type="Button" parent="BottomBar/Margin/HBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+text = "2D"
+
+[node name="BtnCamReset" type="Button" parent="BottomBar/Margin/HBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnCamReset"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 24.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_refresh")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Spacer" type="Control" parent="BottomBar/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="BtnSurrender" type="Button" parent="BottomBar/Margin/HBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnSurrender"]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -25.0
+offset_top = -25.0
+offset_right = 25.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_flag_surrender")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnReactions" type="Button" parent="BottomBar/Margin/HBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnReactions"]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -25.0
+offset_top = -25.0
+offset_right = 25.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_kori")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnAudio" type="Button" parent="BottomBar/Margin/HBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnAudio"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 24.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_sound_on")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FekrBekrActions" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -240.0
+offset_right = -24.0
+offset_bottom = 240.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="FekrBekrActions"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="BtnFekrSubmit" type="Button" parent="FekrBekrActions/VBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="FekrBekrActions/VBox/BtnFekrSubmit"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -26.0
+offset_top = -26.0
+offset_right = 26.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("14_check")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnFekrClear" type="Button" parent="FekrBekrActions/VBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="FekrBekrActions/VBox/BtnFekrClear"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -26.0
+offset_top = -26.0
+offset_right = 26.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("15_cross")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnFekrOpponent" type="Button" parent="FekrBekrActions/VBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="FekrBekrActions/VBox/BtnFekrOpponent"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -26.0
+offset_top = -26.0
+offset_right = 26.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("16_aim")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnFekrDual" type="Button" parent="FekrBekrActions/VBox"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+
+[node name="Icon" type="TextureRect" parent="FekrBekrActions/VBox/BtnFekrDual"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -26.0
+offset_top = -26.0
+offset_right = 26.0
+offset_bottom = 26.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("17_expand")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DisconnectPauseDialog" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="DisconnectPauseDialog"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.03, 0.02, 0.75)
+
+[node name="Card" type="PanelContainer" parent="DisconnectPauseDialog"]
+custom_minimum_size = Vector2(880, 480)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -440.0
+offset_top = -240.0
+offset_right = 440.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_modal_board")
+
+[node name="VBox" type="VBoxContainer" parent="DisconnectPauseDialog/Card"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Icon" type="Label" parent="DisconnectPauseDialog/Card/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 56
+text = "⏸️"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="DisconnectPauseDialog/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 40
+text = "بازی موقتاً متوقف شد"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="DisconnectPauseDialog/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.9, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "اتصال حریف قطع شده است. در انتظار اتصال مجدد حریف..."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="TimerBar" type="ProgressBar" parent="DisconnectPauseDialog/Card/VBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_timer_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_timer_fill")
+value = 100.0
+show_percentage = false
+
+[node name="Countdown" type="Label" parent="DisconnectPauseDialog/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.3, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "مهلت اتصال مجدد: ۳۰ ثانیه"
+horizontal_alignment = 1
+
+[node name="SurrenderDialog" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="SurrenderDialog"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Card" type="PanelContainer" parent="SurrenderDialog"]
+custom_minimum_size = Vector2(880, 480)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -440.0
+offset_top = -240.0
+offset_right = 440.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_modal_board")
+
+[node name="VBox" type="VBoxContainer" parent="SurrenderDialog/Card"]
+layout_mode = 2
+theme_override_constants/separation = 22
+alignment = 1
+
+[node name="Title" type="Label" parent="SurrenderDialog/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 40
+text = "تسلیم بازی"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="SurrenderDialog/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.9, 0.82, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "آیا مطمئن هستید که می‌خواهید تسلیم شوید؟
+با تسلیم شدن، امتیاز این مسابقه برای شما باخت ثبت می‌شود."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="BtnHBox" type="HBoxContainer" parent="SurrenderDialog/Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BtnConfirmSurrender" type="Button" parent="SurrenderDialog/Card/VBox/BtnHBox"]
+custom_minimum_size = Vector2(340, 84)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.35, 0.05, 0.05, 0.95)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+text = "بله، تسلیم می‌شوم"
+
+[node name="BtnCancelSurrender" type="Button" parent="SurrenderDialog/Card/VBox/BtnHBox"]
+custom_minimum_size = Vector2(340, 84)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.1, 0.95)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+text = "ادامه بازی"
+
+[node name="StartGameOverlay" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="StartGameOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.06, 0.04, 0.02, 1)
+
+[node name="Card" type="PanelContainer" parent="StartGameOverlay"]
+custom_minimum_size = Vector2(920, 720)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -460.0
+offset_top = -360.0
+offset_right = 460.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_modal_board")
+
+[node name="VBox" type="VBoxContainer" parent="StartGameOverlay/Card"]
+layout_mode = 2
+theme_override_constants/separation = 22
+alignment = 1
+
+[node name="CafeTitle" type="Label" parent="StartGameOverlay/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "☕ کافه فکر — مسابقه آنلاین"
+horizontal_alignment = 1
+
+[node name="GameTitle" type="Label" parent="StartGameOverlay/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 46
+text = "تیک تاک تو (دوز ۳×۳)"
+horizontal_alignment = 1
+
+[node name="VSBox" type="HBoxContainer" parent="StartGameOverlay/Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="IntroP1" type="VBoxContainer" parent="StartGameOverlay/Card/VBox/VSBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Avatar" type="TextureRect" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.8, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "بازیکن ۱"
+horizontal_alignment = 1
+
+[node name="Role" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "🔴 مهره قرمز"
+horizontal_alignment = 1
+
+[node name="VSLabel" type="Label" parent="StartGameOverlay/Card/VBox/VSBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.3, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 68
+text = "⚔️"
+horizontal_alignment = 1
+
+[node name="IntroP2" type="VBoxContainer" parent="StartGameOverlay/Card/VBox/VSBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Avatar" type="TextureRect" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.8, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "بازیکن ۲"
+horizontal_alignment = 1
+
+[node name="Role" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.75, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "🔵 مهره آبی"
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="StartGameOverlay/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.78, 0.65, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "آماده‌باشید... بازی به‌زودی آغاز می‌شود"
+horizontal_alignment = 1
+
+[node name="Countdown" type="Label" parent="StartGameOverlay/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.25, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 96
+text = "..."
+horizontal_alignment = 1
+
+[node name="RoundFinishBanner" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="RoundFinishBanner"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Card" type="PanelContainer" parent="RoundFinishBanner"]
+custom_minimum_size = Vector2(880, 440)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -440.0
+offset_top = -220.0
+offset_right = 440.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_modal_board")
+
+[node name="VBox" type="VBoxContainer" parent="RoundFinishBanner/Card"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="RoundTitle" type="Label" parent="RoundFinishBanner/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 46
+text = "✨ پایان راند ۱"
+horizontal_alignment = 1
+
+[node name="WinnerDesc" type="Label" parent="RoundFinishBanner/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.95, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 36
+text = "🎉 این راند را شما بردید!"
+horizontal_alignment = 1
+
+[node name="ScoreRow" type="Label" parent="RoundFinishBanner/Card/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "مجموع امتیاز راندها: ۱ - ۰"
+horizontal_alignment = 1
+
+[node name="ToastHint" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -280.0
+offset_top = -240.0
+offset_right = 280.0
+offset_bottom = -165.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_toast")
+
+[node name="LblToast" type="Label" parent="ToastHint"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "نوبتت نیست!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReactionPicker" parent="." instance=ExtResource("5_picker")]
+visible = false
+layout_mode = 1
+
+[node name="GameResultDialog" parent="." instance=ExtResource("6_result")]
+visible = false
+layout_mode = 1
+
+[node name="UserProfileDialog" parent="." instance=ExtResource("7_profile_dlg")]
+visible = false
+layout_mode = 1

@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://crapp05gqfb1f"
+path="res://.godot/imported/king.obj-d5c35adc61dfad466dd217463fd1fd2b.mesh"
+
+[deps]
+
+files=["res://.godot/imported/king.obj-d5c35adc61dfad466dd217463fd1fd2b.mesh"]
+
+source_file="res://assets/models/chess/king.obj"
+dest_files=["res://.godot/imported/king.obj-d5c35adc61dfad466dd217463fd1fd2b.mesh", "res://.godot/imported/king.obj-d5c35adc61dfad466dd217463fd1fd2b.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false
