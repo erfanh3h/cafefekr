@@ -358,16 +358,16 @@ func _setup_card_styles() -> void:
 	_dot_style_danger.shadow_size = 6
 
 func _setup_connections() -> void:
-	# Kenney UI Tactile Game Buttons & Action Juice
-	KenneyUI.style_button(btn_zoom_in, KenneyUI.COLOR_YELLOW)
-	KenneyUI.style_button(btn_zoom_out, KenneyUI.COLOR_YELLOW)
-	KenneyUI.style_button(btn_cam_top, KenneyUI.COLOR_BLUE)
-	KenneyUI.style_button(btn_cam_reset, KenneyUI.COLOR_GREY)
-	KenneyUI.style_button(btn_surrender, KenneyUI.COLOR_RED)
-	KenneyUI.style_button(btn_reactions, KenneyUI.COLOR_BLUE)
-	KenneyUI.style_button(btn_audio, KenneyUI.COLOR_GREY)
+	# Kenney UI Tactile Game Buttons & Action Juice (unified natural wooden background across all 7 bottom icons)
+	KenneyUI.style_button(btn_zoom_in, KenneyUI.COLOR_WOOD)
+	KenneyUI.style_button(btn_zoom_out, KenneyUI.COLOR_WOOD)
+	KenneyUI.style_button(btn_cam_top, KenneyUI.COLOR_WOOD)
+	KenneyUI.style_button(btn_cam_reset, KenneyUI.COLOR_WOOD)
+	KenneyUI.style_button(btn_surrender, KenneyUI.COLOR_WOOD)
+	KenneyUI.style_button(btn_reactions, KenneyUI.COLOR_WOOD)
+	KenneyUI.style_button(btn_audio, KenneyUI.COLOR_WOOD)
 	KenneyUI.style_button(btn_confirm_surrender, KenneyUI.COLOR_RED)
-	KenneyUI.style_button(btn_cancel_surrender, KenneyUI.COLOR_RED)
+	KenneyUI.style_button(btn_cancel_surrender, KenneyUI.COLOR_GREY)
 	
 	btn_zoom_in.text = ""
 	btn_zoom_out.text = ""
@@ -423,12 +423,13 @@ func _setup_connections() -> void:
 		_update_audio_visual()
 	)
 	
-	# Style FekrBekr Center-Right HUD Action Buttons
+	# Style FekrBekr Center-Right HUD Action Buttons (unified natural wooden background across all 4 buttons)
 	if is_instance_valid(btn_fekr_submit):
-		KenneyUI.style_button(btn_fekr_submit, KenneyUI.COLOR_GREEN)
-		KenneyUI.style_button(btn_fekr_clear, KenneyUI.COLOR_RED)
-		KenneyUI.style_button(btn_fekr_opp, KenneyUI.COLOR_BLUE)
-		KenneyUI.style_button(btn_fekr_dual, KenneyUI.COLOR_YELLOW)
+		KenneyUI.style_button(btn_fekr_submit, KenneyUI.COLOR_WOOD)
+		KenneyUI.style_button(btn_fekr_clear, KenneyUI.COLOR_WOOD)
+		KenneyUI.style_button(btn_fekr_opp, KenneyUI.COLOR_WOOD)
+		KenneyUI.style_button(btn_fekr_dual, KenneyUI.COLOR_WOOD)
+		_ensure_clean_white_fekr_icons()
 		btn_fekr_submit.text = ""
 		btn_fekr_clear.text = ""
 		btn_fekr_opp.text = ""
@@ -526,8 +527,51 @@ func _open_surrender_dialog() -> void:
 func _close_surrender_dialog() -> void:
 	ActionVFXManager.animate_dialog_close(surrender_card, surrender_dialog)
 
+var _surrender_handled: bool = false
+var _result_shown: bool = false
+var _surrender_result_tween: Tween = null
+var _last_reconnect_remaining_time: float = -1.0
+
+func _ensure_clean_white_fekr_icons() -> void:
+	# Guarantees FekrBekr Clear and Dual icons render as crisp white on transparent background
+	# even if local .godot/imported/*.ctex cache was generated from older icon files.
+	var clear_icon = btn_fekr_clear.get_node_or_null("Icon") as TextureRect if is_instance_valid(btn_fekr_clear) else null
+	if clear_icon and clear_icon.texture:
+		var img = clear_icon.texture.get_image()
+		if img and not img.is_empty():
+			img.decompress()
+			img.convert(Image.FORMAT_RGBA8)
+			for y in range(img.get_height()):
+				for x in range(img.get_width()):
+					var c = img.get_pixel(x, y)
+					if c.a > 0.01:
+						img.set_pixel(x, y, Color(1.0, 1.0, 1.0, c.a))
+			clear_icon.texture = ImageTexture.create_from_image(img)
+	var dual_icon = btn_fekr_dual.get_node_or_null("Icon") as TextureRect if is_instance_valid(btn_fekr_dual) else null
+	if dual_icon and dual_icon.texture:
+		var img2 = dual_icon.texture.get_image()
+		if img2 and not img2.is_empty():
+			img2.decompress()
+			img2.convert(Image.FORMAT_RGBA8)
+			for y in range(img2.get_height()):
+				for x in range(img2.get_width()):
+					var c2 = img2.get_pixel(x, y)
+					var lum = (c2.r + c2.g + c2.b) / 3.0
+					if c2.a < 0.08 or lum <= 0.30:
+						img2.set_pixel(x, y, Color(1.0, 1.0, 1.0, 0.0))
+					else:
+						var alpha_out = clampf((lum - 0.30) / 0.32, 0.0, 1.0) * c2.a
+						img2.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha_out))
+			dual_icon.texture = ImageTexture.create_from_image(img2)
+
 func reset_for_new_match() -> void:
 	set_fekrbekr_hud_buttons(false)
+	_surrender_handled = false
+	_result_shown = false
+	_last_reconnect_remaining_time = -1.0
+	if _surrender_result_tween and _surrender_result_tween.is_valid():
+		_surrender_result_tween.kill()
+		_surrender_result_tween = null
 	is_start_overlay_dismissed = false
 	is_countdown_running = false
 	is_game_started = false
@@ -920,9 +964,65 @@ func hide_pause_dialog() -> void:
 		if pause_dialog.visible:
 			ActionVFXManager.animate_dialog_close(pause_card, pause_dialog)
 
+func pause_turn_timer() -> void:
+	is_timer_active = false
+	AudioManager.stop_sound("time")
+
+func resume_timer_on_user_reconnected(remaining_time: int) -> void:
+	var max_time = GameRegistry.get_turn_time(GameManager.current_game_type)
+	turn_duration = max_time
+	if remaining_time > 0:
+		_last_reconnect_remaining_time = float(remaining_time)
+		turn_time_left = clampf(float(remaining_time), 1.0, max_time)
+	elif turn_time_left <= 0.0:
+		turn_time_left = max_time
+	is_game_started = true
+	is_start_overlay_dismissed = true
+	is_round_finished = false
+	is_pause_active = false
+	is_timer_active = true
+	last_second_ticked = -1
+	if is_instance_valid(current_top_header):
+		current_top_header._last_displayed_sec = -1
+		current_top_header.update_timer(turn_time_left, turn_duration, GameManager.current_turn)
+	var sec = int(ceil(turn_time_left))
+	if is_instance_valid(lbl_timer):
+		lbl_timer.text = "%02d ثانیه" % sec
+	if is_instance_valid(turn_timer_bar):
+		turn_timer_bar.value = (turn_time_left / maxf(1.0, turn_duration)) * 100.0
+
+func sync_reconnect_timer(payload: Dictionary) -> void:
+	var max_time = GameRegistry.get_turn_time(GameManager.current_game_type)
+	turn_duration = max_time
+	var timer_data = payload.get("timer_data", {})
+	if typeof(timer_data) == TYPE_DICTIONARY and timer_data.has("time") and float(timer_data.get("time", 0)) > 0.0:
+		var elapsed = float(timer_data.get("time", 0))
+		turn_time_left = clampf(max_time - elapsed, 1.0, max_time)
+	elif _last_reconnect_remaining_time > 0.0:
+		turn_time_left = clampf(_last_reconnect_remaining_time, 1.0, max_time)
+	else:
+		turn_time_left = max_time
+	_last_reconnect_remaining_time = -1.0
+	is_game_started = true
+	is_start_overlay_dismissed = true
+	is_round_finished = false
+	is_pause_active = false
+	is_timer_active = true
+	last_second_ticked = -1
+	if is_instance_valid(current_top_header):
+		current_top_header._last_displayed_sec = -1
+		current_top_header.update_timer(turn_time_left, turn_duration, GameManager.current_turn)
+	var sec = int(ceil(turn_time_left))
+	if is_instance_valid(lbl_timer):
+		lbl_timer.text = "%02d ثانیه" % sec
+	if is_instance_valid(turn_timer_bar):
+		turn_timer_bar.value = (turn_time_left / maxf(1.0, turn_duration)) * 100.0
+
 # Handles full game reconnect data payload (re-syncs gamers, round, scores, turn, and timer)
 func handle_reconnect_data(payload: Dictionary) -> void:
 	visible = true
+	_surrender_handled = false
+	_result_shown = false
 	hide_pause_dialog()
 	force_dismiss_start_overlay(false)
 	
@@ -959,27 +1059,7 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 			var turn = int(game_data.get("current_turn", 1))
 			update_turn(turn)
 		
-	var max_time = GameRegistry.get_turn_time(GameManager.current_game_type)
-	turn_duration = max_time
-	var timer_data = payload.get("timer_data", {})
-	if typeof(timer_data) == TYPE_DICTIONARY:
-		var elapsed = float(timer_data.get("time", 0))
-		turn_time_left = clampf(max_time - elapsed, 1.0, max_time)
-	else:
-		turn_time_left = max_time
-		
-	is_game_started = true
-	is_start_overlay_dismissed = true
-	is_round_finished = false
-	is_pause_active = false
-	is_timer_active = true
-	last_second_ticked = -1
-	
-	# Force refresh timer UI immediately
-	var sec = int(ceil(turn_time_left))
-	lbl_timer.text = "%02d ثانیه" % sec
-	turn_timer_bar.value = (turn_time_left / turn_duration) * 100.0
-			
+	sync_reconnect_timer(payload)
 	show_toast_hint("✅ اتصال به مسابقه با موفقیت برقرار شد!")
 
 # Shows non-blocking floating hint centered at bottom of screen
@@ -1169,6 +1249,9 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 		current_top_header.show_reaction(user_index, reaction_id)
 
 func show_surrender_notification(surrendered_gamer_id: int) -> void:
+	if _surrender_handled or _result_shown:
+		return
+	_surrender_handled = true
 	is_game_finished = true
 	stop_timer()
 	
@@ -1198,14 +1281,22 @@ func show_surrender_notification(surrendered_gamer_id: int) -> void:
 		AudioManager.play_sound("win")
 		show_toast_hint("حریف تسلیم شد! تبریک، شما برنده این بازی شدید.")
 		
-	# Show result modal after 1.5s so player can review result and return to main menu
-	var tw = create_tween()
-	tw.tween_interval(1.5)
-	tw.tween_callback(func():
+	# Show result modal after 1.5s if not already shown by server Finish_Game command
+	if _surrender_result_tween and _surrender_result_tween.is_valid():
+		_surrender_result_tween.kill()
+	_surrender_result_tween = create_tween()
+	_surrender_result_tween.tween_interval(1.5)
+	_surrender_result_tween.tween_callback(func():
 		show_game_result(winner_idx, GameManager.p1_score, GameManager.p2_score)
 	)
 
 func show_game_result(winner: int, p1_score: int, p2_score: int) -> void:
+	if _result_shown:
+		return
+	_result_shown = true
+	if _surrender_result_tween and _surrender_result_tween.is_valid():
+		_surrender_result_tween.kill()
+		_surrender_result_tween = null
 	is_game_finished = true
 	stop_timer()
 	var final_winner = winner

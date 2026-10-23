@@ -133,6 +133,8 @@ func _setup_styles() -> void:
 	_style_plaque_draw.shadow_size = 12
 
 func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_friendly: bool = true) -> void:
+	if visible and is_instance_valid(panel) and panel.visible:
+		return
 	visible = true
 	modulate.a = 1.0
 	mouse_filter = Control.MOUSE_FILTER_STOP

@@ -566,23 +566,40 @@ func _on_user_disconnected(user_id: String, wait_time: int) -> void:
 		board.set_board_locked(true)
 	base_game_hud.show_pause_dialog(wait_time)
 
-func _on_user_reconnected(user_id: String, _remaining_time: int) -> void:
-	print("[Main] Opponent reconnected (%s). Resuming match..." % user_id)
+func _on_user_reconnected(user_id: String, remaining_time: int) -> void:
+	print("[Main] User reconnected (%s, remaining_time=%ds). Resuming match..." % [user_id, remaining_time])
+	_pending_start_game = false
+	_pending_turn = -1
+	GameManager.is_game_active = true
 	base_game_hud.hide_pause_dialog()
-	base_game_hud.show_toast_hint("✅ حریف مجدداً متصل شد! بازی از سر گرفته شد.")
+	base_game_hud.force_dismiss_start_overlay(false)
+	base_game_hud.resume_timer_on_user_reconnected(remaining_time)
 	var board = cafe_table.current_board_node
 	if board and is_instance_valid(board) and board.has_method("sync_turn_state"):
 		board.sync_turn_state()
+	base_game_hud.resume_timer_on_user_reconnected(remaining_time)
+	if str(user_id) != str(GameManager.get_user_id()):
+		base_game_hud.show_toast_hint("✅ حریف مجدداً متصل شد! بازی از سر گرفته شد.")
 
 func _on_reconnect_data_received(payload: Dictionary) -> void:
 	print("[Main] Received Reconnect_Data from server. Restoring match state...")
 	_pending_start_game = false
 	_pending_turn = -1
 	GameManager.is_game_active = true
+	var g_data = payload.get("game_data", {})
+	if typeof(g_data) == TYPE_DICTIONARY:
+		var inferred_type = ""
+		if g_data.has("is_play_phase") or g_data.has("player1_choices"):
+			inferred_type = GameTypes.FEKRBEKR
+		elif g_data.has("peaces"):
+			inferred_type = GameTypes.CHESS
+		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:
+			inferred_type = GameTypes.TIC_TAC_TOE
+		if not inferred_type.is_empty() and inferred_type.to_lower() != GameManager.current_game_type.to_lower():
+			_switch_active_game(inferred_type)
 	base_game_hud.handle_reconnect_data(payload)
 	var board = cafe_table.current_board_node
 	if board and is_instance_valid(board):
-		var g_data = payload.get("game_data", {})
 		if typeof(g_data) == TYPE_DICTIONARY and board.has_method("sync_board_state"):
 			if g_data.has("board"):
 				board.sync_board_state(g_data["board"])
@@ -592,6 +609,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 				board.sync_board_state(g_data["peaces"])
 		if board.has_method("sync_turn_state"):
 			board.sync_turn_state()
+	base_game_hud.sync_reconnect_timer(payload)
+	base_game_hud.call_deferred("sync_reconnect_timer", payload)
 
 func _on_finish_reconnect_time(user_id: String) -> void:
 	print("[Main] Opponent reconnect time expired for user: %s." % user_id)
@@ -603,6 +622,7 @@ func _on_finish_reconnect_time(user_id: String) -> void:
 func _on_connection_status_changed(connected: bool) -> void:
 	if not GameManager.active_game_id.is_empty():
 		if not connected:
+			base_game_hud.pause_turn_timer()
 			base_game_hud.show_toast_hint("📡 اتصال اینترنت قطع شد! در حال تلاش برای اتصال مجدد...")
 			var board = cafe_table.current_board_node
 			if board and is_instance_valid(board) and board.has_method("set_board_locked"):

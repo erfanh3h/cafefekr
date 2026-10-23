@@ -31,19 +31,21 @@ static func get_button_style(color: String = "wood", state: String = "normal") -
 	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	
-	# Determine base tint from color while keeping authentic wooden grain
+	# Determine base tint from color while keeping authentic warm wooden grain.
+	# Note: button.png is a rich orange-brown wood texture, so multiplying by low-red tints
+	# (like pure blue/green) would crush the red channel into dark muddy charcoal.
 	var base_tint = Color(1.0, 1.0, 1.0, 1.0)
 	var c_lower = color.to_lower()
 	if c_lower == COLOR_RED:
-		base_tint = Color(0.92, 0.22, 0.22, 1.0) # Bold vibrant crimson red
+		base_tint = Color(1.0, 0.62, 0.58, 1.0) # Warm crimson-rosewood tint
 	elif c_lower == COLOR_GREEN:
-		base_tint = Color(0.24, 0.78, 0.32, 1.0) # Forest emerald green
+		base_tint = Color(0.82, 1.08, 0.78, 1.0) # Warm sage-amber wood tint
 	elif c_lower == COLOR_BLUE:
-		base_tint = Color(0.25, 0.58, 0.95, 1.0) # Vivid arcade blue
+		base_tint = Color(0.92, 0.96, 1.08, 1.0) # Crisp cool-walnut wood tint
 	elif c_lower == COLOR_YELLOW:
-		base_tint = Color(0.98, 0.76, 0.18, 1.0) # Warm golden amber
+		base_tint = Color(1.06, 0.98, 0.82, 1.0) # Warm golden-honey wood tint
 	elif c_lower == COLOR_GREY:
-		base_tint = Color(0.68, 0.65, 0.62, 1.0) # Muted slate grey
+		base_tint = Color(0.92, 0.88, 0.84, 1.0) # Soft weathered-oak wood tint
 	else:
 		base_tint = Color(1.0, 1.0, 1.0, 1.0) # Authentic natural wood
 		

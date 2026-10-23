@@ -1658,7 +1658,7 @@ func on_turn_changed(turn: int, _is_me: bool) -> void:
 		set_board_locked(not GameManager.is_game_active)
 		if GameManager.is_game_active:
 			var hud = _get_hud()
-			if hud and hud.has_method("set_setup_phase"):
+			if hud and hud.has_method("set_setup_phase") and not hud.get("is_timer_active"):
 				hud.set_setup_phase()
 		return
 
@@ -1753,6 +1753,8 @@ func on_reconnect_data(payload: Dictionary) -> void:
 			hud.set_fekrbekr_hud_buttons(is_play_phase)
 		if is_waiting and hud.has_method("set_waiting_opponent"):
 			hud.set_waiting_opponent("⏳ حدس شما ثبت شده است — در انتظار حریف..." if is_play_phase else "🔐 رمز شما ثبت شده است — در انتظار حریف...")
+		if hud.has_method("sync_reconnect_timer"):
+			hud.sync_reconnect_timer(payload)
 	if not is_play_phase and is_waiting:
 		if is_instance_valid(phase1_root):
 			phase1_root.visible = false
