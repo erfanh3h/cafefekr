@@ -1110,6 +1110,8 @@ func update_scores(p1_s: int, p2_s: int) -> void:
 	GameManager.p2_score = p2_s
 	if is_instance_valid(current_top_header):
 		current_top_header.update_scores(p1_s, p2_s)
+	if is_instance_valid(result_dialog) and result_dialog.has_method("update_scores"):
+		result_dialog.update_scores(p1_s, p2_s)
 
 func start_turn_timer(duration: float, custom_banner: String = "") -> void:
 

@@ -307,6 +307,7 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 	_camera_hint_shown = false
 	_pending_start_game = false
 	_pending_turn = -1
+	_current_round_scored = false
 	
 	# Dismiss and clear all menu overlays and backdrops so nothing intercepts gameplay touch input
 	_hide_backdrop()
@@ -365,6 +366,7 @@ func _switch_active_game(new_game_type: String) -> void:
 var _camera_hint_shown: bool = false
 var _pending_start_game: bool = false
 var _pending_turn: int = -1
+var _current_round_scored: bool = false
 
 func _on_start_game_received() -> void:
 	print("[Main] Server Start_Game received!")
@@ -413,6 +415,7 @@ func _on_wait_time_received(wait_sec: int) -> void:
 
 func _on_turn_changed(turn: int) -> void:
 	# Current_Turn signal proves real game has begun on server
+	_current_round_scored = false
 	var was_active = GameManager.is_game_active
 	GameManager.is_game_active = true
 	GameManager.current_turn = turn
@@ -447,14 +450,16 @@ func _on_round_finished(payload: Variant) -> void:
 	
 	var winner = 0
 	if typeof(payload) == TYPE_DICTIONARY:
-		winner = int(payload.get("Winner", 0))
+		winner = int(payload.get("Winner", payload.get("winner", 0)))
 	else:
 		winner = int(payload)
 		
-	if winner == 1:
-		GameManager.p1_score += 1
-	elif winner == 2:
-		GameManager.p2_score += 1
+	if not _current_round_scored:
+		_current_round_scored = true
+		if winner == 1:
+			GameManager.p1_score += 1
+		elif winner == 2:
+			GameManager.p2_score += 1
 		
 	base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)
 	# Wait for winning piece placement animation, drop sound, and laser strike to complete visibly before showing round finish banner
@@ -464,6 +469,7 @@ func _on_round_finished(payload: Variant) -> void:
 	)
 
 func _on_new_round_started(round_num: int) -> void:
+	_current_round_scored = false
 	GameManager.current_round = round_num
 	base_game_hud.set_round(round_num, GameManager.max_rounds)
 	base_game_hud.hide_round_finish_banner()
@@ -546,11 +552,23 @@ func _on_game_finished(data: Dictionary) -> void:
 	GameManager.is_game_active = false
 	GameManager.clear_open_game_id()
 	_hide_backdrop()
-	var winner = data.get("winner", data.get("Winner", data.get("rank1", 0)))
+	var winner = int(data.get("winner", data.get("Winner", data.get("rank1", 0))))
+	if GameRegistry.has_round_score(GameManager.current_game_type):
+		if data.has("scores") and typeof(data["scores"]) == TYPE_ARRAY and (data["scores"] as Array).size() >= 2:
+			GameManager.p1_score = int(data["scores"][0])
+			GameManager.p2_score = int(data["scores"][1])
+			_current_round_scored = true
+		elif not _current_round_scored and not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active:
+			_current_round_scored = true
+			if winner == 1:
+				GameManager.p1_score += 1
+			elif winner == 2:
+				GameManager.p2_score += 1
+		base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)
 	var board = cafe_table.current_board_node
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
 		board.set_board_locked(true)
-	base_game_hud.show_game_result(int(winner), GameManager.p1_score, GameManager.p2_score)
+	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score)
 
 # Auto enters ongoing match if one is active on server when game starts or reconnects
 func _check_and_auto_enter_active_game() -> void:

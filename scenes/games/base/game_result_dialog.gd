@@ -260,12 +260,7 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 	lbl_p1_name.add_theme_color_override("font_color", Color(1.0, 0.48, 0.52))
 	lbl_p2_name.add_theme_color_override("font_color", Color(0.48, 0.82, 1.0))
 	
-	var show_round_scores = (GameManager.max_rounds > 1) or (p1_score > 0 or p2_score > 0)
-	lbl_p1_score.visible = show_round_scores
-	lbl_p2_score.visible = show_round_scores
-	if show_round_scores:
-		lbl_p1_score.text = "امتیاز دست‌ها: %d" % p1_score
-		lbl_p2_score.text = "امتیاز دست‌ها: %d" % p2_score
+	update_scores(p1_score, p2_score)
 	
 	# Highlight winner card with clear high-contrast tags
 	if not is_draw:
@@ -357,3 +352,25 @@ func close_immediate() -> void:
 	if panel and is_instance_valid(panel):
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		panel.visible = false
+
+static func _fa_digits(val: Variant) -> String:
+	var s = str(val)
+	var fa = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
+	var out = ""
+	for ch in s:
+		if ch >= "0" and ch <= "9":
+			out += fa[int(ch)]
+		else:
+			out += ch
+	return out
+
+func update_scores(p1_score: int, p2_score: int) -> void:
+	var show_round_scores = GameRegistry.has_round_score(GameManager.current_game_type) and ((GameManager.max_rounds > 1) or (p1_score > 0 or p2_score > 0))
+	if is_instance_valid(lbl_p1_score):
+		lbl_p1_score.visible = show_round_scores
+		if show_round_scores:
+			lbl_p1_score.text = "امتیاز دست‌ها: %s" % _fa_digits(p1_score)
+	if is_instance_valid(lbl_p2_score):
+		lbl_p2_score.visible = show_round_scores
+		if show_round_scores:
+			lbl_p2_score.text = "امتیاز دست‌ها: %s" % _fa_digits(p2_score)

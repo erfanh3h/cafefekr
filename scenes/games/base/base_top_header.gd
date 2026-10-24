@@ -627,16 +627,14 @@ func _enhance_player_card(player_idx: int) -> void:
 			sb_score.content_margin_bottom = 4
 			score_badge.add_theme_stylebox_override("panel", sb_score)
 
-			# Use normal clean UI font (Vazir) for score numbers so digits look crisp and natural
-			if _font_vazir:
-				score_lbl.add_theme_font_override("font", _font_vazir)
-			else:
-				score_lbl.remove_theme_font_override("font")
+			# Use Persian game font (hekayat.ttf) + Persian numerals like on the FekrBekr board
+			if _font_hekayat:
+				score_lbl.add_theme_font_override("font", _font_hekayat)
 			score_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
 			score_lbl.add_theme_color_override("font_outline_color", Color(0.12, 0.06, 0.02, 0.95))
-			score_lbl.add_theme_constant_override("outline_size", 2)
-			score_lbl.add_theme_font_size_override("font_size", 32)
-			score_lbl.text = "0"
+			score_lbl.add_theme_constant_override("outline_size", 3)
+			score_lbl.add_theme_font_size_override("font_size", 40)
+			score_lbl.text = _fa_digits(0)
 
 func _is_score_based_game() -> bool:
 	var g_type = GameManager.current_game_type
@@ -846,12 +844,12 @@ func _animate_timer_warning() -> void:
 func update_scores(p1_score: int, p2_score: int) -> void:
 	_update_score_badges_visibility()
 	if is_instance_valid(p1_score_lbl):
-		p1_score_lbl.text = str(p1_score)
+		p1_score_lbl.text = _fa_digits(p1_score)
 		if p1_score > _last_p1_score and _is_score_based_game():
 			_animate_score_bump(p1_score_lbl.get_parent() as Control)
 		_last_p1_score = p1_score
 	if is_instance_valid(p2_score_lbl):
-		p2_score_lbl.text = str(p2_score)
+		p2_score_lbl.text = _fa_digits(p2_score)
 		if p2_score > _last_p2_score and _is_score_based_game():
 			_animate_score_bump(p2_score_lbl.get_parent() as Control)
 		_last_p2_score = p2_score
@@ -916,9 +914,9 @@ func reset_header() -> void:
 		lbl_turn_banner.text = "بازی درحال آغاز است"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	if is_instance_valid(p1_score_lbl):
-		p1_score_lbl.text = "0"
+		p1_score_lbl.text = _fa_digits(0)
 	if is_instance_valid(p2_score_lbl):
-		p2_score_lbl.text = "0"
+		p2_score_lbl.text = _fa_digits(0)
 	if is_instance_valid(lbl_timer):
 		lbl_timer.text = "--"
 		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
