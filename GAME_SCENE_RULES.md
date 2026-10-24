@@ -89,7 +89,7 @@ In Cafe Fekr, **the in-game experience is shared across ALL board games**:
     - Tapping either avatar emits `p1_profile_clicked` / `p2_profile_clicked` to open `UserProfileDialog`.
   - **Score Badge Visibility Rule (`GameRegistry.has_round_score`):**
     - In games that do **not** have round scores (e.g. `Chess` and `FekrBekr`, where `GameRegistry.has_round_score(game_type)` is `false`), `ScoreBadge` (`_p1_score_badge` and `_p2_score_badge`) **MUST be hidden** (`visible = false`).
-    - Only round-score-based games (such as `TicTacToe`) display the score badge inside the player cards.
+    - Only score-based games (such as `TicTacToe` for round wins and `Yatzy` for cumulative points) display the score badge inside the player cards.
   - **Score Badge Persian Typography & Single-Child Rule:**
     - `Score` inside `ScoreBadge` **MUST** use the Persian game font (`res://assets/fonts/hekayat.ttf`, `font_size = 40`, `outline_size = 3`) and Persian numerals (`_fa_digits(score)` -> `"۰"`, `"۱"`, `"۲"`, `"۳"`), matching the Persian numeral styling on the `FekrBekr` 3D board.
     - **NEVER** add extra child `Label` nodes (such as a `"🏆"` crown tag) directly inside `ScoreBadge` (`PanelContainer`), because `PanelContainer` stacks all direct children in the same rect and causes overlapping glyphs.

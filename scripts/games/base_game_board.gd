@@ -37,7 +37,7 @@ func sync_turn_state() -> void:
 		if game_type == GameTypes.FEKRBEKR:
 			on_turn_changed(0, true)
 		return
-	if game_type == GameTypes.FEKRBEKR:
+	if GameRegistry.is_simultaneous(game_type):
 		is_my_turn = true
 		is_board_locked = false
 		on_turn_changed(current_turn, true)
@@ -49,6 +49,10 @@ func sync_turn_state() -> void:
 # --- Network Signal Wiring ---
 
 func _connect_network_signals() -> void:
+	if not NetworkManager.turn_data_received.is_connected(_on_internal_turn_data):
+		NetworkManager.turn_data_received.connect(_on_internal_turn_data)
+	if not NetworkManager.roll_result_received.is_connected(_on_internal_roll_result):
+		NetworkManager.roll_result_received.connect(_on_internal_roll_result)
 	if not NetworkManager.turn_changed.is_connected(_on_internal_turn_changed):
 		NetworkManager.turn_changed.connect(_on_internal_turn_changed)
 	if not NetworkManager.piece_selected.is_connected(_on_internal_piece_selected):
@@ -69,6 +73,10 @@ func _connect_network_signals() -> void:
 		NetworkManager.start_game_received.connect(_on_internal_start_game)
 
 func _disconnect_network_signals() -> void:
+	if NetworkManager.turn_data_received.is_connected(_on_internal_turn_data):
+		NetworkManager.turn_data_received.disconnect(_on_internal_turn_data)
+	if NetworkManager.roll_result_received.is_connected(_on_internal_roll_result):
+		NetworkManager.roll_result_received.disconnect(_on_internal_roll_result)
 	if NetworkManager.turn_changed.is_connected(_on_internal_turn_changed):
 		NetworkManager.turn_changed.disconnect(_on_internal_turn_changed)
 	if NetworkManager.piece_selected.is_connected(_on_internal_piece_selected):
@@ -90,10 +98,16 @@ func _disconnect_network_signals() -> void:
 
 # --- Internal Network Callbacks (Dispatches to Virtual Hooks) ---
 
+func _on_internal_turn_data(payload: Dictionary) -> void:
+	on_turn_data(payload)
+
+func _on_internal_roll_result(payload: Dictionary) -> void:
+	on_roll_result(payload)
+
 func _on_internal_turn_changed(turn: int) -> void:
 	current_turn = turn
 	my_player_index = GameManager.my_player_index
-	if game_type == GameTypes.FEKRBEKR:
+	if GameRegistry.is_simultaneous(game_type):
 		is_my_turn = true
 		is_board_locked = false
 		on_turn_changed(turn, true)
@@ -126,12 +140,17 @@ func _on_internal_reconnect_data(payload: Dictionary) -> void:
 		current_turn = max(1, r_num) if is_play_rec else 0
 		GameManager.current_turn = current_turn
 		GameManager.current_round = r_num
+	elif GameManager.current_game_type == GameTypes.YATZY and typeof(g_data) == TYPE_DICTIONARY:
+		var r_num = int(g_data.get("current_round", 1))
+		current_turn = max(1, r_num)
+		GameManager.current_turn = current_turn
+		GameManager.current_round = r_num
 	elif typeof(g_data) == TYPE_DICTIONARY and g_data.has("current_turn"):
 		current_turn = int(g_data["current_turn"])
 		GameManager.current_turn = current_turn
 	else:
 		current_turn = GameManager.current_turn
-	if GameManager.current_game_type == GameTypes.FEKRBEKR:
+	if GameRegistry.is_simultaneous(GameManager.current_game_type):
 		is_my_turn = true
 		is_board_locked = false
 	else:
@@ -179,6 +198,10 @@ func on_start_game() -> void:
 func on_wait_time(_time_sec: int) -> void:
 	pass
 
+func on_turn_data(_payload: Dictionary) -> void:
+	pass
+func on_roll_result(_payload: Dictionary) -> void:
+	pass
 func on_turn_changed(_turn: int, _is_me: bool) -> void:
 	pass
 

@@ -8,6 +8,8 @@ signal game_play_data_received(data: Dictionary)
 signal game_play_time_received(time: int)
 signal game_play_navigate_received(data: Dictionary)
 signal turn_changed(turn: int)
+signal turn_data_received(payload: Dictionary)
+signal roll_result_received(payload: Dictionary)
 signal piece_selected(user_id: int, target_peace: int, extra: Dictionary)
 signal round_finished(winner_id: Variant)
 signal new_round_started(round_num: int)
@@ -216,18 +218,26 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				if payload.has("current_round"):
 					turn = int(payload["current_round"])
 					GameManager.current_round = turn
+				elif payload.has("current_turn"):
+					turn = int(payload["current_turn"])
+					GameManager.current_round = turn
 				else:
 					turn = int(payload.get("turn", 1))
 			else:
 				turn = int(payload)
 			GameManager.current_turn = turn
 			print("[NetworkManager] Current Turn/Round: %d | My Player Index: %d | Is My Turn: %s" % [turn, GameManager.my_player_index, str(GameManager.is_my_turn)])
+			if typeof(payload) == TYPE_DICTIONARY:
+				turn_data_received.emit(payload)
 			turn_changed.emit(turn)
+
+		Commands.Roll_Result:
+			roll_result_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
 
 		Commands.Peace_Selected:
 			if typeof(payload) == TYPE_DICTIONARY:
 				var user_id = int(payload.get("gamer_id", payload.get("user", 0)))
-				var target_peace = int(payload.get("target_peace", 0))
+				var target_peace = int(payload.get("target_peace", payload.get("selected_index", 0)))
 				var extra: Dictionary = payload.duplicate()
 				if payload.has("select_data") and typeof(payload["select_data"]) == TYPE_DICTIONARY:
 					var sdata = payload["select_data"]

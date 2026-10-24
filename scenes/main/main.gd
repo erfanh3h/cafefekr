@@ -423,13 +423,16 @@ func _on_turn_changed(turn: int) -> void:
 		AudioManager.play_sound("bell")
 	if not base_game_hud.is_start_overlay_dismissed:
 		base_game_hud.force_dismiss_start_overlay(false)
+	if GameManager.current_game_type == GameTypes.YATZY and turn > 0:
+		GameManager.current_round = turn
+		base_game_hud.set_round(turn, GameManager.max_rounds)
 	base_game_hud.update_turn(turn)
 	
 	var board = cafe_table.current_board_node
 	if board and is_instance_valid(board) and board.has_method("sync_turn_state"):
 		board.sync_turn_state()
 	
-	var is_opp_turn = (turn != GameManager.my_player_index) if GameManager.current_game_type != GameTypes.FEKRBEKR else false
+	var is_opp_turn = (turn != GameManager.my_player_index) if not GameRegistry.is_simultaneous(GameManager.current_game_type) else false
 	if is_instance_valid(cafe_table):
 		cafe_table.set_opponent_thinking(is_opp_turn)
 	
@@ -558,7 +561,7 @@ func _on_game_finished(data: Dictionary) -> void:
 			GameManager.p1_score = int(data["scores"][0])
 			GameManager.p2_score = int(data["scores"][1])
 			_current_round_scored = true
-		elif not _current_round_scored and not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active:
+		elif not GameRegistry.is_cumulative_score(GameManager.current_game_type) and not _current_round_scored and not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active:
 			_current_round_scored = true
 			if winner == 1:
 				GameManager.p1_score += 1
@@ -609,6 +612,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 		var inferred_type = ""
 		if g_data.has("is_play_phase") or g_data.has("player1_choices"):
 			inferred_type = GameTypes.FEKRBEKR
+		elif g_data.has("player1_board") or g_data.has("current_dices"):
+			inferred_type = GameTypes.YATZY
 		elif g_data.has("peaces"):
 			inferred_type = GameTypes.CHESS
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:

@@ -1055,6 +1055,10 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 			set_fekrbekr_hud_buttons(is_play_rec)
 			if is_waiting:
 				set_waiting_opponent("حدس شما ثبت شده است. در انتظار حریف..." if is_play_rec else "رمز شما ثبت شده است. در انتظار حریف...")
+		elif GameManager.current_game_type == GameTypes.YATZY:
+			update_turn(max(1, r_num))
+			if bool(game_data.get("is_round_done", false)):
+				set_waiting_opponent("امتیاز شما ثبت شد! در انتظار حریف...")
 		else:
 			var turn = int(game_data.get("current_turn", 1))
 			update_turn(turn)
@@ -1188,7 +1192,7 @@ func update_turn(turn: int) -> void:
 		
 	set_fekrbekr_hud_buttons(turn > 0)
 	GameManager.current_turn = turn
-	var is_me = (turn == GameManager.my_player_index) if GameManager.current_game_type != GameTypes.FEKRBEKR else true
+	var is_me = (turn == GameManager.my_player_index) if not GameRegistry.is_simultaneous(GameManager.current_game_type) else true
 	
 	# Current_Turn signal proves match is actively running!
 	if not is_countdown_running:

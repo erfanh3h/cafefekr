@@ -657,6 +657,8 @@ func _get_role_badge_text(player_idx: int) -> String:
 	var g_type = GameManager.current_game_type
 	if g_type == GameTypes.FEKRBEKR:
 		return "🔐 کدشکن"
+	elif g_type == GameTypes.YATZY:
+		return "🎲 تاس‌انداز قرمز" if player_idx == 1 else "🎲 تاس‌انداز آبی"
 	elif g_type == GameTypes.CHESS:
 		return "🔴 ارتش قرمز" if player_idx == 1 else "🔵 ارتش آبی"
 	else:

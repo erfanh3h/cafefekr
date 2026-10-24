@@ -33,7 +33,7 @@ var is_my_turn: bool:
 	get:
 		if not is_game_active:
 			return false
-		if current_game_type == GameTypes.FEKRBEKR:
+		if GameRegistry.is_simultaneous(current_game_type):
 			return true
 		return current_turn == my_player_index
 

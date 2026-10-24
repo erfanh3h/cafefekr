@@ -366,11 +366,12 @@ static func _fa_digits(val: Variant) -> String:
 
 func update_scores(p1_score: int, p2_score: int) -> void:
 	var show_round_scores = GameRegistry.has_round_score(GameManager.current_game_type) and ((GameManager.max_rounds > 1) or (p1_score > 0 or p2_score > 0))
+	var prefix = "مجموع امتیاز: %s" if GameRegistry.is_cumulative_score(GameManager.current_game_type) else "امتیاز دست‌ها: %s"
 	if is_instance_valid(lbl_p1_score):
 		lbl_p1_score.visible = show_round_scores
 		if show_round_scores:
-			lbl_p1_score.text = "امتیاز دست‌ها: %s" % _fa_digits(p1_score)
+			lbl_p1_score.text = prefix % _fa_digits(p1_score)
 	if is_instance_valid(lbl_p2_score):
 		lbl_p2_score.visible = show_round_scores
 		if show_round_scores:
-			lbl_p2_score.text = "امتیاز دست‌ها: %s" % _fa_digits(p2_score)
+			lbl_p2_score.text = prefix % _fa_digits(p2_score)

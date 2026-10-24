@@ -11,11 +11,13 @@ const DEFAULT_GAME_TYPE: String = GameTypes.TIC_TAC_TOE
 const TICTACTOE_SCENE: String = "res://scenes/games/tictactoe/tictactoe_3d.tscn"
 const CHESS_SCENE: String = "res://scenes/games/chess/chess_3d.tscn"
 const FEKRBEKR_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_3d.tscn"
+const YATZY_SCENE: String = "res://scenes/games/yatzy/yatzy_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
 const BASE_TOP_HEADER_SCENE: String = "res://scenes/games/base/base_top_header.tscn"
 const CHESS_TOP_HEADER_SCENE: String = "res://scenes/games/chess/chess_top_header.tscn"
 const FEKRBEKR_TOP_HEADER_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_top_header.tscn"
+const YATZY_TOP_HEADER_SCENE: String = "res://scenes/games/yatzy/yatzy_top_header.tscn"
 
 static var _registry: Dictionary = {
 	GameTypes.FEKRBEKR: {
@@ -25,9 +27,27 @@ static var _registry: Dictionary = {
 		"top_header_scene": FEKRBEKR_TOP_HEADER_SCENE,
 		"max_rounds": 12,
 		"has_round_score": false,
+		"is_simultaneous": true,
+		"is_cumulative_score": false,
 		"turn_time": 60.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/fekrbekr.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.YATZY: {
+		"id": GameTypes.YATZY,
+		"name_fa": "یاتزی",
+		"board_scene": YATZY_SCENE,
+		"top_header_scene": YATZY_TOP_HEADER_SCENE,
+		"max_rounds": 12,
+		"has_round_score": true,
+		"is_simultaneous": true,
+		"is_cumulative_score": true,
+		"turn_time": 60.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/yatzy.jpg",
 		"min_players": 2,
 		"max_players": 2,
 		"is_3d": true
@@ -227,3 +247,11 @@ static func get_max_missed_turns(game_type: String = "") -> int:
 	if not has_missed_turns_limit(game_type):
 		return 0
 	return int(info.get("max_missed_turns", 4))
+
+static func is_simultaneous(game_type: String = "") -> bool:
+	var info = get_game_info(game_type)
+	return bool(info.get("is_simultaneous", false))
+
+static func is_cumulative_score(game_type: String = "") -> bool:
+	var info = get_game_info(game_type)
+	return bool(info.get("is_cumulative_score", false))
