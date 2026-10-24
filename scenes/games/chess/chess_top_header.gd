@@ -32,6 +32,13 @@ var _max_missed_turns: int = 4
 func _ready() -> void:
 	super._ready()
 	_setup_strike_dot_styles()
+	if is_instance_valid(_p1_score_badge):
+		_p1_score_badge.visible = false
+	if is_instance_valid(_p2_score_badge):
+		_p2_score_badge.visible = false
+
+func _is_score_based_game() -> bool:
+	return false
 	if is_instance_valid(p1_missed_turns_box):
 		p1_missed_turns_box.visible = true
 	if is_instance_valid(p2_missed_turns_box):

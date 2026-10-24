@@ -4,7 +4,7 @@ extends Control
 # Base Top Header for Cafe Fekr
 # Standard in-game top header for all board games.
 # Manages Player 1 and Player 2 profile cards, scores, turn highlights,
-# active turn banners, and real-time turn countdown timer.
+# active turn banners, and real-time turn countdown timer with dynamic VFX.
 # Extended via inheritance for games requiring custom header widgets (e.g. ChessTopHeader).
 
 signal p1_profile_clicked()
@@ -60,13 +60,10 @@ var _p1_avatar_frame: Panel = null
 var _p2_avatar_frame: Panel = null
 var _p1_side_tag: Label = null
 var _p2_side_tag: Label = null
-var _p1_turn_pill: PanelContainer = null
-var _p2_turn_pill: PanelContainer = null
-var _p1_turn_lbl: Label = null
-var _p2_turn_lbl: Label = null
-var _timer_pill: PanelContainer = null
+var _p1_score_badge: PanelContainer = null
+var _p2_score_badge: PanelContainer = null
 var _timer_icon: TextureRect = null
-var _vs_badge: PanelContainer = null
+var _timer_vfx_overlay: TimerBarVFXOverlay = null
 
 # --- State ---
 var _current_turn: int = 1
@@ -80,8 +77,192 @@ static var _avatar_cache: Dictionary = {}
 static var _reaction_cache: Dictionary = {}
 static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
 static var _tex_time_icon: Texture2D = preload("res://assets/icons/General/time.png")
-static var _tex_cup_icon: Texture2D = preload("res://assets/icons/General/cup.png")
-static var _tex_wood_disc: Texture2D = preload("res://assets/images/frames/button5.png")
+
+
+# ============================================================================
+# REAL-TIME PROCEDURAL VFX OVERLAY FOR TURN TIMER BAR
+# ============================================================================
+class TimerBarVFXOverlay extends Control:
+	var bar_ref: ProgressBar = null
+	var icon_ref: TextureRect = null
+	var is_danger: bool = false
+	var is_active: bool = true
+	var theme_color: Color = Color(0.25, 0.65, 1.0)
+	var time_accum: float = 0.0
+	var _sparks: Array = []
+	var _shockwaves: Array = []
+	var _spawn_accum: float = 0.0
+	var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
+	func _ready() -> void:
+		_rng.randomize()
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		clip_contents = false
+
+	func trigger_danger_shockwave() -> void:
+		if not is_instance_valid(bar_ref):
+			return
+		var pct = clampf(bar_ref.value / 100.0, 0.0, 1.0)
+		var tip_x = clampf(size.x * pct, 8.0, maxf(8.0, size.x - 6.0))
+		_shockwaves.append({
+			"pos": Vector2(tip_x, size.y * 0.5),
+			"radius": 4.0,
+			"max_radius": 38.0,
+			"alpha": 1.0
+		})
+		# Burst of extra fiery sparks on each critical second tick
+		for _i in range(12):
+			_spawn_spark(tip_x, true, 1.45)
+
+	func _process(delta: float) -> void:
+		if not is_instance_valid(bar_ref) or not is_visible_in_tree():
+			return
+		time_accum += delta
+		var pct = clampf(bar_ref.value / 100.0, 0.0, 1.0)
+
+		# Ringing stopwatch icon animation when time is finishing
+		if is_instance_valid(icon_ref):
+			icon_ref.pivot_offset = icon_ref.size * 0.5
+			if is_danger and pct > 0.005:
+				icon_ref.rotation_degrees = sin(time_accum * 38.0) * 16.0
+				var s_pulse = 1.0 + 0.14 * abs(sin(time_accum * 10.0))
+				icon_ref.scale = Vector2(s_pulse, s_pulse)
+				icon_ref.modulate = Color(1.0, 0.55 + 0.45 * abs(sin(time_accum * 12.0)), 0.45, 1.0)
+			else:
+				icon_ref.rotation_degrees = lerpf(icon_ref.rotation_degrees, 0.0, 12.0 * delta)
+				icon_ref.scale = icon_ref.scale.lerp(Vector2.ONE, 10.0 * delta)
+				icon_ref.modulate = Color.WHITE
+
+		var tip_x = clampf(size.x * pct, 6.0, maxf(6.0, size.x - 4.0))
+		if pct > 0.01 and size.x > 20.0:
+			var spawn_rate = 42.0 if is_danger else 14.0
+			_spawn_accum += delta * spawn_rate
+			while _spawn_accum >= 1.0:
+				_spawn_accum -= 1.0
+				_spawn_spark(tip_x, is_danger, 1.0)
+
+		# Update active sparks
+		for i in range(_sparks.size() - 1, -1, -1):
+			var sp = _sparks[i]
+			sp["age"] += delta
+			if sp["age"] >= sp["life"]:
+				_sparks.remove_at(i)
+				continue
+			sp["pos"] += sp["vel"] * delta
+			sp["vel"].y += sp["grav"] * delta
+			sp["pos"].y += sin(time_accum * 12.0 + sp["phase"]) * 8.0 * delta
+
+		# Update expanding shockwaves
+		for i in range(_shockwaves.size() - 1, -1, -1):
+			var sw = _shockwaves[i]
+			sw["radius"] += delta * 95.0
+			sw["alpha"] = clampf(1.0 - (sw["radius"] / sw["max_radius"]), 0.0, 1.0)
+			if sw["alpha"] <= 0.02:
+				_shockwaves.remove_at(i)
+
+		queue_redraw()
+
+	func _spawn_spark(tip_x: float, danger_mode: bool, speed_mult: float = 1.0) -> void:
+		if _sparks.size() > 60:
+			return
+		var cy = size.y * 0.5 + _rng.randf_range(-size.y * 0.32, size.y * 0.32)
+		var angle = _rng.randf_range(-PI * 0.88, PI * 0.88)
+		var spd = _rng.randf_range(28.0, 82.0) * (1.45 if danger_mode else 0.75) * speed_mult
+		var vx = -abs(cos(angle)) * spd + _rng.randf_range(-12.0, 22.0)
+		var vy = sin(angle) * spd * 0.85
+		var col: Color
+		if danger_mode:
+			var r_pick = _rng.randf()
+			if r_pick < 0.38:
+				col = Color(1.0, 0.96, 0.65, 1.0) # White-hot gold
+			elif r_pick < 0.72:
+				col = Color(1.0, 0.55, 0.15, 1.0) # Blazing orange
+			else:
+				col = Color(1.0, 0.22, 0.28, 1.0) # Crimson ember
+		else:
+			col = theme_color.lightened(_rng.randf_range(0.32, 0.65))
+			col.a = 0.95
+
+		_sparks.append({
+			"pos": Vector2(tip_x, cy),
+			"vel": Vector2(vx, vy),
+			"grav": _rng.randf_range(-18.0, 26.0),
+			"size": _rng.randf_range(2.2, 4.6 if danger_mode else 3.4),
+			"age": 0.0,
+			"life": _rng.randf_range(0.28, 0.58 if danger_mode else 0.48),
+			"col": col,
+			"phase": _rng.randf_range(0.0, TAU)
+		})
+
+	func _draw() -> void:
+		if not is_instance_valid(bar_ref) or size.x <= 10.0:
+			return
+		var pct = clampf(bar_ref.value / 100.0, 0.0, 1.0)
+		if pct <= 0.005:
+			return
+
+		var pad: float = 3.0
+		var inner_w: float = maxf(0.0, (size.x - pad * 2.0) * pct)
+		var inner_h: float = maxf(4.0, size.y - pad * 2.0)
+		var tip_x: float = pad + inner_w
+		var center_y: float = size.y * 0.5
+
+		# 1. CRITICAL FINISHING TIME: Pulsing Outer Neon Danger Aura around the Bar
+		if is_danger:
+			var danger_pulse = 0.5 + 0.5 * sin(time_accum * 15.0)
+			var aura_col = Color(1.0, 0.22, 0.25, 0.32 + 0.45 * danger_pulse)
+			draw_rect(Rect2(Vector2(-2.0, -2.0), size + Vector2(4.0, 4.0)), aura_col, false, 2.5 + danger_pulse * 1.5)
+			var inner_flash = Color(1.0, 0.65, 0.20, 0.16 + 0.24 * danger_pulse)
+			draw_rect(Rect2(Vector2(pad, pad), Vector2(inner_w, inner_h)), inner_flash, true)
+
+		# 2. TRAVELING ENERGY SHIMMER WAVES along the filled bar
+		var wave_speed = 2.4 if is_danger else 0.95
+		var wave_count = 3
+		for w_idx in range(wave_count):
+			var phase = fmod(time_accum * wave_speed + float(w_idx) / float(wave_count), 1.0)
+			var wx = pad + inner_w * phase
+			var band_w = clampf(inner_w * 0.16, 12.0, 38.0)
+			if wx - band_w * 0.5 >= pad and wx + band_w * 0.5 <= tip_x:
+				var edge_fade = sin(phase * PI)
+				var shimmer_col = Color(1.0, 0.95, 0.78, (0.34 if is_danger else 0.20) * edge_fade)
+				draw_rect(Rect2(Vector2(wx - band_w * 0.5, pad + 1.0), Vector2(band_w, inner_h - 2.0)), shimmer_col, true)
+
+		# 3. EXPANDING SHOCKWAVE RINGS (Critical Countdown)
+		for sw in _shockwaves:
+			var sw_col = Color(1.0, 0.55, 0.22, sw["alpha"] * 0.85)
+			draw_arc(sw["pos"], sw["radius"], 0.0, TAU, 28, sw_col, 2.4)
+
+		# 4. FLOATING SPARKLES & FIERY EMBERS
+		for sp in _sparks:
+			var t_norm = clampf(1.0 - (sp["age"] / sp["life"]), 0.0, 1.0)
+			var c: Color = sp["col"]
+			c.a *= t_norm
+			var r: float = sp["size"] * (0.45 + 0.55 * t_norm)
+			var p: Vector2 = sp["pos"]
+			# Soft outer glow + bright spark core
+			draw_circle(p, r * 1.8, Color(c.r, c.g, c.b, c.a * 0.32))
+			draw_circle(p, r, c)
+
+		# 5. GLOWING LEADING-EDGE COMET / FUSE HEAD AT TIP (`tip_x, center_y`)
+		var tip_pos = Vector2(tip_x, center_y)
+		var pulse = 1.0 + (0.28 if is_danger else 0.12) * sin(time_accum * (22.0 if is_danger else 8.0))
+		var base_glow_col = Color(1.0, 0.35, 0.18, 0.45) if is_danger else Color(theme_color.r, theme_color.g, theme_color.b, 0.38)
+		var mid_glow_col = Color(1.0, 0.75, 0.25, 0.82) if is_danger else theme_color.lightened(0.45)
+		mid_glow_col.a = 0.82
+
+		draw_circle(tip_pos, (14.0 if is_danger else 10.0) * pulse, base_glow_col)
+		draw_circle(tip_pos, (8.5 if is_danger else 6.5) * pulse, mid_glow_col)
+		draw_circle(tip_pos, (4.8 if is_danger else 3.6) * pulse, Color(1.0, 0.98, 0.88, 0.98))
+
+		# Rotating 4-ray star-flare on the fuse tip (intensified when time is finishing)
+		var ray_len = (16.0 if is_danger else 9.0) * pulse
+		var rot = time_accum * (6.5 if is_danger else 2.2)
+		var flare_col = Color(1.0, 0.92, 0.65, 0.90 if is_danger else 0.60)
+		for k in range(4):
+			var a = rot + float(k) * PI * 0.5
+			var dir = Vector2(cos(a), sin(a))
+			draw_line(tip_pos - dir * ray_len, tip_pos + dir * ray_len, flare_col, 2.2 if is_danger else 1.5)
+
 
 static func _get_cached_avatar(av_id: int) -> Texture2D:
 	if _avatar_cache.has(av_id):
@@ -117,6 +298,7 @@ static func _fa_digits(val: Variant) -> String:
 func _ready() -> void:
 	_setup_styles()
 	_build_game_ui_enhancements()
+	_update_score_badges_visibility()
 	_connect_buttons()
 	if is_instance_valid(p1_reaction_bubble):
 		p1_reaction_bubble.visible = false
@@ -271,47 +453,11 @@ func _setup_styles() -> void:
 		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
 
 func _build_game_ui_enhancements() -> void:
-	# 1. Enhance Player 1 & Player 2 Cards (Avatar Medallion, Side Tag, Role Pill, Score Shield, Active Turn Crown)
+	# 1. Enhance Player 1 & Player 2 Cards (Avatar Medallion, Side Tag, Role Pill, Score Shield)
 	_enhance_player_card(1)
 	_enhance_player_card(2)
 
-	# 2. Add Center "VS / ⚔️" Duel Emblem overlay on PlayersRow
-	var players_row = get_node_or_null("Margin/VBoxMain/PlayersRow") as Control
-	if players_row and not is_instance_valid(_vs_badge):
-		players_row.add_theme_constant_override("separation", 22)
-		var vs_holder = Control.new()
-		vs_holder.name = "VsOverlayHolder"
-		vs_holder.set_anchors_preset(Control.PRESET_CENTER)
-		vs_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vs_holder.z_index = 5
-		# Since PlayersRow is an HBoxContainer, attach the floating VS badge to Margin/VBoxMain or P1Card's right edge
-		if is_instance_valid(p1_card):
-			_vs_badge = PanelContainer.new()
-			_vs_badge.name = "VsDuelBadge"
-			_vs_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			_vs_badge.custom_minimum_size = Vector2(44, 44)
-			var sb_vs = StyleBoxFlat.new()
-			sb_vs.bg_color = Color(0.18, 0.11, 0.05, 0.98)
-			sb_vs.border_color = Color(0.96, 0.78, 0.28, 1.0)
-			sb_vs.set_border_width_all(2)
-			sb_vs.set_corner_radius_all(22)
-			sb_vs.shadow_color = Color(0, 0, 0, 0.65)
-			sb_vs.shadow_size = 8
-			_vs_badge.add_theme_stylebox_override("panel", sb_vs)
-
-			var lbl_vs = Label.new()
-			lbl_vs.text = "⚔️"
-			lbl_vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			lbl_vs.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			lbl_vs.add_theme_font_size_override("font_size", 20)
-			lbl_vs.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			_vs_badge.add_child(lbl_vs)
-
-			vs_holder.add_child(_vs_badge)
-			add_child(vs_holder)
-			_vs_badge.position = Vector2(-22, 94)
-
-	# 3. Enhance MatchDetailsBox: Round Crown Ribbon, Turn Banner Strip, and Stopwatch Timer Capsule
+	# 2. Enhance MatchDetailsBox: Round Crown Ribbon, Turn Banner Strip, Stopwatch Timer Capsule, and Timer Bar VFX
 	var round_panel = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox/RoundPanel") as PanelContainer
 	if round_panel:
 		var sb_round = StyleBoxFlat.new()
@@ -354,6 +500,15 @@ func _build_game_ui_enhancements() -> void:
 
 		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
 		lbl_timer.add_theme_font_size_override("font_size", 28)
+
+	# 3. Attach Real-Time Procedural VFX Overlay to TurnTimerBar
+	if is_instance_valid(turn_timer_bar) and not is_instance_valid(_timer_vfx_overlay):
+		_timer_vfx_overlay = TimerBarVFXOverlay.new()
+		_timer_vfx_overlay.name = "TimerBarVFXOverlay"
+		_timer_vfx_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_timer_vfx_overlay.bar_ref = turn_timer_bar
+		_timer_vfx_overlay.icon_ref = _timer_icon
+		turn_timer_bar.add_child(_timer_vfx_overlay)
 
 func _enhance_player_card(player_idx: int) -> void:
 	var card = p1_card if player_idx == 1 else p2_card
@@ -442,10 +597,14 @@ func _enhance_player_card(player_idx: int) -> void:
 		sb_role.content_margin_bottom = 2
 		role_lbl.add_theme_stylebox_override("normal", sb_role)
 
-	# C. 3D Trophy Score Shield Plaque (`ScoreBadge`)
+	# C. 3D Trophy Score Shield Plaque (`ScoreBadge`) — visible only in score-based games
 	if is_instance_valid(score_lbl):
 		var score_badge = score_lbl.get_parent() as PanelContainer
 		if score_badge:
+			if player_idx == 1:
+				_p1_score_badge = score_badge
+			else:
+				_p2_score_badge = score_badge
 			score_badge.custom_minimum_size = Vector2(68, 86)
 			var sb_score = StyleBoxFlat.new()
 			sb_score.bg_color = Color(0.09, 0.05, 0.03, 0.94)
@@ -466,7 +625,6 @@ func _enhance_player_card(player_idx: int) -> void:
 			score_lbl.add_theme_constant_override("outline_size", 3)
 			score_lbl.add_theme_font_size_override("font_size", 42)
 
-			# Small golden trophy crown label at top of ScoreBadge
 			var crown_lbl = Label.new()
 			crown_lbl.name = "ScoreCrownTag"
 			crown_lbl.text = "🏆"
@@ -475,6 +633,23 @@ func _enhance_player_card(player_idx: int) -> void:
 			crown_lbl.add_theme_font_size_override("font_size", 15)
 			crown_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			score_badge.add_child(crown_lbl)
+
+func _is_score_based_game() -> bool:
+	var g_type = GameManager.current_game_type
+	if g_type == GameTypes.CHESS or g_type == GameTypes.FEKRBEKR:
+		return false
+	return GameRegistry.has_round_score(g_type)
+
+func _update_score_badges_visibility() -> void:
+	var show_scores = _is_score_based_game()
+	if is_instance_valid(_p1_score_badge):
+		_p1_score_badge.visible = show_scores
+	elif is_instance_valid(p1_score_lbl) and p1_score_lbl.get_parent() is Control:
+		(p1_score_lbl.get_parent() as Control).visible = show_scores
+	if is_instance_valid(_p2_score_badge):
+		_p2_score_badge.visible = show_scores
+	elif is_instance_valid(p2_score_lbl) and p2_score_lbl.get_parent() is Control:
+		(p2_score_lbl.get_parent() as Control).visible = show_scores
 
 func _get_role_badge_text(player_idx: int) -> String:
 	var g_type = GameManager.current_game_type
@@ -487,6 +662,7 @@ func _get_role_badge_text(player_idx: int) -> String:
 
 func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
 	_last_displayed_sec = -1
+	_update_score_badges_visibility()
 	if is_instance_valid(lbl_round):
 		if max_rounds <= 1:
 			lbl_round.text = "👑 %s — %s" % [game_name_fa, mode_title]
@@ -500,12 +676,16 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
 	if is_instance_valid(turn_timer_bar):
 		turn_timer_bar.value = 100.0
+	if is_instance_valid(_timer_vfx_overlay):
+		_timer_vfx_overlay.is_danger = false
+		_timer_vfx_overlay.theme_color = Color(0.92, 0.72, 0.22) if GameManager.current_game_type == GameTypes.FEKRBEKR else Color(0.25, 0.65, 1.0)
 	if is_instance_valid(p1_role_badge):
 		p1_role_badge.text = _get_role_badge_text(1)
 	if is_instance_valid(p2_role_badge):
 		p2_role_badge.text = _get_role_badge_text(2)
 
 func set_round(round_num: int, max_rounds: int) -> void:
+	_update_score_badges_visibility()
 	if is_instance_valid(lbl_round):
 		if max_rounds <= 1:
 			var g_info = GameRegistry.get_game_info(GameManager.current_game_type)
@@ -516,6 +696,7 @@ func set_round(round_num: int, max_rounds: int) -> void:
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_my_player_index = my_idx
+	_update_score_badges_visibility()
 
 	if is_instance_valid(p1_name):
 		p1_name.text = p1_data.get("name", "میزبان")
@@ -548,6 +729,7 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 	_current_turn = turn
 	_my_player_index = my_idx
 	_last_critical_sec = -1
+	_update_score_badges_visibility()
 
 	var is_p1 = (turn == 1)
 	var is_me = (turn == my_idx)
@@ -574,9 +756,13 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 	if is_instance_valid(match_details_box):
 		match_details_box.add_theme_stylebox_override("panel", _style_match_box_p1 if is_p1 else _style_match_box_p2)
 
-	# Timer Fill Color
+	# Timer Fill Color & VFX Theme Color
+	var fill_col = Color(1.0, 0.32, 0.35) if is_p1 else Color(0.25, 0.65, 1.0)
 	if is_instance_valid(_timer_style_fill):
-		_timer_style_fill.bg_color = Color(1.0, 0.32, 0.35) if is_p1 else Color(0.25, 0.65, 1.0)
+		_timer_style_fill.bg_color = fill_col
+	if is_instance_valid(_timer_vfx_overlay):
+		_timer_vfx_overlay.is_danger = false
+		_timer_vfx_overlay.theme_color = fill_col
 
 	# Turn Banner Text
 	if is_instance_valid(lbl_turn_banner):
@@ -606,6 +792,11 @@ func _animate_card_pulse(card: Control) -> void:
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 	var is_danger = (remaining_sec <= 4.0 and remaining_sec > 0.0)
+	var fill_col = Color(1.0, 0.32, 0.35) if turn == 1 else Color(0.25, 0.65, 1.0)
+	if is_instance_valid(_timer_vfx_overlay):
+		_timer_vfx_overlay.is_danger = is_danger
+		_timer_vfx_overlay.theme_color = fill_col
+
 	if is_instance_valid(lbl_timer):
 		var sec_ceil = int(ceil(remaining_sec))
 		if sec_ceil != _last_displayed_sec:
@@ -617,6 +808,8 @@ func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 			if sec_ceil != _last_critical_sec:
 				_last_critical_sec = sec_ceil
 				_animate_timer_warning()
+				if is_instance_valid(_timer_vfx_overlay):
+					_timer_vfx_overlay.trigger_danger_shockwave()
 		else:
 			lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
 			lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
@@ -637,7 +830,7 @@ func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 		if is_danger:
 			_timer_style_fill.bg_color = Color(1.0, 0.24, 0.26)
 		else:
-			_timer_style_fill.bg_color = Color(1.0, 0.32, 0.35) if turn == 1 else Color(0.25, 0.65, 1.0)
+			_timer_style_fill.bg_color = fill_col
 
 func _animate_timer_warning() -> void:
 	if not is_instance_valid(lbl_timer):
@@ -646,21 +839,17 @@ func _animate_timer_warning() -> void:
 	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(lbl_timer, "scale", Vector2(1.18, 1.18), 0.12)
 	tw.tween_property(lbl_timer, "scale", Vector2(1.0, 1.0), 0.14)
-	if is_instance_valid(_timer_icon):
-		_timer_icon.pivot_offset = _timer_icon.size / 2.0
-		var tw_i = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tw_i.tween_property(_timer_icon, "scale", Vector2(1.25, 1.25), 0.12)
-		tw_i.tween_property(_timer_icon, "scale", Vector2(1.0, 1.0), 0.14)
 
 func update_scores(p1_score: int, p2_score: int) -> void:
+	_update_score_badges_visibility()
 	if is_instance_valid(p1_score_lbl):
 		p1_score_lbl.text = _fa_digits(p1_score)
-		if p1_score > _last_p1_score:
+		if p1_score > _last_p1_score and _is_score_based_game():
 			_animate_score_bump(p1_score_lbl.get_parent() as Control)
 		_last_p1_score = p1_score
 	if is_instance_valid(p2_score_lbl):
 		p2_score_lbl.text = _fa_digits(p2_score)
-		if p2_score > _last_p2_score:
+		if p2_score > _last_p2_score and _is_score_based_game():
 			_animate_score_bump(p2_score_lbl.get_parent() as Control)
 		_last_p2_score = p2_score
 
@@ -719,6 +908,7 @@ func reset_header() -> void:
 	_last_displayed_sec = -1
 	_last_p1_score = 0
 	_last_p2_score = 0
+	_update_score_badges_visibility()
 	if is_instance_valid(lbl_turn_banner):
 		lbl_turn_banner.text = "بازی درحال آغاز است"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
@@ -731,6 +921,10 @@ func reset_header() -> void:
 		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
 	if is_instance_valid(turn_timer_bar):
 		turn_timer_bar.value = 100.0
+	if is_instance_valid(_timer_vfx_overlay):
+		_timer_vfx_overlay.is_danger = false
+		_timer_vfx_overlay._sparks.clear()
+		_timer_vfx_overlay._shockwaves.clear()
 	if is_instance_valid(match_details_box):
 		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
 	if is_instance_valid(p1_card):

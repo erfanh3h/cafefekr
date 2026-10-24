@@ -12,6 +12,13 @@ var is_guess_submitted: bool = false
 
 func _ready() -> void:
 	super._ready()
+	if is_instance_valid(_p1_score_badge):
+		_p1_score_badge.visible = false
+	if is_instance_valid(_p2_score_badge):
+		_p2_score_badge.visible = false
+
+func _is_score_based_game() -> bool:
+	return false
 
 func _to_fa_num(n: int) -> String:
 	return _fa_digits(n)
@@ -75,6 +82,7 @@ func update_turn(turn: int, my_idx: int, _p1_n: String, _p2_n: String) -> void:
 	_last_critical_sec = -1
 	is_setup_phase = (turn == 0)
 	is_guess_submitted = false
+	_update_score_badges_visibility()
 
 	if not GameManager.is_game_active:
 		if is_instance_valid(lbl_turn_banner):
@@ -110,9 +118,16 @@ func _highlight_both_players() -> void:
 		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
 	if is_instance_valid(_timer_style_fill):
 		_timer_style_fill.bg_color = Color(0.92, 0.72, 0.22)
+	if is_instance_valid(_timer_vfx_overlay):
+		_timer_vfx_overlay.is_danger = false
+		_timer_vfx_overlay.theme_color = Color(0.92, 0.72, 0.22)
 
 func update_timer(remaining_sec: float, total_sec: float, _turn: int) -> void:
 	var is_danger = (remaining_sec <= 5.0 and remaining_sec > 0.0)
+	if is_instance_valid(_timer_vfx_overlay):
+		_timer_vfx_overlay.is_danger = is_danger
+		_timer_vfx_overlay.theme_color = Color(0.92, 0.72, 0.22)
+
 	if is_instance_valid(lbl_timer):
 		var sec_ceil = int(ceil(remaining_sec))
 		if sec_ceil != _last_displayed_sec:
@@ -124,6 +139,8 @@ func update_timer(remaining_sec: float, total_sec: float, _turn: int) -> void:
 			if sec_ceil != _last_critical_sec:
 				_last_critical_sec = sec_ceil
 				_animate_timer_warning()
+				if is_instance_valid(_timer_vfx_overlay):
+					_timer_vfx_overlay.trigger_danger_shockwave()
 		else:
 			lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
 			lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)

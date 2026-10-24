@@ -24,6 +24,7 @@ static var _registry: Dictionary = {
 		"board_scene": FEKRBEKR_SCENE,
 		"top_header_scene": FEKRBEKR_TOP_HEADER_SCENE,
 		"max_rounds": 12,
+		"has_round_score": false,
 		"turn_time": 60.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/fekrbekr.jpg",
@@ -37,6 +38,7 @@ static var _registry: Dictionary = {
 		"board_scene": TICTACTOE_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 5,
+		"has_round_score": true,
 		"turn_time": 10.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/tictactoe.jpg",
@@ -50,6 +52,7 @@ static var _registry: Dictionary = {
 		"board_scene": CHESS_SCENE,
 		"top_header_scene": CHESS_TOP_HEADER_SCENE,
 		"max_rounds": 1,
+		"has_round_score": false,
 		"turn_time": 20.0,
 		"has_missed_turns_limit": true,
 		"max_missed_turns": 4,
@@ -63,6 +66,7 @@ static var _registry: Dictionary = {
 		"name_fa": "چکرز",
 		"board_scene": "",
 		"max_rounds": 3,
+		"has_round_score": true,
 		"turn_time": 20.0,
 		"has_missed_turns_limit": true,
 		"max_missed_turns": 4,
@@ -76,6 +80,7 @@ static var _registry: Dictionary = {
 		"name_fa": "تخته نرد",
 		"board_scene": "",
 		"max_rounds": 3,
+		"has_round_score": true,
 		"turn_time": 25.0,
 		"has_missed_turns_limit": true,
 		"max_missed_turns": 4,
@@ -89,6 +94,7 @@ static var _registry: Dictionary = {
 		"name_fa": "دوز چهارتایی",
 		"board_scene": "",
 		"max_rounds": 3,
+		"has_round_score": true,
 		"turn_time": 15.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/fourinrow.jpg",
@@ -101,6 +107,7 @@ static var _registry: Dictionary = {
 		"name_fa": "اتللو",
 		"board_scene": "",
 		"max_rounds": 1,
+		"has_round_score": false,
 		"turn_time": 20.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/othello.jpg",
@@ -113,6 +120,7 @@ static var _registry: Dictionary = {
 		"name_fa": "دوز نه تایی",
 		"board_scene": "",
 		"max_rounds": 3,
+		"has_round_score": true,
 		"turn_time": 20.0,
 		"has_missed_turns_limit": true,
 		"max_missed_turns": 4,
@@ -126,6 +134,7 @@ static var _registry: Dictionary = {
 		"name_fa": "نقطه خط",
 		"board_scene": "",
 		"max_rounds": 1,
+		"has_round_score": false,
 		"turn_time": 15.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/dotbox.jpg",
@@ -167,6 +176,7 @@ static func get_game_info(game_type: String) -> Dictionary:
 		"name_fa": GameTypes.get_display_name_fa(normalized),
 		"board_scene": TICTACTOE_SCENE,
 		"max_rounds": 3,
+		"has_round_score": true,
 		"turn_time": 15.0,
 		"icon": "",
 		"min_players": 2,
@@ -197,6 +207,12 @@ static func get_display_name_fa(game_type: String) -> String:
 static func get_max_rounds(game_type: String) -> int:
 	var info = get_game_info(game_type)
 	return int(info.get("max_rounds", 3))
+
+static func has_round_score(game_type: String = "") -> bool:
+	var info = get_game_info(game_type)
+	if info.has("has_round_score"):
+		return bool(info.get("has_round_score", false))
+	return int(info.get("max_rounds", 1)) > 1
 
 static func get_turn_time(game_type: String) -> float:
 	var info = get_game_info(game_type)
