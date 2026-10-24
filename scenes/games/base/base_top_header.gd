@@ -76,6 +76,7 @@ var _last_p2_score: int = 0
 static var _avatar_cache: Dictionary = {}
 static var _reaction_cache: Dictionary = {}
 static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
+static var _font_vazir: FontFile = preload("res://assets/fonts/Vazir.ttf")
 static var _tex_time_icon: Texture2D = preload("res://assets/icons/General/time.png")
 
 
@@ -107,10 +108,9 @@ class TimerBarVFXOverlay extends Control:
 		_shockwaves.append({
 			"pos": Vector2(tip_x, size.y * 0.5),
 			"radius": 4.0,
-			"max_radius": 38.0,
+			"max_radius": 34.0,
 			"alpha": 1.0
 		})
-		# Burst of extra fiery sparks on each critical second tick
 		for _i in range(12):
 			_spawn_spark(tip_x, true, 1.45)
 
@@ -141,7 +141,6 @@ class TimerBarVFXOverlay extends Control:
 				_spawn_accum -= 1.0
 				_spawn_spark(tip_x, is_danger, 1.0)
 
-		# Update active sparks
 		for i in range(_sparks.size() - 1, -1, -1):
 			var sp = _sparks[i]
 			sp["age"] += delta
@@ -152,7 +151,6 @@ class TimerBarVFXOverlay extends Control:
 			sp["vel"].y += sp["grav"] * delta
 			sp["pos"].y += sin(time_accum * 12.0 + sp["phase"]) * 8.0 * delta
 
-		# Update expanding shockwaves
 		for i in range(_shockwaves.size() - 1, -1, -1):
 			var sw = _shockwaves[i]
 			sw["radius"] += delta * 95.0
@@ -167,18 +165,18 @@ class TimerBarVFXOverlay extends Control:
 			return
 		var cy = size.y * 0.5 + _rng.randf_range(-size.y * 0.32, size.y * 0.32)
 		var angle = _rng.randf_range(-PI * 0.88, PI * 0.88)
-		var spd = _rng.randf_range(28.0, 82.0) * (1.45 if danger_mode else 0.75) * speed_mult
+		var spd = _rng.randf_range(26.0, 76.0) * (1.45 if danger_mode else 0.75) * speed_mult
 		var vx = -abs(cos(angle)) * spd + _rng.randf_range(-12.0, 22.0)
 		var vy = sin(angle) * spd * 0.85
 		var col: Color
 		if danger_mode:
 			var r_pick = _rng.randf()
 			if r_pick < 0.38:
-				col = Color(1.0, 0.96, 0.65, 1.0) # White-hot gold
+				col = Color(1.0, 0.96, 0.65, 1.0)
 			elif r_pick < 0.72:
-				col = Color(1.0, 0.55, 0.15, 1.0) # Blazing orange
+				col = Color(1.0, 0.55, 0.15, 1.0)
 			else:
-				col = Color(1.0, 0.22, 0.28, 1.0) # Crimson ember
+				col = Color(1.0, 0.22, 0.28, 1.0)
 		else:
 			col = theme_color.lightened(_rng.randf_range(0.32, 0.65))
 			col.a = 0.95
@@ -186,10 +184,10 @@ class TimerBarVFXOverlay extends Control:
 		_sparks.append({
 			"pos": Vector2(tip_x, cy),
 			"vel": Vector2(vx, vy),
-			"grav": _rng.randf_range(-18.0, 26.0),
-			"size": _rng.randf_range(2.2, 4.6 if danger_mode else 3.4),
+			"grav": _rng.randf_range(-16.0, 24.0),
+			"size": _rng.randf_range(2.0, 4.2 if danger_mode else 3.2),
 			"age": 0.0,
-			"life": _rng.randf_range(0.28, 0.58 if danger_mode else 0.48),
+			"life": _rng.randf_range(0.26, 0.54 if danger_mode else 0.44),
 			"col": col,
 			"phase": _rng.randf_range(0.0, TAU)
 		})
@@ -201,7 +199,7 @@ class TimerBarVFXOverlay extends Control:
 		if pct <= 0.005:
 			return
 
-		var pad: float = 3.0
+		var pad: float = 2.0
 		var inner_w: float = maxf(0.0, (size.x - pad * 2.0) * pct)
 		var inner_h: float = maxf(4.0, size.y - pad * 2.0)
 		var tip_x: float = pad + inner_w
@@ -211,7 +209,7 @@ class TimerBarVFXOverlay extends Control:
 		if is_danger:
 			var danger_pulse = 0.5 + 0.5 * sin(time_accum * 15.0)
 			var aura_col = Color(1.0, 0.22, 0.25, 0.32 + 0.45 * danger_pulse)
-			draw_rect(Rect2(Vector2(-2.0, -2.0), size + Vector2(4.0, 4.0)), aura_col, false, 2.5 + danger_pulse * 1.5)
+			draw_rect(Rect2(Vector2(-2.0, -2.0), size + Vector2(4.0, 4.0)), aura_col, false, 2.2 + danger_pulse * 1.4)
 			var inner_flash = Color(1.0, 0.65, 0.20, 0.16 + 0.24 * danger_pulse)
 			draw_rect(Rect2(Vector2(pad, pad), Vector2(inner_w, inner_h)), inner_flash, true)
 
@@ -221,7 +219,7 @@ class TimerBarVFXOverlay extends Control:
 		for w_idx in range(wave_count):
 			var phase = fmod(time_accum * wave_speed + float(w_idx) / float(wave_count), 1.0)
 			var wx = pad + inner_w * phase
-			var band_w = clampf(inner_w * 0.16, 12.0, 38.0)
+			var band_w = clampf(inner_w * 0.16, 12.0, 36.0)
 			if wx - band_w * 0.5 >= pad and wx + band_w * 0.5 <= tip_x:
 				var edge_fade = sin(phase * PI)
 				var shimmer_col = Color(1.0, 0.95, 0.78, (0.34 if is_danger else 0.20) * edge_fade)
@@ -230,7 +228,7 @@ class TimerBarVFXOverlay extends Control:
 		# 3. EXPANDING SHOCKWAVE RINGS (Critical Countdown)
 		for sw in _shockwaves:
 			var sw_col = Color(1.0, 0.55, 0.22, sw["alpha"] * 0.85)
-			draw_arc(sw["pos"], sw["radius"], 0.0, TAU, 28, sw_col, 2.4)
+			draw_arc(sw["pos"], sw["radius"], 0.0, TAU, 28, sw_col, 2.2)
 
 		# 4. FLOATING SPARKLES & FIERY EMBERS
 		for sp in _sparks:
@@ -239,29 +237,27 @@ class TimerBarVFXOverlay extends Control:
 			c.a *= t_norm
 			var r: float = sp["size"] * (0.45 + 0.55 * t_norm)
 			var p: Vector2 = sp["pos"]
-			# Soft outer glow + bright spark core
 			draw_circle(p, r * 1.8, Color(c.r, c.g, c.b, c.a * 0.32))
 			draw_circle(p, r, c)
 
-		# 5. GLOWING LEADING-EDGE COMET / FUSE HEAD AT TIP (`tip_x, center_y`)
+		# 5. GLOWING LEADING-EDGE COMET / FUSE HEAD AT TIP
 		var tip_pos = Vector2(tip_x, center_y)
 		var pulse = 1.0 + (0.28 if is_danger else 0.12) * sin(time_accum * (22.0 if is_danger else 8.0))
 		var base_glow_col = Color(1.0, 0.35, 0.18, 0.45) if is_danger else Color(theme_color.r, theme_color.g, theme_color.b, 0.38)
 		var mid_glow_col = Color(1.0, 0.75, 0.25, 0.82) if is_danger else theme_color.lightened(0.45)
 		mid_glow_col.a = 0.82
 
-		draw_circle(tip_pos, (14.0 if is_danger else 10.0) * pulse, base_glow_col)
-		draw_circle(tip_pos, (8.5 if is_danger else 6.5) * pulse, mid_glow_col)
-		draw_circle(tip_pos, (4.8 if is_danger else 3.6) * pulse, Color(1.0, 0.98, 0.88, 0.98))
+		draw_circle(tip_pos, (12.0 if is_danger else 8.5) * pulse, base_glow_col)
+		draw_circle(tip_pos, (7.5 if is_danger else 5.5) * pulse, mid_glow_col)
+		draw_circle(tip_pos, (4.2 if is_danger else 3.2) * pulse, Color(1.0, 0.98, 0.88, 0.98))
 
-		# Rotating 4-ray star-flare on the fuse tip (intensified when time is finishing)
-		var ray_len = (16.0 if is_danger else 9.0) * pulse
+		var ray_len = (14.0 if is_danger else 8.0) * pulse
 		var rot = time_accum * (6.5 if is_danger else 2.2)
 		var flare_col = Color(1.0, 0.92, 0.65, 0.90 if is_danger else 0.60)
 		for k in range(4):
 			var a = rot + float(k) * PI * 0.5
 			var dir = Vector2(cos(a), sin(a))
-			draw_line(tip_pos - dir * ray_len, tip_pos + dir * ray_len, flare_col, 2.2 if is_danger else 1.5)
+			draw_line(tip_pos - dir * ray_len, tip_pos + dir * ray_len, flare_col, 2.0 if is_danger else 1.4)
 
 
 static func _get_cached_avatar(av_id: int) -> Texture2D:
@@ -385,20 +381,20 @@ func _setup_styles() -> void:
 
 	_style_avatar_p2_idle = _style_avatar_p1_idle.duplicate()
 
-	# Match Details Box Styles (Carved Game Clock Console)
+	# Match Details Box Styles (Compact Sleek Game Clock Console)
 	_style_match_box_normal = StyleBoxFlat.new()
-	_style_match_box_normal.bg_color = Color(0.11, 0.07, 0.04, 0.95)
-	_style_match_box_normal.border_color = Color(0.86, 0.66, 0.28, 0.92)
-	_style_match_box_normal.set_border_width_all(3)
-	_style_match_box_normal.border_width_bottom = 6
-	_style_match_box_normal.set_corner_radius_all(24)
-	_style_match_box_normal.shadow_color = Color(0, 0, 0, 0.62)
-	_style_match_box_normal.shadow_size = 16
-	_style_match_box_normal.shadow_offset = Vector2(0, 6)
-	_style_match_box_normal.content_margin_left = 24
-	_style_match_box_normal.content_margin_right = 24
-	_style_match_box_normal.content_margin_top = 10
-	_style_match_box_normal.content_margin_bottom = 14
+	_style_match_box_normal.bg_color = Color(0.11, 0.07, 0.04, 0.94)
+	_style_match_box_normal.border_color = Color(0.86, 0.66, 0.28, 0.90)
+	_style_match_box_normal.set_border_width_all(2)
+	_style_match_box_normal.border_width_bottom = 4
+	_style_match_box_normal.set_corner_radius_all(18)
+	_style_match_box_normal.shadow_color = Color(0, 0, 0, 0.55)
+	_style_match_box_normal.shadow_size = 10
+	_style_match_box_normal.shadow_offset = Vector2(0, 4)
+	_style_match_box_normal.content_margin_left = 14
+	_style_match_box_normal.content_margin_right = 14
+	_style_match_box_normal.content_margin_top = 6
+	_style_match_box_normal.content_margin_bottom = 8
 
 	_style_match_box_p1 = _style_match_box_normal.duplicate()
 	_style_match_box_p1.border_color = Color(0.95, 0.48, 0.36, 0.95)
@@ -410,46 +406,47 @@ func _setup_styles() -> void:
 	_style_match_box_danger.border_color = Color(1.0, 0.28, 0.30, 1.0)
 	_style_match_box_danger.shadow_color = Color(1.0, 0.15, 0.20, 0.55)
 
-	# Timer Capsule Pill Styles
+	# Timer Capsule Pill Styles (Compact)
 	_style_timer_pill_normal = StyleBoxFlat.new()
 	_style_timer_pill_normal.bg_color = Color(0.06, 0.04, 0.02, 0.92)
 	_style_timer_pill_normal.border_color = Color(0.82, 0.64, 0.26, 0.85)
-	_style_timer_pill_normal.set_border_width_all(2)
-	_style_timer_pill_normal.set_corner_radius_all(14)
-	_style_timer_pill_normal.content_margin_left = 16
-	_style_timer_pill_normal.content_margin_right = 16
-	_style_timer_pill_normal.content_margin_top = 3
-	_style_timer_pill_normal.content_margin_bottom = 3
+	_style_timer_pill_normal.set_border_width_all(1)
+	_style_timer_pill_normal.set_corner_radius_all(10)
+	_style_timer_pill_normal.content_margin_left = 10
+	_style_timer_pill_normal.content_margin_right = 10
+	_style_timer_pill_normal.content_margin_top = 1
+	_style_timer_pill_normal.content_margin_bottom = 1
 
 	_style_timer_pill_danger = _style_timer_pill_normal.duplicate()
 	_style_timer_pill_danger.bg_color = Color(0.28, 0.05, 0.06, 0.96)
 	_style_timer_pill_danger.border_color = Color(1.0, 0.32, 0.32, 1.0)
 	_style_timer_pill_danger.shadow_color = Color(1.0, 0.18, 0.20, 0.55)
-	_style_timer_pill_danger.shadow_size = 8
+	_style_timer_pill_danger.shadow_size = 6
 
-	# Timer Bar Background & Glossy Fill
+	# Timer Bar Background & Glossy Fill (Compact Sleek Bar)
 	_timer_style_bg = StyleBoxFlat.new()
 	_timer_style_bg.bg_color = Color(0.05, 0.03, 0.02, 0.95)
 	_timer_style_bg.border_color = Color(0.66, 0.48, 0.24, 0.88)
 	_timer_style_bg.set_border_width_all(2)
-	_timer_style_bg.set_corner_radius_all(11)
-	_timer_style_bg.content_margin_left = 3
-	_timer_style_bg.content_margin_right = 3
-	_timer_style_bg.content_margin_top = 3
-	_timer_style_bg.content_margin_bottom = 3
+	_timer_style_bg.set_corner_radius_all(9)
+	_timer_style_bg.content_margin_left = 2
+	_timer_style_bg.content_margin_right = 2
+	_timer_style_bg.content_margin_top = 2
+	_timer_style_bg.content_margin_bottom = 2
 
 	_timer_style_fill = StyleBoxFlat.new()
 	_timer_style_fill.bg_color = Color(0.25, 0.65, 1.0)
 	_timer_style_fill.border_color = Color(1.0, 0.96, 0.82, 0.55)
-	_timer_style_fill.border_width_top = 3
-	_timer_style_fill.set_corner_radius_all(9)
+	_timer_style_fill.border_width_top = 2
+	_timer_style_fill.set_corner_radius_all(7)
 
 	if is_instance_valid(turn_timer_bar):
-		turn_timer_bar.custom_minimum_size = Vector2(480, 22)
+		turn_timer_bar.custom_minimum_size = Vector2(460, 16)
 		turn_timer_bar.add_theme_stylebox_override("background", _timer_style_bg)
 		turn_timer_bar.add_theme_stylebox_override("fill", _timer_style_fill)
 
 	if is_instance_valid(match_details_box):
+		match_details_box.custom_minimum_size = Vector2(540, 0)
 		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
 
 func _build_game_ui_enhancements() -> void:
@@ -457,40 +454,39 @@ func _build_game_ui_enhancements() -> void:
 	_enhance_player_card(1)
 	_enhance_player_card(2)
 
-	# 2. Enhance MatchDetailsBox: Round Crown Ribbon, Turn Banner Strip, Stopwatch Timer Capsule, and Timer Bar VFX
+	# 2. Restructure MatchDetailsBox into a Sleek, Compact 2-Row Console (without shrinking font sizes!)
+	var vbox_main = get_node_or_null("Margin/VBoxMain") as VBoxContainer
+	if vbox_main:
+		vbox_main.add_theme_constant_override("separation", 8)
+
+	var match_vbox = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox") as VBoxContainer
 	var round_panel = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox/RoundPanel") as PanelContainer
+	var timer_row = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox/TimerRow") as HBoxContainer
+
 	if round_panel:
 		var sb_round = StyleBoxFlat.new()
-		sb_round.bg_color = Color(0.24, 0.14, 0.06, 0.96)
-		sb_round.border_color = Color(0.95, 0.78, 0.30, 0.92)
-		sb_round.set_border_width_all(2)
-		sb_round.set_corner_radius_all(14)
-		sb_round.content_margin_left = 20
-		sb_round.content_margin_right = 20
-		sb_round.content_margin_top = 3
-		sb_round.content_margin_bottom = 3
+		sb_round.bg_color = Color(0.22, 0.13, 0.05, 0.92)
+		sb_round.border_color = Color(0.95, 0.78, 0.30, 0.85)
+		sb_round.set_border_width_all(1)
+		sb_round.set_corner_radius_all(10)
+		sb_round.content_margin_left = 12
+		sb_round.content_margin_right = 12
+		sb_round.content_margin_top = 1
+		sb_round.content_margin_bottom = 1
 		round_panel.add_theme_stylebox_override("panel", sb_round)
 
 	if is_instance_valid(lbl_turn_banner):
-		var sb_banner = StyleBoxFlat.new()
-		sb_banner.bg_color = Color(0.06, 0.04, 0.02, 0.65)
-		sb_banner.border_color = Color(0.55, 0.40, 0.22, 0.45)
-		sb_banner.set_border_width_all(1)
-		sb_banner.set_corner_radius_all(12)
-		sb_banner.content_margin_left = 16
-		sb_banner.content_margin_right = 16
-		sb_banner.content_margin_top = 4
-		sb_banner.content_margin_bottom = 4
-		lbl_turn_banner.add_theme_stylebox_override("normal", sb_banner)
+		lbl_turn_banner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl_turn_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_turn_banner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
-	var timer_row = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox/TimerRow") as HBoxContainer
 	if timer_row and is_instance_valid(lbl_timer):
-		timer_row.add_theme_constant_override("separation", 10)
+		timer_row.add_theme_constant_override("separation", 6)
 		if not is_instance_valid(_timer_icon):
 			_timer_icon = TextureRect.new()
 			_timer_icon.name = "TimerStopwatchIcon"
 			_timer_icon.texture = _tex_time_icon
-			_timer_icon.custom_minimum_size = Vector2(28, 28)
+			_timer_icon.custom_minimum_size = Vector2(24, 24)
 			_timer_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			_timer_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			_timer_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -499,7 +495,21 @@ func _build_game_ui_enhancements() -> void:
 			timer_row.move_child(_timer_icon, 0)
 
 		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
-		lbl_timer.add_theme_font_size_override("font_size", 28)
+
+	# Combine [TimerRow] + [TurnBanner] + [RoundPanel] into a single compact top row inside MatchDetailsBox/VBox!
+	if match_vbox and round_panel and timer_row and is_instance_valid(lbl_turn_banner):
+		match_vbox.add_theme_constant_override("separation", 5)
+		var top_compact_row = HBoxContainer.new()
+		top_compact_row.name = "TopCompactRow"
+		top_compact_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		top_compact_row.add_theme_constant_override("separation", 12)
+		top_compact_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		match_vbox.add_child(top_compact_row)
+		match_vbox.move_child(top_compact_row, 0)
+
+		timer_row.reparent(top_compact_row)
+		lbl_turn_banner.reparent(top_compact_row)
+		round_panel.reparent(top_compact_row)
 
 	# 3. Attach Real-Time Procedural VFX Overlay to TurnTimerBar
 	if is_instance_valid(turn_timer_bar) and not is_instance_valid(_timer_vfx_overlay):
@@ -531,14 +541,12 @@ func _enhance_player_card(player_idx: int) -> void:
 			av_container.add_child(av_frame)
 			av_container.move_child(av_frame, 0)
 
-			# Inset avatar slightly inside the medallion frame
 			avatar_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 			avatar_rect.offset_left = 6.0
 			avatar_rect.offset_top = 6.0
 			avatar_rect.offset_right = -6.0
 			avatar_rect.offset_bottom = -6.0
 
-			# Bottom Mini-Tag ("شما" / "حریف")
 			var side_lbl = Label.new()
 			side_lbl.name = "PlayerSideTag"
 			side_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -562,7 +570,6 @@ func _enhance_player_card(player_idx: int) -> void:
 			side_lbl.add_theme_stylebox_override("normal", sb_side)
 			side_lbl.text = "شما" if player_idx == 1 else "حریف"
 			av_container.add_child(side_lbl)
-			# Ensure BtnP1Profile / BtnP2Profile stays on top for clicks
 			var btn_prof = btn_p1_profile if player_idx == 1 else btn_p2_profile
 			if is_instance_valid(btn_prof):
 				av_container.move_child(btn_prof, av_container.get_child_count() - 1)
@@ -597,7 +604,7 @@ func _enhance_player_card(player_idx: int) -> void:
 		sb_role.content_margin_bottom = 2
 		role_lbl.add_theme_stylebox_override("normal", sb_role)
 
-	# C. 3D Trophy Score Shield Plaque (`ScoreBadge`) — visible only in score-based games
+	# C. Clean Score Badge with Standard Normal Font (`Vazir.ttf` + clean digits)
 	if is_instance_valid(score_lbl):
 		var score_badge = score_lbl.get_parent() as PanelContainer
 		if score_badge:
@@ -605,34 +612,31 @@ func _enhance_player_card(player_idx: int) -> void:
 				_p1_score_badge = score_badge
 			else:
 				_p2_score_badge = score_badge
-			score_badge.custom_minimum_size = Vector2(68, 86)
+			score_badge.custom_minimum_size = Vector2(58, 58)
 			var sb_score = StyleBoxFlat.new()
-			sb_score.bg_color = Color(0.09, 0.05, 0.03, 0.94)
-			sb_score.border_color = Color(0.94, 0.76, 0.28, 0.92)
+			sb_score.bg_color = Color(0.09, 0.05, 0.03, 0.92)
+			sb_score.border_color = Color(0.94, 0.76, 0.28, 0.90)
 			sb_score.set_border_width_all(2)
-			sb_score.border_width_bottom = 4
-			sb_score.set_corner_radius_all(16)
-			sb_score.shadow_color = Color(0, 0, 0, 0.45)
-			sb_score.shadow_size = 6
-			sb_score.content_margin_left = 8
-			sb_score.content_margin_right = 8
+			sb_score.border_width_bottom = 3
+			sb_score.set_corner_radius_all(14)
+			sb_score.shadow_color = Color(0, 0, 0, 0.40)
+			sb_score.shadow_size = 4
+			sb_score.content_margin_left = 6
+			sb_score.content_margin_right = 6
 			sb_score.content_margin_top = 4
 			sb_score.content_margin_bottom = 4
 			score_badge.add_theme_stylebox_override("panel", sb_score)
 
-			score_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.32))
+			# Use normal clean UI font (Vazir) for score numbers so digits look crisp and natural
+			if _font_vazir:
+				score_lbl.add_theme_font_override("font", _font_vazir)
+			else:
+				score_lbl.remove_theme_font_override("font")
+			score_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
 			score_lbl.add_theme_color_override("font_outline_color", Color(0.12, 0.06, 0.02, 0.95))
-			score_lbl.add_theme_constant_override("outline_size", 3)
-			score_lbl.add_theme_font_size_override("font_size", 42)
-
-			var crown_lbl = Label.new()
-			crown_lbl.name = "ScoreCrownTag"
-			crown_lbl.text = "🏆"
-			crown_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			crown_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-			crown_lbl.add_theme_font_size_override("font_size", 15)
-			crown_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			score_badge.add_child(crown_lbl)
+			score_lbl.add_theme_constant_override("outline_size", 2)
+			score_lbl.add_theme_font_size_override("font_size", 32)
+			score_lbl.text = "0"
 
 func _is_score_based_game() -> bool:
 	var g_type = GameManager.current_game_type
@@ -660,14 +664,14 @@ func _get_role_badge_text(player_idx: int) -> String:
 	else:
 		return "🔴 مهره قرمز" if player_idx == 1 else "🔵 مهره آبی"
 
-func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
+func setup_match(game_name_fa: String, _mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
 	_last_displayed_sec = -1
 	_update_score_badges_visibility()
 	if is_instance_valid(lbl_round):
 		if max_rounds <= 1:
-			lbl_round.text = "👑 %s — %s" % [game_name_fa, mode_title]
+			lbl_round.text = "%s" % game_name_fa
 		else:
-			lbl_round.text = "🏆 راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
+			lbl_round.text = "راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
 	if is_instance_valid(lbl_turn_banner):
 		lbl_turn_banner.text = "بازی درحال آغاز است"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
@@ -690,9 +694,9 @@ func set_round(round_num: int, max_rounds: int) -> void:
 		if max_rounds <= 1:
 			var g_info = GameRegistry.get_game_info(GameManager.current_game_type)
 			var game_name_fa = g_info.get("name_fa", "بازی")
-			lbl_round.text = "👑 %s" % game_name_fa
+			lbl_round.text = "%s" % game_name_fa
 		else:
-			lbl_round.text = "🏆 راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
+			lbl_round.text = "راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_my_player_index = my_idx
@@ -764,7 +768,7 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 		_timer_vfx_overlay.is_danger = false
 		_timer_vfx_overlay.theme_color = fill_col
 
-	# Turn Banner Text
+	# Concise, high-impact Turn Banner Text
 	if is_instance_valid(lbl_turn_banner):
 		if not GameManager.is_game_active:
 			lbl_turn_banner.text = "بازی درحال آغاز است"
@@ -772,12 +776,11 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 		elif is_me:
 			var color_str = "قرمز" if is_p1 else "آبی"
 			var dot = "🔴" if is_p1 else "🔵"
-			lbl_turn_banner.text = "%s نوبت شماست (%s) — یک خانه خالی انتخاب کنید" % [dot, color_str]
+			lbl_turn_banner.text = "%s نوبت شماست (%s)" % [dot, color_str]
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 		else:
 			var opp_name = p1_n if is_p1 else p2_n
-			var opp_color = "قرمز" if is_p1 else "آبی"
-			lbl_turn_banner.text = "⏳ نوبت %s (%s) — در انتظار حرکت حریف..." % [opp_name, opp_color]
+			lbl_turn_banner.text = "⏳ نوبت %s" % opp_name
 			lbl_turn_banner.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 
 	_on_turn_changed(turn)
@@ -843,12 +846,12 @@ func _animate_timer_warning() -> void:
 func update_scores(p1_score: int, p2_score: int) -> void:
 	_update_score_badges_visibility()
 	if is_instance_valid(p1_score_lbl):
-		p1_score_lbl.text = _fa_digits(p1_score)
+		p1_score_lbl.text = str(p1_score)
 		if p1_score > _last_p1_score and _is_score_based_game():
 			_animate_score_bump(p1_score_lbl.get_parent() as Control)
 		_last_p1_score = p1_score
 	if is_instance_valid(p2_score_lbl):
-		p2_score_lbl.text = _fa_digits(p2_score)
+		p2_score_lbl.text = str(p2_score)
 		if p2_score > _last_p2_score and _is_score_based_game():
 			_animate_score_bump(p2_score_lbl.get_parent() as Control)
 		_last_p2_score = p2_score
@@ -913,9 +916,9 @@ func reset_header() -> void:
 		lbl_turn_banner.text = "بازی درحال آغاز است"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	if is_instance_valid(p1_score_lbl):
-		p1_score_lbl.text = "۰"
+		p1_score_lbl.text = "0"
 	if is_instance_valid(p2_score_lbl):
-		p2_score_lbl.text = "۰"
+		p2_score_lbl.text = "0"
 	if is_instance_valid(lbl_timer):
 		lbl_timer.text = "--"
 		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)

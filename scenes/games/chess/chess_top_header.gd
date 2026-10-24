@@ -131,12 +131,12 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 	if is_me:
 		var color_str = "ارتش قرمز" if is_p1 else "ارتش آبی"
 		var dot = "🔴" if is_p1 else "🔵"
-		lbl_turn_banner.text = "%s نوبت شماست (%s) — مهره خود را حرکت دهید" % [dot, color_str]
+		lbl_turn_banner.text = "%s نوبت شماست (%s)" % [dot, color_str]
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 	else:
 		var opp_name = p1_n if is_p1 else p2_n
 		var opp_color = "ارتش قرمز" if is_p1 else "ارتش آبی"
-		lbl_turn_banner.text = "⏳ نوبت %s (%s) — در انتظار حرکت حریف..." % [opp_name, opp_color]
+		lbl_turn_banner.text = "⏳ نوبت %s (%s)" % [opp_name, opp_color]
 		lbl_turn_banner.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 
 func reset_header() -> void:

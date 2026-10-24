@@ -29,7 +29,7 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	is_guess_submitted = false
 	if not GameManager.is_game_active:
 		if is_instance_valid(lbl_round):
-			lbl_round.text = "👑 %s — %s" % [game_name_fa, mode_title]
+			lbl_round.text = "%s" % game_name_fa
 		if is_instance_valid(lbl_turn_banner):
 			lbl_turn_banner.text = "بازی درحال آغاز است"
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
@@ -39,9 +39,9 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 		set_setup_phase()
 	else:
 		if is_instance_valid(lbl_round):
-			lbl_round.text = "🏆 حدس %s از ۱۲" % _to_fa_num(round_num if round_num > 0 else 1)
+			lbl_round.text = "حدس %s از ۱۲" % _to_fa_num(round_num if round_num > 0 else 1)
 		if is_instance_valid(lbl_turn_banner):
-			lbl_turn_banner.text = "🔍 رمز ۴ رنگ حریف را کشف کنید (رنگ‌های غیرتکراری)"
+			lbl_turn_banner.text = "🔍 رمز ۴ رنگ حریف را بیابید"
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 		_highlight_both_players()
 
@@ -54,9 +54,9 @@ func set_setup_phase() -> void:
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 		return
 	if is_instance_valid(lbl_round):
-		lbl_round.text = "🔐 مرحله ۱: تعیین رمز مخفی"
+		lbl_round.text = "مرحله ۱: تعیین رمز"
 	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.text = "🔐 ۴ مهره با رنگ‌های غیرتکراری برای حریف بچینید"
+		lbl_turn_banner.text = "🔐 ۴ مهره غیرتکراری بچینید"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 	_highlight_both_players()
 
@@ -95,10 +95,10 @@ func update_turn(turn: int, my_idx: int, _p1_n: String, _p2_n: String) -> void:
 		return
 
 	if is_instance_valid(lbl_round):
-		lbl_round.text = "🏆 حدس %s از ۱۲" % _to_fa_num(turn)
+		lbl_round.text = "حدس %s از ۱۲" % _to_fa_num(turn)
 
 	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.text = "🔍 رمز ۴ رنگ حریف را کشف کنید (رنگ‌های غیرتکراری)"
+		lbl_turn_banner.text = "🔍 رمز ۴ رنگ حریف را بیابید"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 
 	_highlight_both_players()

@@ -299,19 +299,7 @@ func _build_royal_architecture() -> void:
 			collar.position = Vector3(cx, 0.054, cz)
 			arch_root.add_child(collar)
 
-	# 6. Engraved Persian Royal Plaque Text on Front & Back
-	var lbl_front = Label3D.new()
-	lbl_front.text = "« تیک تاک تو سلطنتی »"
-	if _FONT_FA:
-		lbl_front.font = _FONT_FA
-	lbl_front.font_size = 44
-	lbl_front.pixel_size = 0.00045
-	lbl_front.modulate = Color(1.0, 0.94, 0.72)
-	lbl_front.outline_modulate = Color(0.14, 0.07, 0.02)
-	lbl_front.outline_size = 10
-	lbl_front.position = Vector3(0, 0.058, 0.586)
-	lbl_front.rotation_degrees = Vector3(-75, 0, 0)
-	arch_root.add_child(lbl_front)
+
 
 func _generate_3d_board() -> void:
 	var step = board_size / 3.0
