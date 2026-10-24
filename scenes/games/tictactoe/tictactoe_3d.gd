@@ -690,25 +690,15 @@ func _spawn_3d_piece(cell_idx: int, user_id: int) -> void:
 			c_stud.position = stud_pos
 			piece_root.add_child(c_stud)
 
-	# Elevated spawn position with hand placement animation
+	# Elevated spawn position with physical squash & stretch drop animation (no hands in TicTacToe)
 	piece_root.position = Vector3(area.position.x, final_y, area.position.z)
 	add_child(piece_root)
 	pieces_nodes[cell_idx] = piece_root
 
-	var table = get_tree().get_first_node_in_group("cafe_table")
-	if table and table.has_method("animate_place_piece"):
-		var target_world = area.global_position
-		target_world.y = global_position.y + final_y
-		table.animate_place_piece(user_id, target_world, piece_root, func():
-			AudioManager.play_sound("hit")
-			ActionVFXManager.spawn_piece_impact_vfx(self, Vector3(area.position.x, final_y, area.position.z), user_id)
-		)
-	else:
-		# Fallback Action Drop with physical squash & stretch and particle impact
-		ActionVFXManager.animate_piece_drop(piece_root, final_y, func():
-			AudioManager.play_sound("hit")
-			ActionVFXManager.spawn_piece_impact_vfx(self, Vector3(area.position.x, final_y, area.position.z), user_id)
-		)
+	ActionVFXManager.animate_piece_drop(piece_root, final_y, func():
+		AudioManager.play_sound("hit")
+		ActionVFXManager.spawn_piece_impact_vfx(self, Vector3(area.position.x, final_y, area.position.z), user_id)
+	)
 
 func _check_winning_line(user_id: int) -> Array:
 	for cond in WIN_CONDITIONS:
