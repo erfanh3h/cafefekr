@@ -1510,6 +1510,15 @@ func _on_submit_button_clicked() -> void:
 # SERVER COMMAND HANDLERS (Simultaneous Turn, RollResult, PeaceSelected, Reconnect)
 # ==============================================================================
 
+func set_board_locked(locked: bool) -> void:
+	super.set_board_locked(locked)
+	if not _cat_row_nodes.is_empty():
+		_refresh_visuals()
+
+func on_turn_changed(_turn: int, _is_me: bool) -> void:
+	if not _cat_row_nodes.is_empty():
+		_refresh_visuals()
+
 func on_turn_data(payload: Dictionary) -> void:
 	_hide_hands_for_yatzy()
 	my_player_index = GameManager.my_player_index
@@ -1520,6 +1529,9 @@ func on_turn_data(payload: Dictionary) -> void:
 		for i in range(NUM_DICE):
 			current_dices.append(clampi(int(dices_raw[i]), 1, 6))
 
+	for i in range(NUM_CATEGORIES):
+		p1_board[i]["last_played"] = false
+		p2_board[i]["last_played"] = false
 	held_dice_indices.clear()
 	remaining_rolls = 2
 	is_round_played = false
@@ -1568,7 +1580,6 @@ func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) 
 
 	GameManager.p1_score = p1_tot
 	GameManager.p2_score = p2_tot
-	GameManager.scores_updated.emit(p1_tot, p2_tot)
 	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
 	if hud and hud.has_method("update_scores"):
 		hud.update_scores(p1_tot, p2_tot)
@@ -1579,10 +1590,12 @@ func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) 
 		AudioManager.play_sound("add_peace")
 	else:
 		AudioManager.play_sound("move_peace")
-		var opp_name = GameManager.p2_name if user_id == 2 else GameManager.p1_name
+		var opp_data = GameManager.get_opponent_player_data()
+		var opp_name = str(opp_data.get("name", opp_data.get("username", "حریف")))
 		if sel_idx >= 0 and sel_idx < CATEGORY_NAMES_FA.size():
 			show_hint("🎲 %s خانه «%s» (%s امتیاز) را ثبت کرد" % [opp_name, CATEGORY_NAMES_FA[sel_idx], _fa_digits(sc)])
 
+	_recalculate_preview_scores()
 	_refresh_visuals()
 
 	if sel_idx >= 0 and sel_idx < _cat_row_nodes.size():
@@ -1603,6 +1616,8 @@ func on_wait_time(time_sec: int) -> void:
 
 func on_reconnect_data(payload: Dictionary) -> void:
 	_hide_hands_for_yatzy()
+	is_rolling_dice = false
+	set_board_locked(false)
 	my_player_index = GameManager.my_player_index
 	var g_data = payload.get("game_data", payload)
 	if typeof(g_data) != TYPE_DICTIONARY:
@@ -1638,7 +1653,6 @@ func on_reconnect_data(payload: Dictionary) -> void:
 	if typeof(scores) == TYPE_ARRAY and scores.size() >= 2:
 		GameManager.p1_score = int(scores[0])
 		GameManager.p2_score = int(scores[1])
-		GameManager.scores_updated.emit(GameManager.p1_score, GameManager.p2_score)
 		var hud = get_tree().root.find_child("BaseGameHUD", true, false)
 		if hud and hud.has_method("update_scores"):
 			hud.update_scores(int(scores[0]), int(scores[1]))

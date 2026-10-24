@@ -630,6 +630,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 				board.sync_board_state(g_data["board_data"])
 			elif g_data.has("peaces"):
 				board.sync_board_state(g_data["peaces"])
+		if board.has_method("on_reconnect_data"):
+			board.on_reconnect_data(payload)
 		if board.has_method("sync_turn_state"):
 			board.sync_turn_state()
 	base_game_hud.sync_reconnect_timer(payload)

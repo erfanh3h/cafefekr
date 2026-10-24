@@ -236,6 +236,9 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 
 		Commands.Peace_Selected:
 			if typeof(payload) == TYPE_DICTIONARY:
+				if payload.has("player1_score") and payload.has("player2_score"):
+					GameManager.p1_score = int(payload["player1_score"])
+					GameManager.p2_score = int(payload["player2_score"])
 				var user_id = int(payload.get("gamer_id", payload.get("user", 0)))
 				var target_peace = int(payload.get("target_peace", payload.get("selected_index", 0)))
 				var extra: Dictionary = payload.duplicate()
@@ -293,11 +296,19 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 					GameManager.set_match_gamers(payload["gamers"])
 				var g_data = payload.get("game_data", {})
-				if typeof(g_data) == TYPE_DICTIONARY and g_data.has("current_turn"):
-					var turn = int(g_data["current_turn"])
-					GameManager.current_turn = turn
-					print("[NetworkManager] Reconnect Current Turn: %d | My Index: %d | Is My Turn: %s" % [turn, GameManager.my_player_index, str(GameManager.is_my_turn)])
-					turn_changed.emit(turn)
+				if typeof(g_data) == TYPE_DICTIONARY:
+					if g_data.has("scores") and typeof(g_data["scores"]) == TYPE_ARRAY and (g_data["scores"] as Array).size() >= 2:
+						GameManager.p1_score = int(g_data["scores"][0])
+						GameManager.p2_score = int(g_data["scores"][1])
+					if g_data.has("current_turn"):
+						var turn = int(g_data["current_turn"])
+						GameManager.current_turn = turn
+						print("[NetworkManager] Reconnect Current Turn: %d | My Index: %d | Is My Turn: %s" % [turn, GameManager.my_player_index, str(GameManager.is_my_turn)])
+						turn_changed.emit(turn)
+					elif g_data.has("current_round"):
+						var r_num = int(g_data["current_round"])
+						GameManager.current_round = max(1, r_num)
+						GameManager.current_turn = max(1, r_num)
 				reconnect_data_received.emit(payload)
 
 		Commands.Finish_Reconnect_Time:
