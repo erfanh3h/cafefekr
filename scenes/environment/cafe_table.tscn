@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://c8yfqe2l1f0j1"]
+[gd_scene load_steps=62 format=3 uid="uid://c83y2h5v42v4"]
 
 [ext_resource type="Script" path="res://scenes/environment/cafe_table.gd" id="1_table_script"]
 [ext_resource type="Texture2D" path="res://assets/images/background2.png" id="2_wood_tex"]
@@ -17,20 +17,19 @@ sky_material = SubResource("ProceduralSkyMaterial_sky")
 background_mode = 2
 sky = SubResource("Sky_env")
 ambient_light_source = 3
-ambient_light_color = Color(0.62, 0.48, 0.35, 1)
+ambient_light_color = Color(0.64, 0.50, 0.38, 1)
 ambient_light_energy = 1.05
 tonemap_mode = 3
 tonemap_exposure = 1.05
 glow_enabled = true
-glow_intensity = 0.18
-glow_bloom = 0.04
+glow_intensity = 0.22
+glow_bloom = 0.05
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_table_wood"]
 albedo_color = Color(0.85, 0.74, 0.62, 1)
 albedo_texture = ExtResource("2_wood_tex")
 metallic = 0.02
 roughness = 0.65
-clearcoat_enabled = false
 uv1_scale = Vector3(1.2, 1.2, 1.2)
 uv1_triplanar = true
 
@@ -39,15 +38,15 @@ material = SubResource("StandardMaterial3D_table_wood")
 size = Vector3(4.4, 0.12, 4.4)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_wood"]
-albedo_color = Color(0.26, 0.16, 0.1, 1)
-roughness = 0.48
+albedo_color = Color(0.24, 0.14, 0.08, 1)
+roughness = 0.45
 
 [sub_resource type="BoxMesh" id="BoxMesh_table_rim"]
 material = SubResource("StandardMaterial3D_dark_wood")
 size = Vector3(4.54, 0.07, 4.54)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_table_mat"]
-albedo_color = Color(0.14, 0.09, 0.06, 1)
+albedo_color = Color(0.12, 0.08, 0.05, 1)
 roughness = 0.88
 
 [sub_resource type="BoxMesh" id="BoxMesh_table_mat"]
@@ -90,25 +89,37 @@ roughness = 0.65
 material = SubResource("StandardMaterial3D_floor")
 size = Vector3(14, 0.2, 14)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ceramic"]
-albedo_color = Color(0.95, 0.93, 0.88, 1)
-roughness = 0.15
-clearcoat_enabled = true
-clearcoat = 1.0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_coffee"]
-albedo_color = Color(0.14, 0.07, 0.03, 1)
-roughness = 0.06
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_brass"]
 albedo_color = Color(0.92, 0.76, 0.28, 1)
 metallic = 0.88
 roughness = 0.22
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_clear_glass"]
+transparency = 1
+albedo_color = Color(0.92, 0.96, 1.0, 0.25)
+roughness = 0.08
+refraction_enabled = true
+refraction_scale = 0.04
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_persian_tea"]
+transparency = 1
+albedo_color = Color(0.82, 0.32, 0.06, 0.85)
+roughness = 0.12
+clearcoat_enabled = true
+clearcoat = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sugar"]
+albedo_color = Color(0.98, 0.98, 0.97, 1)
+roughness = 0.78
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cinnamon"]
+albedo_color = Color(0.42, 0.22, 0.11, 1)
+roughness = 0.85
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lantern_glass"]
 transparency = 1
-albedo_color = Color(1, 0.85, 0.52, 0.38)
-roughness = 0.1
+albedo_color = Color(1, 0.85, 0.52, 0.35)
+roughness = 0.10
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_flame"]
 albedo_color = Color(1, 0.88, 0.35, 1)
@@ -116,55 +127,287 @@ emission_enabled = true
 emission = Color(1, 0.78, 0.25, 1)
 emission_energy_multiplier = 4.0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_coaster"]
-albedo_color = Color(0.48, 0.32, 0.2, 1)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sand_gold"]
+albedo_color = Color(0.88, 0.74, 0.36, 1)
+roughness = 0.90
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ivory_dice"]
+albedo_color = Color(0.96, 0.93, 0.86, 1)
+roughness = 0.22
+clearcoat_enabled = true
+clearcoat = 0.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dice_pip"]
+albedo_color = Color(0.12, 0.08, 0.06, 1)
+roughness = 0.30
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_leather_notebook"]
+albedo_color = Color(0.35, 0.18, 0.10, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_paper_pages"]
+albedo_color = Color(0.95, 0.92, 0.84, 1)
 roughness = 0.85
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_coaster"]
-material = SubResource("StandardMaterial3D_coaster")
-top_radius = 0.22
-bottom_radius = 0.22
-height = 0.01
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gem_ruby"]
+transparency = 1
+albedo_color = Color(0.92, 0.15, 0.22, 0.85)
+roughness = 0.06
+clearcoat_enabled = true
+clearcoat = 1.0
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_saucer"]
-material = SubResource("StandardMaterial3D_ceramic")
-top_radius = 0.18
-bottom_radius = 0.12
-height = 0.02
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gem_sapphire"]
+transparency = 1
+albedo_color = Color(0.15, 0.38, 0.92, 0.85)
+roughness = 0.06
+clearcoat_enabled = true
+clearcoat = 1.0
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_cup"]
-material = SubResource("StandardMaterial3D_ceramic")
-top_radius = 0.11
-bottom_radius = 0.09
-height = 0.16
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gem_emerald"]
+transparency = 1
+albedo_color = Color(0.12, 0.78, 0.38, 0.85)
+roughness = 0.06
+clearcoat_enabled = true
+clearcoat = 1.0
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_coffee"]
-material = SubResource("StandardMaterial3D_coffee")
-top_radius = 0.1
-bottom_radius = 0.1
-height = 0.005
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gem_amber"]
+transparency = 1
+albedo_color = Color(0.98, 0.68, 0.12, 0.85)
+roughness = 0.06
+clearcoat_enabled = true
+clearcoat = 1.0
 
-[sub_resource type="TorusMesh" id="TorusMesh_handle"]
-material = SubResource("StandardMaterial3D_ceramic")
-inner_radius = 0.02
-outer_radius = 0.055
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_box_maroon"]
+albedo_color = Color(0.55, 0.14, 0.16, 1)
+roughness = 0.50
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_box_blue"]
+albedo_color = Color(0.12, 0.22, 0.45, 1)
+roughness = 0.50
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_box_green"]
+albedo_color = Color(0.14, 0.38, 0.22, 1)
+roughness = 0.50
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_box_gold"]
+albedo_color = Color(0.78, 0.62, 0.25, 1)
+roughness = 0.40
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tea_saucer"]
+material = SubResource("StandardMaterial3D_brass")
+top_radius = 0.14
+bottom_radius = 0.10
+height = 0.018
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_holder_base"]
+material = SubResource("StandardMaterial3D_brass")
+top_radius = 0.075
+bottom_radius = 0.075
+height = 0.045
+
+[sub_resource type="TorusMesh" id="TorusMesh_holder_handle"]
+material = SubResource("StandardMaterial3D_brass")
+inner_radius = 0.015
+outer_radius = 0.045
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_glass_lower"]
+material = SubResource("StandardMaterial3D_clear_glass")
+top_radius = 0.052
+bottom_radius = 0.060
+height = 0.06
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_glass_upper"]
+material = SubResource("StandardMaterial3D_clear_glass")
+top_radius = 0.062
+bottom_radius = 0.050
+height = 0.08
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tea_liquid"]
+material = SubResource("StandardMaterial3D_persian_tea")
+top_radius = 0.056
+bottom_radius = 0.046
+height = 0.11
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_sugar_plate"]
+material = SubResource("StandardMaterial3D_brass")
+top_radius = 0.08
+bottom_radius = 0.06
+height = 0.012
+
+[sub_resource type="BoxMesh" id="BoxMesh_sugar_cube"]
+material = SubResource("StandardMaterial3D_sugar")
+size = Vector3(0.024, 0.024, 0.024)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_cinnamon"]
+material = SubResource("StandardMaterial3D_cinnamon")
+top_radius = 0.007
+bottom_radius = 0.007
+height = 0.10
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_lantern_base"]
 material = SubResource("StandardMaterial3D_brass")
-top_radius = 0.14
-bottom_radius = 0.16
+top_radius = 0.12
+bottom_radius = 0.15
 height = 0.035
+
+[sub_resource type="TorusMesh" id="TorusMesh_lantern_ring"]
+material = SubResource("StandardMaterial3D_brass")
+inner_radius = 0.10
+outer_radius = 0.125
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_lantern_glass"]
 material = SubResource("StandardMaterial3D_lantern_glass")
-top_radius = 0.11
+top_radius = 0.095
+bottom_radius = 0.095
+height = 0.22
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_lantern_cap"]
+material = SubResource("StandardMaterial3D_brass")
+top_radius = 0.05
 bottom_radius = 0.11
-height = 0.24
+height = 0.04
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_lantern_vent"]
+material = SubResource("StandardMaterial3D_brass")
+top_radius = 0.035
+bottom_radius = 0.045
+height = 0.03
+
+[sub_resource type="TorusMesh" id="TorusMesh_lantern_topring"]
+material = SubResource("StandardMaterial3D_brass")
+inner_radius = 0.02
+outer_radius = 0.045
 
 [sub_resource type="SphereMesh" id="SphereMesh_flame"]
 material = SubResource("StandardMaterial3D_flame")
-radius = 0.025
-height = 0.06
+radius = 0.022
+height = 0.055
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hg_plate"]
+material = SubResource("StandardMaterial3D_brass")
+top_radius = 0.09
+bottom_radius = 0.095
+height = 0.016
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hg_pillar"]
+material = SubResource("StandardMaterial3D_brass")
+top_radius = 0.007
+bottom_radius = 0.007
+height = 0.245
+
+[sub_resource type="SphereMesh" id="SphereMesh_hg_bulb"]
+material = SubResource("StandardMaterial3D_clear_glass")
+radius = 0.065
+height = 0.11
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_sand_bottom"]
+material = SubResource("StandardMaterial3D_sand_gold")
+top_radius = 0.045
+bottom_radius = 0.055
+height = 0.04
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_sand_stream"]
+material = SubResource("StandardMaterial3D_sand_gold")
+top_radius = 0.004
+bottom_radius = 0.004
+height = 0.07
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_dice_cup"]
+material = SubResource("StandardMaterial3D_dark_wood")
+top_radius = 0.095
+bottom_radius = 0.075
+height = 0.18
+
+[sub_resource type="TorusMesh" id="TorusMesh_cup_rim"]
+material = SubResource("StandardMaterial3D_brass")
+inner_radius = 0.085
+outer_radius = 0.10
+
+[sub_resource type="BoxMesh" id="BoxMesh_die"]
+material = SubResource("StandardMaterial3D_ivory_dice")
+size = Vector3(0.044, 0.044, 0.044)
+
+[sub_resource type="SphereMesh" id="SphereMesh_pip"]
+material = SubResource("StandardMaterial3D_dice_pip")
+radius = 0.005
+height = 0.004
+
+[sub_resource type="BoxMesh" id="BoxMesh_notebook_cover"]
+material = SubResource("StandardMaterial3D_leather_notebook")
+size = Vector3(0.24, 0.012, 0.32)
+
+[sub_resource type="BoxMesh" id="BoxMesh_notebook_pages"]
+material = SubResource("StandardMaterial3D_paper_pages")
+size = Vector3(0.22, 0.008, 0.30)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pen"]
+material = SubResource("StandardMaterial3D_brass")
+top_radius = 0.006
+bottom_radius = 0.006
+height = 0.22
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_token_bowl"]
+material = SubResource("StandardMaterial3D_dark_wood")
+top_radius = 0.11
+bottom_radius = 0.07
+height = 0.038
+
+[sub_resource type="TorusMesh" id="TorusMesh_bowl_rim"]
+material = SubResource("StandardMaterial3D_brass")
+inner_radius = 0.095
+outer_radius = 0.115
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_gem_ruby"]
+material = SubResource("StandardMaterial3D_gem_ruby")
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.012
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_gem_sapphire"]
+material = SubResource("StandardMaterial3D_gem_sapphire")
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.012
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_gem_emerald"]
+material = SubResource("StandardMaterial3D_gem_emerald")
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.012
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_gem_amber"]
+material = SubResource("StandardMaterial3D_gem_amber")
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.012
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_shelf"]
+material = SubResource("StandardMaterial3D_dark_wood")
+size = Vector3(3.6, 0.06, 0.40)
+
+[sub_resource type="BoxMesh" id="BoxMesh_shelf_bracket"]
+material = SubResource("StandardMaterial3D_dark_wood")
+size = Vector3(0.06, 0.28, 0.32)
+
+[sub_resource type="BoxMesh" id="BoxMesh_box_maroon"]
+material = SubResource("StandardMaterial3D_box_maroon")
+size = Vector3(0.55, 0.12, 0.32)
+
+[sub_resource type="BoxMesh" id="BoxMesh_box_blue"]
+material = SubResource("StandardMaterial3D_box_blue")
+size = Vector3(0.48, 0.10, 0.28)
+
+[sub_resource type="BoxMesh" id="BoxMesh_box_green"]
+material = SubResource("StandardMaterial3D_box_green")
+size = Vector3(0.52, 0.11, 0.30)
+
+[sub_resource type="BoxMesh" id="BoxMesh_box_gold"]
+material = SubResource("StandardMaterial3D_box_gold")
+size = Vector3(0.35, 0.08, 0.24)
+
+[sub_resource type="BoxMesh" id="BoxMesh_plaque"]
+material = SubResource("StandardMaterial3D_dark_wood")
+size = Vector3(1.10, 0.44, 0.04)
 
 [node name="CafeTableScene" type="Node3D"]
 script = ExtResource("1_table_script")
@@ -234,48 +477,242 @@ mesh = SubResource("BoxMesh_foot2")
 
 [node name="CafeProps" type="Node3D" parent="."]
 
-[node name="CoffeeCupGroup" type="Node3D" parent="CafeProps"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.05, 0.063, 0.42)
+[node name="PersianTeaService" type="Node3D" parent="CafeProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.06, 0.063, 0.42)
 
-[node name="Coaster" type="MeshInstance3D" parent="CafeProps/CoffeeCupGroup"]
-mesh = SubResource("CylinderMesh_coaster")
+[node name="Saucer" type="MeshInstance3D" parent="CafeProps/PersianTeaService"]
+mesh = SubResource("CylinderMesh_tea_saucer")
 
-[node name="Saucer" type="MeshInstance3D" parent="CafeProps/CoffeeCupGroup"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.015, 0)
-mesh = SubResource("CylinderMesh_saucer")
+[node name="HolderBase" type="MeshInstance3D" parent="CafeProps/PersianTeaService"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.025, 0)
+mesh = SubResource("CylinderMesh_holder_base")
 
-[node name="Cup" type="MeshInstance3D" parent="CafeProps/CoffeeCupGroup"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.095, 0)
-mesh = SubResource("CylinderMesh_cup")
+[node name="HolderHandle" type="MeshInstance3D" parent="CafeProps/PersianTeaService"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.09, 0.055, 0)
+mesh = SubResource("TorusMesh_holder_handle")
 
-[node name="Coffee" type="MeshInstance3D" parent="CafeProps/CoffeeCupGroup"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.165, 0)
-mesh = SubResource("CylinderMesh_coffee")
+[node name="GlassLower" type="MeshInstance3D" parent="CafeProps/PersianTeaService"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.040, 0)
+mesh = SubResource("CylinderMesh_glass_lower")
 
-[node name="Handle" type="MeshInstance3D" parent="CafeProps/CoffeeCupGroup"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.12, 0.095, 0)
-mesh = SubResource("TorusMesh_handle")
+[node name="GlassUpper" type="MeshInstance3D" parent="CafeProps/PersianTeaService"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.105, 0)
+mesh = SubResource("CylinderMesh_glass_upper")
+
+[node name="TeaLiquid" type="MeshInstance3D" parent="CafeProps/PersianTeaService"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.070, 0)
+mesh = SubResource("CylinderMesh_tea_liquid")
+
+[node name="SugarPlate" type="MeshInstance3D" parent="CafeProps/PersianTeaService"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0, -0.16)
+mesh = SubResource("CylinderMesh_sugar_plate")
+
+[node name="SugarCube1" type="MeshInstance3D" parent="CafeProps/PersianTeaService/SugarPlate"]
+transform = Transform3D(0.906308, 0, 0.422618, 0, 1, 0, -0.422618, 0, 0.906308, 0.012, 0.016, 0.01)
+mesh = SubResource("BoxMesh_sugar_cube")
+
+[node name="SugarCube2" type="MeshInstance3D" parent="CafeProps/PersianTeaService/SugarPlate"]
+transform = Transform3D(0.819152, 0, -0.573576, 0, 1, 0, 0.573576, 0, 0.819152, -0.018, 0.016, -0.012)
+mesh = SubResource("BoxMesh_sugar_cube")
+
+[node name="SugarCube3" type="MeshInstance3D" parent="CafeProps/PersianTeaService/SugarPlate"]
+transform = Transform3D(0.984808, 0, 0.173648, 0, 1, 0, -0.173648, 0, 0.984808, -0.005, 0.038, 0.005)
+mesh = SubResource("BoxMesh_sugar_cube")
+
+[node name="CinnamonStick" type="MeshInstance3D" parent="CafeProps/PersianTeaService/SugarPlate"]
+transform = Transform3D(0.664463, -0.744158, 0.0695865, 0.0871557, 0.170669, 0.981467, -0.742232, -0.645799, 0.178263, 0.02, 0.016, 0.04)
+mesh = SubResource("CylinderMesh_cinnamon")
 
 [node name="LanternGroup" type="Node3D" parent="CafeProps"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.05, 0.063, -0.42)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.10, 0.063, -0.42)
 
 [node name="LanternBase" type="MeshInstance3D" parent="CafeProps/LanternGroup"]
 mesh = SubResource("CylinderMesh_lantern_base")
 
+[node name="LanternRing" type="MeshInstance3D" parent="CafeProps/LanternGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+mesh = SubResource("TorusMesh_lantern_ring")
+
 [node name="LanternGlass" type="MeshInstance3D" parent="CafeProps/LanternGroup"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.14, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13, 0)
 mesh = SubResource("CylinderMesh_lantern_glass")
 
+[node name="LanternCap" type="MeshInstance3D" parent="CafeProps/LanternGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+mesh = SubResource("CylinderMesh_lantern_cap")
+
+[node name="LanternVent" type="MeshInstance3D" parent="CafeProps/LanternGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.285, 0)
+mesh = SubResource("CylinderMesh_lantern_vent")
+
+[node name="LanternTopRing" type="MeshInstance3D" parent="CafeProps/LanternGroup"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0.32, 0)
+mesh = SubResource("TorusMesh_lantern_topring")
+
 [node name="Flame" type="MeshInstance3D" parent="CafeProps/LanternGroup"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.145, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.125, 0)
 mesh = SubResource("SphereMesh_flame")
 
 [node name="CandleLight" type="OmniLight3D" parent="CafeProps/LanternGroup"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
-light_color = Color(1, 0.78, 0.4, 1)
-light_energy = 0.65
-omni_range = 3.5
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.16, 0)
+light_color = Color(1, 0.82, 0.45, 1)
+light_energy = 0.70
+omni_range = 3.6
 omni_attenuation = 1.3
+
+[node name="HourglassGroup" type="Node3D" parent="CafeProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.10, 0.063, -0.45)
+
+[node name="BasePlate" type="MeshInstance3D" parent="CafeProps/HourglassGroup"]
+mesh = SubResource("CylinderMesh_hg_plate")
+
+[node name="TopPlate" type="MeshInstance3D" parent="CafeProps/HourglassGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+mesh = SubResource("CylinderMesh_hg_plate")
+
+[node name="Pillar1" type="MeshInstance3D" parent="CafeProps/HourglassGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.065, 0.125, 0)
+mesh = SubResource("CylinderMesh_hg_pillar")
+
+[node name="Pillar2" type="MeshInstance3D" parent="CafeProps/HourglassGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.032, 0.125, 0.056)
+mesh = SubResource("CylinderMesh_hg_pillar")
+
+[node name="Pillar3" type="MeshInstance3D" parent="CafeProps/HourglassGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.032, 0.125, -0.056)
+mesh = SubResource("CylinderMesh_hg_pillar")
+
+[node name="BulbBottom" type="MeshInstance3D" parent="CafeProps/HourglassGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.075, 0)
+mesh = SubResource("SphereMesh_hg_bulb")
+
+[node name="BulbTop" type="MeshInstance3D" parent="CafeProps/HourglassGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 0)
+mesh = SubResource("SphereMesh_hg_bulb")
+
+[node name="SandBottom" type="MeshInstance3D" parent="CafeProps/HourglassGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.045, 0)
+mesh = SubResource("CylinderMesh_sand_bottom")
+
+[node name="SandStream" type="MeshInstance3D" parent="CafeProps/HourglassGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.125, 0)
+mesh = SubResource("CylinderMesh_sand_stream")
+
+[node name="DiceCupGroup" type="Node3D" parent="CafeProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.10, 0.063, 0.45)
+
+[node name="DiceCup" type="MeshInstance3D" parent="CafeProps/DiceCupGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09, 0)
+mesh = SubResource("CylinderMesh_dice_cup")
+
+[node name="CupRim" type="MeshInstance3D" parent="CafeProps/DiceCupGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+mesh = SubResource("TorusMesh_cup_rim")
+
+[node name="Die1" type="MeshInstance3D" parent="CafeProps/DiceCupGroup"]
+transform = Transform3D(0.882948, 0, 0.469472, 0, 1, 0, -0.469472, 0, 0.882948, 0.14, 0.022, -0.05)
+mesh = SubResource("BoxMesh_die")
+
+[node name="Pip1" type="MeshInstance3D" parent="CafeProps/DiceCupGroup/Die1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.023, 0)
+mesh = SubResource("SphereMesh_pip")
+
+[node name="Die2" type="MeshInstance3D" parent="CafeProps/DiceCupGroup"]
+transform = Transform3D(0.743145, 0, -0.669131, 0, 1, 0, 0.669131, 0, 0.743145, 0.08, 0.022, 0.12)
+mesh = SubResource("BoxMesh_die")
+
+[node name="Pip2" type="MeshInstance3D" parent="CafeProps/DiceCupGroup/Die2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.023, 0)
+mesh = SubResource("SphereMesh_pip")
+
+[node name="ScoreNotebookGroup" type="Node3D" parent="CafeProps"]
+transform = Transform3D(0.970296, 0, 0.241922, 0, 1, 0, -0.241922, 0, 0.970296, -0.96, 0.063, 0.88)
+
+[node name="NotebookCover" type="MeshInstance3D" parent="CafeProps/ScoreNotebookGroup"]
+mesh = SubResource("BoxMesh_notebook_cover")
+
+[node name="NotebookPages" type="MeshInstance3D" parent="CafeProps/ScoreNotebookGroup"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.008, 0)
+mesh = SubResource("BoxMesh_notebook_pages")
+
+[node name="BrassPen" type="MeshInstance3D" parent="CafeProps/ScoreNotebookGroup"]
+transform = Transform3D(0.927184, 0, 0.374607, 0, 1, 0, -0.374607, 0, 0.927184, 0.14, 0.016, 0)
+mesh = SubResource("CylinderMesh_pen")
+
+[node name="GameTokenBowl" type="Node3D" parent="CafeProps"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.94, 0.063, -0.88)
+
+[node name="Bowl" type="MeshInstance3D" parent="CafeProps/GameTokenBowl"]
+mesh = SubResource("CylinderMesh_token_bowl")
+
+[node name="BowlRim" type="MeshInstance3D" parent="CafeProps/GameTokenBowl"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.019, 0)
+mesh = SubResource("TorusMesh_bowl_rim")
+
+[node name="GemRuby" type="MeshInstance3D" parent="CafeProps/GameTokenBowl"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.03, 0.016, 0.02)
+mesh = SubResource("CylinderMesh_gem_ruby")
+
+[node name="GemSapphire" type="MeshInstance3D" parent="CafeProps/GameTokenBowl"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.03, 0.016, -0.01)
+mesh = SubResource("CylinderMesh_gem_sapphire")
+
+[node name="GemEmerald" type="MeshInstance3D" parent="CafeProps/GameTokenBowl"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.01, 0.016, -0.04)
+mesh = SubResource("CylinderMesh_gem_emerald")
+
+[node name="GemAmber" type="MeshInstance3D" parent="CafeProps/GameTokenBowl"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.02, 0.016, 0.03)
+mesh = SubResource("CylinderMesh_gem_amber")
+
+[node name="GameCafeBackground" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, -3.08)
+
+[node name="WallShelf" type="MeshInstance3D" parent="GameCafeBackground"]
+mesh = SubResource("BoxMesh_wall_shelf")
+
+[node name="BracketLeft" type="MeshInstance3D" parent="GameCafeBackground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.35, -0.14, 0)
+mesh = SubResource("BoxMesh_shelf_bracket")
+
+[node name="BracketRight" type="MeshInstance3D" parent="GameCafeBackground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.35, -0.14, 0)
+mesh = SubResource("BoxMesh_shelf_bracket")
+
+[node name="GameBox_Backgammon" type="MeshInstance3D" parent="GameCafeBackground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.92, 0.09, 0)
+mesh = SubResource("BoxMesh_box_maroon")
+
+[node name="GameBox_Chess" type="MeshInstance3D" parent="GameCafeBackground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.30, 0.08, 0)
+mesh = SubResource("BoxMesh_box_blue")
+
+[node name="GameBox_FekrBekr" type="MeshInstance3D" parent="GameCafeBackground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.42, 0.085, 0)
+mesh = SubResource("BoxMesh_box_green")
+
+[node name="GameBox_Cards" type="MeshInstance3D" parent="GameCafeBackground"]
+transform = Transform3D(0.965926, 0, 0.258819, 0, 1, 0, -0.258819, 0, 0.965926, 1.15, 0.07, 0)
+mesh = SubResource("BoxMesh_box_gold")
+
+[node name="CafeWallPlaque" type="MeshInstance3D" parent="GameCafeBackground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0.02)
+mesh = SubResource("BoxMesh_plaque")
+
+[node name="CafeLabel" type="Label3D" parent="GameCafeBackground/CafeWallPlaque"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.03)
+modulate = Color(1, 0.90, 0.60, 1)
+outline_modulate = Color(0.2, 0.1, 0.05, 1)
+text = "کـافـه فـکـر"
+font_size = 60
+outline_size = 14
+
+[node name="ShelfSpotLight" type="OmniLight3D" parent="GameCafeBackground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.70, 0.45)
+light_color = Color(1, 0.88, 0.70, 1)
+light_energy = 0.55
+omni_range = 4.5
+omni_attenuation = 1.4
 
 [node name="BoardContainer" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
