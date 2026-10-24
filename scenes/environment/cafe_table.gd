@@ -214,13 +214,6 @@ func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 		current_board_node = board_packed_scene.instantiate()
 		board_container.add_child(current_board_node)
 		transition_to_board_view(1.2)
-	var is_tictactoe = (GameManager.current_game_type == GameTypes.TICTACTOE)
-	if player_hand and is_instance_valid(player_hand):
-		if is_tictactoe:
-			player_hand.visible = false
-	if enemy_hand and is_instance_valid(enemy_hand):
-		if is_tictactoe:
-			enemy_hand.visible = false
 	return current_board_node
 
 func clear_board() -> void:
@@ -339,10 +332,6 @@ func play_opponent_reaction() -> void:
 	pass
 
 func animate_place_piece(user_id: int, target_world_pos: Vector3, piece_node: Node3D, on_dropped: Callable) -> void:
-	if GameManager.current_game_type == GameTypes.TICTACTOE:
-		if on_dropped.is_valid():
-			on_dropped.call()
-		return
 	update_hand_colors()
 	if user_id == GameManager.my_player_index:
 		if player_hand and is_instance_valid(player_hand):
