@@ -1,157 +1,161 @@
-# Universal Game Scene & Board Architecture Rules for Cafe Fekr (Godot 4.3+)
-> **Version 2.2** | *Updated with Yatzy UI Overhaul, Socket Payload Type Invariants, Cold Reconnect Delivery, Full 11-Game Status Matrix, and Right Vertical Action Panel Architecture Standards.*
+# Cafe Fekr — Game Scene Architecture & Implementation Rules
+> **Version:** 2.1  
+> **Target Engine:** Godot 4.x (GDScript)  
+> **Scope:** General UI, 3D Environment, Game Logic, Socket Networking, and Porting Standards for ALL present and future Cafe Fekr games (TicTacToe, Chess, FekrBekr, Checkers, Backgammon, Four-in-a-Row, Othello, Mill, DotBox, Battleship, Sudoku, Yatzy, etc.).
 
 ---
 
 ## 🛡️ CRITICAL MANDATORY DIRECTIVE: ZERO CROSS-GAME REGRESSIONS & STRICT GAME ISOLATION
 
-1. **Absolute Game Isolation:**
-   - Every game in Cafe Fekr (`TicTacToe`, `Chess`, `FekrBekr`, `Yatzy`, and all future games) is an **independent module**.
-   - When adding, updating, or fixing any game, you are **STRICTLY FORBIDDEN** from modifying or refactoring shared core systems (`GameManager`, `NetworkManager`, `BaseGameHUD`, `CafeTable`, `BaseGameBoard`) in a way that breaks, regresses, or alters the existing behavior of other games.
-   - Core autoloads (`autoload/game_manager.gd`, `autoload/network_manager.gd`) and core scenes (`scenes/main.gd`, `scenes/hud/base_game_hud.gd`, `scenes/environment/cafe_table.gd`) serve **ALL** games. Any change to them must be 100% backward-compatible.
-
-2. **No Game-Specific Hacks in Core Autoloads:**
-   - Never inject game-specific branch logic (e.g. `if GameManager.current_game_type == ...`) into core autoloads or shared scripts unless strictly coordinating a generic polymorphic hook.
-   - Game-specific logic MUST reside inside that game’s own directory: `scenes/games/<game_name>/` or `scripts/games/<game_name>/`.
-
-3. **Polymorphic Hook Requirement:**
-   - If a new game requires custom behavior (such as custom header UI, special timers, or unique 3D board mechanics), implement it by **extending base classes** (`BaseGameBoard`, `BaseTopHeader`) or registering callbacks through `GameRegistry`.
-
-4. **Verify Existing Games Before Finalizing:**
-   - Whenever any shared code is touched, you must run headless compilation and verify that all previously working games compile and initialize without errors.
+> [!CAUTION]
+> ### 🚨 NEVER BREAK EXISTING GAMES WHEN ADDING OR IMPROVING A GAME!
+> **Every game in Cafe Fekr must remain completely independent, modular, encapsulated, and strictly follow clean object-oriented inheritance:**
+>
+> 1. **Zero Collateral Impact**:
+>    - Adding a new game (e.g. FekrBekr, Checkers, Backgammon) or improving/polishing an existing game must **NEVER** break, regress, or alter the logic, visuals, timing, or flow of ANY other game (TicTacToe, Chess, etc.).
+> 2. **Strict Encapsulation & Inheritance Hierarchy**:
+>    - Every game board MUST extend and inherit from `BaseGameBoard` (`res://scripts/games/base_game_board.gd`).
+>    - Every specialized top header MUST extend and inherit from `BaseTopHeader` (`res://scenes/games/base/base_top_header.gd`).
+>    - Game-specific phases (e.g. FekrBekr secret code placement phase vs guess phase), custom side action buttons, dedicated dual board views, or specialized piece models **MUST** be encapsulated entirely inside that game's own scene and script folder (`res://scenes/games/<game>/`).
+> 3. **NO Game-Specific Hacks in Core / Shared Singletons or Base Classes**:
+>    - **NEVER** add ad-hoc hardcoded conditional branches (e.g., `if GameManager.current_game_type == ...`) inside core shared systems (`GameManager`, `SocketService`, `BaseGameBoard`, `BaseGameHUD`, `CafeTable`, `NetworkManager`) unless architecting a generic, cleanly documented virtual method or signal hook intended for all games.
+>    - Changes to shared base classes MUST be backwards-compatible, default-safe, and must NEVER invert or change default behaviors expected by other games (e.g., do not prematurely show turn HUDs, do not force-change camera parameters, do not alter turn timer logic).
+> 4. **Mandatory Multi-Game Regression Testing**:
+>    - Whenever changes are made to shared autoloads, HUD, table, or base classes, you MUST verify that existing games (TicTacToe, Chess, FekrBekr, etc.) continue to run, start, transition rounds, reconnect, and display dialogs flawlessly without side effects.
 
 ---
 
 ## ⚠️ THE GOLDEN PRINCIPLE: FLUTTER & BACKEND ARE THE ABSOLUTE SOURCES OF TRUTH
 
-- **NEVER GUESS GAME LOGIC, SERVER COMMANDS, OR PROTOCOL STRUCTURES.**
-- Cafe Fekr is a multi-platform ecosystem with an established Python backend (`kafehfekrbackend`) and reference Flutter client (`kafehfekr` / `flutter-code`).
-- When implementing, fixing, or porting ANY game:
-  1. Inspect the backend session controller: `kafehfekrbackend/Controllers/GameSession/<game>_game_session.py`.
-  2. Inspect the backend game logic engine: `kafehfekrbackend/Entities/Games/<game>/`.
-  3. Inspect the Flutter client implementation: `flutter-code/lib/Games/<GameName>/`.
-  4. Inspect the bot controller: `bots/controllers/<game>_bot_controller.py`.
-- If Godot client logic diverges from the backend or Flutter reference, **the Godot client is wrong**. Align Godot with the backend and Flutter code.
+> [!IMPORTANT]
+> **MANDATORY INSTRUCTION FOR ALL FUTURE AGENTS & DEVELOPERS:**  
+> Every single game in Cafe Fekr has already been fully designed, programmed, balanced, and battle-tested in the Flutter mobile application (`d:\game\flutter-code`) and the Python WebSocket backend (`d:\game\kafehfekrbackend`).
+>
+> When starting work on ANY game in future conversations:
+> 1. **DO NOT invent, guess, or approximate game rules, piece movement, board representation, or state logic.**
+> 2. **DO NOT invent custom socket payloads or command sequences.**
+> 3. **YOU MUST directly inspect and port the exact logic from the Flutter controller/models and the Python backend:**
+>    - **Flutter Controller:** `d:\game\flutter-code\lib\Games\<GameName>\Controllers\<game>_controller.dart` (exact tap checks, turn checks, move validation, animations, round resets).
+>    - **Flutter Models & Widgets:** `d:\game\flutter-code\lib\Games\<GameName>\Models\` and `Widgets\` (cell indexing, piece states, status enums).
+>    - **Backend Session:** `d:\game\kafehfekrbackend\Controllers\GameSession\<game>_game_session.py` (exact command names, timers, round switching, win detection).
+>    - **Backend Game Logic:** `d:\game\kafehfekrbackend\Entities\Games\<GameName>\` (board matrix structure, authority checking, win conditions).
+> 4. **Create the UI and 3D visual presentation strictly following the unified rules below in this document.**
 
 ---
 
 ## 1. Architectural Philosophy
 
-Cafe Fekr delivers an immersive, luxury Parisian board-game cafe experience set in a cozy 3D environment. Players sit at a handcrafted wooden cafe table with emerald green felt (baize), ambient coffee cups, warm lighting, and physical playing pieces.
+In Cafe Fekr, **the in-game experience is shared across ALL board games**:
+1. **The 3D Cafe Environment is Constant**: The wooden cafe table, cozy warm lighting, candlelight, realistic animated hands, and camera orbit/zoom system (`scenes/environment/cafe_table.tscn`) remain identical for every game.
+2. **The 2D In-Game HUD is Constant**: The top player cards, round count, turn banner, turn timer bar, 7-button bottom control bar, toast hints, reaction bubbles, pause/disconnect dialogs, and match result dialogs (`scenes/games/base/base_game_hud.tscn`) are unified and shared.
+3. **Only the Board Changes**: Each game provides its own 3D board scene that is spawned dynamically inside `cafe_table`'s `BoardContainer`. Every board inherits from `BaseGameBoard` (`scripts/games/base_game_board.gd`).
+4. **Header Inheritance for Special Game Elements**: If a game has specific UI elements not present in all games (e.g. Chess has AFK missed turns strikes, whereas TicTacToe does not), its header MUST inherit from `BaseTopHeader` (`scenes/games/base/base_top_header.gd`).
 
-All games share:
-1. **A Single Unified Game Scene (`main.tscn`):** Handles room connections, match orchestrations, and lifecycle events.
-2. **A Universal In-Game HUD (`base_game_hud.tscn`):** Displays player cards, timers, scores, chat/kori, camera controls, right vertical action panel, and match states.
-3. **A Realistic 3D Table Environment (`cafe_table.tscn`):** Renders the cafe table, lighting, camera rig, and decor.
-4. **Pluggable 3D Game Boards (`BaseGameBoard`):** Instantiated dynamically into the table's `BoardSlot` based on `GameRegistry`.
+```
++-----------------------------------------------------------------------------------+
+|                                  MAIN SCENE                                       |
+|                                                                                   |
+|  +-----------------------------------------------------------------------------+  |
+|  | [3D Environment] CafeTable (scenes/environment/cafe_table.tscn)              |  |
+|  |   |- Camera3D (Damped Orbit, Tilt, Zoom, 2D Top-Down Toggle, Drag Lock)     |  |
+|  |   |- Environment Lighting (OmniLight3D Lamp + Candlelight Flicker)           |  |
+|  |   |- Realistic Hands (Player Hand + Opponent Hand with dynamic sleeve color)|  |
+|  |   |- BoardContainer (Node3D)                                                 |  |
+|  |        \--> [Spawned Game Board] (e.g. TicTacToe3D, Chess3D, FekrBekr3D)     |  |
+|  +-----------------------------------------------------------------------------+  |
+|                                                                                   |
+|  +-----------------------------------------------------------------------------+  |
+|  | [2D CanvasLayer] BaseGameHUD (scenes/games/base/base_game_hud.tscn)         |  |
+|  |   |- Dynamic TopHeaderSlot (Loads BaseTopHeader or specialized child header)|  |
+|  |   |- MatchDetailsBox (Round label, Turn Banner, Countdown, TurnTimerBar)    |  |
+|  |   |- ToastHint (Bottom-center notification pill, Font size 32)              |  |
+|  |   |- BottomBar (7 Buttons: 4 Camera Controls + 3 Match Controls)            |  |
+|  |   |- DisconnectPauseDialog (45s Opponent Disconnect Countdown & Progress)   |  |
+|  |   |- Dialogs (StartGameOverlay, RoundFinishBanner, GameResultDialog)        |  |
+|  +-----------------------------------------------------------------------------+  |
++-----------------------------------------------------------------------------------+
+```
 
 ---
 
 ## 2. Universal In-Game UI Rules (`BaseGameHUD`)
 
-In Cafe Fekr, **the in-game experience is shared across ALL board games**:
-
 ### 2.1. Top Header Architecture, Royal Player Plaques & Score Badges (`TopHeaderSlot`)
-- **Royal Player Plaques (`P1Card` & `P2Card`):**
-  - Mirrored left and right player cards inside `TopHeaderSlot`:
-    - **P1 (Local Player / Red):** Anchored left.
-    - **P2 (Opponent / Blue):** Anchored right.
-  - Each plaque contains an avatar frame (`AvatarFrame`), player name (`LblName`), a bottom **"شما" / "حریف" pill tag**, and a styled **Role Badge pill** (`"🔴 مهره قرمز"` / `"🔵 مهره آبی"`, `"🔴 ارتش قرمز"` / `"🔵 ارتش آبی"` in Chess, `"🔐 کدشکن"` in FekrBekr, or `"🎲 تاس‌انداز قرمز/آبی"` in Yatzy).
-  - Tapping either avatar emits `p1_profile_clicked` / `p2_profile_clicked` to open `UserProfileDialog`.
-- **Score Badge Visibility Rule (`GameRegistry.has_round_score`):**
-  - In games that do **not** have round scores (e.g. `Chess` and `FekrBekr`, where `GameRegistry.has_round_score(game_type)` is `false`), `ScoreBadge` (`_p1_score_badge` and `_p2_score_badge`) **MUST be hidden** (`visible = false`).
-  - In round-based score games (e.g. `TicTacToe`) and cumulative point games (e.g. `Yatzy`), `ScoreBadge` is **visible** (`visible = true`).
-  - Score badge numbers MUST use Persian digits via `_fa_digits(score)` and `hekayat.ttf`.
-  - Never add redundant child labels (like `"🏆"`) inside `ScoreBadge`.
-- **No Floating Center Sword / VS Icon:**
-  - Do **NOT** spawn any floating `⚔️` / VS emblem between `P1Card` and `P2Card`; it stacks over the pre-game `StartGameOverlay` dialog and clutters the top header.
+- All games share the top player status area, while games requiring extra widgets (e.g. Chess AFK missed-turn strikes) specialize `BaseTopHeader`.
+- **Base Header (`scenes/games/base/base_top_header.tscn` / `base_top_header.gd`):**
+  - **Royal Player Plaques (`P1Card` & `P2Card`):**
+    - P1 Card uses a Royal Crimson-Gold illuminated plaque when active (`Color(1.0, 0.42, 0.38)` border) and P2 Card uses a Royal Sapphire-Gold illuminated plaque when active (`Color(0.32, 0.76, 1.0)` border); inactive cards use carved dark walnut with warm brass trim.
+    - Each card features a circular gold/player-tinted **Avatar Medallion Frame** (`_p1_avatar_frame` / `_p2_avatar_frame`), a bottom **"شما" / "حریف" pill tag**, and a styled **Role Badge pill** (`"🔴 مهره قرمز"` / `"🔵 مهره آبی"`, `"🔴 ارتش قرمز"` / `"🔵 ارتش آبی"` in Chess, or `"🔐 کدشکن"` in FekrBekr).
+    - Tapping either avatar emits `p1_profile_clicked` / `p2_profile_clicked` to open `UserProfileDialog`.
+  - **Score Badge Visibility Rule (`GameRegistry.has_round_score`):**
+    - In games that do **not** have round scores (e.g. `Chess` and `FekrBekr`, where `GameRegistry.has_round_score(game_type)` is `false`), `ScoreBadge` (`_p1_score_badge` and `_p2_score_badge`) **MUST be hidden** (`visible = false`).
+    - Only score-based games (such as `TicTacToe` for round wins and `Yatzy` for cumulative points) display the score badge inside the player cards.
+  - **Score Badge Persian Typography & Single-Child Rule:**
+    - `Score` inside `ScoreBadge` **MUST** use the Persian game font (`res://assets/fonts/hekayat.ttf`, `font_size = 40`, `outline_size = 3`) and Persian numerals (`_fa_digits(score)` -> `"۰"`, `"۱"`, `"۲"`, `"۳"`), matching the Persian numeral styling on the `FekrBekr` 3D board.
+    - **NEVER** add extra child `Label` nodes (such as a `"🏆"` crown tag) directly inside `ScoreBadge` (`PanelContainer`), because `PanelContainer` stacks all direct children in the same rect and causes overlapping glyphs.
+  - **No Floating Center Sword / VS Icon:**
+    - Do **NOT** spawn any floating `⚔️` / VS emblem between `P1Card` and `P2Card`; it stacks over the pre-game `StartGameOverlay` dialog and clutters the top header.
 - **Game-Specific Header Specialization Rule:**
-  - When a game has extra header requirements (e.g. `ChessTopHeader`, `YatzyTopHeader`), it **MUST inherit from `BaseTopHeader`**.
+  - When a game has extra header requirements (e.g. `ChessTopHeader`), it **MUST inherit from `BaseTopHeader`**.
   - Declare the scene inheritance in Godot (`scenes/games/<game>/<game>_top_header.tscn` inheriting `base_top_header.tscn`).
   - Register the scene in `GameRegistry` under `"top_header_scene"`.
   - Do NOT modify the base header to hardcode one game's features; use the inheritance pattern.
 
 ### 2.2. Compact 2-Row Match Details Box (`MatchDetailsBox`) & Real-Time Timer Bar VFX
 Located directly beneath the player cards at the top center:
-- **Geometry & Structure:**
-  - `MatchDetailsBox` is anchored horizontally centered (`anchor_left = 0.5, anchor_right = 0.5`, `offset_left = -264.0, offset_right = 264.0`, width `528px`, `offset_top = 136.0, offset_bottom = 236.0`, height `100px`).
-  - Features an ornate wood frame with warm walnut gradient fill and thin inner gold border.
-  - Divided strictly into **two rows**:
-    1. **Row 1 (`StatusRow`):**
-       - **Turn / Phase Label (`LblTurnStatus`):** Concise Persian status text (`font_size = 28`):
+- **Compact 2-Row Console Structure (`540 × 101 px` — Full Font Sizes Preserved):**
+  - Instead of stacking 4 tall vertical rows, `MatchDetailsBox` is structured as a sleek 2-row console (`custom_minimum_size = Vector2(540, 0)`, `corner_radius = 18`):
+    1. **Row 1 (`TopStatusRow`):** Horizontal `HBoxContainer` combining:
+       - **Round Pill (`RoundPanel` / `LblRound`):** Displays `"راند ۱ از ۵"` in multi-round games (or the Persian game title in single-round games) at `font_size = 28` using Persian digits (`_fa_digits`).
+       - **Turn Banner (`TurnBanner`):** Expanding center status text at `font_size = 28`:
          - Pre-game waiting state: `"بازی درحال آغاز است"` (`Color(1.0, 0.88, 0.45)`).
          - My turn: `"🔴 نوبت شماست (قرمز)"` / `"🔵 نوبت شماست (آبی)"`.
          - Opponent turn: `"⏳ نوبت <نام حریف>"`.
-         - Simultaneous turn (e.g. Yatzy): `"🎲 نوبت پرتاب تاس و انتخاب خانه"`.
        - **Timer Pill (`TimerRow` / `LblTimer`):** Stopwatch icon (`time.png`) + remaining time pill `"۱۰ ثانیه"` (`font_size = 26`) using Persian digits (`_fa_digits`).
     2. **Row 2 (`TurnTimerBar`):** Full-width recessed capsule bar (`504 × 22 px`, `corner_radius = 11`) with `TimerBarVFXOverlay`.
 - **Real-Time Procedural Timer Bar VFX (`TimerBarVFXOverlay`):**
   - `TurnTimerBar` hosts a custom `Control` overlay (`TimerBarVFXOverlay`) that renders 60fps procedural VFX in `_draw()`:
     - **Normal Turn State (`remaining_sec > 4.0s`):**
       - Smooth traveling energy shimmer bands sweeping across the filled portion of the bar.
-      - Glowing leading-edge comet/fuse head at the bar tip with a rotating 4-ray star flare and gentle floating sparkles tinted to the active player's color (Red for P1, Blue for P2, Gold for simultaneous).
+      - Glowing leading-edge comet/fuse head at the bar tip with a rotating 4-ray star flare and gentle floating sparkles tinted to the active player's color (Red for P1, Blue for P2).
     - **Critical Finishing State (`remaining_sec <= 4.0s`):**
       - High-intensity fiery gold/crimson ember bursts (3× particle spawn rate) and expanding shockwave rings (`trigger_danger_shockwave()`) on each final second tick.
       - Pulsing neon danger aura around the bar, urgent red fill (`Color(1.0, 0.24, 0.26)`), ringing stopwatch icon oscillation, scale pulse on `LblTimer`, and audio heartbeat ticking (`AudioManager.play_sound("time")`).
 
-### 2.3. Bottom Action Bar (`BottomBar`) — Unified Wood & White Icon Rule
-Contains **7 core buttons** arranged horizontally at the bottom of the screen:
+### 2.3. Bottom Action Bar (`BottomBar`) & Game-Specific Action Buttons — Unified Wood & White Icon Rule
+Contains **7 core buttons** arranged horizontally at the bottom of the screen, plus any game-specific action buttons (such as FekrBekr Phase 1 & Phase 2 buttons):
 - **Unified Background Color (`KenneyUI.COLOR_WOOD`):**
-  - Because `res://assets/images/frames/button.png` is a rich warm orange-brown wood texture (`RGB ≈ 115, 48, 28`), multiplying it by low-red tints crushes the red channel and turns buttons into dark muddy charcoal.
-  - Therefore, **all 7 buttons in `BottomBar`** **MUST** use `KenneyUI.COLOR_WOOD` so that every button on the HUD shares the exact same warm wood background color.
+  - Because `res://assets/images/frames/button.png` is a rich warm orange-brown wood texture (`RGB ≈ 115, 48, 28`), multiplying it by low-red tints (like raw blue or green) crushes the red channel and turns buttons into dark muddy charcoal.
+  - Therefore, **all 7 buttons in `BottomBar`** and **all game-specific HUD action buttons** (e.g. `btn_fekr_submit`, `btn_fekr_clear`, `btn_fekr_opp`, `btn_fekr_dual`) **MUST** use `KenneyUI.COLOR_WOOD` so that every button on the HUD shares the exact same warm wood background color.
 - **Pure White-on-Transparent Icon Asset Rule:**
-  - Every icon placed inside a HUD button (`zoom_in_white.png`, `zoom_out_white.png`, `refresh.png`, `flag_surrender_white.png`, `kori.png`, `soundOn_white.png`, `soundOff_white.png`) **MUST** be a crisp white foreground (`RGB = 255, 255, 255`) on a **100% transparent background (`alpha = 0`)**.
+  - Every icon placed inside a HUD button (`zoom_in_white.png`, `zoom_out_white.png`, `refresh.png`, `flag_surrender_white.png`, `kori.png`, `soundOn_white.png`, `soundOff_white.png`, `checkmark.png`, `cross.png`, `user.png`, `expand.png`) **MUST** be a crisp white foreground (`RGB = 255, 255, 255`) on a **100% transparent background (`alpha = 0`)**.
+  - **NEVER** use icon PNGs that have a baked dark or colored square background inside a wooden button frame.
 - **Left Group (Camera & View Controls):**
   1. `BtnZoomIn`: Zoom In (`zoom_in_white.png`)
   2. `BtnZoomOut`: Zoom Out (`zoom_out_white.png`)
-  3. `BtnCameraReset`: Camera Angle Reset (`refresh.png`)
-- **Center Action Button:**
-  4. `BtnSurrender`: Surrender / Resign match button (`flag_surrender_white.png`). Opens confirmation dialog.
-- **Right Group (Social & Audio):**
-  5. `BtnChat`: In-game quick chat messages.
+  3. `BtnCamTop`: 2D / 3D Toggle. Displays label text `"2D"` in 3D mode, and `"3D"` in top-down mode.
+  4. `BtnCamReset`: Reset Camera View (`refresh.png`). Restores default orbit distance, yaw, and tilt.
+- **Right Group (Match & Social Controls):**
+  5. `BtnSurrender`: White surrender flag (`flag_surrender_white.png`). Opens confirmation dialog.
   6. `BtnReactions`: Kori / Emoji picker button (`kori.png`). Opens reaction grid.
   7. `BtnAudio`: White sound toggle (`soundOn_white.png` / `soundOff_white.png`). Toggles SFX & Music.
 
-### 2.4. Right Vertical Action Panel (`RightActionPanel` / `GameSpecificActions`) — Architecture Rules
-The Right Action Panel is a dedicated HUD slot located on the **right-center edge of the screen** (`anchor_left = 1.0, anchor_right = 1.0, anchor_top = 0.5, anchor_bottom = 0.5`, `offset_left = -128.0, offset_right = -24.0`, width `104px`, `offset_top = -240.0, offset_bottom = 240.0`):
-
-1. **Separation of Concerns: 2D HUD Right Panel vs. 3D In-World Physical Buttons**:
-   - **Use the 2D Right Panel** for:
-     - **Board-wide meta-actions and phase transitions**: Actions that apply to the whole board or phase state, such as submitting a full secret code or guess in `FekrBekr` (`BtnFekrSubmit`).
-     - **Board clearing / reset tools**: Actions that wipe local draft placements (`BtnFekrClear`).
-     - **Camera view switches & inspection modes**: Dedicated board view toggles that change what the camera frames (e.g. `BtnFekrOpponent` to view opponent vault, `BtnFekrDual` to view both boards side-by-side).
-     - **Administrative & helper tools**: Note-taking, draft markers, or game-wide toggles.
-   - **Do NOT use the 2D Right Panel** when:
-     - The game has direct **tactile in-world 3D physical buttons** on the wooden board itself (e.g. `Yatzy` uses physical 3D pushbuttons `BtnRollDice` and `BtnSubmitScore` carved directly into the dice arena plinth; `Chess` uses tactile promotion dials on the board).
-     - For games without game-wide meta actions (e.g. `TicTacToe`, `Chess`, `Yatzy`), the Right Panel **MUST remain completely hidden** (`visible = false`) to maintain a clean, distraction-free viewport.
-2. **Universal Visual & Styling Standards**:
-   - **Button Size & Spacing**: Buttons are `96 × 96 px` (`custom_minimum_size = Vector2(96, 96)`) with `16px` vertical separation in a `VBoxContainer`.
-   - **Wood Texture**: Every button **MUST** be styled with `KenneyUI.style_button(btn, KenneyUI.COLOR_WOOD)`, matching the bottom bar and top cards.
-   - **Vector Pure White Icons**: Use vector-style pure white-on-transparent icons scaled to `52 × 52 px` centered inside the button (`expand = true, stretch_mode = KEEP_CENTERED`). Never use colored badges or non-transparent backgrounds; only the clean icon renders.
-   - **Touch Juice**: Buttons MUST have pivot set to center (`btn.pivot_offset = btn.custom_minimum_size / 2.0`) and receive `ActionVFXManager.apply_button_juice(btn, "tap_button")` for responsive scale bouncing on press.
-3. **Safety Guards & Disconnect State**:
-   - Tapping any right panel action button MUST verify `GameManager.is_game_active` and verify that the board is not locked (`not board.is_board_locked`).
-   - If pressed while the match is not active or paused, it must trigger audio rejection (`AudioManager.sfx_button()`) and display a toast hint (`"لطفاً تا شروع مسابقه صبر کنید..."`).
-4. **Extensibility for Upcoming Games**:
-   - When introducing new games that require meta-actions (e.g., `Backgammon` doubling cube / roll requests, `Checkers` multi-jump undo, `Battleship` fleet deployment toggles), add the button group to `BaseGameHUD` under `RightActionPanel` or provide a modular container that toggles visibility based on `GameManager.current_game_type`.
-
-### 2.5. Floating Toast Notification (`ToastHint`)
-Used for quick feedback messages (e.g. `"نوبت شما نیست؛ لطفاً منتظر حرکت حریف بمانید."`, `"این خانه قبلاً پر شده است؛ خانه دیگری انتخاب کنید."`, `"زاویه دوربین به حالت پیش‌فرض بازگشت"`, `"آغاز راند ۲ — آماده باشید!"`):
+### 2.4. Floating Toast Notification (`ToastHint`)
+Used for quick feedback messages (e.g. `"نوبت شما نیست؛ لطفاً منتظر حرکت حریف بمانید."`, `"این خانه قبلاً پر شده است؛ خانه دیگری انتخاب کنید."`, `"زاویه دوربین به حالت پیش‌فرض بازگشت"`, `" آغاز راند ۲ — آماده باشید!"`):
 - **Position:** Anchored at **bottom-center** (`anchor_left = 0.5, anchor_right = 0.5, anchor_top = 1.0, anchor_bottom = 1.0`).
 - **Offsets:** Symmetrically centered (`offset_left = -half_w, offset_right = half_w`, `offset_top = -240.0, offset_bottom = -165.0`).
 - **Typography:** `font_size = 32`, centered alignment, golden font color with drop shadow.
 - **Animation:** Chained Tween pop-in (`scale 0.85 -> 1.0`), 2.2s visible display, and smooth fade-out.
 - **Implementation Note:** Never call `toast_hint.reset_size()` directly without resetting symmetric offsets, or the box will shift horizontally!
 
-### 2.6. Disconnect Pause Dialog (`DisconnectPauseDialog`) & Reconnect Timer Synchronization
+### 2.5. Disconnect Pause Dialog (`DisconnectPauseDialog`) & Reconnect Timer Synchronization
 Matches Flutter's `DialogComponent().showTimerDialog` and backend `UserDisconnectTimerClass`:
 - **Trigger (`Commands.User_Disconnected`):** Server sends `{"user_id": ..., "time": 45}`.
 - **Pause Behavior:**
   - `hud.pause_turn_timer()` MUST be called so `turn_time_left` freezes while the match is paused, and board input is locked (`board.set_board_locked(true)`).
   - Dialog opens with blurred dark dimmer, displaying:
     - Title: `"⏸️ وقفه در مسابقه — قطع اتصال حریف"`
-    - Description: `"ارتباط حریف با سرور موقتاً قطع شده است.
-لطفاً شکیبا باشید؛ در صورت عدم بازگشت در مهلت مقرر، پیروزی این مسابقه برای شما ثبت خواهد شد."`
+    - Description: `"ارتباط حریف با سرور موقتاً قطع شده است.\nلطفاً شکیبا باشید؛ در صورت عدم بازگشت در مهلت مقرر، پیروزی این مسابقه برای شما ثبت خواهد شد."`
     - Live countdown label: `"⏳ مهلت بازگشت حریف: %d ثانیه"`
     - Animated progress bar counting down smoothly.
 - **Opponent Reconnection (`Commands.User_Reconnected`):**
@@ -164,51 +168,62 @@ Matches Flutter's `DialogComponent().showTimerDialog` and backend `UserDisconnec
 - **Timeout (`Commands.Finish_Reconnect_Time`):**
   - `hide_pause_dialog()` is called immediately, and the remaining player is awarded the win via `GameResultDialog`.
 
-### 2.7. Final Round Score Synchronization, Surrender & Match Result Dialog (`GameResultDialog`)
+### 2.6. Final Round Score Synchronization, Surrender & Match Result Dialog (`GameResultDialog`)
 - **Final Round Score Synchronization Rule (`_current_round_scored` in `main.gd`):**
   - In round-based games (such as `TicTacToe`), when the final match-clinching round finishes (e.g., making the match `3 - 0`), the backend server may emit `Commands.Finish_Game` directly or emit `Commands.Finish_Game` **before** `Commands.Finish_Round`.
   - `main.gd` **MUST** track `_current_round_scored: bool` (reset to `false` in `_start_game_match()`, `_on_new_round_started()`, and `_on_turn_changed()`).
   - In both `_on_round_finished(payload)` and `_on_game_finished(data)`:
-    - If `GameRegistry.has_round_score(GameManager.current_game_type)` and `not GameRegistry.is_cumulative_score(GameManager.current_game_type)` and `not _current_round_scored` (and the match was not ended by surrender or disconnect timeout), set `_current_round_scored = true`, increment `GameManager.p1_score` (if `winner == 1`) or `GameManager.p2_score` (if `winner == 2`), and call `base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)` **BEFORE** calling `base_game_hud.show_game_result(...)`.
+    - If `GameRegistry.has_round_score(GameManager.current_game_type)` and `not _current_round_scored` (and the match was not ended by surrender or disconnect timeout), set `_current_round_scored = true`, increment `GameManager.p1_score` (if `winner == 1`) or `GameManager.p2_score` (if `winner == 2`), and call `base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)` **BEFORE** calling `base_game_hud.show_game_result(...)`.
     - This guarantees the finished dialog always displays the true final score (e.g., `۳ - ۰` instead of `۲ - ۰`) and never double-increments if both `Finish_Round` and `Finish_Game` arrive for the final round.
-  - In cumulative point games (such as `Yatzy`), scores are server-authoritative cumulative sums (`GameRegistry.is_cumulative_score = true`); they MUST NEVER receive the `+1` increment on match finish, and `GameResultDialog` displays `"مجموع امتیاز: %s" % _fa_digits(score)`.
+  - `BaseGameHUD.update_scores(...)` also forwards updates to `result_dialog.update_scores(...)`, and `GameResultDialog` formats round scores with Persian digits (`"امتیاز دست‌ها: %s" % _fa_digits(score)`).
 - **Surrender Confirmation:**
-  - Clicking `BtnSurrender` opens a confirmation modal (`"آیا از ادامه مسابقه انصراف می‌دهید؟
-با اعلام تسلیم، نتیجه این بازی به سود حریف ثبت خواهد شد."`).
+  - Clicking `BtnSurrender` opens a confirmation modal (`"آیا از ادامه مسابقه انصراف می‌دهید؟\nبا اعلام تسلیم، نتیجه این بازی به سود حریف ثبت خواهد شد."`).
   - Confirming sends `Commands.Surrender` to backend and locks the board immediately.
   - The confirmation modal is hidden immediately with `visible = false` and `mouse_filter = IGNORE`.
 - **Single-Execution Idempotency Guard (Preventing Double Finish Dialogs):**
   - When a player surrenders, the backend emits `Commands.Surrender` followed by `Commands.Finish_Game` (and in some backend sessions `Finish_Game` is emitted twice due to `timer.stop()` + `check_finish_game()`). Meanwhile, the local client also triggers a 1.15s surrender transition tween.
   - `BaseGameHUD` MUST maintain `_surrender_handled: bool`, `_result_shown: bool`, and `_surrender_result_tween: Tween` (all reset in `setup_match()`):
-    - When `_on_player_surrendered` executes, `_surrender_handled = true`.
-    - When `show_game_result()` executes, `_result_shown = true`.
-    - Any subsequent call while either flag is `true` is safely discarded, preventing flickering duplicate dialogs.
+    - `show_surrender_notification()` returns immediately if `_surrender_handled` or `_result_shown` is `true`.
+    - `show_game_result()` returns immediately if `_result_shown` is `true`, sets `_result_shown = true`, and kills `_surrender_result_tween` if running.
+    - `GameResultDialog.show_result()` also guards against duplicate open animations if `visible and panel and panel.visible`.
+- **Result Dialog Visibility Guarantee:**
+  - In `show_result(...)`, always ensure `panel.visible = true`, `panel.modulate.a = 1.0`, `panel.mouse_filter = Control.MOUSE_FILTER_STOP`, and `btn_return.disabled = false`.
+  - **CRITICAL:** Because `close()` and `close_immediate()` set `panel.visible = false`, `show_result()` MUST explicitly re-enable `panel.visible = true`, otherwise only the dark background DimOverlay will display and trap the user in a black screen!
+- **Return to Menu:** Clicking `"بازگشت به لابی کافه"` (`BtnReturn`) emits `return_to_menu_requested`, which triggers `leave_game_requested` on HUD, clearing board caches and smoothly returning to the main menu.
 
 ---
 
 ## 3. 3D Cafe Environment & Camera Rules (`CafeTable`)
 
-- **Table Surface & Spatial Allocation**:
-  - The emerald baize table arena measures `1.84m × 1.94m`.
-  - Central board area: `X ∈ [-0.55, +0.55]`, `Z ∈ [-0.85, +0.85]`.
-  - Board origin MUST be at `Vector3(0, 0, 0)` with the playing surface elevation at `Y = 0.0` or slightly above.
-- **Default Camera Rig Positioning:**
-  - `CameraGimbal` position: `Vector3(0, 0, 0)`.
-  - Standard distance: `3.20m` to `3.38m` (optimized for 1080×1920 portrait mobile screen).
-  - Default elevation angle (pitch): `-0.73` to `-1.16` radians (~42° to ~66° downward tilt).
-  - Orbit limits: Yaw `[-0.45, +0.45]` rad, Pitch `[-1.25, -0.40]` rad, Distance `[2.10m, 4.20m]`.
-- **Cozy Tabletop Props (Decorative Only):**
-  1. **Hot Ceramic Coffee Cup** (`Vector3(-0.68, 0, 0.48)`): Porcelain cup with dark espresso, saucer, and rising steam particles.
-  2. **Silver Coffee Spoon** (`Vector3(-0.76, 0, 0.52)`): Resting beside the saucer.
-  3. **Pastry Plate with Croissant** (`Vector3(-0.65, 0, -0.45)`): Flaky croissant on a porcelain plate.
-  4. **Glass Cafe Lamp** (`Vector3(0.68, 0, -0.45)`): Warm amber glow (`light_color = Color(1.0, 0.85, 0.58)`).
-  5. **Vintage Brass Pocket Watch on Chain** (`Vector3(0.62, 0, 0.68)`): Hinged brass case, cream watch face, hands, crown loop, and curved brass chain.
-  6. **Stack of Game Tokens / Coasters** (`Vector3(-0.62, 0, -0.68)`): Crimson, sapphire, and obsidian brass-rimmed game tokens.
+The 3D environment represents a cozy, nostalgic board game cafe:
+- **Target Focus:** `Vector3(0.0, 0.08, -0.04)` (the exact center of the table board).
+- **Orbit View (3D Mode):**
+  - **Distance / Zoom Boundaries:** Strictly bounded to `2.20m` (min zoom) and `3.55m` (max zoom). Default is `3.20m`.
+  - **Yaw (Horizontal Orbit):** Strictly bounded to `[-31.5°, +31.5°]` (`[-0.55 rad, +0.55 rad]`).
+  - **Pitch (Vertical Tilt):** Strictly bounded to `[-63.0°, -33.2°]` (`[-1.10 rad, -0.58 rad]`). Default is `-42.0°`.
+  - **Privacy Rule:** The camera must NEVER zoom out or pan so far that character bodies, faces, or empty chairs become visible. Only the hands across the table should be seen.
+- **Camera Drag Lock During Piece Interaction (`camera_drag_locked`):**
+  - In games that support drag-and-drop piece placement or interactive board controls (e.g. FekrBekr Phase 1 & Phase 2 peg dragging), the board MUST set `cafe_table.camera_drag_locked = true` as soon as the player presses or drags an interactive piece/slot, and reset `cafe_table.camera_drag_locked = false` on mouse release (`_input` release handler).
+  - When `camera_drag_locked` is `true`, `CafeTable` immediately cancels `_is_dragging_camera` so releasing or dragging a piece on the board NEVER causes the camera to jump or orbit.
+- **Top-Down View (2D Mode):**
+  - Camera pitch is locked to `-90.0°` (straight down looking at the board).
+  - Heights: Min `2.75m` (full board visible with safe margin), Default `3.60m`, Max `5.20m` (wide view of table and mugs).
+- **Lighting & Atmosphere:**
+  - Table lamp omni-light: Energy `0.65 - 0.9` (prevents overexposed glare on game boards).
+  - Candlelight: Subtle warm flicker at `5.5Hz` with sine modulation.
+- **Luxury 3D Board-Game Cafe Table Props (`_build_board_game_cafe_props()` in `cafe_table.gd`):**
+  - To create an authentic, rich board-game cafe atmosphere without obstructing any game board, `CafeTable` procedurally builds detailed 3D tabletop props strictly outside the central board zone (`radius >= 0.78m`):
+    1. **Antique Brass Sand Hourglass** (`Vector3(-0.88, 0, -0.34)`): Carved walnut bases, 3 brass pillars, dual glass bulbs, golden sand cones, and central sand stream.
+    2. **Carved Walnut Dice Tray & 2 Ivory/Gold 3D Dice** (`Vector3(0.88, 0, 0.24)`): Octagonal wooden bowl lined with green baize felt and two 3D dice with recessed pips.
+    3. **Stacked Leather-Bound Rulebooks & Brass Compass Emblem** (`Vector3(-0.92, 0, 0.28)`): Burgundy and emerald leather books with cream page blocks, gold spine ribs, ribbon bookmark, and brass emblem.
+    4. **Traditional Persian Ceramic Plate with Pistachios & Saffron Rock Candy** (`Vector3(0.88, 0, -0.38)`): Glazed turquoise plate with gold rim, pistachio shells, and amber rock candy crystals.
+    5. **Vintage Brass Pocket Watch on Chain** (`Vector3(0.62, 0, 0.68)`): Hinged brass case, cream watch face, hands, crown loop, and curved brass chain.
+    6. **Stack of Game Tokens / Coasters** (`Vector3(-0.62, 0, -0.68)`): Crimson, sapphire, and obsidian brass-rimmed game tokens.
 - **Realistic Hands System (`RealisticHand`) & Per-Game Hand Policy:**
   - In games that use animated 3D hands (such as `Chess`), `PlayerHand` (enters from bottom) and `EnemyHand` (enters from top) place pieces with physical kinematics, with sleeve colors matching the player's role: Crimson Red (`Color(0.85, 0.15, 0.2)`) for P1, Sapphire Blue (`Color(0.15, 0.35, 0.85)`) for P2.
-  - **No-Hands Policy for Physical Particle & Die Rolling Games:**
-    - `TicTacToe` and `Yatzy` **MUST NOT** use `PlayerHand` or `EnemyHand`. In `TicTacToe`, pieces drop from the sky with physics bounce. In `Yatzy`, dice tumble through aerodynamic tumbling tweens in the center arena.
-    - Do **NOT** add any `Label3D` text on the front wooden lip under game boards.
+  - **TicTacToe No-Hands & Clean Front-Lip Rule:**
+    - `TicTacToe` (`scenes/games/tictactoe/tictactoe_3d.gd`) **MUST NOT** use `PlayerHand` or `EnemyHand`; X and O pieces drop directly onto the board via `ActionVFXManager.animate_piece_drop` with impact particles.
+    - Do **NOT** add any `Label3D` text on the front wooden lip under the `TicTacToe` board.
 
 ---
 
@@ -222,6 +237,7 @@ extends "res://scripts/games/base_game_board.gd"
 ```
 
 Lifecycle hooks provided by `BaseGameBoard`:
+
 | Hook Method | Description |
 | :--- | :--- |
 | `setup_board(game_data: Dictionary)` | Initializes board state from server payload upon match start. |
@@ -236,10 +252,10 @@ Lifecycle hooks provided by `BaseGameBoard`:
 
 ### 4.2. 3D Board Craftsmanship & Procedural Material Rule
 - **No Stretched 2D UI Background Textures on 3D Boards:**
-  - **NEVER** stretch 2D UI background textures across 3D board `MeshInstance3D` surfaces.
+  - **NEVER** stretch 2D UI background textures (such as `res://assets/images/background/background2.png`) across 3D board `MeshInstance3D` surfaces.
   - Always craft 3D boards using procedural `StandardMaterial3D` luxury finishes: carved royal walnut / mahogany frames (`Color(0.24, 0.12, 0.06)`), dark obsidian / slate playing beds (`Color(0.09, 0.08, 0.11)`), recessed cell wells, brushed imperial gold inlays (`metallic = 0.88, roughness = 0.20`), and clearcoat lacquered or gemstone tokens.
 - **3D Typography Readability (`Label3D`):**
-  - Any `Label3D` placed on a 3D board MUST use high-contrast colors with thick dark outlines (`outline_size >= 14`) and generous font sizes so text remains crisp in both angled 3D and top-down 2D camera modes.
+  - Any `Label3D` placed on a 3D board (row numbers, secret/guess headers, status badges) MUST use high-contrast colors with thick dark outlines (`outline_size >= 14`) and generous font sizes so text remains crisp in both angled 3D and top-down 2D camera modes.
 
 ### 4.3. Input Handling & Race Condition Prevention Rule
 To avoid duplicate input triggers (such as false *"این خانه قبلاً انتخاب شده است!"* errors):
@@ -300,36 +316,16 @@ Always use the standardized sound keys:
 
 ---
 
-## 5. Comprehensive Game Status Matrix
-
-| Game ID | Persian Title | Mechanism | Max Rounds | Scoring Mode | Turn Time | Top Header | 3D Board Footprint & Camera | Right Panel | 3D Hands | Bot Support | Implementation Status |
-| :--- | :--- | :--- | :---: | :--- | :---: | :--- | :--- | :---: | :---: | :---: | :--- |
-| `TicTacToe` | دوز | Turn-Based | 5 | Round Wins (3-pt target) | 20s | `BaseTopHeader` | Square (`0.90 × 0.90m`)<br>Dist: `3.20m`, Pitch: `-0.73` | Hidden | Disabled | Level 1-3<br>`run_tictactoe.bat` | ✅ **Production Ready** |
-| `Chess` | شطرنج | Turn-Based | 1 | Match Win/Loss | 60s | `ChessTopHeader`<br>(AFK Strikes) | Square (`1.08 × 1.08m`)<br>Dist: `3.20m`, Pitch: `-0.73` | Hidden | Enabled | Stockfish / Custom<br>`run_chess.bat` | ✅ **Production Ready** |
-| `FekrBekr` | فکر و بکر | Multi-Phase Simultaneous | 12 | Guess Count / Match Win | 60s (P2)<br>45s (P1) | `FekrBekrTopHeader`<br>(Dual Boards) | Portrait Rect (`0.76 × 1.80m`)<br>Dist: `3.38m`, Pitch: `-1.16` | **Active**<br>(Submit, Clear, Opponent, Dual) | Disabled | Level 1-3<br>`run_fekrbekr.bat` | ✅ **Production Ready** |
-| `Yatzy` | پنج تاس (یاتزی) | Simultaneous Multi-Roll | 12 | Cumulative Points (12 Categories) | 60s | `YatzyTopHeader`<br>(Scores & Rolls) | Portrait Rect (`1.06 × 1.68m`)<br>Dist: `3.28m`, Pitch: `-1.14` | Hidden<br>(Tactile 3D Buttons) | Disabled | Level 1-3<br>`run_yatzy.bat` | ✅ **Production Ready** |
-| `Checkers` | دامه (چکرز) | Turn-Based | 1 | Match Win/Loss | 30s | `BaseTopHeader` | Square (`1.08 × 1.08m`) | Hidden | Enabled | Planned | ⏳ Architecture Ready |
-| `Backgammon` | تخته نرد | Turn-Based | 1-5 | Pip / Bear-off Points | 45s | Custom Header<br>(Pips & Dices) | Rectangular Case (`1.15 × 0.95m`) | Optional<br>(Doubling Cube) | Enabled | Planned | ⏳ Architecture Ready |
-| `FourInARow` | چهار در یک خط | Turn-Based | 5 | Round Wins | 20s | `BaseTopHeader` | Vertical Grid (`0.85 × 0.85m`) | Hidden | Disabled | Planned | ⏳ Architecture Ready |
-| `Othello` | اتللو (ریورسی) | Turn-Based | 1 | Disc Count Sum | 30s | `BaseTopHeader` | Square (`0.95 × 0.95m`) | Hidden | Enabled | Planned | ⏳ Architecture Ready |
-| `Mill` | دوز دوازده تایی | Turn-Based | 3 | Round Wins | 30s | `BaseTopHeader` | Concentric Squares (`0.90 × 0.90m`) | Hidden | Enabled | Planned | ⏳ Architecture Ready |
-| `DotBox` | نقطه خط | Turn-Based | 1 | Box Count Sum | 25s | `BaseTopHeader` | Lattice Grid (`0.85 × 0.85m`) | Hidden | Disabled | Planned | ⏳ Architecture Ready |
-| `Battleship` | نبرد دریایی | Simultaneous / Alternating | 1 | Fleet Elimination | 30s | Custom Dual Header | Dual Radar Grids (`1.10 × 0.90m`) | Active<br>(Fleet Setup / Fire) | Disabled | Planned | ⏳ Architecture Ready |
-
----
-
-## 6. Step-by-Step Guide: Porting a New Game to Cafe Fekr
+## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
 
 Whenever you are tasked with adding a new game (e.g. Checkers, Backgammon, Four-in-a-Row, Othello, Mill, etc.):
 
 ### Step 0: Study the Flutter & Backend References
 Before writing any Godot code, open and read:
-1. `flutter-code/lib/Games/<GameName>/Controllers/<game>_controller.dart`
-2. `flutter-code/lib/Games/<GameName>/Models/`
-3. `kafehfekrbackend/Controllers/GameSession/<game>_game_session.py`
-4. `kafehfekrbackend/Entities/Games/<game>/`
-5. `bots/controllers/<game>_bot_controller.py`
-
+1. `d:\game\flutter-code\lib\Games\<GameName>\Controllers\<game>_controller.dart`
+2. `d:\game\flutter-code\lib\Games\<GameName>\Models\`
+3. `d:\game\kafehfekrbackend\Controllers\GameSession\<game>_game_session.py`
+4. `d:\game\kafehfekrbackend\Entities\Games\<GameName>\`
 Extract:
 - Board size & indexing layout (e.g. 1D array of 64 cells, 24 points, etc.).
 - Move commands (e.g. `Select_Peace`, `Move_Peace`, `Roll_Dice`, etc.) and payload structure.
@@ -379,46 +375,7 @@ Always test headless compilation and automated logic via Godot console:
 
 ---
 
-## 7. Architectural Hardening & Lessons Learned From Recent Fixes
-
-### 7.1. Yatzy 3D Board UI Upgrades & Rectangular Camera Ratio
-- **Portrait Rectangular Footprint (`1.06m × 1.68m`)**: In vertical 1080×1920 mobile viewport, a square board squashes rows and leaves excessive empty table baize. Reshaping to `1.06m × 1.68m` provides `0.146m` vertical height per row (50% more room), allowing generous spacing for large score plaques, 3D emblems, and dice wells.
-- **3D Sculpted Category Emblems (`_build_3d_category_emblem`)**: Never map 2D icon textures onto flat planes in 3D. Use real 3D miniature beveled dice tiles with colored 3D pips for single numbers (1–6) and 3D miniature geometric sculptures (cube clusters, faceted crystals, crowns) for combo categories on raised golden medallion pedestals.
-- **Typography & Bounding Frame Integrity**: All category text labels must fit strictly inside their card compartment (`get_aabb().size.x <= compartment_width`). Use balanced `pixel_size = 0.00125` and font sizes (`21..24`) with an internal brass dividing strip separating text from the 3D emblem.
-- **Precision-Molded 3D Dice**: Dice faces must use flush, precision-spaced enamel cylinder pips with generous margins to avoid blobby overlapping sphere bezels. Under each die well, provide a framed 3D numeral badge displaying the Persian digit and glowing gold when held.
-
-### 7.2. Strict Socket Payload Type Compliance (`SelectPeace`)
-- Never assume a command takes a primitive integer or string. In `Yatzy`, the server (`YatzyGameClass.recieve_data`) explicitly requires:
-  ```python
-  if command_id == commands.Select_Peace:
-      user_selected_index = data["index"]
-  ```
-  Sending raw integer `8` causes `TypeError: 'int' object is not subscriptable`.
-- Always inspect Flutter (`sendCommand({"id": GameCommands.selectPeace, "data": {"index": equippedIndex}})`) and backend session code. Ensure Godot sends `send_move(Commands.Select_Peace, {"index": equipped_index})`.
-
-### 7.3. Autoload Invariant Hardening (No Ghost Properties or Signals)
-- Never call signals or properties that do not exist on `GameManager` (e.g. `scores_updated`, `p1_name`, `p2_name`).
-- Doing so causes GDScript runtime exceptions that abort execution silently, preventing subsequent lines (such as `hud.update_scores` and `_refresh_visuals`) from executing.
-- Always use `GameManager.get_opponent_player_data().get("name", ...)` for opponent names, and rely on `scores_updated` on HUD or direct `hud.update_scores()`.
-
-### 7.4. Server-Authoritative Score Synchronization
-- For cumulative score games like `Yatzy`, scores are updated continuously during the round as `Peace_Selected` events arrive.
-- Update `GameManager.p1_score` and `GameManager.p2_score` immediately inside `NetworkManager` on both `Peace_Selected` and `Reconnect_Data`, and notify `BaseGameHUD.update_scores()` without waiting for round finish.
-
-### 7.5. Cold-Start Reconnection Board State Delivery
-- If a user returns to an ongoing match from the main menu, `main.gd` initially spawns the default game board before `Reconnect_Data` arrives.
-- When `Reconnect_Data` arrives, `main._on_reconnect_data_received(payload)` detects `inferred_type` and calls `_switch_active_game(inferred_type)`.
-- **CRITICAL**: Because the new board is instantiated *after* `NetworkManager.reconnect_data_received` has already fired, `main.gd` **MUST** explicitly invoke `board.on_reconnect_data(payload)` on the newly switched board node to deliver the server state immediately.
-
-### 7.6. Responsive Board State Visual Refresh Hooks
-- Every board implementation inheriting from `BaseGameBoard` MUST implement:
-  - `on_turn_changed(turn: int, is_me: bool)` -> calls `_refresh_visuals()`
-  - `set_board_locked(locked: bool)` -> calls `_refresh_visuals()`
-- This guarantees that when `User_Reconnected` arrives or `sync_turn_state()` runs, the board visuals update instantly without requiring the user to tap a piece or die first.
-
----
-
-## 8. Checklist & Prohibitions
+## 6. Checklist & Prohibitions
 
 | Item | Rule |
 | :--- | :--- |
@@ -427,17 +384,18 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Tight Coupling** | All games must be fully separate and pluggable through `GameRegistry` and standard `BaseGameBoard` lifecycle hooks. |
 | ❌ **No Guessing Logics** | Never guess game rules; port them directly from `flutter-code` and `kafehfekrbackend`. |
 | ❌ **No Custom HUDs** | Never build a standalone HUD per game. Always use `BaseGameHUD`. |
-| ❌ **No Mismatched Button Colors** | All 7 bottom bar buttons and all right panel action buttons must use `KenneyUI.COLOR_WOOD` with pure white-on-transparent icons. |
-| ❌ **Right Panel Exclusivity** | Only use the 2D Right Panel for game-wide meta-actions (FekrBekr). Hide it completely for standard piece games (TicTacToe, Chess, Yatzy). |
+| ❌ **No Mismatched Button Colors** | All 7 bottom bar buttons and all game-specific HUD action buttons must use `KenneyUI.COLOR_WOOD` with pure white-on-transparent icons. |
 | ❌ **No Duplicate Input Listeners** | Do not bind click handlers to both `Area3D` and `_unhandled_input`. |
 | ❌ **No Camera Orbit on Piece Drag** | Always lock `cafe_table.camera_drag_locked = true` while dragging/interacting with board pieces and unlock on mouse release. |
 | ❌ **No Reconnect Timer Overwrites** | Never let `update_turn()` or `set_setup_phase()` overwrite the server's remaining timer during reconnect; always let `hud.sync_reconnect_timer(payload)` run last. |
 | ❌ **No Duplicate Finish Dialogs** | Maintain `_surrender_handled` and `_result_shown` single-execution guards so `GameResultDialog` never opens twice on surrender or match finish. |
+| ❌ **No Hidden Result Panels** | Always ensure `panel.visible = true` in `GameResultDialog.show_result()`. |
 | ❌ **No Premature Game Finish** | Never set `is_game_finished = true` inside `stop_timer()`. |
 | ❌ **No Endless Heartbeat** | Always call `AudioManager.stop_sound("time")` when a round or match ends. |
+| ❌ **No Hardcoded Player Colors** | P1 is always Red, P2 is always Blue. Sleeves and piece highlights must reflect this. |
+| ❌ **No 2D UI Textures on 3D Boards** | Never stretch 2D UI background images onto 3D board meshes; use procedural luxury materials and recessed 3D geometry. |
+| ❌ **No Unbounded Cameras** | Do not zoom out to show full character models; maintain the cozy table view. |
 | ❌ **No Score Boxes in Non-Score Games** | Always hide `ScoreBadge` when `GameRegistry.has_round_score(game_type)` is `false` (e.g. `Chess`, `FekrBekr`). |
-| ❌ **No Extra Child Nodes Inside `ScoreBadge`** | Never add extra `Label` children inside `ScoreBadge` (`PanelContainer`), and always render player scores with `hekayat.ttf` + Persian digits (`_fa_digits`). |
+| ❌ **No Extra Child Nodes Inside `ScoreBadge`** | Never add extra `Label` children (like `"🏆"`) inside `ScoreBadge` (`PanelContainer`), and always render player scores with `hekayat.ttf` + Persian digits (`_fa_digits`). |
 | ❌ **No Stale Final-Round Score on Result Dialog** | Always synchronize the final round score via `_current_round_scored` in `main.gd` before opening `GameResultDialog`. |
-| ❌ **No Increment on Cumulative Scores** | Never apply `+1` round increment to cumulative score games (`Yatzy`) on `Finish_Game`; preserve server total points. |
-| ❌ **No Missing Reconnect Delivery** | Always deliver `board.on_reconnect_data(payload)` when `_switch_active_game()` occurs on cold-start reconnect. |
-| ❌ **No Hands in Incompatible Games** | Never trigger 3D hands in games without physical piece pickup animations (`TicTacToe`, `Yatzy`). |
+| ❌ **No Hands or Front-Lip Text in TicTacToe** | Never trigger 3D hands or add front-frame `Label3D` text on the `TicTacToe` 3D board. |
