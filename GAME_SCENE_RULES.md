@@ -80,44 +80,47 @@ In Cafe Fekr, **the in-game experience is shared across ALL board games**:
 
 ## 2. Universal In-Game UI Rules (`BaseGameHUD`)
 
-### 2.1. Top Header Architecture & Inheritance (`TopHeaderSlot`)
-- All games share the top player status area, but some games require unique elements (e.g. Chess displays AFK missed-turn strikes).
+### 2.1. Top Header Architecture, Royal Player Plaques & Score Badges (`TopHeaderSlot`)
+- All games share the top player status area, while games requiring extra widgets (e.g. Chess AFK missed-turn strikes) specialize `BaseTopHeader`.
 - **Base Header (`scenes/games/base/base_top_header.tscn` / `base_top_header.gd`):**
-  - Displays P1 Card (Red theme `Color(1.0, 0.32, 0.35)`) and P2 Card (Blue theme `Color(0.25, 0.65, 1.0)`).
-  - Tapping either avatar emits `p1_profile_clicked` / `p2_profile_clicked` to open `UserProfileDialog`.
-  - Role indicator is a clean color dot: `🔴` or `🔵` (never use textual "X", "O", or piece letters in role tags).
-  - Active turn card has a radiant glowing border and gentle spring juice; inactive card is dimmed.
+  - **Royal Player Plaques (`P1Card` & `P2Card`):**
+    - P1 Card uses a Royal Crimson-Gold illuminated plaque when active (`Color(1.0, 0.42, 0.38)` border) and P2 Card uses a Royal Sapphire-Gold illuminated plaque when active (`Color(0.32, 0.76, 1.0)` border); inactive cards use carved dark walnut with warm brass trim.
+    - Each card features a circular gold/player-tinted **Avatar Medallion Frame** (`_p1_avatar_frame` / `_p2_avatar_frame`), a bottom **"شما" / "حریف" pill tag**, and a styled **Role Badge pill** (`"🔴 مهره قرمز"` / `"🔵 مهره آبی"`, `"🔴 ارتش قرمز"` / `"🔵 ارتش آبی"` in Chess, or `"🔐 کدشکن"` in FekrBekr).
+    - Tapping either avatar emits `p1_profile_clicked` / `p2_profile_clicked` to open `UserProfileDialog`.
+  - **Score Badge Visibility Rule (`GameRegistry.has_round_score`):**
+    - In games that do **not** have round scores (e.g. `Chess` and `FekrBekr`, where `GameRegistry.has_round_score(game_type)` is `false`), `ScoreBadge` (`_p1_score_badge` and `_p2_score_badge`) **MUST be hidden** (`visible = false`).
+    - Only round-score-based games (such as `TicTacToe`) display the score badge inside the player cards.
+  - **Score Badge Persian Typography & Single-Child Rule:**
+    - `Score` inside `ScoreBadge` **MUST** use the Persian game font (`res://assets/fonts/hekayat.ttf`, `font_size = 40`, `outline_size = 3`) and Persian numerals (`_fa_digits(score)` -> `"۰"`, `"۱"`, `"۲"`, `"۳"`), matching the Persian numeral styling on the `FekrBekr` 3D board.
+    - **NEVER** add extra child `Label` nodes (such as a `"🏆"` crown tag) directly inside `ScoreBadge` (`PanelContainer`), because `PanelContainer` stacks all direct children in the same rect and causes overlapping glyphs.
+  - **No Floating Center Sword / VS Icon:**
+    - Do **NOT** spawn any floating `⚔️` / VS emblem between `P1Card` and `P2Card`; it stacks over the pre-game `StartGameOverlay` dialog and clutters the top header.
 - **Game-Specific Header Specialization Rule:**
   - When a game has extra header requirements (e.g. `ChessTopHeader`), it **MUST inherit from `BaseTopHeader`**.
   - Declare the scene inheritance in Godot (`scenes/games/<game>/<game>_top_header.tscn` inheriting `base_top_header.tscn`).
   - Register the scene in `GameRegistry` under `"top_header_scene"`.
   - Do NOT modify the base header to hardcode one game's features; use the inheritance pattern.
 
-### 2.2. Match Details Box (`MatchDetailsBox`) & Pre-Game Transition State
+### 2.2. Compact 2-Row Match Details Box (`MatchDetailsBox`) & Real-Time Timer Bar VFX
 Located directly beneath the player cards at the top center:
-- **Pre-Game Waiting Banner (`show_waiting_for_game_start()`):**
-  - Immediately after the match intro dialog (`StartGameOverlay`) finishes and the game scene appears, the top header `TurnBanner` **MUST** display `"بازی درحال آغاز است"` (`Color(1.0, 0.92, 0.55)`) with the countdown timer hidden across **ALL games**.
-  - Once the server sends `Commands.Start_Game` or `Commands.Start_Put_Peace_Timer`, the HUD transitions to the active phase or turn banner.
-- **Round Number (`LblRound`):**
-  - Displays `"راند X از Y"` (e.g. `راند ۱ از ۵`).
-  - Floats cleanly with soft text shadow and outline (`font_size = 32`).
-- **Turn Banner (`TurnBanner`):**
-  - Clearly announces whose turn it is in Persian:
-    - My turn (Red): `"🔴 نوبت شماست (قرمز) — حرکت خود را انجام دهید"`
-    - My turn (Blue): `"🔵 نوبت شماست (آبی) — حرکت خود را انجام دهید"`
-    - Opponent turn: `"⏳ نوبت حریف است (قرمز/آبی)..."`
-- **Turn Countdown Label (`LblTimer`):**
-  - Shows remaining turn time: `"XX ثانیه"`.
-  - When `time_left > 3.0s`: Warm golden color (`Color(1.0, 0.88, 0.3)`).
-  - When `time_left <= 3.0s`: Warning red (`Color(1.0, 0.35, 0.35)`), urgency bounce scale animation (`1.25 -> 1.0`), and audio heartbeat ticking (`AudioManager.play_sound("time")`).
-- **Turn Timer Bar (`TurnTimerBar`):**
-  - **Background (`StyleBoxFlat_turn_timer_bg`):**
-    - Inset groove styling: Deep dark espresso/chocolate color `Color(0.06, 0.04, 0.03, 0.9)`.
-    - 2px golden-bronze border `Color(0.48, 0.36, 0.2, 0.75)`, pill capsule shape (`corner_radius = 10`), content margin padding of `3px`.
-  - **Fill Bar (`StyleBoxFlat_timer_fill`):**
-    - `corner_radius = 7` (concentric with the 10px outer radius minus 3px padding).
-    - Color matches current turn: Red for P1, Blue for P2, Urgent Red for `<= 3s`.
-  - **Dimensions:** Width `440px`, Height `20px`. Placed with 16px bottom margin inside `MatchDetailsBox`.
+- **Compact 2-Row Console Structure (`540 × 101 px` — Full Font Sizes Preserved):**
+  - Instead of stacking 4 tall vertical rows, `MatchDetailsBox` is structured as a sleek 2-row console (`custom_minimum_size = Vector2(540, 0)`, `corner_radius = 18`):
+    1. **Row 1 (`TopStatusRow`):** Horizontal `HBoxContainer` combining:
+       - **Round Pill (`RoundPanel` / `LblRound`):** Displays `"راند ۱ از ۵"` in multi-round games (or the Persian game title in single-round games) at `font_size = 28` using Persian digits (`_fa_digits`).
+       - **Turn Banner (`TurnBanner`):** Expanding center status text at `font_size = 28`:
+         - Pre-game waiting state: `"بازی درحال آغاز است"` (`Color(1.0, 0.88, 0.45)`).
+         - My turn: `"🔴 نوبت شماست (قرمز)"` / `"🔵 نوبت شماست (آبی)"`.
+         - Opponent turn: `"⏳ نوبت <نام حریف>"`.
+       - **Timer Pill (`TimerRow` / `LblTimer`):** Stopwatch icon (`time.png`) + remaining time pill `"۱۰ ثانیه"` (`font_size = 26`) using Persian digits (`_fa_digits`).
+    2. **Row 2 (`TurnTimerBar`):** Full-width recessed capsule bar (`504 × 22 px`, `corner_radius = 11`) with `TimerBarVFXOverlay`.
+- **Real-Time Procedural Timer Bar VFX (`TimerBarVFXOverlay`):**
+  - `TurnTimerBar` hosts a custom `Control` overlay (`TimerBarVFXOverlay`) that renders 60fps procedural VFX in `_draw()`:
+    - **Normal Turn State (`remaining_sec > 4.0s`):**
+      - Smooth traveling energy shimmer bands sweeping across the filled portion of the bar.
+      - Glowing leading-edge comet/fuse head at the bar tip with a rotating 4-ray star flare and gentle floating sparkles tinted to the active player's color (Red for P1, Blue for P2).
+    - **Critical Finishing State (`remaining_sec <= 4.0s`):**
+      - High-intensity fiery gold/crimson ember bursts (3× particle spawn rate) and expanding shockwave rings (`trigger_danger_shockwave()`) on each final second tick.
+      - Pulsing neon danger aura around the bar, urgent red fill (`Color(1.0, 0.24, 0.26)`), ringing stopwatch icon oscillation, scale pulse on `LblTimer`, and audio heartbeat ticking (`AudioManager.play_sound("time")`).
 
 ### 2.3. Bottom Action Bar (`BottomBar`) & Game-Specific Action Buttons — Unified Wood & White Icon Rule
 Contains **7 core buttons** arranged horizontally at the bottom of the screen, plus any game-specific action buttons (such as FekrBekr Phase 1 & Phase 2 buttons):
@@ -165,7 +168,14 @@ Matches Flutter's `DialogComponent().showTimerDialog` and backend `UserDisconnec
 - **Timeout (`Commands.Finish_Reconnect_Time`):**
   - `hide_pause_dialog()` is called immediately, and the remaining player is awarded the win via `GameResultDialog`.
 
-### 2.6. Surrender & Match Result Dialog Idempotency (`GameResultDialog`)
+### 2.6. Final Round Score Synchronization, Surrender & Match Result Dialog (`GameResultDialog`)
+- **Final Round Score Synchronization Rule (`_current_round_scored` in `main.gd`):**
+  - In round-based games (such as `TicTacToe`), when the final match-clinching round finishes (e.g., making the match `3 - 0`), the backend server may emit `Commands.Finish_Game` directly or emit `Commands.Finish_Game` **before** `Commands.Finish_Round`.
+  - `main.gd` **MUST** track `_current_round_scored: bool` (reset to `false` in `_start_game_match()`, `_on_new_round_started()`, and `_on_turn_changed()`).
+  - In both `_on_round_finished(payload)` and `_on_game_finished(data)`:
+    - If `GameRegistry.has_round_score(GameManager.current_game_type)` and `not _current_round_scored` (and the match was not ended by surrender or disconnect timeout), set `_current_round_scored = true`, increment `GameManager.p1_score` (if `winner == 1`) or `GameManager.p2_score` (if `winner == 2`), and call `base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)` **BEFORE** calling `base_game_hud.show_game_result(...)`.
+    - This guarantees the finished dialog always displays the true final score (e.g., `۳ - ۰` instead of `۲ - ۰`) and never double-increments if both `Finish_Round` and `Finish_Game` arrive for the final round.
+  - `BaseGameHUD.update_scores(...)` also forwards updates to `result_dialog.update_scores(...)`, and `GameResultDialog` formats round scores with Persian digits (`"امتیاز دست‌ها: %s" % _fa_digits(score)`).
 - **Surrender Confirmation:**
   - Clicking `BtnSurrender` opens a confirmation modal (`"آیا از ادامه مسابقه انصراف می‌دهید؟\nبا اعلام تسلیم، نتیجه این بازی به سود حریف ثبت خواهد شد."`).
   - Confirming sends `Commands.Surrender` to backend and locks the board immediately.
@@ -201,9 +211,19 @@ The 3D environment represents a cozy, nostalgic board game cafe:
 - **Lighting & Atmosphere:**
   - Table lamp omni-light: Energy `0.65 - 0.9` (prevents overexposed glare on game boards).
   - Candlelight: Subtle warm flicker at `5.5Hz` with sine modulation.
-- **Realistic Hands System (`RealisticHand`):**
-  - `PlayerHand` (enters from bottom) and `EnemyHand` (enters from top) place pieces with physical kinematics.
-  - Sleeve color MUST match the player's role: Crimson Red (`Color(0.85, 0.15, 0.2)`) for P1, Sapphire Blue (`Color(0.15, 0.35, 0.85)`) for P2.
+- **Luxury 3D Board-Game Cafe Table Props (`_build_board_game_cafe_props()` in `cafe_table.gd`):**
+  - To create an authentic, rich board-game cafe atmosphere without obstructing any game board, `CafeTable` procedurally builds detailed 3D tabletop props strictly outside the central board zone (`radius >= 0.78m`):
+    1. **Antique Brass Sand Hourglass** (`Vector3(-0.88, 0, -0.34)`): Carved walnut bases, 3 brass pillars, dual glass bulbs, golden sand cones, and central sand stream.
+    2. **Carved Walnut Dice Tray & 2 Ivory/Gold 3D Dice** (`Vector3(0.88, 0, 0.24)`): Octagonal wooden bowl lined with green baize felt and two 3D dice with recessed pips.
+    3. **Stacked Leather-Bound Rulebooks & Brass Compass Emblem** (`Vector3(-0.92, 0, 0.28)`): Burgundy and emerald leather books with cream page blocks, gold spine ribs, ribbon bookmark, and brass emblem.
+    4. **Traditional Persian Ceramic Plate with Pistachios & Saffron Rock Candy** (`Vector3(0.88, 0, -0.38)`): Glazed turquoise plate with gold rim, pistachio shells, and amber rock candy crystals.
+    5. **Vintage Brass Pocket Watch on Chain** (`Vector3(0.62, 0, 0.68)`): Hinged brass case, cream watch face, hands, crown loop, and curved brass chain.
+    6. **Stack of Game Tokens / Coasters** (`Vector3(-0.62, 0, -0.68)`): Crimson, sapphire, and obsidian brass-rimmed game tokens.
+- **Realistic Hands System (`RealisticHand`) & Per-Game Hand Policy:**
+  - In games that use animated 3D hands (such as `Chess`), `PlayerHand` (enters from bottom) and `EnemyHand` (enters from top) place pieces with physical kinematics, with sleeve colors matching the player's role: Crimson Red (`Color(0.85, 0.15, 0.2)`) for P1, Sapphire Blue (`Color(0.15, 0.35, 0.85)`) for P2.
+  - **TicTacToe No-Hands & Clean Front-Lip Rule:**
+    - `TicTacToe` (`scenes/games/tictactoe/tictactoe_3d.gd`) **MUST NOT** use `PlayerHand` or `EnemyHand`; X and O pieces drop directly onto the board via `ActionVFXManager.animate_piece_drop` with impact particles.
+    - Do **NOT** add any `Label3D` text on the front wooden lip under the `TicTacToe` board.
 
 ---
 
@@ -375,3 +395,7 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Hardcoded Player Colors** | P1 is always Red, P2 is always Blue. Sleeves and piece highlights must reflect this. |
 | ❌ **No 2D UI Textures on 3D Boards** | Never stretch 2D UI background images onto 3D board meshes; use procedural luxury materials and recessed 3D geometry. |
 | ❌ **No Unbounded Cameras** | Do not zoom out to show full character models; maintain the cozy table view. |
+| ❌ **No Score Boxes in Non-Score Games** | Always hide `ScoreBadge` when `GameRegistry.has_round_score(game_type)` is `false` (e.g. `Chess`, `FekrBekr`). |
+| ❌ **No Extra Child Nodes Inside `ScoreBadge`** | Never add extra `Label` children (like `"🏆"`) inside `ScoreBadge` (`PanelContainer`), and always render player scores with `hekayat.ttf` + Persian digits (`_fa_digits`). |
+| ❌ **No Stale Final-Round Score on Result Dialog** | Always synchronize the final round score via `_current_round_scored` in `main.gd` before opening `GameResultDialog`. |
+| ❌ **No Hands or Front-Lip Text in TicTacToe** | Never trigger 3D hands or add front-frame `Label3D` text on the `TicTacToe` 3D board. |
