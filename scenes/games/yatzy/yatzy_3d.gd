@@ -4,28 +4,27 @@ extends "res://scripts/games/base_game_board.gd"
 # ==============================================================================
 # Yatzy (یاتزی) 3D Board Implementation — Cafe Fekr
 #
-# Rectangular Portrait 3D Arena (0.96m x 1.68m) featuring:
+# Rectangular Portrait 3D Arena (1.06m x 1.68m) featuring:
 #   1. Sleek Rectangular Carved Walnut, Brass & Obsidian Board proportioned
-#      specifically for Cafe Fekr's portrait table camera.
-#   2. 3D Sculpted Category Views (خانه امتیاز):
-#      - Categories 0..5 (یک‌ها تا شش‌ها): Real 3D miniature beveled dice tiles
-#        with raised 3D jewel pips (1..6) on golden bezels.
-#      - Categories 6..11 (سه‌تایی، چهارتایی، شانس، فول‌هاوس، ردیف بزرگ، یاتزی):
-#        Custom 3D miniature sculptures (3D cube clusters, faceted star gem,
-#        3+2 full-house gems, 5-step ascending straight bars, and royal crown).
-#   3. High-Contrast, Large-Scale Persian Typography (`hekayat.ttf`) across all
-#      category names, score plaques, dice counters, and 3D buttons.
-#   4. Luxury Multi-Part Chamfered/Beveled 3D Dice (`DIE_SIZE = 0.088`) with
-#      golden chamfer cores, glossy pearl-ivory face plates, brass pip bezels,
-#      and domed enamel jewel pips (Royal Ruby 1-pip & 4-pip, Obsidian 2/3/5/6).
+#      for Cafe Fekr's portrait table camera.
+#   2. 3D Sculpted Category Cards (خانه امتیاز) with internal brass divider:
+#      - Right compartment: 3D miniature sculpture on golden pedestal
+#        (beveled 3D mini-dice for 1..6, 3D gem clusters/crown for 6..11).
+#      - Left compartment: Cleanly fitted Persian category name that never
+#        overflows its card frame.
+#   3. Precision-Molded 3D Luxury Dice with flush enamel pips on all 6 faces
+#      and a framed 3D numeral plaque below each die well.
+#   4. Exact Server Protocol:
+#      - Roll_Dice: {"selected_indexes": [0..4]}
+#      - Select_Peace: {"index": 0..11}
 # ==============================================================================
 
-# --- Camera Tuning for Rectangular Portrait Board (0.96m x 1.68m) ---
-@export var camera_distance: float = 3.24
+# --- Camera Tuning for Rectangular Portrait Board (1.06m x 1.68m) ---
+@export var camera_distance: float = 3.28
 @export var camera_pitch: float = -1.14
 
 # --- Rectangular Board Geometry Constants ---
-const BOARD_W: float = 0.96
+const BOARD_W: float = 1.06
 const BOARD_L: float = 1.68
 const BOARD_H: float = 0.030
 
@@ -97,10 +96,11 @@ var mat_die_ivory: StandardMaterial3D
 var mat_die_chamfer: StandardMaterial3D
 var mat_die_held_ivory: StandardMaterial3D
 var mat_die_held_chamfer: StandardMaterial3D
-var mat_pip_bezel: StandardMaterial3D
 var mat_pip_dark: StandardMaterial3D
 var mat_pip_red: StandardMaterial3D
 var mat_die_lock_ring: StandardMaterial3D
+var mat_die_badge_idle: StandardMaterial3D
+var mat_die_badge_held: StandardMaterial3D
 
 var mat_emblem_ruby: StandardMaterial3D
 var mat_emblem_sapphire: StandardMaterial3D
@@ -233,7 +233,6 @@ func _init_materials() -> void:
 	mat_felt_well.albedo_color = Color(0.04, 0.16, 0.11)
 	mat_felt_well.roughness = 0.90
 
-	# Category description card background
 	mat_cat_card_bg = StandardMaterial3D.new()
 	mat_cat_card_bg.albedo_color = Color(0.15, 0.12, 0.10)
 	mat_cat_card_bg.roughness = 0.34
@@ -278,59 +277,54 @@ func _init_materials() -> void:
 
 	# Luxury 3D Dice Materials
 	mat_die_ivory = StandardMaterial3D.new()
-	mat_die_ivory.albedo_color = Color(0.99, 0.97, 0.92)
-	mat_die_ivory.roughness = 0.10
+	mat_die_ivory.albedo_color = Color(0.99, 0.97, 0.93)
+	mat_die_ivory.roughness = 0.12
 	mat_die_ivory.metallic = 0.02
 	mat_die_ivory.clearcoat_enabled = true
-	mat_die_ivory.clearcoat = 0.92
+	mat_die_ivory.clearcoat = 0.90
 	mat_die_ivory.clearcoat_roughness = 0.06
 
 	mat_die_chamfer = StandardMaterial3D.new()
-	mat_die_chamfer.albedo_color = Color(0.91, 0.85, 0.72)
+	mat_die_chamfer.albedo_color = Color(0.94, 0.90, 0.80)
 	mat_die_chamfer.roughness = 0.18
-	mat_die_chamfer.metallic = 0.22
+	mat_die_chamfer.metallic = 0.10
 	mat_die_chamfer.clearcoat_enabled = true
 	mat_die_chamfer.clearcoat = 0.75
 
 	mat_die_held_ivory = StandardMaterial3D.new()
-	mat_die_held_ivory.albedo_color = Color(1.0, 0.96, 0.80)
+	mat_die_held_ivory.albedo_color = Color(1.0, 0.97, 0.86)
 	mat_die_held_ivory.roughness = 0.10
-	mat_die_held_ivory.metallic = 0.12
+	mat_die_held_ivory.metallic = 0.08
 	mat_die_held_ivory.clearcoat_enabled = true
 	mat_die_held_ivory.clearcoat = 0.95
 	mat_die_held_ivory.emission_enabled = true
 	mat_die_held_ivory.emission = Color(0.95, 0.75, 0.20)
-	mat_die_held_ivory.emission_energy_multiplier = 0.22
+	mat_die_held_ivory.emission_energy_multiplier = 0.18
 
 	mat_die_held_chamfer = StandardMaterial3D.new()
 	mat_die_held_chamfer.albedo_color = Color(0.98, 0.78, 0.22)
-	mat_die_held_chamfer.metallic = 0.85
+	mat_die_held_chamfer.metallic = 0.82
 	mat_die_held_chamfer.roughness = 0.16
 	mat_die_held_chamfer.emission_enabled = true
 	mat_die_held_chamfer.emission = Color(0.96, 0.74, 0.16)
-	mat_die_held_chamfer.emission_energy_multiplier = 0.45
-
-	mat_pip_bezel = StandardMaterial3D.new()
-	mat_pip_bezel.albedo_color = Color(0.88, 0.70, 0.24)
-	mat_pip_bezel.metallic = 0.85
-	mat_pip_bezel.roughness = 0.22
+	mat_die_held_chamfer.emission_energy_multiplier = 0.40
 
 	mat_pip_dark = StandardMaterial3D.new()
-	mat_pip_dark.albedo_color = Color(0.06, 0.08, 0.14)
-	mat_pip_dark.roughness = 0.12
-	mat_pip_dark.metallic = 0.25
+	mat_pip_dark.albedo_color = Color(0.05, 0.06, 0.10)
+	mat_pip_dark.roughness = 0.14
+	mat_pip_dark.metallic = 0.20
 	mat_pip_dark.clearcoat_enabled = true
-	mat_pip_dark.clearcoat = 0.90
+	mat_pip_dark.clearcoat = 0.85
 
 	mat_pip_red = StandardMaterial3D.new()
-	mat_pip_red.albedo_color = Color(0.90, 0.10, 0.16)
-	mat_pip_red.roughness = 0.12
-	mat_pip_red.metallic = 0.20
+	mat_pip_red.albedo_color = Color(0.88, 0.10, 0.15)
+	mat_pip_red.roughness = 0.14
+	mat_pip_red.metallic = 0.18
 	mat_pip_red.clearcoat_enabled = true
-	mat_pip_red.clearcoat = 0.92
+	mat_pip_red.clearcoat = 0.90
 	mat_pip_red.emission_enabled = true
 	mat_pip_red.emission = Color(0.75, 0.08, 0.12)
-	mat_pip_red.emission_energy_multiplier = 0.25
+	mat_pip_red.emission_energy_multiplier = 0.20
 
 	mat_die_lock_ring = StandardMaterial3D.new()
 	mat_die_lock_ring.albedo_color = Color(1.0, 0.82, 0.20)
@@ -339,6 +333,19 @@ func _init_materials() -> void:
 	mat_die_lock_ring.emission_enabled = true
 	mat_die_lock_ring.emission = Color(1.0, 0.76, 0.14)
 	mat_die_lock_ring.emission_energy_multiplier = 0.75
+
+	mat_die_badge_idle = StandardMaterial3D.new()
+	mat_die_badge_idle.albedo_color = Color(0.12, 0.15, 0.20)
+	mat_die_badge_idle.roughness = 0.32
+	mat_die_badge_idle.metallic = 0.20
+
+	mat_die_badge_held = StandardMaterial3D.new()
+	mat_die_badge_held.albedo_color = Color(0.76, 0.54, 0.10)
+	mat_die_badge_held.roughness = 0.22
+	mat_die_badge_held.metallic = 0.55
+	mat_die_badge_held.emission_enabled = true
+	mat_die_badge_held.emission = Color(0.95, 0.70, 0.15)
+	mat_die_badge_held.emission_energy_multiplier = 0.45
 
 	# 3D Category Emblem Gemstone Materials
 	mat_emblem_ruby = StandardMaterial3D.new()
@@ -402,11 +409,11 @@ func _init_materials() -> void:
 	mat_btn_submit_disabled.roughness = 0.55
 
 # ==============================================================================
-# 3D RECTANGULAR ARENA CONSTRUCTION (0.96m x 1.68m)
+# 3D RECTANGULAR ARENA CONSTRUCTION (1.06m x 1.68m)
 # ==============================================================================
 
 func _build_3d_arena() -> void:
-	# 1. Outer Carved Walnut Rectangular Plinth (0.96m wide x 1.68m long)
+	# 1. Outer Carved Walnut Rectangular Plinth (1.06m wide x 1.68m long)
 	var plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
 	plinth_mesh.size = Vector3(BOARD_W, BOARD_H, BOARD_L)
@@ -458,10 +465,10 @@ func _build_3d_arena() -> void:
 			med.position = Vector3(cx, BOARD_H + 0.008, cz)
 			add_child(med)
 
-	# 2. Upper Obsidian Scorecard Bed (Z = -0.79 to +0.18, length = 0.97m)
+	# 2. Upper Obsidian Scorecard Bed (Z = -0.79 to +0.18, width = 0.99m, length = 0.97m)
 	var score_bed = MeshInstance3D.new()
 	var sb_mesh = BoxMesh.new()
-	sb_mesh.size = Vector3(0.89, 0.006, 0.97)
+	sb_mesh.size = Vector3(0.99, 0.006, 0.97)
 	sb_mesh.material = mat_obsidian_bed
 	score_bed.mesh = sb_mesh
 	score_bed.position = Vector3(0, BOARD_H + 0.003, -0.305)
@@ -476,39 +483,38 @@ func _build_3d_arena() -> void:
 	col_div.position = Vector3(0, BOARD_H + 0.006, -0.305)
 	add_child(col_div)
 
-	# Column Headers for Both Columns (Large, crisp Persian labels)
+	# Column Headers for Both Columns
 	_col_header_labels.clear()
 	for col_idx in range(2):
-		var col_x = -0.222 if col_idx == 0 else 0.222
+		var col_x = -0.248 if col_idx == 0 else 0.248
 		var hdr_z = -0.742
-		var lbl_p2 = _create_3d_label("🔵 حریف", 30, Color(0.52, 0.84, 1.0))
-		lbl_p2.position = Vector3(col_x - 0.152, BOARD_H + 0.014, hdr_z)
+		var lbl_p2 = _create_3d_label("🔵 حریف", 24, Color(0.52, 0.84, 1.0))
+		lbl_p2.position = Vector3(col_x - 0.180, BOARD_H + 0.014, hdr_z)
 		add_child(lbl_p2)
 		_col_header_labels.append(lbl_p2)
 
-		var lbl_p1 = _create_3d_label("🔴 شما", 30, Color(1.0, 0.52, 0.56))
-		lbl_p1.position = Vector3(col_x - 0.052, BOARD_H + 0.014, hdr_z)
+		var lbl_p1 = _create_3d_label("🔴 شما", 24, Color(1.0, 0.52, 0.56))
+		lbl_p1.position = Vector3(col_x - 0.082, BOARD_H + 0.014, hdr_z)
 		add_child(lbl_p1)
 		_col_header_labels.append(lbl_p1)
 
-		var lbl_cat = _create_3d_label("خانه امتیاز", 30, Color(0.98, 0.88, 0.58))
-		lbl_cat.position = Vector3(col_x + 0.105, BOARD_H + 0.014, hdr_z)
+		var lbl_cat = _create_3d_label("خانه امتیاز", 24, Color(0.98, 0.88, 0.58))
+		lbl_cat.position = Vector3(col_x + 0.100, BOARD_H + 0.014, hdr_z)
 		add_child(lbl_cat)
 
 	# Build the 12 Category Rows (0..5 in Left Column, 6..11 in Right Column)
-	# Generous 0.146m vertical spacing per row inside the 1.68m rectangular board!
 	_cat_row_nodes.clear()
 	for idx in range(NUM_CATEGORIES):
 		var col_idx = 0 if idx < 6 else 1
 		var row_in_col = idx % 6
-		var col_center_x = -0.222 if col_idx == 0 else 0.222
+		var col_center_x = -0.248 if col_idx == 0 else 0.248
 		var row_z = -0.635 + float(row_in_col) * 0.146
 		var row_dict = _build_category_row(idx, col_center_x, row_z)
 		_cat_row_nodes.append(row_dict)
 
 	# 3. Recessed Emerald Baize 3D Dice Rolling Arena (Z = +0.21 to +0.58)
 	var tray_center_z: float = 0.395
-	var tray_w: float = 0.88
+	var tray_w: float = 0.96
 	var tray_l: float = 0.36
 
 	var felt_bed = MeshInstance3D.new()
@@ -543,35 +549,35 @@ func _build_3d_arena() -> void:
 		add_child(trim_inst)
 
 	# Status / Guidance Label inside the Top Rim of the Dice Tray
-	_status_lbl_3d = _create_3d_label("تاس‌ها را لمس کنید تا برای پرتاب بعدی قفل (🔒) شوند", 28, Color(0.98, 0.92, 0.72))
+	_status_lbl_3d = _create_3d_label("تاس‌ها را لمس کنید تا برای پرتاب بعدی قفل شوند", 23, Color(0.98, 0.92, 0.72))
 	_status_lbl_3d.position = Vector3(0, BOARD_H + 0.016, 0.252)
 	add_child(_status_lbl_3d)
 
 	# Build the 5 Physical Luxury 3D Dice inside the Tray
 	_dice_nodes.clear()
-	var dice_x_positions = [-0.32, -0.16, 0.0, 0.16, 0.32]
+	var dice_x_positions = [-0.35, -0.175, 0.0, 0.175, 0.35]
 	for d_idx in range(NUM_DICE):
-		var d_node = _build_single_3d_die(d_idx, Vector3(dice_x_positions[d_idx], BOARD_H + 0.010, 0.388))
+		var d_node = _build_single_3d_die(d_idx, Vector3(dice_x_positions[d_idx], BOARD_H + 0.010, 0.376))
 		_dice_nodes.append(d_node)
 
 	# 4. Lower 3D Tactile Action Buttons Dock (Z = +0.695)
 	_btn_roll_node = _build_3d_action_button(
 		"BtnRollDice",
-		Vector3(0.218, BOARD_H + 0.016, 0.695),
-		Vector3(0.41, 0.032, 0.132),
+		Vector3(0.242, BOARD_H + 0.016, 0.695),
+		Vector3(0.45, 0.032, 0.132),
 		"🎲 تاس بریز (۲)",
 		mat_btn_roll_active
 	)
 	_btn_submit_node = _build_3d_action_button(
 		"BtnSubmitScore",
-		Vector3(-0.218, BOARD_H + 0.016, 0.695),
-		Vector3(0.41, 0.032, 0.132),
+		Vector3(-0.242, BOARD_H + 0.016, 0.695),
+		Vector3(0.45, 0.032, 0.132),
 		"✅ ثبت امتیاز",
 		mat_btn_submit_active
 	)
 
 # ==============================================================================
-# 3D SCULPTED CATEGORY ROW (خانه امتیاز) BUILDER
+# 3D SCULPTED CATEGORY ROW (خانه امتیاز) BUILDER — NO TEXT OVERFLOW
 # ==============================================================================
 
 func _build_category_row(cat_idx: int, col_x: float, row_z: float) -> Dictionary:
@@ -580,43 +586,55 @@ func _build_category_row(cat_idx: int, col_x: float, row_z: float) -> Dictionary
 	row_root.position = Vector3(col_x, BOARD_H + 0.008, row_z)
 	add_child(row_root)
 
-	# 1. Opponent / Player 2 Score Plaque (x = -0.152)
-	var p2_cell = _build_score_cell_plaque(row_root, Vector3(-0.152, 0, 0), 2, cat_idx)
+	# 1. Opponent / Player 2 Score Plaque (x = -0.180, width = 0.088m)
+	var p2_cell = _build_score_cell_plaque(row_root, Vector3(-0.180, 0, 0), 2, cat_idx)
 
-	# 2. My / Player 1 Score Plaque (x = -0.052)
-	var p1_cell = _build_score_cell_plaque(row_root, Vector3(-0.052, 0, 0), 1, cat_idx)
+	# 2. My / Player 1 Score Plaque (x = -0.082, width = 0.088m)
+	var p1_cell = _build_score_cell_plaque(row_root, Vector3(-0.082, 0, 0), 1, cat_idx)
 
-	# 3. 3D Category Card (خانه امتیاز) on the right side of the row (x = +0.105)
+	# 3. Wide 3D Category Card (خانه امتیاز) on the right side of the row (x = +0.100, width = 0.244m)
 	var cat_card = Node3D.new()
-	cat_card.position = Vector3(0.105, 0, 0)
+	cat_card.position = Vector3(0.100, 0, 0)
 	row_root.add_child(cat_card)
 
-	# Category Card Base Plaque + Gold Rim
+	# Category Card Outer Gold Rim (0.244m wide x 0.122m tall)
 	var card_rim = MeshInstance3D.new()
 	var cr_box = BoxMesh.new()
-	cr_box.size = Vector3(0.198, 0.008, 0.124)
+	cr_box.size = Vector3(0.244, 0.008, 0.122)
 	cr_box.material = mat_gold_trim
 	card_rim.mesh = cr_box
 	card_rim.position = Vector3(0, 0.002, 0)
 	cat_card.add_child(card_rim)
 
+	# Category Card Dark Walnut-Obsidian Inner Face (0.236m wide x 0.114m tall)
 	var card_bg = MeshInstance3D.new()
 	var cb_box = BoxMesh.new()
-	cb_box.size = Vector3(0.190, 0.012, 0.116)
+	cb_box.size = Vector3(0.236, 0.012, 0.114)
 	cb_box.material = mat_cat_card_bg
 	card_bg.mesh = cb_box
 	card_bg.position = Vector3(0, 0.005, 0)
 	cat_card.add_child(card_bg)
 
-	# 3D Sculpted Category Emblem on the right side of the card (x = +0.056)
+	# Internal Vertical Brass Divider separating Text Compartment (-0.118..+0.042) & 3D Emblem (+0.042..+0.118)
+	var inner_div = MeshInstance3D.new()
+	var id_box = BoxMesh.new()
+	id_box.size = Vector3(0.004, 0.014, 0.110)
+	id_box.material = mat_gold_trim
+	inner_div.mesh = id_box
+	inner_div.position = Vector3(0.042, 0.006, 0)
+	cat_card.add_child(inner_div)
+
+	# 3D Sculpted Category Emblem in the right compartment (x = +0.080)
 	var emblem_root = Node3D.new()
-	emblem_root.position = Vector3(0.056, 0.012, 0)
+	emblem_root.position = Vector3(0.080, 0.012, 0)
 	cat_card.add_child(emblem_root)
 	_build_3d_category_emblem(emblem_root, cat_idx)
 
-	# Large Persian Category Name on the left/center of the card (x = -0.030)
-	var cat_lbl = _create_3d_label(CATEGORY_NAMES_FA[cat_idx], 33, Color(0.98, 0.94, 0.84))
-	cat_lbl.position = Vector3(-0.030, 0.016, 0.0)
+	# Cleanly Proportioned Persian Category Name centered in the 0.160m left compartment (x = -0.038)
+	var cat_name_str: String = CATEGORY_NAMES_FA[cat_idx]
+	var cat_font_size: int = 21 if cat_name_str.length() >= 7 else 24
+	var cat_lbl = _create_3d_label(cat_name_str, cat_font_size, Color(0.98, 0.94, 0.84))
+	cat_lbl.position = Vector3(-0.038, 0.016, 0.0)
 	cat_card.add_child(cat_lbl)
 
 	# Clickable Area3D on the 3D Emblem (shows Persian scoring guide hint)
@@ -626,23 +644,23 @@ func _build_category_row(cat_idx: int, col_x: float, row_z: float) -> Dictionary
 	guide_area.set_meta("cat_index", cat_idx)
 	var guide_col = CollisionShape3D.new()
 	var guide_shape = BoxShape3D.new()
-	guide_shape.size = Vector3(0.075, 0.04, 0.120)
+	guide_shape.size = Vector3(0.076, 0.04, 0.120)
 	guide_col.shape = guide_shape
 	guide_area.add_child(guide_col)
-	guide_area.position = Vector3(0.162, 0.015, 0)
+	guide_area.position = Vector3(0.180, 0.015, 0)
 	row_root.add_child(guide_area)
 
-	# Clickable Area3D covering the Score Plaques & Category Name to equip this category
+	# Clickable Area3D covering Score Plaques & Category Name to equip this category
 	var row_area = Area3D.new()
 	row_area.name = "SelectArea_%d" % cat_idx
 	row_area.set_meta("hit_type", "category")
 	row_area.set_meta("cat_index", cat_idx)
 	var row_col = CollisionShape3D.new()
 	var row_shape = BoxShape3D.new()
-	row_shape.size = Vector3(0.325, 0.04, 0.128)
+	row_shape.size = Vector3(0.365, 0.04, 0.124)
 	row_col.shape = row_shape
 	row_area.add_child(row_col)
-	row_area.position = Vector3(-0.040, 0.015, 0)
+	row_area.position = Vector3(-0.048, 0.015, 0)
 	row_root.add_child(row_area)
 
 	return {
@@ -656,31 +674,31 @@ func _build_3d_category_emblem(parent: Node3D, cat_idx: int) -> void:
 	# Golden Circular Medallion Pedestal beneath every 3D category sculpture
 	var ped = MeshInstance3D.new()
 	var ped_cyl = CylinderMesh.new()
-	ped_cyl.top_radius = 0.033
-	ped_cyl.bottom_radius = 0.036
-	ped_cyl.height = 0.006
+	ped_cyl.top_radius = 0.028
+	ped_cyl.bottom_radius = 0.031
+	ped_cyl.height = 0.005
 	ped_cyl.material = mat_gold_trim
 	ped.mesh = ped_cyl
-	ped.position = Vector3(0, 0.003, 0)
+	ped.position = Vector3(0, 0.0025, 0)
 	parent.add_child(ped)
 
 	if cat_idx >= 0 and cat_idx <= 5:
-		# Categories 0..5 (Faces 1..6): Real 3D Miniature Beveled Die Tile with 3D Jewel Pips!
+		# Categories 0..5 (Faces 1..6): 3D Miniature Beveled Die Tile with 3D Pips
 		var face_num: int = cat_idx + 1
 		var tile_chamfer = MeshInstance3D.new()
 		var tc_box = BoxMesh.new()
-		tc_box.size = Vector3(0.052, 0.012, 0.052)
+		tc_box.size = Vector3(0.044, 0.010, 0.044)
 		tc_box.material = mat_die_chamfer
 		tile_chamfer.mesh = tc_box
-		tile_chamfer.position = Vector3(0, 0.009, 0)
+		tile_chamfer.position = Vector3(0, 0.008, 0)
 		parent.add_child(tile_chamfer)
 
 		var tile_top = MeshInstance3D.new()
 		var tt_box = BoxMesh.new()
-		tt_box.size = Vector3(0.046, 0.014, 0.046)
+		tt_box.size = Vector3(0.039, 0.012, 0.039)
 		tt_box.material = mat_die_ivory
 		tile_top.mesh = tt_box
-		tile_top.position = Vector3(0, 0.010, 0)
+		tile_top.position = Vector3(0, 0.009, 0)
 		parent.add_child(tile_top)
 
 		var pip_mats = [
@@ -692,7 +710,7 @@ func _build_3d_category_emblem(parent: Node3D, cat_idx: int) -> void:
 			mat_emblem_ruby,
 		]
 		var p_mat = pip_mats[cat_idx]
-		var o: float = 0.013
+		var o: float = 0.011
 		var pip_coords: Array = []
 		match face_num:
 			1: pip_coords = [Vector2(0, 0)]
@@ -704,76 +722,73 @@ func _build_3d_category_emblem(parent: Node3D, cat_idx: int) -> void:
 
 		for p2 in pip_coords:
 			var pip = MeshInstance3D.new()
-			var sph = SphereMesh.new()
-			var r_val = 0.0068 if face_num == 1 else 0.0048
-			sph.radius = r_val
-			sph.height = r_val * 1.3
-			sph.material = p_mat
-			pip.mesh = sph
-			pip.position = Vector3(p2.x, 0.018, p2.y)
+			var cyl = CylinderMesh.new()
+			var r_val = 0.0055 if face_num == 1 else 0.0038
+			cyl.top_radius = r_val
+			cyl.bottom_radius = r_val
+			cyl.height = 0.003
+			cyl.material = p_mat
+			pip.mesh = cyl
+			pip.position = Vector3(p2.x, 0.016, p2.y)
 			parent.add_child(pip)
 
 	elif cat_idx == 6:
-		# سه‌تایی (Three of a Kind): 3D Triangle Cluster of 3 Golden/Sapphire Mini-Cubes
-		var offsets_3 = [Vector3(0, 0.012, -0.014), Vector3(-0.015, 0.012, 0.012), Vector3(0.015, 0.012, 0.012)]
+		# سه‌تایی (Three of a Kind): 3D Triangle Cluster of 3 Sapphire Mini-Cubes
+		var offsets_3 = [Vector3(0, 0.011, -0.011), Vector3(-0.012, 0.011, 0.010), Vector3(0.012, 0.011, 0.010)]
 		for pos in offsets_3:
 			var c = MeshInstance3D.new()
 			var bm = BoxMesh.new()
-			bm.size = Vector3(0.021, 0.016, 0.021)
+			bm.size = Vector3(0.017, 0.014, 0.017)
 			bm.material = mat_emblem_sapphire
 			c.mesh = bm
 			c.position = pos
 			parent.add_child(c)
 
 	elif cat_idx == 7:
-		# چهارتایی (Four of a Kind): 2x2 3D Diamond Cluster of 4 Amethyst/Gold Mini-Cubes
+		# چهارتایی (Four of a Kind): 2x2 3D Cluster of 4 Amethyst Mini-Cubes
 		var offsets_4 = [
-			Vector3(-0.013, 0.012, -0.013), Vector3(0.013, 0.012, -0.013),
-			Vector3(-0.013, 0.012, 0.013), Vector3(0.013, 0.012, 0.013)
+			Vector3(-0.011, 0.011, -0.011), Vector3(0.011, 0.011, -0.011),
+			Vector3(-0.011, 0.011, 0.011), Vector3(0.011, 0.011, 0.011)
 		]
 		for pos in offsets_4:
 			var c = MeshInstance3D.new()
 			var bm = BoxMesh.new()
-			bm.size = Vector3(0.020, 0.016, 0.020)
+			bm.size = Vector3(0.016, 0.014, 0.016)
 			bm.material = mat_emblem_amethyst
 			c.mesh = bm
 			c.position = pos
 			parent.add_child(c)
 
 	elif cat_idx == 8:
-		# شانس (Chance): 3D Faceted Emerald Octahedron/Diamond + Golden Star Ring
+		# شانس (Chance): 3D Faceted Emerald Crystal
 		var gem = MeshInstance3D.new()
 		var gm = SphereMesh.new()
-		gm.radius = 0.020
-		gm.height = 0.026
+		gm.radius = 0.017
+		gm.height = 0.022
 		gm.radial_segments = 6
 		gm.rings = 3
 		gm.material = mat_emblem_emerald
 		gem.mesh = gm
-		gem.position = Vector3(0, 0.014, 0)
+		gem.position = Vector3(0, 0.012, 0)
 		parent.add_child(gem)
 
-		var q_lbl = _create_3d_label("؟", 28, Color(1.0, 0.96, 0.65))
-		q_lbl.position = Vector3(0, 0.029, 0)
-		parent.add_child(q_lbl)
-
 	elif cat_idx == 9:
-		# فول‌هاوس (Full House 3+2): 3 Ruby Cubes + 2 Sapphire Cubes in 3D Formation
+		# فول‌هاوس (Full House 3+2): 3 Ruby Cubes + 2 Sapphire Cubes
 		for i in range(3):
 			var c3 = MeshInstance3D.new()
 			var b3 = BoxMesh.new()
-			b3.size = Vector3(0.016, 0.015, 0.016)
+			b3.size = Vector3(0.013, 0.013, 0.013)
 			b3.material = mat_emblem_ruby
 			c3.mesh = b3
-			c3.position = Vector3(-0.018 + float(i) * 0.018, 0.012, -0.011)
+			c3.position = Vector3(-0.014 + float(i) * 0.014, 0.011, -0.009)
 			parent.add_child(c3)
 		for j in range(2):
 			var c2 = MeshInstance3D.new()
 			var b2 = BoxMesh.new()
-			b2.size = Vector3(0.017, 0.015, 0.017)
+			b2.size = Vector3(0.014, 0.013, 0.014)
 			b2.material = mat_emblem_sapphire
 			c2.mesh = b2
-			c2.position = Vector3(-0.010 + float(j) * 0.020, 0.012, 0.012)
+			c2.position = Vector3(-0.008 + float(j) * 0.016, 0.011, 0.010)
 			parent.add_child(c2)
 
 	elif cat_idx == 10:
@@ -781,34 +796,34 @@ func _build_3d_category_emblem(parent: Node3D, cat_idx: int) -> void:
 		for step_i in range(5):
 			var bar = MeshInstance3D.new()
 			var bm = BoxMesh.new()
-			var h_bar = 0.008 + float(step_i) * 0.0035
-			var z_len = 0.016 + float(step_i) * 0.006
-			bm.size = Vector3(0.008, h_bar, z_len)
+			var h_bar = 0.007 + float(step_i) * 0.003
+			var z_len = 0.013 + float(step_i) * 0.005
+			bm.size = Vector3(0.007, h_bar, z_len)
 			bm.material = mat_emblem_amber if step_i % 2 == 0 else mat_gold_trim
 			bar.mesh = bm
-			bar.position = Vector3(-0.020 + float(step_i) * 0.010, 0.006 + h_bar * 0.5, 0.012 - z_len * 0.5)
+			bar.position = Vector3(-0.016 + float(step_i) * 0.008, 0.005 + h_bar * 0.5, 0.010 - z_len * 0.5)
 			parent.add_child(bar)
 
 	elif cat_idx == 11:
 		# یاتزی (Yatzy 50 pts): 3D Royal Golden Crown with Ruby Center Gem
 		var crown_base = MeshInstance3D.new()
 		var cb_cyl = CylinderMesh.new()
-		cb_cyl.top_radius = 0.024
-		cb_cyl.bottom_radius = 0.020
-		cb_cyl.height = 0.014
+		cb_cyl.top_radius = 0.020
+		cb_cyl.bottom_radius = 0.017
+		cb_cyl.height = 0.012
 		cb_cyl.radial_segments = 8
 		cb_cyl.material = mat_die_held_chamfer
 		crown_base.mesh = cb_cyl
-		crown_base.position = Vector3(0, 0.012, 0)
+		crown_base.position = Vector3(0, 0.010, 0)
 		parent.add_child(crown_base)
 
 		var ruby_orb = MeshInstance3D.new()
 		var ro_sph = SphereMesh.new()
-		ro_sph.radius = 0.011
-		ro_sph.height = 0.018
+		ro_sph.radius = 0.009
+		ro_sph.height = 0.015
 		ro_sph.material = mat_pip_red
 		ruby_orb.mesh = ro_sph
-		ruby_orb.position = Vector3(0, 0.021, 0)
+		ruby_orb.position = Vector3(0, 0.018, 0)
 		parent.add_child(ruby_orb)
 
 func _build_score_cell_plaque(parent: Node3D, pos: Vector3, player_num: int, _cat_idx: int) -> Dictionary:
@@ -816,10 +831,10 @@ func _build_score_cell_plaque(parent: Node3D, pos: Vector3, player_num: int, _ca
 	cell_root.position = pos
 	parent.add_child(cell_root)
 
-	# Selection / Last-Played Gold Border Frame (Larger for rectangular layout)
+	# Selection / Last-Played Gold Border Frame
 	var ring_inst = MeshInstance3D.new()
 	var ring_box = BoxMesh.new()
-	ring_box.size = Vector3(0.094, 0.010, 0.124)
+	ring_box.size = Vector3(0.092, 0.010, 0.122)
 	ring_box.material = mat_cell_last_ring
 	ring_inst.mesh = ring_box
 	ring_inst.position = Vector3(0, 0.004, 0)
@@ -829,14 +844,14 @@ func _build_score_cell_plaque(parent: Node3D, pos: Vector3, player_num: int, _ca
 	# Main Cell Plaque Mesh
 	var cell_mesh = MeshInstance3D.new()
 	var box = BoxMesh.new()
-	box.size = Vector3(0.086, 0.014, 0.116)
+	box.size = Vector3(0.084, 0.014, 0.114)
 	box.material = mat_cell_idle_my if player_num == 1 else mat_cell_idle_opp
 	cell_mesh.mesh = box
 	cell_mesh.position = Vector3(0, 0.007, 0)
 	cell_root.add_child(cell_mesh)
 
-	# Large Persian Score Value Label (font_size = 38)
-	var score_lbl = _create_3d_label("۰", 38, Color(0.95, 0.92, 0.82))
+	# Clean Persian Score Value Label that fits comfortably inside the 0.084m plaque
+	var score_lbl = _create_3d_label("۰", 28, Color(0.95, 0.92, 0.82))
 	score_lbl.position = Vector3(0, 0.017, 0)
 	cell_root.add_child(score_lbl)
 
@@ -848,7 +863,7 @@ func _build_score_cell_plaque(parent: Node3D, pos: Vector3, player_num: int, _ca
 	}
 
 # ==============================================================================
-# LUXURY MULTI-PART CHAMFERED 3D DICE BUILDER
+# PRECISION-MOLDED LUXURY 3D DICE & FRAMED NUMBER BADGES
 # ==============================================================================
 
 func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
@@ -878,7 +893,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	well_bed.position = Vector3(0, 0.0035, 0)
 	slot_root.add_child(well_bed)
 
-	# 2. Glowing Gold Lock Ring Pedestal (Visible when die is Held / Locked 🔒)
+	# 2. Glowing Gold Lock Ring Pedestal (Visible when die is Held / Locked)
 	var lock_ring = MeshInstance3D.new()
 	var cyl = CylinderMesh.new()
 	cyl.top_radius = 0.062
@@ -896,7 +911,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	die_pivot.position = Vector3(0, 0.050, 0)
 	slot_root.add_child(die_pivot)
 
-	# Chamfered Inner Core (gives smooth beveled corners & warm golden-ivory edges)
+	# Smooth Chamfered Inner Core
 	var chamfer_core = MeshInstance3D.new()
 	var core_box = BoxMesh.new()
 	core_box.size = Vector3(DIE_SIZE * 0.94, DIE_SIZE * 0.94, DIE_SIZE * 0.94)
@@ -904,12 +919,12 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	chamfer_core.mesh = core_box
 	die_pivot.add_child(chamfer_core)
 
-	# 3 Overlapping Beveled Face Slabs (X, Y, Z) forming a true rounded/chamfered 3D die body!
+	# 3 Overlapping Beveled Face Slabs (X, Y, Z) forming a rounded-edge casino die
 	var face_meshes: Array[MeshInstance3D] = []
 	for slab_size in [
-		Vector3(DIE_SIZE, DIE_SIZE * 0.84, DIE_SIZE * 0.84),
-		Vector3(DIE_SIZE * 0.84, DIE_SIZE, DIE_SIZE * 0.84),
-		Vector3(DIE_SIZE * 0.84, DIE_SIZE * 0.84, DIE_SIZE),
+		Vector3(DIE_SIZE, DIE_SIZE * 0.86, DIE_SIZE * 0.86),
+		Vector3(DIE_SIZE * 0.86, DIE_SIZE, DIE_SIZE * 0.86),
+		Vector3(DIE_SIZE * 0.86, DIE_SIZE * 0.86, DIE_SIZE),
 	]:
 		var slab_inst = MeshInstance3D.new()
 		var slab_box = BoxMesh.new()
@@ -919,29 +934,28 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 		die_pivot.add_child(slab_inst)
 		face_meshes.append(slab_inst)
 
-	# 8 Rounded Corner Spheres to complete the smooth chamfered silhouette
-	var c_off: float = DIE_SIZE * 0.42
-	var c_rad: float = DIE_SIZE * 0.085
-	for sx in [-c_off, c_off]:
-		for sy in [-c_off, c_off]:
-			for sz in [-c_off, c_off]:
-				var corner_sph = MeshInstance3D.new()
-				var sm = SphereMesh.new()
-				sm.radius = c_rad
-				sm.height = c_rad * 2.0
-				sm.radial_segments = 12
-				sm.rings = 6
-				sm.material = mat_die_chamfer
-				corner_sph.mesh = sm
-				corner_sph.position = Vector3(sx, sy, sz)
-				die_pivot.add_child(corner_sph)
-
-	# Build 3D Gold-Rimmed Jewel Pips on all 6 faces
+	# Precision-Spaced Flush Enamel Pips on all 6 faces
 	_add_3d_die_pips(die_pivot, DIE_SIZE * 0.5)
 
-	# 4. Large Persian Value & Lock Indicator Label below the die
-	var val_lbl = _create_3d_label("🎲 ۱", 34, Color(0.98, 0.94, 0.84))
-	val_lbl.position = Vector3(0, 0.010, 0.115)
+	# 4. Framed 3D Brass & Obsidian Numeral Plaque in front of each die well
+	var badge_rim = MeshInstance3D.new()
+	var br_box = BoxMesh.new()
+	br_box.size = Vector3(0.112, 0.006, 0.052)
+	br_box.material = mat_gold_trim
+	badge_rim.mesh = br_box
+	badge_rim.position = Vector3(0, 0.004, 0.112)
+	slot_root.add_child(badge_rim)
+
+	var badge_cap = MeshInstance3D.new()
+	var bc_box = BoxMesh.new()
+	bc_box.size = Vector3(0.104, 0.009, 0.044)
+	bc_box.material = mat_die_badge_idle
+	badge_cap.mesh = bc_box
+	badge_cap.position = Vector3(0, 0.006, 0.112)
+	slot_root.add_child(badge_cap)
+
+	var val_lbl = _create_3d_label("۱", 26, Color(1.0, 0.96, 0.86))
+	val_lbl.position = Vector3(0, 0.013, 0.112)
 	slot_root.add_child(val_lbl)
 
 	# 5. Clickable Area3D for Holding / Unholding this Die
@@ -951,7 +965,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	die_area.set_meta("die_index", die_idx)
 	var die_col = CollisionShape3D.new()
 	var die_shape = BoxShape3D.new()
-	die_shape.size = Vector3(0.145, 0.14, 0.22)
+	die_shape.size = Vector3(0.155, 0.14, 0.22)
 	die_col.shape = die_shape
 	die_area.add_child(die_col)
 	die_area.position = Vector3(0, 0.05, 0.03)
@@ -963,34 +977,35 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 		"chamfer": chamfer_core,
 		"slabs": face_meshes,
 		"lock_ring": lock_ring,
+		"badge_cap": badge_cap,
 		"label": val_lbl,
 	}
 
 func _add_3d_die_pips(die_pivot: Node3D, half_s: float) -> void:
-	var o: float = half_s * 0.50
+	var o: float = half_s * 0.54
 	# Opposing faces sum to 7:
-	# +Y = 1 (Giant Ruby), -Y = 6, +Z = 2, -Z = 5, +X = 3, -X = 4 (Ruby Corners)
+	# +Y = 1 (Ruby), -Y = 6, +Z = 2, -Z = 5, +X = 3, -X = 4 (Ruby)
 	var face_configs = [
-		# Face 1 (+Y) — Traditional Luxury Oversized Ruby Center Pip
-		{"normal": Vector3.UP, "right": Vector3.RIGHT, "fwd": Vector3.BACK, "pips": [Vector2(0, 0)], "red": true, "big": true},
+		# Face 1 (+Y)
+		{"normal": Vector3.UP, "right": Vector3.RIGHT, "fwd": Vector3.BACK, "rot_deg": Vector3(0, 0, 0), "pips": [Vector2(0, 0)], "red": true, "big": true},
 		# Face 6 (-Y)
-		{"normal": Vector3.DOWN, "right": Vector3.RIGHT, "fwd": Vector3.FORWARD, "pips": [
+		{"normal": Vector3.DOWN, "right": Vector3.RIGHT, "fwd": Vector3.FORWARD, "rot_deg": Vector3(0, 0, 0), "pips": [
 			Vector2(-o, -o), Vector2(o, -o), Vector2(-o, 0), Vector2(o, 0), Vector2(-o, o), Vector2(o, o)
 		], "red": false, "big": false},
 		# Face 2 (+Z)
-		{"normal": Vector3.BACK, "right": Vector3.RIGHT, "fwd": Vector3.DOWN, "pips": [
+		{"normal": Vector3.BACK, "right": Vector3.RIGHT, "fwd": Vector3.DOWN, "rot_deg": Vector3(90, 0, 0), "pips": [
 			Vector2(-o, -o), Vector2(o, o)
 		], "red": false, "big": false},
 		# Face 5 (-Z)
-		{"normal": Vector3.FORWARD, "right": Vector3.LEFT, "fwd": Vector3.DOWN, "pips": [
+		{"normal": Vector3.FORWARD, "right": Vector3.LEFT, "fwd": Vector3.DOWN, "rot_deg": Vector3(90, 0, 0), "pips": [
 			Vector2(-o, -o), Vector2(o, -o), Vector2(0, 0), Vector2(-o, o), Vector2(o, o)
 		], "red": false, "big": false},
 		# Face 3 (+X)
-		{"normal": Vector3.RIGHT, "right": Vector3.FORWARD, "fwd": Vector3.DOWN, "pips": [
+		{"normal": Vector3.RIGHT, "right": Vector3.FORWARD, "fwd": Vector3.DOWN, "rot_deg": Vector3(0, 0, 90), "pips": [
 			Vector2(-o, -o), Vector2(0, 0), Vector2(o, o)
 		], "red": false, "big": false},
-		# Face 4 (-X) — Ruby Red Pips (Classic Luxury Dice Styling)
-		{"normal": Vector3.LEFT, "right": Vector3.BACK, "fwd": Vector3.DOWN, "pips": [
+		# Face 4 (-X)
+		{"normal": Vector3.LEFT, "right": Vector3.BACK, "fwd": Vector3.DOWN, "rot_deg": Vector3(0, 0, 90), "pips": [
 			Vector2(-o, -o), Vector2(o, -o), Vector2(-o, o), Vector2(o, o)
 		], "red": true, "big": false},
 	]
@@ -999,31 +1014,22 @@ func _add_3d_die_pips(die_pivot: Node3D, half_s: float) -> void:
 		var n: Vector3 = fc["normal"]
 		var r: Vector3 = fc["right"]
 		var f: Vector3 = fc["fwd"]
+		var rot_d: Vector3 = fc["rot_deg"]
 		var is_red: bool = fc["red"]
 		var is_big: bool = fc["big"]
-		var rad: float = 0.0135 if is_big else 0.0086
+		var rad: float = 0.0108 if is_big else 0.0068
 
 		for p2 in fc["pips"]:
-			var pip_pos: Vector3 = n * (half_s + 0.0006) + r * p2.x + f * p2.y
-
-			# Golden Bezel Ring around each Pip
-			var bezel = MeshInstance3D.new()
-			var bz_sph = SphereMesh.new()
-			bz_sph.radius = rad * 1.22
-			bz_sph.height = rad * 0.55
-			bz_sph.material = mat_pip_bezel
-			bezel.mesh = bz_sph
-			bezel.position = pip_pos - n * 0.0004
-			die_pivot.add_child(bezel)
-
-			# Glossy Jewel Pip Dome
 			var pip = MeshInstance3D.new()
-			var sph = SphereMesh.new()
-			sph.radius = rad
-			sph.height = rad * 1.15
-			sph.material = mat_pip_red if is_red else mat_pip_dark
-			pip.mesh = sph
-			pip.position = pip_pos + n * 0.0005
+			var cyl = CylinderMesh.new()
+			cyl.top_radius = rad
+			cyl.bottom_radius = rad
+			cyl.height = 0.0022
+			cyl.radial_segments = 18
+			cyl.material = mat_pip_red if is_red else mat_pip_dark
+			pip.mesh = cyl
+			pip.rotation_degrees = rot_d
+			pip.position = n * (half_s + 0.0005) + r * p2.x + f * p2.y
 			die_pivot.add_child(pip)
 
 func _get_die_target_rotation(val: int) -> Vector3:
@@ -1059,7 +1065,7 @@ func _build_3d_action_button(btn_name: String, pos: Vector3, btn_size: Vector3, 
 	cap.position = Vector3(0, 0.005, 0)
 	root.add_child(cap)
 
-	var lbl = _create_3d_label(title_text, 34, Color(1.0, 0.98, 0.90))
+	var lbl = _create_3d_label(title_text, 27, Color(1.0, 0.98, 0.90))
 	lbl.position = Vector3(0, btn_size.y * 0.5 + 0.008, 0)
 	root.add_child(lbl)
 
@@ -1085,11 +1091,11 @@ func _create_3d_label(txt: String, f_size: int, col: Color, with_outline: bool =
 	if _game_font:
 		lbl.font = _game_font
 	lbl.font_size = f_size
-	lbl.pixel_size = 0.00155
+	lbl.pixel_size = 0.00125
 	lbl.modulate = col
 	lbl.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 	lbl.rotation_degrees = Vector3(-90, 0, 0)
-	lbl.outline_size = 14 if with_outline else 3
+	lbl.outline_size = 10 if with_outline else 2
 	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.96) if with_outline else Color(1.0, 0.96, 0.88, 0.35)
 	return lbl
 
@@ -1217,7 +1223,7 @@ func _refresh_visuals() -> void:
 		_update_single_cell_ui(row_ui["p1"], p1_board[idx], 1, idx)
 		_update_single_cell_ui(row_ui["p2"], p2_board[idx], 2, idx)
 
-	# 2. Refresh 5 Luxury 3D Dice slots
+	# 2. Refresh 5 Luxury 3D Dice slots & Framed Number Badges
 	for d_idx in range(NUM_DICE):
 		if d_idx >= _dice_nodes.size():
 			continue
@@ -1229,13 +1235,16 @@ func _refresh_visuals() -> void:
 		for slab in d_ui["slabs"]:
 			(slab as MeshInstance3D).material_override = mat_die_held_ivory if is_held else mat_die_ivory
 
+		if d_ui.has("badge_cap"):
+			(d_ui["badge_cap"] as MeshInstance3D).material_override = mat_die_badge_held if is_held else mat_die_badge_idle
+
 		var d_lbl: Label3D = d_ui["label"]
 		if is_held:
-			d_lbl.text = "🔒 %s" % _fa_digits(val)
-			d_lbl.modulate = Color(1.0, 0.88, 0.28)
+			d_lbl.text = "قفل %s" % _fa_digits(val)
+			d_lbl.modulate = Color(1.0, 0.98, 0.78)
 		else:
-			d_lbl.text = "🎲 %s" % _fa_digits(val)
-			d_lbl.modulate = Color(0.96, 0.94, 0.88)
+			d_lbl.text = _fa_digits(val)
+			d_lbl.modulate = Color(1.0, 0.96, 0.88)
 
 		if not is_rolling_dice:
 			var target_y = 0.064 if is_held else 0.050
@@ -1266,7 +1275,7 @@ func _refresh_visuals() -> void:
 			sub_lbl.text = "⏳ منتظر حرکت حریف..."
 			sub_lbl.modulate = Color(0.75, 0.85, 0.95)
 		else:
-			sub_lbl.text = "✅ ثبت (%s: %s)" % [eq_name, _fa_digits(eq_pts)]
+			sub_lbl.text = "✅ ثبت %s (%s)" % [eq_name, _fa_digits(eq_pts)]
 			sub_lbl.modulate = Color(1.0, 0.98, 0.90) if can_act else Color(0.65, 0.65, 0.68)
 
 	if is_instance_valid(_status_lbl_3d):
@@ -1274,7 +1283,7 @@ func _refresh_visuals() -> void:
 			_status_lbl_3d.text = "⏳ امتیاز این دست شما ثبت شد — منتظر انتخاب حریف باشید..."
 			_status_lbl_3d.modulate = Color(0.55, 0.90, 1.0)
 		elif remaining_rolls > 0:
-			_status_lbl_3d.text = "تاس‌های دلخواه را قفل کنید (🔒) یا خانه امتیاز را انتخاب و ثبت کنید"
+			_status_lbl_3d.text = "تاس‌های دلخواه را قفل کنید یا خانه امتیاز را انتخاب و ثبت کنید"
 			_status_lbl_3d.modulate = Color(0.98, 0.92, 0.72)
 		else:
 			_status_lbl_3d.text = "فرصت پرتاب تاس تمام شد — یک خانه را انتخاب و ثبت کنید"
@@ -1300,8 +1309,8 @@ func _update_single_cell_ui(cell_ui: Dictionary, cell_data: Dictionary, player_n
 		if is_equipped:
 			mesh_inst.material_override = mat_cell_equipped
 			ring_inst.visible = true
-			lbl.text = "✓%s" % _fa_digits(preview_val)
-			lbl.modulate = Color(1.0, 0.98, 0.78)
+			lbl.text = _fa_digits(preview_val)
+			lbl.modulate = Color(1.0, 0.98, 0.82)
 		else:
 			mesh_inst.material_override = mat_cell_idle_my
 			ring_inst.visible = false
@@ -1494,7 +1503,8 @@ func _on_submit_button_clicked() -> void:
 	is_round_played = true
 	held_dice_indices.clear()
 	_refresh_visuals()
-	send_move(Commands.Select_Peace, equipped_index)
+	# Backend YatzyGameClass.recieve_data expects data = {"index": equipped_index}
+	send_move(Commands.Select_Peace, {"index": equipped_index})
 
 # ==============================================================================
 # SERVER COMMAND HANDLERS (Simultaneous Turn, RollResult, PeaceSelected, Reconnect)
