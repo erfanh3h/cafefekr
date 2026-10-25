@@ -11,6 +11,7 @@ const DEFAULT_GAME_TYPE: String = GameTypes.TIC_TAC_TOE
 const TICTACTOE_SCENE: String = "res://scenes/games/tictactoe/tictactoe_3d.tscn"
 const CHESS_SCENE: String = "res://scenes/games/chess/chess_3d.tscn"
 const CHECKERS_SCENE: String = "res://scenes/games/checkers/checkers_3d.tscn"
+const FOURINROW_SCENE: String = "res://scenes/games/fourinrow/four_in_row_3d.tscn"
 const FEKRBEKR_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_3d.tscn"
 const YATZY_SCENE: String = "res://scenes/games/yatzy/yatzy_3d.tscn"
 
@@ -114,9 +115,10 @@ static var _registry: Dictionary = {
 	GameTypes.FOURINROW: {
 		"id": GameTypes.FOURINROW,
 		"name_fa": "دوز چهارتایی",
-		"board_scene": "",
-		"max_rounds": 3,
-		"has_round_score": true,
+		"board_scene": FOURINROW_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
 		"turn_time": 15.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/fourinrow.jpg",

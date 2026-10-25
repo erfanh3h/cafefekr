@@ -338,6 +338,17 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 - When the player is offline (`not NetworkManager.is_online`) and taps **لابی (Lobby)** or **بازی رقابتی (Ranked)** on the main menu—or when launching the app while offline—**NEVER** open `LoginDialog`.
 - Instead, check `if not NetworkManager.is_online:` **before** checking `GameManager.is_logged_in`, call `NetworkManager.connect_to_game_server()` (ensuring `_reconnect_timer` is active), and display the reconnection notice (`"🔄 در حال تلاش برای اتصال مجدد به سرور بازی..."`). Once connected, automatically restore the saved user session.
 
+### 4.8. Four-in-a-Row (`FourInRow` / `دوز چهارتایی`) 3D Gravity Rack & Reconnect Disambiguation Rules
+- **Coordinate & Payload Parity (`FourInRowGameClass` & `FourInRowController`):**
+  - 8 columns × 8 rows (`64` cells, `0..63`), where `r_index` (`0..7`) is the horizontal column (left to right), `c_index` (`0..7`) is the vertical row (top `0` to bottom `7`), and 1D index is `c_index * 8 + r_index`.
+  - Gravity drops discs into the lowest empty row (`c_index` scanning from `7` down to `0`).
+  - Move dispatch sends `Commands.Select_Peace` with `{"r_index": r_index}`. Server broadcasts `Commands.Peace_Selected` with `{"select_data": {"c_index": c_index, "r_index": r_index, "gamer_id": gamer_id}}`.
+  - Match format is 1 round (`max_rounds: 1`, `has_round_score: false`, `turn_time: 15.0`, `has_missed_turns_limit: false`), with 32 reserve discs per player displayed in left/right 3D dispenser trays.
+- **2D / 3D Hinged Gravity Rack Synchronization:**
+  - `FourInRow3D` passively listens to `cafe_table.camera_mode_changed(is_top_down)`: in 2D mode (`is_top_down == true`), `RackPivot` lies flat (`rotation_degrees.x = 0.0`) so all 64 circular portholes and 8 top drop-arrow buttons face the top-down camera squarely; in 3D mode (`is_top_down == false`), `RackPivot` smoothly inclines (`rotation_degrees.x = 26.0`) on its sculpted brass trunnion pillars. Never force camera mode changes on column tap.
+- **64-Cell Reconnect Disambiguation (`Checkers` vs `FourInRow` in `main.gd`):**
+  - Both `Checkers` and `FourInRow` send a 64-element `board` array and `pawns_count` in `Reconnect_Data`. In `main.gd:_on_reconnect_data_received`, inspect `typeof((g_data["board"] as Array)[0])`: if `TYPE_DICTIONARY`, infer `GameTypes.CHECKERS`; otherwise (integer cell values `0, 1, 2`), infer `GameTypes.FOURINROW`.
+
 ---
 
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr

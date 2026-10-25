@@ -302,6 +302,11 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 					var tr = int(sdata.get("t_r_index", -1))
 					if tc != -1 and tr != -1:
 						target_peace = tc * 8 + tr
+					elif sdata.has("c_index") and sdata.has("r_index"):
+						var ci = int(sdata.get("c_index", -1))
+						var ri = int(sdata.get("r_index", -1))
+						if ci != -1 and ri != -1:
+							target_peace = ci * 8 + ri
 				piece_selected.emit(user_id, target_peace, extra)
 
 		Commands.Finish_Round:
