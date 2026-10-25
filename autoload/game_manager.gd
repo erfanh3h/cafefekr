@@ -15,6 +15,7 @@ var device_id: String = ""
 var token: String = ""
 var user_data: Dictionary = {}
 var is_logged_in: bool = false
+var is_guest: bool = false
 
 # Current Match State
 var active_game_id: String = ""
@@ -29,6 +30,7 @@ var p1_score: int = 0
 var p2_score: int = 0
 var local_player_surrendered: bool = false
 var opponent_player_surrendered: bool = false
+
 var is_my_turn: bool:
 	get:
 		if not is_game_active:
@@ -72,6 +74,7 @@ func clear_open_game_id() -> void:
 		var config = ConfigFile.new()
 		config.set_value("auth", "token", token)
 		config.set_value("auth", "user_data", user_data)
+		config.set_value("auth", "is_guest", is_guest)
 		config.save(SESSION_PATH)
 		print("[GameManager] Cleared open_game_id from cached session.")
 
@@ -139,19 +142,56 @@ func _load_or_create_device_id() -> void:
 func load_saved_token() -> String:
 	var config = ConfigFile.new()
 	var err = config.load(SESSION_PATH)
-	if err == OK and config.has_section_key("auth", "token"):
-		return config.get_value("auth", "token", "")
+	if err == OK:
+		is_guest = config.get_value("auth", "is_guest", false)
+		if config.has_section_key("auth", "token"):
+			return config.get_value("auth", "token", "")
 	return ""
+
+func load_saved_user_data() -> Dictionary:
+	var config = ConfigFile.new()
+	var err = config.load(SESSION_PATH)
+	if err == OK:
+		is_guest = config.get_value("auth", "is_guest", false)
+		if config.has_section_key("auth", "user_data"):
+			return config.get_value("auth", "user_data", {})
+	return {}
+
+func start_guest_session() -> void:
+	is_guest = true
+	is_logged_in = true
+	token = "guest_" + device_id
+	user_data = {
+		"_id": "guest_" + device_id.substr(0, 8),
+		"id": "guest_" + device_id.substr(0, 8),
+		"username": "کاربر مهمان",
+		"name": "کاربر مهمان",
+		"phone": "",
+		"coin": 0,
+		"score": 0,
+		"xp": 0,
+		"avatar": 0,
+		"is_guest": true
+	}
+	var config = ConfigFile.new()
+	config.set_value("auth", "token", token)
+	config.set_value("auth", "user_data", user_data)
+	config.set_value("auth", "is_guest", true)
+	config.save(SESSION_PATH)
+	print("[GameManager] Guest session initiated.")
+	user_logged_in.emit(user_data)
 
 func set_session(new_token: String, new_user_data: Dictionary, save_to_disk: bool = true) -> void:
 	token = new_token
 	user_data = new_user_data
 	is_logged_in = true
+	is_guest = false
 	
 	if save_to_disk:
 		var config = ConfigFile.new()
 		config.set_value("auth", "token", token)
 		config.set_value("auth", "user_data", user_data)
+		config.set_value("auth", "is_guest", false)
 		config.save(SESSION_PATH)
 		print("[GameManager] Session saved locally.")
 		
@@ -161,9 +201,9 @@ func logout() -> void:
 	token = ""
 	user_data.clear()
 	is_logged_in = false
+	is_guest = false
 	
 	# Delete local session file
-	var config = ConfigFile.new()
 	if FileAccess.file_exists(SESSION_PATH):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SESSION_PATH))
 	print("[GameManager] Logged out. Session cleared.")
@@ -171,22 +211,34 @@ func logout() -> void:
 	user_logged_out.emit()
 
 func get_user_id() -> String:
-	return user_data.get("_id", "")
+	return str(user_data.get("_id", user_data.get("id", "")))
 
 func get_username() -> String:
-	return user_data.get("username", "Guest")
+	var name_str = str(user_data.get("username", user_data.get("name", ""))).strip_edges()
+	if name_str.is_empty():
+		return "کاربر مهمان" if is_guest else "Guest"
+	return name_str
+
+func has_username() -> bool:
+	var uname = get_username().strip_edges()
+	if uname.is_empty() or uname == "Guest" or uname == "کاربر مهمان":
+		return false
+	return true
 
 func get_phone() -> String:
-	return user_data.get("phone", "")
+	return str(user_data.get("phone", "")).strip_edges()
+
+func has_phone() -> bool:
+	return not get_phone().is_empty()
 
 func get_coins() -> int:
-	return user_data.get("coin", 0)
+	return int(user_data.get("coin", 0))
 
 func get_score() -> int:
-	return user_data.get("score", 0)
+	return int(user_data.get("score", 0))
 
 func get_avatar_id() -> int:
-	return int(user_data.get("avatar", user_data.get("avatar_id", 0)))
+	return int(user_data.get("image", user_data.get("avatar", user_data.get("avatar_id", 0))))
 
 func get_open_game_id() -> String:
 	return str(user_data.get("open_game_id", ""))

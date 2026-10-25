@@ -2,7 +2,7 @@ extends MarginContainer
 
 # User Header Component
 # Mirrors GlobalUserDataHeader from Flutter app:
-# Displays avatar in wooden medallion, username, user ID, level, XP bar, coins (+ store button), score/rank.
+# Displays avatar in wooden medallion, username, user ID, connection status (Online/Offline/Guest), level, XP bar, coins, score.
 
 signal store_requested()
 signal profile_requested()
@@ -11,18 +11,17 @@ signal profile_requested()
 @onready var avatar_btn: TextureButton = $PanelFrame/ContentMargin/HBoxMain/AvatarFrame/AvatarBtn
 @onready var lbl_username: Label = $PanelFrame/ContentMargin/HBoxMain/UserCol/Username
 @onready var btn_user_id: Button = $PanelFrame/ContentMargin/HBoxMain/UserCol/UserIdBtn
+@onready var lbl_status: Label = $PanelFrame/ContentMargin/HBoxMain/UserCol/StatusRow/LblStatus
 
 @onready var coin_badge: HBoxContainer = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge
 @onready var sep1: VSeparator = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/Sep1
 @onready var lbl_coins: Label = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge/CoinsLabel
 @onready var btn_coins_add: TextureButton = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge/BtnAddCoins
-
 @onready var lbl_score: Label = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreBadge/ScoreLabel
 @onready var lbl_level: Label = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelBadge/LevelLabel
 @onready var xp_bar: ProgressBar = $PanelFrame/ContentMargin/HBoxMain/StatsCol/XpBar
 
 func _ready() -> void:
-	# Coins temporarily disabled
 	coin_badge.visible = false
 	sep1.visible = false
 	
@@ -43,27 +42,35 @@ func _ready() -> void:
 			DisplayServer.clipboard_set(str(uid))
 			btn_user_id.text = "کپی شد"
 			get_tree().create_timer(1.5).timeout.connect(func():
-				btn_user_id.text = "شناسه: " + str(uid).substr(0, 8)
+				if GameManager.is_guest:
+					btn_user_id.text = "مهمان (بدون شماره)"
+				else:
+					btn_user_id.text = "شناسه: " + str(uid).substr(0, 8)
 			)
 	)
 	
 	GameManager.user_logged_in.connect(func(_u): update_ui())
 	GameManager.user_logged_out.connect(func(): update_ui())
+	NetworkManager.connection_status_changed.connect(func(_connected: bool): update_ui())
 	
 	update_ui()
 
 func update_ui() -> void:
+	var is_online = NetworkManager.is_online
+	
 	if GameManager.is_logged_in:
 		lbl_username.text = GameManager.get_username()
 		lbl_coins.text = str(GameManager.get_coins())
 		lbl_score.text = str(GameManager.get_score())
 		
 		var uid = GameManager.user_data.get("_id", GameManager.user_data.get("id", ""))
-		if uid != "":
+		if GameManager.is_guest:
+			btn_user_id.text = "مهمان (بدون شماره)"
+		elif uid != "":
 			btn_user_id.text = "شناسه: " + str(uid).substr(0, 8)
 		else:
 			btn_user_id.text = "شناسه: ----"
-		
+			
 		var xp = int(GameManager.user_data.get("xp", 0))
 		var level = _calculate_level(xp)
 		lbl_level.text = "سطح %d" % (level + 1)
@@ -80,6 +87,18 @@ func update_ui() -> void:
 		lbl_score.text = "0"
 		lbl_level.text = "سطح ۱"
 		xp_bar.value = 0.0
+		
+	if is_instance_valid(lbl_status):
+		if is_online:
+			if GameManager.is_guest:
+				lbl_status.text = "🟢 مهمان"
+				lbl_status.modulate = Color(0.4, 0.9, 0.5)
+			else:
+				lbl_status.text = "🟢 آنلاین"
+				lbl_status.modulate = Color(0.35, 1.0, 0.45)
+		else:
+			lbl_status.text = "🔴 آفلاین"
+			lbl_status.modulate = Color(1.0, 0.35, 0.35)
 
 static func _total_exp_to_level(level: int, base: int = 20) -> int:
 	return int(base * (level * level))

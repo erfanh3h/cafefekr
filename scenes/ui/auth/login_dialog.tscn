@@ -59,16 +59,16 @@ shadow_size = 10
 shadow_offset = Vector2(0, 3)
 
 [node name="LoginDialog" type="PanelContainer"]
-custom_minimum_size = Vector2(880, 760)
+custom_minimum_size = Vector2(880, 840)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -440.0
-offset_top = -380.0
+offset_top = -420.0
 offset_right = 440.0
-offset_bottom = 380.0
+offset_bottom = 420.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_board")
@@ -83,7 +83,7 @@ theme_override_constants/margin_bottom = 36
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 20
 
 [node name="TopRow" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -113,18 +113,18 @@ layout_mode = 2
 
 [node name="Step1_Phone" type="VBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 18
 
 [node name="LblSubtitle" type="Label" parent="Margin/VBox/Step1_Phone"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 34
 text = "شماره موبایل خود را وارد کنید:"
 horizontal_alignment = 1
 
 [node name="InputPhone" type="LineEdit" parent="Margin/VBox/Step1_Phone"]
-custom_minimum_size = Vector2(580, 96)
+custom_minimum_size = Vector2(580, 92)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
@@ -138,7 +138,7 @@ alignment = 1
 max_length = 13
 
 [node name="BtnSendCode" type="Button" parent="Margin/VBox/Step1_Phone"]
-custom_minimum_size = Vector2(520, 96)
+custom_minimum_size = Vector2(520, 92)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -149,10 +149,47 @@ theme_override_font_sizes/font_size = 36
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "دریافت کد تأیید (SMS)"
 
+[node name="OrSeparator" type="HBoxContainer" parent="Margin/VBox/Step1_Phone"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="LineLeft" type="ColorRect" parent="Margin/VBox/Step1_Phone/OrSeparator"]
+custom_minimum_size = Vector2(160, 2)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.6, 0.45, 0.3, 0.6)
+
+[node name="LblOr" type="Label" parent="Margin/VBox/Step1_Phone/OrSeparator"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.55, 1)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "یا"
+horizontal_alignment = 1
+
+[node name="LineRight" type="ColorRect" parent="Margin/VBox/Step1_Phone/OrSeparator"]
+custom_minimum_size = Vector2(160, 2)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.6, 0.45, 0.3, 0.6)
+
+[node name="BtnGuestLogin" type="Button" parent="Margin/VBox/Step1_Phone"]
+custom_minimum_size = Vector2(460, 84)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.18, 0.28, 0.95)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+text = "ورود به عنوان مهمان"
+
 [node name="Step2_Code" type="VBoxContainer" parent="Margin/VBox"]
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 20
 
 [node name="LblSubtitle" type="Label" parent="Margin/VBox/Step2_Code"]
 layout_mode = 2
@@ -163,7 +200,7 @@ text = "کد تأیید پیامک شده را وارد کنید:"
 horizontal_alignment = 1
 
 [node name="InputCode" type="LineEdit" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(440, 96)
+custom_minimum_size = Vector2(440, 92)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
@@ -177,7 +214,7 @@ alignment = 1
 max_length = 4
 
 [node name="BtnVerifyCode" type="Button" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(520, 96)
+custom_minimum_size = Vector2(520, 92)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -189,22 +226,81 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "تأیید و ورود به بازی"
 
 [node name="BtnBackPhone" type="Button" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(380, 84)
+custom_minimum_size = Vector2(380, 80)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.12, 0.12, 0.12, 0.9)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 28
 text = "ویرایش شماره موبایل"
+
+[node name="Step3_Username" type="VBoxContainer" parent="Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="LblSubtitle" type="Label" parent="Margin/VBox/Step3_Username"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 32
+text = "لطفاً نام کاربری خود را انتخاب کنید:"
+horizontal_alignment = 1
+
+[node name="InputUsername" type="LineEdit" parent="Margin/VBox/Step3_Username"]
+custom_minimum_size = Vector2(560, 90)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 38
+theme_override_styles/normal = SubResource("StyleBoxFlat_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
+placeholder_text = "نام کاربری (حداقل ۳ حرف)"
+alignment = 1
+max_length = 30
+
+[node name="LblRepSubtitle" type="Label" parent="Margin/VBox/Step3_Username"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.78, 0.65, 1)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "کد معرف (اختیاری):"
+horizontal_alignment = 1
+
+[node name="InputRepId" type="LineEdit" parent="Margin/VBox/Step3_Username"]
+custom_minimum_size = Vector2(400, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
+placeholder_text = "کد معرف ۶ رقمی"
+alignment = 1
+max_length = 6
+
+[node name="BtnSubmitUsername" type="Button" parent="Margin/VBox/Step3_Username"]
+custom_minimum_size = Vector2(520, 92)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 36
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+text = "ثبت نام و شروع بازی"
 
 [node name="LblStatus" type="Label" parent="Margin/VBox"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
-horizontal_alignment = 1
-autowrap_mode = 2
+theme_override_font_sizes/font_size = 26
 horizontal_alignment = 1
 autowrap_mode = 2

@@ -1,7 +1,6 @@
 extends Node
 
 # NetworkManager Autoload (Singleton)
-
 signal game_match_found(game_id: String)
 signal game_data_received(data: Dictionary)
 signal game_play_data_received(data: Dictionary)
@@ -27,18 +26,25 @@ signal start_game_received()
 
 var api: APIClient
 var socket: SocketIOClient
-
 var game_port: int = 5000
 var api_port: int = 5001
 
-# Automatically resolve the server host based on platform:
-# - Android emulator uses 10.0.2.2 to reach the host machine's localhost
-# - Windows (and other desktop) uses the local network IP
+var _reconnect_timer: Timer
+
+# Automatically resolve the server host based on platform and user configuration
 var server_host: String:
 	get:
+		var config = ConfigFile.new()
+		if config.load("user://server.cfg") == OK and config.has_section_key("network", "host"):
+			return str(config.get_value("network", "host"))
 		if OS.get_name() == "Android":
-			return "10.0.2.2"
+			# Default Wi-Fi host on Android, can be configured via user://server.cfg
+			return "192.168.1.2"
 		return "192.168.1.2"
+
+var is_online: bool:
+	get:
+		return socket != null and socket.is_connected_to_server
 
 func _ready() -> void:
 	# Initialize REST API Client
@@ -55,9 +61,17 @@ func _ready() -> void:
 	socket.namespace_connected.connect(_on_namespace_connected)
 	socket.event_received.connect(_on_socket_event)
 	
-	GameManager.user_logged_in.connect(func(user_data):
+	GameManager.user_logged_in.connect(func(_user_data):
 		api.set_token(GameManager.token)
 	)
+	
+	# Background reconnection timer
+	_reconnect_timer = Timer.new()
+	_reconnect_timer.wait_time = 4.0
+	_reconnect_timer.one_shot = false
+	_reconnect_timer.autostart = false
+	add_child(_reconnect_timer)
+	_reconnect_timer.timeout.connect(_on_reconnect_timeout)
 
 func restore_session(callback: Callable) -> void:
 	var saved_token = GameManager.load_saved_token()
@@ -65,24 +79,49 @@ func restore_session(callback: Callable) -> void:
 		callback.call(false, "No saved session")
 		return
 	
+	if GameManager.is_guest:
+		var guest_data = GameManager.load_saved_user_data()
+		if not guest_data.is_empty():
+			GameManager.user_data = guest_data
+			GameManager.is_logged_in = true
+			GameManager.is_guest = true
+			print("[NetworkManager] Guest session restored from local cache.")
+			callback.call(true, "Guest session restored")
+			return
+
 	api.set_token(saved_token)
 	api.get_my_data(func(success: bool, response_code: int, data: Variant):
-		if success and typeof(data) == TYPE_DICTIONARY and data.has("result"):
-			var user_data = data["result"]
+		if success and typeof(data) == TYPE_DICTIONARY and (data.has("result") or data.has("user_data")):
+			var user_data = data.get("result", data.get("user_data", {}))
 			GameManager.set_session(saved_token, user_data, false)
 			print("[NetworkManager] Session restored successfully for %s" % GameManager.get_username())
 			callback.call(true, "Restored")
-		else:
-			print("[NetworkManager] Saved token invalid or expired. Response code: %d" % response_code)
+		elif response_code == 401:
+			print("[NetworkManager] Saved token invalid or expired (401).")
 			GameManager.logout()
 			callback.call(false, "Invalid token")
+		else:
+			# Network error or offline
+			print("[NetworkManager] Network error (%d) while contacting server. Checking cached session..." % response_code)
+			var cached_data = GameManager.load_saved_user_data()
+			if not cached_data.is_empty():
+				GameManager.set_session(saved_token, cached_data, false)
+				callback.call(true, "Cached session restored (offline)")
+			else:
+				callback.call(false, "Offline without cache")
 	)
 
 func connect_to_game_server() -> void:
 	socket.connect_to_host(server_host, game_port, false)
 
 func disconnect_from_game_server() -> void:
+	_reconnect_timer.stop()
 	socket.disconnect_from_host()
+
+func _on_reconnect_timeout() -> void:
+	if not is_online:
+		print("[NetworkManager] Attempting to reconnect to game backend (%s:%d)..." % [server_host, game_port])
+		connect_to_game_server()
 
 # --- QUEUE & MATCHMAKING ---
 
@@ -96,21 +135,31 @@ func join_matchmaking_queue(pre_game_id: Variant = null) -> void:
 func leave_matchmaking_queue() -> void:
 	socket.disconnect_namespace("/queue")
 
-func accept_match(pre_game_id: String = "") -> void:
+func send_queue_command(command_id: String, data: Variant = null) -> void:
 	var payload = {
-		"id": Commands.Accept,
-		"user_id": GameManager.get_user_id()
+		"id": command_id,
+		"data": data
 	}
-	if not pre_game_id.is_empty():
-		payload["pre_game_id"] = pre_game_id
 	socket.emit_event("/queue", "user_command", payload)
 
-# --- GAMEPLAY ---
+# --- FRIENDLY LOBBY ---
+
+func join_lobby(auth_data: Dictionary = {}) -> void:
+	socket.connect_namespace("/lobby", auth_data)
+
+func leave_lobby() -> void:
+	socket.disconnect_namespace("/lobby")
+
+func send_lobby_command(command_id: String, data: Variant = null) -> void:
+	var payload = {
+		"id": command_id,
+		"data": data
+	}
+	socket.emit_event("/lobby", "user_command", payload)
+
+# --- IN-GAME SESSION ---
 
 func join_active_game(game_id: String) -> void:
-	if GameManager.active_game_id == game_id and socket.connected_namespaces.has("/game") and socket.connected_namespaces["/game"]:
-		print("[NetworkManager] Already connected to /game namespace for match: %s" % game_id)
-		return
 	GameManager.active_game_id = game_id
 	var auth = {
 		"token": GameManager.token,
@@ -136,7 +185,6 @@ func send_select_peace(piece_data: Variant) -> void:
 	send_game_command(Commands.Select_Peace, piece_data)
 
 func send_game_command(command_id: String, data: Variant = null) -> void:
-	# Format matches server: {"id": command_id, ...} or raw command
 	var payload = {
 		"id": command_id,
 		"data": data
@@ -150,6 +198,7 @@ func send_game_reaction(reaction_id: Variant) -> void:
 
 func _on_socket_connected() -> void:
 	print("[NetworkManager] Connected to game backend!")
+	_reconnect_timer.stop()
 	connection_status_changed.emit(true)
 	# Auto-rejoin active game namespace if socket reconnected during ongoing match
 	if not GameManager.active_game_id.is_empty():
@@ -159,12 +208,13 @@ func _on_socket_connected() -> void:
 func _on_socket_disconnected() -> void:
 	print("[NetworkManager] Disconnected from game backend.")
 	connection_status_changed.emit(false)
+	if _reconnect_timer.is_stopped():
+		_reconnect_timer.start()
 
 func _on_namespace_connected(ns: String) -> void:
 	print("[NetworkManager] Namespace %s ready." % ns)
 
 func _on_socket_event(ns: String, event_name: String, data: Variant) -> void:
-	# Server emits: emit('command', {'id': command_id, 'data': ...})
 	if event_name == "command" and typeof(data) == TYPE_DICTIONARY:
 		var cmd_id = data.get("id", "")
 		var payload = data.get("data", {})
@@ -178,7 +228,6 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 	
 	match cmd_id:
 		Commands.Start_Game:
-			# Match found in queue!
 			if typeof(payload) == TYPE_DICTIONARY and payload.has("game_id"):
 				var game_id = payload["game_id"]
 				game_match_found.emit(game_id)

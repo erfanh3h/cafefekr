@@ -51,18 +51,26 @@ func _ready() -> void:
 	base_game_hud.visible = false
 	menu_container.visible = true
 	
-	# Start theme background music
-	AudioManager.play_theme_music()
+	# Defer theme background music until after splash screen has cleared
+	get_tree().create_timer(0.65).timeout.connect(func():
+		if is_instance_valid(self):
+			AudioManager.play_theme_music()
+	)
 	
 	# Try to restore saved session
 	NetworkManager.restore_session(func(restored: bool, _msg: String):
 		user_header.update_ui()
 		if not restored:
 			login_dialog.open()
+			_show_backdrop()
 		else:
+			if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
+				print("[Main] Returning user has phone but no username. Enforcing username registration.")
+				login_dialog.open_for_username_completion()
+				_show_backdrop()
+				return
 			_check_and_auto_enter_active_game()
 	)
-	
 	# Connect to real-time game server (port 5000)
 	NetworkManager.connect_to_game_server()
 
@@ -83,6 +91,10 @@ func _setup_signals() -> void:
 	# Dialog events
 	login_dialog.login_completed.connect(func():
 		user_header.update_ui()
+		if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
+			login_dialog.open_for_username_completion()
+			_show_backdrop()
+			return
 		_check_and_auto_enter_active_game()
 		_hide_backdrop()
 		_update_backdrop_state()
@@ -108,6 +120,10 @@ func _setup_signals() -> void:
 		dialog_backdrop.gui_input.connect(func(event: InputEvent):
 			if event is InputEventMouseButton and event.pressed:
 				if is_instance_valid(login_dialog) and login_dialog.visible:
+					if login_dialog.is_mandatory_username:
+						AudioManager.sfx_tap()
+						_show_menu_toast("ثبت نام کاربری الزامی است.")
+						return
 					login_dialog.close()
 				elif is_instance_valid(user_profile_dialog) and user_profile_dialog.visible:
 					user_profile_dialog.close()
@@ -202,6 +218,16 @@ func _on_ranked_pressed() -> void:
 	if not GameManager.is_logged_in:
 		login_dialog.open()
 		return
+	if GameManager.is_guest or not GameManager.has_phone():
+		login_dialog.open_for_phone_upgrade("برای شرکت در بازی رده‌بندی (رنک)، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
+		return
+	if not GameManager.has_username():
+		login_dialog.open_for_username_completion()
+		return
+	if not NetworkManager.is_online:
+		_hide_backdrop()
+		_show_menu_toast("عدم اتصال به سرور بازی. لطفاً اتصال اینترنت خود را بررسی کنید.")
+		return
 	queue_dialog.start_queue()
 
 func _on_lobby_pressed() -> void:
@@ -209,6 +235,16 @@ func _on_lobby_pressed() -> void:
 	_show_backdrop()
 	if not GameManager.is_logged_in:
 		login_dialog.open()
+		return
+	if GameManager.is_guest or not GameManager.has_phone():
+		login_dialog.open_for_phone_upgrade("برای ورود به اتاق دوستانه (لابی)، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
+		return
+	if not GameManager.has_username():
+		login_dialog.open_for_username_completion()
+		return
+	if not NetworkManager.is_online:
+		_hide_backdrop()
+		_show_menu_toast("عدم اتصال به سرور بازی. لطفاً اتصال اینترنت خود را بررسی کنید.")
 		return
 	lobby_dialog.open()
 
@@ -677,3 +713,46 @@ func _update_table_opponent_avatar() -> void:
 	var opp_data = GameManager.get_opponent_player_data()
 	var opp_av_id = int(opp_data.get("image", opp_data.get("user_image", 0)))
 	cafe_table.update_opponent_avatar(opp_av_id)
+
+var _menu_toast_label: Label = null
+var _menu_toast_tween: Tween = null
+
+func _show_menu_toast(msg: String) -> void:
+	if not _menu_toast_label or not is_instance_valid(_menu_toast_label):
+		_menu_toast_label = Label.new()
+		_menu_toast_label.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		_menu_toast_label.add_theme_font_size_override("font_size", 32)
+		_menu_toast_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.45))
+		_menu_toast_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		_menu_toast_label.add_theme_constant_override("shadow_outline_size", 3)
+		_menu_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_menu_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_menu_toast_label.custom_minimum_size = Vector2(760, 80)
+		_menu_toast_label.anchors_preset = Control.PRESET_CENTER_BOTTOM
+		_menu_toast_label.anchor_left = 0.5
+		_menu_toast_label.anchor_right = 0.5
+		_menu_toast_label.anchor_top = 1.0
+		_menu_toast_label.anchor_bottom = 1.0
+		_menu_toast_label.offset_left = -380.0
+		_menu_toast_label.offset_right = 380.0
+		_menu_toast_label.offset_top = -320.0
+		_menu_toast_label.offset_bottom = -240.0
+		_menu_toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ui_canvas.add_child(_menu_toast_label)
+		
+	if _menu_toast_tween and _menu_toast_tween.is_valid():
+		_menu_toast_tween.kill()
+		
+	_menu_toast_label.text = msg
+	_menu_toast_label.visible = true
+	_menu_toast_label.modulate.a = 0.0
+	_menu_toast_label.scale = Vector2(0.9, 0.9)
+	_menu_toast_label.pivot_offset = _menu_toast_label.size / 2.0
+	
+	_menu_toast_tween = create_tween()
+	_menu_toast_tween.set_parallel(true)
+	_menu_toast_tween.tween_property(_menu_toast_label, "modulate:a", 1.0, 0.25)
+	_menu_toast_tween.tween_property(_menu_toast_label, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_menu_toast_tween.chain().tween_interval(2.5)
+	_menu_toast_tween.chain().tween_property(_menu_toast_label, "modulate:a", 0.0, 0.4)
+	_menu_toast_tween.chain().tween_callback(func(): _menu_toast_label.visible = false)

@@ -2,7 +2,6 @@ class_name APIClient
 extends Node
 
 # REST API Client for kafehfekrserver (Port 5001)
-
 signal request_completed(endpoint: String, success: bool, data: Variant)
 
 var base_url: String = "http://127.0.0.1:5001"
@@ -28,10 +27,12 @@ func verify_code(phone: String, code: String, device_id: String, callback: Calla
 	]
 	_post_form("/code", body, [], callback)
 
-func complete_registration(username: String, rep_id: String, callback: Callable) -> void:
+func complete_registration(username: String, rep_id: String = "", phone: String = "", callback: Callable = Callable()) -> void:
 	var body = "username=" + username.uri_encode()
 	if not rep_id.is_empty():
 		body += "&rep_id=" + rep_id.uri_encode()
+	if not phone.is_empty():
+		body += "&phone=" + phone.uri_encode()
 	_post_form("/complete-data", body, _get_auth_headers(), callback)
 
 # --- USER ENDPOINTS ---
@@ -80,7 +81,7 @@ func _http_get(endpoint: String, custom_headers: PackedStringArray, callback: Ca
 		var parsed_data = null
 		if json.parse(body.get_string_from_utf8()) == OK:
 			parsed_data = json.data
-		
+			
 		callback.call(success, response_code, parsed_data)
 		http.queue_free()
 	)
@@ -101,7 +102,7 @@ func _post_form(endpoint: String, body_str: String, custom_headers: PackedString
 		var parsed_data = null
 		if json.parse(body.get_string_from_utf8()) == OK:
 			parsed_data = json.data
-		
+			
 		callback.call(success, response_code, parsed_data)
 		http.queue_free()
 	)
