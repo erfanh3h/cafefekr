@@ -274,17 +274,17 @@ func _open_game_select_modal() -> void:
 	if p_size == Vector2.ZERO:
 		p_size = Vector2(960, 1150)
 	game_select_panel.pivot_offset = p_size / 2.0
-	game_select_panel.scale = Vector2(0.88, 0.88)
+	game_select_panel.scale = Vector2(0.92, 0.92)
 	game_select_panel.modulate.a = 0.0
 	
-	var tw = create_tween().set_parallel(true)
-	tw.tween_property(game_select_panel, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(game_select_panel, "modulate:a", 1.0, 0.18)
+	var tw = game_select_panel.create_tween().set_parallel(true)
+	tw.tween_property(game_select_panel, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(game_select_panel, "modulate:a", 1.0, 0.15)
 
 func _close_game_select_modal() -> void:
-	var tw = create_tween().set_parallel(true)
-	tw.tween_property(game_select_panel, "scale", Vector2(0.88, 0.88), 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.tween_property(game_select_panel, "modulate:a", 0.0, 0.15)
+	var tw = game_select_panel.create_tween().set_parallel(true)
+	tw.tween_property(game_select_panel, "scale", Vector2(0.92, 0.92), 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(game_select_panel, "modulate:a", 0.0, 0.14)
 	tw.finished.connect(func():
 		game_select_modal.visible = false
 	)
@@ -300,15 +300,15 @@ func _populate_game_grid() -> void:
 func _create_game_card(g_type: String) -> Control:
 	var is_selected = (g_type == selected_create_game_type)
 	
-	var card = PanelContainer.new()
-	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	var card = Button.new()
 	# 2 cards per row layout (width ~380px, height ~200px)
 	card.custom_minimum_size = Vector2(380, 200)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
+	card.flat = true
 	card.pivot_offset = Vector2(190, 100)
 	
-	# Warm wooden mahogany card styling (not pitch-black)
+	# Warm wooden mahogany card styling
 	var style_normal = StyleBoxFlat.new()
 	style_normal.bg_color = Color(0.22, 0.15, 0.1, 0.98)
 	style_normal.set_corner_radius_all(18)
@@ -327,7 +327,10 @@ func _create_game_card(g_type: String) -> Control:
 	style_hover.shadow_size = 12
 	style_hover.shadow_offset = Vector2(0, 5)
 	
-	card.add_theme_stylebox_override("panel", style_normal)
+	card.add_theme_stylebox_override("normal", style_normal)
+	card.add_theme_stylebox_override("hover", style_hover)
+	card.add_theme_stylebox_override("pressed", style_normal)
+	card.add_theme_stylebox_override("focus", style_normal)
 	
 	# Warm underlay glow so transparent or dark areas look warm
 	var bg_warmth = ColorRect.new()
@@ -342,7 +345,7 @@ func _create_game_card(g_type: String) -> Control:
 	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	img.modulate = Color(1.18, 1.12, 1.05) # Brightens line drawings and sketch art
+	img.modulate = Color(1.18, 1.12, 1.05)
 	var icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
 	if ResourceLoader.exists(icon_path):
 		img.texture = load(icon_path)
@@ -402,102 +405,67 @@ func _create_game_card(g_type: String) -> Control:
 	mode_pill.add_child(mode_lbl)
 	card.add_child(mode_pill)
 	
-	# Golden active badge (top-right)
-	if is_selected:
-		var badge = PanelContainer.new()
-		badge.custom_minimum_size = Vector2(38, 38)
-		badge.position = Vector2(card.custom_minimum_size.x - 50, 12)
-		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var badge_style = StyleBoxFlat.new()
-		badge_style.bg_color = Color(1.0, 0.82, 0.15, 1.0)
-		badge_style.set_corner_radius_all(19)
-		badge_style.border_color = Color(1, 1, 1, 0.95)
-		badge_style.set_border_width_all(2)
-		badge_style.shadow_color = Color(1.0, 0.8, 0.2, 0.5)
-		badge_style.shadow_size = 6
-		badge.add_theme_stylebox_override("panel", badge_style)
-		
-		var check_lbl = Label.new()
-		check_lbl.text = "✓"
-		check_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		check_lbl.add_theme_font_size_override("font_size", 24)
-		check_lbl.add_theme_color_override("font_color", Color(0.15, 0.1, 0.02, 1.0))
-		check_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		check_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		check_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		badge.add_child(check_lbl)
-		card.add_child(badge)
-	
 	# Dynamic hover juice (desktop)
 	card.mouse_entered.connect(func():
 		AudioManager.sfx_tap()
-		card.add_theme_stylebox_override("panel", style_hover)
 		var tw = card.create_tween()
 		tw.tween_property(card, "scale", Vector2(1.02, 1.02), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	)
 	card.mouse_exited.connect(func():
-		card.add_theme_stylebox_override("panel", style_normal)
 		var tw = card.create_tween()
 		tw.tween_property(card, "scale", Vector2.ONE, 0.1)
 	)
 	
-	# Mobile Touch-Drag Scroll & Tap Selection:
-	# Allows swiping/dragging directly across game cards on touchscreens without getting blocked,
-	# while preserving instantaneous tap selection when released without dragging!
-	var touch_down: bool = false
-	var touch_start_y: float = 0.0
-	var initial_scroll_v: int = 0
-	var is_dragging_scroll: bool = false
+	# Touch Drag Scrolling + Tap Selection Handling:
+	# If finger moves > 24px vertically, it scrolls ScrollGames and suppresses card.pressed.
+	# If tapped without drag, card.pressed executes instantly!
+	var touch_down_y: float = 0.0
+	var scroll_start_v: int = 0
+	var is_scrolling_drag: bool = false
+	var touch_active: bool = false
 	
 	card.gui_input.connect(func(event: InputEvent):
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
-				touch_down = true
-				is_dragging_scroll = false
-				touch_start_y = event.global_position.y
-				initial_scroll_v = scroll_games.scroll_vertical
-				var tw = card.create_tween()
-				tw.tween_property(card, "scale", Vector2(0.96, 0.96), 0.06)
+				touch_active = true
+				is_scrolling_drag = false
+				touch_down_y = event.global_position.y
+				scroll_start_v = scroll_games.scroll_vertical
 			else:
-				var tw = card.create_tween()
-				tw.tween_property(card, "scale", Vector2.ONE, 0.08)
-				if touch_down:
-					touch_down = false
-					if not is_dragging_scroll:
-						AudioManager.sfx_button()
-						selected_create_game_type = g_type
-						_update_selected_game_display()
-						_close_game_select_modal()
+				touch_active = false
 		elif event is InputEventScreenTouch:
 			if event.pressed:
-				touch_down = true
-				is_dragging_scroll = false
-				touch_start_y = event.position.y
-				initial_scroll_v = scroll_games.scroll_vertical
-				var tw = card.create_tween()
-				tw.tween_property(card, "scale", Vector2(0.96, 0.96), 0.06)
+				touch_active = true
+				is_scrolling_drag = false
+				touch_down_y = event.position.y
+				scroll_start_v = scroll_games.scroll_vertical
 			else:
-				var tw = card.create_tween()
-				tw.tween_property(card, "scale", Vector2.ONE, 0.08)
-				if touch_down:
-					touch_down = false
-					if not is_dragging_scroll:
-						AudioManager.sfx_button()
-						selected_create_game_type = g_type
-						_update_selected_game_display()
-						_close_game_select_modal()
-		elif (event is InputEventMouseMotion and touch_down) or event is InputEventScreenDrag:
-			var curr_y = event.global_position.y if event is InputEventMouseMotion else event.position.y
-			var delta_y = curr_y - touch_start_y
-			if abs(delta_y) > 10.0 or is_dragging_scroll:
-				is_dragging_scroll = true
-				var tw = card.create_tween()
-				tw.tween_property(card, "scale", Vector2.ONE, 0.06)
-				scroll_games.scroll_vertical = initial_scroll_v - int(delta_y)
+				touch_active = false
+		elif event is InputEventScreenDrag:
+			var dy = event.position.y - touch_down_y
+			if abs(dy) > 24.0 or is_scrolling_drag:
+				is_scrolling_drag = true
+				scroll_games.scroll_vertical = scroll_start_v - int(dy)
+		elif event is InputEventMouseMotion and touch_active:
+			var dy = event.global_position.y - touch_down_y
+			if abs(dy) > 24.0 or is_scrolling_drag:
+				is_scrolling_drag = true
+				scroll_games.scroll_vertical = scroll_start_v - int(dy)
+	)
+	
+	card.pressed.connect(func():
+		if is_scrolling_drag:
+			return
+		AudioManager.sfx_button()
+		var tw = card.create_tween()
+		tw.tween_property(card, "scale", Vector2(0.95, 0.95), 0.08)
+		tw.tween_property(card, "scale", Vector2.ONE, 0.08)
+		selected_create_game_type = g_type
+		_update_selected_game_display()
+		_close_game_select_modal()
 	)
 	
 	return card
-
 
 func _setup_scroll_container_touch_drag(sc: ScrollContainer) -> void:
 	if not sc:
