@@ -6,7 +6,7 @@ extends BaseGameBoard
 # - Authentic 3D lathe-turned ribbed checkers pucks with concentric grooves & 24K gold/platinum inlays
 # - Promoted Super Pawns (Kings) feature double-stacked 3D checker pucks + sculpted 3D Royal Crown
 # - Complete single-jump & multi-jump chaining (BFS check_move_list + back-pointer capture resolution)
-# - Parabolic jump arcs, capture shockwaves, promotion crown bursts, and realistic 3D hand animations
+# - Parabolic jump arcs, capture shockwaves, and promotion crown bursts
 
 signal piece_moved(from_idx: int, to_idx: int, is_capture: bool)
 
@@ -1381,12 +1381,6 @@ func _execute_checkers_move(s_c_index: int, s_r_index: int, t_c_index: int, t_r_
 			player2_pawns = max(0, player2_pawns - 1)
 		else:
 			player1_pawns = max(0, player1_pawns - 1)
-
-	# Trigger realistic 3D hand animation on CafeTable
-	var cafe_table = get_tree().get_first_node_in_group("cafe_table")
-	if cafe_table and cafe_table.has_method("animate_place_piece") and tgt_idx >= 0 and tgt_idx < cells.size():
-		var target_world = cells[tgt_idx].global_position + Vector3(0.0, 0.048, 0.0)
-		cafe_table.animate_place_piece(gamer_id, target_world, null, Callable())
 
 	# Retrieve or spawn moving 3D checker node
 	var moving_node: Node3D = null

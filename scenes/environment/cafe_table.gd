@@ -77,10 +77,7 @@ var _flame_mesh: MeshInstance3D = null
 var _flame_halo_mesh: MeshInstance3D = null
 var current_board_node: Node3D = null
 
-# Realistic Hands (No ugly bodies or chairs, only natural animated hands!)
-const RealisticHandScript = preload("res://scenes/environment/realistic_hand.gd")
-var enemy_hand: Node3D = null
-var player_hand: Node3D = null
+
 
 func _ready() -> void:
 	add_to_group("cafe_table")
@@ -102,19 +99,7 @@ func _ready() -> void:
 			sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 			sun.shadow_blur = 0.5
 
-	# Enemy Realistic Hand (comes in from opponent's side)
-	enemy_hand = RealisticHandScript.new()
-	enemy_hand.is_enemy = true
-	enemy_hand.name = "EnemyHand"
-	add_child(enemy_hand)
 
-	# Player Realistic Hand (comes in from player's side)
-	player_hand = RealisticHandScript.new()
-	player_hand.is_enemy = false
-	player_hand.name = "PlayerHand"
-	add_child(player_hand)
-
-	update_hand_colors()
 	transition_to_menu_view(0.1)
 
 func _process(delta: float) -> void:
@@ -209,17 +194,11 @@ func transition_to_board_view(duration: float = 1.2) -> void:
 
 func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 	clear_board()
-	update_hand_colors()
 	is_top_down_view = true
 	camera_mode_changed.emit(true)
 	if board_packed_scene:
 		current_board_node = board_packed_scene.instantiate()
 		board_container.add_child(current_board_node)
-		if GameManager.current_game_type == GameTypes.TIC_TAC_TOE:
-			if player_hand and is_instance_valid(player_hand):
-				player_hand.visible = false
-			if enemy_hand and is_instance_valid(enemy_hand):
-				enemy_hand.visible = false
 		transition_to_board_view(1.2)
 	return current_board_node
 
@@ -315,20 +294,13 @@ func zoom_out(step: float = 0.28) -> void:
 	else:
 		target_distance = clampf(target_distance + step, ZOOM_MIN, ZOOM_MAX)
 
-# --- Realistic Hand Piece Placement ---
+# --- Table Callbacks (3D Hands Removed per Game Scene Rules) ---
 
 func update_opponent_avatar(_avatar_id: int) -> void:
 	pass
 
 func update_hand_colors() -> void:
-	var my_idx = GameManager.my_player_index
-	# Player 1 is Red, Player 2 is Blue
-	var player_col = RealisticHandScript.COLOR_RED_CLOTH if my_idx == 1 else RealisticHandScript.COLOR_BLUE_CLOTH
-	var enemy_col = RealisticHandScript.COLOR_BLUE_CLOTH if my_idx == 1 else RealisticHandScript.COLOR_RED_CLOTH
-	if player_hand and is_instance_valid(player_hand):
-		player_hand.set_cloth_color(player_col)
-	if enemy_hand and is_instance_valid(enemy_hand):
-		enemy_hand.set_cloth_color(enemy_col)
+	pass
 
 func set_opponent_thinking(_thinking: bool) -> void:
 	pass
@@ -336,28 +308,9 @@ func set_opponent_thinking(_thinking: bool) -> void:
 func play_opponent_reaction() -> void:
 	pass
 
-func animate_place_piece(user_id: int, target_world_pos: Vector3, piece_node: Node3D, on_dropped: Callable) -> void:
-	if GameManager.current_game_type == GameTypes.TIC_TAC_TOE:
-		if player_hand and is_instance_valid(player_hand):
-			player_hand.visible = false
-		if enemy_hand and is_instance_valid(enemy_hand):
-			enemy_hand.visible = false
-		if on_dropped.is_valid():
-			on_dropped.call()
-		return
-	update_hand_colors()
-	if user_id == GameManager.my_player_index:
-		if player_hand and is_instance_valid(player_hand):
-			player_hand.play_place_piece(target_world_pos, piece_node, on_dropped)
-		else:
-			if on_dropped.is_valid():
-				on_dropped.call()
-	else:
-		if enemy_hand and is_instance_valid(enemy_hand):
-			enemy_hand.play_place_piece(target_world_pos, piece_node, on_dropped)
-		else:
-			if on_dropped.is_valid():
-				on_dropped.call()
+func animate_place_piece(_user_id: int, _target_world_pos: Vector3, _piece_node: Node3D, on_dropped: Callable) -> void:
+	if on_dropped.is_valid():
+		on_dropped.call()
 
 # --- Input Handling for Orbit & Zoom ---
 

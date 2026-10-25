@@ -277,7 +277,7 @@ func _process(delta: float) -> void:
 		if turn_time_left <= 3.0 and turn_time_left > 0.0:
 			if sec != last_second_ticked:
 				last_second_ticked = sec
-				if (GameManager.is_my_turn or not GameManager.is_game_active) and not is_game_finished and not is_round_finished:
+				if is_start_overlay_dismissed and not is_countdown_running and (GameManager.is_my_turn or not GameManager.is_game_active) and not is_game_finished and not is_round_finished:
 					AudioManager.play_sound("time")
 
 func _setup_card_styles() -> void:
@@ -635,8 +635,8 @@ func reset_for_new_match() -> void:
 		else:
 			result_dialog.visible = false
 			result_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	intro_p1_role.visible = false
-	intro_p2_role.visible = false
+	intro_p1_role.visible = true
+	intro_p2_role.visible = true
 	if not is_countdown_running:
 		intro_countdown_lbl.text = "⏳"
 		intro_countdown_lbl.add_theme_font_size_override("font_size", 54)
@@ -656,8 +656,8 @@ func setup_match(game_title: String = "تیک تاک تو", mode_title: String =
 		intro_cafe_title.text = mode_title
 	if intro_game_title:
 		intro_game_title.text = game_title
-	intro_p1_role.visible = false
-	intro_p2_role.visible = false
+	intro_p1_role.visible = true
+	intro_p2_role.visible = true
 	if not is_countdown_running:
 		intro_countdown_lbl.text = "⏳"
 		intro_countdown_lbl.add_theme_font_size_override("font_size", 54)
@@ -738,21 +738,29 @@ func update_not_played_turns(gamer_id: int, count: int) -> void:
 			elif count == 3:
 				show_toast_hint("⚠️ حریف به آخرین اخطار عدم حرکت رسید (۳ از ۳ خطا)")
 
+var _countdown_pulse_tween: Tween = null
+
 func _start_loading_pulse() -> void:
 	_stop_loading_pulse()
 	if not intro_countdown_lbl or not is_instance_valid(intro_countdown_lbl):
 		return
+	intro_countdown_lbl.custom_minimum_size = Vector2(360, 130)
+	intro_countdown_lbl.pivot_offset = Vector2(180, 65)
 	intro_countdown_lbl.scale = Vector2.ONE
-	intro_countdown_lbl.pivot_offset = intro_countdown_lbl.size / 2.0
 	_loading_pulse_tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_loading_pulse_tween.tween_property(intro_countdown_lbl, "scale", Vector2(1.18, 1.18), 0.55)
-	_loading_pulse_tween.tween_property(intro_countdown_lbl, "scale", Vector2(0.92, 0.92), 0.55)
+	_loading_pulse_tween.tween_property(intro_countdown_lbl, "scale", Vector2(1.12, 1.12), 0.55)
+	_loading_pulse_tween.tween_property(intro_countdown_lbl, "scale", Vector2(0.94, 0.94), 0.55)
 
 func _stop_loading_pulse() -> void:
 	if _loading_pulse_tween and _loading_pulse_tween.is_valid():
 		_loading_pulse_tween.kill()
 		_loading_pulse_tween = null
+	if _countdown_pulse_tween and _countdown_pulse_tween.is_valid():
+		_countdown_pulse_tween.kill()
+		_countdown_pulse_tween = null
 	if intro_countdown_lbl and is_instance_valid(intro_countdown_lbl):
+		intro_countdown_lbl.custom_minimum_size = Vector2(360, 130)
+		intro_countdown_lbl.pivot_offset = Vector2(180, 65)
 		intro_countdown_lbl.scale = Vector2.ONE
 
 # Shows the initial match connection loading overlay
@@ -769,11 +777,13 @@ func show_match_loading(status_text: String = "در حال آماده‌سازی
 	turn_timer_bar.value = 100.0
 	
 	intro_status_lbl.text = status_text
+	intro_countdown_lbl.custom_minimum_size = Vector2(360, 130)
+	intro_countdown_lbl.pivot_offset = Vector2(180, 65)
 	intro_countdown_lbl.text = "⏳"
 	intro_countdown_lbl.add_theme_font_size_override("font_size", 54)
 	intro_countdown_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.25))
-	intro_p1_role.visible = false
-	intro_p2_role.visible = false
+	intro_p1_role.visible = true
+	intro_p2_role.visible = true
 	
 	_start_loading_pulse()
 	
@@ -783,22 +793,9 @@ func show_match_loading(status_text: String = "در حال آماده‌سازی
 func set_overlay_status(status_text: String) -> void:
 	intro_status_lbl.text = status_text
 
-# Updates server-synchronized countdown timer
-func update_start_countdown_time(sec: int) -> void:
-	if is_start_overlay_dismissed:
-		return
-	# When real countdown has not started yet, ignore early server setup values (such as 1) and remain in loading state
-	if not is_countdown_running:
-		intro_countdown_lbl.text = "⏳"
-		intro_countdown_lbl.add_theme_font_size_override("font_size", 54)
-		return
-	if sec <= 0:
-		pass
-	else:
-		intro_countdown_lbl.add_theme_font_size_override("font_size", 96)
-		intro_countdown_lbl.text = "%d" % sec
-		_pulse_countdown_label()
-		AudioManager.play_sound("time")
+# Ignore server Game_Play_Time elapsed counter ticks when local play_start_countdown is already running
+func update_start_countdown_time(_sec: int) -> void:
+	return
 
 # Plays synchronized pre-game loading countdown
 func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int = 5) -> void:
@@ -897,10 +894,15 @@ func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 
 func _pulse_countdown_label() -> void:
-	intro_countdown_lbl.scale = Vector2(1.35, 1.35)
-	intro_countdown_lbl.pivot_offset = intro_countdown_lbl.size / 2.0
-	var tw = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-	tw.tween_property(intro_countdown_lbl, "scale", Vector2.ONE, 0.22)
+	if not intro_countdown_lbl or not is_instance_valid(intro_countdown_lbl):
+		return
+	if _countdown_pulse_tween and _countdown_pulse_tween.is_valid():
+		_countdown_pulse_tween.kill()
+	intro_countdown_lbl.custom_minimum_size = Vector2(360, 130)
+	intro_countdown_lbl.pivot_offset = Vector2(180, 65)
+	intro_countdown_lbl.scale = Vector2(1.16, 1.16)
+	_countdown_pulse_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_countdown_pulse_tween.tween_property(intro_countdown_lbl, "scale", Vector2.ONE, 0.20)
 
 # Shows between-rounds banner dialog (like Flutter's showFinishRoundDialog)
 func stop_round_timer() -> void:
@@ -1187,7 +1189,8 @@ func start_pre_game_countdown(wait_sec: int = 5) -> void:
 	if is_game_finished or GameManager.is_game_active:
 		return
 	set_fekrbekr_hud_buttons(false)
-	start_wait_timer(wait_sec, "بازی درحال آغاز است")
+	if is_start_overlay_dismissed and not is_countdown_running:
+		start_wait_timer(wait_sec, "بازی درحال آغاز است")
 
 func set_setup_phase() -> void:
 	set_fekrbekr_hud_buttons(false)

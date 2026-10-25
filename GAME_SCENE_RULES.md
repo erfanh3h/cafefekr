@@ -46,7 +46,7 @@
 ## 1. Architectural Philosophy
 
 In Cafe Fekr, **the in-game experience is shared across ALL board games**:
-1. **The 3D Cafe Environment is Constant**: The wooden cafe table, cozy warm lighting, candlelight, realistic animated hands, and camera orbit/zoom system (`scenes/environment/cafe_table.tscn`) remain identical for every game.
+1. **The 3D Cafe Environment is Constant**: The wooden cafe table, cozy warm lighting, candlelight, luxury tabletop props, and camera orbit/zoom system (`scenes/environment/cafe_table.tscn`) remain identical for every game (with no disembodied 3D hands).
 2. **The 2D In-Game HUD is Constant**: The top player cards, round count, turn banner, turn timer bar, 8-button bottom control bar, toast hints, reaction bubbles, pause/disconnect dialogs, and match result dialogs (`scenes/games/base/base_game_hud.tscn`) are unified and shared.
 3. **Only the Board Changes**: Each game provides its own 3D board scene that is spawned dynamically inside `cafe_table`'s `BoardContainer`. Every board inherits from `BaseGameBoard` (`scripts/games/base_game_board.gd`).
 4. **Header Inheritance for Special Game Elements**: If a game has specific UI elements not present in all games (e.g. Chess has AFK missed turns strikes, whereas TicTacToe does not), its header MUST inherit from `BaseTopHeader` (`scenes/games/base/base_top_header.gd`).
@@ -172,7 +172,16 @@ Matches Flutter's `DialogComponent().showTimerDialog` and backend `UserDisconnec
 - **Timeout (`Commands.Finish_Reconnect_Time`):**
   - `hide_pause_dialog()` is called immediately, and the remaining player is awarded the win via `GameResultDialog`.
 
-### 2.6. Final Round Score Synchronization, Surrender & Match Result Dialog (`GameResultDialog`)
+### 2.6. Pre-Game Countdown Dialog (`StartGameOverlay`) Stability & Single-Source Ticking Rule
+- **Fixed Countdown Box & Center Pivot (`StartGameOverlay/Card/VBox/Countdown`):**
+  - `intro_countdown_lbl` (`Countdown`) inside `StartGameOverlay/Card/VBox` **MUST** have a fixed `custom_minimum_size = Vector2(360, 130)`, `size_flags_horizontal = Control.SIZE_SHRINK_CENTER`, `horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER`, `vertical_alignment = VERTICAL_ALIGNMENT_CENTER`, and a locked `pivot_offset = Vector2(180, 65)`.
+  - `intro_p1_role` and `intro_p2_role` **MUST** remain `visible = true` (using `modulate.a` for fade-in) so `StartGameOverlay/Card/VBox` never changes height or shifts `Countdown` vertically while digits `5..1` are animating.
+  - `_pulse_countdown_label()` must kill any previous `_countdown_pulse_tween` before starting a new smooth `TRANS_QUAD` scale pulse (`1.16 -> 1.0`), avoiding multi-bounce `TRANS_BOUNCE` jitter inside `VBoxContainer`.
+- **Single-Source Countdown Ticking (No `Game_Play_Time` Overwrite or Background Double-Tick):**
+  - Once `play_start_countdown()` is running (`is_countdown_running == true`), `update_start_countdown_time()` **MUST** be a no-op so server `Game_Play_Time` elapsed counter packets (`{"time": 1}`) never overwrite the active `5..1` countdown or fire duplicate `"time"` sounds.
+  - In `BaseGameHUD._process(delta)` and `start_pre_game_countdown()`, background turn timer urgency ticks (`AudioManager.play_sound("time")`) **MUST** be suppressed while `not is_start_overlay_dismissed or is_countdown_running`.
+
+### 2.7. Final Round Score Synchronization, Surrender & Match Result Dialog (`GameResultDialog`)
 - **Final Round Score Synchronization Rule (`_current_round_scored` in `main.gd`):**
   - In round-based games (such as `TicTacToe`), when the final match-clinching round finishes (e.g., making the match `3 - 0`), the backend server may emit `Commands.Finish_Game` directly or emit `Commands.Finish_Game` **before** `Commands.Finish_Round`.
   - `main.gd` **MUST** track `_current_round_scored: bool` (reset to `false` in `_start_game_match()`, `_on_new_round_started()`, and `_on_turn_changed()`).
@@ -205,7 +214,7 @@ The 3D environment represents a cozy, nostalgic board game cafe:
   - **Distance / Zoom Boundaries:** Strictly bounded to `2.20m` (min zoom) and `3.55m` (max zoom). Default is `3.20m`.
   - **Yaw (Horizontal Orbit):** Strictly bounded to `[-31.5°, +31.5°]` (`[-0.55 rad, +0.55 rad]`).
   - **Pitch (Vertical Tilt):** Strictly bounded to `[-63.0°, -33.2°]` (`[-1.10 rad, -0.58 rad]`). Default is `-42.0°`.
-  - **Privacy Rule:** The camera must NEVER zoom out or pan so far that character bodies, faces, or empty chairs become visible. Only the hands across the table should be seen.
+  - **Privacy Rule:** The camera must NEVER zoom out or pan so far that character bodies, faces, or empty chairs become visible.
 - **Camera Drag Lock During Piece Interaction (`camera_drag_locked`):**
   - In games that support drag-and-drop piece placement or interactive board controls (e.g. FekrBekr Phase 1 & Phase 2 peg dragging), the board MUST set `cafe_table.camera_drag_locked = true` as soon as the player presses or drags an interactive piece/slot, and reset `cafe_table.camera_drag_locked = false` on mouse release (`_input` release handler).
   - When `camera_drag_locked` is `true`, `CafeTable` immediately cancels `_is_dragging_camera` so releasing or dragging a piece on the board NEVER causes the camera to jump or orbit.
@@ -225,11 +234,10 @@ The 3D environment represents a cozy, nostalgic board game cafe:
     4. **Traditional Persian Ceramic Plate with Pistachios & Saffron Rock Candy** (`Vector3(0.88, 0, -0.38)`): Glazed turquoise plate with gold rim, pistachio shells, and amber rock candy crystals.
     5. **Vintage Brass Pocket Watch on Chain** (`Vector3(0.62, 0, 0.68)`): Hinged brass case, cream watch face, hands, crown loop, and curved brass chain.
     6. **Stack of Game Tokens / Coasters** (`Vector3(-0.62, 0, -0.68)`): Crimson, sapphire, and obsidian brass-rimmed game tokens.
-- **Realistic Hands System (`RealisticHand`) & Per-Game Hand Policy:**
-  - In games that use animated 3D hands (such as `Chess`), `PlayerHand` (enters from bottom) and `EnemyHand` (enters from top) place pieces with physical kinematics, with sleeve colors matching the player's role: Crimson Red (`Color(0.85, 0.15, 0.2)`) for P1, Sapphire Blue (`Color(0.15, 0.35, 0.85)`) for P2.
-  - **TicTacToe No-Hands & Clean Front-Lip Rule:**
-    - `TicTacToe` (`scenes/games/tictactoe/tictactoe_3d.gd`) **MUST NOT** use `PlayerHand` or `EnemyHand`; X and O pieces drop directly onto the board via `ActionVFXManager.animate_piece_drop` with impact particles.
-    - Do **NOT** add any `Label3D` text on the front wooden lip under the `TicTacToe` board.
+- **No 3D Hands Rule (All Games):**
+  - Disembodied 3D hands (`RealisticHand` / `player_hand` / `enemy_hand`) are **completely removed and prohibited across ALL games** (including `Checkers`, `Chess`, `TicTacToe`, `FekrBekr`, and `Yatzy`).
+  - Pieces, dice, and pegs animate directly on the 3D board using clean physical trajectories (parabolic hops, drops, slides, and rolls) with `ActionVFXManager` impact bursts. `cafe_table.animate_place_piece(...)` is a direct callback pass-through with no hand nodes.
+  - Do **NOT** add any `Label3D` text on the front wooden lip under the `TicTacToe` board.
 
 ---
 
@@ -417,4 +425,6 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Score Boxes in Non-Score Games** | Always hide `ScoreBadge` when `GameRegistry.has_round_score(game_type)` is `false` (e.g. `Chess`, `FekrBekr`). |
 | ❌ **No Extra Child Nodes Inside `ScoreBadge`** | Never add extra `Label` children (like `"🏆"`) inside `ScoreBadge` (`PanelContainer`), and always render player scores with `hekayat.ttf` + Persian digits (`_fa_digits`). |
 | ❌ **No Stale Final-Round Score on Result Dialog** | Always synchronize the final round score via `_current_round_scored` in `main.gd` before opening `GameResultDialog`. |
-| ❌ **No Hands or Front-Lip Text in TicTacToe** | Never trigger 3D hands or add front-frame `Label3D` text on the `TicTacToe` 3D board. |
+| ❌ **No 3D Hands in Any Game** | Never spawn or trigger 3D hand models (`RealisticHand`) in any game (`CafeTable`, `Checkers`, `Chess`, `TicTacToe`, `FekrBekr`, `Yatzy`). |
+| ❌ **No Start-Countdown Glitch or Double-Tick** | Keep `StartGameOverlay/Card/VBox/Countdown` at a fixed `custom_minimum_size = Vector2(360, 130)` and `pivot_offset = Vector2(180, 65)`, and never let `Game_Play_Time` or background `_process` timers overwrite or double-tick during `play_start_countdown()`. |
+| ❌ **No Front-Lip Text in TicTacToe** | Never add front-frame `Label3D` text on the `TicTacToe` 3D board. |

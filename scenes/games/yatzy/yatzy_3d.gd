@@ -137,12 +137,7 @@ func _ready() -> void:
 	_hide_hands_for_yatzy()
 
 func _hide_hands_for_yatzy() -> void:
-	var tbl = get_tree().get_first_node_in_group("cafe_table")
-	if tbl:
-		if "player_hand" in tbl and is_instance_valid(tbl.player_hand):
-			tbl.player_hand.visible = false
-		if "enemy_hand" in tbl and is_instance_valid(tbl.enemy_hand):
-			tbl.enemy_hand.visible = false
+	pass
 
 func is_interacting_with_piece() -> bool:
 	return (Time.get_ticks_msec() - _last_interaction_msec) < 350

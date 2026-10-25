@@ -836,12 +836,15 @@ text = "آماده‌باشید... بازی به‌زودی آغاز می‌شو
 horizontal_alignment = 1
 
 [node name="Countdown" type="Label" parent="StartGameOverlay/Card/VBox"]
+custom_minimum_size = Vector2(360, 130)
 layout_mode = 2
+size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.88, 0.25, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 96
 text = "..."
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="RoundFinishBanner" type="Control" parent="."]
 visible = false
