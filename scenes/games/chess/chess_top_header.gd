@@ -71,7 +71,7 @@ func _setup_strike_dot_styles() -> void:
 
 func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
 	super.setup_match(game_name_fa, mode_title, round_num, max_rounds, turn_time)
-	_max_missed_turns = GameRegistry.get_max_missed_turns(GameTypes.CHESS)
+	_max_missed_turns = GameRegistry.get_max_missed_turns(GameManager.current_game_type)
 	if _max_missed_turns <= 0:
 		_max_missed_turns = 4
 	if is_instance_valid(lbl_afk_rule):

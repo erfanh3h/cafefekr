@@ -789,6 +789,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameTypes.YATZY
 		elif g_data.has("peaces"):
 			inferred_type = GameTypes.CHESS
+		elif g_data.has("pawns_count") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 64):
+			inferred_type = GameTypes.CHECKERS
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:
 			inferred_type = GameTypes.TIC_TAC_TOE
 		if not inferred_type.is_empty() and inferred_type.to_lower() != GameManager.current_game_type.to_lower():

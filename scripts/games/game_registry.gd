@@ -10,6 +10,7 @@ const DEFAULT_GAME_TYPE: String = GameTypes.TIC_TAC_TOE
 # Preloaded / registered board scenes
 const TICTACTOE_SCENE: String = "res://scenes/games/tictactoe/tictactoe_3d.tscn"
 const CHESS_SCENE: String = "res://scenes/games/chess/chess_3d.tscn"
+const CHECKERS_SCENE: String = "res://scenes/games/checkers/checkers_3d.tscn"
 const FEKRBEKR_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_3d.tscn"
 const YATZY_SCENE: String = "res://scenes/games/yatzy/yatzy_3d.tscn"
 
@@ -84,9 +85,10 @@ static var _registry: Dictionary = {
 	GameTypes.CHECKERS: {
 		"id": GameTypes.CHECKERS,
 		"name_fa": "چکرز",
-		"board_scene": "",
-		"max_rounds": 3,
-		"has_round_score": true,
+		"board_scene": CHECKERS_SCENE,
+		"top_header_scene": CHESS_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
 		"turn_time": 20.0,
 		"has_missed_turns_limit": true,
 		"max_missed_turns": 4,

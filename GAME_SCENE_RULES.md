@@ -61,7 +61,7 @@ In Cafe Fekr, **the in-game experience is shared across ALL board games**:
 |  |   |- Environment Lighting (OmniLight3D Lamp + Candlelight Flicker)           |  |
 |  |   |- Realistic Hands (Player Hand + Opponent Hand with dynamic sleeve color)|  |
 |  |   |- BoardContainer (Node3D)                                                 |  |
-|  |        \--> [Spawned Game Board] (e.g. TicTacToe3D, Chess3D, FekrBekr3D)     |  |
+|  |        \--> [Spawned Game Board] (e.g. TicTacToe3D, Chess3D, Checkers3D, FekrBekr3D, Yatzy3D)     |  |
 |  +-----------------------------------------------------------------------------+  |
 |                                                                                   |
 |  +-----------------------------------------------------------------------------+  |
@@ -88,7 +88,7 @@ In Cafe Fekr, **the in-game experience is shared across ALL board games**:
     - Each card features a circular gold/player-tinted **Avatar Medallion Frame** (`_p1_avatar_frame` / `_p2_avatar_frame`), a bottom **"شما" / "حریف" pill tag**, and a styled **Role Badge pill** (`"🔴 مهره قرمز"` / `"🔵 مهره آبی"`, `"🔴 ارتش قرمز"` / `"🔵 ارتش آبی"` in Chess, or `"🔐 کدشکن"` in FekrBekr).
     - Tapping either avatar emits `p1_profile_clicked` / `p2_profile_clicked` to open `UserProfileDialog`.
   - **Score Badge Visibility Rule (`GameRegistry.has_round_score`):**
-    - In games that do **not** have round scores (e.g. `Chess` and `FekrBekr`, where `GameRegistry.has_round_score(game_type)` is `false`), `ScoreBadge` (`_p1_score_badge` and `_p2_score_badge`) **MUST be hidden** (`visible = false`).
+    - In games that do **not** have round scores (e.g. `Chess`, `Checkers`, and `FekrBekr`, where `GameRegistry.has_round_score(game_type)` is `false`), `ScoreBadge` (`_p1_score_badge` and `_p2_score_badge`) **MUST be hidden** (`visible = false`).
     - Only score-based games (such as `TicTacToe` for round wins and `Yatzy` for cumulative points) display the score badge inside the player cards.
   - **Score Badge Persian Typography & Single-Child Rule:**
     - `Score` inside `ScoreBadge` **MUST** use the Persian game font (`res://assets/fonts/hekayat.ttf`, `font_size = 40`, `outline_size = 3`) and Persian numerals (`_fa_digits(score)` -> `"۰"`, `"۱"`, `"۲"`, `"۳"`), matching the Persian numeral styling on the `FekrBekr` 3D board.
