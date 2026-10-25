@@ -8,14 +8,17 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="cafefekr"
 run/main_scene="res://scenes/main/main.tscn"
-config/features=PackedStringArray("4.3", "Mobile")
-config/icon="res://assets/icons/logo.png"
+config/features=PackedStringArray("4.7", "Mobile")
 boot_splash/show_image=false
-boot_splash/minimum_display_time=0
+config/icon="res://assets/icons/logo.png"
 
 [audio]
 
@@ -38,7 +41,6 @@ window/size/window_height_override=960
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
-window/vsync/vsync_mode=1
 
 [gui]
 
@@ -50,11 +52,8 @@ theme/custom_font="res://assets/fonts/Vazir.ttf"
 
 [rendering]
 
-renderer/rendering_method="mobile"
-renderer/rendering_method.mobile="mobile"
-renderer/rendering_method.web="compatibility"
-scaling_3d/mode=0
-scaling_3d/scale.mobile=0.85
-scaling_3d/scale=1.0
 rendering_device/driver.windows="d3d12"
+renderer/rendering_method="mobile"
+renderer/rendering_method.web="compatibility"
 textures/vram_compression/import_etc2_astc=true
+scaling_3d/scale.mobile=0.85
