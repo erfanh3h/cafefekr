@@ -57,7 +57,9 @@ func _ready() -> void:
 	input_code.text_submitted.connect(func(_t): _on_verify_code_pressed())
 	input_username.text_submitted.connect(func(_t): _on_submit_username_pressed())
 	
-	_show_step1()
+	step1_container.visible = true
+	step2_container.visible = false
+	step3_container.visible = false
 
 func open() -> void:
 	is_mandatory_username = false
@@ -104,12 +106,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			lbl_status.modulate = Color(1.0, 0.4, 0.4)
 			AudioManager.sfx_tap()
 
+func _safe_grab_focus(control: Control) -> void:
+	if not is_instance_valid(control) or not visible:
+		return
+	# On mobile devices (Android/iOS), grabbing focus forces virtual keyboard open automatically on app startup.
+	# Only grab focus on desktop platforms where hardware keyboards are present.
+	if OS.get_name() not in ["Android", "iOS"]:
+		control.grab_focus()
+
 func _show_step1() -> void:
 	step1_container.visible = true
 	step2_container.visible = false
 	step3_container.visible = false
 	lbl_status.text = ""
-	input_phone.grab_focus()
+	_safe_grab_focus(input_phone)
 
 func _show_step2() -> void:
 	step1_container.visible = false
@@ -118,7 +128,7 @@ func _show_step2() -> void:
 	lbl_step2_subtitle.text = "کد ارسال شده به %s را وارد کنید:" % current_phone
 	lbl_status.text = ""
 	input_code.text = ""
-	input_code.grab_focus()
+	_safe_grab_focus(input_code)
 
 func _show_step3_username() -> void:
 	step1_container.visible = false
@@ -126,7 +136,7 @@ func _show_step3_username() -> void:
 	step3_container.visible = true
 	lbl_status.text = ""
 	input_username.text = ""
-	input_username.grab_focus()
+	_safe_grab_focus(input_username)
 
 func _normalize_phone(raw: String) -> String:
 	var phone = raw.strip_edges()

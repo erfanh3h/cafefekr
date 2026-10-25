@@ -145,7 +145,7 @@ func _hide_hands_for_yatzy() -> void:
 			tbl.enemy_hand.visible = false
 
 func is_interacting_with_piece() -> bool:
-	return (Time.get_ticks_msec() - _last_interaction_msec) < 280
+	return (Time.get_ticks_msec() - _last_interaction_msec) < 350
 
 func _mark_interaction() -> void:
 	_last_interaction_msec = Time.get_ticks_msec()
@@ -965,7 +965,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	die_area.set_meta("die_index", die_idx)
 	var die_col = CollisionShape3D.new()
 	var die_shape = BoxShape3D.new()
-	die_shape.size = Vector3(0.155, 0.14, 0.22)
+	die_shape.size = Vector3(0.19, 0.18, 0.25)
 	die_col.shape = die_shape
 	die_area.add_child(die_col)
 	die_area.position = Vector3(0, 0.05, 0.03)
@@ -1357,55 +1357,94 @@ func _animate_dice_roll(only_unheld: bool = false) -> void:
 # INPUT HANDLING (3D Camera Raycasting)
 # ==============================================================================
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_handle_board_click(event.position)
-	elif event is InputEventScreenTouch and event.pressed:
-		_handle_board_click(event.position)
+var _pointer_down_pos: Vector2 = Vector2.ZERO
+var _pointer_down_time: float = 0.0
+var _is_pointer_down: bool = false
+var _last_handled_tap_time: float = 0.0
 
-func _handle_board_click(screen_pos: Vector2) -> void:
+func _unhandled_input(event: InputEvent) -> void:
+	if not GameManager.is_game_active:
+		return
+
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_pointer_down_pos = event.position
+			_pointer_down_time = Time.get_ticks_msec() / 1000.0
+			_is_pointer_down = true
+		else:
+			if _is_pointer_down:
+				_is_pointer_down = false
+				var dist = event.position.distance_to(_pointer_down_pos)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _pointer_down_time
+				var now = Time.get_ticks_msec() / 1000.0
+				if dist <= 24.0 and elapsed < 0.6:
+					if now - _last_handled_tap_time >= 0.18:
+						_last_handled_tap_time = now
+						if _handle_board_click(event.position):
+							get_viewport().set_input_as_handled()
+
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			_pointer_down_pos = event.position
+			_pointer_down_time = Time.get_ticks_msec() / 1000.0
+			_is_pointer_down = true
+		else:
+			if _is_pointer_down:
+				_is_pointer_down = false
+				var dist = event.position.distance_to(_pointer_down_pos)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _pointer_down_time
+				var now = Time.get_ticks_msec() / 1000.0
+				if dist <= 24.0 and elapsed < 0.6:
+					if now - _last_handled_tap_time >= 0.18:
+						_last_handled_tap_time = now
+						if _handle_board_click(event.position):
+							get_viewport().set_input_as_handled()
+
+func _handle_board_click(screen_pos: Vector2) -> bool:
 	var viewport = get_viewport()
 	if not viewport:
-		return
+		return false
 	var cam = viewport.get_camera_3d()
 	if not cam:
-		return
+		return false
 
 	var from = cam.project_ray_origin(screen_pos)
 	var to = from + cam.project_ray_normal(screen_pos) * 10.0
-
 	var space_state = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
 	query.collide_with_areas = true
 	query.collide_with_bodies = false
-
 	var result = space_state.intersect_ray(query)
 	if result.is_empty():
-		return
-
+		return false
 	var collider = result.get("collider")
 	if not collider or not (collider is Area3D):
-		return
+		return false
 
 	_mark_interaction()
 	var hit_type = str(collider.get_meta("hit_type", ""))
-
 	match hit_type:
 		"guide":
 			var g_idx = int(collider.get_meta("cat_index", 0))
 			if g_idx >= 0 and g_idx < CATEGORY_GUIDES_FA.size():
 				AudioManager.sfx_tap()
 				show_hint("ℹ️ " + CATEGORY_GUIDES_FA[g_idx])
+			return true
 		"category":
 			var c_idx = int(collider.get_meta("cat_index", 0))
 			_on_category_clicked(c_idx)
+			return true
 		"die":
 			var d_idx = int(collider.get_meta("die_index", 0))
 			_on_die_clicked(d_idx)
+			return true
 		"BtnRollDice":
 			_on_roll_button_clicked()
+			return true
 		"BtnSubmitScore":
 			_on_submit_button_clicked()
+			return true
+	return false
 
 func _on_category_clicked(cat_idx: int) -> void:
 	if not GameManager.is_game_active:

@@ -17,6 +17,7 @@ signal match_ready(game_id: String, game_type: String)
 
 # View 1: Active Lobbies List
 @onready var view_list: VBoxContainer = $Margin/VBox/ViewList
+@onready var scroll_list: ScrollContainer = $Margin/VBox/ViewList/ScrollList
 @onready var btn_show_create: Button = $Margin/VBox/ViewList/ActionsRow/BtnShowCreate
 @onready var btn_show_join_code: Button = $Margin/VBox/ViewList/ActionsRow/BtnShowJoinCode
 @onready var lobbies_container: VBoxContainer = $Margin/VBox/ViewList/ScrollList/LobbiesContainer
@@ -35,6 +36,7 @@ signal match_ready(game_id: String, game_type: String)
 @onready var game_select_modal: Control = $GameSelectModal
 @onready var game_select_panel: PanelContainer = $GameSelectModal/Panel
 @onready var btn_close_game_select: TextureButton = $GameSelectModal/Panel/ModalMargin/VBox/TopRow/BtnCloseGameSelect
+@onready var scroll_games: ScrollContainer = $GameSelectModal/Panel/ModalMargin/VBox/ScrollGames
 @onready var game_grid: GridContainer = $GameSelectModal/Panel/ModalMargin/VBox/ScrollGames/GameGrid
 @onready var backdrop_game_select: ColorRect = $GameSelectModal/Backdrop
 
@@ -181,6 +183,8 @@ func _ready() -> void:
 	)
 	
 	_update_selected_game_display()
+	_setup_scroll_container_touch_drag(scroll_games)
+	_setup_scroll_container_touch_drag(scroll_list)
 
 func open() -> void:
 	ActionVFXManager.animate_dialog_open(self, null, true)
@@ -296,12 +300,12 @@ func _populate_game_grid() -> void:
 func _create_game_card(g_type: String) -> Control:
 	var is_selected = (g_type == selected_create_game_type)
 	
-	var card = Button.new()
+	var card = PanelContainer.new()
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	# 2 cards per row layout (width ~380px, height ~200px)
 	card.custom_minimum_size = Vector2(380, 200)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
-	card.flat = true
 	card.pivot_offset = Vector2(190, 100)
 	
 	# Warm wooden mahogany card styling (not pitch-black)
@@ -323,10 +327,7 @@ func _create_game_card(g_type: String) -> Control:
 	style_hover.shadow_size = 12
 	style_hover.shadow_offset = Vector2(0, 5)
 	
-	card.add_theme_stylebox_override("normal", style_normal)
-	card.add_theme_stylebox_override("hover", style_hover)
-	card.add_theme_stylebox_override("pressed", style_normal)
-	card.add_theme_stylebox_override("focus", style_normal)
+	card.add_theme_stylebox_override("panel", style_normal)
 	
 	# Warm underlay glow so transparent or dark areas look warm
 	var bg_warmth = ColorRect.new()
@@ -427,29 +428,106 @@ func _create_game_card(g_type: String) -> Control:
 		badge.add_child(check_lbl)
 		card.add_child(badge)
 	
-	# Dynamic hover & click juice
+	# Dynamic hover juice (desktop)
 	card.mouse_entered.connect(func():
 		AudioManager.sfx_tap()
+		card.add_theme_stylebox_override("panel", style_hover)
 		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2(1.03, 1.03), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(card, "scale", Vector2(1.02, 1.02), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	)
 	card.mouse_exited.connect(func():
+		card.add_theme_stylebox_override("panel", style_normal)
 		var tw = card.create_tween()
 		tw.tween_property(card, "scale", Vector2.ONE, 0.1)
 	)
 	
-	card.pressed.connect(func():
-		AudioManager.sfx_button()
-		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2(0.95, 0.95), 0.08)
-		tw.tween_property(card, "scale", Vector2.ONE, 0.08)
-		selected_create_game_type = g_type
-		_update_selected_game_display()
-		_close_game_select_modal()
+	# Mobile Touch-Drag Scroll & Tap Selection:
+	# Allows swiping/dragging directly across game cards on touchscreens without getting blocked,
+	# while preserving instantaneous tap selection when released without dragging!
+	var touch_down: bool = false
+	var touch_start_y: float = 0.0
+	var initial_scroll_v: int = 0
+	var is_dragging_scroll: bool = false
+	
+	card.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				touch_down = true
+				is_dragging_scroll = false
+				touch_start_y = event.global_position.y
+				initial_scroll_v = scroll_games.scroll_vertical
+				var tw = card.create_tween()
+				tw.tween_property(card, "scale", Vector2(0.96, 0.96), 0.06)
+			else:
+				var tw = card.create_tween()
+				tw.tween_property(card, "scale", Vector2.ONE, 0.08)
+				if touch_down:
+					touch_down = false
+					if not is_dragging_scroll:
+						AudioManager.sfx_button()
+						selected_create_game_type = g_type
+						_update_selected_game_display()
+						_close_game_select_modal()
+		elif event is InputEventScreenTouch:
+			if event.pressed:
+				touch_down = true
+				is_dragging_scroll = false
+				touch_start_y = event.position.y
+				initial_scroll_v = scroll_games.scroll_vertical
+				var tw = card.create_tween()
+				tw.tween_property(card, "scale", Vector2(0.96, 0.96), 0.06)
+			else:
+				var tw = card.create_tween()
+				tw.tween_property(card, "scale", Vector2.ONE, 0.08)
+				if touch_down:
+					touch_down = false
+					if not is_dragging_scroll:
+						AudioManager.sfx_button()
+						selected_create_game_type = g_type
+						_update_selected_game_display()
+						_close_game_select_modal()
+		elif (event is InputEventMouseMotion and touch_down) or event is InputEventScreenDrag:
+			var curr_y = event.global_position.y if event is InputEventMouseMotion else event.position.y
+			var delta_y = curr_y - touch_start_y
+			if abs(delta_y) > 10.0 or is_dragging_scroll:
+				is_dragging_scroll = true
+				var tw = card.create_tween()
+				tw.tween_property(card, "scale", Vector2.ONE, 0.06)
+				scroll_games.scroll_vertical = initial_scroll_v - int(delta_y)
 	)
 	
 	return card
 
+
+func _setup_scroll_container_touch_drag(sc: ScrollContainer) -> void:
+	if not sc:
+		return
+	var sb = sc.get_v_scroll_bar()
+	if sb:
+		sb.custom_minimum_size = Vector2(16, 0)
+	var touch_down: bool = false
+	var touch_start_y: float = 0.0
+	var initial_scroll_v: int = 0
+	sc.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				touch_down = true
+				touch_start_y = event.global_position.y
+				initial_scroll_v = sc.scroll_vertical
+			else:
+				touch_down = false
+		elif event is InputEventScreenTouch:
+			if event.pressed:
+				touch_down = true
+				touch_start_y = event.position.y
+				initial_scroll_v = sc.scroll_vertical
+			else:
+				touch_down = false
+		elif (event is InputEventMouseMotion and touch_down) or event is InputEventScreenDrag:
+			var curr_y = event.global_position.y if event is InputEventMouseMotion else event.position.y
+			var delta_y = curr_y - touch_start_y
+			sc.scroll_vertical = initial_scroll_v - int(delta_y)
+	)
 func _request_lobbies() -> void:
 	lbl_status.text = "در حال بروزرسانی لیست اتاق‌ها..."
 	var payload = {
@@ -552,6 +630,29 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 		icon_plate.texture = load("res://assets/icons/General/lobby.png")
 	hbox.add_child(icon_plate)
 	
+	var row_touch_down: bool = false
+	var row_touch_y: float = 0.0
+	var row_start_scroll: int = 0
+	row_panel.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				row_touch_down = true
+				row_touch_y = event.global_position.y
+				row_start_scroll = scroll_list.scroll_vertical
+			else:
+				row_touch_down = false
+		elif event is InputEventScreenTouch:
+			if event.pressed:
+				row_touch_down = true
+				row_touch_y = event.position.y
+				row_start_scroll = scroll_list.scroll_vertical
+			else:
+				row_touch_down = false
+		elif (event is InputEventMouseMotion and row_touch_down) or event is InputEventScreenDrag:
+			var curr_y = event.global_position.y if event is InputEventMouseMotion else event.position.y
+			var delta_y = curr_y - row_touch_y
+			scroll_list.scroll_vertical = row_start_scroll - int(delta_y)
+	)
 	return row_panel
 
 func _join_lobby_by_id(lobby_id: String) -> void:

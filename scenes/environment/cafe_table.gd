@@ -91,6 +91,17 @@ func _ready() -> void:
 
 	_build_luxury_game_environment()
 
+	# Mobile GPU Optimization (e.g. Samsung Galaxy M32 with Mali-G52 GPU):
+	# Turn off multi-pass ping-pong glow bloom and optimize shadow passes for 60fps mobile gameplay
+	if OS.get_name() in ["Android", "iOS"]:
+		var env_node = get_node_or_null("WorldEnvironment")
+		if env_node and env_node.environment:
+			env_node.environment.glow_enabled = false
+		if has_node("SunLight"):
+			var sun: DirectionalLight3D = get_node("SunLight")
+			sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+			sun.shadow_blur = 0.5
+
 	# Enemy Realistic Hand (comes in from opponent's side)
 	enemy_hand = RealisticHandScript.new()
 	enemy_hand.is_enemy = true

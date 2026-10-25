@@ -41,6 +41,9 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 var _sound_on_tex = preload("res://assets/icons/General/soundOn.png")
 var _sound_off_tex = preload("res://assets/icons/General/soundOff.png")
 
+var _splash_overlay: Control = null
+var _splash_dismissed: bool = false
+
 func _ready() -> void:
 	_setup_signals()
 	_start_logo_animation()
@@ -51,28 +54,156 @@ func _ready() -> void:
 	base_game_hud.visible = false
 	menu_container.visible = true
 	
-	# Defer theme background music until after splash screen has cleared
-	get_tree().create_timer(0.65).timeout.connect(func():
-		if is_instance_valid(self):
-			AudioManager.play_theme_music()
+	# Display polished in-engine splash overlay matching boot splash screen
+	_setup_splash_overlay()
+	
+	# Connect to real-time game server (port 5000)
+	NetworkManager.connect_to_game_server()
+	
+	# Safety fallback timer: ensure splash always dismisses even if offline or slow server response
+	get_tree().create_timer(2.6).timeout.connect(func():
+		if not _splash_dismissed and is_instance_valid(self):
+			_dismiss_splash_overlay()
 	)
 	
 	# Try to restore saved session
 	NetworkManager.restore_session(func(restored: bool, _msg: String):
 		user_header.update_ui()
-		if not restored:
-			login_dialog.open()
-			_show_backdrop()
-		else:
-			if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
-				print("[Main] Returning user has phone but no username. Enforcing username registration.")
-				login_dialog.open_for_username_completion()
-				_show_backdrop()
+		# Allow at least 0.75s display so the splash transition feels smooth & deliberate
+		get_tree().create_timer(0.75).timeout.connect(func():
+			if not is_instance_valid(self):
 				return
-			_check_and_auto_enter_active_game()
+			_dismiss_splash_overlay(func():
+				if not restored:
+					login_dialog.open()
+					_show_backdrop()
+				else:
+					if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
+						print("[Main] Returning user has phone but no username. Enforcing username registration.")
+						login_dialog.open_for_username_completion()
+						_show_backdrop()
+						return
+					_check_and_auto_enter_active_game()
+			)
+		)
 	)
-	# Connect to real-time game server (port 5000)
-	NetworkManager.connect_to_game_server()
+
+func _setup_splash_overlay() -> void:
+	_splash_overlay = Control.new()
+	_splash_overlay.name = "SplashOverlay"
+	_splash_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_splash_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_splash_overlay.z_index = 100
+	
+	# Solid warm mahogany background matching project boot_splash (Color(0.12, 0.08, 0.05, 1))
+	var bg = ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0.12, 0.08, 0.05, 1.0)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_splash_overlay.add_child(bg)
+	
+	# Center content
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_splash_overlay.add_child(center)
+	
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 22)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.add_child(vbox)
+	
+	# Cafe Logo (280x280)
+	var logo_rect = TextureRect.new()
+	logo_rect.custom_minimum_size = Vector2(280, 280)
+	logo_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	logo_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	logo_rect.pivot_offset = Vector2(140, 140)
+	logo_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if ResourceLoader.exists("res://assets/icons/logo_432.png"):
+		logo_rect.texture = load("res://assets/icons/logo_432.png")
+	elif ResourceLoader.exists("res://assets/icons/logo.png"):
+		logo_rect.texture = load("res://assets/icons/logo.png")
+	vbox.add_child(logo_rect)
+	
+	# Subtle breathing scale loop
+	var tw = logo_rect.create_tween().set_loops()
+	tw.tween_property(logo_rect, "scale", Vector2(1.05, 1.05), 1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(logo_rect, "scale", Vector2.ONE, 1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
+	# Persian App Title
+	var title_lbl = Label.new()
+	title_lbl.text = "کافه فِکـــر"
+	title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	title_lbl.add_theme_font_size_override("font_size", 54)
+	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45, 1.0))
+	title_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	title_lbl.add_theme_constant_override("shadow_outline_size", 4)
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title_lbl)
+	
+	# Persian Subtitle
+	var sub_lbl = Label.new()
+	sub_lbl.text = "باشگاه بازی‌های فکری و دورهمی آنلاین"
+	sub_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	sub_lbl.add_theme_font_size_override("font_size", 26)
+	sub_lbl.add_theme_color_override("font_color", Color(0.88, 0.80, 0.68, 0.95))
+	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(sub_lbl)
+	
+	# Animated Loading Text / Dots
+	var load_lbl = Label.new()
+	load_lbl.text = "در حال ورود به کافه..."
+	load_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	load_lbl.add_theme_font_size_override("font_size", 24)
+	load_lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.65, 0.9))
+	load_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(load_lbl)
+	
+	var dot_step = 0
+	var dot_timer = Timer.new()
+	dot_timer.wait_time = 0.35
+	dot_timer.autostart = true
+	_splash_overlay.add_child(dot_timer)
+	dot_timer.timeout.connect(func():
+		if not is_instance_valid(load_lbl):
+			return
+		dot_step = (dot_step + 1) % 4
+		var dots = ""
+		for d in range(dot_step):
+			dots += " ."
+		load_lbl.text = "در حال ورود به کافه" + dots
+	)
+	
+	$CanvasLayer.add_child(_splash_overlay)
+
+func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:
+	if _splash_dismissed:
+		if callback.is_valid():
+			callback.call()
+		return
+	_splash_dismissed = true
+	
+	if not _splash_overlay or not is_instance_valid(_splash_overlay):
+		AudioManager.play_theme_music()
+		if callback.is_valid():
+			callback.call()
+		return
+	
+	# Music begins playing right as splash smoothly fades out!
+	AudioManager.play_theme_music()
+	
+	var tw = create_tween().set_parallel(true)
+	tw.tween_property(_splash_overlay, "modulate:a", 0.0, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_callback(func():
+		if is_instance_valid(_splash_overlay):
+			_splash_overlay.queue_free()
+			_splash_overlay = null
+		if callback.is_valid():
+			callback.call()
+	)
 
 func _setup_signals() -> void:
 	# Menu Button Connections (Only 2 central game buttons)
