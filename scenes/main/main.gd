@@ -75,8 +75,12 @@ func _ready() -> void:
 				return
 			_dismiss_splash_overlay(func():
 				if not restored:
-					login_dialog.open()
-					_show_backdrop()
+					if not NetworkManager.is_online:
+						NetworkManager.connect_to_game_server()
+						_show_menu_toast("🔄 در حال تلاش برای اتصال مجدد به سرور بازی...")
+					else:
+						login_dialog.open()
+						_show_backdrop()
 				else:
 					if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
 						print("[Main] Returning user has phone but no username. Enforcing username registration.")
@@ -345,6 +349,11 @@ func _setup_button_juice() -> void:
 
 func _on_ranked_pressed() -> void:
 	AudioManager.sfx_button()
+	if not NetworkManager.is_online:
+		_hide_backdrop()
+		NetworkManager.connect_to_game_server()
+		_show_menu_toast("🔄 در حال تلاش برای اتصال مجدد به سرور بازی...")
+		return
 	_show_backdrop()
 	if not GameManager.is_logged_in:
 		login_dialog.open()
@@ -355,14 +364,15 @@ func _on_ranked_pressed() -> void:
 	if not GameManager.has_username():
 		login_dialog.open_for_username_completion()
 		return
-	if not NetworkManager.is_online:
-		_hide_backdrop()
-		_show_menu_toast("عدم اتصال به سرور بازی. لطفاً اتصال اینترنت خود را بررسی کنید.")
-		return
 	queue_dialog.start_queue()
 
 func _on_lobby_pressed() -> void:
 	AudioManager.sfx_button()
+	if not NetworkManager.is_online:
+		_hide_backdrop()
+		NetworkManager.connect_to_game_server()
+		_show_menu_toast("🔄 در حال تلاش برای اتصال مجدد به سرور بازی...")
+		return
 	_show_backdrop()
 	if not GameManager.is_logged_in:
 		login_dialog.open()
@@ -372,10 +382,6 @@ func _on_lobby_pressed() -> void:
 		return
 	if not GameManager.has_username():
 		login_dialog.open_for_username_completion()
-		return
-	if not NetworkManager.is_online:
-		_hide_backdrop()
-		_show_menu_toast("عدم اتصال به سرور بازی. لطفاً اتصال اینترنت خود را بررسی کنید.")
 		return
 	lobby_dialog.open()
 
@@ -821,6 +827,13 @@ func _on_connection_status_changed(connected: bool) -> void:
 				board.set_board_locked(true)
 		else:
 			base_game_hud.show_toast_hint("📡 اینترنت متصل شد! در حال بازیابی مسابقه...")
+	else:
+		if connected:
+			if not GameManager.is_logged_in and not GameManager.load_saved_token().is_empty():
+				NetworkManager.restore_session(func(_restored: bool, _msg: String):
+					user_header.update_ui()
+				)
+			_show_menu_toast("✅ اتصال با سرور بازی برقرار شد!")
 
 func _on_leave_game_pressed() -> void:
 	AudioManager.sfx_button()

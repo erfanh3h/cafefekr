@@ -35,7 +35,7 @@ const DRAG_THRESHOLD: float = 12.0
 # Dynamic State
 var is_board_view_active: bool = false
 var is_transitioning: bool = false
-var is_top_down_view: bool = false
+var is_top_down_view: bool = true
 var _camera_tween: Tween = null
 
 func _kill_camera_tween() -> void:
@@ -118,6 +118,9 @@ func _ready() -> void:
 	transition_to_menu_view(0.1)
 
 func _process(delta: float) -> void:
+	if _mouse_pressed and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_mouse_pressed = false
+		_is_dragging = false
 	if is_board_view_active and not is_transitioning:
 		if is_top_down_view:
 			top_down_current_height = lerp(top_down_current_height, top_down_target_height, 10.0 * delta)
@@ -172,8 +175,10 @@ func transition_to_menu_view(duration: float = 1.0) -> void:
 func transition_to_board_view(duration: float = 1.2) -> void:
 	_kill_camera_tween()
 	is_transitioning = true
-	is_top_down_view = false
-	camera_mode_changed.emit(false)
+	is_top_down_view = true
+	top_down_target_height = TOP_DOWN_HEIGHT_DEFAULT
+	top_down_current_height = TOP_DOWN_HEIGHT_DEFAULT
+	camera_mode_changed.emit(true)
 	var use_pitch = PITCH_DEFAULT
 	var use_dist = ZOOM_DEFAULT
 	if current_board_node:
@@ -188,20 +193,8 @@ func transition_to_board_view(duration: float = 1.2) -> void:
 	target_pitch = use_pitch
 	current_pitch = use_pitch
 
-	var cos_pitch = cos(-use_pitch)
-	var sin_pitch = sin(-use_pitch)
-	var end_x = TARGET_FOCUS.x + use_dist * sin(YAW_DEFAULT) * cos_pitch
-	var end_y = TARGET_FOCUS.y + use_dist * sin_pitch
-	var end_z = TARGET_FOCUS.z + use_dist * cos(YAW_DEFAULT) * cos_pitch
-	var end_pos = Vector3(end_x, end_y, end_z)
-
-	# Compute target rotation
-	var temp_cam = Camera3D.new()
-	add_child(temp_cam)
-	temp_cam.position = end_pos
-	temp_cam.look_at(TARGET_FOCUS, Vector3.UP)
-	var end_rot_deg = temp_cam.rotation_degrees
-	temp_cam.queue_free()
+	var end_pos = Vector3(TARGET_FOCUS.x, TARGET_FOCUS.y + top_down_target_height, TARGET_FOCUS.z)
+	var end_rot_deg = Vector3(-90.0, 0.0, 0.0)
 
 	_camera_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_camera_tween.tween_property(camera, "position", end_pos, duration)
@@ -217,8 +210,8 @@ func transition_to_board_view(duration: float = 1.2) -> void:
 func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 	clear_board()
 	update_hand_colors()
-	is_top_down_view = false
-	camera_mode_changed.emit(false)
+	is_top_down_view = true
+	camera_mode_changed.emit(true)
 	if board_packed_scene:
 		current_board_node = board_packed_scene.instantiate()
 		board_container.add_child(current_board_node)
@@ -298,8 +291,6 @@ func set_top_down_view(enabled: bool, duration: float = 0.55) -> void:
 	)
 
 func reset_camera_orbit() -> void:
-	if is_top_down_view:
-		set_top_down_view(false, 0.5)
 	top_down_target_height = TOP_DOWN_HEIGHT_DEFAULT
 	target_yaw = YAW_DEFAULT
 	var def_pitch = PITCH_DEFAULT
@@ -415,21 +406,17 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 			_mouse_start_pos = event.position
 			_is_dragging = false
 		else:
-			var was_pressed = _mouse_pressed
 			_mouse_pressed = false
-			if was_pressed and not _is_dragging:
-				_check_double_tap(event.position)
 			_is_dragging = false
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
+	if is_top_down_view:
+		return
 	if _mouse_pressed:
 		if not _is_dragging:
 			if event.position.distance_to(_mouse_start_pos) > DRAG_THRESHOLD:
 				_is_dragging = true
 		if _is_dragging:
-			if is_top_down_view:
-				is_top_down_view = false
-				camera_mode_changed.emit(false)
 			target_yaw -= event.relative.x * SENSITIVITY_YAW
 			target_pitch -= event.relative.y * SENSITIVITY_PITCH
 			target_yaw = clampf(target_yaw, YAW_MIN, YAW_MAX)
@@ -445,13 +432,10 @@ func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 			var pts = _active_touches.values()
 			_prev_pinch_dist = pts[0].distance_to(pts[1])
 	else:
-		var had_touch = _active_touches.has(event.index)
 		_active_touches.erase(event.index)
 		if _active_touches.size() < 2:
 			_prev_pinch_dist = -1.0
 		if _active_touches.is_empty():
-			if had_touch and not _is_dragging:
-				_check_double_tap(event.position)
 			_is_dragging = false
 
 func _handle_screen_drag(event: InputEventScreenDrag) -> void:
@@ -469,13 +453,12 @@ func _handle_screen_drag(event: InputEventScreenDrag) -> void:
 				target_distance = clampf(target_distance - delta_dist * SENSITIVITY_PINCH, ZOOM_MIN, ZOOM_MAX)
 		_prev_pinch_dist = current_dist
 	else:
+		if is_top_down_view:
+			return
 		if not _is_dragging:
 			if event.position.distance_to(_drag_start_pos) > DRAG_THRESHOLD:
 				_is_dragging = true
 		if _is_dragging:
-			if is_top_down_view:
-				is_top_down_view = false
-				camera_mode_changed.emit(false)
 			target_yaw -= event.relative.x * SENSITIVITY_YAW
 			target_pitch -= event.relative.y * SENSITIVITY_PITCH
 			target_yaw = clampf(target_yaw, YAW_MIN, YAW_MAX)

@@ -113,6 +113,8 @@ func restore_session(callback: Callable) -> void:
 
 func connect_to_game_server() -> void:
 	socket.connect_to_host(server_host, game_port, false)
+	if _reconnect_timer and _reconnect_timer.is_stopped():
+		_reconnect_timer.start()
 
 func disconnect_from_game_server() -> void:
 	_reconnect_timer.stop()

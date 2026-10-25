@@ -685,6 +685,7 @@ func _on_cell_input(cell_idx: int, event: InputEvent) -> void:
 			_cell_press_pos = event.position
 			_cell_press_idx = cell_idx
 			_cell_press_time = Time.get_ticks_msec() / 1000.0
+			get_viewport().set_input_as_handled()
 		else:
 			var target_cell = _cell_press_idx if _cell_press_idx != -1 else cell_idx
 			_cell_press_idx = -1

@@ -22,7 +22,10 @@ signal top_view_requested()
 
 # --- Bottom Controls & Camera Dock ---
 @onready var btn_surrender: Button = $BottomBar/Margin/HBox/BtnSurrender
+@onready var btn_kori: Button = $BottomBar/Margin/HBox/BtnKori
 @onready var btn_reactions: Button = $BottomBar/Margin/HBox/BtnReactions
+
+var _last_reaction_sent_msec: int = -10000
 @onready var btn_zoom_in: Button = $BottomBar/Margin/HBox/BtnZoomIn
 @onready var btn_zoom_out: Button = $BottomBar/Margin/HBox/BtnZoomOut
 @onready var btn_cam_top: Button = $BottomBar/Margin/HBox/BtnCamTop
@@ -364,6 +367,9 @@ func _setup_connections() -> void:
 	KenneyUI.style_button(btn_cam_top, KenneyUI.COLOR_WOOD)
 	KenneyUI.style_button(btn_cam_reset, KenneyUI.COLOR_WOOD)
 	KenneyUI.style_button(btn_surrender, KenneyUI.COLOR_WOOD)
+	if is_instance_valid(btn_kori):
+		KenneyUI.style_button(btn_kori, KenneyUI.COLOR_WOOD)
+		btn_kori.text = ""
 	KenneyUI.style_button(btn_reactions, KenneyUI.COLOR_WOOD)
 	KenneyUI.style_button(btn_audio, KenneyUI.COLOR_WOOD)
 	KenneyUI.style_button(btn_confirm_surrender, KenneyUI.COLOR_RED)
@@ -384,6 +390,8 @@ func _setup_connections() -> void:
 	btn_cam_top.add_theme_font_size_override("font_size", 34)
 	
 	var all_btns = [btn_zoom_in, btn_zoom_out, btn_cam_top, btn_cam_reset, btn_surrender, btn_reactions, btn_audio]
+	if is_instance_valid(btn_kori):
+		all_btns.append(btn_kori)
 	for b in all_btns:
 		b.pivot_offset = b.custom_minimum_size / 2.0
 		ActionVFXManager.apply_button_juice(b, "tap_button")
@@ -407,12 +415,21 @@ func _setup_connections() -> void:
 		_close_surrender_dialog()
 	)
 	
+	if is_instance_valid(btn_kori):
+		btn_kori.pressed.connect(func():
+			if not GameManager.is_game_active:
+				show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
+				return
+			AudioManager.sfx_button()
+			reaction_picker.open_koris()
+		)
+	
 	btn_reactions.pressed.connect(func():
 		if not GameManager.is_game_active:
 			show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
 			return
 		AudioManager.sfx_button()
-		reaction_picker.open()
+		reaction_picker.open_stickers()
 	)
 	
 	btn_audio.pressed.connect(func():
@@ -468,6 +485,11 @@ func _setup_connections() -> void:
 		)
 	
 	reaction_picker.reaction_selected.connect(func(r_id):
+		var now_ms = Time.get_ticks_msec()
+		if now_ms - _last_reaction_sent_msec < 3000:
+			show_toast_hint("لطفاً چند ثانیه صبر کنید...")
+			return
+		_last_reaction_sent_msec = now_ms
 		NetworkManager.send_game_reaction(r_id)
 		show_reaction(GameManager.my_player_index, r_id)
 		reaction_sent.emit(r_id)
@@ -590,7 +612,8 @@ func reset_for_new_match() -> void:
 		start_overlay.get_node("Dimmer").mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if intro_card:
 		intro_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	set_camera_mode_indicator(false)
+	set_camera_mode_indicator(true)
+	_last_reaction_sent_msec = -10000
 	round_finish_banner.visible = false
 	if _toast_tween and is_instance_valid(_toast_tween):
 		_toast_tween.kill()

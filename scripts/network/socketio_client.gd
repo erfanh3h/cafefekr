@@ -32,6 +32,9 @@ func connect_url(url: String) -> Error:
 	current_url = url
 	is_connected_to_server = false
 	connected_namespaces.clear()
+	if ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
+		ws.close()
+		ws = WebSocketPeer.new()
 	var err = ws.connect_to_url(url)
 	if err != OK:
 		push_error("[SocketIO] Failed to connect to URL: %s, Error: %d" % [url, err])

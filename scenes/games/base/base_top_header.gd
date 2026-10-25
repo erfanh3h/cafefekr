@@ -864,45 +864,186 @@ func _animate_score_bump(badge: Control) -> void:
 	tw.tween_property(badge, "scale", Vector2(1.24, 1.24), 0.16)
 	tw.tween_property(badge, "scale", Vector2(1.0, 1.0), 0.18)
 
+const KORIS: Array[String] = [
+	"شکست دیگه عادتت شده!",
+	"عجب حرکت هوشمندانه‌ای بود!",
+	"برنده فقط منم!",
+	"بازی شروع نشده، تمومه!",
+	"خیلی خوب بازی کردی!",
+	"حریف من نیستی!",
+	"بازم بردم!",
+	"اون استراتژی عالی بود!",
+	"قهرمان برگشته!",
+	"این فقط تمرین بود!",
+	"خوشم اومد از سبک بازیت!",
+	"یه باخت دیگه تو کارنامت!",
+	"بهتره تسلیم شی!",
+	"آفرین!",
+	"سریع‌تر از اینم می‌بازی؟",
+	"حیف وقتی که گذاشتی!",
+	"حرکتت واقعاً تحسین‌برانگیز بود!",
+	"بهتره تمرین کنی!",
+	"حالا یاد گرفتی؟",
+	"ممنونم!",
+	"راحت‌تر از این نبود!",
+	"این فقط شروعشه!",
+	"اون تاکتیک خیلی جالب بود!",
+	"تو حتی نزدیک هم نشدی!",
+	"پایانش همین بود؟",
+	"این یکی رو عالی مدیریت کردی!",
+	"بازم دیر کردی!",
+	"این برد مال منه!",
+	"ایده خوبی داشتی، بهش ادامه بده!",
+	"مثل همیشه برنده!",
+	"یک حرکت و تموم!",
+	"این حرکت غیرمنتظره بود",
+	"بازی رو یاد بگیر!",
+	"بهترین بودن سخته!",
+	"خیلی خوب مسیر بازی رو تغییر دادی!",
+	"حریف من نیستی!",
+	"دوباره باختی!",
+	"این تاکتیکت واقعاً کارساز بود!",
+	"تو از اول هم شانسی نداشتی!",
+	"بردم، طبق معمول!",
+	"پیشرفتت تو این بازی محسوسه!",
+	"تسلیم شو، هنوز وقت داری!",
+	"بازم ساده بردم!",
+	"خیلی خوب کنترل کردی اوضاع رو!",
+	"این فقط یه گرم کردن بود!",
+	"قهرمان برگشت!",
+	"اون تصمیم واقعاً درست بود!",
+	"دیر رسیدی به بازی!",
+	"بازی کردن با تو وقت تلف کردنه!",
+	"حرکت نهایی‌ات خیلی قوی بود!",
+	"با همین سرعت می‌بازی!",
+	"یه کلاس درس دیگه برات بود!",
+	"این راندو خیلی حرفه‌ای زدی!",
+	"هنوز مونده تا به من برسی!",
+	"فقط نگاه کن چطور برنده می‌شم!",
+	"خیلی خوب بود!",
+	"شروع نکرده باختی!",
+	"پایان داستان تو همین‌جاست!",
+	"عجب حرکت هوشمندانه‌ای!",
+	"به همین سادگی!",
+	"این فقط یک نمایش بود!",
+	"عالی بازی کردی!",
+	"پایان رو از الان می‌دونم!",
+	"خسته نشدی از باختن؟",
+	"به به!",
+	"دوباره شانس داری، امتحان کن!",
+	"فکر کنم هنوز نوبتت نشده!",
+	"اون تاکتیک معرکه بود!",
+	"بازی براتو تفریحه، برا من زندگیه!",
+	"توی لیگ خودت بازی کن!",
+	"چقد خوب دفاع کردی!",
+	"این بود تمام توانت؟",
+	"امروز روز تو نبود!",
+	"بازی خفنی کردی!",
+	"شاید دفعه بعد!",
+	"باید تلاش بیشتری کنی!",
+	"ایده فوق‌العاده‌ای بود!",
+	"هنوز اول راحته!"
+]
+
+var _p1_reaction_seq: int = 0
+var _p2_reaction_seq: int = 0
+
 func show_reaction(user_index: int, reaction_id: int) -> void:
 	var bubble = p1_reaction_bubble if user_index == 1 else p2_reaction_bubble
 	var icon = p1_reaction_icon if user_index == 1 else p2_reaction_icon
 	if not is_instance_valid(bubble) or not is_instance_valid(icon):
 		return
 
-	var r_tex = _get_cached_reaction(reaction_id)
-	if r_tex:
-		icon.texture = r_tex
+	if user_index == 1:
+		_p1_reaction_seq += 1
+	else:
+		_p2_reaction_seq += 1
+	var my_seq = _p1_reaction_seq if user_index == 1 else _p2_reaction_seq
+
+	var bubble_frame = bubble.get_node_or_null("BubbleFrame") as PanelContainer
+	var kori_lbl: Label = null
+	if is_instance_valid(bubble_frame):
+		kori_lbl = bubble_frame.get_node_or_null("KoriLabel") as Label
+		if not is_instance_valid(kori_lbl):
+			kori_lbl = Label.new()
+			kori_lbl.name = "KoriLabel"
+			kori_lbl.add_theme_font_override("font", _font_hekayat)
+			kori_lbl.add_theme_font_size_override("font_size", 24)
+			kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.86, 1.0))
+			kori_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+			kori_lbl.add_theme_constant_override("shadow_offset_y", 2)
+			kori_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			kori_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			kori_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			kori_lbl.custom_minimum_size = Vector2(290, 74)
+			bubble_frame.add_child(kori_lbl)
+
+	bubble.z_index = 30
+	var hold_duration = 2.4
+
+	if reaction_id > 100:
+		# Persian Kori (کری‌خوانی) Speech Bubble
+		var k_idx = clampi(reaction_id - 101, 0, KORIS.size() - 1)
+		icon.visible = false
+		if is_instance_valid(kori_lbl):
+			kori_lbl.visible = true
+			kori_lbl.text = "💬 " + KORIS[k_idx]
+		if is_instance_valid(bubble_frame):
+			bubble_frame.custom_minimum_size = Vector2(330, 104)
+			bubble_frame.offset_left = -165.0
+			bubble_frame.offset_top = -52.0
+			bubble_frame.offset_right = 165.0
+			bubble_frame.offset_bottom = 52.0
+		hold_duration = 4.2
+	else:
+		# Sticker / Emoji Reaction
+		if is_instance_valid(kori_lbl):
+			kori_lbl.visible = false
+		icon.visible = true
+		if is_instance_valid(bubble_frame):
+			bubble_frame.custom_minimum_size = Vector2(120, 120)
+			bubble_frame.offset_left = -60.0
+			bubble_frame.offset_top = -60.0
+			bubble_frame.offset_right = 60.0
+			bubble_frame.offset_bottom = 60.0
+		var r_tex = _get_cached_reaction(reaction_id)
+		if r_tex:
+			icon.texture = r_tex
 
 	bubble.visible = true
 	bubble.scale = Vector2(0.1, 0.1)
 	bubble.modulate.a = 0.0
-	bubble.pivot_offset = Vector2(60, 60)
+	bubble.pivot_offset = bubble.size * 0.5
 
-	var start_rot = -7.0 if user_index == 1 else 7.0
+	var start_rot = (-4.0 if user_index == 1 else 4.0) if reaction_id > 100 else (-7.0 if user_index == 1 else 7.0)
 	bubble.rotation_degrees = start_rot
 
 	AudioManager.play_sound("chat")
 
 	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(bubble, "scale", Vector2(1.18, 1.18), 0.22)
+	tw.tween_property(bubble, "scale", Vector2(1.12, 1.12) if reaction_id > 100 else Vector2(1.18, 1.18), 0.22)
 	tw.parallel().tween_property(bubble, "modulate:a", 1.0, 0.16)
 	tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.22)
 	tw.tween_property(bubble, "scale", Vector2.ONE, 0.1)
 
-	var idle_tw = create_tween().set_loops(3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	idle_tw.tween_property(bubble, "scale", Vector2(1.05, 1.05), 0.35)
-	idle_tw.parallel().tween_property(bubble, "rotation_degrees", -3.5 if user_index == 1 else 3.5, 0.35)
-	idle_tw.tween_property(bubble, "scale", Vector2.ONE, 0.35)
-	idle_tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.35)
+	if reaction_id <= 100:
+		var idle_tw = create_tween().set_loops(3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		idle_tw.tween_property(bubble, "scale", Vector2(1.05, 1.05), 0.35)
+		idle_tw.parallel().tween_property(bubble, "rotation_degrees", -3.5 if user_index == 1 else 3.5, 0.35)
+		idle_tw.tween_property(bubble, "scale", Vector2.ONE, 0.35)
+		idle_tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.35)
 
-	await get_tree().create_timer(2.4).timeout
+	await get_tree().create_timer(hold_duration).timeout
+	var current_seq = _p1_reaction_seq if user_index == 1 else _p2_reaction_seq
+	if current_seq != my_seq:
+		return
 	if is_instance_valid(bubble) and bubble.visible:
 		var fade_tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		fade_tw.tween_property(bubble, "scale", Vector2(1.12, 1.12), 0.1)
+		fade_tw.tween_property(bubble, "scale", Vector2(1.08, 1.08), 0.1)
 		fade_tw.parallel().tween_property(bubble, "modulate:a", 0.0, 0.28)
 		await fade_tw.finished
-		if is_instance_valid(bubble):
+		var after_seq = _p1_reaction_seq if user_index == 1 else _p2_reaction_seq
+		if after_seq == my_seq and is_instance_valid(bubble):
 			bubble.visible = false
 			bubble.scale = Vector2.ONE
 			bubble.rotation_degrees = 0.0
