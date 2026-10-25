@@ -271,23 +271,36 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	
 	card.add_child(row)
 	
-	# Tap interaction: opens UserProfileDialog
-	card.mouse_entered.connect(func():
-		AudioManager.sfx_tap()
-		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2(1.02, 1.02), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	)
-	card.mouse_exited.connect(func():
-		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2.ONE, 0.1)
-	)
-	card.pressed.connect(func():
-		AudioManager.sfx_button()
-		ActionVFXManager.animate_button_pop(card)
-		user_selected.emit(user_dict)
-		var prof_dlg = get_tree().root.find_child("UserProfileDialog", true, false)
-		if prof_dlg and prof_dlg.has_method("open_for_user"):
-			prof_dlg.open_for_user(user_dict, "رتبه %d کافه فکر" % rank)
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
+	var scroll_node = $Margin/VBox/Scroll as ScrollContainer
+	var drag_state = {"active": false, "dragging": false, "start_y": 0.0, "start_scroll": 0}
+	card.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				drag_state["active"] = true
+				drag_state["dragging"] = false
+				drag_state["start_y"] = get_viewport().get_mouse_position().y
+				drag_state["start_scroll"] = scroll_node.scroll_vertical if is_instance_valid(scroll_node) else 0
+			else:
+				var was_dragging = drag_state["dragging"]
+				var was_active = drag_state["active"]
+				drag_state["active"] = false
+				drag_state["dragging"] = false
+				if was_active and not was_dragging:
+					var dy_rel = absf(get_viewport().get_mouse_position().y - float(drag_state["start_y"]))
+					if dy_rel <= 14.0:
+						AudioManager.sfx_button()
+						ActionVFXManager.animate_button_pop(card)
+						user_selected.emit(user_dict)
+						var prof_dlg = get_tree().root.find_child("UserProfileDialog", true, false)
+						if prof_dlg and prof_dlg.has_method("open_for_user"):
+							prof_dlg.open_for_user(user_dict, "رتبه %d کافه فکر" % rank)
+		elif event is InputEventMouseMotion and drag_state["active"]:
+			var dy = get_viewport().get_mouse_position().y - float(drag_state["start_y"])
+			if absf(dy) > 12.0 or drag_state["dragging"]:
+				drag_state["dragging"] = true
+				if is_instance_valid(scroll_node):
+					scroll_node.scroll_vertical = max(0, int(drag_state["start_scroll"]) - int(dy))
 	)
 	
 	list_container.add_child(card)

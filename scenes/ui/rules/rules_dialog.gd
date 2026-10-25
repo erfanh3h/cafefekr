@@ -22,6 +22,7 @@ signal closed()
 @onready var game_select_modal: Control = $GameSelectModal
 @onready var game_select_panel: PanelContainer = $GameSelectModal/Panel
 @onready var btn_close_game_select: TextureButton = $GameSelectModal/Panel/ModalMargin/VBox/TopRow/BtnCloseGameSelect
+@onready var scroll_games: ScrollContainer = $GameSelectModal/Panel/ModalMargin/VBox/ScrollGames
 @onready var game_grid: GridContainer = $GameSelectModal/Panel/ModalMargin/VBox/ScrollGames/GameGrid
 @onready var backdrop_game_select: ColorRect = $GameSelectModal/Backdrop
 
@@ -331,27 +332,34 @@ func _create_game_card(g: Dictionary) -> Control:
 		badge.add_child(check_lbl)
 		card.add_child(badge)
 	
-	# Hover & click juice
-	card.mouse_entered.connect(func():
-		AudioManager.sfx_tap()
-		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2(1.03, 1.03), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	)
-	card.mouse_exited.connect(func():
-		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2.ONE, 0.1)
-	)
-	
-	card.pressed.connect(func():
-		AudioManager.sfx_button()
-		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2(0.95, 0.95), 0.08)
-		tw.tween_property(card, "scale", Vector2.ONE, 0.08)
-		selected_game_key = k
-		_update_selected_game_display()
-		scroll_content.scroll_vertical = 0
-		_render_content()
-		_close_game_select_modal()
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
+	var drag_state = {"active": false, "dragging": false, "start_y": 0.0, "start_scroll": 0}
+	card.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				drag_state["active"] = true
+				drag_state["dragging"] = false
+				drag_state["start_y"] = get_viewport().get_mouse_position().y
+				drag_state["start_scroll"] = scroll_games.scroll_vertical
+			else:
+				var was_dragging = drag_state["dragging"]
+				var was_active = drag_state["active"]
+				drag_state["active"] = false
+				drag_state["dragging"] = false
+				if was_active and not was_dragging:
+					var dy_rel = absf(get_viewport().get_mouse_position().y - float(drag_state["start_y"]))
+					if dy_rel <= 14.0:
+						AudioManager.sfx_button()
+						selected_game_key = k
+						_update_selected_game_display()
+						scroll_content.scroll_vertical = 0
+						_render_content()
+						_close_game_select_modal()
+		elif event is InputEventMouseMotion and drag_state["active"]:
+			var dy = get_viewport().get_mouse_position().y - float(drag_state["start_y"])
+			if absf(dy) > 12.0 or drag_state["dragging"]:
+				drag_state["dragging"] = true
+				scroll_games.scroll_vertical = max(0, int(drag_state["start_scroll"]) - int(dy))
 	)
 	
 	return card

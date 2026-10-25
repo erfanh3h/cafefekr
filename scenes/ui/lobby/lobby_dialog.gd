@@ -405,64 +405,36 @@ func _create_game_card(g_type: String) -> Control:
 	mode_pill.add_child(mode_lbl)
 	card.add_child(mode_pill)
 	
-	# Dynamic hover juice (desktop)
-	card.mouse_entered.connect(func():
-		AudioManager.sfx_tap()
-		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2(1.02, 1.02), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	)
-	card.mouse_exited.connect(func():
-		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2.ONE, 0.1)
-	)
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	
-	# Touch Drag Scrolling + Tap Selection Handling:
-	# If finger moves > 24px vertically, it scrolls ScrollGames and suppresses card.pressed.
-	# If tapped without drag, card.pressed executes instantly!
-	var touch_down_y: float = 0.0
-	var scroll_start_v: int = 0
-	var is_scrolling_drag: bool = false
-	var touch_active: bool = false
-	
+	# Smooth 60fps Viewport-Coordinate Drag Scrolling + Clean Tap Selection:
+	# Uses exclusively viewport global mouse/touch position via InputEventMouseButton/Motion
+	# (emulate_mouse_from_touch handles mobile touch seamlessly without local-coordinate oscillation or hover audio ticking).
+	var drag_state = {"active": false, "dragging": false, "start_y": 0.0, "start_scroll": 0}
 	card.gui_input.connect(func(event: InputEvent):
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
-				touch_active = true
-				is_scrolling_drag = false
-				touch_down_y = event.global_position.y
-				scroll_start_v = scroll_games.scroll_vertical
+				drag_state["active"] = true
+				drag_state["dragging"] = false
+				drag_state["start_y"] = get_viewport().get_mouse_position().y
+				drag_state["start_scroll"] = scroll_games.scroll_vertical
 			else:
-				touch_active = false
-		elif event is InputEventScreenTouch:
-			if event.pressed:
-				touch_active = true
-				is_scrolling_drag = false
-				touch_down_y = event.position.y
-				scroll_start_v = scroll_games.scroll_vertical
-			else:
-				touch_active = false
-		elif event is InputEventScreenDrag:
-			var dy = event.position.y - touch_down_y
-			if abs(dy) > 24.0 or is_scrolling_drag:
-				is_scrolling_drag = true
-				scroll_games.scroll_vertical = scroll_start_v - int(dy)
-		elif event is InputEventMouseMotion and touch_active:
-			var dy = event.global_position.y - touch_down_y
-			if abs(dy) > 24.0 or is_scrolling_drag:
-				is_scrolling_drag = true
-				scroll_games.scroll_vertical = scroll_start_v - int(dy)
-	)
-	
-	card.pressed.connect(func():
-		if is_scrolling_drag:
-			return
-		AudioManager.sfx_button()
-		var tw = card.create_tween()
-		tw.tween_property(card, "scale", Vector2(0.95, 0.95), 0.08)
-		tw.tween_property(card, "scale", Vector2.ONE, 0.08)
-		selected_create_game_type = g_type
-		_update_selected_game_display()
-		_close_game_select_modal()
+				var was_dragging = drag_state["dragging"]
+				var was_active = drag_state["active"]
+				drag_state["active"] = false
+				drag_state["dragging"] = false
+				if was_active and not was_dragging:
+					var dy_release = absf(get_viewport().get_mouse_position().y - float(drag_state["start_y"]))
+					if dy_release <= 14.0:
+						AudioManager.sfx_button()
+						selected_create_game_type = g_type
+						_update_selected_game_display()
+						_close_game_select_modal()
+		elif event is InputEventMouseMotion and drag_state["active"]:
+			var dy = get_viewport().get_mouse_position().y - float(drag_state["start_y"])
+			if absf(dy) > 12.0 or drag_state["dragging"]:
+				drag_state["dragging"] = true
+				scroll_games.scroll_vertical = max(0, int(drag_state["start_scroll"]) - int(dy))
 	)
 	
 	return card
@@ -473,28 +445,18 @@ func _setup_scroll_container_touch_drag(sc: ScrollContainer) -> void:
 	var sb = sc.get_v_scroll_bar()
 	if sb:
 		sb.custom_minimum_size = Vector2(16, 0)
-	var touch_down: bool = false
-	var touch_start_y: float = 0.0
-	var initial_scroll_v: int = 0
+	var state = {"down": false, "start_y": 0.0, "start_scroll": 0}
 	sc.gui_input.connect(func(event: InputEvent):
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
-				touch_down = true
-				touch_start_y = event.global_position.y
-				initial_scroll_v = sc.scroll_vertical
+				state["down"] = true
+				state["start_y"] = get_viewport().get_mouse_position().y
+				state["start_scroll"] = sc.scroll_vertical
 			else:
-				touch_down = false
-		elif event is InputEventScreenTouch:
-			if event.pressed:
-				touch_down = true
-				touch_start_y = event.position.y
-				initial_scroll_v = sc.scroll_vertical
-			else:
-				touch_down = false
-		elif (event is InputEventMouseMotion and touch_down) or event is InputEventScreenDrag:
-			var curr_y = event.global_position.y if event is InputEventMouseMotion else event.position.y
-			var delta_y = curr_y - touch_start_y
-			sc.scroll_vertical = initial_scroll_v - int(delta_y)
+				state["down"] = false
+		elif event is InputEventMouseMotion and state["down"]:
+			var delta_y = get_viewport().get_mouse_position().y - float(state["start_y"])
+			sc.scroll_vertical = max(0, int(state["start_scroll"]) - int(delta_y))
 	)
 func _request_lobbies() -> void:
 	lbl_status.text = "در حال بروزرسانی لیست اتاق‌ها..."
@@ -598,28 +560,19 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 		icon_plate.texture = load("res://assets/icons/General/lobby.png")
 	hbox.add_child(icon_plate)
 	
-	var row_touch_down: bool = false
-	var row_touch_y: float = 0.0
-	var row_start_scroll: int = 0
+	row_panel.mouse_filter = Control.MOUSE_FILTER_PASS
+	var row_state = {"down": false, "start_y": 0.0, "start_scroll": 0}
 	row_panel.gui_input.connect(func(event: InputEvent):
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
-				row_touch_down = true
-				row_touch_y = event.global_position.y
-				row_start_scroll = scroll_list.scroll_vertical
+				row_state["down"] = true
+				row_state["start_y"] = get_viewport().get_mouse_position().y
+				row_state["start_scroll"] = scroll_list.scroll_vertical
 			else:
-				row_touch_down = false
-		elif event is InputEventScreenTouch:
-			if event.pressed:
-				row_touch_down = true
-				row_touch_y = event.position.y
-				row_start_scroll = scroll_list.scroll_vertical
-			else:
-				row_touch_down = false
-		elif (event is InputEventMouseMotion and row_touch_down) or event is InputEventScreenDrag:
-			var curr_y = event.global_position.y if event is InputEventMouseMotion else event.position.y
-			var delta_y = curr_y - row_touch_y
-			scroll_list.scroll_vertical = row_start_scroll - int(delta_y)
+				row_state["down"] = false
+		elif event is InputEventMouseMotion and row_state["down"]:
+			var delta_y = get_viewport().get_mouse_position().y - float(row_state["start_y"])
+			scroll_list.scroll_vertical = max(0, int(row_state["start_scroll"]) - int(delta_y))
 	)
 	return row_panel
 

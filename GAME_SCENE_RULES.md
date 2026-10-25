@@ -47,7 +47,7 @@
 
 In Cafe Fekr, **the in-game experience is shared across ALL board games**:
 1. **The 3D Cafe Environment is Constant**: The wooden cafe table, cozy warm lighting, candlelight, realistic animated hands, and camera orbit/zoom system (`scenes/environment/cafe_table.tscn`) remain identical for every game.
-2. **The 2D In-Game HUD is Constant**: The top player cards, round count, turn banner, turn timer bar, 7-button bottom control bar, toast hints, reaction bubbles, pause/disconnect dialogs, and match result dialogs (`scenes/games/base/base_game_hud.tscn`) are unified and shared.
+2. **The 2D In-Game HUD is Constant**: The top player cards, round count, turn banner, turn timer bar, 8-button bottom control bar, toast hints, reaction bubbles, pause/disconnect dialogs, and match result dialogs (`scenes/games/base/base_game_hud.tscn`) are unified and shared.
 3. **Only the Board Changes**: Each game provides its own 3D board scene that is spawned dynamically inside `cafe_table`'s `BoardContainer`. Every board inherits from `BaseGameBoard` (`scripts/games/base_game_board.gd`).
 4. **Header Inheritance for Special Game Elements**: If a game has specific UI elements not present in all games (e.g. Chess has AFK missed turns strikes, whereas TicTacToe does not), its header MUST inherit from `BaseTopHeader` (`scenes/games/base/base_top_header.gd`).
 
@@ -69,7 +69,7 @@ In Cafe Fekr, **the in-game experience is shared across ALL board games**:
 |  |   |- Dynamic TopHeaderSlot (Loads BaseTopHeader or specialized child header)|  |
 |  |   |- MatchDetailsBox (Round label, Turn Banner, Countdown, TurnTimerBar)    |  |
 |  |   |- ToastHint (Bottom-center notification pill, Font size 32)              |  |
-|  |   |- BottomBar (7 Buttons: 4 Camera Controls + 3 Match Controls)            |  |
+|  |   |- BottomBar (8 Buttons: 4 Camera Controls + 4 Match Controls)            |  |
 |  |   |- DisconnectPauseDialog (45s Opponent Disconnect Countdown & Progress)   |  |
 |  |   |- Dialogs (StartGameOverlay, RoundFinishBanner, GameResultDialog)        |  |
 |  +-----------------------------------------------------------------------------+  |
@@ -122,23 +122,27 @@ Located directly beneath the player cards at the top center:
       - High-intensity fiery gold/crimson ember bursts (3× particle spawn rate) and expanding shockwave rings (`trigger_danger_shockwave()`) on each final second tick.
       - Pulsing neon danger aura around the bar, urgent red fill (`Color(1.0, 0.24, 0.26)`), ringing stopwatch icon oscillation, scale pulse on `LblTimer`, and audio heartbeat ticking (`AudioManager.play_sound("time")`).
 
-### 2.3. Bottom Action Bar (`BottomBar`) & Game-Specific Action Buttons — Unified Wood & White Icon Rule
-Contains **7 core buttons** arranged horizontally at the bottom of the screen, plus any game-specific action buttons (such as FekrBekr Phase 1 & Phase 2 buttons):
+### 2.3. Bottom Action Bar (`BottomBar`), Kori (کری‌خوانی) & Sticker Controls — Unified Wood & Icon Rule
+Contains **8 core buttons** arranged horizontally at the bottom of the screen (`margin_left = 24, margin_right = 24, separation = 10`), plus any game-specific action buttons (such as FekrBekr Phase 1 & Phase 2 buttons):
 - **Unified Background Color (`KenneyUI.COLOR_WOOD`):**
   - Because `res://assets/images/frames/button.png` is a rich warm orange-brown wood texture (`RGB ≈ 115, 48, 28`), multiplying it by low-red tints (like raw blue or green) crushes the red channel and turns buttons into dark muddy charcoal.
-  - Therefore, **all 7 buttons in `BottomBar`** and **all game-specific HUD action buttons** (e.g. `btn_fekr_submit`, `btn_fekr_clear`, `btn_fekr_opp`, `btn_fekr_dual`) **MUST** use `KenneyUI.COLOR_WOOD` so that every button on the HUD shares the exact same warm wood background color.
-- **Pure White-on-Transparent Icon Asset Rule:**
-  - Every icon placed inside a HUD button (`zoom_in_white.png`, `zoom_out_white.png`, `refresh.png`, `flag_surrender_white.png`, `kori.png`, `soundOn_white.png`, `soundOff_white.png`, `checkmark.png`, `cross.png`, `user.png`, `expand.png`) **MUST** be a crisp white foreground (`RGB = 255, 255, 255`) on a **100% transparent background (`alpha = 0`)**.
+  - Therefore, **all 8 buttons in `BottomBar`** and **all game-specific HUD action buttons** (e.g. `btn_fekr_submit`, `btn_fekr_clear`, `btn_fekr_opp`, `btn_fekr_dual`) **MUST** use `KenneyUI.COLOR_WOOD` so that every button on the HUD shares the exact same warm wood background color.
+- **Transparent Icon Asset Rule:**
+  - Every icon placed inside a HUD button (`zoom_in_white.png`, `zoom_out_white.png`, `refresh.png`, `flag_surrender_white.png`, `kori.png`, `Reactions/5.png`, `soundOn_white.png`, `soundOff_white.png`, `check.png`, `cross.png`, `aim.png`, `expand.png`) **MUST** have a **100% transparent background (`alpha = 0`)**.
   - **NEVER** use icon PNGs that have a baked dark or colored square background inside a wooden button frame.
 - **Left Group (Camera & View Controls):**
-  1. `BtnZoomIn`: Zoom In (`zoom_in_white.png`)
-  2. `BtnZoomOut`: Zoom Out (`zoom_out_white.png`)
-  3. `BtnCamTop`: 2D / 3D Toggle. Displays label text `"2D"` in 3D mode, and `"3D"` in top-down mode.
-  4. `BtnCamReset`: Reset Camera View (`refresh.png`). Restores default orbit distance, yaw, and tilt.
+  1. `BtnZoomIn`: Zoom In (`zoom_in_white.png`).
+  2. `BtnZoomOut`: Zoom Out (`zoom_out_white.png`).
+  3. `BtnCamTop`: 2D / 3D Toggle. Default view for every game is **2D (top-down)** (`is_top_down_view = true`), so `BtnCamTop` initially displays `"3D"` (tap to switch to 3D) and `"2D"` when in 3D mode (tap to switch back to 2D).
+  4. `BtnCamReset`: Reset Camera View (`refresh.png`). Resets zoom height in 2D mode or orbit distance/yaw/tilt in 3D mode **without** leaving the current 2D/3D mode.
 - **Right Group (Match & Social Controls):**
-  5. `BtnSurrender`: White surrender flag (`flag_surrender_white.png`). Opens confirmation dialog.
-  6. `BtnReactions`: Kori / Emoji picker button (`kori.png`). Opens reaction grid.
-  7. `BtnAudio`: White sound toggle (`soundOn_white.png` / `soundOff_white.png`). Toggles SFX & Music.
+  5. `BtnSurrender`: White surrender flag (`flag_surrender_white.png`). Opens surrender confirmation dialog.
+  6. `BtnKori`: کری‌خوانی (Kori / Taunt) button (`res://assets/icons/General/kori.png` — comment icon). Calls `reaction_picker.open_koris()` to display the scrollable 78-phrase Persian taunt list (`KORIS` from Flutter `app_consts.dart`).
+  7. `BtnReactions`: Sticker / Emoji picker button (`res://assets/icons/Reactions/5.png` — sticker icon). Calls `reaction_picker.open_stickers()` to display the sticker grid.
+  8. `BtnAudio`: White sound toggle (`soundOn_white.png` / `soundOff_white.png`). Toggles SFX & Music.
+- **Kori (کری‌خوانی) & Sticker Network Protocol (`ReactionPicker` & `BaseTopHeader.show_reaction`):**
+  - **Stickers (`reactionId <= 100`):** Sends `1..44` via `NetworkManager.send_game_reaction(r_id)`. `BaseTopHeader.show_reaction()` renders the sticker texture inside a `120 × 120` `BubbleFrame` on the player's top plaque for `2.4s`.
+  - **Kori Taunts (`reactionId > 100`):** Selecting taunt `index` (`0..77`) sends `index + 101` (`101..178`) via `NetworkManager.send_game_reaction(index + 101)`. `BaseTopHeader.show_reaction()` looks up `KORIS[reaction_id - 101]`, plays `AudioManager.play_sound("chat")`, and displays a `330 × 104` Persian speech bubble (`"💬 " + KORIS[k_idx]`) on the player's top plaque for `4.2s`.
 
 ### 2.4. Floating Toast Notification (`ToastHint`)
 Used for quick feedback messages (e.g. `"نوبت شما نیست؛ لطفاً منتظر حرکت حریف بمانید."`, `"این خانه قبلاً پر شده است؛ خانه دیگری انتخاب کنید."`, `"زاویه دوربین به حالت پیش‌فرض بازگشت"`, `" آغاز راند ۲ — آماده باشید!"`):
@@ -205,9 +209,11 @@ The 3D environment represents a cozy, nostalgic board game cafe:
 - **Camera Drag Lock During Piece Interaction (`camera_drag_locked`):**
   - In games that support drag-and-drop piece placement or interactive board controls (e.g. FekrBekr Phase 1 & Phase 2 peg dragging), the board MUST set `cafe_table.camera_drag_locked = true` as soon as the player presses or drags an interactive piece/slot, and reset `cafe_table.camera_drag_locked = false` on mouse release (`_input` release handler).
   - When `camera_drag_locked` is `true`, `CafeTable` immediately cancels `_is_dragging_camera` so releasing or dragging a piece on the board NEVER causes the camera to jump or orbit.
-- **Top-Down View (2D Mode):**
-  - Camera pitch is locked to `-90.0°` (straight down looking at the board).
-  - Heights: Min `2.75m` (full board visible with safe margin), Default `3.60m`, Max `5.20m` (wide view of table and mugs).
+- **Top-Down View (Default 2D Mode for All Games & Strict 2D Lock Rule):**
+  - **Default View is 2D:** Every game starts in **2D (top-down)** view (`is_top_down_view = true`, `camera.rotation_degrees = Vector3(-90.0, 0.0, 0.0)`, height `3.60m`). `transition_to_board_view()` and `spawn_board()` initialize `is_top_down_view = true` and emit `camera_mode_changed.emit(true)` so `BtnCamTop` displays `"3D"`.
+  - **Strict 2D Lock Rule (No Accidental Jump to 3D):** While `is_top_down_view == true`, tapping pieces/cells (e.g. in Chess or TicTacToe), moving the mouse, single-finger dragging, double-tapping, or pressing `BtnCamReset` (`reset_camera_orbit()`) **MUST NEVER** set `is_top_down_view = false` or transition the camera to 3D. Only explicitly tapping `BtnCamTop` (`toggle_top_down_view()`) switches between 2D and 3D.
+  - **Mouse Press Safety Reset:** In `CafeTable._process(delta)`, if `_mouse_pressed` is `true` and `not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)`, `CafeTable` must immediately reset `_mouse_pressed = false` and `_is_dragging = false` so board piece clicks that consume release events (`set_input_as_handled()`) never leave `_mouse_pressed` stuck `true`.
+  - **Heights:** Min `2.75m` (full board visible with safe margin), Default `3.60m`, Max `5.20m` (wide view of table and mugs).
 - **Lighting & Atmosphere:**
   - Table lamp omni-light: Energy `0.65 - 0.9` (prevents overexposed glare on game boards).
   - Candlelight: Subtle warm flicker at `5.5Hz` with sine modulation.
@@ -314,6 +320,16 @@ Always use the standardized sound keys:
 - Turn urgency heartbeat: `AudioManager.play_sound("time")`
 - Missed turn / Warning: `AudioManager.play_sound("miss_turn")`
 
+### 4.6. Smooth 60fps `ScrollContainer` Drag-Scrolling & No-Hover-Ticking Rule
+Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby list, `RulesDialog` game selector, `RankingDialog`, `StoreDialog`, and `ReactionPicker` Kori list):
+1. **Pass-Through Mouse Filter:** Every clickable card or button inside a `ScrollContainer` **MUST** set `mouse_filter = Control.MOUSE_FILTER_PASS`.
+2. **No Hover Audio or Scale Tweens on Scrollable Cards:** **NEVER** connect `AudioManager.sfx_tap()` or scale `Tween`s to `mouse_entered` / `mouse_exited` on cards inside a `ScrollContainer`. Doing so causes rapid audio ticking and frame lag as cards pass under the finger/cursor during a scroll.
+3. **Viewport-Coordinate Drag Tracking Only:** Custom drag-scroll handlers on cards inside a `ScrollContainer` **MUST** use exclusively `InputEventMouseButton` (`MOUSE_BUTTON_LEFT`) and `InputEventMouseMotion` with **viewport coordinates** (`get_viewport().get_mouse_position().y`)—**NEVER** local `event.position.y` (which shifts in the opposite direction whenever `scroll_vertical` moves the card, causing violent frame-by-frame oscillation) and **NEVER** simultaneously binding `InputEventScreenTouch`/`InputEventScreenDrag` alongside `emulate_mouse_from_touch`.
+
+### 4.7. Main Menu Offline Reconnection Rule (`main.gd` & `NetworkManager`)
+- When the player is offline (`not NetworkManager.is_online`) and taps **لابی (Lobby)** or **بازی رقابتی (Ranked)** on the main menu—or when launching the app while offline—**NEVER** open `LoginDialog`.
+- Instead, check `if not NetworkManager.is_online:` **before** checking `GameManager.is_logged_in`, call `NetworkManager.connect_to_game_server()` (ensuring `_reconnect_timer` is active), and display the reconnection notice (`"🔄 در حال تلاش برای اتصال مجدد به سرور بازی..."`). Once connected, automatically restore the saved user session.
+
 ---
 
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
@@ -384,7 +400,10 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Tight Coupling** | All games must be fully separate and pluggable through `GameRegistry` and standard `BaseGameBoard` lifecycle hooks. |
 | ❌ **No Guessing Logics** | Never guess game rules; port them directly from `flutter-code` and `kafehfekrbackend`. |
 | ❌ **No Custom HUDs** | Never build a standalone HUD per game. Always use `BaseGameHUD`. |
-| ❌ **No Mismatched Button Colors** | All 7 bottom bar buttons and all game-specific HUD action buttons must use `KenneyUI.COLOR_WOOD` with pure white-on-transparent icons. |
+| ❌ **No Mismatched Button Colors** | All 8 bottom bar buttons and all game-specific HUD action buttons must use `KenneyUI.COLOR_WOOD` with transparent-background icons. |
+| ❌ **No Accidental 2D -> 3D Jumps** | Default view for all games is 2D (`is_top_down_view = true`). Never exit 2D mode on piece/cell tap, mouse motion, single-finger drag, or camera reset; only `BtnCamTop` toggles 2D/3D. |
+| ❌ **No Local-Coord Scroll or Hover Ticking** | Never use local `event.position.y` for `ScrollContainer` drag calculations or connect `sfx_tap()` to `mouse_entered` on scrollable cards; always use `get_viewport().get_mouse_position().y`. |
+| ❌ **No Login Dialog When Offline** | Never open `LoginDialog` when `not NetworkManager.is_online`; show the reconnecting toast and trigger `connect_to_game_server()`. |
 | ❌ **No Duplicate Input Listeners** | Do not bind click handlers to both `Area3D` and `_unhandled_input`. |
 | ❌ **No Camera Orbit on Piece Drag** | Always lock `cafe_table.camera_drag_locked = true` while dragging/interacting with board pieces and unlock on mouse release. |
 | ❌ **No Reconnect Timer Overwrites** | Never let `update_turn()` or `set_setup_phase()` overwrite the server's remaining timer during reconnect; always let `hud.sync_reconnect_timer(payload)` run last. |

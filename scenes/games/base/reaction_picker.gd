@@ -220,47 +220,33 @@ func _build_kori_list() -> void:
 		card.add_child(lbl)
 
 		var kori_id = idx + 101
-		var touch_state = {"down": false, "pos": Vector2.ZERO, "dragged": false, "last_ms": 0}
+		var drag_state = {"active": false, "dragging": false, "start_y": 0.0, "start_scroll": 0}
 		card.gui_input.connect(func(event: InputEvent):
-			if event is InputEventScreenDrag:
-				touch_state["dragged"] = true
-				_kori_scroll.scroll_vertical -= int(event.relative.y)
-			elif event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
-				if event.position.distance_to(touch_state["pos"]) > 14.0:
-					touch_state["dragged"] = true
-					_kori_scroll.scroll_vertical -= int(event.relative.y)
-			elif event is InputEventScreenTouch:
+			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 				if event.pressed:
-					touch_state["down"] = true
-					touch_state["pos"] = event.position
-					touch_state["dragged"] = false
+					drag_state["active"] = true
+					drag_state["dragging"] = false
+					drag_state["start_y"] = get_viewport().get_mouse_position().y
+					drag_state["start_scroll"] = _kori_scroll.scroll_vertical
 					card.add_theme_stylebox_override("panel", hover_style)
 				else:
 					card.add_theme_stylebox_override("panel", normal_style)
-					if touch_state["down"] and not touch_state["dragged"] and event.position.distance_to(touch_state["pos"]) <= 18.0:
-						var now_ms = Time.get_ticks_msec()
-						if now_ms - int(touch_state["last_ms"]) > 250:
-							touch_state["last_ms"] = now_ms
+					var was_dragging = drag_state["dragging"]
+					var was_active = drag_state["active"]
+					drag_state["active"] = false
+					drag_state["dragging"] = false
+					if was_active and not was_dragging:
+						var dy_rel = absf(get_viewport().get_mouse_position().y - float(drag_state["start_y"]))
+						if dy_rel <= 14.0:
 							AudioManager.sfx_tap()
 							reaction_selected.emit(kori_id)
 							close()
-					touch_state["down"] = false
-			elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-				if event.pressed:
-					touch_state["down"] = true
-					touch_state["pos"] = event.position
-					touch_state["dragged"] = false
-					card.add_theme_stylebox_override("panel", hover_style)
-				else:
+			elif event is InputEventMouseMotion and drag_state["active"]:
+				var dy = get_viewport().get_mouse_position().y - float(drag_state["start_y"])
+				if absf(dy) > 12.0 or drag_state["dragging"]:
+					drag_state["dragging"] = true
 					card.add_theme_stylebox_override("panel", normal_style)
-					if touch_state["down"] and not touch_state["dragged"] and event.position.distance_to(touch_state["pos"]) <= 18.0:
-						var now_ms = Time.get_ticks_msec()
-						if now_ms - int(touch_state["last_ms"]) > 250:
-							touch_state["last_ms"] = now_ms
-							AudioManager.sfx_tap()
-							reaction_selected.emit(kori_id)
-							close()
-					touch_state["down"] = false
+					_kori_scroll.scroll_vertical = max(0, int(drag_state["start_scroll"]) - int(dy))
 		)
 		_kori_grid.add_child(card)
 
