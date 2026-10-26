@@ -349,6 +349,36 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 - **64-Cell Reconnect Disambiguation (`Checkers` vs `FourInRow` in `main.gd`):**
   - Both `Checkers` and `FourInRow` send a 64-element `board` array and `pawns_count` in `Reconnect_Data`. In `main.gd:_on_reconnect_data_received`, inspect `typeof((g_data["board"] as Array)[0])`: if `TYPE_DICTIONARY`, infer `GameTypes.CHECKERS`; otherwise (integer cell values `0, 1, 2`), infer `GameTypes.FOURINROW`.
 
+### 4.9. Rock Paper Scissors (`RPC` / `سنگ کاغذ قیچی`) 3D Physical Objects & Simultaneous Turn-Round Rules
+- **Match & Round Structure Parity (`RPCGameSession`, `RPCGameClass` & `RPCController`):**
+  - **Match Structure**: Best of 3 Rounds (`RPC_Round_Count = 3`, first to 2 rounds wins the match).
+  - **Round Structure**: Up to 5 Turn-Rounds (`RPC_Turn_Round_Count = 5`, first to 3 turn-round wins takes the round). If tied after 5, sudden-death continues until one leads.
+  - **Simultaneous Selection**: 7.0 seconds (`RPC_Turn_Round_Time = 7.0`) per turn-round. Both players select concurrently via command `Commands.Select_Peace` with payload string: `"rock"`, `"paper"`, or `"cutter"`.
+  - **Server Events & Broadcasts**:
+    - `Commands.New_Turn_Round`: Signals the start of a fresh 7-second turn-round selection window. Triggers turn timer in HUD and resets pedestals to selectable state.
+    - `Commands.Finish_Turn_Round`: Broadcasts turn-round resolution with payload `{"Winner": int, "P1_selection": str, "P2_selection": str}`. If tie, `Winner == 0`.
+    - `Commands.Finish_Round`: Broadcasts round winner `{"Winner": int}` (first player to accumulate 3 turn-round gems). Increments match score badge and clears turn-round score sockets after a celebration pause.
+    - `Commands.Finish_Game`: Concludes the entire match (`Winner` = overall winner).
+  - **Reconnect Disambiguation in `main.gd`**:
+    - `RPC` is detected via `g_data.has("current_turn__round")` or `g_data.has("round_scores")`.
+- **3D Physical Objects Rule (NO 3D HANDS)**:
+  - Per explicit user design requirements and anti-AI slop constitution, **NEVER spawn or display 3D humanoid hands or hand gestures** for Rock-Paper-Scissors.
+  - Objects are luxury, tangible 3D physical artifacts:
+    1. **Rock**: A faceted obsidian/granite meteorite monolith with glowing gold vein inlays.
+    2. **Paper**: An ancient illuminated parchment scroll tied with a red wax imperial seal.
+    3. **Scissors**: Damascus steel shears with intricate golden filigree finger loops and pivot screw.
+  - In each turn-round:
+    - The active player selects one of 3 pedestals on their side of the table (illuminating a gold energy ring and hovering the chosen artifact).
+    - Upon `Finish_Turn_Round`, both players chosen 3D objects rise and fly to the central arena to clash face-to-face:
+      - **Rock vs Scissors**: The obsidian rock slams down like a meteor, shattering sparks and knocking the scissors back.
+      - **Scissors vs Paper**: The Damascus shears snip forward, slicing a ribbon of shimmering golden sparks through the paper scroll.
+      - **Paper vs Rock**: The parchment scroll unfurls and wraps around the rock, binding it with glowing runic bands.
+      - **Draw (Rock vs Rock, Paper vs Paper, Scissors vs Scissors)**: Both objects charge forward, recoil violently on contact with an emerald shockwave, and return to neutral.
+- **Turn-Round Gem Sockets & Score Display**:
+  - Each player has a row of 5 recessed 3D gemstone sockets on the board frame.
+  - Winning a turn-round illuminates a faceted jewel (ruby for Player 1, sapphire for Player 2).
+  - The HUD score badge tracks overall match rounds (0-0, 1-0, 1-1, etc.).
+
 ---
 
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
@@ -436,6 +466,7 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Score Boxes in Non-Score Games** | Always hide `ScoreBadge` when `GameRegistry.has_round_score(game_type)` is `false` (e.g. `Chess`, `FekrBekr`). |
 | ❌ **No Extra Child Nodes Inside `ScoreBadge`** | Never add extra `Label` children (like `"🏆"`) inside `ScoreBadge` (`PanelContainer`), and always render player scores with `hekayat.ttf` + Persian digits (`_fa_digits`). |
 | ❌ **No Stale Final-Round Score on Result Dialog** | Always synchronize the final round score via `_current_round_scored` in `main.gd` before opening `GameResultDialog`. |
-| ❌ **No 3D Hands in Any Game** | Never spawn or trigger 3D hand models (`RealisticHand`) in any game (`CafeTable`, `Checkers`, `Chess`, `TicTacToe`, `FekrBekr`, `Yatzy`). |
+| ❌ **No 3D Hands in Any Game** | Never spawn or trigger 3D hand models (`RealisticHand`) in any game (`CafeTable`, `Checkers`, `Chess`, `TicTacToe`, `FekrBekr`, `Yatzy`, `FourInRow`, `RPC`). |
+| ❌ **No Hand Gestures in Rock Paper Scissors** | Never use 3D humanoid hand poses for Rock-Paper-Scissors; always use physical 3D objects (obsidian rock, parchment scroll, Damascus scissors). |
 | ❌ **No Start-Countdown Glitch or Double-Tick** | Keep `StartGameOverlay/Card/VBox/Countdown` at a fixed `custom_minimum_size = Vector2(360, 130)` and `pivot_offset = Vector2(180, 65)`, and never let `Game_Play_Time` or background `_process` timers overwrite or double-tick during `play_start_countdown()`. |
 | ❌ **No Front-Lip Text in TicTacToe** | Never add front-frame `Label3D` text on the `TicTacToe` 3D board. |

@@ -14,6 +14,7 @@ const CHECKERS_SCENE: String = "res://scenes/games/checkers/checkers_3d.tscn"
 const FOURINROW_SCENE: String = "res://scenes/games/fourinrow/four_in_row_3d.tscn"
 const FEKRBEKR_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_3d.tscn"
 const YATZY_SCENE: String = "res://scenes/games/yatzy/yatzy_3d.tscn"
+const RPC_SCENE: String = "res://scenes/games/rpc/rpc_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
 const BASE_TOP_HEADER_SCENE: String = "res://scenes/games/base/base_top_header.tscn"
@@ -22,6 +23,22 @@ const FEKRBEKR_TOP_HEADER_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_
 const YATZY_TOP_HEADER_SCENE: String = "res://scenes/games/yatzy/yatzy_top_header.tscn"
 
 static var _registry: Dictionary = {
+	GameTypes.RPC: {
+		"id": GameTypes.RPC,
+		"name_fa": "سنگ کاغذ قیچی",
+		"board_scene": RPC_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 3,
+		"has_round_score": true,
+		"is_simultaneous": true,
+		"is_cumulative_score": false,
+		"turn_time": 7.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/rpc.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
 	GameTypes.FEKRBEKR: {
 		"id": GameTypes.FEKRBEKR,
 		"name_fa": "فکر بکر",

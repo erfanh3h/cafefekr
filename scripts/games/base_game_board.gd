@@ -59,6 +59,10 @@ func _connect_network_signals() -> void:
 		NetworkManager.piece_selected.connect(_on_internal_piece_selected)
 	if not NetworkManager.round_finished.is_connected(_on_internal_round_finished):
 		NetworkManager.round_finished.connect(_on_internal_round_finished)
+	if not NetworkManager.new_turn_round_received.is_connected(_on_internal_new_turn_round):
+		NetworkManager.new_turn_round_received.connect(_on_internal_new_turn_round)
+	if not NetworkManager.finish_turn_round_received.is_connected(_on_internal_finish_turn_round):
+		NetworkManager.finish_turn_round_received.connect(_on_internal_finish_turn_round)
 	if not NetworkManager.new_round_started.is_connected(_on_internal_new_round):
 		NetworkManager.new_round_started.connect(_on_internal_new_round)
 	if not NetworkManager.game_finished.is_connected(_on_internal_game_finished):
@@ -118,6 +122,14 @@ func _on_internal_turn_changed(turn: int) -> void:
 
 func _on_internal_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) -> void:
 	on_piece_selected(user_id, target_peace, extra)
+
+func _on_internal_new_turn_round() -> void:
+	set_board_locked(false)
+	on_new_turn_round()
+
+func _on_internal_finish_turn_round(data: Dictionary) -> void:
+	set_board_locked(true)
+	on_finish_turn_round(data)
 
 func _on_internal_round_finished(payload: Variant) -> void:
 	set_board_locked(true)
@@ -212,6 +224,12 @@ func on_piece_swapped(_data: Dictionary) -> void:
 	pass
 
 func on_piece_removed(_data: Dictionary) -> void:
+	pass
+
+func on_new_turn_round() -> void:
+	pass
+
+func on_finish_turn_round(_data: Dictionary) -> void:
 	pass
 
 func on_round_finished(_payload: Variant) -> void:

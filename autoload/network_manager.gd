@@ -11,6 +11,8 @@ signal turn_data_received(payload: Dictionary)
 signal roll_result_received(payload: Dictionary)
 signal piece_selected(user_id: int, target_peace: int, extra: Dictionary)
 signal round_finished(winner_id: Variant)
+signal new_turn_round_received()
+signal finish_turn_round_received(data: Dictionary)
 signal new_round_started(round_num: int)
 signal game_finished(data: Dictionary)
 signal reaction_received(reaction_data: Variant)
@@ -308,6 +310,14 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 						if ci != -1 and ri != -1:
 							target_peace = ci * 8 + ri
 				piece_selected.emit(user_id, target_peace, extra)
+
+		Commands.New_Turn_Round:
+			print("[NetworkManager] New Turn-Round started")
+			new_turn_round_received.emit()
+
+		Commands.Finish_Turn_Round:
+			print("[NetworkManager] Finish Turn-Round: %s" % str(payload))
+			finish_turn_round_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
 
 		Commands.Finish_Round:
 			round_finished.emit(payload)

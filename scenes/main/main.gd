@@ -326,6 +326,8 @@ func _setup_signals() -> void:
 	NetworkManager.turn_changed.connect(_on_turn_changed)
 	NetworkManager.reaction_received.connect(_on_reaction_received)
 	NetworkManager.round_finished.connect(_on_round_finished)
+	NetworkManager.new_turn_round_received.connect(_on_new_turn_round_received)
+	NetworkManager.finish_turn_round_received.connect(_on_finish_turn_round_received)
 	NetworkManager.new_round_started.connect(_on_new_round_started)
 	NetworkManager.player_surrendered.connect(_on_player_surrendered)
 	NetworkManager.game_finished.connect(_on_game_finished)
@@ -619,6 +621,17 @@ func _on_reaction_received(data: Variant) -> void:
 		if p_id != GameManager.my_player_index and is_instance_valid(cafe_table):
 			cafe_table.play_opponent_reaction()
 
+func _on_new_turn_round_received() -> void:
+	if GameManager.current_game_type == GameTypes.RPC:
+		if is_instance_valid(base_game_hud):
+			base_game_hud.start_turn_timer(7.0)
+			base_game_hud.hide_round_finish_banner()
+
+func _on_finish_turn_round_received(data: Dictionary) -> void:
+	if GameManager.current_game_type == GameTypes.RPC:
+		if is_instance_valid(base_game_hud):
+			base_game_hud.start_wait_timer(3)
+
 func _on_round_finished(payload: Variant) -> void:
 	if is_instance_valid(base_game_hud):
 		base_game_hud.stop_round_timer()
@@ -795,6 +808,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 				inferred_type = GameTypes.CHECKERS
 			else:
 				inferred_type = GameTypes.FOURINROW
+		elif g_data.has("current_turn__round") or (g_data.has("round_scores") and not g_data.has("board")):
+			inferred_type = GameTypes.RPC
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:
 			inferred_type = GameTypes.TIC_TAC_TOE
 		if not inferred_type.is_empty() and inferred_type.to_lower() != GameManager.current_game_type.to_lower():
