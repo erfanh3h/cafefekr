@@ -97,12 +97,7 @@ var _bear_p2_nodes: Array[Node3D] = []
 var _bar_p1_ring: MeshInstance3D = null
 var _bar_p2_ring: MeshInstance3D = null
 
-var _bar_p1_badge_root: Node3D = null
-var _bar_p1_badge_lbl: Label3D = null
 var _bar_p1_count_lbl: Label3D = null
-
-var _bar_p2_badge_root: Node3D = null
-var _bar_p2_badge_lbl: Label3D = null
 var _bar_p2_count_lbl: Label3D = null
 
 var _center_rosette_lbl: Label3D = null
@@ -909,59 +904,11 @@ func _build_bar_zones() -> void:
 		else:
 			_bar_p2_ring = ring
 
-	# --- Visible Hit / Out Piece Count Badges on Center Bar (Warm Antique Dark Gold, No White) ---
-	# Player 1 (Red / You) Bar Plaque (Framed on the wooden bar rail)
-	_bar_p1_badge_root = Node3D.new()
-	_bar_p1_badge_root.position = Vector3(BAR_X, SURFACE_Y + 0.034, CABINET_CENTER_Z + 0.090)
-	var b1_bevel = MeshInstance3D.new()
-	var b1_bbox = BoxMesh.new()
-	b1_bbox.size = Vector3(0.180, 0.008, 0.054)
-	b1_bbox.material = mat_bronze_bevel
-	b1_bevel.mesh = b1_bbox
-	_bar_p1_badge_root.add_child(b1_bevel)
-
-	var b1_velvet = MeshInstance3D.new()
-	var b1_vbox = BoxMesh.new()
-	b1_vbox.size = Vector3(0.170, 0.010, 0.044)
-	b1_vbox.material = mat_piece_p1_well
-	b1_velvet.mesh = b1_vbox
-	_bar_p1_badge_root.add_child(b1_velvet)
-
-	_bar_p1_badge_lbl = _create_3d_label("", 24, Color(0.82, 0.52, 0.04))
-	_bar_p1_badge_lbl.position = Vector3(0, 0.008, 0)
-	_bar_p1_badge_root.add_child(_bar_p1_badge_lbl)
-	_bar_p1_badge_root.visible = false
-	add_child(_bar_p1_badge_root)
-
-	# Player 1 Floating Count Label (Directly above hit checkers stack - Label only, NO white mesh disc!)
+	# --- Hit / Out Piece Count on Center Bar (Sword icon and number directly on the piece) ---
 	_bar_p1_count_lbl = _create_3d_label("", 28, Color(0.82, 0.52, 0.04))
 	_bar_p1_count_lbl.visible = false
 	add_child(_bar_p1_count_lbl)
 
-	# Player 2 (Blue / Opponent) Bar Plaque
-	_bar_p2_badge_root = Node3D.new()
-	_bar_p2_badge_root.position = Vector3(BAR_X, SURFACE_Y + 0.034, CABINET_CENTER_Z - 0.090)
-	var b2_bevel = MeshInstance3D.new()
-	var b2_bbox = BoxMesh.new()
-	b2_bbox.size = Vector3(0.180, 0.008, 0.054)
-	b2_bbox.material = mat_bronze_bevel
-	b2_bevel.mesh = b2_bbox
-	_bar_p2_badge_root.add_child(b2_bevel)
-
-	var b2_velvet = MeshInstance3D.new()
-	var b2_vbox = BoxMesh.new()
-	b2_vbox.size = Vector3(0.170, 0.010, 0.044)
-	b2_vbox.material = mat_piece_p2_well
-	b2_velvet.mesh = b2_vbox
-	_bar_p2_badge_root.add_child(b2_velvet)
-
-	_bar_p2_badge_lbl = _create_3d_label("", 24, Color(0.82, 0.52, 0.04))
-	_bar_p2_badge_lbl.position = Vector3(0, 0.008, 0)
-	_bar_p2_badge_root.add_child(_bar_p2_badge_lbl)
-	_bar_p2_badge_root.visible = false
-	add_child(_bar_p2_badge_root)
-
-	# Player 2 Floating Count Label (Directly above hit checkers stack - Label only, NO white mesh disc!)
 	_bar_p2_count_lbl = _create_3d_label("", 28, Color(0.82, 0.52, 0.04))
 	_bar_p2_count_lbl.visible = false
 	add_child(_bar_p2_count_lbl)
@@ -1672,37 +1619,21 @@ func _refresh_ui_and_highlights() -> void:
 		if is_instance_valid(last_ring):
 			last_ring.visible = (i == last_played_point and not is_selectable_src and not is_target_dest)
 
-	# 2. Bar Hit Piece Count Displays & Highlights
-	if is_instance_valid(_bar_p1_badge_root):
-		if p1_out_pieces > 0:
-			_bar_p1_badge_root.visible = true
-			if is_instance_valid(_bar_p1_badge_lbl):
-				_bar_p1_badge_lbl.text = "⚔️ مهره خورده: " + _fa_digits(p1_out_pieces)
-		else:
-			_bar_p1_badge_root.visible = false
-
+	# 2. Bar Hit Piece Count Displays (Sword icon and number directly on the piece) & Highlights
 	if is_instance_valid(_bar_p1_count_lbl):
 		if p1_out_pieces > 0:
 			_bar_p1_count_lbl.visible = true
 			var top_p1_pos = _get_bar_piece_world_pos(1, maxi(p1_out_pieces - 1, 0))
-			_bar_p1_count_lbl.position = Vector3(BAR_X, top_p1_pos.y + PIECE_HEIGHT * 0.85 + 0.014, top_p1_pos.z)
+			_bar_p1_count_lbl.position = Vector3(BAR_X, top_p1_pos.y + PIECE_HEIGHT * 0.85 + 0.005, top_p1_pos.z)
 			_bar_p1_count_lbl.text = "⚔️ " + _fa_digits(p1_out_pieces)
 		else:
 			_bar_p1_count_lbl.visible = false
-
-	if is_instance_valid(_bar_p2_badge_root):
-		if p2_out_pieces > 0:
-			_bar_p2_badge_root.visible = true
-			if is_instance_valid(_bar_p2_badge_lbl):
-				_bar_p2_badge_lbl.text = "⚔️ مهره خورده: " + _fa_digits(p2_out_pieces)
-		else:
-			_bar_p2_badge_root.visible = false
 
 	if is_instance_valid(_bar_p2_count_lbl):
 		if p2_out_pieces > 0:
 			_bar_p2_count_lbl.visible = true
 			var top_p2_pos = _get_bar_piece_world_pos(2, maxi(p2_out_pieces - 1, 0))
-			_bar_p2_count_lbl.position = Vector3(BAR_X, top_p2_pos.y + PIECE_HEIGHT * 0.85 + 0.014, top_p2_pos.z)
+			_bar_p2_count_lbl.position = Vector3(BAR_X, top_p2_pos.y + PIECE_HEIGHT * 0.85 + 0.005, top_p2_pos.z)
 			_bar_p2_count_lbl.text = "⚔️ " + _fa_digits(p2_out_pieces)
 		else:
 			_bar_p2_count_lbl.visible = false
