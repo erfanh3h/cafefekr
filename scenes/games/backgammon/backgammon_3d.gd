@@ -8,19 +8,17 @@ extends "res://scripts/games/base_game_board.gd"
 #   - Backend: Entities/Games/BackGammon/__init__.py & backgammon_game_session.py
 #   - Flutter: lib/Feature/BackGammon/Controllers/backgammon_controller.dart
 #
-# Portrait-Optimized 3D Architecture (1.16m wide x 1.72m long — matches Yatzy3D):
-#   1. Zone 1 (Top, Z = -0.735): Twin Carved Bear-Off Vaults (خانه خروج شما / حریف)
-#      with 3D stacked borne-off checkers and large Persian score counters.
-#   2. Zone 2 (Main Cabinet, Z = -0.61 to +0.29): Royal Persian Walnut & 24K Gold
+# Portrait-Optimized 3D Architecture (1.16m wide x 1.66m long — matches Yatzy3D):
+#   1. Zone 1 (Top, Z = -0.715): Twin Carved Bear-Off Vaults holding 3D stacked
+#      borne-off checkers (no cluttered piece-count text on top).
+#   2. Zone 2 (Main Cabinet, Z = -0.60 to +0.30): Royal Persian Walnut & 24K Gold
 #      Khatamkari Hinged Backgammon Cabinet with 24 multi-layered 3D inlaid points,
-#      brass-hinged Center Bar (بار), and large lathe-turned 3D ribbed checkers.
-#   3. Zone 3 (Guidance Strip, Z = +0.345): High-contrast 3D Persian status banner.
-#   4. Zone 4 (Bottom Dice Tray, Z = +0.515): Recessed Emerald Velvet 3D Dice Arena
+#      brass-hinged Center Bar, and large lathe-turned 3D ribbed checkers.
+#   3. Zone 3 (Bottom Dice Tray, Z = +0.445): Recessed Emerald Velvet 3D Dice Arena
 #      holding large Yatzy-style 3D Ivory Dice (outside the playing field!) with
-#      glowing gold selection rings and framed Persian numeral plaques.
-#   5. Zone 5 (Bottom Action Console, Z = +0.745): Prominent, always-visible 3D
-#      tactile "🎲 پرتاب تاس" button at the bottom of the board with twin 3D dice
-#      emblems and clear active/moved/opponent states.
+#      glowing gold selection rings and large framed Persian numeral plaques.
+#   4. Zone 4 (Bottom Action Console, Z = +0.665): Prominent, always-visible 3D
+#      tactile "🎲 پرتاب تاس" button at the bottom of the board.
 # ==============================================================================
 
 @export var camera_distance: float = 3.22
@@ -31,33 +29,32 @@ const FA_DIGITS = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
 
 # --- Portrait Arena & Board Geometry Constants ---
 const ARENA_W: float = 1.16
-const ARENA_L: float = 1.72
+const ARENA_L: float = 1.66
 const BOARD_H: float = 0.030
 const SURFACE_Y: float = 0.030
 
 # Main Backgammon Cabinet (Upper-Center of Portrait Arena)
 const CABINET_W: float = 1.12
 const CABINET_L: float = 0.90
-const CABINET_CENTER_Z: float = -0.160
-const CABINET_TOP_Z: float = -0.610
-const CABINET_BOT_Z: float = 0.290
+const CABINET_CENTER_Z: float = -0.150
+const CABINET_TOP_Z: float = -0.600
+const CABINET_BOT_Z: float = 0.300
 const BAR_X: float = 0.0
 
 # Larger, Gamer-Friendly 3D Checkers & Yatzy-Scale 3D Dice
 const PIECE_RADIUS: float = 0.0415
 const PIECE_HEIGHT: float = 0.018
-const DIE_SIZE: float = 0.082
+const DIE_SIZE: float = 0.084
 const MAX_DICE_SLOTS: int = 4
 
-# Bottom Dice Tray & Roll Button Coordinates
-const STATUS_BANNER_Z: float = 0.346
-const DICE_TRAY_Z: float = 0.512
+# Bottom Dice Tray & Roll Button Coordinates (Comfortably above bottom HUD bar)
+const DICE_TRAY_Z: float = 0.445
 const DICE_TRAY_W: float = 1.06
 const DICE_TRAY_L: float = 0.250
-const ROLL_BTN_Z: float = 0.742
+const ROLL_BTN_Z: float = 0.665
 
 # Top Bear-Off Vault Coordinates
-const BEAR_VAULT_Z: float = -0.735
+const BEAR_VAULT_Z: float = -0.715
 const BEAR_P2_X: float = -0.275
 const BEAR_P1_X: float = 0.275
 
@@ -89,8 +86,6 @@ var _point_is_top: Array[bool] = []         # True for points 0..11 (top row -Z)
 var _point_source_rings: Array[MeshInstance3D] = []
 var _point_target_rings: Array[MeshInstance3D] = []
 var _point_last_rings: Array[MeshInstance3D] = []
-var _point_count_labels: Array[Label3D] = []
-var _point_target_badges: Array[Label3D] = []
 
 var _pieces_container: Node3D = null
 var _point_piece_nodes: Dictionary = {}     # point_idx (0..23) -> Array[Node3D]
@@ -101,24 +96,19 @@ var _bear_p2_nodes: Array[Node3D] = []
 
 var _bar_p1_ring: MeshInstance3D = null
 var _bar_p2_ring: MeshInstance3D = null
-var _bar_p1_label: Label3D = null
-var _bar_p2_label: Label3D = null
 var _center_rosette_lbl: Label3D = null
 
 var _bear_p1_ring: MeshInstance3D = null
 var _bear_p2_ring: MeshInstance3D = null
-var _bear_p1_label: Label3D = null
-var _bear_p2_label: Label3D = null
 
 var _dice_nodes: Array[Dictionary] = []
 var _roll_btn_ui: Dictionary = {}
-var _lbl_status_3d: Label3D = null
-var _lbl_tray_hint_3d: Label3D = null
 
 var _vfx_time: float = 0.0
 var _sparkle_accum: float = 0.0
 var _is_animating_move: bool = false
 var _is_rolling_dice: bool = false
+var _last_interaction_msec: int = 0
 
 # --- Shared Luxury Materials ---
 var mat_wood_case: StandardMaterial3D
@@ -159,6 +149,10 @@ var mat_btn_roll_disabled: StandardMaterial3D
 # LIFECYCLE & INITIALIZATION
 # ==============================================================================
 
+func _init() -> void:
+	game_type = GameTypes.BACKGAMMON
+
+
 func _ready() -> void:
 	game_type = GameTypes.BACKGAMMON
 	_init_materials()
@@ -168,6 +162,14 @@ func _ready() -> void:
 	_rebuild_all_3d_pieces()
 	_refresh_ui_and_highlights()
 	super._ready()
+
+
+func is_interacting_with_piece() -> bool:
+	return (Time.get_ticks_msec() - _last_interaction_msec) < 350
+
+
+func _mark_interaction() -> void:
+	_last_interaction_msec = Time.get_ticks_msec()
 
 
 func _process(delta: float) -> void:
@@ -253,7 +255,7 @@ func _init_materials() -> void:
 	mat_wood_rail.clearcoat_enabled = true
 	mat_wood_rail.clearcoat = 0.62
 
-	# Obsidian Banner & Frame Backing
+	# Obsidian Backing
 	mat_obsidian_bed = StandardMaterial3D.new()
 	mat_obsidian_bed.albedo_color = Color(0.08, 0.09, 0.13)
 	mat_obsidian_bed.roughness = 0.26
@@ -472,10 +474,10 @@ func _init_materials() -> void:
 
 func _compute_point_anchors() -> void:
 	# Exact Layout Matching Flutter BackGammonBoardWidget:
-	# - Points 0..11 are along the TOP edge (CABINET_TOP_Z = -0.610, base at Z = -0.568):
+	# - Points 0..11 are along the TOP edge (CABINET_TOP_Z = -0.600, base at Z = -0.558):
 	#     0..5:   Top-Right quadrant (right-to-left: col 0..5)
 	#     6..11:  Top-Left quadrant  (right-to-left: col 6..11)
-	# - Points 12..23 are along the BOTTOM edge (CABINET_BOT_Z = +0.290, base at Z = +0.248):
+	# - Points 12..23 are along the BOTTOM edge (CABINET_BOT_Z = +0.300, base at Z = +0.258):
 	#     12..17: Bottom-Left quadrant  (left-to-right: col 11..6)
 	#     18..23: Bottom-Right quadrant (left-to-right: col 5..0)
 	_point_positions.resize(24)
@@ -493,16 +495,16 @@ func _compute_point_anchors() -> void:
 			# Left Court (Outer quadrant): X from -0.094 down to -0.484 (spacing 0.078m)
 			x_pos = -0.094 - float(col_from_right - 6) * 0.078
 
-		var z_base: float = -0.568 if is_top else 0.248
+		var z_base: float = -0.558 if is_top else 0.258
 		_point_positions[i] = Vector3(x_pos, SURFACE_Y, z_base)
 
 
 # ==============================================================================
-# 3D ROYAL PERSIAN BACKGAMMON ARENA CONSTRUCTION (1.16m x 1.72m Portrait)
+# 3D ROYAL PERSIAN BACKGAMMON ARENA CONSTRUCTION (1.16m x 1.66m Portrait)
 # ==============================================================================
 
 func _build_3d_backgammon_board() -> void:
-	# 1. Master Portrait Carved Walnut Plinth (1.16m wide x 1.72m long)
+	# 1. Master Portrait Carved Walnut Plinth (1.16m wide x 1.66m long)
 	var base_plinth = MeshInstance3D.new()
 	var bp_box = BoxMesh.new()
 	bp_box.size = Vector3(ARENA_W, BOARD_H, ARENA_L)
@@ -511,7 +513,7 @@ func _build_3d_backgammon_board() -> void:
 	base_plinth.position = Vector3(0, BOARD_H * 0.5, 0)
 	add_child(base_plinth)
 
-	# Outer Mahogany Frame Moulding around entire 1.16m x 1.72m Arena
+	# Outer Mahogany Frame Moulding around entire Arena
 	for rim_cfg in [
 		{"pos": Vector3(0, BOARD_H + 0.006, -ARENA_L * 0.5 + 0.016), "size": Vector3(ARENA_W, 0.012, 0.032)},
 		{"pos": Vector3(0, BOARD_H + 0.006, ARENA_L * 0.5 - 0.016), "size": Vector3(ARENA_W, 0.012, 0.032)},
@@ -551,10 +553,10 @@ func _build_3d_backgammon_board() -> void:
 
 
 func _build_top_bear_off_vaults() -> void:
-	# Top Bear-Off & Score Vaults at Z = -0.735 (Left = P2 Blue, Right = P1 Red)
+	# Clean Top Bear-Off Vaults at Z = -0.715 (Left = P2 Blue, Right = P1 Red) — NO text clutter!
 	var vault_configs = [
-		{"gamer": 2, "x": BEAR_P2_X, "title": "🔵 خروجی حریف: ۰ / ۱۵", "col": Color(0.58, 0.86, 1.0)},
-		{"gamer": 1, "x": BEAR_P1_X, "title": "🔴 خروجی شما: ۰ / ۱۵", "col": Color(1.0, 0.62, 0.64)},
+		{"gamer": 2, "x": BEAR_P2_X},
+		{"gamer": 1, "x": BEAR_P1_X},
 	]
 
 	for vc in vault_configs:
@@ -568,7 +570,7 @@ func _build_top_bear_off_vaults() -> void:
 		# Gold Outer Frame
 		var frame = MeshInstance3D.new()
 		var f_box = BoxMesh.new()
-		f_box.size = Vector3(0.510, 0.014, 0.148)
+		f_box.size = Vector3(0.510, 0.014, 0.126)
 		f_box.material = mat_gold_trim
 		frame.mesh = f_box
 		frame.position = Vector3(0, 0.007, 0)
@@ -577,7 +579,7 @@ func _build_top_bear_off_vaults() -> void:
 		# Recessed Velvet Trough
 		var bed = MeshInstance3D.new()
 		var b_box = BoxMesh.new()
-		b_box.size = Vector3(0.492, 0.016, 0.132)
+		b_box.size = Vector3(0.492, 0.016, 0.110)
 		b_box.material = mat_velvet_well
 		bed.mesh = b_box
 		bed.position = Vector3(0, 0.008, 0)
@@ -587,26 +589,21 @@ func _build_top_bear_off_vaults() -> void:
 		for s_i in range(14):
 			var div = MeshInstance3D.new()
 			var d_box = BoxMesh.new()
-			d_box.size = Vector3(0.002, 0.018, 0.068)
+			d_box.size = Vector3(0.002, 0.018, 0.088)
 			d_box.material = mat_bronze_bevel
 			div.mesh = d_box
-			div.position = Vector3(-0.210 + float(s_i + 1) * 0.030, 0.009, 0.022)
+			div.position = Vector3(-0.210 + float(s_i + 1) * 0.030, 0.009, 0.0)
 			v_root.add_child(div)
 
 		# Glowing Target Border (Lights up in Emerald when player can Bear Off!)
 		var ring = MeshInstance3D.new()
 		var r_box = BoxMesh.new()
-		r_box.size = Vector3(0.522, 0.020, 0.158)
+		r_box.size = Vector3(0.522, 0.020, 0.136)
 		r_box.material = mat_ring_target
 		ring.mesh = r_box
 		ring.position = Vector3(0, 0.010, 0)
 		ring.visible = false
 		v_root.add_child(ring)
-
-		# Large Persian Score Counter Label inside top half of Vault
-		var lbl = _create_3d_label(vc["title"], 23, vc["col"])
-		lbl.position = Vector3(0, 0.019, -0.036)
-		v_root.add_child(lbl)
 
 		# Clickable Area3D for Bearing Off Checkers
 		var area = Area3D.new()
@@ -615,7 +612,7 @@ func _build_top_bear_off_vaults() -> void:
 		area.set_meta("gamer_id", g_id)
 		var col = CollisionShape3D.new()
 		var shape = BoxShape3D.new()
-		shape.size = Vector3(0.52, 0.08, 0.16)
+		shape.size = Vector3(0.52, 0.08, 0.15)
 		col.shape = shape
 		area.add_child(col)
 		area.position = Vector3(0, 0.025, 0)
@@ -623,16 +620,12 @@ func _build_top_bear_off_vaults() -> void:
 
 		if g_id == 1:
 			_bear_p1_ring = ring
-			_bear_p1_label = lbl
 		else:
 			_bear_p2_ring = ring
-			_bear_p2_label = lbl
 
 
 func _build_main_playing_cabinet() -> void:
 	# Left & Right Recessed Royal Emerald Velvet Playing Courts
-	# Left Court: X = -0.528 to -0.044 (center -0.286, width 0.484)
-	# Right Court: X = +0.044 to +0.528 (center +0.286, width 0.484)
 	for court_x in [-0.286, 0.286]:
 		var court = MeshInstance3D.new()
 		var c_box = BoxMesh.new()
@@ -657,22 +650,17 @@ func _build_main_playing_cabinet() -> void:
 			g_inst.position = c_rim["pos"]
 			add_child(g_inst)
 
-		# Persian Khatamkari Star Medallion in the center of each court (Z = CABINET_CENTER_Z)
+		# Persian Khatamkari Star Medallion in the center of each court
 		_build_court_marquetry_emblem(Vector3(court_x, SURFACE_Y + 0.002, CABINET_CENTER_Z))
 
 	# Raised Mahogany Rails framing the Backgammon Cabinet (Top, Bottom, Left, Right)
 	var rail_h: float = 0.026
 	var rail_y: float = SURFACE_Y + rail_h * 0.5
 	var rails = [
-		# Top Rail (holds point numbers ۱۳..۲۴)
 		{"pos": Vector3(0, rail_y, CABINET_TOP_Z + 0.015), "size": Vector3(CABINET_W, rail_h, 0.030)},
-		# Bottom Rail (holds point numbers ۱۲..۱)
 		{"pos": Vector3(0, rail_y, CABINET_BOT_Z - 0.015), "size": Vector3(CABINET_W, rail_h, 0.030)},
-		# Left Wall
 		{"pos": Vector3(-CABINET_W * 0.5 + 0.015, rail_y, CABINET_CENTER_Z), "size": Vector3(0.030, rail_h, CABINET_L)},
-		# Right Wall
 		{"pos": Vector3(CABINET_W * 0.5 - 0.015, rail_y, CABINET_CENTER_Z), "size": Vector3(0.030, rail_h, CABINET_L)},
-		# Center Hinged Bar (BAR_X = 0.0, width 0.088m)
 		{"pos": Vector3(BAR_X, rail_y + 0.002, CABINET_CENTER_Z), "size": Vector3(0.088, rail_h + 0.004, CABINET_L - 0.04)},
 	]
 
@@ -708,7 +696,6 @@ func _build_main_playing_cabinet() -> void:
 
 
 func _build_court_marquetry_emblem(center_pos: Vector3) -> void:
-	# Subtle 8-point Khatamkari golden star inlaid into the center of each playing court
 	var emblem_root = Node3D.new()
 	emblem_root.position = center_pos
 	add_child(emblem_root)
@@ -736,8 +723,6 @@ func _build_24_points() -> void:
 	_point_source_rings.resize(24)
 	_point_target_rings.resize(24)
 	_point_last_rings.resize(24)
-	_point_count_labels.resize(24)
-	_point_target_badges.resize(24)
 
 	var tri_half_w: float = 0.0365
 	var tri_len: float = 0.372
@@ -780,13 +765,13 @@ func _build_24_points() -> void:
 		stud.position = Vector3(0, 0.004, dir_z * 0.012)
 		pt_root.add_child(stud)
 
-		# 4. Crisp Persian Point Number (۱..۲۴) on the outer wooden rail
+		# 4. Larger Persian Point Number (۱..۲۴) on the outer wooden rail
 		var pt_num_fa = _fa_digits(24 - i)
-		var num_lbl = _create_3d_label(pt_num_fa, 18, Color(0.98, 0.88, 0.60))
+		var num_lbl = _create_3d_label(pt_num_fa, 22, Color(1.0, 0.90, 0.62))
 		num_lbl.position = Vector3(0, 0.030, -dir_z * 0.026)
 		pt_root.add_child(num_lbl)
 
-		# 5. Selectable Source Ring (Glowing Gold Ring under first checker)
+		# 5. Selectable Source Ring (Glowing Gold Ring under top checker)
 		var src_ring = MeshInstance3D.new()
 		var sr_cyl = CylinderMesh.new()
 		sr_cyl.top_radius = PIECE_RADIUS + 0.009
@@ -812,13 +797,6 @@ func _build_24_points() -> void:
 		pt_root.add_child(tgt_ring)
 		_point_target_rings[i] = tgt_ring
 
-		# Floating Target Step Badge on Destination Ring (e.g. "🎯")
-		var tgt_lbl = _create_3d_label("●", 22, Color(0.45, 1.0, 0.68))
-		tgt_lbl.position = Vector3(0, 0.024, dir_z * 0.165)
-		tgt_lbl.visible = false
-		pt_root.add_child(tgt_lbl)
-		_point_target_badges[i] = tgt_lbl
-
 		# 7. Last Move Ring
 		var last_ring = MeshInstance3D.new()
 		var lr_cyl = CylinderMesh.new()
@@ -832,14 +810,7 @@ func _build_24_points() -> void:
 		pt_root.add_child(last_ring)
 		_point_last_rings[i] = last_ring
 
-		# 8. Stack Count Badge Label (e.g. "×۶" when > 5 checkers on a point)
-		var cnt_lbl = _create_3d_label("", 24, Color(1.0, 0.96, 0.78))
-		cnt_lbl.position = Vector3(0, 0.046, dir_z * 0.285)
-		cnt_lbl.visible = false
-		pt_root.add_child(cnt_lbl)
-		_point_count_labels[i] = cnt_lbl
-
-		# 9. Clickable Area3D covering the full point column
+		# 8. Clickable Area3D covering the full point column
 		var area = Area3D.new()
 		area.name = "PointArea_%d" % i
 		area.set_meta("hit_type", "point")
@@ -875,7 +846,7 @@ func _create_point_triangle_mesh(half_w: float, length: float, height: float, di
 
 
 func _build_bar_zones() -> void:
-	# Center Bar Prison Wells for Hit Checkers (P2 Blue at Z = -0.34, P1 Red at Z = +0.02)
+	# Center Bar Prison Wells for Hit Checkers (No text labels on top of pieces)
 	var bar_configs = [
 		{"gamer": 2, "z": CABINET_CENTER_Z - 0.175},
 		{"gamer": 1, "z": CABINET_CENTER_Z + 0.175},
@@ -908,11 +879,6 @@ func _build_bar_zones() -> void:
 		ring.visible = false
 		bar_node.add_child(ring)
 
-		var lbl = _create_3d_label("", 24, Color(1.0, 0.95, 0.72))
-		lbl.position = Vector3(0, 0.048, 0)
-		lbl.visible = false
-		bar_node.add_child(lbl)
-
 		var area = Area3D.new()
 		area.name = "BarArea_P%d" % g_id
 		area.set_meta("hit_type", "bar")
@@ -927,16 +893,14 @@ func _build_bar_zones() -> void:
 
 		if g_id == 1:
 			_bar_p1_ring = ring
-			_bar_p1_label = lbl
 		else:
 			_bar_p2_ring = ring
-			_bar_p2_label = lbl
 
 	# Center Bar Rosette Medallion (at exact center of the bar: X = 0, Z = CABINET_CENTER_Z)
 	var rosette = MeshInstance3D.new()
 	var ros_cyl = CylinderMesh.new()
-	ros_cyl.top_radius = 0.034
-	ros_cyl.bottom_radius = 0.038
+	ros_cyl.top_radius = 0.036
+	ros_cyl.bottom_radius = 0.040
 	ros_cyl.height = 0.008
 	ros_cyl.material = mat_gold_trim
 	rosette.mesh = ros_cyl
@@ -945,15 +909,15 @@ func _build_bar_zones() -> void:
 
 	var ros_inner = MeshInstance3D.new()
 	var ri_cyl = CylinderMesh.new()
-	ri_cyl.top_radius = 0.028
-	ri_cyl.bottom_radius = 0.028
+	ri_cyl.top_radius = 0.030
+	ri_cyl.bottom_radius = 0.030
 	ri_cyl.height = 0.010
 	ri_cyl.material = mat_obsidian_bed
 	ros_inner.mesh = ri_cyl
 	ros_inner.position = Vector3(BAR_X, SURFACE_Y + 0.031, CABINET_CENTER_Z)
 	add_child(ros_inner)
 
-	_center_rosette_lbl = _create_3d_label("🎲", 22, Color(1.0, 0.90, 0.45))
+	_center_rosette_lbl = _create_3d_label("🎲", 28, Color(1.0, 0.90, 0.45))
 	_center_rosette_lbl.position = Vector3(BAR_X, SURFACE_Y + 0.038, CABINET_CENTER_Z)
 	add_child(_center_rosette_lbl)
 
@@ -963,28 +927,7 @@ func _build_bar_zones() -> void:
 # ==============================================================================
 
 func _build_bottom_dice_and_roll_console() -> void:
-	# 1. Framed 3D Guidance / Status Banner Strip (Z = +0.346)
-	var status_frame = MeshInstance3D.new()
-	var sf_box = BoxMesh.new()
-	sf_box.size = Vector3(DICE_TRAY_W, 0.010, 0.064)
-	sf_box.material = mat_gold_trim
-	status_frame.mesh = sf_box
-	status_frame.position = Vector3(0, SURFACE_Y + 0.005, STATUS_BANNER_Z)
-	add_child(status_frame)
-
-	var status_bed = MeshInstance3D.new()
-	var sb_box = BoxMesh.new()
-	sb_box.size = Vector3(DICE_TRAY_W - 0.012, 0.012, 0.054)
-	sb_box.material = mat_obsidian_bed
-	status_bed.mesh = sb_box
-	status_bed.position = Vector3(0, SURFACE_Y + 0.006, STATUS_BANNER_Z)
-	add_child(status_bed)
-
-	_lbl_status_3d = _create_3d_label("به تخته نرد سلطنتی کافه فکر خوش آمدید", 23, Color(1.0, 0.94, 0.72))
-	_lbl_status_3d.position = Vector3(0, SURFACE_Y + 0.016, STATUS_BANNER_Z)
-	add_child(_lbl_status_3d)
-
-	# 2. Recessed Emerald Velvet 3D Dice Tray (Z = +0.512, Width = 1.06m, Length = 0.25m)
+	# 1. Recessed Emerald Velvet 3D Dice Tray (Z = +0.445, Width = 1.06m, Length = 0.25m)
 	var felt_bed = MeshInstance3D.new()
 	var fb_mesh = BoxMesh.new()
 	fb_mesh.size = Vector3(DICE_TRAY_W, 0.008, DICE_TRAY_L)
@@ -1020,15 +963,15 @@ func _build_bottom_dice_and_roll_console() -> void:
 	_dice_nodes.clear()
 	for d_i in range(MAX_DICE_SLOTS):
 		var slot_x = -0.345 + float(d_i) * 0.230
-		var d_ui = _build_single_3d_die(d_i, Vector3(slot_x, SURFACE_Y + 0.008, DICE_TRAY_Z - 0.028))
+		var d_ui = _build_single_3d_die(d_i, Vector3(slot_x, SURFACE_Y + 0.008, DICE_TRAY_Z - 0.026))
 		_dice_nodes.append(d_ui)
 
-	# 3. Large Tactile 3D Roll Dice Button at the Very Bottom of the Board (Z = +0.742)
+	# 2. Large Tactile 3D Roll Dice Button at the Bottom of the Board (Z = +0.665)
 	_roll_btn_ui = _build_3d_roll_button(Vector3(0.0, SURFACE_Y + 0.018, ROLL_BTN_Z))
 
 
 func _build_3d_roll_button(pos: Vector3) -> Dictionary:
-	var btn_size = Vector3(0.76, 0.036, 0.132)
+	var btn_size = Vector3(0.82, 0.038, 0.142)
 	var root = Node3D.new()
 	root.name = "BtnRollDice3D"
 	root.position = pos
@@ -1037,7 +980,7 @@ func _build_3d_roll_button(pos: Vector3) -> Dictionary:
 	# 24K Gold Bezel Base
 	var bezel = MeshInstance3D.new()
 	var bz_box = BoxMesh.new()
-	bz_box.size = btn_size + Vector3(0.022, -0.004, 0.022)
+	bz_box.size = btn_size + Vector3(0.024, -0.004, 0.024)
 	bz_box.material = mat_gold_trim
 	bezel.mesh = bz_box
 	root.add_child(bezel)
@@ -1052,7 +995,7 @@ func _build_3d_roll_button(pos: Vector3) -> Dictionary:
 	root.add_child(cap)
 
 	# Twin 3D Decorative Mini-Dice Sculptures on Left & Right ends of the Button
-	for side_x in [-0.315, 0.315]:
+	for side_x in [-0.345, 0.345]:
 		var mini_ped = MeshInstance3D.new()
 		var mp_cyl = CylinderMesh.new()
 		mp_cyl.top_radius = 0.024
@@ -1065,14 +1008,14 @@ func _build_3d_roll_button(pos: Vector3) -> Dictionary:
 
 		var mini_die = MeshInstance3D.new()
 		var md_box = BoxMesh.new()
-		md_box.size = Vector3(0.028, 0.028, 0.028)
+		md_box.size = Vector3(0.030, 0.030, 0.030)
 		md_box.material = mat_die_ivory
 		mini_die.mesh = md_box
-		mini_die.position = Vector3(side_x, btn_size.y * 0.5 + 0.022, 0)
+		mini_die.position = Vector3(side_x, btn_size.y * 0.5 + 0.023, 0)
 		mini_die.rotation_degrees = Vector3(18, 32, -15)
 		root.add_child(mini_die)
 
-	var lbl = _create_3d_label("🎲 پرتاب تاس (نوبت شما)", 27, Color(1.0, 0.98, 0.90))
+	var lbl = _create_3d_label("🎲 پرتاب تاس", 32, Color(1.0, 0.98, 0.90))
 	lbl.position = Vector3(0, btn_size.y * 0.5 + 0.010, 0)
 	root.add_child(lbl)
 
@@ -1081,7 +1024,7 @@ func _build_3d_roll_button(pos: Vector3) -> Dictionary:
 	area.set_meta("hit_type", "btn_roll")
 	var col = CollisionShape3D.new()
 	var shape = BoxShape3D.new()
-	shape.size = btn_size + Vector3(0.08, 0.08, 0.06)
+	shape.size = btn_size + Vector3(0.14, 0.12, 0.10)
 	col.shape = shape
 	area.add_child(col)
 	root.add_child(area)
@@ -1132,7 +1075,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	lock_ring.visible = false
 	slot_root.add_child(lock_ring)
 
-	# 3. 3D Beveled Die Pivot (Yatzy-scale 0.082m)
+	# 3. 3D Beveled Die Pivot (Yatzy-scale 0.084m)
 	var die_pivot = Node3D.new()
 	die_pivot.name = "DiePivot"
 	die_pivot.position = Vector3(0, 0.052, 0)
@@ -1161,25 +1104,25 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 
 	_add_3d_die_pips(die_pivot, DIE_SIZE * 0.5)
 
-	# 4. Framed 3D Brass & Obsidian Numeral Plaque below each die well
+	# 4. Larger Framed 3D Brass & Obsidian Numeral Plaque below each die well
 	var badge_rim = MeshInstance3D.new()
 	var br_box = BoxMesh.new()
-	br_box.size = Vector3(0.118, 0.006, 0.050)
+	br_box.size = Vector3(0.146, 0.006, 0.058)
 	br_box.material = mat_gold_trim
 	badge_rim.mesh = br_box
-	badge_rim.position = Vector3(0, 0.004, 0.094)
+	badge_rim.position = Vector3(0, 0.004, 0.096)
 	slot_root.add_child(badge_rim)
 
 	var badge_cap = MeshInstance3D.new()
 	var bc_box = BoxMesh.new()
-	bc_box.size = Vector3(0.110, 0.009, 0.042)
+	bc_box.size = Vector3(0.138, 0.009, 0.050)
 	bc_box.material = mat_die_badge_idle
 	badge_cap.mesh = bc_box
-	badge_cap.position = Vector3(0, 0.006, 0.094)
+	badge_cap.position = Vector3(0, 0.006, 0.096)
 	slot_root.add_child(badge_cap)
 
-	var val_lbl = _create_3d_label("۱", 24, Color(1.0, 0.96, 0.86))
-	val_lbl.position = Vector3(0, 0.013, 0.094)
+	var val_lbl = _create_3d_label("۱", 28, Color(1.0, 0.96, 0.86))
+	val_lbl.position = Vector3(0, 0.013, 0.096)
 	slot_root.add_child(val_lbl)
 
 	# 5. Clickable Area3D for Selecting this Die
@@ -1189,7 +1132,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	die_area.set_meta("die_index", die_idx)
 	var die_col = CollisionShape3D.new()
 	var die_shape = BoxShape3D.new()
-	die_shape.size = Vector3(0.18, 0.16, 0.22)
+	die_shape.size = Vector3(0.20, 0.16, 0.24)
 	die_col.shape = die_shape
 	die_area.add_child(die_col)
 	die_area.position = Vector3(0, 0.04, 0.03)
@@ -1544,20 +1487,20 @@ func _get_point_piece_world_pos(point_idx: int, stack_idx: int, total_count: int
 	var is_top: bool = _point_is_top[point_idx]
 	var dir_z: float = 1.0 if is_top else -1.0
 
-	var max_span: float = 0.275
+	var max_span: float = 0.285
 	var default_step: float = 0.064
 	var step: float = default_step
 	if total_count > 5:
 		step = max_span / float(max(total_count - 1, 1))
 
 	var z_offset: float = 0.044 + float(stack_idx) * step
-	var y_lift: float = 0.002 + (float(stack_idx) * 0.0018 if total_count > 5 else 0.0)
+	var y_lift: float = 0.002 + (float(stack_idx) * 0.0022 if total_count > 5 else 0.0)
 	return Vector3(anchor.x, anchor.y + y_lift, anchor.z + dir_z * z_offset)
 
 
 func _get_bar_piece_world_pos(gamer_id: int, stack_idx: int) -> Vector3:
 	var base_z: float = (CABINET_CENTER_Z - 0.175) if gamer_id == 2 else (CABINET_CENTER_Z + 0.175)
-	var vis_idx: int = mini(stack_idx, 4)
+	var vis_idx: int = mini(stack_idx, 6)
 	return Vector3(BAR_X, SURFACE_Y + 0.030 + float(vis_idx) * (PIECE_HEIGHT * 0.85), base_z)
 
 
@@ -1565,7 +1508,7 @@ func _get_bear_off_piece_world_pos(gamer_id: int, stack_idx: int) -> Vector3:
 	var vx: float = BEAR_P1_X if gamer_id == 1 else BEAR_P2_X
 	var start_x: float = vx - 0.210
 	var x_pos: float = start_x + float(clampi(stack_idx, 0, 14)) * 0.030
-	return Vector3(x_pos, SURFACE_Y + 0.016, BEAR_VAULT_Z + 0.022)
+	return Vector3(x_pos, SURFACE_Y + 0.016, BEAR_VAULT_Z)
 
 
 func _rebuild_all_3d_pieces() -> void:
@@ -1581,16 +1524,15 @@ func _rebuild_all_3d_pieces() -> void:
 	_bear_p1_nodes.clear()
 	_bear_p2_nodes.clear()
 
-	# 1. Spawn Checkers on the 24 Points
+	# 1. Spawn All Checkers on the 24 Points (Dynamic compression up to 15 pieces, no text overlay)
 	for pt in range(24):
 		var cnt: int = int(board_spots[pt]["count"])
 		var eq: int = int(board_spots[pt]["equipped_user"])
 		var pt_arr: Array[Node3D] = []
 		if cnt > 0 and (eq == 1 or eq == 2):
-			var visible_cnt: int = mini(cnt, 6)
-			for s_i in range(visible_cnt):
+			for s_i in range(cnt):
 				var p_node = _build_3d_checker_piece(eq)
-				var w_pos = _get_point_piece_world_pos(pt, s_i, visible_cnt)
+				var w_pos = _get_point_piece_world_pos(pt, s_i, cnt)
 				p_node.position = w_pos
 				p_node.set_meta("base_y", w_pos.y)
 				_pieces_container.add_child(p_node)
@@ -1598,24 +1540,24 @@ func _rebuild_all_3d_pieces() -> void:
 		_point_piece_nodes[pt] = pt_arr
 
 	# 2. Spawn Hit Checkers on the Center Bar (P1 & P2)
-	for s_i in range(mini(p1_out_pieces, 5)):
+	for s_i in range(p1_out_pieces):
 		var p_node = _build_3d_checker_piece(1)
 		p_node.position = _get_bar_piece_world_pos(1, s_i)
 		_pieces_container.add_child(p_node)
 		_bar_p1_nodes.append(p_node)
 
-	for s_i in range(mini(p2_out_pieces, 5)):
+	for s_i in range(p2_out_pieces):
 		var p_node = _build_3d_checker_piece(2)
 		p_node.position = _get_bar_piece_world_pos(2, s_i)
 		_pieces_container.add_child(p_node)
 		_bar_p2_nodes.append(p_node)
 
-	# 3. Spawn Borne-Off Checkers in the Top Bear-Off Vaults (Tilted on their edge in slots!)
+	# 3. Spawn Borne-Off Checkers in the Top Bear-Off Vaults
 	for s_i in range(mini(p1_score, 15)):
 		var p_node = _build_3d_checker_piece(1)
 		p_node.position = _get_bear_off_piece_world_pos(1, s_i)
 		p_node.rotation_degrees = Vector3(0, 0, 78)
-		p_node.scale = Vector3(0.76, 0.76, 0.76)
+		p_node.scale = Vector3(0.78, 0.78, 0.78)
 		_pieces_container.add_child(p_node)
 		_bear_p1_nodes.append(p_node)
 
@@ -1623,7 +1565,7 @@ func _rebuild_all_3d_pieces() -> void:
 		var p_node = _build_3d_checker_piece(2)
 		p_node.position = _get_bear_off_piece_world_pos(2, s_i)
 		p_node.rotation_degrees = Vector3(0, 0, 78)
-		p_node.scale = Vector3(0.76, 0.76, 0.76)
+		p_node.scale = Vector3(0.78, 0.78, 0.78)
 		_pieces_container.add_child(p_node)
 		_bear_p2_nodes.append(p_node)
 
@@ -1631,13 +1573,9 @@ func _rebuild_all_3d_pieces() -> void:
 func _refresh_ui_and_highlights() -> void:
 	var my_id: int = GameManager.my_player_index
 
-	# 1. Point Highlights (Source Gold Rings, Destination Target Emerald/Crimson Rings, Stack Counts)
+	# 1. Point Highlights (Source Gold Rings, Destination Target Emerald/Crimson Rings — No text clutter!)
 	for i in range(24):
 		var cnt: int = int(board_spots[i]["count"])
-		var eq: int = int(board_spots[i]["equipped_user"])
-		var is_top: bool = _point_is_top[i]
-		var dir_z: float = 1.0 if is_top else -1.0
-
 		var is_selectable_src: bool = (i in can_select_points)
 		var is_target_dest: bool = can_target_points.has(i) or (i in can_hit_points)
 		var is_blot_hit: bool = is_target_dest and _is_enemy_spot(i, my_id) and _is_single_spot(i)
@@ -1646,69 +1584,34 @@ func _refresh_ui_and_highlights() -> void:
 		if is_instance_valid(src_ring):
 			src_ring.visible = is_selectable_src
 			if is_selectable_src:
-				var top_idx = maxi(mini(cnt, 6) - 1, 0)
-				var top_pos = _get_point_piece_world_pos(i, top_idx, mini(cnt, 6))
+				var top_idx = maxi(cnt - 1, 0)
+				var top_pos = _get_point_piece_world_pos(i, top_idx, maxi(cnt, 1))
 				src_ring.position.z = (top_pos.z - _point_positions[i].z)
 
 		var tgt_ring: MeshInstance3D = _point_target_rings[i]
-		var tgt_lbl: Label3D = _point_target_badges[i]
 		if is_instance_valid(tgt_ring):
 			tgt_ring.visible = is_target_dest
 			if is_target_dest:
 				tgt_ring.material_override = mat_ring_hit_danger if is_blot_hit else mat_ring_target
-				var dest_stack_idx = 0 if is_blot_hit else mini(cnt, 5)
-				var dest_pos = _get_point_piece_world_pos(i, dest_stack_idx, maxi(mini(cnt + 1, 6), 1))
-				var local_z = dest_pos.z - _point_positions[i].z
-				tgt_ring.position.z = local_z
-				if is_instance_valid(tgt_lbl):
-					tgt_lbl.visible = true
-					tgt_lbl.position.z = local_z
-					tgt_lbl.text = "⚔" if is_blot_hit else "●"
-					tgt_lbl.modulate = Color(1.0, 0.38, 0.42) if is_blot_hit else Color(0.42, 1.0, 0.68)
-			elif is_instance_valid(tgt_lbl):
-				tgt_lbl.visible = false
+				var dest_stack_idx = 0 if is_blot_hit else cnt
+				var dest_pos = _get_point_piece_world_pos(i, dest_stack_idx, maxi(cnt + 1, 1))
+				tgt_ring.position.z = (dest_pos.z - _point_positions[i].z)
 
 		var last_ring: MeshInstance3D = _point_last_rings[i]
 		if is_instance_valid(last_ring):
 			last_ring.visible = (i == last_played_point and not is_selectable_src and not is_target_dest)
 
-		var cnt_lbl: Label3D = _point_count_labels[i]
-		if is_instance_valid(cnt_lbl):
-			if cnt > 1 and (eq == 1 or eq == 2):
-				cnt_lbl.visible = true
-				cnt_lbl.text = "×" + _fa_digits(cnt)
-				cnt_lbl.modulate = Color(1.0, 0.88, 0.52) if cnt >= 5 else Color(0.96, 0.94, 0.88)
-				var top_idx = maxi(mini(cnt, 6) - 1, 0)
-				var top_pos = _get_point_piece_world_pos(i, top_idx, mini(cnt, 6))
-				cnt_lbl.position.z = (top_pos.z - _point_positions[i].z)
-			else:
-				cnt_lbl.visible = false
-
-	# 2. Bar Highlights & Stack Badges
+	# 2. Bar Highlights
 	if is_instance_valid(_bar_p1_ring):
 		_bar_p1_ring.visible = (is_my_turn and my_id == 1 and p1_out_pieces > 0 and not can_hit_points.is_empty())
 	if is_instance_valid(_bar_p2_ring):
 		_bar_p2_ring.visible = (is_my_turn and my_id == 2 and p2_out_pieces > 0 and not can_hit_points.is_empty())
 
-	if is_instance_valid(_bar_p1_label):
-		_bar_p1_label.visible = (p1_out_pieces > 0)
-		_bar_p1_label.text = "🔴 بار: " + _fa_digits(p1_out_pieces)
-	if is_instance_valid(_bar_p2_label):
-		_bar_p2_label.visible = (p2_out_pieces > 0)
-		_bar_p2_label.text = "🔵 بار: " + _fa_digits(p2_out_pieces)
-
-	# 3. Top Bear-Off Vault Highlights & Score Labels
+	# 3. Top Bear-Off Vault Highlights
 	if is_instance_valid(_bear_p1_ring):
 		_bear_p1_ring.visible = (is_my_turn and my_id == 1 and not can_bear_off_sources.is_empty())
 	if is_instance_valid(_bear_p2_ring):
 		_bear_p2_ring.visible = (is_my_turn and my_id == 2 and not can_bear_off_sources.is_empty())
-
-	var p1_tag = "شما" if my_id == 1 else "حریف"
-	var p2_tag = "شما" if my_id == 2 else "حریف"
-	if is_instance_valid(_bear_p1_label):
-		_bear_p1_label.text = "🔴 خروجی %s: %s / ۱۵" % [p1_tag, _fa_digits(p1_score)]
-	if is_instance_valid(_bear_p2_label):
-		_bear_p2_label.text = "🔵 خروجی %s: %s / ۱۵" % [p2_tag, _fa_digits(p2_score)]
 
 	# 4. Center Bar Medallion Display
 	if is_instance_valid(_center_rosette_lbl):
@@ -1723,7 +1626,7 @@ func _refresh_ui_and_highlights() -> void:
 	var num_d: int = current_dices.size()
 	var show_preview_dice: bool = (not dices_rolled or num_d == 0)
 	var display_count: int = 2 if show_preview_dice else num_d
-	var span_step: float = 0.230 if display_count > 2 else 0.280
+	var span_step: float = 0.235 if display_count > 2 else 0.300
 	var start_x: float = -float(display_count - 1) * span_step * 0.5
 
 	for d_i in range(MAX_DICE_SLOTS):
@@ -1734,7 +1637,6 @@ func _refresh_ui_and_highlights() -> void:
 			slot.position.x = start_x + float(d_i) * span_step
 			if show_preview_dice:
 				var prev_val: int = 6 if d_i == 0 else 5
-				var is_sel: bool = false
 				d_ui["lock_ring"].visible = false
 				d_ui["badge_cap"].material_override = mat_die_badge_idle
 				d_ui["label"].text = "🎲 " + _fa_digits(prev_val)
@@ -1769,66 +1671,20 @@ func _refresh_ui_and_highlights() -> void:
 
 		if not GameManager.is_game_active:
 			btn_cap.material_override = mat_btn_roll_disabled
-			btn_lbl.text = "🎲 آماده شروع بازی تخته نرد..."
+			btn_lbl.text = "🎲 آماده شروع بازی..."
 			btn_lbl.modulate = Color(0.88, 0.86, 0.80)
 		elif is_my_turn and not dices_rolled:
 			btn_cap.material_override = mat_btn_roll_active
-			btn_lbl.text = "🎲 پرتاب تاس (نوبت شما — لمس کنید)"
+			btn_lbl.text = "🎲 پرتاب تاس"
 			btn_lbl.modulate = Color(1.0, 0.98, 0.90)
 		elif is_my_turn and dices_rolled:
 			btn_cap.material_override = mat_btn_roll_moved
-			btn_lbl.text = "✨ مهره درخشان را حرکت دهید (%s حرکت باقی)" % _fa_digits(current_dices.size())
+			btn_lbl.text = "✨ حرکت دهید (%s)" % _fa_digits(current_dices.size())
 			btn_lbl.modulate = Color(0.95, 0.96, 1.0)
 		else:
 			btn_cap.material_override = mat_btn_roll_disabled
-			btn_lbl.text = "⏳ نوبت حریف — منتظر پرتاب و حرکت حریف..."
+			btn_lbl.text = "⏳ نوبت حریف..."
 			btn_lbl.modulate = Color(0.75, 0.78, 0.84)
-
-	# 7. Update Status Banner Text
-	_update_3d_status_banner()
-
-
-func _update_3d_status_banner() -> void:
-	if not is_instance_valid(_lbl_status_3d):
-		return
-
-	var my_id: int = GameManager.my_player_index
-	if not GameManager.is_game_active:
-		_lbl_status_3d.text = "در انتظار شروع مسابقه تخته نرد..."
-		_lbl_status_3d.modulate = Color(0.92, 0.88, 0.75)
-		return
-
-	if not is_my_turn:
-		if dices_rolled and not current_dices.is_empty():
-			var d_strs: PackedStringArray = []
-			for d in current_dices:
-				d_strs.append(_fa_digits(d))
-			_lbl_status_3d.text = "⏳ نوبت حریف — تاس‌های باقی‌مانده: " + " ، ".join(d_strs)
-		else:
-			_lbl_status_3d.text = "⏳ نوبت حریف — در حال پرتاب تاس..."
-		_lbl_status_3d.modulate = Color(0.68, 0.86, 1.0)
-		return
-
-	if not dices_rolled:
-		_lbl_status_3d.text = "🎲 نوبت شماست — دکمه سبز «پرتاب تاس» در پایین صفحه را بزنید!"
-		_lbl_status_3d.modulate = Color(0.48, 1.0, 0.68)
-		return
-
-	if current_dices.is_empty():
-		_lbl_status_3d.text = "✅ حرکت شما کامل شد"
-		_lbl_status_3d.modulate = Color(0.45, 0.98, 0.62)
-		return
-
-	var sel_val: int = int(current_dices[equipped_dice_index]) if (equipped_dice_index >= 0 and equipped_dice_index < current_dices.size()) else int(current_dices[0])
-	if _check_gamer_piece_is_out(my_id):
-		_lbl_status_3d.text = "🚨 مهره در بار است! با تاس %s روی خانه سبز یا مهره وسط بزنید" % _fa_digits(sel_val)
-		_lbl_status_3d.modulate = Color(1.0, 0.62, 0.56)
-	elif not can_bear_off_sources.is_empty():
-		_lbl_status_3d.text = "🏆 تاس %s — روی مهره طلایی یا خانه خروجی بالا بزنید!" % _fa_digits(sel_val)
-		_lbl_status_3d.modulate = Color(1.0, 0.92, 0.42)
-	else:
-		_lbl_status_3d.text = "✨ تاس %s فعال است — روی مهره طلایی یا خانه سبز مقصد بزنید" % _fa_digits(sel_val)
-		_lbl_status_3d.modulate = Color(1.0, 0.94, 0.66)
 
 
 func _sync_hud_scores() -> void:
@@ -1848,8 +1704,20 @@ func setup_board(_game_data: Dictionary) -> void:
 	_sync_hud_scores()
 
 
+func on_start_game() -> void:
+	my_player_index = GameManager.my_player_index
+	current_turn = GameManager.current_turn
+	is_my_turn = (current_turn == my_player_index)
+	is_board_locked = not is_my_turn
+	_refresh_ui_and_highlights()
+
+
 func on_turn_changed(turn: int, is_me: bool) -> void:
 	super.on_turn_changed(turn, is_me)
+	my_player_index = GameManager.my_player_index
+	current_turn = turn
+	is_my_turn = is_me
+	is_board_locked = not is_me
 	dices_rolled = false
 	current_dices.clear()
 	equipped_dice_index = -1
@@ -1900,12 +1768,7 @@ func on_out_of_move(payload: Dictionary) -> void:
 
 	_animate_dice_roll()
 	_refresh_ui_and_highlights()
-
-	if is_instance_valid(_lbl_status_3d):
-		_lbl_status_3d.text = "⚠️ هیچ حرکت مجازی با این تاس وجود ندارد! تعویض نوبت..."
-		_lbl_status_3d.modulate = Color(1.0, 0.50, 0.45)
-
-	invalid_move_attempted.emit("هیچ حرکت مجازی با این تاس وجود ندارد!")
+	show_hint("هیچ حرکت مجازی با این تاس وجود ندارد!")
 
 
 func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) -> void:
@@ -1967,7 +1830,9 @@ func on_reconnect_data(payload: Dictionary) -> void:
 	if g_data.has("turn"):
 		var t: int = int(g_data.get("turn", 1))
 		GameManager.current_turn = t
+		current_turn = t
 		is_my_turn = (t == GameManager.my_player_index)
+		is_board_locked = not is_my_turn
 
 	if is_my_turn and dices_rolled and not current_dices.is_empty():
 		_auto_select_first_playable_die()
@@ -2010,7 +1875,7 @@ func _apply_move_and_animate(source_idx: int, dice_val: int, gamer_id: int) -> v
 		start_pos = _get_bar_piece_world_pos(gamer_id, maxi(out_cnt - 1, 0))
 	elif _is_valid_index(source_idx):
 		var src_cnt: int = int(board_spots[source_idx]["count"])
-		start_pos = _get_point_piece_world_pos(source_idx, maxi(mini(src_cnt, 6) - 1, 0), maxi(mini(src_cnt, 6), 1))
+		start_pos = _get_point_piece_world_pos(source_idx, maxi(src_cnt - 1, 0), maxi(src_cnt, 1))
 
 	# 1. Mutate Source (Matches BackGammonGameClass.select_peace)
 	if source_idx == -1 or source_idx == 24:
@@ -2044,7 +1909,7 @@ func _apply_move_and_animate(source_idx: int, dice_val: int, gamer_id: int) -> v
 			board_spots[target_idx]["count"] = int(board_spots[target_idx]["count"]) + 1
 
 		var tgt_cnt: int = int(board_spots[target_idx]["count"])
-		end_pos = _get_point_piece_world_pos(target_idx, maxi(mini(tgt_cnt, 6) - 1, 0), maxi(mini(tgt_cnt, 6), 1))
+		end_pos = _get_point_piece_world_pos(target_idx, maxi(tgt_cnt - 1, 0), maxi(tgt_cnt, 1))
 	elif target_idx == 24 or target_idx == -1:
 		last_played_point = -99
 		if gamer_id == 1:
@@ -2128,13 +1993,15 @@ func _animate_checker_flight(gamer_id: int, start_pos: Vector3, end_pos: Vector3
 		if is_instance_valid(hidden_dest_piece):
 			hidden_dest_piece.visible = true
 
-		AudioManager.play_Drop()
+		AudioManager.sfx_move_piece()
 		_is_animating_move = false
 
 		if was_blot_hit:
+			AudioManager.play_sound("hit")
 			var bar_dest = _get_bar_piece_world_pos(hit_enemy_id, maxi((p1_out_pieces if hit_enemy_id == 1 else p2_out_pieces) - 1, 0))
 			_spawn_hit_explosion_vfx(end_pos, hit_enemy_id, bar_dest, hidden_bar_piece)
 		elif target_idx == 24 or target_idx == -1:
+			AudioManager.sfx_add_piece()
 			_spawn_bear_off_celebration_vfx(end_pos, gamer_id)
 		else:
 			var land_col = Color(1.0, 0.36, 0.32) if gamer_id == 1 else Color(0.32, 0.68, 1.0)
@@ -2144,7 +2011,7 @@ func _animate_checker_flight(gamer_id: int, start_pos: Vector3, end_pos: Vector3
 
 func _animate_dice_roll() -> void:
 	_is_rolling_dice = true
-	AudioManager.play_Drop()
+	AudioManager.sfx_dice()
 
 	var is_doubles: bool = (current_dices.size() == 4)
 	for d_i in range(current_dices.size()):
@@ -2169,8 +2036,9 @@ func _animate_dice_roll() -> void:
 		)
 
 	get_tree().create_timer(0.56).timeout.connect(func():
-		_is_rolling_dice = false
-		_refresh_ui_and_highlights()
+		if is_instance_valid(self):
+			_is_rolling_dice = false
+			_refresh_ui_and_highlights()
 	)
 
 
@@ -2283,7 +2151,7 @@ func _emit_ambient_selection_sparkles() -> void:
 	if not can_select_points.is_empty():
 		var pt: int = can_select_points[randi() % can_select_points.size()]
 		var cnt: int = int(board_spots[pt]["count"])
-		pos = _get_point_piece_world_pos(pt, maxi(mini(cnt, 6) - 1, 0), maxi(mini(cnt, 6), 1))
+		pos = _get_point_piece_world_pos(pt, maxi(cnt - 1, 0), maxi(cnt, 1))
 	else:
 		var my_id: int = GameManager.my_player_index
 		var out_cnt = p1_out_pieces if my_id == 1 else p2_out_pieces
@@ -2310,34 +2178,60 @@ func _emit_ambient_selection_sparkles() -> void:
 
 
 # ==============================================================================
-# UNIFIED 3D RAYCAST INPUT HANDLER (Per GAME_SCENE_RULES.md)
+# UNIFIED 3D RAYCAST INPUT HANDLER (Matches Yatzy3D & GAME_SCENE_RULES.md)
 # ==============================================================================
 
-var _press_screen_pos: Vector2 = Vector2.ZERO
-var _press_msec: int = 0
-var _is_pressed: bool = false
+var _pointer_down_pos: Vector2 = Vector2.ZERO
+var _pointer_down_time: float = 0.0
+var _is_pointer_down: bool = false
+var _last_handled_tap_time: float = 0.0
 
 func _unhandled_input(event: InputEvent) -> void:
-	if is_board_locked or _is_animating_move:
+	if not GameManager.is_game_active or _is_animating_move:
 		return
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
-			_press_screen_pos = event.position
-			_press_msec = Time.get_ticks_msec()
-			_is_pressed = true
-		elif _is_pressed:
-			_is_pressed = false
-			var drag_dist = event.position.distance_to(_press_screen_pos)
-			var elapsed = Time.get_ticks_msec() - _press_msec
-			if drag_dist < 18.0 and elapsed < 650:
-				_handle_screen_tap(event.position)
+			_pointer_down_pos = event.position
+			_pointer_down_time = Time.get_ticks_msec() / 1000.0
+			_is_pointer_down = true
+		else:
+			if _is_pointer_down:
+				_is_pointer_down = false
+				var dist = event.position.distance_to(_pointer_down_pos)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _pointer_down_time
+				var now = Time.get_ticks_msec() / 1000.0
+				if dist <= 28.0 and elapsed < 0.75:
+					if now - _last_handled_tap_time >= 0.14:
+						_last_handled_tap_time = now
+						if _handle_screen_tap(event.position):
+							get_viewport().set_input_as_handled()
+
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			_pointer_down_pos = event.position
+			_pointer_down_time = Time.get_ticks_msec() / 1000.0
+			_is_pointer_down = true
+		else:
+			if _is_pointer_down:
+				_is_pointer_down = false
+				var dist = event.position.distance_to(_pointer_down_pos)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _pointer_down_time
+				var now = Time.get_ticks_msec() / 1000.0
+				if dist <= 28.0 and elapsed < 0.75:
+					if now - _last_handled_tap_time >= 0.14:
+						_last_handled_tap_time = now
+						if _handle_screen_tap(event.position):
+							get_viewport().set_input_as_handled()
 
 
-func _handle_screen_tap(screen_pos: Vector2) -> void:
-	var cam = get_viewport().get_camera_3d()
+func _handle_screen_tap(screen_pos: Vector2) -> bool:
+	var viewport = get_viewport()
+	if not viewport:
+		return false
+	var cam = viewport.get_camera_3d()
 	if not cam:
-		return
+		return false
 
 	var from = cam.project_ray_origin(screen_pos)
 	var to = from + cam.project_ray_normal(screen_pos) * 15.0
@@ -2349,47 +2243,73 @@ func _handle_screen_tap(screen_pos: Vector2) -> void:
 
 	var result = space_state.intersect_ray(query)
 	if result.is_empty() or not result.has("collider"):
-		return
+		return false
 
 	var col: Object = result["collider"]
 	if not col or not col.has_meta("hit_type"):
-		return
+		return false
 
+	_mark_interaction()
 	var hit_type: String = str(col.get_meta("hit_type"))
 	match hit_type:
 		"btn_roll":
 			_on_roll_button_tapped()
+			return true
 		"die":
 			var d_idx: int = int(col.get_meta("die_index"))
 			_on_die_tapped(d_idx)
+			return true
 		"bar":
 			var g_id: int = int(col.get_meta("gamer_id"))
 			_on_bar_tapped(g_id)
+			return true
 		"bear_off":
 			var g_id: int = int(col.get_meta("gamer_id"))
 			_on_bear_off_tapped(g_id)
+			return true
 		"point":
 			var pt_idx: int = int(col.get_meta("point_index"))
 			_on_point_tapped(pt_idx)
+			return true
+	return false
 
 
 func _on_roll_button_tapped() -> void:
 	if not GameManager.is_game_active:
 		return
+
+	# Ensure turn state is synced with GameManager
+	my_player_index = GameManager.my_player_index
+	current_turn = GameManager.current_turn
+	is_my_turn = (current_turn == my_player_index)
+
 	if not is_my_turn:
-		invalid_move_attempted.emit("هنوز نوبت شما نیست!")
+		AudioManager.play_sound("miss_turn")
+		show_hint("هنوز نوبت شما نیست!")
 		return
 	if dices_rolled:
-		invalid_move_attempted.emit("تاس‌ها قبلاً پرتاب شده‌اند؛ روی مهره طلایی یا خانه سبز مقصد بزنید!")
+		AudioManager.play_sound("miss_turn")
+		show_hint("تاس‌ها قبلاً پرتاب شده‌اند؛ روی مهره طلایی یا خانه سبز مقصد بزنید!")
 		return
 
-	AudioManager.play_Tap()
-	NetworkManager.send_roll_dice({})
+	if _roll_btn_ui.has("root") and is_instance_valid(_roll_btn_ui["root"]):
+		var b_root: Node3D = _roll_btn_ui["root"]
+		var tw = create_tween()
+		tw.tween_property(b_root, "scale", Vector3(0.94, 0.85, 0.94), 0.07)
+		tw.tween_property(b_root, "scale", Vector3.ONE, 0.10)
+
+	AudioManager.sfx_tap()
+	send_move(Commands.Roll_Dice, {})
 
 
 func _on_die_tapped(die_idx: int) -> void:
 	if not GameManager.is_game_active:
 		return
+
+	my_player_index = GameManager.my_player_index
+	current_turn = GameManager.current_turn
+	is_my_turn = (current_turn == my_player_index)
+
 	# Gamer-friendly shortcut: tapping the preview dice before rolling also rolls the dice!
 	if is_my_turn and not dices_rolled:
 		_on_roll_button_tapped()
@@ -2402,10 +2322,11 @@ func _on_die_tapped(die_idx: int) -> void:
 	var my_id: int = GameManager.my_player_index
 	var d_val: int = int(current_dices[die_idx])
 	if not _has_available_move_for_die(d_val, my_id):
-		invalid_move_attempted.emit("با تاس %s هیچ حرکت مجازی وجود ندارد!" % _fa_digits(d_val))
+		AudioManager.play_sound("miss_turn")
+		show_hint("با تاس %s هیچ حرکت مجازی وجود ندارد!" % _fa_digits(d_val))
 		return
 
-	AudioManager.play_Tap()
+	AudioManager.sfx_tap()
 	equipped_dice_index = die_idx
 	can_select_peace = true
 	_recompute_active_possible_pieces()
@@ -2431,7 +2352,8 @@ func _on_bar_tapped(gamer_id: int) -> void:
 	if not can_hit_points.is_empty():
 		_dispatch_bar_entry_move()
 	else:
-		invalid_move_attempted.emit("با این تاس امکان ورود مهره از بار وجود ندارد!")
+		AudioManager.play_sound("miss_turn")
+		show_hint("با این تاس امکان ورود مهره از بار وجود ندارد!")
 
 
 func _on_bear_off_tapped(gamer_id: int) -> void:
@@ -2440,7 +2362,6 @@ func _on_bear_off_tapped(gamer_id: int) -> void:
 		return
 
 	if can_bear_off_sources.is_empty():
-		# Check if another die can bear off a checker!
 		for i in range(current_dices.size()):
 			var d_val: int = int(current_dices[i])
 			var step: int = d_val if my_id == 1 else -d_val
@@ -2457,17 +2378,25 @@ func _on_bear_off_tapped(gamer_id: int) -> void:
 	if not can_bear_off_sources.is_empty():
 		_dispatch_point_move(can_bear_off_sources[0])
 	else:
-		invalid_move_attempted.emit("برای خارج کردن مهره، تمام مهره‌های شما باید در خانه خودی باشند!")
+		AudioManager.play_sound("miss_turn")
+		show_hint("برای خارج کردن مهره، تمام مهره‌های شما باید در خانه خودی باشند!")
 
 
 func _on_point_tapped(pt_idx: int) -> void:
 	if not GameManager.is_game_active:
 		return
+
+	my_player_index = GameManager.my_player_index
+	current_turn = GameManager.current_turn
+	is_my_turn = (current_turn == my_player_index)
+
 	if not is_my_turn:
-		invalid_move_attempted.emit("نوبت حریف است!")
+		AudioManager.play_sound("miss_turn")
+		show_hint("نوبت حریف است!")
 		return
 	if not dices_rolled:
-		invalid_move_attempted.emit("ابتدا دکمه سبز «پرتاب تاس» در پایین صفحه را بزنید!")
+		AudioManager.play_sound("miss_turn")
+		show_hint("ابتدا دکمه سبز «پرتاب تاس» در پایین صفحه را بزنید!")
 		return
 
 	var my_id: int = GameManager.my_player_index
@@ -2477,7 +2406,6 @@ func _on_point_tapped(pt_idx: int) -> void:
 		if pt_idx in can_hit_points:
 			_dispatch_bar_entry_move()
 			return
-		# Check if another die can enter onto pt_idx from the bar
 		var bar_src: int = -1 if my_id == 1 else 24
 		for i in range(current_dices.size()):
 			var d_val: int = int(current_dices[i])
@@ -2488,7 +2416,8 @@ func _on_point_tapped(pt_idx: int) -> void:
 				_recompute_active_possible_pieces()
 				_dispatch_bar_entry_move()
 				return
-		invalid_move_attempted.emit("ابتدا باید مهره زده‌شده در بار (وسط تخته) را وارد بازی کنید!")
+		AudioManager.play_sound("miss_turn")
+		show_hint("ابتدا باید مهره زده‌شده در بار (وسط تخته) را وارد بازی کنید!")
 		return
 
 	# Case 2: Tapped a selectable source checker directly -> move it!
@@ -2515,10 +2444,12 @@ func _on_point_tapped(pt_idx: int) -> void:
 				_refresh_ui_and_highlights()
 				_dispatch_point_move(pt_idx)
 				return
-		invalid_move_attempted.emit("این مهره با تاس‌های فعلی امکان حرکت ندارد!")
+		AudioManager.play_sound("miss_turn")
+		show_hint("این مهره با تاس‌های فعلی امکان حرکت ندارد!")
 		return
 
-	invalid_move_attempted.emit("روی یکی از مهره‌های درخشان طلایی یا خانه سبز مقصد بزنید!")
+	AudioManager.play_sound("miss_turn")
+	show_hint("روی یکی از مهره‌های درخشان طلایی یا خانه سبز مقصد بزنید!")
 
 
 func _dispatch_bar_entry_move() -> void:
@@ -2526,8 +2457,8 @@ func _dispatch_bar_entry_move() -> void:
 		return
 	var my_id: int = GameManager.my_player_index
 	var bar_index: int = -1 if my_id == 1 else 24
-	AudioManager.play_Tap()
-	NetworkManager.send_select_peace({
+	AudioManager.sfx_tap()
+	send_move(Commands.Select_Peace, {
 		"index": bar_index,
 		"dice_index": equipped_dice_index,
 	})
@@ -2536,15 +2467,15 @@ func _dispatch_bar_entry_move() -> void:
 func _dispatch_point_move(pt_idx: int) -> void:
 	if equipped_dice_index < 0 or equipped_dice_index >= current_dices.size():
 		return
-	AudioManager.play_Tap()
-	NetworkManager.send_select_peace({
+	AudioManager.sfx_tap()
+	send_move(Commands.Select_Peace, {
 		"index": pt_idx,
 		"dice_index": equipped_dice_index,
 	})
 
 
 # ==============================================================================
-# 3D PERSIAN TEXT LABEL HELPER (High-Contrast 0.00125 Pixel Scale)
+# 3D PERSIAN TEXT LABEL HELPER (Larger 0.00150 Pixel Scale & Bold Outline)
 # ==============================================================================
 
 func _create_3d_label(txt: String, f_size: int, col: Color) -> Label3D:
@@ -2553,10 +2484,10 @@ func _create_3d_label(txt: String, f_size: int, col: Color) -> Label3D:
 	if _FONT_FA:
 		lbl.font = _FONT_FA
 	lbl.font_size = f_size
-	lbl.pixel_size = 0.00125
+	lbl.pixel_size = 0.00150
 	lbl.modulate = col
 	lbl.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 	lbl.rotation_degrees = Vector3(-90, 0, 0)
-	lbl.outline_size = 10
-	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.96)
+	lbl.outline_size = 12
+	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98)
 	return lbl
