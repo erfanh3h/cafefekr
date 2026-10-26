@@ -188,9 +188,9 @@ func _process(delta: float) -> void:
 	if is_instance_valid(mat_ring_selectable):
 		mat_ring_selectable.emission_energy_multiplier = 0.70 + 0.30 * pulse
 	if is_instance_valid(mat_ring_target):
-		mat_ring_target.emission_energy_multiplier = 1.5 + 1.1 * pulse
+		mat_ring_target.emission_energy_multiplier = 0.60 + 0.25 * pulse
 	if is_instance_valid(mat_ring_hit_danger):
-		mat_ring_hit_danger.emission_energy_multiplier = 1.9 + 1.5 * pulse
+		mat_ring_hit_danger.emission_energy_multiplier = 0.75 + 0.30 * pulse
 
 	if not _is_animating_move:
 		for pt in range(24):
@@ -436,17 +436,23 @@ func _init_materials() -> void:
 
 	mat_ring_target = StandardMaterial3D.new()
 	mat_ring_target.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ring_target.albedo_color = Color(0.18, 0.96, 0.52, 0.92)
+	mat_ring_target.albedo_color = Color(0.06, 0.62, 0.24, 0.90)
+	mat_ring_target.metallic = 0.15
+	mat_ring_target.roughness = 0.50
+	mat_ring_target.clearcoat_enabled = false
 	mat_ring_target.emission_enabled = true
-	mat_ring_target.emission = Color(0.12, 0.88, 0.44)
-	mat_ring_target.emission_energy_multiplier = 1.8
+	mat_ring_target.emission = Color(0.04, 0.42, 0.16)
+	mat_ring_target.emission_energy_multiplier = 0.75
 
 	mat_ring_hit_danger = StandardMaterial3D.new()
 	mat_ring_hit_danger.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ring_hit_danger.albedo_color = Color(1.0, 0.22, 0.26, 0.95)
+	mat_ring_hit_danger.albedo_color = Color(0.85, 0.16, 0.18, 0.92)
+	mat_ring_hit_danger.metallic = 0.15
+	mat_ring_hit_danger.roughness = 0.50
+	mat_ring_hit_danger.clearcoat_enabled = false
 	mat_ring_hit_danger.emission_enabled = true
-	mat_ring_hit_danger.emission = Color(1.0, 0.14, 0.18)
-	mat_ring_hit_danger.emission_energy_multiplier = 2.2
+	mat_ring_hit_danger.emission = Color(0.60, 0.10, 0.12)
+	mat_ring_hit_danger.emission_energy_multiplier = 0.85
 
 	mat_ring_last_move = StandardMaterial3D.new()
 	mat_ring_last_move.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -792,14 +798,16 @@ func _build_24_points() -> void:
 		pt_root.add_child(src_ring)
 		_point_source_rings[i] = src_ring
 
-		# 6. Destination Target Ring (Glowing Emerald or Crimson Hit Ring)
+		# 6. Destination Target Ring (Compact Hollow Emerald Ring, Reduced Radius & Glare-Free)
 		var tgt_ring = MeshInstance3D.new()
-		var tr_cyl = CylinderMesh.new()
-		tr_cyl.top_radius = PIECE_RADIUS + 0.010
-		tr_cyl.bottom_radius = PIECE_RADIUS + 0.013
-		tr_cyl.height = 0.008
-		tr_cyl.material = mat_ring_target
-		tgt_ring.mesh = tr_cyl
+		var tr_torus = TorusMesh.new()
+		tr_torus.inner_radius = 0.014
+		tr_torus.outer_radius = 0.024
+		tr_torus.rings = 24
+		tr_torus.ring_segments = 12
+		tgt_ring.mesh = tr_torus
+		tgt_ring.scale = Vector3(1.0, 0.40, 1.0)
+		tgt_ring.material_override = mat_ring_target
 		tgt_ring.position = Vector3(0, 0.005, dir_z * 0.165)
 		tgt_ring.visible = false
 		pt_root.add_child(tgt_ring)
@@ -1613,6 +1621,7 @@ func _refresh_ui_and_highlights() -> void:
 				tgt_ring.material_override = mat_ring_hit_danger if is_blot_hit else mat_ring_target
 				var dest_stack_idx = 0 if is_blot_hit else cnt
 				var dest_pos = _get_point_piece_world_pos(i, dest_stack_idx, maxi(cnt + 1, 1))
+				tgt_ring.position.y = (dest_pos.y - _point_positions[i].y) + 0.005
 				tgt_ring.position.z = (dest_pos.z - _point_positions[i].z)
 
 		var last_ring: MeshInstance3D = _point_last_rings[i]
