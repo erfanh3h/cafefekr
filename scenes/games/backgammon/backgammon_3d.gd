@@ -96,6 +96,20 @@ var _bear_p2_nodes: Array[Node3D] = []
 
 var _bar_p1_ring: MeshInstance3D = null
 var _bar_p2_ring: MeshInstance3D = null
+var _point_top_crowns: Array[MeshInstance3D] = []
+var _bar_p1_top_crown: MeshInstance3D = null
+var _bar_p2_top_crown: MeshInstance3D = null
+
+var _bar_p1_badge_root: Node3D = null
+var _bar_p1_badge_lbl: Label3D = null
+var _bar_p1_stack_root: Node3D = null
+var _bar_p1_stack_lbl: Label3D = null
+
+var _bar_p2_badge_root: Node3D = null
+var _bar_p2_badge_lbl: Label3D = null
+var _bar_p2_stack_root: Node3D = null
+var _bar_p2_stack_lbl: Label3D = null
+
 var _center_rosette_lbl: Label3D = null
 
 var _bear_p1_ring: MeshInstance3D = null
@@ -182,11 +196,11 @@ func _process(delta: float) -> void:
 	var float_y = sin(_vfx_time * 4.6) * 0.0055
 
 	if is_instance_valid(mat_ring_selectable):
-		mat_ring_selectable.emission_energy_multiplier = 1.6 + 1.2 * pulse
+		mat_ring_selectable.emission_energy_multiplier = 2.8 + 1.8 * pulse
 	if is_instance_valid(mat_ring_target):
-		mat_ring_target.emission_energy_multiplier = 1.5 + 1.1 * pulse
+		mat_ring_target.emission_energy_multiplier = 1.6 + 1.2 * pulse
 	if is_instance_valid(mat_ring_hit_danger):
-		mat_ring_hit_danger.emission_energy_multiplier = 1.9 + 1.5 * pulse
+		mat_ring_hit_danger.emission_energy_multiplier = 2.2 + 1.6 * pulse
 
 	if not _is_animating_move:
 		for pt in range(24):
@@ -198,6 +212,18 @@ func _process(delta: float) -> void:
 					if is_instance_valid(top_piece) and top_piece.has_meta("base_y"):
 						var by: float = float(top_piece.get_meta("base_y"))
 						top_piece.position.y = by + (float_y if is_sel else 0.0)
+			if pt < _point_top_crowns.size():
+				var crown: MeshInstance3D = _point_top_crowns[pt]
+				if is_instance_valid(crown) and crown.visible and crown.has_meta("base_y"):
+					crown.position.y = float(crown.get_meta("base_y")) + (float_y if is_sel else 0.0)
+
+		# Also float bar top piece & crown if selectable
+		if is_instance_valid(_bar_p1_top_crown) and _bar_p1_top_crown.visible and not _bar_p1_nodes.is_empty():
+			var top_p1: Node3D = _bar_p1_nodes[_bar_p1_nodes.size() - 1]
+			if is_instance_valid(top_p1):
+				var p1_base_y: float = SURFACE_Y + 0.030 + float(mini(p1_out_pieces - 1, 6)) * (PIECE_HEIGHT * 0.85)
+				top_p1.position.y = p1_base_y + float_y
+				_bar_p1_top_crown.position.y = p1_base_y + PIECE_HEIGHT * 0.84 + float_y
 
 	# 2. Float selected die in the bottom tray & pulse bottom Roll Dice button when ready
 	for d_idx in range(_dice_nodes.size()):
@@ -420,12 +446,17 @@ func _init_materials() -> void:
 	mat_die_badge_selected.emission_energy_multiplier = 0.55
 
 	# Highlight Rings (Selectable Source, Valid Target, Blot Hit Danger, Last Move)
+	# Upgraded to Brilliant 24K Imperial Persian Gold
 	mat_ring_selectable = StandardMaterial3D.new()
-	mat_ring_selectable.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ring_selectable.albedo_color = Color(1.0, 0.86, 0.24, 0.94)
+	mat_ring_selectable.albedo_color = Color(1.0, 0.78, 0.02, 1.0)
+	mat_ring_selectable.metallic = 0.95
+	mat_ring_selectable.roughness = 0.10
+	mat_ring_selectable.clearcoat_enabled = true
+	mat_ring_selectable.clearcoat = 1.0
+	mat_ring_selectable.clearcoat_roughness = 0.06
 	mat_ring_selectable.emission_enabled = true
-	mat_ring_selectable.emission = Color(1.0, 0.78, 0.16)
-	mat_ring_selectable.emission_energy_multiplier = 2.0
+	mat_ring_selectable.emission = Color(1.0, 0.76, 0.02)
+	mat_ring_selectable.emission_energy_multiplier = 3.6
 
 	mat_ring_target = StandardMaterial3D.new()
 	mat_ring_target.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -724,6 +755,7 @@ func _build_24_points() -> void:
 	_point_source_rings.resize(24)
 	_point_target_rings.resize(24)
 	_point_last_rings.resize(24)
+	_point_top_crowns.resize(24)
 
 	var tri_half_w: float = 0.0365
 	var tri_len: float = 0.372
@@ -772,18 +804,32 @@ func _build_24_points() -> void:
 		num_lbl.position = Vector3(0, 0.030, -dir_z * 0.026)
 		pt_root.add_child(num_lbl)
 
-		# 5. Selectable Source Ring (Glowing Gold Ring under top checker)
+		# 5. Selectable Source Ring (Generous glowing 24K gold disc on the board floor)
 		var src_ring = MeshInstance3D.new()
 		var sr_cyl = CylinderMesh.new()
-		sr_cyl.top_radius = PIECE_RADIUS + 0.009
-		sr_cyl.bottom_radius = PIECE_RADIUS + 0.012
-		sr_cyl.height = 0.007
+		sr_cyl.top_radius = PIECE_RADIUS + 0.018
+		sr_cyl.bottom_radius = PIECE_RADIUS + 0.024
+		sr_cyl.height = 0.009
 		sr_cyl.material = mat_ring_selectable
 		src_ring.mesh = sr_cyl
 		src_ring.position = Vector3(0, 0.005, dir_z * 0.044)
 		src_ring.visible = false
 		pt_root.add_child(src_ring)
 		_point_source_rings[i] = src_ring
+
+		# 5b. Floating 24K Imperial Gold Crown Ring on top surface of selectable checker
+		var top_crown = MeshInstance3D.new()
+		var cr_torus = TorusMesh.new()
+		cr_torus.inner_radius = PIECE_RADIUS * 0.50
+		cr_torus.outer_radius = PIECE_RADIUS * 1.02
+		cr_torus.rings = 28
+		cr_torus.ring_segments = 14
+		cr_torus.material = mat_ring_selectable
+		top_crown.mesh = cr_torus
+		top_crown.scale = Vector3(1.0, 0.45, 1.0)
+		top_crown.visible = false
+		pt_root.add_child(top_crown)
+		_point_top_crowns[i] = top_crown
 
 		# 6. Destination Target Ring (Glowing Emerald or Crimson Hit Ring)
 		var tgt_ring = MeshInstance3D.new()
@@ -872,9 +918,9 @@ func _build_bar_zones() -> void:
 
 		var ring = MeshInstance3D.new()
 		var r_cyl = CylinderMesh.new()
-		r_cyl.top_radius = PIECE_RADIUS + 0.011
-		r_cyl.bottom_radius = PIECE_RADIUS + 0.014
-		r_cyl.height = 0.008
+		r_cyl.top_radius = PIECE_RADIUS + 0.018
+		r_cyl.bottom_radius = PIECE_RADIUS + 0.024
+		r_cyl.height = 0.009
 		r_cyl.material = mat_ring_selectable
 		ring.mesh = r_cyl
 		ring.visible = false
@@ -896,6 +942,130 @@ func _build_bar_zones() -> void:
 			_bar_p1_ring = ring
 		else:
 			_bar_p2_ring = ring
+
+	# 24K Gold Top Crowns for Bar Pieces
+	_bar_p1_top_crown = MeshInstance3D.new()
+	var b1_torus = TorusMesh.new()
+	b1_torus.inner_radius = PIECE_RADIUS * 0.50
+	b1_torus.outer_radius = PIECE_RADIUS * 1.02
+	b1_torus.rings = 28
+	b1_torus.ring_segments = 14
+	b1_torus.material = mat_ring_selectable
+	_bar_p1_top_crown.mesh = b1_torus
+	_bar_p1_top_crown.scale = Vector3(1.0, 0.45, 1.0)
+	_bar_p1_top_crown.visible = false
+	add_child(_bar_p1_top_crown)
+
+	_bar_p2_top_crown = MeshInstance3D.new()
+	var b2_torus = TorusMesh.new()
+	b2_torus.inner_radius = PIECE_RADIUS * 0.50
+	b2_torus.outer_radius = PIECE_RADIUS * 1.02
+	b2_torus.rings = 28
+	b2_torus.ring_segments = 14
+	b2_torus.material = mat_ring_selectable
+	_bar_p2_top_crown.mesh = b2_torus
+	_bar_p2_top_crown.scale = Vector3(1.0, 0.45, 1.0)
+	_bar_p2_top_crown.visible = false
+	add_child(_bar_p2_top_crown)
+
+	# --- Highly Visible Hit / Out Piece Count Badges & Medallions on Center Bar ---
+	# Player 1 (Red / You) Bar Plaque (Framed on the wooden bar rail)
+	_bar_p1_badge_root = Node3D.new()
+	_bar_p1_badge_root.position = Vector3(BAR_X, SURFACE_Y + 0.034, CABINET_CENTER_Z + 0.090)
+	var b1_gold = MeshInstance3D.new()
+	var b1_gbox = BoxMesh.new()
+	b1_gbox.size = Vector3(0.190, 0.008, 0.056)
+	b1_gbox.material = mat_gold_trim
+	b1_gold.mesh = b1_gbox
+	_bar_p1_badge_root.add_child(b1_gold)
+
+	var b1_velvet = MeshInstance3D.new()
+	var b1_vbox = BoxMesh.new()
+	b1_vbox.size = Vector3(0.178, 0.010, 0.046)
+	b1_vbox.material = mat_piece_p1_well
+	b1_velvet.mesh = b1_vbox
+	_bar_p1_badge_root.add_child(b1_velvet)
+
+	_bar_p1_badge_lbl = _create_3d_label("", 26, Color(1.0, 0.95, 0.85))
+	_bar_p1_badge_lbl.position = Vector3(0, 0.008, 0)
+	_bar_p1_badge_root.add_child(_bar_p1_badge_lbl)
+	_bar_p1_badge_root.visible = false
+	add_child(_bar_p1_badge_root)
+
+	# Player 1 Floating Stack Medallion (Hovering directly over the checkers stack)
+	_bar_p1_stack_root = Node3D.new()
+	var s1_gold = MeshInstance3D.new()
+	var s1_gcyl = CylinderMesh.new()
+	s1_gcyl.top_radius = 0.032
+	s1_gcyl.bottom_radius = 0.034
+	s1_gcyl.height = 0.006
+	s1_gcyl.material = mat_gold_trim
+	s1_gold.mesh = s1_gcyl
+	_bar_p1_stack_root.add_child(s1_gold)
+
+	var s1_inner = MeshInstance3D.new()
+	var s1_icyl = CylinderMesh.new()
+	s1_icyl.top_radius = 0.027
+	s1_icyl.bottom_radius = 0.027
+	s1_icyl.height = 0.008
+	s1_icyl.material = mat_piece_p1_well
+	s1_inner.mesh = s1_icyl
+	_bar_p1_stack_root.add_child(s1_inner)
+
+	_bar_p1_stack_lbl = _create_3d_label("", 32, Color(1.0, 0.98, 0.70))
+	_bar_p1_stack_lbl.position = Vector3(0, 0.007, 0)
+	_bar_p1_stack_root.add_child(_bar_p1_stack_lbl)
+	_bar_p1_stack_root.visible = false
+	add_child(_bar_p1_stack_root)
+
+	# Player 2 (Blue / Opponent) Bar Plaque
+	_bar_p2_badge_root = Node3D.new()
+	_bar_p2_badge_root.position = Vector3(BAR_X, SURFACE_Y + 0.034, CABINET_CENTER_Z - 0.090)
+	var b2_gold = MeshInstance3D.new()
+	var b2_gbox = BoxMesh.new()
+	b2_gbox.size = Vector3(0.190, 0.008, 0.056)
+	b2_gbox.material = mat_gold_trim
+	b2_gold.mesh = b2_gbox
+	_bar_p2_badge_root.add_child(b2_gold)
+
+	var b2_velvet = MeshInstance3D.new()
+	var b2_vbox = BoxMesh.new()
+	b2_vbox.size = Vector3(0.178, 0.010, 0.046)
+	b2_vbox.material = mat_piece_p2_well
+	b2_velvet.mesh = b2_vbox
+	_bar_p2_badge_root.add_child(b2_velvet)
+
+	_bar_p2_badge_lbl = _create_3d_label("", 26, Color(0.92, 0.96, 1.0))
+	_bar_p2_badge_lbl.position = Vector3(0, 0.008, 0)
+	_bar_p2_badge_root.add_child(_bar_p2_badge_lbl)
+	_bar_p2_badge_root.visible = false
+	add_child(_bar_p2_badge_root)
+
+	# Player 2 Floating Stack Medallion
+	_bar_p2_stack_root = Node3D.new()
+	var s2_gold = MeshInstance3D.new()
+	var s2_gcyl = CylinderMesh.new()
+	s2_gcyl.top_radius = 0.032
+	s2_gcyl.bottom_radius = 0.034
+	s2_gcyl.height = 0.006
+	s2_gcyl.material = mat_gold_trim
+	s2_gold.mesh = s2_gcyl
+	_bar_p2_stack_root.add_child(s2_gold)
+
+	var s2_inner = MeshInstance3D.new()
+	var s2_icyl = CylinderMesh.new()
+	s2_icyl.top_radius = 0.027
+	s2_icyl.bottom_radius = 0.027
+	s2_icyl.height = 0.008
+	s2_icyl.material = mat_piece_p2_well
+	s2_inner.mesh = s2_icyl
+	_bar_p2_stack_root.add_child(s2_inner)
+
+	_bar_p2_stack_lbl = _create_3d_label("", 32, Color(0.92, 0.96, 1.0))
+	_bar_p2_stack_lbl.position = Vector3(0, 0.007, 0)
+	_bar_p2_stack_root.add_child(_bar_p2_stack_lbl)
+	_bar_p2_stack_root.visible = false
+	add_child(_bar_p2_stack_root)
 
 	# Center Bar Rosette Medallion (at exact center of the bar: X = 0, Z = CABINET_CENTER_Z)
 	var rosette = MeshInstance3D.new()
@@ -1502,7 +1672,8 @@ func _get_point_piece_world_pos(point_idx: int, stack_idx: int, total_count: int
 func _get_bar_piece_world_pos(gamer_id: int, stack_idx: int) -> Vector3:
 	var base_z: float = (CABINET_CENTER_Z - 0.175) if gamer_id == 2 else (CABINET_CENTER_Z + 0.175)
 	var vis_idx: int = mini(stack_idx, 6)
-	return Vector3(BAR_X, SURFACE_Y + 0.030 + float(vis_idx) * (PIECE_HEIGHT * 0.85), base_z)
+	var z_stagger: float = float(vis_idx) * 0.006 * (1.0 if gamer_id == 1 else -1.0)
+	return Vector3(BAR_X, SURFACE_Y + 0.030 + float(vis_idx) * (PIECE_HEIGHT * 0.85), base_z + z_stagger)
 
 
 func _get_bear_off_piece_world_pos(gamer_id: int, stack_idx: int) -> Vector3:
@@ -1589,6 +1760,16 @@ func _refresh_ui_and_highlights() -> void:
 				var top_pos = _get_point_piece_world_pos(i, top_idx, maxi(cnt, 1))
 				src_ring.position.z = (top_pos.z - _point_positions[i].z)
 
+		var top_crown: MeshInstance3D = _point_top_crowns[i]
+		if is_instance_valid(top_crown):
+			top_crown.visible = is_selectable_src
+			if is_selectable_src:
+				var top_idx = maxi(cnt - 1, 0)
+				var top_pos = _get_point_piece_world_pos(i, top_idx, maxi(cnt, 1))
+				var base_crown_y = (top_pos.y - _point_positions[i].y) + PIECE_HEIGHT * 0.84
+				top_crown.position = Vector3(0, base_crown_y, top_pos.z - _point_positions[i].z)
+				top_crown.set_meta("base_y", base_crown_y)
+
 		var tgt_ring: MeshInstance3D = _point_target_rings[i]
 		if is_instance_valid(tgt_ring):
 			tgt_ring.visible = is_target_dest
@@ -1602,11 +1783,60 @@ func _refresh_ui_and_highlights() -> void:
 		if is_instance_valid(last_ring):
 			last_ring.visible = (i == last_played_point and not is_selectable_src and not is_target_dest)
 
-	# 2. Bar Highlights
+	# 2. Bar Hit Piece Count Displays & Highlights
+	if is_instance_valid(_bar_p1_badge_root):
+		if p1_out_pieces > 0:
+			_bar_p1_badge_root.visible = true
+			if is_instance_valid(_bar_p1_badge_lbl):
+				_bar_p1_badge_lbl.text = "⚔️ مهره خورده: " + _fa_digits(p1_out_pieces)
+		else:
+			_bar_p1_badge_root.visible = false
+
+	if is_instance_valid(_bar_p1_stack_root):
+		if p1_out_pieces > 0:
+			_bar_p1_stack_root.visible = true
+			var top_p1_pos = _get_bar_piece_world_pos(1, maxi(p1_out_pieces - 1, 0))
+			_bar_p1_stack_root.position = Vector3(BAR_X, top_p1_pos.y + PIECE_HEIGHT * 0.85 + 0.018, top_p1_pos.z)
+			if is_instance_valid(_bar_p1_stack_lbl):
+				_bar_p1_stack_lbl.text = "⚔️ " + _fa_digits(p1_out_pieces)
+		else:
+			_bar_p1_stack_root.visible = false
+
+	if is_instance_valid(_bar_p2_badge_root):
+		if p2_out_pieces > 0:
+			_bar_p2_badge_root.visible = true
+			if is_instance_valid(_bar_p2_badge_lbl):
+				_bar_p2_badge_lbl.text = "⚔️ مهره خورده: " + _fa_digits(p2_out_pieces)
+		else:
+			_bar_p2_badge_root.visible = false
+
+	if is_instance_valid(_bar_p2_stack_root):
+		if p2_out_pieces > 0:
+			_bar_p2_stack_root.visible = true
+			var top_p2_pos = _get_bar_piece_world_pos(2, maxi(p2_out_pieces - 1, 0))
+			_bar_p2_stack_root.position = Vector3(BAR_X, top_p2_pos.y + PIECE_HEIGHT * 0.85 + 0.018, top_p2_pos.z)
+			if is_instance_valid(_bar_p2_stack_lbl):
+				_bar_p2_stack_lbl.text = "⚔️ " + _fa_digits(p2_out_pieces)
+		else:
+			_bar_p2_stack_root.visible = false
+
+	var is_bar_p1_sel: bool = (is_my_turn and my_id == 1 and p1_out_pieces > 0 and not can_hit_points.is_empty())
 	if is_instance_valid(_bar_p1_ring):
-		_bar_p1_ring.visible = (is_my_turn and my_id == 1 and p1_out_pieces > 0 and not can_hit_points.is_empty())
+		_bar_p1_ring.visible = is_bar_p1_sel
+	if is_instance_valid(_bar_p1_top_crown):
+		_bar_p1_top_crown.visible = is_bar_p1_sel
+		if is_bar_p1_sel:
+			var top_p1_pos = _get_bar_piece_world_pos(1, maxi(p1_out_pieces - 1, 0))
+			_bar_p1_top_crown.position = Vector3(BAR_X, top_p1_pos.y + PIECE_HEIGHT * 0.84, top_p1_pos.z)
+
+	var is_bar_p2_sel: bool = (is_my_turn and my_id == 2 and p2_out_pieces > 0 and not can_hit_points.is_empty())
 	if is_instance_valid(_bar_p2_ring):
-		_bar_p2_ring.visible = (is_my_turn and my_id == 2 and p2_out_pieces > 0 and not can_hit_points.is_empty())
+		_bar_p2_ring.visible = is_bar_p2_sel
+	if is_instance_valid(_bar_p2_top_crown):
+		_bar_p2_top_crown.visible = is_bar_p2_sel
+		if is_bar_p2_sel:
+			var top_p2_pos = _get_bar_piece_world_pos(2, maxi(p2_out_pieces - 1, 0))
+			_bar_p2_top_crown.position = Vector3(BAR_X, top_p2_pos.y + PIECE_HEIGHT * 0.84, top_p2_pos.z)
 
 	# 3. Top Bear-Off Vault Highlights
 	if is_instance_valid(_bear_p1_ring):
@@ -2238,24 +2468,25 @@ func _emit_ambient_selection_sparkles() -> void:
 		var out_cnt = p1_out_pieces if my_id == 1 else p2_out_pieces
 		pos = _get_bar_piece_world_pos(my_id, maxi(out_cnt - 1, 0))
 
-	var orb = MeshInstance3D.new()
-	var sph = SphereMesh.new()
-	sph.radius = 0.0055
-	sph.height = 0.011
-	var mat = StandardMaterial3D.new()
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(1.0, 0.90, 0.36, 0.90)
-	sph.material = mat
-	orb.mesh = sph
-	orb.position = pos + Vector3(randf_range(-0.025, 0.025), 0.018, randf_range(-0.025, 0.025))
-	add_child(orb)
+	for s_k in range(2):
+		var orb = MeshInstance3D.new()
+		var sph = SphereMesh.new()
+		sph.radius = 0.006
+		sph.height = 0.012
+		var mat = StandardMaterial3D.new()
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_color = Color(1.0, 0.82, 0.04, 0.95)
+		sph.material = mat
+		orb.mesh = sph
+		orb.position = pos + Vector3(randf_range(-0.028, 0.028), 0.020, randf_range(-0.028, 0.028))
+		add_child(orb)
 
-	var tw = create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(orb, "position:y", orb.position.y + 0.065, 0.48).set_trans(Tween.TRANS_SINE)
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.48)
-	tw.chain().tween_callback(orb.queue_free)
+		var tw = create_tween()
+		tw.set_parallel(true)
+		tw.tween_property(orb, "position:y", orb.position.y + 0.075, 0.50).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(mat, "albedo_color:a", 0.0, 0.50).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.chain().tween_callback(orb.queue_free)
 
 
 # ==============================================================================
