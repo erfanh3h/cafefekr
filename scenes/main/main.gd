@@ -632,8 +632,6 @@ func _on_new_turn_round_received() -> void:
 		if board and is_instance_valid(board):
 			if board.has_method("set_board_locked"):
 				board.set_board_locked(false)
-			if board.has_method("on_new_turn_round"):
-				board.on_new_turn_round()
 
 func _on_finish_turn_round_received(data: Dictionary) -> void:
 	if GameManager.current_game_type == GameTypes.RPC:

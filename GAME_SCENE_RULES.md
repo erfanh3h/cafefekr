@@ -11,8 +11,10 @@
 > ### 🚨 NEVER BREAK EXISTING GAMES WHEN ADDING OR IMPROVING A GAME!
 > **Every game in Cafe Fekr must remain completely independent, modular, encapsulated, and strictly follow clean object-oriented inheritance:**
 >
-> 1. **Zero Collateral Impact**:
->    - Adding a new game (e.g. FekrBekr, Checkers, Backgammon) or improving/polishing an existing game must **NEVER** break, regress, or alter the logic, visuals, timing, or flow of ANY other game (TicTacToe, Chess, etc.).
+> 1. **Zero Collateral Impact & Absolute Game Isolation (MAIN MAJOR RULE)**:
+>    - **CRITICAL LAW**: When you want to change, polish, or fix something in a game, it **MUST NOT affect any other game** (it may ONLY affect multiple games if the mechanic, fix, or feature is explicitly common to both/all by design).
+>    - Adding a new game (e.g. FekrBekr, Checkers, Backgammon, Four-in-a-Row, RPC) or modifying an existing game must **NEVER** break, regress, or alter the logic, visuals, timing, input handling, or flow of ANY other game (TicTacToe, Chess, Checkers, etc.).
+>    - Any code edit in shared files (`main.gd`, `BaseGameBoard`, `BaseGameHUD`, `BaseTopHeader`, `GameManager`, `NetworkManager`) must be guard-fenced and backwards-compatible to ensure zero cross-game side effects.
 > 2. **Strict Encapsulation & Inheritance Hierarchy**:
 >    - Every game board MUST extend and inherit from `BaseGameBoard` (`res://scripts/games/base_game_board.gd`).
 >    - Every specialized top header MUST extend and inherit from `BaseTopHeader` (`res://scenes/games/base/base_top_header.gd`).
@@ -478,3 +480,4 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Stale Turn Banner in Simultaneous Games** | In simultaneous games (e.g. `RPC`), never display turn-based text ("نوبت قرمز/آبی" or "بازی درحال آغاز است") during active play; always show clear prompts ("سنگ، کاغذ یا قیچی را انتخاب کنید!" / "✅ انتخاب شما: ...") and dismiss start overlays immediately on `New_Turn_Round`. |
 | ❌ **No Start-Countdown Glitch or Double-Tick** | Keep `StartGameOverlay/Card/VBox/Countdown` at a fixed `custom_minimum_size = Vector2(360, 130)` and `pivot_offset = Vector2(180, 65)`, and never let `Game_Play_Time` or background `_process` timers overwrite or double-tick during `play_start_countdown()`. |
 | ❌ **No Front-Lip Text in TicTacToe** | Never add front-frame `Label3D` text on the `TicTacToe` 3D board. |
+| ❌ **Cross-Game Side-Effect Prohibition** | When changing or fixing something in a game, it MUST NOT affect any other game (only affects if it was common on both). Never introduce collateral changes to existing games. |

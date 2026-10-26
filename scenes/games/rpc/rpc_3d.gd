@@ -1125,7 +1125,7 @@ func _spawn_stone_debris(world_pos: Vector3) -> void:
 		var s_size = randf_range(0.018, 0.038)
 		prism.size = Vector3(s_size, s_size * 1.4, s_size * 0.8)
 		shard.mesh = prism
-		shard.material_override = mat_obsidian
+		shard.material_override = mat_rock_obsidian
 		shard.rotation_degrees = Vector3(randf_range(-180, 180), randf_range(-180, 180), randf_range(-180, 180))
 		debris_root.add_child(shard)
 
