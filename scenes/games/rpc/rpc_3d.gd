@@ -336,7 +336,6 @@ func _setup_materials() -> void:
 	mat_selected_light_pillar_p1.emission_enabled = true
 	mat_selected_light_pillar_p1.emission = Color(1.0, 0.18, 0.22)
 	mat_selected_light_pillar_p1.emission_energy_multiplier = 1.6
-	mat_selected_light_pillar_p1.cull_mode = BaseMaterial3D.CULL_DISABLED
 
 	mat_selected_light_pillar_p2 = StandardMaterial3D.new()
 	mat_selected_light_pillar_p2.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -344,7 +343,6 @@ func _setup_materials() -> void:
 	mat_selected_light_pillar_p2.emission_enabled = true
 	mat_selected_light_pillar_p2.emission = Color(0.18, 0.50, 1.0)
 	mat_selected_light_pillar_p2.emission_energy_multiplier = 1.6
-	mat_selected_light_pillar_p2.cull_mode = BaseMaterial3D.CULL_DISABLED
 
 	# Mystic Digestion Talisman Rune Material
 	mat_digest_rune = StandardMaterial3D.new()
@@ -552,8 +550,6 @@ func _build_selection_pedestals() -> void:
 		sp_cyl.bottom_radius = 0.128
 		sp_cyl.height = 0.38
 		sp_cyl.radial_segments = 24
-		sp_cyl.cap_top = false
-		sp_cyl.cap_bottom = false
 		s_pillar.mesh = sp_cyl
 		s_pillar.material_override = mat_selected_light_pillar_p1
 		s_pillar.position = Vector3(0, 0.22, 0)
@@ -767,7 +763,7 @@ func _create_paper_node(gamer_id: int) -> Node3D:
 	for z_end in [-0.080, 0.080]:
 		var strip = MeshInstance3D.new()
 		var s_box = BoxMesh.new()
-	s_box.size = Vector3(0.068, 0.006, 0.006)
+		s_box.size = Vector3(0.068, 0.006, 0.006)
 		strip.mesh = s_box
 		strip.material_override = mat_paper_gold_leaf
 		strip.position = Vector3(-0.034, 0.0525, z_end)
@@ -777,7 +773,7 @@ func _create_paper_node(gamer_id: int) -> Node3D:
 	for l_z in [-0.050, -0.025, 0.0, 0.025, 0.050]:
 		var ink_line = MeshInstance3D.new()
 		var il_box = BoxMesh.new()
-	il_box.size = Vector3(0.046, 0.002, 0.0035)
+		il_box.size = Vector3(0.046, 0.002, 0.0035)
 		ink_line.mesh = il_box
 		ink_line.material_override = mat_paper_ink
 		ink_line.position = Vector3(-0.034, 0.055, l_z)
@@ -854,7 +850,7 @@ func _create_paper_node(gamer_id: int) -> Node3D:
 	for z_end in [-0.080, 0.080]:
 		var strip = MeshInstance3D.new()
 		var s_box = BoxMesh.new()
-	s_box.size = Vector3(0.068, 0.006, 0.006)
+		s_box.size = Vector3(0.068, 0.006, 0.006)
 		strip.mesh = s_box
 		strip.material_override = mat_paper_gold_leaf
 		strip.position = Vector3(0.034, 0.0525, z_end)
@@ -864,7 +860,7 @@ func _create_paper_node(gamer_id: int) -> Node3D:
 	for l_z in [-0.050, -0.025, 0.0, 0.025, 0.050]:
 		var ink_line = MeshInstance3D.new()
 		var il_box = BoxMesh.new()
-	il_box.size = Vector3(0.046, 0.002, 0.0035)
+		il_box.size = Vector3(0.046, 0.002, 0.0035)
 		ink_line.mesh = il_box
 		ink_line.material_override = mat_paper_ink
 		ink_line.position = Vector3(0.034, 0.055, l_z)
