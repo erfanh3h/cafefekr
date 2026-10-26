@@ -9,6 +9,7 @@ signal game_play_navigate_received(data: Dictionary)
 signal turn_changed(turn: int)
 signal turn_data_received(payload: Dictionary)
 signal roll_result_received(payload: Dictionary)
+signal out_of_move_received(payload: Dictionary)
 signal piece_selected(user_id: int, target_peace: int, extra: Dictionary)
 signal round_finished(winner_id: Variant)
 signal new_turn_round_received()
@@ -287,13 +288,16 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.Roll_Result:
 			roll_result_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
 
+		Commands.Out_Of_Move:
+			out_of_move_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
+
 		Commands.Peace_Selected:
 			if typeof(payload) == TYPE_DICTIONARY:
 				if payload.has("player1_score") and payload.has("player2_score"):
 					GameManager.p1_score = int(payload["player1_score"])
 					GameManager.p2_score = int(payload["player2_score"])
 				var user_id = int(payload.get("gamer_id", payload.get("user", 0)))
-				var target_peace = int(payload.get("target_peace", payload.get("selected_index", 0)))
+				var target_peace = int(payload.get("target_peace", payload.get("selected_index", payload.get("index", 0))))
 				var extra: Dictionary = payload.duplicate()
 				if payload.has("select_data") and typeof(payload["select_data"]) == TYPE_DICTIONARY:
 					var sdata = payload["select_data"]

@@ -848,6 +848,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 		var inferred_type = ""
 		if g_data.has("is_play_phase") or g_data.has("player1_choices"):
 			inferred_type = GameTypes.FEKRBEKR
+		elif g_data.has("out_pieces") or g_data.has("end_phases"):
+			inferred_type = GameTypes.BACKGAMMON
 		elif g_data.has("player1_board") or g_data.has("current_dices"):
 			inferred_type = GameTypes.YATZY
 		elif g_data.has("peaces"):

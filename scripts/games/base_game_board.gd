@@ -53,6 +53,8 @@ func _connect_network_signals() -> void:
 		NetworkManager.turn_data_received.connect(_on_internal_turn_data)
 	if not NetworkManager.roll_result_received.is_connected(_on_internal_roll_result):
 		NetworkManager.roll_result_received.connect(_on_internal_roll_result)
+	if not NetworkManager.out_of_move_received.is_connected(_on_internal_out_of_move):
+		NetworkManager.out_of_move_received.connect(_on_internal_out_of_move)
 	if not NetworkManager.turn_changed.is_connected(_on_internal_turn_changed):
 		NetworkManager.turn_changed.connect(_on_internal_turn_changed)
 	if not NetworkManager.piece_selected.is_connected(_on_internal_piece_selected):
@@ -81,6 +83,8 @@ func _disconnect_network_signals() -> void:
 		NetworkManager.turn_data_received.disconnect(_on_internal_turn_data)
 	if NetworkManager.roll_result_received.is_connected(_on_internal_roll_result):
 		NetworkManager.roll_result_received.disconnect(_on_internal_roll_result)
+	if NetworkManager.out_of_move_received.is_connected(_on_internal_out_of_move):
+		NetworkManager.out_of_move_received.disconnect(_on_internal_out_of_move)
 	if NetworkManager.turn_changed.is_connected(_on_internal_turn_changed):
 		NetworkManager.turn_changed.disconnect(_on_internal_turn_changed)
 	if NetworkManager.piece_selected.is_connected(_on_internal_piece_selected):
@@ -107,6 +111,9 @@ func _on_internal_turn_data(payload: Dictionary) -> void:
 
 func _on_internal_roll_result(payload: Dictionary) -> void:
 	on_roll_result(payload)
+
+func _on_internal_out_of_move(payload: Dictionary) -> void:
+	on_out_of_move(payload)
 
 func _on_internal_turn_changed(turn: int) -> void:
 	current_turn = turn
@@ -213,6 +220,9 @@ func on_wait_time(_time_sec: int) -> void:
 func on_turn_data(_payload: Dictionary) -> void:
 	pass
 func on_roll_result(_payload: Dictionary) -> void:
+	pass
+
+func on_out_of_move(_payload: Dictionary) -> void:
 	pass
 func on_turn_changed(_turn: int, _is_me: bool) -> void:
 	pass

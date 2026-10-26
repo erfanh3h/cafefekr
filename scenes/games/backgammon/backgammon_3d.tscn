@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8backgammon3d01"]
+
+[ext_resource type="Script" path="res://scenes/games/backgammon/backgammon_3d.gd" id="1_bg_script"]
+
+[node name="BackGammonBoard" type="Node3D"]
+script = ExtResource("1_bg_script")

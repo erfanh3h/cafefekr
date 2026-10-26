@@ -390,6 +390,18 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 
 ---
 
+### 4.10. Royal Persian Backgammon (`BackGammon` / `تخته نرد`) 3D Board, Dice & Bar/Bear-Off Rules
+- **3D Hinged Walnut & Gold Khatamkari Case (`backgammon_3d.gd`):**
+  - Renders 24 inlaid triangular points (`0..23`), a hinged Center Bar (`BAR_X = -0.08`) with brass barrel hinges, and Right-Side Bear-Off Trays (`BEAR_OFF_X = +0.675`, Top for P2 `-1`, Bottom for P1 `24`).
+  - Uses lathe-turned 3D ribbed checkers (`_build_3d_checker_piece`) matching `Checkers3D` and precision-molded 3D beveled ivory dice (`_build_single_3d_die`) matching `Yatzy3D`.
+- **Exact Server Protocol & Rules Parity (`BackGammonGameClass`):**
+  - `Roll_Dice`: `{}` -> Server emits `Roll_Result` (`{"dices": [...]}`) or `Out_Of_Move` (`{"turn": turn, "dices": [...]}` with 4s wait).
+  - `Select_Peace`: `{"index": -1..24, "dice_index": 0..3}` -> Server emits `Peace_Selected` (`{"gamer_id": g, "index": idx, "dice_index": d_idx}`).
+  - Bar Entry Priority: When `out_pieces > 0`, player must enter from `-1` (P1, into `0..5`) or `24` (P2, into `18..23`) before moving board checkers.
+  - End Phase Bearing Off: Enabled when all 15 checkers of `gamer_id` are in home quadrant (`18..23` for P1, `0..5` for P2) plus borne-off score (`p1_score` / `p2_score`). P1 bears off at `index + dice == 24`; P2 bears off at `index - dice == -1`.
+
+---
+
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
 
 Whenever you are tasked with adding a new game (e.g. Checkers, Backgammon, Four-in-a-Row, Othello, Mill, etc.):

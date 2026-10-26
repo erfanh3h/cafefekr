@@ -15,6 +15,7 @@ const FOURINROW_SCENE: String = "res://scenes/games/fourinrow/four_in_row_3d.tsc
 const FEKRBEKR_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_3d.tscn"
 const YATZY_SCENE: String = "res://scenes/games/yatzy/yatzy_3d.tscn"
 const RPC_SCENE: String = "res://scenes/games/rpc/rpc_3d.tscn"
+const BACKGAMMON_SCENE: String = "res://scenes/games/backgammon/backgammon_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -141,10 +142,11 @@ static var _registry: Dictionary = {
 		"id": GameTypes.BACKGAMMON,
 		"name_fa": "تخته نرد",
 		"narrative": "در سحرگاه باستانی تخته نرد، تاس‌ها در رقصی بی‌پایان به گردش درمی‌آیند.",
-		"board_scene": TEMP_SCENE,
-		"top_header_scene": BASE_TOP_HEADER_SCENE,
-		"max_rounds": 3,
+		"board_scene": BACKGAMMON_SCENE,
+		"top_header_scene": CHESS_TOP_HEADER_SCENE,
+		"max_rounds": 1,
 		"has_round_score": true,
+		"is_cumulative_score": true,
 		"turn_time": 30.0,
 		"has_missed_turns_limit": true,
 		"max_missed_turns": 4,
