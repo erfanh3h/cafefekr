@@ -36,8 +36,10 @@ var is_choice_confirmed: bool = false
 var pedestals: Dictionary = {}         # "rock", "paper", "cutter" -> Node3D
 var pedestal_areas: Dictionary = {}    # "rock", "paper", "cutter" -> Area3D
 var pedestal_objects: Dictionary = {}  # "rock", "paper", "cutter" -> Node3D
-var selection_halos: Dictionary = {}   # "rock", "paper", "cutter" -> MeshInstance3D
-var hover_rings: Dictionary = {}       # "rock", "paper", "cutter" -> MeshInstance3D
+var selection_halos: Dictionary = {}         # "rock", "paper", "cutter" -> MeshInstance3D
+var selection_aura_rings: Dictionary = {}    # "rock", "paper", "cutter" -> MeshInstance3D
+var selection_light_pillars: Dictionary = {} # "rock", "paper", "cutter" -> MeshInstance3D
+var hover_rings: Dictionary = {}             # "rock", "paper", "cutter" -> MeshInstance3D
 
 # Arena & Combatant Nodes
 var arena_center: Node3D = null
@@ -86,8 +88,15 @@ var mat_paper_gold_leaf: StandardMaterial3D
 var mat_paper_seal_p1: StandardMaterial3D
 var mat_paper_seal_p2: StandardMaterial3D
 var mat_scissors_damascus: StandardMaterial3D
+var mat_scissors_edge: StandardMaterial3D
 var mat_scissors_handle_p1: StandardMaterial3D
 var mat_scissors_handle_p2: StandardMaterial3D
+var mat_paper_ink: StandardMaterial3D
+var mat_selected_halo_p1: StandardMaterial3D
+var mat_selected_halo_p2: StandardMaterial3D
+var mat_selected_light_pillar_p1: StandardMaterial3D
+var mat_selected_light_pillar_p2: StandardMaterial3D
+var mat_digest_rune: StandardMaterial3D
 var mat_slash_beam: StandardMaterial3D
 
 func _ready() -> void:
@@ -101,21 +110,39 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_anim_time += delta * 3.5
-	# Gentle idle floating bob on pedestal objects
+
+	# Gentle idle floating bob and rotation on pedestal objects
 	for k in pedestal_objects.keys():
 		var obj = pedestal_objects[k]
 		if is_instance_valid(obj):
 			var is_selected: bool = (k == my_selected_choice)
-			var base_y: float = 0.075 if is_selected else 0.050
-			var bob: float = sin(_anim_time + (0.0 if k == "rock" else (1.8 if k == "paper" else 3.6))) * (0.007 if is_selected else 0.004)
-			obj.position.y = base_y + bob
+			if is_selected:
+				obj.position.y = 0.082 + sin(_anim_time * 2.2) * 0.008
+				obj.rotation_degrees.y += delta * 35.0
+			else:
+				obj.position.y = 0.050 + sin(_anim_time * 1.5 + (0.0 if k == "rock" else (1.8 if k == "paper" else 3.6))) * 0.003
+				obj.rotation_degrees.y = 0.0
 
-	# Pulsing selection halo
+	# Pulsing and rotating selection halos and light pillars
 	for k in selection_halos.keys():
 		var halo = selection_halos[k]
 		if is_instance_valid(halo) and halo.visible:
-			var s: float = 1.0 + sin(_anim_time * 1.5) * 0.05
+			var s: float = 1.0 + sin(_anim_time * 2.0) * 0.06
 			halo.scale = Vector3(s, 1.0, s)
+			halo.rotation_degrees.y += delta * 45.0
+
+	for k in selection_aura_rings.keys():
+		var aura = selection_aura_rings[k]
+		if is_instance_valid(aura) and aura.visible:
+			var s_a: float = 1.0 + sin(_anim_time * 2.0 + 1.2) * 0.08
+			aura.scale = Vector3(s_a, 1.0, s_a)
+			aura.rotation_degrees.y -= delta * 30.0
+
+	for k in selection_light_pillars.keys():
+		var pillar = selection_light_pillars[k]
+		if is_instance_valid(pillar) and pillar.visible:
+			var s_p: float = 1.0 + sin(_anim_time * 3.0) * 0.04
+			pillar.scale = Vector3(s_p, 1.0, s_p)
 
 # --- Materials Setup ---
 
@@ -271,6 +298,63 @@ func _setup_materials() -> void:
 	mat_scissors_handle_p2.metallic = 0.92
 	mat_scissors_handle_p2.roughness = 0.18
 
+	# Scissors Razor Edge (Chrome Mirror)
+	mat_scissors_edge = StandardMaterial3D.new()
+	mat_scissors_edge.albedo_color = Color(0.98, 0.99, 1.0)
+	mat_scissors_edge.metallic = 0.99
+	mat_scissors_edge.roughness = 0.04
+	mat_scissors_edge.clearcoat_enabled = true
+	mat_scissors_edge.clearcoat = 1.0
+
+	# Persian Gilded Ink for Calligraphy Lines
+	mat_paper_ink = StandardMaterial3D.new()
+	mat_paper_ink.albedo_color = Color(0.28, 0.18, 0.08)
+	mat_paper_ink.roughness = 0.85
+	mat_paper_ink.metallic = 0.12
+
+	# Color-Specific Selection Halos
+	mat_selected_halo_p1 = StandardMaterial3D.new()
+	mat_selected_halo_p1.albedo_color = Color(1.0, 0.22, 0.28)
+	mat_selected_halo_p1.metallic = 0.85
+	mat_selected_halo_p1.roughness = 0.15
+	mat_selected_halo_p1.emission_enabled = true
+	mat_selected_halo_p1.emission = Color(1.0, 0.18, 0.24)
+	mat_selected_halo_p1.emission_energy_multiplier = 2.4
+
+	mat_selected_halo_p2 = StandardMaterial3D.new()
+	mat_selected_halo_p2.albedo_color = Color(0.20, 0.60, 1.0)
+	mat_selected_halo_p2.metallic = 0.85
+	mat_selected_halo_p2.roughness = 0.15
+	mat_selected_halo_p2.emission_enabled = true
+	mat_selected_halo_p2.emission = Color(0.18, 0.55, 1.0)
+	mat_selected_halo_p2.emission_energy_multiplier = 2.4
+
+	# Ascending Light Pillar Materials
+	mat_selected_light_pillar_p1 = StandardMaterial3D.new()
+	mat_selected_light_pillar_p1.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_selected_light_pillar_p1.albedo_color = Color(1.0, 0.25, 0.30, 0.24)
+	mat_selected_light_pillar_p1.emission_enabled = true
+	mat_selected_light_pillar_p1.emission = Color(1.0, 0.18, 0.22)
+	mat_selected_light_pillar_p1.emission_energy_multiplier = 1.6
+	mat_selected_light_pillar_p1.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	mat_selected_light_pillar_p2 = StandardMaterial3D.new()
+	mat_selected_light_pillar_p2.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_selected_light_pillar_p2.albedo_color = Color(0.22, 0.60, 1.0, 0.24)
+	mat_selected_light_pillar_p2.emission_enabled = true
+	mat_selected_light_pillar_p2.emission = Color(0.18, 0.50, 1.0)
+	mat_selected_light_pillar_p2.emission_energy_multiplier = 1.6
+	mat_selected_light_pillar_p2.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	# Mystic Digestion Talisman Rune Material
+	mat_digest_rune = StandardMaterial3D.new()
+	mat_digest_rune.albedo_color = Color(0.35, 1.0, 0.55)
+	mat_digest_rune.metallic = 0.50
+	mat_digest_rune.roughness = 0.20
+	mat_digest_rune.emission_enabled = true
+	mat_digest_rune.emission = Color(0.30, 1.0, 0.50)
+	mat_digest_rune.emission_energy_multiplier = 3.0
+
 	# Slash Beam VFX Material
 	mat_slash_beam = StandardMaterial3D.new()
 	mat_slash_beam.albedo_color = Color(1.0, 0.95, 0.45)
@@ -361,6 +445,8 @@ func _build_selection_pedestals() -> void:
 	pedestal_areas.clear()
 	pedestal_objects.clear()
 	selection_halos.clear()
+	selection_aura_rings.clear()
+	selection_light_pillars.clear()
 	hover_rings.clear()
 
 	var choices = [
@@ -440,11 +526,40 @@ func _build_selection_pedestals() -> void:
 		sh_torus.outer_radius = 0.136
 		sh_torus.rings = 28
 		s_halo.mesh = sh_torus
-		s_halo.material_override = mat_selected_halo
+		s_halo.material_override = mat_selected_halo_p1
 		s_halo.position = Vector3(0, 0.040, 0)
 		s_halo.visible = false
 		ped.add_child(s_halo)
 		selection_halos[c_type] = s_halo
+
+		# Concentric Inner Selection Aura Ring
+		var s_aura = MeshInstance3D.new()
+		var sa_torus = TorusMesh.new()
+		sa_torus.inner_radius = 0.098
+		sa_torus.outer_radius = 0.114
+		sa_torus.rings = 24
+		s_aura.mesh = sa_torus
+		s_aura.material_override = mat_selected_halo_p1
+		s_aura.position = Vector3(0, 0.038, 0)
+		s_aura.visible = false
+		ped.add_child(s_aura)
+		selection_aura_rings[c_type] = s_aura
+
+		# Ascending Pillar of Light (radiant column in player color)
+		var s_pillar = MeshInstance3D.new()
+		var sp_cyl = CylinderMesh.new()
+		sp_cyl.top_radius = 0.116
+		sp_cyl.bottom_radius = 0.128
+		sp_cyl.height = 0.38
+		sp_cyl.radial_segments = 24
+		sp_cyl.cap_top = false
+		sp_cyl.cap_bottom = false
+		s_pillar.mesh = sp_cyl
+		s_pillar.material_override = mat_selected_light_pillar_p1
+		s_pillar.position = Vector3(0, 0.22, 0)
+		s_pillar.visible = false
+		ped.add_child(s_pillar)
+		selection_light_pillars[c_type] = s_pillar
 
 		# 3D Persian Label ("سنگ", "کاغذ", "قیچی")
 		var lbl = Label3D.new()
@@ -622,145 +737,321 @@ func _create_rock_node(gamer_id: int) -> Node3D:
 
 func _create_paper_node(gamer_id: int) -> Node3D:
 	var paper = Node3D.new()
+	var seal_mat = mat_paper_seal_p1 if gamer_id == 1 else mat_paper_seal_p2
+	var trim_mat = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
 
-	# 1. Arched Illuminated Parchment Sheet
-	var sheet = MeshInstance3D.new()
-	var box = BoxMesh.new()
-	box.size = Vector3(0.125, 0.005, 0.160)
-	sheet.mesh = box
-	sheet.material_override = mat_paper_parchment
-	sheet.position = Vector3(0, 0.052, 0)
-	paper.add_child(sheet)
+	# 1. LEFT HALF of the Illuminated Manuscript Scroll
+	var left_half = Node3D.new()
+	left_half.name = "LeftHalf"
+	paper.add_child(left_half)
 
-	# 2. Gold Leaf Filigree Border
-	var border = MeshInstance3D.new()
-	var b_box = BoxMesh.new()
-	b_box.size = Vector3(0.132, 0.006, 0.168)
-	border.mesh = b_box
-	border.material_override = mat_paper_gold_leaf
-	border.position = Vector3(0, 0.051, 0)
-	paper.add_child(border)
+	# Left parchment sheet body
+	var left_sheet = MeshInstance3D.new()
+	var left_box = BoxMesh.new()
+	left_box.size = Vector3(0.068, 0.005, 0.164)
+	left_sheet.mesh = left_box
+	left_sheet.material_override = mat_paper_parchment
+	left_sheet.position = Vector3(-0.034, 0.052, 0)
+	left_half.add_child(left_sheet)
 
-	# 3. Top and Bottom Rolled Wooden Finial Rods
-	for z_end in [-0.082, 0.082]:
-		var rod = MeshInstance3D.new()
-		var rod_cyl = CylinderMesh.new()
-		rod_cyl.top_radius = 0.010
-		rod_cyl.bottom_radius = 0.010
-		rod_cyl.height = 0.148
-		rod.mesh = rod_cyl
-		rod.material_override = mat_walnut_frame
-		rod.position = Vector3(0, 0.054, z_end)
-		rod.rotation_degrees = Vector3(0, 0, 90)
-		paper.add_child(rod)
+	# Gold Leaf Filigree Border on Left Outer Edge
+	var left_border = MeshInstance3D.new()
+	var lb_box = BoxMesh.new()
+	lb_box.size = Vector3(0.006, 0.006, 0.166)
+	left_border.mesh = lb_box
+	left_border.material_override = mat_paper_gold_leaf
+	left_border.position = Vector3(-0.066, 0.0525, 0)
+	left_half.add_child(left_border)
 
-		# Gold Finial End-Caps
-		for x_end in [-0.076, 0.076]:
-			var cap = MeshInstance3D.new()
-			var cap_sph = SphereMesh.new()
-			cap_sph.radius = 0.013
-			cap_sph.height = 0.022
-			cap.mesh = cap_sph
-			cap.material_override = mat_gold_trim
-			cap.position = Vector3(x_end, 0.054, z_end)
-			paper.add_child(cap)
+	# Top and Bottom Gold Trim Strips (Left)
+	for z_end in [-0.080, 0.080]:
+		var strip = MeshInstance3D.new()
+		var s_box = BoxMesh.new()
+	s_box.size = Vector3(0.068, 0.006, 0.006)
+		strip.mesh = s_box
+		strip.material_override = mat_paper_gold_leaf
+		strip.position = Vector3(-0.034, 0.0525, z_end)
+		left_half.add_child(strip)
 
-	# 4. Royal Wax Seal Medallion with Silk Ribbons
-	var seal = MeshInstance3D.new()
-	var seal_cyl = CylinderMesh.new()
-	seal_cyl.top_radius = 0.022
-	seal_cyl.bottom_radius = 0.022
-	seal_cyl.height = 0.008
-	seal.mesh = seal_cyl
-	seal.material_override = mat_paper_seal_p1 if gamer_id == 1 else mat_paper_seal_p2
-	seal.position = Vector3(0, 0.057, 0.01)
-	paper.add_child(seal)
+	# Persian Calligraphy Ink Lines on Left Page
+	for l_z in [-0.050, -0.025, 0.0, 0.025, 0.050]:
+		var ink_line = MeshInstance3D.new()
+		var il_box = BoxMesh.new()
+	il_box.size = Vector3(0.046, 0.002, 0.0035)
+		ink_line.mesh = il_box
+		ink_line.material_override = mat_paper_ink
+		ink_line.position = Vector3(-0.034, 0.055, l_z)
+		left_half.add_child(ink_line)
 
-	# Gold Royal Emblem on Wax Seal
-	var emblem = MeshInstance3D.new()
-	var emb_cyl = CylinderMesh.new()
-	emb_cyl.top_radius = 0.012
-	emb_cyl.bottom_radius = 0.012
-	emb_cyl.height = 0.010
-	emblem.mesh = emb_cyl
-	emblem.material_override = mat_gold_trim
-	emblem.position = Vector3(0, 0.058, 0.01)
-	paper.add_child(emblem)
+	# Left Turned Walnut Spindle Rod
+	var left_rod = MeshInstance3D.new()
+	var l_cyl = CylinderMesh.new()
+	l_cyl.top_radius = 0.008
+	l_cyl.bottom_radius = 0.008
+	l_cyl.height = 0.190
+	left_rod.mesh = l_cyl
+	left_rod.material_override = mat_walnut_frame
+	left_rod.position = Vector3(-0.071, 0.053, 0)
+	left_rod.rotation_degrees = Vector3(90, 0, 0)
+	left_half.add_child(left_rod)
+
+	# Left Gilded Spindle Finials
+	for z_finial in [-0.098, 0.098]:
+		var finial = MeshInstance3D.new()
+		var f_sph = SphereMesh.new()
+		f_sph.radius = 0.012
+		f_sph.height = 0.022
+		finial.mesh = f_sph
+		finial.material_override = trim_mat
+		finial.position = Vector3(-0.071, 0.053, z_finial)
+		left_half.add_child(finial)
+
+	# Left Half of Imperial Wax Seal Medallion
+	var left_seal = MeshInstance3D.new()
+	var ls_cyl = CylinderMesh.new()
+	ls_cyl.top_radius = 0.018
+	ls_cyl.bottom_radius = 0.018
+	ls_cyl.height = 0.008
+	left_seal.mesh = ls_cyl
+	left_seal.material_override = seal_mat
+	left_seal.position = Vector3(-0.009, 0.057, 0.005)
+	left_half.add_child(left_seal)
+
+	# Left Cascading Silk Ribbon
+	var left_ribbon = MeshInstance3D.new()
+	var lr_box = BoxMesh.new()
+	lr_box.size = Vector3(0.010, 0.003, 0.040)
+	left_ribbon.mesh = lr_box
+	left_ribbon.material_override = seal_mat
+	left_ribbon.position = Vector3(-0.016, 0.055, 0.026)
+	left_ribbon.rotation_degrees = Vector3(0, -18, 0)
+	left_half.add_child(left_ribbon)
+
+	# 2. RIGHT HALF of the Illuminated Manuscript Scroll
+	var right_half = Node3D.new()
+	right_half.name = "RightHalf"
+	paper.add_child(right_half)
+
+	# Right parchment sheet body
+	var right_sheet = MeshInstance3D.new()
+	var right_box = BoxMesh.new()
+	right_box.size = Vector3(0.068, 0.005, 0.164)
+	right_sheet.mesh = right_box
+	right_sheet.material_override = mat_paper_parchment
+	right_sheet.position = Vector3(0.034, 0.052, 0)
+	right_half.add_child(right_sheet)
+
+	# Gold Leaf Filigree Border on Right Outer Edge
+	var right_border = MeshInstance3D.new()
+	var rb_box = BoxMesh.new()
+	rb_box.size = Vector3(0.006, 0.006, 0.166)
+	right_border.mesh = rb_box
+	right_border.material_override = mat_paper_gold_leaf
+	right_border.position = Vector3(0.066, 0.0525, 0)
+	right_half.add_child(right_border)
+
+	# Top and Bottom Gold Trim Strips (Right)
+	for z_end in [-0.080, 0.080]:
+		var strip = MeshInstance3D.new()
+		var s_box = BoxMesh.new()
+	s_box.size = Vector3(0.068, 0.006, 0.006)
+		strip.mesh = s_box
+		strip.material_override = mat_paper_gold_leaf
+		strip.position = Vector3(0.034, 0.0525, z_end)
+		right_half.add_child(strip)
+
+	# Persian Calligraphy Ink Lines on Right Page
+	for l_z in [-0.050, -0.025, 0.0, 0.025, 0.050]:
+		var ink_line = MeshInstance3D.new()
+		var il_box = BoxMesh.new()
+	il_box.size = Vector3(0.046, 0.002, 0.0035)
+		ink_line.mesh = il_box
+		ink_line.material_override = mat_paper_ink
+		ink_line.position = Vector3(0.034, 0.055, l_z)
+		right_half.add_child(ink_line)
+
+	# Right Turned Walnut Spindle Rod
+	var right_rod = MeshInstance3D.new()
+	var r_cyl = CylinderMesh.new()
+	r_cyl.top_radius = 0.008
+	r_cyl.bottom_radius = 0.008
+	r_cyl.height = 0.190
+	right_rod.mesh = r_cyl
+	right_rod.material_override = mat_walnut_frame
+	right_rod.position = Vector3(0.071, 0.053, 0)
+	right_rod.rotation_degrees = Vector3(90, 0, 0)
+	right_half.add_child(right_rod)
+
+	# Right Gilded Spindle Finials
+	for z_finial in [-0.098, 0.098]:
+		var finial = MeshInstance3D.new()
+		var f_sph = SphereMesh.new()
+		f_sph.radius = 0.012
+		f_sph.height = 0.022
+		finial.mesh = f_sph
+		finial.material_override = trim_mat
+		finial.position = Vector3(0.071, 0.053, z_finial)
+		right_half.add_child(finial)
+
+	# Right Half of Imperial Wax Seal Medallion
+	var right_seal = MeshInstance3D.new()
+	var rs_cyl = CylinderMesh.new()
+	rs_cyl.top_radius = 0.018
+	rs_cyl.bottom_radius = 0.018
+	rs_cyl.height = 0.008
+	right_seal.mesh = rs_cyl
+	right_seal.material_override = seal_mat
+	right_seal.position = Vector3(0.009, 0.057, 0.005)
+	right_half.add_child(right_seal)
+
+	# Right Cascading Silk Ribbon
+	var right_ribbon = MeshInstance3D.new()
+	var rr_box = BoxMesh.new()
+	rr_box.size = Vector3(0.010, 0.003, 0.040)
+	right_ribbon.mesh = rr_box
+	right_ribbon.material_override = seal_mat
+	right_ribbon.position = Vector3(0.016, 0.055, 0.026)
+	right_ribbon.rotation_degrees = Vector3(0, 18, 0)
+	right_half.add_child(right_ribbon)
 
 	return paper
 
 func _create_scissors_node(gamer_id: int) -> Node3D:
 	var shears = Node3D.new()
-
 	var mat_handle = mat_scissors_handle_p1 if gamer_id == 1 else mat_scissors_handle_p2
+	var trim_mat = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
 
-	# 1. Left Blade & Handle
+	# 1. Left Blade & Royal Handle (BladeLeft)
 	var left_half = Node3D.new()
 	left_half.name = "BladeLeft"
 	shears.add_child(left_half)
 
+	# Damascus Steel Tapered Blade
 	var b_left = MeshInstance3D.new()
 	var b_box = BoxMesh.new()
-	b_box.size = Vector3(0.014, 0.005, 0.120)
+	b_box.size = Vector3(0.015, 0.005, 0.132)
 	b_left.mesh = b_box
 	b_left.material_override = mat_scissors_damascus
-	b_left.position = Vector3(-0.012, 0.050, -0.050)
-	b_left.rotation_degrees = Vector3(0, -12, 0)
+	b_left.position = Vector3(-0.013, 0.050, -0.054)
+	b_left.rotation_degrees = Vector3(0, -11, 0)
 	left_half.add_child(b_left)
 
+	# Mirror-Polished Chrome Razor Cutting Bevel Edge
+	var edge_left = MeshInstance3D.new()
+	var e_box = BoxMesh.new()
+	e_box.size = Vector3(0.003, 0.004, 0.128)
+	edge_left.mesh = e_box
+	edge_left.material_override = mat_scissors_edge
+	edge_left.position = Vector3(-0.006, 0.050, -0.054)
+	edge_left.rotation_degrees = Vector3(0, -11, 0)
+	left_half.add_child(edge_left)
+
+	# Left Shank Arm
+	var shank_left = MeshInstance3D.new()
+	var s_cyl = CylinderMesh.new()
+	s_cyl.top_radius = 0.006
+	s_cyl.bottom_radius = 0.007
+	s_cyl.height = 0.046
+	shank_left.mesh = s_cyl
+	shank_left.material_override = trim_mat
+	shank_left.position = Vector3(-0.020, 0.050, 0.024)
+	shank_left.rotation_degrees = Vector3(90, 20, 0)
+	left_half.add_child(shank_left)
+
+	# Left Royal Enamelled Bow Finger Ring
 	var h_left = MeshInstance3D.new()
 	var h_torus = TorusMesh.new()
-	h_torus.inner_radius = 0.018
-	h_torus.outer_radius = 0.029
-	h_torus.rings = 24
+	h_torus.inner_radius = 0.020
+	h_torus.outer_radius = 0.032
+	h_torus.rings = 28
 	h_left.mesh = h_torus
 	h_left.material_override = mat_handle
-	h_left.position = Vector3(-0.034, 0.050, 0.055)
+	h_left.position = Vector3(-0.038, 0.050, 0.060)
 	h_left.rotation_degrees = Vector3(0, 0, 90)
 	left_half.add_child(h_left)
 
-	# 2. Right Blade & Handle
+	# Left Finger Rest Tang / Spur
+	var tang_left = MeshInstance3D.new()
+	var t_prism = PrismMesh.new()
+	t_prism.size = Vector3(0.008, 0.022, 0.008)
+	tang_left.mesh = t_prism
+	tang_left.material_override = trim_mat
+	tang_left.position = Vector3(-0.052, 0.050, 0.088)
+	tang_left.rotation_degrees = Vector3(180, 30, 0)
+	left_half.add_child(tang_left)
+
+	# 2. Right Blade & Royal Handle (BladeRight)
 	var right_half = Node3D.new()
 	right_half.name = "BladeRight"
 	shears.add_child(right_half)
 
+	# Damascus Steel Tapered Blade
 	var b_right = MeshInstance3D.new()
 	b_right.mesh = b_box
 	b_right.material_override = mat_scissors_damascus
-	b_right.position = Vector3(0.012, 0.052, -0.050)
-	b_right.rotation_degrees = Vector3(0, 12, 0)
+	b_right.position = Vector3(0.013, 0.052, -0.054)
+	b_right.rotation_degrees = Vector3(0, 11, 0)
 	right_half.add_child(b_right)
 
+	# Mirror-Polished Chrome Razor Cutting Bevel Edge
+	var edge_right = MeshInstance3D.new()
+	edge_right.mesh = e_box
+	edge_right.material_override = mat_scissors_edge
+	edge_right.position = Vector3(0.006, 0.052, -0.054)
+	edge_right.rotation_degrees = Vector3(0, 11, 0)
+	right_half.add_child(edge_right)
+
+	# Right Shank Arm
+	var shank_right = MeshInstance3D.new()
+	shank_right.mesh = s_cyl
+	shank_right.material_override = trim_mat
+	shank_right.position = Vector3(0.020, 0.052, 0.024)
+	shank_right.rotation_degrees = Vector3(90, -20, 0)
+	right_half.add_child(shank_right)
+
+	# Right Royal Enamelled Bow Finger Ring
 	var h_right = MeshInstance3D.new()
 	h_right.mesh = h_torus
 	h_right.material_override = mat_handle
-	h_right.position = Vector3(0.034, 0.050, 0.055)
+	h_right.position = Vector3(0.038, 0.050, 0.060)
 	h_right.rotation_degrees = Vector3(0, 0, 90)
 	right_half.add_child(h_right)
 
-	# 3. Central Gold Pivot Screw with Cabochon Jewel
+	# 3. Central Gold Pivot Joint & Gemstone Bolt (PivotJoint)
+	var pivot_node = Node3D.new()
+	pivot_node.name = "PivotJoint"
+	shears.add_child(pivot_node)
+
 	var pivot = MeshInstance3D.new()
 	var p_cyl = CylinderMesh.new()
-	p_cyl.top_radius = 0.014
-	p_cyl.bottom_radius = 0.014
-	p_cyl.height = 0.012
+	p_cyl.top_radius = 0.015
+	p_cyl.bottom_radius = 0.015
+	p_cyl.height = 0.014
 	pivot.mesh = p_cyl
-	pivot.material_override = mat_gold_trim
+	pivot.material_override = trim_mat
 	pivot.position = Vector3(0, 0.051, 0)
-	shears.add_child(pivot)
+	pivot_node.add_child(pivot)
 
 	var jewel = MeshInstance3D.new()
 	var j_sph = SphereMesh.new()
-	j_sph.radius = 0.009
-	j_sph.height = 0.014
+	j_sph.radius = 0.010
+	j_sph.height = 0.015
 	jewel.mesh = j_sph
 	jewel.material_override = mat_ruby_gem if gamer_id == 1 else mat_sapphire_gem
-	jewel.position = Vector3(0, 0.058, 0)
-	shears.add_child(jewel)
+	jewel.position = Vector3(0, 0.059, 0)
+	pivot_node.add_child(jewel)
+
+	var washer = MeshInstance3D.new()
+	var w_torus = TorusMesh.new()
+	w_torus.inner_radius = 0.014
+	w_torus.outer_radius = 0.019
+	w_torus.rings = 20
+	washer.mesh = w_torus
+	washer.material_override = trim_mat
+	washer.position = Vector3(0, 0.046, 0)
+	pivot_node.add_child(washer)
 
 	return shears
-
-# --- Camera Raycasting Input Handling (Rule 4.2) ---
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not GameManager.is_game_active:
@@ -852,17 +1143,37 @@ func _select_choice(choice: String) -> void:
 	is_choice_confirmed = true
 	AudioManager.play_sound("tap")
 
-	# Update Selection Halos immediately
+	var p_idx: int = my_player_index if my_player_index in [1, 2] else 1
+	var halo_mat = mat_selected_halo_p1 if p_idx == 1 else mat_selected_halo_p2
+	var pillar_mat = mat_selected_light_pillar_p1 if p_idx == 1 else mat_selected_light_pillar_p2
+	var p_color = Color(1.0, 0.22, 0.28) if p_idx == 1 else Color(0.20, 0.60, 1.0)
+
+	# Update Selection Halos, Auras, and Pillars with player color
 	for k in selection_halos.keys():
 		var halo = selection_halos[k]
 		if is_instance_valid(halo):
+			halo.material_override = halo_mat
 			halo.visible = (k == choice)
+	for k in selection_aura_rings.keys():
+		var aura = selection_aura_rings[k]
+		if is_instance_valid(aura):
+			aura.material_override = halo_mat
+			aura.visible = (k == choice)
+	for k in selection_light_pillars.keys():
+		var pillar = selection_light_pillars[k]
+		if is_instance_valid(pillar):
+			pillar.material_override = pillar_mat
+			pillar.visible = (k == choice)
+
+	# Rich Radial Burst VFX at pedestal upon selection
+	if pedestals.has(choice) and is_instance_valid(pedestals[choice]):
+		_spawn_selection_burst(pedestals[choice].global_position + Vector3(0, 0.045, 0), p_color)
 
 	# Tactile pop-lift animation on selected object
 	if pedestal_objects.has(choice) and is_instance_valid(pedestal_objects[choice]):
 		var obj = pedestal_objects[choice]
 		var tw = _create_tracked_tween()
-		tw.tween_property(obj, "scale", Vector3(1.28, 1.28, 1.28), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(obj, "scale", Vector3(1.32, 1.32, 1.32), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tw.tween_property(obj, "scale", Vector3.ONE, 0.14)
 
 	# Update HUD banner in real-time
@@ -876,7 +1187,6 @@ func _select_choice(choice: String) -> void:
 	send_move(Commands.Select_Peace, choice)
 
 # --- BaseGameBoard Lifecycle & RPC Hooks ---
-
 func setup_board(_game_data: Dictionary) -> void:
 	reset_board()
 
@@ -886,9 +1196,14 @@ func on_new_turn_round() -> void:
 	is_choice_confirmed = false
 	my_selected_choice = ""
 	for k in selection_halos.keys():
-		var halo = selection_halos[k]
-		if is_instance_valid(halo):
-			halo.visible = false
+		if is_instance_valid(selection_halos[k]):
+			selection_halos[k].visible = false
+	for k in selection_aura_rings.keys():
+		if is_instance_valid(selection_aura_rings[k]):
+			selection_aura_rings[k].visible = false
+	for k in selection_light_pillars.keys():
+		if is_instance_valid(selection_light_pillars[k]):
+			selection_light_pillars[k].visible = false
 	_clear_clash_nodes()
 	_update_score_trackers()
 
@@ -972,9 +1287,21 @@ func reset_board() -> void:
 	p2_turn_round_score = 0
 	is_choice_confirmed = false
 	my_selected_choice = "rock"
+	var p_idx: int = my_player_index if my_player_index in [1, 2] else 1
+	var halo_mat = mat_selected_halo_p1 if p_idx == 1 else mat_selected_halo_p2
+	var pillar_mat = mat_selected_light_pillar_p1 if p_idx == 1 else mat_selected_light_pillar_p2
 	for k in selection_halos.keys():
 		if is_instance_valid(selection_halos[k]):
+			selection_halos[k].material_override = halo_mat
 			selection_halos[k].visible = (k == "rock")
+	for k in selection_aura_rings.keys():
+		if is_instance_valid(selection_aura_rings[k]):
+			selection_aura_rings[k].material_override = halo_mat
+			selection_aura_rings[k].visible = (k == "rock")
+	for k in selection_light_pillars.keys():
+		if is_instance_valid(selection_light_pillars[k]):
+			selection_light_pillars[k].material_override = pillar_mat
+			selection_light_pillars[k].visible = (k == "rock")
 	_update_score_trackers()
 
 func cleanup_board() -> void:
@@ -1035,90 +1362,345 @@ func _resolve_clash_impact(p1_sel: String, p2_sel: String, winner_id: int) -> vo
 	var center_world = arena_center.global_position + Vector3(0, 0.18, 0)
 
 	if winner_id == 0:
-		# DRAW: Clash and bounce back
+		# DRAW: Clash and bounce back with dual shockwaves
 		AudioManager.play_sound("hit")
 		var tw = _create_tracked_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tw.tween_property(p1_clash_node, "position:x", -0.16, 0.22)
 		tw.tween_property(p2_clash_node, "position:x", 0.16, 0.22)
 		_spawn_clash_ring(center_world, Color(1.0, 0.90, 0.40))
+		_spawn_clash_ring(center_world + Vector3(0, 0.02, 0), Color(0.9, 0.95, 1.0))
 	else:
 		var winning_node = p1_clash_node if winner_id == 1 else p2_clash_node
 		var losing_node = p2_clash_node if winner_id == 1 else p1_clash_node
 		var win_color = Color(1.0, 0.25, 0.30) if winner_id == 1 else Color(0.28, 0.65, 1.0)
-
 		var win_sel = p1_sel if winner_id == 1 else p2_sel
 		var lose_sel = p2_sel if winner_id == 1 else p1_sel
 
 		if win_sel == "rock" and lose_sel == "cutter":
-			# Spectacular Rock smashes Scissors VFX!
+			# 1. Rock SMASHES and BREAKS Scissors into flying pieces!
 			_play_rock_smash_scissors_vfx(center_world, winning_node, losing_node, winner_id, win_color)
-
 		elif win_sel == "cutter" and lose_sel == "paper":
-			# Scissors snips Paper!
-			AudioManager.play_sound("hit")
-			_spawn_slash_arc(center_world)
-			var tw = _create_tracked_tween().set_parallel(true)
-			tw.tween_property(winning_node, "scale", Vector3(1.4, 1.4, 1.4), 0.15)
-			var tw_lose = _create_tracked_tween().set_parallel(true)
-			tw_lose.tween_property(losing_node, "position:y", 0.08, 0.35)
-			tw_lose.tween_property(losing_node, "rotation_degrees:x", 75.0, 0.35)
-			tw_lose.tween_property(losing_node, "modulate:a" if "modulate" in losing_node else "scale", Vector3.ZERO if "scale" in losing_node else 0.0, 0.35)
-
+			# 2. Scissors SNIPS and CUTS Paper scroll into two separate halves!
+			_play_scissors_cut_paper_vfx(center_world, winning_node, losing_node, winner_id, win_color)
 		elif win_sel == "paper" and lose_sel == "rock":
-			# Paper covers Rock!
-			AudioManager.play_sound("move_peace")
-			AudioManager.play_sound("tap")
-			_spawn_clash_ring(center_world, win_color)
-			# Paper floats high over Rock
-			var tw = _create_tracked_tween().set_parallel(true)
-			tw.tween_property(winning_node, "position", Vector3(0, 0.24, 0), 0.25)
-			tw.tween_property(winning_node, "scale", Vector3(1.5, 1.5, 1.5), 0.25)
-			var tw_lose = _create_tracked_tween()
-			tw_lose.tween_property(losing_node, "scale", Vector3(0.7, 0.7, 0.7), 0.25)
+			# 3. Paper scroll ENFOLDS and DIGESTS Rock into itself!
+			_play_paper_digest_rock_vfx(center_world, winning_node, losing_node, winner_id, win_color)
 
 		# Winning halo on victor
 		_spawn_victory_halo(winning_node, win_color)
 
 	_update_score_trackers()
 
+# --- 1. Clash VFX: Rock Smashes Scissors (Physical Fracture & Break) ---
 func _play_rock_smash_scissors_vfx(center_world: Vector3, winning_node: Node3D, losing_node: Node3D, winner_id: int, win_color: Color) -> void:
-	# 1. Heavy camera shake & impact SFX
-	ActionVFXManager.shake_camera(0.09, 0.45)
+	# Heavy camera shake & impact SFX
+	ActionVFXManager.shake_camera(0.12, 0.50)
 	AudioManager.play_sound("hit")
 	AudioManager.play_sound("add_peace")
 
-	# 2. Dual expanding shockwaves
+	# Dual expanding shockwaves
 	_spawn_clash_ring(center_world, win_color)
 	_spawn_clash_ring(center_world + Vector3(0, 0.02, 0), Color(1.0, 0.90, 0.35))
 
-	# 3. Flying physical 3D debris shards & metallic sparks
+	# Flying physical stone debris shards & metallic fracture sparks
 	_spawn_stone_debris(center_world)
 	_spawn_metallic_sparks(center_world)
 	ActionVFXManager.play_piece_drop_vfx(self, center_world, win_color)
 
-	# 4. Rock meteor crushing movement: heavy squash on impact, then elastic rebound
+	# Rock meteor crushing movement: heavy squash on impact, then elastic rebound
 	var tw_rock = _create_tracked_tween()
-	tw_rock.tween_property(winning_node, "position:y", 0.38, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw_rock.tween_property(winning_node, "position:y", 0.40, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw_rock.parallel().tween_property(winning_node, "rotation_degrees:x", -25.0, 0.12)
-	tw_rock.chain().tween_property(winning_node, "position:y", 0.08, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw_rock.parallel().tween_property(winning_node, "scale", Vector3(1.45, 0.75, 1.45), 0.06)
+	tw_rock.chain().tween_property(winning_node, "position:y", 0.07, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw_rock.parallel().tween_property(winning_node, "scale", Vector3(1.50, 0.70, 1.50), 0.06)
 	tw_rock.parallel().tween_property(winning_node, "rotation_degrees:x", 0.0, 0.06)
 	tw_rock.chain().tween_property(winning_node, "position:y", 0.14, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw_rock.parallel().tween_property(winning_node, "scale", Vector3(1.25, 1.25, 1.25), 0.12)
 
-	# 5. Scissors catastrophic destruction: blades snap open, shears spin 720 deg, rocket backwards
-	var tw_scissors = _create_tracked_tween().set_parallel(true)
-	var knockback_dir = 0.32 if winner_id == 1 else -0.32
-	tw_scissors.tween_property(losing_node, "position", losing_node.position + Vector3(knockback_dir, -0.06, 0.12), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw_scissors.tween_property(losing_node, "rotation_degrees:z", 720.0 if winner_id == 1 else -720.0, 0.42)
-	tw_scissors.tween_property(losing_node, "rotation_degrees:x", 65.0, 0.42)
-	tw_scissors.tween_property(losing_node, "scale", Vector3(0.35, 0.35, 0.35), 0.42)
+	# Scissors Physical Destruction:
+	# 1. Pivot joint snaps off and pops upward spinning
+	if losing_node.has_node("PivotJoint"):
+		var pivot = losing_node.get_node("PivotJoint")
+		var tw_p = _create_tracked_tween()
+		tw_p.tween_property(pivot, "position", pivot.position + Vector3(randf_range(-0.04, 0.04), 0.32, randf_range(0.12, 0.24)), 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw_p.parallel().tween_property(pivot, "rotation_degrees", Vector3(540, 720, 360), 0.45)
+		tw_p.chain().tween_property(pivot, "position:y", -0.05, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw_p.parallel().tween_property(pivot, "scale", Vector3.ZERO, 0.22)
+
+	# 2. BladeLeft snaps, spins 920 deg, rockets towards left boundary
+	if losing_node.has_node("BladeLeft"):
+		var bl = losing_node.get_node("BladeLeft")
+		var tw_bl = _create_tracked_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw_bl.tween_property(bl, "position", bl.position + Vector3(-0.36, -0.04, 0.15), 0.42)
+		tw_bl.tween_property(bl, "rotation_degrees:z", -920.0, 0.42)
+		tw_bl.tween_property(bl, "rotation_degrees:x", 75.0, 0.42)
+		tw_bl.tween_property(bl, "scale", Vector3(0.35, 0.35, 0.35), 0.42)
+
+	# 3. BladeRight snaps, spins -920 deg, rockets towards right boundary
+	if losing_node.has_node("BladeRight"):
+		var br = losing_node.get_node("BladeRight")
+		var tw_br = _create_tracked_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw_br.tween_property(br, "position", br.position + Vector3(0.36, -0.04, 0.15), 0.42)
+		tw_br.tween_property(br, "rotation_degrees:z", 920.0, 0.42)
+		tw_br.tween_property(br, "rotation_degrees:x", -75.0, 0.42)
+		tw_br.tween_property(br, "scale", Vector3(0.35, 0.35, 0.35), 0.42)
+
+	# Fallback for unexpected hierarchy
+	if not losing_node.has_node("BladeLeft") and not losing_node.has_node("BladeRight"):
+		var tw_scissors = _create_tracked_tween().set_parallel(true)
+		var knockback_dir = 0.34 if winner_id == 1 else -0.34
+		tw_scissors.tween_property(losing_node, "position", losing_node.position + Vector3(knockback_dir, -0.06, 0.12), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw_scissors.tween_property(losing_node, "rotation_degrees:z", 720.0 if winner_id == 1 else -720.0, 0.42)
+		tw_scissors.tween_property(losing_node, "scale", Vector3(0.35, 0.35, 0.35), 0.42)
+
+# --- 2. Clash VFX: Scissors Cuts Paper (Physical Severance & Flutter) ---
+func _play_scissors_cut_paper_vfx(center_world: Vector3, winning_node: Node3D, losing_node: Node3D, winner_id: int, win_color: Color) -> void:
+	# 1. Scissors Open Blades and Lunge Forward
+	var bl: Node3D = winning_node.get_node_or_null("BladeLeft")
+	var br: Node3D = winning_node.get_node_or_null("BladeRight")
+
+	if is_instance_valid(bl) and is_instance_valid(br):
+		var tw_open = _create_tracked_tween().set_parallel(true)
+		tw_open.tween_property(bl, "rotation_degrees:y", -32.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw_open.tween_property(br, "rotation_degrees:y", 32.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	# 2. Shears thrust forward to center
+	var tw_thrust = _create_tracked_tween()
+	tw_thrust.tween_property(winning_node, "position:x", 0.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	# 3. SNIP SHUT & SLICE!
+	tw_thrust.chain().tween_callback(func():
+		AudioManager.play_sound("hit")
+		AudioManager.play_sound("move_peace")
+		ActionVFXManager.shake_camera(0.07, 0.30)
+		_spawn_slash_arc(center_world)
+		_spawn_clash_ring(center_world, win_color)
+		_spawn_paper_cut_fragments(center_world)
+	)
+
+	if is_instance_valid(bl) and is_instance_valid(br):
+		var tw_snip = _create_tracked_tween().set_parallel(true)
+		tw_snip.tween_property(bl, "rotation_degrees:y", 0.0, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).set_delay(0.16)
+		tw_snip.tween_property(br, "rotation_degrees:y", 0.0, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).set_delay(0.16)
+
+	# 4. Paper scroll physically severs into LeftHalf and RightHalf
+	var p_left: Node3D = losing_node.get_node_or_null("LeftHalf")
+	var p_right: Node3D = losing_node.get_node_or_null("RightHalf")
+
+	if is_instance_valid(p_left) and is_instance_valid(p_right):
+		var tw_cut = _create_tracked_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		# Left half separates left, tilts and drifts down
+		tw_cut.tween_property(p_left, "position", Vector3(-0.18, -0.015, 0.04), 0.48).set_delay(0.17)
+		tw_cut.tween_property(p_left, "rotation_degrees", Vector3(18.0, -28.0, -42.0), 0.48).set_delay(0.17)
+		tw_cut.tween_property(p_left, "scale", Vector3(0.5, 0.5, 0.5), 0.48).set_delay(0.17)
+		# Right half separates right, tilts and drifts down
+		tw_cut.tween_property(p_right, "position", Vector3(0.18, -0.015, 0.04), 0.48).set_delay(0.17)
+		tw_cut.tween_property(p_right, "rotation_degrees", Vector3(18.0, 28.0, 42.0), 0.48).set_delay(0.17)
+		tw_cut.tween_property(p_right, "scale", Vector3(0.5, 0.5, 0.5), 0.48).set_delay(0.17)
+	else:
+		var tw_lose = _create_tracked_tween().set_parallel(true)
+		tw_lose.tween_property(losing_node, "position:y", 0.04, 0.38).set_delay(0.17)
+		tw_lose.tween_property(losing_node, "rotation_degrees:x", 75.0, 0.38).set_delay(0.17)
+		tw_lose.tween_property(losing_node, "scale", Vector3(0.2, 0.2, 0.2), 0.38).set_delay(0.17)
+
+	# 5. Winning scissors victory snip flourish
+	var tw_flourish = _create_tracked_tween()
+	tw_flourish.tween_property(winning_node, "position", Vector3(0, 0.18, 0), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT).set_delay(0.25)
+	tw_flourish.parallel().tween_property(winning_node, "scale", Vector3(1.4, 1.4, 1.4), 0.25)
+
+# --- 3. Clash VFX: Paper Digests Rock (Absorption & Talisman Cocoon) ---
+func _play_paper_digest_rock_vfx(center_world: Vector3, winning_node: Node3D, losing_node: Node3D, winner_id: int, win_color: Color) -> void:
+	AudioManager.play_sound("move_peace")
+	AudioManager.play_sound("tap")
+
+	# 1. Paper scroll ascends majestically above the rock
+	var tw_scroll = _create_tracked_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw_scroll.tween_property(winning_node, "position", Vector3(0, 0.28, 0), 0.35)
+	tw_scroll.tween_property(winning_node, "scale", Vector3(1.55, 1.55, 1.55), 0.35)
+	tw_scroll.tween_property(winning_node, "rotation_degrees:x", 25.0, 0.35)
+
+	# 2. Mystic Talisman Digestion Runes illuminate beneath rock
+	_spawn_digestion_runes(arena_center.global_position + Vector3(0, 0.026, 0), win_color)
+
+	# 3. Glowing parchment ribbons wrap around rock
+	_spawn_digest_wrapping_ribbons(center_world)
+
+	# 4. Rock trembles and is absorbed/digested into the parchment cocoon
+	var tw_rock = _create_tracked_tween()
+	for s in range(4):
+		tw_rock.tween_property(losing_node, "position:x", randf_range(-0.015, 0.015), 0.04)
+	# Rock shrinks and ascends directly into scroll center
+	tw_rock.chain().tween_property(losing_node, "position:y", 0.26, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw_rock.parallel().tween_property(losing_node, "scale", Vector3(0.04, 0.04, 0.04), 0.35)
+	tw_rock.chain().tween_callback(func():
+		AudioManager.play_sound("add_peace")
+		ActionVFXManager.shake_camera(0.06, 0.30)
+		_spawn_digest_motes(center_world + Vector3(0, 0.12, 0))
+		_spawn_clash_ring(center_world + Vector3(0, 0.12, 0), Color(0.35, 1.0, 0.55))
+		if is_instance_valid(losing_node):
+			losing_node.visible = false
+	)
+
+	# 5. Enchanted Scroll seals shut triumphantly
+	tw_scroll.chain().tween_property(winning_node, "scale", Vector3(1.35, 1.35, 1.35), 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw_scroll.parallel().tween_property(winning_node, "position:y", 0.18, 0.18)
+
+# --- Procedural VFX Mesh Generators ---
+func _spawn_selection_burst(world_pos: Vector3, player_color: Color) -> void:
+	var burst_root = Node3D.new()
+	add_child(burst_root)
+	burst_root.global_position = world_pos
+
+	# Expanding Ring
+	var ring = MeshInstance3D.new()
+	var torus = TorusMesh.new()
+	torus.inner_radius = 0.08
+	torus.outer_radius = 0.11
+	torus.rings = 24
+	ring.mesh = torus
+	var mat_ring = StandardMaterial3D.new()
+	mat_ring.albedo_color = player_color
+	mat_ring.emission_enabled = true
+	mat_ring.emission = player_color
+	mat_ring.emission_energy_multiplier = 3.2
+	ring.material_override = mat_ring
+	burst_root.add_child(ring)
+
+	var tw_ring = _create_tracked_tween().set_parallel(true)
+	tw_ring.tween_property(ring, "scale", Vector3(2.4, 1.0, 2.4), 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw_ring.tween_property(mat_ring, "albedo_color:a", 0.0, 0.30)
+
+	# 10 Rising Radiant Sparks
+	for i in range(10):
+		var spark = MeshInstance3D.new()
+		var sph = SphereMesh.new()
+		sph.radius = 0.007
+		sph.height = 0.014
+		spark.mesh = sph
+		spark.material_override = mat_ring
+		burst_root.add_child(spark)
+
+		var angle: float = float(i) * (TAU / 10.0)
+		var dist: float = randf_range(0.08, 0.16)
+		var end_pos = Vector3(cos(angle) * dist, randf_range(0.12, 0.28), sin(angle) * dist)
+		var tw_sp = _create_tracked_tween()
+		tw_sp.tween_property(spark, "position", end_pos, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw_sp.parallel().tween_property(spark, "scale", Vector3.ZERO, 0.32)
+
+	get_tree().create_timer(0.40).timeout.connect(burst_root.queue_free)
+
+func _spawn_paper_cut_fragments(world_pos: Vector3) -> void:
+	var root = Node3D.new()
+	arena_center.add_child(root)
+	root.global_position = world_pos
+
+	for i in range(16):
+		var scrap = MeshInstance3D.new()
+		var box = BoxMesh.new()
+		var sx = randf_range(0.015, 0.032)
+		var sz = randf_range(0.015, 0.032)
+		box.size = Vector3(sx, 0.002, sz)
+		scrap.mesh = box
+		scrap.material_override = mat_paper_parchment if (i % 2 == 0) else mat_paper_gold_leaf
+		root.add_child(scrap)
+
+		var angle = randf_range(0, TAU)
+		var dist = randf_range(0.12, 0.36)
+		var peak_y = randf_range(0.14, 0.32)
+		var mid_pos = Vector3(cos(angle) * dist * 0.5, peak_y, sin(angle) * dist * 0.5)
+		var end_pos = Vector3(cos(angle) * dist, -0.04, sin(angle) * dist)
+
+		var tw = _create_tracked_tween()
+		tw.tween_property(scrap, "position", mid_pos, 0.20).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(scrap, "rotation_degrees", Vector3(randf_range(-360, 360), randf_range(-360, 360), randf_range(-360, 360)), 0.65)
+		tw.chain().tween_property(scrap, "position", end_pos, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tw.parallel().tween_property(scrap, "scale", Vector3.ZERO, 0.45)
+
+	get_tree().create_timer(0.70).timeout.connect(root.queue_free)
+
+func _spawn_digestion_runes(world_pos: Vector3, tint: Color) -> void:
+	var rune_root = Node3D.new()
+	arena_center.add_child(rune_root)
+	rune_root.global_position = world_pos
+
+	# Outer Runic Circle
+	var circle = MeshInstance3D.new()
+	var torus = TorusMesh.new()
+	torus.inner_radius = 0.16
+	torus.outer_radius = 0.18
+	torus.rings = 28
+	circle.mesh = torus
+	circle.material_override = mat_digest_rune
+	rune_root.add_child(circle)
+
+	# 6 Radial Talisman Glyph Boxes
+	for i in range(6):
+		var angle: float = float(i) * (TAU / 6.0)
+		var glyph = MeshInstance3D.new()
+		var g_box = BoxMesh.new()
+		g_box.size = Vector3(0.012, 0.003, 0.045)
+		glyph.mesh = g_box
+		glyph.material_override = mat_digest_rune
+		glyph.position = Vector3(cos(angle) * 0.17, 0.002, sin(angle) * 0.17)
+		glyph.rotation = Vector3(0, -angle, 0)
+		rune_root.add_child(glyph)
+
+	var tw = _create_tracked_tween().set_parallel(true)
+	tw.tween_property(rune_root, "scale", Vector3(1.3, 1.0, 1.3), 0.60)
+	tw.tween_property(rune_root, "rotation_degrees:y", 90.0, 0.60)
+	tw.chain().tween_property(rune_root, "scale", Vector3.ZERO, 0.20)
+	tw.chain().tween_callback(rune_root.queue_free)
+
+func _spawn_digest_wrapping_ribbons(world_pos: Vector3) -> void:
+	var ribbon_root = Node3D.new()
+	arena_center.add_child(ribbon_root)
+	ribbon_root.global_position = world_pos
+
+	for i in range(3):
+		var rib = MeshInstance3D.new()
+		var torus = TorusMesh.new()
+		torus.inner_radius = 0.075 + float(i) * 0.015
+		torus.outer_radius = 0.088 + float(i) * 0.015
+		torus.rings = 24
+		rib.mesh = torus
+		rib.material_override = mat_paper_gold_leaf
+		rib.rotation_degrees = Vector3(randf_range(-35, 35), float(i) * 60.0, randf_range(-35, 35))
+		ribbon_root.add_child(rib)
+
+		var tw = _create_tracked_tween().set_parallel(true)
+		tw.tween_property(rib, "rotation_degrees:y", rib.rotation_degrees.y + 360.0, 0.55)
+		tw.tween_property(rib, "position:y", 0.10 + float(i) * 0.04, 0.55)
+		tw.chain().tween_property(rib, "scale", Vector3.ZERO, 0.18)
+
+	get_tree().create_timer(0.75).timeout.connect(ribbon_root.queue_free)
+
+func _spawn_digest_motes(world_pos: Vector3) -> void:
+	var mote_root = Node3D.new()
+	arena_center.add_child(mote_root)
+	mote_root.global_position = world_pos
+
+	for i in range(14):
+		var mote = MeshInstance3D.new()
+		var sph = SphereMesh.new()
+		sph.radius = 0.009
+		sph.height = 0.018
+		mote.mesh = sph
+		mote.material_override = mat_digest_rune if (i % 2 == 0) else mat_paper_gold_leaf
+		mote_root.add_child(mote)
+
+		var angle = randf_range(0, TAU)
+		var dist = randf_range(0.08, 0.28)
+		var end_pos = Vector3(cos(angle) * dist, randf_range(0.10, 0.35), sin(angle) * dist)
+		var tw = _create_tracked_tween()
+		tw.tween_property(mote, "position", end_pos, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(mote, "scale", Vector3.ZERO, 0.38)
+
+	get_tree().create_timer(0.45).timeout.connect(mote_root.queue_free)
 
 func _spawn_stone_debris(world_pos: Vector3) -> void:
 	var debris_root = Node3D.new()
 	arena_center.add_child(debris_root)
 	debris_root.global_position = world_pos
-
 	for i in range(14):
 		var shard = MeshInstance3D.new()
 		var prism = PrismMesh.new()
@@ -1128,33 +1710,28 @@ func _spawn_stone_debris(world_pos: Vector3) -> void:
 		shard.material_override = mat_rock_obsidian
 		shard.rotation_degrees = Vector3(randf_range(-180, 180), randf_range(-180, 180), randf_range(-180, 180))
 		debris_root.add_child(shard)
-
 		var angle = randf_range(0, TAU)
 		var dist = randf_range(0.18, 0.42)
 		var peak_y = randf_range(0.22, 0.48)
 		var end_pos = Vector3(cos(angle) * dist, -0.10, sin(angle) * dist)
 		var mid_pos = Vector3(cos(angle) * dist * 0.5, peak_y, sin(angle) * dist * 0.5)
-
 		var tw = _create_tracked_tween()
 		tw.tween_property(shard, "position", mid_pos, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tw.parallel().tween_property(shard, "rotation_degrees", shard.rotation_degrees + Vector3(randf_range(-360, 360), randf_range(-360, 360), 0), 0.55)
 		tw.chain().tween_property(shard, "position", end_pos, 0.33).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		tw.parallel().tween_property(shard, "scale", Vector3.ZERO, 0.33)
-
 	get_tree().create_timer(0.65).timeout.connect(debris_root.queue_free)
 
 func _spawn_metallic_sparks(world_pos: Vector3) -> void:
 	var sparks_root = Node3D.new()
 	arena_center.add_child(sparks_root)
 	sparks_root.global_position = world_pos
-
 	for i in range(12):
 		var spark = MeshInstance3D.new()
 		var sphere = SphereMesh.new()
 		sphere.radius = 0.007
 		sphere.height = 0.014
 		spark.mesh = sphere
-
 		var mat = StandardMaterial3D.new()
 		mat.albedo_color = Color(1.0, 0.90, 0.40)
 		mat.emission_enabled = true
@@ -1162,17 +1739,14 @@ func _spawn_metallic_sparks(world_pos: Vector3) -> void:
 		mat.emission_energy_multiplier = 4.0
 		spark.material_override = mat
 		sparks_root.add_child(spark)
-
 		var angle = randf_range(0, TAU)
 		var dist = randf_range(0.15, 0.38)
 		var peak_y = randf_range(0.15, 0.35)
 		var end_pos = Vector3(cos(angle) * dist, -0.05, sin(angle) * dist)
-
 		var tw = _create_tracked_tween()
 		tw.tween_property(spark, "position", Vector3(cos(angle) * dist * 0.5, peak_y, sin(angle) * dist * 0.5), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tw.chain().tween_property(spark, "position", end_pos, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		tw.parallel().tween_property(spark, "scale", Vector3.ZERO, 0.24)
-
 	get_tree().create_timer(0.5).timeout.connect(sparks_root.queue_free)
 
 func _spawn_clash_ring(world_pos: Vector3, tint: Color) -> void:
@@ -1190,7 +1764,6 @@ func _spawn_clash_ring(world_pos: Vector3, tint: Color) -> void:
 	ring.material_override = mat
 	arena_center.add_child(ring)
 	ring.global_position = world_pos
-
 	var tw = _create_tracked_tween().set_parallel(true)
 	tw.tween_property(ring, "scale", Vector3(3.2, 3.2, 3.2), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(mat, "albedo_color:a", 0.0, 0.35)
@@ -1208,7 +1781,6 @@ func _spawn_slash_arc(world_pos: Vector3) -> void:
 	slash.global_position = world_pos
 	slash.rotation_degrees = Vector3(45, 0, 45)
 	slash.scale = Vector3(1.0, 0.05, 1.0)
-
 	var tw = _create_tracked_tween()
 	tw.tween_property(slash, "scale", Vector3(1.2, 1.2, 1.2), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(slash, "scale", Vector3.ZERO, 0.18)
@@ -1229,12 +1801,9 @@ func _spawn_victory_halo(parent_node: Node3D, tint: Color) -> void:
 	halo.material_override = mat
 	halo.position = Vector3(0, 0.06, 0)
 	parent_node.add_child(halo)
-
 	var tw = _create_tracked_tween().set_loops(3)
 	tw.tween_property(halo, "scale", Vector3(1.15, 1.15, 1.15), 0.22)
 	tw.tween_property(halo, "scale", Vector3.ONE, 0.22)
-
-# --- Tween Tracking Helpers ---
 
 func _create_tracked_tween() -> Tween:
 	var tw = create_tween()
