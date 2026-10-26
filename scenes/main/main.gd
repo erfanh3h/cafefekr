@@ -623,11 +623,13 @@ func _on_reaction_received(data: Variant) -> void:
 
 func _on_new_turn_round_received() -> void:
 	if GameManager.current_game_type == GameTypes.RPC:
+		_current_round_scored = false
 		GameManager.is_game_active = true
 		if is_instance_valid(base_game_hud):
 			base_game_hud.force_dismiss_start_overlay(false)
-			base_game_hud.start_turn_timer(7.0, "سنگ، کاغذ یا قیچی را انتخاب کنید!")
 			base_game_hud.hide_round_finish_banner()
+			base_game_hud.set_round(min(GameManager.current_round, GameManager.max_rounds), GameManager.max_rounds)
+			base_game_hud.start_turn_timer(7.0, "سنگ، کاغذ یا قیچی را انتخاب کنید!")
 		var board = cafe_table.current_board_node
 		if board and is_instance_valid(board):
 			if board.has_method("set_board_locked"):
@@ -674,10 +676,13 @@ func _on_round_finished(payload: Variant) -> void:
 		
 	base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)
 	if GameManager.current_game_type == GameTypes.RPC:
-		var my_idx = GameManager.my_player_index
-		var msg = "🏆 تبریک! شما برنده این ست شدید!" if winner == my_idx else ("حریف برنده این ست شد" if winner > 0 else "ست مساوی شد")
-		if is_instance_valid(base_game_hud):
-			base_game_hud.start_wait_timer(5, msg)
+		var cur_r = GameManager.current_round
+		GameManager.current_round = min(GameManager.current_round + 1, GameManager.max_rounds)
+		get_tree().create_timer(1.2).timeout.connect(func():
+			if is_instance_valid(base_game_hud) and not base_game_hud.is_game_finished:
+				base_game_hud.show_round_finish_banner(winner, cur_r, GameManager.p1_score, GameManager.p2_score)
+				base_game_hud.set_round(min(GameManager.current_round, GameManager.max_rounds), GameManager.max_rounds)
+		)
 	else:
 		# Wait for winning piece placement animation, drop sound, and laser strike to complete visibly before showing round finish banner
 		get_tree().create_timer(1.0).timeout.connect(func():
@@ -716,10 +721,12 @@ func _on_game_play_time_received(time: int) -> void:
 func _on_game_data_received(payload: Dictionary) -> void:
 	if GameManager.current_game_type == GameTypes.RPC:
 		GameManager.is_game_active = true
+		GameManager.current_round = 1
 		if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 			GameManager.set_match_gamers(payload["gamers"])
 			_update_table_opponent_avatar()
 			base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
+		base_game_hud.set_round(1, GameManager.max_rounds)
 		base_game_hud.force_dismiss_start_overlay(false)
 		var board = cafe_table.current_board_node
 		if board and is_instance_valid(board):

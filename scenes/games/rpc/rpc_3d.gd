@@ -38,7 +38,6 @@ var pedestal_areas: Dictionary = {}    # "rock", "paper", "cutter" -> Area3D
 var pedestal_objects: Dictionary = {}  # "rock", "paper", "cutter" -> Node3D
 var selection_halos: Dictionary = {}         # "rock", "paper", "cutter" -> MeshInstance3D
 var selection_aura_rings: Dictionary = {}    # "rock", "paper", "cutter" -> MeshInstance3D
-var selection_light_pillars: Dictionary = {} # "rock", "paper", "cutter" -> MeshInstance3D
 var hover_rings: Dictionary = {}             # "rock", "paper", "cutter" -> MeshInstance3D
 
 # Arena & Combatant Nodes
@@ -94,8 +93,6 @@ var mat_scissors_handle_p2: StandardMaterial3D
 var mat_paper_ink: StandardMaterial3D
 var mat_selected_halo_p1: StandardMaterial3D
 var mat_selected_halo_p2: StandardMaterial3D
-var mat_selected_light_pillar_p1: StandardMaterial3D
-var mat_selected_light_pillar_p2: StandardMaterial3D
 var mat_digest_rune: StandardMaterial3D
 var mat_slash_beam: StandardMaterial3D
 
@@ -138,11 +135,6 @@ func _process(delta: float) -> void:
 			aura.scale = Vector3(s_a, 1.0, s_a)
 			aura.rotation_degrees.y -= delta * 30.0
 
-	for k in selection_light_pillars.keys():
-		var pillar = selection_light_pillars[k]
-		if is_instance_valid(pillar) and pillar.visible:
-			var s_p: float = 1.0 + sin(_anim_time * 3.0) * 0.04
-			pillar.scale = Vector3(s_p, 1.0, s_p)
 
 # --- Materials Setup ---
 
@@ -329,20 +321,6 @@ func _setup_materials() -> void:
 	mat_selected_halo_p2.emission = Color(0.18, 0.55, 1.0)
 	mat_selected_halo_p2.emission_energy_multiplier = 2.4
 
-	# Ascending Light Pillar Materials
-	mat_selected_light_pillar_p1 = StandardMaterial3D.new()
-	mat_selected_light_pillar_p1.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_selected_light_pillar_p1.albedo_color = Color(1.0, 0.25, 0.30, 0.24)
-	mat_selected_light_pillar_p1.emission_enabled = true
-	mat_selected_light_pillar_p1.emission = Color(1.0, 0.18, 0.22)
-	mat_selected_light_pillar_p1.emission_energy_multiplier = 1.6
-
-	mat_selected_light_pillar_p2 = StandardMaterial3D.new()
-	mat_selected_light_pillar_p2.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_selected_light_pillar_p2.albedo_color = Color(0.22, 0.60, 1.0, 0.24)
-	mat_selected_light_pillar_p2.emission_enabled = true
-	mat_selected_light_pillar_p2.emission = Color(0.18, 0.50, 1.0)
-	mat_selected_light_pillar_p2.emission_energy_multiplier = 1.6
 
 	# Mystic Digestion Talisman Rune Material
 	mat_digest_rune = StandardMaterial3D.new()
@@ -444,7 +422,6 @@ func _build_selection_pedestals() -> void:
 	pedestal_objects.clear()
 	selection_halos.clear()
 	selection_aura_rings.clear()
-	selection_light_pillars.clear()
 	hover_rings.clear()
 
 	var choices = [
@@ -543,19 +520,6 @@ func _build_selection_pedestals() -> void:
 		ped.add_child(s_aura)
 		selection_aura_rings[c_type] = s_aura
 
-		# Ascending Pillar of Light (radiant column in player color)
-		var s_pillar = MeshInstance3D.new()
-		var sp_cyl = CylinderMesh.new()
-		sp_cyl.top_radius = 0.116
-		sp_cyl.bottom_radius = 0.128
-		sp_cyl.height = 0.38
-		sp_cyl.radial_segments = 24
-		s_pillar.mesh = sp_cyl
-		s_pillar.material_override = mat_selected_light_pillar_p1
-		s_pillar.position = Vector3(0, 0.22, 0)
-		s_pillar.visible = false
-		ped.add_child(s_pillar)
-		selection_light_pillars[c_type] = s_pillar
 
 		# 3D Persian Label ("سنگ", "کاغذ", "قیچی")
 		var lbl = Label3D.new()
@@ -607,14 +571,14 @@ func _build_score_trackers() -> void:
 	tracker_group.position = Vector3(0, 0.040, -0.42)
 	add_child(tracker_group)
 
-	# 1. Player 1 (Red) Turn-Round Sockets (5 pips on Left)
-	for i in range(5):
-		var sx: float = -0.46 + float(i) * 0.065
+	# 1. Player 1 (Red) Turn-Round Sockets (3 pips on Left - first to 3 wins round)
+	for i in range(3):
+		var sx: float = -0.38 + float(i) * 0.075
 		var sock = MeshInstance3D.new()
 		var sc = CylinderMesh.new()
-		sc.top_radius = 0.024
-		sc.bottom_radius = 0.026
-		sc.height = 0.014
+		sc.top_radius = 0.025
+		sc.bottom_radius = 0.027
+		sc.height = 0.015
 		sock.mesh = sc
 		sock.material_override = mat_gold_trim
 		sock.position = Vector3(sx, 0.007, 0)
@@ -623,22 +587,22 @@ func _build_score_trackers() -> void:
 
 		var gem = MeshInstance3D.new()
 		var gc = SphereMesh.new()
-		gc.radius = 0.016
-		gc.height = 0.018
+		gc.radius = 0.017
+		gc.height = 0.020
 		gem.mesh = gc
 		gem.material_override = mat_socket_unlit
-		gem.position = Vector3(sx, 0.016, 0)
+		gem.position = Vector3(sx, 0.017, 0)
 		tracker_group.add_child(gem)
 		p1_gems.append(gem)
 
-	# 2. Player 2 (Blue) Turn-Round Sockets (5 pips on Right)
-	for i in range(5):
-		var sx: float = 0.20 + float(i) * 0.065
+	# 2. Player 2 (Blue) Turn-Round Sockets (3 pips on Right - first to 3 wins round)
+	for i in range(3):
+		var sx: float = 0.23 + float(i) * 0.075
 		var sock = MeshInstance3D.new()
 		var sc = CylinderMesh.new()
-		sc.top_radius = 0.024
-		sc.bottom_radius = 0.026
-		sc.height = 0.014
+		sc.top_radius = 0.025
+		sc.bottom_radius = 0.027
+		sc.height = 0.015
 		sock.mesh = sc
 		sock.material_override = mat_platinum_trim
 		sock.position = Vector3(sx, 0.007, 0)
@@ -647,11 +611,11 @@ func _build_score_trackers() -> void:
 
 		var gem = MeshInstance3D.new()
 		var gc = SphereMesh.new()
-		gc.radius = 0.016
-		gc.height = 0.018
+		gc.radius = 0.017
+		gc.height = 0.020
 		gem.mesh = gc
 		gem.material_override = mat_socket_unlit
-		gem.position = Vector3(sx, 0.016, 0)
+		gem.position = Vector3(sx, 0.017, 0)
 		tracker_group.add_child(gem)
 		p2_gems.append(gem)
 
@@ -669,7 +633,7 @@ func _build_score_trackers() -> void:
 	tracker_group.add_child(lbl_turn_round_status)
 
 func _update_score_trackers() -> void:
-	for i in range(5):
+	for i in range(3):
 		if i < p1_gems.size() and is_instance_valid(p1_gems[i]):
 			p1_gems[i].material_override = mat_ruby_lit if (i < p1_turn_round_score) else mat_socket_unlit
 		if i < p2_gems.size() and is_instance_valid(p2_gems[i]):
@@ -1141,10 +1105,9 @@ func _select_choice(choice: String) -> void:
 
 	var p_idx: int = my_player_index if my_player_index in [1, 2] else 1
 	var halo_mat = mat_selected_halo_p1 if p_idx == 1 else mat_selected_halo_p2
-	var pillar_mat = mat_selected_light_pillar_p1 if p_idx == 1 else mat_selected_light_pillar_p2
 	var p_color = Color(1.0, 0.22, 0.28) if p_idx == 1 else Color(0.20, 0.60, 1.0)
 
-	# Update Selection Halos, Auras, and Pillars with player color
+	# Update Selection Halos and Auras with player color (No tall cylinder)
 	for k in selection_halos.keys():
 		var halo = selection_halos[k]
 		if is_instance_valid(halo):
@@ -1155,11 +1118,6 @@ func _select_choice(choice: String) -> void:
 		if is_instance_valid(aura):
 			aura.material_override = halo_mat
 			aura.visible = (k == choice)
-	for k in selection_light_pillars.keys():
-		var pillar = selection_light_pillars[k]
-		if is_instance_valid(pillar):
-			pillar.material_override = pillar_mat
-			pillar.visible = (k == choice)
 
 	# Rich Radial Burst VFX at pedestal upon selection
 	if pedestals.has(choice) and is_instance_valid(pedestals[choice]):
@@ -1197,9 +1155,6 @@ func on_new_turn_round() -> void:
 	for k in selection_aura_rings.keys():
 		if is_instance_valid(selection_aura_rings[k]):
 			selection_aura_rings[k].visible = false
-	for k in selection_light_pillars.keys():
-		if is_instance_valid(selection_light_pillars[k]):
-			selection_light_pillars[k].visible = false
 	_clear_clash_nodes()
 	_update_score_trackers()
 
@@ -1238,6 +1193,9 @@ func on_round_finished(payload: Variant) -> void:
 	p2_turn_round_score = 0
 	current_turn_round_num = 1
 	current_round_num += 1
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud) and hud.has_method("set_round"):
+		hud.set_round(min(current_round_num, 3), 3)
 
 	# Celebration VFX
 	var my_idx = GameManager.my_player_index
@@ -1285,7 +1243,6 @@ func reset_board() -> void:
 	my_selected_choice = "rock"
 	var p_idx: int = my_player_index if my_player_index in [1, 2] else 1
 	var halo_mat = mat_selected_halo_p1 if p_idx == 1 else mat_selected_halo_p2
-	var pillar_mat = mat_selected_light_pillar_p1 if p_idx == 1 else mat_selected_light_pillar_p2
 	for k in selection_halos.keys():
 		if is_instance_valid(selection_halos[k]):
 			selection_halos[k].material_override = halo_mat
@@ -1294,10 +1251,6 @@ func reset_board() -> void:
 		if is_instance_valid(selection_aura_rings[k]):
 			selection_aura_rings[k].material_override = halo_mat
 			selection_aura_rings[k].visible = (k == "rock")
-	for k in selection_light_pillars.keys():
-		if is_instance_valid(selection_light_pillars[k]):
-			selection_light_pillars[k].material_override = pillar_mat
-			selection_light_pillars[k].visible = (k == "rock")
 	_update_score_trackers()
 
 func cleanup_board() -> void:
