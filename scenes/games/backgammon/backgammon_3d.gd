@@ -1731,9 +1731,9 @@ func _refresh_ui_and_highlights() -> void:
 				btn_lbl.text = "✨ حرکت دهید (%s)" % _fa_digits(current_dices.size())
 				btn_lbl.modulate = Color(0.95, 0.96, 1.0)
 			else:
-				btn_cap.material_override = mat_btn_roll_disabled
-				btn_lbl.text = "⚠️ بدون حرکت مجاز..."
-				btn_lbl.modulate = Color(1.0, 0.68, 0.62)
+				btn_cap.material_override = mat_btn_roll_active
+				btn_lbl.text = "⏭️ پایان نوبت (بدون حرکت)"
+				btn_lbl.modulate = Color(1.0, 0.95, 0.85)
 		else:
 			btn_cap.material_override = mat_btn_roll_disabled
 			btn_lbl.text = "⏳ نوبت حریف..."
@@ -2054,7 +2054,11 @@ func _apply_move_and_animate(source_idx: int, dice_val: int, gamer_id: int) -> v
 			can_hit_points.clear()
 			can_target_points.clear()
 			can_bear_off_sources.clear()
-			show_hint("با تاس باقی‌مانده هیچ حرکت مجازی وجود ندارد!")
+			show_hint("با تاس باقی‌مانده هیچ حرکت مجازی وجود ندارد! در حال پایان نوبت...")
+			get_tree().create_timer(1.2).timeout.connect(func():
+				if is_instance_valid(self) and is_my_turn and dices_rolled and not current_dices.is_empty() and not _has_any_available_move(GameManager.my_player_index):
+					send_move(Commands.Pass_Turn, {})
+			)
 	else:
 		can_select_points.clear()
 		can_hit_points.clear()
@@ -2449,8 +2453,18 @@ func _on_roll_button_tapped() -> void:
 		show_hint("هنوز نوبت شما نیست!")
 		return
 	if dices_rolled:
+		if not current_dices.is_empty() and not _has_any_available_move(my_player_index):
+			if _roll_btn_ui.has("root") and is_instance_valid(_roll_btn_ui["root"]):
+				var b_root: Node3D = _roll_btn_ui["root"]
+				var tw = create_tween()
+				tw.tween_property(b_root, "scale", Vector3(0.94, 0.85, 0.94), 0.07)
+				tw.tween_property(b_root, "scale", Vector3.ONE, 0.10)
+			AudioManager.sfx_tap()
+			show_hint("پایان نوبت: هیچ حرکت مجازی با تاس باقی‌مانده وجود ندارد.")
+			send_move(Commands.Pass_Turn, {})
+			return
 		AudioManager.play_sound("miss_turn")
-		show_hint("تاس‌ها قبلاً پرتاب شده‌اند؛ روی مهره طلایی یا خانه سبز مقصد بزنید!")
+		show_hint("تاس‌ها قبلاً پرتاب شده‌اند؛ روی مهره یا خانه سبز مقصد بزنید!")
 		return
 
 	if _roll_btn_ui.has("root") and is_instance_valid(_roll_btn_ui["root"]):
