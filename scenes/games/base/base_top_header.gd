@@ -757,11 +757,21 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 		else:
 			p2_card.scale = Vector2.ONE
 
-	if is_instance_valid(match_details_box):
+	var is_simul = GameRegistry.is_simultaneous(GameManager.current_game_type)
+	if is_simul:
+		if is_instance_valid(p1_card):
+			p1_card.add_theme_stylebox_override("panel", _style_p1_active)
+			p1_card.scale = Vector2.ONE
+		if is_instance_valid(p2_card):
+			p2_card.add_theme_stylebox_override("panel", _style_p2_active)
+			p2_card.scale = Vector2.ONE
+		if is_instance_valid(match_details_box):
+			match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
+	elif is_instance_valid(match_details_box):
 		match_details_box.add_theme_stylebox_override("panel", _style_match_box_p1 if is_p1 else _style_match_box_p2)
 
 	# Timer Fill Color & VFX Theme Color
-	var fill_col = Color(1.0, 0.32, 0.35) if is_p1 else Color(0.25, 0.65, 1.0)
+	var fill_col = Color(1.0, 0.85, 0.30) if is_simul else (Color(1.0, 0.32, 0.35) if is_p1 else Color(0.25, 0.65, 1.0))
 	if is_instance_valid(_timer_style_fill):
 		_timer_style_fill.bg_color = fill_col
 	if is_instance_valid(_timer_vfx_overlay):
@@ -773,6 +783,10 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 		if not GameManager.is_game_active:
 			lbl_turn_banner.text = "بازی درحال آغاز است"
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		elif is_simul:
+			var sim_text = "سنگ، کاغذ یا قیچی را انتخاب کنید!" if GameManager.current_game_type == GameTypes.RPC else "انتخاب خود را مشخص کنید"
+			lbl_turn_banner.text = sim_text
+			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 		elif is_me:
 			var color_str = "قرمز" if is_p1 else "آبی"
 			var dot = "🔴" if is_p1 else "🔵"
@@ -795,7 +809,7 @@ func _animate_card_pulse(card: Control) -> void:
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 	var is_danger = (remaining_sec <= 4.0 and remaining_sec > 0.0)
-	var fill_col = Color(1.0, 0.32, 0.35) if turn == 1 else Color(0.25, 0.65, 1.0)
+	var fill_col = Color(1.0, 0.85, 0.30) if GameRegistry.is_simultaneous(GameManager.current_game_type) else (Color(1.0, 0.32, 0.35) if turn == 1 else Color(0.25, 0.65, 1.0))
 	if is_instance_valid(_timer_vfx_overlay):
 		_timer_vfx_overlay.is_danger = is_danger
 		_timer_vfx_overlay.theme_color = fill_col

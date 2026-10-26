@@ -623,14 +623,38 @@ func _on_reaction_received(data: Variant) -> void:
 
 func _on_new_turn_round_received() -> void:
 	if GameManager.current_game_type == GameTypes.RPC:
+		GameManager.is_game_active = true
 		if is_instance_valid(base_game_hud):
-			base_game_hud.start_turn_timer(7.0)
+			base_game_hud.force_dismiss_start_overlay(false)
+			base_game_hud.start_turn_timer(7.0, "سنگ، کاغذ یا قیچی را انتخاب کنید!")
 			base_game_hud.hide_round_finish_banner()
+		var board = cafe_table.current_board_node
+		if board and is_instance_valid(board):
+			if board.has_method("set_board_locked"):
+				board.set_board_locked(false)
+			if board.has_method("on_new_turn_round"):
+				board.on_new_turn_round()
 
 func _on_finish_turn_round_received(data: Dictionary) -> void:
 	if GameManager.current_game_type == GameTypes.RPC:
+		var winner = int(data.get("Winner", 0))
+		var p1_sel = str(data.get("P1_selection", "rock")).to_lower()
+		var p2_sel = str(data.get("P2_selection", "rock")).to_lower()
+		var my_idx = GameManager.my_player_index
+		var my_sel = p1_sel if my_idx == 1 else p2_sel
+		var opp_sel = p2_sel if my_idx == 1 else p1_sel
+		var sel_names = {"rock": "سنگ", "paper": "کاغذ", "cutter": "قیچی"}
+		var my_name = sel_names.get(my_sel, my_sel)
+		var opp_name = sel_names.get(opp_sel, opp_sel)
+		var result_msg = ""
+		if winner == my_idx:
+			result_msg = "🎉 شما این دست را بردید! (%s بر %s)" % [my_name, opp_name]
+		elif winner == 0:
+			result_msg = "🤝 مساوی شد! (هر دو: %s)" % my_name
+		else:
+			result_msg = "💥 حریف این دست را برد! (%s بر %s)" % [opp_name, my_name]
 		if is_instance_valid(base_game_hud):
-			base_game_hud.start_wait_timer(3)
+			base_game_hud.start_wait_timer(3, result_msg)
 
 func _on_round_finished(payload: Variant) -> void:
 	if is_instance_valid(base_game_hud):
@@ -651,11 +675,17 @@ func _on_round_finished(payload: Variant) -> void:
 			GameManager.p2_score += 1
 		
 	base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)
-	# Wait for winning piece placement animation, drop sound, and laser strike to complete visibly before showing round finish banner
-	get_tree().create_timer(1.0).timeout.connect(func():
-		if is_instance_valid(base_game_hud) and not base_game_hud.is_game_finished:
-			base_game_hud.show_round_finish_banner(winner, GameManager.current_round, GameManager.p1_score, GameManager.p2_score)
-	)
+	if GameManager.current_game_type == GameTypes.RPC:
+		var my_idx = GameManager.my_player_index
+		var msg = "🏆 تبریک! شما برنده این ست شدید!" if winner == my_idx else ("حریف برنده این ست شد" if winner > 0 else "ست مساوی شد")
+		if is_instance_valid(base_game_hud):
+			base_game_hud.start_wait_timer(5, msg)
+	else:
+		# Wait for winning piece placement animation, drop sound, and laser strike to complete visibly before showing round finish banner
+		get_tree().create_timer(1.0).timeout.connect(func():
+			if is_instance_valid(base_game_hud) and not base_game_hud.is_game_finished:
+				base_game_hud.show_round_finish_banner(winner, GameManager.current_round, GameManager.p1_score, GameManager.p2_score)
+		)
 
 func _on_new_round_started(round_num: int) -> void:
 	_current_round_scored = false
@@ -686,6 +716,21 @@ func _on_game_play_time_received(time: int) -> void:
 		base_game_hud.update_start_countdown_time(time)
 
 func _on_game_data_received(payload: Dictionary) -> void:
+	if GameManager.current_game_type == GameTypes.RPC:
+		GameManager.is_game_active = true
+		if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
+			GameManager.set_match_gamers(payload["gamers"])
+			_update_table_opponent_avatar()
+			base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
+		base_game_hud.force_dismiss_start_overlay(false)
+		var board = cafe_table.current_board_node
+		if board and is_instance_valid(board):
+			if board.has_method("set_board_locked"):
+				board.set_board_locked(false)
+			if board.has_method("sync_turn_state"):
+				board.sync_turn_state()
+		return
+
 	# Server sends Game_Data and then counts Start_Game_Time (5s) before starting the real game.
 	# Keep GameManager.is_game_active = false and board locked during this pre-game delay!
 	GameManager.is_game_active = false

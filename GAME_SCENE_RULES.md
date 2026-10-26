@@ -370,7 +370,7 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
   - In each turn-round:
     - The active player selects one of 3 pedestals on their side of the table (illuminating a gold energy ring and hovering the chosen artifact).
     - Upon `Finish_Turn_Round`, both players chosen 3D objects rise and fly to the central arena to clash face-to-face:
-      - **Rock vs Scissors**: The obsidian rock slams down like a meteor, shattering sparks and knocking the scissors back.
+      - **Rock vs Scissors**: High-impact meteor smash VFX featuring screen camera shake (0.09 intensity), dual expanding energy shockwave rings (winner color + gold), 14 flying 3D stone shards in parabolic arcs, 12 metallic golden sparks, squash-and-stretch on the obsidian rock, and catastrophic destruction of the shears (blades splaying apart, spinning 720 degrees on Z, tumbling across the board, and bouncing off the mahogany cushion).
       - **Scissors vs Paper**: The Damascus shears snip forward, slicing a ribbon of shimmering golden sparks through the paper scroll.
       - **Paper vs Rock**: The parchment scroll unfurls and wraps around the rock, binding it with glowing runic bands.
       - **Draw (Rock vs Rock, Paper vs Paper, Scissors vs Scissors)**: Both objects charge forward, recoil violently on contact with an emerald shockwave, and return to neutral.
@@ -378,6 +378,13 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
   - Each player has a row of 5 recessed 3D gemstone sockets on the board frame.
   - Winning a turn-round illuminates a faceted jewel (ruby for Player 1, sapphire for Player 2).
   - The HUD score badge tracks overall match rounds (0-0, 1-0, 1-1, etc.).
+- **Simultaneous Turn Banner & Selection Lifecycle**:
+  - Upon receiving `Commands.New_Turn_Round`, `main.gd` immediately sets `GameManager.is_game_active = true`, unlocks the 3D board, and force-dismisses the start overlay so players never encounter input blocking or need to restart.
+  - The top header turn banner clearly guides the player:
+    - On turn-round start: `"سنگ، کاغذ یا قیچی را انتخاب کنید!"` with both player cards highlighted.
+    - Upon selecting an object: `"✅ انتخاب شما: <نام مهره> (می‌توانید تغییر دهید)"`, allowing fluid switching anytime before the 7s timer expires.
+    - On resolution (`Finish_Turn_Round`): displays the outcome with choices e.g. `"🎉 شما این دست را بردید! (سنگ بر قیچی)"` or `"🤝 مساوی شد!"`.
+    - On round conclusion (`Finish_Round`): `"🏆 تبریک! شما برنده این ست شدید!"` with 5s celebratory wait timer.
 
 ---
 
@@ -468,5 +475,6 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Stale Final-Round Score on Result Dialog** | Always synchronize the final round score via `_current_round_scored` in `main.gd` before opening `GameResultDialog`. |
 | ❌ **No 3D Hands in Any Game** | Never spawn or trigger 3D hand models (`RealisticHand`) in any game (`CafeTable`, `Checkers`, `Chess`, `TicTacToe`, `FekrBekr`, `Yatzy`, `FourInRow`, `RPC`). |
 | ❌ **No Hand Gestures in Rock Paper Scissors** | Never use 3D humanoid hand poses for Rock-Paper-Scissors; always use physical 3D objects (obsidian rock, parchment scroll, Damascus scissors). |
+| ❌ **No Stale Turn Banner in Simultaneous Games** | In simultaneous games (e.g. `RPC`), never display turn-based text ("نوبت قرمز/آبی" or "بازی درحال آغاز است") during active play; always show clear prompts ("سنگ، کاغذ یا قیچی را انتخاب کنید!" / "✅ انتخاب شما: ...") and dismiss start overlays immediately on `New_Turn_Round`. |
 | ❌ **No Start-Countdown Glitch or Double-Tick** | Keep `StartGameOverlay/Card/VBox/Countdown` at a fixed `custom_minimum_size = Vector2(360, 130)` and `pivot_offset = Vector2(180, 65)`, and never let `Game_Play_Time` or background `_process` timers overwrite or double-tick during `play_start_countdown()`. |
 | ❌ **No Front-Lip Text in TicTacToe** | Never add front-frame `Label3D` text on the `TicTacToe` 3D board. |

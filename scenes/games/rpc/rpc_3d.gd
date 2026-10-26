@@ -29,7 +29,7 @@ var p1_turn_round_score: int = 0
 var p2_turn_round_score: int = 0
 var p1_match_score: int = 0
 var p2_match_score: int = 0
-var my_selected_choice: String = "rock"
+var my_selected_choice: String = ""
 var is_choice_confirmed: bool = false
 
 # Interactive Pedestals & Visual Nodes
@@ -57,6 +57,7 @@ var hovered_choice: String = ""
 var _press_screen_pos: Vector2 = Vector2.ZERO
 var _is_pointer_down: bool = false
 var _last_click_time: float = 0.0
+var _press_down_time: float = 0.0
 var _anim_time: float = 0.0
 var _active_tweens: Array[Tween] = []
 
@@ -441,7 +442,7 @@ func _build_selection_pedestals() -> void:
 		s_halo.mesh = sh_torus
 		s_halo.material_override = mat_selected_halo
 		s_halo.position = Vector3(0, 0.040, 0)
-		s_halo.visible = (c_type == my_selected_choice)
+		s_halo.visible = false
 		ped.add_child(s_halo)
 		selection_halos[c_type] = s_halo
 
@@ -469,12 +470,15 @@ func _build_selection_pedestals() -> void:
 		var area = Area3D.new()
 		area.name = "PedestalArea_" + c_type
 		area.set_meta("rpc_type", c_type)
+		area.input_ray_pickable = true
+		area.collision_layer = 1
+		area.collision_mask = 1
 		var col = CollisionShape3D.new()
 		var c_shape = CylinderShape3D.new()
-		c_shape.radius = 0.155
-		c_shape.height = 0.22
+		c_shape.radius = 0.18
+		c_shape.height = 0.35
 		col.shape = c_shape
-		col.position = Vector3(0, 0.10, 0)
+		col.position = Vector3(0, 0.14, 0)
 		area.add_child(col)
 		ped.add_child(area)
 		pedestal_areas[c_type] = area
@@ -769,11 +773,27 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.pressed:
 			_is_pointer_down = true
 			_press_screen_pos = event.position
+			_press_down_time = Time.get_ticks_msec() / 1000.0
 			_handle_pointer_hover(event.position)
 		else:
 			if _is_pointer_down:
 				_is_pointer_down = false
-				if _press_screen_pos.distance_to(event.position) <= DRAG_THRESHOLD:
+				var dist = _press_screen_pos.distance_to(event.position)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _press_down_time
+				if dist <= 28.0 and elapsed < 0.8:
+					_handle_pointer_tap(event.position)
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			_is_pointer_down = true
+			_press_screen_pos = event.position
+			_press_down_time = Time.get_ticks_msec() / 1000.0
+			_handle_pointer_hover(event.position)
+		else:
+			if _is_pointer_down:
+				_is_pointer_down = false
+				var dist = _press_screen_pos.distance_to(event.position)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _press_down_time
+				if dist <= 28.0 and elapsed < 0.8:
 					_handle_pointer_tap(event.position)
 
 func _raycast_choice_at(screen_pos: Vector2) -> String:
@@ -827,13 +847,12 @@ func _handle_pointer_tap(screen_pos: Vector2) -> void:
 func _select_choice(choice: String) -> void:
 	if is_board_locked or not GameManager.is_game_active:
 		return
-
 	_last_click_time = Time.get_ticks_msec() / 1000.0
 	my_selected_choice = choice
 	is_choice_confirmed = true
 	AudioManager.play_sound("tap")
 
-	# Update Selection Halos
+	# Update Selection Halos immediately
 	for k in selection_halos.keys():
 		var halo = selection_halos[k]
 		if is_instance_valid(halo):
@@ -843,11 +862,17 @@ func _select_choice(choice: String) -> void:
 	if pedestal_objects.has(choice) and is_instance_valid(pedestal_objects[choice]):
 		var obj = pedestal_objects[choice]
 		var tw = _create_tracked_tween()
-		tw.tween_property(obj, "scale", Vector3(1.22, 1.22, 1.22), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(obj, "scale", Vector3(1.28, 1.28, 1.28), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tw.tween_property(obj, "scale", Vector3.ONE, 0.14)
 
+	# Update HUD banner in real-time
+	var choice_names = {"rock": "سنگ", "paper": "کاغذ", "cutter": "قیچی"}
+	var c_fa = choice_names.get(choice, choice)
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud) and hud.has_method("set_custom_banner"):
+		hud.set_custom_banner("✅ انتخاب شما: %s (می‌توانید تغییر دهید)" % c_fa)
+
 	# 1:1 with Flutter RPCController.acceptSelection():
-	# sendCommand({"id": GameCommands.selectPeace, "data": selectedPeace.value.name})
 	send_move(Commands.Select_Peace, choice)
 
 # --- BaseGameBoard Lifecycle & RPC Hooks ---
@@ -859,6 +884,11 @@ func on_new_turn_round() -> void:
 	# Unlock board and prepare next turn-round
 	set_board_locked(false)
 	is_choice_confirmed = false
+	my_selected_choice = ""
+	for k in selection_halos.keys():
+		var halo = selection_halos[k]
+		if is_instance_valid(halo):
+			halo.visible = false
 	_clear_clash_nodes()
 	_update_score_trackers()
 
@@ -1020,18 +1050,8 @@ func _resolve_clash_impact(p1_sel: String, p2_sel: String, winner_id: int) -> vo
 		var lose_sel = p2_sel if winner_id == 1 else p1_sel
 
 		if win_sel == "rock" and lose_sel == "cutter":
-			# Rock smashes Scissors!
-			AudioManager.play_sound("hit")
-			AudioManager.play_sound("add_peace")
-			ActionVFXManager.play_piece_drop_vfx(self, center_world, win_color)
-			# Rock slams down, Scissors tumble back
-			var tw = _create_tracked_tween()
-			tw.tween_property(winning_node, "position:y", 0.22, 0.08)
-			tw.tween_property(winning_node, "position:y", 0.14, 0.08)
-			var tw_lose = _create_tracked_tween().set_parallel(true)
-			tw_lose.tween_property(losing_node, "position", losing_node.position + Vector3(0.25 if winner_id == 1 else -0.25, -0.06, 0.08), 0.35)
-			tw_lose.tween_property(losing_node, "rotation_degrees:z", 140.0 if winner_id == 1 else -140.0, 0.35)
-			tw_lose.tween_property(losing_node, "scale", Vector3(0.5, 0.5, 0.5), 0.35)
+			# Spectacular Rock smashes Scissors VFX!
+			_play_rock_smash_scissors_vfx(center_world, winning_node, losing_node, winner_id, win_color)
 
 		elif win_sel == "cutter" and lose_sel == "paper":
 			# Scissors snips Paper!
@@ -1060,6 +1080,100 @@ func _resolve_clash_impact(p1_sel: String, p2_sel: String, winner_id: int) -> vo
 		_spawn_victory_halo(winning_node, win_color)
 
 	_update_score_trackers()
+
+func _play_rock_smash_scissors_vfx(center_world: Vector3, winning_node: Node3D, losing_node: Node3D, winner_id: int, win_color: Color) -> void:
+	# 1. Heavy camera shake & impact SFX
+	ActionVFXManager.shake_camera(0.09, 0.45)
+	AudioManager.play_sound("hit")
+	AudioManager.play_sound("add_peace")
+
+	# 2. Dual expanding shockwaves
+	_spawn_clash_ring(center_world, win_color)
+	_spawn_clash_ring(center_world + Vector3(0, 0.02, 0), Color(1.0, 0.90, 0.35))
+
+	# 3. Flying physical 3D debris shards & metallic sparks
+	_spawn_stone_debris(center_world)
+	_spawn_metallic_sparks(center_world)
+	ActionVFXManager.play_piece_drop_vfx(self, center_world, win_color)
+
+	# 4. Rock meteor crushing movement: heavy squash on impact, then elastic rebound
+	var tw_rock = _create_tracked_tween()
+	tw_rock.tween_property(winning_node, "position:y", 0.38, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw_rock.parallel().tween_property(winning_node, "rotation_degrees:x", -25.0, 0.12)
+	tw_rock.chain().tween_property(winning_node, "position:y", 0.08, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw_rock.parallel().tween_property(winning_node, "scale", Vector3(1.45, 0.75, 1.45), 0.06)
+	tw_rock.parallel().tween_property(winning_node, "rotation_degrees:x", 0.0, 0.06)
+	tw_rock.chain().tween_property(winning_node, "position:y", 0.14, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw_rock.parallel().tween_property(winning_node, "scale", Vector3(1.25, 1.25, 1.25), 0.12)
+
+	# 5. Scissors catastrophic destruction: blades snap open, shears spin 720 deg, rocket backwards
+	var tw_scissors = _create_tracked_tween().set_parallel(true)
+	var knockback_dir = 0.32 if winner_id == 1 else -0.32
+	tw_scissors.tween_property(losing_node, "position", losing_node.position + Vector3(knockback_dir, -0.06, 0.12), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw_scissors.tween_property(losing_node, "rotation_degrees:z", 720.0 if winner_id == 1 else -720.0, 0.42)
+	tw_scissors.tween_property(losing_node, "rotation_degrees:x", 65.0, 0.42)
+	tw_scissors.tween_property(losing_node, "scale", Vector3(0.35, 0.35, 0.35), 0.42)
+
+func _spawn_stone_debris(world_pos: Vector3) -> void:
+	var debris_root = Node3D.new()
+	arena_center.add_child(debris_root)
+	debris_root.global_position = world_pos
+
+	for i in range(14):
+		var shard = MeshInstance3D.new()
+		var prism = PrismMesh.new()
+		var s_size = randf_range(0.018, 0.038)
+		prism.size = Vector3(s_size, s_size * 1.4, s_size * 0.8)
+		shard.mesh = prism
+		shard.material_override = mat_obsidian
+		shard.rotation_degrees = Vector3(randf_range(-180, 180), randf_range(-180, 180), randf_range(-180, 180))
+		debris_root.add_child(shard)
+
+		var angle = randf_range(0, TAU)
+		var dist = randf_range(0.18, 0.42)
+		var peak_y = randf_range(0.22, 0.48)
+		var end_pos = Vector3(cos(angle) * dist, -0.10, sin(angle) * dist)
+		var mid_pos = Vector3(cos(angle) * dist * 0.5, peak_y, sin(angle) * dist * 0.5)
+
+		var tw = _create_tracked_tween()
+		tw.tween_property(shard, "position", mid_pos, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(shard, "rotation_degrees", shard.rotation_degrees + Vector3(randf_range(-360, 360), randf_range(-360, 360), 0), 0.55)
+		tw.chain().tween_property(shard, "position", end_pos, 0.33).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.parallel().tween_property(shard, "scale", Vector3.ZERO, 0.33)
+
+	get_tree().create_timer(0.65).timeout.connect(debris_root.queue_free)
+
+func _spawn_metallic_sparks(world_pos: Vector3) -> void:
+	var sparks_root = Node3D.new()
+	arena_center.add_child(sparks_root)
+	sparks_root.global_position = world_pos
+
+	for i in range(12):
+		var spark = MeshInstance3D.new()
+		var sphere = SphereMesh.new()
+		sphere.radius = 0.007
+		sphere.height = 0.014
+		spark.mesh = sphere
+
+		var mat = StandardMaterial3D.new()
+		mat.albedo_color = Color(1.0, 0.90, 0.40)
+		mat.emission_enabled = true
+		mat.emission = Color(1.0, 0.85, 0.25)
+		mat.emission_energy_multiplier = 4.0
+		spark.material_override = mat
+		sparks_root.add_child(spark)
+
+		var angle = randf_range(0, TAU)
+		var dist = randf_range(0.15, 0.38)
+		var peak_y = randf_range(0.15, 0.35)
+		var end_pos = Vector3(cos(angle) * dist, -0.05, sin(angle) * dist)
+
+		var tw = _create_tracked_tween()
+		tw.tween_property(spark, "position", Vector3(cos(angle) * dist * 0.5, peak_y, sin(angle) * dist * 0.5), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.chain().tween_property(spark, "position", end_pos, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.parallel().tween_property(spark, "scale", Vector3.ZERO, 0.24)
+
+	get_tree().create_timer(0.5).timeout.connect(sparks_root.queue_free)
 
 func _spawn_clash_ring(world_pos: Vector3, tint: Color) -> void:
 	var ring = MeshInstance3D.new()

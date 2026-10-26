@@ -1142,31 +1142,29 @@ func update_scores(p1_s: int, p2_s: int) -> void:
 	if is_instance_valid(result_dialog) and result_dialog.has_method("update_scores"):
 		result_dialog.update_scores(p1_s, p2_s)
 
+func set_custom_banner(msg: String, color: Color = Color(1.0, 0.90, 0.45)) -> void:
+	if is_instance_valid(lbl_turn_banner):
+		lbl_turn_banner.text = msg
+		lbl_turn_banner.add_theme_color_override("font_color", color)
+	if is_instance_valid(current_top_header) and is_instance_valid(current_top_header.lbl_turn_banner):
+		current_top_header.lbl_turn_banner.text = msg
+		current_top_header.lbl_turn_banner.add_theme_color_override("font_color", color)
+
 func start_turn_timer(duration: float, custom_banner: String = "") -> void:
-
 	if is_game_finished:
-
 		return
-
 	turn_duration = duration
-
 	turn_time_left = duration
-
 	last_second_ticked = -1
-
 	is_timer_active = true
-
 	is_game_started = true
-
-	if not custom_banner.is_empty() and is_instance_valid(lbl_turn_banner):
-
-		lbl_turn_banner.text = custom_banner
-
+	var banner = custom_banner
+	if banner.is_empty() and GameRegistry.is_simultaneous(GameManager.current_game_type):
+		banner = "سنگ، کاغذ یا قیچی را انتخاب کنید!" if GameManager.current_game_type == GameTypes.RPC else "انتخاب خود را مشخص کنید"
+	if not banner.is_empty():
+		set_custom_banner(banner, Color(1.0, 0.90, 0.45))
 	if is_instance_valid(current_top_header):
-
 		current_top_header.update_timer(turn_time_left, turn_duration, GameManager.current_turn)
-
-
 
 func start_wait_timer(wait_sec: int, msg: String = "") -> void:
 	if is_game_finished:
@@ -1181,9 +1179,7 @@ func start_wait_timer(wait_sec: int, msg: String = "") -> void:
 		if msg.is_empty() and current_top_header.has_method("set_round_wait"):
 			current_top_header.set_round_wait(wait_sec)
 		current_top_header.update_timer(turn_time_left, turn_duration, 0)
-	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.text = banner_text
-		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	set_custom_banner(banner_text, Color(1.0, 0.88, 0.45))
 
 func start_pre_game_countdown(wait_sec: int = 5) -> void:
 	if is_game_finished or GameManager.is_game_active:
