@@ -2,8 +2,8 @@ class_name GameRegistry
 extends RefCounted
 
 # Central Game Registry for Cafe Fekr
-# Maps game types to their metadata, display names, 3D board scenes, and rules.
-# Provides unified lookups for both Lobby, Ranked, and Offline matches.
+# Canonical authority for all 20 board configurations, scenes, rules, timing, narratives, and assets.
+# 100% parity with Flutter kafehfekr & Python kafehfekrbackend.
 
 const DEFAULT_GAME_TYPE: String = GameTypes.TIC_TAC_TOE
 
@@ -15,6 +15,7 @@ const FOURINROW_SCENE: String = "res://scenes/games/fourinrow/four_in_row_3d.tsc
 const FEKRBEKR_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_3d.tscn"
 const YATZY_SCENE: String = "res://scenes/games/yatzy/yatzy_3d.tscn"
 const RPC_SCENE: String = "res://scenes/games/rpc/rpc_3d.tscn"
+const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
 const BASE_TOP_HEADER_SCENE: String = "res://scenes/games/base/base_top_header.tscn"
@@ -26,6 +27,7 @@ static var _registry: Dictionary = {
 	GameTypes.RPC: {
 		"id": GameTypes.RPC,
 		"name_fa": "سنگ کاغذ قیچی",
+		"narrative": "در سکوت انتظار، دست‌ها با دقتی آموخته‌شده به حرکت درآمدند و نمادها سرنوشت را رقم زدند.",
 		"board_scene": RPC_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 3,
@@ -42,6 +44,7 @@ static var _registry: Dictionary = {
 	GameTypes.FEKRBEKR: {
 		"id": GameTypes.FEKRBEKR,
 		"name_fa": "فکر بکر",
+		"narrative": "در قلمروی مرموز فکربکر، هر عدد رمزی است از رازهای پنهان که ذهن‌های کنجکاو را به چالش می‌کشد.",
 		"board_scene": FEKRBEKR_SCENE,
 		"top_header_scene": FEKRBEKR_TOP_HEADER_SCENE,
 		"max_rounds": 12,
@@ -58,6 +61,7 @@ static var _registry: Dictionary = {
 	GameTypes.YATZY: {
 		"id": GameTypes.YATZY,
 		"name_fa": "یاتزی",
+		"narrative": "در یاتزی، هر بار انداختن تاس، لحظه‌ای گذرا از شانس است که نجواهای سرنوشت را بازگو می‌کند.",
 		"board_scene": YATZY_SCENE,
 		"top_header_scene": YATZY_TOP_HEADER_SCENE,
 		"max_rounds": 12,
@@ -74,6 +78,7 @@ static var _registry: Dictionary = {
 	GameTypes.TIC_TAC_TOE: {
 		"id": GameTypes.TIC_TAC_TOE,
 		"name_fa": "تیک تاک تو",
+		"narrative": "تخته به میدان نبردی از تنش خاموش بدل شده بود؛ هر علامت، تقدیری را رقم می‌زند.",
 		"board_scene": TICTACTOE_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 5,
@@ -88,6 +93,7 @@ static var _registry: Dictionary = {
 	GameTypes.CHESS: {
 		"id": GameTypes.CHESS,
 		"name_fa": "شطرنج",
+		"narrative": "در تئاتر بزرگ شطرنج، هر حرکت همچون آتشفشانی خاموش و باله‌ای از عقل و اندیشه است.",
 		"board_scene": CHESS_SCENE,
 		"top_header_scene": CHESS_TOP_HEADER_SCENE,
 		"max_rounds": 1,
@@ -103,6 +109,7 @@ static var _registry: Dictionary = {
 	GameTypes.CHECKERS: {
 		"id": GameTypes.CHECKERS,
 		"name_fa": "چکرز",
+		"narrative": "در رقصی بی‌زمان، هر قطعه همچون سربازی است که در میدان نبرد خرد به پیش می‌تازد.",
 		"board_scene": CHECKERS_SCENE,
 		"top_header_scene": CHESS_TOP_HEADER_SCENE,
 		"max_rounds": 1,
@@ -115,23 +122,10 @@ static var _registry: Dictionary = {
 		"max_players": 2,
 		"is_3d": true
 	},
-	GameTypes.BACKGAMMON: {
-		"id": GameTypes.BACKGAMMON,
-		"name_fa": "تخته نرد",
-		"board_scene": "",
-		"max_rounds": 3,
-		"has_round_score": true,
-		"turn_time": 25.0,
-		"has_missed_turns_limit": true,
-		"max_missed_turns": 4,
-		"icon": "res://assets/images/games/backgammon.jpg",
-		"min_players": 2,
-		"max_players": 2,
-		"is_3d": true
-	},
 	GameTypes.FOURINROW: {
 		"id": GameTypes.FOURINROW,
 		"name_fa": "دوز چهارتایی",
+		"narrative": "در این بازی، هر دیسکی که به شبکه انداخته می‌شود، گامی است در راستای خط پیروزی.",
 		"board_scene": FOURINROW_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
@@ -143,10 +137,28 @@ static var _registry: Dictionary = {
 		"max_players": 2,
 		"is_3d": true
 	},
+	GameTypes.BACKGAMMON: {
+		"id": GameTypes.BACKGAMMON,
+		"name_fa": "تخته نرد",
+		"narrative": "در سحرگاه باستانی تخته نرد، تاس‌ها در رقصی بی‌پایان به گردش درمی‌آیند.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 3,
+		"has_round_score": true,
+		"turn_time": 30.0,
+		"has_missed_turns_limit": true,
+		"max_missed_turns": 4,
+		"icon": "res://assets/images/games/backgammon.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
 	GameTypes.OTHELLO: {
 		"id": GameTypes.OTHELLO,
 		"name_fa": "اتللو",
-		"board_scene": "",
+		"narrative": "در بازی اتللو، هر مهره مانند سربازی است که در میدان نبرد ذهن‌ها جبهه را دگرگون می‌سازد.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
 		"has_round_score": false,
 		"turn_time": 20.0,
@@ -159,10 +171,12 @@ static var _registry: Dictionary = {
 	GameTypes.MILL: {
 		"id": GameTypes.MILL,
 		"name_fa": "دوز نه تایی",
-		"board_scene": "",
+		"narrative": "در میان شبکه پیچیده‌ی نُه‌مرد موریس، هر قرارگیری نغمه‌ای از تفکر است.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 3,
 		"has_round_score": true,
-		"turn_time": 20.0,
+		"turn_time": 15.0,
 		"has_missed_turns_limit": true,
 		"max_missed_turns": 4,
 		"icon": "res://assets/images/games/mill.jpg",
@@ -173,7 +187,9 @@ static var _registry: Dictionary = {
 	GameTypes.DOTBOX: {
 		"id": GameTypes.DOTBOX,
 		"name_fa": "نقطه خط",
-		"board_scene": "",
+		"narrative": "در بازی نقطه خط، تصاحب هر مربع با تفکر استراتژیک برنده را مشخص می‌کند.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
 		"has_round_score": false,
 		"turn_time": 15.0,
@@ -181,6 +197,144 @@ static var _registry: Dictionary = {
 		"icon": "res://assets/images/games/dotbox.jpg",
 		"min_players": 2,
 		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.PENTAGO: {
+		"id": GameTypes.PENTAGO,
+		"name_fa": "پنتاگو",
+		"narrative": "در دنیای پنتاگو، هر مهره‌ داستانی را روایت می‌کند و هر چرخش، تقدیری نو رقم می‌زند.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 25.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/pentago.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.YINSH: {
+		"id": GameTypes.YINSH,
+		"name_fa": "یینش",
+		"narrative": "در دنیای یینش، هر حلقه فرمانده‌ای خاموش است که نشانگرها را به خط می‌کند.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 30.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/yinsh.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.TEN: {
+		"id": GameTypes.TEN,
+		"name_fa": "ده بساز",
+		"narrative": "در بازی ده بساز، هوش و سرعت در محاسبات ریاضی برنده را مشخص می‌کند.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 3,
+		"has_round_score": true,
+		"is_simultaneous": true,
+		"turn_time": 300.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/ten.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.BATTLESHIP: {
+		"id": GameTypes.BATTLESHIP,
+		"name_fa": "نبرد کشتی",
+		"narrative": "در پهنه وسیع دریا، کشتی جنگی به‌سان نبردی از خرد و استراتژی در مه پنهان است.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 12.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/battleship.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.BOXFOUR: {
+		"id": GameTypes.BOXFOUR,
+		"name_fa": "چهارطرفه",
+		"narrative": "در یک شبکه‌ی رنگین ۵x۵، اعداد به رقص در می‌آیند و رنگ‌ها شکوه می‌آفرینند.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 12.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/boxfour.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.SUDOKU: {
+		"id": GameTypes.SUDOKU,
+		"name_fa": "سودوکو",
+		"narrative": "در رقص ظریف سودوکو، هر عدد گامی به‌سوی تعادل است و هر خانه‌ی خالی رازی نهفته.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"is_simultaneous": true,
+		"turn_time": 1200.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/sudoku.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.MNUMBERS: {
+		"id": GameTypes.MNUMBERS,
+		"name_fa": "کشف اعداد",
+		"narrative": "در ظرافت خاموش بازی، هر برگشت کارت همچون ضربه‌ای از قلم در پیوند اعداد است.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 7.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/mnumbers.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.MSWEEPER: {
+		"id": GameTypes.MSWEEPER,
+		"name_fa": "مین یاب",
+		"narrative": "در هزارتوی پیکسل‌ها، هر کلیک گامی محتاطانه به سوی ناشناخته‌هاست.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"is_simultaneous": true,
+		"turn_time": 600.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/msweeper.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.LUDO: {
+		"id": GameTypes.LUDO,
+		"name_fa": "منچ",
+		"narrative": "هیجان پرتاب تاس و تعقیب و گریز مهره‌ها در بازی خاطره‌انگیز منچ.",
+		"board_scene": TEMP_SCENE,
+		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 25.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/ludo.jpg",
+		"min_players": 2,
+		"max_players": 4,
 		"is_3d": true
 	}
 }
@@ -215,11 +369,12 @@ static func get_game_info(game_type: String) -> Dictionary:
 	return {
 		"id": normalized,
 		"name_fa": GameTypes.get_display_name_fa(normalized),
-		"board_scene": TICTACTOE_SCENE,
+		"narrative": "",
+		"board_scene": TEMP_SCENE,
 		"max_rounds": 3,
 		"has_round_score": true,
 		"turn_time": 15.0,
-		"icon": "",
+		"icon": "res://assets/images/games/%s.jpg" % normalized.to_lower(),
 		"min_players": 2,
 		"max_players": 2,
 		"is_3d": true
@@ -230,7 +385,9 @@ static func get_board_packed_scene(game_type: String) -> PackedScene:
 	var scene_path: String = str(info.get("board_scene", ""))
 	if not scene_path.is_empty() and ResourceLoader.exists(scene_path):
 		return load(scene_path) as PackedScene
-	# Default fallback to TicTacToe 3D board
+	# Default fallback to Temp 3D board
+	if ResourceLoader.exists(TEMP_SCENE):
+		return load(TEMP_SCENE) as PackedScene
 	return load(TICTACTOE_SCENE) as PackedScene
 
 static func get_top_header_packed_scene(game_type: String) -> PackedScene:
@@ -244,6 +401,10 @@ static func get_top_header_packed_scene(game_type: String) -> PackedScene:
 static func get_display_name_fa(game_type: String) -> String:
 	var info = get_game_info(game_type)
 	return info.get("name_fa", GameTypes.get_display_name_fa(game_type))
+
+static func get_narrative(game_type: String) -> String:
+	var info = get_game_info(game_type)
+	return info.get("narrative", "")
 
 static func get_max_rounds(game_type: String) -> int:
 	var info = get_game_info(game_type)

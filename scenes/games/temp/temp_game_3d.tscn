@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c6v8y4tempgame3d"]
+
+[ext_resource type="Script" path="res://scenes/games/temp/temp_game_3d.gd" id="1_temp_script"]
+
+[node name="TempGameBoard" type="Node3D"]
+script = ExtResource("1_temp_script")

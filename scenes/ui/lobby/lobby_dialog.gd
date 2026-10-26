@@ -87,7 +87,9 @@ var available_games = [
 	GameTypes.RPC,
 	GameTypes.SUDOKU,
 	GameTypes.BOXFOUR,
-	GameTypes.TEN
+	GameTypes.TEN,
+	GameTypes.MNUMBERS,
+	GameTypes.MSWEEPER
 ]
 
 var _btn_style = preload("res://assets/images/frames/button.png")
