@@ -44,7 +44,7 @@ const BAR_X: float = 0.0
 # Larger, Gamer-Friendly 3D Checkers & Yatzy-Scale 3D Dice
 const PIECE_RADIUS: float = 0.0415
 const PIECE_HEIGHT: float = 0.018
-const DIE_SIZE: float = 0.084
+const DIE_SIZE: float = 0.090
 const MAX_DICE_SLOTS: int = 4
 
 # Bottom Dice Tray & Roll Button Coordinates (Comfortably above bottom HUD bar)
@@ -109,6 +109,7 @@ var _sparkle_accum: float = 0.0
 var _is_animating_move: bool = false
 var _is_rolling_dice: bool = false
 var _last_interaction_msec: int = 0
+var _reconnect_guard_msec: int = 0
 
 # --- Shared Luxury Materials ---
 var mat_wood_case: StandardMaterial3D
@@ -1132,10 +1133,10 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	die_area.set_meta("die_index", die_idx)
 	var die_col = CollisionShape3D.new()
 	var die_shape = BoxShape3D.new()
-	die_shape.size = Vector3(0.20, 0.16, 0.24)
+	die_shape.size = Vector3(0.26, 0.28, 0.28)
 	die_col.shape = die_shape
 	die_area.add_child(die_col)
-	die_area.position = Vector3(0, 0.04, 0.03)
+	die_area.position = Vector3(0, 0.06, 0.03)
 	slot_root.add_child(die_area)
 
 	return {
@@ -1372,7 +1373,7 @@ func _is_valid_index_in_end_phase(idx: int, gamer_id: int) -> bool:
 
 func _is_enemy_spot(idx: int, gamer_id: int) -> bool:
 	var eq: int = int(board_spots[idx]["equipped_user"])
-	if eq == -1 or eq == gamer_id:
+	if eq <= 0 or eq == gamer_id:
 		return false
 	return true
 
@@ -1678,9 +1679,14 @@ func _refresh_ui_and_highlights() -> void:
 			btn_lbl.text = "🎲 پرتاب تاس"
 			btn_lbl.modulate = Color(1.0, 0.98, 0.90)
 		elif is_my_turn and dices_rolled:
-			btn_cap.material_override = mat_btn_roll_moved
-			btn_lbl.text = "✨ حرکت دهید (%s)" % _fa_digits(current_dices.size())
-			btn_lbl.modulate = Color(0.95, 0.96, 1.0)
+			if not current_dices.is_empty() and _has_any_available_move(my_id):
+				btn_cap.material_override = mat_btn_roll_moved
+				btn_lbl.text = "✨ حرکت دهید (%s)" % _fa_digits(current_dices.size())
+				btn_lbl.modulate = Color(0.95, 0.96, 1.0)
+			else:
+				btn_cap.material_override = mat_btn_roll_disabled
+				btn_lbl.text = "⚠️ بدون حرکت مجاز..."
+				btn_lbl.modulate = Color(1.0, 0.68, 0.62)
 		else:
 			btn_cap.material_override = mat_btn_roll_disabled
 			btn_lbl.text = "⏳ نوبت حریف..."
@@ -1718,6 +1724,14 @@ func on_turn_changed(turn: int, is_me: bool) -> void:
 	current_turn = turn
 	is_my_turn = is_me
 	is_board_locked = not is_me
+
+	# Guard against sync_turn_state() wiping restored dice right after on_reconnect_data()
+	if Time.get_ticks_msec() < _reconnect_guard_msec:
+		if is_my_turn and dices_rolled and not current_dices.is_empty():
+			_auto_select_first_playable_die()
+		_refresh_ui_and_highlights()
+		return
+
 	dices_rolled = false
 	current_dices.clear()
 	equipped_dice_index = -1
@@ -1731,10 +1745,11 @@ func on_turn_changed(turn: int, is_me: bool) -> void:
 
 func on_roll_result(payload: Dictionary) -> void:
 	# Server payload: {"dices": [d1, d2]} or {"dices": [d, d, d, d]} on doubles
-	var raw_dices: Array = payload.get("dices", [])
+	var raw_dices = payload.get("dices", [])
 	current_dices.clear()
-	for d in raw_dices:
-		current_dices.append(int(d))
+	if typeof(raw_dices) == TYPE_ARRAY:
+		for d in raw_dices:
+			current_dices.append(int(d))
 
 	dices_rolled = true
 	if is_my_turn:
@@ -1752,11 +1767,12 @@ func on_roll_result(payload: Dictionary) -> void:
 
 
 func on_out_of_move(payload: Dictionary) -> void:
-	# Server payload: {"turn": turn, "dices": [...]} when roll has no legal moves
-	var raw_dices: Array = payload.get("dices", [])
+	# Server payload: {"turn": turn, "dices": [...]} when roll has no legal moves (4s auto pass_turn on server)
+	var raw_dices = payload.get("dices", [])
 	current_dices.clear()
-	for d in raw_dices:
-		current_dices.append(int(d))
+	if typeof(raw_dices) == TYPE_ARRAY:
+		for d in raw_dices:
+			current_dices.append(int(d))
 
 	dices_rolled = true
 	equipped_dice_index = -1
@@ -1768,7 +1784,18 @@ func on_out_of_move(payload: Dictionary) -> void:
 
 	_animate_dice_roll()
 	_refresh_ui_and_highlights()
-	show_hint("هیچ حرکت مجازی با این تاس وجود ندارد!")
+	AudioManager.play_sound("tap_wrong")
+
+	var turn_id: int = int(payload.get("turn", current_turn))
+	if turn_id == GameManager.my_player_index:
+		show_hint("هیچ حرکت مجازی با این تاس وجود ندارد! تعویض نوبت...")
+	else:
+		show_hint("حریف هیچ حرکت مجازی ندارد! تعویض نوبت...")
+
+	# Sync HUD countdown to Backend's BackGammon_Out_Of_Move_time (4.0s)
+	var hud = get_tree().get_first_node_in_group("base_game_hud")
+	if hud and hud.has_method("start_turn_timer"):
+		hud.start_turn_timer(4.0)
 
 
 func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) -> void:
@@ -1791,53 +1818,98 @@ func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) 
 	_apply_move_and_animate(source_idx, dice_val, gamer_id)
 
 
+func sync_board_state(new_board: Variant) -> void:
+	if typeof(new_board) != TYPE_ARRAY or (new_board as Array).size() != 24:
+		return
+	var raw_board: Array = new_board as Array
+	board_spots.clear()
+	for item in raw_board:
+		if typeof(item) == TYPE_DICTIONARY:
+			var cnt: int = int(item.get("count", 0))
+			var eq: int = int(item.get("equipped_user", item.get("selected_user", -1)))
+			if cnt <= 0 or eq <= 0:
+				eq = -1
+				cnt = 0
+			board_spots.append({
+				"count": cnt,
+				"equipped_user": eq,
+			})
+		else:
+			board_spots.append({"count": 0, "equipped_user": -1})
+	_rebuild_all_3d_pieces()
+	_refresh_ui_and_highlights()
+
+
 func on_reconnect_data(payload: Dictionary) -> void:
-	var g_data: Dictionary = payload.get("game_data", payload)
-	if g_data.is_empty():
+	_reconnect_guard_msec = Time.get_ticks_msec() + 800
+	_is_rolling_dice = false
+	_is_animating_move = false
+	my_player_index = GameManager.my_player_index
+
+	var g_data = payload.get("game_data", payload)
+	if typeof(g_data) != TYPE_DICTIONARY or g_data.is_empty():
 		return
 
-	var raw_board: Array = g_data.get("board", [])
-	if raw_board.size() == 24:
-		board_spots.clear()
-		for item in raw_board:
-			if item is Dictionary:
-				board_spots.append({
-					"count": int(item.get("count", 0)),
-					"equipped_user": int(item.get("equipped_user", -1)),
-				})
-			else:
-				board_spots.append({"count": 0, "equipped_user": -1})
+	# 1. Board spots (24 points)
+	var raw_board = g_data.get("board", [])
+	if typeof(raw_board) == TYPE_ARRAY and (raw_board as Array).size() == 24:
+		sync_board_state(raw_board)
 
-	var scores: Dictionary = g_data.get("scores", {})
-	p1_score = int(scores.get("player_1_score", p1_score))
-	p2_score = int(scores.get("player_2_score", p2_score))
+	# 2. Scores: Backend sends Array [p1_score, p2_score]
+	var raw_scores = g_data.get("scores", [])
+	if typeof(raw_scores) == TYPE_ARRAY and (raw_scores as Array).size() >= 2:
+		p1_score = int(raw_scores[0])
+		p2_score = int(raw_scores[1])
+	elif typeof(raw_scores) == TYPE_DICTIONARY:
+		p1_score = int(raw_scores.get("player_1_score", p1_score))
+		p2_score = int(raw_scores.get("player_2_score", p2_score))
 
-	var out_p: Dictionary = g_data.get("out_pieces", {})
-	p1_out_pieces = int(out_p.get("player_1", 0))
-	p2_out_pieces = int(out_p.get("player_2", 0))
+	# 3. Out pieces (Bar): Backend sends Array [p1_out_pieces, p2_out_pieces]
+	var raw_out = g_data.get("out_pieces", [])
+	if typeof(raw_out) == TYPE_ARRAY and (raw_out as Array).size() >= 2:
+		p1_out_pieces = int(raw_out[0])
+		p2_out_pieces = int(raw_out[1])
+	elif typeof(raw_out) == TYPE_DICTIONARY:
+		p1_out_pieces = int(raw_out.get("player_1", 0))
+		p2_out_pieces = int(raw_out.get("player_2", 0))
 
-	var end_p: Dictionary = g_data.get("end_phases", {})
-	p1_is_in_end_phase = bool(end_p.get("player_1", false))
-	p2_is_in_end_phase = bool(end_p.get("player_2", false))
+	# 4. End phases: Backend sends Array [p1_is_in_end_phase, p2_is_in_end_phase]
+	var raw_end = g_data.get("end_phases", [])
+	if typeof(raw_end) == TYPE_ARRAY and (raw_end as Array).size() >= 2:
+		p1_is_in_end_phase = bool(raw_end[0])
+		p2_is_in_end_phase = bool(raw_end[1])
+	elif typeof(raw_end) == TYPE_DICTIONARY:
+		p1_is_in_end_phase = bool(raw_end.get("player_1", false))
+		p2_is_in_end_phase = bool(raw_end.get("player_2", false))
+	else:
+		_check_gamer_is_in_end_phase(1)
+		_check_gamer_is_in_end_phase(2)
 
+	# 5. Current dices & rolled state: Backend sends "current_turn_player_rolled" and "current_dices"
 	current_dices.clear()
-	var raw_dices: Array = g_data.get("current_dices", [])
-	for d in raw_dices:
-		current_dices.append(int(d))
+	var raw_dices = g_data.get("current_dices", [])
+	if typeof(raw_dices) == TYPE_ARRAY:
+		for d in raw_dices:
+			current_dices.append(int(d))
 
-	dices_rolled = bool(g_data.get("dices_rolled", not current_dices.is_empty()))
+	if g_data.has("current_turn_player_rolled"):
+		dices_rolled = bool(g_data.get("current_turn_player_rolled", false))
+	elif g_data.has("dices_rolled"):
+		dices_rolled = bool(g_data.get("dices_rolled", false))
+	else:
+		dices_rolled = not current_dices.is_empty()
 
-	if g_data.has("turn"):
-		var t: int = int(g_data.get("turn", 1))
-		GameManager.current_turn = t
-		current_turn = t
-		is_my_turn = (t == GameManager.my_player_index)
-		is_board_locked = not is_my_turn
+	# 6. Turn state: Backend sends "current_turn"
+	var t: int = int(g_data.get("current_turn", g_data.get("turn", GameManager.current_turn)))
+	GameManager.current_turn = t
+	current_turn = t
+	is_my_turn = (t == my_player_index)
+	is_board_locked = not is_my_turn
 
 	if is_my_turn and dices_rolled and not current_dices.is_empty():
 		_auto_select_first_playable_die()
 	else:
-		equipped_dice_index = -1
+		equipped_dice_index = 0 if (dices_rolled and not current_dices.is_empty()) else -1
 		can_select_peace = false
 		can_select_points.clear()
 		can_hit_points.clear()
@@ -1925,8 +1997,17 @@ func _apply_move_and_animate(source_idx: int, dice_val: int, gamer_id: int) -> v
 	_sync_hud_scores()
 
 	# 4. If my turn still has remaining dice & moves, auto-select next playable die
-	if is_my_turn and not current_dices.is_empty() and _has_any_available_move(GameManager.my_player_index):
-		_auto_select_first_playable_die()
+	if is_my_turn and not current_dices.is_empty():
+		if _has_any_available_move(GameManager.my_player_index):
+			_auto_select_first_playable_die()
+		else:
+			equipped_dice_index = -1
+			can_select_peace = false
+			can_select_points.clear()
+			can_hit_points.clear()
+			can_target_points.clear()
+			can_bear_off_sources.clear()
+			show_hint("با تاس باقی‌مانده هیچ حرکت مجازی وجود ندارد!")
 	else:
 		can_select_points.clear()
 		can_hit_points.clear()
@@ -2201,8 +2282,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				var dist = event.position.distance_to(_pointer_down_pos)
 				var elapsed = (Time.get_ticks_msec() / 1000.0) - _pointer_down_time
 				var now = Time.get_ticks_msec() / 1000.0
-				if dist <= 28.0 and elapsed < 0.75:
-					if now - _last_handled_tap_time >= 0.14:
+				if dist <= 42.0 and elapsed < 0.90:
+					if now - _last_handled_tap_time >= 0.12:
 						_last_handled_tap_time = now
 						if _handle_screen_tap(event.position):
 							get_viewport().set_input_as_handled()
@@ -2218,8 +2299,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				var dist = event.position.distance_to(_pointer_down_pos)
 				var elapsed = (Time.get_ticks_msec() / 1000.0) - _pointer_down_time
 				var now = Time.get_ticks_msec() / 1000.0
-				if dist <= 28.0 and elapsed < 0.75:
-					if now - _last_handled_tap_time >= 0.14:
+				if dist <= 42.0 and elapsed < 0.90:
+					if now - _last_handled_tap_time >= 0.12:
 						_last_handled_tap_time = now
 						if _handle_screen_tap(event.position):
 							get_viewport().set_input_as_handled()
@@ -2234,8 +2315,28 @@ func _handle_screen_tap(screen_pos: Vector2) -> bool:
 		return false
 
 	var from = cam.project_ray_origin(screen_pos)
-	var to = from + cam.project_ray_normal(screen_pos) * 15.0
+	var dir = cam.project_ray_normal(screen_pos)
+	var to = from + dir * 15.0
 
+	# 1. Check 3D Board Plane Intersection first for ultra-reliable Dice Tray & Roll Button tapping!
+	var board_plane = Plane(Vector3.UP, SURFACE_Y + 0.04)
+	var plane_hit = board_plane.intersects_ray(from, dir)
+	if plane_hit != null:
+		var local_hit: Vector3 = to_local(plane_hit)
+		# Roll Button Zone (Z around ROLL_BTN_Z = 0.665)
+		if absf(local_hit.x) <= 0.48 and absf(local_hit.z - ROLL_BTN_Z) <= 0.095:
+			_mark_interaction()
+			_on_roll_button_tapped()
+			return true
+		# Bottom Dice Tray Zone (Z around DICE_TRAY_Z = 0.445)
+		if absf(local_hit.x) <= (DICE_TRAY_W * 0.52) and absf(local_hit.z - DICE_TRAY_Z) <= (DICE_TRAY_L * 0.56):
+			_mark_interaction()
+			var best_die_idx: int = _find_nearest_visible_die(local_hit.x)
+			if best_die_idx >= 0:
+				_on_die_tapped(best_die_idx)
+				return true
+
+	# 2. Physics Area3D Raycast for Points, Bar, Bear-Off, Dice & Button
 	var space_state = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
 	query.collide_with_areas = true
@@ -2272,6 +2373,19 @@ func _handle_screen_tap(screen_pos: Vector2) -> bool:
 			_on_point_tapped(pt_idx)
 			return true
 	return false
+
+
+func _find_nearest_visible_die(local_x: float) -> int:
+	var best_idx: int = -1
+	var best_dist: float = 999.0
+	for i in range(_dice_nodes.size()):
+		var slot: Node3D = _dice_nodes[i]["slot"]
+		if is_instance_valid(slot) and slot.visible:
+			var d: float = absf(local_x - slot.position.x)
+			if d < best_dist:
+				best_dist = d
+				best_idx = i
+	return best_idx
 
 
 func _on_roll_button_tapped() -> void:
@@ -2320,15 +2434,43 @@ func _on_die_tapped(die_idx: int) -> void:
 		return
 
 	var my_id: int = GameManager.my_player_index
-	var d_val: int = int(current_dices[die_idx])
+	var target_idx: int = die_idx
+
+	# If tapping the already-equipped die and another playable die exists, cycle to it!
+	if target_idx == equipped_dice_index and current_dices.size() > 1:
+		for offset in range(1, current_dices.size()):
+			var cand_idx: int = (die_idx + offset) % current_dices.size()
+			if _has_available_move_for_die(int(current_dices[cand_idx]), my_id):
+				target_idx = cand_idx
+				break
+
+	var d_val: int = int(current_dices[target_idx])
 	if not _has_available_move_for_die(d_val, my_id):
-		AudioManager.play_sound("miss_turn")
-		show_hint("با تاس %s هیچ حرکت مجازی وجود ندارد!" % _fa_digits(d_val))
-		return
+		# Try to find any playable die if the tapped one has no move
+		var fallback_idx: int = -1
+		for i in range(current_dices.size()):
+			if _has_available_move_for_die(int(current_dices[i]), my_id):
+				fallback_idx = i
+				break
+		if fallback_idx >= 0 and fallback_idx != equipped_dice_index:
+			target_idx = fallback_idx
+			d_val = int(current_dices[target_idx])
+		else:
+			AudioManager.play_sound("miss_turn")
+			show_hint("با تاس %s هیچ حرکت مجازی وجود ندارد!" % _fa_digits(d_val))
+			return
 
 	AudioManager.sfx_tap()
-	equipped_dice_index = die_idx
+	equipped_dice_index = target_idx
 	can_select_peace = true
+
+	if target_idx >= 0 and target_idx < _dice_nodes.size():
+		var slot_node: Node3D = _dice_nodes[target_idx]["slot"]
+		if is_instance_valid(slot_node):
+			var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw.tween_property(slot_node, "scale", Vector3(1.14, 1.14, 1.14), 0.10)
+			tw.tween_property(slot_node, "scale", Vector3.ONE, 0.12)
+
 	_recompute_active_possible_pieces()
 	_refresh_ui_and_highlights()
 
