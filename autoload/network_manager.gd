@@ -280,12 +280,16 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 					GameManager.current_round = turn
 				else:
 					turn = int(payload.get("turn", 1))
+			elif typeof(payload) == TYPE_ARRAY:
+				turn = max(1, GameManager.current_round)
 			else:
 				turn = int(payload)
 			GameManager.current_turn = turn
 			print("[NetworkManager] Current Turn/Round: %d | My Player Index: %d | Is My Turn: %s" % [turn, GameManager.my_player_index, str(GameManager.is_my_turn)])
 			if typeof(payload) == TYPE_DICTIONARY:
 				turn_data_received.emit(payload)
+			elif typeof(payload) == TYPE_ARRAY:
+				turn_data_received.emit({"numbers": payload})
 			turn_changed.emit(turn)
 
 		Commands.Roll_Result:
