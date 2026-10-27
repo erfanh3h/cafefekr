@@ -87,9 +87,6 @@ var box_crest_nodes: Dictionary = {} # box_id -> Node3D
 
 var tray_red_pieces: Array[Node3D] = []
 var tray_blue_pieces: Array[Node3D] = []
-var tray_red_label: Label3D
-var tray_blue_label: Label3D
-var status_banner_3d: Label3D
 
 # Shared Luxury Materials
 var _mat_gold_24k: StandardMaterial3D
@@ -107,21 +104,9 @@ var _mat_last_played_aura: StandardMaterial3D
 var _mat_box_opportunity: StandardMaterial3D
 var _mat_hover_red: StandardMaterial3D
 var _mat_hover_blue: StandardMaterial3D
-var _mat_hover_gold: StandardMaterial3D
+var _mat_hover_capture: StandardMaterial3D
 
 var _pulse_tween: Tween = null
-static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
-
-static func _fa_digits(val: Variant) -> String:
-	var s = str(val)
-	var fa = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
-	var out = ""
-	for ch in s:
-		if ch >= "0" and ch <= "9":
-			out += fa[int(ch)]
-		else:
-			out += ch
-	return out
 
 
 func _ready() -> void:
@@ -165,46 +150,51 @@ func _build_board_3d() -> void:
 
 func _init_shared_materials() -> void:
 	_mat_gold_24k = StandardMaterial3D.new()
-	_mat_gold_24k.albedo_color = Color(0.95, 0.78, 0.26)
-	_mat_gold_24k.metallic = 0.90
-	_mat_gold_24k.roughness = 0.22
+	_mat_gold_24k.albedo_color = Color(0.82, 0.65, 0.28)
+	_mat_gold_24k.metallic = 0.86
+	_mat_gold_24k.roughness = 0.26
 
 	_mat_brass_dark = StandardMaterial3D.new()
-	_mat_brass_dark.albedo_color = Color(0.42, 0.31, 0.15)
+	_mat_brass_dark.albedo_color = Color(0.36, 0.27, 0.14)
 	_mat_brass_dark.metallic = 0.72
 	_mat_brass_dark.roughness = 0.36
 
 	_mat_obsidian_well = StandardMaterial3D.new()
-	_mat_obsidian_well.albedo_color = Color(0.11, 0.08, 0.06)
+	_mat_obsidian_well.albedo_color = Color(0.10, 0.08, 0.07)
 	_mat_obsidian_well.metallic = 0.15
 	_mat_obsidian_well.roughness = 0.42
 	_mat_obsidian_well.clearcoat_enabled = true
 	_mat_obsidian_well.clearcoat = 0.45
 
+	# Neutral dark recessed groove when not selectable
 	_mat_channel_empty = StandardMaterial3D.new()
-	_mat_channel_empty.albedo_color = Color(0.32, 0.23, 0.15, 0.88)
+	_mat_channel_empty.albedo_color = Color(0.13, 0.12, 0.15, 0.88)
 	_mat_channel_empty.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_mat_channel_empty.roughness = 0.45
+	_mat_channel_empty.metallic = 0.15
+	_mat_channel_empty.roughness = 0.55
 
+	# Subtle cool silver-slate selectable channel (zero yellow tint so Red & Blue stand out clearly)
 	_mat_channel_turn_ready = StandardMaterial3D.new()
-	_mat_channel_turn_ready.albedo_color = Color(0.92, 0.76, 0.36, 0.55)
+	_mat_channel_turn_ready.albedo_color = Color(0.66, 0.74, 0.84, 0.34)
 	_mat_channel_turn_ready.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_mat_channel_turn_ready.roughness = 0.32
 	_mat_channel_turn_ready.emission_enabled = true
-	_mat_channel_turn_ready.emission = Color(0.88, 0.70, 0.26)
-	_mat_channel_turn_ready.emission_energy_multiplier = 0.55
+	_mat_channel_turn_ready.emission = Color(0.54, 0.65, 0.78)
+	_mat_channel_turn_ready.emission_energy_multiplier = 0.18
 
+	# Soft emerald-mint guide when a channel completes the 4th wall of a box
 	_mat_channel_capture_ready = StandardMaterial3D.new()
-	_mat_channel_capture_ready.albedo_color = Color(1.0, 0.86, 0.22, 0.85)
+	_mat_channel_capture_ready.albedo_color = Color(0.20, 0.84, 0.58, 0.52)
 	_mat_channel_capture_ready.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_channel_capture_ready.emission_enabled = true
-	_mat_channel_capture_ready.emission = Color(1.0, 0.80, 0.15)
-	_mat_channel_capture_ready.emission_energy_multiplier = 1.65
+	_mat_channel_capture_ready.emission = Color(0.15, 0.74, 0.50)
+	_mat_channel_capture_ready.emission_energy_multiplier = 0.48
 
-	# Player 1: Imperial Ruby Crimson & 24K Gold
+	# Player 1: Imperial Ruby Crimson & Warm Bronze-Gold
 	_mat_red_body = StandardMaterial3D.new()
-	_mat_red_body.albedo_color = Color(0.76, 0.10, 0.14)
+	_mat_red_body.albedo_color = Color(0.80, 0.10, 0.14)
 	_mat_red_body.metallic = 0.22
-	_mat_red_body.roughness = 0.22
+	_mat_red_body.roughness = 0.20
 	_mat_red_body.clearcoat_enabled = true
 	_mat_red_body.clearcoat = 0.88
 	_mat_red_body.clearcoat_roughness = 0.10
@@ -217,9 +207,9 @@ func _init_shared_materials() -> void:
 
 	# Player 2: Royal Sapphire Blue & Brushed Platinum
 	_mat_blue_body = StandardMaterial3D.new()
-	_mat_blue_body.albedo_color = Color(0.10, 0.34, 0.78)
+	_mat_blue_body.albedo_color = Color(0.10, 0.36, 0.82)
 	_mat_blue_body.metallic = 0.25
-	_mat_blue_body.roughness = 0.22
+	_mat_blue_body.roughness = 0.20
 	_mat_blue_body.clearcoat_enabled = true
 	_mat_blue_body.clearcoat = 0.88
 	_mat_blue_body.clearcoat_roughness = 0.10
@@ -235,40 +225,42 @@ func _init_shared_materials() -> void:
 	_mat_platinum.metallic = 0.88
 	_mat_platinum.roughness = 0.20
 
+	# Crisp diamond-white / silver-ice highlight for last played line (no yellow clash)
 	_mat_last_played_aura = StandardMaterial3D.new()
-	_mat_last_played_aura.albedo_color = Color(1.0, 0.86, 0.20, 0.65)
+	_mat_last_played_aura.albedo_color = Color(0.92, 0.96, 1.0, 0.58)
 	_mat_last_played_aura.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_last_played_aura.emission_enabled = true
-	_mat_last_played_aura.emission = Color(1.0, 0.82, 0.15)
-	_mat_last_played_aura.emission_energy_multiplier = 1.9
+	_mat_last_played_aura.emission = Color(0.84, 0.92, 1.0)
+	_mat_last_played_aura.emission_energy_multiplier = 0.65
 
+	# Soft emerald-mint opportunity ring inside 3-wall boxes
 	_mat_box_opportunity = StandardMaterial3D.new()
-	_mat_box_opportunity.albedo_color = Color(1.0, 0.82, 0.22, 0.52)
+	_mat_box_opportunity.albedo_color = Color(0.20, 0.84, 0.58, 0.38)
 	_mat_box_opportunity.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_box_opportunity.emission_enabled = true
-	_mat_box_opportunity.emission = Color(1.0, 0.76, 0.16)
-	_mat_box_opportunity.emission_energy_multiplier = 1.35
+	_mat_box_opportunity.emission = Color(0.15, 0.74, 0.50)
+	_mat_box_opportunity.emission_energy_multiplier = 0.50
 
 	_mat_hover_red = StandardMaterial3D.new()
-	_mat_hover_red.albedo_color = Color(1.0, 0.26, 0.28, 0.75)
+	_mat_hover_red.albedo_color = Color(1.0, 0.26, 0.28, 0.78)
 	_mat_hover_red.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_hover_red.emission_enabled = true
 	_mat_hover_red.emission = Color(1.0, 0.22, 0.24)
-	_mat_hover_red.emission_energy_multiplier = 1.5
+	_mat_hover_red.emission_energy_multiplier = 1.35
 
 	_mat_hover_blue = StandardMaterial3D.new()
-	_mat_hover_blue.albedo_color = Color(0.24, 0.64, 1.0, 0.75)
+	_mat_hover_blue.albedo_color = Color(0.24, 0.64, 1.0, 0.78)
 	_mat_hover_blue.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_hover_blue.emission_enabled = true
 	_mat_hover_blue.emission = Color(0.20, 0.58, 1.0)
-	_mat_hover_blue.emission_energy_multiplier = 1.5
+	_mat_hover_blue.emission_energy_multiplier = 1.35
 
-	_mat_hover_gold = StandardMaterial3D.new()
-	_mat_hover_gold.albedo_color = Color(1.0, 0.88, 0.26, 0.90)
-	_mat_hover_gold.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_mat_hover_gold.emission_enabled = true
-	_mat_hover_gold.emission = Color(1.0, 0.82, 0.18)
-	_mat_hover_gold.emission_energy_multiplier = 2.1
+	_mat_hover_capture = StandardMaterial3D.new()
+	_mat_hover_capture.albedo_color = Color(0.24, 0.94, 0.64, 0.85)
+	_mat_hover_capture.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_mat_hover_capture.emission_enabled = true
+	_mat_hover_capture.emission = Color(0.18, 0.86, 0.56)
+	_mat_hover_capture.emission_energy_multiplier = 1.35
 
 
 func _precompute_geometry() -> void:
@@ -570,68 +562,100 @@ func _find_closest_line_to_local_pos(local_pos: Vector3, max_dist: float, prefer
 
 
 func _build_side_reserve_trays() -> void:
-	tray_red_root = _create_single_side_tray(TRAY_RED_X, 1, "خانه‌های قرمز")
-	tray_blue_root = _create_single_side_tray(TRAY_BLUE_X, 2, "خانه‌های آبی")
-
-	status_banner_3d = Label3D.new()
-	status_banner_3d.font = _font_hekayat
-	status_banner_3d.font_size = 38
-	status_banner_3d.outline_size = 8
-	status_banner_3d.modulate = Color(1.0, 0.90, 0.42)
-	status_banner_3d.outline_modulate = Color(0, 0, 0, 0.92)
-	status_banner_3d.pixel_size = 0.0014
-	status_banner_3d.position = Vector3(0, BOARD_SURFACE_Y + 0.035, -0.585)
-	status_banner_3d.rotation.x = -deg_to_rad(52)
-	status_banner_3d.text = ""
-	board_decor_root.add_child(status_banner_3d)
+	tray_red_root = _create_single_side_tray(TRAY_RED_X, 1)
+	tray_blue_root = _create_single_side_tray(TRAY_BLUE_X, 2)
 
 
-func _create_single_side_tray(x_pos: float, player_id: int, title_text: String) -> Node3D:
+func _create_single_side_tray(x_pos: float, player_id: int) -> Node3D:
 	var tray = Node3D.new()
 	tray.name = "SideTray_P%d" % player_id
-	tray.position = Vector3(x_pos, 0.0, 0.0)
+	tray.position = Vector3(x_pos, 0.012, 0.0)
 	board_decor_root.add_child(tray)
 
+	const TRAY_W: float = 0.178
+	const TRAY_L: float = 0.98
+	const TRAY_H: float = 0.022
+	const WALL_T: float = 0.014
+	const WALL_H: float = 0.015
+
 	var base_mat = StandardMaterial3D.new()
-	base_mat.albedo_color = Color(0.20, 0.12, 0.07)
-	base_mat.roughness = 0.38
+	base_mat.albedo_color = Color(0.20, 0.11, 0.06)
+	base_mat.metallic = 0.04
+	base_mat.roughness = 0.36
 	base_mat.clearcoat_enabled = true
 	base_mat.clearcoat = 0.55
 
 	var base_mesh = BoxMesh.new()
-	base_mesh.size = Vector3(0.15, 0.032, 0.98)
+	base_mesh.size = Vector3(TRAY_W, TRAY_H, TRAY_L)
 	base_mesh.material = base_mat
 	var base_inst = MeshInstance3D.new()
 	base_inst.mesh = base_mesh
-	base_inst.position = Vector3(0, 0.012, 0)
+	base_inst.position = Vector3.ZERO
 	tray.add_child(base_inst)
 
-	var rim_mesh = BoxMesh.new()
-	rim_mesh.size = Vector3(0.16, 0.006, 1.00)
-	rim_mesh.material = _mat_gold_24k
-	var rim_inst = MeshInstance3D.new()
-	rim_inst.mesh = rim_mesh
-	rim_inst.position = Vector3(0, 0.029, 0)
-	tray.add_child(rim_inst)
+	var felt_mat = StandardMaterial3D.new()
+	felt_mat.albedo_color = Color(0.36, 0.07, 0.09) if player_id == 1 else Color(0.07, 0.18, 0.40)
+	felt_mat.roughness = 0.88
+	felt_mat.metallic = 0.0
 
-	var lbl = Label3D.new()
-	lbl.font = _font_hekayat
-	lbl.font_size = 34
-	lbl.outline_size = 7
-	lbl.modulate = Color(1.0, 0.45, 0.45) if player_id == 1 else Color(0.48, 0.78, 1.0)
-	lbl.outline_modulate = Color(0, 0, 0, 0.95)
-	lbl.pixel_size = 0.0014
-	lbl.position = Vector3(0, 0.062, -0.42)
-	lbl.rotation.x = -deg_to_rad(55)
-	lbl.text = "%s: ۰" % title_text
-	tray.add_child(lbl)
+	var felt_mesh = BoxMesh.new()
+	felt_mesh.size = Vector3(TRAY_W - WALL_T * 1.8, 0.004, TRAY_L - WALL_T * 1.8)
+	felt_mesh.material = felt_mat
+	var felt_inst = MeshInstance3D.new()
+	felt_inst.mesh = felt_mesh
+	felt_inst.position = Vector3(0.0, TRAY_H * 0.5 + 0.001, 0.0)
+	tray.add_child(felt_inst)
 
-	if player_id == 1:
-		tray_red_label = lbl
-	else:
-		tray_blue_label = lbl
+	var wall_long_mesh = BoxMesh.new()
+	wall_long_mesh.size = Vector3(WALL_T, WALL_H, TRAY_L)
+	wall_long_mesh.material = base_mat
+	for sx in [-1.0, 1.0]:
+		var w_side = MeshInstance3D.new()
+		w_side.mesh = wall_long_mesh
+		w_side.position = Vector3(sx * (TRAY_W * 0.5 - WALL_T * 0.5), TRAY_H * 0.5 + WALL_H * 0.5 - 0.002, 0.0)
+		tray.add_child(w_side)
+
+	var wall_short_mesh = BoxMesh.new()
+	wall_short_mesh.size = Vector3(TRAY_W, WALL_H, WALL_T)
+	wall_short_mesh.material = base_mat
+	for sz in [-1.0, 1.0]:
+		var w_end = MeshInstance3D.new()
+		w_end.mesh = wall_short_mesh
+		w_end.position = Vector3(0.0, TRAY_H * 0.5 + WALL_H * 0.5 - 0.002, sz * (TRAY_L * 0.5 - WALL_T * 0.5))
+		tray.add_child(w_end)
+
+	var divider_mesh = BoxMesh.new()
+	divider_mesh.size = Vector3(0.004, 0.005, TRAY_L - WALL_T * 2.2)
+	divider_mesh.material = _mat_brass_dark
+	var divider = MeshInstance3D.new()
+	divider.mesh = divider_mesh
+	divider.position = Vector3(0.0, TRAY_H * 0.5 + 0.003, 0.0)
+	tray.add_child(divider)
+
+	var corner_cap_mesh = BoxMesh.new()
+	corner_cap_mesh.size = Vector3(0.024, WALL_H + 0.006, 0.024)
+	corner_cap_mesh.material = _mat_gold_24k
+	for sx in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			var cap = MeshInstance3D.new()
+			cap.mesh = corner_cap_mesh
+			cap.position = Vector3(sx * (TRAY_W * 0.5 - 0.008), TRAY_H * 0.5 + WALL_H * 0.5, sz * (TRAY_L * 0.5 - 0.008))
+			tray.add_child(cap)
 
 	return tray
+
+
+func _get_reserve_slot_local_pos(slot_idx: int) -> Vector3:
+	# 25 pieces arranged in 2 columns x 5 rows (10 slots per layer, up to 3 stacked layers)
+	var stack_slot: int = slot_idx % 10
+	var stack_layer: int = slot_idx / 10
+	var col_idx: int = stack_slot / 5
+	var row_idx: int = stack_slot % 5
+
+	var slot_x: float = -0.036 if col_idx == 0 else 0.036
+	var slot_z: float = -0.350 + float(row_idx) * 0.175
+	var slot_y: float = 0.015 + float(stack_layer) * 0.013
+	return Vector3(slot_x, slot_y, slot_z)
 
 
 func _rebuild_reserve_tray_stacks() -> void:
@@ -645,29 +669,22 @@ func _rebuild_reserve_tray_stacks() -> void:
 			p.queue_free()
 	tray_blue_pieces.clear()
 
-	var red_remaining: int = clampi(13 - player1_score, 0, 13)
-	var blue_remaining: int = clampi(13 - player2_score, 0, 13)
+	var red_remaining: int = clampi(TOTAL_BOXES - player1_score, 0, TOTAL_BOXES)
+	var blue_remaining: int = clampi(TOTAL_BOXES - player2_score, 0, TOTAL_BOXES)
 
 	for i in range(red_remaining):
 		var puck = _build_3d_territory_crest(1)
-		puck.scale = Vector3(0.76, 0.76, 0.76)
-		var z_off: float = -0.30 + float(i) * 0.056
-		puck.position = Vector3(0, 0.036, z_off)
+		puck.scale = Vector3(0.56, 0.72, 0.56)
+		puck.position = _get_reserve_slot_local_pos(i)
 		tray_red_root.add_child(puck)
 		tray_red_pieces.append(puck)
 
 	for i in range(blue_remaining):
 		var puck = _build_3d_territory_crest(2)
-		puck.scale = Vector3(0.76, 0.76, 0.76)
-		var z_off: float = -0.30 + float(i) * 0.056
-		puck.position = Vector3(0, 0.036, z_off)
+		puck.scale = Vector3(0.56, 0.72, 0.56)
+		puck.position = _get_reserve_slot_local_pos(i)
 		tray_blue_root.add_child(puck)
 		tray_blue_pieces.append(puck)
-
-	if is_instance_valid(tray_red_label):
-		tray_red_label.text = "خانه‌های قرمز: %s" % _fa_digits(player1_score)
-	if is_instance_valid(tray_blue_label):
-		tray_blue_label.text = "خانه‌های آبی: %s" % _fa_digits(player2_score)
 
 
 func _build_3d_bridge_bar(owner_id: int, is_horiz: bool, is_last_played: bool) -> Node3D:
@@ -709,7 +726,7 @@ func _build_3d_bridge_bar(owner_id: int, is_horiz: bool, is_last_played: bool) -
 		cap_inst.position = Vector3(offset, bar_height * 0.5, 0) if is_horiz else Vector3(0, bar_height * 0.5, offset)
 		root.add_child(cap_inst)
 
-	# Last-Turn Played Golden Highlight Frame (matches Flutter PeaceStatusTypes.lastTurnPlayed)
+	# Last-Turn Played Highlight Frame (matches Flutter PeaceStatusTypes.lastTurnPlayed)
 	var aura_mesh = BoxMesh.new()
 	aura_mesh.size = Vector3(bar_len + 0.008, 0.006, bar_thick + 0.012) if is_horiz else Vector3(bar_thick + 0.012, 0.006, bar_len + 0.008)
 	aura_mesh.material = _mat_last_played_aura
@@ -787,8 +804,8 @@ func _start_ambient_pulse() -> void:
 	if _pulse_tween and _pulse_tween.is_valid():
 		_pulse_tween.kill()
 	_pulse_tween = create_tween().set_loops()
-	_pulse_tween.tween_property(_mat_box_opportunity, "emission_energy_multiplier", 2.1, 0.75).set_trans(Tween.TRANS_SINE)
-	_pulse_tween.tween_property(_mat_box_opportunity, "emission_energy_multiplier", 0.75, 0.75).set_trans(Tween.TRANS_SINE)
+	_pulse_tween.tween_property(_mat_box_opportunity, "emission_energy_multiplier", 0.72, 0.85).set_trans(Tween.TRANS_SINE)
+	_pulse_tween.tween_property(_mat_box_opportunity, "emission_energy_multiplier", 0.30, 0.85).set_trans(Tween.TRANS_SINE)
 
 
 # --- Rule Helpers (1:1 with DotBoxGameClass & DotBoxController) ---
@@ -849,7 +866,7 @@ func _on_line_hovered(line_id: int) -> void:
 	var hover_inst: MeshInstance3D = line_hover_meshes[line_id]
 	if is_instance_valid(hover_inst):
 		if _would_line_complete_box(line_id):
-			hover_inst.material_override = _mat_hover_gold
+			hover_inst.material_override = _mat_hover_capture
 		else:
 			var my_idx: int = GameManager.my_player_index if GameManager.my_player_index > 0 else 1
 			hover_inst.material_override = _mat_hover_red if my_idx == 1 else _mat_hover_blue
@@ -894,7 +911,9 @@ func _on_line_channel_pressed(line_id: int) -> void:
 	is_my_turn = false
 	_clear_line_hover()
 	AudioManager.play_sound("tap")
-	ActionVFXManager.spawn_ui_click_burst(get_viewport().get_mouse_position(), Color(1.0, 0.85, 0.35))
+	var my_idx: int = GameManager.my_player_index if GameManager.my_player_index > 0 else 1
+	var burst_col: Color = Color(1.0, 0.28, 0.30) if my_idx == 1 else Color(0.28, 0.68, 1.0)
+	ActionVFXManager.spawn_ui_click_burst(get_viewport().get_mouse_position(), burst_col)
 	send_move(Commands.Select_Peace, line_id)
 
 
@@ -1092,8 +1111,10 @@ func _spawn_or_animate_box_crest(box_id: int, owner_id: int, animate: bool, dela
 
 	if animate:
 		var start_x: float = TRAY_RED_X if owner_id == 1 else TRAY_BLUE_X
-		crest.position = Vector3(start_x, BOARD_SURFACE_Y + 0.18, target_pos.z)
-		crest.scale = Vector3(0.25, 0.25, 0.25)
+		var slot_idx: int = clampi((TOTAL_BOXES - 1) - (player1_score if owner_id == 1 else player2_score), 0, TOTAL_BOXES - 1)
+		var tray_local: Vector3 = _get_reserve_slot_local_pos(slot_idx)
+		crest.position = Vector3(start_x + tray_local.x, BOARD_SURFACE_Y + 0.16, tray_local.z)
+		crest.scale = Vector3(0.56, 0.72, 0.56)
 		crest.rotation.y = PI
 		var tw = create_tween()
 		if delay_sec > 0.0:
@@ -1138,7 +1159,6 @@ func _rebuild_all_3d_pieces_from_state() -> void:
 
 func _refresh_visual_guides() -> void:
 	# 1. Update 3-wall opportunity glow on uncaptured boxes
-	var has_opportunity: bool = false
 	for box_id in range(TOTAL_BOXES):
 		if box_id >= box_opportunity_rings.size():
 			continue
@@ -1147,7 +1167,6 @@ func _refresh_visual_guides() -> void:
 			continue
 		if boxes_board[box_id] == 0 and _count_filled_walls_for_box(box_id) == 3:
 			opp_ring.visible = true
-			has_opportunity = true
 		else:
 			opp_ring.visible = false
 
@@ -1169,22 +1188,6 @@ func _refresh_visual_guides() -> void:
 					slot_inst.material_override = _mat_channel_turn_ready
 			else:
 				slot_inst.material_override = _mat_channel_empty
-
-	# 3. Update 3D top status banner
-	if is_instance_valid(status_banner_3d):
-		var remaining_boxes: int = TOTAL_BOXES - (player1_score + player2_score)
-		if not GameManager.is_game_active:
-			status_banner_3d.text = "نقطه خط — ۲۵ خانه"
-		elif is_my_turn and not is_board_locked:
-			if has_opportunity:
-				status_banner_3d.text = "✨ فرصت تسخیر خانه! یک خط طلایی را ببندید"
-				status_banner_3d.modulate = Color(1.0, 0.88, 0.25)
-			else:
-				status_banner_3d.text = "نوبت شما — یک خط بین دو ستون طلایی رسم کنید (%s خانه باقی‌مانده)" % _fa_digits(remaining_boxes)
-				status_banner_3d.modulate = Color(0.95, 0.92, 0.78)
-		else:
-			status_banner_3d.text = "در انتظار حرکت حریف... (%s خانه باقی‌مانده)" % _fa_digits(remaining_boxes)
-			status_banner_3d.modulate = Color(0.75, 0.78, 0.85)
 
 
 func reset_board() -> void:
