@@ -1158,19 +1158,13 @@ func _rebuild_all_3d_pieces_from_state() -> void:
 
 
 func _refresh_visual_guides() -> void:
-	# 1. Update 3-wall opportunity glow on uncaptured boxes
 	for box_id in range(TOTAL_BOXES):
 		if box_id >= box_opportunity_rings.size():
 			continue
 		var opp_ring: MeshInstance3D = box_opportunity_rings[box_id]
-		if not is_instance_valid(opp_ring):
-			continue
-		if boxes_board[box_id] == 0 and _count_filled_walls_for_box(box_id) == 3:
-			opp_ring.visible = true
-		else:
+		if is_instance_valid(opp_ring):
 			opp_ring.visible = false
 
-	# 2. Update empty channel slot shimmer so active player clearly sees available moves and immediate captures
 	for line_id in range(TOTAL_LINES):
 		if line_id >= line_slot_meshes.size():
 			continue
@@ -1181,13 +1175,7 @@ func _refresh_visual_guides() -> void:
 			slot_inst.visible = false
 		else:
 			slot_inst.visible = true
-			if is_my_turn and not is_board_locked:
-				if _would_line_complete_box(line_id):
-					slot_inst.material_override = _mat_channel_capture_ready
-				else:
-					slot_inst.material_override = _mat_channel_turn_ready
-			else:
-				slot_inst.material_override = _mat_channel_empty
+			slot_inst.material_override = _mat_channel_empty
 
 
 func reset_board() -> void:
