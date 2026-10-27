@@ -336,6 +336,7 @@ func _setup_signals() -> void:
 	NetworkManager.reconnect_data_received.connect(_on_reconnect_data_received)
 	NetworkManager.finish_reconnect_time_received.connect(_on_finish_reconnect_time)
 	NetworkManager.not_played_turns_received.connect(_on_not_played_turns_received)
+	NetworkManager.select_remove_peace_received.connect(_on_select_remove_peace_received)
 	NetworkManager.connection_status_changed.connect(_on_connection_status_changed)
 
 func _start_logo_animation() -> void:
@@ -621,6 +622,14 @@ func _on_reaction_received(data: Variant) -> void:
 		if p_id != GameManager.my_player_index and is_instance_valid(cafe_table):
 			cafe_table.play_opponent_reaction()
 
+func _on_select_remove_peace_received(remover_id: int) -> void:
+	if GameManager.current_game_type == GameTypes.MILL and is_instance_valid(base_game_hud):
+		var my_idx = GameManager.my_player_index
+		if remover_id == my_idx:
+			base_game_hud.start_turn_timer(15.0, "⚔️ دوز ساختید! یک مهره حریف را برای حذف انتخاب کنید")
+		else:
+			base_game_hud.start_turn_timer(15.0, "⚠️ حریف دوز ساخته و در حال حذف مهره است...")
+
 func _on_new_turn_round_received() -> void:
 	if GameManager.current_game_type == GameTypes.RPC:
 		_current_round_scored = false
@@ -864,6 +873,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 				inferred_type = GameTypes.FOURINROW
 		elif g_data.has("current_turn__round") or (g_data.has("round_scores") and not g_data.has("board")):
 			inferred_type = GameTypes.RPC
+		elif g_data.has("played_peaces") or g_data.has("current_remover") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 24 and not g_data.has("out_pieces")):
+			inferred_type = GameTypes.MILL
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:
 			inferred_type = GameTypes.TIC_TAC_TOE
 		if not inferred_type.is_empty() and inferred_type.to_lower() != GameManager.current_game_type.to_lower():

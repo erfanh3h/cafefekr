@@ -11,6 +11,9 @@ signal turn_data_received(payload: Dictionary)
 signal roll_result_received(payload: Dictionary)
 signal out_of_move_received(payload: Dictionary)
 signal piece_selected(user_id: int, target_peace: int, extra: Dictionary)
+signal piece_swapped(data: Dictionary)
+signal piece_removed(data: Dictionary)
+signal select_remove_peace_received(remover_id: int)
 signal round_finished(winner_id: Variant)
 signal new_turn_round_received()
 signal finish_turn_round_received(data: Dictionary)
@@ -314,6 +317,18 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 						if ci != -1 and ri != -1:
 							target_peace = ci * 8 + ri
 				piece_selected.emit(user_id, target_peace, extra)
+
+		Commands.Peace_Swaped:
+			if typeof(payload) == TYPE_DICTIONARY:
+				piece_swapped.emit(payload)
+
+		Commands.Peace_Removed:
+			if typeof(payload) == TYPE_DICTIONARY:
+				piece_removed.emit(payload)
+
+		Commands.Select_Remove_Peace:
+			var rem_id = int(payload) if typeof(payload) != TYPE_DICTIONARY else int(payload.get("remover_id", payload.get("user", 1)))
+			select_remove_peace_received.emit(rem_id)
 
 		Commands.New_Turn_Round:
 			print("[NetworkManager] New Turn-Round started")

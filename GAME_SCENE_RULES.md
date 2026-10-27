@@ -414,6 +414,17 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 
 ---
 
+### 4.12. Royal Nine Men's Morris (`Mill` / `دوز نه تایی`) 3D Board, Checkers Pucks & 3-Phase Rules
+- **3D Concentric Walnut & 24K Gold Board (`mill_3d.gd` & `mill_3d.tscn`):**
+  - Renders a handcrafted square mahogany/walnut cabinet (`1.12m x 1.12m`) with 3 concentric 24K Gold & Ebony track squares (`R_OUTER = 0.44m`, `R_MID = 0.295m`, `R_INNER = 0.15m`), 4 cross-midpoint golden spokes, a central brass rosette medallion, 24 sculpted brass/obsidian node sockets (`0..23`), and left/right mahogany side trays holding 9 unplaced reserve pucks + captured graveyard slots.
+  - Uses lathe-turned 3D ribbed Checkers pucks (`_build_3d_checker_piece` matching `Checkers3D`): Imperial Ruby Crimson with 24K Gold inlay (`Player 1`) and Royal Sapphire Blue with Brushed Platinum inlay (`Player 2`).
+- **Exact 3-Phase Server Protocol (`MillGameClass` & `MillController`):**
+  - **Phase 1 — Placement (`played_peaces < 9`)**: Client sends `Select_Peace` (`peace_id: 0..23`). Server emits `Peace_Selected` (`{"user": gamer_id, "target_peace": peace_id}`).
+  - **Phase 2 & 3 — Sliding Movement / Flying (`played_peaces >= 9`)**: Client sends `Swap_Peace` (`{"source": src_id, "target": dst_id}`). When `9 - removed_peaces == 3`, the player can **Fly** (`پرواز`) to any empty socket `0..23`; otherwise movement is along `PIECES_NEIGHBORS[src_id]`. Server emits `Peace_Swaped` (`{"user": gamer_id, "source_peace": src, "target_peace": dst}`).
+  - **Mill Capture Phase (`Select_Remove_Peace`)**: Forming any of the 16 3-in-a-row `WIN_CONDITIONS` illuminates golden mill energy beams and triggers `Select_Remove_Peace` (`remover_id`, 15s timer). Client sends `Select_Remove_Peace` (`peace_id` of an enemy piece), and server emits `Peace_Removed` (`{"user": gamer_id, "target_peace": peace_id}`).
+
+---
+
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
 
 Whenever you are tasked with adding a new game (e.g. Checkers, Backgammon, Four-in-a-Row, Othello, Mill, etc.):

@@ -59,6 +59,12 @@ func _connect_network_signals() -> void:
 		NetworkManager.turn_changed.connect(_on_internal_turn_changed)
 	if not NetworkManager.piece_selected.is_connected(_on_internal_piece_selected):
 		NetworkManager.piece_selected.connect(_on_internal_piece_selected)
+	if not NetworkManager.piece_swapped.is_connected(_on_internal_piece_swapped):
+		NetworkManager.piece_swapped.connect(_on_internal_piece_swapped)
+	if not NetworkManager.piece_removed.is_connected(_on_internal_piece_removed):
+		NetworkManager.piece_removed.connect(_on_internal_piece_removed)
+	if not NetworkManager.select_remove_peace_received.is_connected(_on_internal_select_remove_peace):
+		NetworkManager.select_remove_peace_received.connect(_on_internal_select_remove_peace)
 	if not NetworkManager.round_finished.is_connected(_on_internal_round_finished):
 		NetworkManager.round_finished.connect(_on_internal_round_finished)
 	if not NetworkManager.new_turn_round_received.is_connected(_on_internal_new_turn_round):
@@ -89,6 +95,12 @@ func _disconnect_network_signals() -> void:
 		NetworkManager.turn_changed.disconnect(_on_internal_turn_changed)
 	if NetworkManager.piece_selected.is_connected(_on_internal_piece_selected):
 		NetworkManager.piece_selected.disconnect(_on_internal_piece_selected)
+	if NetworkManager.piece_swapped.is_connected(_on_internal_piece_swapped):
+		NetworkManager.piece_swapped.disconnect(_on_internal_piece_swapped)
+	if NetworkManager.piece_removed.is_connected(_on_internal_piece_removed):
+		NetworkManager.piece_removed.disconnect(_on_internal_piece_removed)
+	if NetworkManager.select_remove_peace_received.is_connected(_on_internal_select_remove_peace):
+		NetworkManager.select_remove_peace_received.disconnect(_on_internal_select_remove_peace)
 	if NetworkManager.round_finished.is_connected(_on_internal_round_finished):
 		NetworkManager.round_finished.disconnect(_on_internal_round_finished)
 	if NetworkManager.new_round_started.is_connected(_on_internal_new_round):
@@ -129,6 +141,15 @@ func _on_internal_turn_changed(turn: int) -> void:
 
 func _on_internal_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) -> void:
 	on_piece_selected(user_id, target_peace, extra)
+
+func _on_internal_piece_swapped(data: Dictionary) -> void:
+	on_piece_swapped(data)
+
+func _on_internal_piece_removed(data: Dictionary) -> void:
+	on_piece_removed(data)
+
+func _on_internal_select_remove_peace(remover_id: int) -> void:
+	on_select_remove_peace(remover_id)
 
 func _on_internal_new_turn_round() -> void:
 	set_board_locked(false)
@@ -234,6 +255,9 @@ func on_piece_swapped(_data: Dictionary) -> void:
 	pass
 
 func on_piece_removed(_data: Dictionary) -> void:
+	pass
+
+func on_select_remove_peace(_remover_id: int) -> void:
 	pass
 
 func on_new_turn_round() -> void:
