@@ -800,6 +800,12 @@ func _on_game_finished(data: Dictionary) -> void:
 	GameManager.is_game_active = false
 	GameManager.clear_open_game_id()
 	_hide_backdrop()
+	var board = cafe_table.current_board_node
+	if board and is_instance_valid(board):
+		if board.has_method("_recalculate_scores_from_boxes"):
+			board._recalculate_scores_from_boxes()
+		if board.has_method("_sync_hud_scores"):
+			board._sync_hud_scores()
 	var winner = int(data.get("winner", data.get("Winner", data.get("rank1", 0))))
 	if GameRegistry.has_round_score(GameManager.current_game_type):
 		if data.has("scores") and typeof(data["scores"]) == TYPE_ARRAY and (data["scores"] as Array).size() >= 2:
@@ -813,7 +819,14 @@ func _on_game_finished(data: Dictionary) -> void:
 			elif winner == 2:
 				GameManager.p2_score += 1
 		base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)
-	var board = cafe_table.current_board_node
+	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+			if GameManager.p1_score > GameManager.p2_score:
+				winner = 1
+			elif GameManager.p2_score > GameManager.p1_score:
+				winner = 2
+			elif GameManager.current_game_type == GameTypes.DOTBOX and (GameManager.p1_score + GameManager.p2_score) >= 25 and GameManager.p1_score == GameManager.p2_score:
+				winner = 0
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
 		board.set_board_locked(true)
 	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score)

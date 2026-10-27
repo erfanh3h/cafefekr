@@ -132,6 +132,9 @@ func _setup_styles() -> void:
 	_style_plaque_draw.shadow_color = Color(0.65, 0.5, 0.2, 0.35)
 	_style_plaque_draw.shadow_size = 12
 
+var _current_winner_index: int = -1
+var _current_is_friendly: bool = true
+
 func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_friendly: bool = true) -> void:
 	if visible and is_instance_valid(panel) and panel.visible:
 		return
@@ -144,6 +147,18 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 	if btn_return and is_instance_valid(btn_return):
 		btn_return.mouse_filter = Control.MOUSE_FILTER_STOP
 		btn_return.disabled = false
+
+	var resolved_winner = winner_player_index
+	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+			if p1_score > p2_score:
+				resolved_winner = 1
+			elif p2_score > p1_score:
+				resolved_winner = 2
+	winner_player_index = resolved_winner
+	_current_winner_index = winner_player_index
+	_current_is_friendly = is_friendly
+
 	var my_idx = GameManager.my_player_index
 	var is_winner = false
 	var is_draw = false
@@ -375,3 +390,16 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 		lbl_p2_score.visible = show_round_scores
 		if show_round_scores:
 			lbl_p2_score.text = prefix % _fa_digits(p2_score)
+	if visible and is_instance_valid(panel) and panel.visible:
+		if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
+			if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+				var score_winner = _current_winner_index
+				if p1_score > p2_score:
+					score_winner = 1
+				elif p2_score > p1_score:
+					score_winner = 2
+				if score_winner != _current_winner_index and score_winner > 0:
+					visible = false
+					panel.visible = false
+					show_result(score_winner, p1_score, p2_score, _current_is_friendly)
+

@@ -1332,6 +1332,12 @@ func show_game_result(winner: int, p1_score: int, p2_score: int) -> void:
 		final_winner = 2 if GameManager.my_player_index == 1 else 1
 	elif GameManager.opponent_player_surrendered:
 		final_winner = GameManager.my_player_index
+	elif not is_pause_active and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+			if p1_score > p2_score:
+				final_winner = 1
+			elif p2_score > p1_score:
+				final_winner = 2
 	result_dialog.show_result(final_winner, p1_score, p2_score)
 
 func _update_audio_visual() -> void:
