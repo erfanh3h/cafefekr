@@ -16,6 +16,7 @@ const FEKRBEKR_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_3d.tscn"
 const YATZY_SCENE: String = "res://scenes/games/yatzy/yatzy_3d.tscn"
 const RPC_SCENE: String = "res://scenes/games/rpc/rpc_3d.tscn"
 const BACKGAMMON_SCENE: String = "res://scenes/games/backgammon/backgammon_3d.tscn"
+const OTHELLO_SCENE: String = "res://scenes/games/othello/othello_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -159,10 +160,11 @@ static var _registry: Dictionary = {
 		"id": GameTypes.OTHELLO,
 		"name_fa": "اتللو",
 		"narrative": "در بازی اتللو، هر مهره مانند سربازی است که در میدان نبرد ذهن‌ها جبهه را دگرگون می‌سازد.",
-		"board_scene": TEMP_SCENE,
+		"board_scene": OTHELLO_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
-		"has_round_score": false,
+		"has_round_score": true,
+		"is_cumulative_score": true,
 		"turn_time": 20.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/othello.jpg",

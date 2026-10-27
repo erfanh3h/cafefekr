@@ -402,6 +402,18 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 
 ---
 
+### 4.11. Royal Tournament Othello (`Othello` / `اتللو`) 3D Board, Reversible Checkers Pucks & 180° Flip Wave Rules
+- **3D Walnut Cabinet & Reversible Ribbed Checkers Pucks (`othello_3d.gd` & `othello_3d.tscn`):**
+  - Renders an 8x8 inlaid walnut/rosewood board (`cell_size = 0.13m`, `board_width = 1.04m`) with 24K gold wire grid lines, 4 brass Hoshi quadrant star-points, algebraic coordinates (`A–H`, `1–8`), and left/right mahogany reserve disc trays (`tray_red` and `tray_blue`) displaying 30 stacked 3D reserve discs per player.
+  - Uses dual-sided 3D lathe-turned ribbed Checkers pucks (`_build_3d_othello_piece`): top face (`RedFace`, `FlipPivot.rotation.x = 0.0`) is Imperial Ruby Crimson with 24K Gold inlay (Player 1), bottom face (`BlueFace`, `FlipPivot.rotation.x = PI`) is Royal Sapphire Blue with Brushed Platinum inlay (Player 2), united by a 24K Gold equator bevel ring.
+  - When enemy discs are bracketed along any of the 8 ray directions (`MOVE_DIRS`), each bracketed disc executes a staggered **180° mid-air 3D somersault flip** (`_animate_flip_piece_at_cell`) with shockwave VFX and live HUD score badge updates (`_sync_hud_scores()`).
+- **Exact Server Protocol & Reconnect Disambiguation (`OthelloGameClass` & `OthelloController`):**
+  - Initial 4 center discs: `27` (`c=3, r=3`) = P1 Red, `36` (`c=4, r=4`) = P1 Red, `28` (`c=3, r=4`) = P2 Blue, `35` (`c=4, r=3`) = P2 Blue. Initial scores `2 - 2`, reserve pawns `30 - 30`.
+  - `Select_Peace`: `{"c_index": c_index, "r_index": r_index}` -> Server emits `Peace_Selected` (`{"select_data": {"c_index": c, "r_index": r, "gamer_id": g}, "scores": [p1_score, p2_score]}`).
+  - In `main.gd:_on_reconnect_data_received`, 64-element integer boards with `g_data.has("scores")` disambiguate `GameTypes.OTHELLO` from `GameTypes.FOURINROW`.
+
+---
+
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
 
 Whenever you are tasked with adding a new game (e.g. Checkers, Backgammon, Four-in-a-Row, Othello, Mill, etc.):

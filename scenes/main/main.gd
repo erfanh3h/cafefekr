@@ -858,6 +858,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			var b_arr: Array = g_data["board"]
 			if not b_arr.is_empty() and typeof(b_arr[0]) == TYPE_DICTIONARY:
 				inferred_type = GameTypes.CHECKERS
+			elif g_data.has("scores"):
+				inferred_type = GameTypes.OTHELLO
 			else:
 				inferred_type = GameTypes.FOURINROW
 		elif g_data.has("current_turn__round") or (g_data.has("round_scores") and not g_data.has("board")):
