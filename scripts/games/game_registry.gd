@@ -19,6 +19,7 @@ const BACKGAMMON_SCENE: String = "res://scenes/games/backgammon/backgammon_3d.ts
 const OTHELLO_SCENE: String = "res://scenes/games/othello/othello_3d.tscn"
 const MILL_SCENE: String = "res://scenes/games/mill/mill_3d.tscn"
 const DOTBOX_SCENE: String = "res://scenes/games/dotbox/dotbox_3d.tscn"
+const MNUMBERS_SCENE: String = "res://scenes/games/mnumbers/mnumbers_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -303,10 +304,11 @@ static var _registry: Dictionary = {
 		"id": GameTypes.MNUMBERS,
 		"name_fa": "کشف اعداد",
 		"narrative": "در ظرافت خاموش بازی، هر برگشت کارت همچون ضربه‌ای از قلم در پیوند اعداد است.",
-		"board_scene": TEMP_SCENE,
+		"board_scene": MNUMBERS_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
-		"has_round_score": false,
+		"has_round_score": true,
+		"is_cumulative_score": true,
 		"turn_time": 7.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/mnumbers.jpg",

@@ -435,6 +435,17 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 
 ---
 
+### 4.14. Royal Persian Match Numbers (`MNumbers` / `کشف اعداد`) 3D Board, 36 Flipping Memory Medallions & Pair Rules
+- **3D Walnut Cabinet & 36 Double-Sided Memory Medallions (`mnumbers_3d.gd` & `mnumbers_3d.tscn`):**
+  - Renders a `6×6` grid of `36` recessed obsidian wells (`CELL_SPACING = 0.168m`, indices `0..35`), `36` double-sided 3D lathe-turned Memory Medallions (`18` pairs of numbers `1..18` rendered in Persian digits `۱..۱۸` via `hekayat.ttf`), and left/right mahogany reserve trays holding `18` 3D score medallions per player (no floating text above pieces).
+  - Gamer-friendly 3D UX: selecting the 1st tile (`equipped_index`) elevates it with a crisp player-colored rim (clicking it again deselects it); selecting the 2nd tile dispatches the pair to the server.
+- **Exact Server Protocol & 2-Second Reveal Window (`MNumbersGameClass`, `MNumbersGameSession` & `MNumbersController`):**
+  - Client sends `Select_Peace` (`{"index1": idx1, "index2": idx2}`). Server emits `Peace_Selected` (`{"user": gamer_id, "index1": idx1, "value1": val1, "index2": idx2, "value2": val2, "is_correct": is_correct}`).
+  - If `is_correct == true`: both medallions permanently flip face-up in Player 1 (Ruby Red + 24K Gold) or Player 2 (Sapphire Blue + Platinum), player score increments by `+1`, and side reserve trays update.
+  - If `is_correct == false`: both medallions flip open for the 2-second reveal window (`MNumbers_Show_Result_Time = 2`) so both players can memorize `value1` and `value2`, then smoothly flip 180° back face-down on the next turn.
+
+---
+
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
 
 Whenever you are tasked with adding a new game (e.g. Checkers, Backgammon, Four-in-a-Row, Othello, Mill, etc.):
