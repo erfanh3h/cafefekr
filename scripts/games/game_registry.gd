@@ -20,7 +20,6 @@ const OTHELLO_SCENE: String = "res://scenes/games/othello/othello_3d.tscn"
 const MILL_SCENE: String = "res://scenes/games/mill/mill_3d.tscn"
 const DOTBOX_SCENE: String = "res://scenes/games/dotbox/dotbox_3d.tscn"
 const MNUMBERS_SCENE: String = "res://scenes/games/mnumbers/mnumbers_3d.tscn"
-const TEN_SCENE: String = "res://scenes/games/ten/ten_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -243,7 +242,7 @@ static var _registry: Dictionary = {
 		"id": GameTypes.TEN,
 		"name_fa": "ده بساز",
 		"narrative": "در بازی ده بساز، هوش و سرعت در محاسبات ریاضی برنده را مشخص می‌کند.",
-		"board_scene": TEN_SCENE,
+		"board_scene": TEMP_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 3,
 		"has_round_score": true,

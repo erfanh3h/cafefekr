@@ -1084,8 +1084,6 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 			update_turn(max(1, r_num))
 			if bool(game_data.get("is_round_done", false)):
 				set_waiting_opponent("امتیاز شما ثبت شد! در انتظار حریف...")
-		elif GameManager.current_game_type == GameTypes.TEN:
-			update_turn(max(1, r_num))
 		else:
 			var turn = int(game_data.get("current_turn", 1))
 			update_turn(turn)
@@ -1162,12 +1160,7 @@ func start_turn_timer(duration: float, custom_banner: String = "") -> void:
 	is_game_started = true
 	var banner = custom_banner
 	if banner.is_empty() and GameRegistry.is_simultaneous(GameManager.current_game_type):
-		if GameManager.current_game_type == GameTypes.RPC:
-			banner = "سنگ، کاغذ یا قیچی را انتخاب کنید!"
-		elif GameManager.current_game_type == GameTypes.TEN:
-			banner = "🧮 با ۴ عدد و عملگرها عدد ۱۰ بسازید!"
-		else:
-			banner = "انتخاب خود را مشخص کنید"
+		banner = "سنگ، کاغذ یا قیچی را انتخاب کنید!" if GameManager.current_game_type == GameTypes.RPC else "انتخاب خود را مشخص کنید"
 	if not banner.is_empty():
 		set_custom_banner(banner, Color(1.0, 0.90, 0.45))
 	if is_instance_valid(current_top_header):
@@ -1340,7 +1333,7 @@ func show_game_result(winner: int, p1_score: int, p2_score: int) -> void:
 	elif GameManager.opponent_player_surrendered:
 		final_winner = GameManager.my_player_index
 	elif not is_pause_active and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
-		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.TEN, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
 			if p1_score > p2_score:
 				final_winner = 1
 			elif p2_score > p1_score:

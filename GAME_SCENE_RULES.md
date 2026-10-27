@@ -446,19 +446,6 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 
 ---
 
-### 4.15. Royal Persian Make 10 / 4=10 (`Ten` / `ده بساز`) 3D Equation Console & Simultaneous Rules
-- **3D Walnut & 24K Gold 4=10 Equation Console (`ten_3d.gd` & `ten_3d.tscn`):**
-  - Modeled directly on the classic **4=10** puzzle mechanic: the 4 round numbers (`current_numbers`) are pre-placed in the 4 sculpted 3D Number Slots (`0..3`) on the interactive Equation Track, separated by 3 sculpted 3D Operator Wells (`0..2`).
-  - Players can reorder any two 3D Number Tiles via **3D Drag-and-Drop** (locking `cafe_table.camera_drag_locked = true`) or **Two-Tap Swap**, place/cycle operators (`+`, `-`, `×`, `÷`) by tapping an operator well or dragging/tapping from the bottom 3D Operator Palette, and cycle the 3D 24K Gold Parentheses Arch `( ... )` across all 5 valid bracket spans (`None`, `(n1 op n2)`, `(n2 op n3)`, `(n3 op n4)`, `(n1 op n2 op n3)`, `(n2 op n3 op n4)`).
-  - Live 3D Equation Readout at the top of the board evaluates the formula in real time (using exact rational/floating arithmetic with division-by-zero protection) and illuminates the 3D `= ۱۰` target badge and Emerald-Gold Submit Button when the expression equals `10` (`abs(val - 10.0) < 1e-6` and all 3 operators filled).
-  - Left and right mahogany reserve trays hold `3` 3D round-win medallions per player (no floating text above reserve pieces).
-- **Exact Server Protocol & Simultaneous Round Lifecycle (`TenGameClass`, `TenGameSession` & `TenController`):**
-  - Best of 3 simultaneous rounds (`max_rounds: 3`, `has_round_score: true`, `is_simultaneous: true`, `turn_time: 300.0`).
-  - Server sends `Commands.Current_Turn` with a 4-element `Array` payload `[n1, n2, n3, n4]` (`NetworkManager` emits `turn_data_received({"numbers": payload})` and `turn_changed`).
-  - When a player solves `= 10`, client dispatches `Commands.Solve` (`{"id": "Solve", "data": ""}`). Server broadcasts `Commands.Finish_Round` (`{"Winner": round_winner}`), pauses 5 seconds (`Ten_Sleep_Round_Time`), and starts the next round (`Commands.New_Round` + `Commands.Current_Turn`) or ends the match (`Commands.Finish_Game`).
-
----
-
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
 
 Whenever you are tasked with adding a new game (e.g. Checkers, Backgammon, Four-in-a-Row, Othello, Mill, etc.):
