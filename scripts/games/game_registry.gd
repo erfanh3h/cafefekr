@@ -238,22 +238,6 @@ static var _registry: Dictionary = {
 		"max_players": 2,
 		"is_3d": true
 	},
-	GameTypes.TEN: {
-		"id": GameTypes.TEN,
-		"name_fa": "ده بساز",
-		"narrative": "در بازی ده بساز، هوش و سرعت در محاسبات ریاضی برنده را مشخص می‌کند.",
-		"board_scene": TEMP_SCENE,
-		"top_header_scene": BASE_TOP_HEADER_SCENE,
-		"max_rounds": 3,
-		"has_round_score": true,
-		"is_simultaneous": true,
-		"turn_time": 300.0,
-		"has_missed_turns_limit": false,
-		"icon": "res://assets/images/games/ten.jpg",
-		"min_players": 2,
-		"max_players": 2,
-		"is_3d": true
-	},
 	GameTypes.BATTLESHIP: {
 		"id": GameTypes.BATTLESHIP,
 		"name_fa": "نبرد کشتی",

@@ -446,6 +446,50 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 
 ---
 
+### 4.15. Royal Persian Ludo / Mench (`Ludo` / `منچ`) Architecture & Protocol Specifications
+- **Overview & Gameplay Philosophy:**
+  - Classic 4-arm cross board designed for 2 to 4 players (`GameTypesEnum.multi_players_games()`).
+  - Supported players & starting orientations:
+    - **Player 1 (Red / قرمز)**: Track entry spot `0`, Home yard (`index = -2`), Start staging pedestal (`index = -1`), Home runway cells `36..39`.
+    - **Player 2 (Blue / آبی)**: Track entry spot `18` (directly opposite P1 in 2-player matches), Home yard (`index = -2`), Start staging pedestal (`index = -1`), Home runway cells `40..43`.
+    - **Player 3 (Yellow / زرد)**: Track entry spot `27`, Home yard (`index = -2`), Start staging pedestal (`index = -1`), Home runway cells `44..47`.
+    - **Player 4 (Green / سبز)**: Track entry spot `9`, Home yard (`index = -2`), Start staging pedestal (`index = -1`), Home runway cells `48..51`.
+- **Track Geometry & Indexing Layout (`52` spots in `LudoGameClass`):**
+  - **Outer Circular Track**: `36` spots (`0..35`), mapped clockwise.
+  - **Player Home Yards (`players_out_pieces`)**: 4 tokens per player kept in corner pavilions before entering the board.
+  - **Start Pedestal (`start_pieces`)**: Intermediate staging zone where a token rests upon rolling 6 before moving onto the track.
+  - **Home Runways (`36..51`)**: 4 colored private slots per player (`36..39` for P1, `40..43` for P2, `44..47` for P3, `48..51` for P4).
+- **Core Rules & Movement Mechanics (`LudoGameClass`):**
+  - **Summoning from Home Yard**: When `current_dice == 6` and `players_out_pieces[gamer_id - 1] > 0`, `index = -2` is available. Selecting `-2` transfers a token from the yard to `start_pieces[gamer_id - 1]` (`type = "out"`).
+  - **Entering the Outer Track**: Selecting `index = -1` (from start pedestal) deploys the token onto the board (`type = "start"`) at:
+    - P1: `target_index = current_dice - 1`
+    - P2: `target_index = 18 + current_dice - 1`
+    - P3: `target_index = 27 + current_dice - 1`
+    - P4: `target_index = 9 + current_dice - 1`
+  - **Advancing Along the Track**: `target_index = (index + current_dice) % 36`.
+  - **Diverting into Home Runway**:
+    - Governed by `gamer_pieces_win_map` and `gamer_win_indexes_map`:
+      - P1 thresholds at `30..35` → enters `36..39`.
+      - P2 thresholds at `12..17` → enters `40..43`.
+      - P3 thresholds at `21..26` → enters `44..47`.
+      - P4 thresholds at `3..8` → enters `48..51`.
+    - Inside home runway (`gamer_in_win_indexes_map`), tokens require exact dice rolls to advance toward the destination.
+  - **Capturing / Knocking Opponent Tokens (`check_hit_enemy`)**:
+    - Landing on an outer track cell (`target_index < 36`) occupied by an enemy token knocks all enemy tokens on that cell back to `players_out_pieces` of that opponent.
+  - **Bonus Turn on Rolling 6**:
+    - Rolling a 6 sets `has_more_dice = True`. After completing a move, the player retains the turn for another roll!
+  - **Out of Move (`Out_Of_Move`)**:
+    - If `len(current_available_indexes) == 0` after rolling, server emits `Commands.Out_Of_Move` (`{"turn": current_turn, "dice": current_dice}`) with a 3.0-second delay (`Ludo_Out_Of_Move_time = 3`) before automatically passing turn to the next active player.
+- **Exact Server Protocol (`LudoGameSession` & `LudoGameClass`):**
+  - `Roll_Dice`: Client sends `{"id": "Roll_Dice", "data": {}}`.
+  - `Roll_Result`: Server broadcasts `{"id": "Roll_Result", "data": {"dice": current_dice}}`.
+  - `Select_Peace`: Client sends `{"id": "Select_Peace", "data": {"index": selected_index}}`.
+  - `Peace_Selected`: Server broadcasts `{"id": "Peace_Selected", "data": {"gamer_id": gamer_id, "index": index, "target_index": target_index, "type": move_type}}`.
+  - `Win_Happened`: Server broadcasts `{"id": "Win_Happened", "data": {"Winner": winner_gamer_id}}`.
+  - Match Format: 1 Round (`max_rounds = 1`, `has_round_score = false`), 25.0s turn timer (`Ludo_Turn_Time = 25.0`).
+
+---
+
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
 
 Whenever you are tasked with adding a new game (e.g. Checkers, Backgammon, Four-in-a-Row, Othello, Mill, etc.):

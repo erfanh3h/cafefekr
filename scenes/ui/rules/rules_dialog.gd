@@ -47,7 +47,6 @@ const GAME_KEYS = [
 	{"key": "yinsh", "name": "یینش", "time": "۱۵ دقیقه", "diff": "سخت"},
 	{"key": "rpc", "name": "سنگ کاغذ قیچی", "time": "۲ دقیقه", "diff": "آسان"},
 	{"key": "fekrbekr", "name": "فکر بکر", "time": "۸ دقیقه", "diff": "متوسط"},
-	{"key": "ten", "name": "ده بساز", "time": "۳ الی ۱۰ دقیقه", "diff": "متوسط"},
 	{"key": "boxfour", "name": "چهارطرفه", "time": "۵ الی ۱۰ دقیقه", "diff": "متوسط"},
 	{"key": "mnumbers", "name": "کشف اعداد", "time": "۵ الی ۲۰ دقیقه", "diff": "آسان"},
 	{"key": "msweeper", "name": "مین یاب", "time": "۵ الی ۱۰ دقیقه", "diff": "سخت"},

@@ -87,7 +87,6 @@ var available_games = [
 	GameTypes.RPC,
 	GameTypes.SUDOKU,
 	GameTypes.BOXFOUR,
-	GameTypes.TEN,
 	GameTypes.MNUMBERS,
 	GameTypes.MSWEEPER
 ]
