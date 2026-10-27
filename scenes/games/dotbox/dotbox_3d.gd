@@ -1,12 +1,12 @@
 class_name DotBox3D
-extends BaseGameBoard
+extends "res://scripts/games/base_game_board.gd"
 
 # Royal Persian Dots & Boxes (نقطه خط - DotBox) 3D Physical Board
 # 100% server parity with kafehfekrbackend/Entities/Games/DotBox/__init__.py
 # and kafehfekr/lib/Feature/DotBox/Controllers/dotbox_controller.dart:
 # - 6x6 sculpted 24K Gold pillar posts (36 dots)
 # - 60 interactive 3D bridge channels (0..59: 30 horizontal + 30 vertical)
-#   with wide, forgiving touch hitboxes, hover laser previews, and last-move gold aura
+#   with forgiving ray-plane tap & hover detection, laser previews, and last-move gold aura
 # - 25 recessed obsidian territory wells (0..24: 5x5 grid) with 3-wall opportunity glow
 #   and 3D lathe-turned Checkers crest medallions slamming into captured boxes
 # - Bonus turn continuation when 1 or 2 boxes are completed on a move
@@ -20,8 +20,8 @@ const BOARD_SURFACE_Y: float = 0.048
 const DOT_SPACING: float = 0.175
 const GRID_MIN_XZ: float = -0.4375 # -2.5 * 0.175
 
-const TRAY_RED_X: float = -0.76
-const TRAY_BLUE_X: float = 0.76
+const TRAY_RED_X: float = -0.765
+const TRAY_BLUE_X: float = 0.765
 
 # Exact 25 box-to-lines adjacency map matching DotBoxGameClass.boxes_neighbors 1:1
 const BOXES_NEIGHBORS: Dictionary = {
@@ -59,7 +59,12 @@ var player1_score: int = 0
 var player2_score: int = 0
 var last_played_line_id: int = -1
 var hovered_line_id: int = -1
-var _can_select_peace: bool = false
+
+var last_click_time: float = 0.0
+var _last_click_frame: int = -1
+var _raycast_down_pos: Vector2 = Vector2.ZERO
+var _raycast_down_time: float = 0.0
+var _raycast_is_down: bool = false
 
 # 3D Containers & Nodes
 var board_decor_root: Node3D
@@ -105,9 +110,23 @@ var _mat_hover_blue: StandardMaterial3D
 var _mat_hover_gold: StandardMaterial3D
 
 var _pulse_tween: Tween = null
+static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
+
+static func _fa_digits(val: Variant) -> String:
+	var s = str(val)
+	var fa = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
+	var out = ""
+	for ch in s:
+		if ch >= "0" and ch <= "9":
+			out += fa[int(ch)]
+		else:
+			out += ch
+	return out
 
 
-func setup_board() -> void:
+func _ready() -> void:
+	game_type = GameTypes.DOTBOX
+	add_to_group("board")
 	lines_board.resize(TOTAL_LINES)
 	lines_board.fill(0)
 	boxes_board.resize(TOTAL_BOXES)
@@ -115,7 +134,13 @@ func setup_board() -> void:
 
 	_init_shared_materials()
 	_precompute_geometry()
+	_build_board_3d()
+	_start_ambient_pulse()
+	reset_board()
+	super._ready()
 
+
+func _build_board_3d() -> void:
 	board_decor_root = Node3D.new()
 	board_decor_root.name = "BoardDecorRoot"
 	add_child(board_decor_root)
@@ -136,9 +161,6 @@ func setup_board() -> void:
 	_build_36_gold_dot_pillars()
 	_build_60_interactive_line_channels()
 	_build_side_reserve_trays()
-	_build_board_Fallback_surface_area()
-	_start_ambient_pulse()
-	reset_board()
 
 
 func _init_shared_materials() -> void:
@@ -160,23 +182,23 @@ func _init_shared_materials() -> void:
 	_mat_obsidian_well.clearcoat = 0.45
 
 	_mat_channel_empty = StandardMaterial3D.new()
-	_mat_channel_empty.albedo_color = Color(0.24, 0.17, 0.12, 0.75)
+	_mat_channel_empty.albedo_color = Color(0.32, 0.23, 0.15, 0.88)
 	_mat_channel_empty.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_mat_channel_empty.roughness = 0.50
+	_mat_channel_empty.roughness = 0.45
 
 	_mat_channel_turn_ready = StandardMaterial3D.new()
-	_mat_channel_turn_ready.albedo_color = Color(0.85, 0.72, 0.42, 0.42)
+	_mat_channel_turn_ready.albedo_color = Color(0.92, 0.76, 0.36, 0.55)
 	_mat_channel_turn_ready.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_channel_turn_ready.emission_enabled = true
-	_mat_channel_turn_ready.emission = Color(0.85, 0.68, 0.25)
-	_mat_channel_turn_ready.emission_energy_multiplier = 0.45
+	_mat_channel_turn_ready.emission = Color(0.88, 0.70, 0.26)
+	_mat_channel_turn_ready.emission_energy_multiplier = 0.55
 
 	_mat_channel_capture_ready = StandardMaterial3D.new()
-	_mat_channel_capture_ready.albedo_color = Color(1.0, 0.84, 0.22, 0.72)
+	_mat_channel_capture_ready.albedo_color = Color(1.0, 0.86, 0.22, 0.85)
 	_mat_channel_capture_ready.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_channel_capture_ready.emission_enabled = true
-	_mat_channel_capture_ready.emission = Color(1.0, 0.78, 0.15)
-	_mat_channel_capture_ready.emission_energy_multiplier = 1.35
+	_mat_channel_capture_ready.emission = Color(1.0, 0.80, 0.15)
+	_mat_channel_capture_ready.emission_energy_multiplier = 1.65
 
 	# Player 1: Imperial Ruby Crimson & 24K Gold
 	_mat_red_body = StandardMaterial3D.new()
@@ -221,28 +243,28 @@ func _init_shared_materials() -> void:
 	_mat_last_played_aura.emission_energy_multiplier = 1.9
 
 	_mat_box_opportunity = StandardMaterial3D.new()
-	_mat_box_opportunity.albedo_color = Color(1.0, 0.82, 0.22, 0.48)
+	_mat_box_opportunity.albedo_color = Color(1.0, 0.82, 0.22, 0.52)
 	_mat_box_opportunity.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_box_opportunity.emission_enabled = true
 	_mat_box_opportunity.emission = Color(1.0, 0.76, 0.16)
-	_mat_box_opportunity.emission_energy_multiplier = 1.25
+	_mat_box_opportunity.emission_energy_multiplier = 1.35
 
 	_mat_hover_red = StandardMaterial3D.new()
-	_mat_hover_red.albedo_color = Color(1.0, 0.26, 0.28, 0.72)
+	_mat_hover_red.albedo_color = Color(1.0, 0.26, 0.28, 0.75)
 	_mat_hover_red.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_hover_red.emission_enabled = true
 	_mat_hover_red.emission = Color(1.0, 0.22, 0.24)
 	_mat_hover_red.emission_energy_multiplier = 1.5
 
 	_mat_hover_blue = StandardMaterial3D.new()
-	_mat_hover_blue.albedo_color = Color(0.24, 0.64, 1.0, 0.72)
+	_mat_hover_blue.albedo_color = Color(0.24, 0.64, 1.0, 0.75)
 	_mat_hover_blue.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_hover_blue.emission_enabled = true
 	_mat_hover_blue.emission = Color(0.20, 0.58, 1.0)
 	_mat_hover_blue.emission_energy_multiplier = 1.5
 
 	_mat_hover_gold = StandardMaterial3D.new()
-	_mat_hover_gold.albedo_color = Color(1.0, 0.88, 0.26, 0.88)
+	_mat_hover_gold.albedo_color = Color(1.0, 0.88, 0.26, 0.90)
 	_mat_hover_gold.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_hover_gold.emission_enabled = true
 	_mat_hover_gold.emission = Color(1.0, 0.82, 0.18)
@@ -289,11 +311,11 @@ func _build_25_territory_wells() -> void:
 	var well_floor_mesh = BoxMesh.new()
 	well_floor_mesh.size = Vector3(DOT_SPACING - 0.032, 0.005, DOT_SPACING - 0.032)
 
-	var opp_ring_mesh = CylinderMesh.new()
-	opp_ring_mesh.top_radius = 0.048
-	opp_ring_mesh.bottom_radius = 0.052
-	opp_ring_mesh.height = 0.004
-	opp_ring_mesh.radial_segments = 24
+	var opp_ring_mesh = TorusMesh.new()
+	opp_ring_mesh.inner_radius = 0.038
+	opp_ring_mesh.outer_radius = 0.052
+	opp_ring_mesh.rings = 24
+	opp_ring_mesh.ring_segments = 16
 	opp_ring_mesh.material = _mat_box_opportunity
 
 	for box_id in range(TOTAL_BOXES):
@@ -318,6 +340,7 @@ func _build_25_territory_wells() -> void:
 		var opp_inst = MeshInstance3D.new()
 		opp_inst.mesh = opp_ring_mesh
 		opp_inst.position = Vector3(0, 0.004, 0)
+		opp_inst.scale = Vector3(1.0, 0.35, 1.0)
 		opp_inst.visible = false
 		well_node.add_child(opp_inst)
 		box_opportunity_rings.append(opp_inst)
@@ -378,21 +401,20 @@ func _build_60_interactive_line_channels() -> void:
 	line_hover_meshes.clear()
 
 	var groove_len: float = DOT_SPACING - 0.038 # 0.137m clear between dot pillars
-	var groove_width: float = 0.018
+	var groove_width: float = 0.020
 
 	var h_groove_mesh = BoxMesh.new()
-	h_groove_mesh.size = Vector3(groove_len, 0.005, groove_width)
+	h_groove_mesh.size = Vector3(groove_len, 0.006, groove_width)
 
 	var v_groove_mesh = BoxMesh.new()
-	v_groove_mesh.size = Vector3(groove_width, 0.005, groove_len)
+	v_groove_mesh.size = Vector3(groove_width, 0.006, groove_len)
 
 	var h_hover_mesh = BoxMesh.new()
-	h_hover_mesh.size = Vector3(groove_len, 0.016, 0.024)
+	h_hover_mesh.size = Vector3(groove_len, 0.018, 0.026)
 
 	var v_hover_mesh = BoxMesh.new()
-	v_hover_mesh.size = Vector3(0.024, 0.016, groove_len)
+	v_hover_mesh.size = Vector3(0.026, 0.018, groove_len)
 
-	# Forgiving, gamer-friendly 3D collision boxes (wide enough for effortless tapping without overlapping neighbors)
 	var h_hit_shape = BoxShape3D.new()
 	h_hit_shape.size = Vector3(DOT_SPACING - 0.032, 0.055, 0.074)
 
@@ -411,7 +433,7 @@ func _build_60_interactive_line_channels() -> void:
 		var slot_inst = MeshInstance3D.new()
 		slot_inst.mesh = h_groove_mesh if is_horiz else v_groove_mesh
 		slot_inst.material_override = _mat_channel_empty
-		slot_inst.position = Vector3(0, 0.0025, 0)
+		slot_inst.position = Vector3(0, 0.003, 0)
 		ch_root.add_child(slot_inst)
 		line_slot_meshes.append(slot_inst)
 
@@ -447,38 +469,100 @@ func _build_60_interactive_line_channels() -> void:
 		)
 
 
-func _build_board_Fallback_surface_area() -> void:
-	# Fallback surface ray catcher so tapping slightly outside a channel's center still snaps to the closest valid line
-	var surface_area = Area3D.new()
-	surface_area.name = "BoardSurfaceFallbackArea"
-	var shape = BoxShape3D.new()
-	shape.size = Vector3(1.06, 0.010, 1.06)
-	var col = CollisionShape3D.new()
-	col.shape = shape
-	col.position = Vector3(0, BOARD_SURFACE_Y - 0.004, 0)
-	surface_area.add_child(col)
-	board_decor_root.add_child(surface_area)
+# --- Raycast Input Handling (Single Source of Input per GAME_SCENE_RULES 4.3) ---
 
-	surface_area.input_event.connect(func(_cam: Node, event: InputEvent, click_pos: Vector3, _norm: Vector3, _idx: int):
-		var local_pos: Vector3 = to_local(click_pos)
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			var nearest_id: int = _find_closest_line_to_local_pos(local_pos, 0.072)
-			if nearest_id != -1:
-				_on_line_channel_pressed(nearest_id)
-		elif event is InputEventScreenTouch and event.pressed:
-			var nearest_id: int = _find_closest_line_to_local_pos(local_pos, 0.078)
-			if nearest_id != -1:
-				_on_line_channel_pressed(nearest_id)
-	)
+func _unhandled_input(event: InputEvent) -> void:
+	if not GameManager.is_game_active:
+		return
+
+	if event is InputEventMouseMotion:
+		_raycast_board_hover(event.position)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_raycast_down_pos = event.position
+			_raycast_down_time = Time.get_ticks_msec() / 1000.0
+			_raycast_is_down = true
+		else:
+			if _raycast_is_down:
+				_raycast_is_down = false
+				var dist = event.position.distance_to(_raycast_down_pos)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _raycast_down_time
+				if dist <= 28.0 and elapsed < 0.65:
+					_raycast_board_click(event.position)
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			_raycast_down_pos = event.position
+			_raycast_down_time = Time.get_ticks_msec() / 1000.0
+			_raycast_is_down = true
+		else:
+			if _raycast_is_down:
+				_raycast_is_down = false
+				var dist = event.position.distance_to(_raycast_down_pos)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _raycast_down_time
+				if dist <= 28.0 and elapsed < 0.65:
+					_raycast_board_click(event.position)
 
 
-func _find_closest_line_to_local_pos(local_pos: Vector3, max_dist: float) -> int:
+func _project_screen_to_local_board(screen_pos: Vector2) -> Vector3:
+	var cam = get_viewport().get_camera_3d()
+	if not cam:
+		return Vector3(999.0, 0.0, 999.0)
+	var ray_origin = cam.project_ray_origin(screen_pos)
+	var ray_normal = cam.project_ray_normal(screen_pos)
+	var board_y = global_position.y + BOARD_SURFACE_Y
+	if abs(ray_normal.y) < 0.0001:
+		return Vector3(999.0, 0.0, 999.0)
+	var t = (board_y - ray_origin.y) / ray_normal.y
+	if t < 0.0:
+		return Vector3(999.0, 0.0, 999.0)
+	var hit_world = ray_origin + ray_normal * t
+	return to_local(hit_world)
+
+
+func _raycast_board_hover(screen_pos: Vector2) -> void:
+	var local_hit = _project_screen_to_local_board(screen_pos)
+	if abs(local_hit.x) > 0.56 or abs(local_hit.z) > 0.56:
+		_clear_line_hover()
+		return
+	var nearest_id = _find_closest_line_to_local_pos(local_hit, 0.048, true)
+	if nearest_id != -1:
+		_on_line_hovered(nearest_id)
+	else:
+		_clear_line_hover()
+
+
+func _raycast_board_click(screen_pos: Vector2) -> void:
+	var local_hit = _project_screen_to_local_board(screen_pos)
+	if abs(local_hit.x) > 0.56 or abs(local_hit.z) > 0.56:
+		return
+	# First prefer closest empty line within forgiving radius; otherwise closest line overall
+	var nearest_id = _find_closest_line_to_local_pos(local_hit, 0.056, true)
+	if nearest_id == -1:
+		nearest_id = _find_closest_line_to_local_pos(local_hit, 0.048, false)
+	if nearest_id != -1:
+		_on_line_channel_pressed(nearest_id)
+
+
+func _find_closest_line_to_local_pos(local_pos: Vector3, max_dist: float, prefer_empty: bool = false) -> int:
 	var best_id: int = -1
 	var best_d: float = max_dist
 	var p2 = Vector2(local_pos.x, local_pos.z)
+	var half_seg: float = (DOT_SPACING - 0.048) * 0.5 # ~0.0635m half-length of channel between dots
 	for line_id in range(TOTAL_LINES):
+		if prefer_empty and lines_board[line_id] != 0:
+			continue
 		var c: Vector3 = line_centers[line_id]
-		var d: float = p2.distance_to(Vector2(c.x, c.z))
+		var is_horiz: bool = line_is_horizontal[line_id]
+		var a: Vector2
+		var b: Vector2
+		if is_horiz:
+			a = Vector2(c.x - half_seg, c.z)
+			b = Vector2(c.x + half_seg, c.z)
+		else:
+			a = Vector2(c.x, c.z - half_seg)
+			b = Vector2(c.x, c.z + half_seg)
+		var closest_pt: Vector2 = Geometry2D.get_closest_point_to_segment(p2, a, b)
+		var d: float = p2.distance_to(closest_pt)
 		if d < best_d:
 			best_d = d
 			best_id = line_id
@@ -486,11 +570,11 @@ func _find_closest_line_to_local_pos(local_pos: Vector3, max_dist: float) -> int
 
 
 func _build_side_reserve_trays() -> void:
-	tray_red_root = _create_single_side_tray(TRAY_RED_X, 1, "مهره‌های قرمز")
-	tray_blue_root = _create_single_side_tray(TRAY_BLUE_X, 2, "مهره‌های آبی")
+	tray_red_root = _create_single_side_tray(TRAY_RED_X, 1, "خانه‌های قرمز")
+	tray_blue_root = _create_single_side_tray(TRAY_BLUE_X, 2, "خانه‌های آبی")
 
 	status_banner_3d = Label3D.new()
-	status_banner_3d.font = preload("res://assets/fonts/hekayat.ttf")
+	status_banner_3d.font = _font_hekayat
 	status_banner_3d.font_size = 38
 	status_banner_3d.outline_size = 8
 	status_banner_3d.modulate = Color(1.0, 0.90, 0.42)
@@ -531,7 +615,7 @@ func _create_single_side_tray(x_pos: float, player_id: int, title_text: String) 
 	tray.add_child(rim_inst)
 
 	var lbl = Label3D.new()
-	lbl.font = preload("res://assets/fonts/hekayat.ttf")
+	lbl.font = _font_hekayat
 	lbl.font_size = 34
 	lbl.outline_size = 7
 	lbl.modulate = Color(1.0, 0.45, 0.45) if player_id == 1 else Color(0.48, 0.78, 1.0)
@@ -581,9 +665,9 @@ func _rebuild_reserve_tray_stacks() -> void:
 		tray_blue_pieces.append(puck)
 
 	if is_instance_valid(tray_red_label):
-		tray_red_label.text = "خانه‌های قرمز: %d" % player1_score
+		tray_red_label.text = "خانه‌های قرمز: %s" % _fa_digits(player1_score)
 	if is_instance_valid(tray_blue_label):
-		tray_blue_label.text = "خانه‌های آبی: %d" % player2_score
+		tray_blue_label.text = "خانه‌های آبی: %s" % _fa_digits(player2_score)
 
 
 func _build_3d_bridge_bar(owner_id: int, is_horiz: bool, is_last_played: bool) -> Node3D:
@@ -703,7 +787,7 @@ func _start_ambient_pulse() -> void:
 	if _pulse_tween and _pulse_tween.is_valid():
 		_pulse_tween.kill()
 	_pulse_tween = create_tween().set_loops()
-	_pulse_tween.tween_property(_mat_box_opportunity, "emission_energy_multiplier", 2.0, 0.75).set_trans(Tween.TRANS_SINE)
+	_pulse_tween.tween_property(_mat_box_opportunity, "emission_energy_multiplier", 2.1, 0.75).set_trans(Tween.TRANS_SINE)
 	_pulse_tween.tween_property(_mat_box_opportunity, "emission_energy_multiplier", 0.75, 0.75).set_trans(Tween.TRANS_SINE)
 
 
@@ -755,7 +839,7 @@ func _would_line_complete_box(line_id: int) -> bool:
 func _on_line_hovered(line_id: int) -> void:
 	if line_id < 0 or line_id >= TOTAL_LINES:
 		return
-	if is_board_locked or not _can_select_peace or lines_board[line_id] != 0:
+	if is_board_locked or not is_my_turn or lines_board[line_id] != 0:
 		_clear_line_hover()
 		return
 	if hovered_line_id == line_id:
@@ -781,45 +865,74 @@ func _clear_line_hover() -> void:
 
 
 func _on_line_channel_pressed(line_id: int) -> void:
-	if is_board_locked or not GameManager.is_game_active:
-		return
-	if not _can_select_peace:
-		invalid_move_attempted.emit("⏳ نوبت حریف است! لطفاً صبر کنید.")
+	if not GameManager.is_game_active:
+		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
+		AudioManager.play_sound("miss_turn")
 		return
 	if line_id < 0 or line_id >= TOTAL_LINES:
 		return
-	if lines_board[line_id] != 0:
-		invalid_move_attempted.emit("⚠️ این خط قبلاً انتخاب شده است!")
+	if is_board_locked:
+		return
+	if not is_my_turn:
+		show_hint("نوبت شما نیست؛ لطفاً منتظر حرکت حریف بمانید.")
+		AudioManager.play_sound("miss_turn")
 		return
 
-	_can_select_peace = false
+	var now = Time.get_ticks_msec() / 1000.0
+	var current_frame = Engine.get_process_frames()
+	if current_frame == _last_click_frame or (now - last_click_time < 0.08):
+		return
+	_last_click_frame = current_frame
+	last_click_time = now
+
+	if lines_board[line_id] != 0:
+		show_hint("این خط قبلاً انتخاب شده است؛ خط دیگری انتخاب کنید.")
+		AudioManager.play_sound("miss_turn")
+		return
+
+	set_board_locked(true)
+	is_my_turn = false
 	_clear_line_hover()
-	AudioManager.sfx_tap()
-	NetworkManager.send_game_command(Commands.Select_Peace, line_id)
+	AudioManager.play_sound("tap")
+	ActionVFXManager.spawn_ui_click_burst(get_viewport().get_mouse_position(), Color(1.0, 0.85, 0.35))
+	send_move(Commands.Select_Peace, line_id)
 
 
 # --- BaseGameBoard Lifecycle & Network Hooks ---
 
-func on_start_game() -> void:
-	sync_turn_state()
-
-
-func on_turn_changed(turn: int) -> void:
-	_can_select_peace = (turn == GameManager.my_player_index) and not is_board_locked
-	_clear_line_hover()
+func set_board_locked(locked: bool) -> void:
+	super.set_board_locked(locked)
+	if locked:
+		_clear_line_hover()
 	_refresh_visual_guides()
 
 
-func sync_turn_state() -> void:
-	var my_idx: int = GameManager.my_player_index
-	var turn: int = GameManager.current_turn
-	_can_select_peace = GameManager.is_game_active and not is_board_locked and (turn == my_idx) and my_idx > 0
+func setup_board(game_data: Dictionary) -> void:
+	reset_board()
+	super._ready()
+	if game_data.has("lines_board"):
+		sync_board_state(game_data["lines_board"])
+	_sync_hud_scores()
+	_refresh_visual_guides()
+
+
+func on_start_game() -> void:
+	sync_turn_state()
+	_refresh_visual_guides()
+
+
+func on_turn_changed(turn: int, is_me: bool) -> void:
+	my_player_index = GameManager.my_player_index
+	current_turn = turn
+	is_my_turn = is_me
+	is_board_locked = not is_me
+	_clear_line_hover()
 	_refresh_visual_guides()
 
 
 func on_piece_selected(user_id: int, target_peace: int, _extra: Dictionary = {}) -> void:
 	var line_id: int = int(target_peace)
-	var gamer_id: int = int(user_id)
+	var gamer_id: int = int(user_id) if user_id > 0 else current_turn
 	if line_id < 0 or line_id >= TOTAL_LINES or gamer_id <= 0:
 		return
 
@@ -839,54 +952,57 @@ func on_piece_selected(user_id: int, target_peace: int, _extra: Dictionary = {})
 		_recalculate_scores_from_boxes()
 		_sync_hud_scores()
 		_rebuild_reserve_tray_stacks()
-		AudioManager.sfx_win_round()
+		AudioManager.play_sound("correct")
 
 		# When a box is completed and lines still remain, the same player continues their turn!
 		if not _is_all_lines_filled():
+			current_turn = gamer_id
 			GameManager.current_turn = gamer_id
-			if gamer_id == GameManager.my_player_index:
-				_can_select_peace = not is_board_locked
-				var hud = _find_base_game_hud()
-				if hud and hud.has_method("show_toast_hint"):
-					var count_fa = "۲ خانه" if newly_completed.size() > 1 else "۱ خانه"
-					hud.show_toast_hint("🎁 %s گرفتید! نوبت جایزه شماست" % count_fa)
+			my_player_index = GameManager.my_player_index
+			if gamer_id == my_player_index:
+				is_my_turn = true
+				set_board_locked(false)
+				var count_fa = "۲ خانه" if newly_completed.size() > 1 else "۱ خانه"
+				show_hint("🎁 %s گرفتید! نوبت جایزه شماست" % count_fa)
 			else:
-				_can_select_peace = false
+				is_my_turn = false
+				set_board_locked(true)
 	else:
-		AudioManager.sfx_move()
+		AudioManager.play_sound("add_peace")
 
 	_refresh_visual_guides()
 
 
 func on_reconnect_data(payload: Dictionary) -> void:
-	var g_data: Dictionary = payload.get("game_data", payload)
-	if typeof(g_data) != TYPE_DICTIONARY:
-		return
+	my_player_index = GameManager.my_player_index
+	var g_data = payload.get("game_data", payload)
+	if typeof(g_data) == TYPE_DICTIONARY:
+		var l_arr = g_data.get("lines_board", [])
+		if typeof(l_arr) == TYPE_ARRAY and (l_arr as Array).size() == TOTAL_LINES:
+			for i in range(TOTAL_LINES):
+				lines_board[i] = int(l_arr[i])
 
-	var l_arr = g_data.get("lines_board", [])
-	if typeof(l_arr) == TYPE_ARRAY and l_arr.size() == TOTAL_LINES:
-		for i in range(TOTAL_LINES):
-			lines_board[i] = int(l_arr[i])
+		var b_arr = g_data.get("boxes_board", [])
+		if typeof(b_arr) == TYPE_ARRAY and (b_arr as Array).size() == TOTAL_BOXES:
+			for i in range(TOTAL_BOXES):
+				boxes_board[i] = int(b_arr[i])
 
-	var b_arr = g_data.get("boxes_board", [])
-	if typeof(b_arr) == TYPE_ARRAY and b_arr.size() == TOTAL_BOXES:
-		for i in range(TOTAL_BOXES):
-			boxes_board[i] = int(b_arr[i])
+		if g_data.has("scores") and typeof(g_data["scores"]) == TYPE_ARRAY and (g_data["scores"] as Array).size() >= 2:
+			player1_score = int(g_data["scores"][0])
+			player2_score = int(g_data["scores"][1])
+		else:
+			_recalculate_scores_from_boxes()
 
-	if g_data.has("scores") and typeof(g_data["scores"]) == TYPE_ARRAY and (g_data["scores"] as Array).size() >= 2:
-		player1_score = int(g_data["scores"][0])
-		player2_score = int(g_data["scores"][1])
-	else:
-		_recalculate_scores_from_boxes()
-
-	if g_data.has("current_turn"):
-		GameManager.current_turn = int(g_data["current_turn"])
+		if g_data.has("current_turn"):
+			current_turn = int(g_data["current_turn"])
+			GameManager.current_turn = current_turn
 
 	last_played_line_id = -1
 	_rebuild_all_3d_pieces_from_state()
 	_sync_hud_scores()
 	_rebuild_reserve_tray_stacks()
 	sync_turn_state()
+	_refresh_visual_guides()
 
 
 func sync_board_state(board_data: Variant) -> void:
@@ -920,16 +1036,9 @@ func _recalculate_scores_from_boxes() -> void:
 func _sync_hud_scores() -> void:
 	GameManager.p1_score = player1_score
 	GameManager.p2_score = player2_score
-	var hud = _find_base_game_hud()
-	if hud and hud.has_method("update_scores"):
-		hud.update_scores(player1_score, player2_score)
-
-
-func _find_base_game_hud() -> Node:
-	var tree = get_tree()
-	if not tree or not tree.current_scene:
-		return null
-	return tree.current_scene.find_child("BaseGameHUD", true, false)
+	var main_node = get_tree().current_scene if get_tree() else null
+	if main_node and "base_game_hud" in main_node and is_instance_valid(main_node.base_game_hud):
+		main_node.base_game_hud.update_scores(player1_score, player2_score)
 
 
 func _spawn_or_animate_bridge_bar(line_id: int, owner_id: int, animate: bool) -> void:
@@ -995,9 +1104,7 @@ func _spawn_or_animate_box_crest(box_id: int, owner_id: int, animate: bool, dela
 		tw.tween_property(crest, "rotation:y", 0.0, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tw.chain().tween_callback(func():
 			if is_instance_valid(crest):
-				ActionVFXManager.play_3d_landing_dust(self, target_pos)
-				var pop_color = Color(1.0, 0.88, 0.28) if owner_id == GameManager.my_player_index else Color(0.85, 0.85, 0.85)
-				ActionVFXManager.spawn_3d_score_popup(self, target_pos + Vector3(0, 0.05, 0), "+1", pop_color)
+				ActionVFXManager.spawn_piece_impact_vfx(self, target_pos, owner_id)
 		)
 	else:
 		crest.position = target_pos
@@ -1033,6 +1140,8 @@ func _refresh_visual_guides() -> void:
 	# 1. Update 3-wall opportunity glow on uncaptured boxes
 	var has_opportunity: bool = false
 	for box_id in range(TOTAL_BOXES):
+		if box_id >= box_opportunity_rings.size():
+			continue
 		var opp_ring: MeshInstance3D = box_opportunity_rings[box_id]
 		if not is_instance_valid(opp_ring):
 			continue
@@ -1044,6 +1153,8 @@ func _refresh_visual_guides() -> void:
 
 	# 2. Update empty channel slot shimmer so active player clearly sees available moves and immediate captures
 	for line_id in range(TOTAL_LINES):
+		if line_id >= line_slot_meshes.size():
+			continue
 		var slot_inst: MeshInstance3D = line_slot_meshes[line_id]
 		if not is_instance_valid(slot_inst):
 			continue
@@ -1051,7 +1162,7 @@ func _refresh_visual_guides() -> void:
 			slot_inst.visible = false
 		else:
 			slot_inst.visible = true
-			if _can_select_peace and not is_board_locked:
+			if is_my_turn and not is_board_locked:
 				if _would_line_complete_box(line_id):
 					slot_inst.material_override = _mat_channel_capture_ready
 				else:
@@ -1064,15 +1175,15 @@ func _refresh_visual_guides() -> void:
 		var remaining_boxes: int = TOTAL_BOXES - (player1_score + player2_score)
 		if not GameManager.is_game_active:
 			status_banner_3d.text = "نقطه خط — ۲۵ خانه"
-		elif _can_select_peace and not is_board_locked:
+		elif is_my_turn and not is_board_locked:
 			if has_opportunity:
 				status_banner_3d.text = "✨ فرصت تسخیر خانه! یک خط طلایی را ببندید"
 				status_banner_3d.modulate = Color(1.0, 0.88, 0.25)
 			else:
-				status_banner_3d.text = "نوبت شما — یک خط بین دو ستون طلایی رسم کنید (%d خانه باقی‌مانده)" % remaining_boxes
+				status_banner_3d.text = "نوبت شما — یک خط بین دو ستون طلایی رسم کنید (%s خانه باقی‌مانده)" % _fa_digits(remaining_boxes)
 				status_banner_3d.modulate = Color(0.95, 0.92, 0.78)
 		else:
-			status_banner_3d.text = "در انتظار حرکت حریف... (%d خانه باقی‌مانده)" % remaining_boxes
+			status_banner_3d.text = "در انتظار حرکت حریف... (%s خانه باقی‌مانده)" % _fa_digits(remaining_boxes)
 			status_banner_3d.modulate = Color(0.75, 0.78, 0.85)
 
 
@@ -1082,14 +1193,39 @@ func reset_board() -> void:
 	player1_score = 0
 	player2_score = 0
 	last_played_line_id = -1
-	_can_select_peace = false
 	_clear_line_hover()
 	_rebuild_all_3d_pieces_from_state()
 	_rebuild_reserve_tray_stacks()
+	_sync_hud_scores()
 	_refresh_visual_guides()
+
+
+func on_round_finished(_payload: Variant) -> void:
+	set_board_locked(true)
+	_clear_line_hover()
+
+
+func on_new_round(_round_num: int) -> void:
+	reset_board()
 
 
 func cleanup_board() -> void:
 	if _pulse_tween and _pulse_tween.is_valid():
 		_pulse_tween.kill()
-	super.cleanup_board()
+	_clear_line_hover()
+	for k in line_bridge_nodes.keys():
+		if is_instance_valid(line_bridge_nodes[k]):
+			line_bridge_nodes[k].queue_free()
+	line_bridge_nodes.clear()
+	for k in box_crest_nodes.keys():
+		if is_instance_valid(box_crest_nodes[k]):
+			box_crest_nodes[k].queue_free()
+	box_crest_nodes.clear()
+	for p in tray_red_pieces:
+		if is_instance_valid(p):
+			p.queue_free()
+	tray_red_pieces.clear()
+	for p in tray_blue_pieces:
+		if is_instance_valid(p):
+			p.queue_free()
+	tray_blue_pieces.clear()
