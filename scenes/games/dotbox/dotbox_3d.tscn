@@ -1,0 +1,134 @@
+[gd_scene load_steps=17 format=3 uid="uid://db8x93y0pqch7"]
+
+[ext_resource type="Script" path="res://scenes/games/dotbox/dotbox_3d.gd" id="1_dotbox_script"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_plinth"]
+albedo_color = Color(0.15, 0.09, 0.06, 1)
+metallic = 0.02
+roughness = 0.50
+
+[sub_resource type="BoxMesh" id="BoxMesh_plinth"]
+material = SubResource("StandardMaterial3D_plinth")
+size = Vector3(1.36, 0.025, 1.36)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_outer_rim"]
+albedo_color = Color(0.24, 0.14, 0.09, 1)
+metallic = 0.03
+roughness = 0.36
+clearcoat_enabled = true
+clearcoat = 0.65
+clearcoat_roughness = 0.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_outer_rim"]
+material = SubResource("StandardMaterial3D_outer_rim")
+size = Vector3(1.28, 0.042, 1.28)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_playing_bed"]
+albedo_color = Color(0.18, 0.12, 0.08, 1)
+metallic = 0.04
+roughness = 0.38
+clearcoat_enabled = true
+clearcoat = 0.52
+clearcoat_roughness = 0.22
+
+[sub_resource type="BoxMesh" id="BoxMesh_playing_bed"]
+material = SubResource("StandardMaterial3D_playing_bed")
+size = Vector3(1.16, 0.018, 1.16)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gold_grid"]
+albedo_color = Color(0.92, 0.76, 0.26, 1)
+metallic = 0.88
+roughness = 0.32
+
+[sub_resource type="BoxMesh" id="BoxMesh_border_h"]
+material = SubResource("StandardMaterial3D_gold_grid")
+size = Vector3(1.08, 0.005, 0.010)
+
+[sub_resource type="BoxMesh" id="BoxMesh_border_v"]
+material = SubResource("StandardMaterial3D_gold_grid")
+size = Vector3(0.010, 0.005, 1.08)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_brass_corner"]
+albedo_color = Color(0.92, 0.74, 0.26, 1)
+metallic = 0.92
+roughness = 0.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_corner"]
+material = SubResource("StandardMaterial3D_brass_corner")
+size = Vector3(0.10, 0.050, 0.10)
+
+[sub_resource type="SphereMesh" id="SphereMesh_rivet"]
+material = SubResource("StandardMaterial3D_brass_corner")
+radius = 0.016
+height = 0.020
+
+[sub_resource type="BoxMesh" id="BoxMesh_plaque"]
+material = SubResource("StandardMaterial3D_brass_corner")
+size = Vector3(0.28, 0.020, 0.010)
+
+[node name="DotBox3D" type="Node3D"]
+script = ExtResource("1_dotbox_script")
+
+[node name="PlinthBase" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.012, 0)
+mesh = SubResource("BoxMesh_plinth")
+
+[node name="BoardFrame" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.015, 0)
+mesh = SubResource("BoxMesh_outer_rim")
+
+[node name="PlayingBed" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.038, 0)
+mesh = SubResource("BoxMesh_playing_bed")
+
+[node name="GoldBorderN" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0475, -0.538)
+mesh = SubResource("BoxMesh_border_h")
+
+[node name="GoldBorderS" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0475, 0.538)
+mesh = SubResource("BoxMesh_border_h")
+
+[node name="GoldBorderW" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.538, 0.0475, 0)
+mesh = SubResource("BoxMesh_border_v")
+
+[node name="GoldBorderE" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.538, 0.0475, 0)
+mesh = SubResource("BoxMesh_border_v")
+
+[node name="CornerTL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.61, 0.018, -0.61)
+mesh = SubResource("BoxMesh_corner")
+
+[node name="RivetTL" type="MeshInstance3D" parent="CornerTL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.026, 0)
+mesh = SubResource("SphereMesh_rivet")
+
+[node name="CornerTR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.61, 0.018, -0.61)
+mesh = SubResource("BoxMesh_corner")
+
+[node name="RivetTR" type="MeshInstance3D" parent="CornerTR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.026, 0)
+mesh = SubResource("SphereMesh_rivet")
+
+[node name="CornerBL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.61, 0.018, 0.61)
+mesh = SubResource("BoxMesh_corner")
+
+[node name="RivetBL" type="MeshInstance3D" parent="CornerBL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.026, 0)
+mesh = SubResource("SphereMesh_rivet")
+
+[node name="CornerBR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.61, 0.018, 0.61)
+mesh = SubResource("BoxMesh_corner")
+
+[node name="RivetBR" type="MeshInstance3D" parent="CornerBR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.026, 0)
+mesh = SubResource("SphereMesh_rivet")
+
+[node name="FrontPlaque" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.018, 0.642)
+mesh = SubResource("BoxMesh_plaque")

@@ -425,6 +425,16 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 
 ---
 
+### 4.13. Royal Persian Dots & Boxes (`DotBox` / `نقطه خط`) 3D Board, 36 Gold Pillars & Territory Crest Rules
+- **3D Walnut Cabinet, 36 Gold Pillar Posts & 60 Forgiving Bridge Channels (`dotbox_3d.gd` & `dotbox_3d.tscn`):**
+  - Renders a `6×6` grid of lathe-turned 24K Gold & Brass pillar posts (`DOT_SPACING = 0.175m`), `60` recessed ebony bridge channels (`0..59`: 30 horizontal + 30 vertical, stride `11` per box row), `25` recessed obsidian territory wells (`0..24`, `5×5` grid), and left/right mahogany reserve trays holding 3D Territory Crest Medallions.
+  - Gamer-friendly 3D UX: extra-wide `Area3D` channel hitboxes + board-surface fallback snapping, translucent 3D laser hover preview bars (glowing 24K Gold when a line immediately completes a box), pulsing golden opportunity rings inside any 3-walled box, and a 24K Gold aura around the most recently played line (`last_played_line_id`).
+- **Exact Server Protocol & Bonus Turn Continuation (`DotBoxGameClass` & `DotBoxController`):**
+  - Client sends `Select_Peace` (`line_id: 0..59`). Server emits `Peace_Selected` (`{"user": gamer_id, "target_peace": line_id}`).
+  - When `check_box_win_happen(line_id)` completes 1 or 2 boxes in `BOXES_NEIGHBORS`, 3D Territory Crest Medallions launch into the captured box wells with `+1` score popups, HUD scores update live, and `gamer_id` immediately continues their turn for a bonus line placement.
+
+---
+
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
 
 Whenever you are tasked with adding a new game (e.g. Checkers, Backgammon, Four-in-a-Row, Othello, Mill, etc.):

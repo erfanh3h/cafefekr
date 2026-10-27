@@ -873,6 +873,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 				inferred_type = GameTypes.FOURINROW
 		elif g_data.has("current_turn__round") or (g_data.has("round_scores") and not g_data.has("board")):
 			inferred_type = GameTypes.RPC
+		elif g_data.has("lines_board") or g_data.has("boxes_board"):
+			inferred_type = GameTypes.DOTBOX
 		elif g_data.has("played_peaces") or g_data.has("current_remover") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 24 and not g_data.has("out_pieces")):
 			inferred_type = GameTypes.MILL
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:
@@ -885,6 +887,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 		if typeof(g_data) == TYPE_DICTIONARY and board.has_method("sync_board_state"):
 			if g_data.has("board"):
 				board.sync_board_state(g_data["board"])
+			elif g_data.has("lines_board"):
+				board.sync_board_state(g_data["lines_board"])
 			elif g_data.has("board_data"):
 				board.sync_board_state(g_data["board_data"])
 			elif g_data.has("peaces"):
