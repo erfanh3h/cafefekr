@@ -7,7 +7,7 @@ extends "res://scripts/games/base_game_board.gd"
 # - Phase 1 (Setup - 60s): Large 8x8 Ocean Grid (CELL_PITCH = 0.122) + Bottom Command Bar.
 #   * Real-time 3D ship dragging across the grid (ship model floats & follows cursor live!)
 #   * Instant 1-tap ship rotation (clicking any segment of any ship rotates it 90° around
-#     that point with smart 2D neighborhood collision resolution, plus dedicated 🔄 button!)
+#     that point with smart 2D neighborhood collision resolution!)
 # - Phase 2 (Combat - 12s/turn, Bonus Turn on Hit!):
 #   * Switchable 3D Views (MY_BOARD Attack Radar, OPP_BOARD Defense Fleet, DUAL Side-by-Side)
 #   * Large, high-contrast 3D typography, artillery shell arcs, water splashes, and
@@ -86,9 +86,8 @@ var defense_markers_root: Node3D
 var my_status_badges: Dictionary = {}
 
 # Bottom Command Bar Layout (in drydock_root local XZ)
-const CMD_BTN_ROTATE_X: float = -0.37
-const CMD_BTN_RANDOM_X: float = 0.37
-const CMD_BERTH_X: Array[float] = [-0.15, -0.05, 0.05, 0.15]
+const CMD_BTN_RANDOM_X: float = 0.34
+const CMD_BERTH_X: Array[float] = [-0.41, -0.25, -0.09, 0.07]
 const CMD_BERTH_LENGTHS: Array[int] = [5, 4, 3, 2]
 
 # Shared Materials (Strictly Opaque for Board/Grid to prevent Z-Fighting!)
@@ -464,22 +463,14 @@ func _build_phase1_setup_ui() -> void:
 	lbl_phase1_hint.position = Vector3(0, 0.027, -0.052)
 	drydock_root.add_child(lbl_phase1_hint)
 
-	# Left Large Button: Rotate Selected Ship ("🔄 چرخش کشتی")
-	_create_drydock_3d_button(
-		Vector3(CMD_BTN_ROTATE_X, 0.028, 0.022),
-		Vector3(0.32, 0.010, 0.082),
-		"🔄 چرخش کشتی",
-		Color(0.16, 0.50, 0.86)
-	)
-
-	# Center 4 Ship Selector Buttons (Lengths 5, 4, 3, 2)
+	# 4 Ship Selector Buttons (Lengths 5, 4, 3, 2)
 	for i in range(4):
 		var s_len: int = CMD_BERTH_LENGTHS[i]
 		var bx: float = CMD_BERTH_X[i]
 
 		var slot_box = MeshInstance3D.new()
 		var sbm = BoxMesh.new()
-		sbm.size = Vector3(0.088, 0.010, 0.082)
+		sbm.size = Vector3(0.135, 0.010, 0.082)
 		slot_box.mesh = sbm
 		slot_box.position = Vector3(bx, 0.028, 0.022)
 		var slot_mat = StandardMaterial3D.new()
@@ -496,7 +487,7 @@ func _build_phase1_setup_ui() -> void:
 	# Right Large Button: Randomize Fleet ("🎲 چیدمان تصادفی")
 	_create_drydock_3d_button(
 		Vector3(CMD_BTN_RANDOM_X, 0.028, 0.022),
-		Vector3(0.32, 0.010, 0.082),
+		Vector3(0.36, 0.010, 0.082),
 		"🎲 چیدمان تصادفی",
 		Color(0.15, 0.64, 0.40)
 	)
@@ -1372,16 +1363,12 @@ func _handle_phase1_input(event: InputEvent) -> void:
 			var dock_local: Vector3 = drydock_root.to_local(world_pt)
 			if abs(dock_local.x) <= 0.58 and abs(dock_local.z) <= 0.11:
 				_mark_piece_interaction()
-				if abs(dock_local.x - CMD_BTN_ROTATE_X) <= 0.165:
-					_rotate_selected_ship()
-					get_viewport().set_input_as_handled()
-					return
-				elif abs(dock_local.x - CMD_BTN_RANDOM_X) <= 0.165:
+				if abs(dock_local.x - CMD_BTN_RANDOM_X) <= 0.185:
 					_randomize_fleet_placement()
 					get_viewport().set_input_as_handled()
 					return
 				for i in range(4):
-					if abs(dock_local.x - CMD_BERTH_X[i]) <= 0.048:
+					if abs(dock_local.x - CMD_BERTH_X[i]) <= 0.072:
 						var s_len: int = CMD_BERTH_LENGTHS[i]
 						if selected_ship_len == s_len:
 							_rotate_selected_ship()
