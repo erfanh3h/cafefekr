@@ -83,6 +83,10 @@ func _connect_network_signals() -> void:
 		NetworkManager.wait_time_received.connect(_on_internal_wait_time)
 	if not NetworkManager.start_game_received.is_connected(_on_internal_start_game):
 		NetworkManager.start_game_received.connect(_on_internal_start_game)
+	if not NetworkManager.start_game_data_received.is_connected(_on_internal_start_game_data):
+		NetworkManager.start_game_data_received.connect(_on_internal_start_game_data)
+	if not NetworkManager.wrong_solve_received.is_connected(_on_internal_wrong_solve):
+		NetworkManager.wrong_solve_received.connect(_on_internal_wrong_solve)
 
 func _disconnect_network_signals() -> void:
 	if NetworkManager.turn_data_received.is_connected(_on_internal_turn_data):
@@ -115,6 +119,10 @@ func _disconnect_network_signals() -> void:
 		NetworkManager.wait_time_received.disconnect(_on_internal_wait_time)
 	if NetworkManager.start_game_received.is_connected(_on_internal_start_game):
 		NetworkManager.start_game_received.disconnect(_on_internal_start_game)
+	if NetworkManager.start_game_data_received.is_connected(_on_internal_start_game_data):
+		NetworkManager.start_game_data_received.disconnect(_on_internal_start_game_data)
+	if NetworkManager.wrong_solve_received.is_connected(_on_internal_wrong_solve):
+		NetworkManager.wrong_solve_received.disconnect(_on_internal_wrong_solve)
 
 # --- Internal Network Callbacks (Dispatches to Virtual Hooks) ---
 
@@ -216,6 +224,12 @@ func _on_internal_game_data(payload: Dictionary) -> void:
 func _on_internal_start_game() -> void:
 	on_start_game()
 
+func _on_internal_start_game_data(payload: Dictionary) -> void:
+	on_start_game_data(payload)
+
+func _on_internal_wrong_solve() -> void:
+	on_wrong_solve()
+
 func _on_internal_wait_time(time_sec: int) -> void:
 	on_wait_time(time_sec)
 
@@ -237,6 +251,12 @@ func setup_board(_game_data: Dictionary) -> void:
 	pass
 
 func on_start_game() -> void:
+	pass
+
+func on_start_game_data(_payload: Dictionary) -> void:
+	pass
+
+func on_wrong_solve() -> void:
 	pass
 
 func on_wait_time(_time_sec: int) -> void:

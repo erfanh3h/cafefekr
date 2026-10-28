@@ -896,6 +896,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameTypes.DOTBOX
 		elif g_data.has("played_peaces") or g_data.has("current_remover") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 24 and not g_data.has("out_pieces")):
 			inferred_type = GameTypes.MILL
+		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 81:
+			inferred_type = GameTypes.SUDOKU
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 36:
 			inferred_type = GameTypes.MNUMBERS
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:

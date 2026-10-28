@@ -1175,7 +1175,12 @@ func start_turn_timer(duration: float, custom_banner: String = "") -> void:
 	is_game_started = true
 	var banner = custom_banner
 	if banner.is_empty() and GameRegistry.is_simultaneous(GameManager.current_game_type):
-		banner = "سنگ، کاغذ یا قیچی را انتخاب کنید!" if GameManager.current_game_type == GameTypes.RPC else "انتخاب خود را مشخص کنید"
+		if GameManager.current_game_type == GameTypes.RPC:
+			banner = "سنگ، کاغذ یا قیچی را انتخاب کنید!"
+		elif GameManager.current_game_type == GameTypes.SUDOKU:
+			banner = "جدول سودوکو را با اعداد ۱ تا ۹ تکمیل کنید"
+		else:
+			banner = "انتخاب خود را مشخص کنید"
 	if not banner.is_empty():
 		set_custom_banner(banner, Color(1.0, 0.90, 0.45))
 	if is_instance_valid(current_top_header):

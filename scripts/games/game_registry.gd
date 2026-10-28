@@ -21,6 +21,7 @@ const MILL_SCENE: String = "res://scenes/games/mill/mill_3d.tscn"
 const DOTBOX_SCENE: String = "res://scenes/games/dotbox/dotbox_3d.tscn"
 const MNUMBERS_SCENE: String = "res://scenes/games/mnumbers/mnumbers_3d.tscn"
 const BATTLESHIP_SCENE: String = "res://scenes/games/battleship/battleship_3d.tscn"
+const SUDOKU_SCENE: String = "res://scenes/games/sudoku/sudoku_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -275,7 +276,7 @@ static var _registry: Dictionary = {
 		"id": GameTypes.SUDOKU,
 		"name_fa": "سودوکو",
 		"narrative": "در رقص ظریف سودوکو، هر عدد گامی به‌سوی تعادل است و هر خانه‌ی خالی رازی نهفته.",
-		"board_scene": TEMP_SCENE,
+		"board_scene": SUDOKU_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
 		"has_round_score": false,

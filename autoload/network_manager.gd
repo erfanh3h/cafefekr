@@ -29,6 +29,8 @@ signal connection_status_changed(connected: bool)
 signal not_played_turns_received(gamer_id: int, count: int)
 signal wait_time_received(time: int)
 signal start_game_received()
+signal start_game_data_received(payload: Dictionary)
+signal wrong_solve_received()
 
 var api: APIClient
 var socket: SocketIOClient
@@ -243,6 +245,8 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				join_active_game(game_id)
 			else:
 				print("[NetworkManager] Start_Game command received inside game session.")
+				if typeof(payload) == TYPE_DICTIONARY:
+					start_game_data_received.emit(payload)
 				start_game_received.emit()
 
 		Commands.Wait_Time:
@@ -408,5 +412,8 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.Reaction:
 			reaction_received.emit(payload)
 
+		Commands.Wrong_Solve:
+			print("[NetworkManager] Wrong_Solve received!")
+			wrong_solve_received.emit()
 		Commands.Logout:
 			GameManager.logout()
