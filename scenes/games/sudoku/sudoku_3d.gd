@@ -26,14 +26,14 @@ const BLOCK_GAP: float = 0.016
 const BLOCK_W: float = (3.0 * CELL_W) + (2.0 * CELL_GAP) # 0.326m
 const TOTAL_GRID_W: float = (3.0 * BLOCK_W) + (2.0 * BLOCK_GAP) # 1.010m
 
-# Bottom Console Metrics (Enlarged selectable buttons with zero text overflow)
+# Bottom Console Metrics (Extra-large mechanical digit buttons & centered submit button)
 const CONSOLE_Z: float = 0.445
-const PAD_BTN_W: float = 0.096
-const PAD_BTN_D: float = 0.088
-const PAD_BTN_H: float = 0.024
-const PAD_SPACING: float = 0.110 # Total span = 8 * 0.110 = 0.880m
+const PAD_BTN_W: float = 0.106
+const PAD_BTN_D: float = 0.104
+const PAD_BTN_H: float = 0.026
+const PAD_SPACING: float = 0.116 # Total span = 8 * 0.116 = 0.928m
 const ACTION_BTN_Y: float = 0.038
-const ACTION_BTN_Z: float = 0.565
+const ACTION_BTN_Z: float = 0.575
 
 # Camera framing hints for CafeTable
 var camera_pitch: float = -0.733
@@ -44,7 +44,7 @@ var _game_font: Font = null
 var board_values: Array = []         # 0..9 (0 = empty)
 var is_base_number: Array = []       # True for immutable starting clues
 var selected_cell_idx: int = -1      # Currently focused cell (0..80, or -1)
-var selected_digit: int = 1          # Currently selected digit in pad (1..9, or 0 for erase mode)
+var selected_digit: int = -1          # Currently selected digit in pad (1..9, or 0 for erase mode)
 var numbers_count: Dictionary = {}   # digit (1..9) -> count on board (0..9)
 var conflicting_indices: Array = []  # Indices of cells violating Sudoku rules
 var completed_rows: Array = []       # Completed 9-cell rows (0..8)
@@ -79,10 +79,7 @@ var pad_btn_meshes: Array = []
 var pad_btn_labels: Array = []
 var pad_btn_count_labels: Array = []
 
-var btn_erase_root: Node3D
-var btn_erase_pivot: Node3D
-var btn_erase_mesh: MeshInstance3D
-var btn_erase_label: Label3D
+
 
 var btn_solve_root: Node3D
 var btn_solve_pivot: Node3D
@@ -106,8 +103,7 @@ var mat_highlight_conflict: StandardMaterial3D
 var mat_pad_normal: StandardMaterial3D
 var mat_pad_selected: StandardMaterial3D
 var mat_pad_completed: StandardMaterial3D
-var mat_btn_erase_normal: StandardMaterial3D
-var mat_btn_erase_active: StandardMaterial3D
+
 var mat_btn_solve: StandardMaterial3D
 
 func _init() -> void:
@@ -274,17 +270,6 @@ func _init_materials() -> void:
 	mat_pad_completed.roughness = 0.32
 
 	# Action Buttons
-	mat_btn_erase_normal = StandardMaterial3D.new()
-	mat_btn_erase_normal.albedo_color = Color(0.48, 0.20, 0.18, 1.0)
-	mat_btn_erase_normal.metallic = 0.12
-	mat_btn_erase_normal.roughness = 0.35
-
-	mat_btn_erase_active = StandardMaterial3D.new()
-	mat_btn_erase_active.albedo_color = Color(0.85, 0.24, 0.20, 1.0)
-	mat_btn_erase_active.emission_enabled = true
-	mat_btn_erase_active.emission = Color(0.75, 0.20, 0.16)
-	mat_btn_erase_active.emission_energy_multiplier = 0.80
-
 	mat_btn_solve = StandardMaterial3D.new()
 	mat_btn_solve.albedo_color = Color(0.16, 0.54, 0.34, 1.0)
 	mat_btn_solve.metallic = 0.20
@@ -556,19 +541,19 @@ func _build_bottom_console() -> void:
 	# 1. Master Console Wood Base Plinth (Cleanly contained inside bed bounds)
 	var console_plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
-	plinth_mesh.size = Vector3(1.04, 0.024, 0.30)
+	plinth_mesh.size = Vector3(1.06, 0.024, 0.32)
 	console_plinth.mesh = plinth_mesh
 	console_plinth.material_override = mat_plinth
-	console_plinth.position = Vector3(0, 0.024, 0.475)
+	console_plinth.position = Vector3(0, 0.024, 0.485)
 	console_root.add_child(console_plinth)
 
 	# 2. Brass Divider Trim Bar
 	var trim_bar = MeshInstance3D.new()
 	var trim_mesh = BoxMesh.new()
-	trim_mesh.size = Vector3(1.02, 0.008, 0.008)
+	trim_mesh.size = Vector3(1.04, 0.008, 0.008)
 	trim_bar.mesh = trim_mesh
 	trim_bar.material_override = mat_brass_trim
-	trim_bar.position = Vector3(0, 0.038, CONSOLE_Z - 0.075)
+	trim_bar.position = Vector3(0, 0.038, CONSOLE_Z - 0.082)
 	console_root.add_child(trim_bar)
 
 	# 3. Dynamic Status Hint & Guidance Label
@@ -578,14 +563,14 @@ func _build_bottom_console() -> void:
 	lbl_status_hint.font_size = 26
 	lbl_status_hint.pixel_size = 0.00135
 	lbl_status_hint.rotation_degrees = Vector3(-90, 0, 0)
-	lbl_status_hint.position = Vector3(0, 0.040, CONSOLE_Z - 0.054)
+	lbl_status_hint.position = Vector3(0, 0.040, CONSOLE_Z - 0.062)
 	lbl_status_hint.text = "یک عدد را از پایین انتخاب و روی خانه‌های جدول بزنید"
 	lbl_status_hint.modulate = Color(0.95, 0.92, 0.82)
 	lbl_status_hint.outline_modulate = Color(0.06, 0.06, 0.08)
 	lbl_status_hint.outline_size = 8
 	console_root.add_child(lbl_status_hint)
 
-	# 4. 9 Tactile Mechanical Keycap Buttons (1..9)
+	# 4. 9 Enlarged Tactile Mechanical Keycap Buttons (1..9)
 	pad_btn_roots.resize(10)
 	pad_btn_pivots.resize(10)
 	pad_btn_meshes.resize(10)
@@ -627,14 +612,14 @@ func _build_bottom_console() -> void:
 		pivot.add_child(b_mesh)
 		pad_btn_meshes[d] = b_mesh
 
-		# Large Prominent Digit Label (Calibrated to fit button face perfectly)
+		# Extra-Large Prominent Persian Digit Label
 		var lbl_d = Label3D.new()
 		if _game_font:
 			lbl_d.font = _game_font
-		lbl_d.font_size = 44
-		lbl_d.pixel_size = 0.00125
+		lbl_d.font_size = 58
+		lbl_d.pixel_size = 0.00140
 		lbl_d.rotation_degrees = Vector3(-90, 0, 0)
-		lbl_d.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, -0.014)
+		lbl_d.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, -0.016)
 		lbl_d.text = _fa_num(d)
 		lbl_d.modulate = Color(1.0, 0.95, 0.82)
 		lbl_d.outline_modulate = Color(0.05, 0.05, 0.08)
@@ -646,10 +631,10 @@ func _build_bottom_console() -> void:
 		var lbl_cnt = Label3D.new()
 		if _game_font:
 			lbl_cnt.font = _game_font
-		lbl_cnt.font_size = 18
-		lbl_cnt.pixel_size = 0.00115
+		lbl_cnt.font_size = 22
+		lbl_cnt.pixel_size = 0.00125
 		lbl_cnt.rotation_degrees = Vector3(-90, 0, 0)
-		lbl_cnt.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, 0.024)
+		lbl_cnt.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, 0.028)
 		lbl_cnt.text = "۰/۹"
 		lbl_cnt.modulate = Color(0.75, 0.82, 0.88)
 		lbl_cnt.outline_modulate = Color(0.05, 0.05, 0.08)
@@ -657,46 +642,17 @@ func _build_bottom_console() -> void:
 		pivot.add_child(lbl_cnt)
 		pad_btn_count_labels[d] = lbl_cnt
 
-	# 5. Action Button: Erase (🧹 پاک کردن خانه)
-	btn_erase_root = Node3D.new()
-	btn_erase_root.name = "BtnErase"
-	btn_erase_root.position = Vector3(-0.22, ACTION_BTN_Y, ACTION_BTN_Z)
-	console_root.add_child(btn_erase_root)
-
-	btn_erase_pivot = Node3D.new()
-	btn_erase_root.add_child(btn_erase_pivot)
-
-	var erase_mesh = BoxMesh.new()
-	erase_mesh.size = Vector3(0.40, 0.024, 0.064)
-	btn_erase_mesh = MeshInstance3D.new()
-	btn_erase_mesh.mesh = erase_mesh
-	btn_erase_mesh.material_override = mat_btn_erase_normal
-	btn_erase_pivot.add_child(btn_erase_mesh)
-
-	btn_erase_label = Label3D.new()
-	if _game_font:
-		btn_erase_label.font = _game_font
-	btn_erase_label.font_size = 28
-	btn_erase_label.pixel_size = 0.00135
-	btn_erase_label.rotation_degrees = Vector3(-90, 0, 0)
-	btn_erase_label.position = Vector3(0, 0.015, 0)
-	btn_erase_label.text = "🧹 حالت پاک‌کن"
-	btn_erase_label.modulate = Color(1.0, 0.95, 0.92)
-	btn_erase_label.outline_modulate = Color(0.12, 0.04, 0.04)
-	btn_erase_label.outline_size = 8
-	btn_erase_pivot.add_child(btn_erase_label)
-
-	# 6. Action Button: Submit & Solve (✨ بررسی و ثبت حل)
+	# 5. Centered Action Button: Submit & Solve (✨ بررسی و ثبت حل)
 	btn_solve_root = Node3D.new()
 	btn_solve_root.name = "BtnSolve"
-	btn_solve_root.position = Vector3(0.22, ACTION_BTN_Y, ACTION_BTN_Z)
+	btn_solve_root.position = Vector3(0.0, ACTION_BTN_Y, ACTION_BTN_Z)
 	console_root.add_child(btn_solve_root)
 
 	btn_solve_pivot = Node3D.new()
 	btn_solve_root.add_child(btn_solve_pivot)
 
 	var solve_mesh = BoxMesh.new()
-	solve_mesh.size = Vector3(0.44, 0.024, 0.064)
+	solve_mesh.size = Vector3(0.56, 0.026, 0.068)
 	btn_solve_mesh = MeshInstance3D.new()
 	btn_solve_mesh.mesh = solve_mesh
 	btn_solve_mesh.material_override = mat_btn_solve
@@ -705,10 +661,10 @@ func _build_bottom_console() -> void:
 	btn_solve_label = Label3D.new()
 	if _game_font:
 		btn_solve_label.font = _game_font
-	btn_solve_label.font_size = 28
-	btn_solve_label.pixel_size = 0.00135
+	btn_solve_label.font_size = 32
+	btn_solve_label.pixel_size = 0.00140
 	btn_solve_label.rotation_degrees = Vector3(-90, 0, 0)
-	btn_solve_label.position = Vector3(0, 0.015, 0)
+	btn_solve_label.position = Vector3(0, 0.016, 0)
 	btn_solve_label.text = "✨ بررسی و ثبت حل"
 	btn_solve_label.modulate = Color(1.0, 1.0, 0.90)
 	btn_solve_label.outline_modulate = Color(0.04, 0.12, 0.06)
@@ -745,10 +701,7 @@ func _update_numbers_count() -> void:
 				pad_btn_meshes[d].material_override = mat_pad_normal
 				pad_btn_pivots[d].position.y = 0.0
 
-	# Update Erase Button styling
-	if is_instance_valid(btn_erase_mesh):
-		btn_erase_mesh.material_override = mat_btn_erase_active if selected_digit == 0 else mat_btn_erase_normal
-		btn_erase_pivot.position.y = -0.003 if selected_digit == 0 else 0.0
+
 
 	# Update Solve Button styling (ready if all 81 filled)
 	var filled_cnt = 0
@@ -1075,17 +1028,10 @@ func _handle_tap_at(screen_pos: Vector2) -> void:
 				_on_pad_button_tapped(d)
 				return
 
-	# Check Erase Button
-	if btn_erase_root and is_instance_valid(btn_erase_root):
-		var e_pos = btn_erase_root.position
-		if abs(hit_pos.x - e_pos.x) <= 0.21 and abs(hit_pos.z - e_pos.z) <= 0.036:
-			_on_erase_button_tapped()
-			return
-
-	# Check Submit Solve Button
+	# Check Centered Submit Solve Button
 	if btn_solve_root and is_instance_valid(btn_solve_root):
 		var s_pos = btn_solve_root.position
-		if abs(hit_pos.x - s_pos.x) <= 0.23 and abs(hit_pos.z - s_pos.z) <= 0.036:
+		if abs(hit_pos.x - s_pos.x) <= 0.29 and abs(hit_pos.z - s_pos.z) <= 0.038:
 			_on_solve_button_tapped()
 			return
 
@@ -1104,51 +1050,35 @@ func _handle_tap_at(screen_pos: Vector2) -> void:
 
 func _on_pad_button_tapped(digit: int) -> void:
 	AudioManager.play_sound("tap_button")
-	
-	# Tactile Keycap Plunge Animation
-	if is_instance_valid(pad_btn_pivots[digit]):
-		var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		pad_btn_pivots[digit].position.y = -0.007
-		tw.tween_property(pad_btn_pivots[digit], "position:y", -0.004, 0.18)
 
 	if selected_digit == digit:
-		selected_digit = -1 # Deselect
+		# UNSELECT: Animate button popping back UP to 0.0
+		if is_instance_valid(pad_btn_pivots[digit]):
+			var tw_up = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw_up.tween_property(pad_btn_pivots[digit], "position:y", 0.0, 0.16)
+		selected_digit = -1
+		selected_cell_idx = -1
 		if is_instance_valid(lbl_status_hint):
-			lbl_status_hint.text = "یک عدد را انتخاب کنید"
+			lbl_status_hint.text = "یک عدد را از پایین انتخاب کنید"
 	else:
+		# If a previous button was selected, pop it back UP
+		if selected_digit in range(1, 10) and is_instance_valid(pad_btn_pivots[selected_digit]):
+			var tw_prev = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw_prev.tween_property(pad_btn_pivots[selected_digit], "position:y", 0.0, 0.16)
+
+		# SELECT NEW DIGIT: Depress keycap down
 		selected_digit = digit
+		if is_instance_valid(pad_btn_pivots[digit]):
+			var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			pad_btn_pivots[digit].position.y = -0.008
+			tw.tween_property(pad_btn_pivots[digit], "position:y", -0.005, 0.16)
+
 		if is_instance_valid(lbl_status_hint):
 			lbl_status_hint.text = "عدد %s انتخاب شد • روی خانه مورد نظر بزنید" % _fa_num(digit)
 
-	# If a non-base cell was already selected, apply this digit to it immediately!
-	if selected_cell_idx >= 0 and not is_base_number[selected_cell_idx]:
-		if selected_digit > 0:
+		# If a non-base cell was already focused, apply this digit immediately
+		if selected_cell_idx >= 0 and not is_base_number[selected_cell_idx]:
 			_place_number_on_cell(selected_cell_idx, selected_digit)
-		elif selected_digit == 0:
-			_erase_cell(selected_cell_idx)
-
-	_update_numbers_count()
-	_refresh_board_visuals()
-
-func _on_erase_button_tapped() -> void:
-	AudioManager.play_sound("tap_button")
-	
-	if is_instance_valid(btn_erase_pivot):
-		var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		btn_erase_pivot.position.y = -0.006
-		tw.tween_property(btn_erase_pivot, "position:y", 0.0, 0.18)
-
-	if selected_digit == 0:
-		selected_digit = 1
-		if is_instance_valid(lbl_status_hint):
-			lbl_status_hint.text = "حالت پاک‌کن غیرفعال شد"
-	else:
-		selected_digit = 0
-		if is_instance_valid(lbl_status_hint):
-			lbl_status_hint.text = "🧹 حالت پاک‌کن فعال شد • روی خانه مورد نظر برای حذف بزنید"
-
-	if selected_cell_idx >= 0 and not is_base_number[selected_cell_idx]:
-		_erase_cell(selected_cell_idx)
 
 	_update_numbers_count()
 	_refresh_board_visuals()
@@ -1173,16 +1103,6 @@ func _on_cell_tapped(idx: int) -> void:
 
 	selected_cell_idx = idx
 
-	# Dual input logic:
-	# If Erase mode is active -> erase this cell
-	if selected_digit == 0:
-		if board_values[idx] > 0:
-			_erase_cell(idx)
-		else:
-			AudioManager.play_sound("tap")
-		_refresh_board_visuals()
-		return
-
 	# If a digit (1..9) is active:
 	if selected_digit in range(1, 10):
 		# If cell already has this exact digit, toggle/erase it!
@@ -1191,14 +1111,14 @@ func _on_cell_tapped(idx: int) -> void:
 		else:
 			_place_number_on_cell(idx, selected_digit)
 	else:
-		# Just selecting the cell
-		AudioManager.play_sound("tap")
-		if board_values[idx] > 0:
-			if is_instance_valid(lbl_status_hint):
-				lbl_status_hint.text = "خانه انتخاب شد (عدد %s) • برای تغییر روی اعداد پایین بزنید" % _fa_num(board_values[idx])
+		# No digit selected in pad:
+		# Tapping an already filled player cell removes it directly!
+		if board_values[idx] > 0 and not is_base:
+			_erase_cell(idx)
 		else:
+			AudioManager.play_sound("tap")
 			if is_instance_valid(lbl_status_hint):
-				lbl_status_hint.text = "خانه خالی انتخاب شد • یک عدد را از پایین بزنید"
+				lbl_status_hint.text = "خانه انتخاب شد • یک عدد را از پایین بزنید"
 
 	_update_numbers_count()
 	_refresh_board_visuals()
