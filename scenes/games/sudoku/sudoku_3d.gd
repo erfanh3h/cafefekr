@@ -40,15 +40,15 @@ var camera_distance: float = 3.35
 var _game_font: Font = null
 
 # Logical Board State
-var board_values: Array[int] = []         # 0..9 (0 = empty)
-var is_base_number: Array[bool] = []       # True for immutable starting clues
+var board_values: Array = []         # 0..9 (0 = empty)
+var is_base_number: Array = []       # True for immutable starting clues
 var selected_cell_idx: int = -1            # Currently focused cell (0..80, or -1)
 var selected_digit: int = 1                # Currently selected digit in pad (1..9, or 0 for erase mode)
 var numbers_count: Dictionary = {}         # digit (1..9) -> count on board (0..9)
-var conflicting_indices: Array[int] = []   # Indices of cells violating Sudoku rules
-var completed_rows: Array[int] = []        # Completed 9-cell rows (0..8)
-var completed_cols: Array[int] = []        # Completed 9-cell cols (0..8)
-var completed_boxes: Array[int] = []       # Completed 3x3 boxes (0..8)
+var conflicting_indices: Array = []   # Indices of cells violating Sudoku rules
+var completed_rows: Array = []        # Completed 9-cell rows (0..8)
+var completed_cols: Array = []        # Completed 9-cell cols (0..8)
+var completed_boxes: Array = []       # Completed 3x3 boxes (0..8)
 
 # Input Tracking
 var _raycast_down_pos: Vector2 = Vector2.ZERO
@@ -63,17 +63,17 @@ var console_root: Node3D
 var vfx_root: Node3D
 
 # Cell Nodes Cache
-var cell_centers: Array[Vector3] = []
-var cell_boxes: Array[MeshInstance3D] = []
-var cell_highlights: Array[MeshInstance3D] = []
-var cell_labels: Array[Label3D] = []
-var cell_rivets: Array[MeshInstance3D] = []
+var cell_centers: Array = []
+var cell_boxes: Array = []
+var cell_highlights: Array = []
+var cell_labels: Array = []
+var cell_rivets: Array = []
 
 # Console Nodes Cache
-var pad_btn_roots: Array[Node3D] = []
-var pad_btn_meshes: Array[MeshInstance3D] = []
-var pad_btn_labels: Array[Label3D] = []
-var pad_btn_count_labels: Array[Label3D] = []
+var pad_btn_roots: Array = []
+var pad_btn_meshes: Array = []
+var pad_btn_labels: Array = []
+var pad_btn_count_labels: Array = []
 var btn_erase_root: Node3D
 var btn_erase_mesh: MeshInstance3D
 var btn_erase_label: Label3D
@@ -146,7 +146,7 @@ func _init_data_structures() -> void:
 
 func _apply_default_starter_puzzle() -> void:
 	# Classic valid starter Sudoku puzzle with 36 initial clues
-	var default_puzzle: Array[int] = [
+	var default_puzzle: Array = [
 		5, 3, 0,  0, 7, 0,  0, 0, 0,
 		6, 0, 0,  1, 9, 5,  0, 0, 0,
 		0, 9, 8,  0, 0, 0,  0, 6, 0,
@@ -279,6 +279,7 @@ func _build_master_cabinet() -> void:
 	plinth_mesh.size = Vector3(1.24, 0.03, 1.46)
 	plinth_mesh.material = mat_plinth
 	plinth.mesh = plinth_mesh
+	plinth.material_override = mat_plinth
 	plinth.position = Vector3(0, -0.015, 0.06)
 	board_decor_root.add_child(plinth)
 
@@ -288,6 +289,7 @@ func _build_master_cabinet() -> void:
 	frame_mesh.size = Vector3(1.18, 0.045, 1.40)
 	frame_mesh.material = mat_frame
 	frame.mesh = frame_mesh
+	frame.material_override = mat_frame
 	frame.position = Vector3(0, 0.015, 0.06)
 	board_decor_root.add_child(frame)
 
@@ -297,6 +299,7 @@ func _build_master_cabinet() -> void:
 	bed_mesh.size = Vector3(1.08, 0.02, 1.28)
 	bed_mesh.material = mat_playing_bed
 	bed.mesh = bed_mesh
+	bed.material_override = mat_playing_bed
 	bed.position = Vector3(0, 0.038, 0.06)
 	board_decor_root.add_child(bed)
 
@@ -319,11 +322,13 @@ func _build_master_cabinet() -> void:
 	for c_pos in corners:
 		var c_inst = MeshInstance3D.new()
 		c_inst.mesh = corner_mesh
+		c_inst.material_override = mat_gold_rim
 		c_inst.position = c_pos
 		board_decor_root.add_child(c_inst)
 
 		var r_inst = MeshInstance3D.new()
 		r_inst.mesh = rivet_mesh
+		r_inst.material_override = mat_gold_rim
 		r_inst.position = Vector3(0, 0.026, 0)
 		c_inst.add_child(r_inst)
 
@@ -352,11 +357,13 @@ func _build_sudoku_grid() -> void:
 		# Vertical major dividers
 		var v_inst = MeshInstance3D.new()
 		v_inst.mesh = rib_mesh_v
+		v_inst.material_override = mat_gold_rim
 		v_inst.position = Vector3(offset, BOARD_SURFACE_Y + 0.006, GRID_CENTER_Z)
 		board_decor_root.add_child(v_inst)
 		# Horizontal major dividers
 		var h_inst = MeshInstance3D.new()
 		h_inst.mesh = rib_mesh_h
+		h_inst.material_override = mat_gold_rim
 		h_inst.position = Vector3(0, BOARD_SURFACE_Y + 0.006, GRID_CENTER_Z + offset)
 		board_decor_root.add_child(h_inst)
 
@@ -372,21 +379,25 @@ func _build_sudoku_grid() -> void:
 	var half_tot = TOTAL_GRID_W * 0.5 + 0.010
 	var b_top = MeshInstance3D.new()
 	b_top.mesh = border_mesh_h
+	b_top.material_override = mat_gold_rim
 	b_top.position = Vector3(0, BOARD_SURFACE_Y + 0.005, GRID_CENTER_Z - half_tot)
 	board_decor_root.add_child(b_top)
 
 	var b_bot = MeshInstance3D.new()
 	b_bot.mesh = border_mesh_h
+	b_bot.material_override = mat_gold_rim
 	b_bot.position = Vector3(0, BOARD_SURFACE_Y + 0.005, GRID_CENTER_Z + half_tot)
 	board_decor_root.add_child(b_bot)
 
 	var b_left = MeshInstance3D.new()
 	b_left.mesh = border_mesh_v
+	b_left.material_override = mat_gold_rim
 	b_left.position = Vector3(-half_tot, BOARD_SURFACE_Y + 0.005, GRID_CENTER_Z)
 	board_decor_root.add_child(b_left)
 
 	var b_right = MeshInstance3D.new()
 	b_right.mesh = border_mesh_v
+	b_right.material_override = mat_gold_rim
 	b_right.position = Vector3(half_tot, BOARD_SURFACE_Y + 0.005, GRID_CENTER_Z)
 	board_decor_root.add_child(b_right)
 
@@ -466,6 +477,7 @@ func _build_bottom_console() -> void:
 	plinth_mesh.size = Vector3(1.14, 0.035, 0.28)
 	plinth_mesh.material = mat_pad_normal
 	console_plinth.mesh = plinth_mesh
+	console_plinth.material_override = mat_pad_normal
 	console_plinth.position = Vector3(0, 0.020, CONSOLE_Z + 0.05)
 	console_root.add_child(console_plinth)
 
@@ -475,6 +487,7 @@ func _build_bottom_console() -> void:
 	trim_mesh.size = Vector3(1.10, 0.008, 0.008)
 	trim_mesh.material = mat_gold_rim
 	trim_bar.mesh = trim_mesh
+	trim_bar.material_override = mat_gold_rim
 	trim_bar.position = Vector3(0, 0.038, CONSOLE_Z - 0.082)
 	console_root.add_child(trim_bar)
 
@@ -743,7 +756,7 @@ func _check_completions() -> void:
 	for r in range(GRID_SIZE):
 		if not r in completed_rows:
 			var is_full = true
-			var nums: Array[int] = []
+			var nums: Array = []
 			for c in range(GRID_SIZE):
 				var v = board_values[r * GRID_SIZE + c]
 				if v == 0 or v in nums:
@@ -758,7 +771,7 @@ func _check_completions() -> void:
 	for c in range(GRID_SIZE):
 		if not c in completed_cols:
 			var is_full = true
-			var nums: Array[int] = []
+			var nums: Array = []
 			for r in range(GRID_SIZE):
 				var v = board_values[r * GRID_SIZE + c]
 				if v == 0 or v in nums:
@@ -775,7 +788,7 @@ func _check_completions() -> void:
 			var b_r = b / 3
 			var b_c = b % 3
 			var is_full = true
-			var nums: Array[int] = []
+			var nums: Array = []
 			for r in range(b_r * 3, b_r * 3 + 3):
 				for c in range(b_c * 3, b_c * 3 + 3):
 					var v = board_values[r * GRID_SIZE + c]
@@ -917,8 +930,11 @@ func _project_screen_to_board_plane(screen_pos: Vector2) -> Variant:
 	if not cam: return null
 	var ray_origin = cam.project_ray_origin(screen_pos)
 	var ray_normal = cam.project_ray_normal(screen_pos)
-	var plane = Plane(Vector3.UP, BOARD_SURFACE_Y)
-	return plane.intersects_ray(ray_origin, ray_normal)
+	var plane_y = global_position.y + BOARD_SURFACE_Y
+	var plane = Plane(Vector3.UP, plane_y)
+	var hit = plane.intersects_ray(ray_origin, ray_normal)
+	if hit == null: return null
+	return to_local(hit)
 
 func _handle_tap_at(screen_pos: Vector2) -> void:
 	var hit = _project_screen_to_board_plane(screen_pos)
@@ -1138,7 +1154,10 @@ func on_wrong_solve() -> void:
 		lbl_status_hint.text = "❌ حل نادرست است! ردیف‌ها و ستون‌ها را دوباره بررسی کنید"
 	_refresh_board_visuals()
 
-func sync_board_state(board_array: Array) -> void:
+func sync_board_state(board_data: Variant) -> void:
+	if typeof(board_data) != TYPE_ARRAY:
+		return
+	var board_array: Array = board_data as Array
 	if board_array.size() < TOTAL_CELLS:
 		return
 	for i in range(min(TOTAL_CELLS, board_array.size())):
