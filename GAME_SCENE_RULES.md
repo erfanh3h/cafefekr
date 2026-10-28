@@ -490,6 +490,16 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 
 ---
 
+### 4.16. Royal Naval BattleShip (`BattleShip` / `نبرد کشتی`) 3D Warships, 2-Phase Fleet Setup & Dual Switchable Radar Boards
+- **2-Phase Lifecycle (`BattleShip_Board_Time = 60s`, `BattleShip_Turn_Time = 12s`)**:
+  - **Phase 1 (Fleet Deployment)**: Both players arrange 4 procedural 3D warships (Lengths `2, 3, 4, 5` — total `14` segments) on an `8×8` grid (`0..63`) via drag-and-drop, click-to-place, in-place rotation, or auto-randomize (`🎲`), then submit `Save_Board` (`{"2": [...], "3": [...], "4": [...], "5": [...]}`).
+  - **Phase 2 (Naval Artillery Combat)**: Alternating 12s turns firing at the opponent's `8×8` ocean grid (`Select_Peace: index`).
+  - **Bonus Turn on Hit**: When `Peace_Selected` returns `number > 0` (`is_turn_win_happened == true`), the shooter scores `+1` and immediately gets a bonus 12s turn without a `Current_Turn` command.
+  - **Full Ship Sunk (`checkIsShipCompleted`)**: When the number of hit cells with `cell.number == L` reaches `L` (`2, 3, 4, or 5`), the full 3D enemy warship materializes on the Attack Radar board with a multi-stage chain explosion, shockwave ring, board shudder, and sinking animation.
+  - **Switchable 3D Boards (`MY_BOARD` / Attack Radar, `OPP_BOARD` / My Fleet Defense, `DUAL` Side-by-Side)**: Controlled via both the HUD `🎯` / `👥` buttons and 3D board view tabs.
+
+---
+
 ## 5. Step-by-Step Guide: Porting a New Game to Cafe Fekr
 
 Whenever you are tasked with adding a new game (e.g. Checkers, Backgammon, Four-in-a-Row, Othello, Mill, etc.):

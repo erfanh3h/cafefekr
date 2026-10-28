@@ -556,7 +556,7 @@ func _on_start_game_received() -> void:
 
 func _activate_start_game() -> void:
 	base_game_hud.force_dismiss_start_overlay(false)
-	if GameManager.current_game_type == GameTypes.FEKRBEKR:
+	if GameManager.current_game_type in [GameTypes.FEKRBEKR, GameTypes.BATTLESHIP]:
 		base_game_hud.set_setup_phase()
 	else:
 		var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
@@ -820,7 +820,7 @@ func _on_game_finished(data: Dictionary) -> void:
 				GameManager.p2_score += 1
 		base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)
 	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
-		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
 			if GameManager.p1_score > GameManager.p2_score:
 				winner = 1
 			elif GameManager.p2_score > GameManager.p1_score:
@@ -870,7 +870,11 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 	var g_data = payload.get("game_data", {})
 	if typeof(g_data) == TYPE_DICTIONARY:
 		var inferred_type = ""
-		if g_data.has("is_play_phase") or g_data.has("player1_choices"):
+		if g_data.has("player1_choices") or g_data.has("player2_choices"):
+			inferred_type = GameTypes.FEKRBEKR
+		elif g_data.has("is_play_phase") and g_data.has("player1_board") and g_data.has("player2_board"):
+			inferred_type = GameTypes.BATTLESHIP
+		elif g_data.has("is_play_phase"):
 			inferred_type = GameTypes.FEKRBEKR
 		elif g_data.has("out_pieces") or g_data.has("end_phases"):
 			inferred_type = GameTypes.BACKGAMMON

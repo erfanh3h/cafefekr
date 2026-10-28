@@ -1018,6 +1018,10 @@ func resume_timer_on_user_reconnected(remaining_time: int) -> void:
 
 func sync_reconnect_timer(payload: Dictionary) -> void:
 	var max_time = GameRegistry.get_turn_time(GameManager.current_game_type)
+	if GameManager.current_game_type == GameTypes.BATTLESHIP:
+		var gd = payload.get("game_data", {})
+		if typeof(gd) == TYPE_DICTIONARY and not bool(gd.get("is_play_phase", false)):
+			max_time = 60.0
 	turn_duration = max_time
 	var timer_data = payload.get("timer_data", {})
 	if typeof(timer_data) == TYPE_DICTIONARY and timer_data.has("time") and float(timer_data.get("time", 0)) > 0.0:
@@ -1080,6 +1084,17 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 			set_fekrbekr_hud_buttons(is_play_rec)
 			if is_waiting:
 				set_waiting_opponent("حدس شما ثبت شده است. در انتظار حریف..." if is_play_rec else "رمز شما ثبت شده است. در انتظار حریف...")
+		elif GameManager.current_game_type == GameTypes.BATTLESHIP:
+			var is_play_rec = bool(game_data.get("is_play_phase", false))
+			var is_waiting = bool(game_data.get("is_player_rdy", false))
+			if is_play_rec:
+				var b_turn = int(game_data.get("current_turn", 1))
+				update_turn(max(1, b_turn))
+			else:
+				set_setup_phase()
+			set_fekrbekr_hud_buttons(is_play_rec)
+			if not is_play_rec and is_waiting:
+				set_waiting_opponent("ناوگان شما ثبت شد. در انتظار حریف...")
 		elif GameManager.current_game_type == GameTypes.YATZY:
 			update_turn(max(1, r_num))
 			if bool(game_data.get("is_round_done", false)):
@@ -1192,7 +1207,7 @@ func set_setup_phase() -> void:
 	set_fekrbekr_hud_buttons(false)
 	if is_instance_valid(current_top_header) and current_top_header.has_method("set_setup_phase"):
 		current_top_header.set_setup_phase()
-	var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
+	var def_time = 60.0 if GameManager.current_game_type == GameTypes.BATTLESHIP else GameRegistry.get_turn_time(GameManager.current_game_type)
 	start_turn_timer(def_time)
 
 func set_waiting_opponent(custom_text: String = "در انتظار حریف...") -> void:
@@ -1333,7 +1348,7 @@ func show_game_result(winner: int, p1_score: int, p2_score: int) -> void:
 	elif GameManager.opponent_player_surrendered:
 		final_winner = GameManager.my_player_index
 	elif not is_pause_active and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
-		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
 			if p1_score > p2_score:
 				final_winner = 1
 			elif p2_score > p1_score:
@@ -1355,16 +1370,17 @@ func _exit_tree() -> void:
 # Phase 1: Only Checkmark (✓) and Cross (✕) are visible
 # Phase 2: All 4 buttons (✓, ✕, 🎯, 👥) are visible
 func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
-	if GameManager.current_game_type != GameTypes.FEKRBEKR or not GameManager.is_game_active:
+	if not (GameManager.current_game_type in [GameTypes.FEKRBEKR, GameTypes.BATTLESHIP]) or not GameManager.is_game_active:
 		if is_instance_valid(fekrbekr_actions):
 			fekrbekr_actions.visible = false
 		return
 	if is_instance_valid(fekrbekr_actions):
 		fekrbekr_actions.visible = true
+	var is_bs: bool = (GameManager.current_game_type == GameTypes.BATTLESHIP)
 	if is_instance_valid(btn_fekr_submit):
-		btn_fekr_submit.visible = true
+		btn_fekr_submit.visible = (not is_play_phase) if is_bs else true
 	if is_instance_valid(btn_fekr_clear):
-		btn_fekr_clear.visible = true
+		btn_fekr_clear.visible = (not is_play_phase) if is_bs else true
 	if is_instance_valid(btn_fekr_opp):
 		btn_fekr_opp.visible = is_play_phase
 	if is_instance_valid(btn_fekr_dual):

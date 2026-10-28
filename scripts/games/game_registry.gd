@@ -20,6 +20,7 @@ const OTHELLO_SCENE: String = "res://scenes/games/othello/othello_3d.tscn"
 const MILL_SCENE: String = "res://scenes/games/mill/mill_3d.tscn"
 const DOTBOX_SCENE: String = "res://scenes/games/dotbox/dotbox_3d.tscn"
 const MNUMBERS_SCENE: String = "res://scenes/games/mnumbers/mnumbers_3d.tscn"
+const BATTLESHIP_SCENE: String = "res://scenes/games/battleship/battleship_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -27,6 +28,7 @@ const BASE_TOP_HEADER_SCENE: String = "res://scenes/games/base/base_top_header.t
 const CHESS_TOP_HEADER_SCENE: String = "res://scenes/games/chess/chess_top_header.tscn"
 const FEKRBEKR_TOP_HEADER_SCENE: String = "res://scenes/games/fekrbekr/fekrbekr_top_header.tscn"
 const YATZY_TOP_HEADER_SCENE: String = "res://scenes/games/yatzy/yatzy_top_header.tscn"
+const BATTLESHIP_TOP_HEADER_SCENE: String = "res://scenes/games/battleship/battleship_top_header.tscn"
 
 static var _registry: Dictionary = {
 	GameTypes.RPC: {
@@ -242,10 +244,11 @@ static var _registry: Dictionary = {
 		"id": GameTypes.BATTLESHIP,
 		"name_fa": "نبرد کشتی",
 		"narrative": "در پهنه وسیع دریا، کشتی جنگی به‌سان نبردی از خرد و استراتژی در مه پنهان است.",
-		"board_scene": TEMP_SCENE,
-		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"board_scene": BATTLESHIP_SCENE,
+		"top_header_scene": BATTLESHIP_TOP_HEADER_SCENE,
 		"max_rounds": 1,
-		"has_round_score": false,
+		"has_round_score": true,
+		"is_cumulative_score": true,
 		"turn_time": 12.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/battleship.jpg",

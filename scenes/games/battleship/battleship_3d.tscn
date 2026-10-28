@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://battleship3d01"]
+
+[ext_resource type="Script" path="res://scenes/games/battleship/battleship_3d.gd" id="1_script"]
+
+[node name="BattleShip3D" type="Node3D"]
+script = ExtResource("1_script")

@@ -305,6 +305,8 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				if payload.has("select_data") and typeof(payload["select_data"]) == TYPE_DICTIONARY:
 					var sdata = payload["select_data"]
 					user_id = int(sdata.get("gamer_id", user_id))
+					if sdata.has("index"):
+						target_peace = int(sdata.get("index", target_peace))
 					for k in sdata.keys():
 						extra[k] = sdata[k]
 					var tc = int(sdata.get("t_c_index", -1))

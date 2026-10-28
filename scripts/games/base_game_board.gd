@@ -180,6 +180,10 @@ func _on_internal_reconnect_data(payload: Dictionary) -> void:
 		current_turn = max(1, r_num) if is_play_rec else 0
 		GameManager.current_turn = current_turn
 		GameManager.current_round = r_num
+	elif GameManager.current_game_type == GameTypes.BATTLESHIP and typeof(g_data) == TYPE_DICTIONARY:
+		var is_play_rec = bool(g_data.get("is_play_phase", false))
+		current_turn = int(g_data.get("current_turn", 1)) if is_play_rec else 0
+		GameManager.current_turn = current_turn
 	elif GameManager.current_game_type == GameTypes.YATZY and typeof(g_data) == TYPE_DICTIONARY:
 		var r_num = int(g_data.get("current_round", 1))
 		current_turn = max(1, r_num)
