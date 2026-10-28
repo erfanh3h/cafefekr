@@ -2,20 +2,21 @@ class_name BattleShip3D
 extends "res://scripts/games/base_game_board.gd"
 
 # ==============================================================================
-# BattleShip 3D ("نبرد کشتی") for Cafe Fekr
+# BattleShip 3D ("نبرد کشتی") for Cafe Fekr — Grand Naval Edition
 # 2-Phase Naval Strategy Game:
-# - Phase 1 (Setup - 60s): Place 4 Warships (Lengths 2, 3, 4, 5) on an 8x8 Ocean Grid.
-#   Supports Drag-and-Drop, Click-to-Place, In-Place Rotation, and Auto-Randomize.
+# - Phase 1 (Setup - 60s): Large 8x8 Ocean Grid (CELL_PITCH = 0.122) + Bottom Command Bar.
+#   * Real-time 3D ship dragging across the grid (ship model floats & follows cursor live!)
+#   * Instant 1-tap ship rotation (clicking any segment of any ship rotates it 90° around
+#     that point with smart 2D neighborhood collision resolution, plus dedicated 🔄 button!)
 # - Phase 2 (Combat - 12s/turn, Bonus Turn on Hit!):
-#   Switchable 3D Views (like FekrBekr via HUD 🎯 and 👥 buttons):
-#     * ViewMode.MY_BOARD (0): Attack Radar Grid (Opponent's waters - click to fire!)
-#     * ViewMode.OPP_BOARD (1): My Fleet Defense Grid (Your 3D warships & incoming shots)
-#     * ViewMode.DUAL (2): Side-by-side simultaneous 3D boards!
+#   * Switchable 3D Views (MY_BOARD Attack Radar, OPP_BOARD Defense Fleet, DUAL Side-by-Side)
+#   * Large, high-contrast 3D typography, artillery shell arcs, water splashes, and
+#     Full-Ship-Down chain explosions + sinking 3D warship reveal!
 # ==============================================================================
 
 const GRID_SIZE: int = 8
 const TOTAL_CELLS: int = 64
-const CELL_PITCH: float = 0.086
+const CELL_PITCH: float = 0.122
 const SHIP_LENGTHS: Array[int] = [2, 3, 4, 5]
 
 enum ViewMode {
@@ -34,13 +35,15 @@ var p2_score: int = 0
 
 var _game_font: Font = null
 
-# Phase 1 Ship Placement State
+# Phase 1 Ship Placement & Live Drag State
 var fleet_state: Dictionary = {}
 var selected_ship_len: int = 5
 var is_dragging_ship: bool = false
 var _pointer_down: bool = false
 var _pointer_down_screen: Vector2 = Vector2.ZERO
-var _press_anchor_cell: int = -1
+var _press_cell_idx: int = -1
+var _drag_segment_offset: int = 0
+var _drag_moved_cells: bool = false
 var hover_grid_index: int = -1
 var _last_piece_interaction_time: float = -10.0
 
@@ -60,6 +63,7 @@ var ghost_preview_root: Node3D
 var ghost_tile_meshes: Array[MeshInstance3D] = []
 var phase1_cell_meshes: Array[MeshInstance3D] = []
 var phase1_ship_nodes: Dictionary = {}
+var selected_ship_rotate_badge: Node3D = null
 var drydock_slot_highlights: Dictionary = {}
 var lbl_phase1_hint: Label3D
 
@@ -78,11 +82,11 @@ var defense_ships_root: Node3D
 var defense_markers_root: Node3D
 var my_status_badges: Dictionary = {}
 
-# Drydock Berth & Button Hit Rectangles (in drydock_root local XZ)
-const BERTH_Z_OFFSETS: Array[float] = [-0.175, -0.062, 0.051, 0.164]
-const BERTH_SHIP_LENGTHS: Array[int] = [5, 4, 3, 2]
-const BTN_ROTATE_Z: float = 0.268
-const BTN_RANDOM_Z: float = 0.348
+# Bottom Command Bar Layout (in drydock_root local XZ)
+const CMD_BTN_ROTATE_X: float = -0.37
+const CMD_BTN_RANDOM_X: float = 0.37
+const CMD_BERTH_X: Array[float] = [-0.15, -0.05, 0.05, 0.15]
+const CMD_BERTH_LENGTHS: Array[int] = [5, 4, 3, 2]
 
 # Shared Materials (Strictly Opaque for Board/Grid to prevent Z-Fighting!)
 var _mat_mahogany: StandardMaterial3D
@@ -156,7 +160,7 @@ func _fa_num(n: int) -> String:
 			out += ch
 	return out
 
-func _create_3d_label(text_str: String, font_px: int, col: Color, px_size: float = 0.00125) -> Label3D:
+func _create_3d_label(text_str: String, font_px: int, col: Color, px_size: float = 0.00185) -> Label3D:
 	var lbl = Label3D.new()
 	lbl.text = text_str
 	if _game_font:
@@ -164,8 +168,8 @@ func _create_3d_label(text_str: String, font_px: int, col: Color, px_size: float
 	lbl.font_size = font_px
 	lbl.pixel_size = px_size
 	lbl.modulate = col
-	lbl.outline_modulate = Color(0.02, 0.03, 0.05, 0.94)
-	lbl.outline_size = 7
+	lbl.outline_modulate = Color(0.02, 0.03, 0.05, 0.96)
+	lbl.outline_size = 9
 	lbl.rotation_degrees = Vector3(-90, 0, 0)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -182,24 +186,23 @@ func _init_materials() -> void:
 	_mat_brass.metallic = 0.85
 	_mat_brass.roughness = 0.22
 
-	# Strictly opaque ocean & radar tiles so depth buffer never Z-fights!
 	_mat_ocean_cell = StandardMaterial3D.new()
-	_mat_ocean_cell.albedo_color = Color(0.06, 0.24, 0.38)
+	_mat_ocean_cell.albedo_color = Color(0.06, 0.25, 0.40)
 	_mat_ocean_cell.roughness = 0.22
 	_mat_ocean_cell.metallic = 0.20
 
 	_mat_ocean_alt = StandardMaterial3D.new()
-	_mat_ocean_alt.albedo_color = Color(0.08, 0.29, 0.44)
+	_mat_ocean_alt.albedo_color = Color(0.09, 0.31, 0.47)
 	_mat_ocean_alt.roughness = 0.22
 	_mat_ocean_alt.metallic = 0.20
 
 	_mat_radar_cell = StandardMaterial3D.new()
-	_mat_radar_cell.albedo_color = Color(0.05, 0.19, 0.28)
+	_mat_radar_cell.albedo_color = Color(0.05, 0.20, 0.30)
 	_mat_radar_cell.roughness = 0.22
 	_mat_radar_cell.metallic = 0.25
 
 	_mat_radar_alt = StandardMaterial3D.new()
-	_mat_radar_alt.albedo_color = Color(0.07, 0.24, 0.34)
+	_mat_radar_alt.albedo_color = Color(0.08, 0.26, 0.37)
 	_mat_radar_alt.roughness = 0.22
 	_mat_radar_alt.metallic = 0.25
 
@@ -216,17 +219,17 @@ func _init_materials() -> void:
 	_mat_ghost_invalid.emission_energy_multiplier = 0.95
 
 	_mat_ship_hull = StandardMaterial3D.new()
-	_mat_ship_hull.albedo_color = Color(0.38, 0.45, 0.52)
+	_mat_ship_hull.albedo_color = Color(0.40, 0.48, 0.56)
 	_mat_ship_hull.metallic = 0.62
-	_mat_ship_hull.roughness = 0.32
+	_mat_ship_hull.roughness = 0.30
 
 	_mat_ship_deck = StandardMaterial3D.new()
-	_mat_ship_deck.albedo_color = Color(0.24, 0.29, 0.35)
+	_mat_ship_deck.albedo_color = Color(0.25, 0.31, 0.38)
 	_mat_ship_deck.metallic = 0.48
-	_mat_ship_deck.roughness = 0.42
+	_mat_ship_deck.roughness = 0.40
 
 	_mat_ship_dark = StandardMaterial3D.new()
-	_mat_ship_dark.albedo_color = Color(0.14, 0.17, 0.21)
+	_mat_ship_dark.albedo_color = Color(0.14, 0.17, 0.22)
 	_mat_ship_dark.metallic = 0.70
 	_mat_ship_dark.roughness = 0.28
 
@@ -283,26 +286,29 @@ func _build_scene_hierarchy() -> void:
 	board_root.add_child(phase2_root)
 	_build_phase2_combat_ui()
 
-func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_color: Color, is_radar: bool, out_cell_meshes: Array[MeshInstance3D]) -> Node3D:
+func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_color: Color, is_radar: bool, out_cell_meshes: Array[MeshInstance3D], has_bottom_strip: bool = false) -> Node3D:
 	var container = Node3D.new()
 	parent_node.add_child(container)
 
 	var board_span: float = GRID_SIZE * CELL_PITCH
-	var frame_span: float = board_span + 0.13
+	var frame_w: float = board_span + 0.18
+	var extra_bottom: float = 0.11 if has_bottom_strip else 0.02
+	var frame_z: float = board_span + 0.19 + extra_bottom
+	var z_center_offset: float = (extra_bottom - 0.04) * 0.5
 
 	# Layer 1: Outer Mahogany Base (top = 0.016)
 	var base_box = MeshInstance3D.new()
 	var b_mesh = BoxMesh.new()
-	b_mesh.size = Vector3(frame_span, 0.016, frame_span + 0.09)
+	b_mesh.size = Vector3(frame_w, 0.016, frame_z)
 	base_box.mesh = b_mesh
-	base_box.position = Vector3(0, 0.008, 0.0)
+	base_box.position = Vector3(0, 0.008, z_center_offset)
 	base_box.material_override = _mat_mahogany
 	container.add_child(base_box)
 
 	# Layer 2: Brass Trim Rim (top = 0.020)
 	var brass_rim = MeshInstance3D.new()
 	var r_mesh = BoxMesh.new()
-	r_mesh.size = Vector3(board_span + 0.026, 0.018, board_span + 0.026)
+	r_mesh.size = Vector3(board_span + 0.036, 0.018, board_span + 0.036)
 	brass_rim.mesh = r_mesh
 	brass_rim.position = Vector3(0, 0.011, 0.0)
 	brass_rim.material_override = _mat_brass
@@ -311,7 +317,7 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 	# Layer 3: Deep Basin Grout Floor (top = 0.024)
 	var basin = MeshInstance3D.new()
 	var basin_mesh = BoxMesh.new()
-	basin_mesh.size = Vector3(board_span + 0.008, 0.020, board_span + 0.008)
+	basin_mesh.size = Vector3(board_span + 0.012, 0.020, board_span + 0.012)
 	basin.mesh = basin_mesh
 	basin.position = Vector3(0, 0.014, 0.0)
 	var mat_basin = StandardMaterial3D.new()
@@ -320,23 +326,23 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 	basin.material_override = mat_basin
 	container.add_child(basin)
 
-	# Top Title Plaque (Crisp pixel_size = 0.00122)
-	var lbl_title = _create_3d_label(title_text, 22, title_color, 0.00122)
-	lbl_title.position = Vector3(0, 0.025, -board_span * 0.5 - 0.052)
+	# Top Title Plaque (Large & Bold!)
+	var lbl_title = _create_3d_label(title_text, 30, title_color, 0.00185)
+	lbl_title.position = Vector3(0, 0.026, -board_span * 0.5 - 0.075)
 	container.add_child(lbl_title)
 
 	# Column Coordinate Labels (A..H) and Row Coordinate Labels (۱..۸)
 	var cols_text = ["A", "B", "C", "D", "E", "F", "G", "H"]
 	for i in range(GRID_SIZE):
-		var lbl_c = _create_3d_label(cols_text[i], 17, Color(0.92, 0.80, 0.45), 0.00112)
-		lbl_c.position = Vector3((float(i) - 3.5) * CELL_PITCH, 0.025, -board_span * 0.5 - 0.023)
+		var lbl_c = _create_3d_label(cols_text[i], 24, Color(0.96, 0.84, 0.48), 0.00170)
+		lbl_c.position = Vector3((float(i) - 3.5) * CELL_PITCH, 0.026, -board_span * 0.5 - 0.034)
 		container.add_child(lbl_c)
 
-		var lbl_r = _create_3d_label(_fa_num(i + 1), 18, Color(0.92, 0.80, 0.45), 0.00112)
-		lbl_r.position = Vector3(-board_span * 0.5 - 0.026, 0.025, (float(i) - 3.5) * CELL_PITCH)
+		var lbl_r = _create_3d_label(_fa_num(i + 1), 26, Color(0.96, 0.84, 0.48), 0.00175)
+		lbl_r.position = Vector3(-board_span * 0.5 - 0.042, 0.026, (float(i) - 3.5) * CELL_PITCH)
 		container.add_child(lbl_r)
 
-	# Layer 4: 64 Opaque Grid Cells (y = 0.028, height = 0.006 -> bottom = 0.025, top = 0.031, zero Z-fighting!)
+	# Layer 4: 64 Opaque Grid Cells (y = 0.028, height = 0.006 -> top = 0.031)
 	out_cell_meshes.clear()
 	for idx in range(TOTAL_CELLS):
 		var r: int = idx / GRID_SIZE
@@ -345,7 +351,7 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 
 		var cell_mesh = MeshInstance3D.new()
 		var cm = BoxMesh.new()
-		cm.size = Vector3(CELL_PITCH - 0.006, 0.006, CELL_PITCH - 0.006)
+		cm.size = Vector3(CELL_PITCH - 0.007, 0.006, CELL_PITCH - 0.007)
 		cell_mesh.mesh = cm
 		cell_mesh.position = c_pos
 		var is_checker: bool = ((r + c) % 2 == 0)
@@ -357,33 +363,36 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 		out_cell_meshes.append(cell_mesh)
 
 	# 4 Brass Corner Bollards
-	var corner_off: float = frame_span * 0.5 - 0.020
+	var corner_x: float = frame_w * 0.5 - 0.024
+	var top_z: float = z_center_offset - frame_z * 0.5 + 0.024
+	var bot_z: float = z_center_offset + frame_z * 0.5 - 0.024
 	for sx in [-1.0, 1.0]:
-		for sz in [-1.0, 1.0]:
+		for zp in [top_z, bot_z]:
 			var post = MeshInstance3D.new()
 			var pm = CylinderMesh.new()
-			pm.top_radius = 0.013
-			pm.bottom_radius = 0.016
-			pm.height = 0.034
+			pm.top_radius = 0.016
+			pm.bottom_radius = 0.020
+			pm.height = 0.036
 			post.mesh = pm
-			post.position = Vector3(sx * corner_off, 0.017, sz * (frame_span * 0.5 + 0.020))
+			post.position = Vector3(sx * corner_x, 0.018, zp)
 			post.material_override = _mat_brass
 			container.add_child(post)
 
 	return container
 
 func _build_phase1_setup_ui() -> void:
-	# Left/Center: 8x8 Fleet Placement Grid
+	# Large Centered 8x8 Fleet Placement Grid (CELL_PITCH = 0.122 -> ~1.16m wide!)
 	phase1_grid_root = _build_naval_grid_frame(
 		phase1_root,
-		"⚓ آرایش ناوگان شما",
+		"⚓ آرایش ناوگان (کشتی را بکشید یا برای چرخش لمس کنید)",
 		Color(1.0, 0.88, 0.42),
 		false,
-		phase1_cell_meshes
+		phase1_cell_meshes,
+		false
 	)
-	phase1_grid_root.position = Vector3(-0.19, 0.0, 0.02)
+	phase1_grid_root.position = Vector3(-0.04, 0.0, -0.10)
 
-	# Pre-allocated Ghost Preview Tiles (Zero dynamic alloc/free during mouse move!)
+	# Pre-allocated Ghost Preview Tiles
 	ghost_preview_root = Node3D.new()
 	ghost_preview_root.name = "GhostPreviewRoot"
 	phase1_grid_root.add_child(ghost_preview_root)
@@ -391,41 +400,42 @@ func _build_phase1_setup_ui() -> void:
 	for _i in range(5):
 		var g_box = MeshInstance3D.new()
 		var bm = BoxMesh.new()
-		bm.size = Vector3(CELL_PITCH - 0.010, 0.005, CELL_PITCH - 0.010)
+		bm.size = Vector3(CELL_PITCH - 0.012, 0.005, CELL_PITCH - 0.012)
 		g_box.mesh = bm
 		g_box.visible = false
 		g_box.material_override = _mat_ghost_valid
 		ghost_preview_root.add_child(g_box)
 		ghost_tile_meshes.append(g_box)
 
-	# Right: Drydock Shipyard Console (Clean non-overlapping Y layers)
+	# Floating 3D Rotate Indicator Ring on Selected Ship
+	selected_ship_rotate_badge = _create_selected_ship_rotate_indicator()
+	phase1_grid_root.add_child(selected_ship_rotate_badge)
+
+	# Bottom Wide Command Console Bar (1.16m wide, right below the 8x8 grid!)
 	drydock_root = Node3D.new()
 	drydock_root.name = "DrydockRoot"
-	drydock_root.position = Vector3(0.41, 0.0, 0.02)
+	drydock_root.position = Vector3(-0.04, 0.0, 0.62)
 	phase1_root.add_child(drydock_root)
 
-	# Layer 1: Mahogany Base (top = 0.016)
 	var dock_panel = MeshInstance3D.new()
 	var dm = BoxMesh.new()
-	dm.size = Vector3(0.36, 0.016, 0.86)
+	dm.size = Vector3(1.16, 0.016, 0.21)
 	dock_panel.mesh = dm
 	dock_panel.position = Vector3(0, 0.008, 0.0)
 	dock_panel.material_override = _mat_mahogany
 	drydock_root.add_child(dock_panel)
 
-	# Layer 2: Brass Rim (top = 0.020)
 	var dock_rim = MeshInstance3D.new()
 	var drm = BoxMesh.new()
-	drm.size = Vector3(0.33, 0.018, 0.83)
+	drm.size = Vector3(1.12, 0.018, 0.18)
 	dock_rim.mesh = drm
 	dock_rim.position = Vector3(0, 0.011, 0.0)
 	dock_rim.material_override = _mat_brass
 	drydock_root.add_child(dock_rim)
 
-	# Layer 3: Inner Slate Plate (top = 0.024)
 	var dock_inner = MeshInstance3D.new()
 	var dim = BoxMesh.new()
-	dim.size = Vector3(0.31, 0.020, 0.81)
+	dim.size = Vector3(1.10, 0.020, 0.16)
 	dock_inner.mesh = dim
 	dock_inner.position = Vector3(0, 0.014, 0.0)
 	var mat_dock_in = StandardMaterial3D.new()
@@ -434,24 +444,29 @@ func _build_phase1_setup_ui() -> void:
 	dock_inner.material_override = mat_dock_in
 	drydock_root.add_child(dock_inner)
 
-	var lbl_dock = _create_3d_label("🚢 اسکله ناوگان", 20, Color(0.98, 0.86, 0.42), 0.00118)
-	lbl_dock.position = Vector3(0, 0.026, -0.345)
-	drydock_root.add_child(lbl_dock)
-
-	lbl_phase1_hint = _create_3d_label("کشتی را بکشید یا لمس کنید", 14, Color(0.80, 0.92, 1.0), 0.00105)
-	lbl_phase1_hint.position = Vector3(0, 0.026, -0.282)
+	# Status Hint Label along top edge of Command Bar
+	lbl_phase1_hint = _create_3d_label("برای جابجایی کشتی را بکشید • برای چرخش روی کشتی کلیک کنید", 20, Color(0.85, 0.95, 1.0), 0.00155)
+	lbl_phase1_hint.position = Vector3(0, 0.027, -0.052)
 	drydock_root.add_child(lbl_phase1_hint)
 
-	# Layer 4: 4 Drydock Ship Selector Berths (y = 0.028, height = 0.006 -> top = 0.031)
+	# Left Large Button: Rotate Selected Ship ("🔄 چرخش کشتی")
+	_create_drydock_3d_button(
+		Vector3(CMD_BTN_ROTATE_X, 0.028, 0.022),
+		Vector3(0.32, 0.010, 0.082),
+		"🔄 چرخش کشتی",
+		Color(0.16, 0.50, 0.86)
+	)
+
+	# Center 4 Ship Selector Buttons (Lengths 5, 4, 3, 2)
 	for i in range(4):
-		var s_len: int = BERTH_SHIP_LENGTHS[i]
-		var bz: float = BERTH_Z_OFFSETS[i]
+		var s_len: int = CMD_BERTH_LENGTHS[i]
+		var bx: float = CMD_BERTH_X[i]
 
 		var slot_box = MeshInstance3D.new()
 		var sbm = BoxMesh.new()
-		sbm.size = Vector3(0.275, 0.006, 0.092)
+		sbm.size = Vector3(0.088, 0.010, 0.082)
 		slot_box.mesh = sbm
-		slot_box.position = Vector3(0, 0.028, bz)
+		slot_box.position = Vector3(bx, 0.028, 0.022)
 		var slot_mat = StandardMaterial3D.new()
 		slot_mat.albedo_color = Color(0.14, 0.24, 0.34)
 		slot_mat.roughness = 0.3
@@ -459,30 +474,37 @@ func _build_phase1_setup_ui() -> void:
 		drydock_root.add_child(slot_box)
 		drydock_slot_highlights[s_len] = slot_box
 
-		var mini_ship = _create_warship_3d_model(s_len, false, false)
-		mini_ship.rotation.y = PI * 0.5
-		var preview_scale: float = clampf(0.185 / (float(s_len) * CELL_PITCH), 0.36, 0.58)
-		mini_ship.scale = Vector3(preview_scale, preview_scale, preview_scale)
-		mini_ship.position = Vector3(-0.035, 0.033, bz)
-		drydock_root.add_child(mini_ship)
-
-		var lbl_s = _create_3d_label(_fa_num(s_len), 20, Color(1.0, 0.90, 0.45), 0.00120)
-		lbl_s.position = Vector3(0.102, 0.033, bz)
+		var lbl_s = _create_3d_label("ناو %s" % _fa_num(s_len), 22, Color(1.0, 0.92, 0.48), 0.00160)
+		lbl_s.position = Vector3(bx, 0.036, 0.022)
 		drydock_root.add_child(lbl_s)
 
-	# 2 Tactical 3D Buttons on Drydock Console: Rotate & Randomize
+	# Right Large Button: Randomize Fleet ("🎲 چیدمان تصادفی")
 	_create_drydock_3d_button(
-		Vector3(0, 0.028, BTN_ROTATE_Z),
-		Vector3(0.275, 0.008, 0.064),
-		"🔄 چرخش کشتی",
-		Color(0.18, 0.52, 0.86)
-	)
-	_create_drydock_3d_button(
-		Vector3(0, 0.028, BTN_RANDOM_Z),
-		Vector3(0.275, 0.008, 0.064),
+		Vector3(CMD_BTN_RANDOM_X, 0.028, 0.022),
+		Vector3(0.32, 0.010, 0.082),
 		"🎲 چیدمان تصادفی",
-		Color(0.16, 0.66, 0.42)
+		Color(0.15, 0.64, 0.40)
 	)
+
+func _create_selected_ship_rotate_indicator() -> Node3D:
+	var root = Node3D.new()
+	var torus = TorusMesh.new()
+	torus.inner_radius = CELL_PITCH * 0.28
+	torus.outer_radius = CELL_PITCH * 0.36
+	var ring = MeshInstance3D.new()
+	ring.mesh = torus
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.88, 0.25)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.78, 0.15)
+	mat.emission_energy_multiplier = 1.4
+	ring.material_override = mat
+	root.add_child(ring)
+
+	var lbl = _create_3d_label("🔄", 22, Color(1.0, 0.95, 0.55), 0.00165)
+	lbl.position = Vector3(0, 0.012, 0)
+	root.add_child(lbl)
+	return root
 
 func _create_drydock_3d_button(pos: Vector3, sz: Vector3, text_str: String, bg_col: Color) -> void:
 	var btn_mesh = MeshInstance3D.new()
@@ -497,8 +519,8 @@ func _create_drydock_3d_button(pos: Vector3, sz: Vector3, text_str: String, bg_c
 	btn_mesh.material_override = mat
 	drydock_root.add_child(btn_mesh)
 
-	var lbl = _create_3d_label(text_str, 16, Color.WHITE, 0.00112)
-	lbl.position = pos + Vector3(0, 0.006, 0)
+	var lbl = _create_3d_label(text_str, 24, Color.WHITE, 0.00165)
+	lbl.position = pos + Vector3(0, 0.008, 0)
 	drydock_root.add_child(lbl)
 
 func _build_phase2_combat_ui() -> void:
@@ -508,7 +530,8 @@ func _build_phase2_combat_ui() -> void:
 		"🎯 میدان حمله (ناوگان حریف)",
 		Color(1.0, 0.48, 0.40),
 		true,
-		attack_cell_meshes
+		attack_cell_meshes,
+		true
 	)
 	attack_sunk_ships_root = Node3D.new()
 	attack_sunk_ships_root.name = "AttackSunkShipsRoot"
@@ -530,7 +553,8 @@ func _build_phase2_combat_ui() -> void:
 		"🛡️ ناوگان خودی (میدان دفاع)",
 		Color(0.38, 0.90, 0.98),
 		false,
-		defense_cell_meshes
+		defense_cell_meshes,
+		true
 	)
 	defense_ships_root = Node3D.new()
 	defense_ships_root.name = "DefenseShipsRoot"
@@ -543,24 +567,24 @@ func _build_phase2_combat_ui() -> void:
 	_build_fleet_status_strip(my_fleet_board_root, my_status_badges)
 
 func _build_fleet_status_strip(parent_board: Node3D, badge_dict: Dictionary) -> void:
-	var strip_z: float = (GRID_SIZE * CELL_PITCH) * 0.5 + 0.048
-	var x_positions = [-0.24, -0.08, 0.08, 0.24]
+	var strip_z: float = (GRID_SIZE * CELL_PITCH) * 0.5 + 0.068
+	var x_positions = [-0.34, -0.115, 0.115, 0.34]
 	var lengths = [5, 4, 3, 2]
 	for i in range(4):
 		var s_len: int = lengths[i]
 		var pill = MeshInstance3D.new()
 		var pm = BoxMesh.new()
-		pm.size = Vector3(0.135, 0.006, 0.036)
+		pm.size = Vector3(0.195, 0.008, 0.056)
 		pill.mesh = pm
 		pill.position = Vector3(x_positions[i], 0.022, strip_z)
 		var pmat = StandardMaterial3D.new()
-		pmat.albedo_color = Color(0.12, 0.34, 0.26)
+		pmat.albedo_color = Color(0.12, 0.36, 0.28)
 		pmat.roughness = 0.3
 		pill.material_override = pmat
 		parent_board.add_child(pill)
 
-		var slbl = _create_3d_label("ناو %s" % _fa_num(s_len), 15, Color(0.80, 1.0, 0.88), 0.00110)
-		slbl.position = Vector3(x_positions[i], 0.027, strip_z)
+		var slbl = _create_3d_label("ناو %s" % _fa_num(s_len), 24, Color(0.84, 1.0, 0.90), 0.00165)
+		slbl.position = Vector3(x_positions[i], 0.029, strip_z)
 		parent_board.add_child(slbl)
 
 		badge_dict[s_len] = {"pill": pill, "label": slbl}
@@ -574,20 +598,20 @@ func _update_fleet_status_badge(badge_dict: Dictionary, s_len: int, is_sunk: boo
 	if is_instance_valid(pill) and pill.material_override is StandardMaterial3D:
 		var mat: StandardMaterial3D = pill.material_override
 		if is_sunk:
-			mat.albedo_color = Color(0.55, 0.12, 0.14)
+			mat.albedo_color = Color(0.60, 0.12, 0.14)
 			mat.emission_enabled = true
 			mat.emission = Color(0.85, 0.15, 0.15)
-			mat.emission_energy_multiplier = 0.5
+			mat.emission_energy_multiplier = 0.55
 		else:
-			mat.albedo_color = Color(0.12, 0.34, 0.26)
+			mat.albedo_color = Color(0.12, 0.36, 0.28)
 			mat.emission_enabled = false
 	if is_instance_valid(slbl):
 		if is_sunk:
 			slbl.text = "غرق %s" % _fa_num(s_len)
-			slbl.modulate = Color(1.0, 0.50, 0.50)
+			slbl.modulate = Color(1.0, 0.55, 0.55)
 		else:
 			slbl.text = "ناو %s" % _fa_num(s_len)
-			slbl.modulate = Color(0.80, 1.0, 0.88)
+			slbl.modulate = Color(0.84, 1.0, 0.90)
 
 func _create_target_reticle() -> Node3D:
 	var root = Node3D.new()
@@ -606,13 +630,13 @@ func _create_target_reticle() -> Node3D:
 	return root
 
 # ==============================================================================
-# PROCEDURAL 3D WARSHIP GENERATOR (Lengths 2, 3, 4, 5)
+# PROCEDURAL 3D WARSHIP GENERATOR (Scaled for CELL_PITCH = 0.122)
 # ==============================================================================
 func _create_warship_3d_model(ship_len: int, is_enemy_sunk: bool = false, is_ghost: bool = false) -> Node3D:
 	var ship_root = Node3D.new()
-	var total_len: float = float(ship_len) * CELL_PITCH - 0.016
-	var hull_width: float = CELL_PITCH * 0.64
-	var hull_height: float = 0.022
+	var total_len: float = float(ship_len) * CELL_PITCH - 0.020
+	var hull_width: float = CELL_PITCH * 0.66
+	var hull_height: float = 0.030
 
 	var mat_hull: Material = _mat_ship_hull
 	var mat_deck: Material = _mat_ship_deck
@@ -630,7 +654,7 @@ func _create_warship_3d_model(ship_len: int, is_enemy_sunk: bool = false, is_gho
 		mat_dark = _mat_ghost_valid
 		mat_accent = _mat_ghost_valid
 
-	var main_len: float = maxf(0.04, total_len - 0.055)
+	var main_len: float = maxf(0.06, total_len - 0.075)
 	var hull_mesh = MeshInstance3D.new()
 	var hm = BoxMesh.new()
 	hm.size = Vector3(hull_width, hull_height, main_len)
@@ -646,60 +670,60 @@ func _create_warship_3d_model(ship_len: int, is_enemy_sunk: bool = false, is_gho
 	bpm.height = hull_height
 	bpm.radial_segments = 6
 	bow_prism.mesh = bpm
-	bow_prism.position = Vector3(0, hull_height * 0.5, main_len * 0.5 + 0.012)
+	bow_prism.position = Vector3(0, hull_height * 0.5, main_len * 0.5 + 0.016)
 	bow_prism.material_override = mat_hull
 	ship_root.add_child(bow_prism)
 
 	var stern_prism = MeshInstance3D.new()
 	stern_prism.mesh = bpm
-	stern_prism.position = Vector3(0, hull_height * 0.5, -main_len * 0.5 - 0.010)
+	stern_prism.position = Vector3(0, hull_height * 0.5, -main_len * 0.5 - 0.014)
 	stern_prism.material_override = mat_hull
 	ship_root.add_child(stern_prism)
 
 	var deck_mesh = MeshInstance3D.new()
 	var dm = BoxMesh.new()
-	dm.size = Vector3(hull_width * 0.84, 0.006, main_len * 0.94)
+	dm.size = Vector3(hull_width * 0.84, 0.008, main_len * 0.94)
 	deck_mesh.mesh = dm
-	deck_mesh.position = Vector3(0, hull_height + 0.003, 0)
+	deck_mesh.position = Vector3(0, hull_height + 0.004, 0)
 	deck_mesh.material_override = mat_deck
 	ship_root.add_child(deck_mesh)
 
 	if ship_len == 2:
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.014, -0.012), Vector3(hull_width * 0.58, 0.020, 0.045), mat_hull)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.008, 0.032), mat_dark, mat_accent, 1)
+		_add_ship_box(ship_root, Vector3(0, hull_height + 0.018, -0.018), Vector3(hull_width * 0.58, 0.026, 0.062), mat_hull)
+		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.010, 0.044), mat_dark, mat_accent, 1)
 	elif ship_len == 3:
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.018, 0.0), Vector3(hull_width * 0.52, 0.028, 0.068), mat_dark)
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.038, -0.005), Vector3(0.008, 0.022, 0.008), mat_accent)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.008, 0.068), mat_hull, mat_accent, 2)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.008, -0.068), mat_hull, mat_accent, 1)
+		_add_ship_box(ship_root, Vector3(0, hull_height + 0.022, 0.0), Vector3(hull_width * 0.52, 0.034, 0.092), mat_dark)
+		_add_ship_box(ship_root, Vector3(0, hull_height + 0.048, -0.006), Vector3(0.012, 0.028, 0.012), mat_accent)
+		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.010, 0.095), mat_hull, mat_accent, 2)
+		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.010, -0.095), mat_hull, mat_accent, 1)
 	elif ship_len == 4:
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.020, 0.015), Vector3(hull_width * 0.62, 0.032, 0.065), mat_hull)
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.038, 0.020), Vector3(hull_width * 0.42, 0.018, 0.038), mat_dark)
+		_add_ship_box(ship_root, Vector3(0, hull_height + 0.026, 0.020), Vector3(hull_width * 0.62, 0.038, 0.090), mat_hull)
+		_add_ship_box(ship_root, Vector3(0, hull_height + 0.048, 0.026), Vector3(hull_width * 0.42, 0.024, 0.052), mat_dark)
 		var funnel = MeshInstance3D.new()
 		var fm = CylinderMesh.new()
-		fm.top_radius = 0.012
-		fm.bottom_radius = 0.015
-		fm.height = 0.032
+		fm.top_radius = 0.016
+		fm.bottom_radius = 0.020
+		fm.height = 0.042
 		funnel.mesh = fm
-		funnel.position = Vector3(0, hull_height + 0.020, -0.032)
+		funnel.position = Vector3(0, hull_height + 0.026, -0.044)
 		funnel.material_override = mat_dark
 		ship_root.add_child(funnel)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.009, 0.095), mat_dark, mat_accent, 2)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.009, -0.095), mat_dark, mat_accent, 2)
+		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.011, 0.135), mat_dark, mat_accent, 2)
+		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.011, -0.135), mat_dark, mat_accent, 2)
 	else:
 		var flight_deck = MeshInstance3D.new()
 		var fdm = BoxMesh.new()
-		fdm.size = Vector3(hull_width * 1.12, 0.008, total_len * 0.94)
+		fdm.size = Vector3(hull_width * 1.12, 0.010, total_len * 0.94)
 		flight_deck.mesh = fdm
-		flight_deck.position = Vector3(0, hull_height + 0.008, 0)
+		flight_deck.position = Vector3(0, hull_height + 0.010, 0)
 		flight_deck.material_override = mat_dark
 		ship_root.add_child(flight_deck)
 
-		_add_ship_box(ship_root, Vector3(-0.006, hull_height + 0.013, 0), Vector3(0.006, 0.002, total_len * 0.84), mat_accent)
-		_add_ship_box(ship_root, Vector3(hull_width * 0.36, hull_height + 0.026, -0.02), Vector3(0.018, 0.032, 0.085), mat_hull)
-		_add_ship_box(ship_root, Vector3(hull_width * 0.36, hull_height + 0.048, -0.02), Vector3(0.010, 0.018, 0.025), mat_accent)
-		_add_ship_box(ship_root, Vector3(-0.010, hull_height + 0.016, 0.09), Vector3(0.024, 0.006, 0.028), mat_hull)
-		_add_ship_box(ship_root, Vector3(-0.010, hull_height + 0.016, -0.10), Vector3(0.024, 0.006, 0.028), mat_hull)
+		_add_ship_box(ship_root, Vector3(-0.008, hull_height + 0.016, 0), Vector3(0.008, 0.003, total_len * 0.84), mat_accent)
+		_add_ship_box(ship_root, Vector3(hull_width * 0.36, hull_height + 0.032, -0.025), Vector3(0.024, 0.040, 0.115), mat_hull)
+		_add_ship_box(ship_root, Vector3(hull_width * 0.36, hull_height + 0.058, -0.025), Vector3(0.014, 0.024, 0.034), mat_accent)
+		_add_ship_box(ship_root, Vector3(-0.014, hull_height + 0.020, 0.13), Vector3(0.032, 0.008, 0.038), mat_hull)
+		_add_ship_box(ship_root, Vector3(-0.014, hull_height + 0.020, -0.14), Vector3(0.032, 0.008, 0.038), mat_hull)
 
 	return ship_root
 
@@ -715,29 +739,29 @@ func _add_ship_box(parent_node: Node3D, pos: Vector3, sz: Vector3, mat: Material
 func _add_ship_turret(parent_node: Node3D, pos: Vector3, mat_base: Material, mat_barrel: Material, barrel_count: int) -> void:
 	var base = MeshInstance3D.new()
 	var cm = CylinderMesh.new()
-	cm.top_radius = 0.014
-	cm.bottom_radius = 0.017
-	cm.height = 0.014
+	cm.top_radius = 0.019
+	cm.bottom_radius = 0.023
+	cm.height = 0.018
 	base.mesh = cm
 	base.position = pos
 	base.material_override = mat_base
 	parent_node.add_child(base)
 
 	for i in range(barrel_count):
-		var x_off: float = 0.0 if barrel_count == 1 else (-0.005 + float(i) * 0.010)
+		var x_off: float = 0.0 if barrel_count == 1 else (-0.007 + float(i) * 0.014)
 		var barrel = MeshInstance3D.new()
 		var b_cyl = CylinderMesh.new()
-		b_cyl.top_radius = 0.0025
-		b_cyl.bottom_radius = 0.003
-		b_cyl.height = 0.026
+		b_cyl.top_radius = 0.0035
+		b_cyl.bottom_radius = 0.004
+		b_cyl.height = 0.034
 		barrel.mesh = b_cyl
 		barrel.rotation.x = PI * 0.5
-		barrel.position = pos + Vector3(x_off, 0.003, 0.016)
+		barrel.position = pos + Vector3(x_off, 0.004, 0.022)
 		barrel.material_override = mat_barrel
 		parent_node.add_child(barrel)
 
 # ==============================================================================
-# PHASE 1: FLEET PLACEMENT & VALIDATION LOGIC
+# PHASE 1: FLEET PLACEMENT, LIVE DRAGGING & EASY ROTATION LOGIC
 # ==============================================================================
 func _apply_default_initial_fleet() -> void:
 	var default_layout = {
@@ -755,8 +779,8 @@ func _apply_default_initial_fleet() -> void:
 	_highlight_selected_drydock_berth()
 
 func _compute_candidate_cells(anchor_idx: int, s_len: int, is_horiz: bool) -> Array[int]:
-	var r: int = anchor_idx / GRID_SIZE
-	var c: int = anchor_idx % GRID_SIZE
+	var r: int = clampi(anchor_idx / GRID_SIZE, 0, GRID_SIZE - 1)
+	var c: int = clampi(anchor_idx % GRID_SIZE, 0, GRID_SIZE - 1)
 	if is_horiz:
 		if c + s_len > GRID_SIZE:
 			c = GRID_SIZE - s_len
@@ -769,6 +793,15 @@ func _compute_candidate_cells(anchor_idx: int, s_len: int, is_horiz: bool) -> Ar
 		var nc: int = c + (step if is_horiz else 0)
 		result.append(nr * GRID_SIZE + nc)
 	return result
+
+func _compute_anchor_from_grabbed_cell(hovered_cell: int, s_len: int, is_horiz: bool, seg_offset: int) -> int:
+	var r: int = hovered_cell / GRID_SIZE
+	var c: int = hovered_cell % GRID_SIZE
+	if is_horiz:
+		c = clampi(c - seg_offset, 0, GRID_SIZE - s_len)
+	else:
+		r = clampi(r - seg_offset, 0, GRID_SIZE - s_len)
+	return r * GRID_SIZE + c
 
 func _are_cells_free_for_ship(candidate_cells: Array[int], ignore_ship_len: int) -> bool:
 	if candidate_cells.is_empty():
@@ -787,19 +820,20 @@ func _are_cells_free_for_ship(candidate_cells: Array[int], ignore_ship_len: int)
 				return false
 	return true
 
-func _try_place_ship_at(s_len: int, anchor_idx: int, is_horiz: bool) -> bool:
+func _try_place_ship_at(s_len: int, anchor_idx: int, is_horiz: bool, play_sfx: bool = true) -> bool:
 	var cells = _compute_candidate_cells(anchor_idx, s_len, is_horiz)
 	if not _are_cells_free_for_ship(cells, s_len):
 		return false
 	fleet_state[s_len]["cells"] = cells
 	fleet_state[s_len]["is_horizontal"] = is_horiz
 	fleet_state[s_len]["placed"] = true
-	AudioManager.play_sound("tap_button")
+	if play_sfx:
+		AudioManager.play_sound("tap_button")
 	_rebuild_phase1_ships_visuals()
 	_highlight_selected_drydock_berth()
 	return true
 
-func _rotate_selected_ship() -> void:
+func _rotate_selected_ship(pivot_cell_override: int = -1) -> void:
 	if is_play_phase or is_board_saved:
 		return
 	var st = fleet_state.get(selected_ship_len)
@@ -808,32 +842,56 @@ func _rotate_selected_ship() -> void:
 	var new_horiz: bool = not st["is_horizontal"]
 	if not st["placed"] or st["cells"].is_empty():
 		st["is_horizontal"] = new_horiz
-		_show_phase1_feedback("جهت کشتی سایز %s تغییر کرد" % _fa_num(selected_ship_len), Color(0.55, 0.92, 1.0))
+		_show_phase1_feedback("جهت ناو %s تغییر کرد" % _fa_num(selected_ship_len), Color(0.55, 0.92, 1.0))
 		return
 
-	var anchor_idx: int = int(st["cells"][0])
-	var candidate = _compute_candidate_cells(anchor_idx, selected_ship_len, new_horiz)
-	if _are_cells_free_for_ship(candidate, selected_ship_len):
-		st["cells"] = candidate
+	var cur_cells: Array = st["cells"]
+	# Determine pivot cell (either the clicked segment or the center of the ship!)
+	var pivot_idx: int = pivot_cell_override
+	var seg_idx: int = cur_cells.find(pivot_idx)
+	if seg_idx == -1:
+		seg_idx = cur_cells.size() / 2
+		pivot_idx = int(cur_cells[seg_idx])
+
+	var pivot_r: int = pivot_idx / GRID_SIZE
+	var pivot_c: int = pivot_idx % GRID_SIZE
+
+	# Ideal anchor in new orientation so ship rotates around pivot_idx
+	var ideal_r: int = pivot_r - (0 if new_horiz else seg_idx)
+	var ideal_c: int = pivot_c - (seg_idx if new_horiz else 0)
+	ideal_r = clampi(ideal_r, 0, GRID_SIZE - (1 if new_horiz else selected_ship_len))
+	ideal_c = clampi(ideal_c, 0, GRID_SIZE - (selected_ship_len if new_horiz else 1))
+
+	# 2D spiral/Manhattan search around (ideal_r, ideal_c) so rotation ALWAYS finds nearest free spot!
+	var best_cells: Array[int] = []
+	var best_dist: int = 999
+	for dr in range(-GRID_SIZE, GRID_SIZE + 1):
+		for dc in range(-GRID_SIZE, GRID_SIZE + 1):
+			var tr: int = ideal_r + dr
+			var tc: int = ideal_c + dc
+			if tr < 0 or tc < 0:
+				continue
+			if new_horiz and (tc + selected_ship_len > GRID_SIZE or tr >= GRID_SIZE):
+				continue
+			if (not new_horiz) and (tr + selected_ship_len > GRID_SIZE or tc >= GRID_SIZE):
+				continue
+			var dist: int = abs(dr) + abs(dc)
+			if dist >= best_dist:
+				continue
+			var cand = _compute_candidate_cells(tr * GRID_SIZE + tc, selected_ship_len, new_horiz)
+			if _are_cells_free_for_ship(cand, selected_ship_len):
+				best_dist = dist
+				best_cells = cand
+
+	if not best_cells.is_empty():
+		st["cells"] = best_cells
 		st["is_horizontal"] = new_horiz
 		AudioManager.play_sound("tap_button")
 		_rebuild_phase1_ships_visuals()
-		return
-
-	var base_r: int = anchor_idx / GRID_SIZE
-	var base_c: int = anchor_idx % GRID_SIZE
-	for delta in [-1, 1, -2, 2, -3, 3]:
-		var test_r = clampi(base_r + (0 if new_horiz else delta), 0, GRID_SIZE - 1)
-		var test_c = clampi(base_c + (delta if new_horiz else 0), 0, GRID_SIZE - 1)
-		var alt_cells = _compute_candidate_cells(test_r * GRID_SIZE + test_c, selected_ship_len, new_horiz)
-		if _are_cells_free_for_ship(alt_cells, selected_ship_len):
-			st["cells"] = alt_cells
-			st["is_horizontal"] = new_horiz
-			AudioManager.play_sound("tap_button")
-			_rebuild_phase1_ships_visuals()
-			return
-
-	_show_phase1_feedback("فضای کافی برای چرخش نیست!", Color(1.0, 0.45, 0.45))
+		_highlight_selected_drydock_berth()
+		_show_phase1_feedback("🔄 ناو %s چرخانده شد" % _fa_num(selected_ship_len), Color(0.55, 0.95, 1.0))
+	else:
+		_show_phase1_feedback("فضای کافی برای چرخش نیست!", Color(1.0, 0.45, 0.45))
 
 func _randomize_fleet_placement() -> void:
 	if is_play_phase or is_board_saved:
@@ -862,7 +920,7 @@ func _randomize_fleet_placement() -> void:
 	AudioManager.play_sound("tap_button")
 	_rebuild_phase1_ships_visuals()
 	_highlight_selected_drydock_berth()
-	_show_phase1_feedback("🎲 ناوگان تصادفی چیده شد!", Color(0.45, 1.0, 0.68))
+	_show_phase1_feedback("🎲 ناوگان به صورت تصادفی چیده شد!", Color(0.45, 1.0, 0.68))
 
 func _rebuild_phase1_ships_visuals() -> void:
 	for s_len in phase1_ship_nodes.keys():
@@ -877,8 +935,11 @@ func _rebuild_phase1_ships_visuals() -> void:
 		var cm: MeshInstance3D = phase1_cell_meshes[idx]
 		if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
 			var mat: StandardMaterial3D = cm.material_override
-			mat.albedo_color = Color(0.06, 0.24, 0.38) if ((r + c) % 2 == 0) else Color(0.08, 0.29, 0.44)
+			mat.albedo_color = Color(0.06, 0.25, 0.40) if ((r + c) % 2 == 0) else Color(0.09, 0.31, 0.47)
 			mat.emission_enabled = false
+
+	if is_instance_valid(selected_ship_rotate_badge):
+		selected_ship_rotate_badge.visible = false
 
 	for s_len in SHIP_LENGTHS:
 		var st = fleet_state[s_len]
@@ -889,7 +950,8 @@ func _rebuild_phase1_ships_visuals() -> void:
 		var p_first: Vector3 = _cell_index_to_local_pos(int(cells[0]))
 		var p_last: Vector3 = _cell_index_to_local_pos(int(cells[cells.size() - 1]))
 		var center_pos: Vector3 = (p_first + p_last) * 0.5
-		center_pos.y = 0.032
+		var is_sel: bool = (s_len == selected_ship_len)
+		center_pos.y = 0.044 if (is_sel and is_dragging_ship) else 0.032
 
 		var ship_node = _create_warship_3d_model(s_len, false, false)
 		ship_node.position = center_pos
@@ -897,19 +959,22 @@ func _rebuild_phase1_ships_visuals() -> void:
 		phase1_grid_root.add_child(ship_node)
 		phase1_ship_nodes[s_len] = ship_node
 
-		var is_sel: bool = (s_len == selected_ship_len)
+		if is_sel and is_instance_valid(selected_ship_rotate_badge) and not is_board_saved:
+			selected_ship_rotate_badge.visible = true
+			selected_ship_rotate_badge.position = Vector3(center_pos.x, center_pos.y + 0.046, center_pos.z)
+
 		for c_idx in cells:
 			if c_idx >= 0 and c_idx < phase1_cell_meshes.size():
 				var cm: MeshInstance3D = phase1_cell_meshes[c_idx]
 				if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
 					var mat: StandardMaterial3D = cm.material_override
 					if is_sel:
-						mat.albedo_color = Color(0.16, 0.55, 0.42)
+						mat.albedo_color = Color(0.16, 0.58, 0.44)
 						mat.emission_enabled = true
-						mat.emission = Color(0.18, 0.75, 0.50)
-						mat.emission_energy_multiplier = 0.35
+						mat.emission = Color(0.18, 0.78, 0.52)
+						mat.emission_energy_multiplier = 0.40
 					else:
-						mat.albedo_color = Color(0.10, 0.38, 0.52)
+						mat.albedo_color = Color(0.10, 0.40, 0.55)
 
 func _highlight_selected_drydock_berth() -> void:
 	for s_len in drydock_slot_highlights.keys():
@@ -998,8 +1063,10 @@ func submit_code() -> void:
 	is_board_saved = true
 	set_board_locked(true)
 	_update_ghost_preview(-1)
+	if is_instance_valid(selected_ship_rotate_badge):
+		selected_ship_rotate_badge.visible = false
 	AudioManager.play_sound("tap_button")
-	_show_phase1_feedback("✓ ناوگان ثبت شد! منتظر حریف...", Color(0.45, 1.0, 0.65))
+	_show_phase1_feedback("✓ ناوگان ثبت شد! در انتظار آماده شدن حریف...", Color(0.45, 1.0, 0.65))
 	NetworkManager.send_save_board(payload)
 
 	var hud = _get_hud()
@@ -1040,24 +1107,24 @@ func _animate_view_transition() -> void:
 	if view_mode == ViewMode.MY_BOARD:
 		attack_board_root.visible = true
 		my_fleet_board_root.visible = true
-		tw.tween_property(attack_board_root, "position", Vector3(0.0, 0.0, 0.02), 0.32)
-		tw.tween_property(attack_board_root, "scale", Vector3.ONE, 0.32)
-		tw.tween_property(my_fleet_board_root, "position", Vector3(2.2, -0.05, 0.02), 0.32)
-		tw.tween_property(my_fleet_board_root, "scale", Vector3(0.65, 0.65, 0.65), 0.32)
+		tw.tween_property(attack_board_root, "position", Vector3(-0.04, 0.0, 0.02), 0.32)
+		tw.tween_property(attack_board_root, "scale", Vector3(1.04, 1.04, 1.04), 0.32)
+		tw.tween_property(my_fleet_board_root, "position", Vector3(2.4, -0.05, 0.02), 0.32)
+		tw.tween_property(my_fleet_board_root, "scale", Vector3(0.60, 0.60, 0.60), 0.32)
 	elif view_mode == ViewMode.OPP_BOARD:
 		attack_board_root.visible = true
 		my_fleet_board_root.visible = true
-		tw.tween_property(attack_board_root, "position", Vector3(-2.2, -0.05, 0.02), 0.32)
-		tw.tween_property(attack_board_root, "scale", Vector3(0.65, 0.65, 0.65), 0.32)
-		tw.tween_property(my_fleet_board_root, "position", Vector3(0.0, 0.0, 0.02), 0.32)
-		tw.tween_property(my_fleet_board_root, "scale", Vector3.ONE, 0.32)
+		tw.tween_property(attack_board_root, "position", Vector3(-2.4, -0.05, 0.02), 0.32)
+		tw.tween_property(attack_board_root, "scale", Vector3(0.60, 0.60, 0.60), 0.32)
+		tw.tween_property(my_fleet_board_root, "position", Vector3(-0.04, 0.0, 0.02), 0.32)
+		tw.tween_property(my_fleet_board_root, "scale", Vector3(1.04, 1.04, 1.04), 0.32)
 	else:
 		attack_board_root.visible = true
 		my_fleet_board_root.visible = true
-		tw.tween_property(attack_board_root, "position", Vector3(-0.37, 0.0, 0.02), 0.32)
-		tw.tween_property(attack_board_root, "scale", Vector3(0.80, 0.80, 0.80), 0.32)
-		tw.tween_property(my_fleet_board_root, "position", Vector3(0.37, 0.0, 0.02), 0.32)
-		tw.tween_property(my_fleet_board_root, "scale", Vector3(0.80, 0.80, 0.80), 0.32)
+		tw.tween_property(attack_board_root, "position", Vector3(-0.42, 0.0, 0.02), 0.32)
+		tw.tween_property(attack_board_root, "scale", Vector3(0.64, 0.64, 0.64), 0.32)
+		tw.tween_property(my_fleet_board_root, "position", Vector3(0.35, 0.0, 0.02), 0.32)
+		tw.tween_property(my_fleet_board_root, "scale", Vector3(0.64, 0.64, 0.64), 0.32)
 
 func _update_phase_visibility() -> void:
 	if is_instance_valid(phase1_root):
@@ -1088,7 +1155,7 @@ func _populate_defense_board_ships() -> void:
 		defense_ships_root.add_child(ship_node)
 
 # ==============================================================================
-# MATHEMATICAL RAY-PLANE INTERSECTION (60FPS Smooth & Zero StaticBody3D Lag!)
+# MATHEMATICAL RAY-PLANE INTERSECTION (Live Dragging & 60fps Selection)
 # ==============================================================================
 func _project_screen_to_board_plane(screen_pos: Vector2, plane_h: float = 0.031) -> Variant:
 	var vp = get_viewport()
@@ -1149,72 +1216,78 @@ func _handle_phase1_input(event: InputEvent) -> void:
 			if world_pt == null:
 				return
 
-			# 1. Check Drydock Console Hits (Berths & Rotate/Randomize buttons)
+			# 1. Check Bottom Command Console Bar Hits
 			var dock_local: Vector3 = drydock_root.to_local(world_pt)
-			if abs(dock_local.x) <= 0.165 and abs(dock_local.z) <= 0.42:
+			if abs(dock_local.x) <= 0.58 and abs(dock_local.z) <= 0.11:
 				_mark_piece_interaction()
-				if abs(dock_local.z - BTN_ROTATE_Z) <= 0.036:
+				if abs(dock_local.x - CMD_BTN_ROTATE_X) <= 0.165:
 					_rotate_selected_ship()
 					get_viewport().set_input_as_handled()
 					return
-				elif abs(dock_local.z - BTN_RANDOM_Z) <= 0.036:
+				elif abs(dock_local.x - CMD_BTN_RANDOM_X) <= 0.165:
 					_randomize_fleet_placement()
 					get_viewport().set_input_as_handled()
 					return
 				for i in range(4):
-					if abs(dock_local.z - BERTH_Z_OFFSETS[i]) <= 0.048:
-						var s_len: int = BERTH_SHIP_LENGTHS[i]
+					if abs(dock_local.x - CMD_BERTH_X[i]) <= 0.048:
+						var s_len: int = CMD_BERTH_LENGTHS[i]
 						if selected_ship_len == s_len:
 							_rotate_selected_ship()
 						else:
 							selected_ship_len = s_len
 							_highlight_selected_drydock_berth()
 							_rebuild_phase1_ships_visuals()
-							_show_phase1_feedback("کشتی %s انتخاب شد — روی میدان بکشید" % _fa_num(s_len), Color(1.0, 0.90, 0.45))
-						_pointer_down = true
-						_pointer_down_screen = pos
-						is_dragging_ship = true
-						_press_anchor_cell = -1
+							_show_phase1_feedback("ناو %s انتخاب شد — بکشید یا برای چرخش کلیک کنید" % _fa_num(s_len), Color(1.0, 0.90, 0.45))
 						get_viewport().set_input_as_handled()
 						return
 
-			# 2. Check 8x8 Grid Cell Hits
+			# 2. Check 8x8 Grid Cell Hits (Start Live Drag or Tap-to-Rotate!)
 			var c_idx: int = _world_to_grid_cell(phase1_grid_root, world_pt)
 			if c_idx != -1:
 				_mark_piece_interaction()
 				_pointer_down = true
 				_pointer_down_screen = pos
+				_press_cell_idx = c_idx
+				_drag_moved_cells = false
 				var occupant_len: int = _get_ship_at_cell(c_idx)
 				if occupant_len > 0:
 					selected_ship_len = occupant_len
 					is_dragging_ship = true
-					_press_anchor_cell = c_idx
+					var ship_cells: Array = fleet_state[occupant_len]["cells"]
+					var seg_idx: int = ship_cells.find(c_idx)
+					_drag_segment_offset = max(0, seg_idx)
 					hover_grid_index = c_idx
 					_highlight_selected_drydock_berth()
 					_rebuild_phase1_ships_visuals()
-					_update_ghost_preview(c_idx)
+					_show_phase1_feedback("در حال جابجایی ناو %s (رها کردن در همین نقطه = چرخش 🔄)" % _fa_num(occupant_len), Color(0.55, 0.95, 1.0))
 				else:
-					_press_anchor_cell = -1
+					# Clicked an empty cell -> immediately move currently selected ship there and allow dragging!
+					_drag_segment_offset = selected_ship_len / 2
+					var new_anchor: int = _compute_anchor_from_grabbed_cell(c_idx, selected_ship_len, fleet_state[selected_ship_len]["is_horizontal"], _drag_segment_offset)
+					_try_place_ship_at(selected_ship_len, new_anchor, fleet_state[selected_ship_len]["is_horizontal"], true)
 					is_dragging_ship = true
+					_drag_moved_cells = true
 					hover_grid_index = c_idx
-					_try_place_ship_at(selected_ship_len, c_idx, fleet_state[selected_ship_len]["is_horizontal"])
-					_update_ghost_preview(-1)
 				get_viewport().set_input_as_handled()
 		else:
 			if _pointer_down or is_dragging_ship:
 				_mark_piece_interaction()
 				var world_pt = _project_screen_to_board_plane(pos)
-				if world_pt != null and is_dragging_ship:
-					var drop_idx: int = _world_to_grid_cell(phase1_grid_root, world_pt)
-					if drop_idx != -1:
-						if _press_anchor_cell != -1 and drop_idx == _press_anchor_cell and pos.distance_to(_pointer_down_screen) < 18.0:
-							# Tapped an existing ship without dragging -> Rotate it in place!
-							_rotate_selected_ship()
-						else:
-							_try_place_ship_at(selected_ship_len, drop_idx, fleet_state[selected_ship_len]["is_horizontal"])
+				var release_idx: int = _world_to_grid_cell(phase1_grid_root, world_pt) if world_pt != null else -1
+				var was_tap: bool = (not _drag_moved_cells) and (pos.distance_to(_pointer_down_screen) < 22.0 or release_idx == _press_cell_idx)
+
 				_pointer_down = false
 				is_dragging_ship = false
-				_press_anchor_cell = -1
+
+				if was_tap and _press_cell_idx != -1:
+					# Single tap/click on ANY segment of ANY ship rotates it 90° immediately!
+					_rotate_selected_ship(_press_cell_idx)
+				else:
+					AudioManager.play_sound("tap_button")
+					_rebuild_phase1_ships_visuals()
+					_show_phase1_feedback("⚓ ناو %s مستقر شد (برای چرخش روی آن کلیک کنید)" % _fa_num(selected_ship_len), Color(0.45, 1.0, 0.68))
+
+				_press_cell_idx = -1
 				hover_grid_index = -1
 				_update_ghost_preview(-1)
 				get_viewport().set_input_as_handled()
@@ -1222,18 +1295,27 @@ func _handle_phase1_input(event: InputEvent) -> void:
 	elif (event is InputEventMouseMotion) or (event is InputEventScreenDrag):
 		var pos: Vector2 = event.position
 		var world_pt = _project_screen_to_board_plane(pos)
-		if world_pt != null:
-			var c_idx: int = _world_to_grid_cell(phase1_grid_root, world_pt)
-			if c_idx != hover_grid_index:
+		if world_pt == null:
+			return
+		var c_idx: int = _world_to_grid_cell(phase1_grid_root, world_pt)
+
+		if is_dragging_ship and _pointer_down:
+			_mark_piece_interaction()
+			if c_idx != -1 and c_idx != hover_grid_index:
 				hover_grid_index = c_idx
-				if is_dragging_ship or c_idx != -1:
-					_update_ghost_preview(c_idx)
-			if _pointer_down or is_dragging_ship:
-				_mark_piece_interaction()
-				get_viewport().set_input_as_handled()
+				if c_idx != _press_cell_idx:
+					_drag_moved_cells = true
+				var is_horiz: bool = fleet_state[selected_ship_len]["is_horizontal"]
+				var target_anchor: int = _compute_anchor_from_grabbed_cell(c_idx, selected_ship_len, is_horiz, _drag_segment_offset)
+				# Live-move the 3D ship immediately if target cells are free!
+				if _try_place_ship_at(selected_ship_len, target_anchor, is_horiz, false):
+					_update_ghost_preview(-1)
+				else:
+					# Show red blocked preview where cursor is aiming
+					_update_ghost_preview(target_anchor)
+			get_viewport().set_input_as_handled()
 
 func _handle_phase2_input(event: InputEvent) -> void:
-	# Re-verify turn state from GameManager so turn transitions never get out of sync
 	my_player_index = GameManager.my_player_index
 	if GameManager.current_turn in [1, 2]:
 		current_turn = GameManager.current_turn
@@ -1261,7 +1343,6 @@ func _handle_phase2_input(event: InputEvent) -> void:
 			if world_pt == null:
 				return
 
-			# If it's our turn and player is looking at Defense Board (OPP_BOARD), clicking switches to Attack Radar!
 			if is_my_turn and view_mode == ViewMode.OPP_BOARD:
 				var def_idx: int = _world_to_grid_cell(my_fleet_board_root, world_pt)
 				if def_idx != -1:
@@ -1288,7 +1369,6 @@ func _handle_phase2_input(event: InputEvent) -> void:
 					get_viewport().set_input_as_handled()
 					return
 
-				# Fire artillery shot at opponent's cell!
 				is_waiting_server = true
 				_set_attack_hover_cell(c_idx)
 				AudioManager.play_sound("tap_button")
@@ -1298,7 +1378,6 @@ func _handle_phase2_input(event: InputEvent) -> void:
 func _set_attack_hover_cell(c_idx: int) -> void:
 	if hover_attack_index == c_idx:
 		return
-	# Restore previous hovered cell color
 	if hover_attack_index >= 0 and hover_attack_index < attack_cell_meshes.size():
 		if not attack_cells_state[hover_attack_index]["is_selected"]:
 			var old_cm: MeshInstance3D = attack_cell_meshes[hover_attack_index]
@@ -1306,7 +1385,7 @@ func _set_attack_hover_cell(c_idx: int) -> void:
 				var r: int = hover_attack_index / GRID_SIZE
 				var c: int = hover_attack_index % GRID_SIZE
 				var old_mat: StandardMaterial3D = old_cm.material_override
-				old_mat.albedo_color = Color(0.05, 0.19, 0.28) if ((r + c) % 2 == 0) else Color(0.07, 0.24, 0.34)
+				old_mat.albedo_color = Color(0.05, 0.20, 0.30) if ((r + c) % 2 == 0) else Color(0.08, 0.26, 0.37)
 				old_mat.emission_enabled = false
 
 	hover_attack_index = c_idx
@@ -1314,7 +1393,7 @@ func _set_attack_hover_cell(c_idx: int) -> void:
 		var cm: MeshInstance3D = attack_cell_meshes[c_idx]
 		if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
 			var mat: StandardMaterial3D = cm.material_override
-			mat.albedo_color = Color(0.18, 0.52, 0.42)
+			mat.albedo_color = Color(0.18, 0.55, 0.44)
 			mat.emission_enabled = true
 			mat.emission = Color(0.25, 0.85, 0.55)
 			mat.emission_energy_multiplier = 0.45
@@ -1398,7 +1477,6 @@ func on_turn_changed(turn: int, _is_me: bool) -> void:
 		if hud and hud.has_method("set_fekrbekr_hud_buttons"):
 			hud.set_fekrbekr_hud_buttons(true)
 	elif is_play_phase:
-		# Automatically switch to Attack Radar when it becomes our turn (unless in DUAL mode)!
 		if view_mode != ViewMode.DUAL:
 			var target_mode = ViewMode.MY_BOARD if is_my_turn else ViewMode.OPP_BOARD
 			if view_mode != target_mode:
@@ -1600,8 +1678,8 @@ func _play_shot_sequence_vfx(
 ) -> void:
 	var shell = MeshInstance3D.new()
 	var sm = SphereMesh.new()
-	sm.radius = 0.015
-	sm.height = 0.030
+	sm.radius = 0.018
+	sm.height = 0.036
 	shell.mesh = sm
 	var s_mat = StandardMaterial3D.new()
 	s_mat.albedo_color = Color(1.0, 0.78, 0.25)
@@ -1609,7 +1687,7 @@ func _play_shot_sequence_vfx(
 	s_mat.emission = Color(1.0, 0.55, 0.12)
 	s_mat.emission_energy_multiplier = 2.5
 	shell.material_override = s_mat
-	var start_pos = Vector3(0.0, 0.38, 0.42 if is_my_shot else -0.42)
+	var start_pos = Vector3(0.0, 0.45, 0.52 if is_my_shot else -0.52)
 	shell.position = start_pos
 	target_board.add_child(shell)
 
@@ -1618,7 +1696,7 @@ func _play_shot_sequence_vfx(
 	tw.tween_method(func(t: float):
 		if is_instance_valid(shell):
 			var p = start_pos.lerp(impact_pos, t)
-			p.y += sin(t * PI) * 0.22
+			p.y += sin(t * PI) * 0.26
 			shell.position = p
 	, 0.0, 1.0, flight_dur)
 
@@ -1652,11 +1730,11 @@ func _place_persistent_shot_marker(markers_root: Node3D, cell_meshes: Array[Mesh
 
 	var peg = MeshInstance3D.new()
 	var cyl = CylinderMesh.new()
-	cyl.top_radius = 0.014 if is_hit else 0.011
-	cyl.bottom_radius = 0.016 if is_hit else 0.013
-	cyl.height = 0.028 if is_hit else 0.018
+	cyl.top_radius = 0.018 if is_hit else 0.014
+	cyl.bottom_radius = 0.021 if is_hit else 0.017
+	cyl.height = 0.032 if is_hit else 0.022
 	peg.mesh = cyl
-	peg.position = pos + Vector3(0, 0.016, 0)
+	peg.position = pos + Vector3(0, 0.018, 0)
 	var p_mat = StandardMaterial3D.new()
 	if is_hit:
 		p_mat.albedo_color = Color(1.0, 0.25, 0.15)
@@ -1664,7 +1742,7 @@ func _place_persistent_shot_marker(markers_root: Node3D, cell_meshes: Array[Mesh
 		p_mat.emission = Color(1.0, 0.30, 0.10)
 		p_mat.emission_energy_multiplier = 1.8
 	else:
-		p_mat.albedo_color = Color(0.82, 0.94, 1.0)
+		p_mat.albedo_color = Color(0.86, 0.96, 1.0)
 		p_mat.roughness = 0.2
 	peg.material_override = p_mat
 	markers_root.add_child(peg)
@@ -1672,8 +1750,8 @@ func _place_persistent_shot_marker(markers_root: Node3D, cell_meshes: Array[Mesh
 func _spawn_water_splash_vfx(target_board: Node3D, pos: Vector3) -> void:
 	var ring = MeshInstance3D.new()
 	var tm = TorusMesh.new()
-	tm.inner_radius = 0.012
-	tm.outer_radius = 0.020
+	tm.inner_radius = 0.016
+	tm.outer_radius = 0.026
 	ring.mesh = tm
 	var r_mat = StandardMaterial3D.new()
 	r_mat.albedo_color = Color(0.65, 0.95, 1.0, 0.90)
@@ -1688,18 +1766,18 @@ func _spawn_water_splash_vfx(target_board: Node3D, pos: Vector3) -> void:
 
 	var plume = MeshInstance3D.new()
 	var pm = CylinderMesh.new()
-	pm.top_radius = 0.006
-	pm.bottom_radius = 0.016
-	pm.height = 0.065
+	pm.top_radius = 0.008
+	pm.bottom_radius = 0.020
+	pm.height = 0.075
 	plume.mesh = pm
 	plume.material_override = r_mat
-	plume.position = pos + Vector3(0, 0.025, 0)
+	plume.position = pos + Vector3(0, 0.028, 0)
 	target_board.add_child(plume)
 
 	var tw = create_tween().set_parallel(true)
-	tw.tween_property(ring, "scale", Vector3(2.4, 1.0, 2.4), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ring, "scale", Vector3(2.6, 1.0, 2.6), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(r_mat, "albedo_color:a", 0.0, 0.42)
-	tw.tween_property(plume, "position:y", pos.y + 0.065, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(plume, "position:y", pos.y + 0.075, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.chain().tween_callback(func():
 		if is_instance_valid(ring):
 			ring.queue_free()
@@ -1710,8 +1788,8 @@ func _spawn_water_splash_vfx(target_board: Node3D, pos: Vector3) -> void:
 func _spawn_ship_hit_vfx(target_board: Node3D, pos: Vector3) -> void:
 	var fireball = MeshInstance3D.new()
 	var sm = SphereMesh.new()
-	sm.radius = 0.028
-	sm.height = 0.056
+	sm.radius = 0.034
+	sm.height = 0.068
 	fireball.mesh = sm
 	var f_mat = StandardMaterial3D.new()
 	f_mat.albedo_color = Color(1.0, 0.45, 0.10, 0.95)
@@ -1720,14 +1798,14 @@ func _spawn_ship_hit_vfx(target_board: Node3D, pos: Vector3) -> void:
 	f_mat.emission = Color(1.0, 0.35, 0.05)
 	f_mat.emission_energy_multiplier = 2.8
 	fireball.material_override = f_mat
-	fireball.position = pos + Vector3(0, 0.022, 0)
+	fireball.position = pos + Vector3(0, 0.024, 0)
 	fireball.scale = Vector3(0.3, 0.3, 0.3)
 	target_board.add_child(fireball)
 
 	var shock = MeshInstance3D.new()
 	var tm = TorusMesh.new()
-	tm.inner_radius = 0.018
-	tm.outer_radius = 0.028
+	tm.inner_radius = 0.022
+	tm.outer_radius = 0.034
 	shock.mesh = tm
 	shock.material_override = f_mat
 	shock.position = pos + Vector3(0, 0.010, 0)
@@ -1735,8 +1813,8 @@ func _spawn_ship_hit_vfx(target_board: Node3D, pos: Vector3) -> void:
 	target_board.add_child(shock)
 
 	var tw = create_tween().set_parallel(true)
-	tw.tween_property(fireball, "scale", Vector3(1.85, 1.85, 1.85), 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(shock, "scale", Vector3(2.8, 1.0, 2.8), 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(fireball, "scale", Vector3(1.9, 1.9, 1.9), 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(shock, "scale", Vector3(2.9, 1.0, 2.9), 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(f_mat, "albedo_color:a", 0.0, 0.40)
 	tw.chain().tween_callback(func():
 		if is_instance_valid(fireball):
@@ -1771,8 +1849,8 @@ func _trigger_full_ship_sunk_vfx(target_board: Node3D, ship_len: int, ship_cells
 
 	var mega_ring = MeshInstance3D.new()
 	var mtm = TorusMesh.new()
-	mtm.inner_radius = 0.035
-	mtm.outer_radius = 0.055
+	mtm.inner_radius = 0.042
+	mtm.outer_radius = 0.066
 	mega_ring.mesh = mtm
 	var m_mat = StandardMaterial3D.new()
 	m_mat.albedo_color = Color(1.0, 0.65, 0.15, 0.95)
@@ -1787,8 +1865,8 @@ func _trigger_full_ship_sunk_vfx(target_board: Node3D, ship_len: int, ship_cells
 
 	var base_pos = target_board.position
 	var tw = create_tween()
-	tw.tween_property(target_board, "position", base_pos + Vector3(0.016, 0, -0.012), 0.05)
-	tw.tween_property(target_board, "position", base_pos + Vector3(-0.016, 0, 0.012), 0.05)
+	tw.tween_property(target_board, "position", base_pos + Vector3(0.018, 0, -0.014), 0.05)
+	tw.tween_property(target_board, "position", base_pos + Vector3(-0.018, 0, 0.014), 0.05)
 	tw.tween_property(target_board, "position", base_pos + Vector3(0.010, 0, 0.008), 0.05)
 	tw.tween_property(target_board, "position", base_pos, 0.06)
 
@@ -1808,7 +1886,7 @@ func _spawn_sunk_enemy_warship_model(ship_cells: Array, ship_len: int, animate_s
 	var p_first: Vector3 = _cell_index_to_local_pos(int(ship_cells[0]))
 	var p_last: Vector3 = _cell_index_to_local_pos(int(ship_cells[ship_cells.size() - 1]))
 	var center_pos: Vector3 = (p_first + p_last) * 0.5
-	center_pos.y = 0.030
+	center_pos.y = 0.032
 
 	var sunk_ship = _create_warship_3d_model(ship_len, true, false)
 	sunk_ship.position = center_pos
@@ -1829,15 +1907,15 @@ func _spawn_sunk_debris_burst(target_board: Node3D, pos: Vector3) -> void:
 	for i in range(6):
 		var spark = MeshInstance3D.new()
 		var bm = BoxMesh.new()
-		bm.size = Vector3(0.010, 0.010, 0.010)
+		bm.size = Vector3(0.012, 0.012, 0.012)
 		spark.mesh = bm
 		spark.material_override = _mat_ship_sunk_fire
 		spark.position = pos + Vector3(0, 0.02, 0)
 		target_board.add_child(spark)
 
 		var angle: float = float(i) * (TAU / 6.0) + randf_range(-0.3, 0.3)
-		var dist: float = randf_range(0.04, 0.09)
-		var target_p = pos + Vector3(cos(angle) * dist, randf_range(0.05, 0.11), sin(angle) * dist)
+		var dist: float = randf_range(0.05, 0.11)
+		var target_p = pos + Vector3(cos(angle) * dist, randf_range(0.06, 0.13), sin(angle) * dist)
 		var tw = create_tween().set_parallel(true)
 		tw.tween_property(spark, "position", target_p, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tw.tween_property(spark, "scale", Vector3(0.1, 0.1, 0.1), 0.38)
