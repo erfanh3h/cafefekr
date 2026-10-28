@@ -17,23 +17,23 @@ const GRID_SIZE: int = 9
 const BOX_SIZE: int = 3
 
 const BOARD_SURFACE_Y: float = 0.048
-const GRID_CENTER_Z: float = -0.155
+const GRID_CENTER_Z: float = -0.165
 
-# Cell & Block Metrics (Calculated to fit 100% inside board bed without overflow)
-const CELL_W: float = 0.094
-const CELL_GAP: float = 0.0035
-const BLOCK_GAP: float = 0.014
-const BLOCK_W: float = (3.0 * CELL_W) + (2.0 * CELL_GAP) # 0.289m
-const TOTAL_GRID_W: float = (3.0 * BLOCK_W) + (2.0 * BLOCK_GAP) # 0.895m
+# Cell & Block Metrics (Enlarged 3D cell wells with perfectly calibrated typography)
+const CELL_W: float = 0.106
+const CELL_GAP: float = 0.004
+const BLOCK_GAP: float = 0.016
+const BLOCK_W: float = (3.0 * CELL_W) + (2.0 * CELL_GAP) # 0.326m
+const TOTAL_GRID_W: float = (3.0 * BLOCK_W) + (2.0 * BLOCK_GAP) # 1.010m
 
-# Bottom Console Metrics
-const CONSOLE_Z: float = 0.435
-const PAD_BTN_W: float = 0.084
-const PAD_BTN_D: float = 0.076
+# Bottom Console Metrics (Enlarged selectable buttons with zero text overflow)
+const CONSOLE_Z: float = 0.445
+const PAD_BTN_W: float = 0.096
+const PAD_BTN_D: float = 0.088
 const PAD_BTN_H: float = 0.024
-const PAD_SPACING: float = 0.098 # Total span = 8 * 0.098 = 0.784m
+const PAD_SPACING: float = 0.110 # Total span = 8 * 0.110 = 0.880m
 const ACTION_BTN_Y: float = 0.038
-const ACTION_BTN_Z: float = 0.555
+const ACTION_BTN_Z: float = 0.565
 
 # Camera framing hints for CafeTable
 var camera_pitch: float = -0.733
@@ -313,7 +313,7 @@ func _build_master_cabinet() -> void:
 	# 1. Master Base Plinth (Dark Walnut)
 	var plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
-	plinth_mesh.size = Vector3(1.22, 0.030, 1.48)
+	plinth_mesh.size = Vector3(1.24, 0.030, 1.48)
 	plinth.mesh = plinth_mesh
 	plinth.material_override = mat_plinth
 	plinth.position = Vector3(0, -0.012, 0.0)
@@ -322,7 +322,7 @@ func _build_master_cabinet() -> void:
 	# 2. Polished Outer Frame (Warm Mahogany)
 	var frame = MeshInstance3D.new()
 	var frame_mesh = BoxMesh.new()
-	frame_mesh.size = Vector3(1.18, 0.044, 1.44)
+	frame_mesh.size = Vector3(1.20, 0.044, 1.44)
 	frame.mesh = frame_mesh
 	frame.material_override = mat_frame
 	frame.position = Vector3(0, 0.016, 0.0)
@@ -331,7 +331,7 @@ func _build_master_cabinet() -> void:
 	# 3. Stepped Brass Perimeter Inset Ring
 	var brass_ring = MeshInstance3D.new()
 	var brass_ring_mesh = BoxMesh.new()
-	brass_ring_mesh.size = Vector3(1.11, 0.008, 1.37)
+	brass_ring_mesh.size = Vector3(1.13, 0.008, 1.37)
 	brass_ring.mesh = brass_ring_mesh
 	brass_ring.material_override = mat_brass_trim
 	brass_ring.position = Vector3(0, 0.038, 0.0)
@@ -340,7 +340,7 @@ func _build_master_cabinet() -> void:
 	# 4. Recessed Obsidian Velvet Playing Bed (Encloses entire grid and console)
 	var bed = MeshInstance3D.new()
 	var bed_mesh = BoxMesh.new()
-	bed_mesh.size = Vector3(1.09, 0.020, 1.35)
+	bed_mesh.size = Vector3(1.11, 0.020, 1.35)
 	bed.mesh = bed_mesh
 	bed.material_override = mat_playing_bed
 	bed.position = Vector3(0, 0.035, 0.0)
@@ -372,35 +372,7 @@ func _build_master_cabinet() -> void:
 		r_inst.position = Vector3(0, 0.026, 0)
 		c_inst.add_child(r_inst)
 
-	# 6. Royal Header Cartouche Plate at Top of Bed
-	var cartouche = MeshInstance3D.new()
-	var c_mesh = BoxMesh.new()
-	c_mesh.size = Vector3(0.48, 0.012, 0.052)
-	cartouche.mesh = c_mesh
-	cartouche.material_override = mat_brass_trim
-	cartouche.position = Vector3(0, BOARD_SURFACE_Y + 0.004, -0.585)
-	board_decor_root.add_child(cartouche)
 
-	var cartouche_inner = MeshInstance3D.new()
-	var ci_mesh = BoxMesh.new()
-	ci_mesh.size = Vector3(0.44, 0.014, 0.044)
-	cartouche_inner.mesh = ci_mesh
-	cartouche_inner.material_override = mat_frame
-	cartouche_inner.position = Vector3(0, 0.001, 0)
-	cartouche.add_child(cartouche_inner)
-
-	var lbl_title = Label3D.new()
-	if _game_font:
-		lbl_title.font = _game_font
-	lbl_title.font_size = 32
-	lbl_title.pixel_size = 0.00140
-	lbl_title.rotation_degrees = Vector3(-90, 0, 0)
-	lbl_title.position = Vector3(0, 0.010, 0)
-	lbl_title.text = "⚜ سودوکو سلطنتی ⚜"
-	lbl_title.modulate = Color(1.0, 0.90, 0.50)
-	lbl_title.outline_modulate = Color(0.12, 0.06, 0.02)
-	lbl_title.outline_size = 8
-	cartouche.add_child(lbl_title)
 
 func _get_cell_pos(r: int, c: int) -> Vector3:
 	var c_block = c / 3
@@ -498,10 +470,10 @@ func _build_sudoku_grid() -> void:
 	well_mesh.size = Vector3(CELL_W, 0.006, CELL_W)
 
 	var tile_mesh = BoxMesh.new()
-	tile_mesh.size = Vector3(CELL_W * 0.90, 0.010, CELL_W * 0.90)
+	tile_mesh.size = Vector3(CELL_W * 0.92, 0.010, CELL_W * 0.92)
 
 	var highlight_mesh = BoxMesh.new()
-	highlight_mesh.size = Vector3(CELL_W * 0.94, 0.004, CELL_W * 0.94)
+	highlight_mesh.size = Vector3(CELL_W * 0.95, 0.004, CELL_W * 0.95)
 
 	var rivet_mesh = SphereMesh.new()
 	rivet_mesh.radius = 0.0045
@@ -547,7 +519,7 @@ func _build_sudoku_grid() -> void:
 			pivot.add_child(rivets_group)
 			cell_rivet_nodes[idx] = rivets_group
 
-			var r_d = CELL_W * 0.36
+			var r_d = CELL_W * 0.38
 			for r_corner in [Vector3(-r_d, 0.006, -r_d), Vector3(r_d, 0.006, -r_d), Vector3(-r_d, 0.006, r_d), Vector3(r_d, 0.006, r_d)]:
 				var r_dot = MeshInstance3D.new()
 				r_dot.mesh = rivet_mesh
@@ -564,12 +536,12 @@ func _build_sudoku_grid() -> void:
 			pivot.add_child(h_mesh)
 			cell_highlight_meshes[idx] = h_mesh
 
-			# Prominent 3D Persian Number Label
+			# Prominent 3D Persian Number Label (Calibrated to fit with clean margins)
 			var lbl = Label3D.new()
 			if _game_font:
 				lbl.font = _game_font
-			lbl.font_size = 64
-			lbl.pixel_size = 0.00165
+			lbl.font_size = 52
+			lbl.pixel_size = 0.00125
 			lbl.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 			lbl.rotation_degrees = Vector3(-90, 0, 0)
 			lbl.position = Vector3(0, 0.008, 0)
@@ -584,16 +556,16 @@ func _build_bottom_console() -> void:
 	# 1. Master Console Wood Base Plinth (Cleanly contained inside bed bounds)
 	var console_plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
-	plinth_mesh.size = Vector3(1.02, 0.024, 0.30)
+	plinth_mesh.size = Vector3(1.04, 0.024, 0.30)
 	console_plinth.mesh = plinth_mesh
 	console_plinth.material_override = mat_plinth
-	console_plinth.position = Vector3(0, 0.024, 0.470)
+	console_plinth.position = Vector3(0, 0.024, 0.475)
 	console_root.add_child(console_plinth)
 
 	# 2. Brass Divider Trim Bar
 	var trim_bar = MeshInstance3D.new()
 	var trim_mesh = BoxMesh.new()
-	trim_mesh.size = Vector3(1.00, 0.008, 0.008)
+	trim_mesh.size = Vector3(1.02, 0.008, 0.008)
 	trim_bar.mesh = trim_mesh
 	trim_bar.material_override = mat_brass_trim
 	trim_bar.position = Vector3(0, 0.038, CONSOLE_Z - 0.075)
@@ -603,10 +575,10 @@ func _build_bottom_console() -> void:
 	lbl_status_hint = Label3D.new()
 	if _game_font:
 		lbl_status_hint.font = _game_font
-	lbl_status_hint.font_size = 28
-	lbl_status_hint.pixel_size = 0.00155
+	lbl_status_hint.font_size = 26
+	lbl_status_hint.pixel_size = 0.00135
 	lbl_status_hint.rotation_degrees = Vector3(-90, 0, 0)
-	lbl_status_hint.position = Vector3(0, 0.040, CONSOLE_Z - 0.052)
+	lbl_status_hint.position = Vector3(0, 0.040, CONSOLE_Z - 0.054)
 	lbl_status_hint.text = "یک عدد را از پایین انتخاب و روی خانه‌های جدول بزنید"
 	lbl_status_hint.modulate = Color(0.95, 0.92, 0.82)
 	lbl_status_hint.outline_modulate = Color(0.06, 0.06, 0.08)
@@ -655,14 +627,14 @@ func _build_bottom_console() -> void:
 		pivot.add_child(b_mesh)
 		pad_btn_meshes[d] = b_mesh
 
-		# Large Prominent Digit Label
+		# Large Prominent Digit Label (Calibrated to fit button face perfectly)
 		var lbl_d = Label3D.new()
 		if _game_font:
 			lbl_d.font = _game_font
-		lbl_d.font_size = 54
-		lbl_d.pixel_size = 0.00160
+		lbl_d.font_size = 44
+		lbl_d.pixel_size = 0.00125
 		lbl_d.rotation_degrees = Vector3(-90, 0, 0)
-		lbl_d.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, -0.011)
+		lbl_d.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, -0.014)
 		lbl_d.text = _fa_num(d)
 		lbl_d.modulate = Color(1.0, 0.95, 0.82)
 		lbl_d.outline_modulate = Color(0.05, 0.05, 0.08)
@@ -674,8 +646,8 @@ func _build_bottom_console() -> void:
 		var lbl_cnt = Label3D.new()
 		if _game_font:
 			lbl_cnt.font = _game_font
-		lbl_cnt.font_size = 23
-		lbl_cnt.pixel_size = 0.00135
+		lbl_cnt.font_size = 18
+		lbl_cnt.pixel_size = 0.00115
 		lbl_cnt.rotation_degrees = Vector3(-90, 0, 0)
 		lbl_cnt.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, 0.024)
 		lbl_cnt.text = "۰/۹"
@@ -688,14 +660,14 @@ func _build_bottom_console() -> void:
 	# 5. Action Button: Erase (🧹 پاک کردن خانه)
 	btn_erase_root = Node3D.new()
 	btn_erase_root.name = "BtnErase"
-	btn_erase_root.position = Vector3(-0.21, ACTION_BTN_Y, ACTION_BTN_Z)
+	btn_erase_root.position = Vector3(-0.22, ACTION_BTN_Y, ACTION_BTN_Z)
 	console_root.add_child(btn_erase_root)
 
 	btn_erase_pivot = Node3D.new()
 	btn_erase_root.add_child(btn_erase_pivot)
 
 	var erase_mesh = BoxMesh.new()
-	erase_mesh.size = Vector3(0.38, 0.024, 0.062)
+	erase_mesh.size = Vector3(0.40, 0.024, 0.064)
 	btn_erase_mesh = MeshInstance3D.new()
 	btn_erase_mesh.mesh = erase_mesh
 	btn_erase_mesh.material_override = mat_btn_erase_normal
@@ -704,8 +676,8 @@ func _build_bottom_console() -> void:
 	btn_erase_label = Label3D.new()
 	if _game_font:
 		btn_erase_label.font = _game_font
-	btn_erase_label.font_size = 30
-	btn_erase_label.pixel_size = 0.00155
+	btn_erase_label.font_size = 28
+	btn_erase_label.pixel_size = 0.00135
 	btn_erase_label.rotation_degrees = Vector3(-90, 0, 0)
 	btn_erase_label.position = Vector3(0, 0.015, 0)
 	btn_erase_label.text = "🧹 حالت پاک‌کن"
@@ -717,14 +689,14 @@ func _build_bottom_console() -> void:
 	# 6. Action Button: Submit & Solve (✨ بررسی و ثبت حل)
 	btn_solve_root = Node3D.new()
 	btn_solve_root.name = "BtnSolve"
-	btn_solve_root.position = Vector3(0.21, ACTION_BTN_Y, ACTION_BTN_Z)
+	btn_solve_root.position = Vector3(0.22, ACTION_BTN_Y, ACTION_BTN_Z)
 	console_root.add_child(btn_solve_root)
 
 	btn_solve_pivot = Node3D.new()
 	btn_solve_root.add_child(btn_solve_pivot)
 
 	var solve_mesh = BoxMesh.new()
-	solve_mesh.size = Vector3(0.44, 0.024, 0.062)
+	solve_mesh.size = Vector3(0.44, 0.024, 0.064)
 	btn_solve_mesh = MeshInstance3D.new()
 	btn_solve_mesh.mesh = solve_mesh
 	btn_solve_mesh.material_override = mat_btn_solve
@@ -733,8 +705,8 @@ func _build_bottom_console() -> void:
 	btn_solve_label = Label3D.new()
 	if _game_font:
 		btn_solve_label.font = _game_font
-	btn_solve_label.font_size = 30
-	btn_solve_label.pixel_size = 0.00155
+	btn_solve_label.font_size = 28
+	btn_solve_label.pixel_size = 0.00135
 	btn_solve_label.rotation_degrees = Vector3(-90, 0, 0)
 	btn_solve_label.position = Vector3(0, 0.015, 0)
 	btn_solve_label.text = "✨ بررسی و ثبت حل"
@@ -1106,14 +1078,14 @@ func _handle_tap_at(screen_pos: Vector2) -> void:
 	# Check Erase Button
 	if btn_erase_root and is_instance_valid(btn_erase_root):
 		var e_pos = btn_erase_root.position
-		if abs(hit_pos.x - e_pos.x) <= 0.20 and abs(hit_pos.z - e_pos.z) <= 0.035:
+		if abs(hit_pos.x - e_pos.x) <= 0.21 and abs(hit_pos.z - e_pos.z) <= 0.036:
 			_on_erase_button_tapped()
 			return
 
 	# Check Submit Solve Button
 	if btn_solve_root and is_instance_valid(btn_solve_root):
 		var s_pos = btn_solve_root.position
-		if abs(hit_pos.x - s_pos.x) <= 0.23 and abs(hit_pos.z - s_pos.z) <= 0.035:
+		if abs(hit_pos.x - s_pos.x) <= 0.23 and abs(hit_pos.z - s_pos.z) <= 0.036:
 			_on_solve_button_tapped()
 			return
 
