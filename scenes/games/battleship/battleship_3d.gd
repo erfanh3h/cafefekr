@@ -103,7 +103,11 @@ var _mat_ship_hull: StandardMaterial3D
 var _mat_ship_deck: StandardMaterial3D
 var _mat_ship_dark: StandardMaterial3D
 var _mat_ship_sunk_hull: StandardMaterial3D
+var _mat_ship_sunk_deck: StandardMaterial3D
+var _mat_ship_sunk_dark: StandardMaterial3D
+var _mat_ship_sunk_rust: StandardMaterial3D
 var _mat_ship_sunk_fire: StandardMaterial3D
+var _mat_smoke_puff: StandardMaterial3D
 
 func _init() -> void:
 	game_type = GameTypes.BATTLESHIP
@@ -248,18 +252,37 @@ func _init_materials() -> void:
 	_mat_ship_dark.roughness = 0.28
 
 	_mat_ship_sunk_hull = StandardMaterial3D.new()
-	_mat_ship_sunk_hull.albedo_color = Color(0.16, 0.08, 0.07)
-	_mat_ship_sunk_hull.metallic = 0.45
-	_mat_ship_sunk_hull.roughness = 0.65
-	_mat_ship_sunk_hull.emission_enabled = true
-	_mat_ship_sunk_hull.emission = Color(0.55, 0.12, 0.04)
-	_mat_ship_sunk_hull.emission_energy_multiplier = 0.45
+	_mat_ship_sunk_hull.albedo_color = Color(0.17, 0.19, 0.22)
+	_mat_ship_sunk_hull.metallic = 0.52
+	_mat_ship_sunk_hull.roughness = 0.78
+
+	_mat_ship_sunk_deck = StandardMaterial3D.new()
+	_mat_ship_sunk_deck.albedo_color = Color(0.10, 0.11, 0.13)
+	_mat_ship_sunk_deck.metallic = 0.35
+	_mat_ship_sunk_deck.roughness = 0.88
+
+	_mat_ship_sunk_dark = StandardMaterial3D.new()
+	_mat_ship_sunk_dark.albedo_color = Color(0.06, 0.07, 0.08)
+	_mat_ship_sunk_dark.metallic = 0.45
+	_mat_ship_sunk_dark.roughness = 0.85
+
+	_mat_ship_sunk_rust = StandardMaterial3D.new()
+	_mat_ship_sunk_rust.albedo_color = Color(0.30, 0.14, 0.09)
+	_mat_ship_sunk_rust.metallic = 0.28
+	_mat_ship_sunk_rust.roughness = 0.82
 
 	_mat_ship_sunk_fire = StandardMaterial3D.new()
-	_mat_ship_sunk_fire.albedo_color = Color(1.0, 0.38, 0.08)
+	_mat_ship_sunk_fire.albedo_color = Color(0.92, 0.20, 0.04)
 	_mat_ship_sunk_fire.emission_enabled = true
-	_mat_ship_sunk_fire.emission = Color(1.0, 0.32, 0.05)
-	_mat_ship_sunk_fire.emission_energy_multiplier = 2.0
+	_mat_ship_sunk_fire.emission = Color(0.85, 0.14, 0.02)
+	_mat_ship_sunk_fire.emission_energy_multiplier = 0.85
+
+	_mat_smoke_puff = StandardMaterial3D.new()
+	_mat_smoke_puff.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_mat_smoke_puff.vertex_color_use_as_albedo = true
+	_mat_smoke_puff.albedo_color = Color(1.0, 1.0, 1.0, 1.0)
+	_mat_smoke_puff.roughness = 0.96
+	_mat_smoke_puff.metallic = 0.0
 
 func _init_data_structures() -> void:
 	fleet_state.clear()
@@ -651,9 +674,9 @@ func _create_warship_3d_model(ship_len: int, is_enemy_sunk: bool = false, is_gho
 
 	if is_enemy_sunk:
 		mat_hull = _mat_ship_sunk_hull
-		mat_deck = _mat_ship_sunk_hull
-		mat_dark = _mat_ship_sunk_fire
-		mat_accent = _mat_ship_sunk_fire
+		mat_deck = _mat_ship_sunk_deck
+		mat_dark = _mat_ship_sunk_dark
+		mat_accent = _mat_ship_sunk_rust
 	elif is_ghost:
 		mat_hull = _mat_ghost_valid
 		mat_deck = _mat_ghost_valid
@@ -731,7 +754,131 @@ func _create_warship_3d_model(ship_len: int, is_enemy_sunk: bool = false, is_gho
 		_add_ship_box(ship_root, Vector3(-0.014, hull_height + 0.020, 0.13), Vector3(0.032, 0.008, 0.038), mat_hull)
 		_add_ship_box(ship_root, Vector3(-0.014, hull_height + 0.020, -0.14), Vector3(0.032, 0.008, 0.038), mat_hull)
 
+	if is_enemy_sunk:
+		_add_destroyed_ship_damage_and_smoke(ship_root, ship_len, total_len, hull_width, hull_height)
+
 	return ship_root
+
+func _add_destroyed_ship_damage_and_smoke(ship_root: Node3D, ship_len: int, total_len: float, hull_width: float, hull_height: float) -> void:
+	var vent_count: int = clampi(ship_len - 1, 2, 4)
+	var span: float = total_len * 0.66
+	for i in range(vent_count):
+		var t: float = 0.0 if vent_count <= 1 else (float(i) / float(vent_count - 1)) - 0.5
+		var z_off: float = t * span
+		var x_off: float = (-0.007 if (i % 2 == 0) else 0.007)
+		var breach_pos: Vector3 = Vector3(x_off, hull_height + 0.014, z_off)
+
+		# Scorched shell-breach crater rim
+		var crater_rim = MeshInstance3D.new()
+		var crm = TorusMesh.new()
+		crm.inner_radius = 0.011
+		crm.outer_radius = 0.021
+		crater_rim.mesh = crm
+		crater_rim.position = breach_pos
+		crater_rim.material_override = _mat_ship_sunk_dark
+		ship_root.add_child(crater_rim)
+
+		# Jagged twisted hull plates around breach
+		for s_idx in range(3):
+			var shard = MeshInstance3D.new()
+			var sbm = BoxMesh.new()
+			sbm.size = Vector3(0.010, 0.014, 0.005)
+			shard.mesh = sbm
+			var ang: float = float(s_idx) * (TAU / 3.0) + float(i) * 0.7
+			shard.position = breach_pos + Vector3(cos(ang) * 0.013, 0.005, sin(ang) * 0.013)
+			shard.rotation = Vector3(0.45, ang, -0.35)
+			shard.material_override = _mat_ship_sunk_rust if (s_idx == 0) else _mat_ship_sunk_dark
+			ship_root.add_child(shard)
+
+		# Subtle deep-crimson glowing ember crack inside the dark crater (never flat yellow)
+		var ember_core = MeshInstance3D.new()
+		var ecm = SphereMesh.new()
+		ecm.radius = 0.009
+		ecm.height = 0.008
+		ember_core.mesh = ecm
+		ember_core.position = breach_pos + Vector3(0, 0.001, 0)
+		ember_core.material_override = _mat_ship_sunk_fire
+		ship_root.add_child(ember_core)
+
+		# Continuous rising 3D dark naval smoke plume + ember sparks
+		var smoke_plume = _create_continuous_smoke_plume_node(1.0)
+		smoke_plume.position = breach_pos + Vector3(0, 0.006, 0)
+		ship_root.add_child(smoke_plume)
+
+func _create_continuous_smoke_plume_node(intensity_scale: float = 1.0) -> Node3D:
+	var plume_root = Node3D.new()
+
+	# 1. CPUParticles3D billowing dark charcoal/ash 3D smoke spheres
+	var smoke_particles = CPUParticles3D.new()
+	smoke_particles.amount = int(round(18.0 * intensity_scale))
+	smoke_particles.lifetime = 1.75
+	smoke_particles.preprocess = 0.85
+	smoke_particles.speed_scale = 1.0
+	smoke_particles.explosiveness = 0.0
+	smoke_particles.randomness = 0.35
+	smoke_particles.local_coords = false
+
+	var puff_mesh = SphereMesh.new()
+	puff_mesh.radius = 0.016 * intensity_scale
+	puff_mesh.height = 0.028 * intensity_scale
+	puff_mesh.radial_segments = 8
+	puff_mesh.rings = 5
+	smoke_particles.mesh = puff_mesh
+	smoke_particles.material_override = _mat_smoke_puff
+
+	smoke_particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	smoke_particles.emission_sphere_radius = 0.010 * intensity_scale
+	smoke_particles.direction = Vector3(0.26, 1.0, -0.22).normalized()
+	smoke_particles.spread = 22.0
+	smoke_particles.gravity = Vector3(0.05, 0.14, -0.04)
+	smoke_particles.initial_velocity_min = 0.042
+	smoke_particles.initial_velocity_max = 0.082
+	smoke_particles.damping_min = 0.02
+	smoke_particles.damping_max = 0.05
+	smoke_particles.scale_amount_min = 0.70
+	smoke_particles.scale_amount_max = 1.45
+
+	var scale_curve = Curve.new()
+	scale_curve.add_point(Vector2(0.0, 0.42))
+	scale_curve.add_point(Vector2(0.45, 1.05))
+	scale_curve.add_point(Vector2(1.0, 1.55))
+	smoke_particles.scale_amount_curve = scale_curve
+
+	var grad = Gradient.new()
+	grad.set_offset(0, 0.0)
+	grad.set_color(0, Color(0.09, 0.10, 0.12, 0.88))
+	grad.add_point(0.30, Color(0.16, 0.18, 0.21, 0.74))
+	grad.add_point(0.70, Color(0.26, 0.28, 0.32, 0.42))
+	grad.set_offset(1, 1.0)
+	grad.set_color(1, Color(0.34, 0.36, 0.40, 0.0))
+	smoke_particles.color_ramp = grad
+	smoke_particles.emitting = true
+	plume_root.add_child(smoke_particles)
+
+	# 2. Subtle rising glowing ember cinders at the base of the smoke
+	var ember_particles = CPUParticles3D.new()
+	ember_particles.amount = maxi(3, int(round(5.0 * intensity_scale)))
+	ember_particles.lifetime = 0.95
+	ember_particles.preprocess = 0.4
+	ember_particles.local_coords = false
+
+	var spark_mesh = BoxMesh.new()
+	spark_mesh.size = Vector3(0.005, 0.005, 0.005) * intensity_scale
+	ember_particles.mesh = spark_mesh
+	ember_particles.material_override = _mat_ship_sunk_fire
+	ember_particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	ember_particles.emission_sphere_radius = 0.008 * intensity_scale
+	ember_particles.direction = Vector3(0.18, 1.0, -0.15).normalized()
+	ember_particles.spread = 28.0
+	ember_particles.gravity = Vector3(0.03, 0.10, -0.03)
+	ember_particles.initial_velocity_min = 0.05
+	ember_particles.initial_velocity_max = 0.10
+	ember_particles.scale_amount_min = 0.5
+	ember_particles.scale_amount_max = 1.1
+	ember_particles.emitting = true
+	plume_root.add_child(ember_particles)
+
+	return plume_root
 
 func _add_ship_box(parent_node: Node3D, pos: Vector3, sz: Vector3, mat: Material) -> void:
 	var mi = MeshInstance3D.new()
@@ -1291,10 +1438,14 @@ func _populate_defense_board_ships() -> void:
 		var center_pos: Vector3 = (p_first + p_last) * 0.5
 		center_pos.y = 0.032
 
-		var ship_node = _create_warship_3d_model(s_len, false, false)
+		var is_sunk_def: bool = bool(sunk_my_ships.get(s_len, false))
+		var ship_node = _create_warship_3d_model(s_len, is_sunk_def, false)
 		ship_node.name = "MyDefenseShip_%d" % s_len
 		ship_node.position = center_pos
 		ship_node.rotation.y = (PI * 0.5) if is_horiz else 0.0
+		if is_sunk_def:
+			ship_node.rotation.z = deg_to_rad(14.0)
+			ship_node.position.y = 0.020
 		defense_ships_root.add_child(ship_node)
 
 # ==============================================================================
@@ -1807,10 +1958,13 @@ func on_reconnect_data(payload: Dictionary) -> void:
 		if opp_hit_counts[s_len].size() >= s_len:
 			sunk_enemy_ships[s_len] = true
 			_update_fleet_status_badge(enemy_status_badges, s_len, true)
+			_apply_sunk_ship_board_cleanup(attack_markers_root, attack_cell_meshes, opp_hit_counts[s_len])
 			_spawn_sunk_enemy_warship_model(opp_hit_counts[s_len], s_len, false)
 		if my_hit_counts[s_len].size() >= s_len:
 			sunk_my_ships[s_len] = true
 			_update_fleet_status_badge(my_status_badges, s_len, true)
+			_apply_sunk_ship_board_cleanup(defense_markers_root, defense_cell_meshes, my_hit_counts[s_len])
+	_populate_defense_board_ships()
 
 	if is_play_phase and c_turn in [1, 2]:
 		current_turn = c_turn
@@ -1824,7 +1978,7 @@ func on_reconnect_data(payload: Dictionary) -> void:
 		hud.set_fekrbekr_hud_buttons(is_play_phase)
 
 # ==============================================================================
-# 3D NAVAL COMBAT VFX (Artillery Shell, Water Splash, Hit Explosion & Sunk Ship!)
+# 3D NAVAL COMBAT VFX (Naval Cannon Battery, Ballistic Shell, Splash, Hit & Smoke!)
 # ==============================================================================
 func _play_shot_sequence_vfx(
 	target_board: Node3D,
@@ -1837,28 +1991,42 @@ func _play_shot_sequence_vfx(
 	sunk_ship_cells: Array[int],
 	is_my_shot: bool
 ) -> void:
-	var shell = MeshInstance3D.new()
-	var sm = SphereMesh.new()
-	sm.radius = 0.018
-	sm.height = 0.036
-	shell.mesh = sm
-	var s_mat = StandardMaterial3D.new()
-	s_mat.albedo_color = Color(1.0, 0.78, 0.25)
-	s_mat.emission_enabled = true
-	s_mat.emission = Color(1.0, 0.55, 0.12)
-	s_mat.emission_energy_multiplier = 2.5
-	shell.material_override = s_mat
-	var start_pos = Vector3(0.0, 0.45, 0.52 if is_my_shot else -0.52)
-	shell.position = start_pos
+	# 1. Spawn 3D Twin-Barrel Naval Artillery Cannon Battery at the firing edge aimed at impact_pos
+	var cannon_z: float = 0.56 if is_my_shot else -0.56
+	var cannon_x: float = clampf(impact_pos.x * 0.42, -0.34, 0.34)
+	var cannon_pos: Vector3 = Vector3(cannon_x, 0.048, cannon_z)
+	var muzzle_pos: Vector3 = _spawn_firing_naval_cannon(target_board, cannon_pos, impact_pos)
+
+	# 2. Build 3D Aerodynamic Nose-Coned Naval Artillery Projectile
+	var shell: Node3D = _create_artillery_shell_3d()
+	shell.position = muzzle_pos
 	target_board.add_child(shell)
 
-	var flight_dur: float = 0.24
+	var flight_dur: float = 0.34
+	var arc_height: float = 0.28
+	var last_trail_step: Array[int] = [-1]
+
 	var tw = create_tween()
 	tw.tween_method(func(t: float):
 		if is_instance_valid(shell):
-			var p = start_pos.lerp(impact_pos, t)
-			p.y += sin(t * PI) * 0.26
-			shell.position = p
+			var p_cur: Vector3 = muzzle_pos.lerp(impact_pos, t)
+			p_cur.y += sin(t * PI) * arc_height
+			shell.position = p_cur
+
+			var t_next: float = minf(1.0, t + 0.03)
+			var p_next: Vector3 = muzzle_pos.lerp(impact_pos, t_next)
+			p_next.y += sin(t_next * PI) * arc_height
+			var dir_vec: Vector3 = p_next - p_cur
+			if dir_vec.length_squared() > 0.000001:
+				var global_target: Vector3 = shell.global_position + dir_vec.normalized()
+				if not shell.global_position.is_equal_approx(global_target):
+					shell.look_at(global_target, Vector3.UP)
+
+			# Spawn arcing smoke & tracer puffs along the trajectory
+			var step_idx: int = int(t * 9.0)
+			if step_idx > last_trail_step[0] and t > 0.06 and t < 0.92:
+				last_trail_step[0] = step_idx
+				_spawn_shell_trail_puff(target_board, p_cur)
 	, 0.0, 1.0, flight_dur)
 
 	tw.tween_callback(func():
@@ -1875,89 +2043,425 @@ func _play_shot_sequence_vfx(
 				_trigger_full_ship_sunk_vfx(target_board, hit_number, sunk_ship_cells, is_my_shot)
 	)
 
+func _spawn_firing_naval_cannon(target_board: Node3D, cannon_pos: Vector3, target_pos: Vector3) -> Vector3:
+	var cannon_root = Node3D.new()
+	cannon_root.position = cannon_pos
+	target_board.add_child(cannon_root)
+
+	var to_target: Vector3 = target_pos - cannon_pos
+	var yaw_angle: float = atan2(to_target.x, to_target.z)
+	cannon_root.rotation.y = yaw_angle
+
+	# 1. Armored Turret Ring & Pedestal
+	var pedestal = MeshInstance3D.new()
+	var pm = CylinderMesh.new()
+	pm.top_radius = 0.044
+	pm.bottom_radius = 0.052
+	pm.height = 0.022
+	pm.radial_segments = 12
+	pedestal.mesh = pm
+	pedestal.material_override = _mat_ship_dark
+	cannon_root.add_child(pedestal)
+
+	var brass_ring = MeshInstance3D.new()
+	var brm = TorusMesh.new()
+	brm.inner_radius = 0.038
+	brm.outer_radius = 0.048
+	brass_ring.mesh = brm
+	brass_ring.position = Vector3(0, 0.011, 0)
+	brass_ring.material_override = _mat_brass
+	cannon_root.add_child(brass_ring)
+
+	# 2. Sloped Heavy Armored Gunhouse
+	var gunhouse = MeshInstance3D.new()
+	var ghm = BoxMesh.new()
+	ghm.size = Vector3(0.068, 0.028, 0.076)
+	gunhouse.mesh = ghm
+	gunhouse.position = Vector3(0, 0.024, -0.004)
+	gunhouse.material_override = _mat_ship_hull
+	cannon_root.add_child(gunhouse)
+
+	var gunhouse_roof = MeshInstance3D.new()
+	var grm = BoxMesh.new()
+	grm.size = Vector3(0.052, 0.008, 0.058)
+	gunhouse_roof.mesh = grm
+	gunhouse_roof.position = Vector3(0, 0.040, -0.006)
+	gunhouse_roof.material_override = _mat_ship_deck
+	cannon_root.add_child(gunhouse_roof)
+
+	# 3. Elevating Twin Heavy Naval Cannon Barrels (with Recoil Pivot)
+	var barrel_pivot = Node3D.new()
+	barrel_pivot.position = Vector3(0, 0.028, 0.026)
+	barrel_pivot.rotation.x = deg_to_rad(-24.0)
+	cannon_root.add_child(barrel_pivot)
+
+	var barrels_recoil_holder = Node3D.new()
+	barrel_pivot.add_child(barrels_recoil_holder)
+
+	for b_idx in range(2):
+		var bx: float = -0.015 if b_idx == 0 else 0.015
+
+		# Brass Breech Jacket
+		var jacket = MeshInstance3D.new()
+		var jm = CylinderMesh.new()
+		jm.top_radius = 0.0085
+		jm.bottom_radius = 0.0105
+		jm.height = 0.036
+		jacket.mesh = jm
+		jacket.rotation.x = PI * 0.5
+		jacket.position = Vector3(bx, 0, 0.014)
+		jacket.material_override = _mat_brass
+		barrels_recoil_holder.add_child(jacket)
+
+		# Main Steel Cannon Barrel
+		var barrel = MeshInstance3D.new()
+		var bm = CylinderMesh.new()
+		bm.top_radius = 0.0058
+		bm.bottom_radius = 0.0076
+		bm.height = 0.078
+		barrel.mesh = bm
+		barrel.rotation.x = PI * 0.5
+		barrel.position = Vector3(bx, 0, 0.046)
+		barrel.material_override = _mat_ship_dark
+		barrels_recoil_holder.add_child(barrel)
+
+		# Heavy Muzzle Brake
+		var brake = MeshInstance3D.new()
+		var bkm = CylinderMesh.new()
+		bkm.top_radius = 0.0082
+		bkm.bottom_radius = 0.0082
+		bkm.height = 0.014
+		brake.mesh = bkm
+		brake.rotation.x = PI * 0.5
+		brake.position = Vector3(bx, 0, 0.084)
+		brake.material_override = _mat_brass
+		barrels_recoil_holder.add_child(brake)
+
+	# Compute world/board-local muzzle blast position
+	var forward_dir: Vector3 = Vector3(sin(yaw_angle), 0.22, cos(yaw_angle)).normalized()
+	var muzzle_board_pos: Vector3 = cannon_pos + Vector3(0, 0.032, 0) + forward_dir * 0.095
+
+	# 4. Muzzle Flash Starburst + Blast Ring + Cannon Smoke Cloud
+	_spawn_cannon_muzzle_blast_vfx(target_board, muzzle_board_pos, forward_dir)
+
+	# 5. Snappy Barrel Recoil Kickback & Turret Fade-Out after Firing
+	barrels_recoil_holder.position.z = -0.028
+	var tw = create_tween()
+	tw.tween_property(barrels_recoil_holder, "position:z", 0.0, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.18)
+	tw.tween_property(cannon_root, "scale", Vector3(0.05, 0.05, 0.05), 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_callback(func():
+		if is_instance_valid(cannon_root):
+			cannon_root.queue_free()
+	)
+
+	return muzzle_board_pos
+
+func _spawn_cannon_muzzle_blast_vfx(target_board: Node3D, muzzle_pos: Vector3, forward_dir: Vector3) -> void:
+	var flash_mat = StandardMaterial3D.new()
+	flash_mat.albedo_color = Color(1.0, 0.62, 0.16, 0.95)
+	flash_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	flash_mat.emission_enabled = true
+	flash_mat.emission = Color(1.0, 0.45, 0.08)
+	flash_mat.emission_energy_multiplier = 2.4
+
+	var flash_core = MeshInstance3D.new()
+	var fsm = SphereMesh.new()
+	fsm.radius = 0.026
+	fsm.height = 0.052
+	flash_core.mesh = fsm
+	flash_core.material_override = flash_mat
+	flash_core.position = muzzle_pos
+	flash_core.scale = Vector3(0.4, 0.4, 0.8)
+	target_board.add_child(flash_core)
+
+	var blast_ring = MeshInstance3D.new()
+	var btm = TorusMesh.new()
+	btm.inner_radius = 0.015
+	btm.outer_radius = 0.025
+	blast_ring.mesh = btm
+	blast_ring.material_override = flash_mat
+	blast_ring.position = muzzle_pos
+	target_board.add_child(blast_ring)
+
+	# 4 Billowing Dark-Gray Cannon Smoke Puffs from Muzzle
+	for i in range(4):
+		var puff = MeshInstance3D.new()
+		var psm = SphereMesh.new()
+		psm.radius = 0.018
+		psm.height = 0.032
+		puff.mesh = psm
+		var p_mat = StandardMaterial3D.new()
+		p_mat.albedo_color = Color(0.22, 0.24, 0.27, 0.82)
+		p_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		p_mat.roughness = 0.95
+		puff.material_override = p_mat
+		puff.position = muzzle_pos
+		target_board.add_child(puff)
+
+		var spread_vec: Vector3 = Vector3(randf_range(-0.045, 0.045), randf_range(0.015, 0.055), randf_range(-0.025, 0.025))
+		var dest_p: Vector3 = muzzle_pos + forward_dir * randf_range(0.03, 0.07) + spread_vec
+		var ptw = create_tween().set_parallel(true)
+		ptw.tween_property(puff, "position", dest_p, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		ptw.tween_property(puff, "scale", Vector3(1.8, 1.8, 1.8), 0.34)
+		ptw.tween_property(p_mat, "albedo_color:a", 0.0, 0.34)
+		ptw.chain().tween_callback(func():
+			if is_instance_valid(puff):
+				puff.queue_free()
+		)
+
+	var ftw = create_tween().set_parallel(true)
+	ftw.tween_property(flash_core, "scale", Vector3(1.5, 1.5, 2.1), 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	ftw.tween_property(blast_ring, "scale", Vector3(2.2, 1.0, 2.2), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	ftw.tween_property(flash_mat, "albedo_color:a", 0.0, 0.16)
+	ftw.chain().tween_callback(func():
+		if is_instance_valid(flash_core):
+			flash_core.queue_free()
+		if is_instance_valid(blast_ring):
+			blast_ring.queue_free()
+	)
+
+func _create_artillery_shell_3d() -> Node3D:
+	var shell_root = Node3D.new()
+
+	# Sleek Brass/Steel Artillery Casing aligned along -Z (for look_at)
+	var body = MeshInstance3D.new()
+	var bm = CylinderMesh.new()
+	bm.top_radius = 0.008
+	bm.bottom_radius = 0.012
+	bm.height = 0.038
+	body.mesh = bm
+	body.rotation.x = PI * 0.5
+	body.position = Vector3(0, 0, 0.008)
+	body.material_override = _mat_brass
+	shell_root.add_child(body)
+
+	# Tapered Armor-Piercing Ballistic Nose Cone pointing toward -Z
+	var nose = MeshInstance3D.new()
+	var nm = CylinderMesh.new()
+	nm.top_radius = 0.001
+	nm.bottom_radius = 0.008
+	nm.height = 0.024
+	nose.mesh = nm
+	nose.rotation.x = PI * 0.5
+	nose.position = Vector3(0, 0, -0.022)
+	nose.material_override = _mat_ship_sunk_fire
+	shell_root.add_child(nose)
+
+	# Glowing Tracer Tail Plume at +Z
+	var tracer = MeshInstance3D.new()
+	var tm = SphereMesh.new()
+	tm.radius = 0.010
+	tm.height = 0.026
+	tracer.mesh = tm
+	tracer.position = Vector3(0, 0, 0.030)
+	var t_mat = StandardMaterial3D.new()
+	t_mat.albedo_color = Color(1.0, 0.52, 0.12)
+	t_mat.emission_enabled = true
+	t_mat.emission = Color(1.0, 0.38, 0.06)
+	t_mat.emission_energy_multiplier = 2.4
+	tracer.material_override = t_mat
+	shell_root.add_child(tracer)
+
+	return shell_root
+
+func _spawn_shell_trail_puff(target_board: Node3D, pos: Vector3) -> void:
+	var puff = MeshInstance3D.new()
+	var sm = SphereMesh.new()
+	sm.radius = 0.011
+	sm.height = 0.020
+	puff.mesh = sm
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(0.28, 0.30, 0.34, 0.68)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.roughness = 0.95
+	puff.material_override = mat
+	puff.position = pos
+	target_board.add_child(puff)
+
+	var tw = create_tween().set_parallel(true)
+	tw.tween_property(puff, "scale", Vector3(1.9, 1.9, 1.9), 0.26).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(puff, "position:y", pos.y + 0.022, 0.26)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.26)
+	tw.chain().tween_callback(func():
+		if is_instance_valid(puff):
+			puff.queue_free()
+	)
+
 func _place_persistent_shot_marker(markers_root: Node3D, cell_meshes: Array[MeshInstance3D], cell_idx: int, pos: Vector3, is_hit: bool) -> void:
+	var marker_name: String = "ShotMarker_%d" % cell_idx
+	var old_marker = markers_root.get_node_or_null(marker_name)
+	if is_instance_valid(old_marker):
+		old_marker.queue_free()
+
 	if cell_idx >= 0 and cell_idx < cell_meshes.size():
 		var cm: MeshInstance3D = cell_meshes[cell_idx]
 		if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
 			var mat: StandardMaterial3D = cm.material_override
 			if is_hit:
-				mat.albedo_color = Color(0.75, 0.14, 0.12)
+				mat.albedo_color = Color(0.42, 0.11, 0.12)
 				mat.emission_enabled = true
-				mat.emission = Color(0.95, 0.22, 0.10)
-				mat.emission_energy_multiplier = 0.65
+				mat.emission = Color(0.65, 0.12, 0.08)
+				mat.emission_energy_multiplier = 0.28
 			else:
-				mat.albedo_color = Color(0.14, 0.42, 0.56)
+				mat.albedo_color = Color(0.11, 0.36, 0.50)
 				mat.emission_enabled = false
 
-	var peg = MeshInstance3D.new()
-	var cyl = CylinderMesh.new()
-	cyl.top_radius = 0.018 if is_hit else 0.014
-	cyl.bottom_radius = 0.021 if is_hit else 0.017
-	cyl.height = 0.032 if is_hit else 0.022
-	peg.mesh = cyl
-	peg.position = pos + Vector3(0, 0.018, 0)
-	var p_mat = StandardMaterial3D.new()
+	var marker_root = Node3D.new()
+	marker_root.name = marker_name
+	marker_root.position = pos + Vector3(0, 0.008, 0)
+	markers_root.add_child(marker_root)
+
 	if is_hit:
-		p_mat.albedo_color = Color(1.0, 0.25, 0.15)
-		p_mat.emission_enabled = true
-		p_mat.emission = Color(1.0, 0.30, 0.10)
-		p_mat.emission_energy_multiplier = 1.8
+		# 3D Scorched Armor Breach Crater + Twisted Shrapnel + Rising Dark Smoke Plume (NO Cylinder!)
+		var crater = MeshInstance3D.new()
+		var ctm = TorusMesh.new()
+		ctm.inner_radius = 0.012
+		ctm.outer_radius = 0.024
+		crater.mesh = ctm
+		crater.material_override = _mat_ship_sunk_dark
+		marker_root.add_child(crater)
+
+		for i in range(3):
+			var shard = MeshInstance3D.new()
+			var sbm = BoxMesh.new()
+			sbm.size = Vector3(0.010, 0.015, 0.005)
+			shard.mesh = sbm
+			var ang: float = float(i) * (TAU / 3.0) + 0.4
+			shard.position = Vector3(cos(ang) * 0.015, 0.006, sin(ang) * 0.015)
+			shard.rotation = Vector3(0.42, ang, -0.35)
+			shard.material_override = _mat_ship_sunk_rust if (i == 0) else _mat_ship_sunk_hull
+			marker_root.add_child(shard)
+
+		var ember = MeshInstance3D.new()
+		var esm = SphereMesh.new()
+		esm.radius = 0.010
+		esm.height = 0.008
+		ember.mesh = esm
+		ember.position = Vector3(0, 0.002, 0)
+		ember.material_override = _mat_ship_sunk_fire
+		marker_root.add_child(ember)
+
+		var hit_smoke = _create_continuous_smoke_plume_node(0.75)
+		hit_smoke.position = Vector3(0, 0.006, 0)
+		marker_root.add_child(hit_smoke)
 	else:
-		p_mat.albedo_color = Color(0.86, 0.96, 1.0)
-		p_mat.roughness = 0.2
-	peg.material_override = p_mat
-	markers_root.add_child(peg)
+		# 3D Concentric Ocean Ripple Rings & Naval Sonar Splash Marker (NO Cylinder!)
+		var ripple_mat = StandardMaterial3D.new()
+		ripple_mat.albedo_color = Color(0.58, 0.88, 0.98)
+		ripple_mat.roughness = 0.25
+
+		var outer_ring = MeshInstance3D.new()
+		var otm = TorusMesh.new()
+		otm.inner_radius = 0.019
+		otm.outer_radius = 0.025
+		outer_ring.mesh = otm
+		outer_ring.material_override = ripple_mat
+		marker_root.add_child(outer_ring)
+
+		var inner_drop = MeshInstance3D.new()
+		var ism = SphereMesh.new()
+		ism.radius = 0.010
+		ism.height = 0.014
+		inner_drop.mesh = ism
+		inner_drop.position = Vector3(0, 0.003, 0)
+		var drop_mat = StandardMaterial3D.new()
+		drop_mat.albedo_color = Color(0.78, 0.95, 1.0)
+		drop_mat.roughness = 0.18
+		inner_drop.material_override = drop_mat
+		marker_root.add_child(inner_drop)
+
+func _apply_sunk_ship_board_cleanup(markers_root: Node3D, cell_meshes: Array[MeshInstance3D], ship_cells: Array) -> void:
+	for c_val in ship_cells:
+		var c_idx: int = int(c_val)
+		# Remove individual cell hit marker so it doesn't poke through the 3D wrecked ship
+		if is_instance_valid(markers_root):
+			var old_m = markers_root.get_node_or_null("ShotMarker_%d" % c_idx)
+			if is_instance_valid(old_m):
+				old_m.queue_free()
+		# Set cell tile under sunk ship to dark scorched-crimson sea (never bright neon orange/yellow)
+		if c_idx >= 0 and c_idx < cell_meshes.size():
+			var cm: MeshInstance3D = cell_meshes[c_idx]
+			if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
+				var mat: StandardMaterial3D = cm.material_override
+				mat.albedo_color = Color(0.24, 0.08, 0.10)
+				mat.emission_enabled = false
 
 func _spawn_water_splash_vfx(target_board: Node3D, pos: Vector3) -> void:
-	var ring = MeshInstance3D.new()
-	var tm = TorusMesh.new()
-	tm.inner_radius = 0.016
-	tm.outer_radius = 0.026
-	ring.mesh = tm
 	var r_mat = StandardMaterial3D.new()
-	r_mat.albedo_color = Color(0.65, 0.95, 1.0, 0.90)
+	r_mat.albedo_color = Color(0.72, 0.96, 1.0, 0.92)
 	r_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	r_mat.emission_enabled = true
 	r_mat.emission = Color(0.45, 0.88, 1.0)
-	r_mat.emission_energy_multiplier = 1.2
-	ring.material_override = r_mat
-	ring.position = pos + Vector3(0, 0.008, 0)
-	ring.scale = Vector3(0.4, 1.0, 0.4)
-	target_board.add_child(ring)
+	r_mat.emission_energy_multiplier = 1.1
 
-	var plume = MeshInstance3D.new()
-	var pm = CylinderMesh.new()
-	pm.top_radius = 0.008
-	pm.bottom_radius = 0.020
-	pm.height = 0.075
-	plume.mesh = pm
-	plume.material_override = r_mat
-	plume.position = pos + Vector3(0, 0.028, 0)
-	target_board.add_child(plume)
+	# 2 Concentric Expanding Seafoam Ripple Rings
+	var ring1 = MeshInstance3D.new()
+	var tm1 = TorusMesh.new()
+	tm1.inner_radius = 0.015
+	tm1.outer_radius = 0.025
+	ring1.mesh = tm1
+	ring1.material_override = r_mat
+	ring1.position = pos + Vector3(0, 0.008, 0)
+	ring1.scale = Vector3(0.35, 1.0, 0.35)
+	target_board.add_child(ring1)
+
+	var ring2 = MeshInstance3D.new()
+	ring2.mesh = tm1
+	ring2.material_override = r_mat
+	ring2.position = pos + Vector3(0, 0.010, 0)
+	ring2.scale = Vector3(0.20, 1.0, 0.20)
+	target_board.add_child(ring2)
+
+	# 8 Parabolic 3D Water Droplets splashing outward (NO Cylinder!)
+	for i in range(8):
+		var drop = MeshInstance3D.new()
+		var dsm = SphereMesh.new()
+		dsm.radius = 0.009
+		dsm.height = 0.020
+		drop.mesh = dsm
+		drop.material_override = r_mat
+		drop.position = pos + Vector3(0, 0.014, 0)
+		target_board.add_child(drop)
+
+		var ang: float = float(i) * (TAU / 8.0) + randf_range(-0.2, 0.2)
+		var rad: float = randf_range(0.032, 0.068)
+		var peak_h: float = randf_range(0.055, 0.105)
+		var dtw = create_tween()
+		dtw.tween_method(func(t: float):
+			if is_instance_valid(drop):
+				var dp = pos + Vector3(cos(ang) * rad * t, 0.012 + sin(t * PI) * peak_h, sin(ang) * rad * t)
+				drop.position = dp
+				drop.scale = Vector3.ONE * (1.15 - 0.75 * t)
+		, 0.0, 1.0, 0.38)
+		dtw.tween_callback(func():
+			if is_instance_valid(drop):
+				drop.queue_free()
+		)
 
 	var tw = create_tween().set_parallel(true)
-	tw.tween_property(ring, "scale", Vector3(2.6, 1.0, 2.6), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(r_mat, "albedo_color:a", 0.0, 0.42)
-	tw.tween_property(plume, "position:y", pos.y + 0.075, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ring1, "scale", Vector3(2.8, 1.0, 2.8), 0.44).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ring2, "scale", Vector3(1.8, 1.0, 1.8), 0.44).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(r_mat, "albedo_color:a", 0.0, 0.44)
 	tw.chain().tween_callback(func():
-		if is_instance_valid(ring):
-			ring.queue_free()
-		if is_instance_valid(plume):
-			plume.queue_free()
+		if is_instance_valid(ring1):
+			ring1.queue_free()
+		if is_instance_valid(ring2):
+			ring2.queue_free()
 	)
 
 func _spawn_ship_hit_vfx(target_board: Node3D, pos: Vector3) -> void:
 	var fireball = MeshInstance3D.new()
 	var sm = SphereMesh.new()
-	sm.radius = 0.034
-	sm.height = 0.068
+	sm.radius = 0.032
+	sm.height = 0.064
 	fireball.mesh = sm
 	var f_mat = StandardMaterial3D.new()
-	f_mat.albedo_color = Color(1.0, 0.45, 0.10, 0.95)
+	f_mat.albedo_color = Color(0.96, 0.32, 0.06, 0.95)
 	f_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	f_mat.emission_enabled = true
-	f_mat.emission = Color(1.0, 0.35, 0.05)
-	f_mat.emission_energy_multiplier = 2.8
+	f_mat.emission = Color(0.95, 0.24, 0.04)
+	f_mat.emission_energy_multiplier = 2.2
 	fireball.material_override = f_mat
 	fireball.position = pos + Vector3(0, 0.024, 0)
 	fireball.scale = Vector3(0.3, 0.3, 0.3)
@@ -1973,27 +2477,62 @@ func _spawn_ship_hit_vfx(target_board: Node3D, pos: Vector3) -> void:
 	shock.scale = Vector3(0.4, 1.0, 0.4)
 	target_board.add_child(shock)
 
+	# Rising dark blast-smoke cloud
+	var smoke_cloud = MeshInstance3D.new()
+	var ssm = SphereMesh.new()
+	ssm.radius = 0.028
+	ssm.height = 0.052
+	smoke_cloud.mesh = ssm
+	var s_mat = StandardMaterial3D.new()
+	s_mat.albedo_color = Color(0.14, 0.15, 0.18, 0.86)
+	s_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	s_mat.roughness = 0.95
+	smoke_cloud.material_override = s_mat
+	smoke_cloud.position = pos + Vector3(0, 0.030, 0)
+	smoke_cloud.scale = Vector3(0.4, 0.4, 0.4)
+	target_board.add_child(smoke_cloud)
+
+	_spawn_sunk_debris_burst(target_board, pos)
+
 	var tw = create_tween().set_parallel(true)
-	tw.tween_property(fireball, "scale", Vector3(1.9, 1.9, 1.9), 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(shock, "scale", Vector3(2.9, 1.0, 2.9), 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(f_mat, "albedo_color:a", 0.0, 0.40)
+	tw.tween_property(fireball, "scale", Vector3(1.85, 1.85, 1.85), 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(shock, "scale", Vector3(2.8, 1.0, 2.8), 0.36).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(f_mat, "albedo_color:a", 0.0, 0.36)
+	tw.tween_property(smoke_cloud, "scale", Vector3(2.1, 2.1, 2.1), 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(smoke_cloud, "position:y", pos.y + 0.095, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(s_mat, "albedo_color:a", 0.0, 0.55)
 	tw.chain().tween_callback(func():
 		if is_instance_valid(fireball):
 			fireball.queue_free()
 		if is_instance_valid(shock):
 			shock.queue_free()
+		if is_instance_valid(smoke_cloud):
+			smoke_cloud.queue_free()
 	)
 
 func _trigger_full_ship_sunk_vfx(target_board: Node3D, ship_len: int, ship_cells: Array[int], is_enemy_board: bool) -> void:
 	ship_cells.sort()
 	if is_enemy_board:
+		_apply_sunk_ship_board_cleanup(attack_markers_root, attack_cell_meshes, ship_cells)
 		_spawn_sunk_enemy_warship_model(ship_cells, ship_len, true)
 	else:
-		var my_ship = defense_ships_root.get_node_or_null("MyDefenseShip_%d" % ship_len)
-		if is_instance_valid(my_ship):
-			var stw = create_tween().set_parallel(true)
-			stw.tween_property(my_ship, "rotation:z", deg_to_rad(18.0), 0.65).set_trans(Tween.TRANS_SINE)
-			stw.tween_property(my_ship, "position:y", 0.018, 0.65).set_trans(Tween.TRANS_SINE)
+		_apply_sunk_ship_board_cleanup(defense_markers_root, defense_cell_meshes, ship_cells)
+		var old_my_ship = defense_ships_root.get_node_or_null("MyDefenseShip_%d" % ship_len)
+		if is_instance_valid(old_my_ship):
+			old_my_ship.queue_free()
+		var is_horiz: bool = (ship_cells.size() >= 2 and (int(ship_cells[1]) - int(ship_cells[0]) == 1))
+		var pf: Vector3 = _cell_index_to_local_pos(int(ship_cells[0]))
+		var pl: Vector3 = _cell_index_to_local_pos(int(ship_cells[ship_cells.size() - 1]))
+		var cpos: Vector3 = (pf + pl) * 0.5
+		cpos.y = 0.032
+		var wrecked_my_ship = _create_warship_3d_model(ship_len, true, false)
+		wrecked_my_ship.name = "MyDefenseShip_%d" % ship_len
+		wrecked_my_ship.position = cpos
+		wrecked_my_ship.rotation.y = (PI * 0.5) if is_horiz else 0.0
+		defense_ships_root.add_child(wrecked_my_ship)
+		var stw = create_tween().set_parallel(true)
+		stw.tween_property(wrecked_my_ship, "rotation:z", deg_to_rad(15.0), 0.65).set_trans(Tween.TRANS_SINE)
+		stw.tween_property(wrecked_my_ship, "position:y", 0.020, 0.65).set_trans(Tween.TRANS_SINE)
 
 	for i in range(ship_cells.size()):
 		var c_idx: int = int(ship_cells[i])
@@ -2001,7 +2540,6 @@ func _trigger_full_ship_sunk_vfx(target_board: Node3D, ship_len: int, ship_cells
 		get_tree().create_timer(float(i) * 0.11).timeout.connect(func():
 			if is_instance_valid(target_board):
 				_spawn_ship_hit_vfx(target_board, c_pos)
-				_spawn_sunk_debris_burst(target_board, c_pos)
 		)
 
 	var p_first = _cell_index_to_local_pos(int(ship_cells[0]))
@@ -2014,11 +2552,11 @@ func _trigger_full_ship_sunk_vfx(target_board: Node3D, ship_len: int, ship_cells
 	mtm.outer_radius = 0.066
 	mega_ring.mesh = mtm
 	var m_mat = StandardMaterial3D.new()
-	m_mat.albedo_color = Color(1.0, 0.65, 0.15, 0.95)
+	m_mat.albedo_color = Color(0.95, 0.35, 0.08, 0.92)
 	m_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m_mat.emission_enabled = true
-	m_mat.emission = Color(1.0, 0.45, 0.08)
-	m_mat.emission_energy_multiplier = 3.2
+	m_mat.emission = Color(0.92, 0.25, 0.05)
+	m_mat.emission_energy_multiplier = 2.2
 	mega_ring.material_override = m_mat
 	mega_ring.position = ship_center + Vector3(0, 0.018, 0)
 	mega_ring.scale = Vector3(0.4, 1.0, 0.4)
@@ -2058,19 +2596,19 @@ func _spawn_sunk_enemy_warship_model(ship_cells: Array, ship_len: int, animate_s
 		sunk_ship.scale = Vector3(0.2, 0.2, 0.2)
 		var tw = create_tween().set_parallel(true)
 		tw.tween_property(sunk_ship, "scale", Vector3.ONE, 0.38).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tw.tween_property(sunk_ship, "rotation:z", deg_to_rad(15.0), 0.70).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(sunk_ship, "rotation:z", deg_to_rad(14.0), 0.70).set_trans(Tween.TRANS_SINE)
 		tw.tween_property(sunk_ship, "position:y", 0.020, 0.70).set_trans(Tween.TRANS_SINE)
 	else:
-		sunk_ship.rotation.z = deg_to_rad(15.0)
+		sunk_ship.rotation.z = deg_to_rad(14.0)
 		sunk_ship.position.y = 0.020
 
 func _spawn_sunk_debris_burst(target_board: Node3D, pos: Vector3) -> void:
 	for i in range(6):
 		var spark = MeshInstance3D.new()
 		var bm = BoxMesh.new()
-		bm.size = Vector3(0.012, 0.012, 0.012)
+		bm.size = Vector3(0.011, 0.008, 0.014)
 		spark.mesh = bm
-		spark.material_override = _mat_ship_sunk_fire
+		spark.material_override = _mat_ship_sunk_fire if (i % 2 == 0) else _mat_ship_sunk_dark
 		spark.position = pos + Vector3(0, 0.02, 0)
 		target_board.add_child(spark)
 
@@ -2079,6 +2617,7 @@ func _spawn_sunk_debris_burst(target_board: Node3D, pos: Vector3) -> void:
 		var target_p = pos + Vector3(cos(angle) * dist, randf_range(0.06, 0.13), sin(angle) * dist)
 		var tw = create_tween().set_parallel(true)
 		tw.tween_property(spark, "position", target_p, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(spark, "rotation", Vector3(randf_range(-3.0, 3.0), randf_range(-3.0, 3.0), randf_range(-3.0, 3.0)), 0.38)
 		tw.tween_property(spark, "scale", Vector3(0.1, 0.1, 0.1), 0.38)
 		tw.chain().tween_callback(func():
 			if is_instance_valid(spark):
