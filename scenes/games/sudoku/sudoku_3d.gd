@@ -16,25 +16,28 @@ const TOTAL_CELLS: int = 81
 const GRID_SIZE: int = 9
 const BOX_SIZE: int = 3
 const BOARD_SURFACE_Y: float = 0.048
-const GRID_CENTER_Z: float = -0.150
+const GRID_CENTER_Z: float = -0.160
 
 # Cell & Block Metrics
-const CELL_W: float = 0.104
+const CELL_W: float = 0.106
 const CELL_GAP: float = 0.005
 const BLOCK_GAP: float = 0.016
-const BLOCK_W: float = (3.0 * CELL_W) + (2.0 * CELL_GAP) # 0.322m
-const TOTAL_GRID_W: float = (3.0 * BLOCK_W) + (2.0 * BLOCK_GAP) # 0.998m
+const BLOCK_W: float = (3.0 * CELL_W) + (2.0 * CELL_GAP) # 0.328m
+const TOTAL_GRID_W: float = (3.0 * BLOCK_W) + (2.0 * BLOCK_GAP) # 1.016m
 
 # Bottom Console Metrics
-const CONSOLE_Z: float = 0.480
-const PAD_BTN_W: float = 0.096
-const PAD_BTN_D: float = 0.090
+const CONSOLE_Z: float = 0.465
+const PAD_BTN_W: float = 0.098
+const PAD_BTN_D: float = 0.092
 const PAD_BTN_H: float = 0.024
 const ACTION_BTN_Y: float = 0.038
-const ACTION_BTN_Z: float = 0.585
+const ACTION_BTN_Z: float = 0.575
 
-static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
-static var _font_vazir: FontFile = preload("res://assets/fonts/Vazir.ttf")
+# Camera framing hint for CafeTable
+var camera_pitch: float = -0.733
+var camera_distance: float = 3.35
+
+var _game_font: Font = null
 
 # Logical Board State
 var board_values: Array[int] = []         # 0..9 (0 = empty)
@@ -80,6 +83,9 @@ var btn_solve_label: Label3D
 var lbl_status_hint: Label3D
 
 # Materials
+var mat_plinth: StandardMaterial3D
+var mat_frame: StandardMaterial3D
+var mat_playing_bed: StandardMaterial3D
 var mat_cell_base: StandardMaterial3D
 var mat_cell_given: StandardMaterial3D
 var mat_cell_hover: StandardMaterial3D
@@ -98,14 +104,29 @@ func _init() -> void:
 	game_type = GameTypes.SUDOKU
 
 func _ready() -> void:
-	super._ready()
+	# 1. Load Fonts Safely
+	if ResourceLoader.exists("res://assets/fonts/hekayat.ttf"):
+		_game_font = load("res://assets/fonts/hekayat.ttf")
+	elif ResourceLoader.exists("res://assets/fonts/Vazir.ttf"):
+		_game_font = load("res://assets/fonts/Vazir.ttf")
+
+	# 2. Initialize Data & Default Starter Puzzle
 	_init_data_structures()
+	_apply_default_starter_puzzle()
+
+	# 3. Build Physical 3D Materials & Geometry
 	_init_materials()
 	_build_scene_hierarchy()
+	_build_master_cabinet()
 	_build_sudoku_grid()
 	_build_bottom_console()
+
+	# 4. Synchronize Visuals & Counts
 	_update_numbers_count()
 	_refresh_board_visuals()
+
+	# 5. Call base lifecycle after full setup
+	super._ready()
 
 func _exit_tree() -> void:
 	super._exit_tree()
@@ -123,14 +144,51 @@ func _init_data_structures() -> void:
 	for d in range(1, 10):
 		numbers_count[d] = 0
 
+func _apply_default_starter_puzzle() -> void:
+	# Classic valid starter Sudoku puzzle with 36 initial clues
+	var default_puzzle: Array[int] = [
+		5, 3, 0,  0, 7, 0,  0, 0, 0,
+		6, 0, 0,  1, 9, 5,  0, 0, 0,
+		0, 9, 8,  0, 0, 0,  0, 6, 0,
+
+		8, 0, 0,  0, 6, 0,  0, 0, 3,
+		4, 0, 0,  8, 0, 3,  0, 0, 1,
+		7, 0, 0,  0, 2, 0,  0, 0, 6,
+
+		0, 6, 0,  0, 0, 0,  2, 8, 0,
+		0, 0, 0,  4, 1, 9,  0, 0, 5,
+		0, 0, 0,  0, 8, 0,  0, 7, 9
+	]
+	for i in range(min(TOTAL_CELLS, default_puzzle.size())):
+		var val = default_puzzle[i]
+		board_values[i] = val
+		is_base_number[i] = (val > 0)
+
 func _init_materials() -> void:
+	mat_plinth = StandardMaterial3D.new()
+	mat_plinth.albedo_color = Color(0.13, 0.08, 0.05, 1.0)
+	mat_plinth.metallic = 0.04
+	mat_plinth.roughness = 0.60
+
+	mat_frame = StandardMaterial3D.new()
+	mat_frame.albedo_color = Color(0.24, 0.14, 0.08, 1.0)
+	mat_frame.metallic = 0.08
+	mat_frame.roughness = 0.35
+	mat_frame.clearcoat_enabled = true
+	mat_frame.clearcoat = 0.6
+
+	mat_playing_bed = StandardMaterial3D.new()
+	mat_playing_bed.albedo_color = Color(0.10, 0.11, 0.13, 1.0)
+	mat_playing_bed.metallic = 0.02
+	mat_playing_bed.roughness = 0.70
+
 	mat_cell_base = StandardMaterial3D.new()
 	mat_cell_base.albedo_color = Color(0.18, 0.20, 0.24, 1.0)
 	mat_cell_base.metallic = 0.05
 	mat_cell_base.roughness = 0.50
 
 	mat_cell_given = StandardMaterial3D.new()
-	mat_cell_given.albedo_color = Color(0.14, 0.16, 0.20, 1.0)
+	mat_cell_given.albedo_color = Color(0.13, 0.15, 0.19, 1.0)
 	mat_cell_given.metallic = 0.12
 	mat_cell_given.roughness = 0.40
 
@@ -213,6 +271,61 @@ func _build_scene_hierarchy() -> void:
 	vfx_root = Node3D.new()
 	vfx_root.name = "VFXRoot"
 	add_child(vfx_root)
+
+func _build_master_cabinet() -> void:
+	# 1. Master Plinth Base
+	var plinth = MeshInstance3D.new()
+	var plinth_mesh = BoxMesh.new()
+	plinth_mesh.size = Vector3(1.24, 0.03, 1.46)
+	plinth_mesh.material = mat_plinth
+	plinth.mesh = plinth_mesh
+	plinth.position = Vector3(0, -0.015, 0.06)
+	board_decor_root.add_child(plinth)
+
+	# 2. Polished Board Frame
+	var frame = MeshInstance3D.new()
+	var frame_mesh = BoxMesh.new()
+	frame_mesh.size = Vector3(1.18, 0.045, 1.40)
+	frame_mesh.material = mat_frame
+	frame.mesh = frame_mesh
+	frame.position = Vector3(0, 0.015, 0.06)
+	board_decor_root.add_child(frame)
+
+	# 3. Recessed Slate Playing Bed
+	var bed = MeshInstance3D.new()
+	var bed_mesh = BoxMesh.new()
+	bed_mesh.size = Vector3(1.08, 0.02, 1.28)
+	bed_mesh.material = mat_playing_bed
+	bed.mesh = bed_mesh
+	bed.position = Vector3(0, 0.038, 0.06)
+	board_decor_root.add_child(bed)
+
+	# 4. Corner Golden Brackets
+	var corner_mesh = BoxMesh.new()
+	corner_mesh.size = Vector3(0.08, 0.052, 0.08)
+	corner_mesh.material = mat_gold_rim
+
+	var rivet_mesh = SphereMesh.new()
+	rivet_mesh.radius = 0.014
+	rivet_mesh.height = 0.020
+	rivet_mesh.material = mat_gold_rim
+
+	var corners = [
+		Vector3(-0.56, 0.020, -0.60),
+		Vector3(0.56, 0.020, -0.60),
+		Vector3(-0.56, 0.020, 0.72),
+		Vector3(0.56, 0.020, 0.72)
+	]
+	for c_pos in corners:
+		var c_inst = MeshInstance3D.new()
+		c_inst.mesh = corner_mesh
+		c_inst.position = c_pos
+		board_decor_root.add_child(c_inst)
+
+		var r_inst = MeshInstance3D.new()
+		r_inst.mesh = rivet_mesh
+		r_inst.position = Vector3(0, 0.026, 0)
+		c_inst.add_child(r_inst)
 
 func _get_cell_pos(r: int, c: int) -> Vector3:
 	var c_block = c / 3
@@ -332,7 +445,8 @@ func _build_sudoku_grid() -> void:
 
 			# Large Crisp Digit Label
 			var lbl = Label3D.new()
-			lbl.font = _font_hekayat
+			if _game_font:
+				lbl.font = _game_font
 			lbl.font_size = 72
 			lbl.pixel_size = 0.00165
 			lbl.billboard = BaseMaterial3D.BILLBOARD_DISABLED
@@ -349,7 +463,7 @@ func _build_bottom_console() -> void:
 	# Master Console Wood Base Plinth
 	var console_plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
-	plinth_mesh.size = Vector3(1.18, 0.035, 0.28)
+	plinth_mesh.size = Vector3(1.14, 0.035, 0.28)
 	plinth_mesh.material = mat_pad_normal
 	console_plinth.mesh = plinth_mesh
 	console_plinth.position = Vector3(0, 0.020, CONSOLE_Z + 0.05)
@@ -358,7 +472,7 @@ func _build_bottom_console() -> void:
 	# Brass Trim Bar
 	var trim_bar = MeshInstance3D.new()
 	var trim_mesh = BoxMesh.new()
-	trim_mesh.size = Vector3(1.14, 0.008, 0.008)
+	trim_mesh.size = Vector3(1.10, 0.008, 0.008)
 	trim_mesh.material = mat_gold_rim
 	trim_bar.mesh = trim_mesh
 	trim_bar.position = Vector3(0, 0.038, CONSOLE_Z - 0.082)
@@ -366,7 +480,8 @@ func _build_bottom_console() -> void:
 
 	# Hint / Status Instruction Label
 	lbl_status_hint = Label3D.new()
-	lbl_status_hint.font = _font_vazir
+	if _game_font:
+		lbl_status_hint.font = _game_font
 	lbl_status_hint.font_size = 28
 	lbl_status_hint.pixel_size = 0.00155
 	lbl_status_hint.rotation_degrees = Vector3(-90, 0, 0)
@@ -403,7 +518,8 @@ func _build_bottom_console() -> void:
 
 		# Large Prominent Digit Label
 		var lbl_d = Label3D.new()
-		lbl_d.font = _font_hekayat
+		if _game_font:
+			lbl_d.font = _game_font
 		lbl_d.font_size = 58
 		lbl_d.pixel_size = 0.00160
 		lbl_d.rotation_degrees = Vector3(-90, 0, 0)
@@ -417,7 +533,8 @@ func _build_bottom_console() -> void:
 
 		# Remaining Count Badge Label
 		var lbl_cnt = Label3D.new()
-		lbl_cnt.font = _font_vazir
+		if _game_font:
+			lbl_cnt.font = _game_font
 		lbl_cnt.font_size = 26
 		lbl_cnt.pixel_size = 0.00135
 		lbl_cnt.rotation_degrees = Vector3(-90, 0, 0)
@@ -443,7 +560,8 @@ func _build_bottom_console() -> void:
 	btn_erase_root.add_child(btn_erase_mesh)
 
 	btn_erase_label = Label3D.new()
-	btn_erase_label.font = _font_vazir
+	if _game_font:
+		btn_erase_label.font = _game_font
 	btn_erase_label.font_size = 32
 	btn_erase_label.pixel_size = 0.00155
 	btn_erase_label.rotation_degrees = Vector3(-90, 0, 0)
@@ -468,7 +586,8 @@ func _build_bottom_console() -> void:
 	btn_solve_root.add_child(btn_solve_mesh)
 
 	btn_solve_label = Label3D.new()
-	btn_solve_label.font = _font_vazir
+	if _game_font:
+		btn_solve_label.font = _game_font
 	btn_solve_label.font_size = 32
 	btn_solve_label.pixel_size = 0.00155
 	btn_solve_label.rotation_degrees = Vector3(-90, 0, 0)
@@ -750,8 +869,30 @@ func _spawn_box_completion_vfx(box_index: int) -> void:
 # Input & Raycasting
 # ==============================================================================
 
+func _get_hud() -> Control:
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if hud and is_instance_valid(hud):
+		return hud
+	return null
+
+func _is_gui_blocking_at(screen_pos: Vector2) -> bool:
+	var hud = _get_hud()
+	if not hud or not hud.visible:
+		return false
+	# Modal overlays
+	for modal_name in ["StartGameOverlay", "DisconnectPauseDialog", "SurrenderDialog", "RoundFinishBanner", "ReactionPicker", "GameResultDialog", "UserProfileDialog"]:
+		var node = hud.get_node_or_null(modal_name)
+		if node and node is Control and node.visible:
+			return true
+	# Bars (bottom bar & top header)
+	for bar_name in ["BottomBar", "TopHeaderSlot"]:
+		var bar = hud.get_node_or_null(bar_name)
+		if bar and bar is Control and bar.visible and bar.get_global_rect().has_point(screen_pos):
+			return true
+	return false
+
 func _unhandled_input(event: InputEvent) -> void:
-	if is_board_locked or not GameManager.is_game_active:
+	if is_board_locked:
 		return
 
 	if (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT) or (event is InputEventScreenTouch):
@@ -770,17 +911,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				var dur = (Time.get_ticks_msec() / 1000.0) - _raycast_down_time
 				if dist < DRAG_CLICK_THRESHOLD and dur < 0.60:
 					_handle_tap_at(pos)
-
-func _is_gui_blocking_at(screen_pos: Vector2) -> bool:
-	var vp = get_viewport()
-	if not vp: return false
-	var root_ctrl = vp.gui_get_hovered_control()
-	if root_ctrl:
-		# If cursor is over active buttons, dialogs, or bottom bar
-		var c_name = root_ctrl.name
-		if not (c_name in ["SubViewportContainer", "SubViewport", "RootNode", "Control"]):
-			return true
-	return false
 
 func _project_screen_to_board_plane(screen_pos: Vector2) -> Variant:
 	var cam = get_viewport().get_camera_3d()
