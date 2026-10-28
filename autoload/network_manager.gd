@@ -389,6 +389,8 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 						GameManager.p2_score = int(g_data["scores"][1])
 					if g_data.has("current_turn"):
 						var turn = int(g_data["current_turn"])
+						if g_data.has("is_play_phase") and not bool(g_data["is_play_phase"]):
+							turn = 0
 						GameManager.current_turn = turn
 						print("[NetworkManager] Reconnect Current Turn: %d | My Index: %d | Is My Turn: %s" % [turn, GameManager.my_player_index, str(GameManager.is_my_turn)])
 						turn_changed.emit(turn)

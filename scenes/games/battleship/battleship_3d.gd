@@ -36,7 +36,10 @@ var p2_score: int = 0
 var _game_font: Font = null
 
 # Phase 1 Ship Placement & Live Drag State
+const FLEET_CACHE_PATH: String = "user://battleship_fleet_cache.cfg"
+static var _saved_fleet_memory: Dictionary = {}
 var fleet_state: Dictionary = {}
+var _has_custom_phase1_edits: bool = false
 var selected_ship_len: int = 5
 var is_dragging_ship: bool = false
 var _pointer_down: bool = false
@@ -145,8 +148,20 @@ func _ready() -> void:
 	_init_data_structures()
 	_build_scene_hierarchy()
 	_apply_default_initial_fleet()
+	if not GameManager.active_game_id.is_empty() or not GameManager.get_open_game_id().is_empty():
+		if _load_fleet_from_cache():
+			_rebuild_phase1_ships_visuals()
+			_highlight_selected_drydock_berth()
+			_populate_defense_board_ships()
 	_update_phase_visibility()
 	super._ready()
+
+func _process(_delta: float) -> void:
+	if not is_play_phase and not is_board_saved and GameManager.is_game_active:
+		var hud = _get_hud()
+		if hud and ("is_timer_active" in hud) and ("turn_time_left" in hud):
+			if bool(hud.is_timer_active) and float(hud.turn_time_left) > 0.0 and float(hud.turn_time_left) <= 1.8:
+				submit_code()
 
 func _fa_num(n: int) -> String:
 	var s = str(n)
@@ -766,9 +781,9 @@ func _add_ship_turret(parent_node: Node3D, pos: Vector3, mat_base: Material, mat
 func _apply_default_initial_fleet() -> void:
 	var default_layout = {
 		5: {"cells": [0, 8, 16, 24, 32], "horiz": false},
-		4: {"cells": [2, 10, 18, 26], "horiz": false},
-		3: {"cells": [4, 12, 20], "horiz": false},
-		2: {"cells": [6, 14], "horiz": false}
+		4: {"cells": [1, 9, 17, 25], "horiz": false},
+		3: {"cells": [2, 10, 18], "horiz": false},
+		2: {"cells": [3, 11], "horiz": false}
 	}
 	for s_len in SHIP_LENGTHS:
 		fleet_state[s_len]["cells"] = default_layout[s_len]["cells"].duplicate()
@@ -777,6 +792,136 @@ func _apply_default_initial_fleet() -> void:
 	selected_ship_len = 5
 	_rebuild_phase1_ships_visuals()
 	_highlight_selected_drydock_berth()
+
+func _get_fleet_cache_keys() -> Array[String]:
+	var keys: Array[String] = []
+	if not GameManager.active_game_id.is_empty():
+		keys.append(str(GameManager.active_game_id))
+	var open_id: String = GameManager.get_open_game_id()
+	if not open_id.is_empty() and not (open_id in keys):
+		keys.append(open_id)
+	keys.append("latest")
+	return keys
+
+func _save_fleet_to_cache() -> void:
+	var snap: Dictionary = {
+		"is_board_saved": is_board_saved,
+		"has_custom": _has_custom_phase1_edits,
+		"ships": {}
+	}
+	for s_len in SHIP_LENGTHS:
+		var cells_copy: Array[int] = []
+		for c in fleet_state[s_len]["cells"]:
+			cells_copy.append(int(c))
+		snap["ships"][s_len] = {
+			"cells": cells_copy,
+			"is_horizontal": bool(fleet_state[s_len]["is_horizontal"]),
+			"placed": bool(fleet_state[s_len]["placed"])
+		}
+	var keys = _get_fleet_cache_keys()
+	for k in keys:
+		_saved_fleet_memory[k] = snap.duplicate(true)
+	var cfg = ConfigFile.new()
+	cfg.load(FLEET_CACHE_PATH)
+	for k in keys:
+		cfg.set_value(k, "is_board_saved", is_board_saved)
+		cfg.set_value(k, "has_custom", _has_custom_phase1_edits)
+		for s_len in SHIP_LENGTHS:
+			cfg.set_value(k, "cells_%d" % s_len, snap["ships"][s_len]["cells"])
+			cfg.set_value(k, "horiz_%d" % s_len, snap["ships"][s_len]["is_horizontal"])
+	cfg.save(FLEET_CACHE_PATH)
+
+func _load_fleet_from_cache() -> bool:
+	var keys = _get_fleet_cache_keys()
+	for k in keys:
+		if _saved_fleet_memory.has(k):
+			var snap: Dictionary = _saved_fleet_memory[k]
+			if _apply_cached_ships_dict(snap.get("ships", {})):
+				_has_custom_phase1_edits = bool(snap.get("has_custom", true))
+				return true
+	var cfg = ConfigFile.new()
+	if cfg.load(FLEET_CACHE_PATH) == OK:
+		for k in keys:
+			if cfg.has_section(k):
+				var ships_dict: Dictionary = {}
+				for s_len in SHIP_LENGTHS:
+					var c_arr = cfg.get_value(k, "cells_%d" % s_len, [])
+					var h_val = bool(cfg.get_value(k, "horiz_%d" % s_len, false))
+					ships_dict[s_len] = {"cells": c_arr, "is_horizontal": h_val, "placed": true}
+				if _apply_cached_ships_dict(ships_dict):
+					_has_custom_phase1_edits = bool(cfg.get_value(k, "has_custom", true))
+					return true
+	return false
+
+func _apply_cached_ships_dict(ships_dict: Dictionary) -> bool:
+	if typeof(ships_dict) != TYPE_DICTIONARY:
+		return false
+	var used: Dictionary = {}
+	var parsed: Dictionary = {}
+	for s_len in SHIP_LENGTHS:
+		var entry = ships_dict.get(s_len, ships_dict.get(str(s_len), null))
+		if typeof(entry) != TYPE_DICTIONARY:
+			return false
+		var raw_cells = entry.get("cells", [])
+		if typeof(raw_cells) != TYPE_ARRAY or raw_cells.size() != s_len:
+			return false
+		var clean_cells: Array[int] = []
+		for c in raw_cells:
+			var ci: int = int(c)
+			if ci < 0 or ci >= TOTAL_CELLS or used.has(ci):
+				return false
+			used[ci] = true
+			clean_cells.append(ci)
+		clean_cells.sort()
+		var is_horiz: bool = (clean_cells.size() >= 2 and (clean_cells[1] - clean_cells[0] == 1))
+		parsed[s_len] = {"cells": clean_cells, "is_horizontal": is_horiz}
+	for s_len in SHIP_LENGTHS:
+		fleet_state[s_len]["cells"] = parsed[s_len]["cells"]
+		fleet_state[s_len]["is_horizontal"] = parsed[s_len]["is_horizontal"]
+		fleet_state[s_len]["placed"] = true
+	return true
+
+func _reconstruct_ship_from_hits(s_len: int, hit_cells: Array) -> void:
+	if hit_cells.is_empty():
+		return
+	var clean_hits: Array[int] = []
+	for h in hit_cells:
+		clean_hits.append(int(h))
+	clean_hits.sort()
+	var cur_cells: Array = fleet_state[s_len]["cells"]
+	var all_match: bool = (cur_cells.size() == s_len)
+	for h in clean_hits:
+		if not (h in cur_cells):
+			all_match = false
+			break
+	if all_match:
+		return
+	var try_orientations: Array[bool] = [true, false]
+	if clean_hits.size() >= 2:
+		var diff: int = clean_hits[1] - clean_hits[0]
+		if diff < GRID_SIZE:
+			try_orientations = [true]
+		else:
+			try_orientations = [false]
+	for is_horiz in try_orientations:
+		for start_idx in range(TOTAL_CELLS):
+			var r: int = start_idx / GRID_SIZE
+			var c: int = start_idx % GRID_SIZE
+			if is_horiz and (c + s_len > GRID_SIZE):
+				continue
+			if (not is_horiz) and (r + s_len > GRID_SIZE):
+				continue
+			var cand = _compute_candidate_cells(start_idx, s_len, is_horiz)
+			var covers_all: bool = true
+			for h in clean_hits:
+				if not (h in cand):
+					covers_all = false
+					break
+			if covers_all and _are_cells_free_for_ship(cand, s_len):
+				fleet_state[s_len]["cells"] = cand
+				fleet_state[s_len]["is_horizontal"] = is_horiz
+				fleet_state[s_len]["placed"] = true
+				return
 
 func _compute_candidate_cells(anchor_idx: int, s_len: int, is_horiz: bool) -> Array[int]:
 	var r: int = clampi(anchor_idx / GRID_SIZE, 0, GRID_SIZE - 1)
@@ -827,6 +972,8 @@ func _try_place_ship_at(s_len: int, anchor_idx: int, is_horiz: bool, play_sfx: b
 	fleet_state[s_len]["cells"] = cells
 	fleet_state[s_len]["is_horizontal"] = is_horiz
 	fleet_state[s_len]["placed"] = true
+	_has_custom_phase1_edits = true
+	_save_fleet_to_cache()
 	if play_sfx:
 		AudioManager.play_sound("tap_button")
 	_rebuild_phase1_ships_visuals()
@@ -886,6 +1033,8 @@ func _rotate_selected_ship(pivot_cell_override: int = -1) -> void:
 	if not best_cells.is_empty():
 		st["cells"] = best_cells
 		st["is_horizontal"] = new_horiz
+		_has_custom_phase1_edits = true
+		_save_fleet_to_cache()
 		AudioManager.play_sound("tap_button")
 		_rebuild_phase1_ships_visuals()
 		_highlight_selected_drydock_berth()
@@ -917,6 +1066,8 @@ func _randomize_fleet_placement() -> void:
 			_apply_default_initial_fleet()
 			return
 
+	_has_custom_phase1_edits = true
+	_save_fleet_to_cache()
 	AudioManager.play_sound("tap_button")
 	_rebuild_phase1_ships_visuals()
 	_highlight_selected_drydock_berth()
@@ -1061,6 +1212,7 @@ func submit_code() -> void:
 		payload[str(s_len)] = cells_arr
 
 	is_board_saved = true
+	_save_fleet_to_cache()
 	set_board_locked(true)
 	_update_ghost_preview(-1)
 	if is_instance_valid(selected_ship_rotate_badge):
@@ -1429,12 +1581,14 @@ func on_start_game() -> void:
 	is_play_phase = false
 	is_board_saved = false
 	is_waiting_server = false
+	_has_custom_phase1_edits = false
 	p1_score = 0
 	p2_score = 0
 	view_mode = ViewMode.MY_BOARD
 	set_board_locked(false)
 	_init_data_structures()
 	_apply_default_initial_fleet()
+	_save_fleet_to_cache()
 	_update_phase_visibility()
 
 	var hud = _get_hud()
@@ -1445,6 +1599,8 @@ func on_start_game() -> void:
 			hud.set_fekrbekr_hud_buttons(false)
 
 func on_wait_time(time_sec: int) -> void:
+	if not is_play_phase and not is_board_saved and _has_custom_phase1_edits:
+		submit_code()
 	set_board_locked(true)
 	_set_attack_hover_cell(-1)
 	var hud = _get_hud()
@@ -1531,6 +1687,10 @@ func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) 
 		for idx in range(TOTAL_CELLS):
 			if cells_state[idx]["is_selected"] and int(cells_state[idx]["number"]) == hit_number:
 				sunk_ship_cells.append(idx)
+		if not is_my_shot and not (cell_idx in fleet_state[hit_number]["cells"]):
+			_reconstruct_ship_from_hits(hit_number, sunk_ship_cells)
+			_save_fleet_to_cache()
+			_populate_defense_board_ships()
 		if sunk_ship_cells.size() >= hit_number:
 			is_ship_sunk = true
 			if is_my_shot:
@@ -1567,6 +1727,8 @@ func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) 
 					hud.show_toast_hint("⚠️ ناو جنگی سایز %s شما غرق شد!" % _fa_num(hit_number))
 
 func on_reconnect_data(payload: Dictionary) -> void:
+	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
+		GameManager.set_match_gamers(payload["gamers"])
 	var g_data: Dictionary = payload.get("game_data", payload)
 	if typeof(g_data) != TYPE_DICTIONARY:
 		return
@@ -1584,6 +1746,12 @@ func on_reconnect_data(payload: Dictionary) -> void:
 		GameManager.p2_score = p2_score
 		if hud and hud.has_method("update_scores"):
 			hud.update_scores(p1_score, p2_score)
+
+	# Restore cached Phase 1 ship placement (or server default if Save_Board was never sent)
+	if is_play_phase and not is_board_saved:
+		_apply_default_initial_fleet()
+	else:
+		_load_fleet_from_cache()
 
 	var p1_board: Array = g_data.get("player1_board", [])
 	var p2_board: Array = g_data.get("player2_board", [])
@@ -1603,12 +1771,18 @@ func on_reconnect_data(payload: Dictionary) -> void:
 	for s_len in SHIP_LENGTHS:
 		var cells_arr: Array = by_num[s_len]
 		if cells_arr.size() == s_len:
-			cells_arr.sort()
-			var is_horiz: bool = (cells_arr.size() >= 2 and (int(cells_arr[1]) - int(cells_arr[0]) == 1))
-			fleet_state[s_len]["cells"] = cells_arr
+			var typed_cells: Array[int] = []
+			for c in cells_arr:
+				typed_cells.append(int(c))
+			typed_cells.sort()
+			var is_horiz: bool = (typed_cells.size() >= 2 and (typed_cells[1] - typed_cells[0] == 1))
+			fleet_state[s_len]["cells"] = typed_cells
 			fleet_state[s_len]["is_horizontal"] = is_horiz
 			fleet_state[s_len]["placed"] = true
+		elif cells_arr.size() > 0:
+			_reconstruct_ship_from_hits(s_len, cells_arr)
 
+	_save_fleet_to_cache()
 	_rebuild_phase1_ships_visuals()
 	_populate_defense_board_ships()
 
