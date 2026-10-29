@@ -73,9 +73,55 @@ var _last_tap_pos: Vector2 = Vector2.ZERO
 
 # Atmosphere
 var _flicker_timer: float = 0.0
+var _lantern_flare_boost: float = 0.0
 var _flame_mesh: MeshInstance3D = null
 var _flame_halo_mesh: MeshInstance3D = null
 var current_board_node: Node3D = null
+
+# Interactive Table Props State & References
+var _prop_animating: Dictionary = {}
+var _last_prop_tap_sec: float = 0.0
+
+var _lantern_node: Node3D = null
+var _tea_group_node: Node3D = null
+var _tea_pot_node: Node3D = null
+var _tea_istikan_node: Node3D = null
+var _tea_spoon_pivot: Node3D = null
+var _tea_liquid_top: MeshInstance3D = null
+var _tea_pour_stream: MeshInstance3D = null
+var _tea_qandan_node: Node3D = null
+
+var _dice_group_node: Node3D = null
+var _dice_cup_node: Node3D = null
+var _dice_nodes: Array = []
+var _dice_rest_positions: Array = []
+var _dice_rest_rotations: Array = []
+
+var _hourglass_group_node: Node3D = null
+var _hourglass_pivot: Node3D = null
+var _hourglass_sand_a: MeshInstance3D = null
+var _hourglass_sand_b: MeshInstance3D = null
+var _hourglass_stream: MeshInstance3D = null
+var _hourglass_flipped: bool = false
+
+var _token_bowl_node: Node3D = null
+var _token_coin_nodes: Array = []
+var _token_coin_rest_pos: Array = []
+var _token_coin_rest_rot: Array = []
+
+var _scorebook_node: Node3D = null
+var _scorebook_pen: Node3D = null
+var _scorebook_pen_rest_pos: Vector3 = Vector3.ZERO
+var _scorebook_pen_rest_rot: Vector3 = Vector3.ZERO
+var _scorebook_ink_strokes: Array = []
+
+var _trophy_node: Node3D = null
+var _trophy_ruby_mesh: MeshInstance3D = null
+
+var _chronometer_node: Node3D = null
+var _watch_minute_pivot: Node3D = null
+var _watch_hour_pivot: Node3D = null
+var _watch_crown_node: Node3D = null
 
 
 
@@ -122,12 +168,12 @@ func _process(delta: float) -> void:
 	if candle_light:
 		_flicker_timer += delta * 5.5
 		var pulse = sin(_flicker_timer) * 0.08 + sin(_flicker_timer * 2.3) * 0.05
-		candle_light.light_energy = 0.72 + pulse
+		candle_light.light_energy = 0.72 + pulse + _lantern_flare_boost
 		if _flame_mesh and is_instance_valid(_flame_mesh):
-			var s = 1.0 + pulse * 0.65
-			_flame_mesh.scale = Vector3(1.0 - pulse * 0.25, s, 1.0 - pulse * 0.25)
+			var s = 1.0 + pulse * 0.65 + _lantern_flare_boost * 0.45
+			_flame_mesh.scale = Vector3(1.0 - pulse * 0.20, s, 1.0 - pulse * 0.20)
 		if _flame_halo_mesh and is_instance_valid(_flame_halo_mesh):
-			var hs = 1.0 + pulse * 0.85
+			var hs = 1.0 + pulse * 0.85 + _lantern_flare_boost * 0.75
 			_flame_halo_mesh.scale = Vector3(hs, hs, hs)
 
 func _apply_orbit_transform() -> void:
@@ -359,8 +405,11 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 			_mouse_start_pos = event.position
 			_is_dragging = false
 		else:
+			var was_tap = (_mouse_pressed and not _is_dragging and event.position.distance_to(_mouse_start_pos) <= DRAG_THRESHOLD)
 			_mouse_pressed = false
 			_is_dragging = false
+			if was_tap:
+				_try_trigger_prop_at_screen_pos(event.position)
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
 	if is_top_down_view:
@@ -385,11 +434,14 @@ func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 			var pts = _active_touches.values()
 			_prev_pinch_dist = pts[0].distance_to(pts[1])
 	else:
+		var was_tap = (_active_touches.size() == 1 and not _is_dragging and event.position.distance_to(_drag_start_pos) <= DRAG_THRESHOLD)
 		_active_touches.erase(event.index)
 		if _active_touches.size() < 2:
 			_prev_pinch_dist = -1.0
 		if _active_touches.is_empty():
 			_is_dragging = false
+		if was_tap:
+			_try_trigger_prop_at_screen_pos(event.position)
 
 func _handle_screen_drag(event: InputEventScreenDrag) -> void:
 	if not _active_touches.has(event.index):
@@ -646,10 +698,11 @@ func _build_inlaid_table_arena(mat_walnut: Material, mat_mahogany: Material, mat
 	_add_box(arena_frame, Vector3(outer_w, 0.005, outer_r * 2.0), Vector3(outer_r, 0.0625, 0.0), mat_aged_brass)
 
 
-func _upgrade_lantern_prop(mat_brass: Material, mat_aged_brass: Material, mat_amber_glass: Material, mat_wax: Material, mat_flame: Material) -> void:
+func _upgrade_lantern_prop(mat_brass: Material, mat_aged_brass: Material, mat_amber_glass: Material, mat_wax: Material, _mat_flame: Material) -> void:
 	var lantern = get_node_or_null("CafeProps/LanternGroup")
 	if not lantern:
 		return
+	_lantern_node = lantern
 
 	# Position in Upper-Left Arena Corner so it is 100% visible in portrait 3D & 2D views
 	lantern.position = Vector3(-0.68, 0.063, -1.12)
@@ -710,6 +763,7 @@ func _build_persian_tea_service(parent: Node3D, pos: Vector3, mat_brass: Materia
 	tea_group.position = pos
 	tea_group.rotation_degrees = Vector3(0, -18.0, 0)
 	parent.add_child(tea_group)
+	_tea_group_node = tea_group
 
 	# 1. Engraved Hammered Brass Tray (سینی برنجی)
 	_add_cyl(tea_group, 0.185, 0.175, 0.008, Vector3(0, 0.004, 0), mat_aged_brass, Vector3.ZERO, 32)
@@ -724,6 +778,7 @@ func _build_persian_tea_service(parent: Node3D, pos: Vector3, mat_brass: Materia
 	pot.position = Vector3(-0.058, 0.009, -0.028)
 	pot.rotation_degrees = Vector3(0, 28.0, 0)
 	tea_group.add_child(pot)
+	_tea_pot_node = pot
 	# Teapot Foot & Plump Belly
 	_add_cyl(pot, 0.044, 0.048, 0.014, Vector3(0, 0.007, 0), mat_brass, Vector3.ZERO, 20)
 	_add_sphere(pot, 0.068, 0.115, Vector3(0, 0.062, 0), mat_porcelain)
@@ -743,6 +798,7 @@ func _build_persian_tea_service(parent: Node3D, pos: Vector3, mat_brass: Materia
 	var istikan = Node3D.new()
 	istikan.position = Vector3(0.068, 0.009, 0.042)
 	tea_group.add_child(istikan)
+	_tea_istikan_node = istikan
 	# Porcelain & Gold Saucer (نعلبکی)
 	_add_cyl(istikan, 0.054, 0.034, 0.010, Vector3(0, 0.005, 0), mat_porcelain, Vector3.ZERO, 24)
 	_add_torus(istikan, 0.046, 0.054, Vector3(0, 0.010, 0), mat_brass)
@@ -755,15 +811,23 @@ func _build_persian_tea_service(parent: Node3D, pos: Vector3, mat_brass: Materia
 	_add_torus(istikan, 0.028, 0.032, Vector3(0, 0.094, 0), mat_brass)
 	# Crimson-Amber Persian Tea Fill Inside
 	_add_cyl(istikan, 0.021, 0.024, 0.032, Vector3(0, 0.031, 0), mat_tea, Vector3.ZERO, 18)
-	_add_cyl(istikan, 0.028, 0.021, 0.034, Vector3(0, 0.064, 0), mat_tea, Vector3.ZERO, 18)
-	# Miniature Golden Tea Spoon on Saucer
-	_add_box(istikan, Vector3(0.056, 0.002, 0.005), Vector3(-0.012, 0.012, 0.034), mat_brass, Vector3(0, 22, 0))
-	_add_sphere(istikan, 0.008, 0.004, Vector3(0.014, 0.012, 0.024), mat_brass)
+	_tea_liquid_top = _add_cyl(istikan, 0.028, 0.021, 0.034, Vector3(0, 0.064, 0), mat_tea, Vector3.ZERO, 18)
+	# Miniature Golden Tea Spoon on Saucer (wrapped in pivot for stirring animation)
+	_tea_spoon_pivot = Node3D.new()
+	_tea_spoon_pivot.position = Vector3.ZERO
+	istikan.add_child(_tea_spoon_pivot)
+	_add_box(_tea_spoon_pivot, Vector3(0.056, 0.002, 0.005), Vector3(-0.012, 0.012, 0.034), mat_brass, Vector3(0, 22, 0))
+	_add_sphere(_tea_spoon_pivot, 0.008, 0.004, Vector3(0.014, 0.012, 0.024), mat_brass)
+
+	# Hidden Pouring Tea Stream above the Istikan
+	_tea_pour_stream = _add_cyl(istikan, 0.0035, 0.0022, 0.095, Vector3(0.0, 0.115, 0.0), mat_tea, Vector3(0, 0, 10), 12)
+	_tea_pour_stream.visible = false
 
 	# 4. Brass Sugar Bowl with Sugar Cubes (قندان برنجی و حبه‌های قند) on Right-Back of Tray
 	var qandan = Node3D.new()
 	qandan.position = Vector3(0.064, 0.009, -0.058)
 	tea_group.add_child(qandan)
+	_tea_qandan_node = qandan
 	_add_cyl(qandan, 0.026, 0.034, 0.014, Vector3(0, 0.007, 0), mat_brass, Vector3.ZERO, 18)
 	_add_sphere(qandan, 0.040, 0.048, Vector3(0, 0.032, 0), mat_brass)
 	_add_torus(qandan, 0.032, 0.038, Vector3(0, 0.046, 0), mat_aged_brass)
@@ -778,12 +842,14 @@ func _build_dice_cup_and_dice(parent: Node3D, pos: Vector3, mat_leather: Materia
 	dice_group.name = "DiceCupAndDice"
 	dice_group.position = pos
 	parent.add_child(dice_group)
+	_dice_group_node = dice_group
 
 	# 1. Stitched Leather Dice Shaker Cup with Brass Rings & Crimson Felt Interior
 	var cup = Node3D.new()
 	cup.position = Vector3(-0.055, 0.0, -0.015)
 	cup.rotation_degrees = Vector3(6.0, 18.0, -8.0)
 	dice_group.add_child(cup)
+	_dice_cup_node = cup
 	_add_cyl(cup, 0.044, 0.036, 0.105, Vector3(0, 0.0525, 0), mat_leather, Vector3.ZERO, 24)
 	# Brass Ribs
 	_add_torus(cup, 0.034, 0.039, Vector3(0, 0.014, 0), mat_brass)
@@ -793,12 +859,19 @@ func _build_dice_cup_and_dice(parent: Node3D, pos: Vector3, mat_leather: Materia
 	_add_cyl(cup, 0.039, 0.037, 0.008, Vector3(0, 0.102, 0), mat_felt, Vector3.ZERO, 20)
 
 	# 2. Three Sculpted Ivory 6-Sided Game Dice with Real 3D Pips
-	_create_single_die(dice_group, Vector3(0.032, 0.022, 0.024), Vector3(0, 24.0, 0), 0.042, mat_ivory, mat_brass, mat_pip_dark, mat_pip_red)
-	_create_single_die(dice_group, Vector3(0.088, 0.022, -0.014), Vector3(90.0, -32.0, 0), 0.040, mat_ivory, mat_brass, mat_pip_dark, mat_pip_red)
-	_create_single_die(dice_group, Vector3(0.018, 0.020, -0.042), Vector3(0, 62.0, 90.0), 0.038, mat_ivory, mat_brass, mat_pip_dark, mat_pip_red)
+	_dice_nodes.clear()
+	_dice_rest_positions.clear()
+	_dice_rest_rotations.clear()
+	var d1 = _create_single_die(dice_group, Vector3(0.032, 0.022, 0.024), Vector3(0, 24.0, 0), 0.042, mat_ivory, mat_brass, mat_pip_dark, mat_pip_red)
+	var d2 = _create_single_die(dice_group, Vector3(0.088, 0.022, -0.014), Vector3(90.0, -32.0, 0), 0.040, mat_ivory, mat_brass, mat_pip_dark, mat_pip_red)
+	var d3 = _create_single_die(dice_group, Vector3(0.018, 0.020, -0.042), Vector3(0, 62.0, 90.0), 0.038, mat_ivory, mat_brass, mat_pip_dark, mat_pip_red)
+	for d_node in [d1, d2, d3]:
+		_dice_nodes.append(d_node)
+		_dice_rest_positions.append(d_node.position)
+		_dice_rest_rotations.append(d_node.rotation_degrees)
 
 
-func _create_single_die(parent: Node3D, pos: Vector3, rot_deg: Vector3, s: float, mat_ivory: Material, mat_brass: Material, mat_dark: Material, mat_red: Material) -> void:
+func _create_single_die(parent: Node3D, pos: Vector3, rot_deg: Vector3, s: float, mat_ivory: Material, mat_brass: Material, mat_dark: Material, mat_red: Material) -> Node3D:
 	var die = Node3D.new()
 	die.position = pos
 	die.rotation_degrees = rot_deg
@@ -837,6 +910,7 @@ func _create_single_die(parent: Node3D, pos: Vector3, rot_deg: Vector3, s: float
 	# Left Face (-X): 3 Pips
 	for offset in [Vector2(-d, -d), Vector2(0, 0), Vector2(d, d)]:
 		_add_sphere(die, pr, pr * 0.6, Vector3(-h, offset.x, offset.y), mat_dark)
+	return die
 
 
 func _build_brass_hourglass(parent: Node3D, pos: Vector3, mat_walnut: Material, mat_brass: Material, mat_glass: Material, mat_sand: Material) -> void:
@@ -845,33 +919,45 @@ func _build_brass_hourglass(parent: Node3D, pos: Vector3, mat_walnut: Material, 
 	hg.position = pos
 	hg.rotation_degrees = Vector3(0, 15.0, 0)
 	parent.add_child(hg)
+	_hourglass_group_node = hg
+
+	# Center pivot at the waist (Y = 0.105) so lifting and flipping 180 degrees rotates around the exact center
+	var pivot = Node3D.new()
+	pivot.name = "HourglassPivot"
+	pivot.position = Vector3(0, 0.105, 0)
+	hg.add_child(pivot)
+	_hourglass_pivot = pivot
+
+	var wy: float = -0.105
 
 	# Hexagonal Walnut & Brass Base Plate
-	_add_cyl(hg, 0.074, 0.080, 0.014, Vector3(0, 0.007, 0), mat_walnut, Vector3.ZERO, 6)
-	_add_cyl(hg, 0.066, 0.070, 0.006, Vector3(0, 0.017, 0), mat_brass, Vector3.ZERO, 6)
+	_add_cyl(pivot, 0.074, 0.080, 0.014, Vector3(0, 0.007 + wy, 0), mat_walnut, Vector3.ZERO, 6)
+	_add_cyl(pivot, 0.066, 0.070, 0.006, Vector3(0, 0.017 + wy, 0), mat_brass, Vector3.ZERO, 6)
 
 	# Hexagonal Walnut & Brass Top Plate
-	_add_cyl(hg, 0.070, 0.066, 0.006, Vector3(0, 0.193, 0), mat_brass, Vector3.ZERO, 6)
-	_add_cyl(hg, 0.080, 0.074, 0.014, Vector3(0, 0.203, 0), mat_walnut, Vector3.ZERO, 6)
+	_add_cyl(pivot, 0.070, 0.066, 0.006, Vector3(0, 0.193 + wy, 0), mat_brass, Vector3.ZERO, 6)
+	_add_cyl(pivot, 0.080, 0.074, 0.014, Vector3(0, 0.203 + wy, 0), mat_walnut, Vector3.ZERO, 6)
 
 	# 4 Turned Brass Baluster Rods
 	for i in range(4):
 		var ang = float(i) * PI * 0.5 + PI * 0.25
 		var rx = cos(ang) * 0.056
 		var rz = sin(ang) * 0.056
-		_add_cyl(hg, 0.005, 0.005, 0.176, Vector3(rx, 0.105, rz), mat_brass, Vector3.ZERO, 10)
-		_add_sphere(hg, 0.009, 0.016, Vector3(rx, 0.105, rz), mat_brass)
-		_add_sphere(hg, 0.009, 0.014, Vector3(rx, 0.214, rz), mat_brass)
+		_add_cyl(pivot, 0.005, 0.005, 0.176, Vector3(rx, 0.105 + wy, rz), mat_brass, Vector3.ZERO, 10)
+		_add_sphere(pivot, 0.009, 0.014, Vector3(rx, -0.004 + wy, rz), mat_brass)
+		_add_sphere(pivot, 0.009, 0.016, Vector3(rx, 0.105 + wy, rz), mat_brass)
+		_add_sphere(pivot, 0.009, 0.014, Vector3(rx, 0.214 + wy, rz), mat_brass)
 
 	# Lower & Upper Glass Bulbs + Brass Center Waist Ring
-	_add_cyl(hg, 0.010, 0.046, 0.082, Vector3(0, 0.061, 0), mat_glass, Vector3.ZERO, 20)
-	_add_cyl(hg, 0.046, 0.010, 0.082, Vector3(0, 0.149, 0), mat_glass, Vector3.ZERO, 20)
-	_add_torus(hg, 0.011, 0.018, Vector3(0, 0.105, 0), mat_brass)
+	_add_cyl(pivot, 0.010, 0.046, 0.082, Vector3(0, 0.061 + wy, 0), mat_glass, Vector3.ZERO, 20)
+	_add_cyl(pivot, 0.046, 0.010, 0.082, Vector3(0, 0.149 + wy, 0), mat_glass, Vector3.ZERO, 20)
+	_add_torus(pivot, 0.011, 0.018, Vector3(0, 0.0, 0), mat_brass)
 
-	# Golden Sand Mound in Bottom Bulb + Remaining Sand in Top Bulb + Thin Falling Sand Stream
-	_add_cyl(hg, 0.006, 0.040, 0.042, Vector3(0, 0.041, 0), mat_sand, Vector3.ZERO, 18)
-	_add_cyl(hg, 0.032, 0.008, 0.034, Vector3(0, 0.126, 0), mat_sand, Vector3.ZERO, 18)
-	_add_cyl(hg, 0.002, 0.002, 0.068, Vector3(0, 0.075, 0), mat_sand, Vector3.ZERO, 8)
+	# Golden Sand Mounds in Both Bulbs + Falling Sand Stream across the waist
+	_hourglass_sand_a = _add_cyl(pivot, 0.010, 0.040, 0.044, Vector3(0, -0.062, 0), mat_sand, Vector3.ZERO, 18)
+	_hourglass_sand_b = _add_cyl(pivot, 0.040, 0.010, 0.044, Vector3(0, 0.062, 0), mat_sand, Vector3.ZERO, 18)
+	_hourglass_sand_b.scale = Vector3(0.75, 0.65, 0.75)
+	_hourglass_stream = _add_cyl(pivot, 0.0025, 0.0025, 0.110, Vector3(0, 0.0, 0), mat_sand, Vector3.ZERO, 8)
 
 
 func _build_token_bowl_and_coins(parent: Node3D, pos: Vector3, mat_wood: Material, mat_gold: Material, mat_silver: Material, mat_felt: Material, mat_ruby: Material, mat_sapphire: Material, mat_emerald: Material) -> void:
@@ -879,11 +965,16 @@ func _build_token_bowl_and_coins(parent: Node3D, pos: Vector3, mat_wood: Materia
 	bowl_group.name = "GamingTokenBowl"
 	bowl_group.position = pos
 	parent.add_child(bowl_group)
+	_token_bowl_node = bowl_group
 
 	# Carved Mahogany & Brass Dish with Crimson Velvet Lining
 	_add_cyl(bowl_group, 0.108, 0.084, 0.028, Vector3(0, 0.014, 0), mat_wood, Vector3.ZERO, 28)
 	_add_torus(bowl_group, 0.098, 0.110, Vector3(0, 0.028, 0), mat_gold)
 	_add_cyl(bowl_group, 0.094, 0.082, 0.006, Vector3(0, 0.026, 0), mat_felt, Vector3.ZERO, 24)
+
+	_token_coin_nodes.clear()
+	_token_coin_rest_pos.clear()
+	_token_coin_rest_rot.clear()
 
 	# Stacked Gold, Silver & Jeweled Match Coins inside the dish
 	var stacks = [
@@ -896,13 +987,34 @@ func _build_token_bowl_and_coins(parent: Node3D, pos: Vector3, mat_wood: Materia
 		var cnt: int = st["count"]
 		for i in range(cnt):
 			var c_pos = base_p + Vector3((i % 2) * 0.002, float(i) * 0.0065, ((i + 1) % 2) * 0.002)
-			_add_cyl(bowl_group, 0.024, 0.024, 0.006, c_pos, st["mat"], Vector3.ZERO, 20)
-			_add_cyl(bowl_group, 0.015, 0.015, 0.0066, c_pos, st["gem"], Vector3.ZERO, 16)
+			var coin_wrap = Node3D.new()
+			coin_wrap.position = c_pos
+			bowl_group.add_child(coin_wrap)
+			_add_cyl(coin_wrap, 0.024, 0.024, 0.006, Vector3.ZERO, st["mat"], Vector3.ZERO, 20)
+			_add_cyl(coin_wrap, 0.015, 0.015, 0.0066, Vector3.ZERO, st["gem"], Vector3.ZERO, 16)
+			_token_coin_nodes.append(coin_wrap)
+			_token_coin_rest_pos.append(c_pos)
+			_token_coin_rest_rot.append(Vector3.ZERO)
 
 	# Two extra Gold Match Coins resting on the table beside the bowl
-	_add_cyl(bowl_group, 0.025, 0.025, 0.006, Vector3(0.132, 0.003, 0.028), mat_gold, Vector3.ZERO, 20)
-	_add_cyl(bowl_group, 0.016, 0.016, 0.0066, Vector3(0.132, 0.003, 0.028), mat_ruby, Vector3.ZERO, 16)
-	_add_cyl(bowl_group, 0.025, 0.025, 0.006, Vector3(0.152, 0.009, 0.012), mat_gold, Vector3(12, 25, -14), 20)
+	var loose1 = Node3D.new()
+	loose1.position = Vector3(0.132, 0.003, 0.028)
+	bowl_group.add_child(loose1)
+	_add_cyl(loose1, 0.025, 0.025, 0.006, Vector3.ZERO, mat_gold, Vector3.ZERO, 20)
+	_add_cyl(loose1, 0.016, 0.016, 0.0066, Vector3.ZERO, mat_ruby, Vector3.ZERO, 16)
+	_token_coin_nodes.append(loose1)
+	_token_coin_rest_pos.append(loose1.position)
+	_token_coin_rest_rot.append(Vector3.ZERO)
+
+	var loose2 = Node3D.new()
+	loose2.position = Vector3(0.152, 0.009, 0.012)
+	loose2.rotation_degrees = Vector3(12, 25, -14)
+	bowl_group.add_child(loose2)
+	_add_cyl(loose2, 0.025, 0.025, 0.006, Vector3.ZERO, mat_gold, Vector3.ZERO, 20)
+	_add_cyl(loose2, 0.016, 0.016, 0.0066, Vector3.ZERO, mat_emerald, Vector3.ZERO, 16)
+	_token_coin_nodes.append(loose2)
+	_token_coin_rest_pos.append(loose2.position)
+	_token_coin_rest_rot.append(loose2.rotation_degrees)
 
 
 func _build_scorebook_and_pen(parent: Node3D, pos: Vector3, mat_leather: Material, mat_brass: Material, mat_paper: Material, mat_ebony: Material, mat_ribbon: Material) -> void:
@@ -911,6 +1023,7 @@ func _build_scorebook_and_pen(parent: Node3D, pos: Vector3, mat_leather: Materia
 	book_group.position = pos
 	book_group.rotation_degrees = Vector3(0, -22.0, 0)
 	parent.add_child(book_group)
+	_scorebook_node = book_group
 
 	# Leather-bound Cover + Spine + Brass Corner Protectors
 	_add_box(book_group, Vector3(0.175, 0.012, 0.225), Vector3(0, 0.006, 0), mat_leather)
@@ -922,19 +1035,58 @@ func _build_scorebook_and_pen(parent: Node3D, pos: Vector3, mat_leather: Materia
 	_add_box(book_group, Vector3(0.132, 0.0015, 0.004), Vector3(0.004, 0.0195, -0.032), mat_brass)
 	_add_box(book_group, Vector3(0.132, 0.0015, 0.004), Vector3(0.004, 0.0195, 0.008), mat_brass)
 	_add_box(book_group, Vector3(0.132, 0.0015, 0.004), Vector3(0.004, 0.0195, 0.048), mat_brass)
+	_add_box(book_group, Vector3(0.132, 0.0015, 0.004), Vector3(0.004, 0.0195, 0.084), mat_brass)
 	_add_box(book_group, Vector3(0.004, 0.0015, 0.160), Vector3(0.004, 0.0195, -0.008), mat_brass)
 	# Crimson Ribbon Bookmark
 	_add_box(book_group, Vector3(0.014, 0.003, 0.048), Vector3(0.022, 0.004, 0.125), mat_ribbon, Vector3(0, 14, 0))
 
-	# Brass & Ebony Fountain Pen resting diagonally on the scorebook
+	# Pre-build calligraphic ink word strokes along the 3 ruled rows (hidden until user taps note!)
+	_scorebook_ink_strokes.clear()
+	var mat_ink = StandardMaterial3D.new()
+	mat_ink.albedo_color = Color(0.10, 0.16, 0.36)
+	mat_ink.roughness = 0.25
+	mat_ink.emission_enabled = true
+	mat_ink.emission = Color(0.18, 0.28, 0.62)
+	mat_ink.emission_energy_multiplier = 0.65
+
+	var row_zs = [-0.052, -0.012, 0.028]
+	var word_xs = [0.046, 0.018, -0.012, -0.040]
+	for r_idx in range(row_zs.size()):
+		var rz: float = row_zs[r_idx]
+		for w_idx in range(word_xs.size()):
+			var wx: float = word_xs[w_idx]
+			var stroke_group = Node3D.new()
+			stroke_group.position = Vector3(wx, 0.0202, rz)
+			stroke_group.scale = Vector3(0.001, 1.0, 1.0)
+			stroke_group.visible = false
+			book_group.add_child(stroke_group)
+
+			# Main cursive Persian-style word baseline + ascender/flourish + nuqta dots
+			var w_len = 0.020 if (w_idx % 2 == 0) else 0.016
+			_add_box(stroke_group, Vector3(w_len, 0.0016, 0.0034), Vector3(0, 0, 0.001), mat_ink, Vector3(0, -8.0 if (w_idx % 2 == 0) else 6.0, 0))
+			_add_box(stroke_group, Vector3(0.0032, 0.0016, 0.0095), Vector3(w_len * 0.35, 0, -0.0035), mat_ink, Vector3(0, 12.0, 0))
+			_add_sphere(stroke_group, 0.0020, 0.0016, Vector3(-0.003, 0.0005, -0.0055 if (r_idx + w_idx) % 2 == 0 else 0.0055), mat_ink)
+			if (r_idx + w_idx) % 2 == 1:
+				_add_sphere(stroke_group, 0.0018, 0.0016, Vector3(0.002, 0.0005, -0.0055), mat_ink)
+			_scorebook_ink_strokes.append(stroke_group)
+
+	# Brass & Ebony Fountain Pen with origin at the Gold Nib Tip so it traces the exact strokes on paper
 	var pen = Node3D.new()
-	pen.position = Vector3(0.018, 0.027, 0.012)
-	pen.rotation_degrees = Vector3(0, 36.0, 0)
+	_scorebook_pen_rest_pos = Vector3(-0.038, 0.027, -0.065)
+	_scorebook_pen_rest_rot = Vector3(0, 36.0, 0)
+	pen.position = _scorebook_pen_rest_pos
+	pen.rotation_degrees = _scorebook_pen_rest_rot
 	book_group.add_child(pen)
-	_add_cyl(pen, 0.0065, 0.0055, 0.145, Vector3(0, 0, 0), mat_ebony, Vector3(90, 0, 0), 14)
-	_add_cyl(pen, 0.0072, 0.0072, 0.014, Vector3(0, 0, -0.022), mat_brass, Vector3(90, 0, 0), 14)
-	# Gold Fountain Nib
-	_add_cyl(pen, 0.001, 0.0055, 0.026, Vector3(0, 0, -0.084), mat_brass, Vector3(-90, 0, 0), 8)
+	_scorebook_pen = pen
+
+	var pen_visual = Node3D.new()
+	pen_visual.position = Vector3(0, 0, 0.095)
+	pen.add_child(pen_visual)
+	_add_cyl(pen_visual, 0.0065, 0.0055, 0.145, Vector3(0, 0, 0), mat_ebony, Vector3(90, 0, 0), 14)
+	_add_cyl(pen_visual, 0.0072, 0.0072, 0.014, Vector3(0, 0, -0.022), mat_brass, Vector3(90, 0, 0), 14)
+	_add_box(pen_visual, Vector3(0.0025, 0.003, 0.048), Vector3(0, 0.007, 0.032), mat_brass)
+	# Gold Fountain Nib (tip reaches local Z = -0.095 of pen_visual, which is (0,0,0) of pen!)
+	_add_cyl(pen_visual, 0.001, 0.0055, 0.026, Vector3(0, 0, -0.082), mat_brass, Vector3(-90, 0, 0), 8)
 
 
 func _build_champion_trophy(parent: Node3D, pos: Vector3, mat_walnut: Material, mat_marble: Material, mat_gold: Material, mat_ruby: Material) -> void:
@@ -943,6 +1095,7 @@ func _build_champion_trophy(parent: Node3D, pos: Vector3, mat_walnut: Material, 
 	trophy.position = pos
 	trophy.rotation_degrees = Vector3(0, 25.0, 0)
 	parent.add_child(trophy)
+	_trophy_node = trophy
 
 	# Stepped Walnut & Ivory-Marble Plinth
 	_add_cyl(trophy, 0.068, 0.076, 0.020, Vector3(0, 0.010, 0), mat_walnut, Vector3.ZERO, 8)
@@ -958,7 +1111,7 @@ func _build_champion_trophy(parent: Node3D, pos: Vector3, mat_walnut: Material, 
 	_add_torus(trophy, 0.020, 0.027, Vector3(-0.054, 0.142, 0), mat_gold, Vector3(90, 0, 0))
 	_add_torus(trophy, 0.020, 0.027, Vector3(0.054, 0.142, 0), mat_gold, Vector3(90, 0, 0))
 	# Ruby Emblem on Front
-	_add_sphere(trophy, 0.012, 0.018, Vector3(0, 0.142, 0.042), mat_ruby)
+	_trophy_ruby_mesh = _add_sphere(trophy, 0.012, 0.018, Vector3(0, 0.142, 0.042), mat_ruby)
 
 
 func _build_pocket_chronometer(parent: Node3D, pos: Vector3, mat_gold: Material, mat_aged_brass: Material, mat_dial: Material, mat_hands: Material, mat_glass: Material) -> void:
@@ -967,15 +1120,26 @@ func _build_pocket_chronometer(parent: Node3D, pos: Vector3, mat_gold: Material,
 	watch.position = pos
 	watch.rotation_degrees = Vector3(0, -28.0, 0)
 	parent.add_child(watch)
+	_chronometer_node = watch
 
 	# Pocket Watch Gold Case & Dial
 	_add_cyl(watch, 0.062, 0.066, 0.018, Vector3(0, 0.009, 0), mat_gold, Vector3.ZERO, 28)
 	_add_torus(watch, 0.054, 0.064, Vector3(0, 0.018, 0), mat_gold)
 	_add_cyl(watch, 0.052, 0.052, 0.004, Vector3(0, 0.018, 0), mat_dial, Vector3.ZERO, 24)
 
-	# Clock Hands & 12 Hour Markers
-	_add_box(watch, Vector3(0.004, 0.002, 0.036), Vector3(0, 0.021, -0.012), mat_hands, Vector3(0, 25, 0))
-	_add_box(watch, Vector3(0.005, 0.002, 0.024), Vector3(0.008, 0.021, 0.004), mat_hands, Vector3(0, -65, 0))
+	# Clock Hands wrapped in center pivots at (0, 0.021, 0) so they rotate cleanly around the dial pin
+	_watch_minute_pivot = Node3D.new()
+	_watch_minute_pivot.position = Vector3(0, 0.021, 0)
+	_watch_minute_pivot.rotation_degrees = Vector3(0, 25.0, 0)
+	watch.add_child(_watch_minute_pivot)
+	_add_box(_watch_minute_pivot, Vector3(0.004, 0.002, 0.038), Vector3(0, 0, -0.015), mat_hands)
+
+	_watch_hour_pivot = Node3D.new()
+	_watch_hour_pivot.position = Vector3(0, 0.021, 0)
+	_watch_hour_pivot.rotation_degrees = Vector3(0, -65.0, 0)
+	watch.add_child(_watch_hour_pivot)
+	_add_box(_watch_hour_pivot, Vector3(0.005, 0.002, 0.026), Vector3(0, 0, -0.010), mat_hands)
+
 	_add_sphere(watch, 0.005, 0.005, Vector3(0, 0.021, 0), mat_gold)
 	for i in range(12):
 		var a = float(i) * PI / 6.0
@@ -984,5 +1148,524 @@ func _build_pocket_chronometer(parent: Node3D, pos: Vector3, mat_gold: Material,
 	# Domed Watch Crystal Glass
 	_add_sphere(watch, 0.052, 0.014, Vector3(0, 0.020, 0), mat_glass)
 	# Winding Crown & Bow Ring at Top (-Z)
-	_add_cyl(watch, 0.010, 0.010, 0.016, Vector3(0, 0.010, -0.070), mat_gold, Vector3(90, 0, 0), 12)
+	_watch_crown_node = Node3D.new()
+	_watch_crown_node.position = Vector3(0, 0.010, -0.070)
+	watch.add_child(_watch_crown_node)
+	_add_cyl(_watch_crown_node, 0.010, 0.010, 0.016, Vector3.ZERO, mat_gold, Vector3(90, 0, 0), 12)
 	_add_torus(watch, 0.014, 0.019, Vector3(0, 0.010, -0.084), mat_gold)
+
+
+# ============================================================================
+# INTERACTIVE TABLE PROPS TAP DETECTION & 3D ANIMATIONS
+# ============================================================================
+
+func _play_prop_sfx(sound_name: String) -> void:
+	var am = get_node_or_null("/root/AudioManager")
+	if am and am.has_method("play_sound"):
+		am.play_sound(sound_name)
+
+
+func _is_gui_blocking_at(screen_pos: Vector2) -> bool:
+	var hud = get_tree().get_first_node_in_group("base_game_hud")
+	if not hud:
+		var main_node = get_tree().root.get_node_or_null("Main")
+		if main_node:
+			hud = main_node.get_node_or_null("UILayer/GameHUD")
+	if not hud or not hud.visible:
+		return false
+	for modal_name in ["StartGameOverlay", "DisconnectPauseDialog", "SurrenderDialog", "RoundFinishBanner", "ReactionPicker", "GameResultDialog", "UserProfileDialog"]:
+		var node = hud.get_node_or_null(modal_name)
+		if node and node is Control and node.visible:
+			return true
+	for bar_name in ["BottomBar", "TopHeaderSlot"]:
+		var bar = hud.get_node_or_null(bar_name)
+		if bar and bar is Control and bar.visible and bar.get_global_rect().has_point(screen_pos):
+			return true
+	return false
+
+
+func _try_trigger_prop_at_screen_pos(screen_pos: Vector2) -> bool:
+	if not is_board_view_active or is_transitioning or not camera:
+		return false
+	var now_sec = Time.get_ticks_msec() / 1000.0
+	if now_sec - _last_prop_tap_sec < 0.12:
+		return false
+	if _is_gui_blocking_at(screen_pos):
+		return false
+
+	var ray_origin = camera.project_ray_origin(screen_pos)
+	var ray_dir = camera.project_ray_normal(screen_pos)
+
+	# Intersect table prop plane (Y = 0.095)
+	var prop_plane = Plane(Vector3.UP, 0.095)
+	var plane_hit = prop_plane.intersects_ray(ray_origin, ray_dir)
+	if plane_hit == null:
+		return false
+
+	# Ignore taps inside the central board arena so we never interfere with game boards
+	if absf(plane_hit.x) < 0.84 and absf(plane_hit.z) < 0.88:
+		return false
+
+	var props_list = [
+		{"id": "scorebook", "node": _scorebook_node, "radius": 0.21, "y_off": 0.03},
+		{"id": "hourglass", "node": _hourglass_group_node, "radius": 0.19, "y_off": 0.10},
+		{"id": "dice", "node": _dice_group_node, "radius": 0.20, "y_off": 0.05},
+		{"id": "tea", "node": _tea_group_node, "radius": 0.23, "y_off": 0.06},
+		{"id": "lantern", "node": _lantern_node, "radius": 0.21, "y_off": 0.12},
+		{"id": "tokens", "node": _token_bowl_node, "radius": 0.21, "y_off": 0.04},
+		{"id": "trophy", "node": _trophy_node, "radius": 0.19, "y_off": 0.09},
+		{"id": "chronometer", "node": _chronometer_node, "radius": 0.18, "y_off": 0.03}
+	]
+
+	var best_id: String = ""
+	var best_dist: float = 999.0
+
+	for p in props_list:
+		var node: Node3D = p["node"]
+		if not node or not is_instance_valid(node):
+			continue
+		var p_pos = node.global_position
+		var dist_xz = Vector2(plane_hit.x - p_pos.x, plane_hit.z - p_pos.z).length()
+
+		# Also measure 3D ray distance to prop center so tall props in 3D orbit view are effortless to tap
+		var center_3d = p_pos + Vector3(0.0, float(p["y_off"]), 0.0)
+		var to_c = center_3d - ray_origin
+		var t = maxf(0.0, to_c.dot(ray_dir))
+		var closest = ray_origin + ray_dir * t
+		var dist_ray = Vector2(closest.x - center_3d.x, closest.z - center_3d.z).length()
+
+		var d = minf(dist_xz, dist_ray)
+		if d <= float(p["radius"]) and d < best_dist:
+			best_dist = d
+			best_id = p["id"]
+
+	if best_id == "":
+		return false
+
+	_last_prop_tap_sec = now_sec
+	_trigger_prop_animation(best_id)
+	return true
+
+
+func _trigger_prop_animation(prop_id: String) -> void:
+	if _prop_animating.get(prop_id, false):
+		return
+	match prop_id:
+		"scorebook":
+			_animate_scorebook()
+		"hourglass":
+			_animate_hourglass()
+		"dice":
+			_animate_dice()
+		"tea":
+			_animate_tea_service()
+		"lantern":
+			_animate_lantern()
+		"tokens":
+			_animate_token_bowl()
+		"trophy":
+			_animate_trophy()
+		"chronometer":
+			_animate_chronometer()
+
+
+func _spawn_prop_sparkle_burst(parent: Node3D, local_center: Vector3, color: Color, count: int = 6, spread: float = 0.09, rise: float = 0.09) -> void:
+	if not parent or not is_instance_valid(parent):
+		return
+	var mat = StandardMaterial3D.new()
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = color
+	mat.emission_enabled = true
+	mat.emission = Color(color.r, color.g, color.b)
+	mat.emission_energy_multiplier = 2.6
+
+	for i in range(count):
+		var ang = float(i) * TAU / float(count) + randf_range(-0.25, 0.25)
+		var sp = _add_sphere(parent, 0.007, 0.014, local_center, mat)
+		var target_p = local_center + Vector3(cos(ang) * spread, rise + randf_range(0.0, 0.04), sin(ang) * spread)
+		var tw = create_tween().set_parallel(true)
+		tw.tween_property(sp, "position", target_p, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(sp, "scale", Vector3(0.05, 0.05, 0.05), 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.chain().tween_callback(sp.queue_free)
+
+
+func _spawn_prop_pulse_ring(parent: Node3D, local_center: Vector3, color: Color, max_scale: float = 2.2) -> void:
+	if not parent or not is_instance_valid(parent):
+		return
+	var mat = StandardMaterial3D.new()
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(color.r, color.g, color.b, 0.78)
+	mat.emission_enabled = true
+	mat.emission = Color(color.r, color.g, color.b)
+	mat.emission_energy_multiplier = 2.2
+
+	var ring = _add_torus(parent, 0.032, 0.040, local_center, mat)
+	ring.scale = Vector3(0.35, 1.0, 0.35)
+	var tw = create_tween().set_parallel(true)
+	tw.tween_property(ring, "scale", Vector3(max_scale, 1.0, max_scale), 0.48).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.48)
+	tw.chain().tween_callback(ring.queue_free)
+
+
+# 1. MATCH SCOREBOOK & FOUNTAIN PEN: Pen lifts up and writes fake calligraphic text across the ruled lines!
+func _animate_scorebook() -> void:
+	if not _scorebook_node or not _scorebook_pen:
+		return
+	_prop_animating["scorebook"] = true
+	_play_prop_sfx("tap")
+	_spawn_prop_pulse_ring(_scorebook_node, Vector3(0.0, 0.022, 0.0), Color(0.95, 0.78, 0.28), 2.4)
+
+	# Reset all fake text strokes before starting to write
+	for st in _scorebook_ink_strokes:
+		if is_instance_valid(st):
+			st.visible = false
+			st.scale = Vector3(0.001, 1.0, 1.0)
+
+	var tw = create_tween()
+	var write_rot_a = Vector3(-54.0, 18.0, -14.0)
+	var write_rot_b = Vector3(-50.0, 24.0, -6.0)
+
+	# Lift fountain pen into upright writing posture above the first word on Row 1
+	var first_pos = _scorebook_ink_strokes[0].position if _scorebook_ink_strokes.size() > 0 else Vector3(0.046, 0.021, -0.052)
+	tw.tween_property(_scorebook_pen, "position", first_pos + Vector3(0.0, 0.045, 0.0), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_scorebook_pen, "rotation_degrees", write_rot_a, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	# Write each word stroke across the 3 ruled lines with realistic nib scribble oscillations
+	for idx in range(_scorebook_ink_strokes.size()):
+		var stroke_node: Node3D = _scorebook_ink_strokes[idx]
+		var w_pos: Vector3 = stroke_node.position
+		var is_new_line: bool = (idx > 0 and idx % 4 == 0)
+
+		if is_new_line:
+			# Lift pen slightly to hop to the start of the next ruled line
+			tw.tween_property(_scorebook_pen, "position", w_pos + Vector3(0.010, 0.028, 0.0), 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+		# Touch nib down at start of word
+		tw.tween_property(_scorebook_pen, "position", w_pos + Vector3(0.008, 0.002, 0.003), 0.05)
+		tw.tween_callback(func():
+			if is_instance_valid(stroke_node):
+				stroke_node.visible = true
+				var st_tw = create_tween()
+				st_tw.tween_property(stroke_node, "scale", Vector3(1.0, 1.0, 1.0), 0.11).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			if idx % 3 == 0:
+				_play_prop_sfx("move_peace")
+		)
+		# Rapid cursive scribble motion across the word
+		tw.tween_property(_scorebook_pen, "position", w_pos + Vector3(-0.002, 0.005, -0.004), 0.055)
+		tw.parallel().tween_property(_scorebook_pen, "rotation_degrees", write_rot_b, 0.055)
+		tw.tween_property(_scorebook_pen, "position", w_pos + Vector3(-0.010, 0.002, 0.002), 0.055)
+		tw.parallel().tween_property(_scorebook_pen, "rotation_degrees", write_rot_a, 0.055)
+
+	# Flourish twirl in the air and settle back to rest on the scorebook
+	tw.tween_callback(func():
+		_play_prop_sfx("add_peace")
+		_spawn_prop_sparkle_burst(_scorebook_node, Vector3(0.0, 0.035, -0.01), Color(1.0, 0.84, 0.32), 6, 0.08, 0.06)
+	)
+	tw.tween_property(_scorebook_pen, "position", _scorebook_pen_rest_pos + Vector3(0.0, 0.065, 0.0), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_scorebook_pen, "rotation_degrees", _scorebook_pen_rest_rot + Vector3(0.0, 360.0, 0.0), 0.36).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_scorebook_pen, "position", _scorebook_pen_rest_pos, 0.18).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+
+	# Keep fake text visible on the note for 1.6s, then fade out cleanly
+	tw.tween_interval(1.6)
+	tw.tween_callback(func():
+		for st in _scorebook_ink_strokes:
+			if is_instance_valid(st):
+				var fade_tw = create_tween()
+				fade_tw.tween_property(st, "scale", Vector3(0.001, 1.0, 0.001), 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+				fade_tw.chain().tween_callback(func():
+					if is_instance_valid(st):
+						st.visible = false
+				)
+		_scorebook_pen.rotation_degrees = _scorebook_pen_rest_rot
+		_prop_animating["scorebook"] = false
+	)
+
+
+# 2. BRASS HOURGLASS / SAND WATCH: Rises up, flips 180 degrees upside down, lands, and reverses sand flow!
+func _animate_hourglass() -> void:
+	if not _hourglass_group_node or not _hourglass_pivot:
+		return
+	_prop_animating["hourglass"] = true
+	_play_prop_sfx("time")
+	_spawn_prop_pulse_ring(_hourglass_group_node, Vector3(0.0, 0.015, 0.0), Color(1.0, 0.78, 0.25), 2.3)
+
+	_hourglass_flipped = not _hourglass_flipped
+	var target_rot_x: float = 180.0 if _hourglass_flipped else 360.0
+
+	var tw = create_tween()
+	# Lift hourglass up
+	tw.tween_property(_hourglass_pivot, "position:y", 0.255, 0.26).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# Flip 180 degrees around waist while suspended in mid-air
+	tw.tween_property(_hourglass_pivot, "rotation_degrees:x", target_rot_x, 0.46).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN_OUT)
+	tw.parallel().tween_callback(func():
+		_spawn_prop_sparkle_burst(_hourglass_group_node, Vector3(0.0, 0.22, 0.0), Color(1.0, 0.82, 0.30), 7, 0.10, 0.05)
+	)
+	# Set back down onto the table with a tactile bounce
+	tw.tween_property(_hourglass_pivot, "position:y", 0.105, 0.26).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(func():
+		_play_prop_sfx("tap")
+		if not _hourglass_flipped:
+			_hourglass_pivot.rotation_degrees.x = 0.0
+		# Animate sand draining from the new top bulb into the new bottom bulb
+		if is_instance_valid(_hourglass_stream) and is_instance_valid(_hourglass_sand_a) and is_instance_valid(_hourglass_sand_b):
+			_hourglass_stream.visible = true
+			_hourglass_stream.scale = Vector3(1.4, 1.0, 1.4)
+			var top_sand = _hourglass_sand_a if _hourglass_flipped else _hourglass_sand_b
+			var bot_sand = _hourglass_sand_b if _hourglass_flipped else _hourglass_sand_a
+			top_sand.scale = Vector3(1.0, 1.0, 1.0)
+			bot_sand.scale = Vector3(0.45, 0.35, 0.45)
+
+			var sand_tw = create_tween().set_parallel(true)
+			sand_tw.tween_property(top_sand, "scale", Vector3(0.65, 0.55, 0.65), 1.15).set_trans(Tween.TRANS_SINE)
+			sand_tw.tween_property(bot_sand, "scale", Vector3(1.05, 1.05, 1.05), 1.15).set_trans(Tween.TRANS_SINE)
+			sand_tw.tween_property(_hourglass_stream, "scale", Vector3(0.8, 1.0, 0.8), 1.15)
+			sand_tw.chain().tween_callback(func():
+				_prop_animating["hourglass"] = false
+			)
+		else:
+			_prop_animating["hourglass"] = false
+	)
+
+
+# 3. LEATHER DICE CUP & 3 IVORY DICE: Cup shakes vigorously and all 3 dice tumble & roll new faces!
+func _animate_dice() -> void:
+	if not _dice_group_node or not _dice_cup_node:
+		return
+	_prop_animating["dice"] = true
+	_play_prop_sfx("dice")
+	_spawn_prop_pulse_ring(_dice_group_node, Vector3(0.02, 0.01, 0.0), Color(0.98, 0.88, 0.65), 2.4)
+
+	var cup_rest_pos = Vector3(-0.055, 0.0, -0.015)
+	var cup_rest_rot = Vector3(6.0, 18.0, -8.0)
+
+	# Shake the leather dice cup
+	var cup_tw = create_tween()
+	cup_tw.tween_property(_dice_cup_node, "position", cup_rest_pos + Vector3(0.0, 0.11, 0.0), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	cup_tw.parallel().tween_property(_dice_cup_node, "rotation_degrees", Vector3(-22.0, 35.0, 26.0), 0.12)
+	cup_tw.tween_property(_dice_cup_node, "rotation_degrees", Vector3(24.0, -18.0, -28.0), 0.11)
+	cup_tw.tween_property(_dice_cup_node, "rotation_degrees", Vector3(-18.0, 28.0, 22.0), 0.11)
+	cup_tw.tween_property(_dice_cup_node, "rotation_degrees", cup_rest_rot, 0.16)
+	cup_tw.parallel().tween_property(_dice_cup_node, "position", cup_rest_pos, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+
+	# Tumble & bounce the 3 sculpted ivory dice onto random 90-degree faces
+	var face_angles = [0.0, 90.0, 180.0, 270.0]
+	for i in range(_dice_nodes.size()):
+		var die: Node3D = _dice_nodes[i]
+		if not is_instance_valid(die):
+			continue
+		var r_pos: Vector3 = _dice_rest_positions[i]
+		var jitter_x = randf_range(-0.014, 0.014)
+		var jitter_z = randf_range(-0.014, 0.014)
+		var land_pos = Vector3(r_pos.x + jitter_x, r_pos.y, r_pos.z + jitter_z)
+		var end_rot = Vector3(
+			face_angles[randi() % 4] + 360.0,
+			randf_range(-75.0, 75.0) + 360.0,
+			face_angles[randi() % 4] + 360.0
+		)
+
+		var d_tw = create_tween()
+		d_tw.tween_interval(float(i) * 0.045)
+		d_tw.tween_property(die, "position", land_pos + Vector3(0.0, 0.14 + float(i) * 0.02, 0.0), 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		d_tw.parallel().tween_property(die, "rotation_degrees", end_rot * 0.65, 0.24)
+		d_tw.tween_property(die, "position", land_pos, 0.30).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		d_tw.parallel().tween_property(die, "rotation_degrees", end_rot, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		if i == _dice_nodes.size() - 1:
+			d_tw.tween_callback(func():
+				for d_n in _dice_nodes:
+					if is_instance_valid(d_n):
+						d_n.rotation_degrees = Vector3(
+							fmod(d_n.rotation_degrees.x, 360.0),
+							fmod(d_n.rotation_degrees.y, 360.0),
+							fmod(d_n.rotation_degrees.z, 360.0)
+						)
+				_spawn_prop_sparkle_burst(_dice_group_node, Vector3(0.045, 0.03, -0.01), Color(1.0, 0.86, 0.38), 6, 0.08, 0.06)
+				_prop_animating["dice"] = false
+			)
+
+
+# 4. PERSIAN TEA SERVICE: Sugar cube hops into glass, teapot lifts & pours crimson tea, spoon stirs, steam rises!
+func _animate_tea_service() -> void:
+	if not _tea_group_node or not _tea_pot_node or not _tea_istikan_node:
+		return
+	_prop_animating["tea"] = true
+	_play_prop_sfx("tap_button")
+	_spawn_prop_pulse_ring(_tea_group_node, Vector3(0.0, 0.015, 0.0), Color(0.95, 0.62, 0.22), 2.5)
+
+	var pot_rest_pos = Vector3(-0.058, 0.009, -0.028)
+	var pot_rest_rot = Vector3(0.0, 28.0, 0.0)
+
+	# Spawn a sugar cube hopping from the qandan into the istikan tea glass
+	var mat_sugar = _make_mat(Color(0.97, 0.95, 0.90), 0.22, 0.0)
+	var flying_sugar = _add_box(_tea_group_node, Vector3(0.015, 0.013, 0.015), Vector3(0.064, 0.068, -0.058), mat_sugar)
+	var sug_tw = create_tween()
+	sug_tw.tween_property(flying_sugar, "position", Vector3(0.066, 0.165, -0.008), 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	sug_tw.parallel().tween_property(flying_sugar, "rotation_degrees", Vector3(180.0, 90.0, 45.0), 0.18)
+	sug_tw.tween_property(flying_sugar, "position", Vector3(0.068, 0.075, 0.042), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	sug_tw.tween_callback(func():
+		if is_instance_valid(flying_sugar):
+			flying_sugar.queue_free()
+		_play_prop_sfx("add_peace")
+	)
+
+	# Lift porcelain teapot, tilt over glass, pour crimson tea stream, and stir spoon
+	var tw = create_tween()
+	tw.tween_property(_tea_pot_node, "position", Vector3(-0.018, 0.118, 0.018), 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_tea_pot_node, "rotation_degrees", Vector3(0.0, -24.0, -38.0), 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(func():
+		if is_instance_valid(_tea_pour_stream):
+			_tea_pour_stream.visible = true
+		if is_instance_valid(_tea_spoon_pivot):
+			var sp_tw = create_tween()
+			sp_tw.tween_property(_tea_spoon_pivot, "rotation_degrees:y", 360.0, 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			sp_tw.chain().tween_callback(func():
+				if is_instance_valid(_tea_spoon_pivot):
+					_tea_spoon_pivot.rotation_degrees.y = 0.0
+			)
+		# Spawn rising fragrant steam puffs above the istikan glass
+		var mat_steam = StandardMaterial3D.new()
+		mat_steam.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat_steam.albedo_color = Color(1.0, 0.96, 0.88, 0.52)
+		mat_steam.emission_enabled = true
+		mat_steam.emission = Color(1.0, 0.88, 0.68)
+		mat_steam.emission_energy_multiplier = 0.8
+		for s_i in range(4):
+			var puff = _add_sphere(_tea_istikan_node, 0.014, 0.022, Vector3(randf_range(-0.01, 0.01), 0.10 + float(s_i) * 0.015, randf_range(-0.01, 0.01)), mat_steam)
+			var p_tw = create_tween().set_parallel(true)
+			p_tw.tween_property(puff, "position:y", 0.24 + float(s_i) * 0.03, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			p_tw.tween_property(puff, "scale", Vector3(2.2, 2.2, 2.2), 0.75)
+			p_tw.chain().tween_callback(puff.queue_free)
+	)
+	tw.tween_interval(0.52)
+	tw.tween_callback(func():
+		if is_instance_valid(_tea_pour_stream):
+			_tea_pour_stream.visible = false
+		_play_prop_sfx("bell")
+	)
+	tw.tween_property(_tea_pot_node, "position", pot_rest_pos, 0.28).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_tea_pot_node, "rotation_degrees", pot_rest_rot, 0.26).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(func():
+		_prop_animating["tea"] = false
+	)
+
+
+# 5. MOROCCAN / PERSIAN FILIGREE BRASS LANTERN: Sways gently, flares warm golden light, and releases rising fireflies!
+func _animate_lantern() -> void:
+	if not _lantern_node:
+		return
+	_prop_animating["lantern"] = true
+	_play_prop_sfx("bell")
+	_spawn_prop_pulse_ring(_lantern_node, Vector3(0.0, 0.02, 0.0), Color(1.0, 0.72, 0.18), 2.5)
+	_spawn_prop_sparkle_burst(_lantern_node, Vector3(0.0, 0.26, 0.0), Color(1.0, 0.78, 0.22), 8, 0.12, 0.16)
+
+	var base_pos = Vector3(-0.68, 0.063, -1.12)
+	var flare_tw = create_tween()
+	flare_tw.tween_property(self, "_lantern_flare_boost", 1.35, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	flare_tw.tween_property(self, "_lantern_flare_boost", 0.0, 0.65).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	var tw = create_tween()
+	tw.tween_property(_lantern_node, "position:y", base_pos.y + 0.055, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_lantern_node, "rotation_degrees", Vector3(8.0, 0.0, 14.0), 0.16)
+	tw.tween_property(_lantern_node, "rotation_degrees", Vector3(-7.0, 0.0, -12.0), 0.18)
+	tw.tween_property(_lantern_node, "rotation_degrees", Vector3(4.0, 0.0, 7.0), 0.16)
+	tw.tween_property(_lantern_node, "rotation_degrees", Vector3.ZERO, 0.18)
+	tw.parallel().tween_property(_lantern_node, "position:y", base_pos.y, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(func():
+		_prop_animating["lantern"] = false
+	)
+
+
+# 6. GAMING TOKEN BOWL & COINS: Cascading fountain wave of flipping gold, silver, and jeweled coins!
+func _animate_token_bowl() -> void:
+	if not _token_bowl_node or _token_coin_nodes.is_empty():
+		return
+	_prop_animating["tokens"] = true
+	_play_prop_sfx("bell")
+	_spawn_prop_pulse_ring(_token_bowl_node, Vector3(0.0, 0.025, 0.0), Color(1.0, 0.84, 0.28), 2.4)
+	_spawn_prop_sparkle_burst(_token_bowl_node, Vector3(0.0, 0.06, 0.0), Color(1.0, 0.86, 0.32), 7, 0.11, 0.10)
+
+	for i in range(_token_coin_nodes.size()):
+		var coin: Node3D = _token_coin_nodes[i]
+		if not is_instance_valid(coin):
+			continue
+		var r_pos: Vector3 = _token_coin_rest_pos[i]
+		var r_rot: Vector3 = _token_coin_rest_rot[i]
+		var c_tw = create_tween()
+		c_tw.tween_interval(float(i) * 0.022)
+		c_tw.tween_property(coin, "position:y", r_pos.y + 0.095 + float(i % 4) * 0.018, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		c_tw.parallel().tween_property(coin, "rotation_degrees:x", r_rot.x + 360.0, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		c_tw.tween_property(coin, "position:y", r_pos.y, 0.20).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		if i == _token_coin_nodes.size() - 1:
+			c_tw.tween_callback(func():
+				_play_prop_sfx("add_peace")
+				for j in range(_token_coin_nodes.size()):
+					var c_n: Node3D = _token_coin_nodes[j]
+					if is_instance_valid(c_n):
+						c_n.position = _token_coin_rest_pos[j]
+						c_n.rotation_degrees = _token_coin_rest_rot[j]
+				_prop_animating["tokens"] = false
+			)
+
+
+# 7. GOLDEN CHAMPION TROPHY: Victory levitation, 360-degree celebratory spin, ruby flash, and golden star burst!
+func _animate_trophy() -> void:
+	if not _trophy_node:
+		return
+	_prop_animating["trophy"] = true
+	_play_prop_sfx("correct")
+	_spawn_prop_pulse_ring(_trophy_node, Vector3(0.0, 0.02, 0.0), Color(1.0, 0.85, 0.24), 2.5)
+	_spawn_prop_sparkle_burst(_trophy_node, Vector3(0.0, 0.16, 0.0), Color(1.0, 0.86, 0.28), 8, 0.12, 0.12)
+
+	var base_pos = Vector3(-1.04, 0.063, -0.16)
+	var base_rot = Vector3(0.0, 25.0, 0.0)
+
+	var tw = create_tween()
+	tw.tween_property(_trophy_node, "position:y", base_pos.y + 0.135, 0.26).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_trophy_node, "rotation_degrees", Vector3(-10.0, base_rot.y + 360.0, 8.0), 0.52).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_trophy_node, "position:y", base_pos.y, 0.28).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_trophy_node, "rotation_degrees", base_rot + Vector3(0.0, 360.0, 0.0), 0.24)
+	tw.tween_callback(func():
+		_trophy_node.rotation_degrees = base_rot
+		_prop_animating["trophy"] = false
+	)
+
+
+# 8. VINTAGE POCKET CHRONOMETER: Winding crown press, mechanical vibration hop, and rapid spinning clock hands!
+func _animate_chronometer() -> void:
+	if not _chronometer_node or not _watch_minute_pivot or not _watch_hour_pivot:
+		return
+	_prop_animating["chronometer"] = true
+	_play_prop_sfx("time")
+	_spawn_prop_pulse_ring(_chronometer_node, Vector3(0.0, 0.022, 0.0), Color(1.0, 0.88, 0.42), 2.2)
+
+	var base_pos = Vector3(1.04, 0.063, 0.14)
+	var base_rot = Vector3(0.0, -28.0, 0.0)
+
+	# Depress winding crown
+	if is_instance_valid(_watch_crown_node):
+		var cr_tw = create_tween()
+		cr_tw.tween_property(_watch_crown_node, "position:z", -0.064, 0.08)
+		cr_tw.tween_property(_watch_crown_node, "position:z", -0.070, 0.12)
+
+	# Spin minute hand 2 full revolutions and hour hand 60 degrees
+	var min_start = _watch_minute_pivot.rotation_degrees.y
+	var hr_start = _watch_hour_pivot.rotation_degrees.y
+	var hands_tw = create_tween().set_parallel(true)
+	hands_tw.tween_property(_watch_minute_pivot, "rotation_degrees:y", min_start - 720.0, 0.68).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	hands_tw.tween_property(_watch_hour_pivot, "rotation_degrees:y", hr_start - 60.0, 0.68).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	# Mechanical watch buzz & hop
+	var tw = create_tween()
+	tw.tween_property(_chronometer_node, "position:y", base_pos.y + 0.055, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_chronometer_node, "rotation_degrees:z", 11.0, 0.07)
+	tw.tween_property(_chronometer_node, "rotation_degrees:z", -11.0, 0.07)
+	tw.tween_property(_chronometer_node, "rotation_degrees:z", 9.0, 0.07)
+	tw.tween_property(_chronometer_node, "rotation_degrees:z", -9.0, 0.07)
+	tw.tween_property(_chronometer_node, "rotation_degrees", base_rot, 0.12)
+	tw.parallel().tween_property(_chronometer_node, "position:y", base_pos.y, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.22)
+	tw.tween_callback(func():
+		_watch_minute_pivot.rotation_degrees.y = fmod(_watch_minute_pivot.rotation_degrees.y, 360.0)
+		_watch_hour_pivot.rotation_degrees.y = fmod(_watch_hour_pivot.rotation_degrees.y, 360.0)
+		_spawn_prop_sparkle_burst(_chronometer_node, Vector3(0.0, 0.03, 0.0), Color(1.0, 0.88, 0.36), 5, 0.07, 0.05)
+		_prop_animating["chronometer"] = false
+	)
