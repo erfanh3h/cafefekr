@@ -1179,6 +1179,8 @@ func start_turn_timer(duration: float, custom_banner: String = "") -> void:
 			banner = "سنگ، کاغذ یا قیچی را انتخاب کنید!"
 		elif GameManager.current_game_type == GameTypes.SUDOKU:
 			banner = "جدول سودوکو را با اعداد ۱ تا ۹ تکمیل کنید"
+		elif GameManager.current_game_type == GameTypes.MSWEEPER:
+			banner = "خانه‌های امن را باز کنید و ۱۰ مین را پرچم‌گذاری نمایید"
 		else:
 			banner = "انتخاب خود را مشخص کنید"
 	if not banner.is_empty():
@@ -1353,7 +1355,7 @@ func show_game_result(winner: int, p1_score: int, p2_score: int) -> void:
 	elif GameManager.opponent_player_surrendered:
 		final_winner = GameManager.my_player_index
 	elif not is_pause_active and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
-		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.MSWEEPER]:
 			if p1_score > p2_score:
 				final_winner = 1
 			elif p2_score > p1_score:

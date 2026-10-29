@@ -661,6 +661,8 @@ func _get_role_badge_text(player_idx: int) -> String:
 		return "🎲 تاس‌انداز قرمز" if player_idx == 1 else "🎲 تاس‌انداز آبی"
 	elif g_type == GameTypes.CHESS:
 		return "🔴 ارتش قرمز" if player_idx == 1 else "🔵 ارتش آبی"
+	elif g_type == GameTypes.MSWEEPER:
+		return "💣 کاوشگر قرمز" if player_idx == 1 else "💣 کاوشگر آبی"
 	else:
 		return "🔴 مهره قرمز" if player_idx == 1 else "🔵 مهره آبی"
 
@@ -784,7 +786,7 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 			lbl_turn_banner.text = "بازی درحال آغاز است"
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 		elif is_simul:
-			var sim_text = "سنگ، کاغذ یا قیچی را انتخاب کنید!" if GameManager.current_game_type == GameTypes.RPC else "انتخاب خود را مشخص کنید"
+			var sim_text = "سنگ، کاغذ یا قیچی را انتخاب کنید!" if GameManager.current_game_type == GameTypes.RPC else ("خانه‌های امن را باز کنید و ۱۰ مین را پرچم بزنید!" if GameManager.current_game_type == GameTypes.MSWEEPER else "انتخاب خود را مشخص کنید")
 			lbl_turn_banner.text = sim_text
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 		elif is_me:

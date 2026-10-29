@@ -31,6 +31,11 @@ signal wait_time_received(time: int)
 signal start_game_received()
 signal start_game_data_received(payload: Dictionary)
 signal wrong_solve_received()
+signal select_peace_result_received(payload: Dictionary)
+signal mine_selected_received(payload: Dictionary)
+signal select_mine_correct_received(payload: Dictionary)
+signal select_mine_wrong_received(payload: Dictionary)
+signal player_score_received(payload: Dictionary)
 
 var api: APIClient
 var socket: SocketIOClient
@@ -193,6 +198,10 @@ func send_save_board(board_data: Variant) -> void:
 func send_select_peace(piece_data: Variant) -> void:
 	print("[NetworkManager] Sending Select_Peace: %s" % str(piece_data))
 	send_game_command(Commands.Select_Peace, piece_data)
+
+func send_select_mine(piece_data: Variant) -> void:
+	print("[NetworkManager] Sending Select_Mine: %s" % str(piece_data))
+	send_game_command(Commands.Select_Mine, piece_data)
 
 func send_game_command(command_id: String, data: Variant = null) -> void:
 	var payload = {
@@ -415,5 +424,22 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.Wrong_Solve:
 			print("[NetworkManager] Wrong_Solve received!")
 			wrong_solve_received.emit()
+		Commands.Select_Peace_Result:
+			select_peace_result_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
+		Commands.Mine_Selected:
+			mine_selected_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
+		Commands.Select_Mine_Correct:
+			select_mine_correct_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
+		Commands.Select_Mine_Wrong:
+			select_mine_wrong_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
+		Commands.Player_Score:
+			if typeof(payload) == TYPE_DICTIONARY:
+				var g_id = int(payload.get("gamer_id", 0))
+				var s_val = int(payload.get("value", 0))
+				if g_id == 1:
+					GameManager.p1_score = s_val
+				elif g_id == 2:
+					GameManager.p2_score = s_val
+				player_score_received.emit(payload)
 		Commands.Logout:
 			GameManager.logout()

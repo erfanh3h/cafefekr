@@ -87,6 +87,16 @@ func _connect_network_signals() -> void:
 		NetworkManager.start_game_data_received.connect(_on_internal_start_game_data)
 	if not NetworkManager.wrong_solve_received.is_connected(_on_internal_wrong_solve):
 		NetworkManager.wrong_solve_received.connect(_on_internal_wrong_solve)
+	if not NetworkManager.select_peace_result_received.is_connected(_on_internal_select_peace_result):
+		NetworkManager.select_peace_result_received.connect(_on_internal_select_peace_result)
+	if not NetworkManager.mine_selected_received.is_connected(_on_internal_mine_selected):
+		NetworkManager.mine_selected_received.connect(_on_internal_mine_selected)
+	if not NetworkManager.select_mine_correct_received.is_connected(_on_internal_select_mine_correct):
+		NetworkManager.select_mine_correct_received.connect(_on_internal_select_mine_correct)
+	if not NetworkManager.select_mine_wrong_received.is_connected(_on_internal_select_mine_wrong):
+		NetworkManager.select_mine_wrong_received.connect(_on_internal_select_mine_wrong)
+	if not NetworkManager.player_score_received.is_connected(_on_internal_player_score):
+		NetworkManager.player_score_received.connect(_on_internal_player_score)
 
 func _disconnect_network_signals() -> void:
 	if NetworkManager.turn_data_received.is_connected(_on_internal_turn_data):
@@ -123,6 +133,16 @@ func _disconnect_network_signals() -> void:
 		NetworkManager.start_game_data_received.disconnect(_on_internal_start_game_data)
 	if NetworkManager.wrong_solve_received.is_connected(_on_internal_wrong_solve):
 		NetworkManager.wrong_solve_received.disconnect(_on_internal_wrong_solve)
+	if NetworkManager.select_peace_result_received.is_connected(_on_internal_select_peace_result):
+		NetworkManager.select_peace_result_received.disconnect(_on_internal_select_peace_result)
+	if NetworkManager.mine_selected_received.is_connected(_on_internal_mine_selected):
+		NetworkManager.mine_selected_received.disconnect(_on_internal_mine_selected)
+	if NetworkManager.select_mine_correct_received.is_connected(_on_internal_select_mine_correct):
+		NetworkManager.select_mine_correct_received.disconnect(_on_internal_select_mine_correct)
+	if NetworkManager.select_mine_wrong_received.is_connected(_on_internal_select_mine_wrong):
+		NetworkManager.select_mine_wrong_received.disconnect(_on_internal_select_mine_wrong)
+	if NetworkManager.player_score_received.is_connected(_on_internal_player_score):
+		NetworkManager.player_score_received.disconnect(_on_internal_player_score)
 
 # --- Internal Network Callbacks (Dispatches to Virtual Hooks) ---
 
@@ -230,6 +250,21 @@ func _on_internal_start_game_data(payload: Dictionary) -> void:
 func _on_internal_wrong_solve() -> void:
 	on_wrong_solve()
 
+func _on_internal_select_peace_result(payload: Dictionary) -> void:
+	on_select_peace_result(payload)
+
+func _on_internal_mine_selected(payload: Dictionary) -> void:
+	on_mine_selected(payload)
+
+func _on_internal_select_mine_correct(payload: Dictionary) -> void:
+	on_select_mine_correct(payload)
+
+func _on_internal_select_mine_wrong(payload: Dictionary) -> void:
+	on_select_mine_wrong(payload)
+
+func _on_internal_player_score(payload: Dictionary) -> void:
+	on_player_score(payload)
+
 func _on_internal_wait_time(time_sec: int) -> void:
 	on_wait_time(time_sec)
 
@@ -257,6 +292,21 @@ func on_start_game_data(_payload: Dictionary) -> void:
 	pass
 
 func on_wrong_solve() -> void:
+	pass
+
+func on_select_peace_result(_payload: Dictionary) -> void:
+	pass
+
+func on_mine_selected(_payload: Dictionary) -> void:
+	pass
+
+func on_select_mine_correct(_payload: Dictionary) -> void:
+	pass
+
+func on_select_mine_wrong(_payload: Dictionary) -> void:
+	pass
+
+func on_player_score(_payload: Dictionary) -> void:
 	pass
 
 func on_wait_time(_time_sec: int) -> void:

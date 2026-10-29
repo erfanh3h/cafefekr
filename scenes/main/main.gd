@@ -337,6 +337,7 @@ func _setup_signals() -> void:
 	NetworkManager.finish_reconnect_time_received.connect(_on_finish_reconnect_time)
 	NetworkManager.not_played_turns_received.connect(_on_not_played_turns_received)
 	NetworkManager.select_remove_peace_received.connect(_on_select_remove_peace_received)
+	NetworkManager.player_score_received.connect(_on_player_score_received)
 	NetworkManager.connection_status_changed.connect(_on_connection_status_changed)
 
 func _start_logo_animation() -> void:
@@ -622,6 +623,10 @@ func _on_reaction_received(data: Variant) -> void:
 		if p_id != GameManager.my_player_index and is_instance_valid(cafe_table):
 			cafe_table.play_opponent_reaction()
 
+func _on_player_score_received(_payload: Dictionary) -> void:
+	if is_instance_valid(base_game_hud):
+		base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)
+
 func _on_select_remove_peace_received(remover_id: int) -> void:
 	if GameManager.current_game_type == GameTypes.MILL and is_instance_valid(base_game_hud):
 		var my_idx = GameManager.my_player_index
@@ -885,7 +890,10 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 64:
 			var b_arr: Array = g_data["board"]
 			if not b_arr.is_empty() and typeof(b_arr[0]) == TYPE_DICTIONARY:
-				inferred_type = GameTypes.CHECKERS
+				if (b_arr[0] as Dictionary).has("correctly_selected_mine") or g_data.has("remaining_selectable_mines"):
+					inferred_type = GameTypes.MSWEEPER
+				else:
+					inferred_type = GameTypes.CHECKERS
 			elif g_data.has("scores"):
 				inferred_type = GameTypes.OTHELLO
 			else:

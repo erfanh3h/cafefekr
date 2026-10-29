@@ -22,6 +22,7 @@ const DOTBOX_SCENE: String = "res://scenes/games/dotbox/dotbox_3d.tscn"
 const MNUMBERS_SCENE: String = "res://scenes/games/mnumbers/mnumbers_3d.tscn"
 const BATTLESHIP_SCENE: String = "res://scenes/games/battleship/battleship_3d.tscn"
 const SUDOKU_SCENE: String = "res://scenes/games/sudoku/sudoku_3d.tscn"
+const MSWEEPER_SCENE: String = "res://scenes/games/msweeper/msweeper_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -308,10 +309,11 @@ static var _registry: Dictionary = {
 		"id": GameTypes.MSWEEPER,
 		"name_fa": "مین یاب",
 		"narrative": "در هزارتوی پیکسل‌ها، هر کلیک گامی محتاطانه به سوی ناشناخته‌هاست.",
-		"board_scene": TEMP_SCENE,
+		"board_scene": MSWEEPER_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
-		"has_round_score": false,
+		"has_round_score": true,
+		"is_cumulative_score": true,
 		"is_simultaneous": true,
 		"turn_time": 600.0,
 		"has_missed_turns_limit": false,
