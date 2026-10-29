@@ -151,6 +151,10 @@ func sfx_draw() -> void: play_sound("draw")
 func sfx_dice() -> void: play_sound("dice")
 func sfx_bell() -> void: play_sound("bell")
 func sfx_time() -> void: play_sound("time")
+func sfx_place() -> void: play_sound("add_peace")
+func sfx_invalid() -> void: play_sound("tap_wrong")
+func sfx_capture() -> void: play_sound("correct")
+func sfx_win_line() -> void: play_sound("explode")
 
 # --- SETTINGS TOGGLE ---
 

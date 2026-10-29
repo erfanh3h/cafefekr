@@ -613,9 +613,11 @@ func _update_single_cell_visual(idx: int, animate: bool = false) -> void:
 	var crit_root = cell_critical_roots[idx]
 	crit_root.visible = false
 	for ch in crit_root.get_children():
+		crit_root.remove_child(ch)
 		ch.queue_free()
 	for ch in token_root.get_children():
 		if ch != crit_root:
+			token_root.remove_child(ch)
 			ch.queue_free()
 
 	var target_y: float = 0.062
@@ -748,13 +750,13 @@ func _on_cell_clicked(idx: int) -> void:
 		return
 
 	if not is_my_turn or is_board_locked:
-		AudioManager.sfx_invalid()
+		AudioManager.play_sound("tap_wrong")
 		show_hint("⏳ اکنون نوبت حرکت حریف است!")
 		return
 
 	var my_id = GameManager.my_player_index
 	if cell_owners[idx] != my_id:
-		AudioManager.sfx_invalid()
+		AudioManager.play_sound("tap_wrong")
 		_play_invalid_cell_shake(idx)
 		if cell_owners[idx] == 0:
 			show_hint("⚠️ فقط خانه‌های هم‌رنگ خودتان را می‌توانید تقویت کنید!")
@@ -793,7 +795,7 @@ func _submit_piece_for_user(c_idx: int, r_idx: int, gamer_id: int) -> void:
 	if cell_values[idx] < 3:
 		cell_values[idx] += 1
 		cell_owners[idx] = gamer_id
-		AudioManager.sfx_place()
+		AudioManager.play_sound("add_peace")
 		_spawn_charge_ring_vfx(_cell_pos(c_idx, r_idx), gamer_id)
 		_update_single_cell_visual(idx, true)
 		_refresh_highlights()
@@ -867,9 +869,9 @@ func _play_chain_reaction_vfx(events: Array[Dictionary], gamer_id: int) -> void:
 	if not is_inside_tree() or not is_instance_valid(fx_root):
 		return
 
-	AudioManager.sfx_capture()
+	AudioManager.play_sound("correct")
 	if events.size() > 1:
-		AudioManager.sfx_win_line()
+		AudioManager.play_sound("explode")
 
 	for ev in events:
 		var depth: int = int(ev.get("depth", 0))
@@ -883,7 +885,7 @@ func _play_chain_reaction_vfx(events: Array[Dictionary], gamer_id: int) -> void:
 		else:
 			get_tree().create_timer(delay).timeout.connect(func():
 				if is_inside_tree() and is_instance_valid(fx_root):
-					AudioManager.sfx_capture()
+					AudioManager.play_sound("correct")
 					_spawn_four_way_burst_vfx(c_idx, r_idx, targets, gamer_id)
 			)
 
