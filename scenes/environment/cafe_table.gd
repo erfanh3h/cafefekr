@@ -78,8 +78,13 @@ var _flame_mesh: MeshInstance3D = null
 var _flame_halo_mesh: MeshInstance3D = null
 var current_board_node: Node3D = null
 
-# Interactive Table Props State & References
+# Interactive Table Props State & References (18-Prop Diverse Catalog)
 var _prop_animating: Dictionary = {}
+var _prop_rest_pos: Dictionary = {}
+var _prop_rest_rot: Dictionary = {}
+var _active_table_props: Array = [] # Array of {"id": String, "node": Node3D, "radius": float, "y_off": float}
+var _dynamic_props_root: Node3D = null
+var _shared_mats: Dictionary = {}
 var _last_prop_tap_sec: float = 0.0
 
 var _lantern_node: Node3D = null
@@ -123,6 +128,53 @@ var _watch_minute_pivot: Node3D = null
 var _watch_hour_pivot: Node3D = null
 var _watch_crown_node: Node3D = null
 
+# 10 New Game-Themed & Cafe Actionable Props References
+var _cannon_group_node: Node3D = null
+var _cannon_carriage_node: Node3D = null
+var _cannon_barrel_pivot: Node3D = null
+
+var _spyglass_group_node: Node3D = null
+var _spyglass_body_node: Node3D = null
+var _spyglass_tube_mid: Node3D = null
+var _spyglass_tube_eye: Node3D = null
+var _compass_needle_pivot: Node3D = null
+
+var _crown_group_node: Node3D = null
+var _crown_main_node: Node3D = null
+var _scepter_main_node: Node3D = null
+
+var _abacus_group_node: Node3D = null
+var _abacus_body_node: Node3D = null
+var _abacus_beads: Array = []
+var _abacus_bead_rest_pos: Array = []
+
+var _loupe_group_node: Node3D = null
+var _loupe_main_node: Node3D = null
+var _loupe_clue_dots: Array = []
+
+var _tar_group_node: Node3D = null
+var _tar_body_node: Node3D = null
+var _tar_strings: Array = []
+
+var _astrolabe_group_node: Node3D = null
+var _astro_outer_ring: Node3D = null
+var _astro_mid_ring: Node3D = null
+var _astro_inner_ring: Node3D = null
+var _astro_sun_core: MeshInstance3D = null
+
+var _arms_group_node: Node3D = null
+var _shield_main_node: Node3D = null
+var _dagger_main_node: Node3D = null
+
+var _pastry_group_node: Node3D = null
+var _pastry_baklava_nodes: Array = []
+var _pastry_baklava_rest_pos: Array = []
+var _pastry_fork_node: Node3D = null
+
+var _burner_group_node: Node3D = null
+var _burner_base_node: Node3D = null
+var _burner_lid_node: Node3D = null
+var _burner_embers_mesh: MeshInstance3D = null
 
 
 func _ready() -> void:
@@ -245,6 +297,14 @@ func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 	if board_packed_scene:
 		current_board_node = board_packed_scene.instantiate()
 		board_container.add_child(current_board_node)
+		var g_type: String = ""
+		if "game_type" in current_board_node:
+			g_type = str(current_board_node.game_type)
+		if g_type == "":
+			var gm = get_node_or_null("/root/GameManager")
+			if gm and "current_game_type" in gm:
+				g_type = str(gm.current_game_type)
+		populate_props_for_game(g_type)
 		transition_to_board_view(1.2)
 	return current_board_node
 
@@ -551,11 +611,18 @@ func _build_luxury_game_environment() -> void:
 		props_root.name = "CafeProps"
 		add_child(props_root)
 
-	# Shared Crafted Materials
+	_dynamic_props_root = props_root.get_node_or_null("DynamicTableProps")
+	if not _dynamic_props_root:
+		_dynamic_props_root = Node3D.new()
+		_dynamic_props_root.name = "DynamicTableProps"
+		props_root.add_child(_dynamic_props_root)
+
+	# Shared Crafted Materials stored in dictionary for dynamic per-game prop spawning
 	var mat_brass = _make_mat(Color(0.90, 0.73, 0.28), 0.22, 0.88, 0.35)
 	var mat_aged_brass = _make_mat(Color(0.74, 0.56, 0.20), 0.34, 0.82)
 	var mat_copper = _make_mat(Color(0.84, 0.48, 0.28), 0.26, 0.85)
 	var mat_silver = _make_mat(Color(0.86, 0.88, 0.92), 0.20, 0.90)
+	var mat_steel_dark = _make_mat(Color(0.32, 0.35, 0.40), 0.28, 0.88, 0.30)
 	var mat_dark_walnut = _make_mat(Color(0.20, 0.11, 0.06), 0.36, 0.04, 0.45)
 	var mat_mahogany = _make_mat(Color(0.34, 0.16, 0.08), 0.32, 0.05, 0.55)
 	var mat_ebony = _make_mat(Color(0.11, 0.09, 0.08), 0.28, 0.12, 0.40)
@@ -570,6 +637,8 @@ func _build_luxury_game_environment() -> void:
 	var mat_ruby = _make_mat(Color(0.78, 0.12, 0.18), 0.18, 0.15, 0.80)
 	var mat_sapphire = _make_mat(Color(0.14, 0.36, 0.82), 0.18, 0.15, 0.80)
 	var mat_emerald_gem = _make_mat(Color(0.12, 0.62, 0.36), 0.18, 0.15, 0.80)
+	var mat_pastry_honey = _make_mat(Color(0.86, 0.58, 0.18), 0.32, 0.02, 0.45)
+	var mat_pistachio = _make_mat(Color(0.38, 0.72, 0.24), 0.55, 0.0)
 
 	var mat_clear_glass = StandardMaterial3D.new()
 	mat_clear_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -578,6 +647,14 @@ func _build_luxury_game_environment() -> void:
 	mat_clear_glass.metallic = 0.10
 	mat_clear_glass.clearcoat_enabled = true
 	mat_clear_glass.clearcoat = 1.0
+
+	var mat_cyan_lens = StandardMaterial3D.new()
+	mat_cyan_lens.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_cyan_lens.albedo_color = Color(0.55, 0.88, 1.0, 0.38)
+	mat_cyan_lens.roughness = 0.04
+	mat_cyan_lens.metallic = 0.15
+	mat_cyan_lens.clearcoat_enabled = true
+	mat_cyan_lens.clearcoat = 1.0
 
 	var mat_amber_glass = StandardMaterial3D.new()
 	mat_amber_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -599,30 +676,206 @@ func _build_luxury_game_environment() -> void:
 	mat_amber_glow.emission = Color(1.0, 0.72, 0.22)
 	mat_amber_glow.emission_energy_multiplier = 2.4
 
+	var mat_ember_glow = StandardMaterial3D.new()
+	mat_ember_glow.albedo_color = Color(1.0, 0.32, 0.08)
+	mat_ember_glow.emission_enabled = true
+	mat_ember_glow.emission = Color(1.0, 0.26, 0.04)
+	mat_ember_glow.emission_energy_multiplier = 2.8
+
+	_shared_mats = {
+		"brass": mat_brass,
+		"aged_brass": mat_aged_brass,
+		"copper": mat_copper,
+		"silver": mat_silver,
+		"steel_dark": mat_steel_dark,
+		"walnut": mat_dark_walnut,
+		"mahogany": mat_mahogany,
+		"ebony": mat_ebony,
+		"baize_emerald": mat_baize_emerald,
+		"baize_crimson": mat_baize_crimson,
+		"leather_dark": mat_leather_dark,
+		"leather_saddle": mat_leather_saddle,
+		"ivory": mat_ivory,
+		"porcelain": mat_porcelain,
+		"porcelain_blue": mat_porcelain_blue,
+		"paper_cream": mat_paper_cream,
+		"ruby": mat_ruby,
+		"sapphire": mat_sapphire,
+		"emerald": mat_emerald_gem,
+		"pastry_honey": mat_pastry_honey,
+		"pistachio": mat_pistachio,
+		"clear_glass": mat_clear_glass,
+		"cyan_lens": mat_cyan_lens,
+		"amber_glass": mat_amber_glass,
+		"persian_tea": mat_persian_tea,
+		"amber_glow": mat_amber_glow,
+		"ember_glow": mat_ember_glow
+	}
+
 	# 1. GRAND INLAID GAMING TABLE ARENA SURFACE
 	_build_inlaid_table_arena(mat_dark_walnut, mat_mahogany, mat_brass, mat_aged_brass, mat_baize_emerald, mat_amber_glow)
 
-	# 2. MOROCCAN / PERSIAN FILIGREE BRASS LANTERN (Upper-Left Arena Corner)
+	# 2. MOROCCAN / PERSIAN FILIGREE BRASS LANTERN (Permanent Anchor in Upper-Left Corner for Warm Candlelight)
 	_upgrade_lantern_prop(mat_brass, mat_aged_brass, mat_amber_glass, mat_ivory, mat_amber_glow)
 
-	# 3. TRADITIONAL PERSIAN TEA SERVICE ON HAMMERED BRASS TRAY (Upper-Right Arena Corner)
-	_build_persian_tea_service(props_root, Vector3(0.66, 0.063, -1.12), mat_brass, mat_aged_brass, mat_porcelain, mat_porcelain_blue, mat_clear_glass, mat_persian_tea, mat_ivory)
+	# 3. POPULATE INITIAL DIVERSE TABLE PROPS AROUND THE ARENA
+	populate_props_for_game("")
 
-	# 4. STITCHED LEATHER DICE CUP & 3 SCULPTED IVORY 6-SIDED DICE WITH REAL 3D PIPS (Upper-Center-Left)
-	_build_dice_cup_and_dice(props_root, Vector3(-0.30, 0.063, -1.14), mat_leather_dark, mat_brass, mat_baize_crimson, mat_ivory, mat_ebony, mat_ruby)
 
-	# 5. ANTIQUE BRASS & WALNUT MATCH HOURGLASS / SAND TIMER (Upper-Center-Right)
-	_build_brass_hourglass(props_root, Vector3(0.28, 0.063, -1.14), mat_dark_walnut, mat_brass, mat_clear_glass, mat_amber_glow)
+func _get_themed_props_for_game(game_type: String) -> Array:
+	match game_type:
+		"BattleShip":
+			return ["naval_cannon", "brass_spyglass", "dagger_and_shield", "hourglass"]
+		"Sudoku":
+			return ["scorebook", "vintage_abacus", "magnifying_loupe", "hourglass"]
+		"Chess":
+			return ["royal_crown_scepter", "dagger_and_shield", "hourglass", "fortune_astrolabe"]
+		"Checkers":
+			return ["royal_crown_scepter", "tokens", "hourglass", "cafe_pastry_plate"]
+		"BackGammon":
+			return ["dice", "persian_tar", "tea", "tokens"]
+		"Yatzy":
+			return ["dice", "scorebook", "vintage_abacus", "tokens"]
+		"FekrBekr":
+			return ["magnifying_loupe", "fortune_astrolabe", "scorebook", "chronometer"]
+		"FourInRow":
+			return ["tokens", "trophy", "hourglass", "cafe_pastry_plate"]
+		"MNumbers":
+			return ["vintage_abacus", "magnifying_loupe", "chronometer", "scorebook"]
+		"RPC":
+			return ["dagger_and_shield", "trophy", "dice", "tokens"]
+		"Mill":
+			return ["fortune_astrolabe", "persian_tar", "tokens", "incense_burner"]
+		"Othello":
+			return ["royal_crown_scepter", "tokens", "fortune_astrolabe", "tea"]
+		"DotBox":
+			return ["scorebook", "vintage_abacus", "chronometer", "cafe_pastry_plate"]
+		"TicTacToe":
+			return ["tea", "scorebook", "hourglass", "cafe_pastry_plate"]
+		_:
+			return ["scorebook", "hourglass", "dice", "tea"]
 
-	# 6. ROYAL VELVET GAMING TOKEN BOWL & STACKED GOLD/GEM MATCH COINS (Front-Left Arena Corner)
-	_build_token_bowl_and_coins(props_root, Vector3(-0.64, 0.063, 1.06), mat_mahogany, mat_brass, mat_silver, mat_baize_crimson, mat_ruby, mat_sapphire, mat_emerald_gem)
 
-	# 7. LEATHER MATCH SCOREBOOK & BRASS FOUNTAIN PEN (Front-Right Arena Corner)
-	_build_scorebook_and_pen(props_root, Vector3(0.64, 0.063, 1.06), mat_leather_saddle, mat_brass, mat_paper_cream, mat_ebony, mat_ruby)
+func populate_props_for_game(game_type: String = "") -> void:
+	if not _dynamic_props_root or _shared_mats.is_empty():
+		return
 
-	# 8. GOLDEN CHAMPION TROPHY & VINTAGE POCKET CHRONOMETER (Left & Right Table Wings)
-	_build_champion_trophy(props_root, Vector3(-1.04, 0.063, -0.16), mat_dark_walnut, mat_ivory, mat_brass, mat_ruby)
-	_build_pocket_chronometer(props_root, Vector3(1.04, 0.063, 0.14), mat_brass, mat_aged_brass, mat_porcelain, mat_ebony, mat_clear_glass)
+	# Clear previous dynamic props and reset animation locks
+	_prop_animating.clear()
+	_prop_rest_pos.clear()
+	_prop_rest_rot.clear()
+	_active_table_props.clear()
+
+	for ch in _dynamic_props_root.get_children():
+		ch.queue_free()
+
+	# Always register the Top-Left Moroccan Lantern
+	if _lantern_node and is_instance_valid(_lantern_node):
+		_prop_rest_pos["lantern"] = _lantern_node.position
+		_prop_rest_rot["lantern"] = _lantern_node.rotation_degrees
+		_active_table_props.append({
+			"id": "lantern",
+			"node": _lantern_node,
+			"radius": 0.21,
+			"y_off": 0.12
+		})
+
+	# Curated random pool of movable interactive 3D props (combat props stay in combat/strategy games, universal cafe & table props can appear anywhere)
+	var all_movable_props = [
+		"scorebook", "hourglass", "dice", "tea", "tokens", "trophy", "chronometer",
+		"royal_crown_scepter", "vintage_abacus", "magnifying_loupe", "persian_tar",
+		"fortune_astrolabe", "cafe_pastry_plate", "incense_burner"
+	]
+	if game_type in ["BattleShip", "Chess", "Checkers", "RPC", ""]:
+		all_movable_props.append_array(["naval_cannon", "brass_spyglass", "dagger_and_shield"])
+
+	var selected_ids: Array = []
+	var priority_list = _get_themed_props_for_game(game_type)
+	for pid in priority_list:
+		if not selected_ids.has(pid):
+			selected_ids.append(pid)
+
+	# Build remaining pool and shuffle to pick diverse random items up to 7 slots
+	var remaining_pool: Array = []
+	for pid in all_movable_props:
+		if not selected_ids.has(pid):
+			remaining_pool.append(pid)
+	remaining_pool.shuffle()
+
+	while selected_ids.size() < 7 and not remaining_pool.is_empty():
+		selected_ids.append(remaining_pool.pop_back())
+
+	# Shuffle the 7 selected props across the 7 peripheral slots around the game board
+	selected_ids.shuffle()
+
+	var peripheral_slots = [
+		{"pos": Vector3(-0.30, 0.063, -1.14), "yaw": 12.0},
+		{"pos": Vector3(0.28, 0.063, -1.14), "yaw": -15.0},
+		{"pos": Vector3(0.66, 0.063, -1.12), "yaw": -20.0},
+		{"pos": Vector3(-1.05, 0.063, -0.14), "yaw": 24.0},
+		{"pos": Vector3(1.05, 0.063, 0.14), "yaw": -26.0},
+		{"pos": Vector3(-0.64, 0.063, 1.06), "yaw": 18.0},
+		{"pos": Vector3(0.64, 0.063, 1.06), "yaw": -22.0}
+	]
+
+	for i in range(mini(selected_ids.size(), peripheral_slots.size())):
+		var pid: String = selected_ids[i]
+		var slot: Dictionary = peripheral_slots[i]
+		var s_pos: Vector3 = slot["pos"]
+		var s_yaw: float = float(slot["yaw"]) + randf_range(-6.0, 6.0)
+		_spawn_single_prop_in_slot(pid, s_pos, s_yaw)
+
+
+func _register_spawned_prop(prop_id: String, node: Node3D, hit_radius: float = 0.20, y_off: float = 0.06) -> void:
+	if not node:
+		return
+	_prop_rest_pos[prop_id] = node.position
+	_prop_rest_rot[prop_id] = node.rotation_degrees
+	_active_table_props.append({
+		"id": prop_id,
+		"node": node,
+		"radius": hit_radius,
+		"y_off": y_off
+	})
+
+
+func _spawn_single_prop_in_slot(prop_id: String, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	match prop_id:
+		"tea":
+			_build_persian_tea_service(_dynamic_props_root, pos, yaw_deg, m["brass"], m["aged_brass"], m["porcelain"], m["porcelain_blue"], m["clear_glass"], m["persian_tea"], m["ivory"])
+		"dice":
+			_build_dice_cup_and_dice(_dynamic_props_root, pos, yaw_deg, m["leather_dark"], m["brass"], m["baize_crimson"], m["ivory"], m["ebony"], m["ruby"])
+		"hourglass":
+			_build_brass_hourglass(_dynamic_props_root, pos, yaw_deg, m["walnut"], m["brass"], m["clear_glass"], m["amber_glow"])
+		"tokens":
+			_build_token_bowl_and_coins(_dynamic_props_root, pos, yaw_deg, m["mahogany"], m["brass"], m["silver"], m["baize_crimson"], m["ruby"], m["sapphire"], m["emerald"])
+		"scorebook":
+			_build_scorebook_and_pen(_dynamic_props_root, pos, yaw_deg, m["leather_saddle"], m["brass"], m["paper_cream"], m["ebony"], m["ruby"])
+		"trophy":
+			_build_champion_trophy(_dynamic_props_root, pos, yaw_deg, m["walnut"], m["ivory"], m["brass"], m["ruby"])
+		"chronometer":
+			_build_pocket_chronometer(_dynamic_props_root, pos, yaw_deg, m["brass"], m["aged_brass"], m["porcelain"], m["ebony"], m["clear_glass"])
+		"naval_cannon":
+			_build_prop_naval_cannon(_dynamic_props_root, pos, yaw_deg)
+		"brass_spyglass":
+			_build_prop_brass_spyglass(_dynamic_props_root, pos, yaw_deg)
+		"royal_crown_scepter":
+			_build_prop_royal_crown(_dynamic_props_root, pos, yaw_deg)
+		"vintage_abacus":
+			_build_prop_vintage_abacus(_dynamic_props_root, pos, yaw_deg)
+		"magnifying_loupe":
+			_build_prop_magnifying_loupe(_dynamic_props_root, pos, yaw_deg)
+		"persian_tar":
+			_build_prop_persian_tar(_dynamic_props_root, pos, yaw_deg)
+		"fortune_astrolabe":
+			_build_prop_fortune_astrolabe(_dynamic_props_root, pos, yaw_deg)
+		"dagger_and_shield":
+			_build_prop_dagger_and_shield(_dynamic_props_root, pos, yaw_deg)
+		"cafe_pastry_plate":
+			_build_prop_cafe_pastry(_dynamic_props_root, pos, yaw_deg)
+		"incense_burner":
+			_build_prop_incense_burner(_dynamic_props_root, pos, yaw_deg)
 
 
 func _build_inlaid_table_arena(mat_walnut: Material, mat_mahogany: Material, mat_brass: Material, mat_aged_brass: Material, mat_baize: Material, mat_glow: Material) -> void:
@@ -745,7 +998,6 @@ func _upgrade_lantern_prop(mat_brass: Material, mat_aged_brass: Material, mat_am
 		var px = cos(angle) * r
 		var pz = sin(angle) * r
 		_add_cyl(lantern, 0.0055, 0.0055, 0.185, Vector3(px, 0.124, pz), mat_brass, Vector3.ZERO, 8)
-		# Small decorative finial spheres above each pillar
 		_add_sphere(lantern, 0.009, 0.018, Vector3(px, 0.226, pz), mat_brass)
 
 	# Upper Gallery Ring & Pierced Brass Dome Cap
@@ -753,15 +1005,14 @@ func _upgrade_lantern_prop(mat_brass: Material, mat_aged_brass: Material, mat_am
 	_add_cyl(lantern, 0.048, 0.090, 0.052, Vector3(0, 0.248, 0), mat_aged_brass, Vector3.ZERO, 6)
 	_add_cyl(lantern, 0.008, 0.046, 0.038, Vector3(0, 0.292, 0), mat_brass, Vector3.ZERO, 6)
 	_add_sphere(lantern, 0.014, 0.028, Vector3(0, 0.316, 0), mat_brass)
-	# Top Hanging Ring
 	_add_torus(lantern, 0.014, 0.022, Vector3(0, 0.338, 0), mat_brass, Vector3(90, 0, 0))
 
 
-func _build_persian_tea_service(parent: Node3D, pos: Vector3, mat_brass: Material, mat_aged_brass: Material, mat_porcelain: Material, mat_blue: Material, mat_glass: Material, mat_tea: Material, mat_sugar: Material) -> void:
+func _build_persian_tea_service(parent: Node3D, pos: Vector3, yaw_deg: float, mat_brass: Material, mat_aged_brass: Material, mat_porcelain: Material, mat_blue: Material, mat_glass: Material, mat_tea: Material, mat_sugar: Material) -> void:
 	var tea_group = Node3D.new()
 	tea_group.name = "PersianTeaService"
 	tea_group.position = pos
-	tea_group.rotation_degrees = Vector3(0, -18.0, 0)
+	tea_group.rotation_degrees = Vector3(0, yaw_deg, 0)
 	parent.add_child(tea_group)
 	_tea_group_node = tea_group
 
@@ -769,61 +1020,50 @@ func _build_persian_tea_service(parent: Node3D, pos: Vector3, mat_brass: Materia
 	_add_cyl(tea_group, 0.185, 0.175, 0.008, Vector3(0, 0.004, 0), mat_aged_brass, Vector3.ZERO, 32)
 	_add_cyl(tea_group, 0.165, 0.165, 0.009, Vector3(0, 0.005, 0), mat_brass, Vector3.ZERO, 32)
 	_add_torus(tea_group, 0.172, 0.186, Vector3(0, 0.011, 0), mat_brass)
-	# Brass Tray Side Handles
 	_add_torus(tea_group, 0.018, 0.026, Vector3(-0.192, 0.014, 0), mat_brass, Vector3(0, 0, 20))
 	_add_torus(tea_group, 0.018, 0.026, Vector3(0.192, 0.014, 0), mat_brass, Vector3(0, 0, -20))
 
-	# 2. Hand-Painted Porcelain Teapot (قوری چینی گل‌سرخی / آبی) on Left of Tray
+	# 2. Hand-Painted Porcelain Teapot
 	var pot = Node3D.new()
 	pot.position = Vector3(-0.058, 0.009, -0.028)
 	pot.rotation_degrees = Vector3(0, 28.0, 0)
 	tea_group.add_child(pot)
 	_tea_pot_node = pot
-	# Teapot Foot & Plump Belly
 	_add_cyl(pot, 0.044, 0.048, 0.014, Vector3(0, 0.007, 0), mat_brass, Vector3.ZERO, 20)
 	_add_sphere(pot, 0.068, 0.115, Vector3(0, 0.062, 0), mat_porcelain)
-	# Royal Blue Decorative Waist Band & Gold Rim
 	_add_torus(pot, 0.056, 0.069, Vector3(0, 0.064, 0), mat_blue)
 	_add_torus(pot, 0.036, 0.044, Vector3(0, 0.112, 0), mat_brass)
-	# Domed Lid & Gold Finial
 	_add_sphere(pot, 0.038, 0.036, Vector3(0, 0.120, 0), mat_porcelain)
 	_add_sphere(pot, 0.011, 0.022, Vector3(0, 0.142, 0), mat_brass)
-	# Curved Teapot Handle
 	_add_torus(pot, 0.022, 0.032, Vector3(-0.066, 0.070, 0), mat_porcelain, Vector3(90, 0, 0))
-	# Angled Pouring Spout
 	_add_cyl(pot, 0.009, 0.020, 0.072, Vector3(0.068, 0.076, 0), mat_porcelain, Vector3(0, 0, -42), 14)
 	_add_torus(pot, 0.007, 0.011, Vector3(0.092, 0.100, 0), mat_brass, Vector3(0, 0, -42))
 
-	# 3. Waisted Persian Tea Glass (استکان کمرباریک) in Filigree Brass Holder on Right-Front of Tray
+	# 3. Waisted Persian Tea Glass (استکان کمرباریک)
 	var istikan = Node3D.new()
 	istikan.position = Vector3(0.068, 0.009, 0.042)
 	tea_group.add_child(istikan)
 	_tea_istikan_node = istikan
-	# Porcelain & Gold Saucer (نعلبکی)
 	_add_cyl(istikan, 0.054, 0.034, 0.010, Vector3(0, 0.005, 0), mat_porcelain, Vector3.ZERO, 24)
 	_add_torus(istikan, 0.046, 0.054, Vector3(0, 0.010, 0), mat_brass)
-	# Filigree Brass Cup Holder Base & Handle
 	_add_cyl(istikan, 0.030, 0.025, 0.036, Vector3(0, 0.028, 0), mat_brass, Vector3.ZERO, 16)
 	_add_torus(istikan, 0.014, 0.020, Vector3(0.034, 0.042, 0), mat_brass, Vector3(90, 0, 0))
-	# Waisted Glass (Lower bulb + narrow waist + flared upper rim)
 	_add_cyl(istikan, 0.022, 0.026, 0.036, Vector3(0, 0.032, 0), mat_glass, Vector3.ZERO, 20)
 	_add_cyl(istikan, 0.031, 0.022, 0.044, Vector3(0, 0.072, 0), mat_glass, Vector3.ZERO, 20)
 	_add_torus(istikan, 0.028, 0.032, Vector3(0, 0.094, 0), mat_brass)
-	# Crimson-Amber Persian Tea Fill Inside
 	_add_cyl(istikan, 0.021, 0.024, 0.032, Vector3(0, 0.031, 0), mat_tea, Vector3.ZERO, 18)
 	_tea_liquid_top = _add_cyl(istikan, 0.028, 0.021, 0.034, Vector3(0, 0.064, 0), mat_tea, Vector3.ZERO, 18)
-	# Miniature Golden Tea Spoon on Saucer (wrapped in pivot for stirring animation)
+
 	_tea_spoon_pivot = Node3D.new()
 	_tea_spoon_pivot.position = Vector3.ZERO
 	istikan.add_child(_tea_spoon_pivot)
 	_add_box(_tea_spoon_pivot, Vector3(0.056, 0.002, 0.005), Vector3(-0.012, 0.012, 0.034), mat_brass, Vector3(0, 22, 0))
 	_add_sphere(_tea_spoon_pivot, 0.008, 0.004, Vector3(0.014, 0.012, 0.024), mat_brass)
 
-	# Hidden Pouring Tea Stream above the Istikan
 	_tea_pour_stream = _add_cyl(istikan, 0.0035, 0.0022, 0.095, Vector3(0.0, 0.115, 0.0), mat_tea, Vector3(0, 0, 10), 12)
 	_tea_pour_stream.visible = false
 
-	# 4. Brass Sugar Bowl with Sugar Cubes (قندان برنجی و حبه‌های قند) on Right-Back of Tray
+	# 4. Brass Sugar Bowl with Sugar Cubes (قندان برنجی)
 	var qandan = Node3D.new()
 	qandan.position = Vector3(0.064, 0.009, -0.058)
 	tea_group.add_child(qandan)
@@ -831,34 +1071,32 @@ func _build_persian_tea_service(parent: Node3D, pos: Vector3, mat_brass: Materia
 	_add_cyl(qandan, 0.026, 0.034, 0.014, Vector3(0, 0.007, 0), mat_brass, Vector3.ZERO, 18)
 	_add_sphere(qandan, 0.040, 0.048, Vector3(0, 0.032, 0), mat_brass)
 	_add_torus(qandan, 0.032, 0.038, Vector3(0, 0.046, 0), mat_aged_brass)
-	# Sugar cubes heaped inside
 	_add_box(qandan, Vector3(0.016, 0.014, 0.016), Vector3(-0.008, 0.052, -0.004), mat_sugar, Vector3(8, 15, -6))
 	_add_box(qandan, Vector3(0.016, 0.014, 0.016), Vector3(0.010, 0.053, 0.005), mat_sugar, Vector3(-10, 35, 12))
 	_add_box(qandan, Vector3(0.015, 0.014, 0.015), Vector3(0.0, 0.062, -0.002), mat_sugar, Vector3(14, -20, 5))
 
+	_register_spawned_prop("tea", tea_group, 0.23, 0.06)
 
-func _build_dice_cup_and_dice(parent: Node3D, pos: Vector3, mat_leather: Material, mat_brass: Material, mat_felt: Material, mat_ivory: Material, mat_pip_dark: Material, mat_pip_red: Material) -> void:
+
+func _build_dice_cup_and_dice(parent: Node3D, pos: Vector3, yaw_deg: float, mat_leather: Material, mat_brass: Material, mat_felt: Material, mat_ivory: Material, mat_pip_dark: Material, mat_pip_red: Material) -> void:
 	var dice_group = Node3D.new()
 	dice_group.name = "DiceCupAndDice"
 	dice_group.position = pos
+	dice_group.rotation_degrees = Vector3(0, yaw_deg, 0)
 	parent.add_child(dice_group)
 	_dice_group_node = dice_group
 
-	# 1. Stitched Leather Dice Shaker Cup with Brass Rings & Crimson Felt Interior
 	var cup = Node3D.new()
 	cup.position = Vector3(-0.055, 0.0, -0.015)
 	cup.rotation_degrees = Vector3(6.0, 18.0, -8.0)
 	dice_group.add_child(cup)
 	_dice_cup_node = cup
 	_add_cyl(cup, 0.044, 0.036, 0.105, Vector3(0, 0.0525, 0), mat_leather, Vector3.ZERO, 24)
-	# Brass Ribs
 	_add_torus(cup, 0.034, 0.039, Vector3(0, 0.014, 0), mat_brass)
 	_add_torus(cup, 0.038, 0.043, Vector3(0, 0.054, 0), mat_brass)
 	_add_torus(cup, 0.041, 0.046, Vector3(0, 0.098, 0), mat_brass)
-	# Inner Crimson Velvet Top Opening
 	_add_cyl(cup, 0.039, 0.037, 0.008, Vector3(0, 0.102, 0), mat_felt, Vector3.ZERO, 20)
 
-	# 2. Three Sculpted Ivory 6-Sided Game Dice with Real 3D Pips
 	_dice_nodes.clear()
 	_dice_rest_positions.clear()
 	_dice_rest_rotations.clear()
@@ -870,6 +1108,8 @@ func _build_dice_cup_and_dice(parent: Node3D, pos: Vector3, mat_leather: Materia
 		_dice_rest_positions.append(d_node.position)
 		_dice_rest_rotations.append(d_node.rotation_degrees)
 
+	_register_spawned_prop("dice", dice_group, 0.20, 0.05)
+
 
 func _create_single_die(parent: Node3D, pos: Vector3, rot_deg: Vector3, s: float, mat_ivory: Material, mat_brass: Material, mat_dark: Material, mat_red: Material) -> Node3D:
 	var die = Node3D.new()
@@ -877,7 +1117,6 @@ func _create_single_die(parent: Node3D, pos: Vector3, rot_deg: Vector3, s: float
 	die.rotation_degrees = rot_deg
 	parent.add_child(die)
 
-	# Inner brass core slightly wider on corners + 3 overlapping ivory boxes for beveled-cube look
 	_add_box(die, Vector3(s * 0.94, s * 0.94, s * 0.94), Vector3.ZERO, mat_brass)
 	_add_box(die, Vector3(s, s * 0.88, s * 0.88), Vector3.ZERO, mat_ivory)
 	_add_box(die, Vector3(s * 0.88, s, s * 0.88), Vector3.ZERO, mat_ivory)
@@ -887,41 +1126,30 @@ func _create_single_die(parent: Node3D, pos: Vector3, rot_deg: Vector3, s: float
 	var d: float = s * 0.24
 	var pr: float = s * 0.095
 
-	# Top Face (+Y): 1 Red Bullseye Pip (Traditional Asian/Persian High-Roll Ace)
 	_add_sphere(die, pr * 1.35, pr * 0.7, Vector3(0, h, 0), mat_red)
-
-	# Bottom Face (-Y): 6 Pips
 	for px in [-d, d]:
 		for pz in [-d, 0.0, d]:
 			_add_sphere(die, pr, pr * 0.6, Vector3(px, -h, pz), mat_dark)
-
-	# Front Face (+Z): 5 Pips
 	for offset in [Vector2(0, 0), Vector2(-d, -d), Vector2(d, -d), Vector2(-d, d), Vector2(d, d)]:
 		_add_sphere(die, pr, pr * 0.6, Vector3(offset.x, offset.y, h), mat_dark)
-
-	# Back Face (-Z): 2 Pips
 	for offset in [Vector2(-d, -d), Vector2(d, d)]:
 		_add_sphere(die, pr, pr * 0.6, Vector3(offset.x, offset.y, -h), mat_dark)
-
-	# Right Face (+X): 4 Red Pips
 	for offset in [Vector2(-d, -d), Vector2(d, -d), Vector2(-d, d), Vector2(d, d)]:
 		_add_sphere(die, pr, pr * 0.6, Vector3(h, offset.x, offset.y), mat_red)
-
-	# Left Face (-X): 3 Pips
 	for offset in [Vector2(-d, -d), Vector2(0, 0), Vector2(d, d)]:
 		_add_sphere(die, pr, pr * 0.6, Vector3(-h, offset.x, offset.y), mat_dark)
 	return die
 
 
-func _build_brass_hourglass(parent: Node3D, pos: Vector3, mat_walnut: Material, mat_brass: Material, mat_glass: Material, mat_sand: Material) -> void:
+func _build_brass_hourglass(parent: Node3D, pos: Vector3, yaw_deg: float, mat_walnut: Material, mat_brass: Material, mat_glass: Material, mat_sand: Material) -> void:
 	var hg = Node3D.new()
 	hg.name = "BrassHourglass"
 	hg.position = pos
-	hg.rotation_degrees = Vector3(0, 15.0, 0)
+	hg.rotation_degrees = Vector3(0, yaw_deg, 0)
 	parent.add_child(hg)
 	_hourglass_group_node = hg
+	_hourglass_flipped = false
 
-	# Center pivot at the waist (Y = 0.105) so lifting and flipping 180 degrees rotates around the exact center
 	var pivot = Node3D.new()
 	pivot.name = "HourglassPivot"
 	pivot.position = Vector3(0, 0.105, 0)
@@ -929,16 +1157,11 @@ func _build_brass_hourglass(parent: Node3D, pos: Vector3, mat_walnut: Material, 
 	_hourglass_pivot = pivot
 
 	var wy: float = -0.105
-
-	# Hexagonal Walnut & Brass Base Plate
 	_add_cyl(pivot, 0.074, 0.080, 0.014, Vector3(0, 0.007 + wy, 0), mat_walnut, Vector3.ZERO, 6)
 	_add_cyl(pivot, 0.066, 0.070, 0.006, Vector3(0, 0.017 + wy, 0), mat_brass, Vector3.ZERO, 6)
-
-	# Hexagonal Walnut & Brass Top Plate
 	_add_cyl(pivot, 0.070, 0.066, 0.006, Vector3(0, 0.193 + wy, 0), mat_brass, Vector3.ZERO, 6)
 	_add_cyl(pivot, 0.080, 0.074, 0.014, Vector3(0, 0.203 + wy, 0), mat_walnut, Vector3.ZERO, 6)
 
-	# 4 Turned Brass Baluster Rods
 	for i in range(4):
 		var ang = float(i) * PI * 0.5 + PI * 0.25
 		var rx = cos(ang) * 0.056
@@ -948,26 +1171,26 @@ func _build_brass_hourglass(parent: Node3D, pos: Vector3, mat_walnut: Material, 
 		_add_sphere(pivot, 0.009, 0.016, Vector3(rx, 0.105 + wy, rz), mat_brass)
 		_add_sphere(pivot, 0.009, 0.014, Vector3(rx, 0.214 + wy, rz), mat_brass)
 
-	# Lower & Upper Glass Bulbs + Brass Center Waist Ring
 	_add_cyl(pivot, 0.010, 0.046, 0.082, Vector3(0, 0.061 + wy, 0), mat_glass, Vector3.ZERO, 20)
 	_add_cyl(pivot, 0.046, 0.010, 0.082, Vector3(0, 0.149 + wy, 0), mat_glass, Vector3.ZERO, 20)
 	_add_torus(pivot, 0.011, 0.018, Vector3(0, 0.0, 0), mat_brass)
 
-	# Golden Sand Mounds in Both Bulbs + Falling Sand Stream across the waist
 	_hourglass_sand_a = _add_cyl(pivot, 0.010, 0.040, 0.044, Vector3(0, -0.062, 0), mat_sand, Vector3.ZERO, 18)
 	_hourglass_sand_b = _add_cyl(pivot, 0.040, 0.010, 0.044, Vector3(0, 0.062, 0), mat_sand, Vector3.ZERO, 18)
 	_hourglass_sand_b.scale = Vector3(0.75, 0.65, 0.75)
 	_hourglass_stream = _add_cyl(pivot, 0.0025, 0.0025, 0.110, Vector3(0, 0.0, 0), mat_sand, Vector3.ZERO, 8)
 
+	_register_spawned_prop("hourglass", hg, 0.19, 0.10)
 
-func _build_token_bowl_and_coins(parent: Node3D, pos: Vector3, mat_wood: Material, mat_gold: Material, mat_silver: Material, mat_felt: Material, mat_ruby: Material, mat_sapphire: Material, mat_emerald: Material) -> void:
+
+func _build_token_bowl_and_coins(parent: Node3D, pos: Vector3, yaw_deg: float, mat_wood: Material, mat_gold: Material, mat_silver: Material, mat_felt: Material, mat_ruby: Material, mat_sapphire: Material, mat_emerald: Material) -> void:
 	var bowl_group = Node3D.new()
 	bowl_group.name = "GamingTokenBowl"
 	bowl_group.position = pos
+	bowl_group.rotation_degrees = Vector3(0, yaw_deg, 0)
 	parent.add_child(bowl_group)
 	_token_bowl_node = bowl_group
 
-	# Carved Mahogany & Brass Dish with Crimson Velvet Lining
 	_add_cyl(bowl_group, 0.108, 0.084, 0.028, Vector3(0, 0.014, 0), mat_wood, Vector3.ZERO, 28)
 	_add_torus(bowl_group, 0.098, 0.110, Vector3(0, 0.028, 0), mat_gold)
 	_add_cyl(bowl_group, 0.094, 0.082, 0.006, Vector3(0, 0.026, 0), mat_felt, Vector3.ZERO, 24)
@@ -976,7 +1199,6 @@ func _build_token_bowl_and_coins(parent: Node3D, pos: Vector3, mat_wood: Materia
 	_token_coin_rest_pos.clear()
 	_token_coin_rest_rot.clear()
 
-	# Stacked Gold, Silver & Jeweled Match Coins inside the dish
 	var stacks = [
 		{"pos": Vector3(-0.036, 0.030, -0.020), "count": 6, "mat": mat_gold, "gem": mat_ruby},
 		{"pos": Vector3(0.034, 0.030, -0.022), "count": 5, "mat": mat_silver, "gem": mat_sapphire},
@@ -996,7 +1218,6 @@ func _build_token_bowl_and_coins(parent: Node3D, pos: Vector3, mat_wood: Materia
 			_token_coin_rest_pos.append(c_pos)
 			_token_coin_rest_rot.append(Vector3.ZERO)
 
-	# Two extra Gold Match Coins resting on the table beside the bowl
 	var loose1 = Node3D.new()
 	loose1.position = Vector3(0.132, 0.003, 0.028)
 	bowl_group.add_child(loose1)
@@ -1016,31 +1237,28 @@ func _build_token_bowl_and_coins(parent: Node3D, pos: Vector3, mat_wood: Materia
 	_token_coin_rest_pos.append(loose2.position)
 	_token_coin_rest_rot.append(loose2.rotation_degrees)
 
+	_register_spawned_prop("tokens", bowl_group, 0.21, 0.04)
 
-func _build_scorebook_and_pen(parent: Node3D, pos: Vector3, mat_leather: Material, mat_brass: Material, mat_paper: Material, mat_ebony: Material, mat_ribbon: Material) -> void:
+
+func _build_scorebook_and_pen(parent: Node3D, pos: Vector3, yaw_deg: float, mat_leather: Material, mat_brass: Material, mat_paper: Material, mat_ebony: Material, mat_ribbon: Material) -> void:
 	var book_group = Node3D.new()
 	book_group.name = "MatchScorebook"
 	book_group.position = pos
-	book_group.rotation_degrees = Vector3(0, -22.0, 0)
+	book_group.rotation_degrees = Vector3(0, yaw_deg, 0)
 	parent.add_child(book_group)
 	_scorebook_node = book_group
 
-	# Leather-bound Cover + Spine + Brass Corner Protectors
 	_add_box(book_group, Vector3(0.175, 0.012, 0.225), Vector3(0, 0.006, 0), mat_leather)
 	_add_cyl(book_group, 0.010, 0.010, 0.225, Vector3(-0.088, 0.011, 0), mat_leather, Vector3(90, 0, 0), 14)
-	# Cream Ruled Pages Block
 	_add_box(book_group, Vector3(0.158, 0.010, 0.208), Vector3(0.004, 0.014, 0), mat_paper)
-	# Gold Foil Border & Ruled Lines on Top Page
 	_add_box(book_group, Vector3(0.132, 0.0015, 0.005), Vector3(0.004, 0.0195, -0.072), mat_brass)
 	_add_box(book_group, Vector3(0.132, 0.0015, 0.004), Vector3(0.004, 0.0195, -0.032), mat_brass)
 	_add_box(book_group, Vector3(0.132, 0.0015, 0.004), Vector3(0.004, 0.0195, 0.008), mat_brass)
 	_add_box(book_group, Vector3(0.132, 0.0015, 0.004), Vector3(0.004, 0.0195, 0.048), mat_brass)
 	_add_box(book_group, Vector3(0.132, 0.0015, 0.004), Vector3(0.004, 0.0195, 0.084), mat_brass)
 	_add_box(book_group, Vector3(0.004, 0.0015, 0.160), Vector3(0.004, 0.0195, -0.008), mat_brass)
-	# Crimson Ribbon Bookmark
 	_add_box(book_group, Vector3(0.014, 0.003, 0.048), Vector3(0.022, 0.004, 0.125), mat_ribbon, Vector3(0, 14, 0))
 
-	# Pre-build calligraphic ink word strokes along the 3 ruled rows (hidden until user taps note!)
 	_scorebook_ink_strokes.clear()
 	var mat_ink = StandardMaterial3D.new()
 	mat_ink.albedo_color = Color(0.10, 0.16, 0.36)
@@ -1061,7 +1279,6 @@ func _build_scorebook_and_pen(parent: Node3D, pos: Vector3, mat_leather: Materia
 			stroke_group.visible = false
 			book_group.add_child(stroke_group)
 
-			# Main cursive Persian-style word baseline + ascender/flourish + nuqta dots
 			var w_len = 0.020 if (w_idx % 2 == 0) else 0.016
 			_add_box(stroke_group, Vector3(w_len, 0.0016, 0.0034), Vector3(0, 0, 0.001), mat_ink, Vector3(0, -8.0 if (w_idx % 2 == 0) else 6.0, 0))
 			_add_box(stroke_group, Vector3(0.0032, 0.0016, 0.0095), Vector3(w_len * 0.35, 0, -0.0035), mat_ink, Vector3(0, 12.0, 0))
@@ -1070,7 +1287,6 @@ func _build_scorebook_and_pen(parent: Node3D, pos: Vector3, mat_leather: Materia
 				_add_sphere(stroke_group, 0.0018, 0.0016, Vector3(0.002, 0.0005, -0.0055), mat_ink)
 			_scorebook_ink_strokes.append(stroke_group)
 
-	# Brass & Ebony Fountain Pen with origin at the Gold Nib Tip so it traces the exact strokes on paper
 	var pen = Node3D.new()
 	_scorebook_pen_rest_pos = Vector3(-0.038, 0.027, -0.065)
 	_scorebook_pen_rest_rot = Vector3(0, 36.0, 0)
@@ -1085,49 +1301,45 @@ func _build_scorebook_and_pen(parent: Node3D, pos: Vector3, mat_leather: Materia
 	_add_cyl(pen_visual, 0.0065, 0.0055, 0.145, Vector3(0, 0, 0), mat_ebony, Vector3(90, 0, 0), 14)
 	_add_cyl(pen_visual, 0.0072, 0.0072, 0.014, Vector3(0, 0, -0.022), mat_brass, Vector3(90, 0, 0), 14)
 	_add_box(pen_visual, Vector3(0.0025, 0.003, 0.048), Vector3(0, 0.007, 0.032), mat_brass)
-	# Gold Fountain Nib (tip reaches local Z = -0.095 of pen_visual, which is (0,0,0) of pen!)
 	_add_cyl(pen_visual, 0.001, 0.0055, 0.026, Vector3(0, 0, -0.082), mat_brass, Vector3(-90, 0, 0), 8)
 
+	_register_spawned_prop("scorebook", book_group, 0.21, 0.03)
 
-func _build_champion_trophy(parent: Node3D, pos: Vector3, mat_walnut: Material, mat_marble: Material, mat_gold: Material, mat_ruby: Material) -> void:
+
+func _build_champion_trophy(parent: Node3D, pos: Vector3, yaw_deg: float, mat_walnut: Material, mat_marble: Material, mat_gold: Material, mat_ruby: Material) -> void:
 	var trophy = Node3D.new()
 	trophy.name = "ChampionTrophy"
 	trophy.position = pos
-	trophy.rotation_degrees = Vector3(0, 25.0, 0)
+	trophy.rotation_degrees = Vector3(0, yaw_deg, 0)
 	parent.add_child(trophy)
 	_trophy_node = trophy
 
-	# Stepped Walnut & Ivory-Marble Plinth
 	_add_cyl(trophy, 0.068, 0.076, 0.020, Vector3(0, 0.010, 0), mat_walnut, Vector3.ZERO, 8)
 	_add_cyl(trophy, 0.052, 0.058, 0.026, Vector3(0, 0.033, 0), mat_marble, Vector3.ZERO, 16)
 	_add_torus(trophy, 0.046, 0.054, Vector3(0, 0.048, 0), mat_gold)
-
-	# Sculpted Gold Stem & Chalice Cup
 	_add_cyl(trophy, 0.014, 0.032, 0.048, Vector3(0, 0.070, 0), mat_gold, Vector3.ZERO, 16)
 	_add_sphere(trophy, 0.020, 0.028, Vector3(0, 0.092, 0), mat_gold)
 	_add_cyl(trophy, 0.056, 0.022, 0.078, Vector3(0, 0.138, 0), mat_gold, Vector3.ZERO, 24)
 	_add_torus(trophy, 0.050, 0.058, Vector3(0, 0.178, 0), mat_gold)
-	# Dual Trophy Handles
 	_add_torus(trophy, 0.020, 0.027, Vector3(-0.054, 0.142, 0), mat_gold, Vector3(90, 0, 0))
 	_add_torus(trophy, 0.020, 0.027, Vector3(0.054, 0.142, 0), mat_gold, Vector3(90, 0, 0))
-	# Ruby Emblem on Front
 	_trophy_ruby_mesh = _add_sphere(trophy, 0.012, 0.018, Vector3(0, 0.142, 0.042), mat_ruby)
 
+	_register_spawned_prop("trophy", trophy, 0.19, 0.09)
 
-func _build_pocket_chronometer(parent: Node3D, pos: Vector3, mat_gold: Material, mat_aged_brass: Material, mat_dial: Material, mat_hands: Material, mat_glass: Material) -> void:
+
+func _build_pocket_chronometer(parent: Node3D, pos: Vector3, yaw_deg: float, mat_gold: Material, mat_aged_brass: Material, mat_dial: Material, mat_hands: Material, mat_glass: Material) -> void:
 	var watch = Node3D.new()
 	watch.name = "PocketChronometer"
 	watch.position = pos
-	watch.rotation_degrees = Vector3(0, -28.0, 0)
+	watch.rotation_degrees = Vector3(0, yaw_deg, 0)
 	parent.add_child(watch)
 	_chronometer_node = watch
 
-	# Pocket Watch Gold Case & Dial
 	_add_cyl(watch, 0.062, 0.066, 0.018, Vector3(0, 0.009, 0), mat_gold, Vector3.ZERO, 28)
 	_add_torus(watch, 0.054, 0.064, Vector3(0, 0.018, 0), mat_gold)
 	_add_cyl(watch, 0.052, 0.052, 0.004, Vector3(0, 0.018, 0), mat_dial, Vector3.ZERO, 24)
 
-	# Clock Hands wrapped in center pivots at (0, 0.021, 0) so they rotate cleanly around the dial pin
 	_watch_minute_pivot = Node3D.new()
 	_watch_minute_pivot.position = Vector3(0, 0.021, 0)
 	_watch_minute_pivot.rotation_degrees = Vector3(0, 25.0, 0)
@@ -1145,18 +1357,478 @@ func _build_pocket_chronometer(parent: Node3D, pos: Vector3, mat_gold: Material,
 		var a = float(i) * PI / 6.0
 		_add_box(watch, Vector3(0.003, 0.0015, 0.007), Vector3(sin(a) * 0.043, 0.0205, cos(a) * 0.043), mat_aged_brass, Vector3(0, -rad_to_deg(a), 0))
 
-	# Domed Watch Crystal Glass
 	_add_sphere(watch, 0.052, 0.014, Vector3(0, 0.020, 0), mat_glass)
-	# Winding Crown & Bow Ring at Top (-Z)
 	_watch_crown_node = Node3D.new()
 	_watch_crown_node.position = Vector3(0, 0.010, -0.070)
 	watch.add_child(_watch_crown_node)
 	_add_cyl(_watch_crown_node, 0.010, 0.010, 0.016, Vector3.ZERO, mat_gold, Vector3(90, 0, 0), 12)
 	_add_torus(watch, 0.014, 0.019, Vector3(0, 0.010, -0.084), mat_gold)
 
+	_register_spawned_prop("chronometer", watch, 0.18, 0.03)
+
 
 # ============================================================================
-# INTERACTIVE TABLE PROPS TAP DETECTION & 3D ANIMATIONS
+# 10 NEW GAME-THEMED & CAFE ACTIONABLE 3D PROPS BUILDERS
+# ============================================================================
+
+# 9. BRASS NAVAL DECK CANNON ON OAK CARRIAGE (توپ جنگی دریایی — Battleship & Strategy)
+func _build_prop_naval_cannon(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var cannon_group = Node3D.new()
+	cannon_group.name = "NavalCannon"
+	cannon_group.position = pos
+	# Aim cannon along the table margin so cannonball flights look dramatic without crossing the center board
+	var aim_yaw = yaw_deg
+	if absf(pos.z) > 0.95:
+		aim_yaw = 90.0 if pos.x < 0.0 else -90.0
+	cannon_group.rotation_degrees = Vector3(0, aim_yaw, 0)
+	parent.add_child(cannon_group)
+	_cannon_group_node = cannon_group
+
+	# Engraved Naval Platform Coaster + Stacked Iron Cannonballs beside carriage
+	_add_box(cannon_group, Vector3(0.165, 0.008, 0.210), Vector3(0, 0.004, 0), m["walnut"])
+	_add_sphere(cannon_group, 0.015, 0.030, Vector3(0.058, 0.020, 0.035), m["steel_dark"])
+	_add_sphere(cannon_group, 0.015, 0.030, Vector3(0.058, 0.020, 0.002), m["steel_dark"])
+	_add_sphere(cannon_group, 0.015, 0.030, Vector3(0.058, 0.044, 0.018), m["steel_dark"])
+
+	# Recoiling Oak Gun Carriage
+	var carriage = Node3D.new()
+	carriage.position = Vector3.ZERO
+	cannon_group.add_child(carriage)
+	_cannon_carriage_node = carriage
+
+	# Left & Right Stepped Oak Carriage Cheeks + Cross Transoms
+	_add_box(carriage, Vector3(0.016, 0.048, 0.125), Vector3(-0.028, 0.036, 0.008), m["mahogany"])
+	_add_box(carriage, Vector3(0.016, 0.048, 0.125), Vector3(0.028, 0.036, 0.008), m["mahogany"])
+	_add_box(carriage, Vector3(0.068, 0.018, 0.115), Vector3(0.0, 0.020, 0.012), m["walnut"])
+
+	# 4 Naval Carriage Trucks (Wheels) with Brass Hubs
+	for wx in [-0.040, 0.040]:
+		for wz in [-0.034, 0.042]:
+			_add_cyl(carriage, 0.020, 0.020, 0.010, Vector3(wx, 0.022, wz), m["walnut"], Vector3(0, 0, 90), 16)
+			_add_cyl(carriage, 0.008, 0.008, 0.014, Vector3(wx, 0.022, wz), m["brass"], Vector3(0, 0, 90), 12)
+
+	# Tapered Cast-Brass / Bronze Cannon Barrel on Trunnion Pivot
+	var barrel_piv = Node3D.new()
+	barrel_piv.position = Vector3(0, 0.064, 0.005)
+	barrel_piv.rotation_degrees = Vector3(12.0, 0, 0)
+	carriage.add_child(barrel_piv)
+	_cannon_barrel_pivot = barrel_piv
+
+	# Trunnion Axle
+	_add_cyl(barrel_piv, 0.008, 0.008, 0.082, Vector3(0, -0.004, 0), m["brass"], Vector3(0, 0, 90), 12)
+	# Main Tapered Barrel (Muzzle at -Z, Breech at +Z)
+	_add_cyl(barrel_piv, 0.019, 0.029, 0.172, Vector3(0, 0, 0), m["brass"], Vector3(90, 0, 0), 20)
+	# Reinforcing Astragal Rings & Flared Muzzle Lip
+	_add_torus(barrel_piv, 0.022, 0.031, Vector3(0, 0, 0.052), m["aged_brass"], Vector3(90, 0, 0))
+	_add_torus(barrel_piv, 0.019, 0.027, Vector3(0, 0, -0.010), m["aged_brass"], Vector3(90, 0, 0))
+	_add_torus(barrel_piv, 0.017, 0.025, Vector3(0, 0, -0.082), m["brass"], Vector3(90, 0, 0))
+	# Dark Cannon Bore & Breech Cascabel Knob + Glowing Red Fuse
+	_add_cyl(barrel_piv, 0.013, 0.013, 0.012, Vector3(0, 0, -0.083), m["ebony"], Vector3(90, 0, 0), 14)
+	_add_sphere(barrel_piv, 0.026, 0.036, Vector3(0, 0, 0.086), m["aged_brass"])
+	_add_sphere(barrel_piv, 0.011, 0.022, Vector3(0, 0, 0.106), m["brass"])
+	_add_cyl(barrel_piv, 0.003, 0.003, 0.024, Vector3(0, 0.024, 0.072), m["ember_glow"], Vector3(-25, 0, 0), 8)
+
+	_register_spawned_prop("naval_cannon", cannon_group, 0.22, 0.06)
+
+
+# 10. TELESCOPIC BRASS SPYGLASS & MARITIME COMPASS (دوربین دریایی و قطب‌نما)
+func _build_prop_brass_spyglass(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var spy_group = Node3D.new()
+	spy_group.name = "BrassSpyglass"
+	spy_group.position = pos
+	spy_group.rotation_degrees = Vector3(0, yaw_deg, 0)
+	parent.add_child(spy_group)
+	_spyglass_group_node = spy_group
+
+	# 1. Brass Maritime Compass on Right
+	var comp = Node3D.new()
+	comp.position = Vector3(0.054, 0.0, 0.018)
+	spy_group.add_child(comp)
+	_add_cyl(comp, 0.046, 0.050, 0.018, Vector3(0, 0.009, 0), m["aged_brass"], Vector3.ZERO, 24)
+	_add_torus(comp, 0.042, 0.049, Vector3(0, 0.018, 0), m["brass"])
+	_add_cyl(comp, 0.042, 0.042, 0.003, Vector3(0, 0.017, 0), m["ivory"], Vector3.ZERO, 20)
+	_compass_needle_pivot = Node3D.new()
+	_compass_needle_pivot.position = Vector3(0, 0.020, 0)
+	comp.add_child(_compass_needle_pivot)
+	_add_box(_compass_needle_pivot, Vector3(0.006, 0.002, 0.034), Vector3(0, 0, -0.014), m["ruby"])
+	_add_box(_compass_needle_pivot, Vector3(0.006, 0.002, 0.030), Vector3(0, 0, 0.012), m["ebony"])
+	_add_sphere(_compass_needle_pivot, 0.005, 0.005, Vector3.ZERO, m["brass"])
+	_add_sphere(comp, 0.042, 0.012, Vector3(0, 0.020, 0), m["clear_glass"])
+
+	# 2. 3-Stage Telescopic Brass & Leather Spyglass on Left
+	var body = Node3D.new()
+	body.position = Vector3(-0.036, 0.026, -0.008)
+	body.rotation_degrees = Vector3(4.0, 24.0, 0.0)
+	spy_group.add_child(body)
+	_spyglass_body_node = body
+
+	# Main Leather-Wrapped Objective Barrel
+	_add_cyl(body, 0.023, 0.021, 0.088, Vector3(0, 0, -0.020), m["leather_saddle"], Vector3(90, 0, 0), 20)
+	_add_cyl(body, 0.025, 0.025, 0.016, Vector3(0, 0, -0.064), m["brass"], Vector3(90, 0, 0), 20)
+	_add_cyl(body, 0.022, 0.022, 0.012, Vector3(0, 0, 0.022), m["brass"], Vector3(90, 0, 0), 20)
+	_add_sphere(body, 0.021, 0.008, Vector3(0, 0, -0.070), m["cyan_lens"], Vector3(90, 0, 0))
+
+	# Telescoping Middle & Eyepiece Draw-Tubes
+	_spyglass_tube_mid = Node3D.new()
+	_spyglass_tube_mid.position = Vector3(0, 0, 0.035)
+	body.add_child(_spyglass_tube_mid)
+	_add_cyl(_spyglass_tube_mid, 0.017, 0.016, 0.064, Vector3.ZERO, m["brass"], Vector3(90, 0, 0), 18)
+	_add_torus(_spyglass_tube_mid, 0.015, 0.019, Vector3(0, 0, 0.030), m["aged_brass"], Vector3(90, 0, 0))
+
+	_spyglass_tube_eye = Node3D.new()
+	_spyglass_tube_eye.position = Vector3(0, 0, 0.032)
+	_spyglass_tube_mid.add_child(_spyglass_tube_eye)
+	_add_cyl(_spyglass_tube_eye, 0.013, 0.012, 0.054, Vector3.ZERO, m["brass"], Vector3(90, 0, 0), 16)
+	_add_torus(_spyglass_tube_eye, 0.011, 0.016, Vector3(0, 0, 0.026), m["ebony"], Vector3(90, 0, 0))
+
+	_register_spawned_prop("brass_spyglass", spy_group, 0.21, 0.04)
+
+
+# 11. IMPERIAL PERSIAN GOLD CROWN & JEWELED SCEPTER (تاج پادشاهی و عصای سلطنتی — Chess / Checkers / Strategy)
+func _build_prop_royal_crown(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var crown_group = Node3D.new()
+	crown_group.name = "RoyalCrownAndScepter"
+	crown_group.position = pos
+	crown_group.rotation_degrees = Vector3(0, yaw_deg, 0)
+	parent.add_child(crown_group)
+	_crown_group_node = crown_group
+
+	# Crimson Velvet & Gold Cushion Plinth
+	_add_box(crown_group, Vector3(0.165, 0.018, 0.165), Vector3(0, 0.009, 0), m["baize_crimson"])
+	_add_box(crown_group, Vector3(0.172, 0.006, 0.172), Vector3(0, 0.004, 0), m["brass"])
+	for cx in [-0.082, 0.082]:
+		for cz in [-0.082, 0.082]:
+			_add_sphere(crown_group, 0.012, 0.016, Vector3(cx, 0.010, cz), m["brass"])
+
+	# Imperial Gold Crown with Gems & Velvet Cap
+	var crown = Node3D.new()
+	crown.position = Vector3(-0.010, 0.018, -0.006)
+	crown_group.add_child(crown)
+	_crown_main_node = crown
+
+	_add_cyl(crown, 0.064, 0.058, 0.028, Vector3(0, 0.014, 0), m["brass"], Vector3.ZERO, 24)
+	_add_torus(crown, 0.054, 0.063, Vector3(0, 0.004, 0), m["aged_brass"])
+	_add_torus(crown, 0.058, 0.067, Vector3(0, 0.028, 0), m["brass"])
+	_add_sphere(crown, 0.054, 0.056, Vector3(0, 0.026, 0), m["baize_crimson"])
+
+	var gem_mats = [m["ruby"], m["emerald"], m["sapphire"]]
+	for i in range(6):
+		var a = float(i) * PI / 3.0
+		var rx = cos(a) * 0.060
+		var rz = sin(a) * 0.060
+		# Crown Spike & Top Pearl
+		_add_cyl(crown, 0.002, 0.014, 0.036, Vector3(rx, 0.044, rz), m["brass"], Vector3.ZERO, 8)
+		_add_sphere(crown, 0.006, 0.012, Vector3(rx, 0.064, rz), m["ivory"])
+		# Cabochon Gem on Circlet Band
+		_add_sphere(crown, 0.008, 0.012, Vector3(cos(a) * 0.062, 0.015, sin(a) * 0.062), gem_mats[i % 3])
+
+	# Sovereign Top Orb
+	_add_sphere(crown, 0.014, 0.024, Vector3(0, 0.062, 0), m["brass"])
+	_add_sphere(crown, 0.007, 0.014, Vector3(0, 0.078, 0), m["ruby"])
+
+	# Jeweled Royal Scepter beside the Crown
+	var scepter = Node3D.new()
+	scepter.position = Vector3(0.058, 0.028, 0.022)
+	scepter.rotation_degrees = Vector3(8.0, -32.0, 0.0)
+	crown_group.add_child(scepter)
+	_scepter_main_node = scepter
+	_add_cyl(scepter, 0.006, 0.005, 0.165, Vector3.ZERO, m["brass"], Vector3(90, 0, 0), 14)
+	_add_torus(scepter, 0.008, 0.014, Vector3(0, 0, -0.058), m["aged_brass"], Vector3(90, 0, 0))
+	_add_sphere(scepter, 0.015, 0.026, Vector3(0, 0, -0.078), m["ruby"])
+	_add_torus(scepter, 0.013, 0.018, Vector3(0, 0, -0.078), m["brass"])
+
+	_register_spawned_prop("royal_crown_scepter", crown_group, 0.21, 0.06)
+
+
+# 12. CARVED WALNUT & BRASS BEAD ABACUS (چرتکه سنتی چوبی و برنجی — Sudoku / MNumbers / Yatzy)
+func _build_prop_vintage_abacus(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var abacus_group = Node3D.new()
+	abacus_group.name = "VintageAbacus"
+	abacus_group.position = pos
+	abacus_group.rotation_degrees = Vector3(0, yaw_deg, 0)
+	parent.add_child(abacus_group)
+	_abacus_group_node = abacus_group
+
+	var body = Node3D.new()
+	abacus_group.add_child(body)
+	_abacus_body_node = body
+
+	var fw: float = 0.168
+	var fd: float = 0.128
+	var fh: float = 0.018
+	var rail: float = 0.014
+
+	# Outer Walnut Frame Rails + Brass Corner Plates
+	_add_box(body, Vector3(fw, fh, rail), Vector3(0, fh * 0.5, -fd * 0.5), m["walnut"])
+	_add_box(body, Vector3(fw, fh, rail), Vector3(0, fh * 0.5, fd * 0.5), m["walnut"])
+	_add_box(body, Vector3(rail, fh, fd), Vector3(-fw * 0.5, fh * 0.5, 0), m["walnut"])
+	_add_box(body, Vector3(rail, fh, fd), Vector3(fw * 0.5, fh * 0.5, 0), m["walnut"])
+	for cx in [-fw * 0.48, fw * 0.48]:
+		for cz in [-fd * 0.48, fd * 0.48]:
+			_add_box(body, Vector3(0.022, fh + 0.002, 0.022), Vector3(cx, fh * 0.5, cz), m["brass"])
+
+	_abacus_beads.clear()
+	_abacus_bead_rest_pos.clear()
+	var bead_mats = [m["brass"], m["ivory"], m["copper"], m["brass"], m["ivory"]]
+
+	# 5 Brass Counting Rods with 4 Sliding Beads Each
+	for r_i in range(5):
+		var rx = -0.056 + float(r_i) * 0.028
+		_add_cyl(body, 0.0025, 0.0025, fd - 0.012, Vector3(rx, fh * 0.55, 0), m["aged_brass"], Vector3(90, 0, 0), 10)
+		for b_i in range(4):
+			var bz = -0.036 + float(b_i) * 0.018 + (0.014 if b_i >= 2 else -0.008)
+			var bead = Node3D.new()
+			bead.position = Vector3(rx, fh * 0.55, bz)
+			body.add_child(bead)
+			_add_sphere(bead, 0.010, 0.012, Vector3.ZERO, bead_mats[r_i], Vector3(90, 0, 0))
+			_abacus_beads.append(bead)
+			_abacus_bead_rest_pos.append(bead.position)
+
+	_register_spawned_prop("vintage_abacus", abacus_group, 0.21, 0.03)
+
+
+# 13. DETECTIVE'S BRASS MAGNIFYING LOUPE & CIPHER CLUE CARD (ذره‌بین کارآگاهی و کارت رمز — FekrBekr / Sudoku)
+func _build_prop_magnifying_loupe(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var loupe_group = Node3D.new()
+	loupe_group.name = "MagnifyingLoupe"
+	loupe_group.position = pos
+	loupe_group.rotation_degrees = Vector3(0, yaw_deg, 0)
+	parent.add_child(loupe_group)
+	_loupe_group_node = loupe_group
+
+	# Ivory & Gold Cipher Clue Card on Table
+	var card = Node3D.new()
+	card.position = Vector3(-0.014, 0.004, 0.008)
+	card.rotation_degrees = Vector3(0, -14.0, 0)
+	loupe_group.add_child(card)
+	_add_box(card, Vector3(0.135, 0.005, 0.105), Vector3.ZERO, m["paper_cream"])
+	_add_box(card, Vector3(0.122, 0.006, 0.092), Vector3.ZERO, m["brass"])
+	_add_box(card, Vector3(0.114, 0.0065, 0.084), Vector3.ZERO, m["paper_cream"])
+
+	_loupe_clue_dots.clear()
+	var clue_colors = [m["ruby"], m["emerald"], m["sapphire"], m["amber_glow"], m["ruby"], m["emerald"]]
+	for i in range(6):
+		var dx = -0.034 + float(i % 3) * 0.034
+		var dz = -0.016 + float(i / 3) * 0.032
+		var dot = _add_sphere(card, 0.008, 0.008, Vector3(dx, 0.005, dz), clue_colors[i])
+		_loupe_clue_dots.append(dot)
+
+	# Heavy Brass & Ebony Magnifying Glass resting over Clue Card
+	var loupe = Node3D.new()
+	loupe.position = Vector3(0.010, 0.018, 0.006)
+	loupe.rotation_degrees = Vector3(6.0, 26.0, -4.0)
+	loupe_group.add_child(loupe)
+	_loupe_main_node = loupe
+
+	_add_torus(loupe, 0.038, 0.046, Vector3(0, 0, -0.022), m["brass"])
+	_add_sphere(loupe, 0.039, 0.010, Vector3(0, 0, -0.022), m["cyan_lens"])
+	_add_cyl(loupe, 0.008, 0.007, 0.022, Vector3(0, 0, 0.032), m["brass"], Vector3(90, 0, 0), 14)
+	_add_cyl(loupe, 0.009, 0.007, 0.078, Vector3(0, 0, 0.078), m["ebony"], Vector3(90, 0, 0), 16)
+	_add_sphere(loupe, 0.010, 0.016, Vector3(0, 0, 0.118), m["brass"])
+
+	_register_spawned_prop("magnifying_loupe", loupe_group, 0.21, 0.04)
+
+
+# 14. HAND-CARVED PERSIAN SETAR / LUTE (سه‌تار سنتی ایرانی — Backgammon / Mill / Cafe)
+func _build_prop_persian_tar(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var tar_group = Node3D.new()
+	tar_group.name = "PersianTar"
+	tar_group.position = pos
+	tar_group.rotation_degrees = Vector3(0, yaw_deg, 0)
+	parent.add_child(tar_group)
+	_tar_group_node = tar_group
+
+	var body = Node3D.new()
+	body.position = Vector3(0, 0.028, 0)
+	body.rotation_degrees = Vector3(8.0, 18.0, -10.0)
+	tar_group.add_child(body)
+	_tar_body_node = body
+
+	# Double-chambered Mulberry/Walnut Resonant Bowl (کاسه تار/سه‌تار) + Spruce Soundboard
+	_add_sphere(body, 0.052, 0.046, Vector3(0, 0, 0.056), m["mahogany"])
+	_add_cyl(body, 0.048, 0.042, 0.006, Vector3(0, 0.020, 0.056), m["ivory"], Vector3.ZERO, 20)
+	_add_sphere(body, 0.032, 0.032, Vector3(0, 0.002, 0.004), m["mahogany"])
+	_add_cyl(body, 0.028, 0.024, 0.006, Vector3(0, 0.016, 0.004), m["ivory"], Vector3.ZERO, 18)
+
+	# Bridge (خرک) & Long Fretted Neck (دسته)
+	_add_box(body, Vector3(0.028, 0.006, 0.005), Vector3(0, 0.025, 0.068), m["walnut"])
+	_add_box(body, Vector3(0.016, 0.012, 0.145), Vector3(0, 0.014, -0.072), m["walnut"])
+	_add_box(body, Vector3(0.018, 0.014, 0.036), Vector3(0, 0.014, -0.155), m["brass"])
+
+	# 3 Taut Golden Strings along the Neck and Soundboard
+	_tar_strings.clear()
+	for s_i in range(3):
+		var sx = -0.004 + float(s_i) * 0.004
+		var st_mesh = _add_box(body, Vector3(0.0015, 0.0015, 0.225), Vector3(sx, 0.026, -0.038), m["amber_glow"])
+		_tar_strings.append(st_mesh)
+
+	_register_spawned_prop("persian_tar", tar_group, 0.22, 0.05)
+
+
+# 15. ANTIQUE PERSIAN BRASS CELESTIAL ASTROLABE (اسطرلاب نجومی برنجی — Chess / FekrBekr / Sudoku)
+func _build_prop_fortune_astrolabe(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var astro_group = Node3D.new()
+	astro_group.name = "FortuneAstrolabe"
+	astro_group.position = pos
+	astro_group.rotation_degrees = Vector3(0, yaw_deg, 0)
+	parent.add_child(astro_group)
+	_astrolabe_group_node = astro_group
+
+	# Stepped Walnut & Brass Pedestal
+	_add_cyl(astro_group, 0.064, 0.072, 0.016, Vector3(0, 0.008, 0), m["walnut"], Vector3.ZERO, 16)
+	_add_cyl(astro_group, 0.044, 0.052, 0.014, Vector3(0, 0.022, 0), m["brass"], Vector3.ZERO, 16)
+	_add_cyl(astro_group, 0.010, 0.016, 0.028, Vector3(0, 0.038, 0), m["aged_brass"], Vector3.ZERO, 12)
+
+	# 3 Concentric Gimbaled Celestial Rings + Glowing Sun Core at Y = 0.112
+	var center_y: float = 0.112
+	_astro_outer_ring = Node3D.new()
+	_astro_outer_ring.position = Vector3(0, center_y, 0)
+	astro_group.add_child(_astro_outer_ring)
+	_add_torus(_astro_outer_ring, 0.058, 0.066, Vector3.ZERO, m["brass"], Vector3(90, 0, 0))
+	_add_torus(_astro_outer_ring, 0.010, 0.016, Vector3(0, 0.074, 0), m["brass"], Vector3(90, 0, 0))
+
+	_astro_mid_ring = Node3D.new()
+	_astro_mid_ring.position = Vector3(0, center_y, 0)
+	_astro_mid_ring.rotation_degrees = Vector3(0, 35.0, 0)
+	astro_group.add_child(_astro_mid_ring)
+	_add_torus(_astro_mid_ring, 0.043, 0.050, Vector3.ZERO, m["aged_brass"], Vector3(90, 0, 0))
+
+	_astro_inner_ring = Node3D.new()
+	_astro_inner_ring.position = Vector3(0, center_y, 0)
+	_astro_inner_ring.rotation_degrees = Vector3(25.0, -30.0, 0)
+	astro_group.add_child(_astro_inner_ring)
+	_add_torus(_astro_inner_ring, 0.028, 0.034, Vector3.ZERO, m["brass"])
+	_add_box(_astro_inner_ring, Vector3(0.064, 0.004, 0.006), Vector3.ZERO, m["brass"], Vector3(0, 40.0, 0))
+
+	_astro_sun_core = _add_sphere(astro_group, 0.015, 0.030, Vector3(0, center_y, 0), m["amber_glow"])
+
+	_register_spawned_prop("fortune_astrolabe", astro_group, 0.20, 0.10)
+
+
+# 16. CEREMONIAL PERSIAN SHIELD & CURVED DAGGER (سپر و خنجر تشریفاتی — Battleship / Chess / RPC)
+func _build_prop_dagger_and_shield(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var arms_group = Node3D.new()
+	arms_group.name = "DaggerAndShield"
+	arms_group.position = pos
+	arms_group.rotation_degrees = Vector3(0, yaw_deg, 0)
+	parent.add_child(arms_group)
+	_arms_group_node = arms_group
+
+	# Domed Steel & Gold-Bossed Round Buckler Shield (سپر)
+	var shield = Node3D.new()
+	shield.position = Vector3(-0.008, 0.014, 0.006)
+	arms_group.add_child(shield)
+	_shield_main_node = shield
+	_add_cyl(shield, 0.082, 0.086, 0.010, Vector3.ZERO, m["steel_dark"], Vector3.ZERO, 28)
+	_add_torus(shield, 0.076, 0.086, Vector3(0, 0.005, 0), m["brass"])
+	_add_sphere(shield, 0.028, 0.024, Vector3(0, 0.008, 0), m["brass"])
+	_add_cyl(shield, 0.002, 0.010, 0.022, Vector3(0, 0.022, 0), m["brass"], Vector3.ZERO, 10)
+	for i in range(4):
+		var a = float(i) * PI * 0.5 + PI * 0.25
+		_add_sphere(shield, 0.008, 0.010, Vector3(cos(a) * 0.054, 0.008, sin(a) * 0.054), m["ruby"])
+
+	# Ceremonial Curved Dagger (خنجر) resting across the Shield
+	var dagger = Node3D.new()
+	dagger.position = Vector3(0.016, 0.032, -0.004)
+	dagger.rotation_degrees = Vector3(5.0, -36.0, 0.0)
+	arms_group.add_child(dagger)
+	_dagger_main_node = dagger
+	# Ivory & Ruby Hilt + Brass Crossguard + Gleaming Silver Blade
+	_add_cyl(dagger, 0.008, 0.007, 0.052, Vector3(0, 0, 0.052), m["ivory"], Vector3(90, 0, 0), 12)
+	_add_sphere(dagger, 0.011, 0.018, Vector3(0, 0, 0.082), m["ruby"])
+	_add_box(dagger, Vector3(0.044, 0.009, 0.012), Vector3(0, 0, 0.024), m["brass"])
+	_add_box(dagger, Vector3(0.018, 0.004, 0.095), Vector3(-0.003, 0, -0.026), m["silver"], Vector3(0, 6.0, 0))
+	_add_cyl(dagger, 0.001, 0.009, 0.036, Vector3(-0.008, 0, -0.086), m["silver"], Vector3(-90, 12.0, 0), 8)
+
+	_register_spawned_prop("dagger_and_shield", arms_group, 0.21, 0.04)
+
+
+# 17. PORCELAIN PLATE WITH PERSIAN BAKLAVA, SAFFRON CAKE & GOLDEN FORK (بشقاب باقلوا و شیرینی زعفرانی)
+func _build_prop_cafe_pastry(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var pastry_group = Node3D.new()
+	pastry_group.name = "CafePastryPlate"
+	pastry_group.position = pos
+	pastry_group.rotation_degrees = Vector3(0, yaw_deg, 0)
+	parent.add_child(pastry_group)
+	_pastry_group_node = pastry_group
+
+	# Gold-Rimmed Porcelain Dessert Plate
+	_add_cyl(pastry_group, 0.096, 0.072, 0.012, Vector3(0, 0.006, 0), m["porcelain"], Vector3.ZERO, 28)
+	_add_torus(pastry_group, 0.088, 0.098, Vector3(0, 0.012, 0), m["brass"])
+
+	_pastry_baklava_nodes.clear()
+	_pastry_baklava_rest_pos.clear()
+
+	# 2 Diamond-Cut Persian Baklava Pastries with Crushed Pistachio & Rose Garnish
+	var b_positions = [Vector3(-0.024, 0.022, -0.012), Vector3(0.018, 0.022, -0.018)]
+	var b_yaws = [28.0, -32.0]
+	for i in range(2):
+		var bak = Node3D.new()
+		bak.position = b_positions[i]
+		bak.rotation_degrees = Vector3(0, b_yaws[i], 0)
+		pastry_group.add_child(bak)
+		_add_box(bak, Vector3(0.038, 0.022, 0.038), Vector3.ZERO, m["pastry_honey"], Vector3(0, 45.0, 0))
+		_add_box(bak, Vector3(0.020, 0.005, 0.020), Vector3(0, 0.013, 0), m["pistachio"], Vector3(0, 45.0, 0))
+		_add_sphere(bak, 0.005, 0.006, Vector3(0, 0.016, 0), m["ruby"])
+		_pastry_baklava_nodes.append(bak)
+		_pastry_baklava_rest_pos.append(bak.position)
+
+	# Miniature Golden Dessert Fork on Plate Rim
+	var fork = Node3D.new()
+	fork.position = Vector3(0.010, 0.016, 0.044)
+	fork.rotation_degrees = Vector3(0, 18.0, -6.0)
+	pastry_group.add_child(fork)
+	_pastry_fork_node = fork
+	_add_box(fork, Vector3(0.092, 0.003, 0.007), Vector3.ZERO, m["brass"])
+	_add_box(fork, Vector3(0.022, 0.003, 0.014), Vector3(-0.042, 0, 0), m["brass"])
+
+	_register_spawned_prop("cafe_pastry_plate", pastry_group, 0.20, 0.04)
+
+
+# 18. PIERCED BRASS ESFAND / INCENSE BURNER (عودسوز و اسفنددان برنجی)
+func _build_prop_incense_burner(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
+	var m = _shared_mats
+	var burner_group = Node3D.new()
+	burner_group.name = "IncenseBurner"
+	burner_group.position = pos
+	burner_group.rotation_degrees = Vector3(0, yaw_deg, 0)
+	parent.add_child(burner_group)
+	_burner_group_node = burner_group
+
+	var base = Node3D.new()
+	burner_group.add_child(base)
+	_burner_base_node = base
+	_add_cyl(base, 0.036, 0.048, 0.020, Vector3(0, 0.010, 0), m["aged_brass"], Vector3.ZERO, 20)
+	_add_sphere(base, 0.056, 0.052, Vector3(0, 0.042, 0), m["copper"])
+	_add_torus(base, 0.048, 0.058, Vector3(0, 0.056, 0), m["brass"])
+	# Side Handle
+	_add_box(base, Vector3(0.068, 0.008, 0.012), Vector3(0.072, 0.048, 0), m["walnut"], Vector3(0, 0, -12.0))
+	# Glowing Charcoal Embers inside Bowl
+	_burner_embers_mesh = _add_sphere(base, 0.038, 0.018, Vector3(0, 0.054, 0), m["ember_glow"])
+
+	# Pierced Brass Dome Cover Lid
+	var lid = Node3D.new()
+	lid.position = Vector3(0, 0.060, 0)
+	burner_group.add_child(lid)
+	_burner_lid_node = lid
+	_add_cyl(lid, 0.012, 0.052, 0.048, Vector3(0, 0.024, 0), m["brass"], Vector3.ZERO, 12)
+	_add_sphere(lid, 0.012, 0.022, Vector3(0, 0.054, 0), m["brass"])
+	_add_torus(lid, 0.009, 0.015, Vector3(0, 0.068, 0), m["brass"], Vector3(90, 0, 0))
+
+	_register_spawned_prop("incense_burner", burner_group, 0.20, 0.06)
+
+
+# ============================================================================
+# INTERACTIVE TABLE PROPS TAP DETECTION & 3D ANIMATIONS (ALL 18 PROPS)
 # ============================================================================
 
 func _play_prop_sfx(sound_name: String) -> void:
@@ -1196,7 +1868,6 @@ func _try_trigger_prop_at_screen_pos(screen_pos: Vector2) -> bool:
 	var ray_origin = camera.project_ray_origin(screen_pos)
 	var ray_dir = camera.project_ray_normal(screen_pos)
 
-	# Intersect table prop plane (Y = 0.095)
 	var prop_plane = Plane(Vector3.UP, 0.095)
 	var plane_hit = prop_plane.intersects_ray(ray_origin, ray_dir)
 	if plane_hit == null:
@@ -1206,28 +1877,16 @@ func _try_trigger_prop_at_screen_pos(screen_pos: Vector2) -> bool:
 	if absf(plane_hit.x) < 0.84 and absf(plane_hit.z) < 0.88:
 		return false
 
-	var props_list = [
-		{"id": "scorebook", "node": _scorebook_node, "radius": 0.21, "y_off": 0.03},
-		{"id": "hourglass", "node": _hourglass_group_node, "radius": 0.19, "y_off": 0.10},
-		{"id": "dice", "node": _dice_group_node, "radius": 0.20, "y_off": 0.05},
-		{"id": "tea", "node": _tea_group_node, "radius": 0.23, "y_off": 0.06},
-		{"id": "lantern", "node": _lantern_node, "radius": 0.21, "y_off": 0.12},
-		{"id": "tokens", "node": _token_bowl_node, "radius": 0.21, "y_off": 0.04},
-		{"id": "trophy", "node": _trophy_node, "radius": 0.19, "y_off": 0.09},
-		{"id": "chronometer", "node": _chronometer_node, "radius": 0.18, "y_off": 0.03}
-	]
-
 	var best_id: String = ""
 	var best_dist: float = 999.0
 
-	for p in props_list:
+	for p in _active_table_props:
 		var node: Node3D = p["node"]
 		if not node or not is_instance_valid(node):
 			continue
 		var p_pos = node.global_position
 		var dist_xz = Vector2(plane_hit.x - p_pos.x, plane_hit.z - p_pos.z).length()
 
-		# Also measure 3D ray distance to prop center so tall props in 3D orbit view are effortless to tap
 		var center_3d = p_pos + Vector3(0.0, float(p["y_off"]), 0.0)
 		var to_c = center_3d - ray_origin
 		var t = maxf(0.0, to_c.dot(ray_dir))
@@ -1267,6 +1926,26 @@ func _trigger_prop_animation(prop_id: String) -> void:
 			_animate_trophy()
 		"chronometer":
 			_animate_chronometer()
+		"naval_cannon":
+			_animate_naval_cannon()
+		"brass_spyglass":
+			_animate_brass_spyglass()
+		"royal_crown_scepter":
+			_animate_royal_crown()
+		"vintage_abacus":
+			_animate_vintage_abacus()
+		"magnifying_loupe":
+			_animate_magnifying_loupe()
+		"persian_tar":
+			_animate_persian_tar()
+		"fortune_astrolabe":
+			_animate_fortune_astrolabe()
+		"dagger_and_shield":
+			_animate_dagger_and_shield()
+		"cafe_pastry_plate":
+			_animate_cafe_pastry()
+		"incense_burner":
+			_animate_incense_burner()
 
 
 func _spawn_prop_sparkle_burst(parent: Node3D, local_center: Vector3, color: Color, count: int = 6, spread: float = 0.09, rise: float = 0.09) -> void:
@@ -1309,13 +1988,12 @@ func _spawn_prop_pulse_ring(parent: Node3D, local_center: Vector3, color: Color,
 
 # 1. MATCH SCOREBOOK & FOUNTAIN PEN: Pen lifts up and writes fake calligraphic text across the ruled lines!
 func _animate_scorebook() -> void:
-	if not _scorebook_node or not _scorebook_pen:
+	if not _scorebook_node or not is_instance_valid(_scorebook_node) or not _scorebook_pen:
 		return
 	_prop_animating["scorebook"] = true
 	_play_prop_sfx("tap")
 	_spawn_prop_pulse_ring(_scorebook_node, Vector3(0.0, 0.022, 0.0), Color(0.95, 0.78, 0.28), 2.4)
 
-	# Reset all fake text strokes before starting to write
 	for st in _scorebook_ink_strokes:
 		if is_instance_valid(st):
 			st.visible = false
@@ -1325,22 +2003,18 @@ func _animate_scorebook() -> void:
 	var write_rot_a = Vector3(-54.0, 18.0, -14.0)
 	var write_rot_b = Vector3(-50.0, 24.0, -6.0)
 
-	# Lift fountain pen into upright writing posture above the first word on Row 1
 	var first_pos = _scorebook_ink_strokes[0].position if _scorebook_ink_strokes.size() > 0 else Vector3(0.046, 0.021, -0.052)
 	tw.tween_property(_scorebook_pen, "position", first_pos + Vector3(0.0, 0.045, 0.0), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(_scorebook_pen, "rotation_degrees", write_rot_a, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-	# Write each word stroke across the 3 ruled lines with realistic nib scribble oscillations
 	for idx in range(_scorebook_ink_strokes.size()):
 		var stroke_node: Node3D = _scorebook_ink_strokes[idx]
 		var w_pos: Vector3 = stroke_node.position
 		var is_new_line: bool = (idx > 0 and idx % 4 == 0)
 
 		if is_new_line:
-			# Lift pen slightly to hop to the start of the next ruled line
 			tw.tween_property(_scorebook_pen, "position", w_pos + Vector3(0.010, 0.028, 0.0), 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-		# Touch nib down at start of word
 		tw.tween_property(_scorebook_pen, "position", w_pos + Vector3(0.008, 0.002, 0.003), 0.05)
 		tw.tween_callback(func():
 			if is_instance_valid(stroke_node):
@@ -1350,13 +2024,11 @@ func _animate_scorebook() -> void:
 			if idx % 3 == 0:
 				_play_prop_sfx("move_peace")
 		)
-		# Rapid cursive scribble motion across the word
 		tw.tween_property(_scorebook_pen, "position", w_pos + Vector3(-0.002, 0.005, -0.004), 0.055)
 		tw.parallel().tween_property(_scorebook_pen, "rotation_degrees", write_rot_b, 0.055)
 		tw.tween_property(_scorebook_pen, "position", w_pos + Vector3(-0.010, 0.002, 0.002), 0.055)
 		tw.parallel().tween_property(_scorebook_pen, "rotation_degrees", write_rot_a, 0.055)
 
-	# Flourish twirl in the air and settle back to rest on the scorebook
 	tw.tween_callback(func():
 		_play_prop_sfx("add_peace")
 		_spawn_prop_sparkle_burst(_scorebook_node, Vector3(0.0, 0.035, -0.01), Color(1.0, 0.84, 0.32), 6, 0.08, 0.06)
@@ -1365,7 +2037,6 @@ func _animate_scorebook() -> void:
 	tw.parallel().tween_property(_scorebook_pen, "rotation_degrees", _scorebook_pen_rest_rot + Vector3(0.0, 360.0, 0.0), 0.36).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_scorebook_pen, "position", _scorebook_pen_rest_pos, 0.18).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 
-	# Keep fake text visible on the note for 1.6s, then fade out cleanly
 	tw.tween_interval(1.6)
 	tw.tween_callback(func():
 		for st in _scorebook_ink_strokes:
@@ -1376,14 +2047,15 @@ func _animate_scorebook() -> void:
 					if is_instance_valid(st):
 						st.visible = false
 				)
-		_scorebook_pen.rotation_degrees = _scorebook_pen_rest_rot
+		if is_instance_valid(_scorebook_pen):
+			_scorebook_pen.rotation_degrees = _scorebook_pen_rest_rot
 		_prop_animating["scorebook"] = false
 	)
 
 
 # 2. BRASS HOURGLASS / SAND WATCH: Rises up, flips 180 degrees upside down, lands, and reverses sand flow!
 func _animate_hourglass() -> void:
-	if not _hourglass_group_node or not _hourglass_pivot:
+	if not _hourglass_group_node or not is_instance_valid(_hourglass_group_node) or not _hourglass_pivot:
 		return
 	_prop_animating["hourglass"] = true
 	_play_prop_sfx("time")
@@ -1393,20 +2065,16 @@ func _animate_hourglass() -> void:
 	var target_rot_x: float = 180.0 if _hourglass_flipped else 360.0
 
 	var tw = create_tween()
-	# Lift hourglass up
 	tw.tween_property(_hourglass_pivot, "position:y", 0.255, 0.26).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	# Flip 180 degrees around waist while suspended in mid-air
 	tw.tween_property(_hourglass_pivot, "rotation_degrees:x", target_rot_x, 0.46).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN_OUT)
 	tw.parallel().tween_callback(func():
 		_spawn_prop_sparkle_burst(_hourglass_group_node, Vector3(0.0, 0.22, 0.0), Color(1.0, 0.82, 0.30), 7, 0.10, 0.05)
 	)
-	# Set back down onto the table with a tactile bounce
 	tw.tween_property(_hourglass_pivot, "position:y", 0.105, 0.26).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	tw.tween_callback(func():
 		_play_prop_sfx("tap")
-		if not _hourglass_flipped:
+		if is_instance_valid(_hourglass_pivot) and not _hourglass_flipped:
 			_hourglass_pivot.rotation_degrees.x = 0.0
-		# Animate sand draining from the new top bulb into the new bottom bulb
 		if is_instance_valid(_hourglass_stream) and is_instance_valid(_hourglass_sand_a) and is_instance_valid(_hourglass_sand_b):
 			_hourglass_stream.visible = true
 			_hourglass_stream.scale = Vector3(1.4, 1.0, 1.4)
@@ -1429,7 +2097,7 @@ func _animate_hourglass() -> void:
 
 # 3. LEATHER DICE CUP & 3 IVORY DICE: Cup shakes vigorously and all 3 dice tumble & roll new faces!
 func _animate_dice() -> void:
-	if not _dice_group_node or not _dice_cup_node:
+	if not _dice_group_node or not is_instance_valid(_dice_group_node) or not _dice_cup_node:
 		return
 	_prop_animating["dice"] = true
 	_play_prop_sfx("dice")
@@ -1438,7 +2106,6 @@ func _animate_dice() -> void:
 	var cup_rest_pos = Vector3(-0.055, 0.0, -0.015)
 	var cup_rest_rot = Vector3(6.0, 18.0, -8.0)
 
-	# Shake the leather dice cup
 	var cup_tw = create_tween()
 	cup_tw.tween_property(_dice_cup_node, "position", cup_rest_pos + Vector3(0.0, 0.11, 0.0), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	cup_tw.parallel().tween_property(_dice_cup_node, "rotation_degrees", Vector3(-22.0, 35.0, 26.0), 0.12)
@@ -1447,16 +2114,13 @@ func _animate_dice() -> void:
 	cup_tw.tween_property(_dice_cup_node, "rotation_degrees", cup_rest_rot, 0.16)
 	cup_tw.parallel().tween_property(_dice_cup_node, "position", cup_rest_pos, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 
-	# Tumble & bounce the 3 sculpted ivory dice onto random 90-degree faces
 	var face_angles = [0.0, 90.0, 180.0, 270.0]
 	for i in range(_dice_nodes.size()):
 		var die: Node3D = _dice_nodes[i]
 		if not is_instance_valid(die):
 			continue
 		var r_pos: Vector3 = _dice_rest_positions[i]
-		var jitter_x = randf_range(-0.014, 0.014)
-		var jitter_z = randf_range(-0.014, 0.014)
-		var land_pos = Vector3(r_pos.x + jitter_x, r_pos.y, r_pos.z + jitter_z)
+		var land_pos = Vector3(r_pos.x + randf_range(-0.014, 0.014), r_pos.y, r_pos.z + randf_range(-0.014, 0.014))
 		var end_rot = Vector3(
 			face_angles[randi() % 4] + 360.0,
 			randf_range(-75.0, 75.0) + 360.0,
@@ -1485,7 +2149,7 @@ func _animate_dice() -> void:
 
 # 4. PERSIAN TEA SERVICE: Sugar cube hops into glass, teapot lifts & pours crimson tea, spoon stirs, steam rises!
 func _animate_tea_service() -> void:
-	if not _tea_group_node or not _tea_pot_node or not _tea_istikan_node:
+	if not _tea_group_node or not is_instance_valid(_tea_group_node) or not _tea_pot_node or not _tea_istikan_node:
 		return
 	_prop_animating["tea"] = true
 	_play_prop_sfx("tap_button")
@@ -1494,7 +2158,6 @@ func _animate_tea_service() -> void:
 	var pot_rest_pos = Vector3(-0.058, 0.009, -0.028)
 	var pot_rest_rot = Vector3(0.0, 28.0, 0.0)
 
-	# Spawn a sugar cube hopping from the qandan into the istikan tea glass
 	var mat_sugar = _make_mat(Color(0.97, 0.95, 0.90), 0.22, 0.0)
 	var flying_sugar = _add_box(_tea_group_node, Vector3(0.015, 0.013, 0.015), Vector3(0.064, 0.068, -0.058), mat_sugar)
 	var sug_tw = create_tween()
@@ -1507,7 +2170,6 @@ func _animate_tea_service() -> void:
 		_play_prop_sfx("add_peace")
 	)
 
-	# Lift porcelain teapot, tilt over glass, pour crimson tea stream, and stir spoon
 	var tw = create_tween()
 	tw.tween_property(_tea_pot_node, "position", Vector3(-0.018, 0.118, 0.018), 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(_tea_pot_node, "rotation_degrees", Vector3(0.0, -24.0, -38.0), 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -1521,7 +2183,6 @@ func _animate_tea_service() -> void:
 				if is_instance_valid(_tea_spoon_pivot):
 					_tea_spoon_pivot.rotation_degrees.y = 0.0
 			)
-		# Spawn rising fragrant steam puffs above the istikan glass
 		var mat_steam = StandardMaterial3D.new()
 		mat_steam.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		mat_steam.albedo_color = Color(1.0, 0.96, 0.88, 0.52)
@@ -1529,11 +2190,12 @@ func _animate_tea_service() -> void:
 		mat_steam.emission = Color(1.0, 0.88, 0.68)
 		mat_steam.emission_energy_multiplier = 0.8
 		for s_i in range(4):
-			var puff = _add_sphere(_tea_istikan_node, 0.014, 0.022, Vector3(randf_range(-0.01, 0.01), 0.10 + float(s_i) * 0.015, randf_range(-0.01, 0.01)), mat_steam)
-			var p_tw = create_tween().set_parallel(true)
-			p_tw.tween_property(puff, "position:y", 0.24 + float(s_i) * 0.03, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-			p_tw.tween_property(puff, "scale", Vector3(2.2, 2.2, 2.2), 0.75)
-			p_tw.chain().tween_callback(puff.queue_free)
+			if is_instance_valid(_tea_istikan_node):
+				var puff = _add_sphere(_tea_istikan_node, 0.014, 0.022, Vector3(randf_range(-0.01, 0.01), 0.10 + float(s_i) * 0.015, randf_range(-0.01, 0.01)), mat_steam)
+				var p_tw = create_tween().set_parallel(true)
+				p_tw.tween_property(puff, "position:y", 0.24 + float(s_i) * 0.03, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+				p_tw.tween_property(puff, "scale", Vector3(2.2, 2.2, 2.2), 0.75)
+				p_tw.chain().tween_callback(puff.queue_free)
 	)
 	tw.tween_interval(0.52)
 	tw.tween_callback(func():
@@ -1550,24 +2212,25 @@ func _animate_tea_service() -> void:
 
 # 5. MOROCCAN / PERSIAN FILIGREE BRASS LANTERN: Sways gently, flares warm golden light, and releases rising fireflies!
 func _animate_lantern() -> void:
-	if not _lantern_node:
+	if not _lantern_node or not is_instance_valid(_lantern_node):
 		return
 	_prop_animating["lantern"] = true
 	_play_prop_sfx("bell")
 	_spawn_prop_pulse_ring(_lantern_node, Vector3(0.0, 0.02, 0.0), Color(1.0, 0.72, 0.18), 2.5)
 	_spawn_prop_sparkle_burst(_lantern_node, Vector3(0.0, 0.26, 0.0), Color(1.0, 0.78, 0.22), 8, 0.12, 0.16)
 
-	var base_pos = Vector3(-0.68, 0.063, -1.12)
+	var base_pos: Vector3 = _prop_rest_pos.get("lantern", _lantern_node.position)
+	var base_rot: Vector3 = _prop_rest_rot.get("lantern", Vector3.ZERO)
 	var flare_tw = create_tween()
 	flare_tw.tween_property(self, "_lantern_flare_boost", 1.35, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	flare_tw.tween_property(self, "_lantern_flare_boost", 0.0, 0.65).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 	var tw = create_tween()
 	tw.tween_property(_lantern_node, "position:y", base_pos.y + 0.055, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(_lantern_node, "rotation_degrees", Vector3(8.0, 0.0, 14.0), 0.16)
-	tw.tween_property(_lantern_node, "rotation_degrees", Vector3(-7.0, 0.0, -12.0), 0.18)
-	tw.tween_property(_lantern_node, "rotation_degrees", Vector3(4.0, 0.0, 7.0), 0.16)
-	tw.tween_property(_lantern_node, "rotation_degrees", Vector3.ZERO, 0.18)
+	tw.parallel().tween_property(_lantern_node, "rotation_degrees", base_rot + Vector3(8.0, 0.0, 14.0), 0.16)
+	tw.tween_property(_lantern_node, "rotation_degrees", base_rot + Vector3(-7.0, 0.0, -12.0), 0.18)
+	tw.tween_property(_lantern_node, "rotation_degrees", base_rot + Vector3(4.0, 0.0, 7.0), 0.16)
+	tw.tween_property(_lantern_node, "rotation_degrees", base_rot, 0.18)
 	tw.parallel().tween_property(_lantern_node, "position:y", base_pos.y, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	tw.tween_callback(func():
 		_prop_animating["lantern"] = false
@@ -1576,7 +2239,7 @@ func _animate_lantern() -> void:
 
 # 6. GAMING TOKEN BOWL & COINS: Cascading fountain wave of flipping gold, silver, and jeweled coins!
 func _animate_token_bowl() -> void:
-	if not _token_bowl_node or _token_coin_nodes.is_empty():
+	if not _token_bowl_node or not is_instance_valid(_token_bowl_node) or _token_coin_nodes.is_empty():
 		return
 	_prop_animating["tokens"] = true
 	_play_prop_sfx("bell")
@@ -1608,15 +2271,15 @@ func _animate_token_bowl() -> void:
 
 # 7. GOLDEN CHAMPION TROPHY: Victory levitation, 360-degree celebratory spin, ruby flash, and golden star burst!
 func _animate_trophy() -> void:
-	if not _trophy_node:
+	if not _trophy_node or not is_instance_valid(_trophy_node):
 		return
 	_prop_animating["trophy"] = true
 	_play_prop_sfx("correct")
 	_spawn_prop_pulse_ring(_trophy_node, Vector3(0.0, 0.02, 0.0), Color(1.0, 0.85, 0.24), 2.5)
 	_spawn_prop_sparkle_burst(_trophy_node, Vector3(0.0, 0.16, 0.0), Color(1.0, 0.86, 0.28), 8, 0.12, 0.12)
 
-	var base_pos = Vector3(-1.04, 0.063, -0.16)
-	var base_rot = Vector3(0.0, 25.0, 0.0)
+	var base_pos: Vector3 = _prop_rest_pos.get("trophy", _trophy_node.position)
+	var base_rot: Vector3 = _prop_rest_rot.get("trophy", _trophy_node.rotation_degrees)
 
 	var tw = create_tween()
 	tw.tween_property(_trophy_node, "position:y", base_pos.y + 0.135, 0.26).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -1624,36 +2287,34 @@ func _animate_trophy() -> void:
 	tw.tween_property(_trophy_node, "position:y", base_pos.y, 0.28).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(_trophy_node, "rotation_degrees", base_rot + Vector3(0.0, 360.0, 0.0), 0.24)
 	tw.tween_callback(func():
-		_trophy_node.rotation_degrees = base_rot
+		if is_instance_valid(_trophy_node):
+			_trophy_node.rotation_degrees = base_rot
 		_prop_animating["trophy"] = false
 	)
 
 
 # 8. VINTAGE POCKET CHRONOMETER: Winding crown press, mechanical vibration hop, and rapid spinning clock hands!
 func _animate_chronometer() -> void:
-	if not _chronometer_node or not _watch_minute_pivot or not _watch_hour_pivot:
+	if not _chronometer_node or not is_instance_valid(_chronometer_node) or not _watch_minute_pivot or not _watch_hour_pivot:
 		return
 	_prop_animating["chronometer"] = true
 	_play_prop_sfx("time")
 	_spawn_prop_pulse_ring(_chronometer_node, Vector3(0.0, 0.022, 0.0), Color(1.0, 0.88, 0.42), 2.2)
 
-	var base_pos = Vector3(1.04, 0.063, 0.14)
-	var base_rot = Vector3(0.0, -28.0, 0.0)
+	var base_pos: Vector3 = _prop_rest_pos.get("chronometer", _chronometer_node.position)
+	var base_rot: Vector3 = _prop_rest_rot.get("chronometer", _chronometer_node.rotation_degrees)
 
-	# Depress winding crown
 	if is_instance_valid(_watch_crown_node):
 		var cr_tw = create_tween()
 		cr_tw.tween_property(_watch_crown_node, "position:z", -0.064, 0.08)
 		cr_tw.tween_property(_watch_crown_node, "position:z", -0.070, 0.12)
 
-	# Spin minute hand 2 full revolutions and hour hand 60 degrees
 	var min_start = _watch_minute_pivot.rotation_degrees.y
 	var hr_start = _watch_hour_pivot.rotation_degrees.y
 	var hands_tw = create_tween().set_parallel(true)
 	hands_tw.tween_property(_watch_minute_pivot, "rotation_degrees:y", min_start - 720.0, 0.68).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	hands_tw.tween_property(_watch_hour_pivot, "rotation_degrees:y", hr_start - 60.0, 0.68).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-	# Mechanical watch buzz & hop
 	var tw = create_tween()
 	tw.tween_property(_chronometer_node, "position:y", base_pos.y + 0.055, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(_chronometer_node, "rotation_degrees:z", 11.0, 0.07)
@@ -1664,8 +2325,429 @@ func _animate_chronometer() -> void:
 	tw.parallel().tween_property(_chronometer_node, "position:y", base_pos.y, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	tw.tween_interval(0.22)
 	tw.tween_callback(func():
-		_watch_minute_pivot.rotation_degrees.y = fmod(_watch_minute_pivot.rotation_degrees.y, 360.0)
-		_watch_hour_pivot.rotation_degrees.y = fmod(_watch_hour_pivot.rotation_degrees.y, 360.0)
+		if is_instance_valid(_watch_minute_pivot) and is_instance_valid(_watch_hour_pivot):
+			_watch_minute_pivot.rotation_degrees.y = fmod(_watch_minute_pivot.rotation_degrees.y, 360.0)
+			_watch_hour_pivot.rotation_degrees.y = fmod(_watch_hour_pivot.rotation_degrees.y, 360.0)
 		_spawn_prop_sparkle_burst(_chronometer_node, Vector3(0.0, 0.03, 0.0), Color(1.0, 0.88, 0.36), 5, 0.07, 0.05)
 		_prop_animating["chronometer"] = false
+	)
+
+
+# 9. NAVAL CANNON ANIMATION: Fuse sparks, cannon fires cannonball with muzzle blast, carriage recoils & smoke billows!
+func _animate_naval_cannon() -> void:
+	if not _cannon_group_node or not is_instance_valid(_cannon_group_node) or not _cannon_carriage_node or not _cannon_barrel_pivot:
+		return
+	_prop_animating["naval_cannon"] = true
+	_play_prop_sfx("tap")
+
+	# 1. Fuse ignition spark at breech
+	_spawn_prop_sparkle_burst(_cannon_carriage_node, Vector3(0.0, 0.085, 0.075), Color(1.0, 0.45, 0.10), 5, 0.05, 0.05)
+
+	var tw = create_tween()
+	tw.tween_interval(0.14)
+	tw.tween_callback(func():
+		if not is_instance_valid(_cannon_group_node):
+			return
+		_play_prop_sfx("explode")
+		_play_prop_sfx("hit")
+
+		var muzzle_local = Vector3(0.0, 0.084, -0.092)
+		_spawn_prop_pulse_ring(_cannon_group_node, muzzle_local, Color(1.0, 0.55, 0.12), 2.8)
+		_spawn_prop_sparkle_burst(_cannon_group_node, muzzle_local, Color(1.0, 0.72, 0.18), 8, 0.14, 0.10)
+
+		# Muzzle Flash Sphere
+		var mat_flash = StandardMaterial3D.new()
+		mat_flash.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat_flash.albedo_color = Color(1.0, 0.75, 0.22, 0.92)
+		mat_flash.emission_enabled = true
+		mat_flash.emission = Color(1.0, 0.52, 0.10)
+		mat_flash.emission_energy_multiplier = 3.8
+		var flash = _add_sphere(_cannon_group_node, 0.036, 0.072, muzzle_local, mat_flash)
+		var f_tw = create_tween().set_parallel(true)
+		f_tw.tween_property(flash, "scale", Vector3(2.1, 2.1, 2.1), 0.18)
+		f_tw.tween_property(mat_flash, "albedo_color:a", 0.0, 0.18)
+		f_tw.chain().tween_callback(flash.queue_free)
+
+		# Flying Cannonball Projectile with Explosive Impact Burst
+		var mat_ball = _shared_mats.get("steel_dark", StandardMaterial3D.new())
+		var ball = _add_sphere(_cannon_group_node, 0.015, 0.030, muzzle_local, mat_ball)
+		var b_tw = create_tween()
+		b_tw.tween_property(ball, "position", Vector3(0.0, 0.165, -0.23), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		b_tw.tween_property(ball, "position", Vector3(0.0, 0.020, -0.36), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		b_tw.tween_callback(func():
+			if is_instance_valid(_cannon_group_node):
+				_spawn_prop_pulse_ring(_cannon_group_node, Vector3(0.0, 0.015, -0.36), Color(1.0, 0.42, 0.10), 1.8)
+				_spawn_prop_sparkle_burst(_cannon_group_node, Vector3(0.0, 0.025, -0.36), Color(1.0, 0.65, 0.18), 6, 0.09, 0.08)
+			if is_instance_valid(ball):
+				ball.queue_free()
+		)
+
+		# Billowing Gunpowder Smoke Puffs from Muzzle
+		var mat_smoke = StandardMaterial3D.new()
+		mat_smoke.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat_smoke.albedo_color = Color(0.28, 0.28, 0.30, 0.68)
+		for s_i in range(5):
+			var puff = _add_sphere(_cannon_group_node, 0.018, 0.028, muzzle_local + Vector3(randf_range(-0.015, 0.015), 0.0, randf_range(-0.02, 0.01)), mat_smoke)
+			var s_tw = create_tween().set_parallel(true)
+			s_tw.tween_property(puff, "position", muzzle_local + Vector3(randf_range(-0.05, 0.05), 0.16 + float(s_i) * 0.025, -0.06 - float(s_i) * 0.02), 0.72).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			s_tw.tween_property(puff, "scale", Vector3(2.4, 2.4, 2.4), 0.72)
+			s_tw.chain().tween_callback(puff.queue_free)
+	)
+
+	# Heavy Naval Carriage Recoil & Bucking Kickback, then Rolling Return to Battery
+	tw.tween_property(_cannon_carriage_node, "position:z", 0.058, 0.11).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_cannon_carriage_node, "rotation_degrees:x", 22.0, 0.09)
+	tw.parallel().tween_property(_cannon_barrel_pivot, "rotation_degrees:x", 28.0, 0.09)
+	tw.tween_property(_cannon_carriage_node, "rotation_degrees:x", 0.0, 0.16).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_cannon_barrel_pivot, "rotation_degrees:x", 12.0, 0.18)
+	tw.tween_property(_cannon_carriage_node, "position:z", 0.0, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_callback(func():
+		_prop_animating["naval_cannon"] = false
+	)
+
+
+# 10. BRASS SPYGLASS & COMPASS ANIMATION: Telescopes open, sweeps horizon, compass needle spins!
+func _animate_brass_spyglass() -> void:
+	if not _spyglass_group_node or not is_instance_valid(_spyglass_group_node) or not _spyglass_body_node:
+		return
+	_prop_animating["brass_spyglass"] = true
+	_play_prop_sfx("tap_button")
+	_spawn_prop_pulse_ring(_spyglass_group_node, Vector3(0.0, 0.015, 0.0), Color(0.55, 0.88, 1.0), 2.3)
+
+	if is_instance_valid(_compass_needle_pivot):
+		var c_tw = create_tween()
+		c_tw.tween_property(_compass_needle_pivot, "rotation_degrees:y", 1080.0, 0.85).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		c_tw.chain().tween_callback(func():
+			if is_instance_valid(_compass_needle_pivot):
+				_compass_needle_pivot.rotation_degrees.y = 0.0
+		)
+
+	var rest_pos = Vector3(-0.036, 0.026, -0.008)
+	var rest_rot = Vector3(4.0, 24.0, 0.0)
+
+	var tw = create_tween()
+	# Lift & extend telescoping draw-tubes
+	tw.tween_property(_spyglass_body_node, "position", rest_pos + Vector3(0.0, 0.095, 0.0), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_spyglass_body_node, "rotation_degrees", Vector3(16.0, -18.0, 0.0), 0.22)
+	if is_instance_valid(_spyglass_tube_mid) and is_instance_valid(_spyglass_tube_eye):
+		tw.parallel().tween_property(_spyglass_tube_mid, "position:z", 0.068, 0.20).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(_spyglass_tube_eye, "position:z", 0.058, 0.20).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	# Horizon scan sweep
+	tw.tween_property(_spyglass_body_node, "rotation_degrees", Vector3(18.0, 42.0, 0.0), 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_callback(func():
+		_play_prop_sfx("time")
+		_spawn_prop_sparkle_burst(_spyglass_group_node, Vector3(-0.036, 0.13, -0.05), Color(0.55, 0.92, 1.0), 6, 0.08, 0.05)
+	)
+	tw.tween_property(_spyglass_body_node, "rotation_degrees", Vector3(12.0, 10.0, 0.0), 0.24).set_trans(Tween.TRANS_SINE)
+
+	# Collapse tubes and return to rest
+	if is_instance_valid(_spyglass_tube_mid) and is_instance_valid(_spyglass_tube_eye):
+		tw.tween_property(_spyglass_tube_mid, "position:z", 0.035, 0.16)
+		tw.parallel().tween_property(_spyglass_tube_eye, "position:z", 0.032, 0.16)
+	tw.tween_property(_spyglass_body_node, "position", rest_pos, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_spyglass_body_node, "rotation_degrees", rest_rot, 0.20)
+	tw.tween_callback(func():
+		_prop_animating["brass_spyglass"] = false
+	)
+
+
+# 11. ROYAL CROWN & SCEPTER ANIMATION: Levitates, spins 360° with royal halo, scepter salutes!
+func _animate_royal_crown() -> void:
+	if not _crown_group_node or not is_instance_valid(_crown_group_node) or not _crown_main_node or not _scepter_main_node:
+		return
+	_prop_animating["royal_crown_scepter"] = true
+	_play_prop_sfx("correct")
+	_spawn_prop_pulse_ring(_crown_group_node, Vector3(0.0, 0.02, 0.0), Color(1.0, 0.84, 0.22), 2.5)
+	_spawn_prop_sparkle_burst(_crown_group_node, Vector3(0.0, 0.12, 0.0), Color(1.0, 0.86, 0.28), 8, 0.12, 0.12)
+
+	var c_rest_pos = Vector3(-0.010, 0.018, -0.006)
+	var s_rest_pos = Vector3(0.058, 0.028, 0.022)
+	var s_rest_rot = Vector3(8.0, -32.0, 0.0)
+
+	var s_tw = create_tween()
+	s_tw.tween_property(_scepter_main_node, "position", s_rest_pos + Vector3(0.0, 0.11, 0.0), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	s_tw.parallel().tween_property(_scepter_main_node, "rotation_degrees", Vector3(-45.0, -15.0, 12.0), 0.22)
+	s_tw.tween_property(_scepter_main_node, "rotation_degrees", Vector3(22.0, -15.0, -10.0), 0.18)
+	s_tw.tween_property(_scepter_main_node, "rotation_degrees", Vector3(-35.0, -15.0, 8.0), 0.18)
+	s_tw.tween_property(_scepter_main_node, "position", s_rest_pos, 0.24).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	s_tw.parallel().tween_property(_scepter_main_node, "rotation_degrees", s_rest_rot, 0.22)
+
+	var tw = create_tween()
+	tw.tween_property(_crown_main_node, "position", c_rest_pos + Vector3(0.0, 0.125, 0.0), 0.26).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_crown_main_node, "rotation_degrees", Vector3(-12.0, 360.0, 8.0), 0.54).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(func():
+		_play_prop_sfx("bell")
+		_spawn_prop_pulse_ring(_crown_group_node, Vector3(-0.01, 0.15, 0.0), Color(1.0, 0.30, 0.38), 1.8)
+	)
+	tw.tween_property(_crown_main_node, "position", c_rest_pos, 0.26).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_crown_main_node, "rotation_degrees", Vector3(0.0, 360.0, 0.0), 0.24)
+	tw.tween_callback(func():
+		if is_instance_valid(_crown_main_node):
+			_crown_main_node.rotation_degrees = Vector3.ZERO
+		_prop_animating["royal_crown_scepter"] = false
+	)
+
+
+# 12. VINTAGE ABACUS ANIMATION: Tilts up and rapidly clacks & slides counting beads across all 5 rods!
+func _animate_vintage_abacus() -> void:
+	if not _abacus_group_node or not is_instance_valid(_abacus_group_node) or not _abacus_body_node:
+		return
+	_prop_animating["vintage_abacus"] = true
+	_play_prop_sfx("move_peace")
+	_spawn_prop_pulse_ring(_abacus_group_node, Vector3(0.0, 0.015, 0.0), Color(1.0, 0.82, 0.28), 2.3)
+
+	for i in range(_abacus_beads.size()):
+		var bead: Node3D = _abacus_beads[i]
+		if not is_instance_valid(bead):
+			continue
+		var r_pos: Vector3 = _abacus_bead_rest_pos[i]
+		var shift_dir: float = 0.018 if (i % 4 < 2) else -0.018
+		var b_tw = create_tween()
+		b_tw.tween_interval(float(i % 5) * 0.04)
+		b_tw.tween_property(bead, "position:z", r_pos.z + shift_dir, 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		b_tw.tween_property(bead, "position:z", r_pos.z - shift_dir * 0.5, 0.11)
+		b_tw.tween_property(bead, "position:z", r_pos.z + shift_dir * 0.8, 0.11)
+		b_tw.tween_property(bead, "position:z", r_pos.z, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	var tw = create_tween()
+	tw.tween_property(_abacus_body_node, "position:y", 0.045, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_abacus_body_node, "rotation_degrees:x", 18.0, 0.16)
+	tw.tween_interval(0.18)
+	tw.tween_callback(func(): _play_prop_sfx("tap"))
+	tw.tween_interval(0.18)
+	tw.tween_callback(func():
+		_play_prop_sfx("add_peace")
+		_spawn_prop_sparkle_burst(_abacus_group_node, Vector3(0.0, 0.05, 0.0), Color(1.0, 0.85, 0.32), 6, 0.09, 0.06)
+	)
+	tw.tween_property(_abacus_body_node, "position:y", 0.0, 0.20).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_abacus_body_node, "rotation_degrees:x", 0.0, 0.18)
+	tw.tween_callback(func():
+		_prop_animating["vintage_abacus"] = false
+	)
+
+
+# 13. MAGNIFYING LOUPE & CLUE CARD ANIMATION: Loupe hovers & sweeps over clue runes while runes glow!
+func _animate_magnifying_loupe() -> void:
+	if not _loupe_group_node or not is_instance_valid(_loupe_group_node) or not _loupe_main_node:
+		return
+	_prop_animating["magnifying_loupe"] = true
+	_play_prop_sfx("start_turn")
+	_spawn_prop_pulse_ring(_loupe_group_node, Vector3(0.0, 0.015, 0.0), Color(0.45, 0.92, 0.88), 2.3)
+
+	var rest_pos = Vector3(0.010, 0.018, 0.006)
+	var rest_rot = Vector3(6.0, 26.0, -4.0)
+
+	for idx in range(_loupe_clue_dots.size()):
+		var dot: MeshInstance3D = _loupe_clue_dots[idx]
+		if is_instance_valid(dot):
+			var d_tw = create_tween()
+			d_tw.tween_interval(float(idx) * 0.08)
+			d_tw.tween_property(dot, "scale", Vector3(1.85, 1.85, 1.85), 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			d_tw.tween_property(dot, "scale", Vector3.ONE, 0.22)
+
+	var tw = create_tween()
+	tw.tween_property(_loupe_main_node, "position", Vector3(-0.032, 0.088, -0.022), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_loupe_main_node, "rotation_degrees", Vector3(0.0, 10.0, 0.0), 0.22)
+	tw.tween_property(_loupe_main_node, "position", Vector3(0.028, 0.088, 0.024), 0.26).set_trans(Tween.TRANS_SINE)
+	tw.parallel().tween_property(_loupe_main_node, "rotation_degrees", Vector3(0.0, 38.0, 0.0), 0.26)
+	tw.tween_property(_loupe_main_node, "position", Vector3(-0.006, 0.105, 0.004), 0.22).set_trans(Tween.TRANS_SINE)
+	tw.tween_callback(func():
+		_play_prop_sfx("correct")
+		_spawn_prop_sparkle_burst(_loupe_group_node, Vector3(0.0, 0.08, 0.0), Color(1.0, 0.88, 0.32), 7, 0.09, 0.07)
+	)
+	tw.tween_property(_loupe_main_node, "position", rest_pos, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_loupe_main_node, "rotation_degrees", rest_rot, 0.20)
+	tw.tween_callback(func():
+		_prop_animating["magnifying_loupe"] = false
+	)
+
+
+# 14. PERSIAN SETAR / LUTE ANIMATION: Rises, strums vibrating golden strings, and emits harmonic rings!
+func _animate_persian_tar() -> void:
+	if not _tar_group_node or not is_instance_valid(_tar_group_node) or not _tar_body_node:
+		return
+	_prop_animating["persian_tar"] = true
+	_play_prop_sfx("bell")
+	_spawn_prop_pulse_ring(_tar_group_node, Vector3(0.0, 0.02, 0.0), Color(1.0, 0.78, 0.26), 2.5)
+	_spawn_prop_sparkle_burst(_tar_group_node, Vector3(0.0, 0.08, 0.02), Color(1.0, 0.84, 0.32), 8, 0.12, 0.14)
+
+	var rest_pos = Vector3(0, 0.028, 0)
+	var rest_rot = Vector3(8.0, 18.0, -10.0)
+
+	for st in _tar_strings:
+		if is_instance_valid(st):
+			var s_tw = create_tween()
+			for _k in range(4):
+				s_tw.tween_property(st, "scale:x", 2.4, 0.06)
+				s_tw.tween_property(st, "scale:x", 1.0, 0.06)
+
+	var tw = create_tween()
+	tw.tween_property(_tar_body_node, "position", rest_pos + Vector3(0.0, 0.085, 0.0), 0.20).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_tar_body_node, "rotation_degrees", Vector3(22.0, 32.0, -18.0), 0.20)
+	tw.tween_property(_tar_body_node, "rotation_degrees", Vector3(16.0, 4.0, 8.0), 0.22)
+	tw.tween_callback(func():
+		_play_prop_sfx("add_peace")
+		_spawn_prop_pulse_ring(_tar_group_node, Vector3(0.0, 0.11, 0.04), Color(1.0, 0.85, 0.35), 2.0)
+	)
+	tw.tween_property(_tar_body_node, "rotation_degrees", Vector3(20.0, 26.0, -14.0), 0.20)
+	tw.tween_property(_tar_body_node, "position", rest_pos, 0.24).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_tar_body_node, "rotation_degrees", rest_rot, 0.22)
+	tw.tween_callback(func():
+		_prop_animating["persian_tar"] = false
+	)
+
+
+# 15. CELESTIAL ASTROLABE ANIMATION: Concentric brass gimbal rings spin on 3 axes around flaring sun core!
+func _animate_fortune_astrolabe() -> void:
+	if not _astrolabe_group_node or not is_instance_valid(_astrolabe_group_node) or not _astro_outer_ring:
+		return
+	_prop_animating["fortune_astrolabe"] = true
+	_play_prop_sfx("time")
+	_spawn_prop_pulse_ring(_astrolabe_group_node, Vector3(0.0, 0.02, 0.0), Color(1.0, 0.82, 0.28), 2.4)
+	_spawn_prop_sparkle_burst(_astrolabe_group_node, Vector3(0.0, 0.14, 0.0), Color(1.0, 0.88, 0.35), 8, 0.12, 0.10)
+
+	var tw = create_tween().set_parallel(true)
+	tw.tween_property(_astro_outer_ring, "rotation_degrees:y", 360.0, 0.78).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN_OUT)
+	if is_instance_valid(_astro_mid_ring):
+		tw.tween_property(_astro_mid_ring, "rotation_degrees:x", 360.0, 0.78).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN_OUT)
+	if is_instance_valid(_astro_inner_ring):
+		tw.tween_property(_astro_inner_ring, "rotation_degrees:z", 720.0, 0.78).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN_OUT)
+	if is_instance_valid(_astro_sun_core):
+		tw.tween_property(_astro_sun_core, "scale", Vector3(1.65, 1.65, 1.65), 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	tw.chain().tween_callback(func():
+		_play_prop_sfx("bell")
+		if is_instance_valid(_astro_sun_core):
+			var s_tw = create_tween()
+			s_tw.tween_property(_astro_sun_core, "scale", Vector3.ONE, 0.25)
+		if is_instance_valid(_astro_outer_ring):
+			_astro_outer_ring.rotation_degrees = Vector3.ZERO
+		if is_instance_valid(_astro_mid_ring):
+			_astro_mid_ring.rotation_degrees = Vector3(0, 35.0, 0)
+		if is_instance_valid(_astro_inner_ring):
+			_astro_inner_ring.rotation_degrees = Vector3(25.0, -30.0, 0)
+		_prop_animating["fortune_astrolabe"] = false
+	)
+
+
+# 16. DAGGER & SHIELD ANIMATION: Shield rises defensively, curved dagger slashes twice and clangs on the shield boss!
+func _animate_dagger_and_shield() -> void:
+	if not _arms_group_node or not is_instance_valid(_arms_group_node) or not _shield_main_node or not _dagger_main_node:
+		return
+	_prop_animating["dagger_and_shield"] = true
+	_play_prop_sfx("move_peace")
+
+	var sh_rest_pos = Vector3(-0.008, 0.014, 0.006)
+	var dg_rest_pos = Vector3(0.016, 0.032, -0.004)
+	var dg_rest_rot = Vector3(5.0, -36.0, 0.0)
+
+	var tw = create_tween()
+	# Raise shield & leap dagger high
+	tw.tween_property(_shield_main_node, "position", sh_rest_pos + Vector3(0.0, 0.065, 0.0), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_shield_main_node, "rotation_degrees", Vector3(22.0, 0.0, -12.0), 0.16)
+	tw.parallel().tween_property(_dagger_main_node, "position", dg_rest_pos + Vector3(0.035, 0.135, -0.025), 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_dagger_main_node, "rotation_degrees", Vector3(-45.0, 25.0, 35.0), 0.18)
+
+	# Clang Strike 1 on Shield Boss!
+	tw.tween_property(_dagger_main_node, "position", sh_rest_pos + Vector3(0.0, 0.092, 0.0), 0.09).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(_dagger_main_node, "rotation_degrees", Vector3(18.0, -55.0, -20.0), 0.09)
+	tw.tween_callback(func():
+		_play_prop_sfx("hit")
+		_spawn_prop_pulse_ring(_arms_group_node, Vector3(0.0, 0.08, 0.0), Color(1.0, 0.72, 0.22), 2.4)
+		_spawn_prop_sparkle_burst(_arms_group_node, Vector3(0.0, 0.09, 0.0), Color(1.0, 0.82, 0.28), 8, 0.11, 0.09)
+	)
+
+	# Flourish & Settle Back to Rest
+	tw.tween_property(_dagger_main_node, "position", dg_rest_pos + Vector3(0.0, 0.08, 0.0), 0.16)
+	tw.parallel().tween_property(_dagger_main_node, "rotation_degrees", dg_rest_rot + Vector3(0.0, 360.0, 0.0), 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_dagger_main_node, "position", dg_rest_pos, 0.18).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_shield_main_node, "position", sh_rest_pos, 0.18).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_shield_main_node, "rotation_degrees", Vector3.ZERO, 0.18)
+	tw.tween_callback(func():
+		if is_instance_valid(_dagger_main_node):
+			_dagger_main_node.rotation_degrees = dg_rest_rot
+		_prop_animating["dagger_and_shield"] = false
+	)
+
+
+# 17. CAFE PASTRY PLATE ANIMATION: Golden fork twirls & clinks plate, baklava diamonds hop with pistachio-saffron sparkles!
+func _animate_cafe_pastry() -> void:
+	if not _pastry_group_node or not is_instance_valid(_pastry_group_node) or not _pastry_fork_node:
+		return
+	_prop_animating["cafe_pastry_plate"] = true
+	_play_prop_sfx("tap_button")
+	_spawn_prop_pulse_ring(_pastry_group_node, Vector3(0.0, 0.015, 0.0), Color(0.95, 0.78, 0.24), 2.2)
+
+	var f_rest_pos = Vector3(0.010, 0.016, 0.044)
+	var f_rest_rot = Vector3(0, 18.0, -6.0)
+
+	for i in range(_pastry_baklava_nodes.size()):
+		var bak: Node3D = _pastry_baklava_nodes[i]
+		if not is_instance_valid(bak):
+			continue
+		var r_pos: Vector3 = _pastry_baklava_rest_pos[i]
+		var b_tw = create_tween()
+		b_tw.tween_interval(0.08 + float(i) * 0.07)
+		b_tw.tween_property(bak, "position:y", r_pos.y + 0.085, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		b_tw.parallel().tween_property(bak, "rotation_degrees:y", bak.rotation_degrees.y + 360.0, 0.34).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		b_tw.tween_property(bak, "position:y", r_pos.y, 0.20).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+
+	var tw = create_tween()
+	tw.tween_property(_pastry_fork_node, "position", f_rest_pos + Vector3(0.0, 0.075, -0.02), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_pastry_fork_node, "rotation_degrees", f_rest_rot + Vector3(0.0, 360.0, -35.0), 0.28)
+	tw.tween_callback(func():
+		_play_prop_sfx("bell")
+		_spawn_prop_sparkle_burst(_pastry_group_node, Vector3(0.0, 0.05, -0.01), Color(0.45, 0.88, 0.32), 7, 0.09, 0.08)
+	)
+	tw.tween_property(_pastry_fork_node, "position", f_rest_pos, 0.20).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_pastry_fork_node, "rotation_degrees", f_rest_rot, 0.18)
+	tw.tween_interval(0.15)
+	tw.tween_callback(func():
+		_prop_animating["cafe_pastry_plate"] = false
+	)
+
+
+# 18. INCENSE BURNER ANIMATION: Pierced dome lid lifts, charcoal embers flare bright crimson, aromatic smoke rises!
+func _animate_incense_burner() -> void:
+	if not _burner_group_node or not is_instance_valid(_burner_group_node) or not _burner_lid_node:
+		return
+	_prop_animating["incense_burner"] = true
+	_play_prop_sfx("start_turn")
+	_spawn_prop_pulse_ring(_burner_group_node, Vector3(0.0, 0.02, 0.0), Color(1.0, 0.48, 0.16), 2.3)
+
+	var lid_rest_pos = Vector3(0, 0.060, 0)
+	if is_instance_valid(_burner_embers_mesh):
+		var e_tw = create_tween()
+		e_tw.tween_property(_burner_embers_mesh, "scale", Vector3(1.25, 1.6, 1.25), 0.25)
+		e_tw.tween_property(_burner_embers_mesh, "scale", Vector3.ONE, 0.45)
+
+	var tw = create_tween()
+	tw.tween_property(_burner_lid_node, "position:y", 0.145, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_burner_lid_node, "rotation_degrees:y", 180.0, 0.38)
+	tw.tween_callback(func():
+		_play_prop_sfx("tap")
+		_spawn_prop_sparkle_burst(_burner_group_node, Vector3(0.0, 0.07, 0.0), Color(1.0, 0.45, 0.12), 6, 0.07, 0.09)
+		# Fragrant Silver-Amber Aromatic Smoke Plume
+		var mat_incense = StandardMaterial3D.new()
+		mat_incense.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat_incense.albedo_color = Color(0.92, 0.88, 0.98, 0.55)
+		mat_incense.emission_enabled = true
+		mat_incense.emission = Color(0.85, 0.75, 0.95)
+		mat_incense.emission_energy_multiplier = 0.65
+		for s_i in range(5):
+			if is_instance_valid(_burner_group_node):
+				var puff = _add_sphere(_burner_group_node, 0.015, 0.022, Vector3(randf_range(-0.012, 0.012), 0.075 + float(s_i) * 0.015, randf_range(-0.012, 0.012)), mat_incense)
+				var p_tw = create_tween().set_parallel(true)
+				p_tw.tween_property(puff, "position", Vector3(randf_range(-0.03, 0.03), 0.26 + float(s_i) * 0.03, randf_range(-0.03, 0.03)), 0.82).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+				p_tw.tween_property(puff, "scale", Vector3(2.3, 2.3, 2.3), 0.82)
+				p_tw.chain().tween_callback(puff.queue_free)
+	)
+	tw.tween_interval(0.32)
+	tw.tween_property(_burner_lid_node, "position:y", lid_rest_pos.y, 0.24).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_burner_lid_node, "rotation_degrees:y", 360.0, 0.22)
+	tw.tween_callback(func():
+		if is_instance_valid(_burner_lid_node):
+			_burner_lid_node.rotation_degrees.y = 0.0
+		_prop_animating["incense_burner"] = false
 	)
