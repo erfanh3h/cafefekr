@@ -728,6 +728,8 @@ func _get_themed_props_for_game(game_type: String) -> Array:
 			return ["naval_cannon", "brass_spyglass", "dagger_and_shield", "hourglass"]
 		"MSweeper":
 			return ["naval_cannon", "magnifying_loupe", "brass_spyglass", "chronometer"]
+		"BoxFour":
+			return ["fortune_astrolabe", "dagger_and_shield", "royal_crown_scepter", "chronometer"]
 		"Sudoku":
 			return ["scorebook", "vintage_abacus", "magnifying_loupe", "hourglass"]
 		"Chess":
@@ -788,7 +790,7 @@ func populate_props_for_game(game_type: String = "") -> void:
 		"royal_crown_scepter", "vintage_abacus", "magnifying_loupe", "persian_tar",
 		"fortune_astrolabe", "cafe_pastry_plate", "incense_burner"
 	]
-	if game_type in ["BattleShip", "MSweeper", "Chess", "Checkers", "RPC", ""]:
+	if game_type in ["BattleShip", "MSweeper", "BoxFour", "Chess", "Checkers", "RPC", ""]:
 		all_movable_props.append_array(["naval_cannon", "brass_spyglass", "dagger_and_shield"])
 
 	var selected_ids: Array = []

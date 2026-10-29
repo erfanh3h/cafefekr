@@ -23,6 +23,7 @@ const MNUMBERS_SCENE: String = "res://scenes/games/mnumbers/mnumbers_3d.tscn"
 const BATTLESHIP_SCENE: String = "res://scenes/games/battleship/battleship_3d.tscn"
 const SUDOKU_SCENE: String = "res://scenes/games/sudoku/sudoku_3d.tscn"
 const MSWEEPER_SCENE: String = "res://scenes/games/msweeper/msweeper_3d.tscn"
+const BOXFOUR_SCENE: String = "res://scenes/games/boxfour/box_four_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -262,10 +263,11 @@ static var _registry: Dictionary = {
 		"id": GameTypes.BOXFOUR,
 		"name_fa": "چهارطرفه",
 		"narrative": "در یک شبکه‌ی رنگین ۵x۵، اعداد به رقص در می‌آیند و رنگ‌ها شکوه می‌آفرینند.",
-		"board_scene": TEMP_SCENE,
+		"board_scene": BOXFOUR_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
-		"has_round_score": false,
+		"has_round_score": true,
+		"is_cumulative_score": true,
 		"turn_time": 12.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/boxfour.jpg",

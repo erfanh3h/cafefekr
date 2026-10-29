@@ -663,6 +663,8 @@ func _get_role_badge_text(player_idx: int) -> String:
 		return "🔴 ارتش قرمز" if player_idx == 1 else "🔵 ارتش آبی"
 	elif g_type == GameTypes.MSWEEPER:
 		return "💣 کاوشگر قرمز" if player_idx == 1 else "💣 کاوشگر آبی"
+	elif g_type == GameTypes.BOXFOUR:
+		return "💥 قلمرو قرمز" if player_idx == 1 else "💥 قلمرو آبی"
 	else:
 		return "🔴 مهره قرمز" if player_idx == 1 else "🔵 مهره آبی"
 
