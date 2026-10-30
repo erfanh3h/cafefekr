@@ -131,6 +131,7 @@ var mat_brass_bracket: StandardMaterial3D
 var mat_beam_sheath: StandardMaterial3D
 var mat_beacon_pillar: StandardMaterial3D
 var mat_spark_flare: StandardMaterial3D
+var mat_disk_supply_face: StandardMaterial3D
 
 static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
 
@@ -446,6 +447,18 @@ func _init_materials() -> void:
 	mat_spark_flare.emission_enabled = true
 	mat_spark_flare.emission = Color(1.0, 0.90, 0.45)
 	mat_spark_flare.emission_energy_multiplier = 5.0
+
+	# Neutral Pearl/Ivory Lacquer for Reserve Discs in Top Supply Box (Non-Red)
+	mat_disk_supply_face = StandardMaterial3D.new()
+	mat_disk_supply_face.albedo_color = Color(0.95, 0.93, 0.88)
+	mat_disk_supply_face.metallic = 0.14
+	mat_disk_supply_face.roughness = 0.20
+	mat_disk_supply_face.clearcoat_enabled = true
+	mat_disk_supply_face.clearcoat = 0.95
+	mat_disk_supply_face.clearcoat_roughness = 0.08
+	mat_disk_supply_face.emission_enabled = true
+	mat_disk_supply_face.emission = Color(0.35, 0.32, 0.28)
+	mat_disk_supply_face.emission_energy_multiplier = 0.15
 
 # ============================================================================
 # 3. THREE CUSTOM SCULPTED 3D MODELS (RED RING, BLUE RING, REVERSIBLE DISK)
@@ -926,116 +939,121 @@ func _build_disk_box() -> void:
 	box_disk_nodes.clear()
 	box_disk_slots.clear()
 
+	# Grand Luxury Disk Supply Casket (enlarged width = 0.960, depth = 0.215)
+	var box_z_center: float = -0.605
+
 	# 1. Stepped Antique Mahogany/Walnut Plinth Base
 	var base_plinth = MeshInstance3D.new()
 	var bp_box = BoxMesh.new()
-	bp_box.size = Vector3(0.665, 0.014, 0.144)
+	bp_box.size = Vector3(0.985, 0.016, 0.235)
 	base_plinth.mesh = bp_box
-	base_plinth.position = Vector3(0.0, BOARD_SURFACE_Y + 0.004, -0.565)
+	base_plinth.position = Vector3(0.0, BOARD_SURFACE_Y + 0.005, box_z_center)
 	base_plinth.material_override = mat_walnut_plinth
 	disk_box_root.add_child(base_plinth)
 
 	# 2. Main Walnut Casket Frame
 	var box_frame = MeshInstance3D.new()
 	var frame_mesh = BoxMesh.new()
-	frame_mesh.size = Vector3(0.640, 0.024, 0.128)
+	frame_mesh.size = Vector3(0.960, 0.026, 0.215)
 	box_frame.mesh = frame_mesh
-	box_frame.position = Vector3(0.0, BOARD_SURFACE_Y + 0.012, -0.565)
+	box_frame.position = Vector3(0.0, BOARD_SURFACE_Y + 0.015, box_z_center)
 	box_frame.material_override = mat_walnut_plinth
 	disk_box_root.add_child(box_frame)
 
 	# 3. Burnished Brass Raised Lip / Coaming
 	var box_rim = MeshInstance3D.new()
 	var rim_mesh = BoxMesh.new()
-	rim_mesh.size = Vector3(0.648, 0.012, 0.134)
+	rim_mesh.size = Vector3(0.968, 0.012, 0.223)
 	box_rim.mesh = rim_mesh
-	box_rim.position = Vector3(0.0, BOARD_SURFACE_Y + 0.018, -0.565)
+	box_rim.position = Vector3(0.0, BOARD_SURFACE_Y + 0.021, box_z_center)
 	box_rim.material_override = mat_brass_socket
 	disk_box_root.add_child(box_rim)
 
 	# 4. Four Gilded Antique Corner Guards with Rounded Brass Rivets
-	var c_xs = [-0.316, 0.316]
-	var c_zs = [-0.624, -0.506]
+	var c_xs = [-0.472, 0.472]
+	var c_zs = [box_z_center - 0.102, box_z_center + 0.102]
 	for cx in c_xs:
 		for cz in c_zs:
 			var bracket = MeshInstance3D.new()
 			var b_cyl = CylinderMesh.new()
-			b_cyl.top_radius = 0.0075
-			b_cyl.bottom_radius = 0.009
-			b_cyl.height = 0.026
-			b_cyl.radial_segments = 12
+			b_cyl.top_radius = 0.009
+			b_cyl.bottom_radius = 0.011
+			b_cyl.height = 0.030
+			b_cyl.radial_segments = 14
 			bracket.mesh = b_cyl
-			bracket.position = Vector3(cx, BOARD_SURFACE_Y + 0.014, cz)
+			bracket.position = Vector3(cx, BOARD_SURFACE_Y + 0.017, cz)
 			bracket.material_override = mat_brass_bracket
 			disk_box_root.add_child(bracket)
 
 			var rivet = MeshInstance3D.new()
 			var r_sph = SphereMesh.new()
-			r_sph.radius = 0.004
-			r_sph.height = 0.008
+			r_sph.radius = 0.005
+			r_sph.height = 0.009
 			rivet.mesh = r_sph
-			rivet.position = Vector3(cx, BOARD_SURFACE_Y + 0.028, cz)
+			rivet.position = Vector3(cx, BOARD_SURFACE_Y + 0.033, cz)
 			rivet.material_override = mat_gold_inlay
 			disk_box_root.add_child(rivet)
 
 	# 5. Inner Midnight Royal Sapphire Velvet Bed
 	var velvet_bed = MeshInstance3D.new()
 	var bed_mesh = BoxMesh.new()
-	bed_mesh.size = Vector3(0.612, 0.008, 0.088)
+	bed_mesh.size = Vector3(0.930, 0.008, 0.165)
 	velvet_bed.mesh = bed_mesh
-	velvet_bed.position = Vector3(0.0, BOARD_SURFACE_Y + 0.020, -0.550)
+	velvet_bed.position = Vector3(0.0, BOARD_SURFACE_Y + 0.022, box_z_center + 0.014)
 	velvet_bed.material_override = mat_velvet_bed
 	disk_box_root.add_child(velvet_bed)
 
 	# 6. Gilded Brass Cartouche Plaque for Disc Count
+	var plaque_z: float = box_z_center - 0.088
 	var plaque = MeshInstance3D.new()
 	var pq_box = BoxMesh.new()
-	pq_box.size = Vector3(0.48, 0.009, 0.028)
+	pq_box.size = Vector3(0.58, 0.009, 0.030)
 	plaque.mesh = pq_box
-	plaque.position = Vector3(0.0, BOARD_SURFACE_Y + 0.024, -0.612)
+	plaque.position = Vector3(0.0, BOARD_SURFACE_Y + 0.028, plaque_z)
 	plaque.material_override = mat_gold_inlay
 	disk_box_root.add_child(plaque)
 
 	# Flanking rosette rivets on plaque
-	for rox in [-0.225, 0.225]:
+	for rox in [-0.275, 0.275]:
 		var ro_rivet = MeshInstance3D.new()
 		var ro_sph = SphereMesh.new()
-		ro_sph.radius = 0.004
-		ro_sph.height = 0.006
+		ro_sph.radius = 0.0045
+		ro_sph.height = 0.007
 		ro_rivet.mesh = ro_sph
-		ro_rivet.position = Vector3(rox, BOARD_SURFACE_Y + 0.029, -0.612)
+		ro_rivet.position = Vector3(rox, BOARD_SURFACE_Y + 0.033, plaque_z)
 		ro_rivet.material_override = mat_brass_socket
 		disk_box_root.add_child(ro_rivet)
 
 	lbl_disks_3d = Label3D.new()
 	lbl_disks_3d.font = _font_hekayat
-	lbl_disks_3d.font_size = 42
+	lbl_disks_3d.font_size = 44
 	lbl_disks_3d.outline_size = 8
 	lbl_disks_3d.modulate = Color(1.0, 0.94, 0.48)
 	lbl_disks_3d.outline_modulate = Color(0.08, 0.04, 0.02, 0.95)
-	lbl_disks_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.030, -0.612)
+	lbl_disks_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.034, plaque_z)
 	lbl_disks_3d.rotation.x = -PI * 0.5
-	lbl_disks_3d.pixel_size = 0.00108
+	lbl_disks_3d.pixel_size = 0.00115
 	lbl_disks_3d.text = "مخزن دیسک‌ها: %s دیسک" % _fa_digits(max(0, remaining_disks))
 	disk_box_root.add_child(lbl_disks_3d)
 
 	# 7. Calculate 51 slot coordinates (3 rows x 17 cols) & create velvet socket indentations
+	# Each disc has diameter 0.045 (radius = 0.0225) - identical to board discs
 	for r in range(3):
-		var z_s: float = -0.574 + float(r) * 0.024
+		var z_s: float = (box_z_center - 0.036) + float(r) * 0.050
 		for c in range(17):
-			var x_s: float = -0.280 + float(c) * (0.560 / 16.0)
-			var slot_pos = Vector3(x_s, BOARD_SURFACE_Y + 0.026, z_s)
+			var x_s: float = -0.416 + float(c) * 0.052
+			var slot_pos = Vector3(x_s, BOARD_SURFACE_Y + 0.029, z_s)
 			box_disk_slots.append(slot_pos)
 
-			# Subtle dark recessed velvet ring socket
+			# Subtle dark recessed velvet ring socket matching full disc size
 			var sock = MeshInstance3D.new()
 			var s_torus = TorusMesh.new()
-			s_torus.inner_radius = 0.010
-			s_torus.outer_radius = 0.0135
-			s_torus.rings = 16
-			s_torus.ring_segments = 8
+			s_torus.inner_radius = 0.016
+			s_torus.outer_radius = 0.022
+			s_torus.rings = 20
+			s_torus.ring_segments = 10
 			sock.mesh = s_torus
-			sock.position = Vector3(x_s, BOARD_SURFACE_Y + 0.023, z_s)
+			sock.position = Vector3(x_s, BOARD_SURFACE_Y + 0.025, z_s)
 			sock.material_override = mat_socket_well
 			disk_box_root.add_child(sock)
 
@@ -1050,50 +1068,50 @@ func _create_mini_box_disk(slot_pos: Vector3) -> Node3D:
 	var root = Node3D.new()
 	root.position = slot_pos
 
-	# 1. 24K Gold Coin-Milled Outer Rim
+	# 1. Central 24K Gold Equatorial Band (Identical size to board disk: radius = 0.0225, height = 0.0065)
 	var edge_inst = MeshInstance3D.new()
 	var edge_cyl = CylinderMesh.new()
-	edge_cyl.top_radius = 0.0142
-	edge_cyl.bottom_radius = 0.0142
-	edge_cyl.height = 0.0055
-	edge_cyl.radial_segments = 20
+	edge_cyl.top_radius = 0.0225
+	edge_cyl.bottom_radius = 0.0225
+	edge_cyl.height = 0.0065
+	edge_cyl.radial_segments = 28
 	edge_inst.mesh = edge_cyl
 	edge_inst.material_override = mat_disk_edge_gold
 	root.add_child(edge_inst)
 
-	# 2. Ruby Crimson Enamel Upper Medallion Face
+	# 2. Neutral Royal Ivory/Pearl Lacquer Upper Face (NOT red, identical size to board disk face: radius = 0.0205)
 	var face_inst = MeshInstance3D.new()
 	var face_cyl = CylinderMesh.new()
-	face_cyl.top_radius = 0.0128
-	face_cyl.bottom_radius = 0.0138
-	face_cyl.height = 0.003
-	face_cyl.radial_segments = 20
+	face_cyl.top_radius = 0.0205
+	face_cyl.bottom_radius = 0.0222
+	face_cyl.height = 0.0045
+	face_cyl.radial_segments = 28
 	face_inst.mesh = face_cyl
-	face_inst.position = Vector3(0.0, 0.0028, 0.0)
-	face_inst.material_override = mat_disk_p1_face
+	face_inst.position = Vector3(0.0, 0.0042, 0.0)
+	face_inst.material_override = mat_disk_supply_face
 	root.add_child(face_inst)
 
-	# 3. Concentric Gold Boss Ring
+	# 3. Concentric 24K Gold Boss Ring (Identical to board disk: inner = 0.012, outer = 0.015)
 	var rim_torus = MeshInstance3D.new()
 	var r_torus = TorusMesh.new()
-	r_torus.inner_radius = 0.0065
-	r_torus.outer_radius = 0.0095
-	r_torus.rings = 16
-	r_torus.ring_segments = 8
+	r_torus.inner_radius = 0.012
+	r_torus.outer_radius = 0.015
+	r_torus.rings = 24
+	r_torus.ring_segments = 12
 	rim_torus.mesh = r_torus
-	rim_torus.position = Vector3(0.0, 0.0044, 0.0)
+	rim_torus.position = Vector3(0.0, 0.0066, 0.0)
 	rim_torus.scale = Vector3(1.0, 0.45, 1.0)
 	rim_torus.material_override = mat_gold_inlay
 	root.add_child(rim_torus)
 
-	# 4. Center Ruby Jewel Stud
+	# 4. Center Gold Jewel Medallion Stud (Identical to board disk: radius = 0.0075)
 	var gem = MeshInstance3D.new()
 	var g_sph = SphereMesh.new()
-	g_sph.radius = 0.0040
-	g_sph.height = 0.0045
+	g_sph.radius = 0.0075
+	g_sph.height = 0.006
 	gem.mesh = g_sph
-	gem.position = Vector3(0.0, 0.0045, 0.0)
-	gem.material_override = mat_ring_p1_body
+	gem.position = Vector3(0.0, 0.0065, 0.0)
+	gem.material_override = mat_gold_inlay
 	root.add_child(gem)
 
 	return root
@@ -1630,7 +1648,7 @@ func _execute_place_disk(gamer_id: int, piece_id: int) -> void:
 		return
 
 	# Pop one disk from the 3D supply box at the top of the board!
-	var launch_start_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.03, -0.56)
+	var launch_start_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.032, -0.605)
 	if not box_disk_nodes.is_empty():
 		var popped_box_disk: Node3D = box_disk_nodes.pop_back()
 		if is_instance_valid(popped_box_disk):
@@ -1813,7 +1831,7 @@ func _handle_local_win_lines(local_wins: Array) -> void:
 				if is_instance_valid(board_disk_nodes[pid]):
 					var dn = board_disk_nodes[pid]
 					board_disk_nodes[pid] = null
-					var target_box_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.026, -0.565)
+					var target_box_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.029, -0.605)
 					var slot_idx: int = remaining_disks - 1
 					if slot_idx >= 0 and slot_idx < box_disk_slots.size():
 						target_box_pos = box_disk_slots[slot_idx]
@@ -1947,7 +1965,7 @@ func on_win_happened(payload: Dictionary) -> void:
 								if is_instance_valid(board_disk_nodes[pid]):
 									var dn = board_disk_nodes[pid]
 									board_disk_nodes[pid] = null
-									var target_box_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.026, -0.565)
+									var target_box_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.029, -0.605)
 									var slot_idx: int = remaining_disks - 1
 									if slot_idx >= 0 and slot_idx < box_disk_slots.size():
 										target_box_pos = box_disk_slots[slot_idx]
