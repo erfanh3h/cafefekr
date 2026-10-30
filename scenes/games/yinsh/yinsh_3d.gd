@@ -142,6 +142,7 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	game_type = GameTypes.YINSH
 	add_to_group("board")
+	_connect_yinsh_signals()
 	_build_lattice_topology()
 	_init_materials()
 	_build_board_3d()
@@ -155,24 +156,29 @@ func _exit_tree() -> void:
 	super._exit_tree()
 
 func _connect_yinsh_signals() -> void:
-	if not NetworkManager.ring_submitted.is_connected(on_ring_submitted):
-		NetworkManager.ring_submitted.connect(on_ring_submitted)
-	if not NetworkManager.ring_moved.is_connected(on_ring_moved):
-		NetworkManager.ring_moved.connect(on_ring_moved)
-	if not NetworkManager.remove_peace_received.is_connected(on_remove_peace):
-		NetworkManager.remove_peace_received.connect(on_remove_peace)
-	if not NetworkManager.win_happened_received.is_connected(on_win_happened):
-		NetworkManager.win_happened_received.connect(on_win_happened)
+	if is_instance_valid(NetworkManager.socket) and not NetworkManager.socket.event_received.is_connected(_on_yinsh_socket_event):
+		NetworkManager.socket.event_received.connect(_on_yinsh_socket_event)
 
 func _disconnect_yinsh_signals() -> void:
-	if NetworkManager.ring_submitted.is_connected(on_ring_submitted):
-		NetworkManager.ring_submitted.disconnect(on_ring_submitted)
-	if NetworkManager.ring_moved.is_connected(on_ring_moved):
-		NetworkManager.ring_moved.disconnect(on_ring_moved)
-	if NetworkManager.remove_peace_received.is_connected(on_remove_peace):
-		NetworkManager.remove_peace_received.disconnect(on_remove_peace)
-	if NetworkManager.win_happened_received.is_connected(on_win_happened):
-		NetworkManager.win_happened_received.disconnect(on_win_happened)
+	if is_instance_valid(NetworkManager.socket) and NetworkManager.socket.event_received.is_connected(_on_yinsh_socket_event):
+		NetworkManager.socket.event_received.disconnect(_on_yinsh_socket_event)
+
+func _on_yinsh_socket_event(_ns: String, event_name: String, data: Variant) -> void:
+	if event_name != "command" or typeof(data) != TYPE_DICTIONARY:
+		return
+	var cmd_id: String = str(data.get("id", ""))
+	var payload: Variant = data.get("data", {})
+	if typeof(payload) != TYPE_DICTIONARY:
+		return
+	match cmd_id:
+		Commands.Ring_Submited:
+			on_ring_submitted(payload)
+		Commands.Ring_Moved:
+			on_ring_moved(payload)
+		Commands.Remove_Peace:
+			on_remove_peace(payload)
+		Commands.Win_Happened:
+			on_win_happened(payload)
 
 func _process(delta: float) -> void:
 	_pulse_time += delta

@@ -777,8 +777,6 @@ func _get_themed_props_for_game(game_type: String) -> Array:
 			return ["naval_cannon", "magnifying_loupe", "brass_spyglass", "chronometer"]
 		"BoxFour":
 			return ["fortune_astrolabe", "dagger_and_shield", "royal_crown_scepter", "chronometer"]
-		"Yinsh":
-			return ["fortune_astrolabe", "royal_crown_scepter", "chronometer", "hourglass"]
 		"Sudoku":
 			return ["scorebook", "vintage_abacus", "magnifying_loupe", "hourglass"]
 		"Chess":

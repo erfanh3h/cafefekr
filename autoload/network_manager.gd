@@ -36,10 +36,6 @@ signal mine_selected_received(payload: Dictionary)
 signal select_mine_correct_received(payload: Dictionary)
 signal select_mine_wrong_received(payload: Dictionary)
 signal player_score_received(payload: Dictionary)
-signal ring_submitted(payload: Dictionary)
-signal ring_moved(payload: Dictionary)
-signal remove_peace_received(payload: Dictionary)
-signal win_happened_received(payload: Dictionary)
 
 var api: APIClient
 var socket: SocketIOClient
@@ -317,7 +313,7 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 					GameManager.p1_score = int(payload["player1_score"])
 					GameManager.p2_score = int(payload["player2_score"])
 				var user_id = int(payload.get("gamer_id", payload.get("user", 0)))
-				var target_peace = int(payload.get("target_peace", payload.get("piece_id", payload.get("selected_index", payload.get("index", 0)))))
+				var target_peace = int(payload.get("target_peace", payload.get("selected_index", payload.get("index", 0))))
 				var extra: Dictionary = payload.duplicate()
 				if payload.has("select_data") and typeof(payload["select_data"]) == TYPE_DICTIONARY:
 					var sdata = payload["select_data"]
@@ -336,32 +332,6 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 						if ci != -1 and ri != -1:
 							target_peace = ci * 8 + ri
 				piece_selected.emit(user_id, target_peace, extra)
-
-		Commands.Ring_Submited:
-			if typeof(payload) == TYPE_DICTIONARY:
-				ring_submitted.emit(payload)
-
-		Commands.Ring_Moved:
-			if typeof(payload) == TYPE_DICTIONARY:
-				ring_moved.emit(payload)
-
-		Commands.Remove_Peace:
-			if typeof(payload) == TYPE_DICTIONARY:
-				remove_peace_received.emit(payload)
-
-		Commands.Win_Happened:
-			if typeof(payload) == TYPE_DICTIONARY:
-				var win_arr = payload.get("win_data", [])
-				if typeof(win_arr) == TYPE_ARRAY:
-					for w_item in win_arr:
-						if typeof(w_item) == TYPE_DICTIONARY:
-							var gid = int(w_item.get("gamer_id", 0))
-							if gid == 1:
-								GameManager.p1_score += 1
-							elif gid == 2:
-								GameManager.p2_score += 1
-				win_happened_received.emit(payload)
-				player_score_received.emit({"player1_score": GameManager.p1_score, "player2_score": GameManager.p2_score})
 
 		Commands.Peace_Swaped:
 			if typeof(payload) == TYPE_DICTIONARY:
@@ -430,9 +400,6 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 					if g_data.has("scores") and typeof(g_data["scores"]) == TYPE_ARRAY and (g_data["scores"] as Array).size() >= 2:
 						GameManager.p1_score = int(g_data["scores"][0])
 						GameManager.p2_score = int(g_data["scores"][1])
-					elif g_data.has("player1_score") and g_data.has("player2_score"):
-						GameManager.p1_score = int(g_data["player1_score"])
-						GameManager.p2_score = int(g_data["player2_score"])
 					if g_data.has("current_turn"):
 						var turn = int(g_data["current_turn"])
 						if g_data.has("is_play_phase") and not bool(g_data["is_play_phase"]):
