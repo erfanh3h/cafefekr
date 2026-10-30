@@ -825,7 +825,7 @@ func _on_game_finished(data: Dictionary) -> void:
 				GameManager.p2_score += 1
 		base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)
 	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
-		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.MSWEEPER, GameTypes.BOXFOUR]:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.MSWEEPER, GameTypes.BOXFOUR, GameTypes.YINSH]:
 			if GameManager.p1_score > GameManager.p2_score:
 				winner = 1
 			elif GameManager.p2_score > GameManager.p1_score:
@@ -910,6 +910,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameTypes.MNUMBERS
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 25:
 			inferred_type = GameTypes.BOXFOUR
+		elif g_data.has("is_setup_ring_phase") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 85):
+			inferred_type = GameTypes.YINSH
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:
 			inferred_type = GameTypes.TIC_TAC_TOE
 		if not inferred_type.is_empty() and inferred_type.to_lower() != GameManager.current_game_type.to_lower():

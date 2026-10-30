@@ -1022,6 +1022,10 @@ func sync_reconnect_timer(payload: Dictionary) -> void:
 		var gd = payload.get("game_data", {})
 		if typeof(gd) == TYPE_DICTIONARY and not bool(gd.get("is_play_phase", false)):
 			max_time = 60.0
+	elif GameManager.current_game_type == GameTypes.YINSH:
+		var gd_y = payload.get("game_data", {})
+		if typeof(gd_y) == TYPE_DICTIONARY and bool(gd_y.get("is_setup_ring_phase", false)):
+			max_time = 20.0
 	turn_duration = max_time
 	var timer_data = payload.get("timer_data", {})
 	if typeof(timer_data) == TYPE_DICTIONARY and timer_data.has("time") and float(timer_data.get("time", 0)) > 0.0:
@@ -1069,7 +1073,9 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 	var game_data = payload.get("game_data", {})
 	if typeof(game_data) == TYPE_DICTIONARY:
 		var scores = game_data.get("scores", [0, 0])
-		if scores.size() >= 2:
+		if game_data.has("player1_score") and game_data.has("player2_score"):
+			update_scores(int(game_data["player1_score"]), int(game_data["player2_score"]))
+		elif scores.size() >= 2:
 			update_scores(int(scores[0]), int(scores[1]))
 		var r_num = int(game_data.get("current_round", 1))
 		if is_instance_valid(current_top_header) and current_top_header.has_method("set_round"):

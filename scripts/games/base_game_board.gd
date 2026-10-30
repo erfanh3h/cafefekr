@@ -97,6 +97,14 @@ func _connect_network_signals() -> void:
 		NetworkManager.select_mine_wrong_received.connect(_on_internal_select_mine_wrong)
 	if not NetworkManager.player_score_received.is_connected(_on_internal_player_score):
 		NetworkManager.player_score_received.connect(_on_internal_player_score)
+	if not NetworkManager.ring_submitted.is_connected(_on_internal_ring_submitted):
+		NetworkManager.ring_submitted.connect(_on_internal_ring_submitted)
+	if not NetworkManager.ring_moved.is_connected(_on_internal_ring_moved):
+		NetworkManager.ring_moved.connect(_on_internal_ring_moved)
+	if not NetworkManager.remove_peace_received.is_connected(_on_internal_remove_peace):
+		NetworkManager.remove_peace_received.connect(_on_internal_remove_peace)
+	if not NetworkManager.win_happened_received.is_connected(_on_internal_win_happened):
+		NetworkManager.win_happened_received.connect(_on_internal_win_happened)
 
 func _disconnect_network_signals() -> void:
 	if NetworkManager.turn_data_received.is_connected(_on_internal_turn_data):
@@ -143,6 +151,14 @@ func _disconnect_network_signals() -> void:
 		NetworkManager.select_mine_wrong_received.disconnect(_on_internal_select_mine_wrong)
 	if NetworkManager.player_score_received.is_connected(_on_internal_player_score):
 		NetworkManager.player_score_received.disconnect(_on_internal_player_score)
+	if NetworkManager.ring_submitted.is_connected(_on_internal_ring_submitted):
+		NetworkManager.ring_submitted.disconnect(_on_internal_ring_submitted)
+	if NetworkManager.ring_moved.is_connected(_on_internal_ring_moved):
+		NetworkManager.ring_moved.disconnect(_on_internal_ring_moved)
+	if NetworkManager.remove_peace_received.is_connected(_on_internal_remove_peace):
+		NetworkManager.remove_peace_received.disconnect(_on_internal_remove_peace)
+	if NetworkManager.win_happened_received.is_connected(_on_internal_win_happened):
+		NetworkManager.win_happened_received.disconnect(_on_internal_win_happened)
 
 # --- Internal Network Callbacks (Dispatches to Virtual Hooks) ---
 
@@ -265,6 +281,18 @@ func _on_internal_select_mine_wrong(payload: Dictionary) -> void:
 func _on_internal_player_score(payload: Dictionary) -> void:
 	on_player_score(payload)
 
+func _on_internal_ring_submitted(payload: Dictionary) -> void:
+	on_ring_submitted(payload)
+
+func _on_internal_ring_moved(payload: Dictionary) -> void:
+	on_ring_moved(payload)
+
+func _on_internal_remove_peace(payload: Dictionary) -> void:
+	on_remove_peace(payload)
+
+func _on_internal_win_happened(payload: Dictionary) -> void:
+	on_win_happened(payload)
+
 func _on_internal_wait_time(time_sec: int) -> void:
 	on_wait_time(time_sec)
 
@@ -307,6 +335,18 @@ func on_select_mine_wrong(_payload: Dictionary) -> void:
 	pass
 
 func on_player_score(_payload: Dictionary) -> void:
+	pass
+
+func on_ring_submitted(_payload: Dictionary) -> void:
+	pass
+
+func on_ring_moved(_payload: Dictionary) -> void:
+	pass
+
+func on_remove_peace(_payload: Dictionary) -> void:
+	pass
+
+func on_win_happened(_payload: Dictionary) -> void:
 	pass
 
 func on_wait_time(_time_sec: int) -> void:

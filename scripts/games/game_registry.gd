@@ -24,6 +24,7 @@ const BATTLESHIP_SCENE: String = "res://scenes/games/battleship/battleship_3d.ts
 const SUDOKU_SCENE: String = "res://scenes/games/sudoku/sudoku_3d.tscn"
 const MSWEEPER_SCENE: String = "res://scenes/games/msweeper/msweeper_3d.tscn"
 const BOXFOUR_SCENE: String = "res://scenes/games/boxfour/box_four_3d.tscn"
+const YINSH_SCENE: String = "res://scenes/games/yinsh/yinsh_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -232,10 +233,11 @@ static var _registry: Dictionary = {
 		"id": GameTypes.YINSH,
 		"name_fa": "یینش",
 		"narrative": "در دنیای یینش، هر حلقه فرمانده‌ای خاموش است که نشانگرها را به خط می‌کند.",
-		"board_scene": TEMP_SCENE,
+		"board_scene": YINSH_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
-		"has_round_score": false,
+		"has_round_score": true,
+		"is_cumulative_score": true,
 		"turn_time": 30.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/yinsh.jpg",
