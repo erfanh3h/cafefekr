@@ -51,6 +51,7 @@ var player1_score: int = 0
 var player2_score: int = 0
 var remaining_disks: int = 51
 var last_selected_piece_id: int = -1
+var current_remover: int = 0
 var possible_moves: Array[int] = []
 var last_move_from: int = -1
 var last_move_to: int = -1
@@ -889,6 +890,7 @@ func _init_board_state() -> void:
 	player2_score = 0
 	remaining_disks = 51
 	last_selected_piece_id = -1
+	current_remover = 0
 	possible_moves.clear()
 	last_move_from = -1
 	last_move_to = -1
@@ -1050,6 +1052,13 @@ func _update_3d_labels_and_highlights() -> void:
 			else:
 				lbl_phase_3d.text = "فاز ۱: حریف در حال چیدمان حلقه فرمانده است..."
 				lbl_phase_3d.modulate = Color(1.0, 0.86, 0.45)
+		elif current_remover != 0:
+			if current_remover == GameManager.my_player_index:
+				lbl_phase_3d.text = "🎉 ردیف ۵ تایی! یکی از حلقه‌های خود را برای حذف و دریافت امتیاز انتخاب کنید"
+				lbl_phase_3d.modulate = Color(1.0, 0.94, 0.28)
+			else:
+				lbl_phase_3d.text = "حریف ردیف ۵ تایی ساخت و در حال انتخاب حلقه برای امتیاز است..."
+				lbl_phase_3d.modulate = Color(1.0, 0.72, 0.36)
 		else:
 			if is_my_turn:
 				if last_selected_piece_id == -1:
@@ -1072,7 +1081,9 @@ func _update_3d_labels_and_highlights() -> void:
 		if i < node_select_halos.size() and is_instance_valid(node_select_halos[i]):
 			var can_sel: bool = false
 			if GameManager.is_game_active and is_my_turn and not is_board_locked:
-				if not is_setup_ring_phase and last_selected_piece_id == -1 and ring_owners[i] == my_idx:
+				if current_remover == my_idx and ring_owners[i] == my_idx:
+					can_sel = true
+				elif not is_setup_ring_phase and current_remover == 0 and last_selected_piece_id == -1 and ring_owners[i] == my_idx:
 					if not _compute_possible_moves_for_ring(i).is_empty():
 						can_sel = true
 				elif i == last_selected_piece_id:
@@ -1082,7 +1093,9 @@ func _update_3d_labels_and_highlights() -> void:
 		if i < node_legal_halos.size() and is_instance_valid(node_legal_halos[i]):
 			var is_leg: bool = false
 			if GameManager.is_game_active and is_my_turn and not is_board_locked:
-				if not is_setup_ring_phase and last_selected_piece_id != -1 and possible_moves.has(i):
+				if current_remover == my_idx and ring_owners[i] == my_idx:
+					is_leg = true
+				elif not is_setup_ring_phase and current_remover == 0 and last_selected_piece_id != -1 and possible_moves.has(i):
 					is_leg = true
 			node_legal_halos[i].visible = is_leg
 
@@ -1204,6 +1217,23 @@ func _raycast_spot(screen_pos: Vector2) -> int:
 func _handle_spot_clicked(piece_id: int) -> void:
 	var my_idx: int = GameManager.my_player_index
 
+	# Ring Removal Selection Phase (after forming 5-in-a-row)
+	if current_remover != 0:
+		if current_remover != my_idx:
+			return
+		if ring_owners[piece_id] != my_idx:
+			AudioManager.sfx_invalid()
+			show_hint("یکی از حلقه‌های خودتان را روی صفحه برای حذف و دریافت امتیاز انتخاب کنید!")
+			return
+		is_board_locked = true
+		current_remover = 0
+		hovered_piece_id = -1
+		_update_hover_preview()
+		AudioManager.sfx_tap()
+		_execute_remove_ring(my_idx, piece_id)
+		send_move(Commands.Select_Remove_Peace, piece_id)
+		return
+
 	# Phase 1: Setup 5 Rings
 	if is_setup_ring_phase:
 		if ring_owners[piece_id] != 0 or disk_owners[piece_id] != 0:
@@ -1262,6 +1292,7 @@ func on_turn_changed(turn: int, active_turn: bool) -> void:
 	current_turn = turn
 	is_my_turn = active_turn
 	is_board_locked = not active_turn
+	current_remover = 0
 	last_selected_piece_id = -1
 	possible_moves.clear()
 	hovered_piece_id = -1
@@ -1466,25 +1497,67 @@ func on_remove_peace(payload: Dictionary) -> void:
 			tw.tween_callback(d_node.queue_free)
 	_update_3d_labels_and_highlights()
 
+func on_select_remove_peace(remover_id: int) -> void:
+	current_remover = remover_id
+	last_selected_piece_id = -1
+	possible_moves.clear()
+	hovered_piece_id = -1
+	var my_idx: int = GameManager.my_player_index
+	is_my_turn = (remover_id == my_idx)
+	is_board_locked = not is_my_turn
+	var hud = _get_base_hud()
+	if is_instance_valid(hud) and GameManager.is_game_active:
+		if is_my_turn:
+			hud.start_turn_timer(20.0, "🎉 ردیف ۵ تایی! یکی از حلقه‌های خود را برای حذف و امتیاز انتخاب کنید")
+		else:
+			hud.start_turn_timer(20.0, "⚠️ حریف ردیف ۵ تایی ساخت و در حال انتخاب حلقه است...")
+	_update_3d_labels_and_highlights()
+
+func _execute_remove_ring(gamer_id: int, r_id: int) -> void:
+	if r_id < 0 or r_id >= NUM_SPOTS:
+		return
+	if ring_owners[r_id] == 0 and not is_instance_valid(board_ring_nodes[r_id]):
+		return
+	var r_owner: int = ring_owners[r_id] if ring_owners[r_id] != 0 else gamer_id
+	ring_owners[r_id] = 0
+	if r_owner == 1:
+		player1_score = min(3, player1_score + 1)
+	else:
+		player2_score = min(3, player2_score + 1)
+	var r_node = board_ring_nodes[r_id]
+	board_ring_nodes[r_id] = null
+	if is_instance_valid(r_node):
+		var trophy_arr = p1_trophy_rings if r_owner == 1 else p2_trophy_rings
+		var trophy_pos_arr = p1_trophy_positions if r_owner == 1 else p2_trophy_positions
+		var slot_idx: int = clampi(trophy_arr.size(), 0, 2)
+		var dest_trophy: Vector3 = trophy_pos_arr[slot_idx]
+		trophy_arr.append(r_node)
+		var mid_trophy: Vector3 = (r_node.position + dest_trophy) * 0.5 + Vector3(0.0, 0.18, 0.0)
+		AudioManager.sfx_move_piece()
+		var tw_r = r_node.create_tween()
+		tw_r.tween_property(r_node, "position", mid_trophy, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tw_r.tween_property(r_node, "position", dest_trophy, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw_r.parallel().tween_property(r_node, "scale", Vector3(0.92, 0.92, 0.92), 0.22)
+		tw_r.tween_callback(func():
+			AudioManager.sfx_add_piece()
+		)
+	GameManager.p1_score = player1_score
+	GameManager.p2_score = player2_score
+	_sync_hud_scores()
+	_update_3d_labels_and_highlights()
+
 func on_win_happened(payload: Dictionary) -> void:
-	# Triggered when 5+ contiguous same-color disks are cleared and a ring is scored!
 	var win_arr = payload.get("win_data", [])
 	var rem_rings = payload.get("removed_rings", [])
+	var fallback_gamer_id: int = int(payload.get("gamer_id", 1))
 
-	AudioManager.play_sound("win")
-
-	var fallback_gamer_id: int = 1
-	if typeof(win_arr) == TYPE_ARRAY:
+	if typeof(win_arr) == TYPE_ARRAY and not win_arr.is_empty():
+		AudioManager.sfx_win()
 		for w_entry in win_arr:
 			if typeof(w_entry) == TYPE_DICTIONARY:
 				var gid: int = int(w_entry.get("gamer_id", 1))
 				fallback_gamer_id = gid
 				var d_list = w_entry.get("data", [])
-				if gid == 1:
-					player1_score = min(3, player1_score + 1)
-				else:
-					player2_score = min(3, player2_score + 1)
-
 				if typeof(d_list) == TYPE_ARRAY:
 					_spawn_five_in_row_beam_vfx(d_list, gid)
 					for pid_v in d_list:
@@ -1496,31 +1569,24 @@ func on_win_happened(payload: Dictionary) -> void:
 								var dn = board_disk_nodes[pid]
 								board_disk_nodes[pid] = null
 								var tw_d = dn.create_tween()
+								tw_d.tween_interval(0.22)
 								tw_d.tween_property(dn, "position:y", dn.position.y + 0.09, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 								tw_d.parallel().tween_property(dn, "scale", Vector3(0.05, 0.05, 0.05), 0.24)
 								tw_d.tween_callback(dn.queue_free)
 
-	if typeof(rem_rings) == TYPE_ARRAY:
+	if typeof(rem_rings) == TYPE_ARRAY and not rem_rings.is_empty():
 		for r_id_v in rem_rings:
 			if r_id_v == null:
 				continue
 			var r_id: int = int(r_id_v)
-			if r_id >= 0 and r_id < NUM_SPOTS:
-				var r_owner: int = ring_owners[r_id] if ring_owners[r_id] != 0 else fallback_gamer_id
-				ring_owners[r_id] = 0
-				var r_node = board_ring_nodes[r_id]
-				board_ring_nodes[r_id] = null
-				if is_instance_valid(r_node):
-					var trophy_arr = p1_trophy_rings if r_owner == 1 else p2_trophy_rings
-					var trophy_pos_arr = p1_trophy_positions if r_owner == 1 else p2_trophy_positions
-					var slot_idx: int = clampi(trophy_arr.size(), 0, 2)
-					var dest_trophy: Vector3 = trophy_pos_arr[slot_idx]
-					trophy_arr.append(r_node)
-					var mid_trophy: Vector3 = (r_node.position + dest_trophy) * 0.5 + Vector3(0.0, 0.18, 0.0)
-					var tw_r = r_node.create_tween()
-					tw_r.tween_property(r_node, "position", mid_trophy, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-					tw_r.tween_property(r_node, "position", dest_trophy, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-					tw_r.parallel().tween_property(r_node, "scale", Vector3(0.92, 0.92, 0.92), 0.22)
+			_execute_remove_ring(fallback_gamer_id, r_id)
+
+	if payload.has("current_remover"):
+		var rem_id: int = int(payload["current_remover"])
+		if rem_id != 0:
+			on_select_remove_peace(rem_id)
+		else:
+			current_remover = 0
 
 	GameManager.p1_score = player1_score
 	GameManager.p2_score = player2_score
@@ -1666,7 +1732,11 @@ func on_reconnect_data(payload: Dictionary) -> void:
 			possible_moves = _compute_possible_moves_for_ring(last_selected_piece_id)
 		else:
 			possible_moves.clear()
-		if g_data.has("current_turn"):
+		current_remover = int(g_data.get("current_remover", 0))
+		if current_remover != 0:
+			is_my_turn = (current_remover == GameManager.my_player_index)
+			is_board_locked = not is_my_turn
+		elif g_data.has("current_turn"):
 			current_turn = int(g_data["current_turn"])
 			is_my_turn = (current_turn == GameManager.my_player_index)
 			is_board_locked = not is_my_turn
