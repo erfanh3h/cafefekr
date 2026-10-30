@@ -52,6 +52,7 @@ var player2_score: int = 0
 var remaining_disks: int = 51
 var last_selected_piece_id: int = -1
 var current_remover: int = 0
+var local_removed_ring_this_win: int = -1
 var possible_moves: Array[int] = []
 var last_move_from: int = -1
 var last_move_to: int = -1
@@ -124,6 +125,12 @@ var mat_halo_last: StandardMaterial3D
 var mat_Win_beam: StandardMaterial3D
 var mat_ghost_p1: StandardMaterial3D
 var mat_ghost_p2: StandardMaterial3D
+var mat_velvet_bed: StandardMaterial3D
+var mat_gold_inlay: StandardMaterial3D
+var mat_brass_bracket: StandardMaterial3D
+var mat_beam_sheath: StandardMaterial3D
+var mat_beacon_pillar: StandardMaterial3D
+var mat_spark_flare: StandardMaterial3D
 
 static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
 
@@ -402,6 +409,43 @@ func _init_materials() -> void:
 	mat_ghost_p2.emission_enabled = true
 	mat_ghost_p2.emission = Color(0.22, 0.58, 1.0)
 	mat_ghost_p2.emission_energy_multiplier = 1.1
+
+	# Luxury Top Supply Box & 5-in-a-Row VFX Materials
+	mat_velvet_bed = StandardMaterial3D.new()
+	mat_velvet_bed.albedo_color = Color(0.042, 0.072, 0.145)
+	mat_velvet_bed.metallic = 0.06
+	mat_velvet_bed.roughness = 0.82
+
+	mat_gold_inlay = StandardMaterial3D.new()
+	mat_gold_inlay.albedo_color = Color(1.0, 0.84, 0.30)
+	mat_gold_inlay.metallic = 0.95
+	mat_gold_inlay.roughness = 0.12
+
+	mat_brass_bracket = StandardMaterial3D.new()
+	mat_brass_bracket.albedo_color = Color(0.84, 0.68, 0.28)
+	mat_brass_bracket.metallic = 0.88
+	mat_brass_bracket.roughness = 0.22
+
+	mat_beam_sheath = StandardMaterial3D.new()
+	mat_beam_sheath.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_beam_sheath.albedo_color = Color(1.0, 0.82, 0.26, 0.48)
+	mat_beam_sheath.emission_enabled = true
+	mat_beam_sheath.emission = Color(1.0, 0.76, 0.18)
+	mat_beam_sheath.emission_energy_multiplier = 3.6
+
+	mat_beacon_pillar = StandardMaterial3D.new()
+	mat_beacon_pillar.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_beacon_pillar.albedo_color = Color(1.0, 0.94, 0.65, 0.65)
+	mat_beacon_pillar.emission_enabled = true
+	mat_beacon_pillar.emission = Color(1.0, 0.88, 0.42)
+	mat_beacon_pillar.emission_energy_multiplier = 4.2
+
+	mat_spark_flare = StandardMaterial3D.new()
+	mat_spark_flare.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_spark_flare.albedo_color = Color(1.0, 0.96, 0.75, 0.90)
+	mat_spark_flare.emission_enabled = true
+	mat_spark_flare.emission = Color(1.0, 0.90, 0.45)
+	mat_spark_flare.emission_energy_multiplier = 5.0
 
 # ============================================================================
 # 3. THREE CUSTOM SCULPTED 3D MODELS (RED RING, BLUE RING, REVERSIBLE DISK)
@@ -882,63 +926,120 @@ func _build_disk_box() -> void:
 	box_disk_nodes.clear()
 	box_disk_slots.clear()
 
-	# 1. Walnut Outer Frame (Z = -0.565, Width = 0.64, Depth = 0.125, Height = 0.022)
+	# 1. Stepped Antique Mahogany/Walnut Plinth Base
+	var base_plinth = MeshInstance3D.new()
+	var bp_box = BoxMesh.new()
+	bp_box.size = Vector3(0.665, 0.014, 0.144)
+	base_plinth.mesh = bp_box
+	base_plinth.position = Vector3(0.0, BOARD_SURFACE_Y + 0.004, -0.565)
+	base_plinth.material_override = mat_walnut_plinth
+	disk_box_root.add_child(base_plinth)
+
+	# 2. Main Walnut Casket Frame
 	var box_frame = MeshInstance3D.new()
 	var frame_mesh = BoxMesh.new()
-	frame_mesh.size = Vector3(0.64, 0.022, 0.125)
+	frame_mesh.size = Vector3(0.640, 0.024, 0.128)
 	box_frame.mesh = frame_mesh
-	box_frame.position = Vector3(0.0, BOARD_SURFACE_Y + 0.007, -0.565)
+	box_frame.position = Vector3(0.0, BOARD_SURFACE_Y + 0.012, -0.565)
 	box_frame.material_override = mat_walnut_plinth
 	disk_box_root.add_child(box_frame)
 
-	# 2. Golden / Brass Rim Trim
+	# 3. Burnished Brass Raised Lip / Coaming
 	var box_rim = MeshInstance3D.new()
 	var rim_mesh = BoxMesh.new()
-	rim_mesh.size = Vector3(0.648, 0.012, 0.133)
+	rim_mesh.size = Vector3(0.648, 0.012, 0.134)
 	box_rim.mesh = rim_mesh
-	box_rim.position = Vector3(0.0, BOARD_SURFACE_Y + 0.002, -0.565)
+	box_rim.position = Vector3(0.0, BOARD_SURFACE_Y + 0.018, -0.565)
 	box_rim.material_override = mat_brass_socket
 	disk_box_root.add_child(box_rim)
 
-	# 3. Inner Velvet Bed (Ebony / dark blue interior tray)
+	# 4. Four Gilded Antique Corner Guards with Rounded Brass Rivets
+	var c_xs = [-0.316, 0.316]
+	var c_zs = [-0.624, -0.506]
+	for cx in c_xs:
+		for cz in c_zs:
+			var bracket = MeshInstance3D.new()
+			var b_cyl = CylinderMesh.new()
+			b_cyl.top_radius = 0.0075
+			b_cyl.bottom_radius = 0.009
+			b_cyl.height = 0.026
+			b_cyl.radial_segments = 12
+			bracket.mesh = b_cyl
+			bracket.position = Vector3(cx, BOARD_SURFACE_Y + 0.014, cz)
+			bracket.material_override = mat_brass_bracket
+			disk_box_root.add_child(bracket)
+
+			var rivet = MeshInstance3D.new()
+			var r_sph = SphereMesh.new()
+			r_sph.radius = 0.004
+			r_sph.height = 0.008
+			rivet.mesh = r_sph
+			rivet.position = Vector3(cx, BOARD_SURFACE_Y + 0.028, cz)
+			rivet.material_override = mat_gold_inlay
+			disk_box_root.add_child(rivet)
+
+	# 5. Inner Midnight Royal Sapphire Velvet Bed
 	var velvet_bed = MeshInstance3D.new()
 	var bed_mesh = BoxMesh.new()
-	bed_mesh.size = Vector3(0.61, 0.010, 0.088)
+	bed_mesh.size = Vector3(0.612, 0.008, 0.088)
 	velvet_bed.mesh = bed_mesh
-	velvet_bed.position = Vector3(0.0, BOARD_SURFACE_Y + 0.014, -0.552)
-	velvet_bed.material_override = mat_ebony_surface
+	velvet_bed.position = Vector3(0.0, BOARD_SURFACE_Y + 0.020, -0.550)
+	velvet_bed.material_override = mat_velvet_bed
 	disk_box_root.add_child(velvet_bed)
 
-	# 4. Front / Top Brass Header Plaque for Disc Count
+	# 6. Gilded Brass Cartouche Plaque for Disc Count
 	var plaque = MeshInstance3D.new()
 	var pq_box = BoxMesh.new()
-	pq_box.size = Vector3(0.44, 0.008, 0.026)
+	pq_box.size = Vector3(0.48, 0.009, 0.028)
 	plaque.mesh = pq_box
-	plaque.position = Vector3(0.0, BOARD_SURFACE_Y + 0.018, -0.612)
-	plaque.material_override = mat_brass_socket
+	plaque.position = Vector3(0.0, BOARD_SURFACE_Y + 0.024, -0.612)
+	plaque.material_override = mat_gold_inlay
 	disk_box_root.add_child(plaque)
+
+	# Flanking rosette rivets on plaque
+	for rox in [-0.225, 0.225]:
+		var ro_rivet = MeshInstance3D.new()
+		var ro_sph = SphereMesh.new()
+		ro_sph.radius = 0.004
+		ro_sph.height = 0.006
+		ro_rivet.mesh = ro_sph
+		ro_rivet.position = Vector3(rox, BOARD_SURFACE_Y + 0.029, -0.612)
+		ro_rivet.material_override = mat_brass_socket
+		disk_box_root.add_child(ro_rivet)
 
 	lbl_disks_3d = Label3D.new()
 	lbl_disks_3d.font = _font_hekayat
-	lbl_disks_3d.font_size = 40
+	lbl_disks_3d.font_size = 42
 	lbl_disks_3d.outline_size = 8
-	lbl_disks_3d.modulate = Color(1.0, 0.90, 0.42)
+	lbl_disks_3d.modulate = Color(1.0, 0.94, 0.48)
 	lbl_disks_3d.outline_modulate = Color(0.08, 0.04, 0.02, 0.95)
-	lbl_disks_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.024, -0.612)
+	lbl_disks_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.030, -0.612)
 	lbl_disks_3d.rotation.x = -PI * 0.5
-	lbl_disks_3d.pixel_size = 0.0011
-	lbl_disks_3d.text = "مخزن دیسک‌ها: %s" % _fa_digits(max(0, remaining_disks))
+	lbl_disks_3d.pixel_size = 0.00108
+	lbl_disks_3d.text = "مخزن دیسک‌ها: %s دیسک" % _fa_digits(max(0, remaining_disks))
 	disk_box_root.add_child(lbl_disks_3d)
 
-	# 5. Calculate 51 slot coordinates (3 rows x 17 cols)
+	# 7. Calculate 51 slot coordinates (3 rows x 17 cols) & create velvet socket indentations
 	for r in range(3):
-		var z_s: float = -0.574 + float(r) * 0.022
+		var z_s: float = -0.574 + float(r) * 0.024
 		for c in range(17):
 			var x_s: float = -0.280 + float(c) * (0.560 / 16.0)
-			var slot_pos = Vector3(x_s, BOARD_SURFACE_Y + 0.020, z_s)
+			var slot_pos = Vector3(x_s, BOARD_SURFACE_Y + 0.026, z_s)
 			box_disk_slots.append(slot_pos)
 
-	# 6. Fill initial remaining_disks into slots
+			# Subtle dark recessed velvet ring socket
+			var sock = MeshInstance3D.new()
+			var s_torus = TorusMesh.new()
+			s_torus.inner_radius = 0.010
+			s_torus.outer_radius = 0.0135
+			s_torus.rings = 16
+			s_torus.ring_segments = 8
+			sock.mesh = s_torus
+			sock.position = Vector3(x_s, BOARD_SURFACE_Y + 0.023, z_s)
+			sock.material_override = mat_socket_well
+			disk_box_root.add_child(sock)
+
+	# 8. Fill initial remaining_disks into slots
 	var init_count: int = clampi(remaining_disks, 0, box_disk_slots.size())
 	for i in range(init_count):
 		var mini = _create_mini_box_disk(box_disk_slots[i])
@@ -949,25 +1050,51 @@ func _create_mini_box_disk(slot_pos: Vector3) -> Node3D:
 	var root = Node3D.new()
 	root.position = slot_pos
 
-	var cyl_inst = MeshInstance3D.new()
-	var cyl = CylinderMesh.new()
-	cyl.top_radius = 0.0135
-	cyl.bottom_radius = 0.0135
-	cyl.height = 0.004
-	cyl.radial_segments = 16
-	cyl_inst.mesh = cyl
-	cyl_inst.material_override = mat_disk_p1_face
-	root.add_child(cyl_inst)
+	# 1. 24K Gold Coin-Milled Outer Rim
+	var edge_inst = MeshInstance3D.new()
+	var edge_cyl = CylinderMesh.new()
+	edge_cyl.top_radius = 0.0142
+	edge_cyl.bottom_radius = 0.0142
+	edge_cyl.height = 0.0055
+	edge_cyl.radial_segments = 20
+	edge_inst.mesh = edge_cyl
+	edge_inst.material_override = mat_disk_edge_gold
+	root.add_child(edge_inst)
 
-	var rim = MeshInstance3D.new()
+	# 2. Ruby Crimson Enamel Upper Medallion Face
+	var face_inst = MeshInstance3D.new()
+	var face_cyl = CylinderMesh.new()
+	face_cyl.top_radius = 0.0128
+	face_cyl.bottom_radius = 0.0138
+	face_cyl.height = 0.003
+	face_cyl.radial_segments = 20
+	face_inst.mesh = face_cyl
+	face_inst.position = Vector3(0.0, 0.0028, 0.0)
+	face_inst.material_override = mat_disk_p1_face
+	root.add_child(face_inst)
+
+	# 3. Concentric Gold Boss Ring
+	var rim_torus = MeshInstance3D.new()
 	var r_torus = TorusMesh.new()
-	r_torus.inner_radius = 0.011
-	r_torus.outer_radius = 0.014
+	r_torus.inner_radius = 0.0065
+	r_torus.outer_radius = 0.0095
 	r_torus.rings = 16
 	r_torus.ring_segments = 8
-	rim.mesh = r_torus
-	rim.material_override = mat_disk_p2_face
-	root.add_child(rim)
+	rim_torus.mesh = r_torus
+	rim_torus.position = Vector3(0.0, 0.0044, 0.0)
+	rim_torus.scale = Vector3(1.0, 0.45, 1.0)
+	rim_torus.material_override = mat_gold_inlay
+	root.add_child(rim_torus)
+
+	# 4. Center Ruby Jewel Stud
+	var gem = MeshInstance3D.new()
+	var g_sph = SphereMesh.new()
+	g_sph.radius = 0.0040
+	g_sph.height = 0.0045
+	gem.mesh = g_sph
+	gem.position = Vector3(0.0, 0.0045, 0.0)
+	gem.material_override = mat_ring_p1_body
+	root.add_child(gem)
 
 	return root
 
@@ -1354,6 +1481,7 @@ func _handle_spot_clicked(piece_id: int) -> void:
 		hovered_piece_id = -1
 		_update_hover_preview()
 		AudioManager.sfx_tap()
+		local_removed_ring_this_win = piece_id
 		_execute_remove_ring(my_idx, piece_id)
 		send_move(Commands.Select_Remove_Peace, piece_id)
 		return
@@ -1417,6 +1545,7 @@ func on_turn_changed(turn: int, active_turn: bool) -> void:
 	is_my_turn = active_turn
 	is_board_locked = not active_turn
 	current_remover = 0
+	local_removed_ring_this_win = -1
 	last_selected_piece_id = -1
 	possible_moves.clear()
 	hovered_piece_id = -1
@@ -1669,11 +1798,13 @@ func _handle_local_win_lines(local_wins: Array) -> void:
 	AudioManager.sfx_win()
 	var my_idx: int = GameManager.my_player_index
 	var winning_remover: int = 0
+	local_removed_ring_this_win = -1
 	for w_entry in local_wins:
 		var gid: int = int(w_entry.get("gamer_id", 1))
 		winning_remover = gid
 		var d_list: Array = w_entry.get("data", [])
 		_spawn_five_in_row_beam_vfx(d_list, gid)
+		var stagger_idx: int = 0
 		for pid_v in d_list:
 			var pid: int = int(pid_v)
 			if pid >= 0 and pid < NUM_SPOTS:
@@ -1682,19 +1813,24 @@ func _handle_local_win_lines(local_wins: Array) -> void:
 				if is_instance_valid(board_disk_nodes[pid]):
 					var dn = board_disk_nodes[pid]
 					board_disk_nodes[pid] = null
-					var target_box_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.02, -0.56)
+					var target_box_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.026, -0.565)
 					var slot_idx: int = remaining_disks - 1
 					if slot_idx >= 0 and slot_idx < box_disk_slots.size():
 						target_box_pos = box_disk_slots[slot_idx]
 					var tw_d = dn.create_tween()
-					var arc_return = (dn.position + target_box_pos) * 0.5 + Vector3(0.0, 0.18, 0.0)
-					tw_d.tween_property(dn, "position", arc_return, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-					tw_d.tween_property(dn, "position", target_box_pos, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-					tw_d.parallel().tween_property(dn, "scale", Vector3(0.2, 0.2, 0.2), 0.32)
+					var arc_return = (dn.position + target_box_pos) * 0.5 + Vector3(0.0, 0.22, 0.0)
+					var delay_s: float = float(stagger_idx) * 0.04
+					if delay_s > 0.0:
+						tw_d.tween_interval(delay_s)
+					tw_d.tween_property(dn, "position", arc_return, 0.20).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+					tw_d.parallel().tween_property(dn, "rotation:y", dn.rotation.y + TAU, 0.40)
+					tw_d.tween_property(dn, "position", target_box_pos, 0.20).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+					tw_d.parallel().tween_property(dn, "scale", Vector3(0.25, 0.25, 0.25), 0.40)
 					tw_d.tween_callback(func():
 						dn.queue_free()
 						_sync_disk_box_visuals()
 					)
+			stagger_idx += 1
 
 	if winning_remover != 0:
 		current_remover = winning_remover
@@ -1732,6 +1868,7 @@ func on_remove_peace(payload: Dictionary) -> void:
 
 func on_select_remove_peace(remover_id: int) -> void:
 	current_remover = remover_id
+	local_removed_ring_this_win = -1
 	last_selected_piece_id = -1
 	possible_moves.clear()
 	hovered_piece_id = -1
@@ -1801,6 +1938,7 @@ func on_win_happened(payload: Dictionary) -> void:
 					if not already_cleared:
 						any_new_win = true
 						_spawn_five_in_row_beam_vfx(d_list, gid)
+						var stagger_idx: int = 0
 						for pid_v in d_list:
 							var pid: int = int(pid_v)
 							if pid >= 0 and pid < NUM_SPOTS:
@@ -1809,20 +1947,41 @@ func on_win_happened(payload: Dictionary) -> void:
 								if is_instance_valid(board_disk_nodes[pid]):
 									var dn = board_disk_nodes[pid]
 									board_disk_nodes[pid] = null
+									var target_box_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.026, -0.565)
+									var slot_idx: int = remaining_disks - 1
+									if slot_idx >= 0 and slot_idx < box_disk_slots.size():
+										target_box_pos = box_disk_slots[slot_idx]
 									var tw_d = dn.create_tween()
-									tw_d.tween_property(dn, "scale", Vector3(0.05, 0.05, 0.05), 0.20)
+									var arc_return = (dn.position + target_box_pos) * 0.5 + Vector3(0.0, 0.22, 0.0)
+									var delay_s: float = float(stagger_idx) * 0.04
+									if delay_s > 0.0:
+										tw_d.tween_interval(delay_s)
+									tw_d.tween_property(dn, "position", arc_return, 0.20).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+									tw_d.parallel().tween_property(dn, "rotation:y", dn.rotation.y + TAU, 0.40)
+									tw_d.tween_property(dn, "position", target_box_pos, 0.20).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+									tw_d.parallel().tween_property(dn, "scale", Vector3(0.25, 0.25, 0.25), 0.40)
 									tw_d.tween_callback(func():
 										dn.queue_free()
 										_sync_disk_box_visuals()
 									)
+							stagger_idx += 1
 		if any_new_win:
 			AudioManager.sfx_win()
 
+	var my_idx: int = GameManager.my_player_index
 	if typeof(rem_rings) == TYPE_ARRAY and not rem_rings.is_empty():
 		for r_id_v in rem_rings:
 			if r_id_v == null:
 				continue
 			var r_id: int = int(r_id_v)
+			if fallback_gamer_id == my_idx and local_removed_ring_this_win != -1:
+				if r_id == local_removed_ring_this_win:
+					# Confirmed server removal of our chosen ring
+					local_removed_ring_this_win = -1
+					continue
+				else:
+					# Obsolete/stale timeout removal from server race condition: ignore to avoid double-removing!
+					continue
 			_execute_remove_ring(fallback_gamer_id, r_id)
 
 	if payload.has("current_remover"):
@@ -1878,20 +2037,104 @@ func _spawn_five_in_row_beam_vfx(disk_ids: Array, gamer_id: int) -> void:
 	if dist <= 0.01:
 		return
 
+	var center_pos: Vector3 = (p1 + p2) * 0.5 + Vector3(0.0, 0.026, 0.0)
+	var rot_y: float = atan2(diff.x, diff.z)
+
+	# 1. Inner Pure Laser Core (high bloom)
 	var beam = MeshInstance3D.new()
 	var b_box = BoxMesh.new()
-	b_box.size = Vector3(0.026, 0.016, dist + 0.05)
+	b_box.size = Vector3(0.020, 0.014, dist + 0.06)
 	beam.mesh = b_box
-	beam.position = (p1 + p2) * 0.5 + Vector3(0.0, 0.025, 0.0)
-	beam.rotation.y = atan2(diff.x, diff.z)
+	beam.position = center_pos
+	beam.rotation.y = rot_y
 	beam.material_override = mat_Win_beam
 	fx_root.add_child(beam)
 
 	var tw = beam.create_tween()
-	tw.tween_property(beam, "scale", Vector3(1.5, 1.5, 1.05), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_interval(0.35)
-	tw.tween_property(beam, "scale", Vector3(0.05, 0.05, 1.0), 0.22)
+	tw.tween_property(beam, "scale", Vector3(1.6, 1.6, 1.05), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.40)
+	tw.tween_property(beam, "scale", Vector3(0.05, 0.05, 1.0), 0.24)
 	tw.tween_callback(beam.queue_free)
+
+	# 2. Outer Cylindrical Energy Sheath
+	var sheath = MeshInstance3D.new()
+	var s_cyl = CylinderMesh.new()
+	s_cyl.top_radius = 0.034
+	s_cyl.bottom_radius = 0.034
+	s_cyl.height = dist + 0.04
+	s_cyl.radial_segments = 24
+	s_cyl.mesh = s_cyl
+	s_cyl.position = center_pos
+	s_cyl.rotation.y = rot_y
+	s_cyl.rotation.x = PI * 0.5
+	s_cyl.material_override = mat_beam_sheath
+	fx_root.add_child(sheath)
+
+	var tw_s = sheath.create_tween()
+	tw_s.tween_property(sheath, "scale", Vector3(1.4, 1.0, 1.4), 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw_s.tween_interval(0.35)
+	tw_s.tween_property(sheath, "scale", Vector3(0.1, 1.0, 0.1), 0.24)
+	tw_s.tween_callback(sheath.queue_free)
+
+	# 3. Five Vertical Pillar Beacons & Five Expanding Golden Shockwaves
+	for v in disk_ids:
+		var pid: int = int(v)
+		if pid < 0 or pid >= NUM_SPOTS:
+			continue
+		var spot_pt: Vector3 = spot_positions[pid]
+
+		# Vertical Pillar Beacon rising into sky
+		var pillar = MeshInstance3D.new()
+		var p_cyl = CylinderMesh.new()
+		p_cyl.top_radius = 0.016
+		p_cyl.bottom_radius = 0.024
+		p_cyl.height = 0.42
+		p_cyl.radial_segments = 16
+		pillar.mesh = p_cyl
+		pillar.position = spot_pt + Vector3(0.0, 0.21, 0.0)
+		pillar.scale = Vector3(0.2, 0.1, 0.2)
+		pillar.material_override = mat_beacon_pillar
+		fx_root.add_child(pillar)
+
+		var tw_p = pillar.create_tween()
+		tw_p.tween_property(pillar, "scale", Vector3(1.2, 1.0, 1.2), 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw_p.tween_property(pillar, "scale", Vector3(0.05, 1.8, 0.05), 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tw_p.tween_callback(pillar.queue_free)
+
+		# Expanding Shockwave Ring
+		var wave = MeshInstance3D.new()
+		var w_torus = TorusMesh.new()
+		w_torus.inner_radius = 0.016
+		w_torus.outer_radius = 0.025
+		w_torus.rings = 24
+		w_torus.ring_segments = 10
+		wave.mesh = w_torus
+		wave.position = spot_pt + Vector3(0.0, 0.006, 0.0)
+		wave.scale = Vector3(0.3, 0.3, 0.3)
+		wave.material_override = mat_gold_inlay
+		fx_root.add_child(wave)
+
+		var tw_w = wave.create_tween()
+		tw_w.tween_property(wave, "scale", Vector3(2.3, 0.15, 2.3), 0.36).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw_w.tween_callback(wave.queue_free)
+
+		# 4 Diamond Spark Particle Bursts
+		for sp_k in range(4):
+			var sp_angle = float(sp_k) * (PI * 0.5) + randf_range(-0.2, 0.2)
+			var spark = MeshInstance3D.new()
+			var sp_box = BoxMesh.new()
+			sp_box.size = Vector3(0.007, 0.007, 0.007)
+			spark.mesh = sp_box
+			spark.position = spot_pt + Vector3(0.0, 0.012, 0.0)
+			spark.rotation = Vector3(randf() * PI, randf() * PI, randf() * PI)
+			spark.material_override = mat_spark_flare
+			fx_root.add_child(spark)
+
+			var sp_dir = Vector3(cos(sp_angle), 1.2, sin(sp_angle)).normalized() * randf_range(0.05, 0.09)
+			var tw_sp = spark.create_tween()
+			tw_sp.tween_property(spark, "position", spark.position + sp_dir, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw_sp.parallel().tween_property(spark, "scale", Vector3(0.1, 0.1, 0.1), 0.32)
+			tw_sp.tween_callback(spark.queue_free)
 
 	var hud = _get_base_hud()
 	if is_instance_valid(hud) and hud.has_method("show_toast_hint"):
