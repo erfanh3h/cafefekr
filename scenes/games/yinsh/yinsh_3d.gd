@@ -90,6 +90,11 @@ var p2_trophy_positions: Array[Vector3] = []
 var p1_trophy_rings: Array[Node3D] = []
 var p2_trophy_rings: Array[Node3D] = []
 
+# --- 3D Disk Supply Box at Top of Board ---
+var disk_box_root: Node3D = null
+var box_disk_nodes: Array[Node3D] = []
+var box_disk_slots: Array[Vector3] = []
+
 var lbl_disks_3d: Label3D = null
 var lbl_phase_3d: Label3D = null
 var lbl_p1_tray_3d: Label3D = null
@@ -159,27 +164,39 @@ func _exit_tree() -> void:
 func _connect_yinsh_signals() -> void:
 	if is_instance_valid(NetworkManager.socket) and not NetworkManager.socket.event_received.is_connected(_on_yinsh_socket_event):
 		NetworkManager.socket.event_received.connect(_on_yinsh_socket_event)
+	if not NetworkManager.select_remove_peace_received.is_connected(_on_select_remove_peace_signal):
+		NetworkManager.select_remove_peace_received.connect(_on_select_remove_peace_signal)
 
 func _disconnect_yinsh_signals() -> void:
 	if is_instance_valid(NetworkManager.socket) and NetworkManager.socket.event_received.is_connected(_on_yinsh_socket_event):
 		NetworkManager.socket.event_received.disconnect(_on_yinsh_socket_event)
+	if NetworkManager.select_remove_peace_received.is_connected(_on_select_remove_peace_signal):
+		NetworkManager.select_remove_peace_received.disconnect(_on_select_remove_peace_signal)
+
+func _on_select_remove_peace_signal(remover_id: int) -> void:
+	on_select_remove_peace(remover_id)
 
 func _on_yinsh_socket_event(_ns: String, event_name: String, data: Variant) -> void:
 	if event_name != "command" or typeof(data) != TYPE_DICTIONARY:
 		return
 	var cmd_id: String = str(data.get("id", ""))
-	var payload: Variant = data.get("data", {})
-	if typeof(payload) != TYPE_DICTIONARY:
-		return
+	var payload: Variant = data.get("data", null)
 	match cmd_id:
 		Commands.Ring_Submited:
-			on_ring_submitted(payload)
+			if typeof(payload) == TYPE_DICTIONARY:
+				on_ring_submitted(payload)
 		Commands.Ring_Moved:
-			on_ring_moved(payload)
+			if typeof(payload) == TYPE_DICTIONARY:
+				on_ring_moved(payload)
 		Commands.Remove_Peace:
-			on_remove_peace(payload)
+			if typeof(payload) == TYPE_DICTIONARY:
+				on_remove_peace(payload)
 		Commands.Win_Happened:
-			on_win_happened(payload)
+			if typeof(payload) == TYPE_DICTIONARY:
+				on_win_happened(payload)
+		Commands.Select_Remove_Peace:
+			var rem_id: int = int(payload) if typeof(payload) != TYPE_DICTIONARY else int(payload.get("remover_id", payload.get("user", 1)))
+			on_select_remove_peace(rem_id)
 
 func _process(delta: float) -> void:
 	_pulse_time += delta
@@ -831,26 +848,8 @@ func _build_side_trays_and_plaques() -> void:
 		else:
 			lbl_p2_tray_3d = lbl
 
-	# Top Remaining Disks Plaque (Z = -0.505)
-	var top_plaque = MeshInstance3D.new()
-	var tp_box = BoxMesh.new()
-	tp_box.size = Vector3(0.46, 0.014, 0.062)
-	top_plaque.mesh = tp_box
-	top_plaque.position = Vector3(0.0, BOARD_SURFACE_Y + 0.006, -0.508)
-	top_plaque.material_override = mat_ebony_surface
-	trays_root.add_child(top_plaque)
-
-	lbl_disks_3d = Label3D.new()
-	lbl_disks_3d.font = _font_hekayat
-	lbl_disks_3d.font_size = 42
-	lbl_disks_3d.outline_size = 8
-	lbl_disks_3d.modulate = Color(1.0, 0.90, 0.42)
-	lbl_disks_3d.outline_modulate = Color(0.08, 0.04, 0.02, 0.95)
-	lbl_disks_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.016, -0.508)
-	lbl_disks_3d.rotation.x = -PI * 0.5
-	lbl_disks_3d.pixel_size = 0.0011
-	lbl_disks_3d.text = "دیسک‌های مخزن: ۵۱"
-	trays_root.add_child(lbl_disks_3d)
+	# Top Luxury 3D Disk Supply Box (Z = -0.565)
+	_build_disk_box()
 
 	# Bottom Phase Instruction Plaque (Z = +0.508)
 	var bot_plaque = MeshInstance3D.new()
@@ -872,6 +871,124 @@ func _build_side_trays_and_plaques() -> void:
 	lbl_phase_3d.pixel_size = 0.00105
 	lbl_phase_3d.text = "فاز ۱: چیدمان ۵ حلقه فرمانده روی صفحه"
 	trays_root.add_child(lbl_phase_3d)
+
+func _build_disk_box() -> void:
+	if is_instance_valid(disk_box_root):
+		disk_box_root.queue_free()
+	disk_box_root = Node3D.new()
+	disk_box_root.name = "DiskSupplyBox"
+	trays_root.add_child(disk_box_root)
+
+	box_disk_nodes.clear()
+	box_disk_slots.clear()
+
+	# 1. Walnut Outer Frame (Z = -0.565, Width = 0.64, Depth = 0.125, Height = 0.022)
+	var box_frame = MeshInstance3D.new()
+	var frame_mesh = BoxMesh.new()
+	frame_mesh.size = Vector3(0.64, 0.022, 0.125)
+	box_frame.mesh = frame_mesh
+	box_frame.position = Vector3(0.0, BOARD_SURFACE_Y + 0.007, -0.565)
+	box_frame.material_override = mat_walnut_plinth
+	disk_box_root.add_child(box_frame)
+
+	# 2. Golden / Brass Rim Trim
+	var box_rim = MeshInstance3D.new()
+	var rim_mesh = BoxMesh.new()
+	rim_mesh.size = Vector3(0.648, 0.012, 0.133)
+	box_rim.mesh = rim_mesh
+	box_rim.position = Vector3(0.0, BOARD_SURFACE_Y + 0.002, -0.565)
+	box_rim.material_override = mat_brass_socket
+	disk_box_root.add_child(box_rim)
+
+	# 3. Inner Velvet Bed (Ebony / dark blue interior tray)
+	var velvet_bed = MeshInstance3D.new()
+	var bed_mesh = BoxMesh.new()
+	bed_mesh.size = Vector3(0.61, 0.010, 0.088)
+	velvet_bed.mesh = bed_mesh
+	velvet_bed.position = Vector3(0.0, BOARD_SURFACE_Y + 0.014, -0.552)
+	velvet_bed.material_override = mat_ebony_surface
+	disk_box_root.add_child(velvet_bed)
+
+	# 4. Front / Top Brass Header Plaque for Disc Count
+	var plaque = MeshInstance3D.new()
+	var pq_box = BoxMesh.new()
+	pq_box.size = Vector3(0.44, 0.008, 0.026)
+	plaque.mesh = pq_box
+	plaque.position = Vector3(0.0, BOARD_SURFACE_Y + 0.018, -0.612)
+	plaque.material_override = mat_brass_socket
+	disk_box_root.add_child(plaque)
+
+	lbl_disks_3d = Label3D.new()
+	lbl_disks_3d.font = _font_hekayat
+	lbl_disks_3d.font_size = 40
+	lbl_disks_3d.outline_size = 8
+	lbl_disks_3d.modulate = Color(1.0, 0.90, 0.42)
+	lbl_disks_3d.outline_modulate = Color(0.08, 0.04, 0.02, 0.95)
+	lbl_disks_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.024, -0.612)
+	lbl_disks_3d.rotation.x = -PI * 0.5
+	lbl_disks_3d.pixel_size = 0.0011
+	lbl_disks_3d.text = "مخزن دیسک‌ها: %s" % _fa_digits(max(0, remaining_disks))
+	disk_box_root.add_child(lbl_disks_3d)
+
+	# 5. Calculate 51 slot coordinates (3 rows x 17 cols)
+	for r in range(3):
+		var z_s: float = -0.574 + float(r) * 0.022
+		for c in range(17):
+			var x_s: float = -0.280 + float(c) * (0.560 / 16.0)
+			var slot_pos = Vector3(x_s, BOARD_SURFACE_Y + 0.020, z_s)
+			box_disk_slots.append(slot_pos)
+
+	# 6. Fill initial remaining_disks into slots
+	var init_count: int = clampi(remaining_disks, 0, box_disk_slots.size())
+	for i in range(init_count):
+		var mini = _create_mini_box_disk(box_disk_slots[i])
+		disk_box_root.add_child(mini)
+		box_disk_nodes.append(mini)
+
+func _create_mini_box_disk(slot_pos: Vector3) -> Node3D:
+	var root = Node3D.new()
+	root.position = slot_pos
+
+	var cyl_inst = MeshInstance3D.new()
+	var cyl = CylinderMesh.new()
+	cyl.top_radius = 0.0135
+	cyl.bottom_radius = 0.0135
+	cyl.height = 0.004
+	cyl.radial_segments = 16
+	cyl_inst.mesh = cyl
+	cyl_inst.material_override = mat_disk_p1_face
+	root.add_child(cyl_inst)
+
+	var rim = MeshInstance3D.new()
+	var r_torus = TorusMesh.new()
+	r_torus.inner_radius = 0.011
+	r_torus.outer_radius = 0.014
+	r_torus.rings = 16
+	r_torus.ring_segments = 8
+	rim.mesh = r_torus
+	rim.material_override = mat_disk_p2_face
+	root.add_child(rim)
+
+	return root
+
+func _sync_disk_box_visuals() -> void:
+	if not is_instance_valid(disk_box_root):
+		return
+	var target_count: int = clampi(remaining_disks, 0, box_disk_slots.size())
+	while box_disk_nodes.size() > target_count:
+		var extra = box_disk_nodes.pop_back()
+		if is_instance_valid(extra):
+			extra.queue_free()
+	while box_disk_nodes.size() < target_count:
+		var slot_idx: int = box_disk_nodes.size()
+		if slot_idx < box_disk_slots.size():
+			var mini = _create_mini_box_disk(box_disk_slots[slot_idx])
+			disk_box_root.add_child(mini)
+			box_disk_nodes.append(mini)
+		else:
+			break
+	if is_instance_valid(lbl_disks_3d):
+		lbl_disks_3d.text = "مخزن دیسک‌ها: %s" % _fa_digits(max(0, remaining_disks))
 
 # ============================================================================
 # 5. GAME LOGIC & VALID MOVE CALCULATION (100% PARITY WITH BACKEND & FLUTTER)
@@ -1036,8 +1153,9 @@ func _rebuild_side_tray_rings() -> void:
 		p2_trophy_rings.append(t2)
 
 func _update_3d_labels_and_highlights() -> void:
+	_sync_disk_box_visuals()
 	if is_instance_valid(lbl_disks_3d):
-		lbl_disks_3d.text = "دیسک‌های مخزن: %s" % _fa_digits(max(0, remaining_disks))
+		lbl_disks_3d.text = "مخزن دیسک‌ها: %s" % _fa_digits(max(0, remaining_disks))
 	if is_instance_valid(lbl_p1_tray_3d):
 		lbl_p1_tray_3d.text = "امتیاز قرمز: %s/۳" % _fa_digits(player1_score)
 	if is_instance_valid(lbl_p2_tray_3d):
@@ -1143,8 +1261,14 @@ func _update_hover_preview() -> void:
 # ============================================================================
 
 func _unhandled_input(event: InputEvent) -> void:
-	if is_board_locked or not GameManager.is_game_active or not is_my_turn:
+	if not GameManager.is_game_active:
 		return
+	if current_remover != 0:
+		if current_remover != GameManager.my_player_index:
+			return
+	else:
+		if is_board_locked or not is_my_turn:
+			return
 
 	if event is InputEventMouseMotion:
 		var hit_hover: int = _raycast_spot(event.position)
@@ -1376,21 +1500,33 @@ func _execute_place_disk(gamer_id: int, piece_id: int) -> void:
 		_update_3d_labels_and_highlights()
 		return
 
+	# Pop one disk from the 3D supply box at the top of the board!
+	var launch_start_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.03, -0.56)
+	if not box_disk_nodes.is_empty():
+		var popped_box_disk: Node3D = box_disk_nodes.pop_back()
+		if is_instance_valid(popped_box_disk):
+			launch_start_pos = popped_box_disk.global_position
+			popped_box_disk.queue_free()
+
 	remaining_disks = max(0, remaining_disks - 1)
 	if is_instance_valid(board_disk_nodes[piece_id]):
 		board_disk_nodes[piece_id].queue_free()
 
 	var disk_node = _create_disk_3d_model(gamer_id)
 	var dest_pos: Vector3 = spot_positions[piece_id] + Vector3(0.0, 0.008, 0.0)
-	disk_node.position = dest_pos + Vector3(0.0, 0.09, 0.0)
+	var arc_mid: Vector3 = (launch_start_pos + dest_pos) * 0.5 + Vector3(0.0, 0.20, 0.0)
+	disk_node.position = launch_start_pos
 	disk_node.scale = Vector3(0.4, 0.4, 0.4)
 	pieces_root.add_child(disk_node)
 	board_disk_nodes[piece_id] = disk_node
 
 	var tw = disk_node.create_tween()
+	tw.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(disk_node, "position", arc_mid, 0.12)
+	tw.parallel().tween_property(disk_node, "scale", Vector3(0.8, 0.8, 0.8), 0.12)
 	tw.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(disk_node, "position", dest_pos, 0.22)
-	tw.parallel().tween_property(disk_node, "scale", Vector3.ONE, 0.22)
+	tw.tween_property(disk_node, "position", dest_pos, 0.14)
+	tw.parallel().tween_property(disk_node, "scale", Vector3.ONE, 0.14)
 	tw.tween_callback(func():
 		AudioManager.sfx_add_piece()
 	)
@@ -1456,6 +1592,11 @@ func _execute_ring_move(gamer_id: int, source_id: int, target_id: int, rotations
 
 	_update_3d_labels_and_highlights()
 
+	# 3. Check for 5-in-a-row immediately with ZERO network delay
+	var local_wins: Array = _check_local_five_in_a_row()
+	if not local_wins.is_empty():
+		_handle_local_win_lines(local_wins)
+
 func _animate_disk_flip(piece_id: int, new_owner: int, delay_sec: float) -> void:
 	var disk_node: Node3D = board_disk_nodes[piece_id]
 	if not is_instance_valid(disk_node):
@@ -1481,6 +1622,95 @@ func _animate_disk_flip(piece_id: int, new_owner: int, delay_sec: float) -> void
 		tw.parallel().tween_property(flip_pivot, "rotation:x", target_rot_x, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(disk_node, "position:y", base_pos.y, 0.13).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 
+func _check_local_five_in_a_row() -> Array:
+	var final_wins: Array = []
+	var visited_keys: Dictionary = {}
+	var dir_pairs: Array = [
+		[1, 4],
+		[2, 5],
+		[3, 6]
+	]
+	for pid in range(NUM_SPOTS):
+		var owner: int = disk_owners[pid]
+		if owner == 0:
+			continue
+		for pair in dir_pairs:
+			var d_forward: int = pair[0]
+			var d_backward: int = pair[1]
+			var back_has_same: bool = false
+			if spot_neighbors[pid].has(d_backward):
+				var b_id: int = spot_neighbors[pid][d_backward]
+				if disk_owners[b_id] == owner:
+					back_has_same = true
+			if back_has_same:
+				continue
+
+			var line: Array[int] = [pid]
+			var cur: int = pid
+			while spot_neighbors[cur].has(d_forward):
+				var nxt: int = spot_neighbors[cur][d_forward]
+				if disk_owners[nxt] == owner:
+					line.append(nxt)
+					cur = nxt
+				else:
+					break
+
+			if line.size() >= 5:
+				var five_slice: Array = []
+				for k in range(5):
+					five_slice.append(line[k])
+				var key: String = "%d_%d_%d" % [owner, five_slice[0], five_slice[4]]
+				if not visited_keys.has(key):
+					visited_keys[key] = true
+					final_wins.append({"gamer_id": owner, "data": five_slice})
+	return final_wins
+
+func _handle_local_win_lines(local_wins: Array) -> void:
+	AudioManager.sfx_win()
+	var my_idx: int = GameManager.my_player_index
+	var winning_remover: int = 0
+	for w_entry in local_wins:
+		var gid: int = int(w_entry.get("gamer_id", 1))
+		winning_remover = gid
+		var d_list: Array = w_entry.get("data", [])
+		_spawn_five_in_row_beam_vfx(d_list, gid)
+		for pid_v in d_list:
+			var pid: int = int(pid_v)
+			if pid >= 0 and pid < NUM_SPOTS:
+				disk_owners[pid] = 0
+				remaining_disks = min(51, remaining_disks + 1)
+				if is_instance_valid(board_disk_nodes[pid]):
+					var dn = board_disk_nodes[pid]
+					board_disk_nodes[pid] = null
+					var target_box_pos: Vector3 = Vector3(0.0, BOARD_SURFACE_Y + 0.02, -0.56)
+					var slot_idx: int = remaining_disks - 1
+					if slot_idx >= 0 and slot_idx < box_disk_slots.size():
+						target_box_pos = box_disk_slots[slot_idx]
+					var tw_d = dn.create_tween()
+					var arc_return = (dn.position + target_box_pos) * 0.5 + Vector3(0.0, 0.18, 0.0)
+					tw_d.tween_property(dn, "position", arc_return, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+					tw_d.tween_property(dn, "position", target_box_pos, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+					tw_d.parallel().tween_property(dn, "scale", Vector3(0.2, 0.2, 0.2), 0.32)
+					tw_d.tween_callback(func():
+						dn.queue_free()
+						_sync_disk_box_visuals()
+					)
+
+	if winning_remover != 0:
+		current_remover = winning_remover
+		last_selected_piece_id = -1
+		possible_moves.clear()
+		hovered_piece_id = -1
+		is_my_turn = (winning_remover == my_idx)
+		is_board_locked = not is_my_turn
+		var hud = _get_base_hud()
+		if is_instance_valid(hud) and GameManager.is_game_active:
+			if is_my_turn:
+				hud.start_turn_timer(20.0, "🎉 ردیف ۵ تایی! یکی از حلقه‌های خود را برای دریافت امتیاز انتخاب کنید")
+			else:
+				hud.start_turn_timer(20.0, "⚠️ حریف ردیف ۵ تایی ساخت و در حال انتخاب حلقه است...")
+		_update_3d_labels_and_highlights()
+
 func on_remove_peace(payload: Dictionary) -> void:
 	# Triggered when a player selects a ring (Step 2A) but times out before moving it (Step 2B)
 	var piece_id: int = int(payload.get("piece_id", -1))
@@ -1494,7 +1724,10 @@ func on_remove_peace(payload: Dictionary) -> void:
 			board_disk_nodes[piece_id] = null
 			var tw = d_node.create_tween()
 			tw.tween_property(d_node, "scale", Vector3(0.05, 0.05, 0.05), 0.18)
-			tw.tween_callback(d_node.queue_free)
+			tw.tween_callback(func():
+				d_node.queue_free()
+				_sync_disk_box_visuals()
+			)
 	_update_3d_labels_and_highlights()
 
 func on_select_remove_peace(remover_id: int) -> void:
@@ -1552,27 +1785,38 @@ func on_win_happened(payload: Dictionary) -> void:
 	var fallback_gamer_id: int = int(payload.get("gamer_id", 1))
 
 	if typeof(win_arr) == TYPE_ARRAY and not win_arr.is_empty():
-		AudioManager.sfx_win()
+		var any_new_win: bool = false
 		for w_entry in win_arr:
 			if typeof(w_entry) == TYPE_DICTIONARY:
 				var gid: int = int(w_entry.get("gamer_id", 1))
 				fallback_gamer_id = gid
 				var d_list = w_entry.get("data", [])
 				if typeof(d_list) == TYPE_ARRAY:
-					_spawn_five_in_row_beam_vfx(d_list, gid)
+					var already_cleared: bool = true
 					for pid_v in d_list:
 						var pid: int = int(pid_v)
-						if pid >= 0 and pid < NUM_SPOTS:
-							disk_owners[pid] = 0
-							remaining_disks = min(51, remaining_disks + 1)
-							if is_instance_valid(board_disk_nodes[pid]):
-								var dn = board_disk_nodes[pid]
-								board_disk_nodes[pid] = null
-								var tw_d = dn.create_tween()
-								tw_d.tween_interval(0.22)
-								tw_d.tween_property(dn, "position:y", dn.position.y + 0.09, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-								tw_d.parallel().tween_property(dn, "scale", Vector3(0.05, 0.05, 0.05), 0.24)
-								tw_d.tween_callback(dn.queue_free)
+						if pid >= 0 and pid < NUM_SPOTS and disk_owners[pid] != 0:
+							already_cleared = false
+							break
+					if not already_cleared:
+						any_new_win = true
+						_spawn_five_in_row_beam_vfx(d_list, gid)
+						for pid_v in d_list:
+							var pid: int = int(pid_v)
+							if pid >= 0 and pid < NUM_SPOTS:
+								disk_owners[pid] = 0
+								remaining_disks = min(51, remaining_disks + 1)
+								if is_instance_valid(board_disk_nodes[pid]):
+									var dn = board_disk_nodes[pid]
+									board_disk_nodes[pid] = null
+									var tw_d = dn.create_tween()
+									tw_d.tween_property(dn, "scale", Vector3(0.05, 0.05, 0.05), 0.20)
+									tw_d.tween_callback(func():
+										dn.queue_free()
+										_sync_disk_box_visuals()
+									)
+		if any_new_win:
+			AudioManager.sfx_win()
 
 	if typeof(rem_rings) == TYPE_ARRAY and not rem_rings.is_empty():
 		for r_id_v in rem_rings:
@@ -1587,6 +1831,8 @@ func on_win_happened(payload: Dictionary) -> void:
 			on_select_remove_peace(rem_id)
 		else:
 			current_remover = 0
+			if is_my_turn:
+				is_board_locked = false
 
 	GameManager.p1_score = player1_score
 	GameManager.p2_score = player2_score
