@@ -31,19 +31,27 @@ func _process(delta: float) -> void:
 	if visible and spinner:
 		spinner.rotation += delta * 2.5
 
-func start_queue() -> void:
+func start_queue(requested_game_type: String = "") -> void:
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	elapsed_seconds = 0
 	timer_active = true
 	_update_timer_label()
 	
-	lbl_status.text = "در حال جستجوی حریف..."
-	lbl_status.modulate = Color(1.0, 0.9, 0.4)
-	
-	search_timer.start()
-	AudioManager.play_queue_music()
-	
-	NetworkManager.join_matchmaking_queue()
+	if not requested_game_type.is_empty():
+		GameManager.set_game_type(requested_game_type)
+		var g_info = GameRegistry.get_game_info(requested_game_type)
+		var g_name = g_info.get("name_fa", requested_game_type)
+		lbl_status.text = "در حال جستجوی حریف برای %s..." % g_name
+		lbl_status.modulate = Color(1.0, 0.94, 0.55)
+		search_timer.start()
+		AudioManager.play_queue_music()
+		NetworkManager.join_matchmaking_queue(requested_game_type)
+	else:
+		lbl_status.text = "در حال جستجوی حریف آنلاین..."
+		lbl_status.modulate = Color(1.0, 0.9, 0.4)
+		search_timer.start()
+		AudioManager.play_queue_music()
+		NetworkManager.join_matchmaking_queue()
 
 func stop_queue() -> void:
 	timer_active = false

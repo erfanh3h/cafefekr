@@ -78,6 +78,19 @@ var _flame_mesh: MeshInstance3D = null
 var _flame_halo_mesh: MeshInstance3D = null
 var current_board_node: Node3D = null
 
+# 3D Menu Showcase & Atmosphere
+var _menu_showcase_root: Node3D = null
+var _menu_trophy_pivot: Node3D = null
+var _menu_die_1: Node3D = null
+var _menu_die_2: Node3D = null
+var _menu_orbit_ring_1: MeshInstance3D = null
+var _menu_orbit_ring_2: MeshInstance3D = null
+var _menu_particles: CPUParticles3D = null
+var _menu_anim_time: float = 0.0
+var _menu_sway_time: float = 0.0
+var _menu_parallax_target: Vector2 = Vector2.ZERO
+var _menu_parallax_current: Vector2 = Vector2.ZERO
+
 # Interactive Table Props State & References (18-Prop Diverse Catalog)
 var _prop_animating: Dictionary = {}
 var _prop_rest_pos: Dictionary = {}
@@ -185,6 +198,7 @@ func _ready() -> void:
 		get_node("CafeProps/CoffeeCupGroup").visible = false
 
 	_build_luxury_game_environment()
+	_build_menu_showcase()
 
 	# Mobile GPU Optimization (e.g. Samsung Galaxy M32 with Mali-G52 GPU):
 	# Turn off multi-pass ping-pong glow bloom and optimize shadow passes for 60fps mobile gameplay
@@ -216,6 +230,36 @@ func _process(delta: float) -> void:
 			current_distance = lerp(current_distance, target_distance, 10.0 * delta)
 			_apply_orbit_transform()
 
+	# Animate 3D Menu Showcase & Camera Sway
+	if _menu_showcase_root and _menu_showcase_root.visible:
+		_menu_anim_time += delta
+		if _menu_trophy_pivot and is_instance_valid(_menu_trophy_pivot):
+			_menu_trophy_pivot.rotation.y += delta * 0.45
+			_menu_trophy_pivot.position.y = 0.042 + sin(_menu_anim_time * 2.0) * 0.012
+
+		if _menu_die_1 and is_instance_valid(_menu_die_1):
+			_menu_die_1.rotation.x += delta * 0.65
+			_menu_die_1.rotation.y += delta * 0.85
+			_menu_die_1.position.y = 0.22 + sin(_menu_anim_time * 2.4) * 0.018
+
+		if _menu_die_2 and is_instance_valid(_menu_die_2):
+			_menu_die_2.rotation.y -= delta * 0.75
+			_menu_die_2.rotation.z += delta * 0.55
+			_menu_die_2.position.y = 0.24 + cos(_menu_anim_time * 2.1) * 0.018
+
+		if _menu_orbit_ring_1 and is_instance_valid(_menu_orbit_ring_1):
+			_menu_orbit_ring_1.rotation.y += delta * 0.55
+		if _menu_orbit_ring_2 and is_instance_valid(_menu_orbit_ring_2):
+			_menu_orbit_ring_2.rotation.y -= delta * 0.40
+
+	if not is_board_view_active and not is_transitioning:
+		_menu_sway_time += delta * 0.40
+		var sway_x = sin(_menu_sway_time) * 0.05
+		var sway_y = cos(_menu_sway_time * 0.65) * 0.025
+		_menu_parallax_current = _menu_parallax_current.lerp(_menu_parallax_target, 5.0 * delta)
+		camera.position = CAM_POS_MENU + Vector3(sway_x + _menu_parallax_current.x, sway_y + _menu_parallax_current.y, 0.0)
+		camera.look_at(Vector3(0.0, 0.18, 0.0), Vector3.UP)
+
 	# Cozy candlelight flickering
 	if candle_light:
 		_flicker_timer += delta * 5.5
@@ -244,6 +288,7 @@ func _apply_orbit_transform() -> void:
 func transition_to_menu_view(duration: float = 1.0) -> void:
 	_kill_camera_tween()
 	is_board_view_active = false
+	set_menu_showcase_visible(true)
 	is_transitioning = true
 	is_top_down_view = false
 	camera_mode_changed.emit(false)
@@ -258,6 +303,7 @@ func transition_to_menu_view(duration: float = 1.0) -> void:
 func transition_to_board_view(duration: float = 1.2) -> void:
 	_kill_camera_tween()
 	is_transitioning = true
+	set_menu_showcase_visible(false)
 	is_top_down_view = true
 	top_down_target_height = TOP_DOWN_HEIGHT_DEFAULT
 	top_down_current_height = TOP_DOWN_HEIGHT_DEFAULT
@@ -292,6 +338,7 @@ func transition_to_board_view(duration: float = 1.2) -> void:
 
 func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 	clear_board()
+	set_menu_showcase_visible(false)
 	is_top_down_view = true
 	camera_mode_changed.emit(true)
 	if board_packed_scene:
@@ -1861,7 +1908,7 @@ func _is_gui_blocking_at(screen_pos: Vector2) -> bool:
 
 
 func _try_trigger_prop_at_screen_pos(screen_pos: Vector2) -> bool:
-	if not is_board_view_active or is_transitioning or not camera:
+	if is_transitioning or not camera:
 		return false
 	var now_sec = Time.get_ticks_msec() / 1000.0
 	if now_sec - _last_prop_tap_sec < 0.12:
@@ -1877,9 +1924,17 @@ func _try_trigger_prop_at_screen_pos(screen_pos: Vector2) -> bool:
 	if plane_hit == null:
 		return false
 
-	# Ignore taps inside the central board arena so we never interfere with game boards
-	if absf(plane_hit.x) < 0.84 and absf(plane_hit.z) < 0.88:
-		return false
+	# If in menu mode and tapping the central showcase, trigger showcase celebration
+	if not is_board_view_active:
+		var center_dist = Vector2(plane_hit.x, plane_hit.z).length()
+		if center_dist < 0.62:
+			_last_prop_tap_sec = now_sec
+			_animate_menu_showcase()
+			return true
+	else:
+		# Ignore taps inside the central board arena so we never interfere with game boards
+		if absf(plane_hit.x) < 0.84 and absf(plane_hit.z) < 0.88:
+			return false
 
 	var best_id: String = ""
 	var best_dist: float = 999.0
@@ -2755,3 +2810,160 @@ func _animate_incense_burner() -> void:
 			_burner_lid_node.rotation_degrees.y = 0.0
 		_prop_animating["incense_burner"] = false
 	)
+
+
+# --- 3D Menu Showcase & Interactive Parallax ---
+
+func set_menu_parallax(normalized_offset: Vector2) -> void:
+	_menu_parallax_target = Vector2(normalized_offset.x * 0.14, -normalized_offset.y * 0.08)
+
+func set_menu_showcase_visible(vis: bool) -> void:
+	if _menu_showcase_root and is_instance_valid(_menu_showcase_root):
+		_menu_showcase_root.visible = vis
+
+func _build_menu_showcase() -> void:
+	if _menu_showcase_root and is_instance_valid(_menu_showcase_root):
+		_menu_showcase_root.queue_free()
+
+	_menu_showcase_root = Node3D.new()
+	_menu_showcase_root.name = "MenuShowcaseRoot"
+	add_child(_menu_showcase_root)
+	_menu_showcase_root.position = Vector3(0.0, 0.075, 0.0)
+
+	var mat_brass = _shared_mats.get("brass")
+	var mat_walnut = _shared_mats.get("walnut")
+	var mat_emerald = _shared_mats.get("baize_emerald")
+	var mat_ivory = _shared_mats.get("ivory")
+	var mat_glow = _shared_mats.get("amber_glow")
+
+	# 1. Tiered Octagonal Plinth
+	var plinth_mi = MeshInstance3D.new()
+	var cyl = CylinderMesh.new()
+	cyl.top_radius = 0.52
+	cyl.bottom_radius = 0.56
+	cyl.height = 0.038
+	cyl.radial_segments = 8
+	cyl.material = mat_walnut
+	plinth_mi.mesh = cyl
+	plinth_mi.position = Vector3(0.0, 0.019, 0.0)
+	_menu_showcase_root.add_child(plinth_mi)
+
+	# Gold Chamfer Ring
+	_add_torus(_menu_showcase_root, 0.50, 0.53, Vector3(0.0, 0.038, 0.0), mat_brass)
+
+	# Velvet Emerald Inlay Dish
+	var dish_mi = MeshInstance3D.new()
+	var dish_cyl = CylinderMesh.new()
+	dish_cyl.top_radius = 0.46
+	dish_cyl.bottom_radius = 0.46
+	dish_cyl.height = 0.005
+	dish_cyl.radial_segments = 32
+	dish_cyl.material = mat_emerald
+	dish_mi.mesh = dish_cyl
+	dish_mi.position = Vector3(0.0, 0.039, 0.0)
+	_menu_showcase_root.add_child(dish_mi)
+
+	# Inner Gold Concentric Ring
+	_add_torus(_menu_showcase_root, 0.28, 0.295, Vector3(0.0, 0.041, 0.0), mat_brass)
+
+	# 2. Central Rotating Golden Trophy / Knight Mount
+	_menu_trophy_pivot = Node3D.new()
+	_menu_trophy_pivot.name = "TrophyPivot"
+	_menu_trophy_pivot.position = Vector3(0.0, 0.042, 0.0)
+	_menu_showcase_root.add_child(_menu_trophy_pivot)
+
+	# Golden Pedestal Base
+	_add_cyl(_menu_trophy_pivot, 0.12, 0.15, 0.045, Vector3(0.0, 0.0225, 0.0), mat_brass, Vector3.ZERO, 32)
+	_add_cyl(_menu_trophy_pivot, 0.09, 0.12, 0.030, Vector3(0.0, 0.055, 0.0), mat_walnut, Vector3.ZERO, 32)
+	_add_cyl(_menu_trophy_pivot, 0.08, 0.09, 0.015, Vector3(0.0, 0.075, 0.0), mat_brass, Vector3.ZERO, 32)
+
+	# Knight Chess Model
+	if ResourceLoader.exists("res://assets/models/chess/knight.obj"):
+		var km = load("res://assets/models/chess/knight.obj")
+		var knight_mi = MeshInstance3D.new()
+		knight_mi.mesh = km
+		knight_mi.material_override = mat_brass
+		knight_mi.position = Vector3(0.0, 0.082, 0.0)
+		knight_mi.scale = Vector3(1.2, 1.2, 1.2)
+		_menu_trophy_pivot.add_child(knight_mi)
+
+	# 3. Two Floating, Tumbling 3D Ivory & Gold Dice
+	_menu_die_1 = _create_showcase_die(Vector3(-0.30, 0.22, 0.08), mat_ivory, mat_brass, _shared_mats.get("ruby"))
+	_menu_showcase_root.add_child(_menu_die_1)
+
+	_menu_die_2 = _create_showcase_die(Vector3(0.30, 0.24, -0.08), mat_ivory, mat_brass, _shared_mats.get("sapphire"))
+	_menu_showcase_root.add_child(_menu_die_2)
+
+	# 4. Concentric Glowing Golden Orbit Rings
+	_menu_orbit_ring_1 = _add_torus(_menu_showcase_root, 0.34, 0.355, Vector3(0.0, 0.20, 0.0), mat_glow, Vector3(32.0, 0.0, 15.0))
+	_menu_orbit_ring_2 = _add_torus(_menu_showcase_root, 0.42, 0.432, Vector3(0.0, 0.18, 0.0), mat_glow, Vector3(-24.0, 0.0, -18.0))
+
+	# 5. Cozy Floating Ember / Dust Particles (CPUParticles3D)
+	_menu_particles = CPUParticles3D.new()
+	_menu_particles.name = "MenuEmbers"
+	_menu_particles.amount = 32
+	_menu_particles.lifetime = 3.6
+	_menu_particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	_menu_particles.emission_box_extents = Vector3(0.65, 0.25, 0.65)
+	_menu_particles.direction = Vector3(0.0, 1.0, 0.0)
+	_menu_particles.spread = 30.0
+	_menu_particles.gravity = Vector3(0.0, 0.06, 0.0)
+	_menu_particles.initial_velocity_min = 0.04
+	_menu_particles.initial_velocity_max = 0.12
+	_menu_particles.scale_amount_min = 0.016
+	_menu_particles.scale_amount_max = 0.038
+
+	var part_mat = StandardMaterial3D.new()
+	part_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	part_mat.albedo_color = Color(1.0, 0.86, 0.45, 0.85)
+	part_mat.emission_enabled = true
+	part_mat.emission = Color(1.0, 0.72, 0.25)
+	part_mat.emission_energy_multiplier = 2.5
+	if ResourceLoader.exists("res://assets/particles/spark_01.png"):
+		part_mat.albedo_texture = load("res://assets/particles/spark_01.png")
+	var p_quad = QuadMesh.new()
+	p_quad.size = Vector2(0.03, 0.03)
+	p_quad.material = part_mat
+	_menu_particles.mesh = p_quad
+	_menu_particles.position = Vector3(0.0, 0.15, 0.0)
+	_menu_showcase_root.add_child(_menu_particles)
+
+func _create_showcase_die(pos: Vector3, mat_body: Material, mat_gold: Material, mat_dot: Material) -> Node3D:
+	var root = Node3D.new()
+	root.position = pos
+	var bm = BoxMesh.new()
+	bm.size = Vector3(0.075, 0.075, 0.075)
+	bm.material = mat_body
+	var mi = MeshInstance3D.new()
+	mi.mesh = bm
+	root.add_child(mi)
+
+	for cx in [-0.036, 0.036]:
+		for cy in [-0.036, 0.036]:
+			for cz in [-0.036, 0.036]:
+				_add_sphere(root, 0.007, 0.014, Vector3(cx, cy, cz), mat_gold)
+
+	_add_sphere(root, 0.008, 0.008, Vector3(0.0, 0.038, 0.0), mat_dot)
+	_add_sphere(root, 0.006, 0.006, Vector3(-0.02, -0.038, -0.02), mat_gold)
+	_add_sphere(root, 0.006, 0.006, Vector3(0.02, -0.038, 0.02), mat_gold)
+	return root
+
+func _animate_menu_showcase() -> void:
+	if _prop_animating.get("menu_showcase", false):
+		return
+	_prop_animating["menu_showcase"] = true
+	_play_prop_sfx("bell")
+	_spawn_prop_sparkle_burst(_menu_showcase_root, Vector3(0.0, 0.22, 0.0), Color(1.0, 0.88, 0.35), 14, 0.24, 0.18)
+	_spawn_prop_pulse_ring(_menu_showcase_root, Vector3(0.0, 0.045, 0.0), Color(1.0, 0.82, 0.25), 3.2)
+
+	if _menu_trophy_pivot and is_instance_valid(_menu_trophy_pivot):
+		var tw = _menu_trophy_pivot.create_tween()
+		tw.tween_property(_menu_trophy_pivot, "scale", Vector3(1.25, 0.80, 1.25), 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(_menu_trophy_pivot, "scale", Vector3(0.90, 1.25, 0.90), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(_menu_trophy_pivot, "scale", Vector3.ONE, 0.18)
+		tw.parallel().tween_property(_menu_trophy_pivot, "rotation:y", _menu_trophy_pivot.rotation.y + TAU, 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_callback(func():
+			_prop_animating["menu_showcase"] = false
+		)
+	else:
+		_prop_animating["menu_showcase"] = false

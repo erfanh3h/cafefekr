@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/main.gd" id="1_main_script"]
 [ext_resource type="PackedScene" path="res://scenes/environment/cafe_table.tscn" id="2_cafe_table"]
@@ -27,6 +27,22 @@
 [ext_resource type="PackedScene" uid="uid://cxprofiledialog01" path="res://scenes/ui/profile/user_profile_dialog.tscn" id="25_profile_dlg"]
 [ext_resource type="Texture2D" uid="uid://bjmon80i1yqbe" path="res://assets/images/background2.png" id="26_menu_bg"]
 [ext_resource type="Shader" path="res://scripts/shaders/solid_white_tint.gdshader" id="27_shader_tint"]
+[ext_resource type="Texture2D" path="res://assets/particles/star_01.png" id="28_star_tex"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_online_badge"]
+bg_color = Color(0.12, 0.08, 0.05, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.70, 0.28, 0.85)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 6
+shadow_offset = Vector2(0, 3)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_white_icon"]
 shader = ExtResource("27_shader_tint")
@@ -83,6 +99,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Background" type="TextureRect" parent="CanvasLayer/MenuContainer"]
+modulate = Color(1, 1, 1, 0.28)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -102,7 +119,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.04, 0.02, 0.01, 0.28)
+color = Color(0.04, 0.02, 0.01, 0.45)
+
+[node name="SparkleParticles" type="CPUParticles2D" parent="CanvasLayer/MenuContainer"]
+position = Vector2(540, 520)
+amount = 26
+lifetime = 3.2
+texture = ExtResource("28_star_tex")
+emission_shape = 3
+emission_rect_extents = Vector2(480, 420)
+gravity = Vector2(0, -22)
+scale_amount_min = 0.04
+scale_amount_max = 0.12
+color = Color(1, 0.88, 0.45, 0.75)
 
 [node name="CenterContent" type="VBoxContainer" parent="CanvasLayer/MenuContainer"]
 layout_mode = 1
@@ -111,22 +140,22 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -480.0
-offset_top = -540.0
-offset_right = 480.0
+offset_left = -485.0
+offset_top = -620.0
+offset_right = 485.0
 offset_bottom = 440.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="LogoSection" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="LogoPlate" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection"]
-custom_minimum_size = Vector2(210, 210)
+custom_minimum_size = Vector2(190, 190)
 layout_mode = 2
 size_flags_horizontal = 4
 
@@ -148,10 +177,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -78.0
-offset_top = -78.0
-offset_right = 78.0
-offset_bottom = 78.0
+offset_left = -72.0
+offset_top = -72.0
+offset_right = 72.0
+offset_bottom = 72.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("11_logo_tex")
@@ -164,9 +193,41 @@ theme_override_colors/font_color = Color(1, 0.94, 0.82, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 4
 theme_override_fonts/font = ExtResource("12_font_hekayat")
-theme_override_font_sizes/font_size = 64
-text = "کافه فکر"
+theme_override_font_sizes/font_size = 56
+text = "کافه فِکـــر"
 horizontal_alignment = 1
+
+[node name="OnlineStatusBadge" type="PanelContainer" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection"]
+custom_minimum_size = Vector2(380, 42)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_online_badge")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection/OnlineStatusBadge"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 4
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection/OnlineStatusBadge/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Beacon" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection/OnlineStatusBadge/Margin/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "🟢"
+
+[node name="LblOnlineCount" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/LogoSection/OnlineStatusBadge/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 1, 0.52, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 22
+text = "۱,۴۸۰ بازیکن هم‌اکنون آنلاین در کافه فکر" 
 
 [node name="Spacing" type="Control" parent="CanvasLayer/MenuContainer/CenterContent"]
 custom_minimum_size = Vector2(0, 30)
@@ -379,6 +440,33 @@ texture = ExtResource("16_lobby_tex")
 expand_mode = 1
 stretch_mode = 5
 
+[node name="GameShowcaseSection" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="LblShowcaseTitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/GameShowcaseSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.78, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "⚡ بازی‌های منتخب کافه • ورود مستقیم"
+horizontal_alignment = 1
+
+[node name="ScrollGames" type="ScrollContainer" parent="CanvasLayer/MenuContainer/CenterContent/GameShowcaseSection"]
+custom_minimum_size = Vector2(960, 205)
+layout_mode = 2
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="HBoxGames" type="HBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/GameShowcaseSection/ScrollGames"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+alignment = 1
+
 [node name="BottomDock" type="MarginContainer" parent="CanvasLayer/MenuContainer"]
 layout_mode = 1
 anchors_preset = 7
@@ -386,21 +474,21 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -480.0
-offset_top = -230.0
-offset_right = 480.0
+offset_left = -485.0
+offset_top = -215.0
+offset_right = 485.0
 offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_bottom = 10
 
 [node name="HBoxDock" type="HBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="BtnRanking" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
-custom_minimum_size = Vector2(200, 165)
+custom_minimum_size = Vector2(176, 150)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
 theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
@@ -419,7 +507,7 @@ alignment = 1
 
 [node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking/VBox"]
 material = SubResource("ShaderMaterial_white_icon")
-custom_minimum_size = Vector2(62, 62)
+custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
@@ -434,12 +522,51 @@ theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("12_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "برترین‌ها"
 horizontal_alignment = 1
 
+[node name="BtnStore" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
+custom_minimum_size = Vector2(176, 150)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_tile_pressed")
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnStore"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnStore/VBox"]
+material = SubResource("ShaderMaterial_white_icon")
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("20_store_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnStore/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 24
+text = "فروشگاه"
+horizontal_alignment = 1
+
 [node name="BtnRules" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
-custom_minimum_size = Vector2(200, 165)
+custom_minimum_size = Vector2(176, 150)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
 theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
@@ -458,7 +585,7 @@ alignment = 1
 
 [node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules/VBox"]
 material = SubResource("ShaderMaterial_white_icon")
-custom_minimum_size = Vector2(62, 62)
+custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
@@ -473,12 +600,12 @@ theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("12_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "راهنما"
 horizontal_alignment = 1
 
 [node name="BtnAudio" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
-custom_minimum_size = Vector2(200, 165)
+custom_minimum_size = Vector2(176, 150)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
 theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
@@ -497,7 +624,7 @@ alignment = 1
 
 [node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio/VBox"]
 material = SubResource("ShaderMaterial_white_icon")
-custom_minimum_size = Vector2(62, 62)
+custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
@@ -512,12 +639,12 @@ theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("12_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "صدا"
 horizontal_alignment = 1
 
 [node name="BtnExit" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
-custom_minimum_size = Vector2(200, 165)
+custom_minimum_size = Vector2(176, 150)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
 theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
@@ -536,7 +663,7 @@ alignment = 1
 
 [node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnExit/VBox"]
 material = SubResource("ShaderMaterial_white_icon")
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
@@ -551,9 +678,8 @@ theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("12_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "خروج"
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 22
+text = "خروج" 
 
 [node name="UserHeader" parent="CanvasLayer" instance=ExtResource("3_user_header")]
 

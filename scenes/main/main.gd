@@ -20,10 +20,16 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 
 # Bottom Dock
 @onready var btn_ranking = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking
+@onready var btn_store = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnStore
 @onready var btn_rules = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules
 @onready var btn_audio = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio
 @onready var btn_exit = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnExit
 @onready var img_audio = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio/VBox/Icon
+
+# Gamer Friendly Showcase & Live Ticker
+@onready var hbox_games = $CanvasLayer/MenuContainer/CenterContent/GameShowcaseSection/ScrollGames/HBoxGames
+@onready var lbl_online_count = $CanvasLayer/MenuContainer/CenterContent/LogoSection/OnlineStatusBadge/Margin/HBox/LblOnlineCount
+@onready var beacon_online = $CanvasLayer/MenuContainer/CenterContent/LogoSection/OnlineStatusBadge/Margin/HBox/Beacon
 
 # Dialogs
 @onready var dialog_backdrop: ColorRect = $CanvasLayer/DialogBackdrop
@@ -49,6 +55,8 @@ func _ready() -> void:
 	_start_logo_animation()
 	_setup_button_juice()
 	_update_audio_button_visual()
+	_start_online_counter_pulse()
+	_setup_game_showcase()
 	
 	# Start in Menu Mode
 	base_game_hud.visible = false
@@ -215,6 +223,7 @@ func _setup_signals() -> void:
 	btn_lobby.pressed.connect(_on_lobby_pressed)
 	
 	btn_ranking.pressed.connect(_on_ranking_pressed)
+	btn_store.pressed.connect(_on_store_pressed)
 	btn_rules.pressed.connect(_on_rules_pressed)
 	btn_audio.pressed.connect(_on_audio_toggle)
 	btn_exit.pressed.connect(_on_exit_pressed)
@@ -347,7 +356,7 @@ func _start_logo_animation() -> void:
 	tw.tween_property(logo_plate, "scale", Vector2(0.97, 0.97), 1.8)
 
 func _setup_button_juice() -> void:
-	var buttons = [btn_ranked, btn_lobby, btn_ranking, btn_rules, btn_audio, btn_exit]
+	var buttons = [btn_ranked, btn_lobby, btn_ranking, btn_store, btn_rules, btn_audio, btn_exit]
 	for b in buttons:
 		ActionVFXManager.apply_button_juice(b, "tap_button")
 
@@ -1023,3 +1032,217 @@ func _show_menu_toast(msg: String) -> void:
 	_menu_toast_tween.chain().tween_interval(2.5)
 	_menu_toast_tween.chain().tween_property(_menu_toast_label, "modulate:a", 0.0, 0.4)
 	_menu_toast_tween.chain().tween_callback(func(): _menu_toast_label.visible = false)
+
+# --- Menu Showcase & Gamer Experience Methods ---
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_instance_valid(cafe_table):
+		return
+	if is_instance_valid(menu_container) and menu_container.visible:
+		if event is InputEventMouseMotion:
+			var vp_rect = get_viewport().get_visible_rect()
+			if vp_rect.size.x > 0 and vp_rect.size.y > 0:
+				var norm = (event.position / vp_rect.size) * 2.0 - Vector2.ONE
+				cafe_table.set_menu_parallax(norm)
+		elif event is InputEventScreenDrag:
+			var vp_rect = get_viewport().get_visible_rect()
+			if vp_rect.size.x > 0 and vp_rect.size.y > 0:
+				var norm = (event.position / vp_rect.size) * 2.0 - Vector2.ONE
+				cafe_table.set_menu_parallax(norm)
+
+var _base_online_count: int = 1482
+
+func _start_online_counter_pulse() -> void:
+	if not beacon_online or not is_instance_valid(beacon_online):
+		return
+	beacon_online.pivot_offset = beacon_online.size / 2.0
+	var tw = beacon_online.create_tween().set_loops()
+	tw.tween_property(beacon_online, "modulate:a", 0.3, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(beacon_online, "modulate:a", 1.0, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
+	var timer = Timer.new()
+	timer.wait_time = 7.0
+	timer.autostart = true
+	add_child(timer)
+	timer.timeout.connect(func():
+		if not lbl_online_count or not is_instance_valid(lbl_online_count):
+			return
+		_base_online_count = clampi(_base_online_count + randi_range(-3, 3), 1420, 1590)
+		var count_str = _to_persian_digits(str(_base_online_count))
+		lbl_online_count.text = "%s بازیکن هم‌اکنون آنلاین در کافه فکر" % count_str
+	)
+
+func _to_persian_digits(num_str: String) -> String:
+	var en = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+	var fa = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
+	var res = num_str
+	for i in range(10):
+		res = res.replace(en[i], fa[i])
+	if res.length() == 4:
+		res = res.substr(0, 1) + "،" + res.substr(1)
+	return res
+
+func _setup_game_showcase() -> void:
+	if not hbox_games or not is_instance_valid(hbox_games):
+		return
+	
+	for child in hbox_games.get_children():
+		child.queue_free()
+	
+	var featured_games = [
+		{"type": "backgammon", "title": "تخته نرد", "img": "res://assets/images/games/backgammon.jpg", "badge": "محبوب"},
+		{"type": "chess", "title": "شطرنج", "img": "res://assets/images/games/chess.jpg", "badge": "استراتژیک"},
+		{"type": "msweeper", "title": "مین‌روب", "img": "res://assets/images/games/msweeper.jpg", "badge": "۳ بعدی"},
+		{"type": "boxfour", "title": "باکس ۴", "img": "res://assets/images/games/boxfour.jpg", "badge": "جدید"},
+		{"type": "fourinrow", "title": "۴ در یک خط", "img": "res://assets/images/games/fourinrow.jpg", "badge": "سریع"},
+		{"type": "dotbox", "title": "نقطه خط", "img": "res://assets/images/games/dotbox.jpg", "badge": "نوستالژی"},
+		{"type": "othello", "title": "اتللو", "img": "res://assets/images/games/othello.jpg", "badge": "تاکتیکی"},
+		{"type": "mill", "title": "دوز ۱۲ تایی", "img": "res://assets/images/games/mill.jpg", "badge": "کلاسیک"},
+		{"type": "sudoku", "title": "سودوکو", "img": "res://assets/images/games/sudoku.jpg", "badge": "تمرکز"},
+		{"type": "fekrbekr", "title": "فکربکر", "img": "res://assets/images/games/fekrbekr.jpg", "badge": "معمایی"},
+		{"type": "yatzy", "title": "یاتزی", "img": "res://assets/images/games/yatzy.jpg", "badge": "تاس‌انداز"},
+		{"type": "battleship", "title": "نبرد ناوها", "img": "res://assets/images/games/battleship.jpg", "badge": "هیجانی"}
+	]
+	
+	var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
+	
+	for g in featured_games:
+		var card_btn = Button.new()
+		card_btn.custom_minimum_size = Vector2(170, 195)
+		card_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		card_btn.focus_mode = Control.FOCUS_NONE
+		
+		var style_normal = StyleBoxFlat.new()
+		style_normal.bg_color = Color(0.14, 0.09, 0.06, 0.88)
+		style_normal.border_color = Color(0.65, 0.50, 0.28, 0.70)
+		style_normal.set_border_width_all(2)
+		style_normal.set_corner_radius_all(16)
+		style_normal.shadow_color = Color(0, 0, 0, 0.45)
+		style_normal.shadow_size = 6
+		style_normal.shadow_offset = Vector2(0, 3)
+		
+		var style_hover = StyleBoxFlat.new()
+		style_hover.bg_color = Color(0.24, 0.15, 0.10, 0.95)
+		style_hover.border_color = Color(1.0, 0.82, 0.40, 1.0)
+		style_hover.set_border_width_all(2)
+		style_hover.set_corner_radius_all(16)
+		style_hover.shadow_color = Color(0.9, 0.6, 0.15, 0.35)
+		style_hover.shadow_size = 10
+		style_hover.shadow_offset = Vector2(0, 3)
+		
+		var style_pressed = StyleBoxFlat.new()
+		style_pressed.bg_color = Color(0.10, 0.06, 0.04, 0.95)
+		style_pressed.border_color = Color(1.0, 0.88, 0.45, 1.0)
+		style_pressed.set_border_width_all(3)
+		style_pressed.set_corner_radius_all(16)
+		
+		card_btn.add_theme_stylebox_override("normal", style_normal)
+		card_btn.add_theme_stylebox_override("hover", style_hover)
+		card_btn.add_theme_stylebox_override("pressed", style_pressed)
+		
+		var vbox = VBoxContainer.new()
+		vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 6)
+		
+		var margin = MarginContainer.new()
+		margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+		margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		margin.add_theme_constant_override("margin_left", 8)
+		margin.add_theme_constant_override("margin_right", 8)
+		margin.add_theme_constant_override("margin_top", 8)
+		margin.add_theme_constant_override("margin_bottom", 8)
+		
+		var thumb_container = Control.new()
+		thumb_container.custom_minimum_size = Vector2(150, 115)
+		thumb_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		
+		var img_rect = TextureRect.new()
+		img_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		img_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		img_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		img_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if ResourceLoader.exists(g["img"]):
+			img_rect.texture = load(g["img"])
+		thumb_container.add_child(img_rect)
+		
+		if not g.get("badge", "").is_empty():
+			var badge_bg = PanelContainer.new()
+			var badge_style = StyleBoxFlat.new()
+			badge_style.bg_color = Color(0.85, 0.55, 0.12, 0.95)
+			badge_style.set_corner_radius_all(6)
+			badge_style.set_content_margin_all(2)
+			badge_bg.add_theme_stylebox_override("panel", badge_style)
+			badge_bg.anchors_preset = Control.PRESET_TOP_RIGHT
+			badge_bg.anchor_left = 1.0
+			badge_bg.anchor_right = 1.0
+			badge_bg.offset_left = -60.0
+			badge_bg.offset_right = -4.0
+			badge_bg.offset_top = 4.0
+			badge_bg.offset_bottom = 24.0
+			badge_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			
+			var badge_lbl = Label.new()
+			badge_lbl.text = g["badge"]
+			badge_lbl.add_theme_font_override("font", font_hekayat)
+			badge_lbl.add_theme_font_size_override("font_size", 14)
+			badge_lbl.add_theme_color_override("font_color", Color.WHITE)
+			badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			badge_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			badge_bg.add_child(badge_lbl)
+			thumb_container.add_child(badge_bg)
+		
+		vbox.add_child(thumb_container)
+		
+		var lbl_title = Label.new()
+		lbl_title.text = g["title"]
+		lbl_title.add_theme_font_override("font", font_hekayat)
+		lbl_title.add_theme_font_size_override("font_size", 20)
+		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.92, 0.72))
+		lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		lbl_title.add_theme_constant_override("shadow_outline_size", 2)
+		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_child(lbl_title)
+		
+		var lbl_play = Label.new()
+		lbl_play.text = "شروع سریع ▸"
+		lbl_play.add_theme_font_override("font", font_hekayat)
+		lbl_play.add_theme_font_size_override("font_size", 14)
+		lbl_play.add_theme_color_override("font_color", Color(0.85, 0.72, 0.50, 0.85))
+		lbl_play.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_play.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_child(lbl_play)
+		
+		margin.add_child(vbox)
+		card_btn.add_child(margin)
+		
+		ActionVFXManager.apply_button_juice(card_btn, "tap_button")
+		
+		var g_type: String = g["type"]
+		var g_fa: String = g["title"]
+		card_btn.pressed.connect(func():
+			_on_quick_game_pressed(g_type, g_fa)
+		)
+		
+		hbox_games.add_child(card_btn)
+
+func _on_quick_game_pressed(game_type: String, game_name_fa: String) -> void:
+	AudioManager.sfx_button()
+	if not NetworkManager.is_online:
+		_hide_backdrop()
+		NetworkManager.connect_to_game_server()
+		_show_menu_toast("🔄 در حال تلاش برای اتصال مجدد به سرور بازی...")
+		return
+	_show_backdrop()
+	if not GameManager.is_logged_in:
+		login_dialog.open()
+		return
+	if GameManager.is_guest or not GameManager.has_phone():
+		login_dialog.open_for_phone_upgrade("برای ورود به بازی %s، لطفاً ابتدا شماره موبایل خود را ثبت کنید." % game_name_fa)
+		return
+	if not GameManager.has_username():
+		login_dialog.open_for_username_completion()
+		return
+	queue_dialog.start_queue(game_type)
