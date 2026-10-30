@@ -135,6 +135,10 @@ static func _fa_digits(val: Variant) -> String:
 func _init() -> void:
 	game_type = GameTypes.YINSH
 
+func _enter_tree() -> void:
+	super._enter_tree()
+	_connect_yinsh_signals()
+
 func _ready() -> void:
 	game_type = GameTypes.YINSH
 	add_to_group("board")
@@ -145,6 +149,30 @@ func _ready() -> void:
 	_rebuild_all_pieces_visual()
 	_sync_hud_scores()
 	super._ready()
+
+func _exit_tree() -> void:
+	_disconnect_yinsh_signals()
+	super._exit_tree()
+
+func _connect_yinsh_signals() -> void:
+	if not NetworkManager.ring_submitted.is_connected(on_ring_submitted):
+		NetworkManager.ring_submitted.connect(on_ring_submitted)
+	if not NetworkManager.ring_moved.is_connected(on_ring_moved):
+		NetworkManager.ring_moved.connect(on_ring_moved)
+	if not NetworkManager.remove_peace_received.is_connected(on_remove_peace):
+		NetworkManager.remove_peace_received.connect(on_remove_peace)
+	if not NetworkManager.win_happened_received.is_connected(on_win_happened):
+		NetworkManager.win_happened_received.connect(on_win_happened)
+
+func _disconnect_yinsh_signals() -> void:
+	if NetworkManager.ring_submitted.is_connected(on_ring_submitted):
+		NetworkManager.ring_submitted.disconnect(on_ring_submitted)
+	if NetworkManager.ring_moved.is_connected(on_ring_moved):
+		NetworkManager.ring_moved.disconnect(on_ring_moved)
+	if NetworkManager.remove_peace_received.is_connected(on_remove_peace):
+		NetworkManager.remove_peace_received.disconnect(on_remove_peace)
+	if NetworkManager.win_happened_received.is_connected(on_win_happened):
+		NetworkManager.win_happened_received.disconnect(on_win_happened)
 
 func _process(delta: float) -> void:
 	_pulse_time += delta
@@ -640,7 +668,7 @@ func _build_board_3d() -> void:
 		var legal_halo = MeshInstance3D.new()
 		var lh_torus = TorusMesh.new()
 		lh_torus.inner_radius = 0.018
-		lh_torus.outer_radius = 0.025
+		lh_torus.outer_radius = 0.026
 		lh_torus.rings = 24
 		lh_torus.ring_segments = 12
 		legal_halo.mesh = lh_torus
@@ -681,16 +709,16 @@ func _build_board_3d() -> void:
 		n_holder.add_child(last_halo)
 		node_last_halos.append(last_halo)
 
-		# Raycast Area3D for single-source _unhandled_input
+		# Thin wafer Area3D at board surface level (prevents neighboring cylinders blocking angled rays)
 		var area = Area3D.new()
 		area.name = "SpotArea_%d" % pid
 		area.set_meta("piece_id", pid)
 		var col = CollisionShape3D.new()
 		var cyl_shape = CylinderShape3D.new()
-		cyl_shape.radius = 0.045
-		cyl_shape.height = 0.06
+		cyl_shape.radius = 0.038
+		cyl_shape.height = 0.010
 		col.shape = cyl_shape
-		col.position = Vector3(0.0, 0.02, 0.0)
+		col.position = Vector3(0.0, 0.005, 0.0)
 		area.add_child(col)
 		n_holder.add_child(area)
 		node_areas.append(area)
@@ -928,6 +956,7 @@ func _get_disks_between(source_id: int, target_id: int) -> Array[int]:
 
 func _rebuild_all_pieces_visual() -> void:
 	for child in pieces_root.get_children():
+		pieces_root.remove_child(child)
 		child.queue_free()
 	board_ring_nodes.resize(NUM_SPOTS)
 	board_disk_nodes.resize(NUM_SPOTS)
@@ -1057,6 +1086,7 @@ func _update_hover_preview() -> void:
 	if not is_instance_valid(hover_preview_root):
 		return
 	for ch in hover_preview_root.get_children():
+		hover_preview_root.remove_child(ch)
 		ch.queue_free()
 
 	if not GameManager.is_game_active or not is_my_turn or is_board_locked:
@@ -1071,7 +1101,6 @@ func _update_hover_preview() -> void:
 			ghost.position = spot_positions[hovered_piece_id] + Vector3(0.0, 0.014, 0.0)
 			hover_preview_root.add_child(ghost)
 	elif last_selected_piece_id != -1 and possible_moves.has(hovered_piece_id):
-		# Show ghost ring at destination + glowing trajectory beam + highlight disks to be flipped!
 		var ghost_dest = _create_ring_3d_model(my_idx, true)
 		ghost_dest.position = spot_positions[hovered_piece_id] + Vector3(0.0, 0.014, 0.0)
 		hover_preview_root.add_child(ghost_dest)
@@ -1091,7 +1120,7 @@ func _update_hover_preview() -> void:
 			hover_preview_root.add_child(beam)
 
 # ============================================================================
-# 7.RAYCAST SINGLE-SOURCE INPUT (_unhandled_input)
+# 7. RAYCAST SINGLE-SOURCE INPUT (_unhandled_input)
 # ============================================================================
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1115,7 +1144,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var frame: int = Engine.get_process_frames()
 	var now: float = Time.get_ticks_msec() / 1000.0
-	if frame == _last_click_frame or (now - last_click_time) < 0.18:
+	if frame == _last_click_frame or (now - last_click_time) < 0.14:
 		return
 
 	var hit_id: int = _raycast_spot(click_pos)
@@ -1135,10 +1164,27 @@ func _raycast_spot(screen_pos: Vector2) -> int:
 		return -1
 	var from: Vector3 = cam.project_ray_origin(screen_pos)
 	var dir: Vector3 = cam.project_ray_normal(screen_pos)
+
+	# 1. Exact Board Surface Plane Intersection (Y = BOARD_SURFACE_Y + 0.008)
+	# Guarantees 100% accurate spot picking from any 2D or 3D camera angle without tall cylinder occlusion!
+	if abs(dir.y) > 0.0001:
+		var t: float = ((BOARD_SURFACE_Y + 0.008) - from.y) / dir.y
+		if t > 0.0:
+			var local_pt: Vector3 = to_local(from + dir * t)
+			var best_id: int = -1
+			var best_dist: float = 0.048
+			for i in range(NUM_SPOTS):
+				var d: float = Vector2(local_pt.x - spot_positions[i].x, local_pt.z - spot_positions[i].z).length()
+				if d < best_dist:
+					best_dist = d
+					best_id = i
+			if best_id != -1:
+				return best_id
+
+	# 2. Fallback Physics Area3D Raycast
 	var space = get_world_3d().direct_space_state
 	if not space:
 		return -1
-
 	var query = PhysicsRayQueryParameters3D.create(from, from + dir * 25.0)
 	query.collide_with_areas = true
 	query.collide_with_bodies = false
@@ -1147,20 +1193,6 @@ func _raycast_spot(screen_pos: Vector2) -> int:
 		var col = hit["collider"]
 		if col.has_meta("piece_id"):
 			return int(col.get_meta("piece_id"))
-
-	# Fallback plane intersection with Y = BOARD_SURFACE_Y for effortless gamer-friendly tapping
-	if abs(dir.y) > 0.0001:
-		var t: float = (BOARD_SURFACE_Y - from.y) / dir.y
-		if t > 0.0:
-			var world_pt: Vector3 = from + dir * t
-			var best_id: int = -1
-			var best_dist: float = 0.048
-			for i in range(NUM_SPOTS):
-				var d: float = Vector2(world_pt.x - spot_positions[i].x, world_pt.z - spot_positions[i].z).length()
-				if d < best_dist:
-					best_dist = d
-					best_id = i
-			return best_id
 	return -1
 
 func _handle_spot_clicked(piece_id: int) -> void:
@@ -1190,8 +1222,10 @@ func _handle_spot_clicked(piece_id: int) -> void:
 			AudioManager.sfx_invalid()
 			show_hint("این حلقه هیچ مسیر آزادی برای پرش ندارد! حلقه دیگری انتخاب کنید.")
 			return
-		is_board_locked = true
 		AudioManager.sfx_tap()
+		# Immediately select ring, place disk, and light up legal destinations (1:1 with Flutter YinshController)
+		_execute_place_disk(my_idx, piece_id)
+		is_board_locked = false
 		send_move(Commands.Select_Peace, piece_id)
 		return
 
@@ -1201,10 +1235,13 @@ func _handle_spot_clicked(piece_id: int) -> void:
 		show_hint("فقط نقاط سبز رنگ در امتداد ۶ جهت حلقه مجاز هستند!")
 		return
 
+	var src_id: int = last_selected_piece_id
+	var rots: Array[int] = _get_disks_between(src_id, piece_id)
 	is_board_locked = true
 	hovered_piece_id = -1
 	_update_hover_preview()
 	AudioManager.sfx_tap()
+	_execute_ring_move(my_idx, src_id, piece_id, rots)
 	send_move(Commands.Move_Ring, {"target_id": piece_id})
 
 # ============================================================================
@@ -1219,6 +1256,8 @@ func on_turn_changed(turn: int, active_turn: bool) -> void:
 	current_turn = turn
 	is_my_turn = active_turn
 	is_board_locked = not active_turn
+	last_selected_piece_id = -1
+	possible_moves.clear()
 	hovered_piece_id = -1
 	var hud = _get_base_hud()
 	if is_instance_valid(hud) and GameManager.is_game_active:
@@ -1271,7 +1310,7 @@ func on_ring_submitted(payload: Dictionary) -> void:
 	tw.tween_property(ring_node, "position", dest_pos, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(ring_node, "scale", Vector3.ONE, 0.16)
 	tw.tween_callback(func():
-		AudioManager.sfx_piece_place()
+		AudioManager.sfx_add_piece()
 		_spawn_ring_pulse_vfx(spot_positions[piece_id], gamer_id)
 	)
 
@@ -1283,16 +1322,24 @@ func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) 
 	if piece_id < 0 or piece_id >= NUM_SPOTS:
 		return
 
+	_execute_place_disk(gamer_id, piece_id)
+	if gamer_id == GameManager.my_player_index and is_my_turn:
+		is_board_locked = false
+	_update_3d_labels_and_highlights()
+
+func _execute_place_disk(gamer_id: int, piece_id: int) -> void:
+	if piece_id < 0 or piece_id >= NUM_SPOTS:
+		return
+	var already_placed: bool = (disk_owners[piece_id] == gamer_id and is_instance_valid(board_disk_nodes[piece_id]))
 	disk_owners[piece_id] = gamer_id
-	remaining_disks = max(0, remaining_disks - 1)
 	last_selected_piece_id = piece_id
 	possible_moves = _compute_possible_moves_for_ring(piece_id)
 
-	# Unlock board if it is still local player's turn so they can now click target_id!
-	if gamer_id == GameManager.my_player_index and is_my_turn:
-		is_board_locked = false
+	if already_placed:
+		_update_3d_labels_and_highlights()
+		return
 
-	# Spawn 3D Reversible Disk dropping neatly inside the selected ring
+	remaining_disks = max(0, remaining_disks - 1)
 	if is_instance_valid(board_disk_nodes[piece_id]):
 		board_disk_nodes[piece_id].queue_free()
 
@@ -1308,9 +1355,8 @@ func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) 
 	tw.tween_property(disk_node, "position", dest_pos, 0.22)
 	tw.parallel().tween_property(disk_node, "scale", Vector3.ONE, 0.22)
 	tw.tween_callback(func():
-		AudioManager.sfx_piece_place()
+		AudioManager.sfx_add_piece()
 	)
-
 	_update_3d_labels_and_highlights()
 
 func on_ring_moved(payload: Dictionary) -> void:
@@ -1318,8 +1364,17 @@ func on_ring_moved(payload: Dictionary) -> void:
 	var source_id: int = int(payload.get("source_id", last_selected_piece_id))
 	var target_id: int = int(payload.get("target_id", -1))
 	var rotations_raw = payload.get("rotations_list", [])
+	_execute_ring_move(gamer_id, source_id, target_id, rotations_raw)
 
+func _execute_ring_move(gamer_id: int, source_id: int, target_id: int, rotations_raw: Variant) -> void:
 	if source_id < 0 or source_id >= NUM_SPOTS or target_id < 0 or target_id >= NUM_SPOTS:
+		return
+
+	# Idempotency check if already moved optimistically on local player click
+	if ring_owners[target_id] == gamer_id and ring_owners[source_id] == 0 and last_move_from == source_id and last_move_to == target_id:
+		last_selected_piece_id = -1
+		possible_moves.clear()
+		_update_3d_labels_and_highlights()
 		return
 
 	ring_owners[source_id] = 0
@@ -1342,12 +1397,12 @@ func on_ring_moved(payload: Dictionary) -> void:
 	var end_pos: Vector3 = spot_positions[target_id] + Vector3(0.0, 0.012, 0.0)
 	var arc_mid: Vector3 = (start_pos + end_pos) * 0.5 + Vector3(0.0, 0.11, 0.0)
 
-	AudioManager.sfx_piece_slide()
+	AudioManager.sfx_move_piece()
 	var tw = ring_node.create_tween()
 	tw.tween_property(ring_node, "position", arc_mid, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tw.tween_property(ring_node, "position", end_pos, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_callback(func():
-		AudioManager.sfx_piece_place()
+		AudioManager.sfx_add_piece()
 		_spawn_ring_pulse_vfx(spot_positions[target_id], gamer_id)
 	)
 
@@ -1412,10 +1467,12 @@ func on_win_happened(payload: Dictionary) -> void:
 
 	AudioManager.play_sound("win")
 
+	var fallback_gamer_id: int = 1
 	if typeof(win_arr) == TYPE_ARRAY:
 		for w_entry in win_arr:
 			if typeof(w_entry) == TYPE_DICTIONARY:
 				var gid: int = int(w_entry.get("gamer_id", 1))
+				fallback_gamer_id = gid
 				var d_list = w_entry.get("data", [])
 				if gid == 1:
 					player1_score = min(3, player1_score + 1)
@@ -1443,7 +1500,7 @@ func on_win_happened(payload: Dictionary) -> void:
 				continue
 			var r_id: int = int(r_id_v)
 			if r_id >= 0 and r_id < NUM_SPOTS:
-				var r_owner: int = ring_owners[r_id]
+				var r_owner: int = ring_owners[r_id] if ring_owners[r_id] != 0 else fallback_gamer_id
 				ring_owners[r_id] = 0
 				var r_node = board_ring_nodes[r_id]
 				board_ring_nodes[r_id] = null
