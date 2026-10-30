@@ -634,6 +634,12 @@ func _on_select_remove_peace_received(remover_id: int) -> void:
 			base_game_hud.start_turn_timer(15.0, "⚔️ دوز ساختید! یک مهره حریف را برای حذف انتخاب کنید")
 		else:
 			base_game_hud.start_turn_timer(15.0, "⚠️ حریف دوز ساخته و در حال حذف مهره است...")
+	elif GameManager.current_game_type == GameTypes.YINSH and is_instance_valid(base_game_hud):
+		var my_idx = GameManager.my_player_index
+		if remover_id == my_idx:
+			base_game_hud.start_turn_timer(20.0, "🎉 ردیف ۵ تایی! یکی از حلقه‌های خود را برای دریافت امتیاز انتخاب کنید")
+		else:
+			base_game_hud.start_turn_timer(20.0, "⚠️ حریف ردیف ۵ تایی ساخت و در حال انتخاب حلقه است...")
 
 func _on_new_turn_round_received() -> void:
 	if GameManager.current_game_type == GameTypes.RPC:
@@ -875,7 +881,13 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 	var g_data = payload.get("game_data", {})
 	if typeof(g_data) == TYPE_DICTIONARY:
 		var inferred_type = ""
-		if g_data.has("player1_choices") or g_data.has("player2_choices"):
+		if payload.has("game_type") and not str(payload["game_type"]).is_empty():
+			inferred_type = GameRegistry.normalize_type(str(payload["game_type"]))
+		elif g_data.has("game_type") and not str(g_data["game_type"]).is_empty():
+			inferred_type = GameRegistry.normalize_type(str(g_data["game_type"]))
+		elif g_data.has("is_setup_ring_phase") or g_data.has("disk_count") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 85):
+			inferred_type = GameTypes.YINSH
+		elif g_data.has("player1_choices") or g_data.has("player2_choices"):
 			inferred_type = GameTypes.FEKRBEKR
 		elif g_data.has("is_play_phase") and g_data.has("player1_board") and g_data.has("player2_board"):
 			inferred_type = GameTypes.BATTLESHIP
@@ -902,7 +914,7 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameTypes.RPC
 		elif g_data.has("lines_board") or g_data.has("boxes_board"):
 			inferred_type = GameTypes.DOTBOX
-		elif g_data.has("played_peaces") or g_data.has("current_remover") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 24 and not g_data.has("out_pieces")):
+		elif g_data.has("played_peaces") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 24 and not g_data.has("out_pieces")):
 			inferred_type = GameTypes.MILL
 		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 81:
 			inferred_type = GameTypes.SUDOKU
