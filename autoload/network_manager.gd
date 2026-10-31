@@ -245,9 +245,6 @@ func _on_socket_disconnected() -> void:
 
 func _on_namespace_connected(ns: String) -> void:
 	print("[NetworkManager] Namespace %s ready." % ns)
-	if ns == "/queue" and GameManager.current_match_mode == "classic_rank":
-		print("[NetworkManager] Queue connected for classic_rank. Sending StartClassicRank for %s..." % GameManager.current_game_type)
-		send_queue_command(Commands.Start_Classic_Rank, {"game_type": GameManager.current_game_type})
 
 func _on_socket_event(ns: String, event_name: String, data: Variant) -> void:
 	if event_name == "command" and typeof(data) == TYPE_DICTIONARY:
