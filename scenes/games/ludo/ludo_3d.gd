@@ -1,20 +1,34 @@
+class_name Ludo3D
 extends BaseGameBoard
 
-# Luxury 3D Ludo (منچ) Game Scene for Cafe Fekr
-# Supports 2, 3, or 4 Players with full backend protocol synchronization:
-# - RollDice -> RollResult (with available_moves) or OutOfMove
-# - SelectPeace (index: -2 = Home Yard, -1 = Start Portal, 0..35 = Main Track, 36..51 = Home Stretch)
-# - Bonus turn on rolling a 6
-# - 1st & 2nd place podium celebration (WinHappened / FinishGame)
+# Ludo 3D Board (منچ — Cafe Fekr Royal Persian Edition)
+# Supports 2, 3, or 4 Players:
+# - Player 1 (Red):    Entry at 0,  Home Stretch 36..39, Yard Bottom-Left
+# - Player 2 (Blue):   Entry at 18, Home Stretch 40..43, Yard Top-Right
+# - Player 3 (Green):  Entry at 27, Home Stretch 44..47, Yard Bottom-Right
+# - Player 4 (Yellow): Entry at 9,  Home Stretch 48..51, Yard Top-Left
+#
+# Physical Footprint:
+# - 1.22m x 1.22m Royal Walnut & Brass Cabinet (S = 0.16, matches BackGammon3D & Pentago3D)
+# - Tactile 3D Roll Dice Button at Z = +0.695m + Center 3D Pipped Die Sanctuary at (0, 0, 0)
+# - Unified _unhandled_input geometric raycast (never blocks pinch-zoom, wheel-zoom, or camera orbit)
+
+@export var camera_distance: float = 2.85
+@export var camera_pitch: float = -0.82
 
 const TRACK_SIZE: int = 36
 const BOARD_SPOTS_COUNT: int = 52
+const S: float = 0.16
+const SURFACE_Y: float = 0.038
+const ROLL_BTN_Z: float = 0.695
+
+const FA_DIGITS: Array[String] = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
 
 const FACTION_COLORS: Dictionary = {
-	1: Color(0.92, 0.16, 0.22), # Player 1: Ruby Red (South)
-	2: Color(0.16, 0.52, 0.96), # Player 2: Royal Sapphire Blue (North)
-	3: Color(0.14, 0.78, 0.36), # Player 3: Emerald Jade Green (East)
-	4: Color(0.96, 0.74, 0.12), # Player 4: Sunburst Imperial Gold/Yellow (West)
+	1: Color(0.92, 0.18, 0.22), # P1: Crimson Red
+	2: Color(0.16, 0.52, 0.96), # P2: Royal Sapphire Blue
+	3: Color(0.16, 0.78, 0.36), # P3: Emerald Green
+	4: Color(0.96, 0.76, 0.12), # P4: Imperial Sun Gold / Yellow
 }
 
 const FACTION_NAMES_FA: Dictionary = {
@@ -31,14 +45,13 @@ const ENTRY_TRACK_INDEX: Dictionary = {
 	4: 9,
 }
 
-const HOME_START_INDEX: Dictionary = {
-	1: 36,
-	2: 40,
-	3: 44,
-	4: 48,
+const HOME_STRETCH_INDICES: Dictionary = {
+	1: [36, 37, 38, 39],
+	2: [40, 41, 42, 43],
+	3: [44, 45, 46, 47],
+	4: [48, 49, 50, 51],
 }
 
-# Backend win-entry lookup tables (exact mirror of Entities/Games/Ludo/__init__.py)
 const GAMER_PIECES_WIN_MAP: Dictionary = {
 	1: {
 		30: {1: false, 2: false, 3: false, 4: false, 5: false, 6: true},
@@ -106,38 +119,39 @@ var _roll_request_pending: bool = false
 var _spot_positions: Array[Vector3] = []          # 0..51
 var _start_portal_positions: Dictionary = {}      # gamer_id (1..4) -> Vector3
 var _yard_slot_positions: Dictionary = {}         # gamer_id (1..4) -> Array[Vector3] (4 nests)
+var _yard_center_positions: Dictionary = {}       # gamer_id (1..4) -> Vector3
 
 # 3D Scene Nodes
 var _board_root: Node3D = null
 var _tiles_root: Node3D = null
 var _pawns_root: Node3D = null
 var _vfx_root: Node3D = null
-var _spot_ring_Highlights: Dictionary = {}        # spot_idx -> MeshInstance3D
+var _spot_ring_highlights: Dictionary = {}        # spot_idx -> MeshInstance3D
 var _start_portal_highlights: Dictionary = {}     # gamer_id -> MeshInstance3D
 var _yard_highlights: Dictionary = {}             # gamer_id -> Array[MeshInstance3D]
 var _target_preview_ring: Node3D = null
+var _hovered_move_idx: int = -999
 
 # Active 3D Pawn Nodes on the table
 var _yard_pawn_nodes: Dictionary = {}             # gamer_id -> Array[Node3D] (up to 4)
 var _start_portal_pawn_nodes: Dictionary = {}     # gamer_id -> Node3D
 var _board_spot_pawn_nodes: Dictionary = {}       # spot_idx (0..51) -> Node3D
 
-# 3D Interactive Dice Sanctuary
+# 3D Interactive Dice Sanctuary & 3D Roll Button
 var _dice_sanctuary: Node3D = null
 var _dice_pivot: Node3D = null
 var _dice_mesh_root: Node3D = null
 var _dice_halo_ring: MeshInstance3D = null
 var _dice_value_label3d: Label3D = null
 var _dice_tween: Tween = null
-
-# 2D Gamer-Friendly Action Bar (Roll Dice Button & Status Pill)
-var _hud_layer: CanvasLayer = null
-var _action_panel: PanelContainer = null
-var _btn_roll_dice: Button = null
-var _lbl_status_hint: Label = null
-var _dice_badge_lbl: Label = null
-
+var _roll_btn_ui: Dictionary = {}
 var _pulse_time: float = 0.0
+
+# Pointer tap tracking (Unified Raycast Input — never blocks camera zoom/orbit)
+var _pointer_down_pos: Vector2 = Vector2.ZERO
+var _pointer_down_time: float = 0.0
+var _is_pointer_down: bool = false
+var _last_handled_tap_time: float = 0.0
 
 # Shared Materials
 var _mat_wood_dark: StandardMaterial3D
@@ -149,22 +163,34 @@ var _mat_faction_enamel: Dictionary = {}
 var _mat_faction_pawn: Dictionary = {}
 var _mat_highlight_select: StandardMaterial3D
 var _mat_highlight_target: StandardMaterial3D
+var _mat_btn_roll_active: StandardMaterial3D
+var _mat_btn_roll_move: StandardMaterial3D
+var _mat_btn_roll_idle: StandardMaterial3D
+
+static func _fa_int(val: int) -> String:
+	var s = str(abs(val))
+	var out = ""
+	for i in range(s.length()):
+		var code = s.unicode_at(i) - 48
+		if code >= 0 and code <= 9:
+			out += FA_DIGITS[code]
+		else:
+			out += s[i]
+	return out
 
 func _ready() -> void:
 	game_type = GameTypes.LUDO
 	super._ready()
-
 	if NetworkManager.has_signal("win_happened_received"):
 		if not NetworkManager.win_happened_received.is_connected(_on_win_happened):
 			NetworkManager.win_happened_received.connect(_on_win_happened)
-
 	_init_empty_state(max(2, GameManager.match_players.size()))
 	_init_materials()
 	_compute_all_board_coordinates()
 	_build_board_3d()
 	_build_center_dice_sanctuary()
 	_build_target_preview_indicator()
-	_build_hud_controls()
+	_build_3d_roll_dice_button()
 	_rebuild_all_pawns_visuals()
 	_update_interactive_highlights()
 
@@ -172,8 +198,6 @@ func _exit_tree() -> void:
 	if NetworkManager.has_signal("win_happened_received"):
 		if NetworkManager.win_happened_received.is_connected(_on_win_happened):
 			NetworkManager.win_happened_received.disconnect(_on_win_happened)
-	if is_instance_valid(_hud_layer):
-		_hud_layer.queue_free()
 	super._exit_tree()
 
 func _init_empty_state(p_count: int) -> void:
@@ -253,6 +277,25 @@ func _init_materials() -> void:
 	_mat_highlight_target.emission = Color(0.20, 0.95, 0.85) * 1.8
 	_mat_highlight_target.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
+	_mat_btn_roll_active = StandardMaterial3D.new()
+	_mat_btn_roll_active.albedo_color = Color(0.14, 0.62, 0.30)
+	_mat_btn_roll_active.roughness = 0.28
+	_mat_btn_roll_active.metallic = 0.18
+	_mat_btn_roll_active.emission_enabled = true
+	_mat_btn_roll_active.emission = Color(0.18, 0.82, 0.38) * 0.28
+
+	_mat_btn_roll_move = StandardMaterial3D.new()
+	_mat_btn_roll_move.albedo_color = Color(0.76, 0.48, 0.10)
+	_mat_btn_roll_move.roughness = 0.28
+	_mat_btn_roll_move.metallic = 0.22
+	_mat_btn_roll_move.emission_enabled = true
+	_mat_btn_roll_move.emission = Color(0.95, 0.68, 0.16) * 0.25
+
+	_mat_btn_roll_idle = StandardMaterial3D.new()
+	_mat_btn_roll_idle.albedo_color = Color(0.22, 0.16, 0.12)
+	_mat_btn_roll_idle.roughness = 0.45
+	_mat_btn_roll_idle.metallic = 0.10
+
 func _rotate_xz_90_cw(v: Vector3, quarter_turns: int) -> Vector3:
 	var p = v
 	for _i in range(quarter_turns % 4):
@@ -261,66 +304,58 @@ func _rotate_xz_90_cw(v: Vector3, quarter_turns: int) -> Vector3:
 
 func _compute_all_board_coordinates() -> void:
 	_spot_positions.resize(BOARD_SPOTS_COUNT)
-	var y_top: float = 0.24
+	var y_top: float = SURFACE_Y
 
-	# Base 9-tile quarter arm (Quarter 0: Tiles 0..8, Bottom Arm going up to Left Arm tip)
+	# Base 9-tile quarter arm scaled by S = 0.16 (fits cleanly inside 1.22m x 1.22m cabinet)
 	var base_arm: Array[Vector3] = [
-		Vector3(-0.62, y_top,  3.10), # k=0: Entry Tile (Tile 0 for P1 Red)
-		Vector3(-0.62, y_top,  2.48), # k=1
-		Vector3(-0.62, y_top,  1.86), # k=2
-		Vector3(-0.62, y_top,  1.24), # k=3
-		Vector3(-1.12, y_top,  1.12), # k=4: Inner Corner Junction
-		Vector3(-1.24, y_top,  0.62), # k=5
-		Vector3(-1.86, y_top,  0.62), # k=6
-		Vector3(-2.48, y_top,  0.62), # k=7
-		Vector3(-3.10, y_top,  0.00), # k=8: Arm Tip before next player's Home Stretch
+		Vector3(-0.62 * S, y_top,  3.10 * S), # k=0: Entry Tile (Tile 0 for P1 Red)
+		Vector3(-0.62 * S, y_top,  2.48 * S), # k=1
+		Vector3(-0.62 * S, y_top,  1.86 * S), # k=2
+		Vector3(-0.62 * S, y_top,  1.24 * S), # k=3
+		Vector3(-1.12 * S, y_top,  1.12 * S), # k=4: Inner Corner Junction
+		Vector3(-1.24 * S, y_top,  0.62 * S), # k=5
+		Vector3(-1.86 * S, y_top,  0.62 * S), # k=6
+		Vector3(-2.48 * S, y_top,  0.62 * S), # k=7
+		Vector3(-3.10 * S, y_top,  0.00 * S), # k=8: Arm Tip before next player's Home Stretch
 	]
 
-	# Quarter 0 -> Tiles 0..8 (Red Entry at 0, West Tip at 8 before Yellow Home)
-	# Quarter 1 -> Tiles 9..17 (Yellow Entry at 9, North Tip at 17 before Blue Home)
-	# Quarter 2 -> Tiles 18..26 (Blue Entry at 18, East Tip at 26 before Green Home)
-	# Quarter 3 -> Tiles 27..35 (Green Entry at 27, South Tip at 35 before Red Home)
 	for q in range(4):
 		for k in range(9):
 			var idx = q * 9 + k
 			_spot_positions[idx] = _rotate_xz_90_cw(base_arm[k], q)
 
-	# Home Stretch Corridors (36..51):
-	# P1 Red (36..39): South Arm center column (x = 0, z = +2.48 -> +0.86)
-	# P2 Blue (40..43): North Arm center column (x = 0, z = -2.48 -> -0.86)
-	# P3 Green (44..47): East Arm center row (z = 0, x = +2.48 -> +0.86)
-	# P4 Yellow (48..51): West Arm center row (z = 0, x = -2.48 -> -0.86)
-	var home_radii: Array[float] = [2.48, 1.94, 1.40, 0.86]
+	# Home Stretch Corridors (36..51)
+	var home_radii: Array[float] = [2.48 * S, 1.94 * S, 1.40 * S, 0.86 * S]
 	for step in range(4):
 		var r = home_radii[step]
-		_spot_positions[36 + step] = Vector3(0.0, y_top,  r) # P1 Red
-		_spot_positions[40 + step] = Vector3(0.0, y_top, -r) # P2 Blue
-		_spot_positions[44 + step] = Vector3( r,  y_top, 0.0) # P3 Green
-		_spot_positions[48 + step] = Vector3(-r,  y_top, 0.0) # P4 Yellow
+		_spot_positions[36 + step] = Vector3(0.0, y_top,  r) # P1 Red (South)
+		_spot_positions[40 + step] = Vector3(0.0, y_top, -r) # P2 Blue (North)
+		_spot_positions[44 + step] = Vector3( r,  y_top, 0.0) # P3 Green (East)
+		_spot_positions[48 + step] = Vector3(-r,  y_top, 0.0) # P4 Yellow (West)
 
 	# Start Portals (index = -1, staging pedestal right beside each player's Track Entry tile)
-	var base_portal = Vector3(-1.32, y_top + 0.02, 3.10)
+	var base_portal = Vector3(-1.32 * S, y_top + 0.003, 3.10 * S)
 	_start_portal_positions[1] = _rotate_xz_90_cw(base_portal, 0) # P1 Red: near Tile 0
 	_start_portal_positions[4] = _rotate_xz_90_cw(base_portal, 1) # P4 Yellow: near Tile 9
 	_start_portal_positions[2] = _rotate_xz_90_cw(base_portal, 2) # P2 Blue: near Tile 18
 	_start_portal_positions[3] = _rotate_xz_90_cw(base_portal, 3) # P3 Green: near Tile 27
 
 	# 4 Corner Home Yards (index = -2, 4 pawn sockets per player)
-	var yard_centers: Dictionary = {
-		1: Vector3(-2.35, y_top + 0.02,  2.35), # P1 Red: Bottom-Left
-		4: Vector3(-2.35, y_top + 0.02, -2.35), # P4 Yellow: Top-Left
-		2: Vector3( 2.35, y_top + 0.02, -2.35), # P2 Blue: Top-Right
-		3: Vector3( 2.35, y_top + 0.02,  2.35), # P3 Green: Bottom-Right
+	_yard_center_positions = {
+		1: Vector3(-2.35 * S, y_top + 0.003,  2.35 * S), # P1 Red: Bottom-Left
+		4: Vector3(-2.35 * S, y_top + 0.003, -2.35 * S), # P4 Yellow: Top-Left
+		2: Vector3( 2.35 * S, y_top + 0.003, -2.35 * S), # P2 Blue: Top-Right
+		3: Vector3( 2.35 * S, y_top + 0.003,  2.35 * S), # P3 Green: Bottom-Right
 	}
 	var offsets: Array[Vector3] = [
-		Vector3(-0.42, 0.0, -0.42),
-		Vector3( 0.42, 0.0, -0.42),
-		Vector3(-0.42, 0.0,  0.42),
-		Vector3( 0.42, 0.0,  0.42),
+		Vector3(-0.42 * S, 0.0, -0.42 * S),
+		Vector3( 0.42 * S, 0.0, -0.42 * S),
+		Vector3(-0.42 * S, 0.0,  0.42 * S),
+		Vector3( 0.42 * S, 0.0,  0.42 * S),
 	]
 	for g_id in [1, 2, 3, 4]:
 		var arr: Array[Vector3] = []
-		var c: Vector3 = yard_centers[g_id]
+		var c: Vector3 = _yard_center_positions[g_id]
 		for off in offsets:
 			arr.append(c + off)
 		_yard_slot_positions[g_id] = arr
@@ -342,88 +377,86 @@ func _build_board_3d() -> void:
 	_vfx_root.name = "VFXRoot"
 	add_child(_vfx_root)
 
-	# 1. Carved Royal Cabinet Base & Bevelled Frame
+	# 1. Carved Royal Cabinet Base (1.22m x 1.22m)
 	var cabinet = MeshInstance3D.new()
 	var cab_mesh = BoxMesh.new()
-	cab_mesh.size = Vector3(7.6, 0.20, 7.6)
+	cab_mesh.size = Vector3(7.6 * S, 0.032, 7.6 * S)
 	cabinet.mesh = cab_mesh
-	cabinet.position = Vector3(0.0, 0.10, 0.0)
+	cabinet.position = Vector3(0.0, 0.016, 0.0)
 	cabinet.material_override = _mat_wood_dark
 	_board_root.add_child(cabinet)
 
+	# Recessed Emerald Baize Playfield
 	var playfield = MeshInstance3D.new()
 	var pf_mesh = BoxMesh.new()
-	pf_mesh.size = Vector3(7.1, 0.04, 7.1)
+	pf_mesh.size = Vector3(6.95 * S, 0.010, 6.95 * S)
 	playfield.mesh = pf_mesh
-	playfield.position = Vector3(0.0, 0.21, 0.0)
+	playfield.position = Vector3(0.0, 0.031, 0.0)
 	playfield.material_override = _mat_felt_emerald
 	_board_root.add_child(playfield)
 
-	# Cross Arm Plinths (Horizontal & Vertical Royal Inlays)
-	for is_horiz in [false, true]:
-		var arm = MeshInstance3D.new()
-		var arm_mesh = BoxMesh.new()
-		arm_mesh.size = Vector3(6.8, 0.025, 1.92) if is_horiz else Vector3(1.92, 0.025, 6.8)
-		arm.mesh = arm_mesh
-		arm.position = Vector3(0.0, 0.225, 0.0)
-		arm.material_override = _mat_wood_trim
-		_board_root.add_child(arm)
-
-	# 4 Raised Brass Rails around Cabinet Perimeter
-	var rail_positions = [
-		{"pos": Vector3(0.0, 0.24,  3.68), "size": Vector3(7.6, 0.08, 0.22)},
-		{"pos": Vector3(0.0, 0.24, -3.68), "size": Vector3(7.6, 0.08, 0.22)},
-		{"pos": Vector3( 3.68, 0.24, 0.0), "size": Vector3(0.22, 0.08, 7.2)},
-		{"pos": Vector3(-3.68, 0.24, 0.0), "size": Vector3(0.22, 0.08, 7.2)},
+	# Raised Walnut & Gold Outer Border Walls
+	var wall_configs = [
+		{"pos": Vector3(0.0, 0.038, -3.62 * S), "size": Vector3(7.6 * S, 0.022, 0.36 * S)},
+		{"pos": Vector3(0.0, 0.038,  3.62 * S), "size": Vector3(7.6 * S, 0.022, 0.36 * S)},
+		{"pos": Vector3(-3.62 * S, 0.038, 0.0), "size": Vector3(0.36 * S, 0.022, 6.88 * S)},
+		{"pos": Vector3( 3.62 * S, 0.038, 0.0), "size": Vector3(0.36 * S, 0.022, 6.88 * S)},
 	]
-	for rp in rail_positions:
-		var rail = MeshInstance3D.new()
-		var rm = BoxMesh.new()
-		rm.size = rp["size"]
-		rail.mesh = rm
-		rail.position = rp["pos"]
-		rail.material_override = _mat_wood_trim
-		_board_root.add_child(rail)
+	for wc in wall_configs:
+		var w = MeshInstance3D.new()
+		var wm = BoxMesh.new()
+		wm.size = wc["size"]
+		w.mesh = wm
+		w.position = wc["pos"]
+		w.material_override = _mat_wood_trim
+		_board_root.add_child(w)
 
-		var strip = MeshInstance3D.new()
-		var sm = BoxMesh.new()
-		sm.size = Vector3(rp["size"].x * 0.96, 0.015, rp["size"].z * 0.55)
-		strip.mesh = sm
-		strip.position = rp["pos"] + Vector3(0.0, 0.045, 0.0)
-		strip.material_override = _mat_brass_gold
-		_board_root.add_child(strip)
+		var trim = MeshInstance3D.new()
+		var tm = BoxMesh.new()
+		tm.size = Vector3(wc["size"].x * 0.96, 0.004, wc["size"].z * 0.38)
+		trim.mesh = tm
+		trim.position = wc["pos"] + Vector3(0.0, 0.012, 0.0)
+		trim.material_override = _mat_brass_gold
+		_board_root.add_child(trim)
 
-	# 2. Build 36 Main Track Tiles (0..35) + 16 Home Stretch Tiles (36..51)
-	var entry_map_inv: Dictionary = {0: 1, 18: 2, 27: 3, 9: 4}
-	for idx in range(BOARD_SPOTS_COUNT):
-		var pos = _spot_positions[idx]
-		var tile_mat: StandardMaterial3D = _mat_ivory_tile
-		var is_special: bool = false
-		if idx < TRACK_SIZE:
-			if entry_map_inv.has(idx):
-				var f_id = entry_map_inv[idx]
-				tile_mat = _mat_faction_enamel[f_id]
-				is_special = true
-		else:
-			var home_owner = 1 + int((idx - 36) / 4)
-			tile_mat = _mat_faction_enamel[home_owner]
-			is_special = true
+	# Cross Arm Carpet Backing Plinths
+	var arm_v = MeshInstance3D.new()
+	var av_m = BoxMesh.new()
+	av_m.size = Vector3(1.82 * S, 0.004, 6.68 * S)
+	arm_v.mesh = av_m
+	arm_v.position = Vector3(0.0, SURFACE_Y - 0.002, 0.0)
+	arm_v.material_override = _mat_wood_trim
+	_board_root.add_child(arm_v)
 
-		_create_tile_medallion(idx, pos, tile_mat, is_special)
+	var arm_h = MeshInstance3D.new()
+	var ah_m = BoxMesh.new()
+	ah_m.size = Vector3(6.68 * S, 0.004, 1.82 * S)
+	arm_h.mesh = ah_m
+	arm_h.position = Vector3(0.0, SURFACE_Y - 0.002, 0.0)
+	arm_h.material_override = _mat_wood_trim
+	_board_root.add_child(arm_h)
 
-	# 3. Build 4 Start Portals (index = -1 for each player 1..4)
+	# 2. Build 36 Circular Track Medallions (0..35)
+	for idx in range(TRACK_SIZE):
+		var is_entry_for: int = 0
+		for g_id in ENTRY_TRACK_INDEX.keys():
+			if ENTRY_TRACK_INDEX[g_id] == idx:
+				is_entry_for = g_id
+				break
+		var mat = _mat_faction_enamel[is_entry_for] if is_entry_for > 0 else _mat_ivory_tile
+		_create_tile_medallion(idx, _spot_positions[idx], mat, is_entry_for > 0)
+
+	# 3. Build 16 Home Stretch Medallions (36..51)
+	for g_id in HOME_STRETCH_INDICES.keys():
+		var h_list: Array = HOME_STRETCH_INDICES[g_id]
+		var mat = _mat_faction_enamel[g_id]
+		for h_idx in h_list:
+			_create_tile_medallion(h_idx, _spot_positions[h_idx], mat, true)
+
+	# 4. Build 4 Start Portals (index = -1) & 4 Corner Home Yards (index = -2)
 	for g_id in [1, 2, 3, 4]:
 		_create_start_portal(g_id, _start_portal_positions[g_id])
-
-	# 4. Build 4 Corner Home Yards (index = -2 for each player 1..4)
-	var yard_centers: Dictionary = {
-		1: Vector3(-2.35, 0.24,  2.35),
-		4: Vector3(-2.35, 0.24, -2.35),
-		2: Vector3( 2.35, 0.24, -2.35),
-		3: Vector3( 2.35, 0.24,  2.35),
-	}
-	for g_id in [1, 2, 3, 4]:
-		_create_corner_home_yard(g_id, yard_centers[g_id])
+		_create_corner_home_yard(g_id, _yard_center_positions[g_id])
 
 func _create_tile_medallion(spot_idx: int, pos: Vector3, mat: StandardMaterial3D, is_colored: bool) -> void:
 	var holder = Node3D.new()
@@ -431,114 +464,92 @@ func _create_tile_medallion(spot_idx: int, pos: Vector3, mat: StandardMaterial3D
 	holder.position = pos
 	_tiles_root.add_child(holder)
 
-	# Outer brass bezel ring
+	# Brass outer bezel cylinder
 	var bezel = MeshInstance3D.new()
 	var bm = CylinderMesh.new()
-	bm.top_radius = 0.255
-	bm.bottom_radius = 0.27
-	bm.height = 0.032
+	bm.top_radius = 0.24 * S
+	bm.bottom_radius = 0.26 * S
+	bm.height = 0.005
 	bm.radial_segments = 24
 	bezel.mesh = bm
-	bezel.material_override = _mat_brass_gold if is_colored else _mat_wood_trim
+	bezel.material_override = _mat_brass_gold
 	holder.add_child(bezel)
 
-	# Inner marble/enamel surface
+	# Inner marble/enamel disc
 	var disc = MeshInstance3D.new()
 	var dm = CylinderMesh.new()
-	dm.top_radius = 0.225
-	dm.bottom_radius = 0.23
-	dm.height = 0.038
+	dm.top_radius = 0.205 * S
+	dm.bottom_radius = 0.205 * S
+	dm.height = 0.0065
 	dm.radial_segments = 24
 	disc.mesh = dm
-	disc.position = Vector3(0.0, 0.004, 0.0)
+	disc.position = Vector3(0.0, 0.001, 0.0)
 	disc.material_override = mat
 	holder.add_child(disc)
 
-	# Selection Highlight Halo Ring (hidden unless spot_idx is in available_moves)
-	var h_ring = _create_halo_ring_mesh(0.27, 0.035, _mat_highlight_select)
-	h_ring.position = Vector3(0.0, 0.035, 0.0)
-	h_ring.visible = false
-	holder.add_child(h_ring)
-	_spot_ring_Highlights[spot_idx] = h_ring
+	if is_colored:
+		var star = MeshInstance3D.new()
+		var sm = CylinderMesh.new()
+		sm.top_radius = 0.075 * S
+		sm.bottom_radius = 0.075 * S
+		sm.height = 0.0075
+		sm.radial_segments = 6
+		star.mesh = sm
+		star.position = Vector3(0.0, 0.0015, 0.0)
+		star.material_override = _mat_brass_gold
+		holder.add_child(star)
 
-	# Clickable Area3D for selecting a pawn on this spot
-	var area = Area3D.new()
-	var col = CollisionShape3D.new()
-	var cyl = CylinderShape3D.new()
-	cyl.radius = 0.28
-	cyl.height = 0.55
-	col.shape = cyl
-	col.position = Vector3(0.0, 0.22, 0.0)
-	area.add_child(col)
-	holder.add_child(area)
-
-	var captured_idx = spot_idx
-	area.input_event.connect(func(_cam: Node, event: InputEvent, _pos: Vector3, _norm: Vector3, _shape: int):
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			_on_move_index_clicked(captured_idx)
-	)
-	area.mouse_entered.connect(func(): _on_move_index_hovered(captured_idx, true))
-	area.mouse_exited.connect(func(): _on_move_index_hovered(captured_idx, false))
+	# Selection halo ring (hidden by default)
+	var ring = _create_halo_ring_mesh(0.255 * S, 0.042 * S, _mat_highlight_select)
+	ring.position = Vector3(0.0, 0.005, 0.0)
+	ring.visible = false
+	holder.add_child(ring)
+	_spot_ring_highlights[spot_idx] = ring
 
 func _create_start_portal(g_id: int, pos: Vector3) -> void:
-	var holder = Node3D.new()
-	holder.name = "StartPortal_P%d" % g_id
-	holder.position = pos
-	_tiles_root.add_child(holder)
+	var portal = Node3D.new()
+	portal.name = "StartPortal_P%d" % g_id
+	portal.position = pos
+	_tiles_root.add_child(portal)
 
 	var base = MeshInstance3D.new()
 	var bm = CylinderMesh.new()
-	bm.top_radius = 0.28
-	bm.bottom_radius = 0.31
-	bm.height = 0.045
-	bm.radial_segments = 24
+	bm.top_radius = 0.27 * S
+	bm.bottom_radius = 0.30 * S
+	bm.height = 0.008
+	bm.radial_segments = 8
 	base.mesh = bm
 	base.material_override = _mat_brass_gold
-	holder.add_child(base)
+	portal.add_child(base)
 
-	var top = MeshInstance3D.new()
-	var tm = CylinderMesh.new()
-	tm.top_radius = 0.24
-	tm.bottom_radius = 0.25
-	tm.height = 0.052
-	tm.radial_segments = 24
-	top.mesh = tm
-	top.position = Vector3(0.0, 0.006, 0.0)
-	top.material_override = _mat_faction_enamel[g_id]
-	holder.add_child(top)
+	var core = MeshInstance3D.new()
+	var cm = CylinderMesh.new()
+	cm.top_radius = 0.22 * S
+	cm.bottom_radius = 0.22 * S
+	cm.height = 0.010
+	cm.radial_segments = 16
+	core.mesh = cm
+	core.position = Vector3(0.0, 0.0015, 0.0)
+	core.material_override = _mat_faction_enamel[g_id]
+	portal.add_child(core)
 
-	var h_ring = _create_halo_ring_mesh(0.30, 0.04, _mat_highlight_select)
-	h_ring.position = Vector3(0.0, 0.04, 0.0)
-	h_ring.visible = false
-	holder.add_child(h_ring)
-	_start_portal_highlights[g_id] = h_ring
+	# Connecting golden bridge towards Entry Track Tile
+	var entry_pos: Vector3 = _spot_positions[ENTRY_TRACK_INDEX[g_id]]
+	var diff: Vector3 = entry_pos - pos
+	var bridge = MeshInstance3D.new()
+	var brm = BoxMesh.new()
+	brm.size = Vector3(diff.length(), 0.004, 0.14 * S)
+	bridge.mesh = brm
+	bridge.position = diff * 0.5
+	bridge.rotation.y = atan2(-diff.z, diff.x)
+	bridge.material_override = _mat_brass_gold
+	portal.add_child(bridge)
 
-	var area = Area3D.new()
-	var col = CollisionShape3D.new()
-	var cyl = CylinderShape3D.new()
-	cyl.radius = 0.32
-	cyl.height = 0.60
-	col.shape = cyl
-	col.position = Vector3(0.0, 0.25, 0.0)
-	area.add_child(col)
-	holder.add_child(area)
-
-	var owner_id = g_id
-	area.input_event.connect(func(_cam: Node, event: InputEvent, _p: Vector3, _n: Vector3, _s: int):
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			if owner_id == GameManager.my_player_index:
-				_on_move_index_clicked(-1)
-			else:
-				_on_wrong_pawn_clicked()
-	)
-	area.mouse_entered.connect(func():
-		if owner_id == GameManager.my_player_index:
-			_on_move_index_hovered(-1, true)
-	)
-	area.mouse_exited.connect(func():
-		if owner_id == GameManager.my_player_index:
-			_on_move_index_hovered(-1, false)
-	)
+	var ring = _create_halo_ring_mesh(0.285 * S, 0.045 * S, _mat_highlight_select)
+	ring.position = Vector3(0.0, 0.006, 0.0)
+	ring.visible = false
+	portal.add_child(ring)
+	_start_portal_highlights[g_id] = ring
 
 func _create_corner_home_yard(g_id: int, center_pos: Vector3) -> void:
 	var yard = Node3D.new()
@@ -546,157 +557,165 @@ func _create_corner_home_yard(g_id: int, center_pos: Vector3) -> void:
 	yard.position = center_pos
 	_tiles_root.add_child(yard)
 
-	# Outer Brass & Faction Enamel Platform
-	var outer = MeshInstance3D.new()
-	var om = CylinderMesh.new()
-	om.top_radius = 1.02
-	om.bottom_radius = 1.08
-	om.height = 0.045
-	om.radial_segments = 32
-	outer.mesh = om
-	outer.material_override = _mat_brass_gold
-	yard.add_child(outer)
+	# Outer walnut & brass sanctuary platform
+	var plat = MeshInstance3D.new()
+	var pm = BoxMesh.new()
+	pm.size = Vector3(1.62 * S, 0.008, 1.62 * S)
+	plat.mesh = pm
+	plat.material_override = _mat_wood_trim
+	yard.add_child(plat)
+
+	var trim = MeshInstance3D.new()
+	var tm = BoxMesh.new()
+	tm.size = Vector3(1.50 * S, 0.010, 1.50 * S)
+	trim.mesh = tm
+	trim.position = Vector3(0.0, 0.001, 0.0)
+	trim.material_override = _mat_brass_gold
+	yard.add_child(trim)
 
 	var inner = MeshInstance3D.new()
-	var im = CylinderMesh.new()
-	im.top_radius = 0.94
-	im.bottom_radius = 0.96
-	im.height = 0.052
-	im.radial_segments = 32
+	var im = BoxMesh.new()
+	im.size = Vector3(1.38 * S, 0.011, 1.38 * S)
 	inner.mesh = im
-	inner.position = Vector3(0.0, 0.005, 0.0)
+	inner.position = Vector3(0.0, 0.002, 0.0)
 	inner.material_override = _mat_faction_enamel[g_id]
 	yard.add_child(inner)
 
-	# 4 Nest Sockets inside the Yard
-	var nest_rings: Array[MeshInstance3D] = []
+	# 4 Circular Pawn Sockets inside the Home Yard
+	var slot_rings: Array[MeshInstance3D] = []
 	var slots: Array = _yard_slot_positions[g_id]
-	for s_idx in range(slots.size()):
-		var world_slot: Vector3 = slots[s_idx]
-		var local_slot = world_slot - center_pos
+	for i in range(slots.size()):
+		var world_slot: Vector3 = slots[i]
+		var local_slot: Vector3 = world_slot - center_pos
 
-		var socket_mesh = MeshInstance3D.new()
+		var sock = MeshInstance3D.new()
 		var sm = CylinderMesh.new()
-		sm.top_radius = 0.24
-		sm.bottom_radius = 0.25
-		sm.height = 0.058
+		sm.top_radius = 0.23 * S
+		sm.bottom_radius = 0.25 * S
+		sm.height = 0.008
 		sm.radial_segments = 20
-		socket_mesh.mesh = sm
-		socket_mesh.position = Vector3(local_slot.x, 0.008, local_slot.z)
-		socket_mesh.material_override = _mat_ivory_tile
-		yard.add_child(socket_mesh)
+		sock.mesh = sm
+		sock.position = local_slot + Vector3(0.0, 0.005, 0.0)
+		sock.material_override = _mat_ivory_tile
+		yard.add_child(sock)
 
-		var n_ring = _create_halo_ring_mesh(0.26, 0.035, _mat_highlight_select)
-		n_ring.position = Vector3(local_slot.x, 0.042, local_slot.z)
-		n_ring.visible = false
-		yard.add_child(n_ring)
-		nest_rings.append(n_ring)
+		var ring = _create_halo_ring_mesh(0.26 * S, 0.042 * S, _mat_highlight_select)
+		ring.position = local_slot + Vector3(0.0, 0.010, 0.0)
+		ring.visible = false
+		yard.add_child(ring)
+		slot_rings.append(ring)
 
-	_yard_highlights[g_id] = nest_rings
-
-	# Clickable Area3D covering the Yard so clicking ANY yard pawn selects index = -2
-	var area = Area3D.new()
-	var col = CollisionShape3D.new()
-	var cyl = CylinderShape3D.new()
-	cyl.radius = 1.04
-	cyl.height = 0.65
-	col.shape = cyl
-	col.position = Vector3(0.0, 0.28, 0.0)
-	area.add_child(col)
-	yard.add_child(area)
-
-	var owner_id = g_id
-	area.input_event.connect(func(_cam: Node, event: InputEvent, _p: Vector3, _n: Vector3, _s: int):
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			if owner_id == GameManager.my_player_index:
-				_on_move_index_clicked(-2)
-			else:
-				_on_wrong_pawn_clicked()
-	)
-	area.mouse_entered.connect(func():
-		if owner_id == GameManager.my_player_index:
-			_on_move_index_hovered(-2, true)
-	)
-	area.mouse_exited.connect(func():
-		if owner_id == GameManager.my_player_index:
-			_on_move_index_hovered(-2, false)
-	)
+	_yard_highlights[g_id] = slot_rings
 
 func _build_center_dice_sanctuary() -> void:
 	_dice_sanctuary = Node3D.new()
-	_dice_sanctuary.name = "CenterDiceSanctuary"
-	_dice_sanctuary.position = Vector3(0.0, 0.24, 0.0)
+	_dice_sanctuary.name = "DiceSanctuary"
+	_dice_sanctuary.position = Vector3(0.0, SURFACE_Y, 0.0)
 	_board_root.add_child(_dice_sanctuary)
 
-	# Octagonal Brass & Velvet Pedestal
+	# Octagonal Golden Arena Pedestal in the center of the cross
 	var base = MeshInstance3D.new()
 	var bm = CylinderMesh.new()
-	bm.top_radius = 0.64
-	bm.bottom_radius = 0.72
-	bm.height = 0.07
+	bm.top_radius = 0.62 * S
+	bm.bottom_radius = 0.68 * S
+	bm.height = 0.011
 	bm.radial_segments = 8
 	base.mesh = bm
-	base.position = Vector3(0.0, 0.035, 0.0)
+	base.position = Vector3(0.0, 0.0055, 0.0)
 	base.material_override = _mat_brass_gold
 	_dice_sanctuary.add_child(base)
 
 	var cushion = MeshInstance3D.new()
 	var cm = CylinderMesh.new()
-	cm.top_radius = 0.56
-	cm.bottom_radius = 0.58
-	cm.height = 0.08
+	cm.top_radius = 0.54 * S
+	cm.bottom_radius = 0.56 * S
+	cm.height = 0.013
 	cm.radial_segments = 8
 	cushion.mesh = cm
-	cushion.position = Vector3(0.0, 0.04, 0.0)
+	cushion.position = Vector3(0.0, 0.0065, 0.0)
 	cushion.material_override = _mat_felt_emerald
 	_dice_sanctuary.add_child(cushion)
 
-	_dice_halo_ring = _create_halo_ring_mesh(0.66, 0.05, _mat_highlight_select)
-	_dice_halo_ring.position = Vector3(0.0, 0.082, 0.0)
+	_dice_halo_ring = _create_halo_ring_mesh(0.64 * S, 0.055 * S, _mat_highlight_select)
+	_dice_halo_ring.position = Vector3(0.0, 0.014, 0.0)
 	_dice_halo_ring.visible = false
 	_dice_sanctuary.add_child(_dice_halo_ring)
 
 	# 3D Interactive 6-Sided Ivory & Gold Pipped Die
 	_dice_pivot = Node3D.new()
 	_dice_pivot.name = "DicePivot"
-	_dice_pivot.position = Vector3(0.0, 0.30, 0.0)
+	_dice_pivot.position = Vector3(0.0, 0.052, 0.0)
 	_dice_sanctuary.add_child(_dice_pivot)
 
-	_dice_mesh_root = _create_3d_pipped_die_model(0.38)
+	_dice_mesh_root = _create_3d_pipped_die_model(0.068)
 	_dice_pivot.add_child(_dice_mesh_root)
 
 	# Floating 3D Number Readout above Center Die
 	_dice_value_label3d = Label3D.new()
-	_dice_value_label3d.position = Vector3(0.0, 0.72, 0.0)
+	_dice_value_label3d.position = Vector3(0.0, 0.125, 0.0)
 	_dice_value_label3d.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_dice_value_label3d.no_depth_test = true
+	_dice_value_label3d.pixel_size = 0.0010
 	_dice_value_label3d.font = preload("res://assets/fonts/hekayat.ttf")
-	_dice_value_label3d.font_size = 64
-	_dice_value_label3d.outline_size = 14
+	_dice_value_label3d.font_size = 48
+	_dice_value_label3d.outline_size = 10
 	_dice_value_label3d.modulate = Color(1.0, 0.92, 0.35)
 	_dice_value_label3d.outline_modulate = Color(0.08, 0.04, 0.02, 0.95)
 	_dice_value_label3d.text = ""
 	_dice_sanctuary.add_child(_dice_value_label3d)
 
-	# Clickable Area3D on Center Sanctuary to Roll Dice
-	var area = Area3D.new()
-	var col = CollisionShape3D.new()
-	var cyl = CylinderShape3D.new()
-	cyl.radius = 0.68
-	cyl.height = 0.85
-	col.shape = cyl
-	col.position = Vector3(0.0, 0.35, 0.0)
-	area.add_child(col)
-	_dice_sanctuary.add_child(area)
+func _build_3d_roll_dice_button() -> void:
+	var btn_size = Vector3(0.76, 0.034, 0.126)
+	var root = Node3D.new()
+	root.name = "BtnRollDice3D"
+	root.position = Vector3(0.0, 0.022, ROLL_BTN_Z)
+	add_child(root)
 
-	area.input_event.connect(func(_cam: Node, event: InputEvent, _p: Vector3, _n: Vector3, _s: int):
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			_request_roll_dice()
-	)
+	# 24K Gold Bezel Base
+	var bezel = MeshInstance3D.new()
+	var bz_box = BoxMesh.new()
+	bz_box.size = btn_size + Vector3(0.022, -0.004, 0.022)
+	bezel.mesh = bz_box
+	bezel.material_override = _mat_brass_gold
+	root.add_child(bezel)
+
+	# Tactile Button Cap
+	var cap = MeshInstance3D.new()
+	var cap_box = BoxMesh.new()
+	cap_box.size = btn_size
+	cap.mesh = cap_box
+	cap.position = Vector3(0.0, 0.005, 0.0)
+	cap.material_override = _mat_btn_roll_idle
+	root.add_child(cap)
+
+	# Decorative Mini 3D Dice on Left & Right Ends of the Button
+	for side_x in [-0.31, 0.31]:
+		var mini_die = _create_3d_pipped_die_model(0.032)
+		mini_die.position = Vector3(side_x, 0.036, 0.0)
+		mini_die.rotation_degrees = Vector3(22.0, 35.0 * sign(side_x), -18.0)
+		root.add_child(mini_die)
+
+	# Crisp 3D Persian Label on the Button Cap (hekayat.ttf, no emojis)
+	var lbl = Label3D.new()
+	lbl.position = Vector3(0.0, 0.025, 0.006)
+	lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	lbl.pixel_size = 0.00082
+	lbl.font = preload("res://assets/fonts/hekayat.ttf")
+	lbl.font_size = 44
+	lbl.outline_size = 10
+	lbl.modulate = Color(1.0, 0.96, 0.86)
+	lbl.outline_modulate = Color(0.06, 0.03, 0.01, 0.95)
+	lbl.text = "آماده شروع مسابقه..."
+	root.add_child(lbl)
+
+	_roll_btn_ui = {
+		"root": root,
+		"cap": cap,
+		"label": lbl,
+	}
 
 func _create_3d_pipped_die_model(sz: float) -> Node3D:
 	var root = Node3D.new()
-
 	var mat_ivory = StandardMaterial3D.new()
 	mat_ivory.albedo_color = Color(0.98, 0.95, 0.88)
 	mat_ivory.roughness = 0.22
@@ -733,7 +752,6 @@ func _create_3d_pipped_die_model(sz: float) -> Node3D:
 		5: [Vector2(-step, -step), Vector2(step, -step), Vector2(0, 0), Vector2(-step, step), Vector2(step, step)],
 		6: [Vector2(-step, -step), Vector2(step, -step), Vector2(-step, 0), Vector2(step, 0), Vector2(-step, step), Vector2(step, step)],
 	}
-	# Face normals: 1:+Y, 6:-Y, 2:+X, 5:-X, 3:+Z, 4:-Z
 	for face_val in layouts.keys():
 		var pts: Array = layouts[face_val]
 		for pt in pts:
@@ -767,201 +785,126 @@ func _create_royal_pawn_node(g_id: int, stack_count: int = 1) -> Node3D:
 	# 1. Brass Base Rim
 	var rim = MeshInstance3D.new()
 	var rm = CylinderMesh.new()
-	rm.top_radius = 0.165
-	rm.bottom_radius = 0.185
-	rm.height = 0.04
+	rm.top_radius = 0.165 * S
+	rm.bottom_radius = 0.185 * S
+	rm.height = 0.04 * S
 	rm.radial_segments = 20
 	rim.mesh = rm
-	rim.position = Vector3(0.0, 0.02, 0.0)
+	rim.position = Vector3(0.0, 0.02 * S, 0.0)
 	rim.material_override = _mat_brass_gold
 	pawn.add_child(rim)
 
 	# 2. Stepped Lower Pedestal
-	var plinth = MeshInstance3D.new()
-	var pm = CylinderMesh.new()
-	pm.top_radius = 0.135
-	pm.bottom_radius = 0.16
-	pm.height = 0.08
-	pm.radial_segments = 20
-	plinth.mesh = pm
-	plinth.position = Vector3(0.0, 0.08, 0.0)
-	plinth.material_override = mat
-	pawn.add_child(plinth)
-
-	# 3. Tapered Sculpted Body
-	var body = MeshInstance3D.new()
+	var base = MeshInstance3D.new()
 	var bm = CylinderMesh.new()
-	bm.top_radius = 0.075
-	bm.bottom_radius = 0.125
-	bm.height = 0.24
+	bm.top_radius = 0.135 * S
+	bm.bottom_radius = 0.165 * S
+	bm.height = 0.09 * S
 	bm.radial_segments = 20
-	body.mesh = bm
-	body.position = Vector3(0.0, 0.24, 0.0)
+	base.mesh = bm
+	base.position = Vector3(0.0, 0.085 * S, 0.0)
+	base.material_override = mat
+	pawn.add_child(base)
+
+	# 3. Sculpted Tapered Body Column
+	var body = MeshInstance3D.new()
+	var bdm = CylinderMesh.new()
+	bdm.top_radius = 0.072 * S
+	bdm.bottom_radius = 0.130 * S
+	bdm.height = 0.24 * S
+	bdm.radial_segments = 20
+	body.mesh = bdm
+	body.position = Vector3(0.0, 0.25 * S, 0.0)
 	body.material_override = mat
 	pawn.add_child(body)
 
-	# 4. Gold Collar Ring
+	# 4. Golden Neck Collar Ring
 	var collar = MeshInstance3D.new()
 	var cm = CylinderMesh.new()
-	cm.top_radius = 0.095
-	cm.bottom_radius = 0.095
-	cm.height = 0.032
+	cm.top_radius = 0.096 * S
+	cm.bottom_radius = 0.096 * S
+	cm.height = 0.032 * S
 	cm.radial_segments = 20
 	collar.mesh = cm
-	collar.position = Vector3(0.0, 0.365, 0.0)
+	collar.position = Vector3(0.0, 0.375 * S, 0.0)
 	collar.material_override = _mat_brass_gold
 	pawn.add_child(collar)
 
-	# 5. Royal Crown Head Sphere
+	# 5. Polished Crown Sphere Head
 	var head = MeshInstance3D.new()
 	var hm = SphereMesh.new()
-	hm.radius = 0.105
-	hm.height = 0.21
+	hm.radius = 0.108 * S
+	hm.height = 0.216 * S
 	head.mesh = hm
-	head.position = Vector3(0.0, 0.45, 0.0)
+	head.position = Vector3(0.0, 0.48 * S, 0.0)
 	head.material_override = mat
 	pawn.add_child(head)
 
-	# 6. Gold Finial Tip
-	var finial = MeshInstance3D.new()
-	var fm = SphereMesh.new()
-	fm.radius = 0.038
-	fm.height = 0.076
-	finial.mesh = fm
-	finial.position = Vector3(0.0, 0.565, 0.0)
-	finial.material_override = _mat_brass_gold
-	pawn.add_child(finial)
+	# 6. Golden Finial Tip
+	var tip = MeshInstance3D.new()
+	var tm = SphereMesh.new()
+	tm.radius = 0.036 * S
+	tm.height = 0.072 * S
+	tip.mesh = tm
+	tip.position = Vector3(0.0, 0.60 * S, 0.0)
+	tip.material_override = _mat_brass_gold
+	pawn.add_child(tip)
 
-	# 7. Stack Count Badge when count > 1
+	# 7. Stack Count Badge (if > 1 pawn stacked on same spot)
 	if stack_count > 1:
 		var lbl = Label3D.new()
-		lbl.name = "StackLabel"
-		lbl.position = Vector3(0.0, 0.72, 0.0)
+		lbl.position = Vector3(0.0, 0.78 * S, 0.0)
 		lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		lbl.no_depth_test = true
+		lbl.pixel_size = 0.0009
 		lbl.font = preload("res://assets/fonts/hekayat.ttf")
 		lbl.font_size = 42
 		lbl.outline_size = 10
-		lbl.modulate = Color(1.0, 0.95, 0.45)
-		lbl.outline_modulate = Color(0.05, 0.02, 0.01, 0.98)
-		lbl.text = "×%d" % stack_count
+		lbl.modulate = Color(1.0, 0.95, 0.40)
+		lbl.outline_modulate = Color(0.08, 0.04, 0.02, 0.98)
+		lbl.text = "×%s" % _fa_int(stack_count)
 		pawn.add_child(lbl)
 
 	return pawn
 
 func _create_halo_ring_mesh(radius: float, thickness: float, mat: StandardMaterial3D) -> MeshInstance3D:
-	var m_inst = MeshInstance3D.new()
-	var torus = TorusMesh.new()
-	torus.inner_radius = maxf(0.05, radius - thickness)
-	torus.outer_radius = radius + thickness
-	torus.rings = 24
-	torus.ring_segments = 12
-	m_inst.mesh = torus
-	m_inst.material_override = mat
-	return m_inst
+	var mi = MeshInstance3D.new()
+	var tm = TorusMesh.new()
+	tm.inner_radius = max(0.002, radius - thickness * 0.5)
+	tm.outer_radius = radius + thickness * 0.5
+	tm.rings = 24
+	tm.ring_segments = 12
+	mi.mesh = tm
+	mi.material_override = mat
+	return mi
 
 func _build_target_preview_indicator() -> void:
 	_target_preview_ring = Node3D.new()
 	_target_preview_ring.name = "TargetPreviewRing"
 	_target_preview_ring.visible = false
-	add_child(_target_preview_ring)
+	_vfx_root.add_child(_target_preview_ring)
 
-	var ring = _create_halo_ring_mesh(0.29, 0.045, _mat_highlight_target)
+	var ring = _create_halo_ring_mesh(0.275 * S, 0.055 * S, _mat_highlight_target)
+	ring.position = Vector3(0.0, 0.006, 0.0)
 	_target_preview_ring.add_child(ring)
 
 	var beacon = MeshInstance3D.new()
 	var cm = CylinderMesh.new()
-	cm.top_radius = 0.02
-	cm.bottom_radius = 0.14
-	cm.height = 0.22
+	cm.top_radius = 0.04 * S
+	cm.bottom_radius = 0.14 * S
+	cm.height = 0.36 * S
 	beacon.mesh = cm
-	beacon.position = Vector3(0.0, 0.22, 0.0)
+	beacon.position = Vector3(0.0, 0.20 * S, 0.0)
 	beacon.material_override = _mat_highlight_target
 	_target_preview_ring.add_child(beacon)
-
-func _build_hud_controls() -> void:
-	_hud_layer = CanvasLayer.new()
-	_hud_layer.layer = 5
-	add_child(_hud_layer)
-
-	_action_panel = PanelContainer.new()
-	_action_panel.anchors_preset = Control.PRESET_CENTER_BOTTOM
-	_action_panel.anchor_left = 0.5
-	_action_panel.anchor_right = 0.5
-	_action_panel.anchor_top = 1.0
-	_action_panel.anchor_bottom = 1.0
-	_action_panel.offset_left = -270.0
-	_action_panel.offset_right = 270.0
-	_action_panel.offset_top = -238.0
-	_action_panel.offset_bottom = -148.0
-
-	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.12, 0.08, 0.05, 0.94)
-	sb.border_color = Color(0.92, 0.76, 0.32, 0.92)
-	sb.set_border_width_all(2)
-	sb.border_width_bottom = 4
-	sb.set_corner_radius_all(20)
-	sb.shadow_color = Color(0, 0, 0, 0.55)
-	sb.shadow_size = 10
-	sb.content_margin_left = 18
-	sb.content_margin_right = 18
-	sb.content_margin_top = 10
-	sb.content_margin_bottom = 10
-	_action_panel.add_theme_stylebox_override("panel", sb)
-	_hud_layer.add_child(_action_panel)
-
-	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 14)
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	_action_panel.add_child(hbox)
-
-	_btn_roll_dice = Button.new()
-	_btn_roll_dice.custom_minimum_size = Vector2(190, 64)
-	_btn_roll_dice.text = "🎲 پرتاب تاس"
-	_btn_roll_dice.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	_btn_roll_dice.add_theme_font_size_override("font_size", 28)
-	KenneyUI.style_button(_btn_roll_dice, KenneyUI.COLOR_GREEN)
-	ActionVFXManager.apply_button_juice(_btn_roll_dice, "tap_button")
-	_btn_roll_dice.pressed.connect(_request_roll_dice)
-	hbox.add_child(_btn_roll_dice)
-
-	var dice_pill = PanelContainer.new()
-	dice_pill.custom_minimum_size = Vector2(68, 64)
-	var d_sb = StyleBoxFlat.new()
-	d_sb.bg_color = Color(0.20, 0.13, 0.07, 0.96)
-	d_sb.border_color = Color(1.0, 0.85, 0.35, 0.9)
-	d_sb.set_border_width_all(2)
-	d_sb.set_corner_radius_all(14)
-	dice_pill.add_theme_stylebox_override("panel", d_sb)
-	hbox.add_child(dice_pill)
-
-	_dice_badge_lbl = Label.new()
-	_dice_badge_lbl.text = "-"
-	_dice_badge_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	_dice_badge_lbl.add_theme_font_size_override("font_size", 36)
-	_dice_badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.40))
-	_dice_badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_dice_badge_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	dice_pill.add_child(_dice_badge_lbl)
-
-	_lbl_status_hint = Label.new()
-	_lbl_status_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lbl_status_hint.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	_lbl_status_hint.add_theme_font_size_override("font_size", 24)
-	_lbl_status_hint.add_theme_color_override("font_color", Color(1.0, 0.95, 0.84))
-	_lbl_status_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_lbl_status_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_lbl_status_hint.text = "در انتظار شروع مسابقه..."
-	hbox.add_child(_lbl_status_hint)
 
 func _process(delta: float) -> void:
 	_pulse_time += delta * 4.2
 	var s_pulse = 1.0 + 0.08 * sin(_pulse_time)
-	var y_bob = 0.04 * abs(sin(_pulse_time * 0.85))
+	var y_bob = 0.007 * abs(sin(_pulse_time * 0.85))
 
 	if is_instance_valid(_dice_halo_ring) and _dice_halo_ring.visible:
 		_dice_halo_ring.scale = Vector3(s_pulse, 1.0, s_pulse)
-
 	if is_instance_valid(_target_preview_ring) and _target_preview_ring.visible:
 		_target_preview_ring.scale = Vector3(s_pulse, 1.0, s_pulse)
 
@@ -986,141 +929,128 @@ func _process(delta: float) -> void:
 func _rebuild_all_pawns_visuals() -> void:
 	if not is_instance_valid(_pawns_root):
 		return
-	for child in _pawns_root.get_children():
-		child.queue_free()
+	for ch in _pawns_root.get_children():
+		ch.queue_free()
 	_yard_pawn_nodes.clear()
 	_start_portal_pawn_nodes.clear()
 	_board_spot_pawn_nodes.clear()
 
-	var total_p = clampi(max(players_count, GameManager.match_players.size()), 2, 4)
-
-	# 1. Spawn Home Yard (Out) Pawns for active players (1..total_p)
-	for g_id in range(1, total_p + 1):
-		var out_cnt = int(players_out_pieces[g_id - 1]) if g_id - 1 < players_out_pieces.size() else 4
-		out_cnt = clampi(out_cnt, 0, 4)
-		var arr: Array[Node3D] = []
+	# 1. Spawn Home Yard Pawns (index = -2) for active players 1..players_count
+	for g_id in range(1, players_count + 1):
+		var out_cnt: int = int(players_out_pieces[g_id - 1]) if g_id - 1 < players_out_pieces.size() else 0
+		var yard_list: Array[Node3D] = []
 		var slots: Array = _yard_slot_positions.get(g_id, [])
-		for i in range(out_cnt):
-			if i < slots.size():
-				var p_node = _create_royal_pawn_node(g_id, 1)
-				p_node.position = slots[i]
-				_pawns_root.add_child(p_node)
-				arr.append(p_node)
-		_yard_pawn_nodes[g_id] = arr
-
-	# 2. Spawn Start Portal Pawns (start_board_state[0..total_p-1])
-	for g_id in range(1, total_p + 1):
-		if g_id - 1 < start_board_state.size():
-			var s_dict: Dictionary = start_board_state[g_id - 1]
-			var cnt = int(s_dict.get("count", 0))
-			if cnt > 0:
-				var p_node = _create_royal_pawn_node(g_id, cnt)
-				p_node.position = _start_portal_positions[g_id]
-				_pawns_root.add_child(p_node)
-				_start_portal_pawn_nodes[g_id] = p_node
-
-	# 3. Spawn Main Track & Home Stretch Pawns (board_state[0..51])
-	for idx in range(min(BOARD_SPOTS_COUNT, board_state.size())):
-		var b_dict: Dictionary = board_state[idx]
-		var cnt = int(b_dict.get("count", 0))
-		var eq_user = int(b_dict.get("equipped_user", 0))
-		if cnt > 0 and eq_user >= 1 and eq_user <= 4:
-			var p_node = _create_royal_pawn_node(eq_user, cnt)
-			p_node.position = _spot_positions[idx]
+		for s_i in range(clampi(out_cnt, 0, slots.size())):
+			var p_node = _create_royal_pawn_node(g_id, 1)
+			p_node.position = slots[s_i]
 			_pawns_root.add_child(p_node)
-			_board_spot_pawn_nodes[idx] = p_node
+			yard_list.append(p_node)
+		_yard_pawn_nodes[g_id] = yard_list
+
+	# 2. Spawn Start Portal Pawns (index = -1)
+	for g_id in range(1, min(players_count, start_board_state.size()) + 1):
+		var st_dict: Dictionary = start_board_state[g_id - 1]
+		var cnt: int = int(st_dict.get("count", 0))
+		if cnt > 0:
+			var p_node = _create_royal_pawn_node(g_id, cnt)
+			p_node.position = _start_portal_positions[g_id]
+			_pawns_root.add_child(p_node)
+			_start_portal_pawn_nodes[g_id] = p_node
+
+	# 3. Spawn Main Track & Home Stretch Pawns (0..51)
+	for spot_idx in range(min(BOARD_SPOTS_COUNT, board_state.size())):
+		var b_dict: Dictionary = board_state[spot_idx]
+		var cnt: int = int(b_dict.get("count", 0))
+		var owner_id: int = int(b_dict.get("equipped_user", 0))
+		if cnt > 0 and owner_id >= 1 and owner_id <= 4:
+			var p_node = _create_royal_pawn_node(owner_id, cnt)
+			p_node.position = _spot_positions[spot_idx]
+			_pawns_root.add_child(p_node)
+			_board_spot_pawn_nodes[spot_idx] = p_node
 
 	_sync_header_home_counts()
 
 func _sync_header_home_counts() -> void:
-	var counts = [0, 0, 0, 0]
-	for p_id in [1, 2, 3, 4]:
-		var start_idx: int = HOME_START_INDEX[p_id]
-		var c: int = 0
-		for offset in range(4):
-			var idx = start_idx + offset
-			if idx < board_state.size():
-				var d: Dictionary = board_state[idx]
-				if int(d.get("equipped_user", 0)) == p_id and int(d.get("count", 0)) > 0:
-					c += int(d.get("count", 1))
-		counts[p_id - 1] = c
-
-	GameManager.p1_score = counts[0]
-	GameManager.p2_score = counts[1]
-
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
-	if hud and is_instance_valid(hud) and "current_top_header" in hud and is_instance_valid(hud.current_top_header):
-		if hud.current_top_header.has_method("update_ludo_home_counts"):
-			hud.current_top_header.update_ludo_home_counts(counts, rank1_player, rank2_player)
-		else:
-			hud.update_scores(counts[0], counts[1])
+	var hud = get_tree().get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(hud):
+		var main_node = get_tree().current_scene
+		if is_instance_valid(main_node):
+			hud = main_node.get_node_or_null("CanvasLayer/BaseGameHUD")
+	if not is_instance_valid(hud) or not is_instance_valid(hud.current_top_header):
+		return
+	var header = hud.current_top_header
+	if header.has_method("update_home_counts"):
+		var counts: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
+		for g_id in HOME_STRETCH_INDICES.keys():
+			var c: int = 0
+			for h_idx in HOME_STRETCH_INDICES[g_id]:
+				if h_idx < board_state.size() and int(board_state[h_idx].get("equipped_user", 0)) == g_id:
+					c += int(board_state[h_idx].get("count", 0))
+			counts[g_id] = c
+		header.update_home_counts(counts, rank1_player, rank2_player)
 
 func _update_interactive_highlights() -> void:
-	# Clear all highlights first
-	for k in _spot_ring_Highlights.keys():
-		if is_instance_valid(_spot_ring_Highlights[k]):
-			_spot_ring_Highlights[k].visible = false
-	for k in _start_portal_highlights.keys():
-		if is_instance_valid(_start_portal_highlights[k]):
-			_start_portal_highlights[k].visible = false
+	for idx in _spot_ring_highlights.keys():
+		_spot_ring_highlights[idx].visible = false
+	for g_id in _start_portal_highlights.keys():
+		_start_portal_highlights[g_id].visible = false
 	for g_id in _yard_highlights.keys():
 		for r in _yard_highlights[g_id]:
-			if is_instance_valid(r):
-				r.visible = false
+			r.visible = false
 	if is_instance_valid(_target_preview_ring):
 		_target_preview_ring.visible = false
 
-	var my_id = GameManager.my_player_index
-	var my_turn_now = GameManager.is_game_active and (GameManager.current_turn == my_id) and not is_board_locked
-	var can_roll = my_turn_now and not has_rolled_this_turn and not _roll_request_pending and not _is_animating_move
-	var can_select = my_turn_now and has_rolled_this_turn and not available_moves.is_empty() and not _is_animating_move
+	var my_turn: bool = GameManager.is_my_turn and GameManager.is_game_active
+	var my_id: int = GameManager.my_player_index
+	var can_roll_now: bool = my_turn and not has_rolled_this_turn and not _roll_request_pending and not _is_animating_move
 
 	if is_instance_valid(_dice_halo_ring):
-		_dice_halo_ring.visible = can_roll
+		_dice_halo_ring.visible = can_roll_now
 
-	if is_instance_valid(_btn_roll_dice):
-		_btn_roll_dice.disabled = not can_roll
-		_btn_roll_dice.modulate = Color.WHITE if can_roll else Color(0.65, 0.65, 0.65, 0.65)
-
-	if is_instance_valid(_dice_badge_lbl):
-		_dice_badge_lbl.text = str(current_dice) if current_dice > 0 else "-"
-
-	if is_instance_valid(_lbl_status_hint):
+	# Update 3D Roll Dice Button visual state & text
+	if not _roll_btn_ui.is_empty() and is_instance_valid(_roll_btn_ui.get("root")):
+		var btn_cap: MeshInstance3D = _roll_btn_ui["cap"]
+		var btn_lbl: Label3D = _roll_btn_ui["label"]
 		if not GameManager.is_game_active:
-			_lbl_status_hint.text = "در انتظار شروع مسابقه..."
-		elif can_roll:
-			_lbl_status_hint.text = "نوبت شماست! روی تاس یا دکمه پرتاب تاس بزنید"
-		elif can_select:
-			_lbl_status_hint.text = "تاس %d آمد! یکی از مهره‌های درخشان خود را حرکت دهید" % current_dice
-		elif _roll_request_pending:
-			_lbl_status_hint.text = "در حال پرتاب تاس..."
+			btn_cap.material_override = _mat_btn_roll_idle
+			btn_lbl.text = "آماده شروع مسابقه..."
+			btn_lbl.modulate = Color(0.90, 0.86, 0.78)
+		elif can_roll_now:
+			btn_cap.material_override = _mat_btn_roll_active
+			btn_lbl.text = "پرتاب تاس (کلیک کنید)"
+			btn_lbl.modulate = Color(1.0, 0.98, 0.88)
+		elif my_turn and has_rolled_this_turn:
+			btn_cap.material_override = _mat_btn_roll_move
+			btn_lbl.text = "تاس %s — مهره خود را حرکت دهید" % _fa_int(current_dice)
+			btn_lbl.modulate = Color(1.0, 0.96, 0.84)
 		else:
-			var t_id = max(1, GameManager.current_turn)
-			var p_data = GameManager.get_player_data_by_gamer_id(t_id)
-			var p_name = str(p_data.get("name", p_data.get("username", "بازیکن %d" % t_id)))
-			_lbl_status_hint.text = "نوبت %s (%s)..." % [p_name, FACTION_NAMES_FA.get(t_id, "")]
+			btn_cap.material_override = _mat_btn_roll_idle
+			var turn_color_fa = FACTION_NAMES_FA.get(current_turn, "")
+			if current_dice > 0:
+				btn_lbl.text = "نوبت %s (تاس %s)" % [turn_color_fa, _fa_int(current_dice)]
+			else:
+				btn_lbl.text = "نوبت %s برای پرتاب تاس..." % turn_color_fa
+			btn_lbl.modulate = Color(0.82, 0.80, 0.76)
 
-	if can_select:
-		if available_moves.has(-2) and _yard_highlights.has(my_id):
-			var out_cnt = int(players_out_pieces[my_id - 1]) if my_id - 1 < players_out_pieces.size() else 0
-			var rings: Array = _yard_highlights[my_id]
-			for i in range(min(out_cnt, rings.size())):
-				if is_instance_valid(rings[i]):
-					rings[i].visible = true
-		if available_moves.has(-1) and _start_portal_highlights.has(my_id):
-			if is_instance_valid(_start_portal_highlights[my_id]):
-				_start_portal_highlights[my_id].visible = true
+	if my_turn and has_rolled_this_turn and not _is_animating_move:
 		for mv in available_moves:
-			var s_idx = int(mv)
-			if s_idx >= 0 and _spot_ring_Highlights.has(s_idx):
-				if is_instance_valid(_spot_ring_Highlights[s_idx]):
-					_spot_ring_Highlights[s_idx].visible = true
+			var move_idx = int(mv)
+			if move_idx == -2:
+				var out_cnt: int = int(players_out_pieces[my_id - 1]) if my_id - 1 < players_out_pieces.size() else 0
+				var rings: Array = _yard_highlights.get(my_id, [])
+				for i in range(clampi(out_cnt, 0, rings.size())):
+					rings[i].visible = true
+			elif move_idx == -1:
+				if _start_portal_highlights.has(my_id):
+					_start_portal_highlights[my_id].visible = true
+			elif _spot_ring_highlights.has(move_idx):
+				_spot_ring_highlights[move_idx].visible = true
 
-# Computes local legal moves for current_dice and my_player_index as fallback if server RollResult omitted available_moves
 func _compute_local_available_moves(gamer_id: int, dice_val: int) -> Array:
 	var res: Array = []
 	if dice_val <= 0 or gamer_id < 1 or gamer_id > 4:
 		return res
+
 	for idx in range(min(BOARD_SPOTS_COUNT, board_state.size())):
 		var d: Dictionary = board_state[idx]
 		if int(d.get("equipped_user", 0)) == gamer_id and int(d.get("count", 0)) > 0:
@@ -1142,6 +1072,7 @@ func _compute_local_available_moves(gamer_id: int, dice_val: int) -> Array:
 								res.append(idx)
 						else:
 							res.append(idx)
+
 	var out_cnt = int(players_out_pieces[gamer_id - 1]) if gamer_id - 1 < players_out_pieces.size() else 0
 	if out_cnt > 0 and dice_val == 6:
 		res.append(-2)
@@ -1151,7 +1082,7 @@ func _compute_local_available_moves(gamer_id: int, dice_val: int) -> Array:
 
 func _compute_target_index_for_move(index: int, gamer_id: int, dice_val: int) -> int:
 	if index == -2:
-		return -1 # Moves to Start Portal
+		return -1
 	elif index == -1:
 		return int(ENTRY_TRACK_INDEX.get(gamer_id, 0)) + dice_val - 1
 	elif index >= 36:
@@ -1160,12 +1091,166 @@ func _compute_target_index_for_move(index: int, gamer_id: int, dice_val: int) ->
 			return int(in_map[dice_val])
 		return index
 	else:
-		if (gamer_id == 1 and index <= 29) or (gamer_id == 2 and (index <= 11 or index >= 18)) or (gamer_id == 3 and (index <= 20 or index >= 27)) or (gamer_id == 4 and (index <= 2 or index >= 9)):
+		if (gamer_id == 1 and index <= 29) or (gamer_id == 2 and (index <= 11 or index >= 18)) or (gamer_id == 3 and (index <= 20 or idx_check(index, 27))) or (gamer_id == 4 and (index <= 2 or index >= 9)):
 			return (index + dice_val) % TRACK_SIZE
 		var w_map: Dictionary = GAMER_PIECES_WIN_MAP.get(gamer_id, {}).get(index, {})
 		if w_map.has(dice_val) and bool(w_map[dice_val]):
 			return int(GAMER_WIN_INDEXES_MAP[gamer_id][index][dice_val])
 		return (index + dice_val) % TRACK_SIZE
+
+func idx_check(index: int, threshold: int) -> bool:
+	return index >= threshold
+
+# ==============================================================================
+# UNIFIED 3D RAYCAST INPUT (Matches BackGammon3D & Pentago3D — Never Blocks Zoom)
+# ==============================================================================
+func _unhandled_input(event: InputEvent) -> void:
+	if not GameManager.is_game_active or _is_animating_move:
+		return
+
+	if event is InputEventMouseMotion:
+		_handle_hover_motion(event.position)
+		return
+
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_pointer_down_pos = event.position
+			_pointer_down_time = Time.get_ticks_msec() / 1000.0
+			_is_pointer_down = true
+		else:
+			if _is_pointer_down:
+				_is_pointer_down = false
+				var dist = event.position.distance_to(_pointer_down_pos)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _pointer_down_time
+				var now = Time.get_ticks_msec() / 1000.0
+				if dist <= 42.0 and elapsed < 0.90:
+					if now - _last_handled_tap_time >= 0.12:
+						if _handle_screen_tap(event.position):
+							_last_handled_tap_time = now
+							get_viewport().set_input_as_handled()
+
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			_pointer_down_pos = event.position
+			_pointer_down_time = Time.get_ticks_msec() / 1000.0
+			_is_pointer_down = true
+		else:
+			if _is_pointer_down:
+				_is_pointer_down = false
+				var dist = event.position.distance_to(_pointer_down_pos)
+				var elapsed = (Time.get_ticks_msec() / 1000.0) - _pointer_down_time
+				var now = Time.get_ticks_msec() / 1000.0
+				if dist <= 42.0 and elapsed < 0.90:
+					if now - _last_handled_tap_time >= 0.12:
+						if _handle_screen_tap(event.position):
+							_last_handled_tap_time = now
+							get_viewport().set_input_as_handled()
+
+func _project_screen_to_board_local(screen_pos: Vector2) -> Variant:
+	var vp = get_viewport()
+	if not vp:
+		return null
+	var cam = vp.get_camera_3d()
+	if not is_instance_valid(cam):
+		return null
+	var from: Vector3 = cam.project_ray_origin(screen_pos)
+	var dir: Vector3 = cam.project_ray_normal(screen_pos)
+	var plane = Plane(Vector3.UP, SURFACE_Y + 0.015)
+	var hit = plane.intersects_ray(from, dir)
+	if hit == null:
+		return null
+	return to_local(hit)
+
+func _handle_hover_motion(screen_pos: Vector2) -> void:
+	if not GameManager.is_my_turn or not has_rolled_this_turn:
+		if is_instance_valid(_target_preview_ring):
+			_target_preview_ring.visible = false
+		return
+	var local_pt = _project_screen_to_board_local(screen_pos)
+	if local_pt == null:
+		if is_instance_valid(_target_preview_ring):
+			_target_preview_ring.visible = false
+		return
+	var hit_info = _hit_test_board_point(local_pt)
+	if hit_info.get("type", "") == "move" and available_moves.has(int(hit_info["move_idx"])):
+		var mv_idx = int(hit_info["move_idx"])
+		if mv_idx != _hovered_move_idx:
+			_hovered_move_idx = mv_idx
+			_on_move_index_hovered(mv_idx, true)
+	else:
+		if _hovered_move_idx != -999:
+			_hovered_move_idx = -999
+			_on_move_index_hovered(-999, false)
+
+func _hit_test_board_point(local_pt: Vector3) -> Dictionary:
+	var pt2 = Vector2(local_pt.x, local_pt.z)
+
+	# 1. Front 3D Roll Dice Button (Z = ROLL_BTN_Z)
+	if absf(local_pt.x) <= 0.42 and absf(local_pt.z - ROLL_BTN_Z) <= 0.085:
+		return {"type": "roll"}
+
+	# 2. Center 3D Dice Sanctuary (radius <= 0.115m around center)
+	if pt2.length() <= 0.115:
+		return {"type": "roll"}
+
+	var my_id = GameManager.my_player_index
+
+	# 3. Check Start Portals (-1)
+	for g_id in _start_portal_positions.keys():
+		var sp_pos: Vector3 = _start_portal_positions[g_id]
+		if pt2.distance_to(Vector2(sp_pos.x, sp_pos.z)) <= 0.056:
+			if g_id == my_id:
+				return {"type": "move", "move_idx": -1}
+			elif g_id <= players_count and int(start_board_state[g_id - 1].get("count", 0)) > 0:
+				return {"type": "wrong_pawn"}
+
+	# 4. Check Corner Home Yards (-2)
+	for g_id in _yard_center_positions.keys():
+		var yc: Vector3 = _yard_center_positions[g_id]
+		if absf(local_pt.x - yc.x) <= 0.135 and absf(local_pt.z - yc.z) <= 0.135:
+			if g_id == my_id:
+				return {"type": "move", "move_idx": -2}
+			elif g_id <= players_count:
+				return {"type": "wrong_pawn"}
+
+	# 5. Check 52 Track & Home Stretch Spots (0..51)
+	var best_idx: int = -1
+	var best_dist: float = 0.054
+	for idx in range(_spot_positions.size()):
+		var spos: Vector3 = _spot_positions[idx]
+		var d = pt2.distance_to(Vector2(spos.x, spos.z))
+		if d < best_dist:
+			best_dist = d
+			best_idx = idx
+
+	if best_idx >= 0:
+		var owner_id = int(board_state[best_idx].get("equipped_user", 0))
+		if owner_id == my_id or available_moves.has(best_idx):
+			return {"type": "move", "move_idx": best_idx}
+		elif owner_id > 0:
+			return {"type": "wrong_pawn"}
+
+	return {}
+
+func _handle_screen_tap(screen_pos: Vector2) -> bool:
+	var local_pt = _project_screen_to_board_local(screen_pos)
+	if local_pt == null:
+		return false
+	var hit_info = _hit_test_board_point(local_pt)
+	if hit_info.is_empty():
+		return false
+
+	var h_type: String = str(hit_info.get("type", ""))
+	if h_type == "roll":
+		_request_roll_dice()
+		return true
+	elif h_type == "move":
+		_on_move_index_clicked(int(hit_info["move_idx"]))
+		return true
+	elif h_type == "wrong_pawn":
+		_on_wrong_pawn_clicked()
+		return true
+	return false
 
 func _on_move_index_hovered(move_idx: int, entered: bool) -> void:
 	if not is_instance_valid(_target_preview_ring):
@@ -1176,57 +1261,68 @@ func _on_move_index_hovered(move_idx: int, entered: bool) -> void:
 	var my_id = GameManager.my_player_index
 	var target_idx = _compute_target_index_for_move(move_idx, my_id, current_dice)
 	if target_idx == -1:
-		_target_preview_ring.position = _start_portal_positions[my_id] + Vector3(0.0, 0.04, 0.0)
+		_target_preview_ring.position = _start_portal_positions[my_id]
 		_target_preview_ring.visible = true
 	elif target_idx >= 0 and target_idx < _spot_positions.size():
-		_target_preview_ring.position = _spot_positions[target_idx] + Vector3(0.0, 0.04, 0.0)
+		_target_preview_ring.position = _spot_positions[target_idx]
 		_target_preview_ring.visible = true
+	else:
+		_target_preview_ring.visible = false
 
 func _request_roll_dice() -> void:
-	if not GameManager.is_game_active or is_board_locked:
+	if is_board_locked or not GameManager.is_game_active or _is_animating_move:
 		return
-	if GameManager.current_turn != GameManager.my_player_index:
-		show_hint("نوبت شما نیست!")
+	if not GameManager.is_my_turn:
+		show_hint("⏳ اکنون نوبت شما نیست!")
+		AudioManager.play_sound("wrong_Touch")
 		return
-	if has_rolled_this_turn:
-		show_hint("شما تاس ریخته‌اید! لطفاً یکی از مهره‌های مجاز خود را انتخاب کنید.")
+	if has_rolled_this_turn or _roll_request_pending:
+		show_hint("🎲 شما تاس انداخته‌اید؛ یکی از مهره‌های درخشان خود را حرکت دهید!")
 		return
-	if _roll_request_pending or _is_animating_move:
-		return
+
 	_roll_request_pending = true
+	if _roll_btn_ui.has("root") and is_instance_valid(_roll_btn_ui["root"]):
+		var b_root: Node3D = _roll_btn_ui["root"]
+		var tw = create_tween()
+		tw.tween_property(b_root, "scale", Vector3(0.94, 0.85, 0.94), 0.07)
+		tw.tween_property(b_root, "scale", Vector3.ONE, 0.10)
+
 	AudioManager.sfx_tap()
 	_update_interactive_highlights()
 	send_move(Commands.Roll_Dice, {})
 
 func _on_move_index_clicked(move_idx: int) -> void:
-	if not GameManager.is_game_active or is_board_locked or _is_animating_move:
+	if is_board_locked or not GameManager.is_game_active or _is_animating_move:
 		return
-	if GameManager.current_turn != GameManager.my_player_index:
-		show_hint("نوبت شما نیست!")
+	if not GameManager.is_my_turn:
+		show_hint("⏳ اکنون نوبت شما نیست!")
+		AudioManager.play_sound("wrong_Touch")
 		return
 	if not has_rolled_this_turn:
-		show_hint("ابتدا تاس بریزید! 🎲")
+		_request_roll_dice()
 		return
 	if not available_moves.has(move_idx):
 		if move_idx == -2 and current_dice != 6:
-			show_hint("برای وارد کردن مهره جدید به بازی باید عدد ۶ بیاورید!")
+			show_hint("🎲 برای وارد کردن مهره جدید به بازی باید عدد ۶ بیاورید!")
 		else:
-			show_hint("این مهره با عدد تاس فعلی قابل حرکت نیست!")
+			show_hint("⚠️ این مهره با عدد تاس فعلی قابل حرکت نیست!")
+		AudioManager.play_sound("wrong_Touch")
 		return
 
-	AudioManager.sfx_tap()
 	has_rolled_this_turn = false
 	available_moves.clear()
 	_update_interactive_highlights()
+	AudioManager.sfx_tap()
 	send_move(Commands.Select_Peace, {"index": move_idx})
 
 func _on_wrong_pawn_clicked() -> void:
 	if not GameManager.is_game_active:
 		return
-	if GameManager.current_turn != GameManager.my_player_index:
-		show_hint("نوبت شما نیست!")
+	if not GameManager.is_my_turn:
+		show_hint("⏳ اکنون نوبت شما نیست!")
 	else:
-		show_hint("فقط مهره‌های هم‌رنگ خودتان را می‌توانید حرکت دهید!")
+		show_hint("⚠️ فقط مهره‌های هم‌رنگ خودتان را می‌توانید حرکت دهید!")
+	AudioManager.play_sound("wrong_Touch")
 
 func _animate_3d_dice_roll(dice_val: int, on_done: Callable = Callable()) -> void:
 	if not is_instance_valid(_dice_pivot):
@@ -1236,30 +1332,26 @@ func _animate_3d_dice_roll(dice_val: int, on_done: Callable = Callable()) -> voi
 	if _dice_tween and _dice_tween.is_valid():
 		_dice_tween.kill()
 
-	AudioManager.sfx_button()
+	AudioManager.sfx_tap()
 	var target_rot = _get_dice_target_rotation_degrees(dice_val)
-	var spin_rot = target_rot + Vector3(720.0, 360.0, 360.0)
-
-	if is_instance_valid(_dice_value_label3d):
-		_dice_value_label3d.text = ""
+	var spin_start = target_rot + Vector3(720.0, 540.0, 360.0)
+	_dice_pivot.rotation_degrees = spin_start
 
 	_dice_tween = create_tween()
 	_dice_tween.set_parallel(true)
-	_dice_tween.tween_property(_dice_pivot, "position:y", 1.15, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_dice_tween.tween_property(_dice_pivot, "rotation_degrees", spin_rot, 0.44).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_dice_tween.chain().tween_property(_dice_pivot, "position:y", 0.30, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	_dice_tween.tween_property(_dice_pivot, "rotation_degrees", target_rot, 0.48).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_dice_tween.tween_property(_dice_pivot, "position:y", 0.145, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_dice_tween.chain().tween_property(_dice_pivot, "position:y", 0.052, 0.24).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	_dice_tween.chain().tween_callback(func():
-		_dice_pivot.rotation_degrees = target_rot
 		if is_instance_valid(_dice_value_label3d):
-			_dice_value_label3d.text = "%d" % dice_val
+			_dice_value_label3d.text = _fa_int(dice_val)
 		if on_done.is_valid():
 			on_done.call()
 	)
 
-# ============================================================================
-# SERVER PROTOCOL HOOKS
-# ============================================================================
-
+# ==============================================================================
+# BaseGameBoard Virtual Lifecycle Hooks
+# ==============================================================================
 func setup_board(game_data: Dictionary) -> void:
 	var g_list = game_data.get("gamers", GameManager.match_players)
 	var p_cnt = g_list.size() if typeof(g_list) == TYPE_ARRAY and g_list.size() >= 2 else max(2, GameManager.match_players.size())
@@ -1272,17 +1364,16 @@ func on_start_game() -> void:
 	_update_interactive_highlights()
 
 func sync_turn_state() -> void:
-	current_turn = GameManager.current_turn
-	my_player_index = GameManager.my_player_index
-	is_my_turn = (current_turn == my_player_index)
+	super.sync_turn_state()
+	_roll_request_pending = false
 	_update_interactive_highlights()
 
 func on_turn_data(payload: Dictionary) -> void:
-	var is_bonus = bool(payload.get("bonus", false))
-	if is_bonus:
-		var t_id = int(payload.get("turn", GameManager.current_turn))
-		if t_id == GameManager.my_player_index:
-			show_hint("🎉 جایزه عدد ۶! دوباره تاس بریزید")
+	var turn_id = int(payload.get("turn", GameManager.current_turn))
+	if turn_id > 0:
+		GameManager.current_turn = turn_id
+		current_turn = turn_id
+		on_turn_changed(turn_id, turn_id == GameManager.my_player_index)
 
 func on_turn_changed(turn: int, is_me: bool) -> void:
 	current_turn = turn
@@ -1305,7 +1396,7 @@ func on_roll_result(payload: Dictionary) -> void:
 		for m in payload["available_moves"]:
 			available_moves.append(int(m))
 	else:
-		available_moves = _compute_local_available_moves(GameManager.current_turn, current_dice)
+		available_moves = _compute_local_available_moves(current_turn, current_dice)
 
 	_animate_3d_dice_roll(current_dice, func():
 		_update_interactive_highlights()
@@ -1313,13 +1404,12 @@ func on_roll_result(payload: Dictionary) -> void:
 
 func on_out_of_move(payload: Dictionary) -> void:
 	_roll_request_pending = false
-	current_dice = int(payload.get("dice", 1))
+	current_dice = int(payload.get("dice", current_dice))
 	has_rolled_this_turn = false
 	available_moves.clear()
-	var turn_id = int(payload.get("turn", GameManager.current_turn))
 	_animate_3d_dice_roll(current_dice, func():
-		if turn_id == GameManager.my_player_index:
-			show_hint("🎲 عدد %d آمد — هیچ حرکتی مجاز نیست!" % current_dice)
+		if current_turn == GameManager.my_player_index:
+			show_hint("🎲 تاس %s آمد — حرکتی برای انجام وجود ندارد!" % _fa_int(current_dice))
 		_update_interactive_highlights()
 	)
 
@@ -1331,13 +1421,13 @@ func on_piece_selected(user_id: int, _target_peace: int, extra: Dictionary = {})
 	var move_type = str(extra.get("type", "normal"))
 	var rolled_dice = int(extra.get("dice", current_dice if current_dice > 0 else 1))
 
-	# Update authoritative board state from server payload if included, otherwise apply locally
 	if extra.has("board") and typeof(extra["board"]) == TYPE_ARRAY:
 		board_state = (extra["board"] as Array).duplicate(true)
 	if extra.has("start_board") and typeof(extra["start_board"]) == TYPE_ARRAY:
 		start_board_state = (extra["start_board"] as Array).duplicate(true)
 	if extra.has("players_out_pieces") and typeof(extra["players_out_pieces"]) == TYPE_ARRAY:
 		players_out_pieces = (extra["players_out_pieces"] as Array).duplicate(true)
+
 	if not extra.has("board"):
 		_apply_move_locally(gamer_id, src_index, target_index, move_type)
 
@@ -1360,7 +1450,8 @@ func _apply_move_locally(gamer_id: int, src_index: int, target_index: int, move_
 			var td: Dictionary = board_state[target_index]
 			if int(td.get("equipped_user", 0)) != 0 and int(td.get("equipped_user", 0)) != gamer_id and target_index < TRACK_SIZE:
 				var enemy_id = int(td["equipped_user"])
-				players_out_pieces[enemy_id - 1] = int(players_out_pieces[enemy_id - 1]) + int(td.get("count", 1))
+				if enemy_id - 1 < players_out_pieces.size():
+					players_out_pieces[enemy_id - 1] = int(players_out_pieces[enemy_id - 1]) + int(td.get("count", 1))
 				td["count"] = 0
 			td["equipped_user"] = gamer_id
 			td["count"] = int(td.get("count", 0)) + 1
@@ -1374,7 +1465,8 @@ func _apply_move_locally(gamer_id: int, src_index: int, target_index: int, move_
 			var td2: Dictionary = board_state[target_index]
 			if int(td2.get("equipped_user", 0)) != 0 and int(td2.get("equipped_user", 0)) != gamer_id and target_index < TRACK_SIZE:
 				var enemy_id2 = int(td2["equipped_user"])
-				players_out_pieces[enemy_id2 - 1] = int(players_out_pieces[enemy_id2 - 1]) + int(td2.get("count", 1))
+				if enemy_id2 - 1 < players_out_pieces.size():
+					players_out_pieces[enemy_id2 - 1] = int(players_out_pieces[enemy_id2 - 1]) + int(td2.get("count", 1))
 				td2["count"] = 0
 			td2["equipped_user"] = gamer_id
 			td2["count"] = int(td2.get("count", 0)) + 1
@@ -1383,9 +1475,9 @@ func _animate_pawn_move(gamer_id: int, src_index: int, target_index: int, move_t
 	_is_animating_move = true
 	_update_interactive_highlights()
 
-	# Build waypoint positions for smooth step-by-step hop
 	var waypoints: Array[Vector3] = []
 	var start_pos: Vector3 = Vector3.ZERO
+
 	if move_type == "out" or src_index == -2:
 		var slots: Array = _yard_slot_positions.get(gamer_id, [])
 		start_pos = slots[0] if not slots.is_empty() else Vector3.ZERO
@@ -1418,11 +1510,13 @@ func _animate_pawn_move(gamer_id: int, src_index: int, target_index: int, move_t
 	_vfx_root.add_child(flyer)
 
 	var tw = create_tween()
+	var prev_pos = start_pos
 	for wp in waypoints:
-		var mid = (flyer.position + wp) * 0.5 + Vector3(0.0, 0.42, 0.0)
+		var mid = (prev_pos + wp) * 0.5 + Vector3(0.0, 0.065, 0.0)
 		tw.tween_property(flyer, "position", mid, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tw.tween_property(flyer, "position", wp, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		tw.tween_callback(func(): AudioManager.sfx_tap())
+		prev_pos = wp
 
 	tw.tween_callback(func():
 		if is_instance_valid(flyer):
@@ -1442,8 +1536,8 @@ func _spawn_capture_vfx(hit_pos: Vector3, enemy_gamer_id: int) -> void:
 	else:
 		show_hint("⚔️ ضربه عالی! مهره %s به خانه شروع فرستاده شد!" % FACTION_NAMES_FA.get(enemy_gamer_id, "حریف"))
 
-	var ring = _create_halo_ring_mesh(0.22, 0.05, _mat_highlight_select)
-	ring.position = hit_pos + Vector3(0.0, 0.06, 0.0)
+	var ring = _create_halo_ring_mesh(0.22 * S, 0.05 * S, _mat_highlight_select)
+	ring.position = hit_pos + Vector3(0.0, 0.008, 0.0)
 	_vfx_root.add_child(ring)
 
 	var knocked = _create_royal_pawn_node(enemy_gamer_id, 1)
@@ -1452,7 +1546,7 @@ func _spawn_capture_vfx(hit_pos: Vector3, enemy_gamer_id: int) -> void:
 
 	var yard_slots: Array = _yard_slot_positions.get(enemy_gamer_id, [])
 	var dest_yard: Vector3 = yard_slots[0] if not yard_slots.is_empty() else Vector3.ZERO
-	var apex = (hit_pos + dest_yard) * 0.5 + Vector3(0.0, 1.35, 0.0)
+	var apex = (hit_pos + dest_yard) * 0.5 + Vector3(0.0, 0.22, 0.0)
 
 	var tw = create_tween()
 	tw.set_parallel(true)
@@ -1482,6 +1576,7 @@ func _on_win_happened(payload: Dictionary) -> void:
 
 	_sync_header_home_counts()
 	AudioManager.play_sound("bell")
+
 	var p_data = GameManager.get_player_data_by_gamer_id(winner_id)
 	var p_name = str(p_data.get("name", p_data.get("username", "بازیکن %d" % winner_id)))
 	if winner_id == rank1_player:
@@ -1491,7 +1586,8 @@ func _on_win_happened(payload: Dictionary) -> void:
 
 func on_player_surrendered(gamer_id: int) -> void:
 	if gamer_id >= 1 and gamer_id <= 4:
-		players_out_pieces[gamer_id - 1] = 4
+		if gamer_id - 1 < players_out_pieces.size():
+			players_out_pieces[gamer_id - 1] = 4
 		if gamer_id - 1 < start_board_state.size():
 			start_board_state[gamer_id - 1] = {"count": 0, "equipped_user": 0}
 		for i in range(board_state.size()):
@@ -1508,6 +1604,7 @@ func on_reconnect_data(payload: Dictionary) -> void:
 	var g_data = payload.get("game_data", {})
 	if typeof(g_data) != TYPE_DICTIONARY:
 		return
+
 	var g_list = payload.get("gamers", GameManager.match_players)
 	if typeof(g_list) == TYPE_ARRAY and g_list.size() >= 2:
 		players_count = clampi(g_list.size(), 2, 4)
@@ -1530,6 +1627,7 @@ func on_reconnect_data(payload: Dictionary) -> void:
 	current_turn = int(g_data.get("current_turn", GameManager.current_turn))
 	current_dice = int(g_data.get("current_dice", 0))
 	has_rolled_this_turn = bool(g_data.get("current_turn_player_rolled", false))
+
 	if g_data.has("available_moves") and typeof(g_data["available_moves"]) == TYPE_ARRAY:
 		available_moves.clear()
 		for m in g_data["available_moves"]:
@@ -1542,7 +1640,7 @@ func on_reconnect_data(payload: Dictionary) -> void:
 	if current_dice > 0 and is_instance_valid(_dice_pivot):
 		_dice_pivot.rotation_degrees = _get_dice_target_rotation_degrees(current_dice)
 		if is_instance_valid(_dice_value_label3d):
-			_dice_value_label3d.text = "%d" % current_dice
+			_dice_value_label3d.text = _fa_int(current_dice)
 
 	_rebuild_all_pawns_visuals()
 	_update_interactive_highlights()
