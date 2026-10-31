@@ -63,7 +63,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if visible and is_starting_match and spinner:
-		spinner.rotation += delta * 3.0
+		spinner.rotation += delta * 3.5
 
 func open() -> void:
 	is_starting_match = false
@@ -95,11 +95,13 @@ func _populate_grid() -> void:
 func _create_game_card(g_type: String) -> Button:
 	var is_sel = (g_type == selected_game_type)
 	var card = Button.new()
-	card.custom_minimum_size = Vector2(280, 160)
+	# 2 columns layout: each card ~430px wide, ~210px high for huge readability
+	card.custom_minimum_size = Vector2(430, 210)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(140, 80)
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.pivot_offset = Vector2(215, 105)
 	
 	_apply_card_style(card, is_sel, g_type)
 	
@@ -127,8 +129,8 @@ func _create_game_card(g_type: String) -> Button:
 	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
 	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var vig_style = StyleBoxFlat.new()
-	vig_style.bg_color = Color(0.04, 0.03, 0.02, 0.75)
-	vig_style.set_corner_radius_all(16)
+	vig_style.bg_color = Color(0.04, 0.03, 0.02, 0.72)
+	vig_style.set_corner_radius_all(18)
 	vignette.add_theme_stylebox_override("panel", vig_style)
 	card.add_child(vignette)
 	
@@ -136,10 +138,10 @@ func _create_game_card(g_type: String) -> Button:
 	var margin = MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
 	card.add_child(margin)
 	
 	var vbox = VBoxContainer.new()
@@ -158,30 +160,37 @@ func _create_game_card(g_type: String) -> Button:
 	var diff_color = GameRegistry.get_difficulty_color(g_type)
 	var diff_badge = Label.new()
 	diff_badge.text = " " + diff_name + " "
+	diff_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	diff_badge.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	diff_badge.add_theme_font_size_override("font_size", 18)
+	diff_badge.add_theme_font_size_override("font_size", 22)
 	diff_badge.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	diff_badge.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	diff_badge.add_theme_constant_override("shadow_outline_size", 2)
+	diff_badge.add_theme_constant_override("shadow_outline_size", 3)
 	var b_style = StyleBoxFlat.new()
-	b_style.bg_color = Color(diff_color.r * 0.4, diff_color.g * 0.4, diff_color.b * 0.4, 0.9)
+	b_style.bg_color = Color(diff_color.r * 0.45, diff_color.g * 0.45, diff_color.b * 0.45, 0.95)
 	b_style.border_color = diff_color
-	b_style.set_border_width_all(1)
-	b_style.set_corner_radius_all(8)
+	b_style.set_border_width_all(2)
+	b_style.set_corner_radius_all(10)
+	b_style.content_margin_left = 10
+	b_style.content_margin_right = 10
+	b_style.content_margin_top = 4
+	b_style.content_margin_bottom = 4
 	diff_badge.add_theme_stylebox_override("normal", b_style)
 	top_row.add_child(diff_badge)
 	
 	var spacer = Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top_row.add_child(spacer)
 	
 	var diff_key = GameRegistry.get_game_difficulty(g_type)
 	var win_xp = 12 if diff_key == "easy" else (25 if diff_key == "hard" else 18)
 	var xp_badge = Label.new()
 	xp_badge.text = "+%d XP" % win_xp
+	xp_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	xp_badge.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	xp_badge.add_theme_font_size_override("font_size", 20)
-	xp_badge.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+	xp_badge.add_theme_font_size_override("font_size", 26)
+	xp_badge.add_theme_color_override("font_color", Color(1.0, 0.92, 0.35))
 	xp_badge.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 	xp_badge.add_theme_constant_override("shadow_outline_size", 3)
 	top_row.add_child(xp_badge)
@@ -189,19 +198,22 @@ func _create_game_card(g_type: String) -> Button:
 	# Spacer to push title to bottom
 	var v_spacer = Control.new()
 	v_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(v_spacer)
 	
-	# Game title at bottom
+	# Game title at bottom (large, readable font size 34)
 	var lbl_name = Label.new()
 	lbl_name.text = GameRegistry.get_display_name_fa(g_type)
+	lbl_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_name.add_theme_font_size_override("font_size", 26)
-	lbl_name.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
+	lbl_name.add_theme_font_size_override("font_size", 34)
+	lbl_name.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))
 	lbl_name.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-	lbl_name.add_theme_constant_override("shadow_outline_size", 3)
+	lbl_name.add_theme_constant_override("shadow_outline_size", 4)
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(lbl_name)
 	
+	# Whole button area is cleanly clickable
 	card.pressed.connect(func():
 		_on_game_selected(g_type)
 	)
@@ -211,15 +223,15 @@ func _create_game_card(g_type: String) -> Button:
 func _apply_card_style(card: Button, is_selected: bool, _g_type: String) -> void:
 	var style_normal = StyleBoxFlat.new()
 	style_normal.bg_color = Color(0.20, 0.14, 0.08, 0.95)
-	style_normal.set_corner_radius_all(16)
-	style_normal.set_border_width_all(3)
-	style_normal.border_color = Color(1.0, 0.88, 0.28, 1.0) if is_selected else Color(0.55, 0.42, 0.26, 0.85)
-	style_normal.shadow_color = Color(1.0, 0.85, 0.25, 0.4) if is_selected else Color(0, 0, 0, 0.45)
-	style_normal.shadow_size = 10 if is_selected else 4
-	style_normal.shadow_offset = Vector2(0, 3)
+	style_normal.set_corner_radius_all(18)
+	style_normal.set_border_width_all(4 if is_selected else 2)
+	style_normal.border_color = Color(1.0, 0.88, 0.28, 1.0) if is_selected else Color(0.60, 0.48, 0.30, 0.85)
+	style_normal.shadow_color = Color(1.0, 0.85, 0.25, 0.5) if is_selected else Color(0, 0, 0, 0.5)
+	style_normal.shadow_size = 14 if is_selected else 5
+	style_normal.shadow_offset = Vector2(0, 4)
 	
 	var style_hover = style_normal.duplicate()
-	style_hover.bg_color = Color(0.28, 0.18, 0.12, 0.98)
+	style_hover.bg_color = Color(0.28, 0.19, 0.12, 0.98)
 	style_hover.border_color = Color(1.0, 0.95, 0.55, 1.0)
 	
 	card.add_theme_stylebox_override("normal", style_normal)
@@ -269,6 +281,7 @@ func _on_start_pressed() -> void:
 		status_box.visible = true
 	if is_instance_valid(lbl_status):
 		lbl_status.text = "در حال آماده‌سازی میز بازی..."
+		lbl_status.modulate = Color(1.0, 0.9, 0.4)
 	
 	GameManager.current_match_mode = "classic_rank"
 	GameManager.set_game_type(selected_game_type)
@@ -284,6 +297,6 @@ func _on_match_found(game_id: String) -> void:
 		lbl_status.text = "میز آماده شد! ورود به بازی..."
 		lbl_status.modulate = Color(0.3, 1.0, 0.4)
 	
-	await get_tree().create_timer(0.6).timeout
+	await get_tree().create_timer(0.5).timeout
 	visible = false
 	match_ready.emit(game_id, selected_game_type)
