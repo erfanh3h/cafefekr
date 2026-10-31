@@ -1,0 +1,216 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/classic_rank/classic_rank_dialog.gd" id="1_classic_script"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="3_button_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="5_close_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/logo_transparent.png" id="6_logo_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/cup.png" id="7_cup_tex"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
+texture = ExtResource("2_board_tex")
+texture_margin_left = 60.0
+texture_margin_top = 60.0
+texture_margin_right = 60.0
+texture_margin_bottom = 60.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+bg_color = Color(0.12, 0.08, 0.05, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.5, 0.28, 0.85)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bottom"]
+bg_color = Color(0.14, 0.09, 0.06, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.7, 0.35, 0.9)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 6
+
+[node name="ClassicRankDialog" type="PanelContainer"]
+custom_minimum_size = Vector2(980, 840)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -490.0
+offset_top = -420.0
+offset_right = 490.0
+offset_bottom = 420.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_board")
+script = ExtResource("1_classic_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="BtnClose" type="TextureButton" parent="Margin/VBox/TopRow"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+texture_normal = ExtResource("5_close_tex")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Spacer" type="Control" parent="Margin/VBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LblTitle" type="Label" parent="Margin/VBox/TopRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.92, 0.65, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 38
+text = "رنک کلاسیک (کسب تجربه)"
+horizontal_alignment = 2
+
+[node name="CupIcon" type="TextureRect" parent="Margin/VBox/TopRow"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("7_cup_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BannerPanel" type="PanelContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="BannerHBox" type="HBoxContainer" parent="Margin/VBox/BannerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="LblNote" type="Label" parent="Margin/VBox/BannerPanel/BannerHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.90, 0.78, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 22
+text = "بدون تغییر در کاپ و رتبه رنک • کسب تجربه (XP) بر اساس درجه سختی بازی"
+horizontal_alignment = 1
+
+[node name="ScrollGames" type="ScrollContainer" parent="Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="GameGrid" type="GridContainer" parent="Margin/VBox/ScrollGames"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
+columns = 3
+
+[node name="BottomPanel" type="PanelContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bottom")
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/BottomPanel"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="Margin/VBox/BottomPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="InfoVBox" type="VBoxContainer" parent="Margin/VBox/BottomPanel/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="LblGameName" type="Label" parent="Margin/VBox/BottomPanel/Margin/HBox/InfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.92, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 30
+text = "تیک تاک تو"
+horizontal_alignment = 2
+
+[node name="LblGameDetails" type="Label" parent="Margin/VBox/BottomPanel/Margin/HBox/InfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 0.72, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 22
+text = "درجه سختی: آسان  •  پاداش پیروزی: ۱۲+ XP (مساوی: ۶+ | باخت: ۳+)"
+horizontal_alignment = 2
+
+[node name="BtnStart" type="Button" parent="Margin/VBox/BottomPanel/Margin/HBox"]
+custom_minimum_size = Vector2(240, 72)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 28
+text = "شروع مسابقه"
+
+[node name="StatusBox" type="HBoxContainer" parent="Margin/VBox/BottomPanel/Margin/HBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Spinner" type="TextureRect" parent="Margin/VBox/BottomPanel/Margin/HBox/StatusBox"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+pivot_offset = Vector2(24, 24)
+texture = ExtResource("6_logo_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LblStatus" type="Label" parent="Margin/VBox/BottomPanel/Margin/HBox/StatusBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 24
+text = "در حال آماده‌سازی میز بازی..."

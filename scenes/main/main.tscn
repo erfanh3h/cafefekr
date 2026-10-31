@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/main.gd" id="1_main_script"]
 [ext_resource type="PackedScene" path="res://scenes/environment/cafe_table.tscn" id="2_cafe_table"]
@@ -30,6 +30,7 @@
 [ext_resource type="Texture2D" path="res://assets/particles/star_01.png" id="28_star_tex"]
 
 
+[ext_resource type="PackedScene" path="res://scenes/ui/classic_rank/classic_rank_dialog.tscn" id="29_classic_rank_dialog"]
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_white_icon"]
 shader = ExtResource("27_shader_tint")
 shader_parameter/tint_color = Color(1, 1, 1, 1)
@@ -127,9 +128,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -485.0
-offset_top = -460.0
+offset_top = -540.0
 offset_right = 485.0
-offset_bottom = 240.0
+offset_bottom = 360.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 16
@@ -189,11 +190,11 @@ layout_mode = 2
 
 [node name="CardsContainer" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent"]
 layout_mode = 2
-theme_override_constants/separation = 28
+theme_override_constants/separation = 18
 alignment = 1
 
 [node name="BtnRanked" type="Button" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer"]
-custom_minimum_size = Vector2(940, 185)
+custom_minimum_size = Vector2(940, 165)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
@@ -293,8 +294,109 @@ texture = ExtResource("14_rank_tex")
 expand_mode = 1
 stretch_mode = 5
 
+[node name="BtnClassicRank" type="Button" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer"]
+custom_minimum_size = Vector2(940, 165)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_btn_pressed")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 10
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="Arrow" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin/HBox"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("15_right_tex")
+expand_mode = 1
+stretch_mode = 5
+flip_h = true
+
+[node name="TextCol" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+alignment = 1
+
+[node name="CardTitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin/HBox/TextCol"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 42
+text = "رنک کلاسیک"
+horizontal_alignment = 2
+
+[node name="CardSubtitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin/HBox/TextCol"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 25
+text = "انتخاب بازی دلخواه و دریافت تجربه (XP) بدون ریسک رتبه"
+horizontal_alignment = 2
+
+[node name="IconControl" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin/HBox"]
+custom_minimum_size = Vector2(104, 104)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Disc" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_button5_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -36.0
+offset_top = -36.0
+offset_right = 36.0
+offset_bottom = 36.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("17_multi_tex")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="BtnLobby" type="Button" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer"]
-custom_minimum_size = Vector2(940, 185)
+custom_minimum_size = Vector2(940, 165)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
@@ -606,3 +708,6 @@ visible = false
 
 [node name="UserProfileDialog" parent="CanvasLayer" instance=ExtResource("25_profile_dlg")]
 visible = false
+[node name="ClassicRankDialog" parent="CanvasLayer" instance=ExtResource("29_classic_rank_dialog")]
+visible = false
+

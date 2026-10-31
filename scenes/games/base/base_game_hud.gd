@@ -1460,7 +1460,8 @@ func show_game_result(winner: int, p1_score: int, p2_score: int) -> void:
 				final_winner = 1
 			elif p2_score > p1_score:
 				final_winner = 2
-	result_dialog.show_result(final_winner, p1_score, p2_score)
+	var is_friendly = (GameManager.current_match_mode == "lobby")
+	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly)
 
 func _update_audio_visual() -> void:
 	if AudioManager.is_music_enabled:
