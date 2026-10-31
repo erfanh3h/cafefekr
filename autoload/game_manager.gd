@@ -254,5 +254,21 @@ func get_score() -> int:
 func get_avatar_id() -> int:
 	return int(user_data.get("image", user_data.get("avatar", user_data.get("avatar_id", 0))))
 
+func get_xp() -> int:
+	return int(user_data.get("xp", 0))
+
+func add_xp(amount: int) -> void:
+	if amount <= 0:
+		return
+	var cur_xp = int(user_data.get("xp", 0))
+	user_data["xp"] = cur_xp + amount
+	if not token.is_empty():
+		var config = ConfigFile.new()
+		config.set_value("auth", "token", token)
+		config.set_value("auth", "user_data", user_data)
+		config.set_value("auth", "is_guest", is_guest)
+		config.save(SESSION_PATH)
+	print("[GameManager] Added %d XP. New total: %d" % [amount, user_data["xp"]])
+
 func get_open_game_id() -> String:
 	return str(user_data.get("open_game_id", ""))

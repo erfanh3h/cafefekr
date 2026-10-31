@@ -444,3 +444,32 @@ static func is_simultaneous(game_type: String = "") -> bool:
 static func is_cumulative_score(game_type: String = "") -> bool:
 	var info = get_game_info(game_type)
 	return bool(info.get("is_cumulative_score", false))
+
+static func get_difficulty(game_type: String) -> String:
+	match normalize_type(game_type):
+		GameTypes.TIC_TAC_TOE, GameTypes.RPC, GameTypes.DOTBOX, GameTypes.LUDO, GameTypes.MNUMBERS:
+			return "easy"
+		GameTypes.FEKRBEKR, GameTypes.PENTAGO, GameTypes.MSWEEPER, GameTypes.BATTLESHIP, \
+		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY:
+			return "normal"
+		GameTypes.CHESS, GameTypes.CHECKERS, GameTypes.OTHELLO, GameTypes.BACKGAMMON, \
+		GameTypes.YINSH, GameTypes.MILL:
+			return "hard"
+		_:
+			return "normal"
+
+static func get_difficulty_name_fa(game_type: String) -> String:
+	match get_difficulty(game_type):
+		"easy": return "آسان"
+		"normal": return "متوسط"
+		"hard": return "سخت"
+		_: return "متوسط"
+
+static func get_classic_rank_xp(game_type: String, is_win: bool, is_draw: bool) -> int:
+	var diff = get_difficulty(game_type)
+	if diff == "easy":
+		return 15 if is_win else (8 if is_draw else 4)
+	elif diff == "normal":
+		return 25 if is_win else (14 if is_draw else 7)
+	else:
+		return 40 if is_win else (20 if is_draw else 10)

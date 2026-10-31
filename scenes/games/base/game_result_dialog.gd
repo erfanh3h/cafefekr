@@ -134,8 +134,9 @@ func _setup_styles() -> void:
 
 var _current_winner_index: int = -1
 var _current_is_friendly: bool = true
+var _current_xp_earned: int = 0
 
-func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_friendly: bool = true) -> void:
+func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_friendly: bool = true, xp_earned: int = 0) -> void:
 	if visible and is_instance_valid(panel) and panel.visible:
 		return
 	visible = true
@@ -158,6 +159,7 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 	winner_player_index = resolved_winner
 	_current_winner_index = winner_player_index
 	_current_is_friendly = is_friendly
+	_current_xp_earned = xp_earned
 
 	var my_idx = GameManager.my_player_index
 	var is_winner = false
@@ -173,8 +175,12 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		is_winner = (winner_player_index == my_idx) and (winner_player_index != 0)
 		is_draw = (winner_player_index == 0)
 	
-	# Friendly games have no rank rewards
-	rewards_hbox.visible = not is_friendly
+	# EXP reward banner - ONLY shown in Classic Rank when xp_earned > 0!
+	if xp_earned > 0:
+		rewards_hbox.visible = true
+		lbl_xp.text = "⚡ +%s تجربه (XP)" % _fa_digits(xp_earned)
+	else:
+		rewards_hbox.visible = false
 	
 	# Start rotating background sunburst aura
 	if _aura_tween and _aura_tween.is_valid():
@@ -356,6 +362,14 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 			ActionVFXManager.spawn_dialog_sparkle_burst(panel.global_position + panel.size / 2.0)
 	)
 
+func update_xp(xp: int) -> void:
+	_current_xp_earned = xp
+	if xp > 0:
+		rewards_hbox.visible = true
+		lbl_xp.text = "⚡ +%s تجربه (XP)" % _fa_digits(xp)
+	else:
+		rewards_hbox.visible = false
+
 func close() -> void:
 	if _aura_tween and _aura_tween.is_valid():
 		_aura_tween.kill()
@@ -423,5 +437,5 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 				if score_winner != _current_winner_index and score_winner > 0:
 					visible = false
 					panel.visible = false
-					show_result(score_winner, p1_score, p2_score, _current_is_friendly)
+					show_result(score_winner, p1_score, p2_score, _current_is_friendly, _current_xp_earned)
 

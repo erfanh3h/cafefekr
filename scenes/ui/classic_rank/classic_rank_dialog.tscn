@@ -1,0 +1,221 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/classic_rank/classic_rank_dialog.gd" id="1_classic_script"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="3_close_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/games/tictactoe.jpg" id="5_preview_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="6_button_tex"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
+texture = ExtResource("2_board_tex")
+texture_margin_left = 60.0
+texture_margin_top = 60.0
+texture_margin_right = 60.0
+texture_margin_bottom = 60.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_preview_card"]
+bg_color = Color(0.14, 0.09, 0.06, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.72, 0.38, 0.85)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_diff_badge"]
+bg_color = Color(0.18, 0.12, 0.08, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.42, 0.28, 0.7)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 12.0
+content_margin_top = 4.0
+content_margin_right = 12.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon_frame"]
+bg_color = Color(0.08, 0.05, 0.03, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.85, 0.35, 0.9)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+
+[node name="ClassicRankDialog" type="PanelContainer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -490.0
+offset_top = -700.0
+offset_right = 490.0
+offset_bottom = 700.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_board")
+script = ExtResource("1_classic_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="BtnClose" type="TextureButton" parent="Margin/VBox/TopRow"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+texture_normal = ExtResource("3_close_tex")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TitleBox" type="VBoxContainer" parent="Margin/VBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="LblTitle" type="Label" parent="Margin/VBox/TopRow/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 42
+text = "رنک کلاسیک"
+horizontal_alignment = 1
+
+[node name="LblSubtitle" type="Label" parent="Margin/VBox/TopRow/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.8, 0.65, 0.9)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 22
+text = "بازی در برابر هوش مصنوعی و کسب تجربه (XP)"
+horizontal_alignment = 1
+
+[node name="Placeholder" type="Control" parent="Margin/VBox/TopRow"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+
+[node name="SelectedPreviewCard" type="PanelContainer" parent="Margin/VBox"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_preview_card")
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/SelectedPreviewCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="HBox" type="HBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="VBoxInfo" type="VBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="LblPreviewName" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 32
+text = "تیک تاک تو"
+horizontal_alignment = 2
+
+[node name="HBoxBadges" type="HBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo"]
+layout_mode = 2
+alignment = 2
+
+[node name="DiffBadge" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HBoxBadges"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_diff_badge")
+
+[node name="LblDiff" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HBoxBadges/DiffBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.5, 1)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 20
+text = "درجه سختی: آسان"
+
+[node name="LblPreviewRewards" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 20
+text = "پاداش: 🏆 برد ۱۵+ XP | 🤝 مساوی ۸+ XP | 👏 باخت ۴+ XP"
+horizontal_alignment = 2
+
+[node name="IconFrame" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox"]
+custom_minimum_size = Vector2(104, 104)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_icon_frame")
+
+[node name="PreviewIcon" type="TextureRect" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/IconFrame"]
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("5_preview_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScrollGames" type="ScrollContainer" parent="Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="GameGrid" type="GridContainer" parent="Margin/VBox/ScrollGames"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 16
+columns = 2
+
+[node name="BottomRow" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="BtnStartGame" type="Button" parent="Margin/VBox/BottomRow"]
+custom_minimum_size = Vector2(580, 88)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 36
+text = "شروع بازی ⚔️"

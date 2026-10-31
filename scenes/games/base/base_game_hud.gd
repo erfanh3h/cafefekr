@@ -1440,8 +1440,10 @@ func show_surrender_notification(surrendered_gamer_id: int) -> void:
 		show_game_result(winner_idx, GameManager.p1_score, GameManager.p2_score)
 	)
 
-func show_game_result(winner: int, p1_score: int, p2_score: int) -> void:
+func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int = 0) -> void:
 	if _result_shown:
+		if xp_earned > 0 and is_instance_valid(result_dialog) and result_dialog.has_method("update_xp"):
+			result_dialog.update_xp(xp_earned)
 		return
 	_result_shown = true
 	if _surrender_result_tween and _surrender_result_tween.is_valid():
@@ -1460,7 +1462,8 @@ func show_game_result(winner: int, p1_score: int, p2_score: int) -> void:
 				final_winner = 1
 			elif p2_score > p1_score:
 				final_winner = 2
-	result_dialog.show_result(final_winner, p1_score, p2_score)
+	var is_friendly = (xp_earned <= 0)
+	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly, xp_earned)
 
 func _update_audio_visual() -> void:
 	if AudioManager.is_music_enabled:

@@ -37,6 +37,7 @@ signal mine_selected_received(payload: Dictionary)
 signal select_mine_correct_received(payload: Dictionary)
 signal select_mine_wrong_received(payload: Dictionary)
 signal player_score_received(payload: Dictionary)
+signal classic_rank_match_ready(game_id: String, game_type: String)
 
 var api: APIClient
 var socket: SocketIOClient
@@ -173,6 +174,18 @@ func send_lobby_command(command_id: String, data: Variant = null) -> void:
 	}
 	socket.emit_event("/lobby", "user_command", payload)
 
+# --- CLASSIC RANK MATCHMAKING ---
+
+func start_classic_rank(game_type: String) -> void:
+	var auth = {
+		"token": GameManager.token,
+		"game_type": game_type,
+		"username": GameManager.get_username(),
+		"user_image": GameManager.get_avatar_id()
+	}
+	print("[NetworkManager] Requesting Classic Rank match for %s..." % game_type)
+	socket.connect_namespace("/classic-rank", auth)
+
 # --- IN-GAME SESSION ---
 
 func join_active_game(game_id: String) -> void:
@@ -248,6 +261,14 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 	
 	match cmd_id:
 		Commands.Start_Game:
+			if ns == "/classic-rank":
+				if typeof(payload) == TYPE_DICTIONARY and payload.has("game_id"):
+					var c_gid = str(payload["game_id"])
+					var c_gtype = str(payload.get("game_type", ""))
+					socket.disconnect_namespace("/classic-rank")
+					print("[NetworkManager] Classic Rank match found: %s (%s)" % [c_gid, c_gtype])
+					classic_rank_match_ready.emit(c_gid, c_gtype)
+				return
 			if typeof(payload) == TYPE_DICTIONARY and payload.has("game_id"):
 				var game_id = payload["game_id"]
 				game_match_found.emit(game_id)
