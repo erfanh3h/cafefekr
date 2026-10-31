@@ -444,24 +444,3 @@ static func is_simultaneous(game_type: String = "") -> bool:
 static func is_cumulative_score(game_type: String = "") -> bool:
 	var info = get_game_info(game_type)
 	return bool(info.get("is_cumulative_score", false))
-
-static func get_game_difficulty(game_type: String) -> String:
-	match game_type:
-		GameTypes.TIC_TAC_TOE, GameTypes.RPC, GameTypes.DOTBOX, GameTypes.LUDO, GameTypes.MNUMBERS:
-			return "easy"
-		GameTypes.CHESS, GameTypes.CHECKERS, GameTypes.OTHELLO, GameTypes.BACKGAMMON, GameTypes.YINSH, GameTypes.MILL:
-			return "hard"
-		_:
-			return "normal"
-
-static func get_difficulty_name_fa(game_type: String) -> String:
-	match get_game_difficulty(game_type):
-		"easy": return "آسان"
-		"hard": return "سخت"
-		_: return "متوسط"
-
-static func get_difficulty_color(game_type: String) -> Color:
-	match get_game_difficulty(game_type):
-		"easy": return Color(0.35, 0.88, 0.45)
-		"hard": return Color(1.0, 0.45, 0.35)
-		_: return Color(1.0, 0.82, 0.28)

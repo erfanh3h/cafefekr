@@ -151,18 +151,6 @@ func join_matchmaking_queue(pre_game_id: Variant = null) -> void:
 func leave_matchmaking_queue() -> void:
 	socket.disconnect_namespace("/queue")
 
-func start_classic_rank(game_type: String) -> void:
-	print("[NetworkManager] Starting Classic Rank match for %s..." % game_type)
-	if socket.is_namespace_connected("/queue"):
-		send_queue_command(Commands.Start_Classic_Rank, {"game_type": game_type})
-	else:
-		var auth = {
-			"token": GameManager.token,
-			"mode": "ClassicRank",
-			"game_type": game_type
-		}
-		socket.connect_namespace("/queue", auth)
-
 func send_queue_command(command_id: String, data: Variant = null) -> void:
 	var payload = {
 		"id": command_id,

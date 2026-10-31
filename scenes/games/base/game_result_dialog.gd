@@ -173,16 +173,8 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		is_winner = (winner_player_index == my_idx) and (winner_player_index != 0)
 		is_draw = (winner_player_index == 0)
 	
-	# Display rewards: Classic Rank shows earned XP; Ranked shows XP; Friendly hides
-	var xp_reward = GameManager.last_xp_gained
-	if xp_reward > 0 or GameManager.current_match_mode == "classic_rank":
-		rewards_hbox.visible = true
-		if is_instance_valid(lbl_xp):
-			lbl_xp.text = "+%s XP" % _fa_digits(xp_reward)
-		if is_instance_valid(coin_chip):
-			coin_chip.visible = false
-	else:
-		rewards_hbox.visible = not is_friendly
+	# Friendly games have no rank rewards
+	rewards_hbox.visible = not is_friendly
 	
 	# Start rotating background sunburst aura
 	if _aura_tween and _aura_tween.is_valid():
@@ -433,16 +425,3 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 					panel.visible = false
 					show_result(score_winner, p1_score, p2_score, _current_is_friendly)
 
-
-func set_rewards(xp_gained: int, coin_gained: int = 0) -> void:
-	if is_instance_valid(rewards_hbox):
-		rewards_hbox.visible = (xp_gained > 0 or coin_gained > 0)
-	if is_instance_valid(lbl_xp):
-		lbl_xp.text = "+%s XP" % _fa_digits(xp_gained)
-	if is_instance_valid(coin_chip):
-		if coin_gained > 0:
-			coin_chip.visible = true
-			if is_instance_valid(lbl_coin):
-				lbl_coin.text = "+%s سکه" % _fa_digits(coin_gained)
-		else:
-			coin_chip.visible = false

@@ -16,7 +16,6 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 
 # Menu Cards
 @onready var btn_ranked = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked
-@onready var btn_classic_rank = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank
 @onready var btn_lobby = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby
 
 # Bottom Dock
@@ -35,7 +34,6 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 @onready var store_dialog = $CanvasLayer/StoreDialog
 @onready var rules_dialog = $CanvasLayer/RulesDialog
 @onready var user_profile_dialog = $CanvasLayer/UserProfileDialog
-@onready var classic_rank_dialog = $CanvasLayer/ClassicRankDialog
 
 # Base Game HUD
 @onready var base_game_hud = $CanvasLayer/BaseGameHUD
@@ -214,7 +212,6 @@ func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:
 func _setup_signals() -> void:
 	# Menu Button Connections (Only 2 central game buttons)
 	btn_ranked.pressed.connect(_on_ranked_pressed)
-	btn_classic_rank.pressed.connect(_on_classic_rank_pressed)
 	btn_lobby.pressed.connect(_on_lobby_pressed)
 	
 	btn_ranking.pressed.connect(_on_ranking_pressed)
@@ -248,10 +245,6 @@ func _setup_signals() -> void:
 	lobby_dialog.match_ready.connect(func(gid, gtype = ""):
 		_start_game_match(gid, gtype, "lobby")
 	)
-	classic_rank_dialog.match_ready.connect(func(gid, gtype = ""):
-		_start_game_match(gid, gtype, "classic_rank")
-	)
-	classic_rank_dialog.closed.connect(_update_backdrop_state)
 	lobby_dialog.closed.connect(_update_backdrop_state)
 	ranking_dialog.closed.connect(_update_backdrop_state)
 	store_dialog.closed.connect(_update_backdrop_state)
@@ -267,8 +260,6 @@ func _setup_signals() -> void:
 						_show_menu_toast("ثبت نام کاربری الزامی است.")
 						return
 					login_dialog.close()
-				elif is_instance_valid(classic_rank_dialog) and classic_rank_dialog.visible:
-					classic_rank_dialog.close()
 				elif is_instance_valid(user_profile_dialog) and user_profile_dialog.visible:
 					user_profile_dialog.close()
 				elif is_instance_valid(rules_dialog) and rules_dialog.visible:
@@ -356,7 +347,7 @@ func _start_logo_animation() -> void:
 	tw.tween_property(logo_plate, "scale", Vector2(0.97, 0.97), 1.8)
 
 func _setup_button_juice() -> void:
-	var buttons = [btn_ranked, btn_classic_rank, btn_lobby, btn_ranking, btn_rules, btn_audio, btn_exit]
+	var buttons = [btn_ranked, btn_lobby, btn_ranking, btn_rules, btn_audio, btn_exit]
 	for b in buttons:
 		ActionVFXManager.apply_button_juice(b, "tap_button")
 
@@ -378,20 +369,6 @@ func _on_ranked_pressed() -> void:
 		login_dialog.open_for_username_completion()
 		return
 	queue_dialog.start_queue()
-
-
-func _on_classic_rank_pressed() -> void:
-	AudioManager.sfx_button()
-	if not NetworkManager.is_online:
-		_hide_backdrop()
-		NetworkManager.connect_to_game_server()
-		_show_menu_toast("🔄 در حال تلاش برای اتصال مجدد به سرور بازی...")
-		return
-	_show_backdrop()
-	if not GameManager.is_logged_in:
-		login_dialog.open()
-		return
-	classic_rank_dialog.open()
 
 func _on_lobby_pressed() -> void:
 	AudioManager.sfx_button()
@@ -452,7 +429,7 @@ func _update_backdrop_state() -> void:
 		var is_open = func(dlg: Control) -> bool:
 			return is_instance_valid(dlg) and dlg.visible and dlg.modulate.a > 0.05
 			
-		var any_open = is_queue_active or is_open.call(classic_rank_dialog) or is_open.call(lobby_dialog) \
+		var any_open = is_queue_active or is_open.call(lobby_dialog) \
 			or is_open.call(ranking_dialog) or is_open.call(store_dialog) \
 			or is_open.call(rules_dialog) or is_open.call(login_dialog) \
 			or is_open.call(user_profile_dialog)
@@ -483,12 +460,7 @@ func _on_exit_pressed() -> void:
 var current_match_mode: String = "lobby"
 
 func _get_mode_title() -> String:
-	if current_match_mode == "ranked":
-		return "بازی رقابتی"
-	elif current_match_mode == "classic_rank":
-		return "رنک کلاسیک"
-	else:
-		return "لابی دوستانه"
+	return "بازی رقابتی" if current_match_mode == "ranked" else "لابی دوستانه"
 
 func _start_game_match(game_id: String, requested_game_type: String = "", match_mode: String = "") -> void:
 	if not match_mode.is_empty():
@@ -518,8 +490,6 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 	_hide_backdrop()
 	if is_instance_valid(queue_dialog):
 		queue_dialog.visible = false
-	if is_instance_valid(classic_rank_dialog):
-		classic_rank_dialog.visible = false
 	if is_instance_valid(lobby_dialog):
 		lobby_dialog.visible = false
 	if is_instance_valid(ranking_dialog):
@@ -884,26 +854,6 @@ func _on_game_finished(data: Dictionary) -> void:
 				winner = 0
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
 		board.set_board_locked(true)
-	
-	# Handle Classic Rank XP rewards
-	if data.has("xp_gained"):
-		var xp = int(data["xp_gained"])
-		GameManager.last_xp_gained = xp
-		GameManager.add_xp(xp)
-	elif current_match_mode == "classic_rank":
-		var my_idx = GameManager.my_player_index
-		var is_win = (winner == my_idx) and (winner != 0)
-		var is_drw = (winner == 0)
-		var diff = GameRegistry.get_game_difficulty(GameManager.current_game_type)
-		var xp = 18
-		if diff == "easy":
-			xp = 12 if is_win else (6 if is_drw else 3)
-		elif diff == "hard":
-			xp = 25 if is_win else (12 if is_drw else 6)
-		else:
-			xp = 18 if is_win else (9 if is_drw else 4)
-		GameManager.last_xp_gained = xp
-		GameManager.add_xp(xp)
 	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score)
 
 # Auto enters ongoing match if one is active on server when game starts or reconnects
@@ -1046,7 +996,6 @@ func _on_leave_game_pressed() -> void:
 	base_game_hud.reset_for_new_match()
 	base_game_hud.visible = false
 	user_header.visible = true
-	user_header.update_ui()
 	menu_container.visible = true
 	_hide_backdrop()
 	

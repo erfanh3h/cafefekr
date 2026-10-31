@@ -32,15 +32,6 @@ var local_player_surrendered: bool = false
 var opponent_player_surrendered: bool = false
 var ludo_rank1: int = 0
 var ludo_rank2: int = 0
-var current_match_mode: String = "ranked"
-var last_xp_gained: int = 0
-
-func add_xp(amount: int) -> void:
-	if amount > 0:
-		var cur_xp = int(user_data.get("xp", 0))
-		user_data["xp"] = cur_xp + amount
-		print("[GameManager] Added %d XP. Total XP: %d" % [amount, user_data["xp"]])
-
 
 var is_my_turn: bool:
 	get:

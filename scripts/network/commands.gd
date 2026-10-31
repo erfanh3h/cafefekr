@@ -87,5 +87,3 @@ const Selected_Game = "SelectedGame"
 const System_Banned_Games = "SystemBannedGames"
 const Game_Finished = "GameFinished"
 const Logout = "Logout"
-
-const Start_Classic_Rank = "StartClassicRank"
