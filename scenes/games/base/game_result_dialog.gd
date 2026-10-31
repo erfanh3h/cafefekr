@@ -264,44 +264,66 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		defeat_particles.emitting = true
 		ActionVFXManager.shake_camera(0.2, 0.25)
 		
-	# Setup player cards
-	var p1_data = GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data()
-	var p2_data = GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data()
-	
-	var p1_suffix = "" if GameManager.current_game_type == GameTypes.FEKRBEKR else " (قرمز)"
-	var p2_suffix = "" if GameManager.current_game_type == GameTypes.FEKRBEKR else " (آبی)"
-	lbl_p1_name.text = p1_data.get("name", p1_data.get("username", "بازیکن ۱")) + p1_suffix
-	lbl_p2_name.text = p2_data.get("name", p2_data.get("username", "بازیکن ۲")) + p2_suffix
-	lbl_p1_name.add_theme_color_override("font_color", Color(1.0, 0.48, 0.52))
-	lbl_p2_name.add_theme_color_override("font_color", Color(0.48, 0.82, 1.0))
-	
-	update_scores(p1_score, p2_score)
-	
-	# Highlight winner card with clear high-contrast tags
-	if not is_draw:
-		var winning_idx = 0
-		if GameManager.local_player_surrendered:
-			winning_idx = 2 if my_idx == 1 else 1
-		elif GameManager.opponent_player_surrendered:
-			winning_idx = my_idx
-		else:
-			winning_idx = winner_player_index
-			
-		if winning_idx == 1:
-			p1_card.add_theme_stylebox_override("panel", _style_winner)
-			p2_card.add_theme_stylebox_override("panel", _style_normal)
-			p1_winner_tag.text = "👑 برنده مسابقه"
-			p1_winner_tag.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
-			p2_winner_tag.text = "بازیکن ۲"
-			p2_winner_tag.add_theme_color_override("font_color", Color(0.9, 0.85, 0.78))
-		elif winning_idx == 2:
-			p1_card.add_theme_stylebox_override("panel", _style_normal)
-			p2_card.add_theme_stylebox_override("panel", _style_winner)
-			p1_winner_tag.text = "بازیکن ۱"
-			p1_winner_tag.add_theme_color_override("font_color", Color(0.9, 0.85, 0.78))
-			p2_winner_tag.text = "👑 برنده مسابقه"
-			p2_winner_tag.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
-			
+	# Setup player cards (supports both standard 2-player and 3-4 player Ludo podium)
+	var is_multi_ludo = (GameManager.match_players.size() > 2 or GameManager.current_game_type == GameTypes.LUDO) and (GameManager.ludo_rank1 > 0 or winner_player_index > 2)
+	var p1_data: Dictionary = {}
+	var p2_data: Dictionary = {}
+	if is_multi_ludo:
+		var r1 = GameManager.ludo_rank1 if GameManager.ludo_rank1 > 0 else max(1, winner_player_index)
+		var r2 = GameManager.ludo_rank2 if GameManager.ludo_rank2 > 0 else (2 if r1 != 2 else 1)
+		p1_data = GameManager.get_player_data_by_gamer_id(r1)
+		p2_data = GameManager.get_player_data_by_gamer_id(r2)
+		var color_names = {1: " (قرمز)", 2: " (آبی)", 3: " (سبز)", 4: " (زرد)"}
+		var color_vals = {
+			1: Color(1.0, 0.48, 0.52),
+			2: Color(0.48, 0.82, 1.0),
+			3: Color(0.42, 0.95, 0.55),
+			4: Color(1.0, 0.88, 0.32)
+		}
+		lbl_p1_name.text = str(p1_data.get("name", p1_data.get("username", "بازیکن %d" % r1))) + color_names.get(r1, "")
+		lbl_p2_name.text = str(p2_data.get("name", p2_data.get("username", "بازیکن %d" % r2))) + color_names.get(r2, "")
+		lbl_p1_name.add_theme_color_override("font_color", color_vals.get(r1, Color(1.0, 0.88, 0.3)))
+		lbl_p2_name.add_theme_color_override("font_color", color_vals.get(r2, Color(0.85, 0.85, 0.95)))
+		update_scores(p1_score, p2_score)
+		p1_card.add_theme_stylebox_override("panel", _style_winner)
+		p2_card.add_theme_stylebox_override("panel", _style_normal)
+		p1_winner_tag.text = "👑 مقام اول"
+		p1_winner_tag.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
+		p2_winner_tag.text = "🥈 مقام دوم"
+		p2_winner_tag.add_theme_color_override("font_color", Color(0.85, 0.90, 0.98))
+	else:
+		p1_data = GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data()
+		p2_data = GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data()
+		var p1_suffix = "" if GameManager.current_game_type == GameTypes.FEKRBEKR else " (قرمز)"
+		var p2_suffix = "" if GameManager.current_game_type == GameTypes.FEKRBEKR else " (آبی)"
+		lbl_p1_name.text = p1_data.get("name", p1_data.get("username", "بازیکن ۱")) + p1_suffix
+		lbl_p2_name.text = p2_data.get("name", p2_data.get("username", "بازیکن ۲")) + p2_suffix
+		lbl_p1_name.add_theme_color_override("font_color", Color(1.0, 0.48, 0.52))
+		lbl_p2_name.add_theme_color_override("font_color", Color(0.48, 0.82, 1.0))
+		update_scores(p1_score, p2_score)
+		if not is_draw:
+			var winning_idx = 0
+			if GameManager.local_player_surrendered:
+				winning_idx = 2 if my_idx == 1 else 1
+			elif GameManager.opponent_player_surrendered:
+				winning_idx = my_idx
+			else:
+				winning_idx = winner_player_index
+			if winning_idx == 1:
+				p1_card.add_theme_stylebox_override("panel", _style_winner)
+				p2_card.add_theme_stylebox_override("panel", _style_normal)
+				p1_winner_tag.text = "👑 برنده مسابقه"
+				p1_winner_tag.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
+				p2_winner_tag.text = "بازیکن ۲"
+				p2_winner_tag.add_theme_color_override("font_color", Color(0.9, 0.85, 0.78))
+			elif winning_idx == 2:
+				p1_card.add_theme_stylebox_override("panel", _style_normal)
+				p2_card.add_theme_stylebox_override("panel", _style_winner)
+				p1_winner_tag.text = "بازیکن ۱"
+				p1_winner_tag.add_theme_color_override("font_color", Color(0.9, 0.85, 0.78))
+				p2_winner_tag.text = "👑 برنده مسابقه"
+				p2_winner_tag.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
+		
 	var av1_id = p1_data.get("image", p1_data.get("user_image", 0))
 	var av2_id = p2_data.get("image", p2_data.get("user_image", 0))
 	

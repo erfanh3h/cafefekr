@@ -789,6 +789,14 @@ func _on_surrender_requested() -> void:
 	_on_player_surrendered(GameManager.my_player_index)
 
 func _on_player_surrendered(gamer_id: int) -> void:
+	if GameManager.current_game_type == GameTypes.LUDO and GameManager.match_players.size() > 2 and gamer_id != GameManager.my_player_index:
+		var p_data = GameManager.get_player_data_by_gamer_id(gamer_id)
+		var p_name = str(p_data.get("name", p_data.get("username", "بازیکن %d" % gamer_id)))
+		base_game_hud.show_toast_hint("🏳️ %s از ادامه مسابقه انصراف داد!" % p_name)
+		var b_node = cafe_table.current_board_node
+		if b_node and is_instance_valid(b_node) and b_node.has_method("on_player_surrendered"):
+			b_node.on_player_surrendered(gamer_id)
+		return
 	AudioManager.stop_sound("time")
 	var board = cafe_table.current_board_node
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
@@ -817,6 +825,10 @@ func _on_game_finished(data: Dictionary) -> void:
 			board._recalculate_scores_from_boxes()
 		if board.has_method("_sync_hud_scores"):
 			board._sync_hud_scores()
+	if data.has("rank1") and data["rank1"] != null:
+		GameManager.ludo_rank1 = int(data["rank1"])
+	if data.has("rank2") and data["rank2"] != null:
+		GameManager.ludo_rank2 = int(data["rank2"])
 	var winner = int(data.get("winner", data.get("Winner", data.get("rank1", 0))))
 	if GameRegistry.has_round_score(GameManager.current_game_type):
 		if data.has("scores") and typeof(data["scores"]) == TYPE_ARRAY and (data["scores"] as Array).size() >= 2:
@@ -887,6 +899,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameRegistry.normalize_type(str(g_data["game_type"]))
 		elif g_data.has("is_setup_ring_phase") or g_data.has("disk_count") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 85):
 			inferred_type = GameTypes.YINSH
+		elif g_data.has("players_out_pieces") or g_data.has("start_board"):
+			inferred_type = GameTypes.LUDO
 		elif g_data.has("rotation_played") or g_data.has("selection_played") or g_data.has("pawns"):
 			inferred_type = GameTypes.PENTAGO
 		elif g_data.has("player1_choices") or g_data.has("player2_choices"):

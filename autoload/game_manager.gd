@@ -30,6 +30,8 @@ var p1_score: int = 0
 var p2_score: int = 0
 var local_player_surrendered: bool = false
 var opponent_player_surrendered: bool = false
+var ludo_rank1: int = 0
+var ludo_rank2: int = 0
 
 var is_my_turn: bool:
 	get:
@@ -58,6 +60,8 @@ func reset_match_state() -> void:
 	my_player_index = 1
 	local_player_surrendered = false
 	opponent_player_surrendered = false
+	ludo_rank1 = 0
+	ludo_rank2 = 0
 	current_game_type = GameRegistry.DEFAULT_GAME_TYPE
 	max_rounds = GameRegistry.get_max_rounds(current_game_type)
 	clear_open_game_id()
@@ -95,6 +99,16 @@ func set_match_gamers(gamers_list: Array) -> void:
 			my_player_index = gid if gid > 0 else (i + 1)
 			print("[GameManager] Assigned local player index: Player %d" % my_player_index)
 			break
+
+func get_player_data_by_gamer_id(gamer_id: int) -> Dictionary:
+	for p in match_players:
+		if int(p.get("gamer_id", 0)) == gamer_id:
+			return p
+	if gamer_id > 0 and gamer_id <= match_players.size():
+		return match_players[gamer_id - 1]
+	if gamer_id == my_player_index:
+		return user_data
+	return {}
 
 func get_my_player_data() -> Dictionary:
 	for p in match_players:

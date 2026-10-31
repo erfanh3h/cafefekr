@@ -41,6 +41,9 @@ signal match_ready(game_id: String, game_type: String)
 @onready var backdrop_game_select: ColorRect = $GameSelectModal/Backdrop
 
 var selected_create_game_type: String = GameTypes.TIC_TAC_TOE
+var selected_create_player_count: int = 2
+var player_count_container: PanelContainer = null
+var _player_count_buttons: Dictionary = {}
 
 # View 3: Join by Code
 @onready var view_join_code: VBoxContainer = $Margin/VBox/ViewJoinCode
@@ -67,6 +70,7 @@ var is_ready: bool = false
 var current_lobby_queuers: Array = []
 var active_lobbies_data: Array = []
 var active_lobby_game_type: String = GameTypes.TIC_TAC_TOE
+var active_lobby_max_players: int = 2
 
 # Game types
 var available_games = [
@@ -183,6 +187,7 @@ func _ready() -> void:
 			_close_game_select_modal()
 	)
 	
+	_build_player_count_selector()
 	_update_selected_game_display()
 	_setup_scroll_container_touch_drag(scroll_games)
 	_setup_scroll_container_touch_drag(scroll_list)
@@ -257,6 +262,80 @@ func _on_room_name_changed(new_text: String) -> void:
 	else:
 		btn_create_confirm.modulate = Color(0.65, 0.65, 0.65, 0.55)
 
+func _build_player_count_selector() -> void:
+	if not is_instance_valid(view_create) or is_instance_valid(player_count_container):
+		return
+	player_count_container = PanelContainer.new()
+	player_count_container.name = "PlayerCountSelector"
+	player_count_container.custom_minimum_size = Vector2(0, 96)
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = Color(0.16, 0.10, 0.06, 0.94)
+	sb.border_color = Color(0.85, 0.70, 0.35, 0.85)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(18)
+	sb.content_margin_left = 18
+	sb.content_margin_right = 18
+	sb.content_margin_top = 12
+	sb.content_margin_bottom = 12
+	player_count_container.add_theme_stylebox_override("panel", sb)
+	
+	var hbox = HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 12)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	player_count_container.add_child(hbox)
+	
+	var btns_row = HBoxContainer.new()
+	btns_row.add_theme_constant_override("separation", 12)
+	btns_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.add_child(btns_row)
+	
+	var labels = {2: "۲ نفره", 3: "۳ نفره", 4: "۴ نفره"}
+	for cnt in [2, 3, 4]:
+		var btn = Button.new()
+		btn.custom_minimum_size = Vector2(140, 64)
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.text = labels[cnt]
+		btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		btn.add_theme_font_size_override("font_size", 28)
+		var chosen_cnt = cnt
+		btn.pressed.connect(func():
+			AudioManager.sfx_tap()
+			selected_create_player_count = chosen_cnt
+			_refresh_player_count_buttons()
+		)
+		btns_row.add_child(btn)
+		_player_count_buttons[cnt] = btn
+	
+	var title_lbl = Label.new()
+	title_lbl.text = "تعداد بازیکنان:"
+	title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	title_lbl.add_theme_font_size_override("font_size", 28)
+	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.55))
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hbox.add_child(title_lbl)
+	
+	view_create.add_child(player_count_container)
+	var btn_idx = btn_select_game.get_index()
+	view_create.move_child(player_count_container, btn_idx + 1)
+	_refresh_player_count_buttons()
+
+func _refresh_player_count_buttons() -> void:
+	for cnt in _player_count_buttons.keys():
+		var btn: Button = _player_count_buttons[cnt]
+		if not is_instance_valid(btn):
+			continue
+		var is_sel = (cnt == selected_create_player_count)
+		var st = StyleBoxFlat.new()
+		st.bg_color = Color(0.18, 0.48, 0.22, 0.98) if is_sel else Color(0.22, 0.15, 0.10, 0.90)
+		st.border_color = Color(1.0, 0.88, 0.32, 1.0) if is_sel else Color(0.62, 0.48, 0.30, 0.75)
+		st.set_border_width_all(3 if is_sel else 2)
+		st.set_corner_radius_all(14)
+		btn.add_theme_stylebox_override("normal", st)
+		btn.add_theme_stylebox_override("hover", st)
+		btn.add_theme_stylebox_override("pressed", st)
+		btn.add_theme_stylebox_override("focus", st)
+		btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.85) if is_sel else Color(0.88, 0.80, 0.68))
+
 func _update_selected_game_display() -> void:
 	if not is_instance_valid(lbl_selected_game) or not is_instance_valid(selected_game_icon):
 		return
@@ -266,6 +345,12 @@ func _update_selected_game_display() -> void:
 		selected_game_icon.texture = load(icon_path)
 	else:
 		selected_game_icon.texture = load("res://assets/icons/General/lobby.png")
+	if is_instance_valid(player_count_container):
+		var is_multi = (selected_create_game_type == GameTypes.LUDO)
+		player_count_container.visible = is_multi
+		if not is_multi:
+			selected_create_player_count = 2
+		_refresh_player_count_buttons()
 
 func _open_game_select_modal() -> void:
 	game_select_modal.visible = true
@@ -399,7 +484,7 @@ func _create_game_card(g_type: String) -> Control:
 	p_style.content_margin_bottom = 4
 	mode_pill.add_theme_stylebox_override("panel", p_style)
 	var mode_lbl = Label.new()
-	mode_lbl.text = "۲ نفره"
+	mode_lbl.text = "۲ تا ۴ نفره" if g_type == GameTypes.LUDO else "۲ نفره"
 	mode_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 	mode_lbl.add_theme_font_size_override("font_size", 18)
 	mode_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
@@ -595,13 +680,14 @@ func _on_create_pressed() -> void:
 	var g_type = selected_create_game_type
 	
 	lbl_status.text = "در حال ساخت اتاق..."
+	var l_count = selected_create_player_count if g_type == GameTypes.LUDO else 2
 	var payload = {
 		"id": Commands.Lobby_Create,
 		"data": {
 			"game_type": g_type,
 			"lobby_name": r_name,
 			"lobby_password": "",
-			"lobby_count": 2
+			"lobby_count": l_count
 		}
 	}
 	NetworkManager.socket.emit_event("/lobby", "user_command", payload)
@@ -621,7 +707,11 @@ func _show_inside_view(lobby_data: Dictionary) -> void:
 	lbl_room_id.text = "کد اتاق: " + active_lobby_id
 	
 	active_lobby_game_type = lobby_data.get("game_type", GameTypes.TIC_TAC_TOE)
-	lbl_game_name.text = GameTypes.get_display_name_fa(active_lobby_game_type)
+	active_lobby_max_players = max(2, int(lobby_data.get("lobby_count", 2)))
+	if active_lobby_max_players > 2:
+		lbl_game_name.text = "%s (%d نفره)" % [GameTypes.get_display_name_fa(active_lobby_game_type), active_lobby_max_players]
+	else:
+		lbl_game_name.text = GameTypes.get_display_name_fa(active_lobby_game_type)
 	
 	if is_instance_valid(inside_game_icon):
 		var icon_path = "res://assets/images/games/%s.jpg" % active_lobby_game_type.to_lower()
@@ -769,10 +859,11 @@ func _update_players_list(queuers: Array) -> void:
 				btn_ready.disabled = false
 				KenneyUI.style_button(btn_ready, KenneyUI.COLOR_GREEN)
 	
-	# Empty slot card if waiting for Player 2 (Pulsing fade in / fade out, NO plus icon)
-	if queuers.size() < 2:
+	# Empty slot cards for remaining player seats (supports 2, 3, or 4 player rooms)
+	var seat_names = ["اول", "دوم", "سوم", "چهارم"]
+	for slot_idx in range(queuers.size(), active_lobby_max_players):
 		var empty_card = PanelContainer.new()
-		empty_card.custom_minimum_size = Vector2(0, 110)
+		empty_card.custom_minimum_size = Vector2(0, 94 if active_lobby_max_players > 2 else 110)
 		var emp_style = StyleBoxFlat.new()
 		emp_style.bg_color = Color(0.18, 0.12, 0.08, 0.55)
 		emp_style.set_corner_radius_all(18)
@@ -780,11 +871,10 @@ func _update_players_list(queuers: Array) -> void:
 		emp_style.border_color = Color(0.82, 0.68, 0.42, 0.65)
 		emp_style.content_margin_left = 22
 		emp_style.content_margin_right = 22
-		emp_style.content_margin_top = 12
-		emp_style.content_margin_bottom = 12
+		emp_style.content_margin_top = 10
+		emp_style.content_margin_bottom = 10
 		empty_card.add_theme_stylebox_override("panel", emp_style)
 		
-		# Looping fade-in fade-out pulsing animation
 		var pulse_tw = empty_card.create_tween().set_loops()
 		pulse_tw.tween_property(empty_card, "modulate:a", 0.35, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		pulse_tw.tween_property(empty_card, "modulate:a", 0.95, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -793,7 +883,6 @@ func _update_players_list(queuers: Array) -> void:
 		ehbox.add_theme_constant_override("separation", 18)
 		ehbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		
-		# Left badge: "⏳ در انتظار..."
 		var emp_badge = PanelContainer.new()
 		var eb_style = StyleBoxFlat.new()
 		eb_style.bg_color = Color(0.24, 0.16, 0.08, 0.8)
@@ -813,16 +902,16 @@ func _update_players_list(queuers: Array) -> void:
 		emp_badge.add_child(emp_wait_lbl)
 		ehbox.add_child(emp_badge)
 		
-		# Middle / Right text (fills the row, NO plus icon)
 		var evbox = VBoxContainer.new()
 		evbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		evbox.add_theme_constant_override("separation", 2)
 		evbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		
+		var seat_word = seat_names[clampi(slot_idx, 0, seat_names.size() - 1)]
 		var elbl1 = Label.new()
-		elbl1.text = "در انتظار پیوستن بازیکن دوم..."
+		elbl1.text = "در انتظار پیوستن بازیکن %s..." % seat_word
 		elbl1.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		elbl1.add_theme_font_size_override("font_size", 28)
+		elbl1.add_theme_font_size_override("font_size", 26 if active_lobby_max_players > 2 else 28)
 		elbl1.add_theme_color_override("font_color", Color(1.0, 0.92, 0.6, 0.95))
 		elbl1.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		evbox.add_child(elbl1)
@@ -830,7 +919,7 @@ func _update_players_list(queuers: Array) -> void:
 		var elbl2 = Label.new()
 		elbl2.text = "کد ۶ رقمی اتاق را برای دوستان خود ارسال کنید"
 		elbl2.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		elbl2.add_theme_font_size_override("font_size", 20)
+		elbl2.add_theme_font_size_override("font_size", 19 if active_lobby_max_players > 2 else 20)
 		elbl2.add_theme_color_override("font_color", Color(0.88, 0.82, 0.7, 0.8))
 		elbl2.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		evbox.add_child(elbl2)
@@ -840,15 +929,18 @@ func _update_players_list(queuers: Array) -> void:
 		players_list.add_child(empty_card)
 	
 	if is_host:
-		if queuers.size() < 2:
+		if queuers.size() < active_lobby_max_players:
 			btn_start.disabled = true
-			btn_start.text = "در انتظار بازیکن دوم..."
+			if active_lobby_max_players > 2:
+				btn_start.text = "در انتظار تکمیل ظرفیت (%d/%d)..." % [queuers.size(), active_lobby_max_players]
+			else:
+				btn_start.text = "در انتظار بازیکن دوم..."
 			btn_start.modulate = Color.WHITE
 			KenneyUI.style_button(btn_start, KenneyUI.COLOR_GREY)
 			btn_start.add_theme_color_override("font_disabled_color", Color(0.88, 0.82, 0.72, 0.8))
 		elif not all_guests_ready:
 			btn_start.disabled = true
-			btn_start.text = "در انتظار آمادگی حریف..."
+			btn_start.text = "در انتظار آمادگی بازیکنان..." if active_lobby_max_players > 2 else "در انتظار آمادگی حریف..."
 			btn_start.modulate = Color.WHITE
 			KenneyUI.style_button(btn_start, KenneyUI.COLOR_YELLOW)
 			btn_start.add_theme_color_override("font_disabled_color", Color(0.2, 0.15, 0.05, 0.95))

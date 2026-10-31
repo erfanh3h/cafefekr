@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3 uid="uid://ludotopheader01"]
+
+[ext_resource type="PackedScene" path="res://scenes/games/base/base_top_header.tscn" id="1_base"]
+[ext_resource type="Script" path="res://scenes/games/ludo/ludo_top_header.gd" id="2_script"]
+
+[node name="LudoTopHeader" instance=ExtResource("1_base")]
+script = ExtResource("2_script")

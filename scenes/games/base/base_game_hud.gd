@@ -227,6 +227,8 @@ func _ensure_top_header_for_current_game() -> void:
 		top_header_slot.add_child(current_top_header)
 		current_top_header.p1_profile_clicked.connect(func(): _show_player_profile(1))
 		current_top_header.p2_profile_clicked.connect(func(): _show_player_profile(2))
+		if current_top_header.has_signal("player_profile_clicked"):
+			current_top_header.player_profile_clicked.connect(func(idx: int): _show_player_profile(idx))
 
 func _ready() -> void:
 	_ensure_top_header_for_current_game()
@@ -522,25 +524,31 @@ func _setup_connections() -> void:
 func _show_player_profile(player_index: int) -> void:
 	AudioManager.sfx_tap()
 	var my_idx = GameManager.my_player_index
-	var p_data = {}
+	var p_data = GameManager.get_player_data_by_gamer_id(player_index)
 	var side_tag = "(شما)" if player_index == my_idx else "(حریف)"
 	var role_str = ""
 	if player_index == 1:
-		p_data = GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data()
+		if p_data.is_empty():
+			p_data = GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data()
 		if GameManager.current_game_type == GameTypes.FEKRBEKR:
 			role_str = "🔐 بازیکن ۱ — طراح و کاشف رمز %s" % side_tag
 		elif GameManager.current_game_type == GameTypes.CHESS:
 			role_str = "🔴 بازیکن ۱ — ارتش قرمز %s" % side_tag
 		else:
 			role_str = "🔴 بازیکن ۱ — مهره قرمز %s" % side_tag
-	else:
-		p_data = GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data()
+	elif player_index == 2:
+		if p_data.is_empty():
+			p_data = GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data()
 		if GameManager.current_game_type == GameTypes.FEKRBEKR:
 			role_str = "🔐 بازیکن ۲ — طراح و کاشف رمز %s" % side_tag
 		elif GameManager.current_game_type == GameTypes.CHESS:
 			role_str = "🔵 بازیکن ۲ — ارتش آبی %s" % side_tag
 		else:
 			role_str = "🔵 بازیکن ۲ — مهره آبی %s" % side_tag
+	elif player_index == 3:
+		role_str = "🟢 بازیکن ۳ — مهره سبز %s" % side_tag
+	elif player_index == 4:
+		role_str = "🟡 بازیکن ۴ — مهره زرد %s" % side_tag
 	user_profile_dialog.open_for_user(p_data, role_str)
 
 func _open_surrender_dialog() -> void:
@@ -647,6 +655,96 @@ func reset_for_new_match() -> void:
 		_turn_glow_tween.kill()
 		_turn_glow_tween = null
 
+var _intro_extra_cols: Dictionary = {}
+
+func _ensure_intro_extra_col(idx: int) -> Dictionary:
+	if _intro_extra_cols.has(idx) and is_instance_valid(_intro_extra_cols[idx].get("box")):
+		return _intro_extra_cols[idx]
+	var vs_box = get_node_or_null("StartGameOverlay/Card/VBox/VSBox") as HBoxContainer
+	if not vs_box:
+		return {}
+	var col = VBoxContainer.new()
+	col.name = "IntroP%d" % idx
+	col.add_theme_constant_override("separation", 8)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	
+	var av = TextureRect.new()
+	av.name = "Avatar"
+	av.custom_minimum_size = Vector2(104, 104)
+	av.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	av.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	av.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	col.add_child(av)
+	
+	var nm = Label.new()
+	nm.name = "Name"
+	nm.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	nm.add_theme_font_size_override("font_size", 28)
+	nm.add_theme_color_override("font_color", Color(1.0, 0.90, 0.80, 1.0))
+	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(nm)
+	
+	var rl = Label.new()
+	rl.name = "Role"
+	rl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	rl.add_theme_font_size_override("font_size", 24)
+	rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(rl)
+	
+	vs_box.add_child(col)
+	var info = {"box": col, "avatar": av, "name": nm, "role": rl}
+	_intro_extra_cols[idx] = info
+	return info
+
+func _sync_multiplayer_intro_columns() -> void:
+	var vs_box = get_node_or_null("StartGameOverlay/Card/VBox/VSBox") as HBoxContainer
+	var vs_lbl = get_node_or_null("StartGameOverlay/Card/VBox/VSBox/VSLabel") as Label
+	if not vs_box:
+		return
+	var total_p = GameManager.match_players.size()
+	if total_p <= 2:
+		vs_box.add_theme_constant_override("separation", 40)
+		if is_instance_valid(vs_lbl):
+			vs_lbl.visible = true
+		if is_instance_valid(intro_p1_avatar):
+			intro_p1_avatar.custom_minimum_size = Vector2(120, 120)
+		if is_instance_valid(intro_p2_avatar):
+			intro_p2_avatar.custom_minimum_size = Vector2(120, 120)
+		for idx in [3, 4]:
+			if _intro_extra_cols.has(idx) and is_instance_valid(_intro_extra_cols[idx].get("box")):
+				_intro_extra_cols[idx]["box"].visible = false
+		return
+	
+	vs_box.add_theme_constant_override("separation", 24 if total_p == 3 else 18)
+	if is_instance_valid(vs_lbl):
+		vs_lbl.visible = false
+	if is_instance_valid(intro_p1_avatar):
+		intro_p1_avatar.custom_minimum_size = Vector2(104, 104)
+	if is_instance_valid(intro_p2_avatar):
+		intro_p2_avatar.custom_minimum_size = Vector2(104, 104)
+	
+	for idx in [3, 4]:
+		var col_info = _ensure_intro_extra_col(idx)
+		if col_info.is_empty():
+			continue
+		if idx <= total_p:
+			col_info["box"].visible = true
+			var p_data = GameManager.get_player_data_by_gamer_id(idx)
+			var p_name = str(p_data.get("name", p_data.get("username", "بازیکن %d" % idx)))
+			col_info["name"].text = p_name
+			var av_id = int(p_data.get("image", p_data.get("user_image", 0)))
+			var tex = BaseTopHeaderClass._get_cached_avatar(av_id)
+			if tex:
+				col_info["avatar"].texture = tex
+			if idx == 3:
+				col_info["role"].text = "🟢 مهره سبز"
+				col_info["role"].add_theme_color_override("font_color", Color(0.32, 0.92, 0.48))
+			else:
+				col_info["role"].text = "🟡 مهره زرد"
+				col_info["role"].add_theme_color_override("font_color", Color(1.0, 0.86, 0.25))
+		else:
+			col_info["box"].visible = false
+
 func setup_match(game_title: String = "تیک تاک تو", mode_title: String = "لابی دوستانه") -> void:
 	visible = true
 	set_fekrbekr_hud_buttons(false)
@@ -663,8 +761,9 @@ func setup_match(game_title: String = "تیک تاک تو", mode_title: String =
 		intro_countdown_lbl.add_theme_font_size_override("font_size", 54)
 	
 	var my_idx = GameManager.my_player_index
-	var p1_data = GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data()
-	var p2_data = GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data()
+	var is_multi = GameManager.match_players.size() > 2
+	var p1_data = GameManager.get_player_data_by_gamer_id(1) if is_multi else (GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data())
+	var p2_data = GameManager.get_player_data_by_gamer_id(2) if is_multi else (GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data())
 	
 	var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
 	turn_duration = def_time
@@ -709,6 +808,7 @@ func setup_match(game_title: String = "تیک تاک تو", mode_title: String =
 	var tex2 = BaseTopHeaderClass._get_cached_avatar(av2_id)
 	if tex2:
 		intro_p2_avatar.texture = tex2
+	_sync_multiplayer_intro_columns()
 
 	# Initial clean state before game actually starts
 	is_game_finished = false

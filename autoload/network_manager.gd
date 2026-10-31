@@ -10,6 +10,7 @@ signal turn_changed(turn: int)
 signal turn_data_received(payload: Dictionary)
 signal roll_result_received(payload: Dictionary)
 signal out_of_move_received(payload: Dictionary)
+signal win_happened_received(payload: Dictionary)
 signal piece_selected(user_id: int, target_peace: int, extra: Dictionary)
 signal piece_swapped(data: Dictionary)
 signal piece_removed(data: Dictionary)
@@ -306,6 +307,9 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 
 		Commands.Out_Of_Move:
 			out_of_move_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
+
+		Commands.Win_Happened:
+			win_happened_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {"Winner": payload})
 
 		Commands.Peace_Selected:
 			if typeof(payload) == TYPE_DICTIONARY:

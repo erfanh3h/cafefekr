@@ -26,6 +26,8 @@ const MSWEEPER_SCENE: String = "res://scenes/games/msweeper/msweeper_3d.tscn"
 const BOXFOUR_SCENE: String = "res://scenes/games/boxfour/box_four_3d.tscn"
 const YINSH_SCENE: String = "res://scenes/games/yinsh/yinsh_3d.tscn"
 const PENTAGO_SCENE: String = "res://scenes/games/pentago/pentago_3d.tscn"
+const LUDO_SCENE: String = "res://scenes/games/ludo/ludo_3d.tscn"
+const LUDO_TOP_HEADER_SCENE: String = "res://scenes/games/ludo/ludo_top_header.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -331,8 +333,8 @@ static var _registry: Dictionary = {
 		"id": GameTypes.LUDO,
 		"name_fa": "منچ",
 		"narrative": "هیجان پرتاب تاس و تعقیب و گریز مهره‌ها در بازی خاطره‌انگیز منچ.",
-		"board_scene": TEMP_SCENE,
-		"top_header_scene": BASE_TOP_HEADER_SCENE,
+		"board_scene": LUDO_SCENE,
+		"top_header_scene": LUDO_TOP_HEADER_SCENE,
 		"max_rounds": 1,
 		"has_round_score": false,
 		"turn_time": 25.0,
