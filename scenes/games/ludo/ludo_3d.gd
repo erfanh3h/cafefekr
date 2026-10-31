@@ -112,6 +112,7 @@ var players_out_pieces: Array = [4, 4, 4, 4]
 var active_player_indexes: Array = [1, 2]
 var current_dice: int = 0
 var has_rolled_this_turn: bool = false
+var is_out_of_move: bool = false
 var available_moves: Array = []      # Array of int (-2, -1, 0..51)
 var rank1_player: int = 0
 var rank2_player: int = 0
@@ -222,6 +223,7 @@ func _init_empty_state(p_count: int) -> void:
 		active_player_indexes.append(i)
 	current_dice = 0
 	has_rolled_this_turn = false
+	is_out_of_move = false
 	available_moves.clear()
 
 func _init_materials() -> void:
@@ -1055,7 +1057,7 @@ func _update_interactive_highlights() -> void:
 
 	var my_turn: bool = GameManager.is_my_turn and GameManager.is_game_active
 	var my_id: int = GameManager.my_player_index
-	var can_roll_now: bool = my_turn and not has_rolled_this_turn and not _roll_request_pending and not _is_animating_move
+	var can_roll_now: bool = my_turn and not has_rolled_this_turn and not _roll_request_pending and not _is_animating_move and not is_out_of_move
 
 	if is_instance_valid(_dice_halo_ring):
 		_dice_halo_ring.visible = can_roll_now
@@ -1068,6 +1070,13 @@ func _update_interactive_highlights() -> void:
 			btn_cap.material_override = _mat_btn_roll_idle
 			btn_lbl.text = "آماده شروع مسابقه..."
 			btn_lbl.modulate = Color(0.90, 0.86, 0.78)
+		elif my_turn and (is_out_of_move or (has_rolled_this_turn and available_moves.is_empty())):
+			btn_cap.material_override = _mat_btn_roll_idle
+			if current_dice > 0:
+				btn_lbl.text = "تاس %s — بدون حرکت ممکن (پایان نوبت...)" % _fa_int(current_dice)
+			else:
+				btn_lbl.text = "بدون حرکت ممکن (پایان نوبت...)"
+			btn_lbl.modulate = Color(0.85, 0.75, 0.75)
 		elif can_roll_now:
 			btn_cap.material_override = _mat_btn_roll_active
 			btn_lbl.text = "پرتاب تاس (کلیک کنید)"
@@ -1240,10 +1249,14 @@ func _hit_test_board_point(local_pt: Vector3) -> Dictionary:
 
 	# 1. Front 3D Roll Dice Button (Z = ROLL_BTN_Z)
 	if absf(local_pt.x) <= 0.44 and absf(local_pt.z - ROLL_BTN_Z) <= 0.095:
+		if is_out_of_move or (has_rolled_this_turn and available_moves.is_empty()):
+			return {"type": "no_moves"}
 		return {"type": "roll"}
 
 	# 2. Center 3D Dice Sanctuary (radius <= 0.125m around center)
 	if pt2.length() <= 0.125:
+		if is_out_of_move or (has_rolled_this_turn and available_moves.is_empty()):
+			return {"type": "no_moves"}
 		return {"type": "roll"}
 
 	var my_id = GameManager.my_player_index
@@ -1326,6 +1339,13 @@ func _handle_screen_tap(screen_pos: Vector2) -> bool:
 	if h_type == "roll":
 		_request_roll_dice()
 		return true
+	elif h_type == "no_moves":
+		if current_dice > 0:
+			show_hint("🎲 با تاس %s هیچ حرکتی ممکن نیست؛ نوبت در حال انتقال است..." % _fa_int(current_dice))
+		else:
+			show_hint("⏳ در انتظار نوبت بعدی...")
+		AudioManager.play_sound("wrong_Touch")
+		return true
 	elif h_type == "move":
 		_on_move_index_clicked(int(hit_info["move_idx"]))
 		return true
@@ -1356,6 +1376,13 @@ func _request_roll_dice() -> void:
 		return
 	if not GameManager.is_my_turn:
 		show_hint("⏳ اکنون نوبت شما نیست!")
+		AudioManager.play_sound("wrong_Touch")
+		return
+	if is_out_of_move or (has_rolled_this_turn and available_moves.is_empty()):
+		if current_dice > 0:
+			show_hint("🎲 با تاس %s هیچ حرکتی ممکن نیست؛ نوبت در حال انتقال است..." % _fa_int(current_dice))
+		else:
+			show_hint("⏳ در انتظار نوبت بعدی...")
 		AudioManager.play_sound("wrong_Touch")
 		return
 	if has_rolled_this_turn or _roll_request_pending:
@@ -1459,6 +1486,7 @@ func on_turn_changed(turn: int, is_me: bool) -> void:
 	current_turn = turn
 	is_my_turn = is_me
 	has_rolled_this_turn = false
+	is_out_of_move = false
 	_roll_request_pending = false
 	current_dice = 0
 	available_moves.clear()
@@ -1476,14 +1504,19 @@ func on_roll_result(payload: Dictionary) -> void:
 	else:
 		available_moves = _compute_local_available_moves(current_turn, current_dice)
 
+	is_out_of_move = available_moves.is_empty()
+
 	_animate_3d_dice_roll(current_dice, func():
+		if is_out_of_move and current_turn == GameManager.my_player_index:
+			show_hint("🎲 تاس %s آمد — حرکتی برای انجام وجود ندارد!" % _fa_int(current_dice))
 		_update_interactive_highlights()
 	)
 
 func on_out_of_move(payload: Dictionary) -> void:
 	_roll_request_pending = false
 	current_dice = int(payload.get("dice", current_dice))
-	has_rolled_this_turn = false
+	has_rolled_this_turn = true
+	is_out_of_move = true
 	available_moves.clear()
 	_animate_3d_dice_roll(current_dice, func():
 		if current_turn == GameManager.my_player_index:
@@ -1747,6 +1780,8 @@ func on_reconnect_data(payload: Dictionary) -> void:
 		available_moves = _compute_local_available_moves(current_turn, current_dice)
 	else:
 		available_moves.clear()
+
+	is_out_of_move = has_rolled_this_turn and available_moves.is_empty()
 
 	if current_dice > 0 and is_instance_valid(_dice_pivot):
 		_dice_pivot.rotation = _get_die_target_rotation(current_dice)
