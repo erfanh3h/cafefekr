@@ -25,6 +25,7 @@ const SUDOKU_SCENE: String = "res://scenes/games/sudoku/sudoku_3d.tscn"
 const MSWEEPER_SCENE: String = "res://scenes/games/msweeper/msweeper_3d.tscn"
 const BOXFOUR_SCENE: String = "res://scenes/games/boxfour/box_four_3d.tscn"
 const YINSH_SCENE: String = "res://scenes/games/yinsh/yinsh_3d.tscn"
+const PENTAGO_SCENE: String = "res://scenes/games/pentago/pentago_3d.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -218,7 +219,7 @@ static var _registry: Dictionary = {
 		"id": GameTypes.PENTAGO,
 		"name_fa": "پنتاگو",
 		"narrative": "در دنیای پنتاگو، هر مهره‌ داستانی را روایت می‌کند و هر چرخش، تقدیری نو رقم می‌زند.",
-		"board_scene": TEMP_SCENE,
+		"board_scene": PENTAGO_SCENE,
 		"top_header_scene": BASE_TOP_HEADER_SCENE,
 		"max_rounds": 1,
 		"has_round_score": false,

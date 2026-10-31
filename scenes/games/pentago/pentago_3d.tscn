@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://pentago3d0001"]
+
+[ext_resource type="Script" path="res://scenes/games/pentago/pentago_3d.gd" id="1_pentago"]
+
+[node name="Pentago3D" type="Node3D"]
+script = ExtResource("1_pentago")

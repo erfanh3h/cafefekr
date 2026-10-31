@@ -887,6 +887,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameRegistry.normalize_type(str(g_data["game_type"]))
 		elif g_data.has("is_setup_ring_phase") or g_data.has("disk_count") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 85):
 			inferred_type = GameTypes.YINSH
+		elif g_data.has("rotation_played") or g_data.has("selection_played") or g_data.has("pawns"):
+			inferred_type = GameTypes.PENTAGO
 		elif g_data.has("player1_choices") or g_data.has("player2_choices"):
 			inferred_type = GameTypes.FEKRBEKR
 		elif g_data.has("is_play_phase") and g_data.has("player1_board") and g_data.has("player2_board"):
