@@ -55,6 +55,7 @@ var hovered_cell_id: int = -1
 var hovered_rotation_id: int = -1
 var _pulse_time: float = 0.0
 var _win_vfx_shown: bool = false
+var _win_vfx_started_msec: int = 0
 
 # --- 3D Scene Hierarchy ---
 var board_root: Node3D = null
@@ -75,6 +76,9 @@ var board_marble_nodes: Array[Node3D] = [] # 36 active marble 3D nodes (children
 # 8 Sculpted 3D Rotation Buttons (index 0..7 -> rotation_id 1..8)
 var rotation_btn_nodes: Array[Node3D] = []
 var rotation_btn_halos: Array[MeshInstance3D] = []
+var rotation_btn_plate_groups: Array = [] # Array of Array[MeshInstance3D] for pill plates
+var rotation_btn_dials: Array[Node3D] = [] # 8 rotating 3D curved-arrow dial pivots
+var rotation_btn_glow_rings: Array[MeshInstance3D] = [] # 8 oval glow rings around buttons
 var rotation_btn_areas: Array[Area3D] = []
 
 # Side Reserve Marble Trays
@@ -190,14 +194,23 @@ func _process(delta: float) -> void:
 		if r_idx < rotation_btn_nodes.size() and is_instance_valid(rotation_btn_nodes[r_idx]):
 			var btn_node = rotation_btn_nodes[r_idx]
 			var rot_id: int = r_idx + 1
+			var is_ccw: bool = (rot_id % 2 == 1)
+			var dir_sign: float = 1.0 if is_ccw else -1.0
 			if rot_phase_active:
 				var is_hov: bool = (hovered_rotation_id == rot_id)
-				var s_val: float = 1.16 if is_hov else pulse_rot
+				var s_val: float = 1.14 if is_hov else pulse_rot
 				btn_node.scale = Vector3(s_val, 1.0, s_val)
-				btn_node.position.y = BOARD_SURFACE_Y + (0.018 if is_hov else 0.012 + 0.003 * sin(_pulse_time * 5.2))
+				btn_node.position.y = BOARD_SURFACE_Y + (0.018 if is_hov else 0.011 + 0.003 * sin(_pulse_time * 5.2))
+				if r_idx < rotation_btn_dials.size() and is_instance_valid(rotation_btn_dials[r_idx]):
+					if is_hov:
+						rotation_btn_dials[r_idx].rotation.y += delta * 2.8 * dir_sign
+					else:
+						rotation_btn_dials[r_idx].rotation.y = dir_sign * 0.36 * sin(_pulse_time * 4.8)
 			else:
 				btn_node.scale = Vector3.ONE
 				btn_node.position.y = BOARD_SURFACE_Y + 0.004
+				if r_idx < rotation_btn_dials.size() and is_instance_valid(rotation_btn_dials[r_idx]):
+					rotation_btn_dials[r_idx].rotation.y = 0.0
 
 	if is_instance_valid(quadrant_spin_preview) and quadrant_spin_preview.visible:
 		var dir_sign: float = 1.0 if (hovered_rotation_id % 2 == 1) else -1.0
@@ -473,67 +486,174 @@ func _create_marble_3d_model(gamer_id: int, is_ghost: bool = false) -> Node3D:
 
 	return root
 
-# Model 3: Sculpted 3D Mechanical Rotation Paddle Button (1..8)
+# Model 3: Luxury Pill-Medallion & 3D Sculpted Curved-Arrow Rotation Button (1..8)
 func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_fa: String) -> Node3D:
 	var root = Node3D.new()
 	root.name = "RotationPaddle_%d" % rot_id
 	root.position = pos
 
-	# 1. Outer Gold Bezel Frame
-	var bezel = MeshInstance3D.new()
-	bezel.name = "Bezel"
+	# 1. Stepped Pill-Shaped 24K Gold Bezel (Center Box + Rounded Cylinder End-Caps)
+	var bezel_center = MeshInstance3D.new()
 	var bz_box = BoxMesh.new()
-	bz_box.size = Vector3(0.158, 0.016, 0.068)
-	bezel.mesh = bz_box
-	bezel.material_override = mat_gold_rail
-	root.add_child(bezel)
+	bz_box.size = Vector3(0.096, 0.016, 0.072)
+	bezel_center.mesh = bz_box
+	bezel_center.material_override = mat_gold_rail
+	root.add_child(bezel_center)
 
-	# 2. Inner Interactive Core Plate (changes material when active / hovered)
-	var plate = MeshInstance3D.new()
-	plate.name = "CorePlate"
+	for end_sign in [-1.0, 1.0]:
+		var bz_cap = MeshInstance3D.new()
+		var bzc_cyl = CylinderMesh.new()
+		bzc_cyl.top_radius = 0.036
+		bzc_cyl.bottom_radius = 0.037
+		bzc_cyl.height = 0.016
+		bzc_cyl.radial_segments = 24
+		bz_cap.mesh = bzc_cyl
+		bz_cap.position = Vector3(end_sign * 0.048, 0.0, 0.0)
+		bz_cap.material_override = mat_gold_rail
+		root.add_child(bz_cap)
+
+	# 2. Inner Interactive Core Pill Plate (Center Box + Rounded End-Caps)
+	var plate_meshes: Array[MeshInstance3D] = []
+	var plate_center = MeshInstance3D.new()
+	plate_center.name = "CorePlate"
 	var pl_box = BoxMesh.new()
-	pl_box.size = Vector3(0.146, 0.019, 0.056)
-	plate.mesh = pl_box
-	plate.position = Vector3(0.0, 0.002, 0.0)
-	plate.material_override = mat_rot_btn_idle
-	root.add_child(plate)
-	rotation_btn_halos.append(plate)
+	pl_box.size = Vector3(0.090, 0.020, 0.062)
+	plate_center.mesh = pl_box
+	plate_center.position = Vector3(0.0, 0.0025, 0.0)
+	plate_center.material_override = mat_rot_btn_idle
+	root.add_child(plate_center)
+	plate_meshes.append(plate_center)
+	rotation_btn_halos.append(plate_center)
 
-	# 3. Sculpted 3D Curved Arrow Emblem on Left/Right of Paddle
-	var arrow_ring = MeshInstance3D.new()
-	arrow_ring.name = "ArrowRing"
-	var a_torus = TorusMesh.new()
-	a_torus.inner_radius = 0.011
-	a_torus.outer_radius = 0.016
-	a_torus.rings = 20
-	a_torus.ring_segments = 10
-	arrow_ring.mesh = a_torus
-	arrow_ring.position = Vector3(-0.044 if is_ccw else 0.044, 0.013, 0.0)
-	arrow_ring.scale = Vector3(1.0, 0.45, 1.0)
-	arrow_ring.material_override = mat_rot_arrow_gold
-	root.add_child(arrow_ring)
+	for end_sign in [-1.0, 1.0]:
+		var pl_cap = MeshInstance3D.new()
+		var plc_cyl = CylinderMesh.new()
+		plc_cyl.top_radius = 0.031
+		plc_cyl.bottom_radius = 0.031
+		plc_cyl.height = 0.020
+		plc_cyl.radial_segments = 24
+		pl_cap.mesh = plc_cyl
+		pl_cap.position = Vector3(end_sign * 0.045, 0.0025, 0.0)
+		pl_cap.material_override = mat_rot_btn_idle
+		root.add_child(pl_cap)
+		plate_meshes.append(pl_cap)
 
-	# 4. High-Contrast 3D Direction Label ("↺ پادساعتگرد" or "↻ ساعتگرد")
+	rotation_btn_plate_groups.append(plate_meshes)
+
+	# 3. Glowing Active Halo Ring around the Pill Button (visible during Step 2)
+	var glow_ring = MeshInstance3D.new()
+	var gr_torus = TorusMesh.new()
+	gr_torus.inner_radius = 0.040
+	gr_torus.outer_radius = 0.046
+	gr_torus.rings = 28
+	gr_torus.ring_segments = 12
+	glow_ring.mesh = gr_torus
+	glow_ring.position = Vector3(0.0, 0.005, 0.0)
+	glow_ring.scale = Vector3(2.05, 0.40, 0.92)
+	glow_ring.material_override = mat_halo_legal
+	glow_ring.visible = false
+	root.add_child(glow_ring)
+	rotation_btn_glow_rings.append(glow_ring)
+
+	# 4. Raised Circular Turntable Dial Boss with True 3D Sculpted Curved Arrow
+	var dial_x: float = -0.044 if is_ccw else 0.044
+	var dial_well = MeshInstance3D.new()
+	var dw_cyl = CylinderMesh.new()
+	dw_cyl.top_radius = 0.024
+	dw_cyl.bottom_radius = 0.025
+	dw_cyl.height = 0.006
+	dw_cyl.radial_segments = 24
+	dial_well.mesh = dw_cyl
+	dial_well.position = Vector3(dial_x, 0.013, 0.0)
+	dial_well.material_override = mat_obsidian_bed
+	root.add_child(dial_well)
+
+	var dial_collar = MeshInstance3D.new()
+	var dc_torus = TorusMesh.new()
+	dc_torus.inner_radius = 0.022
+	dc_torus.outer_radius = 0.0255
+	dc_torus.rings = 24
+	dc_torus.ring_segments = 10
+	dial_collar.mesh = dc_torus
+	dial_collar.position = Vector3(dial_x, 0.015, 0.0)
+	dial_collar.scale = Vector3(1.0, 0.45, 1.0)
+	dial_collar.material_override = mat_gold_rail
+	root.add_child(dial_collar)
+
+	var dial_pivot = Node3D.new()
+	dial_pivot.name = "ArrowDialPivot"
+	dial_pivot.position = Vector3(dial_x, 0.017, 0.0)
+	root.add_child(dial_pivot)
+	rotation_btn_dials.append(dial_pivot)
+
+	# Build 230-degree open circular arc + 3D conical arrowhead inside dial_pivot
+	var arc_radius: float = 0.0145
+	var num_beads: int = 11
+	var start_deg: float = 20.0 if is_ccw else 160.0
+	var sweep_deg: float = -225.0 if is_ccw else 225.0
+	for b_i in range(num_beads):
+		var frac: float = float(b_i) / float(num_beads - 1)
+		var ang: float = deg_to_rad(start_deg + sweep_deg * frac)
+		var bead = MeshInstance3D.new()
+		var b_sph = SphereMesh.new()
+		var r_bead: float = lerpf(0.0024, 0.0038, frac)
+		b_sph.radius = r_bead
+		b_sph.height = r_bead * 1.6
+		bead.mesh = b_sph
+		bead.position = Vector3(cos(ang) * arc_radius, 0.001, sin(ang) * arc_radius)
+		bead.material_override = mat_rot_arrow_gold
+		dial_pivot.add_child(bead)
+
+	# Conical 3D Arrowhead at the leading tip of the arc
+	var end_ang: float = deg_to_rad(start_deg + sweep_deg)
+	var tip_pos = Vector3(cos(end_ang) * arc_radius, 0.002, sin(end_ang) * arc_radius)
+	var tangent_ang: float = end_ang + (-PI * 0.5 if is_ccw else PI * 0.5)
+	var arrow_head = MeshInstance3D.new()
+	var ah_cone = CylinderMesh.new()
+	ah_cone.top_radius = 0.0
+	ah_cone.bottom_radius = 0.0076
+	ah_cone.height = 0.0145
+	ah_cone.radial_segments = 12
+	arrow_head.mesh = ah_cone
+	arrow_head.position = tip_pos
+	var dir_vec = Vector3(cos(tangent_ang), 0.0, sin(tangent_ang)).normalized()
+	var up_axis = Vector3.UP.cross(dir_vec).normalized()
+	arrow_head.basis = Basis(up_axis, PI * 0.5)
+	arrow_head.scale = Vector3(1.0, 1.0, 0.55)
+	arrow_head.material_override = mat_rot_arrow_emerald
+	dial_pivot.add_child(arrow_head)
+
+	# Center Jewel Pin inside Dial
+	var center_pin = MeshInstance3D.new()
+	var cp_sph = SphereMesh.new()
+	cp_sph.radius = 0.0042
+	cp_sph.height = 0.0065
+	center_pin.mesh = cp_sph
+	center_pin.position = Vector3(0.0, 0.0015, 0.0)
+	center_pin.material_override = mat_gold_highlight
+	dial_pivot.add_child(center_pin)
+
+	# 5. Crisp Persian Direction Label (No unsupported Unicode boxes)
 	var lbl = Label3D.new()
 	lbl.name = "DirLabel"
 	lbl.font = _font_hekayat
-	lbl.font_size = 36
+	lbl.font_size = 34
 	lbl.outline_size = 10
-	lbl.modulate = Color(1.0, 0.95, 0.65)
-	lbl.outline_modulate = Color(0.05, 0.04, 0.03, 0.98)
-	lbl.position = Vector3(0.010 if is_ccw else -0.010, 0.014, 0.0)
+	lbl.modulate = Color(1.0, 0.96, 0.74)
+	lbl.outline_modulate = Color(0.04, 0.03, 0.02, 0.98)
+	lbl.position = Vector3(0.020 if is_ccw else -0.020, 0.015, 0.0)
 	lbl.rotation.x = -PI * 0.5
-	lbl.pixel_size = 0.00095
+	lbl.pixel_size = 0.00092
 	lbl.text = label_fa
 	root.add_child(lbl)
 
-	# 5. Raycast Area3D for Click & Hover
+	# 6. Raycast Area3D for Click & Hover
 	var area = Area3D.new()
 	area.name = "RotArea_%d" % rot_id
 	area.set_meta("rotation_id", rot_id)
 	var col = CollisionShape3D.new()
 	var box_shape = BoxShape3D.new()
-	box_shape.size = Vector3(0.168, 0.045, 0.078)
+	box_shape.size = Vector3(0.172, 0.048, 0.080)
 	col.shape = box_shape
 	area.add_child(col)
 	var captured_id: int = rot_id
@@ -807,22 +927,59 @@ func _build_board_3d() -> void:
 func _build_rotation_paddles() -> void:
 	rotation_btn_nodes.resize(8)
 	rotation_btn_halos.clear()
+	rotation_btn_plate_groups.clear()
+	rotation_btn_dials.clear()
+	rotation_btn_glow_rings.clear()
 	rotation_btn_areas.clear()
 
-	# Position each of the 8 rotation buttons clearly around its quadrant:
-	# For every quadrant, Left button = CCW (↺ پادساعتگرد, odd id: 1, 3, 5, 7)
-	# and Right button = CW (↻ ساعتگرد, even id: 2, 4, 6, 8)
-	var btn_specs: Array = [
-		{"id": 1, "pos": Vector3(-0.288, BOARD_SURFACE_Y + 0.004, -0.456), "ccw": true,  "txt": "↺ چپ"},
-		{"id": 2, "pos": Vector3(-0.102, BOARD_SURFACE_Y + 0.004, -0.456), "ccw": false, "txt": "راست ↻"},
-		{"id": 3, "pos": Vector3(0.102,  BOARD_SURFACE_Y + 0.004, -0.456), "ccw": true,  "txt": "↺ چپ"},
-		{"id": 4, "pos": Vector3(0.288,  BOARD_SURFACE_Y + 0.004, -0.456), "ccw": false, "txt": "راست ↻"},
-		{"id": 5, "pos": Vector3(-0.288, BOARD_SURFACE_Y + 0.004,  0.456), "ccw": true,  "txt": "↺ چپ"},
-		{"id": 6, "pos": Vector3(-0.102, BOARD_SURFACE_Y + 0.004,  0.456), "ccw": false, "txt": "راست ↻"},
-		{"id": 7, "pos": Vector3(0.102,  BOARD_SURFACE_Y + 0.004,  0.456), "ccw": true,  "txt": "↺ چپ"},
-		{"id": 8, "pos": Vector3(0.288,  BOARD_SURFACE_Y + 0.004,  0.456), "ccw": false, "txt": "راست ↻"}
+	# Build 4 Sculpted Quadrant Control Console Bridges linking each button pair to its Quadrant
+	var console_centers: Array[Vector3] = [
+		Vector3(-0.195, BOARD_SURFACE_Y - 0.002, -0.458), # Q0 Console (Top-Left)
+		Vector3(0.195,  BOARD_SURFACE_Y - 0.002, -0.458), # Q1 Console (Top-Right)
+		Vector3(-0.195, BOARD_SURFACE_Y - 0.002,  0.458), # Q2 Console (Bottom-Left)
+		Vector3(0.195,  BOARD_SURFACE_Y - 0.002,  0.458)  # Q3 Console (Bottom-Right)
 	]
+	for q_i in range(4):
+		var c_pos: Vector3 = console_centers[q_i]
+		var z_dir: float = -1.0 if q_i < 2 else 1.0
+		var dock = MeshInstance3D.new()
+		var dk_box = BoxMesh.new()
+		dk_box.size = Vector3(0.376, 0.012, 0.088)
+		dock.mesh = dk_box
+		dock.position = c_pos
+		dock.material_override = mat_mahogany_trim
+		controls_root.add_child(dock)
 
+		var dock_rim = MeshInstance3D.new()
+		var dr_box = BoxMesh.new()
+		dr_box.size = Vector3(0.384, 0.008, 0.094)
+		dock_rim.mesh = dr_box
+		dock_rim.position = c_pos + Vector3(0.0, -0.002, 0.0)
+		dock_rim.material_override = mat_brass_gear
+		controls_root.add_child(dock_rim)
+
+		# Dual Brass Mechanical Connector Struts linking the console to its 3x3 quadrant
+		for sx in [-0.092, 0.092]:
+			var strut = MeshInstance3D.new()
+			var st_box = BoxMesh.new()
+			st_box.size = Vector3(0.022, 0.010, 0.052)
+			strut.mesh = st_box
+			strut.position = Vector3(c_pos.x + sx, BOARD_SURFACE_Y, c_pos.z - z_dir * 0.052)
+			strut.material_override = mat_gold_rail
+			controls_root.add_child(strut)
+
+	# Position each of the 8 rotation buttons clearly on its quadrant console:
+	# Left button = CCW (odd id: 1, 3, 5, 7) and Right button = CW (even id: 2, 4, 6, 8)
+	var btn_specs: Array = [
+		{"id": 1, "pos": Vector3(-0.288, BOARD_SURFACE_Y + 0.004, -0.458), "ccw": true,  "txt": "چرخش چپ"},
+		{"id": 2, "pos": Vector3(-0.102, BOARD_SURFACE_Y + 0.004, -0.458), "ccw": false, "txt": "چرخش راست"},
+		{"id": 3, "pos": Vector3(0.102,  BOARD_SURFACE_Y + 0.004, -0.458), "ccw": true,  "txt": "چرخش چپ"},
+		{"id": 4, "pos": Vector3(0.288,  BOARD_SURFACE_Y + 0.004, -0.458), "ccw": false, "txt": "چرخش راست"},
+		{"id": 5, "pos": Vector3(-0.288, BOARD_SURFACE_Y + 0.004,  0.458), "ccw": true,  "txt": "چرخش چپ"},
+		{"id": 6, "pos": Vector3(-0.102, BOARD_SURFACE_Y + 0.004,  0.458), "ccw": false, "txt": "چرخش راست"},
+		{"id": 7, "pos": Vector3(0.102,  BOARD_SURFACE_Y + 0.004,  0.458), "ccw": true,  "txt": "چرخش چپ"},
+		{"id": 8, "pos": Vector3(0.288,  BOARD_SURFACE_Y + 0.004,  0.458), "ccw": false, "txt": "چرخش راست"}
+	]
 	for spec in btn_specs:
 		var rid: int = int(spec["id"])
 		var paddle = _create_rotation_paddle_3d(rid, spec["pos"], bool(spec["ccw"]), str(spec["txt"]))
@@ -1085,23 +1242,26 @@ func _update_3d_labels_and_highlights() -> void:
 	var can_rotate: bool = GameManager.is_game_active and is_my_turn and not is_board_locked and is_selection_played and not is_rotation_played and not is_animating_rotation
 
 	if is_instance_valid(lbl_phase_3d):
-		if not GameManager.is_game_active:
+		if _win_vfx_shown:
+			lbl_phase_3d.text = "پنج گوی در یک ردیف تکمیل شد! پایان مسابقه"
+			lbl_phase_3d.modulate = Color(1.0, 0.92, 0.35)
+		elif not GameManager.is_game_active:
 			lbl_phase_3d.text = "پنتاگو: یک گوی بگذارید و یکی از ۴ صفحه را بچرخانید"
 			lbl_phase_3d.modulate = Color(0.95, 0.95, 1.0)
 		elif can_place:
-			lbl_phase_3d.text = "🟢 گام ۱ از ۲: یک گوی در یکی از خانه‌های خالی قرار دهید"
+			lbl_phase_3d.text = "گام ۱ از ۲: یک گوی در یکی از خانه‌های خالی قرار دهید"
 			lbl_phase_3d.modulate = Color(0.42, 1.0, 0.62)
 		elif can_rotate:
-			lbl_phase_3d.text = "🔄 گام ۲ از ۲: با فلش‌های اطراف، یکی از ۴ صفحه را ۹۰ درجه بچرخانید!"
+			lbl_phase_3d.text = "گام ۲ از ۲: با دکمه‌های چرخش، یکی از ۴ صفحه را ۹۰ درجه بچرخانید"
 			lbl_phase_3d.modulate = Color(1.0, 0.90, 0.32)
 		elif is_my_turn:
 			lbl_phase_3d.text = "در حال ثبت حرکت و چرخش صفحه..."
 			lbl_phase_3d.modulate = Color(0.90, 0.92, 1.0)
 		else:
 			if not is_selection_played:
-				lbl_phase_3d.text = "⏳ نوبت حریف: در حال کاشت گوی روی صفحه..."
+				lbl_phase_3d.text = "نوبت حریف: در حال کاشت گوی روی صفحه..."
 			else:
-				lbl_phase_3d.text = "⏳ نوبت حریف: در حال انتخاب جهت چرخش یکی از ۴ صفحه..."
+				lbl_phase_3d.text = "نوبت حریف: در حال انتخاب جهت چرخش یکی از ۴ صفحه..."
 			lbl_phase_3d.modulate = Color(1.0, 0.78, 0.42)
 
 	# Update 36 cell halos
@@ -1111,18 +1271,20 @@ func _update_3d_labels_and_highlights() -> void:
 		if i < cell_legal_halos.size() and is_instance_valid(cell_legal_halos[i]):
 			cell_legal_halos[i].visible = (can_place and board_state[i] == 0 and (hovered_cell_id == i or hovered_cell_id == -1))
 
-	# Update 8 rotation button visuals
+	# Update 8 rotation button visuals (all pill meshes + outer glow ring)
 	for r_idx in range(8):
 		var rot_id: int = r_idx + 1
-		if r_idx < rotation_btn_halos.size() and is_instance_valid(rotation_btn_halos[r_idx]):
-			var plate = rotation_btn_halos[r_idx]
-			if can_rotate:
-				if hovered_rotation_id == rot_id:
-					plate.material_override = mat_rot_btn_hover
-				else:
-					plate.material_override = mat_rot_btn_active
-			else:
-				plate.material_override = mat_rot_btn_idle
+		var target_mat: StandardMaterial3D = mat_rot_btn_idle
+		if can_rotate:
+			target_mat = mat_rot_btn_hover if (hovered_rotation_id == rot_id) else mat_rot_btn_active
+		if r_idx < rotation_btn_plate_groups.size():
+			for mesh_part in rotation_btn_plate_groups[r_idx]:
+				if is_instance_valid(mesh_part):
+					mesh_part.material_override = target_mat
+		elif r_idx < rotation_btn_halos.size() and is_instance_valid(rotation_btn_halos[r_idx]):
+			rotation_btn_halos[r_idx].material_override = target_mat
+		if r_idx < rotation_btn_glow_rings.size() and is_instance_valid(rotation_btn_glow_rings[r_idx]):
+			rotation_btn_glow_rings[r_idx].visible = can_rotate
 
 	# Update quadrant rim highlight when hovering a rotation paddle
 	var hov_quad: int = int((hovered_rotation_id - 1) / 2) if (can_rotate and hovered_rotation_id >= 1 and hovered_rotation_id <= 8) else -1
@@ -1376,6 +1538,7 @@ func _execute_place_marble(user_id: int, cell_id: int) -> void:
 	tw.tween_callback(func():
 		AudioManager.sfx_add_piece()
 		_spawn_socket_ripple_vfx(q_pivot.position + dest_local, user_id)
+		_check_and_celebrate_win()
 	)
 
 	_update_3d_labels_and_highlights()
@@ -1509,6 +1672,8 @@ func _check_and_celebrate_win() -> void:
 				break
 		if all_match:
 			_win_vfx_shown = true
+			_win_vfx_started_msec = Time.get_ticks_msec()
+			_update_3d_labels_and_highlights()
 			_spawn_five_in_row_vfx(cond, first_owner)
 			break
 
@@ -1646,6 +1811,30 @@ func reset_board() -> void:
 	_init_board_state()
 	_rebuild_all_pieces_visual()
 
+func _on_internal_game_finished(data: Dictionary) -> void:
+	super._on_internal_game_finished(data)
+	if GameManager.local_player_surrendered or GameManager.opponent_player_surrendered:
+		return
+	if not _win_vfx_shown and not is_animating_rotation:
+		_check_and_celebrate_win()
+	var elapsed_sec: float = float(Time.get_ticks_msec() - _win_vfx_started_msec) / 1000.0 if _win_vfx_started_msec > 0 else 0.0
+	var needed_wait: float = 2.4 - elapsed_sec
+	if is_animating_rotation:
+		needed_wait = maxf(needed_wait, 2.5)
+	if needed_wait > 0.15:
+		call_deferred("_hold_result_dialog_for_win_vfx", needed_wait)
+
+func _hold_result_dialog_for_win_vfx(wait_sec: float) -> void:
+	if not is_inside_tree():
+		return
+	var dlg = get_tree().root.find_child("GameResultDialog", true, false)
+	if dlg and dlg is CanvasItem and dlg.visible:
+		dlg.visible = false
+		get_tree().create_timer(wait_sec).timeout.connect(func():
+			if is_instance_valid(dlg):
+				dlg.visible = true
+		)
+
 func cleanup_board() -> void:
 	_disconnect_pentago_signals()
 	board_marble_nodes.clear()
@@ -1654,4 +1843,7 @@ func cleanup_board() -> void:
 	quadrant_pivots.clear()
 	rotation_btn_nodes.clear()
 	rotation_btn_halos.clear()
+	rotation_btn_plate_groups.clear()
+	rotation_btn_dials.clear()
+	rotation_btn_glow_rings.clear()
 	rotation_btn_areas.clear()
