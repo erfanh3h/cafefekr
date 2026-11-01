@@ -8,7 +8,8 @@ signal queue_cancelled()
 signal match_ready(game_id: String, game_type: String)
 signal pre_game_ready(pre_game_id: String, queuers: Array)
 
-@onready var lbl_title: Label = $Margin/VBox/LblTitle
+@onready var lbl_title: Label = $Margin/VBox/TopRow/LblTitle
+@onready var btn_close_top: TextureButton = $Margin/VBox/TopRow/BtnCloseTop
 @onready var lbl_timer: Label = $Margin/VBox/LblTimer
 @onready var lbl_status: Label = $Margin/VBox/LblStatus
 @onready var btn_cancel: Button = $Margin/VBox/BtnCancel
@@ -28,8 +29,12 @@ var accept_timer: Timer
 var is_accept_phase: bool = false
 
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	KenneyUI.style_button(btn_cancel, KenneyUI.COLOR_RED)
 	btn_cancel.pressed.connect(_on_cancel_pressed)
+	btn_cancel.visible = false
+	if is_instance_valid(btn_close_top):
+		btn_close_top.pressed.connect(_on_cancel_pressed)
 	
 	search_timer = Timer.new()
 	search_timer.wait_time = 1.0
@@ -89,7 +94,9 @@ func start_queue(requested_game_type: String = "") -> void:
 	
 	lbl_title.text = "جستجوی حریف آنلاین"
 	spinner_container.visible = true
-	btn_cancel.visible = true
+	btn_cancel.visible = false
+	if is_instance_valid(btn_close_top):
+		btn_close_top.visible = true
 	accept_container.visible = false
 	btn_accept.disabled = false
 	btn_reject.disabled = false
@@ -151,6 +158,8 @@ func _on_accept_game_received() -> void:
 	
 	spinner_container.visible = false
 	btn_cancel.visible = false
+	if is_instance_valid(btn_close_top):
+		btn_close_top.visible = false
 	accept_container.visible = true
 	btn_accept.disabled = false
 	btn_reject.disabled = false

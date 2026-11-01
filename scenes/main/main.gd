@@ -96,106 +96,64 @@ var _sound_off_tex = preload("res://assets/icons/General/soundOff.png")
 
 
 var _splash_overlay: Control = null
-
 var _splash_dismissed: bool = false
-
-
+var _offline_dialog: Control = null
+var _offline_status_lbl: Label = null
+var _offline_retry_btn: Button = null
+var _is_retrying_connection: bool = false
 
 func _ready() -> void:
-
 	_setup_signals()
-
 	_start_logo_animation()
-
 	_setup_button_juice()
-
 	_update_audio_button_visual()
-
 	
-
 	# Start in Menu Mode
-
 	base_game_hud.visible = false
-
 	menu_container.visible = true
-
 	
-
 	# Display polished in-engine splash overlay matching boot splash screen
-
 	_setup_splash_overlay()
-
 	
-
 	# Connect to real-time game server (port 5000)
-
 	NetworkManager.connect_to_game_server()
-
 	
-
 	# Safety fallback timer: ensure splash always dismisses even if offline or slow server response
-
 	get_tree().create_timer(2.6).timeout.connect(func():
-
 		if not _splash_dismissed and is_instance_valid(self):
-
-			_dismiss_splash_overlay()
-
-	)
-
-	
-
-	# Try to restore saved session
-
-	NetworkManager.restore_session(func(restored: bool, _msg: String):
-
-		user_header.update_ui()
-
-		# Allow at least 0.75s display so the splash transition feels smooth & deliberate
-
-		get_tree().create_timer(0.75).timeout.connect(func():
-
-			if not is_instance_valid(self):
-
-				return
-
 			_dismiss_splash_overlay(func():
-
-				if not restored:
-
-					if not NetworkManager.is_online:
-
-						NetworkManager.connect_to_game_server()
-
-						_show_menu_toast("🔄 در حال تلاش برای اتصال مجدد به سرور بازی...")
-
-					else:
-
-						login_dialog.open()
-
-						_show_backdrop()
-
-				else:
-
-					if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
-
-						print("[Main] Returning user has phone but no username. Enforcing username registration.")
-
-						login_dialog.open_for_username_completion()
-
-						_show_backdrop()
-
-						return
-
-					_check_and_auto_enter_active_game()
-
+				if not NetworkManager.is_online:
+					_show_offline_dialog()
 			)
-
-		)
-
 	)
-
-
+	
+	# Allow brief moment for initial socket connection before verifying online session
+	get_tree().create_timer(0.75).timeout.connect(func():
+		if not is_instance_valid(self):
+			return
+		NetworkManager.restore_session(func(restored: bool, msg: String):
+			user_header.update_ui()
+			if not is_instance_valid(self):
+				return
+			_dismiss_splash_overlay(func():
+				if msg == "OFFLINE" or not NetworkManager.is_online:
+					NetworkManager.connect_to_game_server()
+					_show_offline_dialog()
+					return
+				_hide_offline_dialog()
+				if not restored:
+					login_dialog.open()
+					_show_backdrop()
+				else:
+					if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
+						print("[Main] Returning user has phone but no username. Enforcing username registration.")
+						login_dialog.open_for_username_completion()
+						_show_backdrop()
+						return
+					_check_and_auto_enter_active_game()
+			)
+		)
+	)
 
 func _setup_splash_overlay() -> void:
 
@@ -580,50 +538,30 @@ func _setup_signals() -> void:
 	
 
 	if is_instance_valid(dialog_backdrop):
-
 		dialog_backdrop.gui_input.connect(func(event: InputEvent):
-
 			if event is InputEventMouseButton and event.pressed:
-
+				# Non-dismissible modal dialogs: area around dialog must NOT be tappable!
+				if (is_instance_valid(queue_dialog) and queue_dialog.visible) 					or (is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible) 					or (is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.visible) 					or (is_instance_valid(lobby_dialog) and lobby_dialog.visible):
+					return
 				if is_instance_valid(login_dialog) and login_dialog.visible:
-
 					if login_dialog.is_mandatory_username:
-
 						AudioManager.sfx_tap()
-
 						_show_menu_toast("ثبت نام کاربری الزامی است.")
-
 						return
-
 					login_dialog.close()
-
 				elif is_instance_valid(user_profile_dialog) and user_profile_dialog.visible:
-
 					user_profile_dialog.close()
-
 				elif is_instance_valid(rules_dialog) and rules_dialog.visible:
-
 					rules_dialog.close()
-
 				elif is_instance_valid(store_dialog) and store_dialog.visible:
-
 					store_dialog.close()
-
 				elif is_instance_valid(ranking_dialog) and ranking_dialog.visible:
-
 					ranking_dialog.close()
-
 				elif is_instance_valid(classic_rank_dialog) and classic_rank_dialog.visible:
-
 					classic_rank_dialog.close()
-
 				else:
-
 					_hide_backdrop()
-
 		)
-
-	
 
 	ranking_dialog.user_selected.connect(func(u_dict):
 
@@ -784,228 +722,121 @@ func _setup_button_juice() -> void:
 
 
 func _on_ranked_pressed() -> void:
-
 	AudioManager.sfx_button()
-
 	if not NetworkManager.is_online:
-
-		_hide_backdrop()
-
 		NetworkManager.connect_to_game_server()
-
-		_show_menu_toast("🔄 در حال تلاش برای اتصال مجدد به سرور بازی...")
-
+		_show_offline_dialog()
 		return
-
 	_show_backdrop()
-
 	if not GameManager.is_logged_in:
-
 		login_dialog.open()
-
 		return
-
 	if GameManager.is_guest or not GameManager.has_phone():
-
-		login_dialog.open_for_phone_upgrade("برای شرکت در بازی رده‌بندی (رنک)، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
-
+		login_dialog.open_for_phone_upgrade("برای شرکت در مسابقات رده‌بندی (Ranked)، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
 		return
-
 	if not GameManager.has_username():
-
 		login_dialog.open_for_username_completion()
-
 		return
-
 	queue_dialog.start_queue()
 
-
-
 func _on_classic_rank_pressed() -> void:
-
 	AudioManager.sfx_button()
-
 	if not NetworkManager.is_online:
-
-		_hide_backdrop()
-
 		NetworkManager.connect_to_game_server()
-
-		_show_menu_toast("🔄 در حال تلاش برای اتصال مجدد به سرور بازی...")
-
+		_show_offline_dialog()
 		return
-
 	_show_backdrop()
-
 	if not GameManager.is_logged_in:
-
 		login_dialog.open()
-
 		return
-
 	if not GameManager.has_username():
-
 		login_dialog.open_for_username_completion()
-
 		return
-
 	classic_rank_dialog.open()
 
-
-
 func _on_classic_rank_start_requested(game_type: String) -> void:
-
+	if not NetworkManager.is_online:
+		NetworkManager.connect_to_game_server()
+		_show_offline_dialog()
+		return
 	print("[Main] Classic rank match requested for game: %s" % game_type)
-
 	_show_backdrop()
-
 	_show_menu_toast("🎮 در حال آغاز رقابت رنک کلاسیک...")
-
 	NetworkManager.start_classic_rank(game_type)
 
-
-
 func _on_lobby_pressed() -> void:
-
 	AudioManager.sfx_button()
-
 	if not NetworkManager.is_online:
-
-		_hide_backdrop()
-
 		NetworkManager.connect_to_game_server()
-
-		_show_menu_toast("🔄 در حال تلاش برای اتصال مجدد به سرور بازی...")
-
+		_show_offline_dialog()
 		return
-
 	_show_backdrop()
-
 	if not GameManager.is_logged_in:
-
 		login_dialog.open()
-
 		return
-
 	if GameManager.is_guest or not GameManager.has_phone():
-
 		login_dialog.open_for_phone_upgrade("برای ورود به اتاق دوستانه (لابی)، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
-
 		return
-
 	if not GameManager.has_username():
-
 		login_dialog.open_for_username_completion()
-
 		return
-
 	lobby_dialog.open()
 
-
-
 func _on_ranking_pressed() -> void:
-
 	AudioManager.sfx_button()
-
+	if not NetworkManager.is_online:
+		NetworkManager.connect_to_game_server()
+		_show_offline_dialog()
+		return
 	_show_backdrop()
-
 	ranking_dialog.open()
 
-
-
 func _on_store_pressed() -> void:
-
 	AudioManager.sfx_button()
-
+	if not NetworkManager.is_online:
+		NetworkManager.connect_to_game_server()
+		_show_offline_dialog()
+		return
 	_show_backdrop()
-
 	store_dialog.open()
 
-
-
 func _on_rules_pressed() -> void:
-
 	AudioManager.sfx_button()
-
 	_show_backdrop()
-
 	rules_dialog.open()
 
-
-
 func _show_backdrop() -> void:
-
 	if not is_instance_valid(dialog_backdrop):
-
 		return
-
 	if (is_instance_valid(base_game_hud) and base_game_hud.visible) or not GameManager.active_game_id.is_empty() or GameManager.is_game_active:
-
 		_hide_backdrop()
-
 		return
-
 	dialog_backdrop.visible = true
-
 	dialog_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 
-
-
 func _hide_backdrop() -> void:
-
 	if is_instance_valid(dialog_backdrop):
-
 		dialog_backdrop.visible = false
-
 		dialog_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-
-
 func _update_backdrop_state() -> void:
-
 	get_tree().create_timer(0.22).timeout.connect(func():
-
 		if not is_instance_valid(dialog_backdrop):
-
 			return
-
 		if (is_instance_valid(base_game_hud) and base_game_hud.visible) or not GameManager.active_game_id.is_empty() or GameManager.is_game_active:
-
 			_hide_backdrop()
-
 			return
-
-		var is_queue_active = is_instance_valid(queue_dialog) and queue_dialog.visible and queue_dialog.timer_active
-
 		var is_open = func(dlg: Control) -> bool:
-
 			return is_instance_valid(dlg) and dlg.visible and dlg.modulate.a > 0.05
-
+		var is_queue_active = is_open.call(queue_dialog)
 			
-
-		var any_open = is_queue_active or is_open.call(lobby_dialog) \
-
-			or is_open.call(classic_rank_dialog) or is_open.call(pick_ban_dialog) \
-
-			or is_open.call(ranking_dialog) or is_open.call(store_dialog) \
-
-			or is_open.call(rules_dialog) or is_open.call(login_dialog) \
-
-			or is_open.call(user_profile_dialog)
-
+		var any_open = is_queue_active or is_open.call(lobby_dialog) 			or is_open.call(classic_rank_dialog) or is_open.call(pick_ban_dialog) 			or is_open.call(ranking_dialog) or is_open.call(store_dialog) 			or is_open.call(rules_dialog) or is_open.call(login_dialog) 			or is_open.call(user_profile_dialog)
 			
-
 		if any_open:
-
 			_show_backdrop()
-
 		else:
-
 			_hide_backdrop()
-
 	)
-
-
 
 func _on_audio_toggle() -> void:
 
@@ -1831,24 +1662,16 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 			base_game_hud.play_start_countdown(Callable(), 5)
 
 func _on_surrender_requested() -> void:
-
 	print("[Main] User confirmed surrender. Sending command to backend...")
-
 	GameManager.local_player_surrendered = true
-
 	GameManager.opponent_player_surrendered = false
-
+	if current_match_mode != "ranked":
+		GameManager.clear_open_game_id()
 	NetworkManager.send_surrender()
-
 	var board = cafe_table.current_board_node
-
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
-
 		board.set_board_locked(true)
-
 	_on_player_surrendered(GameManager.my_player_index)
-
-
 
 func _on_player_surrendered(gamer_id: int) -> void:
 
@@ -2234,74 +2057,190 @@ func _on_finish_reconnect_time(user_id: String) -> void:
 
 
 func _on_connection_status_changed(connected: bool) -> void:
-
 	if not GameManager.active_game_id.is_empty():
-
 		if not connected:
-
 			base_game_hud.pause_turn_timer()
-
 			base_game_hud.show_toast_hint("📡 اتصال اینترنت قطع شد! در حال تلاش برای اتصال مجدد...")
-
 			var board = cafe_table.current_board_node
-
 			if board and is_instance_valid(board) and board.has_method("set_board_locked"):
-
 				board.set_board_locked(true)
-
 		else:
-
 			base_game_hud.show_toast_hint("📡 اینترنت متصل شد! در حال بازیابی مسابقه...")
-
 	else:
+		if not connected:
+			if _splash_dismissed:
+				_show_offline_dialog()
+		else:
+			if _offline_dialog and is_instance_valid(_offline_dialog) and _offline_dialog.visible:
+				if not _is_retrying_connection:
+					_on_offline_retry_pressed()
+			else:
+				if not GameManager.is_logged_in and not GameManager.load_saved_token().is_empty():
+					NetworkManager.restore_session(func(_restored: bool, _msg: String):
+						user_header.update_ui()
+					)
+				_show_menu_toast("✅ اتصال با سرور بازی برقرار شد!")
 
-		if connected:
+func _show_offline_dialog() -> void:
+	if not _offline_dialog or not is_instance_valid(_offline_dialog):
+		_offline_dialog = Control.new()
+		_offline_dialog.name = "OfflineDialogOverlay"
+		_offline_dialog.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_offline_dialog.mouse_filter = Control.MOUSE_FILTER_STOP
+		_offline_dialog.z_index = 95
 
-			if not GameManager.is_logged_in and not GameManager.load_saved_token().is_empty():
+		var dark_bg = ColorRect.new()
+		dark_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		dark_bg.color = Color(0.04, 0.02, 0.01, 0.86)
+		dark_bg.mouse_filter = Control.MOUSE_FILTER_STOP
+		_offline_dialog.add_child(dark_bg)
 
-				NetworkManager.restore_session(func(_restored: bool, _msg: String):
+		var center = CenterContainer.new()
+		center.set_anchors_preset(Control.PRESET_FULL_RECT)
+		center.mouse_filter = Control.MOUSE_FILTER_STOP
+		_offline_dialog.add_child(center)
 
-					user_header.update_ui()
+		var panel = PanelContainer.new()
+		panel.custom_minimum_size = Vector2(780, 480)
+		panel.mouse_filter = Control.MOUSE_FILTER_STOP
+		var style = StyleBoxTexture.new()
+		style.texture = preload("res://assets/images/frames/board.png")
+		style.texture_margin_left = 60.0
+		style.texture_margin_top = 60.0
+		style.texture_margin_right = 60.0
+		style.texture_margin_bottom = 60.0
+		panel.add_theme_stylebox_override("panel", style)
+		center.add_child(panel)
 
-				)
+		var margin = MarginContainer.new()
+		margin.add_theme_constant_override("margin_left", 48)
+		margin.add_theme_constant_override("margin_top", 44)
+		margin.add_theme_constant_override("margin_right", 48)
+		margin.add_theme_constant_override("margin_bottom", 44)
+		panel.add_child(margin)
 
+		var vbox = VBoxContainer.new()
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 24)
+		margin.add_child(vbox)
+
+		var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
+
+		var lbl_title = Label.new()
+		lbl_title.text = "📡 عدم ارتباط با سرور"
+		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_title.add_theme_font_override("font", font_hekayat)
+		lbl_title.add_theme_font_size_override("font_size", 46)
+		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45))
+		lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+		lbl_title.add_theme_constant_override("shadow_outline_size", 3)
+		vbox.add_child(lbl_title)
+
+		var lbl_desc = Label.new()
+		lbl_desc.text = "شما به سرور بازی متصل نیستید.
+بازی کافه‌فکر فقط به صورت آنلاین در دسترس است.
+لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید."
+		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl_desc.custom_minimum_size = Vector2(640, 120)
+		lbl_desc.add_theme_font_override("font", font_hekayat)
+		lbl_desc.add_theme_font_size_override("font_size", 30)
+		lbl_desc.add_theme_color_override("font_color", Color(0.96, 0.91, 0.82))
+		vbox.add_child(lbl_desc)
+
+		_offline_status_lbl = Label.new()
+		_offline_status_lbl.text = ""
+		_offline_status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_offline_status_lbl.add_theme_font_override("font", font_hekayat)
+		_offline_status_lbl.add_theme_font_size_override("font_size", 26)
+		_offline_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.65, 0.45))
+		vbox.add_child(_offline_status_lbl)
+
+		_offline_retry_btn = Button.new()
+		_offline_retry_btn.text = "🔄 تلاش مجدد"
+		_offline_retry_btn.custom_minimum_size = Vector2(360, 84)
+		_offline_retry_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		_offline_retry_btn.add_theme_font_override("font", font_hekayat)
+		_offline_retry_btn.add_theme_font_size_override("font_size", 34)
+		KenneyUI.style_button(_offline_retry_btn, KenneyUI.COLOR_GREEN)
+		_offline_retry_btn.pressed.connect(_on_offline_retry_pressed)
+		vbox.add_child(_offline_retry_btn)
+
+		ui_canvas.add_child(_offline_dialog)
+
+	_is_retrying_connection = false
+	if is_instance_valid(_offline_retry_btn):
+		_offline_retry_btn.disabled = false
+		_offline_retry_btn.text = "🔄 تلاش مجدد"
+	if is_instance_valid(_offline_status_lbl):
+		_offline_status_lbl.text = ""
+	_offline_dialog.visible = true
+
+func _hide_offline_dialog() -> void:
+	_is_retrying_connection = false
+	if _offline_dialog and is_instance_valid(_offline_dialog):
+		_offline_dialog.visible = false
+
+func _on_offline_retry_pressed() -> void:
+	if _is_retrying_connection:
+		return
+	AudioManager.sfx_button()
+	_is_retrying_connection = true
+	if is_instance_valid(_offline_retry_btn):
+		_offline_retry_btn.disabled = true
+		_offline_retry_btn.text = "در حال اتصال..."
+	if is_instance_valid(_offline_status_lbl):
+		_offline_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45))
+		_offline_status_lbl.text = "در حال بررسی اتصال به سرور..."
+
+	NetworkManager.connect_to_game_server()
+	await get_tree().create_timer(1.0).timeout
+	if not is_instance_valid(self):
+		return
+
+	NetworkManager.restore_session(func(restored: bool, msg: String):
+		if not is_instance_valid(self):
+			return
+		_is_retrying_connection = false
+		if NetworkManager.is_online and msg != "OFFLINE":
+			_hide_offline_dialog()
+			user_header.update_ui()
 			_show_menu_toast("✅ اتصال با سرور بازی برقرار شد!")
-
-
+			if not restored or not GameManager.is_logged_in:
+				login_dialog.open()
+				_show_backdrop()
+			elif not GameManager.is_guest and not GameManager.has_username():
+				login_dialog.open_for_username_completion()
+				_show_backdrop()
+			else:
+				_check_and_auto_enter_active_game()
+		else:
+			if is_instance_valid(_offline_retry_btn):
+				_offline_retry_btn.disabled = false
+				_offline_retry_btn.text = "🔄 تلاش مجدد"
+			if is_instance_valid(_offline_status_lbl):
+				_offline_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.48, 0.48))
+				_offline_status_lbl.text = "❌ ارتباط با سرور برقرار نشد. لطفاً اتصال اینترنت را بررسی کنید."
+	)
 
 func _on_leave_game_pressed() -> void:
-
 	AudioManager.sfx_button()
-
+	GameManager.clear_open_game_id()
+	GameManager.clear_open_pre_game_id()
 	NetworkManager.leave_active_game()
-
 	cafe_table.clear_board()
-
 	cafe_table.reset_table_state()
-
 	cafe_table.transition_to_menu_view(1.0)
-
 	
-
 	base_game_hud.reset_for_new_match()
-
 	base_game_hud.visible = false
-
 	user_header.visible = true
-
 	menu_container.visible = true
-
 	_hide_backdrop()
-
 	
-
 	GameManager.reset_match_state()
-
 	user_header.update_ui()
-
 	AudioManager.play_theme_music()
-
-
 
 func _update_table_opponent_avatar() -> void:
 
