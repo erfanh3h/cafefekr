@@ -104,10 +104,19 @@ func open(payload: Dictionary) -> void:
 	var tw = create_tween()
 	tw.tween_property(self, "modulate:a", 1.0, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-	# Sound cue
+	# Music & Sound cue
 	if is_finished:
-		AudioManager.play_sound("win")
+		AudioManager.play_theme_music()
+		var winner_id = payload.get("game_winner_id", null)
+		var my_id = str(GameManager.get_user_id())
+		if winner_id == null or str(winner_id) == "0" or str(winner_id) == "":
+			AudioManager.play_sound("draw")
+		elif str(winner_id) == my_id:
+			AudioManager.play_sound("win")
+		else:
+			AudioManager.play_sound("lose")
 	else:
+		AudioManager.play_queue_music()
 		AudioManager.play_sound("bell")
 
 func dismiss() -> void:
@@ -158,8 +167,9 @@ func _setup_players(payload: Dictionary) -> void:
 
 	var p1_name = str(p1_data.get("username", p1_data.get("name", "بازیکن ۱")))
 	var p2_name = str(p2_data.get("username", p2_data.get("name", "بازیکن ۲")))
-	var p1_rating = int(p1_data.get("score", 1000))
-	var p2_rating = int(p2_data.get("score", 1000))
+	var is_p1_me_check = (str(p1_data.get("user_id", "")) == my_id)
+	var p1_rating = int(p1_data.get("score", p1_data.get("user_score", GameManager.get_score() if is_p1_me_check else 1000)))
+	var p2_rating = int(p2_data.get("score", p2_data.get("user_score", GameManager.get_score() if not is_p1_me_check else 1000)))
 
 	var p1_img = int(p1_data.get("image", p1_data.get("user_image", 0)))
 	var p2_img = int(p2_data.get("image", p2_data.get("user_image", 1)))
@@ -407,7 +417,7 @@ func _setup_finish_state(payload: Dictionary) -> void:
 		footer_waiting_label.text = "⚡ آماده‌سازی زمین بازی بعدی... شروع تا %s ثانیه دیگر" % _fa_num(_remaining_seconds)
 
 func _on_exit_pressed() -> void:
-	AudioManager.play_sound("click")
+	AudioManager.sfx_button()
 	dismiss()
 	exit_match_requested.emit()
 

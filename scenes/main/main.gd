@@ -478,6 +478,7 @@ func _setup_signals() -> void:
 			_start_game_match(gid, first_gtype, "ranked")
 		)
 		pick_ban_dialog.pick_ban_cancelled.connect(func():
+			AudioManager.play_theme_music()
 			GameManager.clear_open_pre_game_id()
 			_hide_backdrop()
 			menu_container.visible = true
@@ -1463,16 +1464,24 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 			GameManager.apply_ranked_rewards(my_sc, my_xp, my_cn)
 
 		var prev_game_finished = (current_idx > 0 and not winners_arr.is_empty() and int(winners_arr[current_idx - 1]) != -1)
-		if is_finished or (prev_game_finished and is_between_games and not GameManager.is_game_active):
+		if is_finished or (prev_game_finished and is_between_games):
 			print("[Main] Ranked breakout view shown: Game %d/3 (is_finished=%s)" % [current_idx + 1, str(is_finished)])
+			GameManager.is_game_active = false
 			GameManager.local_player_surrendered = false
 			GameManager.opponent_player_surrendered = false
 			if is_instance_valid(base_game_hud):
+				base_game_hud.stop_timer()
+				base_game_hud.stop_round_timer()
 				base_game_hud._surrender_handled = false
 				base_game_hud.is_game_finished = false
 				base_game_hud.hide_round_finish_banner()
+				base_game_hud.hide_pause_dialog()
+			var cur_board = cafe_table.current_board_node
+			if cur_board and is_instance_valid(cur_board) and cur_board.has_method("set_board_locked"):
+				cur_board.set_board_locked(true)
 			if is_instance_valid(ranked_breakout_dialog):
 				ranked_breakout_dialog.open(payload)
+			return
 		else:
 			if not games_arr.is_empty() and current_idx < games_arr.size():
 				var server_game_type = str(games_arr[current_idx])
@@ -1600,8 +1609,11 @@ func _on_game_data_received(payload: Dictionary) -> void:
 
 func _on_game_play_navigate_received(payload: Dictionary) -> void:
 	print("[Main] Server Game_Play_Navigate received: %s" % str(payload))
+	_hide_backdrop()
 	if is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.is_open():
 		ranked_breakout_dialog.dismiss()
+	elif is_instance_valid(ranked_breakout_dialog):
+		ranked_breakout_dialog.visible = false
 	base_game_hud.hide_game_transition_banner()
 	# Reset surrender status so new game is active and interactive
 	GameManager.local_player_surrendered = false
@@ -1614,16 +1626,17 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 	var games_arr = payload.get("games", []) as Array
 	if games_arr.is_empty() and not _ranked_series_games.is_empty():
 		games_arr = _ranked_series_games
+	var target_norm = GameManager.current_game_type
 	if not games_arr.is_empty() and current_idx < games_arr.size():
 		var server_game_type = str(games_arr[current_idx])
-		var norm = GameRegistry.normalize_type(server_game_type)
-		if norm.to_lower() != GameManager.current_game_type.to_lower():
-			_switch_active_game(norm)
+		target_norm = GameRegistry.normalize_type(server_game_type)
 
 	var is_reconnect = bool(payload.get("is_reconnect", false))
 	if is_reconnect:
 		print("[Main] Game_Play_Navigate received during reconnect. Bypassing start countdown.")
 		_active_series_game_index = current_idx
+		if not target_norm.is_empty() and target_norm.to_lower() != GameManager.current_game_type.to_lower():
+			_switch_active_game(target_norm)
 		GameManager.is_game_active = true
 		base_game_hud.is_game_started = true
 		base_game_hud.is_start_overlay_dismissed = true
@@ -1650,6 +1663,10 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 		GameManager.p1_score = 0
 		GameManager.p2_score = 0
 
+		if not target_norm.is_empty():
+			_switch_active_game(target_norm)
+		AudioManager.play_game_music()
+
 		var board = cafe_table.current_board_node
 		if board and is_instance_valid(board) and board.has_method("set_board_locked"):
 			board.set_board_locked(true)
@@ -1657,6 +1674,8 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 		base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
 		base_game_hud.play_start_countdown(Callable(), 5)
 	else:
+		if not target_norm.is_empty() and target_norm.to_lower() != GameManager.current_game_type.to_lower():
+			_switch_active_game(target_norm)
 		base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
 		if not base_game_hud.is_countdown_running and not base_game_hud.is_start_overlay_dismissed and not GameManager.is_game_active:
 			base_game_hud.play_start_countdown(Callable(), 5)
@@ -1727,6 +1746,7 @@ func _on_not_played_turns_received(gamer_id: int, count: int) -> void:
 
 func _on_game_finished(data: Dictionary) -> void:
 	AudioManager.stop_sound("time")
+	AudioManager.play_theme_music()
 	GameManager.is_game_active = false
 	GameManager.clear_open_game_id()
 	GameManager.clear_open_pre_game_id()

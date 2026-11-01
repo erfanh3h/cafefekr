@@ -72,20 +72,26 @@ func _load_audio_assets() -> void:
 
 var current_music_mode: String = "none" # "theme", "queue", "game"
 
-func play_theme_music() -> void:
+func play_theme_music(force_restart: bool = false) -> void:
+	if current_music_mode == "theme" and music_player.playing and not force_restart:
+		return
 	current_music_mode = "theme"
 	if not is_music_enabled or music_themes.is_empty():
 		return
 	var stream = music_themes[randi() % music_themes.size()]
 	_play_music_stream(stream)
 
-func play_queue_music() -> void:
+func play_queue_music(force_restart: bool = false) -> void:
+	if current_music_mode == "queue" and music_player.playing and not force_restart:
+		return
 	current_music_mode = "queue"
 	if not is_music_enabled or not music_queue:
 		return
 	_play_music_stream(music_queue)
 
-func play_game_music() -> void:
+func play_game_music(force_restart: bool = true) -> void:
+	if current_music_mode == "game" and music_player.playing and not force_restart:
+		return
 	current_music_mode = "game"
 	if not is_music_enabled or music_games.is_empty():
 		return
@@ -105,11 +111,11 @@ func _on_music_finished() -> void:
 	# Loop or rotate according to mode
 	match current_music_mode:
 		"theme":
-			play_theme_music()
+			play_theme_music(true)
 		"queue":
-			play_queue_music()
+			play_queue_music(true)
 		"game":
-			play_game_music()
+			play_game_music(true)
 
 # --- SFX CONTROL ---
 

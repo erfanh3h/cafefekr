@@ -2958,6 +2958,7 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 
 	var is_friendly = (xp_earned <= 0)
 
+	AudioManager.play_theme_music()
 	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly, xp_earned)
 
 

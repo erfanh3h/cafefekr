@@ -150,7 +150,7 @@ func _on_accept_game_received() -> void:
 	is_accept_phase = true
 	
 	AudioManager.sfx_queue_found()
-	AudioManager.stop_music()
+	AudioManager.play_queue_music()
 	
 	lbl_title.text = "⚡ حریف پیدا شد! ⚡"
 	lbl_status.text = "آماده شروع بازی هستی؟"
