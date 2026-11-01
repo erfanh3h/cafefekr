@@ -293,7 +293,7 @@ func _on_socket_disconnected() -> void:
 
 func _on_namespace_connected(ns: String) -> void:
 	print("[NetworkManager] Namespace %s ready." % ns)
-	if ns == "/game" and (GameManager.is_game_active or not GameManager.active_game_id.is_empty()):
+	if ns == "/game" and GameManager.is_game_active:
 		print("[NetworkManager] Active game session detected upon /game connection. Actively requesting Reconnect_Data...")
 		send_game_command("RequestReconnectData", {})
 
@@ -374,23 +374,6 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.Game_Canceled:
 			print("[NetworkManager] PreGame Game_Canceled received.")
 			queue_game_canceled.emit()
-
-		Commands.Reconnect_Data:
-			print("[NetworkManager] PreGame Reconnect_Data received: %s" % str(payload))
-			if typeof(payload) == TYPE_DICTIONARY:
-				queue_reconnect_data_received.emit(payload)
-
-		Commands.User_Disconnected:
-			var u_id = str(payload.get("user_id", "")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
-			var w_time = int(payload.get("time", 45)) if typeof(payload) == TYPE_DICTIONARY else 45
-			print("[NetworkManager] PreGame User_Disconnected: %s (Wait Time: %d)" % [u_id, w_time])
-			queue_user_disconnected.emit(u_id, w_time)
-
-		Commands.User_Reconnected:
-			var u_id = str(payload.get("user_id", "")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
-			var r_time = int(payload.get("time", 20)) if typeof(payload) == TYPE_DICTIONARY else 20
-			print("[NetworkManager] PreGame User_Reconnected: %s (Resume Time: %d)" % [u_id, r_time])
-			queue_user_reconnected.emit(u_id, r_time)
 
 		Commands.Game_Play_Data:
 			if typeof(payload) == TYPE_DICTIONARY:
@@ -513,18 +496,33 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			game_finished.emit(payload if typeof(payload) == TYPE_DICTIONARY else {"winner": payload})
 
 		Commands.User_Disconnected:
-			var u_id = payload.get("user_id", "") if typeof(payload) == TYPE_DICTIONARY else ""
+			var u_id = str(payload.get("user_id", "")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
+			if ns == "/queue":
+				var w_time_q = int(payload.get("time", 45)) if typeof(payload) == TYPE_DICTIONARY else 45
+				print("[NetworkManager] PreGame User_Disconnected: %s (Wait Time: %d)" % [u_id, w_time_q])
+				queue_user_disconnected.emit(u_id, w_time_q)
+				return
 			var w_time = int(payload.get("time", 30)) if typeof(payload) == TYPE_DICTIONARY else 30
 			print("[NetworkManager] User disconnected: %s (Wait Time: %d)" % [u_id, w_time])
 			user_disconnected.emit(u_id, w_time)
 
 		Commands.User_Reconnected:
-			var u_id = payload.get("user_id", "") if typeof(payload) == TYPE_DICTIONARY else ""
+			var u_id = str(payload.get("user_id", "")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
+			if ns == "/queue":
+				var r_time_q = int(payload.get("time", 20)) if typeof(payload) == TYPE_DICTIONARY else 20
+				print("[NetworkManager] PreGame User_Reconnected: %s (Resume Time: %d)" % [u_id, r_time_q])
+				queue_user_reconnected.emit(u_id, r_time_q)
+				return
 			var r_time = int(payload.get("time", 10)) if typeof(payload) == TYPE_DICTIONARY else 10
 			print("[NetworkManager] User reconnected: %s (Resume Time: %d)" % [u_id, r_time])
 			user_reconnected.emit(u_id, r_time)
 
 		Commands.Reconnect_Data:
+			if ns == "/queue":
+				print("[NetworkManager] PreGame Reconnect_Data received: %s" % str(payload))
+				if typeof(payload) == TYPE_DICTIONARY:
+					queue_reconnect_data_received.emit(payload)
+				return
 			print("[NetworkManager] Received Reconnect_Data: %s" % str(payload))
 			if typeof(payload) == TYPE_DICTIONARY:
 				GameManager.is_game_active = true

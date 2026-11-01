@@ -1589,96 +1589,61 @@ func _on_new_round_started(round_num: int) -> void:
 
 
 func _on_game_play_data_received(payload: Dictionary) -> void:
+	var score_type_str = str(payload.get("game_score_type", ""))
+	if score_type_str == "Rank":
+		current_match_mode = "ranked"
+		GameManager.current_match_mode = "ranked"
+	elif score_type_str == "ClassicRank":
+		current_match_mode = "classic_rank"
+		GameManager.current_match_mode = "classic_rank"
+	elif score_type_str == "Lobby":
+		current_match_mode = "lobby"
+		GameManager.current_match_mode = "lobby"
 
 	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
-
 		GameManager.set_match_gamers(payload["gamers"])
-
 		_update_table_opponent_avatar()
 
-
-
 	var current_idx = int(payload.get("current_game_index", 0))
-
 	var games_arr = payload.get("games", []) as Array
-
 	if not games_arr.is_empty():
-
 		_ranked_series_games = games_arr.duplicate()
 
-
-
 	var is_finished = bool(payload.get("is_game_finished", false))
-
-	var scores_arr = payload.get("scores", [0, 0]) as Array
-
+	var is_between_games = bool(payload.get("is_between_games", false))
 	var winners_arr = payload.get("winners", [-1, -1, -1]) as Array
 
-
-
 	if current_match_mode == "ranked":
-
 		var prev_game_finished = (current_idx > 0 and not winners_arr.is_empty() and int(winners_arr[current_idx - 1]) != -1)
-
-		if is_finished or prev_game_finished:
-
+		if is_finished or (prev_game_finished and is_between_games and not GameManager.is_game_active):
 			print("[Main] Ranked breakout view shown: Game %d/3 (is_finished=%s)" % [current_idx + 1, str(is_finished)])
-
 			GameManager.local_player_surrendered = false
-
 			GameManager.opponent_player_surrendered = false
-
 			if is_instance_valid(base_game_hud):
-
 				base_game_hud._surrender_handled = false
-
 				base_game_hud.is_game_finished = false
-
 			if is_instance_valid(ranked_breakout_dialog):
-
 				ranked_breakout_dialog.open(payload)
-
 		else:
-
 			if not games_arr.is_empty() and current_idx < games_arr.size():
-
 				var server_game_type = str(games_arr[current_idx])
-
 				var norm = GameRegistry.normalize_type(server_game_type)
-
 				if norm.to_lower() != GameManager.current_game_type.to_lower():
-
 					_switch_active_game(norm)
-
 	else:
-
 		if not games_arr.is_empty() and current_idx < games_arr.size():
-
 			var server_game_type = str(games_arr[current_idx])
-
 			var norm = GameRegistry.normalize_type(server_game_type)
-
 			if norm.to_lower() != GameManager.current_game_type.to_lower():
-
 				_switch_active_game(norm)
 
-
-
-	if not GameManager.is_game_active and not is_finished:
-
+	if not GameManager.is_game_active and not is_finished and not (current_match_mode == "ranked" and is_between_games and current_idx > 0):
 		base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
-
 		if not base_game_hud.is_countdown_running and not base_game_hud.is_start_overlay_dismissed:
-
 			base_game_hud.play_start_countdown(Callable(), 5)
-
 	var board = cafe_table.current_board_node
-
 	if board and is_instance_valid(board) and board.has_method("sync_turn_state"):
-
 		board.sync_turn_state()
-
-
 
 func _on_game_play_time_received(time: int) -> void:
 
@@ -1785,26 +1750,26 @@ func _on_game_data_received(payload: Dictionary) -> void:
 
 
 func _on_game_play_navigate_received(payload: Dictionary) -> void:
-
 	print("[Main] Server Game_Play_Navigate received: %s" % str(payload))
-
 	if is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.is_open():
-
 		ranked_breakout_dialog.dismiss()
-
 	base_game_hud.hide_game_transition_banner()
-
 	# Reset surrender status so new game is active and interactive
-
 	GameManager.local_player_surrendered = false
-
 	GameManager.opponent_player_surrendered = false
-
 	if is_instance_valid(base_game_hud):
-
 		base_game_hud._surrender_handled = false
-
 		base_game_hud.is_game_finished = false
+
+	var current_idx = int(payload.get("current_game_index", 0))
+	var games_arr = payload.get("games", []) as Array
+	if games_arr.is_empty() and not _ranked_series_games.is_empty():
+		games_arr = _ranked_series_games
+	if not games_arr.is_empty() and current_idx < games_arr.size():
+		var server_game_type = str(games_arr[current_idx])
+		var norm = GameRegistry.normalize_type(server_game_type)
+		if norm.to_lower() != GameManager.current_game_type.to_lower():
+			_switch_active_game(norm)
 
 	var is_reconnect = bool(payload.get("is_reconnect", false))
 	if is_reconnect:
@@ -1820,35 +1785,22 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 		NetworkManager.send_game_command("RequestReconnectData", {})
 		return
 
-	var current_idx = int(payload.get("current_game_index", 0))
-
-	var games_arr = payload.get("games", []) as Array
-
-	if games_arr.is_empty() and not _ranked_series_games.is_empty():
-
-		games_arr = _ranked_series_games
-
-	if not games_arr.is_empty() and current_idx < games_arr.size():
-
-		var server_game_type = str(games_arr[current_idx])
-
-		var norm = GameRegistry.normalize_type(server_game_type)
-
-		if norm.to_lower() != GameManager.current_game_type.to_lower():
-
-			_switch_active_game(norm)
+	# Starting a new game (Game 1, Game 2, or Game 3)
+	_pending_start_game = false
+	_pending_turn = -1
+	_current_round_scored = false
+	GameManager.is_game_active = false
+	GameManager.current_turn = 0
+	GameManager.current_round = 1
+	GameManager.p1_score = 0
+	GameManager.p2_score = 0
 
 	var board = cafe_table.current_board_node
-
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
-
-		board.set_board_locked(false)
-
+		board.set_board_locked(true)
+	base_game_hud.reset_for_new_match()
 	base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
-
 	base_game_hud.play_start_countdown(Callable(), 5)
-
-
 
 func _on_surrender_requested() -> void:
 
@@ -2124,168 +2076,111 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 	_pending_start_game = false
 	_pending_turn = -1
 	GameManager.is_game_active = true
+
+	# Ensure gameplay HUD is visible and menu/dialogs are hidden
+	_hide_backdrop()
+	if is_instance_valid(queue_dialog):
+		queue_dialog.visible = false
+	if is_instance_valid(lobby_dialog):
+		lobby_dialog.visible = false
+	if is_instance_valid(classic_rank_dialog):
+		classic_rank_dialog.visible = false
+	if is_instance_valid(pick_ban_dialog):
+		pick_ban_dialog.visible = false
+	if is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.is_open():
+		ranked_breakout_dialog.dismiss()
+	elif is_instance_valid(ranked_breakout_dialog):
+		ranked_breakout_dialog.visible = false
+	menu_container.visible = false
+	user_header.visible = false
+	base_game_hud.visible = true
+
+	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
+		GameManager.set_match_gamers(payload["gamers"])
+		_update_table_opponent_avatar()
+
+	var g_data = payload.get("game_data", {})
+	if typeof(g_data) == TYPE_DICTIONARY:
+		var inferred_type = ""
+		if payload.has("game_type") and not str(payload["game_type"]).is_empty():
+			inferred_type = GameRegistry.normalize_type(str(payload["game_type"]))
+		elif g_data.has("game_type") and not str(g_data["game_type"]).is_empty():
+			inferred_type = GameRegistry.normalize_type(str(g_data["game_type"]))
+		elif g_data.has("is_setup_ring_phase") or g_data.has("disk_count") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 85):
+			inferred_type = GameTypes.YINSH
+		elif g_data.has("players_out_pieces") or g_data.has("start_board"):
+			inferred_type = GameTypes.LUDO
+		elif g_data.has("rotation_played") or g_data.has("selection_played") or g_data.has("pawns"):
+			inferred_type = GameTypes.PENTAGO
+		elif g_data.has("player1_choices") or g_data.has("player2_choices"):
+			inferred_type = GameTypes.FEKRBEKR
+		elif g_data.has("is_play_phase") and g_data.has("player1_board") and g_data.has("player2_board"):
+			inferred_type = GameTypes.BATTLESHIP
+		elif g_data.has("is_play_phase"):
+			inferred_type = GameTypes.FEKRBEKR
+		elif g_data.has("out_pieces") or g_data.has("end_phases"):
+			inferred_type = GameTypes.BACKGAMMON
+		elif g_data.has("player1_board") or g_data.has("current_dices"):
+			inferred_type = GameTypes.YATZY
+		elif g_data.has("peaces") or g_data.has("board_data"):
+			inferred_type = GameTypes.CHESS
+		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 64:
+			var b_arr: Array = g_data["board"]
+			if not b_arr.is_empty() and typeof(b_arr[0]) == TYPE_DICTIONARY:
+				if (b_arr[0] as Dictionary).has("correctly_selected_mine") or g_data.has("remaining_selectable_mines"):
+					inferred_type = GameTypes.MSWEEPER
+				else:
+					inferred_type = GameTypes.CHECKERS
+			elif g_data.has("scores"):
+				inferred_type = GameTypes.OTHELLO
+			else:
+				inferred_type = GameTypes.FOURINROW
+		elif g_data.has("current_turn__round") or (g_data.has("round_scores") and not g_data.has("board")):
+			inferred_type = GameTypes.RPC
+		elif g_data.has("lines_board") or g_data.has("boxes_board"):
+			inferred_type = GameTypes.DOTBOX
+		elif g_data.has("played_peaces") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 24 and not g_data.has("out_pieces")):
+			inferred_type = GameTypes.MILL
+		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 81:
+			inferred_type = GameTypes.SUDOKU
+		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 36:
+			inferred_type = GameTypes.MNUMBERS
+		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 25:
+			inferred_type = GameTypes.BOXFOUR
+		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:
+			inferred_type = GameTypes.TIC_TAC_TOE
+		if not inferred_type.is_empty():
+			if cafe_table.current_board_node == null or inferred_type.to_lower() != GameManager.current_game_type.to_lower():
+				_switch_active_game(inferred_type)
+
+	# Never show the start countdown dialog on reconnect
 	base_game_hud.is_game_started = true
 	base_game_hud.is_start_overlay_dismissed = true
 	base_game_hud.force_dismiss_start_overlay(false)
 	base_game_hud.hide_turn_banner()
-
-	if is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.is_open():
-
-		ranked_breakout_dialog.dismiss()
-
-	var g_data = payload.get("game_data", {})
-
-	if typeof(g_data) == TYPE_DICTIONARY:
-
-		var inferred_type = ""
-
-		if payload.has("game_type") and not str(payload["game_type"]).is_empty():
-
-			inferred_type = GameRegistry.normalize_type(str(payload["game_type"]))
-
-		elif g_data.has("game_type") and not str(g_data["game_type"]).is_empty():
-
-			inferred_type = GameRegistry.normalize_type(str(g_data["game_type"]))
-
-		elif g_data.has("is_setup_ring_phase") or g_data.has("disk_count") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 85):
-
-			inferred_type = GameTypes.YINSH
-
-		elif g_data.has("players_out_pieces") or g_data.has("start_board"):
-
-			inferred_type = GameTypes.LUDO
-
-		elif g_data.has("rotation_played") or g_data.has("selection_played") or g_data.has("pawns"):
-
-			inferred_type = GameTypes.PENTAGO
-
-		elif g_data.has("player1_choices") or g_data.has("player2_choices"):
-
-			inferred_type = GameTypes.FEKRBEKR
-
-		elif g_data.has("is_play_phase") and g_data.has("player1_board") and g_data.has("player2_board"):
-
-			inferred_type = GameTypes.BATTLESHIP
-
-		elif g_data.has("is_play_phase"):
-
-			inferred_type = GameTypes.FEKRBEKR
-
-		elif g_data.has("out_pieces") or g_data.has("end_phases"):
-
-			inferred_type = GameTypes.BACKGAMMON
-
-		elif g_data.has("player1_board") or g_data.has("current_dices"):
-
-			inferred_type = GameTypes.YATZY
-
-		elif g_data.has("peaces") or g_data.has("board_data"):
-
-			inferred_type = GameTypes.CHESS
-
-		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 64:
-
-			var b_arr: Array = g_data["board"]
-
-			if not b_arr.is_empty() and typeof(b_arr[0]) == TYPE_DICTIONARY:
-
-				if (b_arr[0] as Dictionary).has("correctly_selected_mine") or g_data.has("remaining_selectable_mines"):
-
-					inferred_type = GameTypes.MSWEEPER
-
-				else:
-
-					inferred_type = GameTypes.CHECKERS
-
-			elif g_data.has("scores"):
-
-				inferred_type = GameTypes.OTHELLO
-
-			else:
-
-				inferred_type = GameTypes.FOURINROW
-
-		elif g_data.has("current_turn__round") or (g_data.has("round_scores") and not g_data.has("board")):
-
-			inferred_type = GameTypes.RPC
-
-		elif g_data.has("lines_board") or g_data.has("boxes_board"):
-
-			inferred_type = GameTypes.DOTBOX
-
-		elif g_data.has("played_peaces") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 24 and not g_data.has("out_pieces")):
-
-			inferred_type = GameTypes.MILL
-
-		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 81:
-
-			inferred_type = GameTypes.SUDOKU
-
-		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 36:
-
-			inferred_type = GameTypes.MNUMBERS
-
-		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 25:
-
-			inferred_type = GameTypes.BOXFOUR
-
-		elif g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 9:
-
-			inferred_type = GameTypes.TIC_TAC_TOE
-
-		if not inferred_type.is_empty():
-
-			if cafe_table.current_board_node == null or inferred_type.to_lower() != GameManager.current_game_type.to_lower():
-
-				_switch_active_game(inferred_type)
-
 	base_game_hud.handle_reconnect_data(payload)
 
 	var board = cafe_table.current_board_node
-
 	if board and is_instance_valid(board):
-
-		if typeof(g_data) == TYPE_DICTIONARY and board.has_method("sync_board_state"):
-
-			if g_data.has("board_data"):
-
-				board.sync_board_state(g_data["board_data"])
-
-			elif g_data.has("board"):
-
-				board.sync_board_state(g_data["board"])
-
-			elif g_data.has("lines_board"):
-
-				board.sync_board_state(g_data["lines_board"])
-
-			elif g_data.has("peaces"):
-
-				board.sync_board_state(g_data["peaces"])
-
-		if board.has_method("on_reconnect_data"):
-
-			board.on_reconnect_data(payload)
-
+		if board.has_method("_on_internal_reconnect_data"):
+			board._on_internal_reconnect_data(payload)
+		else:
+			if typeof(g_data) == TYPE_DICTIONARY and board.has_method("sync_board_state"):
+				if g_data.has("board_data"):
+					board.sync_board_state(g_data["board_data"])
+				elif g_data.has("board"):
+					board.sync_board_state(g_data["board"])
+				elif g_data.has("lines_board"):
+					board.sync_board_state(g_data["lines_board"])
+				elif g_data.has("peaces"):
+					board.sync_board_state(g_data["peaces"])
+			if board.has_method("on_reconnect_data"):
+				board.on_reconnect_data(payload)
 		if board.has_method("sync_turn_state"):
-
 			board.sync_turn_state()
 
-		if board.has_method("set_board_locked"):
-
-			if GameRegistry.is_simultaneous(GameManager.current_game_type):
-
-				board.set_board_locked(false)
-
-			else:
-
-				board.set_board_locked(not GameManager.is_my_turn)
-
 	base_game_hud.sync_reconnect_timer(payload)
-
 	base_game_hud.call_deferred("sync_reconnect_timer", payload)
-
-
 
 func _on_finish_reconnect_time(user_id: String) -> void:
 

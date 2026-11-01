@@ -75,8 +75,6 @@ func _connect_network_signals() -> void:
 		NetworkManager.new_round_started.connect(_on_internal_new_round)
 	if not NetworkManager.game_finished.is_connected(_on_internal_game_finished):
 		NetworkManager.game_finished.connect(_on_internal_game_finished)
-	if not NetworkManager.reconnect_data_received.is_connected(_on_internal_reconnect_data):
-		NetworkManager.reconnect_data_received.connect(_on_internal_reconnect_data)
 	if not NetworkManager.game_data_received.is_connected(_on_internal_game_data):
 		NetworkManager.game_data_received.connect(_on_internal_game_data)
 	if not NetworkManager.wait_time_received.is_connected(_on_internal_wait_time):
@@ -117,6 +115,10 @@ func _disconnect_network_signals() -> void:
 		NetworkManager.select_remove_peace_received.disconnect(_on_internal_select_remove_peace)
 	if NetworkManager.round_finished.is_connected(_on_internal_round_finished):
 		NetworkManager.round_finished.disconnect(_on_internal_round_finished)
+	if NetworkManager.new_turn_round_received.is_connected(_on_internal_new_turn_round):
+		NetworkManager.new_turn_round_received.disconnect(_on_internal_new_turn_round)
+	if NetworkManager.finish_turn_round_received.is_connected(_on_internal_finish_turn_round):
+		NetworkManager.finish_turn_round_received.disconnect(_on_internal_finish_turn_round)
 	if NetworkManager.new_round_started.is_connected(_on_internal_new_round):
 		NetworkManager.new_round_started.disconnect(_on_internal_new_round)
 	if NetworkManager.game_finished.is_connected(_on_internal_game_finished):
@@ -233,6 +235,8 @@ func _on_internal_reconnect_data(payload: Dictionary) -> void:
 			sync_board_state(g_data["board"])
 		elif g_data.has("board_data"):
 			sync_board_state(g_data["board_data"])
+		elif g_data.has("lines_board"):
+			sync_board_state(g_data["lines_board"])
 		elif g_data.has("peaces"):
 			sync_board_state(g_data["peaces"])
 	on_turn_changed(current_turn, is_my_turn)

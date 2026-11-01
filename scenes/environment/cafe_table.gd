@@ -358,8 +358,12 @@ func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 func clear_board() -> void:
 	_kill_camera_tween()
 	if current_board_node and is_instance_valid(current_board_node):
+		if current_board_node.has_method("_disconnect_network_signals"):
+			current_board_node._disconnect_network_signals()
 		if current_board_node.has_method("cleanup_board"):
 			current_board_node.cleanup_board()
+		if current_board_node.get_parent():
+			current_board_node.get_parent().remove_child(current_board_node)
 		current_board_node.queue_free()
 		current_board_node = null
 

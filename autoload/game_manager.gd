@@ -83,8 +83,7 @@ func clear_open_game_id() -> void:
 
 func set_active_game(game_id: String) -> void:
 	active_game_id = game_id
-	is_game_active = not game_id.is_empty()
-	if is_game_active:
+	if not game_id.is_empty():
 		user_data["open_game_id"] = game_id
 		user_data["game_id"] = game_id
 		# Crucial: once match is active, pre-game draft is 100% finished!
@@ -93,6 +92,7 @@ func set_active_game(game_id: String) -> void:
 		if user_data.has("open_pre_game_id"):
 			user_data.erase("open_pre_game_id")
 	else:
+		is_game_active = false
 		clear_open_game_id()
 	_save_session_config()
 	print("[GameManager] Set active match game_id: %s" % game_id)
@@ -136,7 +136,20 @@ func _save_session_config() -> void:
 func set_match_gamers(gamers_list: Array) -> void:
 	if gamers_list.is_empty():
 		return
-	match_players = gamers_list.duplicate()
+	var existing_ids: Dictionary = {}
+	for ep in match_players:
+		if typeof(ep) == TYPE_DICTIONARY:
+			var e_uid = str(ep.get("user_id", ""))
+			var e_gid = int(ep.get("gamer_id", 0))
+			if not e_uid.is_empty() and e_gid > 0:
+				existing_ids[e_uid] = e_gid
+	match_players = gamers_list.duplicate(true)
+	for mp in match_players:
+		if typeof(mp) == TYPE_DICTIONARY:
+			var m_uid = str(mp.get("user_id", ""))
+			if int(mp.get("gamer_id", 0)) <= 0 and existing_ids.has(m_uid):
+				mp["gamer_id"] = existing_ids[m_uid]
+				mp["team_id"] = existing_ids[m_uid]
 	var my_uid = str(get_user_id())
 	var my_uname = str(get_username())
 	
