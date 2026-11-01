@@ -1206,6 +1206,7 @@ func reset_for_new_match() -> void:
 
 		_surrender_result_tween = null
 
+	_countdown_run_id += 1
 	is_start_overlay_dismissed = false
 
 	is_countdown_running = false
@@ -1679,6 +1680,7 @@ func update_not_played_turns(gamer_id: int, count: int) -> void:
 
 
 var _countdown_pulse_tween: Tween = null
+var _countdown_run_id: int = 0
 
 
 
@@ -1799,193 +1801,117 @@ func update_start_countdown_time(_sec: int) -> void:
 # Plays synchronized pre-game loading countdown
 
 func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int = 5) -> void:
-
 	if is_start_overlay_dismissed or is_game_started or GameManager.is_game_active:
-
 		if on_finished.is_valid():
-
 			on_finished.call()
-
 		return
-
 	if is_countdown_running:
-
 		if on_finished.is_valid():
-
 			on_finished.call()
-
 		return
 
-		
-
+	_countdown_run_id += 1
+	var my_run_id: int = _countdown_run_id
 	is_countdown_running = true
-
 	is_game_started = false
-
 	is_timer_active = false
-
 	if is_instance_valid(lbl_turn_banner):
-
 		lbl_turn_banner.text = "بازی درحال آغاز است"
-
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-
 	_stop_loading_pulse()
-
 	intro_countdown_lbl.add_theme_font_size_override("font_size", 96)
-
 	start_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-
 	if not start_overlay.visible:
-
 		ActionVFXManager.animate_dialog_open(intro_card, start_overlay, true)
-
 	intro_status_lbl.text = "میز مسابقه آماده است! نبرد آغاز می‌شود در:"
 
-	
-
 	# Reveal game-specific roles when real countdown begins
-
 	if GameManager.current_game_type == GameTypes.FEKRBEKR:
-
 		intro_p1_role.text = "🔐 طراح و کاشف رمز"
-
 		intro_p2_role.text = "🔐 طراح و کاشف رمز"
-
 		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
-
 		intro_p2_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
-
 	elif GameManager.current_game_type == GameTypes.CHESS:
-
 		intro_p1_role.text = "🔴 ارتش قرمز"
-
 		intro_p2_role.text = "🔵 ارتش آبی"
-
 		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
-
 		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
-
 	else:
-
 		intro_p1_role.text = "🔴 مهره قرمز"
-
 		intro_p2_role.text = "🔵 مهره آبی"
-
 		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
-
 		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
-
 	intro_p1_role.visible = true
-
 	intro_p2_role.visible = true
-
 	intro_p1_role.modulate.a = 0.0
-
 	intro_p2_role.modulate.a = 0.0
-
 	var tw_roles = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
 	tw_roles.tween_property(intro_p1_role, "modulate:a", 1.0, 0.4)
-
 	tw_roles.tween_property(intro_p2_role, "modulate:a", 1.0, 0.4)
 
-	
-
 	for i in range(total_seconds, 0, -1):
-
-		if not start_overlay.visible or is_start_overlay_dismissed:
-
-			break
-
+		if my_run_id != _countdown_run_id or not start_overlay.visible or is_start_overlay_dismissed:
+			return
 		intro_countdown_lbl.text = "%d" % i
-
 		_pulse_countdown_label()
-
 		AudioManager.play_sound("time")
-
 		await get_tree().create_timer(1.0).timeout
 
-	
+	if my_run_id != _countdown_run_id:
+		return
 
 	if start_overlay.visible and not is_start_overlay_dismissed:
-
 		intro_countdown_lbl.text = "شروع!"
-
 		intro_countdown_lbl.add_theme_color_override("font_color", Color(0.35, 0.95, 0.45))
-
 		_pulse_countdown_label()
-
 		AudioManager.play_sound("bell")
-
 		await get_tree().create_timer(0.4).timeout
-
+		if my_run_id != _countdown_run_id:
+			return
 		force_dismiss_start_overlay()
-
 	else:
-
 		force_dismiss_start_overlay()
-
-	
 
 	is_countdown_running = false
-
 	if on_finished.is_valid():
-
 		on_finished.call()
-
 
 
 # Guarantees the loading overlay is dismissed as soon as the intro countdown finishes or match becomes active
 
 func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
-
+	_countdown_run_id += 1
 	_stop_loading_pulse()
-
+	var was_visible: bool = is_instance_valid(start_overlay) and start_overlay.visible
 	is_start_overlay_dismissed = true
-
 	is_countdown_running = false
-
 	if is_instance_valid(start_overlay):
-
-		start_overlay.visible = false
-
 		start_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	if start_overlay.has_node("Dimmer"):
-
-		start_overlay.get_node("Dimmer").mouse_filter = Control.MOUSE_FILTER_IGNORE
-
+		if start_overlay.has_node("Dimmer"):
+			start_overlay.get_node("Dimmer").mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if intro_card:
-
 		intro_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	ActionVFXManager.animate_dialog_close(intro_card, start_overlay, func():
-
-		if emit_finished:
-
-			start_countdown_finished.emit()
-
-	)
-
-	if GameManager.is_game_active:
-
-		is_game_started = true
-
-		if not is_timer_active and not is_game_finished:
-
-			var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
-
-			start_turn_timer(def_time)
-
+	if was_visible:
+		ActionVFXManager.animate_dialog_close(intro_card, start_overlay, func():
+			if is_instance_valid(start_overlay):
+				start_overlay.visible = false
+			if emit_finished:
+				start_countdown_finished.emit()
+		)
 	else:
-
+		if is_instance_valid(start_overlay):
+			start_overlay.visible = false
+		if emit_finished:
+			start_countdown_finished.emit()
+	if GameManager.is_game_active:
+		is_game_started = true
+		if not is_timer_active and not is_game_finished:
+			var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
+			start_turn_timer(def_time)
+	else:
 		if is_instance_valid(lbl_turn_banner):
-
 			lbl_turn_banner.text = "بازی درحال آغاز است"
-
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-
 
 
 func _pulse_countdown_label() -> void:
@@ -2958,7 +2884,7 @@ func show_surrender_notification(surrendered_gamer_id: int) -> void:
 
 	# In ranked series (multi-game), surrender forfeits ONLY current game, moving to next game if available!
 
-	var is_ranked_series = (GameManager.current_match_mode == "ranked" or GameManager.active_match_type == "ranked")
+	var is_ranked_series = (GameManager.current_match_mode == "ranked")
 
 	if is_ranked_series:
 

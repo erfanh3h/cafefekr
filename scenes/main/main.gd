@@ -77,6 +77,9 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 @onready var pick_ban_dialog = $CanvasLayer/PickBanDialog
 @onready var ranked_breakout_dialog = $CanvasLayer/RankedBreakoutDialog
 var _ranked_series_games: Array = []
+var _active_series_game_index: int = -1
+var _last_game_play_payload: Dictionary = {}
+var _ranked_rewards_applied: bool = false
 
 
 
@@ -1105,6 +1108,8 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 	_pending_turn = -1
 
 	_current_round_scored = false
+	_active_series_game_index = 0
+	_ranked_rewards_applied = false
 
 	
 
@@ -1589,6 +1594,7 @@ func _on_new_round_started(round_num: int) -> void:
 
 
 func _on_game_play_data_received(payload: Dictionary) -> void:
+	_last_game_play_payload = payload.duplicate(true)
 	var score_type_str = str(payload.get("game_score_type", ""))
 	if score_type_str == "Rank":
 		current_match_mode = "ranked"
@@ -1614,6 +1620,17 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 	var winners_arr = payload.get("winners", [-1, -1, -1]) as Array
 
 	if current_match_mode == "ranked":
+		if is_finished and not _ranked_rewards_applied:
+			_ranked_rewards_applied = true
+			var my_uid = str(GameManager.get_user_id())
+			var xp_map = payload.get("xp_awarded", {})
+			var sc_map = payload.get("score_awarded", {})
+			var cn_map = payload.get("coin_awarded", {})
+			var my_xp = int(xp_map.get(my_uid, 0)) if typeof(xp_map) == TYPE_DICTIONARY else 0
+			var my_sc = int(sc_map.get(my_uid, 0)) if typeof(sc_map) == TYPE_DICTIONARY else 0
+			var my_cn = int(cn_map.get(my_uid, 0)) if typeof(cn_map) == TYPE_DICTIONARY else 0
+			GameManager.apply_ranked_rewards(my_sc, my_xp, my_cn)
+
 		var prev_game_finished = (current_idx > 0 and not winners_arr.is_empty() and int(winners_arr[current_idx - 1]) != -1)
 		if is_finished or (prev_game_finished and is_between_games and not GameManager.is_game_active):
 			print("[Main] Ranked breakout view shown: Game %d/3 (is_finished=%s)" % [current_idx + 1, str(is_finished)])
@@ -1622,6 +1639,7 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 			if is_instance_valid(base_game_hud):
 				base_game_hud._surrender_handled = false
 				base_game_hud.is_game_finished = false
+				base_game_hud.hide_round_finish_banner()
 			if is_instance_valid(ranked_breakout_dialog):
 				ranked_breakout_dialog.open(payload)
 		else:
@@ -1774,6 +1792,7 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 	var is_reconnect = bool(payload.get("is_reconnect", false))
 	if is_reconnect:
 		print("[Main] Game_Play_Navigate received during reconnect. Bypassing start countdown.")
+		_active_series_game_index = current_idx
 		GameManager.is_game_active = true
 		base_game_hud.is_game_started = true
 		base_game_hud.is_start_overlay_dismissed = true
@@ -1785,22 +1804,31 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 		NetworkManager.send_game_command("RequestReconnectData", {})
 		return
 
-	# Starting a new game (Game 1, Game 2, or Game 3)
-	_pending_start_game = false
-	_pending_turn = -1
-	_current_round_scored = false
-	GameManager.is_game_active = false
-	GameManager.current_turn = 0
-	GameManager.current_round = 1
-	GameManager.p1_score = 0
-	GameManager.p2_score = 0
+	# Check if we are transitioning to a NEW game in the series (e.g. Game 2 or Game 3),
+	# or if Game 1 was already initialized by _start_game_match.
+	var is_new_series_game: bool = (current_idx != _active_series_game_index)
+	_active_series_game_index = current_idx
 
-	var board = cafe_table.current_board_node
-	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
-		board.set_board_locked(true)
-	base_game_hud.reset_for_new_match()
-	base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
-	base_game_hud.play_start_countdown(Callable(), 5)
+	if is_new_series_game:
+		_pending_start_game = false
+		_pending_turn = -1
+		_current_round_scored = false
+		GameManager.is_game_active = false
+		GameManager.current_turn = 0
+		GameManager.current_round = 1
+		GameManager.p1_score = 0
+		GameManager.p2_score = 0
+
+		var board = cafe_table.current_board_node
+		if board and is_instance_valid(board) and board.has_method("set_board_locked"):
+			board.set_board_locked(true)
+		base_game_hud.reset_for_new_match()
+		base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
+		base_game_hud.play_start_countdown(Callable(), 5)
+	else:
+		base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
+		if not base_game_hud.is_countdown_running and not base_game_hud.is_start_overlay_dismissed and not GameManager.is_game_active:
+			base_game_hud.play_start_countdown(Callable(), 5)
 
 func _on_surrender_requested() -> void:
 
@@ -1992,8 +2020,20 @@ func _on_game_finished(data: Dictionary) -> void:
 
 
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
-
 		board.set_board_locked(true)
+
+	if current_match_mode == "ranked":
+		if not _ranked_rewards_applied:
+			_ranked_rewards_applied = true
+			var r_xp = int(data.get("xp_earned", 0))
+			var r_sc = int(data.get("score_earned", 0))
+			var r_cn = int(data.get("coin_earned", 0))
+			GameManager.apply_ranked_rewards(r_sc, r_xp, r_cn)
+		if is_instance_valid(ranked_breakout_dialog):
+			if not ranked_breakout_dialog.is_open() and not _last_game_play_payload.is_empty():
+				_last_game_play_payload["is_game_finished"] = true
+				ranked_breakout_dialog.open(_last_game_play_payload)
+		return
 
 	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned)
 
@@ -2183,15 +2223,12 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 	base_game_hud.call_deferred("sync_reconnect_timer", payload)
 
 func _on_finish_reconnect_time(user_id: String) -> void:
-
 	print("[Main] Opponent reconnect time expired for user: %s." % user_id)
-
 	base_game_hud.hide_pause_dialog()
-
 	base_game_hud.show_toast_hint("🏆 مهلت اتصال حریف به پایان رسید!")
-
+	if current_match_mode == "ranked":
+		return
 	var my_idx = GameManager.my_player_index
-
 	_on_game_finished({"winner": my_idx})
 
 

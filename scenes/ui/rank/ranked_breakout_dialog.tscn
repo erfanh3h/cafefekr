@@ -273,7 +273,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
 theme_override_font_sizes/font_size = 52
-text = "۲۰"
+text = "۱۰"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -442,7 +442,7 @@ theme_override_font_sizes/font_size = 22
 text = "بازی اول مسابقه"
 
 [node name="StatusChip" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow1/Margin/HBox"]
-custom_minimum_size = Vector2(210, 52)
+custom_minimum_size = Vector2(235, 56)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_chip_default")
@@ -515,7 +515,7 @@ theme_override_font_sizes/font_size = 22
 text = "بازی دوم مسابقه"
 
 [node name="StatusChip" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow2/Margin/HBox"]
-custom_minimum_size = Vector2(210, 52)
+custom_minimum_size = Vector2(235, 56)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_chip_default")
@@ -588,7 +588,7 @@ theme_override_font_sizes/font_size = 22
 text = "بازی سوم (در صورت تساوی)"
 
 [node name="StatusChip" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow3/Margin/HBox"]
-custom_minimum_size = Vector2(210, 52)
+custom_minimum_size = Vector2(235, 56)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_chip_default")
@@ -615,7 +615,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
 theme_override_font_sizes/font_size = 26
-text = "آماده‌سازی زمین بازی... شروع بازی بعدی تا ۲۰ ثانیه"
+text = "آماده‌سازی زمین بازی... شروع بازی بعدی تا ۱۰ ثانیه"
 horizontal_alignment = 1
 
 [node name="ProgressBar" type="ProgressBar" parent="Margin/VBox/FooterWaitingBox/VBox"]
@@ -623,8 +623,8 @@ custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_prog_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_prog_fill")
-max_value = 20.0
-value = 20.0
+max_value = 10.0
+value = 10.0
 show_percentage = false
 
 [node name="FooterFinishedBox" type="PanelContainer" parent="Margin/VBox"]
