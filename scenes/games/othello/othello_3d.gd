@@ -1235,8 +1235,10 @@ func sync_board_state(new_board: Variant) -> void:
 func on_reconnect_data(payload: Dictionary) -> void:
 	my_player_index = GameManager.my_player_index
 	update_board_orientation(my_player_index)
-	var g_data = payload.get("game_data", {})
+	var g_data = payload.get("game_data", payload)
 	if typeof(g_data) == TYPE_DICTIONARY:
+		if g_data.has("board"):
+			sync_board_state(g_data["board"])
 		if g_data.has("pawns_count") and typeof(g_data["pawns_count"]) == TYPE_ARRAY and (g_data["pawns_count"] as Array).size() >= 2:
 			player1_pawns = int(g_data["pawns_count"][0])
 			player2_pawns = int(g_data["pawns_count"][1])

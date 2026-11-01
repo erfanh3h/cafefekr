@@ -38,6 +38,17 @@ signal select_mine_correct_received(payload: Dictionary)
 signal select_mine_wrong_received(payload: Dictionary)
 signal player_score_received(payload: Dictionary)
 signal classic_rank_match_ready(game_id: String, game_type: String)
+signal queue_accept_game_received()
+signal pre_game_started(pre_game_id: String, queuers: Array)
+signal system_banned_games_received(banned_games: Array)
+signal select_game_turn(active_user_id: String)
+signal selected_game_received(active_index: int, game_type: String)
+signal queue_game_canceled()
+signal queue_game_finished()
+signal queue_reconnect_data_received(data: Dictionary)
+signal queue_start_game_received(game_id: String)
+signal queue_user_disconnected(user_id: String, wait_time: int)
+signal queue_user_reconnected(user_id: String, remaining_time: int)
 
 var api: APIClient
 var socket: SocketIOClient
@@ -108,7 +119,7 @@ func restore_session(callback: Callable) -> void:
 	api.get_my_data(func(success: bool, response_code: int, data: Variant):
 		if success and typeof(data) == TYPE_DICTIONARY and (data.has("result") or data.has("user_data")):
 			var user_data = data.get("result", data.get("user_data", {}))
-			GameManager.set_session(saved_token, user_data, false)
+			GameManager.set_session(saved_token, user_data, true)
 			print("[NetworkManager] Session restored successfully for %s" % GameManager.get_username())
 			callback.call(true, "Restored")
 		elif response_code == 401:
@@ -159,6 +170,31 @@ func send_queue_command(command_id: String, data: Variant = null) -> void:
 	}
 	socket.emit_event("/queue", "user_command", payload)
 
+func send_queue_accept() -> void:
+	var payload = {
+		"id": Commands.Accept,
+		"user_id": GameManager.get_user_id()
+	}
+	print("[NetworkManager] Sending Accept to /queue: %s" % str(payload))
+	socket.emit_event("/queue", "user_command", payload)
+
+func send_queue_reject() -> void:
+	var payload = {
+		"id": Commands.Reject,
+		"user_id": GameManager.get_user_id()
+	}
+	print("[NetworkManager] Sending Reject to /queue: %s" % str(payload))
+	socket.emit_event("/queue", "user_command", payload)
+
+func send_pre_game_select(pre_game_id: String, game_type: String) -> void:
+	var payload = {
+		"pre_game_id": pre_game_id,
+		"id": Commands.Select_Game,
+		"game_type": game_type
+	}
+	print("[NetworkManager] Sending Select_Game to /queue: %s" % str(payload))
+	socket.emit_event("/queue", "user_command", payload)
+
 # --- FRIENDLY LOBBY ---
 
 func join_lobby(auth_data: Dictionary = {}) -> void:
@@ -189,7 +225,7 @@ func start_classic_rank(game_type: String) -> void:
 # --- IN-GAME SESSION ---
 
 func join_active_game(game_id: String) -> void:
-	GameManager.active_game_id = game_id
+	GameManager.set_active_game(game_id)
 	var auth = {
 		"token": GameManager.token,
 		"game_id": game_id
@@ -197,8 +233,7 @@ func join_active_game(game_id: String) -> void:
 	socket.connect_namespace("/game", auth)
 
 func leave_active_game() -> void:
-	GameManager.active_game_id = ""
-	GameManager.clear_open_game_id()
+	GameManager.set_active_game("")
 	socket.disconnect_namespace("/game")
 
 func send_surrender() -> void:
@@ -233,10 +268,22 @@ func _on_socket_connected() -> void:
 	print("[NetworkManager] Connected to game backend!")
 	_reconnect_timer.stop()
 	connection_status_changed.emit(true)
-	# Auto-rejoin active game namespace if socket reconnected during ongoing match
-	if not GameManager.active_game_id.is_empty():
-		print("[NetworkManager] Socket reconnected during active game (%s). Rejoining /game namespace..." % GameManager.active_game_id)
-		join_active_game(GameManager.active_game_id)
+	# Auto-rejoin active game namespace if socket reconnected during ongoing match (takes priority!)
+	var open_gid = GameManager.get_open_game_id()
+	var act_gid = GameManager.active_game_id
+	var target_game_id = act_gid if not act_gid.is_empty() else open_gid
+	
+	if GameManager.is_game_active or not target_game_id.is_empty():
+		print("[NetworkManager] Game is already started (%s). Rejoining /game namespace..." % target_game_id)
+		GameManager.clear_open_pre_game_id()
+		join_active_game(target_game_id)
+		return
+
+	# Only rejoin /queue if we are truly still in pre-game draft!
+	var open_pre_id = GameManager.get_open_pre_game_id()
+	if not open_pre_id.is_empty():
+		print("[NetworkManager] Socket reconnected during active pre-game draft (%s). Rejoining /queue..." % open_pre_id)
+		join_matchmaking_queue(open_pre_id)
 
 func _on_socket_disconnected() -> void:
 	print("[NetworkManager] Disconnected from game backend.")
@@ -246,6 +293,9 @@ func _on_socket_disconnected() -> void:
 
 func _on_namespace_connected(ns: String) -> void:
 	print("[NetworkManager] Namespace %s ready." % ns)
+	if ns == "/game" and (GameManager.is_game_active or not GameManager.active_game_id.is_empty()):
+		print("[NetworkManager] Active game session detected upon /game connection. Actively requesting Reconnect_Data...")
+		send_game_command("RequestReconnectData", {})
 
 func _on_socket_event(ns: String, event_name: String, data: Variant) -> void:
 	if event_name == "command" and typeof(data) == TYPE_DICTIONARY:
@@ -269,6 +319,16 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 					print("[NetworkManager] Classic Rank match found: %s (%s)" % [c_gid, c_gtype])
 					classic_rank_match_ready.emit(c_gid, c_gtype)
 				return
+			if ns == "/queue":
+				var g_id = ""
+				if typeof(payload) == TYPE_DICTIONARY and payload.has("game_id"):
+					g_id = str(payload["game_id"])
+				print("[NetworkManager] Start_Game received on /queue with game_id: %s" % g_id)
+				leave_matchmaking_queue()
+				if not g_id.is_empty():
+					GameManager.set_active_game(g_id)
+				queue_start_game_received.emit(g_id)
+				return
 			if typeof(payload) == TYPE_DICTIONARY and payload.has("game_id"):
 				var game_id = payload["game_id"]
 				game_match_found.emit(game_id)
@@ -284,6 +344,53 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			var w_time = int(payload) if typeof(payload) != TYPE_DICTIONARY else int(payload.get("time", 5))
 			print("[NetworkManager] Wait_Time received: %d sec" % w_time)
 			wait_time_received.emit(w_time)
+
+		Commands.AcceptGame:
+			print("[NetworkManager] Match Found! AcceptGame received on /queue.")
+			queue_accept_game_received.emit()
+
+		Commands.Start_Pre_Game:
+			var pre_id = payload.get("id", "") if typeof(payload) == TYPE_DICTIONARY else ""
+			var queuers = payload.get("queuers", []) if typeof(payload) == TYPE_DICTIONARY else []
+			print("[NetworkManager] PreGame started: %s with %d players" % [pre_id, queuers.size()])
+			pre_game_started.emit(pre_id, queuers)
+
+		Commands.System_Banned_Games:
+			var b_games = payload if typeof(payload) == TYPE_ARRAY else []
+			print("[NetworkManager] System Banned Games: %s" % str(b_games))
+			system_banned_games_received.emit(b_games)
+
+		Commands.Select_Game:
+			var active_uid = str(payload)
+			print("[NetworkManager] PreGame Select_Game Turn for user: %s" % active_uid)
+			select_game_turn.emit(active_uid)
+
+		Commands.Selected_Game:
+			var s_idx = int(payload.get("active_index", 0)) if typeof(payload) == TYPE_DICTIONARY else 0
+			var s_gtype = str(payload.get("game_type", "")) if typeof(payload) == TYPE_DICTIONARY else ""
+			print("[NetworkManager] PreGame Selected_Game: Turn %d -> %s" % [s_idx, s_gtype])
+			selected_game_received.emit(s_idx, s_gtype)
+
+		Commands.Game_Canceled:
+			print("[NetworkManager] PreGame Game_Canceled received.")
+			queue_game_canceled.emit()
+
+		Commands.Reconnect_Data:
+			print("[NetworkManager] PreGame Reconnect_Data received: %s" % str(payload))
+			if typeof(payload) == TYPE_DICTIONARY:
+				queue_reconnect_data_received.emit(payload)
+
+		Commands.User_Disconnected:
+			var u_id = str(payload.get("user_id", "")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
+			var w_time = int(payload.get("time", 45)) if typeof(payload) == TYPE_DICTIONARY else 45
+			print("[NetworkManager] PreGame User_Disconnected: %s (Wait Time: %d)" % [u_id, w_time])
+			queue_user_disconnected.emit(u_id, w_time)
+
+		Commands.User_Reconnected:
+			var u_id = str(payload.get("user_id", "")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
+			var r_time = int(payload.get("time", 20)) if typeof(payload) == TYPE_DICTIONARY else 20
+			print("[NetworkManager] PreGame User_Reconnected: %s (Resume Time: %d)" % [u_id, r_time])
+			queue_user_reconnected.emit(u_id, r_time)
 
 		Commands.Game_Play_Data:
 			if typeof(payload) == TYPE_DICTIONARY:
@@ -400,6 +507,9 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			game_finished.emit(payload if typeof(payload) == TYPE_DICTIONARY else {"winner": payload})
 
 		Commands.Game_Finished:
+			if ns == "/queue":
+				print("[NetworkManager] Game_Finished received on /queue namespace.")
+				queue_game_finished.emit()
 			game_finished.emit(payload if typeof(payload) == TYPE_DICTIONARY else {"winner": payload})
 
 		Commands.User_Disconnected:

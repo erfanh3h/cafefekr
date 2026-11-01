@@ -20,6 +20,9 @@ var is_guest: bool = false
 # Current Match State
 var active_game_id: String = ""
 var is_game_active: bool = false
+var active_pre_game_id: String = ""
+var is_in_pre_game: bool = false
+var current_match_mode: String = ""
 var current_game_type: String = GameRegistry.DEFAULT_GAME_TYPE
 var current_turn: int = 0 # 0 before start / setup phase; 1 or 2 during play
 var my_player_index: int = 1 # 1 (Player 1) or 2 (Player 2)
@@ -74,13 +77,61 @@ func clear_open_game_id() -> void:
 	if user_data.has("game_id"):
 		user_data.erase("game_id")
 		changed = true
-	if changed and not token.is_empty():
+	if changed:
+		_save_session_config()
+		print("[GameManager] Cleared open_game_id from cached session.")
+
+func set_active_game(game_id: String) -> void:
+	active_game_id = game_id
+	is_game_active = not game_id.is_empty()
+	if is_game_active:
+		user_data["open_game_id"] = game_id
+		user_data["game_id"] = game_id
+		# Crucial: once match is active, pre-game draft is 100% finished!
+		active_pre_game_id = ""
+		is_in_pre_game = false
+		if user_data.has("open_pre_game_id"):
+			user_data.erase("open_pre_game_id")
+	else:
+		clear_open_game_id()
+	_save_session_config()
+	print("[GameManager] Set active match game_id: %s" % game_id)
+
+func set_active_pre_game(pre_id: String) -> void:
+	# Only allow setting active pre-game if NOT currently in an active game!
+	if is_game_active or not active_game_id.is_empty() or not get_open_game_id().is_empty():
+		print("[GameManager] Ignored set_active_pre_game because match is already active!")
+		return
+	active_pre_game_id = pre_id
+	is_in_pre_game = not pre_id.is_empty()
+	if is_in_pre_game:
+		user_data["open_pre_game_id"] = pre_id
+	else:
+		user_data.erase("open_pre_game_id")
+	_save_session_config()
+	print("[GameManager] Set active pre-game draft: %s" % pre_id)
+
+func get_open_pre_game_id() -> String:
+	# If a match is active or open_game_id is set, pre_game_id is invalid!
+	if is_game_active or not active_game_id.is_empty() or not get_open_game_id().is_empty():
+		return ""
+	return str(user_data.get("open_pre_game_id", active_pre_game_id))
+
+func clear_open_pre_game_id() -> void:
+	active_pre_game_id = ""
+	is_in_pre_game = false
+	if user_data.has("open_pre_game_id"):
+		user_data.erase("open_pre_game_id")
+	_save_session_config()
+	print("[GameManager] Cleared open_pre_game_id from cached session.")
+
+func _save_session_config() -> void:
+	if not token.is_empty():
 		var config = ConfigFile.new()
 		config.set_value("auth", "token", token)
 		config.set_value("auth", "user_data", user_data)
 		config.set_value("auth", "is_guest", is_guest)
 		config.save(SESSION_PATH)
-		print("[GameManager] Cleared open_game_id from cached session.")
 
 func set_match_gamers(gamers_list: Array) -> void:
 	if gamers_list.is_empty():
@@ -168,7 +219,11 @@ func load_saved_user_data() -> Dictionary:
 	if err == OK:
 		is_guest = config.get_value("auth", "is_guest", false)
 		if config.has_section_key("auth", "user_data"):
-			return config.get_value("auth", "user_data", {})
+			var udata = config.get_value("auth", "user_data", {})
+			var open_gid = str(udata.get("open_game_id", udata.get("game_id", "")))
+			if not open_gid.is_empty():
+				udata.erase("open_pre_game_id")
+			return udata
 	return {}
 
 func start_guest_session() -> void:
@@ -201,12 +256,17 @@ func set_session(new_token: String, new_user_data: Dictionary, save_to_disk: boo
 	is_logged_in = true
 	is_guest = false
 	
+	# If an ongoing game exists, pick & ban draft is definitely finished!
+	var open_gid = str(user_data.get("open_game_id", user_data.get("game_id", "")))
+	if not open_gid.is_empty():
+		active_game_id = open_gid
+		is_game_active = true
+		active_pre_game_id = ""
+		is_in_pre_game = false
+		user_data["open_pre_game_id"] = ""
+	
 	if save_to_disk:
-		var config = ConfigFile.new()
-		config.set_value("auth", "token", token)
-		config.set_value("auth", "user_data", user_data)
-		config.set_value("auth", "is_guest", false)
-		config.save(SESSION_PATH)
+		_save_session_config()
 		print("[GameManager] Session saved locally.")
 		
 	user_logged_in.emit(user_data)
@@ -271,4 +331,6 @@ func add_xp(amount: int) -> void:
 	print("[GameManager] Added %d XP. New total: %d" % [amount, user_data["xp"]])
 
 func get_open_game_id() -> String:
-	return str(user_data.get("open_game_id", ""))
+	if not active_game_id.is_empty():
+		return active_game_id
+	return str(user_data.get("open_game_id", user_data.get("game_id", "")))

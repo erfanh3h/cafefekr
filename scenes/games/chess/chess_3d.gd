@@ -1917,10 +1917,16 @@ func sync_board_state(new_board: Variant) -> void:
 	if is_my_turn:
 		set_pieces_movements()
 
-func on_reconnect_data(_payload: Dictionary) -> void:
+func on_reconnect_data(payload: Dictionary) -> void:
 	my_player_index = GameManager.my_player_index
 	update_board_orientation(my_player_index)
 	sync_turn_state()
+	var g_data = payload.get("game_data", payload)
+	if typeof(g_data) == TYPE_DICTIONARY:
+		if g_data.has("board_data"):
+			sync_board_state(g_data["board_data"])
+		elif g_data.has("board"):
+			sync_board_state(g_data["board"])
 
 func reset_board() -> void:
 	_clear_markers()

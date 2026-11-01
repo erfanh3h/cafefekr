@@ -1371,8 +1371,10 @@ func sync_board_state(new_board: Variant) -> void:
 
 func on_reconnect_data(payload: Dictionary) -> void:
 	my_player_index = GameManager.my_player_index
-	var g_data = payload.get("game_data", {})
+	var g_data = payload.get("game_data", payload)
 	if typeof(g_data) == TYPE_DICTIONARY:
+		if g_data.has("board"):
+			sync_board_state(g_data["board"])
 		if g_data.has("played_peaces") and typeof(g_data["played_peaces"]) == TYPE_ARRAY and (g_data["played_peaces"] as Array).size() >= 2:
 			player1_played_peaces = int(g_data["played_peaces"][0])
 			player2_played_peaces = int(g_data["played_peaces"][1])

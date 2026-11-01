@@ -1,20 +1,31 @@
 extends PanelContainer
 
 # Queue Dialog Controller
-# Mirrors QueuePage from Flutter:
-# Displays search spinner, elapsed time, plays queue.mp3, and handles match finding
+# Displays search spinner, elapsed time, plays queue.mp3,
+# handles match finding and Accept/Reject confirmation phase before Pre-Game.
 
 signal queue_cancelled()
 signal match_ready(game_id: String, game_type: String)
+signal pre_game_ready(pre_game_id: String, queuers: Array)
 
+@onready var lbl_title: Label = $Margin/VBox/LblTitle
 @onready var lbl_timer: Label = $Margin/VBox/LblTimer
 @onready var lbl_status: Label = $Margin/VBox/LblStatus
 @onready var btn_cancel: Button = $Margin/VBox/BtnCancel
+@onready var spinner_container: Control = $Margin/VBox/SpinnerContainer
 @onready var spinner: Control = $Margin/VBox/SpinnerContainer/Spinner
 
 var elapsed_seconds: int = 0
 var timer_active: bool = false
 var search_timer: Timer
+
+# Accept / Reject confirmation controls
+var accept_container: HBoxContainer
+var btn_accept: Button
+var btn_reject: Button
+var accept_countdown: int = 10
+var accept_timer: Timer
+var is_accept_phase: bool = false
 
 func _ready() -> void:
 	KenneyUI.style_button(btn_cancel, KenneyUI.COLOR_RED)
@@ -25,16 +36,64 @@ func _ready() -> void:
 	search_timer.timeout.connect(_on_timer_tick)
 	add_child(search_timer)
 	
+	accept_timer = Timer.new()
+	accept_timer.wait_time = 1.0
+	accept_timer.timeout.connect(_on_accept_tick)
+	add_child(accept_timer)
+	
+	_setup_accept_ui()
+	
 	NetworkManager.game_match_found.connect(_on_match_found)
+	NetworkManager.queue_accept_game_received.connect(_on_accept_game_received)
+	NetworkManager.pre_game_started.connect(_on_pre_game_started)
+	NetworkManager.queue_game_canceled.connect(_on_game_canceled)
+
+func _setup_accept_ui() -> void:
+	accept_container = HBoxContainer.new()
+	accept_container.name = "AcceptContainer"
+	accept_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	accept_container.add_theme_constant_override("separation", 24)
+	accept_container.visible = false
+	
+	# Accept Button (Green)
+	btn_accept = Button.new()
+	btn_accept.text = "آماده‌ام"
+	btn_accept.custom_minimum_size = Vector2(240, 64)
+	btn_accept.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	btn_accept.add_theme_font_size_override("font_size", 28)
+	KenneyUI.style_button(btn_accept, KenneyUI.COLOR_GREEN)
+	btn_accept.pressed.connect(_on_accept_pressed)
+	accept_container.add_child(btn_accept)
+	
+	# Reject Button (Red)
+	btn_reject = Button.new()
+	btn_reject.text = "انصراف"
+	btn_reject.custom_minimum_size = Vector2(240, 64)
+	btn_reject.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	btn_reject.add_theme_font_size_override("font_size", 28)
+	KenneyUI.style_button(btn_reject, KenneyUI.COLOR_RED)
+	btn_reject.pressed.connect(_on_reject_pressed)
+	accept_container.add_child(btn_reject)
+	
+	$Margin/VBox.add_child(accept_container)
 
 func _process(delta: float) -> void:
-	if visible and spinner:
+	if visible and spinner and not is_accept_phase:
 		spinner.rotation += delta * 2.5
 
 func start_queue(requested_game_type: String = "") -> void:
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	elapsed_seconds = 0
 	timer_active = true
+	is_accept_phase = false
+	
+	lbl_title.text = "جستجوی حریف آنلاین"
+	spinner_container.visible = true
+	btn_cancel.visible = true
+	accept_container.visible = false
+	btn_accept.disabled = false
+	btn_reject.disabled = false
+	
 	_update_timer_label()
 	
 	if not requested_game_type.is_empty():
@@ -47,7 +106,7 @@ func start_queue(requested_game_type: String = "") -> void:
 		AudioManager.play_queue_music()
 		NetworkManager.join_matchmaking_queue(requested_game_type)
 	else:
-		lbl_status.text = "در حال جستجوی حریف آنلاین..."
+		lbl_status.text = "در حال جستجوی حریف در رده‌بندی..."
 		lbl_status.modulate = Color(1.0, 0.9, 0.4)
 		search_timer.start()
 		AudioManager.play_queue_music()
@@ -55,7 +114,9 @@ func start_queue(requested_game_type: String = "") -> void:
 
 func stop_queue() -> void:
 	timer_active = false
+	is_accept_phase = false
 	search_timer.stop()
+	accept_timer.stop()
 	AudioManager.play_theme_music()
 	NetworkManager.leave_matchmaking_queue()
 	queue_cancelled.emit()
@@ -76,18 +137,84 @@ func _on_cancel_pressed() -> void:
 	AudioManager.sfx_button()
 	stop_queue()
 
+func _on_accept_game_received() -> void:
+	# Server notified both players that a match was found; require Accept/Reject confirmation
+	search_timer.stop()
+	is_accept_phase = true
+	
+	AudioManager.sfx_queue_found()
+	AudioManager.stop_music()
+	
+	lbl_title.text = "⚡ حریف پیدا شد! ⚡"
+	lbl_status.text = "آماده شروع بازی هستی؟"
+	lbl_status.modulate = Color(0.3, 0.95, 0.45)
+	
+	spinner_container.visible = false
+	btn_cancel.visible = false
+	accept_container.visible = true
+	btn_accept.disabled = false
+	btn_reject.disabled = false
+	
+	accept_countdown = 15
+	lbl_timer.text = "%d ثانیه" % accept_countdown
+	accept_timer.start()
+
+func _on_accept_tick() -> void:
+	accept_countdown -= 1
+	lbl_timer.text = "%d ثانیه" % max(0, accept_countdown)
+	if accept_countdown <= 0:
+		accept_timer.stop()
+		# Timeout: auto-reject
+		_on_reject_pressed()
+
+func _on_accept_pressed() -> void:
+	AudioManager.sfx_button()
+	btn_accept.disabled = true
+	btn_reject.disabled = true
+	lbl_status.text = "در انتظار تأیید حریف..."
+	lbl_status.modulate = Color(1.0, 0.88, 0.45)
+	NetworkManager.send_queue_accept()
+
+func _on_reject_pressed() -> void:
+	AudioManager.sfx_button()
+	accept_timer.stop()
+	NetworkManager.send_queue_reject()
+	stop_queue()
+
+func _on_pre_game_started(pre_game_id: String, queuers: Array) -> void:
+	# Both accepted! Transition to Pick & Ban scene
+	accept_timer.stop()
+	timer_active = false
+	is_accept_phase = false
+	
+	lbl_status.text = "ورود به مرحله انتخاب و حذف بازی‌ها..."
+	lbl_status.modulate = Color(0.3, 0.95, 0.5)
+	
+	await get_tree().create_timer(0.5).timeout
+	visible = false
+	pre_game_ready.emit(pre_game_id, queuers)
+
+func _on_game_canceled() -> void:
+	accept_timer.stop()
+	search_timer.stop()
+	lbl_status.text = "مسابقه لغو شد."
+	lbl_status.modulate = Color(1.0, 0.4, 0.4)
+	await get_tree().create_timer(1.2).timeout
+	stop_queue()
+
 func _on_match_found(game_id: String) -> void:
-	if not timer_active:
+	if not timer_active and not is_accept_phase:
 		return
 	timer_active = false
+	is_accept_phase = false
 	search_timer.stop()
+	accept_timer.stop()
 	lbl_status.text = "حریف پیدا شد! ورود به میز..."
 	lbl_status.modulate = Color(0.2, 0.9, 0.4)
 	
 	AudioManager.sfx_queue_found()
 	AudioManager.stop_music()
 	
-	# Delay slightly for audio & visual feedback
-	await get_tree().create_timer(1.2).timeout
+	await get_tree().create_timer(1.0).timeout
 	visible = false
 	match_ready.emit(game_id, GameTypes.TIC_TAC_TOE)

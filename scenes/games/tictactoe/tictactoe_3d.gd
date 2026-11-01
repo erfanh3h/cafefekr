@@ -828,5 +828,8 @@ func sync_board_state(new_board: Variant) -> void:
 			_draw_winning_line(win_line, u)
 			break
 
-func on_reconnect_data(_payload: Dictionary) -> void:
+func on_reconnect_data(payload: Dictionary) -> void:
 	sync_turn_state()
+	var g_data = payload.get("game_data", payload)
+	if typeof(g_data) == TYPE_DICTIONARY and g_data.has("board"):
+		sync_board_state(g_data["board"])

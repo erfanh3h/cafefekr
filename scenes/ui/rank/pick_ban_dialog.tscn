@@ -1,0 +1,494 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/rank/pick_ban_dialog.gd" id="1_pb_script"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/room_background.jpg" id="3_bg_tex"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_full_bg"]
+bg_color = Color(0.08, 0.05, 0.04, 0.98)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.55, 0.42, 0.24, 0.95)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_card"]
+bg_color = Color(0.14, 0.09, 0.06, 0.94)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.60, 0.46, 0.26, 0.9)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timeline_panel"]
+bg_color = Color(0.12, 0.08, 0.06, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.50, 0.38, 0.22, 0.85)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status_panel"]
+bg_color = Color(0.13, 0.08, 0.06, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.50, 0.26, 0.9)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
+bg_color = Color(0.10, 0.06, 0.04, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.40, 0.30, 0.18, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
+bg_color = Color(0.32, 0.85, 0.42, 1.0)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_disconnect"]
+bg_color = Color(0.35, 0.08, 0.08, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.35, 0.35, 0.95)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip"]
+bg_color = Color(0.18, 0.08, 0.08, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.30, 0.30, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="PickBanDialog" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+custom_minimum_size = Vector2(1080, 1920)
+theme_override_styles/panel = SubResource("StyleBoxFlat_full_bg")
+script = ExtResource("1_pb_script")
+
+[node name="BgImage" type="TextureRect" parent="."]
+layout_mode = 2
+texture = ExtResource("3_bg_tex")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1, 1, 1, 0.32)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 26
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="VBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/VBox/Header"]
+layout_mode = 2
+alignment = 1
+
+[node name="LblTitle" type="Label" parent="Margin/VBox/Header/TopRow"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_y = 2
+text = "👑 رنک اصلی - انتخاب و حذف بازی‌ها"
+horizontal_alignment = 1
+
+[node name="LblSubtitle" type="Label" parent="Margin/VBox/Header"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.85, 0.76, 0.60, 1)
+text = "سری مسابقات ۳ بازی (Best of 3) • تعیین بازی‌ها با بن و پیک استراتژیک"
+horizontal_alignment = 1
+
+[node name="StatusPanel" type="PanelContainer" parent="Margin/VBox/Header"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_status_panel")
+
+[node name="MarginStatus" type="MarginContainer" parent="Margin/VBox/Header/StatusPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 8
+
+[node name="HBoxStatus" type="HBoxContainer" parent="Margin/VBox/Header/StatusPanel/MarginStatus"]
+layout_mode = 2
+
+[node name="LblStatus" type="Label" parent="Margin/VBox/Header/StatusPanel/MarginStatus/HBoxStatus"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+text = "در حال بارگذاری و شروع درفت مسابقه..."
+vertical_alignment = 1
+
+[node name="LblTurnTimer" type="Label" parent="Margin/VBox/Header/StatusPanel/MarginStatus/HBoxStatus"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+text = "⏳ ۲۰ ثانیه"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="TurnTimerBar" type="ProgressBar" parent="Margin/VBox/Header"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+value = 100.0
+show_percentage = false
+
+[node name="DisconnectBanner" type="PanelContainer" parent="Margin/VBox/Header"]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_disconnect")
+
+[node name="MarginDc" type="MarginContainer" parent="Margin/VBox/Header/DisconnectBanner"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 6
+
+[node name="HBoxDc" type="HBoxContainer" parent="Margin/VBox/Header/DisconnectBanner/MarginDc"]
+layout_mode = 2
+
+[node name="LblDisconnect" type="Label" parent="Margin/VBox/Header/DisconnectBanner/MarginDc/HBoxDc"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 0.80, 0.80, 1)
+text = "⚠️ ارتباط حریف قطع شد. زمان انتظار: ۴۵ ثانیه..."
+vertical_alignment = 1
+
+[node name="LblDcTimer" type="Label" parent="Margin/VBox/Header/DisconnectBanner/MarginDc/HBoxDc"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
+text = "۴۵s"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="PlayersStrip" type="HBoxContainer" parent="Margin/VBox"]
+custom_minimum_size = Vector2(0, 118)
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="P1Card" type="PanelContainer" parent="Margin/VBox/PlayersStrip"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_player_card")
+
+[node name="MarginP1" type="MarginContainer" parent="Margin/VBox/PlayersStrip/P1Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="HBoxP1" type="HBoxContainer" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="P1Avatar" type="TextureRect" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1"]
+custom_minimum_size = Vector2(68, 68)
+layout_mode = 2
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VBoxP1" type="VBoxContainer" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="P1Name" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "بازیکن ۱"
+clip_text = true
+
+[node name="P1Score" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+text = "امتیاز: ۱۲۰۰"
+
+[node name="P1Role" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.35, 0.90, 1.0, 1)
+text = "بازیکن ۱ (شما)"
+
+[node name="CenterVS" type="VBoxContainer" parent="Margin/VBox/PlayersStrip"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+alignment = 1
+
+[node name="LblVS" type="Label" parent="Margin/VBox/PlayersStrip/CenterVS"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 34
+theme_override_colors/font_color = Color(1, 0.84, 0.25, 1)
+text = "⚔️ VS"
+horizontal_alignment = 1
+
+[node name="LblSeries" type="Label" parent="Margin/VBox/PlayersStrip/CenterVS"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "دست ۱/۳"
+horizontal_alignment = 1
+
+[node name="P2Card" type="PanelContainer" parent="Margin/VBox/PlayersStrip"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_player_card")
+
+[node name="MarginP2" type="MarginContainer" parent="Margin/VBox/PlayersStrip/P2Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="HBoxP2" type="HBoxContainer" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="VBoxP2" type="VBoxContainer" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="P2Name" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "بازیکن ۲"
+horizontal_alignment = 2
+clip_text = true
+
+[node name="P2Score" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+text = "امتیاز: ۱۱۵۰"
+horizontal_alignment = 2
+
+[node name="P2Role" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
+text = "بازیکن ۲ (حریف)"
+horizontal_alignment = 2
+
+[node name="P2Avatar" type="TextureRect" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2"]
+custom_minimum_size = Vector2(68, 68)
+layout_mode = 2
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TimelinePanel" type="PanelContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_timeline_panel")
+
+[node name="MarginTimeline" type="MarginContainer" parent="Margin/VBox/TimelinePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxTimeline" type="VBoxContainer" parent="Margin/VBox/TimelinePanel/MarginTimeline"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LblTimelineTitle" type="Label" parent="Margin/VBox/TimelinePanel/MarginTimeline/VBoxTimeline"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.95, 0.85, 0.60, 1)
+text = "📊 تایم‌لاین مراحل انتخاب و حذف بازی‌ها (Timeline)"
+
+[node name="ScrollTimeline" type="ScrollContainer" parent="Margin/VBox/TimelinePanel/MarginTimeline/VBoxTimeline"]
+custom_minimum_size = Vector2(0, 320)
+layout_mode = 2
+vertical_scroll_mode = 0
+
+[node name="HBoxTimeline" type="HBoxContainer" parent="Margin/VBox/TimelinePanel/MarginTimeline/VBoxTimeline/ScrollTimeline"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="SystemBansStrip" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="LblSystemBans" type="Label" parent="Margin/VBox/SystemBansStrip"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 23
+theme_override_colors/font_color = Color(1, 0.70, 0.70, 1)
+text = "🚫 حذف‌های خودکار سیستم:"
+
+[node name="SysBanChip1" type="PanelContainer" parent="Margin/VBox/SystemBansStrip"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/SystemBansStrip/SysBanChip1"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 4
+
+[node name="LblSysBan1" type="Label" parent="Margin/VBox/SystemBansStrip/SysBanChip1/Margin"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(1, 0.85, 0.85, 1)
+text = "در حال انتخاب..."
+
+[node name="SysBanChip2" type="PanelContainer" parent="Margin/VBox/SystemBansStrip"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/SystemBansStrip/SysBanChip2"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 4
+
+[node name="LblSysBan2" type="Label" parent="Margin/VBox/SystemBansStrip/SysBanChip2/Margin"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(1, 0.85, 0.85, 1)
+text = "در حال انتخاب..."
+
+[node name="SysBanChip3" type="PanelContainer" parent="Margin/VBox/SystemBansStrip"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/SystemBansStrip/SysBanChip3"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 4
+
+[node name="LblSysBan3" type="Label" parent="Margin/VBox/SystemBansStrip/SysBanChip3/Margin"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(1, 0.85, 0.85, 1)
+text = "در حال انتخاب..."
+
+[node name="GamesScroll" type="ScrollContainer" parent="Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="MarginGrid" type="MarginContainer" parent="Margin/VBox/GamesScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="GamesGrid" type="GridContainer" parent="Margin/VBox/GamesScroll/MarginGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
+columns = 3
+
+[node name="BottomBar" type="VBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LblSelectedGame" type="Label" parent="Margin/VBox/BottomBar"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
+text = "بازی انتخاب‌شده: —"
+horizontal_alignment = 1
+
+[node name="BtnConfirm" type="Button" parent="Margin/VBox/BottomBar"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 32
+disabled = true
+text = "تایید انتخاب"
