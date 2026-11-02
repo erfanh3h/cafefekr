@@ -357,6 +357,14 @@ func _setup_signals() -> void:
 	user_header.store_requested.connect(_on_store_pressed)
 
 	user_header.profile_requested.connect(_on_store_pressed)
+	if user_header.has_signal("login_requested"):
+		user_header.login_requested.connect(func():
+			_show_backdrop()
+			if not GameManager.is_logged_in:
+				login_dialog.open()
+			else:
+				login_dialog.open_for_phone_upgrade("برای ذخیره دائمی حساب و شرکت در رقابت‌ها، لطفاً شماره موبایل خود را ثبت کنید.")
+		)
 
 	# User State & Progression Listeners
 	GameManager.user_logged_in.connect(func(_user_data):
