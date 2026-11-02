@@ -204,12 +204,19 @@ func open() -> void:
 	_update_lobbies_list()
 	
 	# Connect to /lobby namespace
-	NetworkManager.socket.connect_namespace("/lobby", {"token": GameManager.token})
 	if not NetworkManager.socket.event_received.is_connected(_on_lobby_event):
 		NetworkManager.socket.event_received.connect(_on_lobby_event)
+	if not NetworkManager.socket.namespace_connected.is_connected(_on_lobby_namespace_connected):
+		NetworkManager.socket.namespace_connected.connect(_on_lobby_namespace_connected)
+	NetworkManager.socket.connect_namespace("/lobby", {"token": GameManager.token})
 	
-	# Initial fetch
-	_request_lobbies()
+	# Initial fetch if already connected
+	if NetworkManager.socket.connected_namespaces.has("/lobby"):
+		_request_lobbies()
+
+func _on_lobby_namespace_connected(ns: String) -> void:
+	if ns == "/lobby" and visible:
+		_request_lobbies()
 
 func close() -> void:
 	ActionVFXManager.animate_dialog_close(self, null, func():
@@ -218,6 +225,8 @@ func close() -> void:
 		NetworkManager.socket.disconnect_namespace("/lobby")
 		if NetworkManager.socket.event_received.is_connected(_on_lobby_event):
 			NetworkManager.socket.event_received.disconnect(_on_lobby_event)
+		if NetworkManager.socket.namespace_connected.is_connected(_on_lobby_namespace_connected):
+			NetworkManager.socket.namespace_connected.disconnect(_on_lobby_namespace_connected)
 		closed.emit()
 	)
 
@@ -228,6 +237,8 @@ func close_immediate() -> void:
 	NetworkManager.socket.disconnect_namespace("/lobby")
 	if NetworkManager.socket.event_received.is_connected(_on_lobby_event):
 		NetworkManager.socket.event_received.disconnect(_on_lobby_event)
+	if NetworkManager.socket.namespace_connected.is_connected(_on_lobby_namespace_connected):
+		NetworkManager.socket.namespace_connected.disconnect(_on_lobby_namespace_connected)
 	closed.emit()
 
 func _switch_view(target_view: Control) -> void:

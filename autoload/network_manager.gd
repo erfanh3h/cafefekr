@@ -199,7 +199,10 @@ func send_pre_game_select(pre_game_id: String, game_type: String) -> void:
 # --- FRIENDLY LOBBY ---
 
 func join_lobby(auth_data: Dictionary = {}) -> void:
-	socket.connect_namespace("/lobby", auth_data)
+	var auth = auth_data.duplicate()
+	if not auth.has("token"):
+		auth["token"] = GameManager.token
+	socket.connect_namespace("/lobby", auth)
 
 func leave_lobby() -> void:
 	socket.disconnect_namespace("/lobby")

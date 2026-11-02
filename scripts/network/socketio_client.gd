@@ -75,16 +75,23 @@ func connect_namespace(ns: String, auth: Dictionary = {}) -> void:
 	var same_auth = (typeof(prev_auth) == TYPE_DICTIONARY and JSON.stringify(prev_auth) == JSON.stringify(auth))
 	if (connected_namespaces.has(ns) or connecting_namespaces.has(ns)) and same_auth:
 		return
+	if connected_namespaces.has(ns) or connecting_namespaces.has(ns):
+		if is_connected_to_server:
+			_send_packet("41" + ns + ",")
+		connected_namespaces.erase(ns)
+		connecting_namespaces.erase(ns)
 	pending_auth[ns] = auth
 	if is_connected_to_server:
 		_send_namespace_connect(ns, auth)
 
 func disconnect_namespace(ns: String) -> void:
+	var was_active = connected_namespaces.has(ns) or connecting_namespaces.has(ns)
 	pending_auth.erase(ns)
 	connecting_namespaces.erase(ns)
-	if connected_namespaces.has(ns):
-		_send_packet("41" + ns + ",")
-		connected_namespaces.erase(ns)
+	connected_namespaces.erase(ns)
+	if was_active:
+		if is_connected_to_server:
+			_send_packet("41" + ns + ",")
 		namespace_disconnected.emit(ns)
 
 func emit_event(ns: String, event_name: String, data: Variant = null) -> void:
@@ -166,6 +173,10 @@ func _handle_socketio_packet(body: String) -> void:
 	match sio_type:
 		"0": # Connect ACK for namespace
 			connecting_namespaces.erase(ns)
+			if not pending_auth.has(ns):
+				if is_connected_to_server:
+					_send_packet("41" + ns + ",")
+				return
 			connected_namespaces[ns] = true
 			namespace_connected.emit(ns)
 			print("[SocketIO] Namespace '%s' connected." % ns)

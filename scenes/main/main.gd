@@ -684,6 +684,9 @@ func _on_classic_rank_pressed() -> void:
 	if not GameManager.is_logged_in:
 		login_dialog.open()
 		return
+	if GameManager.is_guest or not GameManager.has_phone():
+		login_dialog.open_for_phone_upgrade("برای شرکت در مسابقات رنک کلاسیک، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
+		return
 	if not GameManager.has_username():
 		login_dialog.open_for_username_completion()
 		return
@@ -1795,9 +1798,14 @@ func _on_game_finished(data: Dictionary) -> void:
 			var r_cn = int(data.get("coin_earned", data.get("coin_awarded", 0)))
 			GameManager.apply_ranked_rewards(r_sc, r_xp, r_cn)
 		if is_instance_valid(ranked_breakout_dialog):
-			if not ranked_breakout_dialog.is_open() and not _last_game_play_payload.is_empty():
+			if not _last_game_play_payload.is_empty():
 				_last_game_play_payload["is_game_finished"] = true
-				ranked_breakout_dialog.open(_last_game_play_payload)
+				if data.has("game_winner_id") and data["game_winner_id"] != null:
+					_last_game_play_payload["game_winner_id"] = data["game_winner_id"]
+				if not ranked_breakout_dialog.is_open():
+					ranked_breakout_dialog.open(_last_game_play_payload)
+				else:
+					ranked_breakout_dialog.update_data(_last_game_play_payload)
 		return
 
 	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned)
