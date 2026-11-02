@@ -73,10 +73,10 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 	var coin_val = user_dict.get("coin", user_dict.get("user_coin", user_dict.get("coins", 0)))
 	lbl_coins.text = "💰 سکه‌ها: %d" % int(coin_val)
 	
-	var xp_val = user_dict.get("xp", 0)
+	var xp_val = int(user_dict.get("xp", 0))
 	var level_val = 1
 	if xp_val > 0:
-		level_val = int(floor(xp_val / 100.0)) + 1
+		level_val = GameManager.calculate_level(xp_val)
 	else:
 		level_val = int(user_dict.get("level", 1))
 	lbl_level.text = "⭐ سطح (Level): %d" % level_val

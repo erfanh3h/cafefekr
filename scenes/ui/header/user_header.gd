@@ -72,9 +72,9 @@ func update_ui() -> void:
 			btn_user_id.text = "شناسه: ----"
 			
 		var xp = int(GameManager.user_data.get("xp", 0))
-		var level = _calculate_level(xp)
-		lbl_level.text = "سطح %d" % (level + 1)
-		xp_bar.value = _calculate_exp_percent(xp) * 100.0
+		var level = GameManager.calculate_level(xp)
+		lbl_level.text = "سطح %d" % level
+		xp_bar.value = GameManager.calculate_exp_percent(xp) * 100.0
 		
 		var img_id = GameManager.user_data.get("image", 0)
 		var avatar_path = "res://assets/icons/Avatars/%d.png" % img_id
@@ -100,23 +100,11 @@ func update_ui() -> void:
 			lbl_status.text = "🔴 آفلاین"
 			lbl_status.modulate = Color(1.0, 0.35, 0.35)
 
-static func _total_exp_to_level(level: int, base: int = 20) -> int:
-	return int(base * (level * level))
+static func _total_exp_to_level(level: int, _base: int = 20) -> int:
+	return GameManager.total_exp_to_level(level)
 
-static func _calculate_level(exp: int, base: int = 20) -> int:
-	if exp < base:
-		return 0
-	var level = 1
-	while _total_exp_to_level(level + 1, base) <= exp:
-		level += 1
-	return level
+static func _calculate_level(exp: int, _base: int = 20) -> int:
+	return GameManager.calculate_level(exp)
 
-static func _calculate_exp_percent(exp: int, base: int = 20) -> float:
-	var level = _calculate_level(exp, base)
-	var current_level_exp = _total_exp_to_level(level, base)
-	var next_level_exp = _total_exp_to_level(level + 1, base)
-	var exp_in_level = exp - current_level_exp
-	var needed = next_level_exp - current_level_exp
-	if needed <= 0:
-		return 1.0
-	return clampf(float(exp_in_level) / float(needed), 0.05, 1.0)
+static func _calculate_exp_percent(exp: int, _base: int = 20) -> float:
+	return GameManager.calculate_exp_percent(exp)

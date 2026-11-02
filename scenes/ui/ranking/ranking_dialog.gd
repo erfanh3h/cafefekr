@@ -102,6 +102,8 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 			var raw_score = float(item.get("score", 0))
 			val_text = "%d امتیاز" % int(round(raw_score))
 			img_id = int(item.get("image", 0))
+			var item_xp = int(item.get("xp", item.get("user_xp", 0)))
+			var item_lvl = GameManager.calculate_level(item_xp) if item_xp > 0 else int(item.get("level", 1))
 			u_dict = {
 				"_id": str(item.get("_id", item.get("user_id", ""))),
 				"username": username,
@@ -109,7 +111,8 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 				"image": img_id,
 				"avatar": img_id,
 				"score": int(round(raw_score)),
-				"level": int(item.get("level", 1)),
+				"xp": item_xp,
+				"level": item_lvl,
 				"coin": int(item.get("coin", 0))
 			}
 		else:
@@ -118,6 +121,8 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 			var raw_win = float(item.get("win", 0))
 			val_text = "%d برد" % int(round(raw_win))
 			img_id = int(u_data.get("image", 0))
+			var u_xp = int(u_data.get("xp", item.get("xp", 0)))
+			var u_lvl = GameManager.calculate_level(u_xp) if u_xp > 0 else int(u_data.get("level", item.get("level", 1)))
 			u_dict = {
 				"_id": str(u_data.get("_id", item.get("user_id", ""))),
 				"username": username,
@@ -126,7 +131,8 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 				"avatar": img_id,
 				"score": int(round(float(u_data.get("score", 0)))),
 				"win": int(round(raw_win)),
-				"level": int(u_data.get("level", 1)),
+				"xp": u_xp,
+				"level": u_lvl,
 				"coin": int(u_data.get("coin", 0))
 			}
 		

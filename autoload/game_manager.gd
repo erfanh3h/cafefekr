@@ -361,6 +361,63 @@ func apply_ranked_rewards(score_delta: int, xp_delta: int, coin_delta: int) -> v
 	_save_session_config()
 	print("[GameManager] Applied ranked rewards: score %+d, xp +%d, coin %+d" % [score_delta, xp_delta, coin_delta])
 
+# ==============================================================================
+# LEVEL & XP PROGRESSION SYSTEM
+# ==============================================================================
+# Modern progressive curve calibrated to Cafe Fekr match rewards (15-50 XP/match):
+# Total cumulative XP needed to reach Level L (L >= 1):
+#   TotalXP(L) = 20 * (L^2 - 1)
+# Step XP needed to go from Level L to Level L+1:
+#   DeltaXP(L) = 20 + 40 * L  (Level 1->2: 60 XP, Level 2->3: 100 XP, etc.)
+# Direct O(1) closed-form calculation:
+#   Level(XP) = floor(sqrt(XP / 20.0 + 1.0))
+# ==============================================================================
+
+static func total_exp_to_level(level: int) -> int:
+	if level <= 1:
+		return 0
+	return 20 * (level * level - 1)
+
+static func calculate_level(xp: int) -> int:
+	if xp <= 0:
+		return 1
+	return int(floor(sqrt(float(xp) / 20.0 + 1.0)))
+
+static func calculate_exp_percent(xp: int) -> float:
+	if xp <= 0:
+		return 0.0
+	var level = calculate_level(xp)
+	var current_level_exp = total_exp_to_level(level)
+	var next_level_exp = total_exp_to_level(level + 1)
+	var needed = next_level_exp - current_level_exp
+	if needed <= 0:
+		return 1.0
+	var exp_in_level = xp - current_level_exp
+	return clampf(float(exp_in_level) / float(needed), 0.0, 1.0)
+
+static func get_level_info(xp: int) -> Dictionary:
+	var lvl = calculate_level(xp)
+	var cur_base = total_exp_to_level(lvl)
+	var next_base = total_exp_to_level(lvl + 1)
+	var needed = next_base - cur_base
+	var in_level = xp - cur_base
+	var percent = clampf(float(in_level) / float(needed), 0.0, 1.0) if needed > 0 else 1.0
+	return {
+		"level": lvl,
+		"current_level_exp": cur_base,
+		"next_level_exp": next_base,
+		"exp_in_level": in_level,
+		"exp_needed": needed,
+		"progress": percent,
+		"percent_int": int(round(percent * 100.0))
+	}
+
+func get_user_level() -> int:
+	return calculate_level(get_xp())
+
+func get_user_exp_percent() -> float:
+	return calculate_exp_percent(get_xp())
+
 func get_open_game_id() -> String:
 	if not active_game_id.is_empty():
 		return active_game_id
