@@ -27,7 +27,7 @@ extends "res://scenes/games/base/base_top_header.gd"
 var _dot_style_empty: StyleBoxFlat
 var _dot_style_filled: StyleBoxFlat
 var _dot_style_danger: StyleBoxFlat
-var _max_missed_turns: int = 4
+var _max_missed_turns: int = 2
 
 func _ready() -> void:
 	super._ready()
@@ -36,6 +36,10 @@ func _ready() -> void:
 		_p1_score_badge.visible = false
 	if is_instance_valid(_p2_score_badge):
 		_p2_score_badge.visible = false
+	if is_instance_valid(p1_dot3):
+		p1_dot3.visible = false
+	if is_instance_valid(p2_dot3):
+		p2_dot3.visible = false
 
 func _is_score_based_game() -> bool:
 	return false
@@ -73,14 +77,14 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	super.setup_match(game_name_fa, mode_title, round_num, max_rounds, turn_time)
 	_max_missed_turns = GameRegistry.get_max_missed_turns(GameManager.current_game_type)
 	if _max_missed_turns <= 0:
-		_max_missed_turns = 4
+		_max_missed_turns = 2
 	if is_instance_valid(lbl_afk_rule):
-		lbl_afk_rule.text = "هر نوبت بازی: %d ثانیه  |  در %d نوبت بدون حرکت = باخت مستقیم" % [int(turn_time), _max_missed_turns]
+		lbl_afk_rule.text = "هر نوبت: %d ثانیه  |  ۲ نوبت پیاپی بدون حرکت = باخت مستقیم" % int(turn_time)
 	update_not_played_turns(1, 0)
 	update_not_played_turns(2, 0)
 
 func update_not_played_turns(gamer_id: int, count: int) -> void:
-	var dots = [p1_dot1, p1_dot2, p1_dot3] if gamer_id == 1 else [p2_dot1, p2_dot2, p2_dot3]
+	var dots = [p1_dot1, p1_dot2] if gamer_id == 1 else [p2_dot1, p2_dot2]
 	var count_lbl: Label = p1_strike_count_lbl if gamer_id == 1 else p2_strike_count_lbl
 	var box: HBoxContainer = p1_missed_turns_box if gamer_id == 1 else p2_missed_turns_box
 
@@ -90,12 +94,12 @@ func update_not_played_turns(gamer_id: int, count: int) -> void:
 	var clamped_count = clampi(count, 0, _max_missed_turns)
 
 	# Update 3 visual dot indicators
-	for i in range(3):
+	for i in range(dots.size()):
 		var dot = dots[i]
 		if not is_instance_valid(dot):
 			continue
 		if clamped_count > i:
-			if clamped_count >= 3:
+			if clamped_count >= 2:
 				dot.add_theme_stylebox_override("panel", _dot_style_danger)
 			else:
 				dot.add_theme_stylebox_override("panel", _dot_style_filled)
@@ -104,7 +108,7 @@ func update_not_played_turns(gamer_id: int, count: int) -> void:
 
 	# Update textual strike indicator (e.g. "خطا: 2/4")
 	count_lbl.text = "خطا: %d/%d" % [clamped_count, _max_missed_turns]
-	if clamped_count >= 3:
+	if clamped_count >= 2:
 		count_lbl.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
 	elif clamped_count > 0:
 		count_lbl.add_theme_color_override("font_color", Color(1.0, 0.78, 0.25))

@@ -1657,25 +1657,21 @@ func update_not_played_turns(gamer_id: int, count: int) -> void:
 
 			if count == 1:
 
-				show_toast_hint("⚠️ نوبت شما سپری شد! خطای ۱ از ۳ (در ۴ خطا بازنده می‌شوید)")
+				show_toast_hint("⚠️ نوبت شما سپری شد! در صورت عدم حرکت در نوبت بعد، بازنده خواهید شد (خطای ۱ از ۲)")
 
-			elif count == 2:
+			elif count >= 2:
 
-				show_toast_hint("⚠️ نوبت شما سپری شد! خطای ۲ از ۳ (تنها ۱ فرصت دیگر باقیست!)")
-
-			elif count == 3:
-
-				show_toast_hint("🚨 اخطار نهایی! در صورت عدم حرکت در نوبت بعد، بازنده خواهید شد!")
+				show_toast_hint("🚨 اخطار نهایی! عدم حرکت مکرر منجر به باخت فنی شد.")
 
 		else:
 
-			if count < 3:
+			if count == 1:
 
-				show_toast_hint("⚠️ حریف در زمان مجاز حرکت نکرد (خطای %d از ۳)" % count)
+				show_toast_hint("⚠️ حریف در زمان مجاز حرکت نکرد (خطای ۱ از ۲)")
 
-			elif count == 3:
+			elif count >= 2:
 
-				show_toast_hint("⚠️ حریف به آخرین اخطار عدم حرکت رسید (۳ از ۳ خطا)")
+				show_toast_hint("⚠️ حریف به دلیل عدم حرکت مکرر بازنده اعلام شد.")
 
 
 
@@ -2136,7 +2132,7 @@ func show_pause_dialog(wait_time: int, reason_text: String = "") -> void:
 
 	_last_pause_sec_ticked = -1
 
-	var actual_time = wait_time if wait_time > 0 else 45
+	var actual_time = wait_time if wait_time > 0 else 60
 
 	pause_total_time = float(actual_time)
 
@@ -2912,13 +2908,13 @@ func show_surrender_notification(surrendered_gamer_id: int) -> void:
 
 
 
-func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int = 0) -> void:
+func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int = 0, coin_earned: int = 0, score_earned: int = 0) -> void:
 
 	if _result_shown:
 
-		if xp_earned > 0 and is_instance_valid(result_dialog) and result_dialog.has_method("update_xp"):
+		if (xp_earned > 0 or coin_earned > 0) and is_instance_valid(result_dialog) and result_dialog.has_method("update_xp"):
 
-			result_dialog.update_xp(xp_earned)
+			result_dialog.update_xp(xp_earned, coin_earned)
 
 		return
 
@@ -2944,7 +2940,7 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 
 		final_winner = GameManager.my_player_index
 
-	elif not is_pause_active and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
+	elif not is_pause_active and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
 
 		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.MSWEEPER, GameTypes.BOXFOUR]:
 
@@ -2956,10 +2952,10 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 
 				final_winner = 2
 
-	var is_friendly = (xp_earned <= 0)
+	var is_friendly = (xp_earned <= 0 and coin_earned <= 0 and score_earned == 0)
 
 	AudioManager.play_theme_music()
-	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly, xp_earned)
+	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly, xp_earned, coin_earned)
 
 
 

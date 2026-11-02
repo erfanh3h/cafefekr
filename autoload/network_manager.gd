@@ -484,7 +484,7 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.Not_played_Turns:
 			var g_id = int(payload.get("gamer_id", 0)) if typeof(payload) == TYPE_DICTIONARY else 0
 			var cnt = int(payload.get("count", 0)) if typeof(payload) == TYPE_DICTIONARY else int(payload)
-			print("[NetworkManager] Player %d missed turn (Count: %d/4)" % [g_id, cnt])
+			print("[NetworkManager] Player %d missed turn (Count: %d/2)" % [g_id, cnt])
 			not_played_turns_received.emit(g_id, cnt)
 
 		Commands.Finish_Game:
@@ -499,11 +499,11 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.User_Disconnected:
 			var u_id = str(payload.get("user_id", "")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
 			if ns == "/queue":
-				var w_time_q = int(payload.get("time", 45)) if typeof(payload) == TYPE_DICTIONARY else 45
+				var w_time_q = int(payload.get("time", 60)) if typeof(payload) == TYPE_DICTIONARY else 60
 				print("[NetworkManager] PreGame User_Disconnected: %s (Wait Time: %d)" % [u_id, w_time_q])
 				queue_user_disconnected.emit(u_id, w_time_q)
 				return
-			var w_time = int(payload.get("time", 30)) if typeof(payload) == TYPE_DICTIONARY else 30
+			var w_time = int(payload.get("time", 60)) if typeof(payload) == TYPE_DICTIONARY else 60
 			print("[NetworkManager] User disconnected: %s (Wait Time: %d)" % [u_id, w_time])
 			user_disconnected.emit(u_id, w_time)
 

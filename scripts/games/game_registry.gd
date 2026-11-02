@@ -114,7 +114,7 @@ static var _registry: Dictionary = {
 		"has_round_score": false,
 		"turn_time": 20.0,
 		"has_missed_turns_limit": true,
-		"max_missed_turns": 4,
+		"max_missed_turns": 2,
 		"icon": "res://assets/images/games/chess.jpg",
 		"min_players": 2,
 		"max_players": 2,
@@ -130,7 +130,7 @@ static var _registry: Dictionary = {
 		"has_round_score": false,
 		"turn_time": 20.0,
 		"has_missed_turns_limit": true,
-		"max_missed_turns": 4,
+		"max_missed_turns": 2,
 		"icon": "res://assets/images/games/checkers.jpg",
 		"min_players": 2,
 		"max_players": 2,
@@ -162,7 +162,7 @@ static var _registry: Dictionary = {
 		"is_cumulative_score": true,
 		"turn_time": 30.0,
 		"has_missed_turns_limit": true,
-		"max_missed_turns": 4,
+		"max_missed_turns": 2,
 		"icon": "res://assets/images/games/backgammon.jpg",
 		"min_players": 2,
 		"max_players": 2,
@@ -195,7 +195,7 @@ static var _registry: Dictionary = {
 		"is_cumulative_score": true,
 		"turn_time": 15.0,
 		"has_missed_turns_limit": true,
-		"max_missed_turns": 4,
+		"max_missed_turns": 2,
 		"icon": "res://assets/images/games/mill.jpg",
 		"min_players": 2,
 		"max_players": 2,
@@ -435,7 +435,7 @@ static func get_max_missed_turns(game_type: String = "") -> int:
 	var info = get_game_info(game_type)
 	if not has_missed_turns_limit(game_type):
 		return 0
-	return int(info.get("max_missed_turns", 4))
+	return int(info.get("max_missed_turns", 2))
 
 static func is_simultaneous(game_type: String = "") -> bool:
 	var info = get_game_info(game_type)
@@ -473,3 +473,12 @@ static func get_classic_rank_xp(game_type: String, is_win: bool, is_draw: bool) 
 		return 25 if is_win else (14 if is_draw else 7)
 	else:
 		return 40 if is_win else (20 if is_draw else 10)
+
+static func get_lobby_xp(game_type: String, is_win: bool, is_draw: bool) -> int:
+	var diff = get_difficulty(game_type)
+	if diff == "easy":
+		return 8 if is_win else (4 if is_draw else 2)
+	elif diff == "normal":
+		return 14 if is_win else (7 if is_draw else 4)
+	else:
+		return 20 if is_win else (10 if is_draw else 5)

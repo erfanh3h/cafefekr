@@ -136,7 +136,7 @@ var _current_winner_index: int = -1
 var _current_is_friendly: bool = true
 var _current_xp_earned: int = 0
 
-func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_friendly: bool = true, xp_earned: int = 0) -> void:
+func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_friendly: bool = true, xp_earned: int = 0, coin_earned: int = 0) -> void:
 	if visible and is_instance_valid(panel) and panel.visible:
 		return
 	visible = true
@@ -150,7 +150,7 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		btn_return.disabled = false
 
 	var resolved_winner = winner_player_index
-	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
+	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
 		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
 			if p1_score > p2_score:
 				resolved_winner = 1
@@ -175,12 +175,28 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		is_winner = (winner_player_index == my_idx) and (winner_player_index != 0)
 		is_draw = (winner_player_index == 0)
 	
-	# EXP reward banner - ONLY shown in Classic Rank when xp_earned > 0!
+	# EXP & Coin reward chips
+	var has_reward = false
 	if xp_earned > 0:
-		rewards_hbox.visible = true
-		lbl_xp.text = "⚡ +%s تجربه (XP)" % _fa_digits(xp_earned)
+		if is_instance_valid(lbl_xp) and is_instance_valid(lbl_xp.get_parent()):
+			lbl_xp.get_parent().visible = true
+			lbl_xp.text = "⚡ +%s تجربه (XP)" % _fa_digits(xp_earned)
+		has_reward = true
 	else:
-		rewards_hbox.visible = false
+		if is_instance_valid(lbl_xp) and is_instance_valid(lbl_xp.get_parent()):
+			lbl_xp.get_parent().visible = false
+
+	if coin_earned > 0:
+		if is_instance_valid(coin_chip):
+			coin_chip.visible = true
+		if is_instance_valid(lbl_coin):
+			lbl_coin.text = "🪙 +%s سکه" % _fa_digits(coin_earned)
+		has_reward = true
+	else:
+		if is_instance_valid(coin_chip):
+			coin_chip.visible = false
+
+	rewards_hbox.visible = has_reward
 	
 	# Start rotating background sunburst aura
 	if _aura_tween and _aura_tween.is_valid():
@@ -362,13 +378,29 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 			ActionVFXManager.spawn_dialog_sparkle_burst(panel.global_position + panel.size / 2.0)
 	)
 
-func update_xp(xp: int) -> void:
+func update_xp(xp: int, coins: int = 0) -> void:
 	_current_xp_earned = xp
+	var has_reward = false
 	if xp > 0:
-		rewards_hbox.visible = true
-		lbl_xp.text = "⚡ +%s تجربه (XP)" % _fa_digits(xp)
+		if is_instance_valid(lbl_xp) and is_instance_valid(lbl_xp.get_parent()):
+			lbl_xp.get_parent().visible = true
+			lbl_xp.text = "⚡ +%s تجربه (XP)" % _fa_digits(xp)
+		has_reward = true
 	else:
-		rewards_hbox.visible = false
+		if is_instance_valid(lbl_xp) and is_instance_valid(lbl_xp.get_parent()):
+			lbl_xp.get_parent().visible = false
+
+	if coins > 0:
+		if is_instance_valid(coin_chip):
+			coin_chip.visible = true
+		if is_instance_valid(lbl_coin):
+			lbl_coin.text = "🪙 +%s سکه" % _fa_digits(coins)
+		has_reward = true
+	else:
+		if is_instance_valid(coin_chip):
+			coin_chip.visible = false
+
+	rewards_hbox.visible = has_reward
 
 func close() -> void:
 	if _aura_tween and _aura_tween.is_valid():
@@ -427,7 +459,7 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 		if show_round_scores:
 			lbl_p2_score.text = prefix % _fa_digits(p2_score)
 	if visible and is_instance_valid(panel) and panel.visible:
-		if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
+		if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
 			if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
 				var score_winner = _current_winner_index
 				if p1_score > p2_score:

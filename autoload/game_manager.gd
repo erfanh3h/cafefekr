@@ -343,6 +343,14 @@ func add_xp(amount: int) -> void:
 		config.save(SESSION_PATH)
 	print("[GameManager] Added %d XP. New total: %d" % [amount, user_data["xp"]])
 
+func add_coins(amount: int) -> void:
+	if amount == 0:
+		return
+	var cur_coin = int(user_data.get("coin", 0))
+	user_data["coin"] = max(0, cur_coin + amount)
+	_save_session_config()
+	print("[GameManager] Added %d Coins. New total: %d" % [amount, user_data["coin"]])
+
 func apply_ranked_rewards(score_delta: int, xp_delta: int, coin_delta: int) -> void:
 	if score_delta != 0:
 		user_data["score"] = max(0, int(user_data.get("score", 0)) + score_delta)

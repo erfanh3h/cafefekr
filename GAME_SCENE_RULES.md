@@ -72,7 +72,7 @@ In Cafe Fekr, **the in-game experience is shared across ALL board games**:
 |  |   |- MatchDetailsBox (Round label, Turn Banner, Countdown, TurnTimerBar)    |  |
 |  |   |- ToastHint (Bottom-center notification pill, Font size 32)              |  |
 |  |   |- BottomBar (8 Buttons: 4 Camera Controls + 4 Match Controls)            |  |
-|  |   |- DisconnectPauseDialog (45s Opponent Disconnect Countdown & Progress)   |  |
+|  |   |- DisconnectPauseDialog (60s Opponent Disconnect Countdown & Progress)   |  |
 |  |   |- Dialogs (StartGameOverlay, RoundFinishBanner, GameResultDialog)        |  |
 |  +-----------------------------------------------------------------------------+  |
 +-----------------------------------------------------------------------------------+
@@ -156,7 +156,7 @@ Used for quick feedback messages (e.g. `"نوبت شما نیست؛ لطفاً �
 
 ### 2.5. Disconnect Pause Dialog (`DisconnectPauseDialog`) & Reconnect Timer Synchronization
 Matches Flutter's `DialogComponent().showTimerDialog` and backend `UserDisconnectTimerClass`:
-- **Trigger (`Commands.User_Disconnected`):** Server sends `{"user_id": ..., "time": 45}`.
+- **Trigger (`Commands.User_Disconnected`):** Server sends `{"user_id": ..., "time": 60}`.
 - **Pause Behavior:**
   - `hud.pause_turn_timer()` MUST be called so `turn_time_left` freezes while the match is paused, and board input is locked (`board.set_board_locked(true)`).
   - Dialog opens with blurred dark dimmer, displaying:
@@ -591,3 +591,67 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Start-Countdown Glitch or Double-Tick** | Keep `StartGameOverlay/Card/VBox/Countdown` at a fixed `custom_minimum_size = Vector2(360, 130)` and `pivot_offset = Vector2(180, 65)`, and never let `Game_Play_Time` or background `_process` timers overwrite or double-tick during `play_start_countdown()`. |
 | ❌ **No Front-Lip Text in TicTacToe** | Never add front-frame `Label3D` text on the `TicTacToe` 3D board. |
 | ❌ **Cross-Game Side-Effect Prohibition** | When changing or fixing something in a game, it MUST NOT affect any other game (only affects if it was common on both). Never introduce collateral changes to existing games. |
+
+---
+
+## 7. Scoring, Reward Economy, Rating & Fair-Play AFK Architecture
+
+### 7.1. Dynamic Elo Rating System (`calculate_elo_change`)
+- Exclusively active in standard `RANK` series matches (Best-of-3).
+- **Dynamic Beginner Scaling:**
+  - If current player score $< 300$, baseline factor $K = 12$ (protects beginners from large point drops).
+  - If player score $\ge 300$, standard factor $K = 20$.
+- **Clean Sweep Multiplier:**
+  - Winning a series 2-0 applies a $1.15\times$ boost to rating gain.
+- **Score Bounds & Safety:**
+  - Winner gain $\ge +4$ rating points.
+  - Loser loss bounded ($\ge -18$ rating points).
+  - Player total score is always clamped $\ge 0$ (never drops into negative numbers).
+
+### 7.2. Difficulty-Scaled EXP & Coin Economy
+1. **Rank Series Matches (`RANK` - Multi-Game Series):**
+   - Main Rank EXP is significantly higher than Classic Rank and Lobby to reward competitive investment:
+     - Easy Games: 25 win / 15 draw / 10 loss per game.
+     - Normal Games: 45 win / 25 draw / 18 loss per game.
+     - Hard Games: 70 win / 40 draw / 25 loss per game.
+   - Series Completion Bonuses:
+     - Series Win Bonus: $+35$ XP.
+     - Clean Sweep Bonus (2-0): $+20$ XP.
+     - Effort/Fought Bonus (won $\ge 1$ game): $+15$ XP.
+   - Total Rank series payout: **105 to 195 XP on win**, **35 to 96 XP on defeat**.
+   - Coins: $+25$ to $+40$ coins for winner.
+2. **Classic Rank Matches (`CLASSIC_RANK` - Single Game vs Bot/AI):**
+   - Single-game training XP:
+     - Easy: 15 win / 8 draw / 4 loss.
+     - Normal: 25 win / 14 draw / 7 loss.
+     - Hard: 40 win / 20 draw / 10 loss.
+   - Coins: 0 coins.
+3. **Lobby & Social Matches (`LOBBY` / Normal):**
+   - **STRICT COIN POLICY:** Lobby players receive **strictly 0 coins** (prevents coin farming or trade exploits).
+   - Social EXP:
+     - Easy: 8 win / 4 draw / 2 loss.
+     - Normal: 14 win / 7 draw / 4 loss.
+     - Hard: 20 win / 10 draw / 5 loss.
+4. **MultiRANK Matches (`MultiRANK` - 4-Player Games like Ludo):**
+   - Rank 1: $+12$ rating, $+50$ XP, $+25$ coins.
+   - Rank 2: $+4$ rating, $+30$ XP, $+15$ coins.
+   - Rank 3: $-4$ rating, $+15$ XP, $0$ coins.
+   - Rank 4: $-8$ rating, $+10$ XP, $0$ coins.
+5. **Engagement Bonuses:**
+   - Daily First Win Bonus: $+30$ XP, $+15$ coins.
+   - Win Streaks (3+ consecutive wins): $+15$ XP, $+2$ to $+6$ rating bonus.
+
+### 7.3. Fair-Play Surrender vs AFK Disqualification
+- **Surrender Without Penalty:**
+  - Surrendering counts as a normal match loss.
+  - The surrendering player incurs standard Elo defeat loss and normal series EXP; **no harsh penalty is applied**.
+- **AFK / Full Disconnect Harsh Penalty:**
+  - Applies ONLY if:
+    1. A player remains fully disconnected until the 60-second reconnect timer expires (`Commands.Finish_Reconnect_Time`).
+    2. A player is detected as AFK by missing **2 consecutive turns**.
+  - Penalty applied: **0 XP, 0 Coins, and a harsh -15 rating penalty**.
+- **Gamer-Friendly AFK Inactivity Detection:**
+  - **Threshold:** Disqualification occurs after **2 consecutive missed turns** (reduced from 4 for tighter flow without being punitive).
+  - **1st Missed Turn Warning:** Broadcasts `Commands.Not_played_Turns` with `count: 1`. The client displays a prominent warning toast and sound prompt.
+  - **Reset on Move:** As soon as the player makes any valid move or action, their `not_played_turns` counter is immediately reset to 0. An occasional missed turn never compounds into a forfeit.
+  - **30-Second Reconnect Safety Floor:** Whenever a player reconnects to a game, their remaining disconnect timer is automatically granted a safety floor of at least 30 seconds (`max(timer.max_time, 30)`), preventing instant forfeit from minor subsequent packet drops.

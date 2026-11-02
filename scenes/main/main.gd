@@ -1812,7 +1812,7 @@ func _on_game_finished(data: Dictionary) -> void:
 
 		base_game_hud.update_scores(GameManager.p1_score, GameManager.p2_score)
 
-	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active and GameManager.get_player_not_played_turns(1) < 4 and GameManager.get_player_not_played_turns(2) < 4:
+	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
 
 		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.MSWEEPER, GameTypes.BOXFOUR]:
 
@@ -1832,35 +1832,23 @@ func _on_game_finished(data: Dictionary) -> void:
 
 				winner = 0
 
-	var xp_earned: int = 0
+	var xp_earned: int = int(data.get("xp_earned", data.get("xp_awarded", 0)))
+	var coin_earned: int = int(data.get("coin_earned", data.get("coin_awarded", 0)))
+	var score_earned: int = int(data.get("score_earned", data.get("score_awarded", 0)))
 
-	# XP is ONLY awarded and displayed in Classic Rank mode! Never in lobby or friendly games!
-
-	if current_match_mode == "classic_rank":
-
-		if data.has("xp_earned") and int(data["xp_earned"]) > 0:
-
-			xp_earned = int(data["xp_earned"])
-
-		elif data.has("xp_awarded") and int(data["xp_awarded"]) > 0:
-
-			xp_earned = int(data["xp_awarded"])
-
-		else:
-
-			var is_win = (winner == GameManager.my_player_index)
-
-			var is_draw = (winner == 0)
-
+	# Fallback XP if not provided by backend
+	if xp_earned <= 0:
+		var is_win = (winner == GameManager.my_player_index)
+		var is_draw = (winner == 0)
+		if current_match_mode == "classic_rank":
 			xp_earned = GameRegistry.get_classic_rank_xp(GameManager.current_game_type, is_win, is_draw)
+		elif current_match_mode == "lobby":
+			xp_earned = GameRegistry.get_lobby_xp(GameManager.current_game_type, is_win, is_draw)
 
-
-
-		if xp_earned > 0:
-
-			GameManager.add_xp(xp_earned)
-
-
+	if xp_earned > 0:
+		GameManager.add_xp(xp_earned)
+	if coin_earned > 0:
+		GameManager.add_coins(coin_earned)
 
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
 		board.set_board_locked(true)
@@ -1868,9 +1856,9 @@ func _on_game_finished(data: Dictionary) -> void:
 	if current_match_mode == "ranked":
 		if not _ranked_rewards_applied:
 			_ranked_rewards_applied = true
-			var r_xp = int(data.get("xp_earned", 0))
-			var r_sc = int(data.get("score_earned", 0))
-			var r_cn = int(data.get("coin_earned", 0))
+			var r_xp = int(data.get("xp_earned", data.get("xp_awarded", 0)))
+			var r_sc = int(data.get("score_earned", data.get("score_awarded", 0)))
+			var r_cn = int(data.get("coin_earned", data.get("coin_awarded", 0)))
 			GameManager.apply_ranked_rewards(r_sc, r_xp, r_cn)
 		if is_instance_valid(ranked_breakout_dialog):
 			if not ranked_breakout_dialog.is_open() and not _last_game_play_payload.is_empty():
@@ -1878,7 +1866,7 @@ func _on_game_finished(data: Dictionary) -> void:
 				ranked_breakout_dialog.open(_last_game_play_payload)
 		return
 
-	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned)
+	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned)
 
 
 
