@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" path="res://assets/images/pick-ban.png" id="3_bg_tex"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_full_bg"]
-bg_color = Color(0.08, 0.05, 0.04, 0.98)
+bg_color = Color(0.07, 0.04, 0.03, 0.72)
 border_width_left = 4
 border_width_top = 4
 border_width_right = 4
@@ -13,7 +13,7 @@ border_width_bottom = 4
 border_color = Color(0.55, 0.42, 0.24, 0.95)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_card"]
-bg_color = Color(0.14, 0.09, 0.06, 0.94)
+bg_color = Color(0.13, 0.08, 0.05, 0.84)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
@@ -27,7 +27,7 @@ shadow_color = Color(0, 0, 0, 0.55)
 shadow_size = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timeline_panel"]
-bg_color = Color(0.12, 0.08, 0.06, 0.95)
+bg_color = Color(0.11, 0.07, 0.05, 0.82)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -41,7 +41,7 @@ shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status_panel"]
-bg_color = Color(0.13, 0.08, 0.06, 0.96)
+bg_color = Color(0.12, 0.08, 0.05, 0.85)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -110,12 +110,12 @@ layout_mode = 2
 texture = ExtResource("3_bg_tex")
 expand_mode = 1
 stretch_mode = 6
-modulate = Color(1, 1, 1, 0.25)
+modulate = Color(1, 1, 1, 0.10)
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
 theme_override_constants/margin_left = 26
-theme_override_constants/margin_top = 36
+theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 26
 theme_override_constants/margin_bottom = 26
 
@@ -128,6 +128,7 @@ layout_mode = 2
 theme_override_constants/separation = 6
 
 [node name="TopRow" type="HBoxContainer" parent="Margin/VBox/Header"]
+visible = false
 layout_mode = 2
 alignment = 1
 
@@ -259,7 +260,7 @@ alignment = 1
 [node name="P1Name" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 30
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "بازیکن ۱"
 clip_text = true
@@ -267,7 +268,7 @@ clip_text = true
 [node name="P1Score" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 text = "امتیاز: ۱۲۰۰"
 
@@ -323,7 +324,7 @@ alignment = 1
 [node name="P2Name" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 30
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "بازیکن ۲"
 horizontal_alignment = 2
@@ -332,7 +333,7 @@ clip_text = true
 [node name="P2Score" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 text = "امتیاز: ۱۱۵۰"
 horizontal_alignment = 2
@@ -376,7 +377,7 @@ theme_override_colors/font_color = Color(0.95, 0.85, 0.60, 1)
 text = "📊 تایم‌لاین مراحل انتخاب و حذف بازی‌ها (Timeline)"
 
 [node name="ScrollTimeline" type="ScrollContainer" parent="Margin/VBox/TimelinePanel/MarginTimeline/VBoxTimeline"]
-custom_minimum_size = Vector2(0, 160)
+custom_minimum_size = Vector2(0, 356)
 horizontal_scroll_mode = 0
 layout_mode = 2
 vertical_scroll_mode = 0
@@ -473,9 +474,9 @@ theme_override_constants/margin_bottom = 6
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/h_separation = 14
-theme_override_constants/v_separation = 14
-columns = 3
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 4
 
 [node name="BottomBar" type="VBoxContainer" parent="Margin/VBox"]
 layout_mode = 2

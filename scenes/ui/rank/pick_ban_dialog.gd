@@ -367,7 +367,26 @@ func _build_timeline() -> void:
 	for child in hbox_timeline.get_children():
 		child.queue_free()
 	timeline_nodes.clear()
-	hbox_timeline.add_theme_constant_override("separation", 8)
+	
+	# Build a structured 2-row container (Row 1: Steps 1..4, Row 2: Steps 5..7) inside hbox_timeline
+	var rows_vbox = VBoxContainer.new()
+	rows_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rows_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rows_vbox.add_theme_constant_override("separation", 10)
+	rows_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox_timeline.add_child(rows_vbox)
+	
+	var row_top = HBoxContainer.new()
+	row_top.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row_top.add_theme_constant_override("separation", 12)
+	row_top.alignment = BoxContainer.ALIGNMENT_CENTER
+	rows_vbox.add_child(row_top)
+	
+	var row_bottom = HBoxContainer.new()
+	row_bottom.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row_bottom.add_theme_constant_override("separation", 14)
+	row_bottom.alignment = BoxContainer.ALIGNMENT_CENTER
+	rows_vbox.add_child(row_bottom)
 	
 	for i in range(TIMELINE_CONFIG.size()):
 		var cfg = TIMELINE_CONFIG[i]
@@ -375,54 +394,60 @@ func _build_timeline() -> void:
 		var t_type = str(cfg["type"]) # "ban", "pick", "sys_pick"
 		var t_owner = int(cfg["owner"]) # 1, 2, 0 (sys)
 		
-		# Clean, equal-width slot that fits all 7 steps in 1 row without horizontal scroll
+		# Large, prominent selection card (4 on top row, 3 centered on bottom row)
 		var node_box = PanelContainer.new()
-		node_box.custom_minimum_size = Vector2(124, 152)
-		node_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		node_box.custom_minimum_size = Vector2(230, 172)
+		node_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL if t_num <= 4 else Control.SIZE_SHRINK_CENTER
+		if t_num > 4:
+			node_box.custom_minimum_size = Vector2(285, 172)
 		node_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
 		var sb = StyleBoxFlat.new()
-		sb.bg_color = Color(0.11, 0.07, 0.05, 0.95)
+		sb.bg_color = Color(0.11, 0.07, 0.05, 0.88)
 		sb.set_border_width_all(2)
-		sb.border_color = Color(0.45, 0.34, 0.20, 0.75)
-		sb.set_corner_radius_all(12)
+		sb.border_color = Color(0.50, 0.38, 0.22, 0.80)
+		sb.set_corner_radius_all(14)
 		node_box.add_theme_stylebox_override("panel", sb)
 		
 		var margin = MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 6)
-		margin.add_theme_constant_override("margin_top", 6)
-		margin.add_theme_constant_override("margin_right", 6)
-		margin.add_theme_constant_override("margin_bottom", 6)
+		margin.add_theme_constant_override("margin_left", 10)
+		margin.add_theme_constant_override("margin_top", 8)
+		margin.add_theme_constant_override("margin_right", 10)
+		margin.add_theme_constant_override("margin_bottom", 8)
 		node_box.add_child(margin)
 		
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 4)
+		vbox.add_theme_constant_override("separation", 6)
 		margin.add_child(vbox)
 		
 		# Top Action Pill
 		var chip_panel = PanelContainer.new()
 		var chip_sb = StyleBoxFlat.new()
-		chip_sb.set_corner_radius_all(6)
+		chip_sb.set_corner_radius_all(8)
 		chip_sb.set_border_width_all(1)
+		chip_sb.content_margin_left = 8
+		chip_sb.content_margin_right = 8
+		chip_sb.content_margin_top = 2
+		chip_sb.content_margin_bottom = 2
 		
 		var lbl_tag = Label.new()
 		lbl_tag.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_tag.add_theme_font_size_override("font_size", 18)
+		lbl_tag.add_theme_font_size_override("font_size", 22)
 		lbl_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		
 		if t_type == "ban":
-			lbl_tag.text = "حذف"
+			lbl_tag.text = "مرحله %s • حذف" % _fa_num(t_num)
 			chip_sb.bg_color = Color(0.32, 0.08, 0.08, 0.90)
 			chip_sb.border_color = Color(0.90, 0.32, 0.32, 0.85)
-			lbl_tag.modulate = Color(1.0, 0.55, 0.55)
+			lbl_tag.modulate = Color(1.0, 0.60, 0.60)
 		elif t_type == "sys_pick":
-			lbl_tag.text = "بازی ۳ 🎲"
+			lbl_tag.text = "مرحله ۷ • بازی ۳ 🎲"
 			chip_sb.bg_color = Color(0.34, 0.24, 0.06, 0.90)
 			chip_sb.border_color = Color(1.0, 0.84, 0.28, 0.90)
 			lbl_tag.modulate = Color(1.0, 0.88, 0.35)
 		else:
-			lbl_tag.text = "بازی ۱ ★" if t_num == 3 else "بازی ۲ ★"
+			lbl_tag.text = ("مرحله ۳ • بازی ۱ ★" if t_num == 3 else "مرحله ۴ • بازی ۲ ★")
 			chip_sb.bg_color = Color(0.08, 0.28, 0.14, 0.90)
 			chip_sb.border_color = Color(0.32, 0.92, 0.52, 0.90)
 			lbl_tag.modulate = Color(0.45, 0.98, 0.62)
@@ -431,19 +456,19 @@ func _build_timeline() -> void:
 		chip_panel.add_child(lbl_tag)
 		vbox.add_child(chip_panel)
 		
-		# Center Icon Box (76x76)
+		# Large Center Icon Box (136x84)
 		var frame = PanelContainer.new()
-		frame.custom_minimum_size = Vector2(76, 76)
+		frame.custom_minimum_size = Vector2(136, 84)
 		frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		var frame_sb = StyleBoxFlat.new()
-		frame_sb.bg_color = Color(0.05, 0.03, 0.02, 0.92)
-		frame_sb.set_border_width_all(1)
-		frame_sb.border_color = Color(0.38, 0.28, 0.18, 0.75)
-		frame_sb.set_corner_radius_all(8)
+		frame_sb.bg_color = Color(0.05, 0.03, 0.02, 0.90)
+		frame_sb.set_border_width_all(2)
+		frame_sb.border_color = Color(0.42, 0.32, 0.20, 0.80)
+		frame_sb.set_corner_radius_all(10)
 		frame.add_theme_stylebox_override("panel", frame_sb)
 		
 		var img_rect = TextureRect.new()
-		img_rect.custom_minimum_size = Vector2(72, 72)
+		img_rect.custom_minimum_size = Vector2(132, 80)
 		img_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		img_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		img_rect.texture = _load_game_texture("tictactoe")
@@ -453,7 +478,7 @@ func _build_timeline() -> void:
 		var ban_overlay = Label.new()
 		ban_overlay.text = "✕"
 		ban_overlay.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		ban_overlay.add_theme_font_size_override("font_size", 38)
+		ban_overlay.add_theme_font_size_override("font_size", 46)
 		ban_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		ban_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		ban_overlay.modulate = Color(1.0, 0.2, 0.2, 0.0)
@@ -465,7 +490,7 @@ func _build_timeline() -> void:
 		var lbl_name = Label.new()
 		lbl_name.text = _get_step_actor_label(t_owner, t_type)
 		lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_name.add_theme_font_size_override("font_size", 19)
+		lbl_name.add_theme_font_size_override("font_size", 24)
 		lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_name.clip_text = true
 		if t_owner == my_player_index:
@@ -476,7 +501,10 @@ func _build_timeline() -> void:
 			lbl_name.modulate = Color(0.95, 0.72, 0.65)
 		vbox.add_child(lbl_name)
 		
-		hbox_timeline.add_child(node_box)
+		if t_num <= 4:
+			row_top.add_child(node_box)
+		else:
+			row_bottom.add_child(node_box)
 		
 		timeline_nodes[t_num] = {
 			"box": node_box,
@@ -498,7 +526,7 @@ func _build_games_grid() -> void:
 	for child in games_grid.get_children():
 		child.queue_free()
 	game_card_nodes.clear()
-	games_grid.columns = 3
+	games_grid.columns = 4
 	
 	for g_type in TWO_PLAYER_GAMES:
 		var card = _create_game_card(g_type)
@@ -507,35 +535,35 @@ func _build_games_grid() -> void:
 
 func _create_game_card(g_type: String) -> PanelContainer:
 	var card = PanelContainer.new()
-	card.custom_minimum_size = Vector2(305, 240)
+	card.custom_minimum_size = Vector2(230, 152)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	
 	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.14, 0.09, 0.07, 0.96)
+	sb.bg_color = Color(0.13, 0.08, 0.06, 0.86)
 	sb.set_border_width_all(2)
-	sb.border_color = Color(0.48, 0.36, 0.22, 0.85)
-	sb.set_corner_radius_all(14)
-	sb.shadow_color = Color(0, 0, 0, 0.45)
-	sb.shadow_size = 5
+	sb.border_color = Color(0.48, 0.36, 0.22, 0.80)
+	sb.set_corner_radius_all(12)
+	sb.shadow_color = Color(0, 0, 0, 0.35)
+	sb.shadow_size = 4
 	card.add_theme_stylebox_override("panel", sb)
 	
 	var margin = MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 8)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_right", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
+	margin.add_theme_constant_override("margin_left", 6)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_right", 6)
+	margin.add_theme_constant_override("margin_bottom", 6)
 	card.add_child(margin)
 	
 	var vbox = VBoxContainer.new()
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_theme_constant_override("separation", 6)
+	vbox.add_theme_constant_override("separation", 4)
 	margin.add_child(vbox)
 	
-	# Clean Game Cover Image (no overlapping badges on top of artwork unless selected/picked)
+	# Compact Game Cover Image
 	var art_holder = Control.new()
-	art_holder.custom_minimum_size = Vector2(0, 145)
+	art_holder.custom_minimum_size = Vector2(0, 86)
 	art_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	art_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(art_holder)
@@ -583,7 +611,7 @@ func _create_game_card(g_type: String) -> PanelContainer:
 	lbl_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl_name.text = GameTypes.get_display_name_fa(g_type)
 	lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_name.add_theme_font_size_override("font_size", 26)
+	lbl_name.add_theme_font_size_override("font_size", 23)
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_name.add_theme_color_override("font_color", Color(1, 0.96, 0.88))
 	vbox.add_child(lbl_name)
@@ -607,7 +635,7 @@ func _create_game_card(g_type: String) -> PanelContainer:
 	lbl_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl_badge.text = "آزاد"
 	lbl_badge.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_badge.add_theme_font_size_override("font_size", 18)
+	lbl_badge.add_theme_font_size_override("font_size", 16)
 	lbl_badge.modulate = Color(0.78, 0.74, 0.66)
 	lbl_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_pill.add_child(lbl_badge)
@@ -934,11 +962,11 @@ func _play_selection_vfx(game_type: String, t_type: String, step_num: int) -> vo
 	var stamp = Label.new()
 	stamp.text = "🚫 حذف شد" if t_type == "ban" else ("🎯 انتخاب شد" if t_type == "pick" else "🎲 انتخاب سیستم")
 	stamp.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	stamp.add_theme_font_size_override("font_size", 28)
+	stamp.add_theme_font_size_override("font_size", 22)
 	stamp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stamp.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	stamp.custom_minimum_size = Vector2(210, 62)
-	stamp.size = Vector2(210, 62)
+	stamp.custom_minimum_size = Vector2(170, 48)
+	stamp.size = Vector2(170, 48)
 	stamp.position = (card.size - stamp.size) * 0.5
 	stamp.pivot_offset = stamp.size * 0.5
 	
