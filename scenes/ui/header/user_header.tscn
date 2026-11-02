@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/header/user_header.gd" id="1_header_script"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/frame4.png" id="2_frame4_tex"]
@@ -42,10 +42,10 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.72, 0.56, 0.24, 0.88)
-corner_radius_top_left = 13
-corner_radius_top_right = 13
-corner_radius_bottom_right = 13
-corner_radius_bottom_left = 13
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xp_fill"]
 bg_color = Color(0.95, 0.74, 0.20, 1)
@@ -54,10 +54,10 @@ border_width_top = 2
 border_width_right = 0
 border_width_bottom = 2
 border_color = Color(1, 0.90, 0.50, 0.65)
-corner_radius_top_left = 11
-corner_radius_top_right = 11
-corner_radius_bottom_right = 11
-corner_radius_bottom_left = 11
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_divider"]
 bg_color = Color(0.85, 0.68, 0.32, 0.35)
@@ -66,102 +66,74 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status_pill"]
-content_margin_left = 12.0
-content_margin_top = 4.0
-content_margin_right = 12.0
-content_margin_bottom = 4.0
-bg_color = Color(0.08, 0.22, 0.12, 0.92)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.35, 0.92, 0.50, 0.85)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_id_btn_normal"]
-content_margin_left = 14.0
-content_margin_top = 5.0
-content_margin_right = 14.0
-content_margin_bottom = 5.0
+content_margin_left = 18.0
+content_margin_top = 6.0
+content_margin_right = 18.0
+content_margin_bottom = 6.0
 bg_color = Color(0.12, 0.08, 0.05, 0.90)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 2
-border_color = Color(0.75, 0.58, 0.28, 0.80)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_id_btn_hover"]
-content_margin_left = 14.0
-content_margin_top = 5.0
-content_margin_right = 14.0
-content_margin_bottom = 5.0
-bg_color = Color(0.18, 0.12, 0.07, 0.95)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 2
-border_color = Color(0.95, 0.78, 0.38, 0.95)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_id_btn_pressed"]
-content_margin_left = 14.0
-content_margin_top = 5.0
-content_margin_right = 14.0
-content_margin_bottom = 5.0
-bg_color = Color(0.09, 0.06, 0.03, 0.96)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.95, 0.78, 0.38, 0.95)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_avatar_ring"]
-bg_color = Color(0.10, 0.06, 0.03, 0.95)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.95, 0.78, 0.32, 0.92)
-corner_radius_top_left = 48
-corner_radius_top_right = 48
-corner_radius_bottom_right = 48
-corner_radius_bottom_left = 48
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_online_dot"]
-bg_color = Color(0.25, 0.95, 0.45, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.12, 0.07, 0.04, 1)
+border_color = Color(0.78, 0.60, 0.28, 0.85)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_id_btn_hover"]
+content_margin_left = 18.0
+content_margin_top = 6.0
+content_margin_right = 18.0
+content_margin_bottom = 6.0
+bg_color = Color(0.18, 0.12, 0.07, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 3
+border_color = Color(0.95, 0.78, 0.38, 0.95)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_id_btn_pressed"]
+content_margin_left = 18.0
+content_margin_top = 6.0
+content_margin_right = 18.0
+content_margin_bottom = 6.0
+bg_color = Color(0.09, 0.06, 0.03, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.78, 0.38, 0.95)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_avatar_ring"]
+bg_color = Color(0.10, 0.06, 0.03, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.78, 0.32, 0.92)
+corner_radius_top_left = 52
+corner_radius_top_right = 52
+corner_radius_bottom_right = 52
+corner_radius_bottom_left = 52
+
 [node name="UserHeader" type="MarginContainer"]
-custom_minimum_size = Vector2(0, 218)
+custom_minimum_size = Vector2(0, 236)
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 218.0
+offset_bottom = 236.0
 grow_horizontal = 2
 theme_override_constants/margin_left = 22
-theme_override_constants/margin_top = 40
+theme_override_constants/margin_top = 38
 theme_override_constants/margin_right = 22
 script = ExtResource("1_header_script")
 
@@ -171,9 +143,9 @@ theme_override_styles/panel = SubResource("StyleBoxTexture_wood_header")
 
 [node name="ContentMargin" type="MarginContainer" parent="PanelFrame"]
 layout_mode = 2
-theme_override_constants/margin_left = 34
+theme_override_constants/margin_left = 32
 theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 34
+theme_override_constants/margin_right = 32
 theme_override_constants/margin_bottom = 20
 
 [node name="HBoxMain" type="HBoxContainer" parent="PanelFrame/ContentMargin"]
@@ -182,14 +154,14 @@ theme_override_constants/separation = 18
 alignment = 1
 
 [node name="StatsCol" type="VBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(400, 0)
+custom_minimum_size = Vector2(436, 0)
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="BadgesRow" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="CoinBadge" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
@@ -199,7 +171,7 @@ theme_override_constants/separation = 6
 alignment = 1
 
 [node name="CoinIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge"]
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("4_coin_tex")
@@ -212,12 +184,12 @@ theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 32
 text = "۵۰"
 vertical_alignment = 1
 
 [node name="BtnAddCoins" type="TextureButton" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge"]
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 size_flags_vertical = 4
 texture_normal = ExtResource("7_add_tex")
@@ -229,18 +201,18 @@ visible = false
 layout_mode = 2
 
 [node name="ScoreCard" type="PanelContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
-custom_minimum_size = Vector2(192, 56)
+custom_minimum_size = Vector2(210, 66)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat_capsule")
 
 [node name="ScoreBadge" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreCard"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="CupIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreCard/ScoreBadge"]
-custom_minimum_size = Vector2(36, 36)
+custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("5_cup_tex")
@@ -251,27 +223,27 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.90, 0.42, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
-theme_override_constants/shadow_outline_size = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 36
 text = "۱۰۰۰ امتیاز"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="LevelCard" type="PanelContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
-custom_minimum_size = Vector2(192, 56)
+custom_minimum_size = Vector2(210, 66)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat_capsule")
 
 [node name="LevelBadge" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelCard"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="LevelIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelCard/LevelBadge"]
-custom_minimum_size = Vector2(36, 36)
+custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("6_level_tex")
@@ -282,16 +254,16 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
-theme_override_constants/shadow_outline_size = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 36
 text = "سطح ۱"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="XpContainer" type="Control" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol"]
-custom_minimum_size = Vector2(0, 26)
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 
 [node name="XpBar" type="ProgressBar" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/XpContainer"]
@@ -318,13 +290,13 @@ theme_override_colors/font_color = Color(1, 0.98, 0.90, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 26
 text = "تجربه: ۰ / ۶۰"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="HeaderDivider" type="Panel" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(2, 92)
+custom_minimum_size = Vector2(2, 106)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_divider")
@@ -332,38 +304,21 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_divider")
 [node name="UserCol" type="VBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="TopIdentityRow" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/UserCol"]
 layout_mode = 2
-theme_override_constants/separation = 10
 alignment = 2
-
-[node name="StatusBadge" type="PanelContainer" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow"]
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_status_pill")
-
-[node name="LblStatus" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow/StatusBadge"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.45, 1, 0.55, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
-theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 20
-text = "● آنلاین"
-horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="Username" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.86, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.92)
-theme_override_constants/shadow_outline_size = 3
+theme_override_constants/shadow_outline_size = 4
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 38
+theme_override_font_sizes/font_size = 46
 text = "کاربر مهمان"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -374,14 +329,14 @@ layout_mode = 2
 alignment = 2
 
 [node name="UserIdBtn" type="Button" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/BottomIdRow"]
-custom_minimum_size = Vector2(210, 40)
+custom_minimum_size = Vector2(240, 52)
 layout_mode = 2
 focus_mode = 0
 theme_override_colors/font_color = Color(0.96, 0.88, 0.72, 1)
 theme_override_colors/font_hover_color = Color(1, 0.96, 0.85, 1)
 theme_override_colors/font_pressed_color = Color(1, 0.90, 0.55, 1)
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 21
+theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_id_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_id_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_id_btn_pressed")
@@ -389,7 +344,7 @@ text = "📋 شناسه: -----"
 alignment = 1
 
 [node name="AvatarFrame" type="Control" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(118, 118)
+custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 size_flags_vertical = 4
 
@@ -411,10 +366,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -47.0
-offset_top = -47.0
-offset_right = 47.0
-offset_bottom = 47.0
+offset_left = -52.0
+offset_top = -52.0
+offset_right = 52.0
+offset_bottom = 52.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -427,34 +382,20 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -43.0
-offset_top = -43.0
-offset_right = 43.0
-offset_bottom = 43.0
+offset_left = -47.0
+offset_top = -47.0
+offset_right = 47.0
+offset_bottom = 47.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="AvatarTexture" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/AvatarFrame/AvatarBtn"]
 layout_mode = 1
-texture = ExtResource("9_default_avatar")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+texture = ExtResource("9_default_avatar")
 expand_mode = 1
 stretch_mode = 5
-
-[node name="OnlineDot" type="Panel" parent="PanelFrame/ContentMargin/HBoxMain/AvatarFrame"]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = -28.0
-offset_right = 30.0
-offset_bottom = -4.0
-grow_vertical = 0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_online_dot")

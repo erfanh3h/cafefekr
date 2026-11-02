@@ -26,7 +26,7 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 
 @onready var menu_container = $CanvasLayer/MenuContainer
 
-@onready var logo_plate = $CanvasLayer/MenuContainer/CenterContent/LogoSection/LogoPlate
+@onready var logo_plate = get_node_or_null("CanvasLayer/MenuContainer/CenterContent/LogoSection/LogoPlate")
 
 
 
@@ -667,7 +667,8 @@ func _setup_signals() -> void:
 
 
 func _start_logo_animation() -> void:
-
+	if not is_instance_valid(logo_plate):
+		return
 	logo_plate.pivot_offset = logo_plate.size / 2.0
 
 	var tw = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
