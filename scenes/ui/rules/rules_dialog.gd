@@ -152,7 +152,9 @@ func _update_selected_game_display() -> void:
 			break
 	lbl_selected_game.text = g_name
 	
-	var icon_path = "res://assets/images/games/%s.jpg" % selected_game_key
+	var icon_path = "res://assets/images/games/%s.png" % selected_game_key
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/images/games/%s.jpg" % selected_game_key
 	if ResourceLoader.exists(icon_path):
 		selected_game_icon.texture = load(icon_path)
 		selected_game_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
@@ -243,7 +245,9 @@ func _create_game_card(g: Dictionary) -> Control:
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	img.modulate = Color(1.18, 1.12, 1.05)
-	var icon_path = "res://assets/images/games/%s.jpg" % k
+	var icon_path = "res://assets/images/games/%s.png" % k
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/images/games/%s.jpg" % k
 	if ResourceLoader.exists(icon_path):
 		img.texture = load(icon_path)
 	elif k == "rank_mode":
@@ -446,7 +450,9 @@ func _render_content() -> void:
 	cover_img.set_anchors_preset(Control.PRESET_FULL_RECT)
 	cover_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	cover_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	var ipath = "res://assets/images/games/%s.jpg" % selected_game_key
+	var ipath = "res://assets/images/games/%s.png" % selected_game_key
+	if not ResourceLoader.exists(ipath):
+		ipath = "res://assets/images/games/%s.jpg" % selected_game_key
 	if ResourceLoader.exists(ipath):
 		cover_img.texture = load(ipath)
 	icon_box.add_child(cover_img)

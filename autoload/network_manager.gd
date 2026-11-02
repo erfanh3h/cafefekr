@@ -134,9 +134,15 @@ func restore_session(callback: Callable) -> void:
 			GameManager.logout()
 			callback.call(false, "Invalid token")
 		else:
-			# Network error or offline: game is online-only, do not restore offline cache
-			print("[NetworkManager] Network error (%d) while contacting server. User is offline." % response_code)
-			callback.call(false, "OFFLINE")
+			print("[NetworkManager] Server unreachable or network error (%d). Preserving local session." % response_code)
+			var cached_data = GameManager.load_saved_user_data()
+			if not cached_data.is_empty():
+				GameManager.token = saved_token
+				GameManager.user_data = cached_data
+				GameManager.is_logged_in = true
+				callback.call(true, "Restored from local cache")
+			else:
+				callback.call(false, "OFFLINE")
 	)
 
 func connect_to_game_server() -> void:

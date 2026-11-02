@@ -183,14 +183,14 @@ func _setup_players(payload: Dictionary) -> void:
 	var is_p1_me = (str(p1_data.get("user_id", "")) == my_id)
 	if is_instance_valid(p1_role_label) and is_instance_valid(p2_role_label):
 		if is_p1_me:
-			p1_role_label.text = "شما • امتیاز: %s" % _fa_num(p1_rating)
+			p1_role_label.text = "شما • امتیاز رنک: \u200E%s\u200E" % _fa_num(p1_rating)
 			p1_role_label.add_theme_color_override("font_color", Color(0.35, 0.90, 1.0))
-			p2_role_label.text = "حریف • امتیاز: %s" % _fa_num(p2_rating)
+			p2_role_label.text = "حریف • امتیاز رنک: \u200E%s\u200E" % _fa_num(p2_rating)
 			p2_role_label.add_theme_color_override("font_color", Color(1.0, 0.50, 0.45))
 		else:
-			p1_role_label.text = "حریف • امتیاز: %s" % _fa_num(p1_rating)
+			p1_role_label.text = "حریف • امتیاز رنک: \u200E%s\u200E" % _fa_num(p1_rating)
 			p1_role_label.add_theme_color_override("font_color", Color(1.0, 0.50, 0.45))
-			p2_role_label.text = "شما • امتیاز: %s" % _fa_num(p2_rating)
+			p2_role_label.text = "شما • امتیاز رنک: \u200E%s\u200E" % _fa_num(p2_rating)
 			p2_role_label.add_theme_color_override("font_color", Color(0.35, 0.90, 1.0))
 
 	var scores = payload.get("scores", [0, 0]) as Array
@@ -394,12 +394,16 @@ func _setup_finish_state(payload: Dictionary) -> void:
 
 		var reward_parts: Array = []
 		if has_score_delta:
-			var sign_str = "+" if my_score_delta >= 0 else ""
-			reward_parts.append("🏆 امتیاز رنک: %s%s" % [sign_str, _fa_num(my_score_delta)])
+			var sign_str = "+" if my_score_delta >= 0 else "-"
+			var val_abs = abs(my_score_delta)
+			var ltr_score = "\u2066\u200E%s%s\u200E\u2069" % [sign_str, _fa_num(val_abs)]
+			reward_parts.append("🏆 امتیاز رنک: %s" % ltr_score)
 		if my_xp > 0:
-			reward_parts.append("⭐ تجربه: +%s XP" % _fa_num(my_xp))
+			var ltr_xp = "\u2066\u200E+%s XP\u200E\u2069" % _fa_num(my_xp)
+			reward_parts.append("⭐ تجربه: %s" % ltr_xp)
 		if my_coin_delta > 0:
-			reward_parts.append("🪙 سکه: +%s" % _fa_num(my_coin_delta))
+			var ltr_coin = "\u2066\u200E+%s\u200E\u2069" % _fa_num(my_coin_delta)
+			reward_parts.append("🪙 سکه: %s" % ltr_coin)
 
 		if not reward_parts.is_empty():
 			finished_xp_label.visible = true
@@ -432,6 +436,9 @@ func _load_avatar(avatar_id: int) -> Texture2D:
 
 func _load_game_thumb(game_type: String) -> Texture2D:
 	var clean = game_type.to_lower().strip_edges()
+	var path_png = "res://assets/images/games/%s.png" % clean
+	if ResourceLoader.exists(path_png):
+		return load(path_png)
 	var path = "res://assets/images/games/%s.jpg" % clean
 	if ResourceLoader.exists(path):
 		return load(path)

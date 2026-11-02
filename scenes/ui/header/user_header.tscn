@@ -227,7 +227,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
 theme_override_font_sizes/font_size = 36
-text = "۱۰۰۰ امتیاز"
+text = "۱۰۰۰"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -258,7 +258,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
 theme_override_font_sizes/font_size = 36
-text = "سطح ۱"
+text = "۱"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -275,8 +275,9 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_xp_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_xp_fill")
+step = 0.01
 max_value = 100.0
-value = 35.0
+value = 0.0
 show_percentage = false
 
 [node name="XpValueLabel" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/XpContainer"]
@@ -291,7 +292,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
 theme_override_font_sizes/font_size = 26
-text = "تجربه: ۰ / ۶۰"
+text = "۰/۶۰"
 horizontal_alignment = 1
 vertical_alignment = 1
 

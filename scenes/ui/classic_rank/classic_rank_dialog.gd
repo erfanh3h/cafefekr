@@ -166,7 +166,9 @@ func _create_game_card(g_type: String) -> Control:
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	img.modulate = Color(1.18, 1.12, 1.05)
-	var icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
+	var icon_path = "res://assets/images/games/%s.png" % g_type.to_lower()
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
 	if ResourceLoader.exists(icon_path):
 		img.texture = load(icon_path)
 	else:
@@ -283,7 +285,9 @@ func _update_grid_selection_visuals() -> void:
 func _update_selected_preview() -> void:
 	if not is_instance_valid(preview_icon):
 		return
-	var cover_path = "res://assets/images/games/%s.jpg" % selected_game_type.to_lower()
+	var cover_path = "res://assets/images/games/%s.png" % selected_game_type.to_lower()
+	if not ResourceLoader.exists(cover_path):
+		cover_path = "res://assets/images/games/%s.jpg" % selected_game_type.to_lower()
 	if ResourceLoader.exists(cover_path):
 		preview_icon.texture = load(cover_path)
 	else:

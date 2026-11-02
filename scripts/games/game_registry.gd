@@ -339,7 +339,7 @@ static var _registry: Dictionary = {
 		"has_round_score": false,
 		"turn_time": 25.0,
 		"has_missed_turns_limit": false,
-		"icon": "res://assets/images/games/ludo.jpg",
+		"icon": "res://assets/images/games/ludo.png",
 		"min_players": 2,
 		"max_players": 4,
 		"is_3d": true

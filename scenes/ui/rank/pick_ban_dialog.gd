@@ -1687,6 +1687,9 @@ func _load_avatar_texture(avatar_id: int) -> Texture2D:
 
 func _load_game_texture(game_type: String) -> Texture2D:
 	var clean = game_type.to_lower().strip_edges()
+	var path_png = "res://assets/images/games/%s.png" % clean
+	if ResourceLoader.exists(path_png):
+		return load(path_png)
 	var path = "res://assets/images/games/%s.jpg" % clean
 	if ResourceLoader.exists(path):
 		return load(path)

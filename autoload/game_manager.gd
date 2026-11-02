@@ -5,6 +5,7 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 # GameManager Autoload (Singleton)
 signal user_logged_in(user_data: Dictionary)
 signal user_logged_out()
+signal user_data_updated(user_data: Dictionary)
 signal game_started(game_id: String, game_data: Dictionary)
 signal game_finished(winner_id: Variant)
 
@@ -205,6 +206,20 @@ func get_player_not_played_turns(gamer_id: int) -> int:
 
 func _ready() -> void:
 	_load_or_create_device_id()
+	_load_saved_session_on_boot()
+
+func _load_saved_session_on_boot() -> void:
+	var saved_token = load_saved_token()
+	if not saved_token.is_empty():
+		token = saved_token
+		var saved_data = load_saved_user_data()
+		if not saved_data.is_empty():
+			user_data = saved_data
+			is_logged_in = true
+			print("[GameManager] Boot: Restored local session for '%s' (Level: %d, XP: %d, Score: %d, Coins: %d)" % [
+				get_username(), get_user_level(), get_xp(), get_score(), get_coins()
+			])
+			user_logged_in.emit(user_data)
 
 func _load_or_create_device_id() -> void:
 	var config = ConfigFile.new()
@@ -342,6 +357,8 @@ func add_xp(amount: int) -> void:
 		config.set_value("auth", "is_guest", is_guest)
 		config.save(SESSION_PATH)
 	print("[GameManager] Added %d XP. New total: %d" % [amount, user_data["xp"]])
+	user_data_updated.emit(user_data)
+	user_logged_in.emit(user_data)
 
 func add_coins(amount: int) -> void:
 	if amount == 0:
@@ -350,6 +367,8 @@ func add_coins(amount: int) -> void:
 	user_data["coin"] = max(0, cur_coin + amount)
 	_save_session_config()
 	print("[GameManager] Added %d Coins. New total: %d" % [amount, user_data["coin"]])
+	user_data_updated.emit(user_data)
+	user_logged_in.emit(user_data)
 
 func apply_ranked_rewards(score_delta: int, xp_delta: int, coin_delta: int) -> void:
 	if score_delta != 0:
@@ -360,6 +379,8 @@ func apply_ranked_rewards(score_delta: int, xp_delta: int, coin_delta: int) -> v
 		user_data["coin"] = max(0, int(user_data.get("coin", 0)) + coin_delta)
 	_save_session_config()
 	print("[GameManager] Applied ranked rewards: score %+d, xp +%d, coin %+d" % [score_delta, xp_delta, coin_delta])
+	user_data_updated.emit(user_data)
+	user_logged_in.emit(user_data)
 
 # ==============================================================================
 # LEVEL & XP PROGRESSION SYSTEM

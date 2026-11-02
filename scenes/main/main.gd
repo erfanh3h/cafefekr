@@ -151,7 +151,7 @@ func _ready() -> void:
 					_show_offline_dialog()
 					return
 				_hide_offline_dialog()
-				if not restored:
+				if not restored and not GameManager.is_logged_in:
 					login_dialog.open()
 					_show_backdrop()
 				else:

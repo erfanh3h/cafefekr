@@ -63,6 +63,8 @@ func _ready() -> void:
 
 	GameManager.user_logged_in.connect(func(_u): update_ui())
 	GameManager.user_logged_out.connect(func(): update_ui())
+	if GameManager.has_signal("user_data_updated"):
+		GameManager.user_data_updated.connect(func(_u): update_ui())
 
 	update_ui()
 
@@ -82,10 +84,19 @@ func update_ui() -> void:
 	if not _is_copy_feedback_active and is_instance_valid(btn_user_id):
 		btn_user_id.add_theme_color_override("font_color", Color(0.96, 0.88, 0.72, 1.0))
 
+	# Instant local session check if not yet marked as logged in
+	if not GameManager.is_logged_in:
+		var saved_tok = GameManager.load_saved_token()
+		var saved_usr = GameManager.load_saved_user_data()
+		if not saved_tok.is_empty() and not saved_usr.is_empty():
+			GameManager.token = saved_tok
+			GameManager.user_data = saved_usr
+			GameManager.is_logged_in = true
+
 	if GameManager.is_logged_in:
 		lbl_username.text = GameManager.get_username()
 		lbl_coins.text = _fa_num(GameManager.get_coins())
-		lbl_score.text = "%s امتیاز" % _fa_num(GameManager.get_score())
+		lbl_score.text = _fa_num(GameManager.get_score())
 
 		var uid = str(GameManager.user_data.get("_id", GameManager.user_data.get("id", ""))).strip_edges()
 		if not _is_copy_feedback_active:
@@ -101,12 +112,24 @@ func update_ui() -> void:
 		var level = int(lvl_info.get("level", 1))
 		var exp_in_lvl = int(lvl_info.get("exp_in_level", 0))
 		var exp_needed = int(lvl_info.get("exp_needed", 60))
-		var pct_int = int(lvl_info.get("percent_int", 0))
 
-		lbl_level.text = "سطح %s" % _fa_num(level)
-		xp_bar.value = float(lvl_info.get("progress", 0.0)) * 100.0
+		lbl_level.text = _fa_num(level)
+
+		# Percentage calculation (e.g., 10/100 -> 10.0%, 20/220 -> 9.09%)
+		var progress_pct: float = 0.0
+		if exp_needed > 0:
+			progress_pct = clampf((float(exp_in_lvl) / float(exp_needed)) * 100.0, 0.0, 100.0)
+		else:
+			progress_pct = 100.0
+
+		if is_instance_valid(xp_bar):
+			xp_bar.min_value = 0.0
+			xp_bar.max_value = 100.0
+			xp_bar.step = 0.01
+			xp_bar.value = progress_pct
+
 		if is_instance_valid(lbl_xp_value):
-			lbl_xp_value.text = "تجربه: %s / %s (%s٪)" % [_fa_num(exp_in_lvl), _fa_num(exp_needed), _fa_num(pct_int)]
+			lbl_xp_value.text = "\u200E%s/%s\u200E" % [_fa_num(exp_in_lvl), _fa_num(exp_needed)]
 
 		var img_id = int(GameManager.user_data.get("image", 0))
 		var avatar_path = "res://assets/icons/Avatars/%d.png" % img_id
@@ -117,11 +140,15 @@ func update_ui() -> void:
 		if not _is_copy_feedback_active:
 			btn_user_id.text = "🔑 ورود / ثبت شماره"
 		lbl_coins.text = "۰"
-		lbl_score.text = "۰ امتیاز"
-		lbl_level.text = "سطح ۱"
-		xp_bar.value = 0.0
+		lbl_score.text = "۰"
+		lbl_level.text = "۱"
+		if is_instance_valid(xp_bar):
+			xp_bar.min_value = 0.0
+			xp_bar.max_value = 100.0
+			xp_bar.step = 0.01
+			xp_bar.value = 0.0
 		if is_instance_valid(lbl_xp_value):
-			lbl_xp_value.text = "تجربه: ۰ / ۶۰ (۰٪)"
+			lbl_xp_value.text = "\u200E۰/۶۰\u200E"
 
 static func _total_exp_to_level(level: int, _base: int = 20) -> int:
 	return GameManager.total_exp_to_level(level)

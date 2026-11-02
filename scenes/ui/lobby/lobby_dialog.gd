@@ -351,7 +351,9 @@ func _update_selected_game_display() -> void:
 	if not is_instance_valid(lbl_selected_game) or not is_instance_valid(selected_game_icon):
 		return
 	lbl_selected_game.text = GameTypes.get_display_name_fa(selected_create_game_type)
-	var icon_path = "res://assets/images/games/%s.jpg" % selected_create_game_type.to_lower()
+	var icon_path = "res://assets/images/games/%s.png" % selected_create_game_type.to_lower()
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/images/games/%s.jpg" % selected_create_game_type.to_lower()
 	if ResourceLoader.exists(icon_path):
 		selected_game_icon.texture = load(icon_path)
 	else:
@@ -443,7 +445,9 @@ func _create_game_card(g_type: String) -> Control:
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	img.modulate = Color(1.18, 1.12, 1.05)
-	var icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
+	var icon_path = "res://assets/images/games/%s.png" % g_type.to_lower()
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
 	if ResourceLoader.exists(icon_path):
 		img.texture = load(icon_path)
 	else:
@@ -650,7 +654,9 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	icon_plate.custom_minimum_size = Vector2(68, 68)
 	icon_plate.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_plate.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	var icon_path = "res://assets/images/games/%s.jpg" % game_type.to_lower()
+	var icon_path = "res://assets/images/games/%s.png" % game_type.to_lower()
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/images/games/%s.jpg" % game_type.to_lower()
 	if ResourceLoader.exists(icon_path):
 		icon_plate.texture = load(icon_path)
 	else:
@@ -725,7 +731,9 @@ func _show_inside_view(lobby_data: Dictionary) -> void:
 		lbl_game_name.text = GameTypes.get_display_name_fa(active_lobby_game_type)
 	
 	if is_instance_valid(inside_game_icon):
-		var icon_path = "res://assets/images/games/%s.jpg" % active_lobby_game_type.to_lower()
+		var icon_path = "res://assets/images/games/%s.png" % active_lobby_game_type.to_lower()
+		if not ResourceLoader.exists(icon_path):
+			icon_path = "res://assets/images/games/%s.jpg" % active_lobby_game_type.to_lower()
 		if ResourceLoader.exists(icon_path):
 			inside_game_icon.texture = load(icon_path)
 		else:
