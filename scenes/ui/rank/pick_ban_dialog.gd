@@ -88,6 +88,7 @@ var system_picked: String = ""
 var currently_selected_card_game: String = ""
 var game_card_nodes: Dictionary = {} # game_type -> PanelContainer
 var timeline_nodes: Dictionary = {} # turn_num (1..7) -> Dictionary of subnodes
+var system_ban_nodes: Array = [] # 3 system-removed game cards at the start of top header
 var reconnect_timeout_timer: Timer = null
 var game_finished_modal: Control = null
 var draft_showcase_overlay: Control = null
@@ -146,6 +147,9 @@ func is_match_active() -> bool:
 	return GameManager.is_game_active or not GameManager.active_game_id.is_empty() or not GameManager.get_open_game_id().is_empty()
 
 func _connect_network_signals() -> void:
+	NetworkManager.pre_game_started.connect(func(_id, _q):
+		system_banned.clear()
+	)
 	NetworkManager.system_banned_games_received.connect(_on_system_banned_games_received)
 	NetworkManager.select_game_turn.connect(_on_select_game_turn)
 	NetworkManager.selected_game_received.connect(_on_selected_game_received)
@@ -173,6 +177,7 @@ func open(p_pre_game_id: String, queuers: Array) -> void:
 	for g in TWO_PLAYER_GAMES:
 		available_games.append(g)
 		
+	var cached_sys_bans = system_banned.duplicate()
 	system_banned.clear()
 	p1_banned.clear()
 	p2_banned.clear()
@@ -195,6 +200,8 @@ func open(p_pre_game_id: String, queuers: Array) -> void:
 	_setup_player_strip()
 	_build_timeline()
 	_build_games_grid()
+	if not cached_sys_bans.is_empty():
+		_on_system_banned_games_received(cached_sys_bans)
 	
 	lbl_status.text = "در حال تحلیل و حذف ۳ بازی توسط سیستم کافه‌فکر..."
 	lbl_status.modulate = Color(1.0, 0.88, 0.45)
@@ -367,8 +374,9 @@ func _build_timeline() -> void:
 	for child in hbox_timeline.get_children():
 		child.queue_free()
 	timeline_nodes.clear()
+	system_ban_nodes.clear()
 	
-	# Build a structured 2-row container (Row 1: Steps 1..4, Row 2: Steps 5..7) inside hbox_timeline
+	# Build a symmetric 2-row header (Row 1: 3 System Removed Games at start + Steps 1..2 = 5 cards; Row 2: Steps 3..7 = 5 cards)
 	var rows_vbox = VBoxContainer.new()
 	rows_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rows_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -378,47 +386,142 @@ func _build_timeline() -> void:
 	
 	var row_top = HBoxContainer.new()
 	row_top.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row_top.add_theme_constant_override("separation", 12)
+	row_top.add_theme_constant_override("separation", 10)
 	row_top.alignment = BoxContainer.ALIGNMENT_CENTER
 	rows_vbox.add_child(row_top)
 	
 	var row_bottom = HBoxContainer.new()
 	row_bottom.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row_bottom.add_theme_constant_override("separation", 14)
+	row_bottom.add_theme_constant_override("separation", 10)
 	row_bottom.alignment = BoxContainer.ALIGNMENT_CENTER
 	rows_vbox.add_child(row_bottom)
 	
+	# First 3 slots at the start of top header: 3 System-Removed Games
+	for s_idx in range(3):
+		var sys_box = PanelContainer.new()
+		sys_box.custom_minimum_size = Vector2(186, 164)
+		sys_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sys_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		
+		var sys_sb = StyleBoxFlat.new()
+		sys_sb.bg_color = Color(0.16, 0.06, 0.06, 0.82)
+		sys_sb.set_border_width_all(2)
+		sys_sb.border_color = Color(0.85, 0.28, 0.28, 0.85)
+		sys_sb.set_corner_radius_all(14)
+		sys_box.add_theme_stylebox_override("panel", sys_sb)
+		
+		var sys_margin = MarginContainer.new()
+		sys_margin.add_theme_constant_override("margin_left", 8)
+		sys_margin.add_theme_constant_override("margin_top", 6)
+		sys_margin.add_theme_constant_override("margin_right", 8)
+		sys_margin.add_theme_constant_override("margin_bottom", 6)
+		sys_box.add_child(sys_margin)
+		
+		var sys_vbox = VBoxContainer.new()
+		sys_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		sys_vbox.add_theme_constant_override("separation", 5)
+		sys_margin.add_child(sys_vbox)
+		
+		var sys_chip = PanelContainer.new()
+		var sys_chip_sb = StyleBoxFlat.new()
+		sys_chip_sb.set_corner_radius_all(8)
+		sys_chip_sb.set_border_width_all(1)
+		sys_chip_sb.content_margin_left = 6
+		sys_chip_sb.content_margin_right = 6
+		sys_chip_sb.content_margin_top = 2
+		sys_chip_sb.content_margin_bottom = 2
+		sys_chip_sb.bg_color = Color(0.38, 0.08, 0.08, 0.92)
+		sys_chip_sb.border_color = Color(0.95, 0.32, 0.32, 0.90)
+		sys_chip.add_theme_stylebox_override("panel", sys_chip_sb)
+		
+		var sys_tag = Label.new()
+		sys_tag.text = "🚫 حذف سیستم %s" % _fa_num(s_idx + 1)
+		sys_tag.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		sys_tag.add_theme_font_size_override("font_size", 19)
+		sys_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sys_tag.modulate = Color(1.0, 0.62, 0.62)
+		sys_chip.add_child(sys_tag)
+		sys_vbox.add_child(sys_chip)
+		
+		var sys_frame = PanelContainer.new()
+		sys_frame.custom_minimum_size = Vector2(126, 76)
+		sys_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		var sys_frame_sb = StyleBoxFlat.new()
+		sys_frame_sb.bg_color = Color(0.06, 0.03, 0.03, 0.90)
+		sys_frame_sb.set_border_width_all(2)
+		sys_frame_sb.border_color = Color(0.75, 0.25, 0.25, 0.80)
+		sys_frame_sb.set_corner_radius_all(10)
+		sys_frame.add_theme_stylebox_override("panel", sys_frame_sb)
+		
+		var sys_img = TextureRect.new()
+		sys_img.custom_minimum_size = Vector2(122, 72)
+		sys_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		sys_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		sys_img.texture = _load_game_texture("tictactoe")
+		sys_img.modulate = Color(0.35, 0.25, 0.25, 0.20)
+		sys_frame.add_child(sys_img)
+		
+		var sys_ban_overlay = Label.new()
+		sys_ban_overlay.text = "✕"
+		sys_ban_overlay.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		sys_ban_overlay.add_theme_font_size_override("font_size", 42)
+		sys_ban_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sys_ban_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		sys_ban_overlay.modulate = Color(1.0, 0.25, 0.25, 0.35)
+		sys_frame.add_child(sys_ban_overlay)
+		sys_vbox.add_child(sys_frame)
+		
+		var sys_name = Label.new()
+		sys_name.text = "در حال حذف..."
+		sys_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		sys_name.add_theme_font_size_override("font_size", 21)
+		sys_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sys_name.clip_text = true
+		sys_name.modulate = Color(1.0, 0.76, 0.76)
+		sys_vbox.add_child(sys_name)
+		
+		row_top.add_child(sys_box)
+		system_ban_nodes.append({
+			"box": sys_box,
+			"style": sys_sb,
+			"frame": sys_frame,
+			"frame_style": sys_frame_sb,
+			"img": sys_img,
+			"ban_overlay": sys_ban_overlay,
+			"name_lbl": sys_name,
+			"tag_lbl": sys_tag,
+			"chip_style": sys_chip_sb
+		})
+	
+	# Next 7 slots: Steps 1..2 on row_top, Steps 3..7 on row_bottom
 	for i in range(TIMELINE_CONFIG.size()):
 		var cfg = TIMELINE_CONFIG[i]
 		var t_num = int(cfg["turn"])
 		var t_type = str(cfg["type"]) # "ban", "pick", "sys_pick"
 		var t_owner = int(cfg["owner"]) # 1, 2, 0 (sys)
 		
-		# Large, prominent selection card (4 on top row, 3 centered on bottom row)
 		var node_box = PanelContainer.new()
-		node_box.custom_minimum_size = Vector2(230, 172)
-		node_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL if t_num <= 4 else Control.SIZE_SHRINK_CENTER
-		if t_num > 4:
-			node_box.custom_minimum_size = Vector2(285, 172)
+		node_box.custom_minimum_size = Vector2(186, 164)
+		node_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		node_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
 		var sb = StyleBoxFlat.new()
-		sb.bg_color = Color(0.11, 0.07, 0.05, 0.88)
+		sb.bg_color = Color(0.11, 0.07, 0.05, 0.78)
 		sb.set_border_width_all(2)
 		sb.border_color = Color(0.50, 0.38, 0.22, 0.80)
 		sb.set_corner_radius_all(14)
 		node_box.add_theme_stylebox_override("panel", sb)
 		
 		var margin = MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 10)
-		margin.add_theme_constant_override("margin_top", 8)
-		margin.add_theme_constant_override("margin_right", 10)
-		margin.add_theme_constant_override("margin_bottom", 8)
+		margin.add_theme_constant_override("margin_left", 8)
+		margin.add_theme_constant_override("margin_top", 6)
+		margin.add_theme_constant_override("margin_right", 8)
+		margin.add_theme_constant_override("margin_bottom", 6)
 		node_box.add_child(margin)
 		
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 6)
+		vbox.add_theme_constant_override("separation", 5)
 		margin.add_child(vbox)
 		
 		# Top Action Pill
@@ -426,14 +529,14 @@ func _build_timeline() -> void:
 		var chip_sb = StyleBoxFlat.new()
 		chip_sb.set_corner_radius_all(8)
 		chip_sb.set_border_width_all(1)
-		chip_sb.content_margin_left = 8
-		chip_sb.content_margin_right = 8
+		chip_sb.content_margin_left = 6
+		chip_sb.content_margin_right = 6
 		chip_sb.content_margin_top = 2
 		chip_sb.content_margin_bottom = 2
 		
 		var lbl_tag = Label.new()
 		lbl_tag.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_tag.add_theme_font_size_override("font_size", 22)
+		lbl_tag.add_theme_font_size_override("font_size", 19)
 		lbl_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		
 		if t_type == "ban":
@@ -456,9 +559,9 @@ func _build_timeline() -> void:
 		chip_panel.add_child(lbl_tag)
 		vbox.add_child(chip_panel)
 		
-		# Large Center Icon Box (136x84)
+		# Center Icon Box (126x76)
 		var frame = PanelContainer.new()
-		frame.custom_minimum_size = Vector2(136, 84)
+		frame.custom_minimum_size = Vector2(126, 76)
 		frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		var frame_sb = StyleBoxFlat.new()
 		frame_sb.bg_color = Color(0.05, 0.03, 0.02, 0.90)
@@ -468,7 +571,7 @@ func _build_timeline() -> void:
 		frame.add_theme_stylebox_override("panel", frame_sb)
 		
 		var img_rect = TextureRect.new()
-		img_rect.custom_minimum_size = Vector2(132, 80)
+		img_rect.custom_minimum_size = Vector2(122, 72)
 		img_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		img_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		img_rect.texture = _load_game_texture("tictactoe")
@@ -478,7 +581,7 @@ func _build_timeline() -> void:
 		var ban_overlay = Label.new()
 		ban_overlay.text = "✕"
 		ban_overlay.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		ban_overlay.add_theme_font_size_override("font_size", 46)
+		ban_overlay.add_theme_font_size_override("font_size", 42)
 		ban_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		ban_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		ban_overlay.modulate = Color(1.0, 0.2, 0.2, 0.0)
@@ -490,7 +593,7 @@ func _build_timeline() -> void:
 		var lbl_name = Label.new()
 		lbl_name.text = _get_step_actor_label(t_owner, t_type)
 		lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_name.add_theme_font_size_override("font_size", 24)
+		lbl_name.add_theme_font_size_override("font_size", 21)
 		lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_name.clip_text = true
 		if t_owner == my_player_index:
@@ -501,7 +604,7 @@ func _build_timeline() -> void:
 			lbl_name.modulate = Color(0.95, 0.72, 0.65)
 		vbox.add_child(lbl_name)
 		
-		if t_num <= 4:
+		if t_num <= 2:
 			row_top.add_child(node_box)
 		else:
 			row_bottom.add_child(node_box)
@@ -535,12 +638,12 @@ func _build_games_grid() -> void:
 
 func _create_game_card(g_type: String) -> PanelContainer:
 	var card = PanelContainer.new()
-	card.custom_minimum_size = Vector2(230, 152)
+	card.custom_minimum_size = Vector2(230, 192)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	
 	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.13, 0.08, 0.06, 0.86)
+	sb.bg_color = Color(0.11, 0.07, 0.05, 0.78)
 	sb.set_border_width_all(2)
 	sb.border_color = Color(0.48, 0.36, 0.22, 0.80)
 	sb.set_corner_radius_all(12)
@@ -563,7 +666,7 @@ func _create_game_card(g_type: String) -> PanelContainer:
 	
 	# Compact Game Cover Image
 	var art_holder = Control.new()
-	art_holder.custom_minimum_size = Vector2(0, 86)
+	art_holder.custom_minimum_size = Vector2(0, 122)
 	art_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	art_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(art_holder)
@@ -611,7 +714,7 @@ func _create_game_card(g_type: String) -> PanelContainer:
 	lbl_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl_name.text = GameTypes.get_display_name_fa(g_type)
 	lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_name.add_theme_font_size_override("font_size", 23)
+	lbl_name.add_theme_font_size_override("font_size", 24)
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_name.add_theme_color_override("font_color", Color(1, 0.96, 0.88))
 	vbox.add_child(lbl_name)
@@ -635,7 +738,7 @@ func _create_game_card(g_type: String) -> PanelContainer:
 	lbl_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl_badge.text = "آزاد"
 	lbl_badge.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_badge.add_theme_font_size_override("font_size", 16)
+	lbl_badge.add_theme_font_size_override("font_size", 17)
 	lbl_badge.modulate = Color(0.78, 0.74, 0.66)
 	lbl_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_pill.add_child(lbl_badge)
@@ -1064,21 +1167,56 @@ func _on_system_banned_games_received(banned_games: Array) -> void:
 	print("[PickBan] System banned 3 games: %s" % str(banned_games))
 	system_banned = banned_games.duplicate()
 	
-	if system_banned.size() > 0:
-		lbl_sys_ban1.text = "🚫 %s" % GameTypes.get_display_name_fa(str(system_banned[0]))
-		_mark_card_banned(str(system_banned[0]), "🚫 حذف خودکار سیستم")
-	if system_banned.size() > 1:
-		lbl_sys_ban2.text = "🚫 %s" % GameTypes.get_display_name_fa(str(system_banned[1]))
-		_mark_card_banned(str(system_banned[1]), "🚫 حذف خودکار سیستم")
-	if system_banned.size() > 2:
-		lbl_sys_ban3.text = "🚫 %s" % GameTypes.get_display_name_fa(str(system_banned[2]))
-		_mark_card_banned(str(system_banned[2]), "🚫 حذف خودکار سیستم")
+	for idx in range(min(3, system_banned.size())):
+		var g_str = str(system_banned[idx])
+		var fa_name = GameTypes.get_display_name_fa(g_str)
+		if idx == 0:
+			lbl_sys_ban1.text = "🚫 %s" % fa_name
+		elif idx == 1:
+			lbl_sys_ban2.text = "🚫 %s" % fa_name
+		elif idx == 2:
+			lbl_sys_ban3.text = "🚫 %s" % fa_name
+		_mark_card_banned(g_str, "🚫 حذف خودکار سیستم")
+		
+		if idx < system_ban_nodes.size():
+			var s_node = system_ban_nodes[idx]
+			var s_box: Control = s_node["box"]
+			var s_sb: StyleBoxFlat = s_node["style"]
+			var s_frame_sb: StyleBoxFlat = s_node["frame_style"]
+			var s_img: TextureRect = s_node["img"]
+			var s_ban_ov: Label = s_node["ban_overlay"]
+			var s_name_lbl: Label = s_node["name_lbl"]
+			var s_tag_lbl: Label = s_node["tag_lbl"]
+			
+			s_sb.border_color = Color(0.95, 0.25, 0.25, 0.95)
+			s_sb.set_border_width_all(3)
+			s_sb.bg_color = Color(0.24, 0.06, 0.06, 0.88)
+			s_sb.shadow_color = Color(0.85, 0.15, 0.15, 0.35)
+			s_sb.shadow_size = 6
+			
+			s_frame_sb.border_color = Color(0.92, 0.22, 0.22, 0.95)
+			s_frame_sb.bg_color = Color(0.18, 0.04, 0.04, 0.92)
+			
+			s_img.texture = _load_game_texture(g_str)
+			s_img.modulate = Color(0.68, 0.38, 0.38, 0.88)
+			s_ban_ov.modulate = Color(1.0, 0.25, 0.25, 0.96)
+			s_name_lbl.text = fa_name
+			s_name_lbl.modulate = Color(1.0, 0.88, 0.88)
+			s_tag_lbl.text = "🚫 حذف سیستم %s" % _fa_num(idx + 1)
+			s_tag_lbl.modulate = Color(1.0, 0.55, 0.55)
+			
+			s_box.pivot_offset = s_box.size * 0.5
+			var tw_s = create_tween()
+			tw_s.tween_property(s_box, "scale", Vector2(1.10, 1.10), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw_s.tween_property(s_box, "scale", Vector2(1.0, 1.0), 0.16)
 		
 	for g in system_banned:
 		if available_games.has(g):
 			available_games.remove_at(available_games.find(g))
 			
-	lbl_status.text = "سیستم ۳ بازی را حذف کرد. آغاز نوبت‌های حذف و انتخاب بازیکنان..."
+	AudioManager.play_sound("remove_peace")
+	_start_timer(5.0)
+	lbl_status.text = "🚫 ۳ بازی توسط سیستم حذف شد! آغاز نوبت‌های حذف و انتخاب..."
 	lbl_status.modulate = Color(1.0, 0.85, 0.3)
 
 func _on_select_game_turn(active_user_id: String) -> void:
@@ -1192,8 +1330,18 @@ func _show_draft_complete_transition() -> void:
 	bg.anchors_preset = Control.PRESET_FULL_RECT
 	bg.anchor_right = 1.0
 	bg.anchor_bottom = 1.0
-	bg.color = Color(0.05, 0.03, 0.02, 0.96)
+	bg.color = Color(0.02, 0.02, 0.01, 1.0)
 	overlay.add_child(bg)
+	
+	var bg_tex = TextureRect.new()
+	bg_tex.anchors_preset = Control.PRESET_FULL_RECT
+	bg_tex.anchor_right = 1.0
+	bg_tex.anchor_bottom = 1.0
+	bg_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg_tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	bg_tex.texture = preload("res://assets/images/pick-ban.png")
+	bg_tex.modulate = Color(1, 1, 1, 0.78)
+	overlay.add_child(bg_tex)
 	
 	var center = CenterContainer.new()
 	center.anchors_preset = Control.PRESET_FULL_RECT

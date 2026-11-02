@@ -296,13 +296,13 @@ func _setup_games(payload: Dictionary) -> void:
 
 			status_label.text = winner_str
 			_style_chip(status_chip, chip_color)
-			_set_card_highlight(card, false, Color(0.18, 0.12, 0.08, 0.96))
+			_set_card_highlight(card, false, Color(0.15, 0.10, 0.07, 0.78))
 
 		elif i == current_idx and not is_finished:
 			# Active Upcoming Game
 			status_label.text = "➔ بازی بعدی"
 			_style_chip(status_chip, Color(0.95, 0.62, 0.12, 0.98))
-			_set_card_highlight(card, true, Color(0.26, 0.18, 0.10, 0.98))
+			_set_card_highlight(card, true, Color(0.24, 0.16, 0.08, 0.84))
 			_start_card_pulse(card)
 
 		else:
@@ -313,7 +313,7 @@ func _setup_games(payload: Dictionary) -> void:
 			else:
 				status_label.text = "⏳ در انتظار نوبت"
 				_style_chip(status_chip, Color(0.38, 0.32, 0.26, 0.88))
-			_set_card_highlight(card, false, Color(0.12, 0.08, 0.06, 0.85))
+			_set_card_highlight(card, false, Color(0.11, 0.07, 0.05, 0.72))
 
 func _setup_finish_state(payload: Dictionary) -> void:
 	var is_finished = bool(payload.get("is_game_finished", false))

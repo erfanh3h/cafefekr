@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" path="res://assets/images/pick-ban.png" id="5_room_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header_card"]
-bg_color = Color(0.12, 0.08, 0.06, 0.96)
+bg_color = Color(0.11, 0.07, 0.05, 0.74)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
@@ -33,7 +33,7 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status_panel"]
-bg_color = Color(0.14, 0.09, 0.07, 0.95)
+bg_color = Color(0.12, 0.08, 0.05, 0.74)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -45,7 +45,7 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_games_panel"]
-bg_color = Color(0.10, 0.07, 0.05, 0.96)
+bg_color = Color(0.08, 0.05, 0.04, 0.58)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
@@ -59,7 +59,7 @@ shadow_color = Color(0, 0, 0, 0.5)
 shadow_size = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_game_row"]
-bg_color = Color(0.16, 0.11, 0.08, 0.95)
+bg_color = Color(0.13, 0.08, 0.06, 0.76)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -90,7 +90,7 @@ corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_footer_wait"]
-bg_color = Color(0.12, 0.08, 0.06, 0.92)
+bg_color = Color(0.11, 0.07, 0.05, 0.74)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -116,7 +116,7 @@ corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_footer_finish"]
-bg_color = Color(0.14, 0.09, 0.06, 0.98)
+bg_color = Color(0.12, 0.08, 0.05, 0.80)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
@@ -169,7 +169,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.05, 0.03, 0.02, 0.96)
+color = Color(0.02, 0.02, 0.01, 1.0)
 
 [node name="BgImage" type="TextureRect" parent="."]
 layout_mode = 1
@@ -181,7 +181,7 @@ grow_vertical = 2
 texture = ExtResource("5_room_bg")
 expand_mode = 1
 stretch_mode = 6
-modulate = Color(1, 1, 1, 0.25)
+modulate = Color(1, 1, 1, 0.78)
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 1
