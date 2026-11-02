@@ -343,7 +343,20 @@ func get_avatar_id() -> int:
 	return int(user_data.get("image", user_data.get("avatar", user_data.get("avatar_id", 0))))
 
 func get_xp() -> int:
-	return int(user_data.get("xp", 0))
+	var val = user_data.get("xp", user_data.get("user_xp", 0))
+	return int(float(val)) if val != null else 0
+
+static func to_fa_num(val: Variant) -> String:
+	var s = str(val)
+	var fa_digits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
+	var out = ""
+	for i in range(s.length()):
+		var code = s.unicode_at(i)
+		if code >= 48 and code <= 57:
+			out += fa_digits[code - 48]
+		else:
+			out += s[i]
+	return out
 
 func add_xp(amount: int) -> void:
 	if amount <= 0:
@@ -421,7 +434,7 @@ static func get_level_info(xp: int) -> Dictionary:
 	var cur_base = total_exp_to_level(lvl)
 	var next_base = total_exp_to_level(lvl + 1)
 	var needed = next_base - cur_base
-	var in_level = xp - cur_base
+	var in_level = max(0, xp - cur_base)
 	var percent = clampf(float(in_level) / float(needed), 0.0, 1.0) if needed > 0 else 1.0
 	return {
 		"level": lvl,
@@ -429,6 +442,9 @@ static func get_level_info(xp: int) -> Dictionary:
 		"next_level_exp": next_base,
 		"exp_in_level": in_level,
 		"exp_needed": needed,
+		"current_xp": xp,
+		"target_xp": next_base,
+		"remaining_xp": max(0, next_base - xp),
 		"progress": percent,
 		"percent_int": int(round(percent * 100.0))
 	}

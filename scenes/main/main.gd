@@ -2404,7 +2404,7 @@ func _update_ranked_button_state() -> void:
 		if is_instance_valid(title_lbl):
 			title_lbl.text = "🔒 بازی دونفره آنلاین (رنک)"
 		if is_instance_valid(sub_lbl):
-			sub_lbl.text = "قفل است • بازگشایی در سطح ۳ (%d / %d XP)" % [prog.current_xp, prog.target_xp]
+			sub_lbl.text = "قفل است • بازگشایی در سطح ۳ (%s / %s XP)" % [GameManager.to_fa_num(prog.current_xp), GameManager.to_fa_num(prog.target_xp)]
 			sub_lbl.add_theme_color_override("font_color", Color(1.0, 0.72, 0.38, 1.0))
 		btn_ranked.modulate = Color(0.92, 0.90, 0.88, 1.0)
 
@@ -2600,9 +2600,9 @@ func _show_ranked_locked_dialog() -> void:
 
 	# Update dynamic values
 	if is_instance_valid(_ranked_locked_progress_lbl):
-		_ranked_locked_progress_lbl.text = "سطح شما: %d (%d / %d XP)" % [prog.current_level, prog.current_xp, prog.target_xp]
+		_ranked_locked_progress_lbl.text = "سطح شما: %s (%s / %s XP)" % [GameManager.to_fa_num(prog.current_level), GameManager.to_fa_num(prog.current_xp), GameManager.to_fa_num(prog.target_xp)]
 	if is_instance_valid(_ranked_locked_remain_lbl):
-		_ranked_locked_remain_lbl.text = "%d XP تا بازگشایی رنک" % [prog.remaining_xp]
+		_ranked_locked_remain_lbl.text = "%s XP تا بازگشایی رنک" % [GameManager.to_fa_num(prog.remaining_xp)]
 	if is_instance_valid(_ranked_locked_bar):
 		_ranked_locked_bar.value = float(clamp(prog.current_xp, 0, prog.target_xp))
 

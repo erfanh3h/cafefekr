@@ -258,7 +258,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
 theme_override_font_sizes/font_size = 36
-text = "۱"
+text = "سطح ۱"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -292,7 +292,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
 theme_override_font_sizes/font_size = 26
-text = "۰/۶۰"
+text = "۰ / ۶۰ XP"
 horizontal_alignment = 1
 vertical_alignment = 1
 
