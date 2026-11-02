@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scenes/ui/rank/pick_ban_dialog.gd" id="1_pb_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
-[ext_resource type="Texture2D" path="res://assets/images/room_background.jpg" id="3_bg_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/pick-ban.png" id="3_bg_tex"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_full_bg"]
 bg_color = Color(0.08, 0.05, 0.04, 0.98)
@@ -110,7 +110,7 @@ layout_mode = 2
 texture = ExtResource("3_bg_tex")
 expand_mode = 1
 stretch_mode = 6
-modulate = Color(1, 1, 1, 0.32)
+modulate = Color(1, 1, 1, 0.25)
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2

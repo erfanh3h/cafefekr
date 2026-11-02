@@ -97,6 +97,9 @@ var _sound_off_tex = preload("res://assets/icons/General/soundOff.png")
 
 var _splash_overlay: Control = null
 var _splash_dismissed: bool = false
+var _splash_progress_bar: ProgressBar = null
+var _splash_load_lbl: Label = null
+var _splash_dot_timer: Timer = null
 var _offline_dialog: Control = null
 var _offline_status_lbl: Label = null
 var _offline_retry_btn: Button = null
@@ -156,235 +159,166 @@ func _ready() -> void:
 	)
 
 func _setup_splash_overlay() -> void:
-
 	_splash_overlay = Control.new()
-
 	_splash_overlay.name = "SplashOverlay"
-
 	_splash_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-
 	_splash_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-
 	_splash_overlay.z_index = 100
 
-	
-
-	# Solid warm mahogany background matching project boot_splash (Color(0.12, 0.08, 0.05, 1))
-
+	# Base mahogany background matching project boot_splash (Color(0.12, 0.08, 0.05, 1))
 	var bg = ColorRect.new()
-
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-
 	bg.color = Color(0.12, 0.08, 0.05, 1.0)
-
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
 	_splash_overlay.add_child(bg)
 
-	
+	# Full-screen splash art image
+	var splash_img = TextureRect.new()
+	splash_img.set_anchors_preset(Control.PRESET_FULL_RECT)
+	splash_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	splash_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	splash_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if ResourceLoader.exists("res://assets/images/splash.png"):
+		splash_img.texture = load("res://assets/images/splash.png")
+	elif ResourceLoader.exists("res://assets/images/splash.jpg"):
+		splash_img.texture = load("res://assets/images/splash.jpg")
+	_splash_overlay.add_child(splash_img)
 
-	# Center content
+	# Subtle bottom dark gradient/scrim for loading bar and text contrast
+	var bottom_scrim = ColorRect.new()
+	bottom_scrim.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_scrim.anchor_top = 1.0
+	bottom_scrim.anchor_bottom = 1.0
+	bottom_scrim.offset_top = -280.0
+	bottom_scrim.offset_bottom = 0.0
+	bottom_scrim.color = Color(0.06, 0.04, 0.02, 0.65)
+	bottom_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_splash_overlay.add_child(bottom_scrim)
 
-	var center = CenterContainer.new()
+	# Bottom loading container
+	var bottom_margin = MarginContainer.new()
+	bottom_margin.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_margin.anchor_top = 1.0
+	bottom_margin.anchor_bottom = 1.0
+	bottom_margin.offset_top = -240.0
+	bottom_margin.offset_bottom = -60.0
+	bottom_margin.offset_left = 60.0
+	bottom_margin.offset_right = -60.0
+	bottom_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_splash_overlay.add_child(bottom_margin)
 
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var load_vbox = VBoxContainer.new()
+	load_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	load_vbox.add_theme_constant_override("separation", 16)
+	load_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bottom_margin.add_child(load_vbox)
 
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Persian Loading status label
+	_splash_load_lbl = Label.new()
+	_splash_load_lbl.text = "در حال ورود به کافه..."
+	_splash_load_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	_splash_load_lbl.add_theme_font_size_override("font_size", 28)
+	_splash_load_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.65, 1.0))
+	_splash_load_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	_splash_load_lbl.add_theme_constant_override("shadow_outline_size", 4)
+	_splash_load_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	load_vbox.add_child(_splash_load_lbl)
 
-	_splash_overlay.add_child(center)
+	# Stylized Loading Bar
+	_splash_progress_bar = ProgressBar.new()
+	_splash_progress_bar.custom_minimum_size = Vector2(0, 20)
+	_splash_progress_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_splash_progress_bar.show_percentage = false
+	_splash_progress_bar.min_value = 0.0
+	_splash_progress_bar.max_value = 100.0
+	_splash_progress_bar.value = 8.0
 
-	
+	var bg_sb = StyleBoxFlat.new()
+	bg_sb.bg_color = Color(0.10, 0.06, 0.04, 0.92)
+	bg_sb.border_width_left = 2
+	bg_sb.border_width_top = 2
+	bg_sb.border_width_right = 2
+	bg_sb.border_width_bottom = 2
+	bg_sb.border_color = Color(0.65, 0.50, 0.26, 0.9)
+	bg_sb.corner_radius_top_left = 10
+	bg_sb.corner_radius_top_right = 10
+	bg_sb.corner_radius_bottom_right = 10
+	bg_sb.corner_radius_bottom_left = 10
+	_splash_progress_bar.add_theme_stylebox_override("background", bg_sb)
 
-	var vbox = VBoxContainer.new()
+	var fill_sb = StyleBoxFlat.new()
+	fill_sb.bg_color = Color(0.96, 0.76, 0.24, 1.0)
+	fill_sb.corner_radius_top_left = 8
+	fill_sb.corner_radius_top_right = 8
+	fill_sb.corner_radius_bottom_right = 8
+	fill_sb.corner_radius_bottom_left = 8
+	_splash_progress_bar.add_theme_stylebox_override("fill", fill_sb)
 
-	vbox.add_theme_constant_override("separation", 22)
+	load_vbox.add_child(_splash_progress_bar)
 
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	# Smooth loading bar progression toward 90%
+	var p_tw = _splash_progress_bar.create_tween()
+	p_tw.tween_property(_splash_progress_bar, "value", 90.0, 2.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	center.add_child(vbox)
-
-	
-
-	# Cafe Logo (280x280)
-
-	var logo_rect = TextureRect.new()
-
-	logo_rect.custom_minimum_size = Vector2(280, 280)
-
-	logo_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-
-	logo_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-
-	logo_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-
-	logo_rect.pivot_offset = Vector2(140, 140)
-
-	logo_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	if ResourceLoader.exists("res://assets/icons/logo_432.png"):
-
-		logo_rect.texture = load("res://assets/icons/logo_432.png")
-
-	elif ResourceLoader.exists("res://assets/icons/logo.png"):
-
-		logo_rect.texture = load("res://assets/icons/logo.png")
-
-	vbox.add_child(logo_rect)
-
-	
-
-	# Subtle breathing scale loop
-
-	var tw = logo_rect.create_tween().set_loops()
-
-	tw.tween_property(logo_rect, "scale", Vector2(1.05, 1.05), 1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	tw.tween_property(logo_rect, "scale", Vector2.ONE, 1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	
-
-	# Persian App Title
-
-	var title_lbl = Label.new()
-
-	title_lbl.text = "کافه فِکـــر"
-
-	title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-
-	title_lbl.add_theme_font_size_override("font_size", 54)
-
-	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45, 1.0))
-
-	title_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-
-	title_lbl.add_theme_constant_override("shadow_outline_size", 4)
-
-	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	vbox.add_child(title_lbl)
-
-	
-
-	# Persian Subtitle
-
-	var sub_lbl = Label.new()
-
-	sub_lbl.text = "باشگاه بازی‌های فکری و دورهمی آنلاین"
-
-	sub_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-
-	sub_lbl.add_theme_font_size_override("font_size", 26)
-
-	sub_lbl.add_theme_color_override("font_color", Color(0.88, 0.80, 0.68, 0.95))
-
-	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	vbox.add_child(sub_lbl)
-
-	
-
-	# Animated Loading Text / Dots
-
-	var load_lbl = Label.new()
-
-	load_lbl.text = "در حال ورود به کافه..."
-
-	load_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-
-	load_lbl.add_theme_font_size_override("font_size", 24)
-
-	load_lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.65, 0.9))
-
-	load_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	vbox.add_child(load_lbl)
-
-	
-
+	# Animated dots for the Persian text
 	var dot_step = 0
-
-	var dot_timer = Timer.new()
-
-	dot_timer.wait_time = 0.35
-
-	dot_timer.autostart = true
-
-	_splash_overlay.add_child(dot_timer)
-
-	dot_timer.timeout.connect(func():
-
-		if not is_instance_valid(load_lbl):
-
+	_splash_dot_timer = Timer.new()
+	_splash_dot_timer.wait_time = 0.35
+	_splash_dot_timer.autostart = true
+	_splash_overlay.add_child(_splash_dot_timer)
+	_splash_dot_timer.timeout.connect(func():
+		if not is_instance_valid(_splash_load_lbl):
 			return
-
 		dot_step = (dot_step + 1) % 4
-
 		var dots = ""
-
 		for d in range(dot_step):
-
 			dots += " ."
-
-		load_lbl.text = "در حال ورود به کافه" + dots
-
+		_splash_load_lbl.text = "در حال ورود به کافه" + dots
 	)
-
-	
 
 	$CanvasLayer.add_child(_splash_overlay)
 
 
-
 func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:
-
 	if _splash_dismissed:
-
 		if callback.is_valid():
-
 			callback.call()
-
 		return
-
 	_splash_dismissed = true
 
-	
-
 	if not _splash_overlay or not is_instance_valid(_splash_overlay):
-
 		AudioManager.play_theme_music()
-
 		if callback.is_valid():
-
 			callback.call()
-
 		return
 
-	
+	# Stop dot timer if running
+	if is_instance_valid(_splash_dot_timer):
+		_splash_dot_timer.stop()
 
-	# Music begins playing right as splash smoothly fades out!
+	# Fast-forward progress bar to 100% and show welcome text
+	if is_instance_valid(_splash_load_lbl):
+		_splash_load_lbl.text = "خوش آمدید!"
 
+	if is_instance_valid(_splash_progress_bar):
+		var fin_tw = _splash_progress_bar.create_tween()
+		fin_tw.tween_property(_splash_progress_bar, "value", 100.0, 0.2).set_trans(Tween.TRANS_LINEAR)
+
+	# Music begins playing as splash smoothly fades out
 	AudioManager.play_theme_music()
 
-	
-
 	var tw = create_tween().set_parallel(true)
-
-	tw.tween_property(_splash_overlay, "modulate:a", 0.0, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
+	# Wait a short 0.2s for progress to hit 100%, then fade out
+	tw.tween_property(_splash_overlay, "modulate:a", 0.0, 0.45).set_delay(0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.chain().tween_callback(func():
-
 		if is_instance_valid(_splash_overlay):
-
 			_splash_overlay.queue_free()
-
 			_splash_overlay = null
-
+			_splash_progress_bar = null
+			_splash_load_lbl = null
+			_splash_dot_timer = null
 		if callback.is_valid():
-
 			callback.call()
-
 	)
 
 
