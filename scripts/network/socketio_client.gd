@@ -18,6 +18,7 @@ var ping_timeout: float = 20.0
 var last_ping_time: float = 0.0
 
 var connected_namespaces: Dictionary = {} # namespace -> bool
+var connecting_namespaces: Dictionary = {} # namespace -> bool
 var pending_auth: Dictionary = {} # namespace -> auth_dict
 
 func _ready() -> void:
@@ -32,6 +33,7 @@ func connect_url(url: String) -> Error:
 	current_url = url
 	is_connected_to_server = false
 	connected_namespaces.clear()
+	connecting_namespaces.clear()
 	if ws.get_ready_state() != WebSocketPeer.STATE_CLOSED:
 		ws.close()
 		ws = WebSocketPeer.new()
@@ -47,6 +49,7 @@ func disconnect_from_host() -> void:
 		ws.close()
 	is_connected_to_server = false
 	connected_namespaces.clear()
+	connecting_namespaces.clear()
 
 func _process(delta: float) -> void:
 	ws.poll()
@@ -63,16 +66,22 @@ func _process(delta: float) -> void:
 			if is_connected_to_server:
 				is_connected_to_server = false
 				connected_namespaces.clear()
+				connecting_namespaces.clear()
 				disconnected_from_server.emit()
 				print("[SocketIO] Connection closed.")
 
 func connect_namespace(ns: String, auth: Dictionary = {}) -> void:
+	var prev_auth = pending_auth.get(ns, null)
+	var same_auth = (typeof(prev_auth) == TYPE_DICTIONARY and JSON.stringify(prev_auth) == JSON.stringify(auth))
+	if (connected_namespaces.has(ns) or connecting_namespaces.has(ns)) and same_auth:
+		return
 	pending_auth[ns] = auth
 	if is_connected_to_server:
 		_send_namespace_connect(ns, auth)
 
 func disconnect_namespace(ns: String) -> void:
 	pending_auth.erase(ns)
+	connecting_namespaces.erase(ns)
 	if connected_namespaces.has(ns):
 		_send_packet("41" + ns + ",")
 		connected_namespaces.erase(ns)
@@ -92,6 +101,9 @@ func emit_event(ns: String, event_name: String, data: Variant = null) -> void:
 	_send_packet(packet)
 
 func _send_namespace_connect(ns: String, auth: Dictionary = {}) -> void:
+	if connected_namespaces.has(ns) or connecting_namespaces.has(ns):
+		return
+	connecting_namespaces[ns] = true
 	var packet = "40" + ns + ","
 	if not auth.is_empty():
 		packet += JSON.stringify(auth)
@@ -119,9 +131,10 @@ func _handle_packet(packet: String) -> void:
 				connected_to_server.emit()
 				print("[SocketIO] Connected. Handshake received. SID: %s" % data.get("sid", ""))
 				
-				# Connect any pending namespaces
+				# Connect any pending namespaces that were not already triggered by connected_to_server
 				for ns in pending_auth.keys():
-					_send_namespace_connect(ns, pending_auth[ns])
+					if not connected_namespaces.has(ns) and not connecting_namespaces.has(ns):
+						_send_namespace_connect(ns, pending_auth[ns])
 
 		"2": # Ping from server
 			_send_packet("3") # Pong reply
@@ -152,12 +165,15 @@ func _handle_socketio_packet(body: String) -> void:
 
 	match sio_type:
 		"0": # Connect ACK for namespace
+			connecting_namespaces.erase(ns)
 			connected_namespaces[ns] = true
 			namespace_connected.emit(ns)
 			print("[SocketIO] Namespace '%s' connected." % ns)
 
 		"1": # Disconnect ACK for namespace
+			connecting_namespaces.erase(ns)
 			connected_namespaces.erase(ns)
+			pending_auth.erase(ns)
 			namespace_disconnected.emit(ns)
 			print("[SocketIO] Namespace '%s' disconnected." % ns)
 
@@ -171,4 +187,6 @@ func _handle_socketio_packet(body: String) -> void:
 					event_received.emit(ns, event_name, data)
 
 		"4": # Connect Error
+			connecting_namespaces.erase(ns)
+			pending_auth.erase(ns)
 			push_error("[SocketIO] Namespace '%s' connect error: %s" % [ns, remaining])
