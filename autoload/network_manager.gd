@@ -49,6 +49,7 @@ signal queue_reconnect_data_received(data: Dictionary)
 signal queue_start_game_received(game_id: String)
 signal queue_user_disconnected(user_id: String, wait_time: int)
 signal queue_user_reconnected(user_id: String, remaining_time: int)
+signal ranked_locked_received(data: Dictionary)
 
 var api: APIClient
 var socket: SocketIOClient
@@ -578,5 +579,9 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				elif g_id == 2:
 					GameManager.p2_score = s_val
 				player_score_received.emit(payload)
+		Commands.Rank_Locked:
+			print("[NetworkManager] Rank_Locked received from server!")
+			var r_data = payload if typeof(payload) == TYPE_DICTIONARY else {}
+			ranked_locked_received.emit(r_data)
 		Commands.Logout:
 			GameManager.logout()

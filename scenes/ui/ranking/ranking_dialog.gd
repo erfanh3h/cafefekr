@@ -90,6 +90,7 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 		lbl_loading.visible = true
 		return
 	
+	var rank_idx = 0
 	for i in range(items.size()):
 		var item = items[i]
 		var username = ""
@@ -98,6 +99,9 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 		var u_dict = {}
 		
 		if current_tab == "score":
+			var uid = str(item.get("_id", item.get("user_id", "")))
+			if uid.begins_with("bot_") or uid.begins_with("test_bot"):
+				continue
 			username = item.get("username", "بی‌نام")
 			var raw_score = float(item.get("score", 0))
 			val_text = "%d امتیاز" % int(round(raw_score))
@@ -105,7 +109,7 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 			var item_xp = int(item.get("xp", item.get("user_xp", 0)))
 			var item_lvl = GameManager.calculate_level(item_xp) if item_xp > 0 else int(item.get("level", 1))
 			u_dict = {
-				"_id": str(item.get("_id", item.get("user_id", ""))),
+				"_id": uid,
 				"username": username,
 				"name": username,
 				"image": img_id,
@@ -117,6 +121,9 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 			}
 		else:
 			var u_data = item.get("user_data", {})
+			var uid = str(u_data.get("_id", item.get("user_id", "")))
+			if uid.begins_with("bot_") or uid.begins_with("test_bot"):
+				continue
 			username = u_data.get("username", "بی‌نام")
 			var raw_win = float(item.get("win", 0))
 			val_text = "%d برد" % int(round(raw_win))
@@ -124,7 +131,7 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 			var u_xp = int(u_data.get("xp", item.get("xp", 0)))
 			var u_lvl = GameManager.calculate_level(u_xp) if u_xp > 0 else int(u_data.get("level", item.get("level", 1)))
 			u_dict = {
-				"_id": str(u_data.get("_id", item.get("user_id", ""))),
+				"_id": uid,
 				"username": username,
 				"name": username,
 				"image": img_id,
@@ -136,7 +143,8 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 				"coin": int(u_data.get("coin", 0))
 			}
 		
-		_create_rank_row(i + 1, username, val_text, img_id, u_dict)
+		rank_idx += 1
+		_create_rank_row(rank_idx, username, val_text, img_id, u_dict)
 
 func _create_rank_row(rank: int, username: String, val_str: String, img_id: int, user_dict: Dictionary) -> void:
 	# Clearly separated, tactile player card

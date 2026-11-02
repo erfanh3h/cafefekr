@@ -418,6 +418,31 @@ func get_user_level() -> int:
 func get_user_exp_percent() -> float:
 	return calculate_exp_percent(get_xp())
 
+# ==============================================================================
+# RANKED MODE ACCESS CONTROL (Level 3 / 160 XP Requirement)
+# ==============================================================================
+const MIN_RANKED_LEVEL: int = 3
+const MIN_RANKED_XP: int = 160
+
+func is_ranked_unlocked() -> bool:
+	return get_xp() >= MIN_RANKED_XP
+
+func get_ranked_unlock_progress() -> Dictionary:
+	var cur_xp = get_xp()
+	var needed = MIN_RANKED_XP
+	var pct = clampf(float(cur_xp) / float(needed), 0.0, 1.0) if needed > 0 else 1.0
+	return {
+		"unlocked": cur_xp >= needed,
+		"current_xp": cur_xp,
+		"current_level": calculate_level(cur_xp),
+		"required_xp": needed,
+		"target_xp": needed,
+		"required_level": MIN_RANKED_LEVEL,
+		"remaining_xp": max(0, needed - cur_xp),
+		"progress": pct,
+		"percent_int": int(round(pct * 100.0))
+	}
+
 func get_open_game_id() -> String:
 	if not active_game_id.is_empty():
 		return active_game_id

@@ -33,9 +33,9 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 # Menu Cards
 
 @onready var btn_ranked = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked
-
+@onready var ranked_title: Label = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/TextCol/CardTitle
+@onready var ranked_subtitle: Label = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/TextCol/CardSubtitle
 @onready var btn_classic_rank = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank
-
 @onready var btn_lobby = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby
 
 
@@ -104,6 +104,11 @@ var _offline_dialog: Control = null
 var _offline_status_lbl: Label = null
 var _offline_retry_btn: Button = null
 var _is_retrying_connection: bool = false
+var _ranked_locked_overlay: Control = null
+var _ranked_locked_panel: PanelContainer = null
+var _ranked_locked_bar: ProgressBar = null
+var _ranked_locked_progress_lbl: Label = null
+var _ranked_locked_remain_lbl: Label = null
 
 func _ready() -> void:
 	_setup_signals()
@@ -114,6 +119,7 @@ func _ready() -> void:
 	# Start in Menu Mode
 	base_game_hud.visible = false
 	menu_container.visible = true
+	_update_ranked_button_state()
 	
 	# Display polished in-engine splash overlay matching boot splash screen
 	_setup_splash_overlay()
@@ -136,6 +142,7 @@ func _ready() -> void:
 			return
 		NetworkManager.restore_session(func(restored: bool, msg: String):
 			user_header.update_ui()
+			_update_ranked_button_state()
 			if not is_instance_valid(self):
 				return
 			_dismiss_splash_overlay(func():
@@ -351,6 +358,22 @@ func _setup_signals() -> void:
 
 	user_header.profile_requested.connect(_on_store_pressed)
 
+	# User State & Progression Listeners
+	GameManager.user_logged_in.connect(func(_user_data):
+		_update_ranked_button_state()
+	)
+	GameManager.user_logged_out.connect(func():
+		_update_ranked_button_state()
+	)
+	GameManager.game_finished.connect(func(_winner):
+		_update_ranked_button_state()
+	)
+	NetworkManager.ranked_locked_received.connect(func(_data):
+		if is_instance_valid(queue_dialog) and queue_dialog.visible:
+			queue_dialog.stop_queue()
+		_show_ranked_locked_dialog()
+	)
+
 	
 
 	# Dialog events
@@ -358,6 +381,7 @@ func _setup_signals() -> void:
 	login_dialog.login_completed.connect(func():
 
 		user_header.update_ui()
+		_update_ranked_button_state()
 
 		if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
 
@@ -671,6 +695,10 @@ func _on_ranked_pressed() -> void:
 		return
 	if not GameManager.has_username():
 		login_dialog.open_for_username_completion()
+		return
+	if not GameManager.is_ranked_unlocked():
+		_hide_backdrop()
+		_show_ranked_locked_dialog()
 		return
 	queue_dialog.start_queue()
 
@@ -2155,6 +2183,7 @@ func _on_offline_retry_pressed() -> void:
 		if NetworkManager.is_online and msg != "OFFLINE":
 			_hide_offline_dialog()
 			user_header.update_ui()
+			_update_ranked_button_state()
 			_show_menu_toast("✅ اتصال با سرور بازی برقرار شد!")
 			if not restored or not GameManager.is_logged_in:
 				login_dialog.open()
@@ -2190,6 +2219,7 @@ func _on_leave_game_pressed() -> void:
 	
 	GameManager.reset_match_state()
 	user_header.update_ui()
+	_update_ranked_button_state()
 	AudioManager.play_theme_music()
 
 func _update_table_opponent_avatar() -> void:
@@ -2339,8 +2369,246 @@ func _on_ranked_breakout_exit_requested() -> void:
 	menu_container.visible = true
 	user_header.visible = true
 	user_header.update_ui()
+	_update_ranked_button_state()
 	GameManager.reset_match_state()
 	GameManager.clear_open_game_id()
 	GameManager.clear_open_pre_game_id()
 	NetworkManager.leave_game()
 	AudioManager.play_theme_music()
+
+func _update_ranked_button_state() -> void:
+	if not is_instance_valid(btn_ranked):
+		return
+	var title_lbl = ranked_title if is_instance_valid(ranked_title) else btn_ranked.get_node_or_null("Margin/HBox/TextCol/CardTitle")
+	var sub_lbl = ranked_subtitle if is_instance_valid(ranked_subtitle) else btn_ranked.get_node_or_null("Margin/HBox/TextCol/CardSubtitle")
+	var is_unlocked = GameManager.is_ranked_unlocked()
+	
+	if is_unlocked:
+		if is_instance_valid(title_lbl):
+			title_lbl.text = "بازی دونفره آنلاین"
+		if is_instance_valid(sub_lbl):
+			sub_lbl.text = "جستجوی حریف آنلاین و افزایش رتبه و امتیاز"
+			sub_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55, 1.0))
+		btn_ranked.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	else:
+		var prog = GameManager.get_ranked_unlock_progress()
+		if is_instance_valid(title_lbl):
+			title_lbl.text = "🔒 بازی دونفره آنلاین (رنک)"
+		if is_instance_valid(sub_lbl):
+			sub_lbl.text = "قفل است • بازگشایی در سطح ۳ (%d / %d XP)" % [prog.current_xp, prog.target_xp]
+			sub_lbl.add_theme_color_override("font_color", Color(1.0, 0.72, 0.38, 1.0))
+		btn_ranked.modulate = Color(0.92, 0.90, 0.88, 1.0)
+
+func _show_ranked_locked_dialog() -> void:
+	var prog = GameManager.get_ranked_unlock_progress()
+	if not _ranked_locked_overlay or not is_instance_valid(_ranked_locked_overlay):
+		_ranked_locked_overlay = Control.new()
+		_ranked_locked_overlay.name = "RankedLockedOverlay"
+		_ranked_locked_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_ranked_locked_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+		_ranked_locked_overlay.z_index = 96
+
+		var dark_bg = ColorRect.new()
+		dark_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		dark_bg.color = Color(0.04, 0.02, 0.01, 0.82)
+		dark_bg.mouse_filter = Control.MOUSE_FILTER_STOP
+		dark_bg.gui_input.connect(func(event: InputEvent):
+			if event is InputEventMouseButton and event.pressed:
+				_close_ranked_locked_dialog()
+		)
+		_ranked_locked_overlay.add_child(dark_bg)
+
+		var center = CenterContainer.new()
+		center.set_anchors_preset(Control.PRESET_FULL_RECT)
+		center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_ranked_locked_overlay.add_child(center)
+
+		_ranked_locked_panel = PanelContainer.new()
+		_ranked_locked_panel.custom_minimum_size = Vector2(820, 520)
+		_ranked_locked_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+		var style = StyleBoxTexture.new()
+		style.texture = preload("res://assets/images/frames/board.png")
+		style.texture_margin_left = 60.0
+		style.texture_margin_top = 60.0
+		style.texture_margin_right = 60.0
+		style.texture_margin_bottom = 60.0
+		_ranked_locked_panel.add_theme_stylebox_override("panel", style)
+		center.add_child(_ranked_locked_panel)
+
+		var margin = MarginContainer.new()
+		margin.add_theme_constant_override("margin_left", 48)
+		margin.add_theme_constant_override("margin_top", 40)
+		margin.add_theme_constant_override("margin_right", 48)
+		margin.add_theme_constant_override("margin_bottom", 40)
+		_ranked_locked_panel.add_child(margin)
+
+		var vbox = VBoxContainer.new()
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 20)
+		margin.add_child(vbox)
+
+		var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
+
+		var lbl_title = Label.new()
+		lbl_title.text = "🔒 بخش مسابقات رنک آنلاین قفل است"
+		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_title.add_theme_font_override("font", font_hekayat)
+		lbl_title.add_theme_font_size_override("font_size", 44)
+		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		lbl_title.add_theme_constant_override("shadow_outline_size", 3)
+		vbox.add_child(lbl_title)
+
+		var lbl_desc = Label.new()
+		lbl_desc.text = "برای تضمین کیفیت مسابقات رده‌بندی و آشنایی با بازی‌ها،\nورود به مسابقات دونفره آنلاین پس از رسیدن به سطح ۳ (۱۶۰ XP) بازگشایی می‌شود."
+		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl_desc.custom_minimum_size = Vector2(680, 70)
+		lbl_desc.add_theme_font_override("font", font_hekayat)
+		lbl_desc.add_theme_font_size_override("font_size", 27)
+		lbl_desc.add_theme_color_override("font_color", Color(0.96, 0.91, 0.82))
+		vbox.add_child(lbl_desc)
+
+		# Progress Panel Box
+		var prog_panel = PanelContainer.new()
+		var prog_box_style = StyleBoxFlat.new()
+		prog_box_style.bg_color = Color(0.10, 0.06, 0.04, 0.9)
+		prog_box_style.border_width_left = 2
+		prog_box_style.border_width_top = 2
+		prog_box_style.border_width_right = 2
+		prog_box_style.border_width_bottom = 2
+		prog_box_style.border_color = Color(0.60, 0.45, 0.22, 0.85)
+		prog_box_style.corner_radius_top_left = 14
+		prog_box_style.corner_radius_top_right = 14
+		prog_box_style.corner_radius_bottom_right = 14
+		prog_box_style.corner_radius_bottom_left = 14
+		prog_box_style.content_margin_left = 24.0
+		prog_box_style.content_margin_top = 16.0
+		prog_box_style.content_margin_right = 24.0
+		prog_box_style.content_margin_bottom = 16.0
+		prog_panel.add_theme_stylebox_override("panel", prog_box_style)
+		vbox.add_child(prog_panel)
+
+		var prog_vbox = VBoxContainer.new()
+		prog_vbox.add_theme_constant_override("separation", 10)
+		prog_panel.add_child(prog_vbox)
+
+		var prog_row = HBoxContainer.new()
+		prog_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		prog_vbox.add_child(prog_row)
+
+		_ranked_locked_remain_lbl = Label.new()
+		_ranked_locked_remain_lbl.text = ""
+		_ranked_locked_remain_lbl.add_theme_font_override("font", font_hekayat)
+		_ranked_locked_remain_lbl.add_theme_font_size_override("font_size", 24)
+		_ranked_locked_remain_lbl.add_theme_color_override("font_color", Color(1.0, 0.65, 0.35))
+		prog_row.add_child(_ranked_locked_remain_lbl)
+
+		var spacer = Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		prog_row.add_child(spacer)
+
+		_ranked_locked_progress_lbl = Label.new()
+		_ranked_locked_progress_lbl.text = ""
+		_ranked_locked_progress_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		_ranked_locked_progress_lbl.add_theme_font_override("font", font_hekayat)
+		_ranked_locked_progress_lbl.add_theme_font_size_override("font_size", 26)
+		_ranked_locked_progress_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72))
+		prog_row.add_child(_ranked_locked_progress_lbl)
+
+		_ranked_locked_bar = ProgressBar.new()
+		_ranked_locked_bar.custom_minimum_size = Vector2(0, 22)
+		_ranked_locked_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_ranked_locked_bar.show_percentage = false
+		_ranked_locked_bar.min_value = 0.0
+		_ranked_locked_bar.max_value = float(GameManager.MIN_RANKED_XP)
+		_ranked_locked_bar.value = 0.0
+
+		var bar_bg = StyleBoxFlat.new()
+		bar_bg.bg_color = Color(0.06, 0.04, 0.02, 0.95)
+		bar_bg.corner_radius_top_left = 10
+		bar_bg.corner_radius_top_right = 10
+		bar_bg.corner_radius_bottom_right = 10
+		bar_bg.corner_radius_bottom_left = 10
+		bar_bg.border_width_left = 1
+		bar_bg.border_width_top = 1
+		bar_bg.border_width_right = 1
+		bar_bg.border_width_bottom = 1
+		bar_bg.border_color = Color(0.4, 0.3, 0.15, 0.8)
+		_ranked_locked_bar.add_theme_stylebox_override("background", bar_bg)
+
+		var bar_fill = StyleBoxFlat.new()
+		bar_fill.bg_color = Color(0.96, 0.76, 0.24, 1.0)
+		bar_fill.corner_radius_top_left = 10
+		bar_fill.corner_radius_top_right = 10
+		bar_fill.corner_radius_bottom_right = 10
+		bar_fill.corner_radius_bottom_left = 10
+		_ranked_locked_bar.add_theme_stylebox_override("fill", bar_fill)
+		prog_vbox.add_child(_ranked_locked_bar)
+
+		# Tip Hint
+		var lbl_hint = Label.new()
+		lbl_hint.text = "💡 راهنما: با انجام ۳ تا ۵ بازی در «رنک تک‌نفره (ربات)» به راحتی تجربه کسب کرده و رنک را باز کنید!"
+		lbl_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl_hint.custom_minimum_size = Vector2(680, 40)
+		lbl_hint.add_theme_font_override("font", font_hekayat)
+		lbl_hint.add_theme_font_size_override("font_size", 24)
+		lbl_hint.add_theme_color_override("font_color", Color(0.80, 0.90, 1.0, 0.95))
+		vbox.add_child(lbl_hint)
+
+		# Action Buttons Row
+		var btn_hbox = HBoxContainer.new()
+		btn_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		btn_hbox.add_theme_constant_override("separation", 20)
+		vbox.add_child(btn_hbox)
+
+		var btn_play_bot = Button.new()
+		btn_play_bot.text = "🎮 کسب XP در رنک تک‌نفره (ربات)"
+		btn_play_bot.custom_minimum_size = Vector2(400, 76)
+		btn_play_bot.add_theme_font_override("font", font_hekayat)
+		btn_play_bot.add_theme_font_size_override("font_size", 30)
+		KenneyUI.style_button(btn_play_bot, KenneyUI.COLOR_GREEN)
+		btn_play_bot.pressed.connect(func():
+			_close_ranked_locked_dialog(func():
+				_on_classic_rank_pressed()
+			)
+		)
+		btn_hbox.add_child(btn_play_bot)
+
+		var btn_close = Button.new()
+		btn_close.text = "متوجه شدم"
+		btn_close.custom_minimum_size = Vector2(200, 76)
+		btn_close.add_theme_font_override("font", font_hekayat)
+		btn_close.add_theme_font_size_override("font_size", 28)
+		KenneyUI.style_button(btn_close, KenneyUI.COLOR_GREY)
+		btn_close.pressed.connect(func():
+			_close_ranked_locked_dialog()
+		)
+		btn_hbox.add_child(btn_close)
+
+		ui_canvas.add_child(_ranked_locked_overlay)
+
+	# Update dynamic values
+	if is_instance_valid(_ranked_locked_progress_lbl):
+		_ranked_locked_progress_lbl.text = "سطح شما: %d (%d / %d XP)" % [prog.current_level, prog.current_xp, prog.target_xp]
+	if is_instance_valid(_ranked_locked_remain_lbl):
+		_ranked_locked_remain_lbl.text = "%d XP تا بازگشایی رنک" % [prog.remaining_xp]
+	if is_instance_valid(_ranked_locked_bar):
+		_ranked_locked_bar.value = float(clamp(prog.current_xp, 0, prog.target_xp))
+
+	_ranked_locked_overlay.visible = true
+	ActionVFXManager.animate_dialog_open(_ranked_locked_panel, _ranked_locked_overlay, true)
+
+func _close_ranked_locked_dialog(callback: Callable = Callable()) -> void:
+	if not _ranked_locked_overlay or not is_instance_valid(_ranked_locked_overlay) or not _ranked_locked_overlay.visible:
+		if callback.is_valid():
+			callback.call()
+		return
+	ActionVFXManager.animate_dialog_close(_ranked_locked_panel, _ranked_locked_overlay, func():
+		if is_instance_valid(_ranked_locked_overlay):
+			_ranked_locked_overlay.visible = false
+		_update_backdrop_state()
+		if callback.is_valid():
+			callback.call()
+	)

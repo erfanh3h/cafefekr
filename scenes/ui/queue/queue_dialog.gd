@@ -52,6 +52,9 @@ func _ready() -> void:
 	NetworkManager.queue_accept_game_received.connect(_on_accept_game_received)
 	NetworkManager.pre_game_started.connect(_on_pre_game_started)
 	NetworkManager.queue_game_canceled.connect(_on_game_canceled)
+	NetworkManager.ranked_locked_received.connect(func(_data):
+		stop_queue()
+	)
 
 func _setup_accept_ui() -> void:
 	accept_container = HBoxContainer.new()
