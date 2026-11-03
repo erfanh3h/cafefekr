@@ -133,7 +133,7 @@ func _init_shared_materials() -> void:
 	_mat_obsidian_well.albedo_color = Color(0.09, 0.08, 0.07)
 	_mat_obsidian_well.metallic = 0.15
 	_mat_obsidian_well.roughness = 0.44
-	_mat_obsidian_well.clearcoat_enabled = true
+	_mat_obsidian_well.clearcoat_enabled = false
 	_mat_obsidian_well.clearcoat = 0.45
 
 	# Unclaimed Face-Down Medallion: Dark Onyx-Slate Lacquer with Brushed Pewter/Bronze Trim
@@ -141,7 +141,7 @@ func _init_shared_materials() -> void:
 	_mat_card_back_body.albedo_color = Color(0.18, 0.19, 0.23)
 	_mat_card_back_body.metallic = 0.28
 	_mat_card_back_body.roughness = 0.28
-	_mat_card_back_body.clearcoat_enabled = true
+	_mat_card_back_body.clearcoat_enabled = false
 	_mat_card_back_body.clearcoat = 0.82
 	_mat_card_back_body.clearcoat_roughness = 0.14
 
@@ -160,7 +160,7 @@ func _init_shared_materials() -> void:
 	_mat_red_body.albedo_color = Color(0.80, 0.10, 0.14)
 	_mat_red_body.metallic = 0.22
 	_mat_red_body.roughness = 0.20
-	_mat_red_body.clearcoat_enabled = true
+	_mat_red_body.clearcoat_enabled = false
 	_mat_red_body.clearcoat = 0.90
 	_mat_red_body.clearcoat_roughness = 0.10
 
@@ -169,7 +169,7 @@ func _init_shared_materials() -> void:
 	_mat_blue_body.albedo_color = Color(0.10, 0.36, 0.82)
 	_mat_blue_body.metallic = 0.25
 	_mat_blue_body.roughness = 0.20
-	_mat_blue_body.clearcoat_enabled = true
+	_mat_blue_body.clearcoat_enabled = false
 	_mat_blue_body.clearcoat = 0.90
 	_mat_blue_body.clearcoat_roughness = 0.10
 
@@ -178,7 +178,7 @@ func _init_shared_materials() -> void:
 	_mat_reveal_body.albedo_color = Color(0.32, 0.26, 0.16)
 	_mat_reveal_body.metallic = 0.35
 	_mat_reveal_body.roughness = 0.26
-	_mat_reveal_body.clearcoat_enabled = true
+	_mat_reveal_body.clearcoat_enabled = false
 	_mat_reveal_body.clearcoat = 0.80
 
 	# Selection / Hover Rings
@@ -505,7 +505,7 @@ func _create_single_tray(tray_name: String, pos_x: float, gamer_id: int) -> Node
 	var mat_wood := StandardMaterial3D.new()
 	mat_wood.albedo_color = Color(0.20, 0.11, 0.07)
 	mat_wood.roughness = 0.40
-	mat_wood.clearcoat_enabled = true
+	mat_wood.clearcoat_enabled = false
 	mat_wood.clearcoat = 0.55
 
 	var base_mesh := BoxMesh.new()

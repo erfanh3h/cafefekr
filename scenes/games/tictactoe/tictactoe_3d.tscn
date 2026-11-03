@@ -6,7 +6,7 @@
 albedo_color = Color(0.16, 0.09, 0.05, 1)
 metallic = 0.08
 roughness = 0.34
-clearcoat_enabled = true
+clearcoat_enabled = false
 clearcoat = 0.65
 clearcoat_roughness = 0.18
 
@@ -18,7 +18,7 @@ size = Vector3(1.34, 0.036, 1.34)
 albedo_color = Color(0.28, 0.16, 0.09, 1)
 metallic = 0.06
 roughness = 0.28
-clearcoat_enabled = true
+clearcoat_enabled = false
 clearcoat = 0.75
 clearcoat_roughness = 0.15
 
@@ -30,7 +30,7 @@ size = Vector3(1.25, 0.05, 1.25)
 albedo_color = Color(0.11, 0.13, 0.16, 1)
 metallic = 0.18
 roughness = 0.26
-clearcoat_enabled = true
+clearcoat_enabled = false
 clearcoat = 0.6
 clearcoat_roughness = 0.16
 
@@ -42,7 +42,7 @@ size = Vector3(1.1, 0.058, 1.1)
 albedo_color = Color(0.95, 0.79, 0.28, 1)
 metallic = 0.92
 roughness = 0.16
-clearcoat_enabled = true
+clearcoat_enabled = false
 clearcoat = 0.6
 
 [sub_resource type="BoxMesh" id="BoxMesh_grid_h"]
@@ -63,7 +63,7 @@ height = 0.024
 albedo_color = Color(0.92, 0.75, 0.26, 1)
 metallic = 0.92
 roughness = 0.18
-clearcoat_enabled = true
+clearcoat_enabled = false
 clearcoat = 0.5
 
 [sub_resource type="BoxMesh" id="BoxMesh_corner"]

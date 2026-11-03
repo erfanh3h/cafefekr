@@ -200,16 +200,19 @@ func _ready() -> void:
 	_build_luxury_game_environment()
 	_build_menu_showcase()
 
-	# Mobile GPU Optimization (e.g. Samsung Galaxy M32 with Mali-G52 GPU):
-	# Turn off multi-pass ping-pong glow bloom and optimize shadow passes for 60fps mobile gameplay
-	if OS.get_name() in ["Android", "iOS"]:
-		var env_node = get_node_or_null("WorldEnvironment")
-		if env_node and env_node.environment:
-			env_node.environment.glow_enabled = false
-		if has_node("SunLight"):
-			var sun: DirectionalLight3D = get_node("SunLight")
-			sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-			sun.shadow_blur = 0.5
+	# Mobile GPU Optimization (e.g. Android Adreno / Mali GPUs):
+	# Turn off multi-pass glow bloom, secondary fill OmniLight3D, and optimize shadow passes for 60fps mobile gameplay
+	var env_node = get_node_or_null("WorldEnvironment")
+	if env_node and env_node.environment:
+		env_node.environment.glow_enabled = false
+	if has_node("SunLight"):
+		var sun: DirectionalLight3D = get_node("SunLight")
+		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+		sun.directional_shadow_max_distance = 8.0
+		sun.shadow_blur = 0.4
+	if OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]:
+		if has_node("WallFillLight"):
+			get_node("WallFillLight").visible = false
 
 
 	transition_to_menu_view(0.1)
@@ -260,17 +263,18 @@ func _process(delta: float) -> void:
 		camera.position = CAM_POS_MENU + Vector3(sway_x + _menu_parallax_current.x, sway_y + _menu_parallax_current.y, 0.0)
 		camera.look_at(Vector3(0.0, 0.18, 0.0), Vector3.UP)
 
-	# Cozy candlelight flickering
+	# Cozy candlelight flickering (throttled to ~15Hz for mobile CPU/GPU efficiency)
 	if candle_light:
 		_flicker_timer += delta * 5.5
-		var pulse = sin(_flicker_timer) * 0.08 + sin(_flicker_timer * 2.3) * 0.05
-		candle_light.light_energy = 0.72 + pulse + _lantern_flare_boost
-		if _flame_mesh and is_instance_valid(_flame_mesh):
-			var s = 1.0 + pulse * 0.65 + _lantern_flare_boost * 0.45
-			_flame_mesh.scale = Vector3(1.0 - pulse * 0.20, s, 1.0 - pulse * 0.20)
-		if _flame_halo_mesh and is_instance_valid(_flame_halo_mesh):
-			var hs = 1.0 + pulse * 0.85 + _lantern_flare_boost * 0.75
-			_flame_halo_mesh.scale = Vector3(hs, hs, hs)
+		if int((_flicker_timer - delta * 5.5) * 3.0) != int(_flicker_timer * 3.0) or _lantern_flare_boost > 0.01:
+			var pulse = sin(_flicker_timer) * 0.08 + sin(_flicker_timer * 2.3) * 0.05
+			candle_light.light_energy = 0.72 + pulse + _lantern_flare_boost
+			if _flame_mesh and is_instance_valid(_flame_mesh):
+				var s = 1.0 + pulse * 0.65 + _lantern_flare_boost * 0.45
+				_flame_mesh.scale = Vector3(1.0 - pulse * 0.20, s, 1.0 - pulse * 0.20)
+			if _flame_halo_mesh and is_instance_valid(_flame_halo_mesh):
+				var hs = 1.0 + pulse * 0.85 + _lantern_flare_boost * 0.75
+				_flame_halo_mesh.scale = Vector3(hs, hs, hs)
 
 func _apply_orbit_transform() -> void:
 	var cos_pitch = cos(-current_pitch)
@@ -343,6 +347,7 @@ func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 	camera_mode_changed.emit(true)
 	if board_packed_scene:
 		current_board_node = board_packed_scene.instantiate()
+		_optimize_board_for_mobile(current_board_node)
 		board_container.add_child(current_board_node)
 		var g_type: String = ""
 		if "game_type" in current_board_node:
@@ -593,19 +598,38 @@ func _check_double_tap(pos: Vector2) -> void:
 # LUXURY 3D BOARD-GAME CAFE TABLE & RECOGNIZABLE PROPS BUILDER
 # ============================================================================
 
-func _make_mat(albedo: Color, rough: float = 0.4, metal: float = 0.0, clearcoat: float = 0.0) -> StandardMaterial3D:
+func _optimize_board_for_mobile(node: Node) -> void:
+	if node is MeshInstance3D:
+		var mi := node as MeshInstance3D
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		if mi.mesh is SphereMesh:
+			var sm := mi.mesh as SphereMesh
+			if sm.radial_segments > 20:
+				sm.radial_segments = 16
+				sm.rings = 8
+		elif mi.mesh is CylinderMesh:
+			var cm := mi.mesh as CylinderMesh
+			if cm.radial_segments > 24:
+				cm.radial_segments = 18
+				cm.rings = 1
+		elif mi.mesh is TorusMesh:
+			var tm := mi.mesh as TorusMesh
+			if tm.rings > 24:
+				tm.rings = 20
+				tm.ring_segments = 10
+	for ch in node.get_children():
+		_optimize_board_for_mobile(ch)
+
+func _make_mat(albedo: Color, rough: float = 0.4, metal: float = 0.0, _clearcoat: float = 0.0) -> StandardMaterial3D:
 	var m = StandardMaterial3D.new()
 	m.albedo_color = albedo
 	m.roughness = rough
 	m.metallic = metal
-	if clearcoat > 0.0:
-		m.clearcoat_enabled = true
-		m.clearcoat = clearcoat
-		m.clearcoat_roughness = 0.12
 	return m
 
 func _add_box(parent: Node3D, size: Vector3, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
 	var mi = MeshInstance3D.new()
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var bm = BoxMesh.new()
 	bm.size = size
 	bm.material = mat
@@ -615,13 +639,15 @@ func _add_box(parent: Node3D, size: Vector3, pos: Vector3, mat: Material, rot_de
 	parent.add_child(mi)
 	return mi
 
-func _add_cyl(parent: Node3D, top_r: float, bot_r: float, h: float, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO, segs: int = 24) -> MeshInstance3D:
+func _add_cyl(parent: Node3D, top_r: float, bot_r: float, h: float, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO, segs: int = 16) -> MeshInstance3D:
 	var mi = MeshInstance3D.new()
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var cm = CylinderMesh.new()
 	cm.top_radius = top_r
 	cm.bottom_radius = bot_r
 	cm.height = h
-	cm.radial_segments = segs
+	cm.radial_segments = mini(segs, 18)
+	cm.rings = 1
 	cm.material = mat
 	mi.mesh = cm
 	mi.position = pos
@@ -631,9 +657,12 @@ func _add_cyl(parent: Node3D, top_r: float, bot_r: float, h: float, pos: Vector3
 
 func _add_sphere(parent: Node3D, r: float, h: float, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
 	var mi = MeshInstance3D.new()
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var sm = SphereMesh.new()
 	sm.radius = r
 	sm.height = h
+	sm.radial_segments = 14
+	sm.rings = 7
 	sm.material = mat
 	mi.mesh = sm
 	mi.position = pos
@@ -643,11 +672,12 @@ func _add_sphere(parent: Node3D, r: float, h: float, pos: Vector3, mat: Material
 
 func _add_torus(parent: Node3D, inner_r: float, outer_r: float, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
 	var mi = MeshInstance3D.new()
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var tm = TorusMesh.new()
 	tm.inner_radius = inner_r
 	tm.outer_radius = outer_r
-	tm.rings = 24
-	tm.ring_segments = 16
+	tm.rings = 16
+	tm.ring_segments = 8
 	tm.material = mat
 	mi.mesh = tm
 	mi.position = pos
@@ -696,7 +726,7 @@ func _build_luxury_game_environment() -> void:
 	mat_clear_glass.albedo_color = Color(0.94, 0.97, 1.0, 0.30)
 	mat_clear_glass.roughness = 0.06
 	mat_clear_glass.metallic = 0.10
-	mat_clear_glass.clearcoat_enabled = true
+	mat_clear_glass.clearcoat_enabled = false
 	mat_clear_glass.clearcoat = 1.0
 
 	var mat_cyan_lens = StandardMaterial3D.new()
@@ -704,21 +734,21 @@ func _build_luxury_game_environment() -> void:
 	mat_cyan_lens.albedo_color = Color(0.55, 0.88, 1.0, 0.38)
 	mat_cyan_lens.roughness = 0.04
 	mat_cyan_lens.metallic = 0.15
-	mat_cyan_lens.clearcoat_enabled = true
+	mat_cyan_lens.clearcoat_enabled = false
 	mat_cyan_lens.clearcoat = 1.0
 
 	var mat_amber_glass = StandardMaterial3D.new()
 	mat_amber_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_amber_glass.albedo_color = Color(1.0, 0.84, 0.48, 0.34)
 	mat_amber_glass.roughness = 0.08
-	mat_amber_glass.clearcoat_enabled = true
+	mat_amber_glass.clearcoat_enabled = false
 	mat_amber_glass.clearcoat = 0.9
 
 	var mat_persian_tea = StandardMaterial3D.new()
 	mat_persian_tea.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_persian_tea.albedo_color = Color(0.58, 0.09, 0.03, 0.88)
 	mat_persian_tea.roughness = 0.05
-	mat_persian_tea.clearcoat_enabled = true
+	mat_persian_tea.clearcoat_enabled = false
 	mat_persian_tea.clearcoat = 1.0
 
 	var mat_amber_glow = StandardMaterial3D.new()
@@ -2824,6 +2854,8 @@ func set_menu_parallax(normalized_offset: Vector2) -> void:
 func set_menu_showcase_visible(vis: bool) -> void:
 	if _menu_showcase_root and is_instance_valid(_menu_showcase_root):
 		_menu_showcase_root.visible = vis
+	if _menu_particles and is_instance_valid(_menu_particles):
+		_menu_particles.emitting = vis
 
 func _build_menu_showcase() -> void:
 	if _menu_showcase_root and is_instance_valid(_menu_showcase_root):
@@ -2905,7 +2937,7 @@ func _build_menu_showcase() -> void:
 	# 5. Cozy Floating Ember / Dust Particles (CPUParticles3D)
 	_menu_particles = CPUParticles3D.new()
 	_menu_particles.name = "MenuEmbers"
-	_menu_particles.amount = 32
+	_menu_particles.amount = 16
 	_menu_particles.lifetime = 3.6
 	_menu_particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
 	_menu_particles.emission_box_extents = Vector3(0.65, 0.25, 0.65)

@@ -59,6 +59,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if not visible or _is_dismissing or not _timer_running:
+		if not visible:
+			set_process(false)
 		return
 	_time_left = max(0.0, _time_left - delta)
 	footer_progress_bar.max_value = _max_time
@@ -84,6 +86,7 @@ func open(payload: Dictionary) -> void:
 	_current_payload = payload
 	_is_dismissing = false
 	visible = true
+	set_process(true)
 
 	var is_finished = bool(payload.get("is_game_finished", false))
 	if not is_finished:

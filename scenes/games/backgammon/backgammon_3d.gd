@@ -249,7 +249,7 @@ func _init_materials() -> void:
 	mat_wood_case.albedo_color = Color(0.19, 0.10, 0.05)
 	mat_wood_case.roughness = 0.34
 	mat_wood_case.metallic = 0.06
-	mat_wood_case.clearcoat_enabled = true
+	mat_wood_case.clearcoat_enabled = false
 	mat_wood_case.clearcoat = 0.50
 
 	# Raised Rails & Center Bar: Roasted Mahogany / Rosewood
@@ -257,7 +257,7 @@ func _init_materials() -> void:
 	mat_wood_rail.albedo_color = Color(0.30, 0.15, 0.08)
 	mat_wood_rail.roughness = 0.28
 	mat_wood_rail.metallic = 0.08
-	mat_wood_rail.clearcoat_enabled = true
+	mat_wood_rail.clearcoat_enabled = false
 	mat_wood_rail.clearcoat = 0.62
 
 	# Obsidian Backing
@@ -288,7 +288,7 @@ func _init_materials() -> void:
 	mat_gold_trim.albedo_color = Color(0.98, 0.82, 0.30)
 	mat_gold_trim.metallic = 0.92
 	mat_gold_trim.roughness = 0.16
-	mat_gold_trim.clearcoat_enabled = true
+	mat_gold_trim.clearcoat_enabled = false
 	mat_gold_trim.clearcoat = 0.88
 	mat_gold_trim.emission_enabled = true
 	mat_gold_trim.emission = Color(0.32, 0.24, 0.06)
@@ -304,7 +304,7 @@ func _init_materials() -> void:
 	mat_platinum_trim.albedo_color = Color(0.93, 0.96, 1.0)
 	mat_platinum_trim.metallic = 0.92
 	mat_platinum_trim.roughness = 0.16
-	mat_platinum_trim.clearcoat_enabled = true
+	mat_platinum_trim.clearcoat_enabled = false
 	mat_platinum_trim.clearcoat = 0.88
 	mat_platinum_trim.emission_enabled = true
 	mat_platinum_trim.emission = Color(0.18, 0.22, 0.30)
@@ -314,7 +314,7 @@ func _init_materials() -> void:
 	mat_point_light.albedo_color = Color(0.95, 0.89, 0.76)
 	mat_point_light.roughness = 0.36
 	mat_point_light.metallic = 0.05
-	mat_point_light.clearcoat_enabled = true
+	mat_point_light.clearcoat_enabled = false
 	mat_point_light.clearcoat = 0.35
 
 	# Odd Points: Deep Royal Crimson-Garnet & Walnut Marquetry
@@ -322,7 +322,7 @@ func _init_materials() -> void:
 	mat_point_dark.albedo_color = Color(0.56, 0.14, 0.12)
 	mat_point_dark.roughness = 0.34
 	mat_point_dark.metallic = 0.10
-	mat_point_dark.clearcoat_enabled = true
+	mat_point_dark.clearcoat_enabled = false
 	mat_point_dark.clearcoat = 0.40
 
 	# Player 1 (Red / شما) Checker Puck: Imperial Crimson Ruby Lacquer
@@ -330,7 +330,7 @@ func _init_materials() -> void:
 	mat_piece_p1.albedo_color = Color(0.88, 0.11, 0.15)
 	mat_piece_p1.metallic = 0.28
 	mat_piece_p1.roughness = 0.15
-	mat_piece_p1.clearcoat_enabled = true
+	mat_piece_p1.clearcoat_enabled = false
 	mat_piece_p1.clearcoat = 1.0
 	mat_piece_p1.clearcoat_roughness = 0.04
 
@@ -338,7 +338,7 @@ func _init_materials() -> void:
 	mat_piece_p1_well.albedo_color = Color(0.54, 0.05, 0.08)
 	mat_piece_p1_well.metallic = 0.34
 	mat_piece_p1_well.roughness = 0.22
-	mat_piece_p1_well.clearcoat_enabled = true
+	mat_piece_p1_well.clearcoat_enabled = false
 	mat_piece_p1_well.clearcoat = 0.85
 
 	# Player 2 (Blue / حریف) Checker Puck: Royal Cobalt Sapphire Lacquer
@@ -346,7 +346,7 @@ func _init_materials() -> void:
 	mat_piece_p2.albedo_color = Color(0.11, 0.42, 0.90)
 	mat_piece_p2.metallic = 0.28
 	mat_piece_p2.roughness = 0.15
-	mat_piece_p2.clearcoat_enabled = true
+	mat_piece_p2.clearcoat_enabled = false
 	mat_piece_p2.clearcoat = 1.0
 	mat_piece_p2.clearcoat_roughness = 0.04
 
@@ -354,7 +354,7 @@ func _init_materials() -> void:
 	mat_piece_p2_well.albedo_color = Color(0.05, 0.20, 0.54)
 	mat_piece_p2_well.metallic = 0.34
 	mat_piece_p2_well.roughness = 0.22
-	mat_piece_p2_well.clearcoat_enabled = true
+	mat_piece_p2_well.clearcoat_enabled = false
 	mat_piece_p2_well.clearcoat = 0.85
 
 	mat_felt_base = StandardMaterial3D.new()
@@ -366,7 +366,7 @@ func _init_materials() -> void:
 	mat_die_ivory.albedo_color = Color(0.99, 0.97, 0.92)
 	mat_die_ivory.roughness = 0.15
 	mat_die_ivory.metallic = 0.04
-	mat_die_ivory.clearcoat_enabled = true
+	mat_die_ivory.clearcoat_enabled = false
 	mat_die_ivory.clearcoat = 0.92
 
 	mat_die_chamfer = StandardMaterial3D.new()
@@ -378,7 +378,7 @@ func _init_materials() -> void:
 	mat_die_selected.albedo_color = Color(1.0, 0.93, 0.70)
 	mat_die_selected.roughness = 0.14
 	mat_die_selected.metallic = 0.22
-	mat_die_selected.clearcoat_enabled = true
+	mat_die_selected.clearcoat_enabled = false
 	mat_die_selected.clearcoat = 0.95
 	mat_die_selected.emission_enabled = true
 	mat_die_selected.emission = Color(0.95, 0.72, 0.18)
@@ -466,7 +466,7 @@ func _init_materials() -> void:
 	mat_btn_roll_active.albedo_color = Color(0.12, 0.64, 0.36)
 	mat_btn_roll_active.roughness = 0.22
 	mat_btn_roll_active.metallic = 0.24
-	mat_btn_roll_active.clearcoat_enabled = true
+	mat_btn_roll_active.clearcoat_enabled = false
 	mat_btn_roll_active.clearcoat = 0.65
 	mat_btn_roll_active.emission_enabled = true
 	mat_btn_roll_active.emission = Color(0.08, 0.52, 0.26)

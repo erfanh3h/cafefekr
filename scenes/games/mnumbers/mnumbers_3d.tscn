@@ -15,7 +15,7 @@ size = Vector3(1.36, 0.025, 1.36)
 albedo_color = Color(0.24, 0.14, 0.09, 1)
 metallic = 0.03
 roughness = 0.36
-clearcoat_enabled = true
+clearcoat_enabled = false
 clearcoat = 0.65
 clearcoat_roughness = 0.2
 
@@ -27,7 +27,7 @@ size = Vector3(1.28, 0.042, 1.28)
 albedo_color = Color(0.16, 0.11, 0.08, 1)
 metallic = 0.04
 roughness = 0.38
-clearcoat_enabled = true
+clearcoat_enabled = false
 clearcoat = 0.52
 clearcoat_roughness = 0.22
 

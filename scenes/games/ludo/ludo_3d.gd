@@ -266,7 +266,7 @@ func _init_materials() -> void:
 		m_pawn.albedo_color = col
 		m_pawn.roughness = 0.18
 		m_pawn.metallic = 0.25
-		m_pawn.clearcoat_enabled = true
+		m_pawn.clearcoat_enabled = false
 		m_pawn.clearcoat = 0.85
 		m_pawn.clearcoat_roughness = 0.12
 		m_pawn.emission_enabled = true
@@ -311,7 +311,7 @@ func _init_materials() -> void:
 	_mat_die_ivory.albedo_color = Color(0.99, 0.97, 0.93)
 	_mat_die_ivory.roughness = 0.12
 	_mat_die_ivory.metallic = 0.02
-	_mat_die_ivory.clearcoat_enabled = true
+	_mat_die_ivory.clearcoat_enabled = false
 	_mat_die_ivory.clearcoat = 0.90
 	_mat_die_ivory.clearcoat_roughness = 0.06
 
@@ -319,21 +319,21 @@ func _init_materials() -> void:
 	_mat_die_chamfer.albedo_color = Color(0.94, 0.90, 0.80)
 	_mat_die_chamfer.roughness = 0.18
 	_mat_die_chamfer.metallic = 0.10
-	_mat_die_chamfer.clearcoat_enabled = true
+	_mat_die_chamfer.clearcoat_enabled = false
 	_mat_die_chamfer.clearcoat = 0.75
 
 	_mat_pip_dark = StandardMaterial3D.new()
 	_mat_pip_dark.albedo_color = Color(0.05, 0.06, 0.10)
 	_mat_pip_dark.roughness = 0.14
 	_mat_pip_dark.metallic = 0.20
-	_mat_pip_dark.clearcoat_enabled = true
+	_mat_pip_dark.clearcoat_enabled = false
 	_mat_pip_dark.clearcoat = 0.85
 
 	_mat_pip_red = StandardMaterial3D.new()
 	_mat_pip_red.albedo_color = Color(0.88, 0.10, 0.15)
 	_mat_pip_red.roughness = 0.14
 	_mat_pip_red.metallic = 0.18
-	_mat_pip_red.clearcoat_enabled = true
+	_mat_pip_red.clearcoat_enabled = false
 	_mat_pip_red.clearcoat = 0.90
 	_mat_pip_red.emission_enabled = true
 	_mat_pip_red.emission = Color(0.75, 0.08, 0.12)

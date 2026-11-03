@@ -130,7 +130,7 @@ func _setup_materials() -> void:
 	mat_mahogany_dark.albedo_color = Color(0.16, 0.09, 0.05)
 	mat_mahogany_dark.metallic = 0.04
 	mat_mahogany_dark.roughness = 0.36
-	mat_mahogany_dark.clearcoat_enabled = true
+	mat_mahogany_dark.clearcoat_enabled = false
 	mat_mahogany_dark.clearcoat = 0.60
 	mat_mahogany_dark.clearcoat_roughness = 0.18
 
@@ -139,7 +139,7 @@ func _setup_materials() -> void:
 	mat_walnut_frame.albedo_color = Color(0.26, 0.15, 0.09)
 	mat_walnut_frame.metallic = 0.05
 	mat_walnut_frame.roughness = 0.30
-	mat_walnut_frame.clearcoat_enabled = true
+	mat_walnut_frame.clearcoat_enabled = false
 	mat_walnut_frame.clearcoat = 0.68
 	mat_walnut_frame.clearcoat_roughness = 0.15
 
@@ -148,7 +148,7 @@ func _setup_materials() -> void:
 	mat_rack_royal_blue.albedo_color = Color(0.11, 0.17, 0.28)
 	mat_rack_royal_blue.metallic = 0.18
 	mat_rack_royal_blue.roughness = 0.28
-	mat_rack_royal_blue.clearcoat_enabled = true
+	mat_rack_royal_blue.clearcoat_enabled = false
 	mat_rack_royal_blue.clearcoat = 0.65
 	mat_rack_royal_blue.clearcoat_roughness = 0.16
 
@@ -163,7 +163,7 @@ func _setup_materials() -> void:
 	mat_gold_trim.albedo_color = Color(0.98, 0.82, 0.30)
 	mat_gold_trim.metallic = 0.94
 	mat_gold_trim.roughness = 0.16
-	mat_gold_trim.clearcoat_enabled = true
+	mat_gold_trim.clearcoat_enabled = false
 	mat_gold_trim.clearcoat = 0.88
 	mat_gold_trim.clearcoat_roughness = 0.06
 	mat_gold_trim.emission_enabled = true
@@ -174,7 +174,7 @@ func _setup_materials() -> void:
 	mat_platinum_trim.albedo_color = Color(0.92, 0.95, 1.0)
 	mat_platinum_trim.metallic = 0.95
 	mat_platinum_trim.roughness = 0.14
-	mat_platinum_trim.clearcoat_enabled = true
+	mat_platinum_trim.clearcoat_enabled = false
 	mat_platinum_trim.clearcoat = 0.90
 	mat_platinum_trim.clearcoat_roughness = 0.05
 	mat_platinum_trim.emission_enabled = true
@@ -185,7 +185,7 @@ func _setup_materials() -> void:
 	mat_porthole_brass.albedo_color = Color(0.86, 0.70, 0.28)
 	mat_porthole_brass.metallic = 0.86
 	mat_porthole_brass.roughness = 0.24
-	mat_porthole_brass.clearcoat_enabled = true
+	mat_porthole_brass.clearcoat_enabled = false
 	mat_porthole_brass.clearcoat = 0.55
 
 	# Illuminated Golden Porthole Bezel on Column Hover
@@ -220,7 +220,7 @@ func _setup_materials() -> void:
 	mat_btn_normal.albedo_color = Color(0.88, 0.82, 0.70)
 	mat_btn_normal.metallic = 0.08
 	mat_btn_normal.roughness = 0.30
-	mat_btn_normal.clearcoat_enabled = true
+	mat_btn_normal.clearcoat_enabled = false
 	mat_btn_normal.clearcoat = 0.60
 
 	mat_btn_hover = StandardMaterial3D.new()
@@ -240,7 +240,7 @@ func _setup_materials() -> void:
 	mat_arrow_gold.albedo_color = Color(0.88, 0.24, 0.16)
 	mat_arrow_gold.metallic = 0.45
 	mat_arrow_gold.roughness = 0.22
-	mat_arrow_gold.clearcoat_enabled = true
+	mat_arrow_gold.clearcoat_enabled = false
 	mat_arrow_gold.clearcoat = 0.70
 
 	mat_arrow_hover = StandardMaterial3D.new()
@@ -256,7 +256,7 @@ func _setup_materials() -> void:
 	mat_piece_p1.albedo_color = Color(0.78, 0.11, 0.15)
 	mat_piece_p1.metallic = 0.08
 	mat_piece_p1.roughness = 0.20
-	mat_piece_p1.clearcoat_enabled = true
+	mat_piece_p1.clearcoat_enabled = false
 	mat_piece_p1.clearcoat = 0.78
 	mat_piece_p1.clearcoat_roughness = 0.12
 
@@ -264,7 +264,7 @@ func _setup_materials() -> void:
 	mat_piece_p1_well.albedo_color = Color(0.50, 0.06, 0.09)
 	mat_piece_p1_well.metallic = 0.04
 	mat_piece_p1_well.roughness = 0.36
-	mat_piece_p1_well.clearcoat_enabled = true
+	mat_piece_p1_well.clearcoat_enabled = false
 	mat_piece_p1_well.clearcoat = 0.45
 
 	mat_piece_p1_ghost = StandardMaterial3D.new()
@@ -279,7 +279,7 @@ func _setup_materials() -> void:
 	mat_piece_p2.albedo_color = Color(0.11, 0.32, 0.76)
 	mat_piece_p2.metallic = 0.08
 	mat_piece_p2.roughness = 0.20
-	mat_piece_p2.clearcoat_enabled = true
+	mat_piece_p2.clearcoat_enabled = false
 	mat_piece_p2.clearcoat = 0.78
 	mat_piece_p2.clearcoat_roughness = 0.12
 
@@ -287,7 +287,7 @@ func _setup_materials() -> void:
 	mat_piece_p2_well.albedo_color = Color(0.06, 0.18, 0.46)
 	mat_piece_p2_well.metallic = 0.04
 	mat_piece_p2_well.roughness = 0.36
-	mat_piece_p2_well.clearcoat_enabled = true
+	mat_piece_p2_well.clearcoat_enabled = false
 	mat_piece_p2_well.clearcoat = 0.45
 
 	mat_piece_p2_ghost = StandardMaterial3D.new()

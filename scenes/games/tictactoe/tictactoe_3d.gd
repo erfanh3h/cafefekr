@@ -56,7 +56,7 @@ func _setup_materials() -> void:
 	mat_cell_light.albedo_color = Color(0.84, 0.75, 0.60)
 	mat_cell_light.metallic = 0.05
 	mat_cell_light.roughness = 0.28
-	mat_cell_light.clearcoat_enabled = true
+	mat_cell_light.clearcoat_enabled = false
 	mat_cell_light.clearcoat = 0.55
 	mat_cell_light.clearcoat_roughness = 0.14
 
@@ -65,7 +65,7 @@ func _setup_materials() -> void:
 	mat_cell_dark.albedo_color = Color(0.42, 0.26, 0.16)
 	mat_cell_dark.metallic = 0.06
 	mat_cell_dark.roughness = 0.30
-	mat_cell_dark.clearcoat_enabled = true
+	mat_cell_dark.clearcoat_enabled = false
 	mat_cell_dark.clearcoat = 0.55
 	mat_cell_dark.clearcoat_roughness = 0.15
 
@@ -83,7 +83,7 @@ func _setup_materials() -> void:
 	mat_cell_frame.albedo_color = Color(0.22, 0.15, 0.09)
 	mat_cell_frame.metallic = 0.55
 	mat_cell_frame.roughness = 0.28
-	mat_cell_frame.clearcoat_enabled = true
+	mat_cell_frame.clearcoat_enabled = false
 	mat_cell_frame.clearcoat = 0.45
 
 	# Subtle Engraved Gold Target Ring inside Cell Well
@@ -105,7 +105,7 @@ func _setup_materials() -> void:
 	mat_walnut_rail.albedo_color = Color(0.24, 0.13, 0.07)
 	mat_walnut_rail.metallic = 0.08
 	mat_walnut_rail.roughness = 0.26
-	mat_walnut_rail.clearcoat_enabled = true
+	mat_walnut_rail.clearcoat_enabled = false
 	mat_walnut_rail.clearcoat = 0.75
 	mat_walnut_rail.clearcoat_roughness = 0.14
 
@@ -114,7 +114,7 @@ func _setup_materials() -> void:
 	mat_obsidian_slate.albedo_color = Color(0.10, 0.13, 0.16)
 	mat_obsidian_slate.metallic = 0.22
 	mat_obsidian_slate.roughness = 0.24
-	mat_obsidian_slate.clearcoat_enabled = true
+	mat_obsidian_slate.clearcoat_enabled = false
 	mat_obsidian_slate.clearcoat = 0.65
 	mat_obsidian_slate.clearcoat_roughness = 0.14
 
@@ -123,7 +123,7 @@ func _setup_materials() -> void:
 	mat_gold_trim.albedo_color = Color(0.95, 0.79, 0.28)
 	mat_gold_trim.metallic = 0.92
 	mat_gold_trim.roughness = 0.16
-	mat_gold_trim.clearcoat_enabled = true
+	mat_gold_trim.clearcoat_enabled = false
 	mat_gold_trim.clearcoat = 0.60
 
 	# Dark Brushed Bronze-Gold Token Pedestal Base
@@ -131,7 +131,7 @@ func _setup_materials() -> void:
 	mat_piece_base.albedo_color = Color(0.18, 0.14, 0.10)
 	mat_piece_base.metallic = 0.72
 	mat_piece_base.roughness = 0.24
-	mat_piece_base.clearcoat_enabled = true
+	mat_piece_base.clearcoat_enabled = false
 	mat_piece_base.clearcoat = 0.65
 
 	# Player 1 (X): Radiant Luxury Crimson Enamel & Ruby
@@ -142,7 +142,7 @@ func _setup_materials() -> void:
 	mat_piece_x.rim_enabled = true
 	mat_piece_x.rim = 0.55
 	mat_piece_x.rim_tint = 0.45
-	mat_piece_x.clearcoat_enabled = true
+	mat_piece_x.clearcoat_enabled = false
 	mat_piece_x.clearcoat = 0.92
 	mat_piece_x.clearcoat_roughness = 0.10
 
@@ -162,7 +162,7 @@ func _setup_materials() -> void:
 	mat_piece_o.rim_enabled = true
 	mat_piece_o.rim = 0.65
 	mat_piece_o.rim_tint = 0.55
-	mat_piece_o.clearcoat_enabled = true
+	mat_piece_o.clearcoat_enabled = false
 	mat_piece_o.clearcoat = 0.95
 	mat_piece_o.clearcoat_roughness = 0.10
 

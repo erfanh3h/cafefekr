@@ -86,10 +86,14 @@ func _setup_accept_ui() -> void:
 	$Margin/VBox.add_child(accept_container)
 
 func _process(delta: float) -> void:
-	if visible and spinner and not is_accept_phase:
+	if not visible:
+		set_process(false)
+		return
+	if spinner and not is_accept_phase:
 		spinner.rotation += delta * 2.5
 
 func start_queue(requested_game_type: String = "") -> void:
+	set_process(true)
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	elapsed_seconds = 0
 	timer_active = true

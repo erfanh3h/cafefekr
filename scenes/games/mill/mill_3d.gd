@@ -179,7 +179,7 @@ func _init_materials() -> void:
 	mat_obsidian_well.albedo_color = Color(0.09, 0.08, 0.10)
 	mat_obsidian_well.metallic = 0.12
 	mat_obsidian_well.roughness = 0.32
-	mat_obsidian_well.clearcoat_enabled = true
+	mat_obsidian_well.clearcoat_enabled = false
 	mat_obsidian_well.clearcoat = 0.65
 
 	# 5. Piece Bottom Baize Felt Pad
@@ -193,7 +193,7 @@ func _init_materials() -> void:
 	mat_piece_p1.albedo_color = Color(0.76, 0.11, 0.15)
 	mat_piece_p1.metallic = 0.18
 	mat_piece_p1.roughness = 0.22
-	mat_piece_p1.clearcoat_enabled = true
+	mat_piece_p1.clearcoat_enabled = false
 	mat_piece_p1.clearcoat = 0.92
 	mat_piece_p1.clearcoat_roughness = 0.10
 
@@ -201,7 +201,7 @@ func _init_materials() -> void:
 	mat_piece_p1_well.albedo_color = Color(0.56, 0.07, 0.10)
 	mat_piece_p1_well.metallic = 0.22
 	mat_piece_p1_well.roughness = 0.28
-	mat_piece_p1_well.clearcoat_enabled = true
+	mat_piece_p1_well.clearcoat_enabled = false
 	mat_piece_p1_well.clearcoat = 0.85
 
 	# 7. Player 2 (Blue) — Royal Sapphire Cobalt Lacquer (Matches Checkers 3D)
@@ -209,7 +209,7 @@ func _init_materials() -> void:
 	mat_piece_p2.albedo_color = Color(0.11, 0.36, 0.78)
 	mat_piece_p2.metallic = 0.20
 	mat_piece_p2.roughness = 0.22
-	mat_piece_p2.clearcoat_enabled = true
+	mat_piece_p2.clearcoat_enabled = false
 	mat_piece_p2.clearcoat = 0.92
 	mat_piece_p2.clearcoat_roughness = 0.10
 
@@ -217,7 +217,7 @@ func _init_materials() -> void:
 	mat_piece_p2_well.albedo_color = Color(0.07, 0.24, 0.58)
 	mat_piece_p2_well.metallic = 0.24
 	mat_piece_p2_well.roughness = 0.28
-	mat_piece_p2_well.clearcoat_enabled = true
+	mat_piece_p2_well.clearcoat_enabled = false
 	mat_piece_p2_well.clearcoat = 0.85
 
 	# 8. 24K Gold & Brushed Platinum Trim
@@ -437,7 +437,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	mat_wood.albedo_color = Color(0.20, 0.11, 0.06)
 	mat_wood.metallic = 0.04
 	mat_wood.roughness = 0.36
-	mat_wood.clearcoat_enabled = true
+	mat_wood.clearcoat_enabled = false
 	mat_wood.clearcoat = 0.55
 
 	var base_inst = MeshInstance3D.new()

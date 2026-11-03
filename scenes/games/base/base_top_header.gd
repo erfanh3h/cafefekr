@@ -142,12 +142,13 @@ class TimerBarVFXOverlay extends Control:
 				icon_ref.modulate = Color.WHITE
 
 		var tip_x = clampf(size.x * pct, 6.0, maxf(6.0, size.x - 4.0))
-		if pct > 0.01 and size.x > 20.0:
-			var spawn_rate = 42.0 if is_danger else 14.0
+		if pct > 0.01 and size.x > 20.0 and _sparks.size() < 16:
+			var spawn_rate = 18.0 if is_danger else 6.0
 			_spawn_accum += delta * spawn_rate
 			while _spawn_accum >= 1.0:
 				_spawn_accum -= 1.0
-				_spawn_spark(tip_x, is_danger, 1.0)
+				if _sparks.size() < 16:
+					_spawn_spark(tip_x, is_danger, 1.0)
 
 		for i in range(_sparks.size() - 1, -1, -1):
 			var sp = _sparks[i]
@@ -166,7 +167,8 @@ class TimerBarVFXOverlay extends Control:
 			if sw["alpha"] <= 0.02:
 				_shockwaves.remove_at(i)
 
-		queue_redraw()
+		if pct > 0.01 or not _sparks.is_empty() or not _shockwaves.is_empty():
+			queue_redraw()
 
 	func _spawn_spark(tip_x: float, danger_mode: bool, speed_mult: float = 1.0) -> void:
 		if _sparks.size() > 60:
@@ -993,10 +995,12 @@ class ReactionBubbleVFXOverlay extends Control:
 		_rng.randomize()
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		clip_contents = false
+		set_process(false)
 
 	func trigger_burst(primary_col: Color, with_border_aura: bool = true) -> void:
 		accent_color = primary_col
 		show_border_aura = with_border_aura
+		set_process(true)
 		time_accum = 0.0
 		_rings.clear()
 		_sparks.clear()
@@ -1021,7 +1025,8 @@ class ReactionBubbleVFXOverlay extends Control:
 		queue_redraw()
 
 	func _process(delta: float) -> void:
-		if not visible:
+		if not is_visible_in_tree():
+			set_process(false)
 			return
 		time_accum += delta
 		for i in range(_rings.size() - 1, -1, -1):

@@ -119,7 +119,7 @@ func _setup_materials() -> void:
 	mat_gold_trim.albedo_color = Color(1.0, 0.84, 0.32)
 	mat_gold_trim.metallic = 0.95
 	mat_gold_trim.roughness = 0.15
-	mat_gold_trim.clearcoat_enabled = true
+	mat_gold_trim.clearcoat_enabled = false
 	mat_gold_trim.clearcoat = 0.90
 	mat_gold_trim.clearcoat_roughness = 0.05
 	mat_gold_trim.emission_enabled = true
@@ -130,7 +130,7 @@ func _setup_materials() -> void:
 	mat_platinum_trim.albedo_color = Color(0.94, 0.96, 1.0)
 	mat_platinum_trim.metallic = 0.96
 	mat_platinum_trim.roughness = 0.12
-	mat_platinum_trim.clearcoat_enabled = true
+	mat_platinum_trim.clearcoat_enabled = false
 	mat_platinum_trim.clearcoat = 0.92
 	mat_platinum_trim.clearcoat_roughness = 0.04
 	mat_platinum_trim.emission_enabled = true
@@ -147,7 +147,7 @@ func _setup_materials() -> void:
 	mat_piece_p1.albedo_color = Color(0.68, 0.11, 0.14)
 	mat_piece_p1.metallic = 0.06
 	mat_piece_p1.roughness = 0.24
-	mat_piece_p1.clearcoat_enabled = true
+	mat_piece_p1.clearcoat_enabled = false
 	mat_piece_p1.clearcoat = 0.65
 	mat_piece_p1.clearcoat_roughness = 0.16
 
@@ -156,7 +156,7 @@ func _setup_materials() -> void:
 	mat_piece_p1_well.albedo_color = Color(0.44, 0.06, 0.09)
 	mat_piece_p1_well.metallic = 0.02
 	mat_piece_p1_well.roughness = 0.42
-	mat_piece_p1_well.clearcoat_enabled = true
+	mat_piece_p1_well.clearcoat_enabled = false
 	mat_piece_p1_well.clearcoat = 0.35
 
 	# Player 2 (Blue / Guest): Midnight Lapis Cobalt Piano Lacquer
@@ -164,7 +164,7 @@ func _setup_materials() -> void:
 	mat_piece_p2.albedo_color = Color(0.10, 0.20, 0.48)
 	mat_piece_p2.metallic = 0.06
 	mat_piece_p2.roughness = 0.24
-	mat_piece_p2.clearcoat_enabled = true
+	mat_piece_p2.clearcoat_enabled = false
 	mat_piece_p2.clearcoat = 0.65
 	mat_piece_p2.clearcoat_roughness = 0.16
 
@@ -173,7 +173,7 @@ func _setup_materials() -> void:
 	mat_piece_p2_well.albedo_color = Color(0.05, 0.11, 0.28)
 	mat_piece_p2_well.metallic = 0.02
 	mat_piece_p2_well.roughness = 0.42
-	mat_piece_p2_well.clearcoat_enabled = true
+	mat_piece_p2_well.clearcoat_enabled = false
 	mat_piece_p2_well.clearcoat = 0.35
 
 	# Side Graveyard Trays (Hardwood & Plush Velvet Lining)

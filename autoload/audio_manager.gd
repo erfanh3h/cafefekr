@@ -17,10 +17,11 @@ var is_sound_enabled: bool = true
 # Preloaded Sounds (.wav)
 var sounds: Dictionary = {}
 
-# Preloaded Musics (.mp3)
-var music_themes: Array[AudioStream] = []
-var music_queue: AudioStream
-var music_games: Array[AudioStream] = []
+# Lazy-loaded Music Paths (.mp3) to avoid loading 25MB of MP3s synchronously at startup on Android
+var music_theme_paths: Array[String] = []
+var music_queue_path: String = ""
+var music_game_paths: Array[String] = []
+var _current_music_path: String = 
 
 func _ready() -> void:
 	_load_settings()
@@ -42,19 +43,18 @@ func _init_audio_players() -> void:
 		sfx_players.append(player)
 
 func _load_audio_assets() -> void:
-	# Load Musics
-	var t1 = load("res://assets/musics/theme1.mp3")
-	var t2 = load("res://assets/musics/theme2.mp3")
-	if t1: music_themes.append(t1)
-	if t2: music_themes.append(t2)
+	# Register Music Paths for on-demand loading (saves ~25MB RAM & eliminates Android startup freeze)
+	for t_path in ["res://assets/musics/theme1.mp3", "res://assets/musics/theme2.mp3"]:
+		if ResourceLoader.exists(t_path):
+			music_theme_paths.append(t_path)
 	
-	music_queue = load("res://assets/musics/queue.mp3")
+	if ResourceLoader.exists("res://assets/musics/queue.mp3"):
+		music_queue_path = "res://assets/musics/queue.mp3"
 	
 	for i in range(1, 9):
 		var path = "res://assets/musics/game%d.mp3" % i
 		if ResourceLoader.exists(path):
-			var stream = load(path)
-			if stream: music_games.append(stream)
+			music_game_paths.append(path)
 	
 	# Load Sound Effects
 	var sound_names = [
@@ -76,35 +76,41 @@ func play_theme_music(force_restart: bool = false) -> void:
 	if current_music_mode == "theme" and music_player.playing and not force_restart:
 		return
 	current_music_mode = "theme"
-	if not is_music_enabled or music_themes.is_empty():
+	if not is_music_enabled or music_theme_paths.is_empty():
 		return
-	var stream = music_themes[randi() % music_themes.size()]
-	_play_music_stream(stream)
+	var path = music_theme_paths[randi() % music_theme_paths.size()]
+	_play_music_path(path)
 
 func play_queue_music(force_restart: bool = false) -> void:
 	if current_music_mode == "queue" and music_player.playing and not force_restart:
 		return
 	current_music_mode = "queue"
-	if not is_music_enabled or not music_queue:
+	if not is_music_enabled or music_queue_path.is_empty():
 		return
-	_play_music_stream(music_queue)
+	_play_music_path(music_queue_path)
 
 func play_game_music(force_restart: bool = true) -> void:
 	if current_music_mode == "game" and music_player.playing and not force_restart:
 		return
 	current_music_mode = "game"
-	if not is_music_enabled or music_games.is_empty():
+	if not is_music_enabled or music_game_paths.is_empty():
 		return
-	var stream = music_games[randi() % music_games.size()]
-	_play_music_stream(stream)
+	var path = music_game_paths[randi() % music_game_paths.size()]
+	_play_music_path(path)
 
 func stop_music() -> void:
 	current_music_mode = "none"
 	music_player.stop()
+	music_player.stream = null
+	_current_music_path = ""
 
-func _play_music_stream(stream: AudioStream) -> void:
-	if stream:
-		music_player.stream = stream
+func _play_music_path(path: String) -> void:
+	if path.is_empty():
+		return
+	if _current_music_path != path or music_player.stream == null:
+		_current_music_path = path
+		music_player.stream = load(path)
+	if music_player.stream:
 		music_player.play()
 
 func _on_music_finished() -> void:

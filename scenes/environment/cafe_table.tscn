@@ -18,10 +18,10 @@ background_mode = 2
 sky = SubResource("Sky_env")
 ambient_light_source = 3
 ambient_light_color = Color(0.62, 0.48, 0.35, 1)
-ambient_light_energy = 1.05
+ambient_light_energy = 1.15
 tonemap_mode = 3
 tonemap_exposure = 1.05
-glow_enabled = true
+glow_enabled = false
 glow_intensity = 0.18
 glow_bloom = 0.04
 
@@ -32,7 +32,6 @@ metallic = 0.02
 roughness = 0.65
 clearcoat_enabled = false
 uv1_scale = Vector3(1.2, 1.2, 1.2)
-uv1_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_table"]
 material = SubResource("StandardMaterial3D_table_wood")
@@ -93,8 +92,6 @@ size = Vector3(14, 0.2, 14)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ceramic"]
 albedo_color = Color(0.95, 0.93, 0.88, 1)
 roughness = 0.15
-clearcoat_enabled = true
-clearcoat = 1.0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_coffee"]
 albedo_color = Color(0.14, 0.07, 0.03, 1)
@@ -175,8 +172,10 @@ environment = SubResource("Environment_cafe")
 [node name="SunLight" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 2, 4, 3)
 light_color = Color(1, 0.94, 0.86, 1)
-light_energy = 0.5
+light_energy = 0.55
 shadow_enabled = true
+directional_shadow_mode = 0
+directional_shadow_max_distance = 8.0
 
 [node name="TableLampLight" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, -0.35)

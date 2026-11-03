@@ -273,14 +273,14 @@ func _init_materials() -> void:
 	mat_walnut_plinth.albedo_color = Color(0.19, 0.10, 0.05)
 	mat_walnut_plinth.metallic = 0.08
 	mat_walnut_plinth.roughness = 0.34
-	mat_walnut_plinth.clearcoat_enabled = true
+	mat_walnut_plinth.clearcoat_enabled = false
 	mat_walnut_plinth.clearcoat = 0.55
 
 	mat_ebony_surface = StandardMaterial3D.new()
 	mat_ebony_surface.albedo_color = Color(0.08, 0.07, 0.09)
 	mat_ebony_surface.metallic = 0.20
 	mat_ebony_surface.roughness = 0.36
-	mat_ebony_surface.clearcoat_enabled = true
+	mat_ebony_surface.clearcoat_enabled = false
 	mat_ebony_surface.clearcoat = 0.40
 
 	mat_parchment_tri = StandardMaterial3D.new()
@@ -313,7 +313,7 @@ func _init_materials() -> void:
 	mat_ring_p1_body.albedo_color = Color(0.86, 0.11, 0.16)
 	mat_ring_p1_body.metallic = 0.28
 	mat_ring_p1_body.roughness = 0.16
-	mat_ring_p1_body.clearcoat_enabled = true
+	mat_ring_p1_body.clearcoat_enabled = false
 	mat_ring_p1_body.clearcoat = 0.95
 	mat_ring_p1_body.clearcoat_roughness = 0.08
 	mat_ring_p1_body.emission_enabled = true
@@ -330,7 +330,7 @@ func _init_materials() -> void:
 	mat_ring_p2_body.albedo_color = Color(0.10, 0.42, 0.90)
 	mat_ring_p2_body.metallic = 0.30
 	mat_ring_p2_body.roughness = 0.16
-	mat_ring_p2_body.clearcoat_enabled = true
+	mat_ring_p2_body.clearcoat_enabled = false
 	mat_ring_p2_body.clearcoat = 0.95
 	mat_ring_p2_body.clearcoat_roughness = 0.08
 	mat_ring_p2_body.emission_enabled = true
@@ -352,7 +352,7 @@ func _init_materials() -> void:
 	mat_disk_p1_face.albedo_color = Color(0.92, 0.16, 0.20)
 	mat_disk_p1_face.metallic = 0.18
 	mat_disk_p1_face.roughness = 0.20
-	mat_disk_p1_face.clearcoat_enabled = true
+	mat_disk_p1_face.clearcoat_enabled = false
 	mat_disk_p1_face.clearcoat = 0.90
 	mat_disk_p1_face.emission_enabled = true
 	mat_disk_p1_face.emission = Color(0.50, 0.06, 0.08)
@@ -362,7 +362,7 @@ func _init_materials() -> void:
 	mat_disk_p2_face.albedo_color = Color(0.14, 0.52, 0.96)
 	mat_disk_p2_face.metallic = 0.18
 	mat_disk_p2_face.roughness = 0.20
-	mat_disk_p2_face.clearcoat_enabled = true
+	mat_disk_p2_face.clearcoat_enabled = false
 	mat_disk_p2_face.clearcoat = 0.90
 	mat_disk_p2_face.emission_enabled = true
 	mat_disk_p2_face.emission = Color(0.06, 0.24, 0.55)
@@ -453,7 +453,7 @@ func _init_materials() -> void:
 	mat_disk_supply_face.albedo_color = Color(0.95, 0.93, 0.88)
 	mat_disk_supply_face.metallic = 0.14
 	mat_disk_supply_face.roughness = 0.20
-	mat_disk_supply_face.clearcoat_enabled = true
+	mat_disk_supply_face.clearcoat_enabled = false
 	mat_disk_supply_face.clearcoat = 0.95
 	mat_disk_supply_face.clearcoat_roughness = 0.08
 	mat_disk_supply_face.emission_enabled = true

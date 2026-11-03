@@ -119,6 +119,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if not visible:
+		set_process(false)
 		return
 		
 	if is_timer_active:
@@ -162,6 +163,7 @@ func _connect_network_signals() -> void:
 # ==============================================================================
 
 func open(p_pre_game_id: String, queuers: Array) -> void:
+	set_process(true)
 	if is_match_active():
 		print("[PickBan] Suppressed open(): Game match is already active.")
 		visible = false
@@ -246,6 +248,7 @@ func show_reconnecting_state(p_pre_game_id: String) -> void:
 	reconnect_timeout_timer.start()
 
 func open_from_reconnect(data: Dictionary) -> void:
+	set_process(true)
 	if is_match_active():
 		print("[PickBan] Suppressed open_from_reconnect(): Game match is already active.")
 		visible = false
@@ -1636,6 +1639,7 @@ func show_opponent_disconnected(user_id: String, wait_time: int) -> void:
 	is_timer_active = false
 	dc_time_left = float(wait_time)
 	is_dc_active = true
+	set_process(true)
 	disconnect_banner.visible = true
 	lbl_disconnect.text = "⚠️ ارتباط حریف قطع شد. زمان انتظار برای اتصال مجدد:"
 	lbl_dc_timer.text = "%ds" % wait_time
@@ -1666,6 +1670,7 @@ func _start_timer(seconds: float) -> void:
 	turn_time_left = seconds
 	turn_total_time = seconds
 	is_timer_active = true
+	set_process(true)
 	turn_timer_bar.value = 100.0
 
 func _stop_timer() -> void:

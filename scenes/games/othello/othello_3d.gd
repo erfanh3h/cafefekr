@@ -106,7 +106,7 @@ func _init_materials() -> void:
 	mat_cell_light.albedo_color = Color(0.84, 0.72, 0.54)
 	mat_cell_light.metallic = 0.04
 	mat_cell_light.roughness = 0.34
-	mat_cell_light.clearcoat_enabled = true
+	mat_cell_light.clearcoat_enabled = false
 	mat_cell_light.clearcoat = 0.45
 	mat_cell_light.clearcoat_roughness = 0.22
 
@@ -115,7 +115,7 @@ func _init_materials() -> void:
 	mat_cell_dark.albedo_color = Color(0.28, 0.16, 0.10)
 	mat_cell_dark.metallic = 0.05
 	mat_cell_dark.roughness = 0.38
-	mat_cell_dark.clearcoat_enabled = true
+	mat_cell_dark.clearcoat_enabled = false
 	mat_cell_dark.clearcoat = 0.50
 	mat_cell_dark.clearcoat_roughness = 0.24
 
@@ -136,7 +136,7 @@ func _init_materials() -> void:
 	mat_piece_p1.albedo_color = Color(0.76, 0.11, 0.15)
 	mat_piece_p1.metallic = 0.18
 	mat_piece_p1.roughness = 0.22
-	mat_piece_p1.clearcoat_enabled = true
+	mat_piece_p1.clearcoat_enabled = false
 	mat_piece_p1.clearcoat = 0.92
 	mat_piece_p1.clearcoat_roughness = 0.10
 
@@ -144,7 +144,7 @@ func _init_materials() -> void:
 	mat_piece_p1_well.albedo_color = Color(0.56, 0.07, 0.10)
 	mat_piece_p1_well.metallic = 0.22
 	mat_piece_p1_well.roughness = 0.28
-	mat_piece_p1_well.clearcoat_enabled = true
+	mat_piece_p1_well.clearcoat_enabled = false
 	mat_piece_p1_well.clearcoat = 0.85
 
 	# 6. Player 2 (Blue) — Royal Sapphire Cobalt Lacquer (Matches Checkers 3D & AppColors.imageBlueColor)
@@ -152,7 +152,7 @@ func _init_materials() -> void:
 	mat_piece_p2.albedo_color = Color(0.11, 0.36, 0.78)
 	mat_piece_p2.metallic = 0.20
 	mat_piece_p2.roughness = 0.22
-	mat_piece_p2.clearcoat_enabled = true
+	mat_piece_p2.clearcoat_enabled = false
 	mat_piece_p2.clearcoat = 0.92
 	mat_piece_p2.clearcoat_roughness = 0.10
 
@@ -160,7 +160,7 @@ func _init_materials() -> void:
 	mat_piece_p2_well.albedo_color = Color(0.07, 0.24, 0.58)
 	mat_piece_p2_well.metallic = 0.24
 	mat_piece_p2_well.roughness = 0.28
-	mat_piece_p2_well.clearcoat_enabled = true
+	mat_piece_p2_well.clearcoat_enabled = false
 	mat_piece_p2_well.clearcoat = 0.85
 
 	# 7. 24K Gold & Brushed Platinum Trim on Pieces
@@ -362,7 +362,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	mat_wood.albedo_color = Color(0.20, 0.11, 0.06)
 	mat_wood.metallic = 0.04
 	mat_wood.roughness = 0.36
-	mat_wood.clearcoat_enabled = true
+	mat_wood.clearcoat_enabled = false
 	mat_wood.clearcoat = 0.55
 
 	var base_inst = MeshInstance3D.new()

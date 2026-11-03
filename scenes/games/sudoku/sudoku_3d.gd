@@ -182,7 +182,7 @@ func _init_materials() -> void:
 	mat_frame.albedo_color = Color(0.25, 0.14, 0.08, 1.0)
 	mat_frame.metallic = 0.08
 	mat_frame.roughness = 0.32
-	mat_frame.clearcoat_enabled = true
+	mat_frame.clearcoat_enabled = false
 	mat_frame.clearcoat = 0.65
 	mat_frame.clearcoat_roughness = 0.20
 
@@ -215,7 +215,7 @@ func _init_materials() -> void:
 	mat_tile_clue.albedo_color = Color(0.24, 0.21, 0.17, 1.0)
 	mat_tile_clue.metallic = 0.22
 	mat_tile_clue.roughness = 0.35
-	mat_tile_clue.clearcoat_enabled = true
+	mat_tile_clue.clearcoat_enabled = false
 	mat_tile_clue.clearcoat = 0.50
 
 	# Player Placed 3D Tile (Polished Midnight Enamel & Cyan Sheen)
@@ -223,7 +223,7 @@ func _init_materials() -> void:
 	mat_tile_player.albedo_color = Color(0.12, 0.20, 0.28, 1.0)
 	mat_tile_player.metallic = 0.18
 	mat_tile_player.roughness = 0.28
-	mat_tile_player.clearcoat_enabled = true
+	mat_tile_player.clearcoat_enabled = false
 	mat_tile_player.clearcoat = 0.60
 
 	# Golden Rivets
@@ -253,7 +253,7 @@ func _init_materials() -> void:
 	mat_pad_normal.albedo_color = Color(0.22, 0.16, 0.12, 1.0)
 	mat_pad_normal.metallic = 0.10
 	mat_pad_normal.roughness = 0.38
-	mat_pad_normal.clearcoat_enabled = true
+	mat_pad_normal.clearcoat_enabled = false
 	mat_pad_normal.clearcoat = 0.45
 
 	mat_pad_selected = StandardMaterial3D.new()
@@ -274,7 +274,7 @@ func _init_materials() -> void:
 	mat_btn_solve.albedo_color = Color(0.16, 0.54, 0.34, 1.0)
 	mat_btn_solve.metallic = 0.20
 	mat_btn_solve.roughness = 0.26
-	mat_btn_solve.clearcoat_enabled = true
+	mat_btn_solve.clearcoat_enabled = false
 	mat_btn_solve.clearcoat = 0.60
 
 func _build_scene_hierarchy() -> void:

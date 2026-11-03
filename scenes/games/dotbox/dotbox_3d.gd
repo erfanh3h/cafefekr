@@ -163,7 +163,7 @@ func _init_shared_materials() -> void:
 	_mat_obsidian_well.albedo_color = Color(0.10, 0.08, 0.07)
 	_mat_obsidian_well.metallic = 0.15
 	_mat_obsidian_well.roughness = 0.42
-	_mat_obsidian_well.clearcoat_enabled = true
+	_mat_obsidian_well.clearcoat_enabled = false
 	_mat_obsidian_well.clearcoat = 0.45
 
 	# Neutral dark recessed groove when not selectable
@@ -195,7 +195,7 @@ func _init_shared_materials() -> void:
 	_mat_red_body.albedo_color = Color(0.80, 0.10, 0.14)
 	_mat_red_body.metallic = 0.22
 	_mat_red_body.roughness = 0.20
-	_mat_red_body.clearcoat_enabled = true
+	_mat_red_body.clearcoat_enabled = false
 	_mat_red_body.clearcoat = 0.88
 	_mat_red_body.clearcoat_roughness = 0.10
 
@@ -210,7 +210,7 @@ func _init_shared_materials() -> void:
 	_mat_blue_body.albedo_color = Color(0.10, 0.36, 0.82)
 	_mat_blue_body.metallic = 0.25
 	_mat_blue_body.roughness = 0.20
-	_mat_blue_body.clearcoat_enabled = true
+	_mat_blue_body.clearcoat_enabled = false
 	_mat_blue_body.clearcoat = 0.88
 	_mat_blue_body.clearcoat_roughness = 0.10
 
@@ -582,7 +582,7 @@ func _create_single_side_tray(x_pos: float, player_id: int) -> Node3D:
 	base_mat.albedo_color = Color(0.20, 0.11, 0.06)
 	base_mat.metallic = 0.04
 	base_mat.roughness = 0.36
-	base_mat.clearcoat_enabled = true
+	base_mat.clearcoat_enabled = false
 	base_mat.clearcoat = 0.55
 
 	var base_mesh = BoxMesh.new()

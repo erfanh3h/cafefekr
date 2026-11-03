@@ -225,7 +225,7 @@ func _init_materials() -> void:
 	mat_walnut_chassis.albedo_color = Color(0.22, 0.11, 0.06)
 	mat_walnut_chassis.metallic = 0.08
 	mat_walnut_chassis.roughness = 0.36
-	mat_walnut_chassis.clearcoat_enabled = true
+	mat_walnut_chassis.clearcoat_enabled = false
 	mat_walnut_chassis.clearcoat = 0.60
 	mat_walnut_chassis.clearcoat_roughness = 0.22
 
@@ -233,7 +233,7 @@ func _init_materials() -> void:
 	mat_mahogany_trim.albedo_color = Color(0.30, 0.14, 0.08)
 	mat_mahogany_trim.metallic = 0.12
 	mat_mahogany_trim.roughness = 0.30
-	mat_mahogany_trim.clearcoat_enabled = true
+	mat_mahogany_trim.clearcoat_enabled = false
 	mat_mahogany_trim.clearcoat = 0.65
 
 	mat_obsidian_bed = StandardMaterial3D.new()
@@ -245,7 +245,7 @@ func _init_materials() -> void:
 	mat_quad_slate.albedo_color = Color(0.13, 0.12, 0.16)
 	mat_quad_slate.metallic = 0.18
 	mat_quad_slate.roughness = 0.32
-	mat_quad_slate.clearcoat_enabled = true
+	mat_quad_slate.clearcoat_enabled = false
 	mat_quad_slate.clearcoat = 0.50
 	mat_quad_slate.clearcoat_roughness = 0.18
 
@@ -282,7 +282,7 @@ func _init_materials() -> void:
 	mat_marble_p1_body.albedo_color = Color(0.90, 0.12, 0.18)
 	mat_marble_p1_body.metallic = 0.26
 	mat_marble_p1_body.roughness = 0.12
-	mat_marble_p1_body.clearcoat_enabled = true
+	mat_marble_p1_body.clearcoat_enabled = false
 	mat_marble_p1_body.clearcoat = 0.98
 	mat_marble_p1_body.clearcoat_roughness = 0.05
 	mat_marble_p1_body.emission_enabled = true
@@ -299,7 +299,7 @@ func _init_materials() -> void:
 	mat_marble_p2_body.albedo_color = Color(0.10, 0.46, 0.94)
 	mat_marble_p2_body.metallic = 0.28
 	mat_marble_p2_body.roughness = 0.12
-	mat_marble_p2_body.clearcoat_enabled = true
+	mat_marble_p2_body.clearcoat_enabled = false
 	mat_marble_p2_body.clearcoat = 0.98
 	mat_marble_p2_body.clearcoat_roughness = 0.05
 	mat_marble_p2_body.emission_enabled = true

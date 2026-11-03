@@ -196,7 +196,7 @@ func _init_materials() -> void:
 	mat_wood_base.albedo_color = Color(0.20, 0.11, 0.05)
 	mat_wood_base.roughness = 0.38
 	mat_wood_base.metallic = 0.08
-	mat_wood_base.clearcoat_enabled = true
+	mat_wood_base.clearcoat_enabled = false
 	mat_wood_base.clearcoat = 0.35
 
 	mat_wood_rim = StandardMaterial3D.new()
@@ -267,14 +267,14 @@ func _init_materials() -> void:
 	mat_pin_black.albedo_color = Color(0.02, 0.02, 0.02)
 	mat_pin_black.roughness = 0.10
 	mat_pin_black.metallic = 0.18
-	mat_pin_black.clearcoat_enabled = true
+	mat_pin_black.clearcoat_enabled = false
 	mat_pin_black.clearcoat = 0.85
 
 	mat_pin_white = StandardMaterial3D.new()
 	mat_pin_white.albedo_color = Color(0.98, 0.98, 0.96)
 	mat_pin_white.roughness = 0.10
 	mat_pin_white.metallic = 0.06
-	mat_pin_white.clearcoat_enabled = true
+	mat_pin_white.clearcoat_enabled = false
 	mat_pin_white.clearcoat = 0.85
 
 	# 8 Pure 3D Colored Gemstone Marble Materials + Subtle Dish Indicator Rings
@@ -284,7 +284,7 @@ func _init_materials() -> void:
 		mat.albedo_color = col
 		mat.roughness = 0.08
 		mat.metallic = 0.10
-		mat.clearcoat_enabled = true
+		mat.clearcoat_enabled = false
 		mat.clearcoat = 0.90
 		mat.emission_enabled = true
 		mat.emission = col * 0.12

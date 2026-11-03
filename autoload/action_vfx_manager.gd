@@ -26,6 +26,7 @@ var _ui_canvas_layer: CanvasLayer = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process(false)
 	_setup_ui_canvas()
 
 func _setup_ui_canvas() -> void:
@@ -52,9 +53,12 @@ func _process(delta: float) -> void:
 				_camera.rotation = _cam_original_rot + Vector3(rot_x, rot_y, 0.0)
 		else:
 			_is_shaking = false
+			set_process(false)
 			if is_instance_valid(_camera):
 				_camera.position = _cam_original_pos
 				_camera.rotation = _cam_original_rot
+	else:
+		set_process(false)
 
 # --- 1. SCREEN / CAMERA SHAKE ACTION ---
 
@@ -75,6 +79,7 @@ func shake_camera(intensity: float = 0.045, duration: float = 0.22, target_cam: 
 	_shake_duration = duration
 	_shake_timer = duration
 	_is_shaking = true
+	set_process(true)
 
 # --- 2. 3D PIECE IMPACT & SHOCKWAVE VFX (Rokojori / Kenney Style) ---
 
@@ -111,7 +116,7 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 	shock_tw.tween_property(shock_mat, "albedo_color:a", 0.0, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	# B. Starburst Sparkle Particles
-	var spark_count = 14
+	var spark_count = 8
 	for i in range(spark_count):
 		var p = Sprite3D.new()
 		p.texture = tex_sparkle if (i % 2 == 0) else tex_spark
@@ -192,7 +197,7 @@ func spawn_victory_celebration(parent_node: Node3D, center_pos: Vector3, winner_
 	]
 	
 	# Spawn bursting stars fountain
-	var total_stars = 28
+	var total_stars = 14
 	for i in range(total_stars):
 		var star = Sprite3D.new()
 		star.texture = tex_star if (i % 2 == 0) else tex_sparkle
@@ -276,7 +281,7 @@ func spawn_ui_click_burst(screen_pos: Vector2, tint_color: Color = Color(1.0, 0.
 	_ui_canvas_layer.add_child(burst_root)
 	
 	# Small cluster of 6 tiny popping sparkles
-	for i in range(6):
+	for i in range(4):
 		var star = TextureRect.new()
 		star.texture = tex_sparkle
 		star.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

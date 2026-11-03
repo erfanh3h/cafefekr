@@ -199,14 +199,14 @@ func _init_materials() -> void:
 	mat_wood_base.albedo_color = Color(0.18, 0.10, 0.05)
 	mat_wood_base.roughness = 0.34
 	mat_wood_base.metallic = 0.05
-	mat_wood_base.clearcoat_enabled = true
+	mat_wood_base.clearcoat_enabled = false
 	mat_wood_base.clearcoat = 0.45
 
 	mat_wood_rim = StandardMaterial3D.new()
 	mat_wood_rim.albedo_color = Color(0.28, 0.14, 0.07)
 	mat_wood_rim.roughness = 0.30
 	mat_wood_rim.metallic = 0.06
-	mat_wood_rim.clearcoat_enabled = true
+	mat_wood_rim.clearcoat_enabled = false
 	mat_wood_rim.clearcoat = 0.55
 
 	mat_gold_trim = StandardMaterial3D.new()
@@ -275,7 +275,7 @@ func _init_materials() -> void:
 	mat_die_ivory.albedo_color = Color(0.99, 0.97, 0.93)
 	mat_die_ivory.roughness = 0.12
 	mat_die_ivory.metallic = 0.02
-	mat_die_ivory.clearcoat_enabled = true
+	mat_die_ivory.clearcoat_enabled = false
 	mat_die_ivory.clearcoat = 0.90
 	mat_die_ivory.clearcoat_roughness = 0.06
 
@@ -283,14 +283,14 @@ func _init_materials() -> void:
 	mat_die_chamfer.albedo_color = Color(0.94, 0.90, 0.80)
 	mat_die_chamfer.roughness = 0.18
 	mat_die_chamfer.metallic = 0.10
-	mat_die_chamfer.clearcoat_enabled = true
+	mat_die_chamfer.clearcoat_enabled = false
 	mat_die_chamfer.clearcoat = 0.75
 
 	mat_die_held_ivory = StandardMaterial3D.new()
 	mat_die_held_ivory.albedo_color = Color(1.0, 0.97, 0.86)
 	mat_die_held_ivory.roughness = 0.10
 	mat_die_held_ivory.metallic = 0.08
-	mat_die_held_ivory.clearcoat_enabled = true
+	mat_die_held_ivory.clearcoat_enabled = false
 	mat_die_held_ivory.clearcoat = 0.95
 	mat_die_held_ivory.emission_enabled = true
 	mat_die_held_ivory.emission = Color(0.95, 0.75, 0.20)
@@ -308,14 +308,14 @@ func _init_materials() -> void:
 	mat_pip_dark.albedo_color = Color(0.05, 0.06, 0.10)
 	mat_pip_dark.roughness = 0.14
 	mat_pip_dark.metallic = 0.20
-	mat_pip_dark.clearcoat_enabled = true
+	mat_pip_dark.clearcoat_enabled = false
 	mat_pip_dark.clearcoat = 0.85
 
 	mat_pip_red = StandardMaterial3D.new()
 	mat_pip_red.albedo_color = Color(0.88, 0.10, 0.15)
 	mat_pip_red.roughness = 0.14
 	mat_pip_red.metallic = 0.18
-	mat_pip_red.clearcoat_enabled = true
+	mat_pip_red.clearcoat_enabled = false
 	mat_pip_red.clearcoat = 0.90
 	mat_pip_red.emission_enabled = true
 	mat_pip_red.emission = Color(0.75, 0.08, 0.12)
@@ -347,35 +347,35 @@ func _init_materials() -> void:
 	mat_emblem_ruby.albedo_color = Color(0.92, 0.16, 0.22)
 	mat_emblem_ruby.roughness = 0.16
 	mat_emblem_ruby.metallic = 0.20
-	mat_emblem_ruby.clearcoat_enabled = true
+	mat_emblem_ruby.clearcoat_enabled = false
 	mat_emblem_ruby.clearcoat = 0.85
 
 	mat_emblem_sapphire = StandardMaterial3D.new()
 	mat_emblem_sapphire.albedo_color = Color(0.18, 0.52, 0.96)
 	mat_emblem_sapphire.roughness = 0.16
 	mat_emblem_sapphire.metallic = 0.20
-	mat_emblem_sapphire.clearcoat_enabled = true
+	mat_emblem_sapphire.clearcoat_enabled = false
 	mat_emblem_sapphire.clearcoat = 0.85
 
 	mat_emblem_emerald = StandardMaterial3D.new()
 	mat_emblem_emerald.albedo_color = Color(0.14, 0.82, 0.42)
 	mat_emblem_emerald.roughness = 0.16
 	mat_emblem_emerald.metallic = 0.20
-	mat_emblem_emerald.clearcoat_enabled = true
+	mat_emblem_emerald.clearcoat_enabled = false
 	mat_emblem_emerald.clearcoat = 0.85
 
 	mat_emblem_amethyst = StandardMaterial3D.new()
 	mat_emblem_amethyst.albedo_color = Color(0.72, 0.28, 0.94)
 	mat_emblem_amethyst.roughness = 0.16
 	mat_emblem_amethyst.metallic = 0.20
-	mat_emblem_amethyst.clearcoat_enabled = true
+	mat_emblem_amethyst.clearcoat_enabled = false
 	mat_emblem_amethyst.clearcoat = 0.85
 
 	mat_emblem_amber = StandardMaterial3D.new()
 	mat_emblem_amber.albedo_color = Color(0.98, 0.64, 0.12)
 	mat_emblem_amber.roughness = 0.16
 	mat_emblem_amber.metallic = 0.25
-	mat_emblem_amber.clearcoat_enabled = true
+	mat_emblem_amber.clearcoat_enabled = false
 	mat_emblem_amber.clearcoat = 0.85
 
 	# Action Buttons

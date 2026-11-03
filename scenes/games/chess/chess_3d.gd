@@ -118,7 +118,7 @@ func _setup_materials() -> void:
 	mat_gold_trim.albedo_color = Color(1.0, 0.84, 0.32)
 	mat_gold_trim.metallic = 0.95
 	mat_gold_trim.roughness = 0.15
-	mat_gold_trim.clearcoat_enabled = true
+	mat_gold_trim.clearcoat_enabled = false
 	mat_gold_trim.clearcoat = 0.90
 	mat_gold_trim.clearcoat_roughness = 0.05
 	mat_gold_trim.emission_enabled = true
@@ -129,7 +129,7 @@ func _setup_materials() -> void:
 	mat_platinum_trim.albedo_color = Color(0.94, 0.96, 1.0)
 	mat_platinum_trim.metallic = 0.96
 	mat_platinum_trim.roughness = 0.12
-	mat_platinum_trim.clearcoat_enabled = true
+	mat_platinum_trim.clearcoat_enabled = false
 	mat_platinum_trim.clearcoat = 0.92
 	mat_platinum_trim.clearcoat_roughness = 0.04
 	mat_platinum_trim.emission_enabled = true
@@ -146,7 +146,7 @@ func _setup_materials() -> void:
 	mat_piece_p1.albedo_color = Color(0.60, 0.10, 0.13)
 	mat_piece_p1.metallic = 0.04
 	mat_piece_p1.roughness = 0.28
-	mat_piece_p1.clearcoat_enabled = true
+	mat_piece_p1.clearcoat_enabled = false
 	mat_piece_p1.clearcoat = 0.50
 	mat_piece_p1.clearcoat_roughness = 0.20
 	mat_piece_p1.rim_enabled = false
@@ -156,7 +156,7 @@ func _setup_materials() -> void:
 	mat_piece_p2.albedo_color = Color(0.08, 0.16, 0.38)
 	mat_piece_p2.metallic = 0.04
 	mat_piece_p2.roughness = 0.26
-	mat_piece_p2.clearcoat_enabled = true
+	mat_piece_p2.clearcoat_enabled = false
 	mat_piece_p2.clearcoat = 0.50
 	mat_piece_p2.clearcoat_roughness = 0.20
 	mat_piece_p2.rim_enabled = false

@@ -133,7 +133,7 @@ func _init_materials() -> void:
 	mat_walnut_base.albedo_color = Color(0.20, 0.11, 0.06)
 	mat_walnut_base.metallic = 0.08
 	mat_walnut_base.roughness = 0.34
-	mat_walnut_base.clearcoat_enabled = true
+	mat_walnut_base.clearcoat_enabled = false
 	mat_walnut_base.clearcoat = 0.55
 	mat_walnut_base.clearcoat_roughness = 0.22
 
@@ -157,14 +157,14 @@ func _init_materials() -> void:
 	mat_cap_neutral_light.albedo_color = Color(0.42, 0.35, 0.27)
 	mat_cap_neutral_light.metallic = 0.10
 	mat_cap_neutral_light.roughness = 0.36
-	mat_cap_neutral_light.clearcoat_enabled = true
+	mat_cap_neutral_light.clearcoat_enabled = false
 	mat_cap_neutral_light.clearcoat = 0.40
 
 	mat_cap_neutral_dark = StandardMaterial3D.new()
 	mat_cap_neutral_dark.albedo_color = Color(0.30, 0.24, 0.19)
 	mat_cap_neutral_dark.metallic = 0.12
 	mat_cap_neutral_dark.roughness = 0.38
-	mat_cap_neutral_dark.clearcoat_enabled = true
+	mat_cap_neutral_dark.clearcoat_enabled = false
 	mat_cap_neutral_dark.clearcoat = 0.40
 
 	mat_rim_neutral = StandardMaterial3D.new()
@@ -177,7 +177,7 @@ func _init_materials() -> void:
 	mat_cap_p1.albedo_color = Color(0.78, 0.12, 0.16)
 	mat_cap_p1.metallic = 0.22
 	mat_cap_p1.roughness = 0.20
-	mat_cap_p1.clearcoat_enabled = true
+	mat_cap_p1.clearcoat_enabled = false
 	mat_cap_p1.clearcoat = 0.92
 	mat_cap_p1.clearcoat_roughness = 0.10
 	mat_cap_p1.emission_enabled = true
@@ -193,7 +193,7 @@ func _init_materials() -> void:
 	mat_orb_p1.albedo_color = Color(1.0, 0.24, 0.28)
 	mat_orb_p1.metallic = 0.30
 	mat_orb_p1.roughness = 0.14
-	mat_orb_p1.clearcoat_enabled = true
+	mat_orb_p1.clearcoat_enabled = false
 	mat_orb_p1.clearcoat = 0.95
 	mat_orb_p1.emission_enabled = true
 	mat_orb_p1.emission = Color(0.95, 0.18, 0.22)
@@ -212,7 +212,7 @@ func _init_materials() -> void:
 	mat_cap_p2.albedo_color = Color(0.11, 0.38, 0.82)
 	mat_cap_p2.metallic = 0.24
 	mat_cap_p2.roughness = 0.20
-	mat_cap_p2.clearcoat_enabled = true
+	mat_cap_p2.clearcoat_enabled = false
 	mat_cap_p2.clearcoat = 0.92
 	mat_cap_p2.clearcoat_roughness = 0.10
 	mat_cap_p2.emission_enabled = true
@@ -228,7 +228,7 @@ func _init_materials() -> void:
 	mat_orb_p2.albedo_color = Color(0.22, 0.62, 1.0)
 	mat_orb_p2.metallic = 0.30
 	mat_orb_p2.roughness = 0.14
-	mat_orb_p2.clearcoat_enabled = true
+	mat_orb_p2.clearcoat_enabled = false
 	mat_orb_p2.clearcoat = 0.95
 	mat_orb_p2.emission_enabled = true
 	mat_orb_p2.emission = Color(0.15, 0.52, 1.0)

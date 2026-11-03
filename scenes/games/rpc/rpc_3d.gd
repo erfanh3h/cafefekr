@@ -147,21 +147,21 @@ func _setup_materials() -> void:
 	mat_mahogany_dark.albedo_color = Color(0.15, 0.08, 0.05)
 	mat_mahogany_dark.metallic = 0.04
 	mat_mahogany_dark.roughness = 0.38
-	mat_mahogany_dark.clearcoat_enabled = true
+	mat_mahogany_dark.clearcoat_enabled = false
 	mat_mahogany_dark.clearcoat = 0.60
 
 	mat_walnut_frame = StandardMaterial3D.new()
 	mat_walnut_frame.albedo_color = Color(0.24, 0.14, 0.08)
 	mat_walnut_frame.metallic = 0.05
 	mat_walnut_frame.roughness = 0.32
-	mat_walnut_frame.clearcoat_enabled = true
+	mat_walnut_frame.clearcoat_enabled = false
 	mat_walnut_frame.clearcoat = 0.68
 
 	mat_gold_trim = StandardMaterial3D.new()
 	mat_gold_trim.albedo_color = Color(0.96, 0.80, 0.28)
 	mat_gold_trim.metallic = 0.94
 	mat_gold_trim.roughness = 0.18
-	mat_gold_trim.clearcoat_enabled = true
+	mat_gold_trim.clearcoat_enabled = false
 	mat_gold_trim.clearcoat = 0.88
 	mat_gold_trim.emission_enabled = true
 	mat_gold_trim.emission = Color(0.32, 0.24, 0.06)
@@ -170,7 +170,7 @@ func _setup_materials() -> void:
 	mat_platinum_trim.albedo_color = Color(0.92, 0.95, 1.0)
 	mat_platinum_trim.metallic = 0.95
 	mat_platinum_trim.roughness = 0.14
-	mat_platinum_trim.clearcoat_enabled = true
+	mat_platinum_trim.clearcoat_enabled = false
 	mat_platinum_trim.clearcoat = 0.90
 
 	mat_arena_velvet = StandardMaterial3D.new()
@@ -277,7 +277,7 @@ func _setup_materials() -> void:
 	mat_scissors_damascus.albedo_color = Color(0.90, 0.92, 0.96)
 	mat_scissors_damascus.metallic = 0.96
 	mat_scissors_damascus.roughness = 0.12
-	mat_scissors_damascus.clearcoat_enabled = true
+	mat_scissors_damascus.clearcoat_enabled = false
 	mat_scissors_damascus.clearcoat = 0.95
 
 	mat_scissors_handle_p1 = StandardMaterial3D.new()
@@ -295,7 +295,7 @@ func _setup_materials() -> void:
 	mat_scissors_edge.albedo_color = Color(0.98, 0.99, 1.0)
 	mat_scissors_edge.metallic = 0.99
 	mat_scissors_edge.roughness = 0.04
-	mat_scissors_edge.clearcoat_enabled = true
+	mat_scissors_edge.clearcoat_enabled = false
 	mat_scissors_edge.clearcoat = 1.0
 
 	# Persian Gilded Ink for Calligraphy Lines
