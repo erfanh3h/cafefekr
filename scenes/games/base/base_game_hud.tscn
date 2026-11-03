@@ -8,19 +8,23 @@
 [ext_resource type="PackedScene" uid="uid://d2k1v5l8q0n4w" path="res://scenes/games/base/reaction_picker.tscn" id="5_picker"]
 [ext_resource type="PackedScene" uid="uid://cxresultdialog01" path="res://scenes/games/base/game_result_dialog.tscn" id="6_result"]
 [ext_resource type="PackedScene" uid="uid://cxprofiledialog01" path="res://scenes/ui/profile/user_profile_dialog.tscn" id="7_profile_dlg"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/soundOn_white.png" id="8_sound_on"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/flag_surrender_white.png" id="9_flag_surrender"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/kori.png" id="10_kori"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/refresh.png" id="11_refresh"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/zoom_in_white.png" id="12_zoom_in"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/zoom_out_white.png" id="13_zoom_out"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/sound-on.png" id="8_sound_on"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/surrender.png" id="9_flag_surrender"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/chat.png" id="10_kori"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/reload.png" id="11_refresh"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/plus.png" id="12_zoom_in"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/minus.png" id="13_zoom_out"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/check.png" id="14_check"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/cross.png" id="15_cross"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/aim.png" id="16_aim"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/expand.png" id="17_expand"]
-[ext_resource type="Texture2D" path="res://assets/icons/Reactions/5.png" id="18_sticker"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/sticker.png" id="18_sticker"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/3d.png" id="19_cam_3d"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/2d.png" id="20_cam_2d"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_score"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dock_btn"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_match_box"]
 content_margin_left = 24.0
@@ -206,7 +210,7 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -140.0
+offset_top = -154.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -219,32 +223,32 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 28
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
 
 [node name="HBox" type="HBoxContainer" parent="BottomBar/Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="BtnZoomIn" type="Button" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnZoomIn"]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -24.0
-offset_top = -24.0
-offset_right = 24.0
-offset_bottom = 24.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -253,22 +257,22 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnZoomOut" type="Button" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnZoomOut"]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -24.0
-offset_top = -24.0
-offset_right = 24.0
-offset_bottom = 24.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -277,34 +281,46 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnCamTop" type="Button" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
-theme_override_constants/shadow_offset_y = 2
-theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-text = "3D"
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnCamTop"]
+custom_minimum_size = Vector2(104, 126)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("19_cam_3d")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BtnCamReset" type="Button" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnCamReset"]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -24.0
-offset_top = -24.0
-offset_right = 24.0
-offset_bottom = 24.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -318,22 +334,22 @@ size_flags_horizontal = 3
 mouse_filter = 2
 
 [node name="BtnSurrender" type="Button" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnSurrender"]
-custom_minimum_size = Vector2(50, 50)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -25.0
-offset_top = -25.0
-offset_right = 25.0
-offset_bottom = 25.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -342,22 +358,22 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnKori" type="Button" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnKori"]
-custom_minimum_size = Vector2(50, 50)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -25.0
-offset_top = -25.0
-offset_right = 25.0
-offset_bottom = 25.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -366,22 +382,22 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnReactions" type="Button" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnReactions"]
-custom_minimum_size = Vector2(54, 54)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -27.0
-offset_top = -27.0
-offset_right = 27.0
-offset_bottom = 27.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -390,22 +406,22 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnAudio" type="Button" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnAudio"]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(104, 126)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -24.0
-offset_top = -24.0
-offset_right = 24.0
-offset_bottom = 24.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

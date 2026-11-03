@@ -59,6 +59,7 @@ var _last_reaction_sent_msec: int = -10000
 @onready var btn_zoom_out: Button = $BottomBar/Margin/HBox/BtnZoomOut
 
 @onready var btn_cam_top: Button = $BottomBar/Margin/HBox/BtnCamTop
+@onready var img_cam_top: TextureRect = $BottomBar/Margin/HBox/BtnCamTop/Icon
 
 @onready var btn_cam_reset: Button = $BottomBar/Margin/HBox/BtnCamReset
 
@@ -354,11 +355,11 @@ var _last_pause_sec_ticked: int = -1
 
 
 
-# Audio icons (White UI)
-
-var _sound_on_tex = preload("res://assets/icons/General/soundOn_white.png")
-
-var _sound_off_tex = preload("res://assets/icons/General/soundOff_white.png")
+# Audio and Camera Badges
+var _sound_on_tex = preload("res://assets/images/badges/sound-on.png")
+var _sound_off_tex = preload("res://assets/images/badges/sound-off.png")
+var _cam_3d_tex = preload("res://assets/images/badges/3d.png")
+var _cam_2d_tex = preload("res://assets/images/badges/2d.png")
 
 
 
@@ -728,73 +729,26 @@ func _setup_card_styles() -> void:
 
 func _setup_connections() -> void:
 
-	# Kenney UI Tactile Game Buttons & Action Juice (unified natural wooden background across all 7 bottom icons)
-
-	KenneyUI.style_button(btn_zoom_in, KenneyUI.COLOR_WOOD)
-
-	KenneyUI.style_button(btn_zoom_out, KenneyUI.COLOR_WOOD)
-
-	KenneyUI.style_button(btn_cam_top, KenneyUI.COLOR_WOOD)
-
-	KenneyUI.style_button(btn_cam_reset, KenneyUI.COLOR_WOOD)
-
-	KenneyUI.style_button(btn_surrender, KenneyUI.COLOR_WOOD)
-
-	if is_instance_valid(btn_kori):
-
-		KenneyUI.style_button(btn_kori, KenneyUI.COLOR_WOOD)
-
-		btn_kori.text = ""
-
-	KenneyUI.style_button(btn_reactions, KenneyUI.COLOR_WOOD)
-
-	KenneyUI.style_button(btn_audio, KenneyUI.COLOR_WOOD)
-
-	KenneyUI.style_button(btn_confirm_surrender, KenneyUI.COLOR_RED)
-
-	KenneyUI.style_button(btn_cancel_surrender, KenneyUI.COLOR_GREY)
-
-	
-
-	btn_zoom_in.text = ""
-
-	btn_zoom_out.text = ""
-
-	btn_cam_reset.text = ""
-
-	btn_surrender.text = ""
-
-	btn_reactions.text = ""
-
-	btn_audio.text = ""
-
-	
-
-	btn_cam_top.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
-
-	btn_cam_top.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
-
-	btn_cam_top.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9, 1.0))
-
-	btn_cam_top.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.95))
-
-	btn_cam_top.add_theme_constant_override("shadow_offset_y", 2)
-
-	btn_cam_top.add_theme_font_size_override("font_size", 34)
-
-	
-
 	var all_btns = [btn_zoom_in, btn_zoom_out, btn_cam_top, btn_cam_reset, btn_surrender, btn_reactions, btn_audio]
-
 	if is_instance_valid(btn_kori):
-
 		all_btns.append(btn_kori)
 
+	var empty_sb = StyleBoxEmpty.new()
 	for b in all_btns:
-
+		b.flat = true
+		b.add_theme_stylebox_override("normal", empty_sb)
+		b.add_theme_stylebox_override("hover", empty_sb)
+		b.add_theme_stylebox_override("pressed", empty_sb)
+		b.add_theme_stylebox_override("focus", empty_sb)
+		b.add_theme_stylebox_override("disabled", empty_sb)
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		b.custom_minimum_size = Vector2(104, 126)
+		b.text = ""
 		b.pivot_offset = b.custom_minimum_size / 2.0
-
 		ActionVFXManager.apply_button_juice(b, "tap_button")
+
+	KenneyUI.style_button(btn_confirm_surrender, KenneyUI.COLOR_RED)
+	KenneyUI.style_button(btn_cancel_surrender, KenneyUI.COLOR_GREY)
 
 	
 
@@ -2814,12 +2768,10 @@ func stop_timer() -> void:
 
 
 func set_camera_mode_indicator(is_top_down: bool) -> void:
-
 	if btn_cam_top and is_instance_valid(btn_cam_top):
-
-		btn_cam_top.text = "3D" if is_top_down else "2D"
-
-		btn_cam_top.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+		btn_cam_top.text = ""
+		if img_cam_top and is_instance_valid(img_cam_top):
+			img_cam_top.texture = _cam_3d_tex if is_top_down else _cam_2d_tex
 
 
 
