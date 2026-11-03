@@ -136,36 +136,36 @@ corner_radius_bottom_right = 20
 corner_radius_bottom_left = 20
 
 [node name="UserHeader" type="MarginContainer"]
-custom_minimum_size = Vector2(0, 224)
+custom_minimum_size = Vector2(0, 276)
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 224.0
+offset_bottom = 276.0
 grow_horizontal = 2
-theme_override_constants/margin_left = 140
-theme_override_constants/margin_top = 34
-theme_override_constants/margin_right = 140
+theme_override_constants/margin_left = 60
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 60
 script = ExtResource("1_header_script")
 
 [node name="PanelFrame" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(740, 0)
+custom_minimum_size = Vector2(920, 236)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_player_card")
 
 [node name="ContentMargin" type="MarginContainer" parent="PanelFrame"]
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 18
 
 [node name="HBoxMain" type="HBoxContainer" parent="PanelFrame/ContentMargin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 20
 alignment = 1
 
 [node name="StatsCol" type="VBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(290, 0)
+custom_minimum_size = Vector2(364, 0)
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
@@ -195,7 +195,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 40
 text = "۵۰"
 vertical_alignment = 1
 
@@ -212,7 +212,7 @@ visible = false
 layout_mode = 2
 
 [node name="ScoreCard" type="PanelContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
-custom_minimum_size = Vector2(136, 114)
+custom_minimum_size = Vector2(172, 138)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_stat_card")
@@ -223,7 +223,7 @@ theme_override_constants/separation = 2
 alignment = 1
 
 [node name="CupIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreCard/ScoreBadge"]
-custom_minimum_size = Vector2(68, 76)
+custom_minimum_size = Vector2(84, 92)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -238,14 +238,14 @@ theme_override_colors/font_color = Color(1, 0.90, 0.42, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 38
 theme_override_styles/normal = SubResource("StyleBoxFlat_value_pill")
 text = "۱۰۰۰"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="LevelCard" type="PanelContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
-custom_minimum_size = Vector2(136, 114)
+custom_minimum_size = Vector2(172, 138)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_stat_card")
@@ -256,7 +256,7 @@ theme_override_constants/separation = 2
 alignment = 1
 
 [node name="LevelIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelCard/LevelBadge"]
-custom_minimum_size = Vector2(68, 76)
+custom_minimum_size = Vector2(84, 92)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -271,14 +271,14 @@ theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 38
 theme_override_styles/normal = SubResource("StyleBoxFlat_value_pill")
 text = "۱"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="XpContainer" type="Control" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol"]
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 
 [node name="XpBar" type="ProgressBar" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/XpContainer"]
@@ -306,13 +306,13 @@ theme_override_colors/font_color = Color(1, 0.98, 0.90, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 34
 text = "۰ / ۶۰ XP"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="HeaderDivider" type="Panel" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(2, 122)
+custom_minimum_size = Vector2(3, 160)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_divider")
@@ -334,8 +334,8 @@ theme_override_colors/font_color = Color(1, 0.96, 0.86, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.92)
 theme_override_constants/shadow_outline_size = 4
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 44
-text = "کاربر مهمان"
+theme_override_font_sizes/font_size = 54
+text = "کاربر کافه فکر"
 horizontal_alignment = 2
 vertical_alignment = 1
 clip_text = true
@@ -345,14 +345,14 @@ layout_mode = 2
 alignment = 2
 
 [node name="UserIdBtn" type="Button" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/BottomIdRow"]
-custom_minimum_size = Vector2(220, 48)
+custom_minimum_size = Vector2(276, 62)
 layout_mode = 2
 focus_mode = 0
 theme_override_colors/font_color = Color(0.96, 0.88, 0.72, 1)
 theme_override_colors/font_hover_color = Color(1, 0.96, 0.85, 1)
 theme_override_colors/font_pressed_color = Color(1, 0.90, 0.55, 1)
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 36
 theme_override_styles/normal = SubResource("StyleBoxFlat_id_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_id_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_id_btn_pressed")
@@ -360,7 +360,7 @@ text = "📋 شناسه: -----"
 alignment = 1
 
 [node name="AvatarFrame" type="Control" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(110, 110)
+custom_minimum_size = Vector2(146, 146)
 layout_mode = 2
 size_flags_vertical = 4
 

@@ -205,8 +205,19 @@ func get_player_not_played_turns(gamer_id: int) -> int:
 	return 0
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().set_quit_on_go_back(false)
 	_load_or_create_device_id()
 	_load_saved_session_on_boot()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		# Completely disable Android hardware/gesture back button
+		return
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.keycode == KEY_BACK:
+		get_viewport().set_input_as_handled()
 
 func _load_saved_session_on_boot() -> void:
 	var saved_token = load_saved_token()
@@ -236,18 +247,29 @@ func load_saved_token() -> String:
 	var config = ConfigFile.new()
 	var err = config.load(SESSION_PATH)
 	if err == OK:
-		is_guest = config.get_value("auth", "is_guest", false)
-		if config.has_section_key("auth", "token"):
-			return config.get_value("auth", "token", "")
+		var saved_guest = bool(config.get_value("auth", "is_guest", false))
+		var saved_tok = str(config.get_value("auth", "token", ""))
+		if saved_guest or saved_tok.begins_with("guest_"):
+			is_guest = false
+			return ""
+		is_guest = false
+		return saved_tok
 	return ""
 
 func load_saved_user_data() -> Dictionary:
 	var config = ConfigFile.new()
 	var err = config.load(SESSION_PATH)
 	if err == OK:
-		is_guest = config.get_value("auth", "is_guest", false)
+		var saved_guest = bool(config.get_value("auth", "is_guest", false))
+		var saved_tok = str(config.get_value("auth", "token", ""))
+		if saved_guest or saved_tok.begins_with("guest_"):
+			is_guest = false
+			return {}
+		is_guest = false
 		if config.has_section_key("auth", "user_data"):
 			var udata = config.get_value("auth", "user_data", {})
+			if bool(udata.get("is_guest", false)):
+				return {}
 			var open_gid = str(udata.get("open_game_id", udata.get("game_id", "")))
 			if not open_gid.is_empty():
 				udata.erase("open_pre_game_id")

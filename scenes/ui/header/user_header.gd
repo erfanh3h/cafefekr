@@ -129,7 +129,7 @@ func update_ui() -> void:
 		if ResourceLoader.exists(avatar_path):
 			avatar_rect.texture = load(avatar_path)
 	else:
-		lbl_username.text = "کاربر مهمان"
+		lbl_username.text = "کاربر کافه فکر"
 		if not _is_copy_feedback_active:
 			btn_user_id.text = "🔑 ورود / ثبت شماره"
 		lbl_coins.text = "۰"

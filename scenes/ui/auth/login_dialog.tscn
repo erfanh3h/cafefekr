@@ -55,16 +55,16 @@ shadow_size = 10
 shadow_offset = Vector2(0, 3)
 
 [node name="LoginDialog" type="PanelContainer"]
-custom_minimum_size = Vector2(880, 840)
+custom_minimum_size = Vector2(880, 620)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -440.0
-offset_top = -420.0
+offset_top = -310.0
 offset_right = 440.0
-offset_bottom = 420.0
+offset_bottom = 310.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_board")
@@ -86,6 +86,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnCloseTop" type="TextureButton" parent="Margin/VBox/TopRow"]
+visible = false
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 texture_normal = ExtResource("5_close_tex")
@@ -104,6 +105,7 @@ text = "ورود به کافه فکر"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="Margin/VBox/TopRow"]
+visible = false
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 
@@ -146,6 +148,7 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "دریافت کد تأیید (SMS)"
 
 [node name="OrSeparator" type="HBoxContainer" parent="Margin/VBox/Step1_Phone"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
@@ -171,6 +174,7 @@ size_flags_vertical = 4
 color = Color(0.6, 0.45, 0.3, 0.6)
 
 [node name="BtnGuestLogin" type="Button" parent="Margin/VBox/Step1_Phone"]
+visible = false
 custom_minimum_size = Vector2(460, 104)
 layout_mode = 2
 size_flags_horizontal = 4

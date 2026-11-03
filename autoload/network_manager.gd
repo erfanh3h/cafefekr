@@ -109,18 +109,10 @@ func restore_session(callback: Callable) -> void:
 			callback.call(false, "No saved session")
 		return
 	
-	if GameManager.is_guest:
-		if not is_online:
-			callback.call(false, "OFFLINE")
-			return
-		var guest_data = GameManager.load_saved_user_data()
-		if not guest_data.is_empty():
-			GameManager.user_data = guest_data
-			GameManager.is_logged_in = true
-			GameManager.is_guest = true
-			print("[NetworkManager] Guest session restored from local cache.")
-			callback.call(true, "Guest session restored")
-			return
+	if GameManager.is_guest or saved_token.begins_with("guest_"):
+		GameManager.logout()
+		callback.call(false, "Guest session disabled")
+		return
 
 	api.set_token(saved_token)
 	api.get_my_data(func(success: bool, response_code: int, data: Variant):

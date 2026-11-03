@@ -511,11 +511,9 @@ func _setup_signals() -> void:
 				if (is_instance_valid(queue_dialog) and queue_dialog.visible) 					or (is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible) 					or (is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.visible) 					or (is_instance_valid(lobby_dialog) and lobby_dialog.visible):
 					return
 				if is_instance_valid(login_dialog) and login_dialog.visible:
-					if login_dialog.is_mandatory_username:
-						AudioManager.sfx_tap()
-						_show_menu_toast("ثبت نام کاربری الزامی است.")
-						return
-					login_dialog.close()
+					# Auth dialog is non-closable!
+					AudioManager.sfx_tap()
+					return
 				elif is_instance_valid(user_profile_dialog) and user_profile_dialog.visible:
 					user_profile_dialog.close()
 				elif is_instance_valid(rules_dialog) and rules_dialog.visible:

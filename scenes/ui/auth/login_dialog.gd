@@ -48,10 +48,9 @@ func _ready() -> void:
 	btn_back_phone.pressed.connect(_show_step1)
 	btn_submit_username.pressed.connect(_on_submit_username_pressed)
 	
-	btn_close_top.pressed.connect(func():
-		AudioManager.sfx_button()
-		close()
-	)
+	btn_close_top.visible = false
+	btn_guest_login.visible = false
+	$Margin/VBox/Step1_Phone/OrSeparator.visible = false
 	
 	input_phone.text_submitted.connect(func(_t): _on_send_code_pressed())
 	input_code.text_submitted.connect(func(_t): _on_verify_code_pressed())
@@ -63,8 +62,9 @@ func _ready() -> void:
 
 func open() -> void:
 	is_mandatory_username = false
-	btn_close_top.visible = true
-	btn_guest_login.visible = true
+	btn_close_top.visible = false
+	btn_guest_login.visible = false
+	$Margin/VBox/Step1_Phone/OrSeparator.visible = false
 	lbl_title.text = "ورود به کافه فکر"
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	_show_step1()
@@ -78,8 +78,9 @@ func open_for_username_completion() -> void:
 
 func open_for_phone_upgrade(reason: String = "") -> void:
 	is_mandatory_username = false
-	btn_close_top.visible = true
-	btn_guest_login.visible = false # Already a guest; need phone
+	btn_close_top.visible = false
+	btn_guest_login.visible = false
+	$Margin/VBox/Step1_Phone/OrSeparator.visible = false
 	lbl_title.text = "ثبت شماره موبایل"
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	_show_step1()
@@ -88,8 +89,8 @@ func open_for_phone_upgrade(reason: String = "") -> void:
 		lbl_status.modulate = Color(1.0, 0.85, 0.35)
 
 func close() -> void:
-	if is_mandatory_username:
-		lbl_status.text = "برای ورود به بازی، لطفاً ابتدا نام کاربری خود را ثبت کنید."
+	if is_mandatory_username or not GameManager.is_logged_in or GameManager.is_guest or not GameManager.has_phone() or not GameManager.has_username():
+		lbl_status.text = "برای ورود به بازی، لطفاً ابتدا شماره موبایل و نام کاربری خود را ثبت کنید."
 		lbl_status.modulate = Color(1.0, 0.4, 0.4)
 		AudioManager.sfx_tap()
 		return
@@ -100,11 +101,7 @@ func close() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and visible:
-		if is_mandatory_username:
-			get_viewport().set_input_as_handled()
-			lbl_status.text = "برای ادامه بازی، ثبت نام کاربری الزامی است."
-			lbl_status.modulate = Color(1.0, 0.4, 0.4)
-			AudioManager.sfx_tap()
+		get_viewport().set_input_as_handled()
 
 func _safe_grab_focus(control: Control) -> void:
 	if not is_instance_valid(control) or not visible:
@@ -249,7 +246,7 @@ func _on_submit_username_pressed() -> void:
 			GameManager.set_session(GameManager.token, GameManager.user_data, true)
 			
 			is_mandatory_username = false
-			btn_close_top.visible = true
+			btn_close_top.visible = false
 			
 			ActionVFXManager.animate_dialog_close(self, null, func():
 				closed.emit()
