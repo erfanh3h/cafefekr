@@ -33,7 +33,7 @@ const KenneyUI = preload("res://scenes/ui/kenney_ui_helper.gd")
 @onready var p1_card: PanelContainer = $Margin/VBox/PlayersStrip/P1Card
 @onready var p1_avatar: TextureRect = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/P1Avatar
 @onready var p1_name: Label = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1Name
-@onready var p1_score: Label = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1ScoreRow/P1Score
+@onready var p1_score: Label = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/P1ScoreBox/P1Score
 @onready var p1_role: Label = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1Role
 
 @onready var lbl_vs: Label = $Margin/VBox/PlayersStrip/CenterVS/LblVS
@@ -42,7 +42,7 @@ const KenneyUI = preload("res://scenes/ui/kenney_ui_helper.gd")
 @onready var p2_card: PanelContainer = $Margin/VBox/PlayersStrip/P2Card
 @onready var p2_avatar: TextureRect = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/P2Avatar
 @onready var p2_name: Label = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2Name
-@onready var p2_score: Label = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2ScoreRow/P2Score
+@onready var p2_score: Label = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/P2ScoreBox/P2Score
 @onready var p2_role: Label = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2Role
 
 # Timeline

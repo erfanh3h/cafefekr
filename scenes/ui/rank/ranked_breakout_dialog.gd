@@ -11,14 +11,14 @@ const KenneyUI = preload("res://scenes/ui/kenney_ui_helper.gd")
 @onready var p1_avatar: TextureRect = $Margin/VBox/HeaderCard/Margin/HBox/P1Box/P1Avatar
 @onready var p1_name_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P1Box/P1Info/P1Name
 @onready var p1_role_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P1Box/P1Info/P1Role
-@onready var p1_rating_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P1Box/P1Info/P1RatingRow/P1RatingLabel
+@onready var p1_rating_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P1Box/P1RatingBox/P1RatingLabel
 @onready var p1_score_badge: PanelContainer = $Margin/VBox/HeaderCard/Margin/HBox/P1ScoreBadge
 @onready var p1_score_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P1ScoreBadge/P1Score
 
 @onready var p2_avatar: TextureRect = $Margin/VBox/HeaderCard/Margin/HBox/P2Box/P2Avatar
 @onready var p2_name_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P2Box/P2Info/P2Name
 @onready var p2_role_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P2Box/P2Info/P2Role
-@onready var p2_rating_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P2Box/P2Info/P2RatingRow/P2RatingLabel
+@onready var p2_rating_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P2Box/P2RatingBox/P2RatingLabel
 @onready var p2_score_badge: PanelContainer = $Margin/VBox/HeaderCard/Margin/HBox/P2ScoreBadge
 @onready var p2_score_label: Label = $Margin/VBox/HeaderCard/Margin/HBox/P2ScoreBadge/P2Score
 

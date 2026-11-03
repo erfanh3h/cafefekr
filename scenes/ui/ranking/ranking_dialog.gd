@@ -149,7 +149,7 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 func _create_rank_row(rank: int, username: String, val_str: String, img_id: int, user_dict: Dictionary) -> void:
 	# Clearly separated, tactile player card
 	var card = Button.new()
-	card.custom_minimum_size = Vector2(0, 100)
+	card.custom_minimum_size = Vector2(0, 116)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.flat = true
 	card.pivot_offset = Vector2(400, 50)
@@ -272,53 +272,88 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	name_lbl.add_theme_constant_override("shadow_outline_size", 3)
 	row.add_child(name_lbl)
 	
-	# 4. User Level Badge
+	# 4. User Level Badge (Bigger, value in dark pill under it)
 	var lvl_val = int(user_dict.get("level", 1))
 	if lvl_val > 0:
-		var lvl_box = HBoxContainer.new()
-		lvl_box.add_theme_constant_override("separation", 6)
+		var lvl_box = VBoxContainer.new()
+		lvl_box.custom_minimum_size = Vector2(60, 0)
+		lvl_box.add_theme_constant_override("separation", 2)
 		lvl_box.alignment = BoxContainer.ALIGNMENT_CENTER
 		var lvl_icon = TextureRect.new()
 		lvl_icon.texture = preload("res://assets/images/badges/level.png")
-		lvl_icon.custom_minimum_size = Vector2(30, 34)
+		lvl_icon.custom_minimum_size = Vector2(46, 52)
 		lvl_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		lvl_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		lvl_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		lvl_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		lvl_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		lvl_box.add_child(lvl_icon)
 		
 		var lvl_lbl = Label.new()
 		lvl_lbl.text = GameManager.to_fa_num(lvl_val)
+		lvl_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lvl_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lvl_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		lvl_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lvl_lbl.add_theme_font_size_override("font_size", 28)
+		lvl_lbl.add_theme_font_size_override("font_size", 22)
 		lvl_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
 		lvl_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 		lvl_lbl.add_theme_constant_override("shadow_outline_size", 2)
+		
+		var lvl_pill = StyleBoxFlat.new()
+		lvl_pill.bg_color = Color(0.10, 0.06, 0.03, 0.94)
+		lvl_pill.border_color = Color(0.85, 0.68, 0.28, 0.88)
+		lvl_pill.set_border_width_all(1)
+		lvl_pill.set_corner_radius_all(8)
+		lvl_pill.content_margin_left = 10
+		lvl_pill.content_margin_right = 10
+		lvl_pill.content_margin_top = 1
+		lvl_pill.content_margin_bottom = 1
+		lvl_lbl.add_theme_stylebox_override("normal", lvl_pill)
+		
 		lvl_box.add_child(lvl_lbl)
 		row.add_child(lvl_box)
 	
-	# 5. Score / Wins Value (with badge)
-	var val_box = HBoxContainer.new()
-	val_box.add_theme_constant_override("separation", 8)
+	# 5. Score / Wins Value (Bigger badge on top, value in dark pill under it)
+	var val_box = VBoxContainer.new()
+	val_box.custom_minimum_size = Vector2(72, 0)
+	val_box.add_theme_constant_override("separation", 2)
 	val_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	
 	if current_tab == "score":
 		var sc_icon = TextureRect.new()
 		sc_icon.texture = preload("res://assets/images/badges/score.png")
-		sc_icon.custom_minimum_size = Vector2(32, 36)
+		sc_icon.custom_minimum_size = Vector2(50, 56)
 		sc_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		sc_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		sc_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		sc_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		sc_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		val_box.add_child(sc_icon)
 	
 	var val_lbl = Label.new()
 	val_lbl.text = val_str
+	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	val_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	val_lbl.add_theme_font_size_override("font_size", 32)
+	val_lbl.add_theme_font_size_override("font_size", 24)
 	val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
 	val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	val_lbl.add_theme_constant_override("shadow_outline_size", 3)
+	
+	if current_tab == "score":
+		var sc_pill = StyleBoxFlat.new()
+		sc_pill.bg_color = Color(0.10, 0.06, 0.03, 0.94)
+		sc_pill.border_color = Color(0.85, 0.68, 0.28, 0.88)
+		sc_pill.set_border_width_all(1)
+		sc_pill.set_corner_radius_all(8)
+		sc_pill.content_margin_left = 12
+		sc_pill.content_margin_right = 12
+		sc_pill.content_margin_top = 2
+		sc_pill.content_margin_bottom = 2
+		val_lbl.add_theme_stylebox_override("normal", sc_pill)
+	
 	val_box.add_child(val_lbl)
 	row.add_child(val_box)
 	

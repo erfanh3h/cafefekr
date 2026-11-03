@@ -2517,21 +2517,41 @@ func _show_ranked_locked_dialog() -> void:
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		prog_row.add_child(spacer)
 
+		var lvl_box = VBoxContainer.new()
+		lvl_box.alignment = BoxContainer.ALIGNMENT_CENTER
+		lvl_box.add_theme_constant_override("separation", 2)
+
 		var level_icon = TextureRect.new()
 		level_icon.texture = preload("res://assets/images/badges/level.png")
-		level_icon.custom_minimum_size = Vector2(32, 36)
+		level_icon.custom_minimum_size = Vector2(58, 66)
 		level_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		level_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		level_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		level_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		prog_row.add_child(level_icon)
+		lvl_box.add_child(level_icon)
 
 		_ranked_locked_progress_lbl = Label.new()
 		_ranked_locked_progress_lbl.text = ""
-		_ranked_locked_progress_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		_ranked_locked_progress_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_ranked_locked_progress_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		_ranked_locked_progress_lbl.add_theme_font_override("font", font_hekayat)
-		_ranked_locked_progress_lbl.add_theme_font_size_override("font_size", 26)
+		_ranked_locked_progress_lbl.add_theme_font_size_override("font_size", 24)
 		_ranked_locked_progress_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72))
-		prog_row.add_child(_ranked_locked_progress_lbl)
+
+		var lvl_pill = StyleBoxFlat.new()
+		lvl_pill.bg_color = Color(0.10, 0.06, 0.03, 0.94)
+		lvl_pill.border_color = Color(0.85, 0.68, 0.28, 0.88)
+		lvl_pill.set_border_width_all(1)
+		lvl_pill.set_corner_radius_all(10)
+		lvl_pill.content_margin_left = 14
+		lvl_pill.content_margin_right = 14
+		lvl_pill.content_margin_top = 2
+		lvl_pill.content_margin_bottom = 2
+		_ranked_locked_progress_lbl.add_theme_stylebox_override("normal", lvl_pill)
+
+		lvl_box.add_child(_ranked_locked_progress_lbl)
+
+		prog_row.add_child(lvl_box)
 
 		_ranked_locked_bar = ProgressBar.new()
 		_ranked_locked_bar.custom_minimum_size = Vector2(0, 22)

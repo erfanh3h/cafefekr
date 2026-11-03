@@ -14,6 +14,24 @@ border_width_right = 4
 border_width_bottom = 4
 border_color = Color(0.55, 0.42, 0.24, 0.95)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_score_pill"]
+content_margin_left = 12.0
+content_margin_top = 2.0
+content_margin_right = 12.0
+content_margin_bottom = 2.0
+bg_color = Color(0.10, 0.06, 0.03, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.68, 0.28, 0.88)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 3
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_card"]
 bg_color = Color(0.11, 0.07, 0.05, 0.74)
 border_width_left = 3
@@ -267,31 +285,40 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "بازیکن ۱"
 clip_text = true
 
-[node name="P1ScoreRow" type="HBoxContainer" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
+[node name="P1Role" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.35, 0.90, 1.0, 1)
+text = "بازیکن ۱ (شما)"
 
-[node name="P1ScoreBadge" type="TextureRect" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1ScoreRow"]
-custom_minimum_size = Vector2(26, 30)
+[node name="P1ScoreBox" type="VBoxContainer" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1"]
+custom_minimum_size = Vector2(74, 0)
 layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="P1ScoreBadge" type="TextureRect" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/P1ScoreBox"]
+custom_minimum_size = Vector2(52, 60)
+layout_mode = 2
+size_flags_horizontal = 4
 size_flags_vertical = 4
 texture = ExtResource("4_score_badge")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="P1Score" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1ScoreRow"]
+[node name="P1Score" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/P1ScoreBox"]
 layout_mode = 2
+size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_score_pill")
 text = "۱۲۰۰"
-
-[node name="P1Role" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.35, 0.90, 1.0, 1)
-text = "بازیکن ۱ (شما)"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="CenterVS" type="VBoxContainer" parent="Margin/VBox/PlayersStrip"]
 custom_minimum_size = Vector2(90, 0)
@@ -330,6 +357,34 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 theme_override_constants/separation = 12
 
+[node name="P2ScoreBox" type="VBoxContainer" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2"]
+custom_minimum_size = Vector2(74, 0)
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="P2ScoreBadge" type="TextureRect" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/P2ScoreBox"]
+custom_minimum_size = Vector2(52, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("4_score_badge")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="P2Score" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/P2ScoreBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_outline_size = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_score_pill")
+text = "۱۱۵۰"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="VBoxP2" type="VBoxContainer" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -344,31 +399,10 @@ text = "بازیکن ۲"
 horizontal_alignment = 2
 clip_text = true
 
-[node name="P2ScoreRow" type="HBoxContainer" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
-layout_mode = 2
-theme_override_constants/separation = 6
-alignment = 2
-
-[node name="P2Score" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2ScoreRow"]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
-theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
-text = "۱۱۵۰"
-horizontal_alignment = 2
-
-[node name="P2ScoreBadge" type="TextureRect" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2ScoreRow"]
-custom_minimum_size = Vector2(26, 30)
-layout_mode = 2
-size_flags_vertical = 4
-texture = ExtResource("4_score_badge")
-expand_mode = 1
-stretch_mode = 5
-
 [node name="P2Role" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
 text = "بازیکن ۲ (حریف)"
 horizontal_alignment = 2
