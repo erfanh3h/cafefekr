@@ -142,12 +142,13 @@ class TimerBarVFXOverlay extends Control:
 				icon_ref.modulate = Color.WHITE
 
 		var tip_x = clampf(size.x * pct, 6.0, maxf(6.0, size.x - 4.0))
-		if pct > 0.01 and size.x > 20.0 and _sparks.size() < 16:
-			var spawn_rate = 18.0 if is_danger else 6.0
+		var max_sparks = 8 if (OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]) else 16
+		if pct > 0.01 and size.x > 20.0 and _sparks.size() < max_sparks:
+			var spawn_rate = 12.0 if is_danger else 5.0
 			_spawn_accum += delta * spawn_rate
 			while _spawn_accum >= 1.0:
 				_spawn_accum -= 1.0
-				if _sparks.size() < 16:
+				if _sparks.size() < max_sparks:
 					_spawn_spark(tip_x, is_danger, 1.0)
 
 		for i in range(_sparks.size() - 1, -1, -1):

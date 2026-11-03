@@ -208,11 +208,24 @@ func _ready() -> void:
 	if has_node("SunLight"):
 		var sun: DirectionalLight3D = get_node("SunLight")
 		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-		sun.directional_shadow_max_distance = 8.0
-		sun.shadow_blur = 0.4
+		sun.directional_shadow_max_distance = 6.0
+		sun.shadow_blur = 0.2
 	if OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]:
 		if has_node("WallFillLight"):
 			get_node("WallFillLight").visible = false
+		if has_node("TableLampLight"):
+			get_node("TableLampLight").visible = false
+		if has_node("SunLight"):
+			var sun: DirectionalLight3D = get_node("SunLight")
+			sun.light_energy = 0.95
+			sun.light_color = Color(1.0, 0.94, 0.86)
+
+	# Disable shadow casting on large non-moving environment meshes that don't need to cast shadows
+	for m_path in ["FloorMesh", "WallMesh", "WallWainscot", "TableRoot/TableMesh", "TableRoot/TableRim", "TableRoot/TableMat", "TableRoot/TablePedestal", "TableRoot/Foot1", "TableRoot/Foot2"]:
+		if has_node(m_path):
+			var n = get_node(m_path)
+			if n is GeometryInstance3D:
+				n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 	transition_to_menu_view(0.1)
@@ -223,15 +236,17 @@ func _process(delta: float) -> void:
 		_is_dragging = false
 	if is_board_view_active and not is_transitioning:
 		if is_top_down_view:
-			top_down_current_height = lerp(top_down_current_height, top_down_target_height, 10.0 * delta)
-			camera.position = Vector3(TARGET_FOCUS.x, TARGET_FOCUS.y + top_down_current_height, TARGET_FOCUS.z)
-			camera.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+			if absf(top_down_current_height - top_down_target_height) > 0.001:
+				top_down_current_height = lerpf(top_down_current_height, top_down_target_height, 10.0 * delta)
+				camera.position = Vector3(TARGET_FOCUS.x, TARGET_FOCUS.y + top_down_current_height, TARGET_FOCUS.z)
+				camera.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 		else:
-			# Smooth spring dampening towards target yaw, pitch, and distance
-			current_yaw = lerp(current_yaw, target_yaw, 10.0 * delta)
-			current_pitch = lerp(current_pitch, target_pitch, 10.0 * delta)
-			current_distance = lerp(current_distance, target_distance, 10.0 * delta)
-			_apply_orbit_transform()
+			# Smooth spring dampening towards target yaw, pitch, and distance only when moving
+			if absf(current_yaw - target_yaw) > 0.005 or absf(current_pitch - target_pitch) > 0.005 or absf(current_distance - target_distance) > 0.005:
+				current_yaw = lerpf(current_yaw, target_yaw, 10.0 * delta)
+				current_pitch = lerpf(current_pitch, target_pitch, 10.0 * delta)
+				current_distance = lerpf(current_distance, target_distance, 10.0 * delta)
+				_apply_orbit_transform()
 
 	# Animate 3D Menu Showcase & Camera Sway
 	if _menu_showcase_root and _menu_showcase_root.visible:
@@ -263,8 +278,8 @@ func _process(delta: float) -> void:
 		camera.position = CAM_POS_MENU + Vector3(sway_x + _menu_parallax_current.x, sway_y + _menu_parallax_current.y, 0.0)
 		camera.look_at(Vector3(0.0, 0.18, 0.0), Vector3.UP)
 
-	# Cozy candlelight flickering (throttled to ~15Hz for mobile CPU/GPU efficiency)
-	if candle_light:
+	# Cozy candlelight flickering (throttled to ~15Hz; disabled during active board view for mobile efficiency)
+	if candle_light and not is_board_view_active:
 		_flicker_timer += delta * 5.5
 		if int((_flicker_timer - delta * 5.5) * 3.0) != int(_flicker_timer * 3.0) or _lantern_flare_boost > 0.01:
 			var pulse = sin(_flicker_timer) * 0.08 + sin(_flicker_timer * 2.3) * 0.05
@@ -293,6 +308,8 @@ func transition_to_menu_view(duration: float = 1.0) -> void:
 	_kill_camera_tween()
 	is_board_view_active = false
 	set_menu_showcase_visible(true)
+	if _dynamic_props_root and is_instance_valid(_dynamic_props_root):
+		_dynamic_props_root.visible = true
 	is_transitioning = true
 	is_top_down_view = false
 	camera_mode_changed.emit(false)
@@ -309,6 +326,8 @@ func transition_to_board_view(duration: float = 1.2) -> void:
 	is_transitioning = true
 	set_menu_showcase_visible(false)
 	is_top_down_view = true
+	if _dynamic_props_root and is_instance_valid(_dynamic_props_root):
+		_dynamic_props_root.visible = not is_top_down_view
 	top_down_target_height = TOP_DOWN_HEIGHT_DEFAULT
 	top_down_current_height = TOP_DOWN_HEIGHT_DEFAULT
 	camera_mode_changed.emit(true)
@@ -398,6 +417,8 @@ func set_top_down_view(enabled: bool, duration: float = 0.55) -> void:
 		return
 	_kill_camera_tween()
 	is_top_down_view = enabled
+	if _dynamic_props_root and is_instance_valid(_dynamic_props_root):
+		_dynamic_props_root.visible = not is_top_down_view
 	camera_mode_changed.emit(is_top_down_view)
 	is_transitioning = true
 
@@ -880,17 +901,19 @@ func populate_props_for_game(game_type: String = "") -> void:
 		if not selected_ids.has(pid):
 			selected_ids.append(pid)
 
-	# Build remaining pool and shuffle to pick diverse random items up to 7 slots
+	# Build remaining pool and shuffle to pick diverse random items (limit to 2 on mobile to maximize FPS)
 	var remaining_pool: Array = []
 	for pid in all_movable_props:
 		if not selected_ids.has(pid):
 			remaining_pool.append(pid)
 	remaining_pool.shuffle()
 
-	while selected_ids.size() < 7 and not remaining_pool.is_empty():
+	var is_mobile_device: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
+	var target_prop_count: int = 2 if is_mobile_device else 7
+	while selected_ids.size() < target_prop_count and not remaining_pool.is_empty():
 		selected_ids.append(remaining_pool.pop_back())
 
-	# Shuffle the 7 selected props across the 7 peripheral slots around the game board
+	# Shuffle the selected props across the peripheral slots around the game board
 	selected_ids.shuffle()
 
 	var peripheral_slots = [

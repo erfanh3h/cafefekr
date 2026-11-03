@@ -168,20 +168,28 @@ func _ready() -> void:
 func _setup_splash_overlay() -> void:
 	_splash_overlay = Control.new()
 	_splash_overlay.name = "SplashOverlay"
-	_splash_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_splash_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	_splash_overlay.z_index = 100
+	$CanvasLayer.add_child(_splash_overlay)
+	_splash_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_splash_overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_splash_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
 
 	# Base mahogany background matching project boot_splash (Color(0.12, 0.08, 0.05, 1))
 	var bg = ColorRect.new()
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_splash_overlay.add_child(bg)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	bg.grow_vertical = Control.GROW_DIRECTION_BOTH
 	bg.color = Color(0.12, 0.08, 0.05, 1.0)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_splash_overlay.add_child(bg)
 
 	# Full-screen splash art image
 	var splash_img = TextureRect.new()
-	splash_img.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_splash_overlay.add_child(splash_img)
+	splash_img.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	splash_img.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	splash_img.grow_vertical = Control.GROW_DIRECTION_BOTH
 	splash_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	splash_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	splash_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -189,22 +197,35 @@ func _setup_splash_overlay() -> void:
 		splash_img.texture = load("res://assets/images/splash.png")
 	elif ResourceLoader.exists("res://assets/images/splash.jpg"):
 		splash_img.texture = load("res://assets/images/splash.jpg")
-	_splash_overlay.add_child(splash_img)
+
+	# Ensure overlay covers 100% of viewport and dynamically tracks Android display insets/rotations
+	var vp = get_viewport()
+	if vp:
+		var sync_splash = func():
+			if is_instance_valid(_splash_overlay):
+				_splash_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		if not vp.size_changed.is_connected(sync_splash):
+			vp.size_changed.connect(sync_splash)
 
 	# Subtle bottom dark gradient/scrim for loading bar and text contrast
 	var bottom_scrim = ColorRect.new()
+	_splash_overlay.add_child(bottom_scrim)
 	bottom_scrim.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_scrim.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	bottom_scrim.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	bottom_scrim.anchor_top = 1.0
 	bottom_scrim.anchor_bottom = 1.0
 	bottom_scrim.offset_top = -280.0
 	bottom_scrim.offset_bottom = 0.0
 	bottom_scrim.color = Color(0.06, 0.04, 0.02, 0.65)
 	bottom_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_splash_overlay.add_child(bottom_scrim)
 
 	# Bottom loading container
 	var bottom_margin = MarginContainer.new()
+	_splash_overlay.add_child(bottom_margin)
 	bottom_margin.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_margin.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	bottom_margin.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	bottom_margin.anchor_top = 1.0
 	bottom_margin.anchor_bottom = 1.0
 	bottom_margin.offset_top = -240.0
@@ -212,7 +233,6 @@ func _setup_splash_overlay() -> void:
 	bottom_margin.offset_left = 60.0
 	bottom_margin.offset_right = -60.0
 	bottom_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_splash_overlay.add_child(bottom_margin)
 
 	var load_vbox = VBoxContainer.new()
 	load_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -282,8 +302,6 @@ func _setup_splash_overlay() -> void:
 			dots += " ."
 		_splash_load_lbl.text = "در حال ورود به کافه" + dots
 	)
-
-	$CanvasLayer.add_child(_splash_overlay)
 
 
 func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:

@@ -192,16 +192,15 @@ func _process(delta: float) -> void:
 	if is_instance_valid(mat_ring_hit_danger):
 		mat_ring_hit_danger.emission_energy_multiplier = 0.75 + 0.30 * pulse
 
-	if not _is_animating_move:
-		for pt in range(24):
-			var is_sel = (pt in can_select_points)
+	if not _is_animating_move and not can_select_points.is_empty():
+		for pt in can_select_points:
 			if _point_piece_nodes.has(pt):
 				var arr: Array = _point_piece_nodes[pt]
 				if not arr.is_empty():
 					var top_piece: Node3D = arr[arr.size() - 1]
 					if is_instance_valid(top_piece) and top_piece.has_meta("base_y"):
 						var by: float = float(top_piece.get_meta("base_y"))
-						top_piece.position.y = by + (float_y if is_sel else 0.0)
+						top_piece.position.y = by + float_y
 
 	# 2. Float selected die in the bottom tray & pulse bottom Roll Dice button when ready
 	for d_idx in range(_dice_nodes.size()):

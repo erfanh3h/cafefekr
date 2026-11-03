@@ -9,7 +9,6 @@ albedo_texture = ExtResource("2_wood_tex")
 metallic = 0.02
 roughness = 0.50
 uv1_scale = Vector3(2, 2, 2)
-uv1_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_plinth"]
 material = SubResource("StandardMaterial3D_plinth")
@@ -24,7 +23,6 @@ clearcoat_enabled = false
 clearcoat = 0.65
 clearcoat_roughness = 0.2
 uv1_scale = Vector3(2, 2, 2)
-uv1_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_outer_rim"]
 material = SubResource("StandardMaterial3D_outer_rim")
@@ -38,7 +36,6 @@ roughness = 0.45
 clearcoat_enabled = false
 clearcoat = 0.5
 uv1_scale = Vector3(1.5, 1.5, 1.5)
-uv1_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_algebraic_bed"]
 material = SubResource("StandardMaterial3D_algebraic_bed")
