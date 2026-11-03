@@ -199,7 +199,7 @@ func _create_game_card(g_type: String) -> Control:
 	var lbl = Label.new()
 	lbl.text = GameTypes.get_display_name_fa(g_type)
 	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl.add_theme_font_size_override("font_size", 28)
+	lbl.add_theme_font_size_override("font_size", 32)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 	lbl.add_theme_constant_override("shadow_outline_size", 3)
@@ -230,7 +230,7 @@ func _create_game_card(g_type: String) -> Control:
 	var d_lbl = Label.new()
 	d_lbl.text = diff_name
 	d_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	d_lbl.add_theme_font_size_override("font_size", 18)
+	d_lbl.add_theme_font_size_override("font_size", 24)
 	d_lbl.add_theme_color_override("font_color", p_color)
 	diff_pill.add_child(d_lbl)
 	card.add_child(diff_pill)

@@ -1,7 +1,6 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/header/user_header.gd" id="1_header_script"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/frame4.png" id="2_frame4_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button5.png" id="3_button5_tex"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/coin.png" id="4_coin_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/score.png" id="5_cup_tex"]
@@ -10,20 +9,28 @@
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="8_font_hekayat"]
 [ext_resource type="Texture2D" path="res://assets/icons/Avatars/0.png" id="9_default_avatar"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_header"]
-texture = ExtResource("2_frame4_tex")
-texture_margin_left = 70.0
-texture_margin_top = 28.0
-texture_margin_right = 70.0
-texture_margin_bottom = 28.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_card"]
+bg_color = Color(0.13, 0.08, 0.05, 0.90)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 5
+border_color = Color(0.54, 0.36, 0.20, 0.82)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0, 0, 0, 0.52)
+shadow_size = 10
+shadow_offset = Vector2(0, 4)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_stat_card"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_value_pill"]
-content_margin_left = 18.0
-content_margin_top = 4.0
-content_margin_right = 18.0
-content_margin_bottom = 4.0
+content_margin_left = 16.0
+content_margin_top = 3.0
+content_margin_right = 16.0
+content_margin_bottom = 3.0
 bg_color = Color(0.10, 0.06, 0.03, 0.94)
 border_width_left = 2
 border_width_top = 2
@@ -69,10 +76,10 @@ corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_id_btn_normal"]
-content_margin_left = 18.0
-content_margin_top = 6.0
-content_margin_right = 18.0
-content_margin_bottom = 6.0
+content_margin_left = 16.0
+content_margin_top = 5.0
+content_margin_right = 16.0
+content_margin_bottom = 5.0
 bg_color = Color(0.12, 0.08, 0.05, 0.90)
 border_width_left = 2
 border_width_top = 2
@@ -85,10 +92,10 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_id_btn_hover"]
-content_margin_left = 18.0
-content_margin_top = 6.0
-content_margin_right = 18.0
-content_margin_bottom = 6.0
+content_margin_left = 16.0
+content_margin_top = 5.0
+content_margin_right = 16.0
+content_margin_bottom = 5.0
 bg_color = Color(0.18, 0.12, 0.07, 0.95)
 border_width_left = 2
 border_width_top = 2
@@ -101,10 +108,10 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_id_btn_pressed"]
-content_margin_left = 18.0
-content_margin_top = 6.0
-content_margin_right = 18.0
-content_margin_bottom = 6.0
+content_margin_left = 16.0
+content_margin_top = 5.0
+content_margin_right = 16.0
+content_margin_bottom = 5.0
 bg_color = Color(0.09, 0.06, 0.03, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -117,53 +124,55 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_avatar_ring"]
-bg_color = Color(0.10, 0.06, 0.03, 0.95)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.95, 0.78, 0.32, 0.92)
-corner_radius_top_left = 52
-corner_radius_top_right = 52
-corner_radius_bottom_right = 52
-corner_radius_bottom_left = 52
+bg_color = Color(0.16, 0.10, 0.06, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.76, 0.58, 0.28, 0.85)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
 
 [node name="UserHeader" type="MarginContainer"]
-custom_minimum_size = Vector2(0, 276)
+custom_minimum_size = Vector2(0, 224)
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 276.0
+offset_bottom = 224.0
 grow_horizontal = 2
-theme_override_constants/margin_left = 22
-theme_override_constants/margin_top = 38
-theme_override_constants/margin_right = 22
+theme_override_constants/margin_left = 140
+theme_override_constants/margin_top = 34
+theme_override_constants/margin_right = 140
 script = ExtResource("1_header_script")
 
 [node name="PanelFrame" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(740, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_wood_header")
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_player_card")
 
 [node name="ContentMargin" type="MarginContainer" parent="PanelFrame"]
 layout_mode = 2
-theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
 
 [node name="HBoxMain" type="HBoxContainer" parent="PanelFrame/ContentMargin"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 14
 alignment = 1
 
 [node name="StatsCol" type="VBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(436, 0)
+custom_minimum_size = Vector2(290, 0)
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="BadgesRow" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="CoinBadge" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
@@ -203,7 +212,7 @@ visible = false
 layout_mode = 2
 
 [node name="ScoreCard" type="PanelContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
-custom_minimum_size = Vector2(180, 130)
+custom_minimum_size = Vector2(136, 114)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_stat_card")
@@ -214,7 +223,7 @@ theme_override_constants/separation = 2
 alignment = 1
 
 [node name="CupIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreCard/ScoreBadge"]
-custom_minimum_size = Vector2(76, 86)
+custom_minimum_size = Vector2(68, 76)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -236,7 +245,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="LevelCard" type="PanelContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
-custom_minimum_size = Vector2(180, 130)
+custom_minimum_size = Vector2(136, 114)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_stat_card")
@@ -247,7 +256,7 @@ theme_override_constants/separation = 2
 alignment = 1
 
 [node name="LevelIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelCard/LevelBadge"]
-custom_minimum_size = Vector2(76, 86)
+custom_minimum_size = Vector2(68, 76)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -269,7 +278,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="XpContainer" type="Control" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol"]
-custom_minimum_size = Vector2(0, 38)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
 [node name="XpBar" type="ProgressBar" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/XpContainer"]
@@ -303,7 +312,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="HeaderDivider" type="Panel" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(2, 136)
+custom_minimum_size = Vector2(2, 122)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_divider")
@@ -311,7 +320,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_divider")
 [node name="UserCol" type="VBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="TopIdentityRow" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/UserCol"]
@@ -325,7 +334,7 @@ theme_override_colors/font_color = Color(1, 0.96, 0.86, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.92)
 theme_override_constants/shadow_outline_size = 4
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 46
+theme_override_font_sizes/font_size = 44
 text = "کاربر مهمان"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -336,14 +345,14 @@ layout_mode = 2
 alignment = 2
 
 [node name="UserIdBtn" type="Button" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/BottomIdRow"]
-custom_minimum_size = Vector2(240, 52)
+custom_minimum_size = Vector2(220, 48)
 layout_mode = 2
 focus_mode = 0
 theme_override_colors/font_color = Color(0.96, 0.88, 0.72, 1)
 theme_override_colors/font_hover_color = Color(1, 0.96, 0.85, 1)
 theme_override_colors/font_pressed_color = Color(1, 0.90, 0.55, 1)
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxFlat_id_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_id_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_id_btn_pressed")
@@ -351,11 +360,12 @@ text = "📋 شناسه: -----"
 alignment = 1
 
 [node name="AvatarFrame" type="Control" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(128, 128)
+custom_minimum_size = Vector2(110, 110)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="WoodDisc" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/AvatarFrame"]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -368,15 +378,9 @@ stretch_mode = 5
 
 [node name="AvatarRing" type="Panel" parent="PanelFrame/ContentMargin/HBoxMain/AvatarFrame"]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -52.0
-offset_top = -52.0
-offset_right = 52.0
-offset_bottom = 52.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -384,15 +388,13 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_avatar_ring")
 
 [node name="AvatarBtn" type="TextureButton" parent="PanelFrame/ContentMargin/HBoxMain/AvatarFrame"]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -47.0
-offset_top = -47.0
-offset_right = 47.0
-offset_bottom = 47.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 2
 

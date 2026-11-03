@@ -1351,13 +1351,12 @@ func _show_draft_complete_transition() -> void:
 	
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(980, 860)
-	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.12, 0.08, 0.06, 0.98)
-	sb.border_color = Color(1.0, 0.84, 0.25, 0.95)
-	sb.set_border_width_all(4)
-	sb.set_corner_radius_all(24)
-	sb.shadow_color = Color(0, 0, 0, 0.75)
-	sb.shadow_size = 18
+	var sb = StyleBoxTexture.new()
+	sb.texture = preload("res://assets/images/frames/board.png")
+	sb.texture_margin_left = 60.0
+	sb.texture_margin_top = 60.0
+	sb.texture_margin_right = 60.0
+	sb.texture_margin_bottom = 60.0
 	panel.add_theme_stylebox_override("panel", sb)
 	center.add_child(panel)
 	
@@ -1551,16 +1550,12 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(740, 420)
-	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.14, 0.09, 0.07, 0.98)
-	sb.border_width_left = 4
-	sb.border_width_top = 4
-	sb.border_width_right = 4
-	sb.border_width_bottom = 4
-	sb.border_color = Color(0.85, 0.40, 0.25, 0.95)
-	sb.set_corner_radius_all(20)
-	sb.shadow_color = Color(0, 0, 0, 0.65)
-	sb.shadow_size = 12
+	var sb = StyleBoxTexture.new()
+	sb.texture = preload("res://assets/images/frames/board.png")
+	sb.texture_margin_left = 60.0
+	sb.texture_margin_top = 60.0
+	sb.texture_margin_right = 60.0
+	sb.texture_margin_bottom = 60.0
 	panel.add_theme_stylebox_override("panel", sb)
 	center.add_child(panel)
 	

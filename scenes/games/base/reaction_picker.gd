@@ -160,7 +160,7 @@ func _build_kori_list() -> void:
 	_kori_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_kori_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_kori_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	_kori_scroll.custom_minimum_size = Vector2(720, 500)
+	_kori_scroll.custom_minimum_size = Vector2(760, 620)
 	_kori_scroll.visible = false
 
 	_kori_grid = GridContainer.new()
@@ -189,14 +189,14 @@ func _build_kori_list() -> void:
 	for idx in range(KORIS.size()):
 		var card = PanelContainer.new()
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.custom_minimum_size = Vector2(335, 82)
+		card.custom_minimum_size = Vector2(360, 98)
 		card.mouse_filter = Control.MOUSE_FILTER_PASS
 		card.add_theme_stylebox_override("panel", normal_style)
 
 		var lbl = Label.new()
 		lbl.text = KORIS[idx]
 		lbl.add_theme_font_override("font", FONT_FA)
-		lbl.add_theme_font_size_override("font_size", 24)
+		lbl.add_theme_font_size_override("font_size", 32)
 		lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 		lbl.add_theme_constant_override("shadow_offset_y", 2)

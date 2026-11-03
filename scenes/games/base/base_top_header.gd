@@ -981,12 +981,111 @@ const KORIS: Array[String] = [
 	"هنوز اول راحته!"
 ]
 
+class ReactionBubbleVFXOverlay extends Control:
+	var accent_color: Color = Color(1.0, 0.85, 0.32)
+	var show_border_aura: bool = true
+	var time_accum: float = 0.0
+	var _rings: Array = []
+	var _sparks: Array = []
+	var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
+	func _ready() -> void:
+		_rng.randomize()
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		clip_contents = false
+
+	func trigger_burst(primary_col: Color, with_border_aura: bool = true) -> void:
+		accent_color = primary_col
+		show_border_aura = with_border_aura
+		time_accum = 0.0
+		_rings.clear()
+		_sparks.clear()
+		var center = size * 0.5
+		if center == Vector2.ZERO:
+			center = Vector2(180.0, 58.0) if with_border_aura else Vector2(74.0, 74.0)
+		var max_r = maxf(center.x, center.y) * 1.45
+		_rings.append({"radius": max_r * 0.25, "max_radius": max_r, "alpha": 0.95, "width": 4.5, "color": Color(1.0, 0.92, 0.45)})
+		_rings.append({"radius": max_r * 0.12, "max_radius": max_r * 1.22, "alpha": 0.80, "width": 3.0, "color": accent_color})
+		for i in range(16):
+			var ang = (float(i) / 16.0) * TAU + _rng.randf_range(-0.18, 0.18)
+			var spd = _rng.randf_range(95.0, 210.0)
+			var col = Color(1.0, 0.92, 0.42) if (i % 2 == 0) else accent_color.lightened(0.28)
+			_sparks.append({
+				"pos": center + Vector2(cos(ang), sin(ang)) * _rng.randf_range(12.0, 36.0),
+				"vel": Vector2(cos(ang), sin(ang)) * spd,
+				"size": _rng.randf_range(3.5, 7.0),
+				"life": 0.0,
+				"max_life": _rng.randf_range(0.45, 0.85),
+				"color": col
+			})
+		queue_redraw()
+
+	func _process(delta: float) -> void:
+		if not visible:
+			return
+		time_accum += delta
+		for i in range(_rings.size() - 1, -1, -1):
+			var r = _rings[i]
+			r["radius"] = lerpf(float(r["radius"]), float(r["max_radius"]), clampf(delta * 7.5, 0.0, 1.0))
+			r["alpha"] = maxf(0.0, float(r["alpha"]) - delta * 2.1)
+			if float(r["alpha"]) <= 0.02:
+				_rings.remove_at(i)
+		for i in range(_sparks.size() - 1, -1, -1):
+			var s = _sparks[i]
+			s["life"] = float(s["life"]) + delta
+			if float(s["life"]) >= float(s["max_life"]):
+				_sparks.remove_at(i)
+				continue
+			s["pos"] = (s["pos"] as Vector2) + (s["vel"] as Vector2) * delta
+			s["vel"] = (s["vel"] as Vector2) * maxf(0.0, 1.0 - delta * 3.8)
+		# Spawn gentle ambient orbiting sparkles while visible
+		if _sparks.size() < 8 and _rng.randf() < delta * 9.0 and size.x > 20.0:
+			var edge_x = _rng.randf_range(6.0, size.x - 6.0)
+			var edge_y = 4.0 if _rng.randf() < 0.5 else (size.y - 4.0)
+			_sparks.append({
+				"pos": Vector2(edge_x, edge_y),
+				"vel": Vector2(_rng.randf_range(-18.0, 18.0), _rng.randf_range(-34.0, -12.0)),
+				"size": _rng.randf_range(2.8, 5.2),
+				"life": 0.0,
+				"max_life": _rng.randf_range(0.5, 0.9),
+				"color": Color(1.0, 0.92, 0.48) if _rng.randf() < 0.65 else accent_color.lightened(0.3)
+			})
+		queue_redraw()
+
+	func _draw() -> void:
+		var center = size * 0.5
+		# 1. Pulsing outer golden/accent aura border for Kori speech bubbles
+		if show_border_aura and size.x > 10.0 and size.y > 10.0:
+			var pulse = 0.5 + 0.5 * sin(time_accum * 6.5)
+			var glow_col = accent_color.lerp(Color(1.0, 0.88, 0.38), 0.55)
+			glow_col.a = lerpf(0.24, 0.56, pulse)
+			var rect_outer = Rect2(Vector2(-4.0, -4.0), size + Vector2(8.0, 8.0))
+			draw_rect(rect_outer, glow_col, false, 3.0)
+		# 2. Expanding shockwave rings
+		for r in _rings:
+			var c: Color = r["color"]
+			c.a = clampf(float(r["alpha"]), 0.0, 1.0)
+			draw_arc(center, float(r["radius"]), 0.0, TAU, 48, c, float(r["width"]), true)
+		# 3. Twinkling 4-point star sparks
+		for s in _sparks:
+			var t = clampf(float(s["life"]) / maxf(0.01, float(s["max_life"])), 0.0, 1.0)
+			var alpha = sin(t * PI)
+			var sc: Color = s["color"]
+			sc.a = alpha
+			var p: Vector2 = s["pos"]
+			var rad: float = float(s["size"]) * (1.0 - 0.35 * t)
+			draw_circle(p, rad, sc)
+			draw_circle(p, rad * 0.5, Color(1.0, 1.0, 1.0, alpha * 0.9))
+			draw_line(p - Vector2(rad * 2.1, 0), p + Vector2(rad * 2.1, 0), sc, 1.6)
+			draw_line(p - Vector2(0, rad * 2.1), p + Vector2(0, rad * 2.1), sc, 1.6)
+
 var _p1_reaction_seq: int = 0
 var _p2_reaction_seq: int = 0
 
 func show_reaction(user_index: int, reaction_id: int) -> void:
 	var bubble = p1_reaction_bubble if user_index == 1 else p2_reaction_bubble
 	var icon = p1_reaction_icon if user_index == 1 else p2_reaction_icon
+	var player_card = p1_card if user_index == 1 else p2_card
 	if not is_instance_valid(bubble) or not is_instance_valid(icon):
 		return
 
@@ -996,26 +1095,36 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 		_p2_reaction_seq += 1
 	var my_seq = _p1_reaction_seq if user_index == 1 else _p2_reaction_seq
 
+	var accent_col = Color(1.0, 0.42, 0.38) if user_index == 1 else Color(0.35, 0.80, 1.0)
 	var bubble_frame = bubble.get_node_or_null("BubbleFrame") as PanelContainer
 	var kori_lbl: Label = null
+	var vfx_overlay: ReactionBubbleVFXOverlay = null
 	if is_instance_valid(bubble_frame):
 		kori_lbl = bubble_frame.get_node_or_null("KoriLabel") as Label
 		if not is_instance_valid(kori_lbl):
 			kori_lbl = Label.new()
 			kori_lbl.name = "KoriLabel"
 			kori_lbl.add_theme_font_override("font", _font_hekayat)
-			kori_lbl.add_theme_font_size_override("font_size", 24)
-			kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.86, 1.0))
-			kori_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-			kori_lbl.add_theme_constant_override("shadow_offset_y", 2)
 			kori_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			kori_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			kori_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			kori_lbl.custom_minimum_size = Vector2(290, 74)
 			bubble_frame.add_child(kori_lbl)
+		kori_lbl.add_theme_font_size_override("font_size", 32)
+		kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.88, 1.0))
+		kori_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		kori_lbl.add_theme_constant_override("shadow_offset_y", 2)
+		kori_lbl.add_theme_constant_override("shadow_outline_size", 4)
+		kori_lbl.custom_minimum_size = Vector2(336, 92)
+
+		vfx_overlay = bubble_frame.get_node_or_null("ReactionVFXOverlay") as ReactionBubbleVFXOverlay
+		if not is_instance_valid(vfx_overlay):
+			vfx_overlay = ReactionBubbleVFXOverlay.new()
+			vfx_overlay.name = "ReactionVFXOverlay"
+			vfx_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+			bubble_frame.add_child(vfx_overlay)
 
 	bubble.z_index = 30
-	var hold_duration = 2.4
+	var hold_duration = 2.6
 
 	if reaction_id > 100:
 		# Persian Kori (کری‌خوانی) Speech Bubble
@@ -1025,13 +1134,28 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			kori_lbl.visible = true
 			kori_lbl.text = "💬 " + KORIS[k_idx]
 		if is_instance_valid(bubble_frame):
-			bubble_frame.remove_theme_stylebox_override("panel")
-			bubble_frame.custom_minimum_size = Vector2(330, 104)
-			bubble_frame.offset_left = -165.0
-			bubble_frame.offset_top = -52.0
-			bubble_frame.offset_right = 165.0
-			bubble_frame.offset_bottom = 52.0
-		hold_duration = 4.2
+			var sb_bubble = StyleBoxFlat.new()
+			sb_bubble.bg_color = Color(0.14, 0.08, 0.05, 0.97)
+			sb_bubble.border_color = Color(1.0, 0.84, 0.32, 1.0)
+			sb_bubble.set_border_width_all(3)
+			sb_bubble.border_width_bottom = 5
+			sb_bubble.set_corner_radius_all(22)
+			sb_bubble.shadow_color = accent_col.lerp(Color(1.0, 0.82, 0.25), 0.5)
+			sb_bubble.shadow_color.a = 0.62
+			sb_bubble.shadow_size = 18
+			sb_bubble.shadow_offset = Vector2(0, 5)
+			sb_bubble.content_margin_left = 16
+			sb_bubble.content_margin_right = 16
+			sb_bubble.content_margin_top = 12
+			sb_bubble.content_margin_bottom = 12
+			bubble_frame.add_theme_stylebox_override("panel", sb_bubble)
+			bubble_frame.custom_minimum_size = Vector2(372, 120)
+			bubble_frame.offset_left = -186.0
+			bubble_frame.offset_top = -60.0
+			bubble_frame.offset_right = 186.0
+			bubble_frame.offset_bottom = 60.0
+			bubble_frame.size = Vector2(372, 120)
+		hold_duration = 4.4
 	else:
 		# Sticker / Emoji Reaction (Pure sticker without background, enlarged)
 		if is_instance_valid(kori_lbl):
@@ -1044,6 +1168,7 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			bubble_frame.offset_top = -74.0
 			bubble_frame.offset_right = 74.0
 			bubble_frame.offset_bottom = 74.0
+			bubble_frame.size = Vector2(148, 148)
 		if is_instance_valid(icon):
 			icon.custom_minimum_size = Vector2(148, 148)
 		var r_tex = _get_cached_reaction(reaction_id)
@@ -1051,27 +1176,39 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			icon.texture = r_tex
 
 	bubble.visible = true
-	bubble.scale = Vector2(0.1, 0.1)
+	bubble.scale = Vector2(0.12, 0.12)
 	bubble.modulate.a = 0.0
 	bubble.pivot_offset = bubble.size * 0.5
-
-	var start_rot = (-4.0 if user_index == 1 else 4.0) if reaction_id > 100 else (-7.0 if user_index == 1 else 7.0)
+	var start_rot = (-6.0 if user_index == 1 else 6.0) if reaction_id > 100 else (-9.0 if user_index == 1 else 9.0)
 	bubble.rotation_degrees = start_rot
-
 	AudioManager.play_sound("chat")
 
-	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(bubble, "scale", Vector2(1.12, 1.12) if reaction_id > 100 else Vector2(1.18, 1.18), 0.22)
-	tw.parallel().tween_property(bubble, "modulate:a", 1.0, 0.16)
-	tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.22)
-	tw.tween_property(bubble, "scale", Vector2.ONE, 0.1)
+	# Trigger User Card Pop + Particle Burst + Bubble Shockwave VFX
+	if is_instance_valid(player_card):
+		player_card.pivot_offset = player_card.size * 0.5
+		var card_tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		card_tw.tween_property(player_card, "scale", Vector2(1.06, 1.06), 0.14)
+		card_tw.tween_property(player_card, "scale", Vector2.ONE, 0.18)
+		if ActionVFXManager:
+			ActionVFXManager.spawn_ui_click_burst(player_card.global_position + player_card.size * 0.5, accent_col)
+	if is_instance_valid(vfx_overlay):
+		vfx_overlay.trigger_burst(accent_col, reaction_id > 100)
 
-	if reaction_id <= 100:
-		var idle_tw = create_tween().set_loops(3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		idle_tw.tween_property(bubble, "scale", Vector2(1.05, 1.05), 0.35)
-		idle_tw.parallel().tween_property(bubble, "rotation_degrees", -3.5 if user_index == 1 else 3.5, 0.35)
-		idle_tw.tween_property(bubble, "scale", Vector2.ONE, 0.35)
-		idle_tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.35)
+	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(bubble, "scale", Vector2(1.16, 1.16) if reaction_id > 100 else Vector2(1.22, 1.22), 0.22)
+	tw.parallel().tween_property(bubble, "modulate:a", 1.0, 0.15)
+	tw.parallel().tween_property(bubble, "rotation_degrees", 2.0 if user_index == 1 else -2.0, 0.22)
+	tw.tween_property(bubble, "scale", Vector2(0.97, 0.97), 0.09)
+	tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.09)
+	tw.tween_property(bubble, "scale", Vector2.ONE, 0.08)
+
+	var loops_count = 4 if reaction_id > 100 else 3
+	var sway_deg = 2.0 if reaction_id > 100 else 3.8
+	var idle_tw = create_tween().set_loops(loops_count).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	idle_tw.tween_property(bubble, "scale", Vector2(1.045, 1.045), 0.36)
+	idle_tw.parallel().tween_property(bubble, "rotation_degrees", -sway_deg if user_index == 1 else sway_deg, 0.36)
+	idle_tw.tween_property(bubble, "scale", Vector2.ONE, 0.36)
+	idle_tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.36)
 
 	await get_tree().create_timer(hold_duration).timeout
 	var current_seq = _p1_reaction_seq if user_index == 1 else _p2_reaction_seq

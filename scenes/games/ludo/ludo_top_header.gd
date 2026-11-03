@@ -415,13 +415,15 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			kori_lbl = Label.new()
 			kori_lbl.name = "KoriLabel"
 			kori_lbl.add_theme_font_override("font", _font_hekayat)
-			kori_lbl.add_theme_font_size_override("font_size", 22)
-			kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.86, 1.0))
 			kori_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			kori_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			kori_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			kori_lbl.custom_minimum_size = Vector2(260, 70)
 			bubble_frame.add_child(kori_lbl)
+		kori_lbl.add_theme_font_size_override("font_size", 30)
+		kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.88, 1.0))
+		kori_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		kori_lbl.add_theme_constant_override("shadow_outline_size", 3)
+		kori_lbl.custom_minimum_size = Vector2(300, 84)
 	bubble.z_index = 30
 	var hold_duration = 2.4
 	if reaction_id > 100:
