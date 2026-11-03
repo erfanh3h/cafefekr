@@ -468,17 +468,17 @@ static func get_difficulty_name_fa(game_type: String) -> String:
 static func get_classic_rank_xp(game_type: String, is_win: bool, is_draw: bool) -> int:
 	var diff = get_difficulty(game_type)
 	if diff == "easy":
-		return 15 if is_win else (8 if is_draw else 4)
+		return 8 if is_win else (4 if is_draw else 2)
 	elif diff == "normal":
-		return 25 if is_win else (14 if is_draw else 7)
+		return 14 if is_win else (7 if is_draw else 3)
 	else:
-		return 40 if is_win else (20 if is_draw else 10)
+		return 20 if is_win else (10 if is_draw else 5)
 
 static func get_lobby_xp(game_type: String, is_win: bool, is_draw: bool) -> int:
 	var diff = get_difficulty(game_type)
 	if diff == "easy":
-		return 8 if is_win else (4 if is_draw else 2)
+		return 5 if is_win else (2 if is_draw else 1)
 	elif diff == "normal":
-		return 14 if is_win else (7 if is_draw else 4)
+		return 9 if is_win else (4 if is_draw else 2)
 	else:
-		return 20 if is_win else (10 if is_draw else 5)
+		return 14 if is_win else (7 if is_draw else 3)
