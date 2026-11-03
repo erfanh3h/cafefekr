@@ -430,11 +430,27 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 		if is_instance_valid(kori_lbl):
 			kori_lbl.visible = true
 			kori_lbl.text = "💬 " + KORIS[k_idx]
+		if is_instance_valid(bubble_frame):
+			bubble_frame.remove_theme_stylebox_override("panel")
+			bubble_frame.custom_minimum_size = Vector2(300, 90)
+			bubble_frame.offset_left = -150.0
+			bubble_frame.offset_top = -45.0
+			bubble_frame.offset_right = 150.0
+			bubble_frame.offset_bottom = 45.0
 		hold_duration = 4.0
 	else:
 		if is_instance_valid(kori_lbl):
 			kori_lbl.visible = false
 		icon.visible = true
+		if is_instance_valid(bubble_frame):
+			bubble_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+			bubble_frame.custom_minimum_size = Vector2(148, 148)
+			bubble_frame.offset_left = -74.0
+			bubble_frame.offset_top = -74.0
+			bubble_frame.offset_right = 74.0
+			bubble_frame.offset_bottom = 74.0
+		if is_instance_valid(icon):
+			icon.custom_minimum_size = Vector2(148, 148)
 		var r_tex = _get_cached_reaction(reaction_id)
 		if r_tex:
 			icon.texture = r_tex

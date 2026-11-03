@@ -15,7 +15,7 @@ const FONT_FA = preload("res://assets/fonts/hekayat.ttf")
 
 # Popular, expressive reaction IDs from assets/icons/Reactions (16 items for clean 4x4 layout)
 const POPULAR_REACTIONS: Array[int] = [
-	1, 2, 3, 4, 6, 7, 8, 10, 11, 14, 15, 18, 20, 22, 27, 36
+	1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
 ]
 
 # Complete Persian Kori (کری‌خوانی) list matching Flutter app_consts.dart (indices 0..77 -> reactionId 101..178)
@@ -114,27 +114,16 @@ func _build_grid() -> void:
 	for child in grid.get_children():
 		child.queue_free()
 		
+	var empty_style = StyleBoxEmpty.new()
+
 	for r_id in POPULAR_REACTIONS:
 		var card = PanelContainer.new()
-		card.custom_minimum_size = Vector2(110, 110)
-		card.pivot_offset = Vector2(55, 55)
-		
-		var normal_style = StyleBoxFlat.new()
-		normal_style.bg_color = Color(0.13, 0.08, 0.05, 0.82)
-		normal_style.set_border_width_all(2)
-		normal_style.border_color = Color(0.48, 0.36, 0.22, 0.85)
-		normal_style.set_corner_radius_all(16)
-		normal_style.shadow_color = Color(0, 0, 0, 0.4)
-		normal_style.shadow_size = 4
-		card.add_theme_stylebox_override("panel", normal_style)
-		
-		var hover_style = normal_style.duplicate() as StyleBoxFlat
-		hover_style.border_color = Color(1.0, 0.85, 0.35, 1.0)
-		hover_style.bg_color = Color(0.25, 0.16, 0.08, 0.95)
-		hover_style.shadow_size = 8
+		card.custom_minimum_size = Vector2(140, 140)
+		card.pivot_offset = Vector2(70, 70)
+		card.add_theme_stylebox_override("panel", empty_style)
 		
 		var btn = TextureButton.new()
-		btn.custom_minimum_size = Vector2(96, 96)
+		btn.custom_minimum_size = Vector2(140, 140)
 		btn.ignore_texture_size = true
 		btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		
@@ -145,12 +134,10 @@ func _build_grid() -> void:
 		card.add_child(btn)
 		
 		btn.mouse_entered.connect(func():
-			card.add_theme_stylebox_override("panel", hover_style)
-			var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-			tw.tween_property(card, "scale", Vector2(1.12, 1.12), 0.1)
+			var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw.tween_property(card, "scale", Vector2(1.16, 1.16), 0.12)
 		)
 		btn.mouse_exited.connect(func():
-			card.add_theme_stylebox_override("panel", normal_style)
 			var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 			tw.tween_property(card, "scale", Vector2.ONE, 0.1)
 		)

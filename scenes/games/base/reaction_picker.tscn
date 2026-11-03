@@ -38,7 +38,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(820, 780)
+custom_minimum_size = Vector2(860, 980)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_panel")
 
