@@ -15,10 +15,6 @@ texture_margin_bottom = 60.0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
 texture = ExtResource("3_button_tex")
-texture_margin_left = 30.0
-texture_margin_top = 20.0
-texture_margin_right = 30.0
-texture_margin_bottom = 20.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input"]
 content_margin_left = 24.0
@@ -138,7 +134,7 @@ alignment = 1
 max_length = 13
 
 [node name="BtnSendCode" type="Button" parent="Margin/VBox/Step1_Phone"]
-custom_minimum_size = Vector2(520, 92)
+custom_minimum_size = Vector2(520, 112)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -175,7 +171,7 @@ size_flags_vertical = 4
 color = Color(0.6, 0.45, 0.3, 0.6)
 
 [node name="BtnGuestLogin" type="Button" parent="Margin/VBox/Step1_Phone"]
-custom_minimum_size = Vector2(460, 84)
+custom_minimum_size = Vector2(460, 104)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -214,7 +210,7 @@ alignment = 1
 max_length = 4
 
 [node name="BtnVerifyCode" type="Button" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(520, 92)
+custom_minimum_size = Vector2(520, 112)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -226,7 +222,7 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "تأیید و ورود به بازی"
 
 [node name="BtnBackPhone" type="Button" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(380, 80)
+custom_minimum_size = Vector2(380, 100)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -286,7 +282,7 @@ alignment = 1
 max_length = 6
 
 [node name="BtnSubmitUsername" type="Button" parent="Margin/VBox/Step3_Username"]
-custom_minimum_size = Vector2(520, 92)
+custom_minimum_size = Vector2(520, 112)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)

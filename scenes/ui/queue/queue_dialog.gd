@@ -66,7 +66,7 @@ func _setup_accept_ui() -> void:
 	# Accept Button (Green)
 	btn_accept = Button.new()
 	btn_accept.text = "آماده‌ام"
-	btn_accept.custom_minimum_size = Vector2(240, 64)
+	btn_accept.custom_minimum_size = Vector2(250, 96)
 	btn_accept.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 	btn_accept.add_theme_font_size_override("font_size", 28)
 	KenneyUI.style_button(btn_accept, KenneyUI.COLOR_GREEN)
@@ -76,7 +76,7 @@ func _setup_accept_ui() -> void:
 	# Reject Button (Red)
 	btn_reject = Button.new()
 	btn_reject.text = "انصراف"
-	btn_reject.custom_minimum_size = Vector2(240, 64)
+	btn_reject.custom_minimum_size = Vector2(250, 96)
 	btn_reject.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 	btn_reject.add_theme_font_size_override("font_size", 28)
 	KenneyUI.style_button(btn_reject, KenneyUI.COLOR_RED)

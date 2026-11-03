@@ -553,7 +553,7 @@ text = "بازی انتخاب‌شده: —"
 horizontal_alignment = 1
 
 [node name="BtnConfirm" type="Button" parent="Margin/VBox/BottomBar"]
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 104)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
 theme_override_font_sizes/font_size = 32

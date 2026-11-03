@@ -24,10 +24,10 @@ static func get_button_style(color: String = "wood", state: String = "normal") -
 		
 	var sb = StyleBoxTexture.new()
 	sb.texture = _wood_tex
-	sb.texture_margin_left = 36.0
-	sb.texture_margin_top = 22.0
-	sb.texture_margin_right = 36.0
-	sb.texture_margin_bottom = 26.0
+	sb.texture_margin_left = 0.0
+	sb.texture_margin_top = 0.0
+	sb.texture_margin_right = 0.0
+	sb.texture_margin_bottom = 0.0
 	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	
@@ -51,28 +51,28 @@ static func get_button_style(color: String = "wood", state: String = "normal") -
 		
 	if state == "pressed":
 		sb.modulate_color = base_tint * Color(0.85, 0.82, 0.78, 1.0)
-		sb.content_margin_left = 32.0
-		sb.content_margin_right = 32.0
-		sb.content_margin_top = 19.0 # Tactile 3px depress shift
-		sb.content_margin_bottom = 13.0
+		sb.content_margin_left = 40.0
+		sb.content_margin_right = 40.0
+		sb.content_margin_top = 25.0 # Tactile 3px depress shift
+		sb.content_margin_bottom = 19.0
 	elif state == "hover":
 		sb.modulate_color = base_tint * Color(1.14, 1.10, 1.04, 1.0) # Subtle warm highlight
-		sb.content_margin_left = 32.0
-		sb.content_margin_right = 32.0
-		sb.content_margin_top = 16.0
-		sb.content_margin_bottom = 16.0
+		sb.content_margin_left = 40.0
+		sb.content_margin_right = 40.0
+		sb.content_margin_top = 22.0
+		sb.content_margin_bottom = 22.0
 	elif state == "disabled":
 		sb.modulate_color = base_tint * Color(0.55, 0.52, 0.5, 0.7)
-		sb.content_margin_left = 32.0
-		sb.content_margin_right = 32.0
-		sb.content_margin_top = 16.0
-		sb.content_margin_bottom = 16.0
+		sb.content_margin_left = 40.0
+		sb.content_margin_right = 40.0
+		sb.content_margin_top = 22.0
+		sb.content_margin_bottom = 22.0
 	else: # normal
 		sb.modulate_color = base_tint
-		sb.content_margin_left = 32.0
-		sb.content_margin_right = 32.0
-		sb.content_margin_top = 16.0
-		sb.content_margin_bottom = 16.0
+		sb.content_margin_left = 40.0
+		sb.content_margin_right = 40.0
+		sb.content_margin_top = 22.0
+		sb.content_margin_bottom = 22.0
 		
 	_style_cache[key] = sb
 	return sb
@@ -101,10 +101,12 @@ static func style_button(btn: BaseButton, color: String = "wood", sound: String 
 	if cur_size < 28:
 		btn.add_theme_font_size_override("font_size", 28)
 		
-	if btn.custom_minimum_size.y < 70 and btn.custom_minimum_size.y > 0 and btn.custom_minimum_size.x > 90:
-		btn.custom_minimum_size.y = 76
-	elif btn.custom_minimum_size.y == 0:
-		btn.custom_minimum_size.y = 76
+	if btn.custom_minimum_size.y == 0:
+		btn.custom_minimum_size.y = 104
+	elif btn.custom_minimum_size.y < 60:
+		btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y + 18.0, 72.0)
+	elif btn.custom_minimum_size.y < 100:
+		btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y + 20.0, 100.0)
 		
 	# High-Contrast Color Harmony for Authentic Wooden Background (UX Art of Coloring)
 	# Crisp warm ivory / light bone white text

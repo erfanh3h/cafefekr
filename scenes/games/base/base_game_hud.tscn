@@ -73,10 +73,6 @@ shadow_offset = Vector2(0, 4)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
 texture = ExtResource("3_btn_wood")
-texture_margin_left = 22.0
-texture_margin_top = 12.0
-texture_margin_right = 22.0
-texture_margin_bottom = 12.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_round"]
 
@@ -457,7 +453,7 @@ theme_override_constants/separation = 16
 alignment = 1
 
 [node name="BtnFekrSubmit" type="Button" parent="FekrBekrActions/VBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(108, 112)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 
@@ -481,7 +477,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnFekrClear" type="Button" parent="FekrBekrActions/VBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(108, 112)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 
@@ -505,7 +501,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnFekrOpponent" type="Button" parent="FekrBekrActions/VBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(108, 112)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 
@@ -529,7 +525,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnFekrDual" type="Button" parent="FekrBekrActions/VBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(108, 112)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 
@@ -698,7 +694,7 @@ theme_override_constants/separation = 24
 alignment = 1
 
 [node name="BtnConfirmSurrender" type="Button" parent="SurrenderDialog/Card/VBox/BtnHBox"]
-custom_minimum_size = Vector2(340, 84)
+custom_minimum_size = Vector2(340, 106)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.35, 0.05, 0.05, 0.95)
@@ -709,7 +705,7 @@ theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "🏳️ بله، واگذار می‌کنم"
 
 [node name="BtnCancelSurrender" type="Button" parent="SurrenderDialog/Card/VBox/BtnHBox"]
-custom_minimum_size = Vector2(340, 84)
+custom_minimum_size = Vector2(340, 106)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.1, 0.95)

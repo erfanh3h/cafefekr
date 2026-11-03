@@ -70,7 +70,7 @@ theme_override_constants/v_separation = 24
 columns = 4
 
 [node name="BtnClose" type="Button" parent="CenterContainer/Panel/Margin/VBox"]
-custom_minimum_size = Vector2(300, 78)
+custom_minimum_size = Vector2(320, 102)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)

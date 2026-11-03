@@ -2156,7 +2156,7 @@ func _show_offline_dialog() -> void:
 
 		_offline_retry_btn = Button.new()
 		_offline_retry_btn.text = "🔄 تلاش مجدد"
-		_offline_retry_btn.custom_minimum_size = Vector2(360, 84)
+		_offline_retry_btn.custom_minimum_size = Vector2(380, 108)
 		_offline_retry_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		_offline_retry_btn.add_theme_font_override("font", font_hekayat)
 		_offline_retry_btn.add_theme_font_size_override("font_size", 34)
@@ -2613,7 +2613,7 @@ func _show_ranked_locked_dialog() -> void:
 
 		var btn_play_bot = Button.new()
 		btn_play_bot.text = "🎮 کسب XP در رنک تک‌نفره (ربات)"
-		btn_play_bot.custom_minimum_size = Vector2(400, 76)
+		btn_play_bot.custom_minimum_size = Vector2(420, 102)
 		btn_play_bot.add_theme_font_override("font", font_hekayat)
 		btn_play_bot.add_theme_font_size_override("font_size", 30)
 		KenneyUI.style_button(btn_play_bot, KenneyUI.COLOR_GREEN)
@@ -2626,7 +2626,7 @@ func _show_ranked_locked_dialog() -> void:
 
 		var btn_close = Button.new()
 		btn_close.text = "متوجه شدم"
-		btn_close.custom_minimum_size = Vector2(200, 76)
+		btn_close.custom_minimum_size = Vector2(220, 102)
 		btn_close.add_theme_font_override("font", font_hekayat)
 		btn_close.add_theme_font_size_override("font_size", 28)
 		KenneyUI.style_button(btn_close, KenneyUI.COLOR_GREY)

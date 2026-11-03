@@ -590,18 +590,14 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	var row_panel = PanelContainer.new()
 	var style = StyleBoxTexture.new()
 	style.texture = _btn_style
-	style.texture_margin_left = 25
-	style.texture_margin_right = 25
-	style.texture_margin_top = 18
-	style.texture_margin_bottom = 18
 	row_panel.add_theme_stylebox_override("panel", style)
-	row_panel.custom_minimum_size = Vector2(0, 105)
+	row_panel.custom_minimum_size = Vector2(0, 132)
 	
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_right", 20)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
+	margin.add_theme_constant_override("margin_left", 44)
+	margin.add_theme_constant_override("margin_right", 44)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_bottom", 16)
 	row_panel.add_child(margin)
 	
 	var hbox = HBoxContainer.new()
@@ -612,7 +608,7 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	# Join button (Kenney tactile button)
 	var btn_join = Button.new()
 	btn_join.text = "ورود"
-	btn_join.custom_minimum_size = Vector2(130, 68)
+	btn_join.custom_minimum_size = Vector2(148, 88)
 	btn_join.add_theme_font_size_override("font_size", 26)
 	KenneyUI.style_button(btn_join, KenneyUI.COLOR_GREEN)
 	btn_join.pressed.connect(func():

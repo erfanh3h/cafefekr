@@ -1597,7 +1597,7 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	# Action Button: Return to Menu
 	var btn_return = Button.new()
 	btn_return.text = "بازگشت به منوی اصلی"
-	btn_return.custom_minimum_size = Vector2(340, 72)
+	btn_return.custom_minimum_size = Vector2(360, 102)
 	btn_return.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 	btn_return.add_theme_font_size_override("font_size", 28)
 	KenneyUI.style_button(btn_return, KenneyUI.COLOR_GREEN)

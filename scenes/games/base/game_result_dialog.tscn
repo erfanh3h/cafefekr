@@ -87,10 +87,6 @@ corner_radius_bottom_left = 20
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
 texture = ExtResource("3_btn_wood")
-texture_margin_left = 22.0
-texture_margin_top = 12.0
-texture_margin_right = 22.0
-texture_margin_bottom = 12.0
 
 [node name="GameResultDialog" type="Control"]
 layout_mode = 3
@@ -417,7 +413,7 @@ theme_override_constants/separation = 20
 alignment = 1
 
 [node name="BtnReturn" type="Button" parent="CenterContainer/Panel/VBox/ButtonsRow"]
-custom_minimum_size = Vector2(560, 88)
+custom_minimum_size = Vector2(560, 112)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.05, 0.15, 0.35, 0.95)

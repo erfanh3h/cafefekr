@@ -16,10 +16,6 @@ texture_margin_bottom = 60.0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
 texture = ExtResource("4_button_tex")
-texture_margin_left = 30.0
-texture_margin_top = 20.0
-texture_margin_right = 30.0
-texture_margin_bottom = 20.0
 
 [node name="QueueDialog" type="PanelContainer"]
 custom_minimum_size = Vector2(880, 720)
@@ -121,7 +117,7 @@ horizontal_alignment = 1
 
 [node name="BtnCancel" type="Button" parent="Margin/VBox"]
 visible = false
-custom_minimum_size = Vector2(380, 84)
+custom_minimum_size = Vector2(380, 108)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
