@@ -21,7 +21,7 @@ var sounds: Dictionary = {}
 var music_theme_paths: Array[String] = []
 var music_queue_path: String = ""
 var music_game_paths: Array[String] = []
-var _current_music_path: String = 
+var _current_music_path: String = ""
 
 func _ready() -> void:
 	_load_settings()
