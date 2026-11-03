@@ -89,9 +89,9 @@ var _ranked_rewards_applied: bool = false
 
 
 
-var _sound_on_tex = preload("res://assets/icons/General/soundOn.png")
+var _sound_on_tex = preload("res://assets/images/badges/sound-on.png")
 
-var _sound_off_tex = preload("res://assets/icons/General/soundOff.png")
+var _sound_off_tex = preload("res://assets/images/badges/sound-off.png")
 
 
 

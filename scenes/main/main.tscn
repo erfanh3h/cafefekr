@@ -18,11 +18,11 @@
 [ext_resource type="Texture2D" path="res://assets/images/badges/lobby.png" id="16_lobby_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/classic-rank.png" id="17_multi_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button3.png" id="18_button3_tex"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/cup.png" id="19_cup_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/bests.png" id="19_bests_tex"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/store1.png" id="20_store_tex"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/info.png" id="21_info_tex"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/soundOn.png" id="22_sound_tex"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/exit.png" id="23_exit_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/info.png" id="21_info_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/sound-on.png" id="22_sound_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/exit.png" id="23_exit_tex"]
 [ext_resource type="PackedScene" uid="uid://basehudscene01" path="res://scenes/games/base/base_game_hud.tscn" id="24_base_hud"]
 [ext_resource type="PackedScene" uid="uid://cxprofiledialog01" path="res://scenes/ui/profile/user_profile_dialog.tscn" id="25_profile_dlg"]
 [ext_resource type="Texture2D" uid="uid://bjmon80i1yqbe" path="res://assets/images/background2.png" id="26_menu_bg"]
@@ -70,6 +70,8 @@ modulate_color = Color(1.15, 1.1, 1, 1)
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_tile_pressed"]
 texture = ExtResource("18_button3_tex")
 modulate_color = Color(0.85, 0.8, 0.75, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dock_btn"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main_script")
@@ -439,24 +441,28 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -460.0
-offset_top = -215.0
+offset_top = -225.0
 offset_right = 460.0
-offset_bottom = -40.0
+offset_bottom = -35.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_constants/margin_bottom = 10
 
 [node name="HBoxDock" type="HBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 40
 alignment = 1
 
 [node name="BtnRanking" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
-custom_minimum_size = Vector2(210, 150)
+custom_minimum_size = Vector2(136, 158)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
-theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_tile_pressed")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking"]
 layout_mode = 1
@@ -466,36 +472,28 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
 alignment = 1
 
 [node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking/VBox"]
-material = SubResource("ShaderMaterial_white_icon")
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(136, 158)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 4
 mouse_filter = 2
-texture = ExtResource("19_cup_tex")
+texture = ExtResource("19_bests_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking/VBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_outline_size = 3
-theme_override_fonts/font = ExtResource("12_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "برترین‌ها"
-horizontal_alignment = 1
-
 [node name="BtnRules" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
-custom_minimum_size = Vector2(210, 150)
+custom_minimum_size = Vector2(136, 158)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
-theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_tile_pressed")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules"]
 layout_mode = 1
@@ -505,36 +503,28 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
 alignment = 1
 
 [node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules/VBox"]
-material = SubResource("ShaderMaterial_white_icon")
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(136, 158)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 4
 mouse_filter = 2
 texture = ExtResource("21_info_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules/VBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_outline_size = 3
-theme_override_fonts/font = ExtResource("12_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "راهنما"
-horizontal_alignment = 1
-
 [node name="BtnAudio" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
-custom_minimum_size = Vector2(210, 150)
+custom_minimum_size = Vector2(136, 158)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
-theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_tile_pressed")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio"]
 layout_mode = 1
@@ -544,36 +534,28 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
 alignment = 1
 
 [node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio/VBox"]
-material = SubResource("ShaderMaterial_white_icon")
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(136, 158)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 4
 mouse_filter = 2
 texture = ExtResource("22_sound_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio/VBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_outline_size = 3
-theme_override_fonts/font = ExtResource("12_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "صدا"
-horizontal_alignment = 1
-
 [node name="BtnExit" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
-custom_minimum_size = Vector2(210, 150)
+custom_minimum_size = Vector2(136, 158)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxTexture_wood_tile")
-theme_override_styles/hover = SubResource("StyleBoxTexture_wood_tile_hover")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_tile_pressed")
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
 
 [node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnExit"]
 layout_mode = 1
@@ -583,30 +565,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
 alignment = 1
 
 [node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnExit/VBox"]
-material = SubResource("ShaderMaterial_white_icon")
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(136, 158)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 4
 mouse_filter = 2
 texture = ExtResource("23_exit_tex")
 expand_mode = 1
 stretch_mode = 5
-
-[node name="Label" type="Label" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnExit/VBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_outline_size = 3
-theme_override_fonts/font = ExtResource("12_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "خروج"
-horizontal_alignment = 1
 vertical_alignment = 1 
 
 [node name="UserHeader" parent="CanvasLayer" instance=ExtResource("3_user_header")]
