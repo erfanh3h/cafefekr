@@ -2517,6 +2517,14 @@ func _show_ranked_locked_dialog() -> void:
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		prog_row.add_child(spacer)
 
+		var level_icon = TextureRect.new()
+		level_icon.texture = preload("res://assets/images/badges/level.png")
+		level_icon.custom_minimum_size = Vector2(32, 36)
+		level_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		level_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		level_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		prog_row.add_child(level_icon)
+
 		_ranked_locked_progress_lbl = Label.new()
 		_ranked_locked_progress_lbl.text = ""
 		_ranked_locked_progress_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -2600,7 +2608,7 @@ func _show_ranked_locked_dialog() -> void:
 
 	# Update dynamic values
 	if is_instance_valid(_ranked_locked_progress_lbl):
-		_ranked_locked_progress_lbl.text = "سطح شما: %s (%s / %s XP)" % [GameManager.to_fa_num(prog.current_level), GameManager.to_fa_num(prog.current_xp), GameManager.to_fa_num(prog.target_xp)]
+		_ranked_locked_progress_lbl.text = "%s (%s / %s XP)" % [GameManager.to_fa_num(prog.current_level), GameManager.to_fa_num(prog.current_xp), GameManager.to_fa_num(prog.target_xp)]
 	if is_instance_valid(_ranked_locked_remain_lbl):
 		_ranked_locked_remain_lbl.text = "%s XP تا بازگشایی رنک" % [GameManager.to_fa_num(prog.remaining_xp)]
 	if is_instance_valid(_ranked_locked_bar):

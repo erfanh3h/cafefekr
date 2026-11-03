@@ -1,10 +1,11 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/rank/ranked_breakout_dialog.gd" id="1_breakout_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
 [ext_resource type="Texture2D" path="res://assets/icons/Avatars/0.png" id="3_default_avatar"]
 [ext_resource type="Texture2D" path="res://assets/images/games/chess.jpg" id="4_default_thumb"]
 [ext_resource type="Texture2D" path="res://assets/images/pick-ban.png" id="5_room_bg"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/score.png" id="6_score_badge"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header_card"]
 bg_color = Color(0.11, 0.07, 0.05, 0.74)
@@ -248,6 +249,25 @@ theme_override_fonts/font = ExtResource("2_font_hekayat")
 theme_override_font_sizes/font_size = 26
 text = "میزبان (P1)"
 
+[node name="P1RatingRow" type="HBoxContainer" parent="Margin/VBox/HeaderCard/Margin/HBox/P1Box/P1Info"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="P1ScoreBadge" type="TextureRect" parent="Margin/VBox/HeaderCard/Margin/HBox/P1Box/P1Info/P1RatingRow"]
+custom_minimum_size = Vector2(28, 32)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("6_score_badge")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="P1RatingLabel" type="Label" parent="Margin/VBox/HeaderCard/Margin/HBox/P1Box/P1Info/P1RatingRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "۱۲۰۰"
+
 [node name="P1ScoreBadge" type="PanelContainer" parent="Margin/VBox/HeaderCard/Margin/HBox"]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
@@ -327,6 +347,27 @@ theme_override_fonts/font = ExtResource("2_font_hekayat")
 theme_override_font_sizes/font_size = 26
 text = "مهمان (P2)"
 horizontal_alignment = 2
+
+[node name="P2RatingRow" type="HBoxContainer" parent="Margin/VBox/HeaderCard/Margin/HBox/P2Box/P2Info"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="P2RatingLabel" type="Label" parent="Margin/VBox/HeaderCard/Margin/HBox/P2Box/P2Info/P2RatingRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "۱۱۵۰"
+horizontal_alignment = 2
+
+[node name="P2ScoreBadge" type="TextureRect" parent="Margin/VBox/HeaderCard/Margin/HBox/P2Box/P2Info/P2RatingRow"]
+custom_minimum_size = Vector2(28, 32)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("6_score_badge")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="P2Avatar" type="TextureRect" parent="Margin/VBox/HeaderCard/Margin/HBox/P2Box"]
 custom_minimum_size = Vector2(100, 100)

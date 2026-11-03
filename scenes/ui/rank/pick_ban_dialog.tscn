@@ -1,8 +1,10 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/rank/pick_ban_dialog.gd" id="1_pb_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
 [ext_resource type="Texture2D" path="res://assets/images/pick-ban.png" id="3_bg_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/score.png" id="4_score_badge"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/level.png" id="5_level_badge"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_full_bg"]
 bg_color = Color(0.02, 0.02, 0.01, 1.0)
@@ -265,12 +267,24 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "بازیکن ۱"
 clip_text = true
 
-[node name="P1Score" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
+[node name="P1ScoreRow" type="HBoxContainer" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="P1ScoreBadge" type="TextureRect" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1ScoreRow"]
+custom_minimum_size = Vector2(26, 30)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4_score_badge")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="P1Score" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1ScoreRow"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 25
+theme_override_font_sizes/font_size = 26
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
-text = "امتیاز: ۱۲۰۰"
+text = "۱۲۰۰"
 
 [node name="P1Role" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
 layout_mode = 2
@@ -330,13 +344,26 @@ text = "بازیکن ۲"
 horizontal_alignment = 2
 clip_text = true
 
-[node name="P2Score" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
+[node name="P2ScoreRow" type="HBoxContainer" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 2
+
+[node name="P2Score" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2ScoreRow"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 25
+theme_override_font_sizes/font_size = 26
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
-text = "امتیاز: ۱۱۵۰"
+text = "۱۱۵۰"
 horizontal_alignment = 2
+
+[node name="P2ScoreBadge" type="TextureRect" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2ScoreRow"]
+custom_minimum_size = Vector2(26, 30)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4_score_badge")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="P2Role" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
 layout_mode = 2

@@ -10,8 +10,8 @@ signal closed()
 @onready var img_avatar: TextureRect = $CenterContainer/Panel/Margin/VBox/AvatarBox/Plaque/Avatar
 @onready var lbl_username: Label = $CenterContainer/Panel/Margin/VBox/LblUsername
 @onready var lbl_role: Label = $CenterContainer/Panel/Margin/VBox/LblRole
-@onready var lbl_level: Label = $CenterContainer/Panel/Margin/VBox/StatsGrid/LevelCard/LblLevel
-@onready var lbl_score: Label = $CenterContainer/Panel/Margin/VBox/StatsGrid/ScoreCard/LblScore
+@onready var lbl_level: Label = $CenterContainer/Panel/Margin/VBox/StatsGrid/LevelCard/LevelHBox/LblLevel
+@onready var lbl_score: Label = $CenterContainer/Panel/Margin/VBox/StatsGrid/ScoreCard/ScoreHBox/LblScore
 @onready var coins_card: PanelContainer = $CenterContainer/Panel/Margin/VBox/StatsGrid/CoinsCard
 @onready var lbl_coins: Label = $CenterContainer/Panel/Margin/VBox/StatsGrid/CoinsCard/LblCoins
 @onready var btn_copy_id: Button = $CenterContainer/Panel/Margin/VBox/UserIdBox/BtnCopyId
@@ -68,10 +68,10 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 		img_avatar.texture = load(av_path)
 		
 	var score_val = user_dict.get("score", user_dict.get("user_score", 0))
-	lbl_score.text = "امتیاز: %d" % int(score_val)
+	lbl_score.text = GameManager.to_fa_num(int(score_val))
 	
 	var coin_val = user_dict.get("coin", user_dict.get("user_coin", user_dict.get("coins", 0)))
-	lbl_coins.text = "💰 سکه‌ها: %d" % int(coin_val)
+	lbl_coins.text = "💰 %s" % GameManager.to_fa_num(int(coin_val))
 	
 	var xp_val = int(float(user_dict.get("xp", user_dict.get("user_xp", 0))))
 	var level_val = 1
@@ -79,7 +79,7 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 		level_val = GameManager.calculate_level(xp_val)
 	else:
 		level_val = int(user_dict.get("level", 1))
-	lbl_level.text = "⭐ سطح: %s" % GameManager.to_fa_num(level_val)
+	lbl_level.text = GameManager.to_fa_num(level_val)
 	
 	_current_user_id = str(user_dict.get("_id", user_dict.get("id", user_dict.get("user_id", ""))))
 	btn_copy_id.text = "📋 کپی شناسه"

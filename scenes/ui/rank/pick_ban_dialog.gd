@@ -33,7 +33,7 @@ const KenneyUI = preload("res://scenes/ui/kenney_ui_helper.gd")
 @onready var p1_card: PanelContainer = $Margin/VBox/PlayersStrip/P1Card
 @onready var p1_avatar: TextureRect = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/P1Avatar
 @onready var p1_name: Label = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1Name
-@onready var p1_score: Label = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1Score
+@onready var p1_score: Label = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1ScoreRow/P1Score
 @onready var p1_role: Label = $Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1/P1Role
 
 @onready var lbl_vs: Label = $Margin/VBox/PlayersStrip/CenterVS/LblVS
@@ -42,7 +42,7 @@ const KenneyUI = preload("res://scenes/ui/kenney_ui_helper.gd")
 @onready var p2_card: PanelContainer = $Margin/VBox/PlayersStrip/P2Card
 @onready var p2_avatar: TextureRect = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/P2Avatar
 @onready var p2_name: Label = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2Name
-@onready var p2_score: Label = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2Score
+@onready var p2_score: Label = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2ScoreRow/P2Score
 @onready var p2_role: Label = $Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2/P2Role
 
 # Timeline
@@ -337,7 +337,7 @@ func _setup_player_strip() -> void:
 	var p1_s = _resolve_player_score(p1_data, 1)
 	var p1_img = int(p1_data.get("image", p1_data.get("user_image", p1_data.get("avatar", 0))))
 	p1_name.text = p1_uname
-	p1_score.text = "🏆 امتیاز: %s" % _fa_num(p1_s)
+	p1_score.text = _fa_num(p1_s)
 	p1_avatar.texture = _load_avatar_texture(p1_img)
 	if my_player_index == 1:
 		p1_role.text = "شما"
@@ -351,7 +351,7 @@ func _setup_player_strip() -> void:
 	var p2_s = _resolve_player_score(p2_data, 2)
 	var p2_img = int(p2_data.get("image", p2_data.get("user_image", p2_data.get("avatar", 1))))
 	p2_name.text = p2_uname
-	p2_score.text = "🏆 امتیاز: %s" % _fa_num(p2_s)
+	p2_score.text = _fa_num(p2_s)
 	p2_avatar.texture = _load_avatar_texture(p2_img)
 	if my_player_index == 2:
 		p2_role.text = "شما"

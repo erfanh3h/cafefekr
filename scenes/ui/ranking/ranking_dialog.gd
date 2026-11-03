@@ -104,7 +104,7 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 				continue
 			username = item.get("username", "بی‌نام")
 			var raw_score = float(item.get("score", 0))
-			val_text = "%d امتیاز" % int(round(raw_score))
+			val_text = GameManager.to_fa_num(int(round(raw_score)))
 			img_id = int(item.get("image", 0))
 			var item_xp = int(item.get("xp", item.get("user_xp", 0)))
 			var item_lvl = GameManager.calculate_level(item_xp) if item_xp > 0 else int(item.get("level", 1))
@@ -126,7 +126,7 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 				continue
 			username = u_data.get("username", "بی‌نام")
 			var raw_win = float(item.get("win", 0))
-			val_text = "%d برد" % int(round(raw_win))
+			val_text = "%s برد" % GameManager.to_fa_num(int(round(raw_win)))
 			img_id = int(u_data.get("image", 0))
 			var u_xp = int(u_data.get("xp", item.get("xp", 0)))
 			var u_lvl = GameManager.calculate_level(u_xp) if u_xp > 0 else int(u_data.get("level", item.get("level", 1)))
@@ -272,7 +272,45 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	name_lbl.add_theme_constant_override("shadow_outline_size", 3)
 	row.add_child(name_lbl)
 	
-	# 4. Score / Wins Value (large font 32px)
+	# 4. User Level Badge
+	var lvl_val = int(user_dict.get("level", 1))
+	if lvl_val > 0:
+		var lvl_box = HBoxContainer.new()
+		lvl_box.add_theme_constant_override("separation", 6)
+		lvl_box.alignment = BoxContainer.ALIGNMENT_CENTER
+		var lvl_icon = TextureRect.new()
+		lvl_icon.texture = preload("res://assets/images/badges/level.png")
+		lvl_icon.custom_minimum_size = Vector2(30, 34)
+		lvl_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		lvl_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		lvl_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lvl_box.add_child(lvl_icon)
+		
+		var lvl_lbl = Label.new()
+		lvl_lbl.text = GameManager.to_fa_num(lvl_val)
+		lvl_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lvl_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		lvl_lbl.add_theme_font_size_override("font_size", 28)
+		lvl_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
+		lvl_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+		lvl_lbl.add_theme_constant_override("shadow_outline_size", 2)
+		lvl_box.add_child(lvl_lbl)
+		row.add_child(lvl_box)
+	
+	# 5. Score / Wins Value (with badge)
+	var val_box = HBoxContainer.new()
+	val_box.add_theme_constant_override("separation", 8)
+	val_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	
+	if current_tab == "score":
+		var sc_icon = TextureRect.new()
+		sc_icon.texture = preload("res://assets/images/badges/score.png")
+		sc_icon.custom_minimum_size = Vector2(32, 36)
+		sc_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		sc_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		sc_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		val_box.add_child(sc_icon)
+	
 	var val_lbl = Label.new()
 	val_lbl.text = val_str
 	val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -281,7 +319,8 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
 	val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	val_lbl.add_theme_constant_override("shadow_outline_size", 3)
-	row.add_child(val_lbl)
+	val_box.add_child(val_lbl)
+	row.add_child(val_box)
 	
 	card.add_child(row)
 	
