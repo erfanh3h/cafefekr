@@ -1045,6 +1045,12 @@ func _setup_connections() -> void:
 
 
 func _show_player_profile(player_index: int) -> void:
+	if not GameManager.is_game_active or is_countdown_running or not is_start_overlay_dismissed or not is_game_started:
+		print("[HUD] Profile popup suppressed during game start / countdown.")
+		return
+	if is_instance_valid(start_overlay) and start_overlay.visible:
+		print("[HUD] Profile popup suppressed: start overlay is visible.")
+		return
 
 	AudioManager.sfx_tap()
 
@@ -1271,6 +1277,10 @@ func reset_for_new_match() -> void:
 
 	pause_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+	if is_instance_valid(user_profile_dialog):
+		user_profile_dialog.visible = false
+		user_profile_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	if reaction_picker and is_instance_valid(reaction_picker):
 
 		reaction_picker.visible = false
@@ -1496,6 +1506,10 @@ func _sync_multiplayer_intro_columns() -> void:
 func setup_match(game_title: String = "تیک تاک تو", mode_title: String = "لابی دوستانه") -> void:
 
 	visible = true
+
+	if is_instance_valid(user_profile_dialog):
+		user_profile_dialog.visible = false
+		user_profile_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	set_fekrbekr_hud_buttons(false)
 
@@ -1899,6 +1913,8 @@ func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
 			start_overlay.visible = false
 		if emit_finished:
 			start_countdown_finished.emit()
+	if is_instance_valid(current_top_header) and current_top_header.has_method("set_profile_clicks_enabled"):
+		current_top_header.set_profile_clicks_enabled(true)
 	if GameManager.is_game_active:
 		is_game_started = true
 		if not is_timer_active and not is_game_finished:
@@ -2561,6 +2577,9 @@ func start_turn_timer(duration: float, custom_banner: String = "") -> void:
 	is_timer_active = true
 
 	is_game_started = true
+
+	if is_instance_valid(current_top_header) and current_top_header.has_method("set_profile_clicks_enabled"):
+		current_top_header.set_profile_clicks_enabled(true)
 
 	var banner = custom_banner
 

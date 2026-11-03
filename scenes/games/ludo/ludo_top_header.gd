@@ -119,10 +119,14 @@ func _build_extra_player_cards() -> void:
 
 		if is_instance_valid(btn_prof):
 			btn_prof.name = "BtnP%dProfile" % idx
+			btn_prof.focus_mode = Control.FOCUS_NONE
 			for conn in btn_prof.pressed.get_connections():
 				btn_prof.pressed.disconnect(conn["callable"])
 			var player_i = idx
-			btn_prof.pressed.connect(func(): player_profile_clicked.emit(player_i))
+			btn_prof.pressed.connect(func():
+				if _can_emit_profile_click():
+					player_profile_clicked.emit(player_i)
+			)
 
 		if is_instance_valid(role_lbl):
 			var sb_role = StyleBoxFlat.new()

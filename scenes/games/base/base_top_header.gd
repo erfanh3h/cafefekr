@@ -10,6 +10,14 @@ extends Control
 signal p1_profile_clicked()
 signal p2_profile_clicked()
 
+var _profile_clicks_enabled: bool = false
+
+func set_profile_clicks_enabled(enabled: bool) -> void:
+	_profile_clicks_enabled = enabled
+
+func _can_emit_profile_click() -> bool:
+	return _profile_clicks_enabled and GameManager.is_game_active
+
 # --- Player 1 Card Nodes ---
 @onready var p1_card: PanelContainer = $Margin/VBoxMain/PlayersRow/P1Card
 @onready var p1_avatar: TextureRect = $Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer/Avatar
@@ -303,9 +311,17 @@ func _ready() -> void:
 
 func _connect_buttons() -> void:
 	if is_instance_valid(btn_p1_profile):
-		btn_p1_profile.pressed.connect(func(): p1_profile_clicked.emit())
+		btn_p1_profile.focus_mode = Control.FOCUS_NONE
+		btn_p1_profile.pressed.connect(func():
+			if _can_emit_profile_click():
+				p1_profile_clicked.emit()
+		)
 	if is_instance_valid(btn_p2_profile):
-		btn_p2_profile.pressed.connect(func(): p2_profile_clicked.emit())
+		btn_p2_profile.focus_mode = Control.FOCUS_NONE
+		btn_p2_profile.pressed.connect(func():
+			if _can_emit_profile_click():
+				p2_profile_clicked.emit()
+		)
 
 func _setup_styles() -> void:
 	# P1 Active (Royal Crimson-Gold Illuminated Plaque)
@@ -572,6 +588,7 @@ func _enhance_player_card(player_idx: int) -> void:
 			av_container.add_child(side_lbl)
 			var btn_prof = btn_p1_profile if player_idx == 1 else btn_p2_profile
 			if is_instance_valid(btn_prof):
+				btn_prof.focus_mode = Control.FOCUS_NONE
 				av_container.move_child(btn_prof, av_container.get_child_count() - 1)
 
 			if player_idx == 1:
@@ -703,6 +720,7 @@ func set_round(round_num: int, max_rounds: int) -> void:
 			lbl_round.text = "راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
+	_profile_clicks_enabled = false
 	_my_player_index = my_idx
 	_update_score_badges_visibility()
 
@@ -1067,6 +1085,7 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			bubble.rotation_degrees = 0.0
 
 func reset_header() -> void:
+	_profile_clicks_enabled = false
 	_last_displayed_sec = -1
 	_last_p1_score = 0
 	_last_p2_score = 0

@@ -21,6 +21,11 @@ var _current_user_id: String = ""
 
 func _ready() -> void:
 	visible = false
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if is_instance_valid(btn_copy_id):
+		btn_copy_id.focus_mode = Control.FOCUS_NONE
+	if is_instance_valid(btn_close_top):
+		btn_close_top.focus_mode = Control.FOCUS_NONE
 	coins_card.visible = false
 	KenneyUI.style_button(btn_copy_id, KenneyUI.COLOR_BLUE)
 	
@@ -46,6 +51,7 @@ func _ready() -> void:
 	)
 
 func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = true
 	var uname = user_dict.get("name", user_dict.get("username", "بازیکن کافه فکر"))
 	lbl_username.text = uname
@@ -88,6 +94,8 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 	ActionVFXManager.animate_dialog_open(panel, self, true)
 
 func close() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ActionVFXManager.animate_dialog_close(panel, self, func():
+		visible = false
 		closed.emit()
 	)

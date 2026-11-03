@@ -49,9 +49,7 @@ const GAME_KEYS = [
 	{"key": "fekrbekr", "name": "فکر بکر", "time": "۸ دقیقه", "diff": "متوسط"},
 	{"key": "boxfour", "name": "چهارطرفه", "time": "۵ الی ۱۰ دقیقه", "diff": "متوسط"},
 	{"key": "mnumbers", "name": "کشف اعداد", "time": "۵ الی ۲۰ دقیقه", "diff": "آسان"},
-	{"key": "msweeper", "name": "مین یاب", "time": "۵ الی ۱۰ دقیقه", "diff": "سخت"},
-	{"key": "rank_mode", "name": "رقابت رنکد", "time": "آنلاین", "diff": "رسمی"},
-	{"key": "lobby_mode", "name": "اتاق دوستانه", "time": "آنلاین", "diff": "خصوصی"}
+	{"key": "msweeper", "name": "مین یاب", "time": "۵ الی ۱۰ دقیقه", "diff": "سخت"}
 ]
 
 func _ready() -> void:
@@ -158,12 +156,7 @@ func _update_selected_game_display() -> void:
 	if ResourceLoader.exists(icon_path):
 		selected_game_icon.texture = load(icon_path)
 		selected_game_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	elif selected_game_key == "rank_mode":
-		selected_game_icon.texture = load("res://assets/icons/General/rank.png")
-		selected_game_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	elif selected_game_key == "lobby_mode":
-		selected_game_icon.texture = load("res://assets/icons/General/lobby.png")
-		selected_game_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
 	else:
 		selected_game_icon.texture = load("res://assets/icons/General/lobby.png")
 		selected_game_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -250,12 +243,7 @@ func _create_game_card(g: Dictionary) -> Control:
 		icon_path = "res://assets/images/games/%s.jpg" % k
 	if ResourceLoader.exists(icon_path):
 		img.texture = load(icon_path)
-	elif k == "rank_mode":
-		img.texture = load("res://assets/icons/General/rank.png")
-		img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	elif k == "lobby_mode":
-		img.texture = load("res://assets/icons/General/lobby.png")
-		img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
 	else:
 		img.texture = load("res://assets/icons/General/lobby.png")
 		img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -375,11 +363,7 @@ func _render_content() -> void:
 	for child in content_box.get_children():
 		child.queue_free()
 	
-	# If rank or lobby special mode
-	if selected_game_key == "rank_mode" or selected_game_key == "lobby_mode":
-		sub_tabs_row.visible = false
-		_render_general_guide(selected_game_key)
-		return
+
 	
 	sub_tabs_row.visible = true
 	var g_data = _game_docs.get(selected_game_key, {})

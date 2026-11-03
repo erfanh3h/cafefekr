@@ -962,6 +962,11 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 	if is_instance_valid(user_profile_dialog):
 
 		user_profile_dialog.visible = false
+		user_profile_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	if is_instance_valid(base_game_hud) and is_instance_valid(base_game_hud.user_profile_dialog):
+		base_game_hud.user_profile_dialog.visible = false
+		base_game_hud.user_profile_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 
@@ -1076,6 +1081,12 @@ func _on_start_game_received() -> void:
 
 
 func _activate_start_game() -> void:
+
+	if is_instance_valid(user_profile_dialog):
+		user_profile_dialog.visible = false
+	if is_instance_valid(base_game_hud) and is_instance_valid(base_game_hud.user_profile_dialog):
+		base_game_hud.user_profile_dialog.visible = false
+		base_game_hud.user_profile_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	base_game_hud.force_dismiss_start_overlay(false)
 
