@@ -113,7 +113,7 @@ func update_ui() -> void:
 		var next_base = int(lvl_info.get("next_level_exp", 60))
 		var progress_pct = float(lvl_info.get("progress", 0.0)) * 100.0
 
-		lbl_level.text = "سطح %s" % _fa_num(level)
+		lbl_level.text = _fa_num(level)
 
 		if is_instance_valid(xp_bar):
 			xp_bar.min_value = 0.0
@@ -122,7 +122,7 @@ func update_ui() -> void:
 			xp_bar.value = progress_pct
 
 		if is_instance_valid(lbl_xp_value):
-			lbl_xp_value.text = "\u200E%s / %s XP\u200E" % [_fa_num(xp), _fa_num(next_base)]
+			lbl_xp_value.text = "\u200E%s/%s\u200E" % [_fa_num(xp), _fa_num(next_base)]
 
 		var img_id = int(GameManager.user_data.get("image", 0))
 		var avatar_path = "res://assets/icons/Avatars/%d.png" % img_id
@@ -134,14 +134,14 @@ func update_ui() -> void:
 			btn_user_id.text = "🔑 ورود / ثبت شماره"
 		lbl_coins.text = "۰"
 		lbl_score.text = "۰"
-		lbl_level.text = "سطح ۱"
+		lbl_level.text = "۱"
 		if is_instance_valid(xp_bar):
 			xp_bar.min_value = 0.0
 			xp_bar.max_value = 100.0
 			xp_bar.step = 0.01
 			xp_bar.value = 0.0
 		if is_instance_valid(lbl_xp_value):
-			lbl_xp_value.text = "\u200E۰ / ۶۰ XP\u200E"
+			lbl_xp_value.text = "\u200E۰/۶۰\u200E"
 
 static func _total_exp_to_level(level: int, _base: int = 20) -> int:
 	return GameManager.total_exp_to_level(level)
