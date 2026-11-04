@@ -213,6 +213,7 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	# 1. Rank Medal / Number Badge (large font 42px)
 	var rank_frame = PanelContainer.new()
 	rank_frame.custom_minimum_size = Vector2(72, 72)
+	rank_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rank_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var rf_style = StyleBoxFlat.new()
 	rf_style.bg_color = Color(0.1, 0.06, 0.03, 0.75)
@@ -236,19 +237,23 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	rank_frame.add_child(rank_lbl)
 	row.add_child(rank_frame)
 	
-	# 2. Player Avatar (large 88x88 with rounded frame)
+	# 2. Player Avatar (strictly square: equal width/height & square corners)
 	var av_frame = PanelContainer.new()
-	av_frame.custom_minimum_size = Vector2(88, 88)
+	av_frame.custom_minimum_size = Vector2(96, 96)
+	av_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	av_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	av_frame.clip_contents = true
 	var f_style = StyleBoxFlat.new()
 	f_style.bg_color = Color(0.1, 0.07, 0.04, 0.9)
-	f_style.set_corner_radius_all(16)
+	f_style.set_corner_radius_all(0)
 	f_style.set_border_width_all(2)
 	f_style.border_color = Color(1.0, 0.82, 0.35, 0.85)
 	av_frame.add_theme_stylebox_override("panel", f_style)
 	
 	var avatar = TextureRect.new()
 	avatar.set_anchors_preset(Control.PRESET_FULL_RECT)
+	avatar.custom_minimum_size = Vector2(92, 92)
 	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
