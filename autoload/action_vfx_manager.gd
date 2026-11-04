@@ -154,7 +154,91 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 	# Screen shake on regular piece placement/movement removed for smooth board experience
 	
 	# Cleanup VFX after animation finishes
-	get_tree().create_timer(0.5).timeout.connect(vfx_root.queue_free)
+	get_tree().create_timer(0.5).timeout.connect(func():
+		if is_instance_valid(vfx_root):
+			vfx_root.queue_free()
+	)
+
+func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant = null) -> void:
+	if not is_instance_valid(parent_node) or not parent_node.is_inside_tree():
+		return
+	
+	var vfx_root = Node3D.new()
+	vfx_root.name = "PieceDropVFX_%d" % Time.get_ticks_msec()
+	parent_node.add_child(vfx_root)
+	vfx_root.global_position = pos
+	
+	var primary_color: Color = Color(1.0, 0.85, 0.35)
+	if color_or_id is Color:
+		primary_color = color_or_id
+	elif color_or_id is int or color_or_id is float:
+		primary_color = Color(1.0, 0.28, 0.32) if int(color_or_id) == 1 else Color(0.28, 0.65, 1.0)
+	var glow_color: Color = primary_color.lightened(0.25)
+	
+	# Expanding Shockwave Ring
+	var shockwave = MeshInstance3D.new()
+	var quad = QuadMesh.new()
+	quad.size = Vector2(0.12, 0.12)
+	shockwave.mesh = quad
+	shockwave.rotation_degrees.x = -90.0
+	shockwave.position.y = 0.005
+	
+	var shock_mat = StandardMaterial3D.new()
+	shock_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	shock_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	shock_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	if tex_circle_shockwave:
+		shock_mat.albedo_texture = tex_circle_shockwave
+	shock_mat.albedo_color = primary_color
+	shockwave.material_override = shock_mat
+	vfx_root.add_child(shockwave)
+	
+	var shock_tw = create_tween().set_parallel(true)
+	shock_tw.tween_property(shockwave, "scale", Vector3(3.2, 3.2, 3.2), 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	shock_tw.tween_property(shock_mat, "albedo_color:a", 0.0, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	
+	# Starburst Sparkles
+	var spark_count = 6
+	for i in range(spark_count):
+		var p = Sprite3D.new()
+		p.texture = tex_sparkle if (i % 2 == 0 and tex_sparkle) else tex_spark
+		p.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		p.modulate = primary_color if (i % 2 == 0) else Color(1.0, 0.95, 0.75)
+		p.scale = Vector3(0.04, 0.04, 0.04)
+		p.position = Vector3(0, 0.02, 0)
+		vfx_root.add_child(p)
+		
+		var angle = (float(i) / float(spark_count)) * TAU + randf_range(-0.2, 0.2)
+		var dist = randf_range(0.12, 0.26)
+		var height = randf_range(0.06, 0.20)
+		var target_offset = Vector3(cos(angle) * dist, height, sin(angle) * dist)
+		
+		var p_tw = create_tween().set_parallel(true)
+		p_tw.tween_property(p, "position", target_offset, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		p_tw.tween_property(p, "scale", Vector3.ZERO, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		p_tw.tween_property(p, "modulate:a", 0.0, 0.34)
+	
+	# Subtle Flash
+	if tex_flare:
+		var flash = Sprite3D.new()
+		flash.texture = tex_flare
+		flash.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		flash.modulate = glow_color
+		flash.scale = Vector3(0.08, 0.08, 0.08)
+		flash.position = Vector3(0, 0.03, 0)
+		vfx_root.add_child(flash)
+		
+		var f_tw = create_tween().set_parallel(true)
+		f_tw.tween_property(flash, "scale", Vector3(0.22, 0.22, 0.22), 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		f_tw.tween_property(flash, "modulate:a", 0.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	
+	get_tree().create_timer(0.45).timeout.connect(func():
+		if is_instance_valid(vfx_root):
+			vfx_root.queue_free()
+	)
+
+func play_win_celebration_vfx(parent_node: Node3D, center_pos: Vector3, winner_id: int) -> void:
+	spawn_victory_celebration(parent_node, center_pos, winner_id)
 
 # --- 3. JUICY PIECE LANDING (Squash & Stretch Action) ---
 
