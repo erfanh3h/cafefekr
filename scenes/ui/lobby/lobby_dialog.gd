@@ -26,6 +26,7 @@ signal match_ready(game_id: String, game_type: String)
 # View 2: Create Lobby
 @onready var view_create: VBoxContainer = $Margin/VBox/ViewCreate
 @onready var input_room_name: LineEdit = $Margin/VBox/ViewCreate/InputRoomName
+@onready var input_room_password: LineEdit = $Margin/VBox/ViewCreate/InputRoomPassword
 @onready var btn_select_game: Button = $Margin/VBox/ViewCreate/BtnSelectGame
 @onready var lbl_selected_game: Label = $Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox/VBoxGameInfo/LblSelectedGame
 @onready var selected_game_icon: TextureRect = $Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox/IconFrame/SelectedGameIcon
@@ -365,9 +366,29 @@ func _update_selected_game_display() -> void:
 			selected_create_player_count = 2
 		_refresh_player_count_buttons()
 
+var _game_cards: Dictionary = {}
+var _cached_game_textures: Dictionary = {}
+
+func _get_game_texture(g_type: String) -> Texture2D:
+	if _cached_game_textures.has(g_type):
+		return _cached_game_textures[g_type]
+	var icon_path = "res://assets/images/games/%s.png" % g_type.to_lower()
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
+	var tex: Texture2D = null
+	if ResourceLoader.exists(icon_path):
+		tex = load(icon_path)
+	else:
+		tex = load("res://assets/icons/General/lobby.png")
+	_cached_game_textures[g_type] = tex
+	return tex
+
 func _open_game_select_modal() -> void:
 	game_select_modal.visible = true
-	_populate_game_grid()
+	if _game_cards.is_empty():
+		_populate_game_grid()
+	else:
+		_update_game_grid_selection()
 	
 	var p_size = game_select_panel.size
 	if p_size == Vector2.ZERO:
@@ -388,13 +409,28 @@ func _close_game_select_modal() -> void:
 		game_select_modal.visible = false
 	)
 
+func _update_game_grid_selection() -> void:
+	for g in _game_cards:
+		var card = _game_cards[g]
+		if is_instance_valid(card):
+			var is_selected = (g == selected_create_game_type)
+			var sb = StyleBoxFlat.new()
+			sb.bg_color = Color(0.22, 0.15, 0.1, 0.98)
+			sb.set_corner_radius_all(18)
+			sb.set_border_width_all(3)
+			sb.border_color = Color(1.0, 0.88, 0.28, 1.0) if is_selected else Color(0.82, 0.68, 0.38, 0.85)
+			sb.shadow_size = 2
+			card.add_theme_stylebox_override("normal", sb)
+
 func _populate_game_grid() -> void:
 	for child in game_grid.get_children():
 		child.queue_free()
+	_game_cards.clear()
 	
 	for g in available_games:
 		var card = _create_game_card(g)
 		game_grid.add_child(card)
+		_game_cards[g] = card
 
 func _create_game_card(g_type: String) -> Control:
 	var is_selected = (g_type == selected_create_game_type)
@@ -407,24 +443,22 @@ func _create_game_card(g_type: String) -> Control:
 	card.flat = true
 	card.pivot_offset = Vector2(190, 100)
 	
-	# Warm wooden mahogany card styling
+	# Warm wooden mahogany card styling (lightweight shadows for 60fps)
 	var style_normal = StyleBoxFlat.new()
 	style_normal.bg_color = Color(0.22, 0.15, 0.1, 0.98)
 	style_normal.set_corner_radius_all(18)
 	style_normal.set_border_width_all(3)
 	style_normal.border_color = Color(1.0, 0.88, 0.28, 1.0) if is_selected else Color(0.82, 0.68, 0.38, 0.85)
-	style_normal.shadow_color = Color(1.0, 0.85, 0.25, 0.3) if is_selected else Color(0, 0, 0, 0.5)
-	style_normal.shadow_size = 10 if is_selected else 6
-	style_normal.shadow_offset = Vector2(0, 4)
+	style_normal.shadow_size = 2
+	style_normal.shadow_offset = Vector2(0, 2)
 	
 	var style_hover = StyleBoxFlat.new()
 	style_hover.bg_color = Color(0.3, 0.2, 0.13, 0.98)
 	style_hover.set_corner_radius_all(18)
 	style_hover.set_border_width_all(3)
 	style_hover.border_color = Color(1.0, 0.94, 0.55, 1.0)
-	style_hover.shadow_color = Color(1.0, 0.85, 0.2, 0.4)
-	style_hover.shadow_size = 12
-	style_hover.shadow_offset = Vector2(0, 5)
+	style_hover.shadow_size = 2
+	style_hover.shadow_offset = Vector2(0, 2)
 	
 	card.add_theme_stylebox_override("normal", style_normal)
 	card.add_theme_stylebox_override("hover", style_hover)
@@ -445,13 +479,7 @@ func _create_game_card(g_type: String) -> Control:
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	img.modulate = Color(1.18, 1.12, 1.05)
-	var icon_path = "res://assets/images/games/%s.png" % g_type.to_lower()
-	if not ResourceLoader.exists(icon_path):
-		icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
-	if ResourceLoader.exists(icon_path):
-		img.texture = load(icon_path)
-	else:
-		img.texture = load("res://assets/icons/General/lobby.png")
+	img.texture = _get_game_texture(g_type)
 	card.add_child(img)
 	
 	# Bottom title banner with gold separator line
@@ -605,6 +633,8 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	margin.add_child(hbox)
 	
+	var has_pwd = lobby.get("has_password", false)
+	
 	# Join button (Kenney tactile button)
 	var btn_join = Button.new()
 	btn_join.text = "ورود"
@@ -613,7 +643,10 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	KenneyUI.style_button(btn_join, KenneyUI.COLOR_GREEN)
 	btn_join.pressed.connect(func():
 		AudioManager.sfx_button()
-		_join_lobby_by_id(lobby_id)
+		if has_pwd:
+			_prompt_lobby_password(lobby_id)
+		else:
+			_join_lobby_by_id(lobby_id)
 	)
 	hbox.add_child(btn_join)
 	
@@ -630,7 +663,7 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	text_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	
 	var name_lbl = Label.new()
-	name_lbl.text = lobby_name
+	name_lbl.text = ("🔒 " + lobby_name) if has_pwd else lobby_name
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
 	name_lbl.add_theme_font_size_override("font_size", 28)
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -675,13 +708,145 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	)
 	return row_panel
 
-func _join_lobby_by_id(lobby_id: String) -> void:
+var _password_modal: Control = null
+var _target_lobby_id_for_pwd: String = ""
+
+func _prompt_lobby_password(lobby_id: String) -> void:
+	_target_lobby_id_for_pwd = lobby_id
+	if not _password_modal or not is_instance_valid(_password_modal):
+		_build_password_modal()
+	
+	var input_pwd = _password_modal.find_child("InputLobbyPassword", true, false) as LineEdit
+	if is_instance_valid(input_pwd):
+		input_pwd.text = ""
+	_password_modal.visible = true
+	var panel = _password_modal.find_child("Panel", true, false)
+	if panel:
+		ActionVFXManager.animate_dialog_open(panel, _password_modal, true)
+
+func _build_password_modal() -> void:
+	_password_modal = Control.new()
+	_password_modal.name = "PasswordModal"
+	_password_modal.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_password_modal.z_index = 85
+	
+	var bd = ColorRect.new()
+	bd.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bd.color = Color(0.04, 0.02, 0.01, 0.85)
+	bd.mouse_filter = Control.MOUSE_FILTER_STOP
+	_password_modal.add_child(bd)
+	
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_STOP
+	_password_modal.add_child(center)
+	
+	var panel = PanelContainer.new()
+	panel.name = "Panel"
+	panel.custom_minimum_size = Vector2(720, 440)
+	var sb = StyleBoxTexture.new()
+	sb.texture = preload("res://assets/images/frames/board.png")
+	sb.texture_margin_left = 60.0
+	sb.texture_margin_top = 60.0
+	sb.texture_margin_right = 60.0
+	sb.texture_margin_bottom = 60.0
+	panel.add_theme_stylebox_override("panel", sb)
+	center.add_child(panel)
+	
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 44)
+	margin.add_theme_constant_override("margin_top", 40)
+	margin.add_theme_constant_override("margin_right", 44)
+	margin.add_theme_constant_override("margin_bottom", 40)
+	panel.add_child(margin)
+	
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 20)
+	margin.add_child(vbox)
+	
+	var title = Label.new()
+	title.text = "🔒 ورود به اتاق دارای رمز"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	title.add_theme_constant_override("shadow_outline_size", 3)
+	vbox.add_child(title)
+	
+	var desc = Label.new()
+	desc.text = "لطفاً رمز عبور اتاق را وارد کنید:"
+	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	desc.add_theme_font_size_override("font_size", 28)
+	desc.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
+	vbox.add_child(desc)
+	
+	var input_pwd = LineEdit.new()
+	input_pwd.name = "InputLobbyPassword"
+	input_pwd.custom_minimum_size = Vector2(460, 76)
+	input_pwd.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	input_pwd.placeholder_text = "رمز عبور..."
+	input_pwd.max_length = 20
+	input_pwd.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	input_pwd.add_theme_font_size_override("font_size", 30)
+	var in_st = StyleBoxFlat.new()
+	in_st.bg_color = Color(0.12, 0.08, 0.05, 0.95)
+	in_st.border_color = Color(0.85, 0.70, 0.35, 0.9)
+	in_st.set_border_width_all(2)
+	in_st.set_corner_radius_all(14)
+	in_st.content_margin_left = 18
+	in_st.content_margin_right = 18
+	input_pwd.add_theme_stylebox_override("normal", in_st)
+	vbox.add_child(input_pwd)
+	
+	var btn_row = HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 20)
+	vbox.add_child(btn_row)
+	
+	var btn_ok = Button.new()
+	btn_ok.text = "ورود"
+	btn_ok.custom_minimum_size = Vector2(200, 76)
+	btn_ok.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	btn_ok.add_theme_font_size_override("font_size", 30)
+	KenneyUI.style_button(btn_ok, KenneyUI.COLOR_GREEN)
+	btn_row.add_child(btn_ok)
+	
+	var btn_cancel = Button.new()
+	btn_cancel.text = "انصراف"
+	btn_cancel.custom_minimum_size = Vector2(180, 76)
+	btn_cancel.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	btn_cancel.add_theme_font_size_override("font_size", 28)
+	KenneyUI.style_button(btn_cancel, KenneyUI.COLOR_GREY)
+	btn_row.add_child(btn_cancel)
+	
+	btn_cancel.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_password_modal.visible = false
+	)
+	
+	btn_ok.pressed.connect(func():
+		var pwd = input_pwd.text.strip_edges()
+		AudioManager.sfx_button()
+		_password_modal.visible = false
+		_join_lobby_by_id(_target_lobby_id_for_pwd, pwd)
+	)
+	
+	add_child(_password_modal)
+
+func _join_lobby_by_id(lobby_id: String, password: String = "") -> void:
 	if lobby_id.is_empty():
 		return
 	lbl_status.text = "در حال پیوستن به اتاق %s..." % lobby_id
 	var payload = {
 		"id": Commands.Lobby_Join,
-		"data": {"lobby_id": lobby_id}
+		"data": {
+			"lobby_id": lobby_id,
+			"lobby_password": password,
+			"password": password
+		}
 	}
 	NetworkManager.socket.emit_event("/lobby", "user_command", payload)
 
@@ -691,6 +856,7 @@ func _on_create_pressed() -> void:
 		return
 	AudioManager.sfx_button()
 	var g_type = selected_create_game_type
+	var r_pwd = input_room_password.text.strip_edges() if is_instance_valid(input_room_password) else ""
 	
 	lbl_status.text = "در حال ساخت اتاق..."
 	var l_count = selected_create_player_count if g_type == GameTypes.LUDO else 2
@@ -699,7 +865,8 @@ func _on_create_pressed() -> void:
 		"data": {
 			"game_type": g_type,
 			"lobby_name": r_name,
-			"lobby_password": "",
+			"lobby_password": r_pwd,
+			"password": r_pwd,
 			"lobby_count": l_count
 		}
 	}
@@ -820,6 +987,19 @@ func _update_players_list(queuers: Array) -> void:
 		badge_panel.add_theme_stylebox_override("panel", badge_style)
 		badge_panel.add_child(rdy_lbl)
 		hbox.add_child(badge_panel)
+		
+		# Host Kick button: If I am the host and this player is another player
+		if is_host and not is_this_creator:
+			var btn_kick = Button.new()
+			btn_kick.text = "❌ اخراج"
+			btn_kick.custom_minimum_size = Vector2(104, 56)
+			btn_kick.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+			btn_kick.add_theme_font_size_override("font_size", 22)
+			KenneyUI.style_button(btn_kick, KenneyUI.COLOR_RED)
+			btn_kick.pressed.connect(func():
+				_kick_player(q_uid)
+			)
+			hbox.add_child(btn_kick)
 		
 		# Middle: Player name (prominent, no subtitle)
 		var name_lbl = Label.new()
@@ -1079,6 +1259,20 @@ func _on_lobby_event(ns: String, event_name: String, data: Variant) -> void:
 			lbl_status.text = "اتاق مورد نظر یافت نشد!"
 			lbl_status.modulate = Color(1.0, 0.4, 0.4)
 
+		Commands.Lobby_Wrong_Password:
+			lbl_status.text = "❌ رمز عبور اتاق اشتباه است!"
+			lbl_status.modulate = Color(1.0, 0.4, 0.4)
+			var wrong_id = payload.get("lobby_id", "") if typeof(payload) == TYPE_DICTIONARY else ""
+			if not wrong_id.is_empty():
+				_prompt_lobby_password(wrong_id)
+
+		Commands.Lobby_Kick:
+			active_lobby_id = ""
+			_switch_view(view_list)
+			lbl_status.text = "⚠️ شما توسط سازنده از اتاق اخراج شدید."
+			lbl_status.modulate = Color(1.0, 0.4, 0.4)
+			_request_lobbies()
+
 		Commands.Start_Game:
 			# Host or server launched match!
 			if typeof(payload) == TYPE_DICTIONARY and payload.has("game_id"):
@@ -1091,3 +1285,13 @@ func _on_lobby_event(ns: String, event_name: String, data: Variant) -> void:
 				active_lobby_id = ""
 				close_immediate()
 				match_ready.emit(game_id, chosen_type)
+
+func _kick_player(target_user_id: String) -> void:
+	AudioManager.sfx_button()
+	var payload = {
+		"id": Commands.Lobby_Kick,
+		"data": {
+			"user_id": target_user_id
+		}
+	}
+	NetworkManager.socket.emit_event("/lobby", "user_command", payload)

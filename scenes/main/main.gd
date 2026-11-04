@@ -95,6 +95,7 @@ var _sound_off_tex = preload("res://assets/images/badges/sound-off.png")
 
 
 
+var _splash_layer: CanvasLayer = null
 var _splash_overlay: Control = null
 var _splash_dismissed: bool = false
 var _splash_progress_bar: ProgressBar = null
@@ -104,6 +105,8 @@ var _offline_dialog: Control = null
 var _offline_status_lbl: Label = null
 var _offline_retry_btn: Button = null
 var _is_retrying_connection: bool = false
+var _offline_retry_token: int = 0
+var _change_username_dialog: Control = null
 var _ranked_locked_overlay: Control = null
 var _ranked_locked_panel: PanelContainer = null
 var _ranked_locked_bar: ProgressBar = null
@@ -166,11 +169,16 @@ func _ready() -> void:
 	)
 
 func _setup_splash_overlay() -> void:
+	if not _splash_layer or not is_instance_valid(_splash_layer):
+		_splash_layer = CanvasLayer.new()
+		_splash_layer.name = "SplashCanvasLayer"
+		_splash_layer.layer = 128
+		add_child(_splash_layer)
+
 	_splash_overlay = Control.new()
 	_splash_overlay.name = "SplashOverlay"
 	_splash_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	_splash_overlay.z_index = 100
-	$CanvasLayer.add_child(_splash_overlay)
+	_splash_layer.add_child(_splash_overlay)
 	_splash_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_splash_overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_splash_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
@@ -342,6 +350,9 @@ func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:
 			_splash_progress_bar = null
 			_splash_load_lbl = null
 			_splash_dot_timer = null
+		if is_instance_valid(_splash_layer):
+			_splash_layer.queue_free()
+			_splash_layer = null
 		if callback.is_valid():
 			callback.call()
 	)
@@ -374,7 +385,21 @@ func _setup_signals() -> void:
 
 	user_header.store_requested.connect(_on_store_pressed)
 
-	user_header.profile_requested.connect(_on_store_pressed)
+	user_header.profile_requested.connect(func():
+		AudioManager.sfx_tap()
+		if GameManager.is_logged_in:
+			user_profile_dialog.open_for_user(GameManager.user_data)
+			_show_backdrop()
+		else:
+			_on_store_pressed()
+	)
+
+	if user_header.has_signal("change_username_requested"):
+		user_header.change_username_requested.connect(_show_change_username_dialog)
+
+	if user_profile_dialog.has_signal("change_username_requested"):
+		user_profile_dialog.change_username_requested.connect(_show_change_username_dialog)
+
 	if user_header.has_signal("login_requested"):
 		user_header.login_requested.connect(func():
 			_show_backdrop()
@@ -2200,6 +2225,9 @@ func _on_offline_retry_pressed() -> void:
 		return
 	AudioManager.sfx_button()
 	_is_retrying_connection = true
+	_offline_retry_token += 1
+	var current_token = _offline_retry_token
+
 	if is_instance_valid(_offline_retry_btn):
 		_offline_retry_btn.disabled = true
 		_offline_retry_btn.text = "در حال اتصال..."
@@ -2208,35 +2236,59 @@ func _on_offline_retry_pressed() -> void:
 		_offline_status_lbl.text = "در حال بررسی اتصال به سرور..."
 
 	NetworkManager.connect_to_game_server()
-	await get_tree().create_timer(1.0).timeout
-	if not is_instance_valid(self):
-		return
 
-	NetworkManager.restore_session(func(restored: bool, msg: String):
-		if not is_instance_valid(self):
+	var start_time = Time.get_ticks_msec()
+	var timeout_ms = 10000
+
+	while Time.get_ticks_msec() - start_time < timeout_ms:
+		await get_tree().create_timer(1.0).timeout
+		if not is_instance_valid(self) or _offline_retry_token != current_token:
 			return
-		_is_retrying_connection = false
-		if NetworkManager.is_online and msg != "OFFLINE":
-			_hide_offline_dialog()
-			user_header.update_ui()
-			_update_ranked_button_state()
-			_show_menu_toast("✅ اتصال با سرور بازی برقرار شد!")
-			if not restored or not GameManager.is_logged_in:
-				login_dialog.open()
-				_show_backdrop()
-			elif not GameManager.is_guest and not GameManager.has_username():
-				login_dialog.open_for_username_completion()
-				_show_backdrop()
-			else:
-				_check_and_auto_enter_active_game()
+
+		if NetworkManager.is_online:
+			var finished = false
+			var restored_ok = false
+			var result_msg = ""
+			NetworkManager.restore_session(func(restored: bool, msg: String):
+				finished = true
+				restored_ok = restored
+				result_msg = msg
+			)
+			var sub_wait = 0
+			while not finished and sub_wait < 25:
+				await get_tree().create_timer(0.1).timeout
+				sub_wait += 1
+			if not is_instance_valid(self) or _offline_retry_token != current_token:
+				return
+			if NetworkManager.is_online and result_msg != "OFFLINE":
+				_is_retrying_connection = false
+				_hide_offline_dialog()
+				user_header.update_ui()
+				_update_ranked_button_state()
+				_show_menu_toast("✅ اتصال با سرور بازی برقرار شد!")
+				if not restored_ok or not GameManager.is_logged_in:
+					login_dialog.open()
+					_show_backdrop()
+				elif not GameManager.is_guest and not GameManager.has_username():
+					login_dialog.open_for_username_completion()
+					_show_backdrop()
+				else:
+					_check_and_auto_enter_active_game()
+				return
 		else:
-			if is_instance_valid(_offline_retry_btn):
-				_offline_retry_btn.disabled = false
-				_offline_retry_btn.text = "🔄 تلاش مجدد"
-			if is_instance_valid(_offline_status_lbl):
-				_offline_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.48, 0.48))
-				_offline_status_lbl.text = "❌ ارتباط با سرور برقرار نشد. لطفاً اتصال اینترنت را بررسی کنید."
-	)
+			NetworkManager.connect_to_game_server()
+
+	# 10-second timeout elapsed: return to init state with toast "ناموفق"
+	if not is_instance_valid(self) or _offline_retry_token != current_token:
+		return
+	_is_retrying_connection = false
+	if is_instance_valid(_offline_retry_btn):
+		_offline_retry_btn.disabled = false
+		_offline_retry_btn.text = "🔄 تلاش مجدد"
+	if is_instance_valid(_offline_status_lbl):
+		_offline_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.48, 0.48))
+		_offline_status_lbl.text = ""
+	_show_menu_toast("ناموفق")
 
 func _on_leave_game_pressed() -> void:
 	AudioManager.sfx_button()
@@ -2676,3 +2728,161 @@ func _close_ranked_locked_dialog(callback: Callable = Callable()) -> void:
 		if callback.is_valid():
 			callback.call()
 	)
+
+func _show_change_username_dialog() -> void:
+	if not GameManager.is_logged_in:
+		_show_menu_toast("ابتدا وارد حساب کاربری خود شوید.")
+		return
+
+	if _change_username_dialog and is_instance_valid(_change_username_dialog):
+		_change_username_dialog.queue_free()
+
+	var ui_canvas = $CanvasLayer
+	var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
+
+	_change_username_dialog = Control.new()
+	_change_username_dialog.name = "ChangeUsernameDialogOverlay"
+	_change_username_dialog.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_change_username_dialog.mouse_filter = Control.MOUSE_FILTER_STOP
+	_change_username_dialog.z_index = 96
+
+	var dark_bg = ColorRect.new()
+	dark_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dark_bg.color = Color(0.04, 0.02, 0.01, 0.85)
+	dark_bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	_change_username_dialog.add_child(dark_bg)
+
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_STOP
+	_change_username_dialog.add_child(center)
+
+	var panel = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(760, 520)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var style = StyleBoxTexture.new()
+	style.texture = preload("res://assets/images/frames/board.png")
+	style.texture_margin_left = 60.0
+	style.texture_margin_top = 60.0
+	style.texture_margin_right = 60.0
+	style.texture_margin_bottom = 60.0
+	panel.add_theme_stylebox_override("panel", style)
+	center.add_child(panel)
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 48)
+	margin.add_theme_constant_override("margin_top", 44)
+	margin.add_theme_constant_override("margin_right", 48)
+	margin.add_theme_constant_override("margin_bottom", 44)
+	panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 20)
+	margin.add_child(vbox)
+
+	var lbl_title = Label.new()
+	lbl_title.text = "✏️ تغییر نام کاربری"
+	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_title.add_theme_font_override("font", font_hekayat)
+	lbl_title.add_theme_font_size_override("font_size", 42)
+	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	lbl_title.add_theme_constant_override("shadow_outline_size", 3)
+	vbox.add_child(lbl_title)
+
+	var lbl_desc = Label.new()
+	lbl_desc.text = "نام کاربری جدید خود را وارد کنید:\n(هزینه تغییر نام ۷۵ سکه است)"
+	lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_desc.add_theme_font_override("font", font_hekayat)
+	lbl_desc.add_theme_font_size_override("font_size", 28)
+	lbl_desc.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
+	vbox.add_child(lbl_desc)
+
+	var input_name = LineEdit.new()
+	input_name.custom_minimum_size = Vector2(500, 80)
+	input_name.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	input_name.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	input_name.text = GameManager.get_username()
+	input_name.placeholder_text = "نام کاربری جدید..."
+	input_name.max_length = 30
+	input_name.add_theme_font_override("font", font_hekayat)
+	input_name.add_theme_font_size_override("font_size", 32)
+	input_name.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
+	var in_style = StyleBoxFlat.new()
+	in_style.bg_color = Color(0.12, 0.08, 0.05, 0.95)
+	in_style.border_color = Color(0.85, 0.70, 0.35, 0.9)
+	in_style.set_border_width_all(2)
+	in_style.set_corner_radius_all(14)
+	in_style.content_margin_left = 18
+	in_style.content_margin_right = 18
+	input_name.add_theme_stylebox_override("normal", in_style)
+	vbox.add_child(input_name)
+
+	var btn_hbox = HBoxContainer.new()
+	btn_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_hbox.add_theme_constant_override("separation", 24)
+	vbox.add_child(btn_hbox)
+
+	var btn_confirm = Button.new()
+	btn_confirm.text = "تأیید"
+	btn_confirm.custom_minimum_size = Vector2(240, 84)
+	btn_confirm.add_theme_font_override("font", font_hekayat)
+	btn_confirm.add_theme_font_size_override("font_size", 32)
+	KenneyUI.style_button(btn_confirm, KenneyUI.COLOR_GREEN)
+	btn_hbox.add_child(btn_confirm)
+
+	var btn_cancel = Button.new()
+	btn_cancel.text = "انصراف"
+	btn_cancel.custom_minimum_size = Vector2(200, 84)
+	btn_cancel.add_theme_font_override("font", font_hekayat)
+	btn_cancel.add_theme_font_size_override("font_size", 30)
+	KenneyUI.style_button(btn_cancel, KenneyUI.COLOR_GREY)
+	btn_hbox.add_child(btn_cancel)
+
+	btn_cancel.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_change_username_dialog.visible = false
+	)
+
+	btn_confirm.pressed.connect(func():
+		var new_val = input_name.text.strip_edges()
+		if new_val.length() < 3:
+			_show_menu_toast("نام کاربری باید حداقل ۳ حرف باشد.")
+			return
+		if new_val == GameManager.get_username():
+			_change_username_dialog.visible = false
+			return
+
+		AudioManager.sfx_button()
+		btn_confirm.disabled = true
+		btn_confirm.text = "در حال ذخیره..."
+
+		NetworkManager.api.update_username(new_val, func(success: bool, resp_code: int, data: Variant):
+			if not is_instance_valid(self):
+				return
+			if success:
+				GameManager.update_username(new_val)
+				if GameManager.get_coins() >= 75:
+					GameManager.user_data["coin"] = GameManager.get_coins() - 75
+					GameManager._save_session_config()
+				user_header.update_ui()
+				_show_menu_toast("✅ نام کاربری با موفقیت تغییر یافت.")
+				if is_instance_valid(_change_username_dialog):
+					_change_username_dialog.visible = false
+			else:
+				if is_instance_valid(btn_confirm):
+					btn_confirm.disabled = false
+					btn_confirm.text = "تأیید"
+				if resp_code == 422:
+					_show_menu_toast("سکه کافی ندارید (حداقل ۷۵ سکه نیاز است).")
+				else:
+					var err_msg = "خطا در تغییر نام کاربری."
+					if typeof(data) == TYPE_DICTIONARY and data.has("detail"):
+						err_msg = str(data["detail"])
+					_show_menu_toast(err_msg)
+		)
+	)
+
+	ui_canvas.add_child(_change_username_dialog)
+	ActionVFXManager.animate_dialog_open(panel, _change_username_dialog, true)

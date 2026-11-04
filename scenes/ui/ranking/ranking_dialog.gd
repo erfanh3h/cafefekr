@@ -126,7 +126,7 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 				continue
 			username = u_data.get("username", "بی‌نام")
 			var raw_win = float(item.get("win", 0))
-			val_text = "%s برد" % GameManager.to_fa_num(int(round(raw_win)))
+			val_text = GameManager.to_fa_num(int(round(raw_win)))
 			img_id = int(u_data.get("image", 0))
 			var u_xp = int(u_data.get("xp", item.get("xp", 0)))
 			var u_lvl = GameManager.calculate_level(u_xp) if u_xp > 0 else int(u_data.get("level", item.get("level", 1)))
@@ -149,44 +149,42 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 func _create_rank_row(rank: int, username: String, val_str: String, img_id: int, user_dict: Dictionary) -> void:
 	# Clearly separated, tactile player card
 	var card = Button.new()
-	card.custom_minimum_size = Vector2(0, 116)
-	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Narrower width (~700px), taller height (142px)
+	card.custom_minimum_size = Vector2(700, 142)
+	card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	card.flat = true
-	card.pivot_offset = Vector2(400, 50)
+	card.pivot_offset = Vector2(350, 71)
 	
-	# Distinct style depending on rank tier for separation and polish
+	# Distinct style depending on rank tier for separation and polish (smooth performance)
 	var style_normal = StyleBoxFlat.new()
 	style_normal.set_corner_radius_all(18)
-	style_normal.content_margin_left = 22
-	style_normal.content_margin_right = 22
-	style_normal.content_margin_top = 10
-	style_normal.content_margin_bottom = 10
+	style_normal.content_margin_left = 24
+	style_normal.content_margin_right = 24
+	style_normal.content_margin_top = 12
+	style_normal.content_margin_bottom = 12
+	style_normal.shadow_size = 2
+	style_normal.shadow_offset = Vector2(0, 2)
 	
 	if rank == 1:
 		style_normal.bg_color = Color(0.28, 0.18, 0.08, 0.95)
 		style_normal.border_color = Color(1.0, 0.85, 0.25, 1.0)
 		style_normal.set_border_width_all(3)
 		style_normal.shadow_color = Color(1.0, 0.82, 0.2, 0.35)
-		style_normal.shadow_size = 10
 	elif rank == 2:
 		style_normal.bg_color = Color(0.22, 0.17, 0.14, 0.95)
 		style_normal.border_color = Color(0.88, 0.92, 0.98, 0.95)
 		style_normal.set_border_width_all(3)
 		style_normal.shadow_color = Color(0.8, 0.88, 1.0, 0.25)
-		style_normal.shadow_size = 8
 	elif rank == 3:
 		style_normal.bg_color = Color(0.24, 0.16, 0.1, 0.95)
 		style_normal.border_color = Color(0.9, 0.62, 0.38, 0.95)
 		style_normal.set_border_width_all(3)
 		style_normal.shadow_color = Color(0.85, 0.55, 0.3, 0.25)
-		style_normal.shadow_size = 7
 	else:
 		style_normal.bg_color = Color(0.16, 0.1, 0.06, 0.9)
 		style_normal.border_color = Color(0.58, 0.45, 0.3, 0.8)
 		style_normal.set_border_width_all(2)
 		style_normal.shadow_color = Color(0, 0, 0, 0.5)
-		style_normal.shadow_size = 6
-	style_normal.shadow_offset = Vector2(0, 4)
 	
 	var style_hover = StyleBoxFlat.new()
 	style_hover.bg_color = Color(0.32, 0.22, 0.14, 0.98)
@@ -194,12 +192,12 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	style_hover.set_border_width_all(3)
 	style_hover.border_color = Color(1.0, 0.92, 0.5, 1.0)
 	style_hover.shadow_color = Color(1.0, 0.85, 0.25, 0.4)
-	style_hover.shadow_size = 12
-	style_hover.shadow_offset = Vector2(0, 5)
-	style_hover.content_margin_left = 22
-	style_hover.content_margin_right = 22
-	style_hover.content_margin_top = 10
-	style_hover.content_margin_bottom = 10
+	style_hover.shadow_size = 2
+	style_hover.shadow_offset = Vector2(0, 2)
+	style_hover.content_margin_left = 24
+	style_hover.content_margin_right = 24
+	style_hover.content_margin_top = 12
+	style_hover.content_margin_bottom = 12
 	
 	card.add_theme_stylebox_override("normal", style_normal)
 	card.add_theme_stylebox_override("hover", style_hover)
@@ -209,23 +207,23 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	var row = HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 18)
+	row.add_theme_constant_override("separation", 20)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	
-	# 1. Rank Medal / Number Badge (large)
+	# 1. Rank Medal / Number Badge (large font 42px)
 	var rank_frame = PanelContainer.new()
-	rank_frame.custom_minimum_size = Vector2(60, 60)
+	rank_frame.custom_minimum_size = Vector2(72, 72)
 	rank_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var rf_style = StyleBoxFlat.new()
 	rf_style.bg_color = Color(0.1, 0.06, 0.03, 0.75)
-	rf_style.set_corner_radius_all(14)
+	rf_style.set_corner_radius_all(16)
 	rank_frame.add_theme_stylebox_override("panel", rf_style)
 	
 	var rank_lbl = Label.new()
 	rank_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rank_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	rank_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	rank_lbl.add_theme_font_size_override("font_size", 34)
+	rank_lbl.add_theme_font_size_override("font_size", 42)
 	if rank == 1:
 		rank_lbl.text = "🥇"
 	elif rank == 2:
@@ -233,18 +231,18 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	elif rank == 3:
 		rank_lbl.text = "🥉"
 	else:
-		rank_lbl.text = str(rank)
+		rank_lbl.text = GameManager.to_fa_num(rank)
 		rank_lbl.add_theme_color_override("font_color", Color(0.9, 0.84, 0.74))
 	rank_frame.add_child(rank_lbl)
 	row.add_child(rank_frame)
 	
-	# 2. Player Avatar (large 76x76 with rounded frame)
+	# 2. Player Avatar (large 88x88 with rounded frame)
 	var av_frame = PanelContainer.new()
-	av_frame.custom_minimum_size = Vector2(76, 76)
+	av_frame.custom_minimum_size = Vector2(88, 88)
 	av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var f_style = StyleBoxFlat.new()
 	f_style.bg_color = Color(0.1, 0.07, 0.04, 0.9)
-	f_style.set_corner_radius_all(14)
+	f_style.set_corner_radius_all(16)
 	f_style.set_border_width_all(2)
 	f_style.border_color = Color(1.0, 0.82, 0.35, 0.85)
 	av_frame.add_theme_stylebox_override("panel", f_style)
@@ -260,101 +258,71 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	av_frame.add_child(avatar)
 	row.add_child(av_frame)
 	
-	# 3. Username (large font 32px)
+	# 3. Username (increased font size: 38px)
 	var name_lbl = Label.new()
 	name_lbl.text = username
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	name_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	name_lbl.add_theme_font_size_override("font_size", 32)
+	name_lbl.add_theme_font_size_override("font_size", 38)
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))
 	name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	name_lbl.add_theme_constant_override("shadow_outline_size", 3)
 	row.add_child(name_lbl)
 	
-	# 4. User Level Badge (Bigger, value in dark pill under it)
-	var lvl_val = int(user_dict.get("level", 1))
-	if lvl_val > 0:
-		var lvl_box = VBoxContainer.new()
-		lvl_box.custom_minimum_size = Vector2(60, 0)
-		lvl_box.add_theme_constant_override("separation", 2)
-		lvl_box.alignment = BoxContainer.ALIGNMENT_CENTER
-		var lvl_icon = TextureRect.new()
-		lvl_icon.texture = preload("res://assets/images/badges/level.png")
-		lvl_icon.custom_minimum_size = Vector2(46, 52)
-		lvl_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		lvl_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		lvl_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		lvl_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		lvl_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		lvl_box.add_child(lvl_icon)
-		
-		var lvl_lbl = Label.new()
-		lvl_lbl.text = GameManager.to_fa_num(lvl_val)
-		lvl_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lvl_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		lvl_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		lvl_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lvl_lbl.add_theme_font_size_override("font_size", 22)
-		lvl_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
-		lvl_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
-		lvl_lbl.add_theme_constant_override("shadow_outline_size", 2)
-		
-		var lvl_pill = StyleBoxFlat.new()
-		lvl_pill.bg_color = Color(0.10, 0.06, 0.03, 0.94)
-		lvl_pill.border_color = Color(0.85, 0.68, 0.28, 0.88)
-		lvl_pill.set_border_width_all(1)
-		lvl_pill.set_corner_radius_all(8)
-		lvl_pill.content_margin_left = 10
-		lvl_pill.content_margin_right = 10
-		lvl_pill.content_margin_top = 1
-		lvl_pill.content_margin_bottom = 1
-		lvl_lbl.add_theme_stylebox_override("normal", lvl_pill)
-		
-		lvl_box.add_child(lvl_lbl)
-		row.add_child(lvl_box)
-	
-	# 5. Score / Wins Value (Bigger badge on top, value in dark pill under it)
+	# 4. Score or Wins Value (NO level badge shown in either tab)
 	var val_box = VBoxContainer.new()
-	val_box.custom_minimum_size = Vector2(72, 0)
+	val_box.custom_minimum_size = Vector2(90, 0)
 	val_box.add_theme_constant_override("separation", 2)
 	val_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	
 	if current_tab == "score":
 		var sc_icon = TextureRect.new()
 		sc_icon.texture = preload("res://assets/images/badges/score.png")
-		sc_icon.custom_minimum_size = Vector2(50, 56)
+		sc_icon.custom_minimum_size = Vector2(52, 58)
 		sc_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		sc_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		sc_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		sc_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		sc_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		val_box.add_child(sc_icon)
-	
-	var val_lbl = Label.new()
-	val_lbl.text = val_str
-	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	val_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	val_lbl.add_theme_font_size_override("font_size", 24)
-	val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
-	val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	val_lbl.add_theme_constant_override("shadow_outline_size", 3)
-	
-	if current_tab == "score":
+		
+		var val_lbl = Label.new()
+		val_lbl.text = val_str
+		val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		val_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		val_lbl.add_theme_font_size_override("font_size", 36)
+		val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
+		val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		val_lbl.add_theme_constant_override("shadow_outline_size", 3)
+		
 		var sc_pill = StyleBoxFlat.new()
 		sc_pill.bg_color = Color(0.10, 0.06, 0.03, 0.94)
 		sc_pill.border_color = Color(0.85, 0.68, 0.28, 0.88)
 		sc_pill.set_border_width_all(1)
-		sc_pill.set_corner_radius_all(8)
-		sc_pill.content_margin_left = 12
-		sc_pill.content_margin_right = 12
+		sc_pill.set_corner_radius_all(10)
+		sc_pill.content_margin_left = 14
+		sc_pill.content_margin_right = 14
 		sc_pill.content_margin_top = 2
 		sc_pill.content_margin_bottom = 2
 		val_lbl.add_theme_stylebox_override("normal", sc_pill)
+		val_box.add_child(val_lbl)
+	else:
+		# In "by win" tab: ONLY a number of wins with bigger font size must show
+		var val_lbl = Label.new()
+		val_lbl.text = val_str
+		val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		val_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		val_lbl.add_theme_font_size_override("font_size", 50)
+		val_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.38, 1.0))
+		val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		val_lbl.add_theme_constant_override("shadow_outline_size", 4)
+		val_box.add_child(val_lbl)
 	
-	val_box.add_child(val_lbl)
 	row.add_child(val_box)
 	
 	card.add_child(row)

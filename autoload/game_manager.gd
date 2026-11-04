@@ -343,6 +343,13 @@ func get_username() -> String:
 		return "کاربر مهمان" if is_guest else "Guest"
 	return name_str
 
+func update_username(new_name: String) -> void:
+	user_data["username"] = new_name
+	user_data["name"] = new_name
+	_save_session_config()
+	if has_signal("user_data_updated"):
+		user_data_updated.emit(user_data)
+
 func has_username() -> bool:
 	var uname = get_username().strip_edges()
 	if uname.is_empty() or uname == "Guest" or uname == "کاربر مهمان":

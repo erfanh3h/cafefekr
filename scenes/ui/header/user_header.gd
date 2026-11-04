@@ -9,10 +9,12 @@ extends MarginContainer
 signal store_requested()
 signal profile_requested()
 signal login_requested()
+signal change_username_requested()
 
 @onready var avatar_rect: TextureRect = $PanelFrame/ContentMargin/HBoxMain/AvatarFrame/AvatarBtn/AvatarTexture
 @onready var avatar_btn: TextureButton = $PanelFrame/ContentMargin/HBoxMain/AvatarFrame/AvatarBtn
 @onready var lbl_username: Label = $PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow/Username
+@onready var btn_edit_username: Button = $PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow/BtnEditUsername
 @onready var btn_user_id: Button = $PanelFrame/ContentMargin/HBoxMain/UserCol/BottomIdRow/UserIdBtn
 
 @onready var coin_badge: HBoxContainer = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge
@@ -32,6 +34,12 @@ func _ready() -> void:
 
 	ActionVFXManager.apply_button_juice(avatar_btn, "tap_button")
 	ActionVFXManager.apply_button_juice(btn_user_id, "tap_button")
+	if is_instance_valid(btn_edit_username):
+		ActionVFXManager.apply_button_juice(btn_edit_username, "tap_button")
+		btn_edit_username.pressed.connect(func():
+			AudioManager.sfx_tap()
+			change_username_requested.emit()
+		)
 
 	btn_coins_add.pressed.connect(func():
 		AudioManager.sfx_button()

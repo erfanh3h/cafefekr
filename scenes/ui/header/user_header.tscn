@@ -327,6 +327,15 @@ alignment = 1
 layout_mode = 2
 alignment = 2
 
+[node name="BtnEditUsername" type="Button" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+theme_override_fonts/font = ExtResource("8_font_hekayat")
+theme_override_font_sizes/font_size = 32
+flat = true
+text = "✏️"
+
 [node name="Username" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow"]
 layout_mode = 2
 size_flags_horizontal = 3

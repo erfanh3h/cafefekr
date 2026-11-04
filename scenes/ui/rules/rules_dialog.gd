@@ -161,9 +161,29 @@ func _update_selected_game_display() -> void:
 		selected_game_icon.texture = load("res://assets/icons/General/lobby.png")
 		selected_game_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
+var _rules_game_cards: Dictionary = {}
+var _rules_game_textures: Dictionary = {}
+
+func _get_game_texture(k: String) -> Texture2D:
+	if _rules_game_textures.has(k):
+		return _rules_game_textures[k]
+	var icon_path = "res://assets/images/games/%s.png" % k
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/images/games/%s.jpg" % k
+	var tex: Texture2D = null
+	if ResourceLoader.exists(icon_path):
+		tex = load(icon_path)
+	else:
+		tex = load("res://assets/icons/General/lobby.png")
+	_rules_game_textures[k] = tex
+	return tex
+
 func _open_game_select_modal() -> void:
 	game_select_modal.visible = true
-	_populate_game_grid()
+	if _rules_game_cards.is_empty():
+		_populate_game_grid()
+	else:
+		_update_game_grid_selection()
 	
 	var p_size = game_select_panel.size
 	if p_size == Vector2.ZERO:
@@ -184,13 +204,28 @@ func _close_game_select_modal() -> void:
 		game_select_modal.visible = false
 	)
 
+func _update_game_grid_selection() -> void:
+	for k in _rules_game_cards:
+		var card = _rules_game_cards[k]
+		if is_instance_valid(card):
+			var is_selected = (k == selected_game_key)
+			var sb = StyleBoxFlat.new()
+			sb.bg_color = Color(0.22, 0.15, 0.1, 0.98)
+			sb.set_corner_radius_all(18)
+			sb.set_border_width_all(3)
+			sb.border_color = Color(1.0, 0.88, 0.28, 1.0) if is_selected else Color(0.82, 0.68, 0.38, 0.85)
+			sb.shadow_size = 2
+			card.add_theme_stylebox_override("normal", sb)
+
 func _populate_game_grid() -> void:
 	for child in game_grid.get_children():
 		child.queue_free()
+	_rules_game_cards.clear()
 	
 	for g in GAME_KEYS:
 		var card = _create_game_card(g)
 		game_grid.add_child(card)
+		_rules_game_cards[g["key"]] = card
 
 func _create_game_card(g: Dictionary) -> Control:
 	var k = g["key"]
@@ -208,18 +243,16 @@ func _create_game_card(g: Dictionary) -> Control:
 	style_normal.set_corner_radius_all(18)
 	style_normal.set_border_width_all(3)
 	style_normal.border_color = Color(1.0, 0.88, 0.28, 1.0) if is_selected else Color(0.82, 0.68, 0.38, 0.85)
-	style_normal.shadow_color = Color(1.0, 0.85, 0.25, 0.3) if is_selected else Color(0, 0, 0, 0.5)
-	style_normal.shadow_size = 10 if is_selected else 6
-	style_normal.shadow_offset = Vector2(0, 4)
+	style_normal.shadow_size = 2
+	style_normal.shadow_offset = Vector2(0, 2)
 	
 	var style_hover = StyleBoxFlat.new()
 	style_hover.bg_color = Color(0.3, 0.2, 0.13, 0.98)
 	style_hover.set_corner_radius_all(18)
 	style_hover.set_border_width_all(3)
 	style_hover.border_color = Color(1.0, 0.94, 0.55, 1.0)
-	style_hover.shadow_color = Color(1.0, 0.85, 0.2, 0.4)
-	style_hover.shadow_size = 12
-	style_hover.shadow_offset = Vector2(0, 5)
+	style_hover.shadow_size = 2
+	style_hover.shadow_offset = Vector2(0, 2)
 	
 	card.add_theme_stylebox_override("normal", style_normal)
 	card.add_theme_stylebox_override("hover", style_hover)
@@ -238,15 +271,7 @@ func _create_game_card(g: Dictionary) -> Control:
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	img.modulate = Color(1.18, 1.12, 1.05)
-	var icon_path = "res://assets/images/games/%s.png" % k
-	if not ResourceLoader.exists(icon_path):
-		icon_path = "res://assets/images/games/%s.jpg" % k
-	if ResourceLoader.exists(icon_path):
-		img.texture = load(icon_path)
-
-	else:
-		img.texture = load("res://assets/icons/General/lobby.png")
-		img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	img.texture = _get_game_texture(k)
 	card.add_child(img)
 	
 	# Bottom title banner

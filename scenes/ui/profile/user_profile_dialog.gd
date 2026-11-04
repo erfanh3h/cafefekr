@@ -5,6 +5,7 @@ extends Control
 # Used both from main menu (user_header) and in-game HUD (tapping player avatars)
 
 signal closed()
+signal change_username_requested()
 
 @onready var panel: PanelContainer = $CenterContainer/Panel
 @onready var img_avatar: TextureRect = $CenterContainer/Panel/Margin/VBox/AvatarBox/Plaque/Avatar
@@ -89,6 +90,29 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 	
 	_current_user_id = str(user_dict.get("_id", user_dict.get("id", user_dict.get("user_id", ""))))
 	btn_copy_id.text = "📋 کپی شناسه"
+
+	var is_self = (_current_user_id == str(GameManager.get_user_id()) or _current_user_id.is_empty())
+	var vbox_root = $CenterContainer/Panel/Margin/VBox
+	var btn_edit_name = vbox_root.get_node_or_null("BtnEditProfileUsername") as Button
+	if is_self:
+		if not is_instance_valid(btn_edit_name):
+			btn_edit_name = Button.new()
+			btn_edit_name.name = "BtnEditProfileUsername"
+			btn_edit_name.text = "✏️ تغییر نام کاربری"
+			btn_edit_name.custom_minimum_size = Vector2(340, 72)
+			btn_edit_name.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			btn_edit_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+			btn_edit_name.add_theme_font_size_override("font_size", 28)
+			KenneyUI.style_button(btn_edit_name, KenneyUI.COLOR_YELLOW)
+			btn_edit_name.pressed.connect(func():
+				AudioManager.sfx_tap()
+				close()
+				change_username_requested.emit()
+			)
+			vbox_root.add_child(btn_edit_name)
+		btn_edit_name.visible = true
+	elif is_instance_valid(btn_edit_name):
+		btn_edit_name.visible = false
 	
 	# Entrance VFX Animation
 	ActionVFXManager.animate_dialog_open(panel, self, true)

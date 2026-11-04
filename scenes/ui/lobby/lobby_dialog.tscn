@@ -238,6 +238,18 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_input_box")
 placeholder_text = "نام اتاق (مثال: اتاق دوستانه)"
 alignment = 1
 
+[node name="InputRoomPassword" type="LineEdit" parent="Margin/VBox/ViewCreate"]
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_placeholder_color = Color(0.72, 0.64, 0.52, 0.75)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_input_box")
+placeholder_text = "🔒 رمز عبور اتاق (اختیاری)"
+alignment = 1
+max_length = 20
+
 [node name="BtnSelectGame" type="Button" parent="Margin/VBox/ViewCreate"]
 custom_minimum_size = Vector2(0, 116)
 layout_mode = 2

@@ -55,6 +55,21 @@ const AVAILABLE_GAMES: Array[String] = [
 var _style_card_normal: StyleBoxFlat
 var _style_card_hover: StyleBoxFlat
 var _style_card_selected: StyleBoxFlat
+var _cached_game_textures: Dictionary = {}
+
+func _get_game_texture(g_type: String) -> Texture2D:
+	if _cached_game_textures.has(g_type):
+		return _cached_game_textures[g_type]
+	var icon_path = "res://assets/images/games/%s.png" % g_type.to_lower()
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
+	var tex: Texture2D = null
+	if ResourceLoader.exists(icon_path):
+		tex = load(icon_path)
+	else:
+		tex = load("res://assets/icons/General/lobby.png")
+	_cached_game_textures[g_type] = tex
+	return tex
 
 func _ready() -> void:
 	visible = false
@@ -77,8 +92,8 @@ func _setup_styles() -> void:
 	_style_card_normal.set_border_width_all(3)
 	_style_card_normal.border_color = Color(0.82, 0.68, 0.38, 0.85)
 	_style_card_normal.shadow_color = Color(0, 0, 0, 0.5)
-	_style_card_normal.shadow_size = 6
-	_style_card_normal.shadow_offset = Vector2(0, 4)
+	_style_card_normal.shadow_size = 2
+	_style_card_normal.shadow_offset = Vector2(0, 2)
 
 	# Hover style
 	_style_card_hover = StyleBoxFlat.new()
@@ -87,8 +102,8 @@ func _setup_styles() -> void:
 	_style_card_hover.set_border_width_all(3)
 	_style_card_hover.border_color = Color(1.0, 0.94, 0.55, 1.0)
 	_style_card_hover.shadow_color = Color(1.0, 0.85, 0.2, 0.4)
-	_style_card_hover.shadow_size = 12
-	_style_card_hover.shadow_offset = Vector2(0, 5)
+	_style_card_hover.shadow_size = 2
+	_style_card_hover.shadow_offset = Vector2(0, 2)
 
 	# Selected style with golden aura glow
 	_style_card_selected = StyleBoxFlat.new()
@@ -97,8 +112,8 @@ func _setup_styles() -> void:
 	_style_card_selected.set_border_width_all(4)
 	_style_card_selected.border_color = Color(1.0, 0.88, 0.28, 1.0)
 	_style_card_selected.shadow_color = Color(1.0, 0.85, 0.25, 0.45)
-	_style_card_selected.shadow_size = 14
-	_style_card_selected.shadow_offset = Vector2(0, 4)
+	_style_card_selected.shadow_size = 2
+	_style_card_selected.shadow_offset = Vector2(0, 2)
 
 func open(default_game: String = "") -> void:
 	if not default_game.is_empty():
@@ -166,13 +181,7 @@ func _create_game_card(g_type: String) -> Control:
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	img.modulate = Color(1.18, 1.12, 1.05)
-	var icon_path = "res://assets/images/games/%s.png" % g_type.to_lower()
-	if not ResourceLoader.exists(icon_path):
-		icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
-	if ResourceLoader.exists(icon_path):
-		img.texture = load(icon_path)
-	else:
-		img.texture = load("res://assets/icons/General/lobby.png")
+	img.texture = _get_game_texture(g_type)
 	card.add_child(img)
 	
 	# 3. Gradient shadow overlay for maximum readability
