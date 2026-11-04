@@ -122,9 +122,15 @@ func _show_step2() -> void:
 	step1_container.visible = false
 	step2_container.visible = true
 	step3_container.visible = false
-	lbl_step2_subtitle.text = "کد ارسال شده به %s را وارد کنید:" % current_phone
-	lbl_status.text = ""
-	input_code.text = ""
+	if current_phone == "09131234567" or current_phone.ends_with("1234567"):
+		lbl_step2_subtitle.text = "ورود بات آزمایشی (%s):" % current_phone
+		lbl_status.text = "کد پیش‌فرض ۱۲۳۴ تنظیم شد (پیامکی ارسال نمی‌شود)."
+		lbl_status.modulate = Color(0.4, 0.9, 0.4)
+		input_code.text = "1234"
+	else:
+		lbl_step2_subtitle.text = "کد ارسال شده به %s را وارد کنید:" % current_phone
+		lbl_status.text = ""
+		input_code.text = ""
 	_safe_grab_focus(input_code)
 
 func _show_step3_username() -> void:
