@@ -1918,6 +1918,9 @@ func stop_round_timer() -> void:
 
 	lbl_timer.text = "-- ثانیه"
 
+	if is_instance_valid(current_top_header) and current_top_header.has_method("update_timer"):
+		current_top_header.update_timer(0.0, max(1.0, turn_duration), 0)
+
 	AudioManager.stop_sound("time")
 
 	if _turn_glow_tween and is_instance_valid(_turn_glow_tween):
@@ -2762,6 +2765,9 @@ func stop_timer() -> void:
 	turn_timer_bar.value = 0.0
 
 	lbl_timer.text = "-- ثانیه"
+
+	if is_instance_valid(current_top_header) and current_top_header.has_method("update_timer"):
+		current_top_header.update_timer(0.0, max(1.0, turn_duration), 0)
 
 	AudioManager.stop_sound("time")
 

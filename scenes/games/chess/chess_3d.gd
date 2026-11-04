@@ -1673,6 +1673,7 @@ func _update_king_check_status(turn: int) -> void:
 		var king_pos = king1_position if turn == 1 else king2_position
 		var king_idx = coord_to_index(king_pos)
 		_spawn_check_marker(king_idx)
+		ActionVFXManager.shake_camera(0.014, 0.25)
 		king_in_check.emit(turn, king_pos)
 
 		if turn == my_player_index:

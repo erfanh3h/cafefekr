@@ -39,25 +39,25 @@ func _process(delta: float) -> void:
 	if _is_shaking:
 		if _shake_timer > 0.0:
 			_shake_timer -= delta
-			var progress = _shake_timer / _shake_duration
-			var current_intensity = _shake_intensity * progress
+			var progress = clampf(_shake_timer / maxf(_shake_duration, 0.001), 0.0, 1.0)
+			var current_intensity = _shake_intensity * progress * progress
 			
 			if is_instance_valid(_camera):
-				var offset_x = randf_range(-current_intensity, current_intensity)
-				var offset_y = randf_range(-current_intensity, current_intensity) * 0.7
-				var offset_z = randf_range(-current_intensity, current_intensity) * 0.5
+				var phase = (_shake_duration - _shake_timer) * 42.0
+				var offset_x = sin(phase) * current_intensity
+				var offset_y = cos(phase * 1.3) * current_intensity * 0.5
+				var offset_z = sin(phase * 0.7) * current_intensity * 0.35
 				_camera.position = _cam_original_pos + Vector3(offset_x, offset_y, offset_z)
-				
-				var rot_x = randf_range(-current_intensity, current_intensity) * 0.4
-				var rot_y = randf_range(-current_intensity, current_intensity) * 0.4
-				_camera.rotation = _cam_original_rot + Vector3(rot_x, rot_y, 0.0)
+				_camera.rotation = _cam_original_rot
 		else:
 			_is_shaking = false
+			_shake_intensity = 0.0
 			set_process(false)
 			if is_instance_valid(_camera):
 				_camera.position = _cam_original_pos
 				_camera.rotation = _cam_original_rot
 	else:
+		_shake_intensity = 0.0
 		set_process(false)
 
 # --- 1. SCREEN / CAMERA SHAKE ACTION ---
@@ -74,8 +74,10 @@ func shake_camera(intensity: float = 0.045, duration: float = 0.22, target_cam: 
 	if not _is_shaking:
 		_cam_original_pos = _camera.position
 		_cam_original_rot = _camera.rotation
+		_shake_intensity = intensity
+	else:
+		_shake_intensity = max(_shake_intensity, intensity)
 		
-	_shake_intensity = max(_shake_intensity, intensity)
 	_shake_duration = duration
 	_shake_timer = duration
 	_is_shaking = true
@@ -149,8 +151,7 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 	f_tw.tween_property(flash, "scale", Vector3(0.24, 0.24, 0.24), 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	f_tw.tween_property(flash, "modulate:a", 0.0, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
-	# Subtle camera shake on impact
-	shake_camera(0.038, 0.18)
+	# Screen shake on regular piece placement/movement removed for smooth board experience
 	
 	# Cleanup VFX after animation finishes
 	get_tree().create_timer(0.5).timeout.connect(vfx_root.queue_free)
@@ -222,8 +223,7 @@ func spawn_victory_celebration(parent_node: Node3D, center_pos: Vector3, winner_
 		s_tw.parallel().tween_property(star, "scale", Vector3.ZERO, 0.55)
 		s_tw.parallel().tween_property(star, "modulate:a", 0.0, 0.55)
 		
-	# Victorious screen shake
-	shake_camera(0.07, 0.45)
+	# Screen shake removed from board victory celebration
 	
 	# Cleanup
 	get_tree().create_timer(1.6).timeout.connect(win_root.queue_free)

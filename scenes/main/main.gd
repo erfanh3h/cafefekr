@@ -1363,7 +1363,7 @@ func _on_finish_turn_round_received(data: Dictionary) -> void:
 
 			result_msg = "💥 حریف این دست را برد! (%s بر %s)" % [opp_name, my_name]
 
-		if is_instance_valid(base_game_hud):
+		if is_instance_valid(base_game_hud) and not base_game_hud.is_round_finished and not base_game_hud.is_game_finished:
 
 			base_game_hud.start_wait_timer(3, result_msg)
 
