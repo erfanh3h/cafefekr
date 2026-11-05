@@ -124,6 +124,27 @@ func open(payload: Dictionary) -> void:
 		AudioManager.play_queue_music()
 		AudioManager.play_sound("bell")
 
+func update_data(payload: Dictionary) -> void:
+	_current_payload = payload
+	var is_finished = bool(payload.get("is_game_finished", false))
+	if is_finished:
+		_timer_running = false
+
+	_setup_players(payload)
+	_setup_games(payload)
+	_setup_finish_state(payload)
+
+	if is_finished:
+		AudioManager.play_theme_music()
+		var winner_id = payload.get("game_winner_id", null)
+		var my_id = str(GameManager.get_user_id())
+		if winner_id == null or str(winner_id) == "0" or str(winner_id) == "":
+			AudioManager.play_sound("draw")
+		elif str(winner_id) == my_id:
+			AudioManager.play_sound("win")
+		else:
+			AudioManager.play_sound("lose")
+
 func dismiss() -> void:
 	if not visible or _is_dismissing:
 		return

@@ -18,6 +18,35 @@ var user_data: Dictionary = {}
 var is_logged_in: bool = false
 var is_guest: bool = false
 
+# Server Configuration & Versioning
+var server_config: Dictionary = {}
+var is_queue_open: bool = true
+var is_force_update_required: bool = false
+var allowed_version: String = ""
+var latest_version: String = ""
+
+func get_app_version() -> String:
+	return str(ProjectSettings.get_setting("application/config/version", "2.0.0"))
+
+func is_version_ok(current_version: String, allowed_ver: String) -> bool:
+	if allowed_ver.is_empty():
+		return true
+	var cur_parts = current_version.split(".")
+	var allowed_parts = allowed_ver.split(".")
+	var cur_major = int(cur_parts[0]) if cur_parts.size() > 0 else 0
+	var cur_minor = int(cur_parts[1]) if cur_parts.size() > 1 else 0
+	var cur_patch = int(cur_parts[2]) if cur_parts.size() > 2 else 0
+	var all_major = int(allowed_parts[0]) if allowed_parts.size() > 0 else 0
+	var all_minor = int(allowed_parts[1]) if allowed_parts.size() > 1 else 0
+	var all_patch = int(allowed_parts[2]) if allowed_parts.size() > 2 else 0
+	if all_major > cur_major:
+		return false
+	if all_major == cur_major and all_minor > cur_minor:
+		return false
+	if all_major == cur_major and all_minor == cur_minor and all_patch > cur_patch:
+		return false
+	return true
+
 # Current Match State
 var active_game_id: String = ""
 var is_game_active: bool = false

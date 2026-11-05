@@ -65,9 +65,9 @@ var server_host: String:
 		if config.load("user://server.cfg") == OK and config.has_section_key("network", "host"):
 			return str(config.get_value("network", "host"))
 		if OS.get_name() == "Android":
-			# Default Wi-Fi host on Android, can be configured via user://server.cfg
-			return "192.168.1.2"
-		return "192.168.1.2"
+			# Default host on Android, can be configured via user://server.cfg
+			return "85.133.205.107"
+		return "85.133.205.107"
 
 var is_online: bool:
 	get:
@@ -135,6 +135,26 @@ func restore_session(callback: Callable) -> void:
 				callback.call(true, "Restored from local cache")
 			else:
 				callback.call(false, "OFFLINE")
+	)
+
+func fetch_server_config(callback: Callable = Callable()) -> void:
+	api.get_config(func(success: bool, _response_code: int, data: Variant):
+		if success and typeof(data) == TYPE_DICTIONARY:
+			var cfg = data.get("result", data)
+			if typeof(cfg) == TYPE_DICTIONARY:
+				GameManager.server_config = cfg
+				GameManager.is_queue_open = bool(cfg.get("is_queue_open", true))
+				GameManager.latest_version = str(cfg.get("latest_version", ""))
+				GameManager.allowed_version = str(cfg.get("allowed_version", ""))
+				var app_ver = GameManager.get_app_version()
+				if not GameManager.is_version_ok(app_ver, GameManager.allowed_version):
+					GameManager.is_force_update_required = true
+					print("[NetworkManager] App version %s is outdated! Allowed version is %s. Force update required." % [app_ver, GameManager.allowed_version])
+				else:
+					GameManager.is_force_update_required = false
+					print("[NetworkManager] Server config loaded. Queue open: %s, Allowed ver: %s" % [GameManager.is_queue_open, GameManager.allowed_version])
+		if callback.is_valid():
+			callback.call(success, GameManager.server_config)
 	)
 
 func connect_to_game_server() -> void:

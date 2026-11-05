@@ -198,6 +198,7 @@ vertical_alignment = 1
 
 [node name="ReactionBubble" type="Control" parent="Margin/VBoxMain/PlayersRow/P1Card"]
 visible = false
+top_level = true
 layout_mode = 2
 mouse_filter = 2
 
@@ -298,6 +299,7 @@ vertical_alignment = 1
 
 [node name="ReactionBubble" type="Control" parent="Margin/VBoxMain/PlayersRow/P2Card"]
 visible = false
+top_level = true
 layout_mode = 2
 mouse_filter = 2
 

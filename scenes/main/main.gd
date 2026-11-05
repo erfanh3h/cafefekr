@@ -44,6 +44,8 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 
 @onready var btn_ranking = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking
 
+@onready var btn_history = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnHistory
+
 @onready var btn_rules = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules
 
 @onready var btn_audio = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio
@@ -67,6 +69,8 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 @onready var classic_rank_dialog = $CanvasLayer/ClassicRankDialog
 
 @onready var ranking_dialog = $CanvasLayer/RankingDialog
+
+@onready var game_history_dialog = $CanvasLayer/GameHistoryDialog
 
 @onready var store_dialog = $CanvasLayer/StoreDialog
 
@@ -122,6 +126,8 @@ func _ready() -> void:
 	# Start in Menu Mode
 	base_game_hud.visible = false
 	menu_container.visible = true
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = false
 	_update_ranked_button_state()
 	
 	# Display polished in-engine splash overlay matching boot splash screen
@@ -130,10 +136,20 @@ func _ready() -> void:
 	# Connect to real-time game server (port 5000)
 	NetworkManager.connect_to_game_server()
 	
+	# Fetch server configuration at startup (version validation & queue status)
+	NetworkManager.fetch_server_config(func(_success, _config):
+		_update_ranked_button_state()
+		if GameManager.is_force_update_required:
+			_show_force_update_dialog()
+	)
+	
 	# Safety fallback timer: ensure splash always dismisses even if offline or slow server response
 	get_tree().create_timer(2.6).timeout.connect(func():
 		if not _splash_dismissed and is_instance_valid(self):
 			_dismiss_splash_overlay(func():
+				if GameManager.is_force_update_required:
+					_show_force_update_dialog()
+					return
 				if not NetworkManager.is_online:
 					_show_offline_dialog()
 			)
@@ -149,6 +165,9 @@ func _ready() -> void:
 			if not is_instance_valid(self):
 				return
 			_dismiss_splash_overlay(func():
+				if GameManager.is_force_update_required:
+					_show_force_update_dialog()
+					return
 				if msg == "OFFLINE" or not NetworkManager.is_online:
 					NetworkManager.connect_to_game_server()
 					_show_offline_dialog()
@@ -320,7 +339,10 @@ func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:
 	_splash_dismissed = true
 
 	if not _splash_overlay or not is_instance_valid(_splash_overlay):
-		AudioManager.play_theme_music()
+		if GameManager.is_game_active or (is_instance_valid(base_game_hud) and base_game_hud.visible) or not GameManager.get_open_game_id().is_empty() or not GameManager.active_game_id.is_empty():
+			AudioManager.play_game_music()
+		else:
+			AudioManager.play_theme_music()
 		if callback.is_valid():
 			callback.call()
 		return
@@ -338,7 +360,10 @@ func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:
 		fin_tw.tween_property(_splash_progress_bar, "value", 100.0, 0.2).set_trans(Tween.TRANS_LINEAR)
 
 	# Music begins playing as splash smoothly fades out
-	AudioManager.play_theme_music()
+	if GameManager.is_game_active or (is_instance_valid(base_game_hud) and base_game_hud.visible) or not GameManager.get_open_game_id().is_empty() or not GameManager.active_game_id.is_empty():
+		AudioManager.play_game_music()
+	else:
+		AudioManager.play_theme_music()
 
 	var tw = create_tween().set_parallel(true)
 	# Wait a short 0.2s for progress to hit 100%, then fade out
@@ -373,6 +398,8 @@ func _setup_signals() -> void:
 
 	btn_ranking.pressed.connect(_on_ranking_pressed)
 
+	btn_history.pressed.connect(_on_history_pressed)
+
 	btn_rules.pressed.connect(_on_rules_pressed)
 
 	btn_audio.pressed.connect(_on_audio_toggle)
@@ -387,11 +414,7 @@ func _setup_signals() -> void:
 
 	user_header.profile_requested.connect(func():
 		AudioManager.sfx_tap()
-		if GameManager.is_logged_in:
-			user_profile_dialog.open_for_user(GameManager.user_data)
-			_show_backdrop()
-		else:
-			_on_store_pressed()
+		_on_store_pressed()
 	)
 
 	if user_header.has_signal("change_username_requested"):
@@ -492,6 +515,8 @@ func _setup_signals() -> void:
 			_hide_backdrop()
 			menu_container.visible = true
 			user_header.visible = true
+			if is_instance_valid(cafe_table):
+				cafe_table.visible = false
 		)
 
 	if is_instance_valid(ranked_breakout_dialog):
@@ -539,6 +564,8 @@ func _setup_signals() -> void:
 
 	ranking_dialog.closed.connect(_update_backdrop_state)
 
+	game_history_dialog.closed.connect(_update_backdrop_state)
+
 	store_dialog.closed.connect(_update_backdrop_state)
 
 	rules_dialog.closed.connect(_update_backdrop_state)
@@ -565,6 +592,8 @@ func _setup_signals() -> void:
 					store_dialog.close()
 				elif is_instance_valid(ranking_dialog) and ranking_dialog.visible:
 					ranking_dialog.close()
+				elif is_instance_valid(game_history_dialog) and game_history_dialog.visible:
+					game_history_dialog.close()
 				elif is_instance_valid(classic_rank_dialog) and classic_rank_dialog.visible:
 					classic_rank_dialog.close()
 				else:
@@ -572,12 +601,15 @@ func _setup_signals() -> void:
 		)
 
 	ranking_dialog.user_selected.connect(func(u_dict):
-
 		user_profile_dialog.open_for_user(u_dict)
-
 		_show_backdrop()
-
 	)
+
+	if is_instance_valid(game_history_dialog):
+		game_history_dialog.user_profile_requested.connect(func(u_dict):
+			user_profile_dialog.open_for_user(u_dict)
+			_show_backdrop()
+		)
 
 	
 
@@ -722,7 +754,7 @@ func _start_logo_animation() -> void:
 
 func _setup_button_juice() -> void:
 
-	var buttons = [btn_ranked, btn_classic_rank, btn_lobby, btn_ranking, btn_rules, btn_audio, btn_exit]
+	var buttons = [btn_ranked, btn_classic_rank, btn_lobby, btn_ranking, btn_history, btn_rules, btn_audio, btn_exit]
 
 	for b in buttons:
 
@@ -732,6 +764,12 @@ func _setup_button_juice() -> void:
 
 func _on_ranked_pressed() -> void:
 	AudioManager.sfx_button()
+	if GameManager.is_force_update_required:
+		_show_force_update_dialog()
+		return
+	if not GameManager.is_queue_open:
+		_show_queue_closed_dialog()
+		return
 	if not NetworkManager.is_online:
 		NetworkManager.connect_to_game_server()
 		_show_offline_dialog()
@@ -754,6 +792,9 @@ func _on_ranked_pressed() -> void:
 
 func _on_classic_rank_pressed() -> void:
 	AudioManager.sfx_button()
+	if GameManager.is_force_update_required:
+		_show_force_update_dialog()
+		return
 	if not NetworkManager.is_online:
 		NetworkManager.connect_to_game_server()
 		_show_offline_dialog()
@@ -782,6 +823,9 @@ func _on_classic_rank_start_requested(game_type: String) -> void:
 
 func _on_lobby_pressed() -> void:
 	AudioManager.sfx_button()
+	if GameManager.is_force_update_required:
+		_show_force_update_dialog()
+		return
 	if not NetworkManager.is_online:
 		NetworkManager.connect_to_game_server()
 		_show_offline_dialog()
@@ -806,6 +850,18 @@ func _on_ranking_pressed() -> void:
 		return
 	_show_backdrop()
 	ranking_dialog.open()
+
+func _on_history_pressed() -> void:
+	AudioManager.sfx_button()
+	if not NetworkManager.is_online:
+		NetworkManager.connect_to_game_server()
+		_show_offline_dialog()
+		return
+	_show_backdrop()
+	if not GameManager.is_logged_in:
+		login_dialog.open()
+		return
+	game_history_dialog.open()
 
 func _on_store_pressed() -> void:
 	AudioManager.sfx_button()
@@ -846,7 +902,11 @@ func _update_backdrop_state() -> void:
 			return is_instance_valid(dlg) and dlg.visible and dlg.modulate.a > 0.05
 		var is_queue_active = is_open.call(queue_dialog)
 			
-		var any_open = is_queue_active or is_open.call(lobby_dialog) 			or is_open.call(classic_rank_dialog) or is_open.call(pick_ban_dialog) 			or is_open.call(ranking_dialog) or is_open.call(store_dialog) 			or is_open.call(rules_dialog) or is_open.call(login_dialog) 			or is_open.call(user_profile_dialog)
+		var any_open = is_queue_active or is_open.call(lobby_dialog) \
+			or is_open.call(classic_rank_dialog) or is_open.call(pick_ban_dialog) \
+			or is_open.call(ranking_dialog) or is_open.call(game_history_dialog) or is_open.call(store_dialog) \
+			or is_open.call(rules_dialog) or is_open.call(login_dialog) \
+			or is_open.call(user_profile_dialog)
 			
 		if any_open:
 			_show_backdrop()
@@ -988,6 +1048,10 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 
 		ranking_dialog.visible = false
 
+	if is_instance_valid(game_history_dialog):
+
+		game_history_dialog.visible = false
+
 	if is_instance_valid(store_dialog):
 
 		store_dialog.visible = false
@@ -1012,9 +1076,9 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 
 
 	menu_container.visible = false
-
 	user_header.visible = false
-
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = true
 	base_game_hud.visible = true
 
 	base_game_hud.reset_for_new_match()
@@ -1789,6 +1853,8 @@ func _on_game_finished(data: Dictionary) -> void:
 		_hide_backdrop()
 		menu_container.visible = true
 		user_header.visible = true
+		if is_instance_valid(cafe_table):
+			cafe_table.visible = false
 		base_game_hud.visible = false
 		if is_instance_valid(pick_ban_dialog):
 			pick_ban_dialog.show_game_finished_dialog("این بازی به پایان رسیده است.")
@@ -1887,14 +1953,17 @@ func _on_game_finished(data: Dictionary) -> void:
 			var r_cn = int(data.get("coin_earned", data.get("coin_awarded", 0)))
 			GameManager.apply_ranked_rewards(r_sc, r_xp, r_cn)
 		if is_instance_valid(ranked_breakout_dialog):
-			if not _last_game_play_payload.is_empty():
-				_last_game_play_payload["is_game_finished"] = true
-				if data.has("game_winner_id") and data["game_winner_id"] != null:
-					_last_game_play_payload["game_winner_id"] = data["game_winner_id"]
-				if not ranked_breakout_dialog.is_open():
-					ranked_breakout_dialog.open(_last_game_play_payload)
-				else:
-					ranked_breakout_dialog.update_data(_last_game_play_payload)
+			var payload = _last_game_play_payload.duplicate() if not _last_game_play_payload.is_empty() else {}
+			for k in data.keys():
+				payload[k] = data[k]
+			payload["is_game_finished"] = true
+			if data.has("game_winner_id") and data["game_winner_id"] != null:
+				payload["game_winner_id"] = data["game_winner_id"]
+			_last_game_play_payload = payload
+			if not ranked_breakout_dialog.is_open():
+				ranked_breakout_dialog.open(payload)
+			else:
+				ranked_breakout_dialog.update_data(payload)
 		return
 
 	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned)
@@ -1914,6 +1983,7 @@ func _check_and_auto_enter_active_game() -> void:
 			pick_ban_dialog.visible = false
 		if not base_game_hud.visible:
 			_start_game_match(target_gid, "", current_match_mode if not current_match_mode.is_empty() else "ranked", true)
+		AudioManager.play_game_music()
 		return
 
 	# Priority 2: Only show pick & ban if we are truly still in pick & ban phase!
@@ -1952,6 +2022,7 @@ func _on_user_reconnected(user_id: String, remaining_time: int) -> void:
 	_pending_turn = -1
 
 	GameManager.is_game_active = true
+	AudioManager.play_game_music()
 
 	base_game_hud.hide_pause_dialog()
 
@@ -1978,6 +2049,7 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 	_pending_start_game = false
 	_pending_turn = -1
 	GameManager.is_game_active = true
+	AudioManager.play_game_music()
 
 	# Ensure gameplay HUD is visible and menu/dialogs are hidden
 	_hide_backdrop()
@@ -1995,6 +2067,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 		ranked_breakout_dialog.visible = false
 	menu_container.visible = false
 	user_header.visible = false
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = true
 	base_game_hud.visible = true
 
 	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
@@ -2303,6 +2377,8 @@ func _on_leave_game_pressed() -> void:
 	base_game_hud.visible = false
 	user_header.visible = true
 	menu_container.visible = true
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = false
 	_hide_backdrop()
 	
 	GameManager.reset_match_state()
@@ -2456,6 +2532,8 @@ func _on_ranked_breakout_exit_requested() -> void:
 	base_game_hud.visible = false
 	menu_container.visible = true
 	user_header.visible = true
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = false
 	user_header.update_ui()
 	_update_ranked_button_state()
 	GameManager.reset_match_state()
@@ -2469,6 +2547,16 @@ func _update_ranked_button_state() -> void:
 		return
 	var title_lbl = ranked_title if is_instance_valid(ranked_title) else btn_ranked.get_node_or_null("Margin/HBox/TextCol/CardTitle")
 	var sub_lbl = ranked_subtitle if is_instance_valid(ranked_subtitle) else btn_ranked.get_node_or_null("Margin/HBox/TextCol/CardSubtitle")
+	
+	if not GameManager.is_queue_open:
+		if is_instance_valid(title_lbl):
+			title_lbl.text = "⛔ بازی دونفره آنلاین (بسته است)"
+		if is_instance_valid(sub_lbl):
+			sub_lbl.text = "صف مسابقات رده‌بندی در حال حاضر بسته است."
+			sub_lbl.add_theme_color_override("font_color", Color(1.0, 0.60, 0.50, 1.0))
+		btn_ranked.modulate = Color(0.85, 0.85, 0.85, 1.0)
+		return
+		
 	var is_unlocked = GameManager.is_ranked_unlocked()
 	
 	if is_unlocked:
@@ -2729,6 +2817,185 @@ func _close_ranked_locked_dialog(callback: Callable = Callable()) -> void:
 			callback.call()
 	)
 
+var _force_update_overlay: Control = null
+var _queue_closed_overlay: Control = null
+
+func _show_force_update_dialog() -> void:
+	if _force_update_overlay and is_instance_valid(_force_update_overlay):
+		_force_update_overlay.visible = true
+		return
+
+	var ui_canvas = $CanvasLayer
+	var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
+
+	_force_update_overlay = Control.new()
+	_force_update_overlay.name = "ForceUpdateOverlay"
+	_force_update_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_force_update_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_force_update_overlay.z_index = 100
+
+	var dark_bg = ColorRect.new()
+	dark_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dark_bg.color = Color(0.04, 0.02, 0.01, 0.92)
+	dark_bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	_force_update_overlay.add_child(dark_bg)
+
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_STOP
+	_force_update_overlay.add_child(center)
+
+	var panel = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(800, 480)
+	var panel_sb = StyleBoxTexture.new()
+	panel_sb.texture = preload("res://assets/images/frames/board.png")
+	panel_sb.texture_margin_left = 60.0
+	panel_sb.texture_margin_top = 60.0
+	panel_sb.texture_margin_right = 60.0
+	panel_sb.texture_margin_bottom = 60.0
+	panel.add_theme_stylebox_override("panel", panel_sb)
+	center.add_child(panel)
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 48)
+	margin.add_theme_constant_override("margin_top", 44)
+	margin.add_theme_constant_override("margin_right", 48)
+	margin.add_theme_constant_override("margin_bottom", 44)
+	panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 24)
+	margin.add_child(vbox)
+
+	var lbl_title = Label.new()
+	lbl_title.text = "🔄 به‌روزرسانی اجباری"
+	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_title.add_theme_font_override("font", font_hekayat)
+	lbl_title.add_theme_font_size_override("font_size", 42)
+	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	lbl_title.add_theme_constant_override("shadow_outline_size", 3)
+	vbox.add_child(lbl_title)
+
+	var lbl_msg = Label.new()
+	lbl_msg.text = "نسخه جدیدی از بازی در دسترس است.\nلطفاً بازی را به روز رسانی کنید."
+	lbl_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_msg.add_theme_font_override("font", font_hekayat)
+	lbl_msg.add_theme_font_size_override("font_size", 30)
+	lbl_msg.add_theme_color_override("font_color", Color(0.95, 0.90, 0.82))
+	vbox.add_child(lbl_msg)
+
+	var btn_update = Button.new()
+	btn_update.text = "به‌روزرسانی"
+	btn_update.custom_minimum_size = Vector2(300, 90)
+	btn_update.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	btn_update.add_theme_font_override("font", font_hekayat)
+	btn_update.add_theme_font_size_override("font_size", 34)
+	KenneyUI.style_button(btn_update, KenneyUI.COLOR_GREEN)
+	btn_update.pressed.connect(func():
+		AudioManager.sfx_tap()
+		OS.shell_open("https://myket.ir/app/kafeh.fekr.classic")
+		get_tree().quit()
+	)
+	vbox.add_child(btn_update)
+
+	ui_canvas.add_child(_force_update_overlay)
+	ActionVFXManager.animate_dialog_open(panel, _force_update_overlay, true)
+
+func _show_queue_closed_dialog() -> void:
+	if _queue_closed_overlay and is_instance_valid(_queue_closed_overlay):
+		_queue_closed_overlay.visible = true
+		return
+
+	var ui_canvas = $CanvasLayer
+	var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
+
+	_queue_closed_overlay = Control.new()
+	_queue_closed_overlay.name = "QueueClosedOverlay"
+	_queue_closed_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_queue_closed_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_queue_closed_overlay.z_index = 97
+
+	var dark_bg = ColorRect.new()
+	dark_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dark_bg.color = Color(0.04, 0.02, 0.01, 0.82)
+	dark_bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	dark_bg.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed:
+			_close_queue_closed_dialog()
+	)
+	_queue_closed_overlay.add_child(dark_bg)
+
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_queue_closed_overlay.add_child(center)
+
+	var panel = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(760, 420)
+	var panel_sb = StyleBoxTexture.new()
+	panel_sb.texture = preload("res://assets/images/frames/board.png")
+	panel_sb.texture_margin_left = 60.0
+	panel_sb.texture_margin_top = 60.0
+	panel_sb.texture_margin_right = 60.0
+	panel_sb.texture_margin_bottom = 60.0
+	panel.add_theme_stylebox_override("panel", panel_sb)
+	center.add_child(panel)
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 48)
+	margin.add_theme_constant_override("margin_top", 44)
+	margin.add_theme_constant_override("margin_right", 48)
+	margin.add_theme_constant_override("margin_bottom", 44)
+	panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 24)
+	margin.add_child(vbox)
+
+	var lbl_title = Label.new()
+	lbl_title.text = "⛔ صف رده‌بندی موقتاً بسته است"
+	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_title.add_theme_font_override("font", font_hekayat)
+	lbl_title.add_theme_font_size_override("font_size", 38)
+	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	vbox.add_child(lbl_title)
+
+	var lbl_msg = Label.new()
+	lbl_msg.text = "صف مسابقات رده‌بندی در حال حاضر بسته است.\nلطفاً بعداً مراجعه نمایید."
+	lbl_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_msg.add_theme_font_override("font", font_hekayat)
+	lbl_msg.add_theme_font_size_override("font_size", 28)
+	lbl_msg.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
+	vbox.add_child(lbl_msg)
+
+	var btn_ok = Button.new()
+	btn_ok.text = "متوجه شدم"
+	btn_ok.custom_minimum_size = Vector2(240, 80)
+	btn_ok.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	btn_ok.add_theme_font_override("font", font_hekayat)
+	btn_ok.add_theme_font_size_override("font_size", 30)
+	KenneyUI.style_button(btn_ok, KenneyUI.COLOR_YELLOW)
+	btn_ok.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_close_queue_closed_dialog()
+	)
+	vbox.add_child(btn_ok)
+
+	ui_canvas.add_child(_queue_closed_overlay)
+	ActionVFXManager.animate_dialog_open(panel, _queue_closed_overlay, true)
+
+func _close_queue_closed_dialog() -> void:
+	if _queue_closed_overlay and is_instance_valid(_queue_closed_overlay):
+		var center = _queue_closed_overlay.get_child(1) if _queue_closed_overlay.get_child_count() > 1 else null
+		var panel = center.get_child(0) if center and center.get_child_count() > 0 else null
+		ActionVFXManager.animate_dialog_close(panel, _queue_closed_overlay, func():
+			_queue_closed_overlay.visible = false
+		)
+
 func _show_change_username_dialog() -> void:
 	if not GameManager.is_logged_in:
 		_show_menu_toast("ابتدا وارد حساب کاربری خود شوید.")
@@ -2792,7 +3059,7 @@ func _show_change_username_dialog() -> void:
 	vbox.add_child(lbl_title)
 
 	var lbl_desc = Label.new()
-	lbl_desc.text = "نام کاربری جدید خود را وارد کنید:\n(هزینه تغییر نام ۷۵ سکه است)"
+	lbl_desc.text = "نام کاربری جدید خود را وارد کنید:"
 	lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_desc.add_theme_font_override("font", font_hekayat)
 	lbl_desc.add_theme_font_size_override("font_size", 28)

@@ -73,6 +73,9 @@ func _load_audio_assets() -> void:
 var current_music_mode: String = "none" # "theme", "queue", "game"
 
 func play_theme_music(force_restart: bool = false) -> void:
+	if GameManager.is_game_active:
+		play_game_music(force_restart)
+		return
 	if current_music_mode == "theme" and music_player.playing and not force_restart:
 		return
 	current_music_mode = "theme"
