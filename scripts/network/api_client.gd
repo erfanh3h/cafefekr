@@ -4,7 +4,7 @@ extends Node
 # REST API Client for kafehfekrserver (Port 5001)
 signal request_completed(endpoint: String, success: bool, data: Variant)
 
-var base_url: String = "http://85.133.205.107:5001"
+var base_url: String = "http://192.168.1.2:5001"
 var auth_token: String = ""
 
 func set_base_url(url: String) -> void:
@@ -53,6 +53,9 @@ func get_ranking_by_score(callback: Callable) -> void:
 
 func get_ranking_by_win(callback: Callable) -> void:
 	_http_get("/ranking-by-win", PackedStringArray(), callback)
+
+func get_config(callback: Callable) -> void:
+	_http_get("/config", PackedStringArray(), callback)
 
 func get_my_history(callback: Callable) -> void:
 	_http_get("/my-history", _get_auth_headers(), callback)

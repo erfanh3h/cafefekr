@@ -1,0 +1,114 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/history/game_history_dialog.gd" id="1_history_script"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="3_button_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="5_close_tex"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
+texture = ExtResource("2_board_tex")
+texture_margin_left = 60.0
+texture_margin_top = 60.0
+texture_margin_right = 60.0
+texture_margin_bottom = 60.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
+texture = ExtResource("3_button_tex")
+
+[node name="GameHistoryDialog" type="PanelContainer"]
+custom_minimum_size = Vector2(940, 1260)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -470.0
+offset_top = -630.0
+offset_right = 470.0
+offset_bottom = 630.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_board")
+script = ExtResource("1_history_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 36
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TopRow" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="BtnCloseTop" type="TextureButton" parent="Margin/VBox/TopRow"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+texture_normal = ExtResource("5_close_tex")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="LblTitle" type="Label" parent="Margin/VBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 40
+text = "📜 تاریخچه بازی‌ها"
+horizontal_alignment = 1
+
+[node name="BtnBack" type="Button" parent="Margin/VBox/TopRow"]
+visible = false
+custom_minimum_size = Vector2(140, 56)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 24
+text = "بازگشت ➔"
+
+[node name="LblLoading" type="Label" parent="Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 0.7, 1)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 28
+text = "در حال بارگذاری تاریخچه بازی‌ها..."
+horizontal_alignment = 1
+
+[node name="ScrollList" type="ScrollContainer" parent="Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ListContainer" type="VBoxContainer" parent="Margin/VBox/ScrollList"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="ScrollDetails" type="ScrollContainer" parent="Margin/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="DetailsContainer" type="VBoxContainer" parent="Margin/VBox/ScrollDetails"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="BtnClose" type="Button" parent="Margin/VBox"]
+custom_minimum_size = Vector2(260, 84)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+text = "بستن"

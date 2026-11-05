@@ -31,6 +31,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/classic_rank/classic_rank_dialog.tscn" id="29_classic_rank_dialog"]
 [ext_resource type="PackedScene" path="res://scenes/ui/rank/pick_ban_dialog.tscn" id="30_pick_ban_dialog"]
 [ext_resource type="PackedScene" path="res://scenes/ui/rank/ranked_breakout_dialog.tscn" id="31_breakout_dialog"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/time.png" id="32_history_tex"]
+[ext_resource type="PackedScene" path="res://scenes/ui/history/game_history_dialog.tscn" id="33_history_dialog"]
 
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_white_icon"]
@@ -438,7 +440,7 @@ theme_override_constants/margin_bottom = 10
 
 [node name="HBoxDock" type="HBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock"]
 layout_mode = 2
-theme_override_constants/separation = 40
+theme_override_constants/separation = 28
 alignment = 1
 
 [node name="BtnRanking" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
@@ -469,6 +471,37 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 mouse_filter = 2
 texture = ExtResource("19_bests_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnHistory" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]
+custom_minimum_size = Vector2(136, 158)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnHistory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnHistory/VBox"]
+custom_minimum_size = Vector2(136, 158)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("32_history_tex")
 expand_mode = 1
 stretch_mode = 5
 
@@ -596,6 +629,9 @@ visible = false
 visible = false
 
 [node name="RankingDialog" parent="CanvasLayer" instance=ExtResource("7_ranking_dialog")]
+visible = false
+
+[node name="GameHistoryDialog" parent="CanvasLayer" instance=ExtResource("33_history_dialog")]
 visible = false
 
 [node name="StoreDialog" parent="CanvasLayer" instance=ExtResource("8_store_dialog")]
