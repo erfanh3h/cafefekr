@@ -925,14 +925,36 @@ func _build_3d_piece_mesh(gamer_id: int, piece_name: String, cell_idx: int = -1)
 		var r_ring = MeshInstance3D.new()
 		r_ring.name = "RookParapetRing"
 		var torus_r = TorusMesh.new()
-		torus_r.inner_radius = 0.035
-		torus_r.outer_radius = 0.039
-		torus_r.rings = 24
-		torus_r.ring_segments = 24
+		torus_r.inner_radius = 0.0345
+		torus_r.outer_radius = 0.0382
+		torus_r.rings = 32
+		torus_r.ring_segments = 32
 		r_ring.mesh = torus_r
 		r_ring.material_override = mat_trim
-		r_ring.position.y = 0.082
+		r_ring.position.y = 0.0825
 		root.add_child(r_ring)
+
+		var r_boss = MeshInstance3D.new()
+		r_boss.name = "RookInnerBoss"
+		var sph_boss = SphereMesh.new()
+		sph_boss.radius = 0.0075
+		sph_boss.height = 0.015
+		r_boss.mesh = sph_boss
+		r_boss.material_override = mat_trim
+		r_boss.position.y = 0.088
+		root.add_child(r_boss)
+	elif key == "knight":
+		var k_collar = MeshInstance3D.new()
+		k_collar.name = "KnightCollarRing"
+		var torus_k = TorusMesh.new()
+		torus_k.inner_radius = 0.0305
+		torus_k.outer_radius = 0.0335
+		torus_k.rings = 28
+		torus_k.ring_segments = 28
+		k_collar.mesh = torus_k
+		k_collar.material_override = mat_trim
+		k_collar.position.y = 0.0295
+		root.add_child(k_collar)
 
 	_disable_shadows_recursive(root)
 	return root

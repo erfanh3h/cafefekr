@@ -414,11 +414,7 @@ func _setup_signals() -> void:
 
 	user_header.profile_requested.connect(func():
 		AudioManager.sfx_tap()
-		if GameManager.is_logged_in:
-			user_profile_dialog.open_for_user(GameManager.user_data)
-			_show_backdrop()
-		else:
-			_on_store_pressed()
+		_on_store_pressed()
 	)
 
 	if user_header.has_signal("change_username_requested"):
