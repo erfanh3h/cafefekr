@@ -595,12 +595,15 @@ func _setup_signals() -> void:
 		)
 
 	ranking_dialog.user_selected.connect(func(u_dict):
-
 		user_profile_dialog.open_for_user(u_dict)
-
 		_show_backdrop()
-
 	)
+
+	if is_instance_valid(game_history_dialog):
+		game_history_dialog.user_profile_requested.connect(func(u_dict):
+			user_profile_dialog.open_for_user(u_dict)
+			_show_backdrop()
+		)
 
 	
 

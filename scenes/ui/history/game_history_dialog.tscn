@@ -65,13 +65,9 @@ theme_override_font_sizes/font_size = 40
 text = "📜 تاریخچه بازی‌ها"
 horizontal_alignment = 1
 
-[node name="BtnBack" type="Button" parent="Margin/VBox/TopRow"]
-visible = false
-custom_minimum_size = Vector2(140, 56)
+[node name="TopSpacer" type="Control" parent="Margin/VBox/TopRow"]
+custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "بازگشت ➔"
 
 [node name="LblLoading" type="Label" parent="Margin/VBox"]
 visible = false
@@ -104,11 +100,22 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 16
 
 [node name="BtnClose" type="Button" parent="Margin/VBox"]
-custom_minimum_size = Vector2(260, 84)
+custom_minimum_size = Vector2(320, 88)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 34
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "بستن"
+
+[node name="BtnBack" type="Button" parent="Margin/VBox"]
+visible = false
+custom_minimum_size = Vector2(320, 88)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_font_sizes/font_size = 34
+theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
+text = "بازگشت ➔"
