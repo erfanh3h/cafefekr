@@ -1887,14 +1887,17 @@ func _on_game_finished(data: Dictionary) -> void:
 			var r_cn = int(data.get("coin_earned", data.get("coin_awarded", 0)))
 			GameManager.apply_ranked_rewards(r_sc, r_xp, r_cn)
 		if is_instance_valid(ranked_breakout_dialog):
-			if not _last_game_play_payload.is_empty():
-				_last_game_play_payload["is_game_finished"] = true
-				if data.has("game_winner_id") and data["game_winner_id"] != null:
-					_last_game_play_payload["game_winner_id"] = data["game_winner_id"]
-				if not ranked_breakout_dialog.is_open():
-					ranked_breakout_dialog.open(_last_game_play_payload)
-				else:
-					ranked_breakout_dialog.update_data(_last_game_play_payload)
+			var payload = _last_game_play_payload.duplicate() if not _last_game_play_payload.is_empty() else {}
+			for k in data.keys():
+				payload[k] = data[k]
+			payload["is_game_finished"] = true
+			if data.has("game_winner_id") and data["game_winner_id"] != null:
+				payload["game_winner_id"] = data["game_winner_id"]
+			_last_game_play_payload = payload
+			if not ranked_breakout_dialog.is_open():
+				ranked_breakout_dialog.open(payload)
+			else:
+				ranked_breakout_dialog.update_data(payload)
 		return
 
 	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned)

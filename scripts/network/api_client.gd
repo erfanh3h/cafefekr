@@ -4,7 +4,7 @@ extends Node
 # REST API Client for kafehfekrserver (Port 5001)
 signal request_completed(endpoint: String, success: bool, data: Variant)
 
-var base_url: String = "http://127.0.0.1:5001"
+var base_url: String = "http://85.133.205.107:5001"
 var auth_token: String = ""
 
 func set_base_url(url: String) -> void:

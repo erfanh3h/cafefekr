@@ -65,9 +65,9 @@ var server_host: String:
 		if config.load("user://server.cfg") == OK and config.has_section_key("network", "host"):
 			return str(config.get_value("network", "host"))
 		if OS.get_name() == "Android":
-			# Default Wi-Fi host on Android, can be configured via user://server.cfg
-			return "192.168.1.2"
-		return "192.168.1.2"
+			# Default host on Android, can be configured via user://server.cfg
+			return "85.133.205.107"
+		return "85.133.205.107"
 
 var is_online: bool:
 	get:
