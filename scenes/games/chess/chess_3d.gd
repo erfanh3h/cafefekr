@@ -933,6 +933,18 @@ func _build_3d_piece_mesh(gamer_id: int, piece_name: String, cell_idx: int = -1)
 		r_ring.material_override = mat_trim
 		r_ring.position.y = 0.082
 		root.add_child(r_ring)
+	elif key == "knight":
+		var k_ring = MeshInstance3D.new()
+		k_ring.name = "KnightCollarRing"
+		var torus_k = TorusMesh.new()
+		torus_k.inner_radius = 0.0285
+		torus_k.outer_radius = 0.0332
+		torus_k.rings = 28
+		torus_k.ring_segments = 28
+		k_ring.mesh = torus_k
+		k_ring.material_override = mat_trim
+		k_ring.position.y = 0.030
+		root.add_child(k_ring)
 
 	return root
 
