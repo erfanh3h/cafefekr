@@ -126,6 +126,8 @@ func _ready() -> void:
 	# Start in Menu Mode
 	base_game_hud.visible = false
 	menu_container.visible = true
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = false
 	_update_ranked_button_state()
 	
 	# Display polished in-engine splash overlay matching boot splash screen
@@ -337,7 +339,10 @@ func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:
 	_splash_dismissed = true
 
 	if not _splash_overlay or not is_instance_valid(_splash_overlay):
-		AudioManager.play_theme_music()
+		if GameManager.is_game_active or (is_instance_valid(base_game_hud) and base_game_hud.visible) or not GameManager.get_open_game_id().is_empty() or not GameManager.active_game_id.is_empty():
+			AudioManager.play_game_music()
+		else:
+			AudioManager.play_theme_music()
 		if callback.is_valid():
 			callback.call()
 		return
@@ -355,7 +360,10 @@ func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:
 		fin_tw.tween_property(_splash_progress_bar, "value", 100.0, 0.2).set_trans(Tween.TRANS_LINEAR)
 
 	# Music begins playing as splash smoothly fades out
-	AudioManager.play_theme_music()
+	if GameManager.is_game_active or (is_instance_valid(base_game_hud) and base_game_hud.visible) or not GameManager.get_open_game_id().is_empty() or not GameManager.active_game_id.is_empty():
+		AudioManager.play_game_music()
+	else:
+		AudioManager.play_theme_music()
 
 	var tw = create_tween().set_parallel(true)
 	# Wait a short 0.2s for progress to hit 100%, then fade out
@@ -511,6 +519,8 @@ func _setup_signals() -> void:
 			_hide_backdrop()
 			menu_container.visible = true
 			user_header.visible = true
+			if is_instance_valid(cafe_table):
+				cafe_table.visible = false
 		)
 
 	if is_instance_valid(ranked_breakout_dialog):
@@ -1070,9 +1080,9 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 
 
 	menu_container.visible = false
-
 	user_header.visible = false
-
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = true
 	base_game_hud.visible = true
 
 	base_game_hud.reset_for_new_match()
@@ -1847,6 +1857,8 @@ func _on_game_finished(data: Dictionary) -> void:
 		_hide_backdrop()
 		menu_container.visible = true
 		user_header.visible = true
+		if is_instance_valid(cafe_table):
+			cafe_table.visible = false
 		base_game_hud.visible = false
 		if is_instance_valid(pick_ban_dialog):
 			pick_ban_dialog.show_game_finished_dialog("این بازی به پایان رسیده است.")
@@ -1975,6 +1987,7 @@ func _check_and_auto_enter_active_game() -> void:
 			pick_ban_dialog.visible = false
 		if not base_game_hud.visible:
 			_start_game_match(target_gid, "", current_match_mode if not current_match_mode.is_empty() else "ranked", true)
+		AudioManager.play_game_music()
 		return
 
 	# Priority 2: Only show pick & ban if we are truly still in pick & ban phase!
@@ -2013,6 +2026,7 @@ func _on_user_reconnected(user_id: String, remaining_time: int) -> void:
 	_pending_turn = -1
 
 	GameManager.is_game_active = true
+	AudioManager.play_game_music()
 
 	base_game_hud.hide_pause_dialog()
 
@@ -2039,6 +2053,7 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 	_pending_start_game = false
 	_pending_turn = -1
 	GameManager.is_game_active = true
+	AudioManager.play_game_music()
 
 	# Ensure gameplay HUD is visible and menu/dialogs are hidden
 	_hide_backdrop()
@@ -2056,6 +2071,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 		ranked_breakout_dialog.visible = false
 	menu_container.visible = false
 	user_header.visible = false
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = true
 	base_game_hud.visible = true
 
 	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
@@ -2364,6 +2381,8 @@ func _on_leave_game_pressed() -> void:
 	base_game_hud.visible = false
 	user_header.visible = true
 	menu_container.visible = true
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = false
 	_hide_backdrop()
 	
 	GameManager.reset_match_state()
@@ -2517,6 +2536,8 @@ func _on_ranked_breakout_exit_requested() -> void:
 	base_game_hud.visible = false
 	menu_container.visible = true
 	user_header.visible = true
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = false
 	user_header.update_ui()
 	_update_ranked_button_state()
 	GameManager.reset_match_state()
@@ -2830,19 +2851,20 @@ func _show_force_update_dialog() -> void:
 
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(800, 480)
-	var panel_sb = StyleBoxFlat.new()
-	panel_sb.bg_color = Color(0.14, 0.09, 0.06, 0.98)
-	panel_sb.border_color = Color(0.9, 0.72, 0.35, 1.0)
-	panel_sb.set_border_width_all(3)
-	panel_sb.set_corner_radius_all(20)
+	var panel_sb = StyleBoxTexture.new()
+	panel_sb.texture = preload("res://assets/images/frames/board.png")
+	panel_sb.texture_margin_left = 60.0
+	panel_sb.texture_margin_top = 60.0
+	panel_sb.texture_margin_right = 60.0
+	panel_sb.texture_margin_bottom = 60.0
 	panel.add_theme_stylebox_override("panel", panel_sb)
 	center.add_child(panel)
 
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 36)
-	margin.add_theme_constant_override("margin_top", 36)
-	margin.add_theme_constant_override("margin_right", 36)
-	margin.add_theme_constant_override("margin_bottom", 36)
+	margin.add_theme_constant_override("margin_left", 48)
+	margin.add_theme_constant_override("margin_top", 44)
+	margin.add_theme_constant_override("margin_right", 48)
+	margin.add_theme_constant_override("margin_bottom", 44)
 	panel.add_child(margin)
 
 	var vbox = VBoxContainer.new()
@@ -2878,7 +2900,8 @@ func _show_force_update_dialog() -> void:
 	KenneyUI.style_button(btn_update, KenneyUI.COLOR_GREEN)
 	btn_update.pressed.connect(func():
 		AudioManager.sfx_tap()
-		OS.shell_open("https://cafebazaar.ir/app/kafeh.fekr.classic")
+		OS.shell_open("https://myket.ir/app/kafeh.fekr.classic")
+		get_tree().quit()
 	)
 	vbox.add_child(btn_update)
 
@@ -2915,19 +2938,20 @@ func _show_queue_closed_dialog() -> void:
 
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(760, 420)
-	var panel_sb = StyleBoxFlat.new()
-	panel_sb.bg_color = Color(0.14, 0.09, 0.06, 0.98)
-	panel_sb.border_color = Color(0.9, 0.72, 0.35, 1.0)
-	panel_sb.set_border_width_all(3)
-	panel_sb.set_corner_radius_all(20)
+	var panel_sb = StyleBoxTexture.new()
+	panel_sb.texture = preload("res://assets/images/frames/board.png")
+	panel_sb.texture_margin_left = 60.0
+	panel_sb.texture_margin_top = 60.0
+	panel_sb.texture_margin_right = 60.0
+	panel_sb.texture_margin_bottom = 60.0
 	panel.add_theme_stylebox_override("panel", panel_sb)
 	center.add_child(panel)
 
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 36)
-	margin.add_theme_constant_override("margin_top", 36)
-	margin.add_theme_constant_override("margin_right", 36)
-	margin.add_theme_constant_override("margin_bottom", 36)
+	margin.add_theme_constant_override("margin_left", 48)
+	margin.add_theme_constant_override("margin_top", 44)
+	margin.add_theme_constant_override("margin_right", 48)
+	margin.add_theme_constant_override("margin_bottom", 44)
 	panel.add_child(margin)
 
 	var vbox = VBoxContainer.new()

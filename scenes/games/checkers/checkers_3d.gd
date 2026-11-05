@@ -746,7 +746,14 @@ func _build_3d_checker_piece(gamer_id: int, is_super_pawn: bool) -> Node3D:
 		king_stack.position.y = 0.021
 		root.add_child(king_stack)
 
+	_disable_shadows_recursive(root)
 	return root
+
+func _disable_shadows_recursive(node: Node) -> void:
+	if node is GeometryInstance3D:
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for child in node.get_children():
+		_disable_shadows_recursive(child)
 
 func _build_single_checker_puck(mat_main: StandardMaterial3D, mat_well: StandardMaterial3D, mat_trim: StandardMaterial3D) -> Node3D:
 	var puck = Node3D.new()
@@ -1463,6 +1470,7 @@ func _animate_king_promotion(piece_node: Node3D, cell_idx: int, gamer_id: int) -
 
 	var king_stack = _build_king_stack_assembly(mat_main, mat_well, mat_trim)
 	king_stack.name = "KingStackNode"
+	_disable_shadows_recursive(king_stack)
 	# Start elevated above the checker and drop down with a royal bounce
 	king_stack.position = Vector3(0.0, 0.16, 0.0)
 	king_stack.scale = Vector3(0.2, 0.2, 0.2)

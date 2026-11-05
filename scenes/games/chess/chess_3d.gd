@@ -934,7 +934,14 @@ func _build_3d_piece_mesh(gamer_id: int, piece_name: String, cell_idx: int = -1)
 		r_ring.position.y = 0.082
 		root.add_child(r_ring)
 
+	_disable_shadows_recursive(root)
 	return root
+
+func _disable_shadows_recursive(node: Node) -> void:
+	if node is GeometryInstance3D:
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for child in node.get_children():
+		_disable_shadows_recursive(child)
 
 func _build_cross_pattee(mat_trim: StandardMaterial3D) -> Node3D:
 	var cross_root = Node3D.new()

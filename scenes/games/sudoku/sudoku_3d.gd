@@ -204,11 +204,11 @@ func _init_materials() -> void:
 	mat_well_socket.metallic = 0.10
 	mat_well_socket.roughness = 0.60
 
-	# Empty Cell Plaque (Sunken slate tile)
+	# Empty Cell Plaque (Light elegant cream parchment tile that gamer can fill)
 	mat_tile_empty = StandardMaterial3D.new()
-	mat_tile_empty.albedo_color = Color(0.16, 0.18, 0.22, 1.0)
-	mat_tile_empty.metallic = 0.06
-	mat_tile_empty.roughness = 0.50
+	mat_tile_empty.albedo_color = Color(0.90, 0.89, 0.84, 1.0)
+	mat_tile_empty.metallic = 0.0
+	mat_tile_empty.roughness = 0.70
 
 	# Base Clue 3D Tile (Antique Carved Ivory & Brass)
 	mat_tile_clue = StandardMaterial3D.new()
@@ -218,11 +218,11 @@ func _init_materials() -> void:
 	mat_tile_clue.clearcoat_enabled = false
 	mat_tile_clue.clearcoat = 0.50
 
-	# Player Placed 3D Tile (Polished Midnight Enamel & Cyan Sheen)
+	# Player Placed 3D Tile (Light soft ivory/porcelain tile filled by gamer)
 	mat_tile_player = StandardMaterial3D.new()
-	mat_tile_player.albedo_color = Color(0.12, 0.20, 0.28, 1.0)
-	mat_tile_player.metallic = 0.18
-	mat_tile_player.roughness = 0.28
+	mat_tile_player.albedo_color = Color(0.94, 0.95, 0.98, 1.0)
+	mat_tile_player.metallic = 0.0
+	mat_tile_player.roughness = 0.45
 	mat_tile_player.clearcoat_enabled = false
 	mat_tile_player.clearcoat = 0.60
 
@@ -745,10 +745,14 @@ func _refresh_board_visuals() -> void:
 				cell_labels[i].text = _fa_num(val)
 				if is_conflict:
 					cell_labels[i].modulate = Color(1.0, 0.32, 0.32)
+					cell_labels[i].outline_modulate = Color(0.25, 0.0, 0.0, 0.9)
 				elif is_base:
 					cell_labels[i].modulate = Color(1.0, 0.88, 0.48)
+					cell_labels[i].outline_modulate = Color(0.08, 0.08, 0.10, 0.95)
 				else:
-					cell_labels[i].modulate = Color(0.35, 0.92, 1.0)
+					# Player filled digit on light cell: royal cobalt blue with clean outline
+					cell_labels[i].modulate = Color(0.08, 0.28, 0.72)
+					cell_labels[i].outline_modulate = Color(0.95, 0.95, 1.0, 0.5)
 			else:
 				cell_labels[i].text = ""
 

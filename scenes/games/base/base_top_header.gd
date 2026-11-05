@@ -308,8 +308,10 @@ func _ready() -> void:
 	_update_score_badges_visibility()
 	_connect_buttons()
 	if is_instance_valid(p1_reaction_bubble):
+		p1_reaction_bubble.top_level = true
 		p1_reaction_bubble.visible = false
 	if is_instance_valid(p2_reaction_bubble):
+		p2_reaction_bubble.top_level = true
 		p2_reaction_bubble.visible = false
 
 func _connect_buttons() -> void:
@@ -1130,6 +1132,12 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			bubble_frame.add_child(vfx_overlay)
 
 	bubble.z_index = 30
+	bubble.top_level = true
+	bubble.size = Vector2.ZERO
+	bubble.custom_minimum_size = Vector2.ZERO
+	bubble.pivot_offset = Vector2.ZERO
+	if is_instance_valid(player_card):
+		bubble.global_position = player_card.global_position + player_card.size * 0.5
 	var hold_duration = 2.6
 
 	if reaction_id > 100:
@@ -1184,7 +1192,7 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 	bubble.visible = true
 	bubble.scale = Vector2(0.12, 0.12)
 	bubble.modulate.a = 0.0
-	bubble.pivot_offset = bubble.size * 0.5
+	bubble.pivot_offset = Vector2.ZERO
 	var start_rot = (-6.0 if user_index == 1 else 6.0) if reaction_id > 100 else (-9.0 if user_index == 1 else 9.0)
 	bubble.rotation_degrees = start_rot
 	AudioManager.play_sound("chat")
@@ -1266,8 +1274,10 @@ func reset_header() -> void:
 	if is_instance_valid(_p2_avatar_frame):
 		_p2_avatar_frame.add_theme_stylebox_override("panel", _style_avatar_p2_idle)
 	if is_instance_valid(p1_reaction_bubble):
+		p1_reaction_bubble.top_level = true
 		p1_reaction_bubble.visible = false
 	if is_instance_valid(p2_reaction_bubble):
+		p2_reaction_bubble.top_level = true
 		p2_reaction_bubble.visible = false
 
 # Virtual hook for child headers

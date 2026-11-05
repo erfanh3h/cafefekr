@@ -115,6 +115,9 @@ func _build_extra_player_cards() -> void:
 		var score_badge = card_dup.get_node_or_null("HBox/ScoreBadge") as PanelContainer
 		var score_lbl = card_dup.get_node_or_null("HBox/ScoreBadge/Score") as Label
 		var react_bubble = card_dup.get_node_or_null("ReactionBubble") as Control
+		if is_instance_valid(react_bubble):
+			react_bubble.top_level = true
+			react_bubble.visible = false
 		var react_icon = card_dup.get_node_or_null("ReactionBubble/BubbleFrame/Icon") as TextureRect
 
 		if is_instance_valid(btn_prof):
@@ -425,6 +428,13 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 		kori_lbl.add_theme_constant_override("shadow_outline_size", 3)
 		kori_lbl.custom_minimum_size = Vector2(300, 84)
 	bubble.z_index = 30
+	bubble.top_level = true
+	bubble.size = Vector2.ZERO
+	bubble.custom_minimum_size = Vector2.ZERO
+	bubble.pivot_offset = Vector2.ZERO
+	var card_node = info.get("card", null) as Control
+	if is_instance_valid(card_node):
+		bubble.global_position = card_node.global_position + card_node.size * 0.5
 	var hold_duration = 2.4
 	if reaction_id > 100:
 		var k_idx = clampi(reaction_id - 101, 0, KORIS.size() - 1)
