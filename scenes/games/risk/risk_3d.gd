@@ -1,292 +1,146 @@
 class_name Risk3D
 extends BaseGameBoard
+
 # ==============================================================================
-# RISK STRIKE 3D — ROYAL COMMAND TABLE, 3D SELECTABLE CARDS & GUIDED HUD
+# RISK STRIKE (ریسک استرایک) - PREMIUM 3D TABLETOP ENVIRONMENT FOR GODOT 4
 # ==============================================================================
-# Fixes & Upgrades:
-# 1. Zero UI overlap during Pre-Game Start Countdown or End-Game Result Dialog:
-#    - UI root is parented inside BaseGameHUD below StartGameOverlay and remains
-#      strictly hidden until the match countdown finishes (on_start_game / active turn).
-# 2. True 3D Selectable Cards in Hand + 3D Selectable Draw Decks:
-#    - Continent Cards in hand are rendered as 3D sculpted cards with stacked thickness,
-#      miniature 3D citadel relief, gold count badges, and smooth 3D hover/select elevation.
-#    - Strategy Cards in hand are rendered as 3D tactical cards with custom 3D emblems
-#      (Bomb, Cannon, Crown, Shield, Spyglass, Swords, Banner) and readiness indicator gems.
-#    - 3D Continent & Strategy Draw Decks on the table can also be tapped directly in 3D.
-# 3. Always-Visible Enemy Cards Bar + Full Visual Enemy Cards Inspector Modal:
-#    - Live opponent strip shows every opponent's visible Continent Cards, Crowns (👑),
-#      and Strategy Card count (🃏) at a glance, plus a 1-tap "👁️ کارت‌های حریفان" modal.
-# 4. Step-by-Step Guided Phase Banner & Compact Contextual Command Bar:
-#    - Uncluttered 1-step-at-a-time controls that guide the player clearly in Persian.
-# ==============================================================================
-const ALL_CONTINENTS: Array[String] = [
-	"NorthAmerica",
-	"Europe",
-	"Asia",
-	"SouthAmerica",
-	"Africa",
-	"Australia"
-]
-const CONTINENT_NAMES_FA: Dictionary = {
-	"Asia": "آسیا",
-	"NorthAmerica": "آمریکای شمالی",
-	"Europe": "اروپا",
-	"Africa": "آفریقا",
-	"Australia": "استرالیا",
-	"SouthAmerica": "آمریکای جنوبی"
-}
-const CONTINENT_ADJACENCY: Dictionary = {
-	"Asia": ["Australia", "Europe", "Africa", "NorthAmerica"],
-	"Australia": ["Asia"],
-	"Europe": ["Asia", "NorthAmerica", "Africa"],
-	"Africa": ["Europe", "Asia", "SouthAmerica"],
-	"SouthAmerica": ["NorthAmerica", "Africa"],
-	"NorthAmerica": ["Europe", "Asia", "SouthAmerica"]
-}
-const CONTINENT_COLORS: Dictionary = {
-	"Asia": Color(0.16, 0.72, 0.44),         # Jade Emerald
-	"NorthAmerica": Color(0.92, 0.68, 0.20), # Imperial Amber Gold
-	"Europe": Color(0.24, 0.56, 0.94),       # Royal Cobalt Blue
-	"Africa": Color(0.90, 0.44, 0.20),       # Terracotta Sun
-	"Australia": Color(0.72, 0.34, 0.88),    # Amethyst Violet
-	"SouthAmerica": Color(0.52, 0.80, 0.24)  # Amazon Chartreuse
-}
-# Upper half of 3D table (-0.48 to +0.06 Z) so lower half (+0.38 to +0.72 Z) holds 3D Hand Cards
-const CONTINENT_POSITIONS_3D: Dictionary = {
-	"NorthAmerica": Vector3(-0.37, 0.052, -0.44),
-	"Europe":       Vector3( 0.00, 0.052, -0.48),
-	"Asia":         Vector3( 0.37, 0.052, -0.42),
-	"SouthAmerica": Vector3(-0.35, 0.052,  0.04),
-	"Africa":       Vector3( 0.00, 0.052,  0.02),
-	"Australia":    Vector3( 0.36, 0.052,  0.05)
-}
-const FACTION_COLORS: Dictionary = {
-	1: Color(0.95, 0.24, 0.28), # Player 1: Ruby Red
-	2: Color(0.22, 0.64, 1.00), # Player 2: Sapphire Blue
-	3: Color(0.20, 0.86, 0.42), # Player 3: Emerald Green
-	4: Color(1.00, 0.80, 0.18)  # Player 4: Sunburst Gold
-}
-const FACTION_DOTS: Dictionary = {
-	1: "🔴",
-	2: "🔵",
-	3: "🟢",
-	4: "🟡"
-}
-const STRATEGY_INFO: Dictionary = {
-	"Backup": {
-		"name_fa": "پشتیبانی",
-		"short_fa": "+۱ کارت قاره",
-		"icon": "🛡️",
-		"desc": "یک قاره که در دست دارید را انتخاب کنید و ۱ کارت دیگر از همان قاره دریافت کنید.",
-		"phases": ["Draw", "Attack", "AttackArmy"]
-	},
-	"Expand": {
-		"name_fa": "پیشروی",
-		"short_fa": "کارت از دسته قاره",
-		"icon": "🗺️",
-		"desc": "بالاترین کارت دسته قاره‌ها را برمی‌دارید؛ اگر از آن قاره داشته باشید، ۲ کارت می‌گیرید!",
-		"phases": ["Draw", "Attack"]
-	},
-	"Destroy": {
-		"name_fa": "تخریب",
-		"short_fa": "حذف قاره ضعیف",
-		"icon": "⚡",
-		"desc": "از هر بازیکن یک کارت قاره که فقط ۱ عدد از آن دارد حذف می‌شود.",
-		"phases": ["Draw", "Attack"]
-	},
-	"Bomb": {
-		"name_fa": "بمباران",
-		"short_fa": "حذف ۱ کارت قاره حریف",
-		"icon": "💣",
-		"desc": "یک بازیکن حریف و یکی از قاره‌های او را انتخاب کنید تا ۱ کارت از آن قاره بسوزد.",
-		"phases": ["Draw", "Attack"]
-	},
-	"Target": {
-		"name_fa": "فتح تاج",
-		"short_fa": "دریافت ۱ تاج طلایی",
-		"icon": "👑",
-		"desc": "اگر در این نوبت در یک حمله پیروز شده باشید، بلافاصله ۱ تاج سلطه دریافت می‌کنید!",
-		"phases": ["Draw", "Attack"]
-	},
-	"Insurgence": {
-		"name_fa": "کودتا",
-		"short_fa": "ربودن تاج حریف",
-		"icon": "🔥",
-		"desc": "اگر تمام کارت‌های یک قاره حریف را در نبرد نابود کرده باشید، ۱ تاج از او می‌ربایید!",
-		"phases": ["Draw", "Attack"]
-	},
-	"Spy": {
-		"name_fa": "جاسوس",
-		"short_fa": "دیدن و حذف استراتژی",
-		"icon": "🕵️",
-		"desc": "کارت‌های استراتژی یک حریف را ببینید و یکی از آن‌ها را نابود کنید.",
-		"phases": ["Draw", "Attack"]
-	},
-	"Canon": {
-		"name_fa": "توپخانه",
-		"short_fa": "+۱ به تاس در نبرد",
-		"icon": "💥",
-		"desc": "در نبرد جاری، ۱ واحد به بالاترین تاس شما (در حمله یا دفاع) اضافه می‌کند.",
-		"phases": ["DeclareAttack", "AttackArmy", "DefenderArmy", "QuestArmy"]
-	},
-	"Cancel": {
-		"name_fa": "آتش‌بس",
-		"short_fa": "لغو کامل حمله حریف",
-		"icon": "🕊️",
-		"desc": "وقتی حریف به شما حمله می‌کند، نبرد را فوراً لغو کرده و حمله را متوقف می‌سازد.",
-		"phases": ["DefenderArmy", "QuestArmy"]
-	},
-	"Army": {
-		"name_fa": "لشکرکشی",
-		"short_fa": "تعویض قاره با دسته",
-		"icon": "⚔️",
-		"desc": "در نبرد، یکی از قاره‌های خود را به دسته برگردانید تا ۲ کارت قاره جدید بکشید.",
-		"phases": ["DeclareAttack", "AttackArmy", "DefenderArmy", "QuestArmy"]
-	}
-}
-# --- Match & Game State ---
-var _font_hekayat: Font = preload("res://assets/fonts/hekayat.ttf")
+# Connects the antique walnut & emerald baize 3D tabletop environment,
+# 3D central board, 3D player stations, 3D interactive cards, and 3D dice
+# strictly to the existing Python backend protocol (`risk_game_session.py`).
+
+const FontHekayat: Font = preload("res://assets/fonts/hekayat.ttf")
+
+# Camera Defaults for CafeTable (Elevated Three-Quarter Tabletop Perspective)
+@export var default_three_quarter_view: bool = true
+@export var camera_pitch: float = -0.89   # ~ -51 deg elevated three-quarter tabletop perspective
+@export var camera_distance: float = 3.12 # Frames the entire walnut table, central board, player stations & 3D card rack
+
+# Shared 3D Meshes & PBR Materials
+var _mats: Dictionary = {}
+var _rook_mesh: Mesh = null
+var _knight_mesh: Mesh = null
+var _king_mesh: Mesh = null
 var _crown_mesh: Mesh = null
-var _match_started: bool = false
-var _player_count: int = 2
+
+# 3D Scene Graph References
+var _table_refs: Dictionary = {}
+var _continent_nodes: Dictionary = {} # continent_id -> Dictionary from Risk3DFactory
+var _bridge_nodes: Dictionary = {}    # "ContA_ContB" -> MeshInstance3D
+var _station_nodes: Dictionary = {}   # player_idx (1..4) -> Dictionary from Risk3DFactory
+var _hand_rack_root: Node3D = null
+var _hand_card_nodes: Array = []      # Array of Dictionaries from Risk3DFactory.build_3d_card
+var _dice_nodes: Array = []           # Active 3D Dice inside _table_refs["dice_arena"]
+
+# Authoritative Backend Game State
+var total_players: int = 2
+var active_player_indexes: Array = [1, 2]
 var _active_turn: int = 1
-var _game_phase: String = "Draw" # "Draw", "Attack", "AttackArmy", "DefenderArmy", "QuestArmy"
-# Public state of all players (1-indexed in UI, stored 0-indexed in arrays)
-var _tokens: Array = [0, 0, 0, 0]
-var _all_continents: Array = [{}, {}, {}, {}]
-var _strategy_counts: Array = [0, 0, 0, 0]
-var _my_strategies: Dictionary = {}
-var _revealed_enemy_strategies: Dictionary = {} # p_idx (1..4) -> Dictionary of revealed strategies
-# Combat & Selection State
-var _selected_my_continent: String = ""
-var _selected_target_continent: String = ""
-var _selected_target_defender: int = 0
-var _selected_strategy_card: String = ""
-var _first_3d_deck_picked: String = "" # "" or "continent" or "strategy" for 2-click 3D deck drawing
-var _current_battle_attacker: int = 0
-var _current_battle_defender: int = 0
-var _current_battle_attacker_continent: String = ""
-var _current_battle_target_continent: String = ""
-var _current_battle_attacker_army: int = 1
-var _won_attack_this_turn: bool = false
-var _eliminated_continent_this_turn: bool = false
-# --- 3D Scene Nodes ---
-var _board_root: Node3D = null
-var _continents_root: Node3D = null
-var _bridges_root: Node3D = null
-var _crowns_root: Node3D = null
-var _decks_root: Node3D = null
-var _dice_arena_root: Node3D = null
-var _hand_3d_root: Node3D = null
-var _continent_nodes: Dictionary = {} # continent -> Dictionary of 3D node refs
-var _bridge_meshes: Dictionary = {}   # "ContA_ContB" -> MeshInstance3D
-var _player_crown_nodes: Dictionary = {} # player_idx (1..4) -> Array[Node3D]
-var _attacker_dice_nodes: Array[Node3D] = []
-var _defender_dice_nodes: Array[Node3D] = []
-var _dice_result_lbl_3d: Label3D = null
-var _deck_continent_node: Node3D = null
-var _deck_strategy_node: Node3D = null
-var _deck_continent_hint_3d: Label3D = null
-var _deck_strategy_hint_3d: Label3D = null
-var _hand_continent_cards_3d: Dictionary = {} # continent -> Node3D
-var _hand_strategy_cards_3d: Dictionary = {}  # strategy -> Node3D
-var _pulse_time: float = 0.0
-var _shared_mats: Dictionary = {}
-# --- 2D Guided HUD Nodes (Parented inside BaseGameHUD below StartGameOverlay) ---
+var game_state: String = "Draw" # "StartGame", "Draw", "SelectAction", "AttackerArmy", "DefenderArmy"
+var continent_deck_count: int = 42
+var strategy_deck_count: int = 40
+var board_tokens: Array = ["Asia", "NorthAmerica", "Europe", "Africa", "Australia", "SouthAmerica"]
+
+# Public Per-Player Data: player_idx (1..4) -> {"continents": Dictionary, "strategies_count": int, "tokens": Array}
+var players_state: Dictionary = {
+	1: {"continents": {}, "strategies_count": 0, "tokens": []},
+	2: {"continents": {}, "strategies_count": 0, "tokens": []},
+	3: {"continents": {}, "strategies_count": 0, "tokens": []},
+	4: {"continents": {}, "strategies_count": 0, "tokens": []},
+}
+
+# Local Player Private Hand Data (`UserData`)
+var my_continents: Dictionary = {} # continent_id -> int count
+var my_strategies: Array = []      # Array[String] of strategy card names in hand
+var my_tokens: Array = []          # Array[String] of conquered continent token names
+
+# Active Combat State (`active_attack`)
+var active_attack: Dictionary = {} # {"attacker_id", "defender_id", "source_continent", "target_continent", "attacker_army", "defender_army"}
+var expand_ignore_adjacency: bool = false
+
+# Interactive Selection State (for 3D Board & 3D Cards)
+var selected_source_continent: String = ""
+var selected_target_continent: String = ""
+var selected_target_player: int = 0
+var selected_hand_card_idx: int = -1
+var selected_strategy_name: String = ""
+var selected_army_commit: int = 0
+var hovered_card_idx: int = -1
+var _first_3d_deck_picked: String = ""
+
+# Match Lifecycle & Animation Clock
+var _match_started: bool = false
+var _anim_clock: float = 0.0
+var _battle_logs: Array[String] = []
+
+# Raycast Click Tracking
+var _pointer_down_pos: Vector2 = Vector2.ZERO
+var _pointer_is_down: bool = false
+const TAP_MAX_DRAG_PX: float = 16.0
+
+# Floating UI Layer & HUD References (Parented inside BaseGameHUD below StartGameOverlay)
 var _fallback_canvas: CanvasLayer = null
-var _ui_root: Control = null
-# Top Opponent Cards Strip & Phase Step Guide
-var _opponent_strip_box: HBoxContainer = null
-var _btn_enemy_inspector: Button = null
-var _step_badge_lbl: Label = null
-var _step_guide_lbl: Label = null
-var _battle_feed_lbl: Label = null
-# Bottom Compact Contextual Command Bar
-var _bottom_panel: PanelContainer = null
-var _action_title_lbl: Label = null
+var _hud_root: Control = null
+var _phase_banner_lbl: Label = null
+var _selection_info_lbl: Label = null
 var _action_buttons_row: HBoxContainer = null
-# Modals (Enemy Cards Inspector & Strategy Target Picker)
-var _enemy_modal_backdrop: ColorRect = null
-var _enemy_modal_panel: PanelContainer = null
-var _enemy_modal_body: VBoxContainer = null
-var _target_modal_backdrop: ColorRect = null
-var _target_modal_panel: PanelContainer = null
-var _target_modal_title: Label = null
-var _target_modal_sub: Label = null
-var _target_modal_body: VBoxContainer = null
-# ==============================================================================
-# LIFECYCLE & INITIALIZATION
-# ==============================================================================
+var _sub_options_row: HBoxContainer = null
+var _hand_filter_bar: HBoxContainer = null
+var _combat_banner_panel: PanelContainer = null
+var _combat_banner_lbl: Label = null
+var _inspector_panel: PanelContainer = null
+var _inspector_title_lbl: Label = null
+var _inspector_body_lbl: Label = null
+var _log_panel: PanelContainer = null
+var _log_vbox: VBoxContainer = null
+
 func _ready() -> void:
 	game_type = GameTypes.RISK
-	if ResourceLoader.exists("res://assets/models/risk/crown.obj"):
-		_crown_mesh = load("res://assets/models/risk/crown.obj")
-	_init_shared_materials()
-	_init_default_state()
-	_build_3d_war_table()
-	_build_2d_command_hud()
-	# Connect Risk-specific network events
+	_mats = RiskMaterials.create_palette()
+	_load_3d_meshes()
+	_detect_players_and_local_id()
+	_build_3d_tabletop_world()
+	_build_floating_ui()
+
 	if not NetworkManager.risk_event_received.is_connected(_on_risk_event_received):
 		NetworkManager.risk_event_received.connect(_on_risk_event_received)
+
 	super._ready()
-	# Keep HUD hidden until the 5s pre-game start countdown finishes
 	_update_hud_visibility()
-	_refresh_all_visuals()
+	_refresh_all_3d_and_hud()
+
 func cleanup_board() -> void:
 	if NetworkManager.risk_event_received.is_connected(_on_risk_event_received):
 		NetworkManager.risk_event_received.disconnect(_on_risk_event_received)
-	if is_instance_valid(_ui_root):
-		_ui_root.queue_free()
-		_ui_root = null
+	if is_instance_valid(_hud_root):
+		_hud_root.queue_free()
+		_hud_root = null
 	if is_instance_valid(_fallback_canvas):
 		_fallback_canvas.queue_free()
 		_fallback_canvas = null
-func _init_default_state() -> void:
-	_player_count = clampi(GameManager.match_players.size(), 2, 4)
-	_tokens = []
-	_all_continents = []
-	_strategy_counts = []
-	for i in range(_player_count):
-		_tokens.append(0)
-		var c_dict: Dictionary = {}
-		for c in ALL_CONTINENTS:
-			c_dict[c] = 0
-		_all_continents.append(c_dict)
-		_strategy_counts.append(0)
-	_my_strategies.clear()
-	_revealed_enemy_strategies.clear()
-	for s_key in STRATEGY_INFO.keys():
-		_my_strategies[s_key] = 0
-func _process(delta: float) -> void:
-	_pulse_time += delta
-	_update_hud_visibility()
-	# Rotate golden domination crowns smoothly
-	for p_idx in _player_crown_nodes.keys():
-		var arr: Array = _player_crown_nodes[p_idx]
-		for c_i in range(arr.size()):
-			var c_node: Node3D = arr[c_i]
-			if is_instance_valid(c_node) and c_node.visible:
-				c_node.rotation.y += delta * 1.35
-				c_node.position.y = 0.095 + sin(_pulse_time * 2.6 + float(p_idx + c_i)) * 0.008
-	# Pulse active continent selection & valid attack targets on the 3D map
-	for cont in _continent_nodes.keys():
-		var info: Dictionary = _continent_nodes[cont]
-		var ring: MeshInstance3D = info.get("select_ring", null)
-		var target_badge: Label3D = info.get("target_badge", null)
-		if is_instance_valid(ring) and ring.visible:
-			var sc = 1.0 + sin(_pulse_time * 5.2) * 0.075
-			ring.scale = Vector3(sc, 1.0, sc)
-		if is_instance_valid(target_badge) and target_badge.visible:
-			target_badge.position.y = 0.25 + sin(_pulse_time * 5.5) * 0.018
-	# Bounce 3D draw decks when it is our turn to draw
-	var is_my_draw: bool = (_match_started and _active_turn == my_player_index and _game_phase == "Draw")
-	if is_instance_valid(_deck_continent_node):
-		var target_y = 0.055 + (abs(sin(_pulse_time * 4.2)) * 0.022 if is_my_draw else 0.0)
-		_deck_continent_node.position.y = lerpf(_deck_continent_node.position.y, target_y, delta * 10.0)
-	if is_instance_valid(_deck_strategy_node):
-		var target_y2 = 0.055 + (abs(cos(_pulse_time * 4.2)) * 0.022 if is_my_draw else 0.0)
-		_deck_strategy_node.position.y = lerpf(_deck_strategy_node.position.y, target_y2, delta * 10.0)
-# Ensures the Risk controller UI is NEVER shown during StartGameOverlay or GameResultDialog
+
+func _load_3d_meshes() -> void:
+	if ResourceLoader.exists("res://assets/models/chess/rook.obj"):
+		_rook_mesh = load("res://assets/models/chess/rook.obj")
+	if ResourceLoader.exists("res://assets/models/chess/knight.obj"):
+		_knight_mesh = load("res://assets/models/chess/knight.obj")
+	if ResourceLoader.exists("res://assets/models/chess/king.obj"):
+		_king_mesh = load("res://assets/models/chess/king.obj")
+	if ResourceLoader.exists("res://assets/models/risk/crown.obj"):
+		_crown_mesh = load("res://assets/models/risk/crown.obj")
+	else:
+		_crown_mesh = _king_mesh
+
+func _detect_players_and_local_id() -> void:
+	if GameManager.my_player_index > 0:
+		my_player_index = GameManager.my_player_index
+	else:
+		my_player_index = 1
+	total_players = clampi(max(2, GameManager.match_players.size()), 2, 4)
+	active_player_indexes.clear()
+	for i in range(1, total_players + 1):
+		active_player_indexes.append(i)
+
+# Ensures the Risk controller UI and 3D Hand Rack are NEVER shown during StartGameOverlay or GameResultDialog
 func _is_hud_overlay_blocking() -> bool:
 	if not _match_started or not GameManager.is_game_active:
 		return true
@@ -301,1295 +155,1328 @@ func _is_hud_overlay_blocking() -> bool:
 		if is_instance_valid(res_dlg) and res_dlg.visible:
 			return true
 	return false
+
 func _update_hud_visibility() -> void:
-	if not is_instance_valid(_ui_root):
+	if not is_instance_valid(_hud_root):
 		return
-	# Re-parent into BaseGameHUD below StartGameOverlay if needed
-	if is_instance_valid(_fallback_canvas) and _ui_root.get_parent() == _fallback_canvas:
+	if is_instance_valid(_fallback_canvas) and _hud_root.get_parent() == _fallback_canvas:
 		var hud = get_tree().root.find_child("BaseGameHUD", true, false)
 		if is_instance_valid(hud):
-			_ui_root.reparent(hud)
+			_hud_root.reparent(hud)
 			var start_ov = hud.get_node_or_null("StartGameOverlay")
 			if is_instance_valid(start_ov):
-				hud.move_child(_ui_root, start_ov.get_index())
+				hud.move_child(_hud_root, start_ov.get_index())
+
 	var should_show = not _is_hud_overlay_blocking()
-	if _ui_root.visible != should_show:
-		_ui_root.visible = should_show
-	if is_instance_valid(_hand_3d_root):
-		_hand_3d_root.visible = should_show
+	if _hud_root.visible != should_show:
+		_hud_root.visible = should_show
+	if is_instance_valid(_hand_rack_root):
+		_hand_rack_root.visible = should_show
+
 # ==============================================================================
-# 3D MATERIALS & PROCEDURAL GEOMETRY
+# 1. 3D TABLETOP WORLD CONSTRUCTION
 # ==============================================================================
-func _init_shared_materials() -> void:
-	var mat_walnut = StandardMaterial3D.new()
-	mat_walnut.albedo_color = Color(0.18, 0.10, 0.05)
-	mat_walnut.roughness = 0.40
-	mat_walnut.metallic = 0.08
-	_shared_mats["walnut"] = mat_walnut
-	var mat_brass = StandardMaterial3D.new()
-	mat_brass.albedo_color = Color(0.92, 0.76, 0.30)
-	mat_brass.metallic = 0.86
-	mat_brass.roughness = 0.22
-	_shared_mats["brass"] = mat_brass
-	var mat_ocean = StandardMaterial3D.new()
-	mat_ocean.albedo_color = Color(0.06, 0.15, 0.25)
-	mat_ocean.roughness = 0.26
-	mat_ocean.metallic = 0.18
-	_shared_mats["ocean"] = mat_ocean
-	var mat_parchment = StandardMaterial3D.new()
-	mat_parchment.albedo_color = Color(0.95, 0.90, 0.78)
-	mat_parchment.roughness = 0.65
-	_shared_mats["parchment"] = mat_parchment
-	var mat_obsidian = StandardMaterial3D.new()
-	mat_obsidian.albedo_color = Color(0.12, 0.09, 0.14)
-	mat_obsidian.roughness = 0.32
-	mat_obsidian.metallic = 0.25
-	_shared_mats["obsidian"] = mat_obsidian
-	var mat_crown_gold = StandardMaterial3D.new()
-	mat_crown_gold.albedo_color = Color(1.0, 0.85, 0.22)
-	mat_crown_gold.metallic = 0.92
-	mat_crown_gold.roughness = 0.16
-	mat_crown_gold.emission_enabled = true
-	mat_crown_gold.emission = Color(0.95, 0.72, 0.12)
-	mat_crown_gold.emission_energy_multiplier = 0.45
-	_shared_mats["crown_gold"] = mat_crown_gold
-	var mat_bridge_idle = StandardMaterial3D.new()
-	mat_bridge_idle.albedo_color = Color(0.82, 0.70, 0.36, 0.45)
-	mat_bridge_idle.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_bridge_idle.emission_enabled = true
-	mat_bridge_idle.emission = Color(0.75, 0.60, 0.25)
-	mat_bridge_idle.emission_energy_multiplier = 0.35
-	_shared_mats["bridge_idle"] = mat_bridge_idle
-	var mat_bridge_active = StandardMaterial3D.new()
-	mat_bridge_active.albedo_color = Color(1.0, 0.38, 0.22, 0.95)
-	mat_bridge_active.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_bridge_active.emission_enabled = true
-	mat_bridge_active.emission = Color(1.0, 0.42, 0.15)
-	mat_bridge_active.emission_energy_multiplier = 2.2
-	_shared_mats["bridge_active"] = mat_bridge_active
-	var mat_die_red = StandardMaterial3D.new()
-	mat_die_red.albedo_color = Color(0.88, 0.14, 0.18)
-	mat_die_red.roughness = 0.20
-	mat_die_red.metallic = 0.15
-	_shared_mats["die_red"] = mat_die_red
-	var mat_die_black = StandardMaterial3D.new()
-	mat_die_black.albedo_color = Color(0.14, 0.16, 0.22)
-	mat_die_black.roughness = 0.22
-	mat_die_black.metallic = 0.28
-	_shared_mats["die_black"] = mat_die_black
-	var mat_pip_white = StandardMaterial3D.new()
-	mat_pip_white.albedo_color = Color(0.98, 0.96, 0.90)
-	mat_pip_white.emission_enabled = true
-	mat_pip_white.emission = Color(0.95, 0.92, 0.82)
-	mat_pip_white.emission_energy_multiplier = 0.35
-	_shared_mats["pip_white"] = mat_pip_white
-func _build_3d_war_table() -> void:
-	if is_instance_valid(_board_root):
-		_board_root.queue_free()
-	_board_root = Node3D.new()
-	_board_root.name = "RiskWarTableRoot"
-	add_child(_board_root)
-	# 1. Outer Royal Walnut War-Table Frame (Covers both Map and 3D Card Rack)
-	var base_box = BoxMesh.new()
-	base_box.size = Vector3(1.26, 0.044, 1.56)
-	base_box.material = _shared_mats["walnut"]
-	var base_mi = MeshInstance3D.new()
-	base_mi.mesh = base_box
-	base_mi.position = Vector3(0.0, 0.022, 0.06)
-	_board_root.add_child(base_mi)
-	# 2. Inner Deep Naval Map Table Surface (Upper Section)
-	var ocean_box = BoxMesh.new()
-	ocean_box.size = Vector3(1.16, 0.010, 0.90)
-	ocean_box.material = _shared_mats["ocean"]
-	var ocean_mi = MeshInstance3D.new()
-	ocean_mi.mesh = ocean_box
-	ocean_mi.position = Vector3(0.0, 0.046, -0.20)
-	_board_root.add_child(ocean_mi)
-	# Divider Brass Rail between Map and Commander's 3D Card Tray
-	var divider_box = BoxMesh.new()
-	divider_box.size = Vector3(1.18, 0.024, 0.022)
-	divider_box.material = _shared_mats["brass"]
-	var divider_mi = MeshInstance3D.new()
-	divider_mi.mesh = divider_box
-	divider_mi.position = Vector3(0.0, 0.052, 0.25)
-	_board_root.add_child(divider_mi)
-	# 3. Commander's Velvet 3D Card Rack Surface (Lower Section: Z = +0.26 to +0.82)
-	var tray_mat = StandardMaterial3D.new()
-	tray_mat.albedo_color = Color(0.11, 0.07, 0.05)
-	tray_mat.roughness = 0.75
-	var tray_box = BoxMesh.new()
-	tray_box.size = Vector3(1.16, 0.010, 0.54)
-	tray_box.material = tray_mat
-	var tray_mi = MeshInstance3D.new()
-	tray_mi.mesh = tray_box
-	tray_mi.position = Vector3(0.0, 0.046, 0.53)
-	_board_root.add_child(tray_mi)
-	# 3D Labels on the Card Rack so the player knows which row is Continent Cards vs Strategy Cards
-	var lbl_cont_row = Label3D.new()
-	lbl_cont_row.font = _font_hekayat
-	lbl_cont_row.font_size = 24
-	lbl_cont_row.pixel_size = 0.0011
-	lbl_cont_row.text = "🗺️ کارت‌های قاره شما (برای حمله یا انتخاب روی کارت بزنید)"
-	lbl_cont_row.modulate = Color(1.0, 0.90, 0.55)
-	lbl_cont_row.outline_size = 6
-	lbl_cont_row.position = Vector3(0.0, 0.056, 0.29)
-	lbl_cont_row.rotation_degrees = Vector3(-65.0, 0.0, 0.0)
-	_board_root.add_child(lbl_cont_row)
-	var lbl_strat_row = Label3D.new()
-	lbl_strat_row.font = _font_hekayat
-	lbl_strat_row.font_size = 24
-	lbl_strat_row.pixel_size = 0.0011
-	lbl_strat_row.text = "🃏 کارت‌های استراتژی شما (برای مشاهده و اجرا روی کارت بزنید)"
-	lbl_strat_row.modulate = Color(0.95, 0.78, 0.98)
-	lbl_strat_row.outline_size = 6
-	lbl_strat_row.position = Vector3(0.0, 0.056, 0.56)
-	lbl_strat_row.rotation_degrees = Vector3(-65.0, 0.0, 0.0)
-	_board_root.add_child(lbl_strat_row)
-	# 4. Sea-Lane Adjacency Bridges
-	_bridges_root = Node3D.new()
-	_bridges_root.name = "SeaLaneBridges"
-	_board_root.add_child(_bridges_root)
-	_build_sea_lane_bridges()
-	# 5. Six 3D Continent Citadels
-	_continents_root = Node3D.new()
-	_continents_root.name = "ContinentsRoot"
-	_board_root.add_child(_continents_root)
-	_build_3d_continents()
-	# 6. Center Battle Dice Arena & Selectable 3D Draw Decks
-	_decks_root = Node3D.new()
-	_decks_root.name = "CardDecksRoot"
-	_board_root.add_child(_decks_root)
-	_build_3d_card_decks()
-	_dice_arena_root = Node3D.new()
-	_dice_arena_root.name = "DiceArenaRoot"
-	_board_root.add_child(_dice_arena_root)
-	_build_3d_dice_arena()
-	# 7. Rotating 3D Golden Domination Crowns
-	_crowns_root = Node3D.new()
-	_crowns_root.name = "DominationCrownsRoot"
-	_board_root.add_child(_crowns_root)
-	_build_3d_domination_crowns()
-	# 8. Player's Interactive 3D Hand Cards Root
-	_hand_3d_root = Node3D.new()
-	_hand_3d_root.name = "Hand3DCardsRoot"
-	_board_root.add_child(_hand_3d_root)
-func _build_sea_lane_bridges() -> void:
-	_bridge_meshes.clear()
-	var pairs = [
-		["NorthAmerica", "Europe"],
-		["NorthAmerica", "Asia"],
-		["NorthAmerica", "SouthAmerica"],
-		["Europe", "Asia"],
-		["Europe", "Africa"],
-		["Asia", "Africa"],
-		["Asia", "Australia"],
-		["SouthAmerica", "Africa"]
-	]
-	for pair in pairs:
-		var c1: String = pair[0]
-		var c2: String = pair[1]
-		var p1: Vector3 = CONTINENT_POSITIONS_3D[c1]
-		var p2: Vector3 = CONTINENT_POSITIONS_3D[c2]
-		var mid = (p1 + p2) * 0.5
-		mid.y = 0.052
-		var dist = p1.distance_to(p2)
-		var angle = atan2(p2.x - p1.x, p2.z - p1.z)
-		var bm = BoxMesh.new()
-		bm.size = Vector3(0.018, 0.005, maxf(0.05, dist - 0.18))
-		bm.material = _shared_mats["bridge_idle"]
-		var mi = MeshInstance3D.new()
-		mi.mesh = bm
-		mi.position = mid
-		mi.rotation = Vector3(0.0, angle, 0.0)
-		_bridges_root.add_child(mi)
-		_bridge_meshes[c1 + "_" + c2] = mi
-		_bridge_meshes[c2 + "_" + c1] = mi
-func _build_3d_continents() -> void:
+
+func _build_3d_tabletop_world() -> void:
+	# 1. Main Walnut Table Surround, Mahogany Board Frame, Emerald Velvet Bed, Decks & Dice Arena
+	_table_refs = Risk3DFactory.build_tabletop_and_board_frame(self, _mats, FontHekayat)
+
+	# 2. Sea-Lane Bridges between Connected Continents
+	_bridge_nodes = Risk3DFactory.build_sea_lane_bridges(self, _mats)
+
+	# 3. 6 Raised 3D Continents on the Central Board
 	_continent_nodes.clear()
-	for cont in ALL_CONTINENTS:
-		var pos: Vector3 = CONTINENT_POSITIONS_3D[cont]
-		var col: Color = CONTINENT_COLORS[cont]
-		var root = Node3D.new()
-		root.name = "Continent_" + cont
-		root.position = pos
-		_continents_root.add_child(root)
-		# Hexagonal Pedestal Island
-		var mat_ped = StandardMaterial3D.new()
-		mat_ped.albedo_color = col.darkened(0.22)
-		mat_ped.roughness = 0.36
-		mat_ped.metallic = 0.18
-		var ped_cyl = CylinderMesh.new()
-		ped_cyl.top_radius = 0.125
-		ped_cyl.bottom_radius = 0.142
-		ped_cyl.height = 0.032
-		ped_cyl.radial_segments = 6
-		ped_cyl.material = mat_ped
-		var ped_mi = MeshInstance3D.new()
-		ped_mi.mesh = ped_cyl
-		ped_mi.position = Vector3(0.0, 0.016, 0.0)
-		root.add_child(ped_mi)
-		# Top Cap Plate
-		var mat_cap = StandardMaterial3D.new()
-		mat_cap.albedo_color = col
-		mat_cap.roughness = 0.28
-		mat_cap.metallic = 0.12
-		var cap_cyl = CylinderMesh.new()
-		cap_cyl.top_radius = 0.112
-		cap_cyl.bottom_radius = 0.118
-		cap_cyl.height = 0.010
-		cap_cyl.radial_segments = 6
-		cap_cyl.material = mat_cap
-		var cap_mi = MeshInstance3D.new()
-		cap_mi.mesh = cap_cyl
-		cap_mi.position = Vector3(0.0, 0.035, 0.0)
-		root.add_child(cap_mi)
-		# Central 3D Citadel Keep + 4 Corner Turrets
-		var keep_node = Node3D.new()
-		keep_node.position = Vector3(0.0, 0.040, 0.0)
-		root.add_child(keep_node)
-		var keep_box = BoxMesh.new()
-		keep_box.size = Vector3(0.056, 0.042, 0.056)
-		keep_box.material = _shared_mats["parchment"]
-		var keep_mi = MeshInstance3D.new()
-		keep_mi.mesh = keep_box
-		keep_mi.position = Vector3(0.0, 0.021, 0.0)
-		keep_node.add_child(keep_mi)
-		for tx in [-0.026, 0.026]:
-			for tz in [-0.026, 0.026]:
-				var t_cyl = CylinderMesh.new()
-				t_cyl.top_radius = 0.010
-				t_cyl.bottom_radius = 0.012
-				t_cyl.height = 0.054
-				t_cyl.radial_segments = 10
-				t_cyl.material = _shared_mats["brass"]
-				var t_mi = MeshInstance3D.new()
-				t_mi.mesh = t_cyl
-				t_mi.position = Vector3(tx, 0.027, tz)
-				keep_node.add_child(t_mi)
-		# Glowing Selection & Target Ring
-		var mat_ring = StandardMaterial3D.new()
-		mat_ring.albedo_color = Color(1.0, 0.88, 0.28, 0.92)
-		mat_ring.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		mat_ring.emission_enabled = true
-		mat_ring.emission = Color(1.0, 0.82, 0.20)
-		mat_ring.emission_energy_multiplier = 2.4
-		var torus = TorusMesh.new()
-		torus.inner_radius = 0.132
-		torus.outer_radius = 0.150
-		torus.material = mat_ring
-		var ring_mi = MeshInstance3D.new()
-		ring_mi.mesh = torus
-		ring_mi.position = Vector3(0.0, 0.015, 0.0)
-		ring_mi.visible = false
-		root.add_child(ring_mi)
-		# 3D Continent Persian Name Label
-		var lbl_name = Label3D.new()
-		lbl_name.font = _font_hekayat
-		lbl_name.font_size = 34
-		lbl_name.pixel_size = 0.0012
-		lbl_name.text = CONTINENT_NAMES_FA.get(cont, cont)
-		lbl_name.modulate = Color(1.0, 0.96, 0.84)
-		lbl_name.outline_size = 8
-		lbl_name.outline_modulate = Color(0.05, 0.03, 0.02, 0.96)
-		lbl_name.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		lbl_name.position = Vector3(0.0, 0.18, 0.0)
-		root.add_child(lbl_name)
-		# 3D Troop Breakdown Label (Shows both My Troops & Enemy Troops on this continent!)
-		var lbl_counts = Label3D.new()
-		lbl_counts.font = _font_hekayat
-		lbl_counts.font_size = 26
-		lbl_counts.pixel_size = 0.0011
-		lbl_counts.text = ""
-		lbl_counts.modulate = Color(1.0, 0.92, 0.55)
-		lbl_counts.outline_size = 7
-		lbl_counts.outline_modulate = Color(0.0, 0.0, 0.0, 0.96)
-		lbl_counts.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		lbl_counts.position = Vector3(0.0, 0.125, 0.0)
-		root.add_child(lbl_counts)
-		# Floating Target Reticle Badge ("🎯 حمله به این قاره")
-		var lbl_target = Label3D.new()
-		lbl_target.font = _font_hekayat
-		lbl_target.font_size = 28
-		lbl_target.pixel_size = 0.0012
-		lbl_target.text = "🎯 هدف قابل حمله (بزنید)"
-		lbl_target.modulate = Color(1.0, 0.38, 0.32)
-		lbl_target.outline_size = 8
-		lbl_target.outline_modulate = Color(0.0, 0.0, 0.0, 0.98)
-		lbl_target.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		lbl_target.position = Vector3(0.0, 0.25, 0.0)
-		lbl_target.visible = false
-		root.add_child(lbl_target)
-		# Container for 3D Faction Troop Miniatures
-		var troops_holder = Node3D.new()
-		troops_holder.name = "TroopsHolder"
-		troops_holder.position = Vector3(0.0, 0.042, 0.0)
-		root.add_child(troops_holder)
-		# StaticBody3D for direct 3D tap/raycast
-		var sb = StaticBody3D.new()
-		sb.name = "HitBox_" + cont
-		sb.set_meta("continent", cont)
-		var cs = CollisionShape3D.new()
-		var cyl_shape = CylinderShape3D.new()
-		cyl_shape.radius = 0.155
-		cyl_shape.height = 0.16
-		cs.shape = cyl_shape
-		cs.position = Vector3(0.0, 0.06, 0.0)
-		sb.add_child(cs)
-		root.add_child(sb)
-		_continent_nodes[cont] = {
-			"root": root,
-			"select_ring": ring_mi,
-			"ring_mat": mat_ring,
-			"lbl_name": lbl_name,
-			"lbl_counts": lbl_counts,
-			"target_badge": lbl_target,
-			"troops_holder": troops_holder
-		}
-func _build_3d_card_decks() -> void:
-	# Left Deck: Selectable 3D Continent Deck
-	_deck_continent_node = _create_3d_deck_stack(
-		Vector3(-0.46, 0.055, -0.18),
-		Color(0.16, 0.56, 0.38),
-		"🗺️ دسته قاره",
-		"deck_continent"
+	for c_id in Risk3DFactory.CONTINENT_META.keys():
+		_continent_nodes[c_id] = Risk3DFactory.build_continent_node(
+			self,
+			c_id,
+			_mats,
+			FontHekayat,
+			_rook_mesh,
+			_knight_mesh,
+			_crown_mesh
+		)
+
+	# 4. 3D Player Stations Around the Table
+	_rebuild_player_stations_3d()
+
+	# 5. Local Player's Tilted 3D Card Rack at the Near Edge of the Table
+	_hand_rack_root = Node3D.new()
+	_hand_rack_root.name = "LocalPlayerCardRack3D"
+	_hand_rack_root.position = Vector3(0.0, 0.085, 0.62)
+	_hand_rack_root.rotation_degrees = Vector3(32.0, 0.0, 0.0) # Tilted towards the elevated 3/4 camera for clear reading
+	add_child(_hand_rack_root)
+
+	var ledge_mi = MeshInstance3D.new()
+	var ledge_bm = BoxMesh.new()
+	ledge_bm.size = Vector3(1.06, 0.014, 0.045)
+	ledge_bm.material = _mats["mahogany"]
+	ledge_mi.mesh = ledge_bm
+	ledge_mi.position = Vector3(0.0, -0.048, 0.035)
+	_hand_rack_root.add_child(ledge_mi)
+
+func _rebuild_player_stations_3d() -> void:
+	for k in _station_nodes.keys():
+		var st = _station_nodes[k]
+		if st.has("root") and is_instance_valid(st["root"]):
+			st["root"].queue_free()
+	_station_nodes.clear()
+
+	var my_id = clampi(my_player_index, 1, 4)
+	var opponents: Array[int] = []
+	for idx in range(1, total_players + 1):
+		if idx != my_id:
+			opponents.append(idx)
+
+	# Local Player Station at Near Side of Table
+	_station_nodes[my_id] = Risk3DFactory.build_player_station(
+		self,
+		my_id,
+		Vector3(0.0, 0.026, 0.45),
+		0.0,
+		true,
+		_mats,
+		FontHekayat,
+		_king_mesh
 	)
-	_decks_root.add_child(_deck_continent_node)
-	_deck_continent_hint_3d = _deck_continent_node.get_node_or_null("DeckHint") as Label3D
-	# Right Deck: Selectable 3D Strategy Deck
-	_deck_strategy_node = _create_3d_deck_stack(
-		Vector3(0.46, 0.055, -0.18),
-		Color(0.68, 0.18, 0.26),
-		"🃏 دسته استراتژی",
-		"deck_strategy"
-	)
-	_decks_root.add_child(_deck_strategy_node)
-	_deck_strategy_hint_3d = _deck_strategy_node.get_node_or_null("DeckHint") as Label3D
-func _create_3d_deck_stack(pos: Vector3, deck_color: Color, label_fa: String, meta_type: String) -> Node3D:
-	var root = Node3D.new()
-	root.position = pos
-	var mat_top = StandardMaterial3D.new()
-	mat_top.albedo_color = deck_color
-	mat_top.roughness = 0.30
-	mat_top.metallic = 0.22
-	for i in range(5):
-		var card_box = BoxMesh.new()
-		card_box.size = Vector3(0.14, 0.007, 0.19)
-		card_box.material = mat_top if i == 4 else _shared_mats["parchment"]
-		var mi = MeshInstance3D.new()
-		mi.mesh = card_box
-		mi.position = Vector3(0.0, float(i) * 0.0075, 0.0)
-		root.add_child(mi)
-	var trim_box = BoxMesh.new()
-	trim_box.size = Vector3(0.148, 0.004, 0.198)
-	trim_box.material = _shared_mats["brass"]
-	var trim_mi = MeshInstance3D.new()
-	trim_mi.mesh = trim_box
-	trim_mi.position = Vector3(0.0, 0.034, 0.0)
-	root.add_child(trim_mi)
-	var lbl = Label3D.new()
-	lbl.font = _font_hekayat
-	lbl.font_size = 24
-	lbl.pixel_size = 0.0011
-	lbl.text = label_fa
-	lbl.modulate = Color(1.0, 0.92, 0.65)
-	lbl.outline_size = 6
-	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	lbl.position = Vector3(0.0, 0.095, 0.0)
-	root.add_child(lbl)
-	var hint_lbl = Label3D.new()
-	hint_lbl.name = "DeckHint"
-	hint_lbl.font = _font_hekayat
-	hint_lbl.font_size = 22
-	hint_lbl.pixel_size = 0.0011
-	hint_lbl.text = "👇 برای کشیدن کارت بزنید"
-	hint_lbl.modulate = Color(0.45, 1.0, 0.58)
-	hint_lbl.outline_size = 6
-	hint_lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	hint_lbl.position = Vector3(0.0, 0.14, 0.0)
-	hint_lbl.visible = false
-	root.add_child(hint_lbl)
-	# StaticBody3D so the player can tap the 3D deck directly!
-	var sb = StaticBody3D.new()
-	sb.set_meta("deck_type", meta_type)
-	var cs = CollisionShape3D.new()
-	var box_shape = BoxShape3D.new()
-	box_shape.size = Vector3(0.17, 0.10, 0.22)
-	cs.shape = box_shape
-	cs.position = Vector3(0.0, 0.04, 0.0)
-	sb.add_child(cs)
-	root.add_child(sb)
-	return root
-func _build_3d_dice_arena() -> void:
-	_attacker_dice_nodes.clear()
-	_defender_dice_nodes.clear()
-	var tray = CylinderMesh.new()
-	tray.top_radius = 0.155
-	tray.bottom_radius = 0.165
-	tray.height = 0.014
-	tray.radial_segments = 24
-	tray.material = _shared_mats["brass"]
-	var tray_mi = MeshInstance3D.new()
-	tray_mi.mesh = tray
-	tray_mi.position = Vector3(0.0, 0.052, -0.18)
-	_dice_arena_root.add_child(tray_mi)
-	var inner = CylinderMesh.new()
-	inner.top_radius = 0.140
-	inner.bottom_radius = 0.140
-	inner.height = 0.016
-	inner.radial_segments = 24
-	var mat_crimson = StandardMaterial3D.new()
-	mat_crimson.albedo_color = Color(0.28, 0.06, 0.08)
-	mat_crimson.roughness = 0.72
-	inner.material = mat_crimson
-	var inner_mi = MeshInstance3D.new()
-	inner_mi.mesh = inner
-	inner_mi.position = Vector3(0.0, 0.054, -0.18)
-	_dice_arena_root.add_child(inner_mi)
-	# 3 Red Attacker Dice & 2 Black Defender Dice
-	for i in range(3):
-		var die_node = _create_3d_battle_die(_shared_mats["die_red"])
-		die_node.position = Vector3(-0.075 + float(i) * 0.075, 0.088, -0.215)
-		die_node.visible = false
-		_dice_arena_root.add_child(die_node)
-		_attacker_dice_nodes.append(die_node)
-	for i in range(2):
-		var die_node = _create_3d_battle_die(_shared_mats["die_black"])
-		die_node.position = Vector3(-0.042 + float(i) * 0.084, 0.088, -0.145)
-		die_node.visible = false
-		_dice_arena_root.add_child(die_node)
-		_defender_dice_nodes.append(die_node)
-	# Floating 3D Dice Battle Summary Label
-	_dice_result_lbl_3d = Label3D.new()
-	_dice_result_lbl_3d.font = _font_hekayat
-	_dice_result_lbl_3d.font_size = 28
-	_dice_result_lbl_3d.pixel_size = 0.0012
-	_dice_result_lbl_3d.text = ""
-	_dice_result_lbl_3d.modulate = Color(1.0, 0.94, 0.55)
-	_dice_result_lbl_3d.outline_size = 8
-	_dice_result_lbl_3d.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_dice_result_lbl_3d.position = Vector3(0.0, 0.18, -0.18)
-	_dice_result_lbl_3d.visible = false
-	_dice_arena_root.add_child(_dice_result_lbl_3d)
-func _create_3d_battle_die(mat_body: Material) -> Node3D:
-	var root = Node3D.new()
-	var bm = BoxMesh.new()
-	bm.size = Vector3(0.048, 0.048, 0.048)
-	bm.material = mat_body
-	var mi = MeshInstance3D.new()
-	mi.mesh = bm
-	root.add_child(mi)
-	# Floating number label above each die so its rolled value is 100% legible
-	var val_lbl = Label3D.new()
-	val_lbl.name = "DieValueLabel"
-	val_lbl.font = _font_hekayat
-	val_lbl.font_size = 32
-	val_lbl.pixel_size = 0.0012
-	val_lbl.text = "۶"
-	val_lbl.modulate = Color(1.0, 0.96, 0.80)
-	val_lbl.outline_size = 7
-	val_lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	val_lbl.position = Vector3(0.0, 0.048, 0.0)
-	root.add_child(val_lbl)
-	return root
-func _build_3d_domination_crowns() -> void:
-	_player_crown_nodes.clear()
-	var crown_anchors: Dictionary = {
-		1: [Vector3(-0.54, 0.095,  0.18), Vector3(-0.45, 0.095,  0.18)],
-		2: [Vector3( 0.45, 0.095, -0.58), Vector3( 0.54, 0.095, -0.58)],
-		3: [Vector3(-0.54, 0.095, -0.58), Vector3(-0.45, 0.095, -0.58)],
-		4: [Vector3( 0.45, 0.095,  0.18), Vector3( 0.54, 0.095,  0.18)]
-	}
-	for p_idx in [1, 2, 3, 4]:
-		var arr: Array[Node3D] = []
-		var positions: Array = crown_anchors[p_idx]
-		for slot_i in range(2):
-			var c_holder = Node3D.new()
-			c_holder.position = positions[slot_i]
-			c_holder.visible = false
-			if _crown_mesh:
-				var mi = MeshInstance3D.new()
-				mi.mesh = _crown_mesh
-				mi.material_override = _shared_mats["crown_gold"]
-				mi.scale = Vector3(0.60, 0.60, 0.60)
-				c_holder.add_child(mi)
-			_crowns_root.add_child(c_holder)
-			arr.append(c_holder)
-		_player_crown_nodes[p_idx] = arr
-# ==============================================================================
-# 3D SELECTABLE HAND CARDS (CONTINENT CARDS & STRATEGY CARDS)
-# ==============================================================================
-func _rebuild_3d_hand_cards() -> void:
-	if not is_instance_valid(_hand_3d_root):
-		return
-	for child in _hand_3d_root.get_children():
-		child.queue_free()
-	_hand_continent_cards_3d.clear()
-	_hand_strategy_cards_3d.clear()
-	var my_idx_0 = clampi(my_player_index - 1, 0, _all_continents.size() - 1)
-	var my_conts: Dictionary = _all_continents[my_idx_0] if my_idx_0 < _all_continents.size() else {}
-	# 1. Build 3D Continent Cards in Row 1 (Z = +0.42)
-	var owned_continents: Array[String] = []
-	for cont in ALL_CONTINENTS:
-		if _to_int(my_conts.get(cont, 0)) > 0:
-			owned_continents.append(cont)
-	var c_total = owned_continents.size()
-	var c_spacing = minf(0.185, 1.02 / maxf(1.0, float(c_total)))
-	var c_start_x = -float(c_total - 1) * c_spacing * 0.5
-	for i in range(c_total):
-		var cont: String = owned_continents[i]
-		var cnt: int = _to_int(my_conts.get(cont, 0))
-		var is_sel: bool = (_selected_my_continent == cont)
-		var card_x = c_start_x + float(i) * c_spacing
-		var card_node = _create_3d_continent_card(cont, cnt, is_sel)
-		card_node.position = Vector3(card_x, 0.135 if is_sel else 0.082, 0.39 if is_sel else 0.42)
-		card_node.rotation_degrees = Vector3(-42.0 if is_sel else -52.0, 0.0, 0.0)
-		if is_sel:
-			card_node.scale = Vector3(1.14, 1.14, 1.14)
-		_hand_3d_root.add_child(card_node)
-		_hand_continent_cards_3d[cont] = card_node
-	# 2. Build 3D Strategy Cards in Row 2 (Z = +0.69)
-	var owned_strategies: Array[String] = []
-	for s_key in STRATEGY_INFO.keys():
-		if _to_int(_my_strategies.get(s_key, 0)) > 0:
-			owned_strategies.append(s_key)
-	var s_total = owned_strategies.size()
-	var s_spacing = minf(0.175, 1.04 / maxf(1.0, float(s_total)))
-	var s_start_x = -float(s_total - 1) * s_spacing * 0.5
-	for i in range(s_total):
-		var s_key: String = owned_strategies[i]
-		var s_cnt: int = _to_int(_my_strategies.get(s_key, 0))
-		var is_sel: bool = (_selected_strategy_card == s_key)
-		var is_playable: bool = _can_play_strategy_now(s_key)
-		var card_x = s_start_x + float(i) * s_spacing
-		var s_node = _create_3d_strategy_card(s_key, s_cnt, is_sel, is_playable)
-		s_node.position = Vector3(card_x, 0.145 if is_sel else 0.086, 0.65 if is_sel else 0.69)
-		s_node.rotation_degrees = Vector3(-40.0 if is_sel else -50.0, 0.0, 0.0)
-		if is_sel:
-			s_node.scale = Vector3(1.16, 1.16, 1.16)
-		_hand_3d_root.add_child(s_node)
-		_hand_strategy_cards_3d[s_key] = s_node
-func _create_3d_continent_card(cont: String, count: int, is_selected: bool) -> Node3D:
-	var root = Node3D.new()
-	root.name = "Card3D_" + cont
-	var col: Color = CONTINENT_COLORS.get(cont, Color(0.3, 0.6, 0.9))
-	# Stacked card thickness underneath if player owns multiple cards of this continent
-	var stack_layers = clampi(count, 1, 4)
-	for l_i in range(stack_layers - 1):
-		var under_box = BoxMesh.new()
-		under_box.size = Vector3(0.156, 0.006, 0.210)
-		under_box.material = _shared_mats["parchment"]
-		var under_mi = MeshInstance3D.new()
-		under_mi.mesh = under_box
-		under_mi.position = Vector3(0.0, -float(l_i + 1) * 0.007, 0.0)
-		root.add_child(under_mi)
-	# Outer Gilded Frame (Glows bright gold when selected)
-	var mat_frame = StandardMaterial3D.new()
-	if is_selected:
-		mat_frame.albedo_color = Color(1.0, 0.92, 0.35)
-		mat_frame.emission_enabled = true
-		mat_frame.emission = Color(1.0, 0.82, 0.20)
-		mat_frame.emission_energy_multiplier = 1.8
+
+	# Opponent Stations Around Top/Sides of Table
+	var opp_positions: Array = []
+	if opponents.size() == 1:
+		opp_positions = [Vector3(0.0, 0.026, -0.54)]
+	elif opponents.size() == 2:
+		opp_positions = [Vector3(-0.34, 0.026, -0.54), Vector3(0.34, 0.026, -0.54)]
 	else:
-		mat_frame.albedo_color = Color(0.85, 0.68, 0.28)
-	mat_frame.metallic = 0.80
-	mat_frame.roughness = 0.24
-	var frame_box = BoxMesh.new()
-	frame_box.size = Vector3(0.162, 0.010, 0.216)
-	frame_box.material = mat_frame
-	var frame_mi = MeshInstance3D.new()
-	frame_mi.mesh = frame_box
-	root.add_child(frame_mi)
-	# Inner Colored Continent Face
-	var mat_face = StandardMaterial3D.new()
-	mat_face.albedo_color = col.darkened(0.18)
-	mat_face.roughness = 0.35
-	var face_box = BoxMesh.new()
-	face_box.size = Vector3(0.146, 0.012, 0.198)
-	face_box.material = mat_face
-	var face_mi = MeshInstance3D.new()
-	face_mi.mesh = face_box
-	face_mi.position = Vector3(0.0, 0.002, 0.0)
-	root.add_child(face_mi)
-	# 3D Sculpted Miniature Citadel Emblem on the Card Center
-	var mini_keep = CylinderMesh.new()
-	mini_keep.top_radius = 0.022
-	mini_keep.bottom_radius = 0.026
-	mini_keep.height = 0.018
-	mini_keep.radial_segments = 6
-	mini_keep.material = _shared_mats["parchment"]
-	var keep_mi = MeshInstance3D.new()
-	keep_mi.mesh = mini_keep
-	keep_mi.position = Vector3(0.0, 0.014, -0.015)
-	root.add_child(keep_mi)
-	# 3D Gold Count Medallion on Top-Right of Card
-	var badge_cyl = CylinderMesh.new()
-	badge_cyl.top_radius = 0.024
-	badge_cyl.bottom_radius = 0.024
-	badge_cyl.height = 0.014
-	badge_cyl.radial_segments = 16
-	badge_cyl.material = _shared_mats["crown_gold"]
-	var badge_mi = MeshInstance3D.new()
-	badge_mi.mesh = badge_cyl
-	badge_mi.position = Vector3(0.052, 0.012, -0.072)
-	root.add_child(badge_mi)
-	var lbl_cnt = Label3D.new()
-	lbl_cnt.font = _font_hekayat
-	lbl_cnt.font_size = 28
-	lbl_cnt.pixel_size = 0.0011
-	lbl_cnt.text = "×%s" % _fa_digits(count)
-	lbl_cnt.modulate = Color(0.10, 0.06, 0.02)
-	lbl_cnt.outline_size = 3
-	lbl_cnt.outline_modulate = Color(1.0, 0.95, 0.75)
-	lbl_cnt.position = Vector3(0.052, 0.022, -0.072)
-	lbl_cnt.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	root.add_child(lbl_cnt)
-	# Continent Persian Title on Card Face
-	var lbl_title = Label3D.new()
-	lbl_title.font = _font_hekayat
-	lbl_title.font_size = 26
-	lbl_title.pixel_size = 0.0011
-	lbl_title.text = CONTINENT_NAMES_FA.get(cont, cont)
-	lbl_title.modulate = Color(1.0, 0.98, 0.90)
-	lbl_title.outline_size = 7
-	lbl_title.outline_modulate = Color(0.04, 0.02, 0.01, 0.96)
-	lbl_title.position = Vector3(0.0, 0.016, 0.042)
-	lbl_title.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	root.add_child(lbl_title)
-	var lbl_sub = Label3D.new()
-	lbl_sub.font = _font_hekayat
-	lbl_sub.font_size = 21
-	lbl_sub.pixel_size = 0.0011
-	lbl_sub.text = "⚔️ %s لشکر" % _fa_digits(count)
-	lbl_sub.modulate = Color(1.0, 0.90, 0.48)
-	lbl_sub.outline_size = 5
-	lbl_sub.position = Vector3(0.0, 0.016, 0.078)
-	lbl_sub.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	root.add_child(lbl_sub)
-	# StaticBody3D for direct 3D card selection
-	var sb = StaticBody3D.new()
-	sb.set_meta("card_continent", cont)
-	var cs = CollisionShape3D.new()
-	var box_shape = BoxShape3D.new()
-	box_shape.size = Vector3(0.17, 0.04, 0.225)
-	cs.shape = box_shape
-	sb.add_child(cs)
-	root.add_child(sb)
-	return root
-func _create_3d_strategy_card(s_key: String, count: int, is_selected: bool, is_playable: bool) -> Node3D:
-	var root = Node3D.new()
-	root.name = "Card3DStrat_" + s_key
-	var info: Dictionary = STRATEGY_INFO.get(s_key, {})
-	# Outer Frame (Glows emerald/gold if playable or selected)
-	var mat_frame = StandardMaterial3D.new()
-	if is_selected:
-		mat_frame.albedo_color = Color(1.0, 0.92, 0.32)
-		mat_frame.emission_enabled = true
-		mat_frame.emission = Color(1.0, 0.85, 0.22)
-		mat_frame.emission_energy_multiplier = 2.0
-	elif is_playable:
-		mat_frame.albedo_color = Color(0.32, 0.95, 0.55)
-		mat_frame.emission_enabled = true
-		mat_frame.emission = Color(0.20, 0.85, 0.42)
-		mat_frame.emission_energy_multiplier = 0.95
-	else:
-		mat_frame.albedo_color = Color(0.62, 0.48, 0.25)
-	mat_frame.metallic = 0.78
-	mat_frame.roughness = 0.26
-	var frame_box = BoxMesh.new()
-	frame_box.size = Vector3(0.156, 0.010, 0.208)
-	frame_box.material = mat_frame
-	var frame_mi = MeshInstance3D.new()
-	frame_mi.mesh = frame_box
-	root.add_child(frame_mi)
-	# Inner Obsidian & Crimson Card Face
-	var mat_face = StandardMaterial3D.new()
-	mat_face.albedo_color = Color(0.24, 0.08, 0.14) if is_playable else Color(0.15, 0.10, 0.14)
-	mat_face.roughness = 0.36
-	var face_box = BoxMesh.new()
-	face_box.size = Vector3(0.140, 0.012, 0.192)
-	face_box.material = mat_face
-	var face_mi = MeshInstance3D.new()
-	face_mi.mesh = face_box
-	face_mi.position = Vector3(0.0, 0.002, 0.0)
-	root.add_child(face_mi)
-	# 3D Sculpted Emblem on Strategy Card Face
-	var emblem_node = _build_strategy_3d_emblem(s_key)
-	emblem_node.position = Vector3(0.0, 0.014, -0.020)
-	root.add_child(emblem_node)
-	# Count Badge (Top Right)
-	if count > 1:
-		var lbl_cnt = Label3D.new()
-		lbl_cnt.font = _font_hekayat
-		lbl_cnt.font_size = 24
-		lbl_cnt.pixel_size = 0.0011
-		lbl_cnt.text = "×%s" % _fa_digits(count)
-		lbl_cnt.modulate = Color(1.0, 0.90, 0.38)
-		lbl_cnt.outline_size = 6
-		lbl_cnt.position = Vector3(0.048, 0.018, -0.070)
-		lbl_cnt.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-		root.add_child(lbl_cnt)
-	# Strategy Persian Name & Short Effect on Card Face
-	var lbl_title = Label3D.new()
-	lbl_title.font = _font_hekayat
-	lbl_title.font_size = 26
-	lbl_title.pixel_size = 0.0011
-	lbl_title.text = str(info.get("name_fa", s_key))
-	lbl_title.modulate = Color(1.0, 0.96, 0.86)
-	lbl_title.outline_size = 7
-	lbl_title.position = Vector3(0.0, 0.016, 0.036)
-	lbl_title.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	root.add_child(lbl_title)
-	var lbl_short = Label3D.new()
-	lbl_short.font = _font_hekayat
-	lbl_short.font_size = 19
-	lbl_short.pixel_size = 0.00105
-	lbl_short.text = str(info.get("short_fa", ""))
-	lbl_short.modulate = Color(0.48, 1.0, 0.62) if is_playable else Color(0.82, 0.76, 0.70)
-	lbl_short.outline_size = 5
-	lbl_short.position = Vector3(0.0, 0.016, 0.072)
-	lbl_short.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	root.add_child(lbl_short)
-	# StaticBody3D for direct 3D tap/raycast
-	var sb = StaticBody3D.new()
-	sb.set_meta("card_strategy", s_key)
-	var cs = CollisionShape3D.new()
-	var box_shape = BoxShape3D.new()
-	box_shape.size = Vector3(0.165, 0.04, 0.215)
-	cs.shape = box_shape
-	sb.add_child(cs)
-	root.add_child(sb)
-	return root
-func _build_strategy_3d_emblem(s_key: String) -> Node3D:
-	var n = Node3D.new()
-	match s_key:
-		"Target", "Insurgence":
-			if _crown_mesh:
-				var mi = MeshInstance3D.new()
-				mi.mesh = _crown_mesh
-				mi.material_override = _shared_mats["crown_gold"]
-				mi.scale = Vector3(0.28, 0.28, 0.28)
-				n.add_child(mi)
-		"Bomb":
-			var sph = SphereMesh.new()
-			sph.radius = 0.020
-			sph.height = 0.040
-			sph.material = _shared_mats["die_red"]
-			var mi = MeshInstance3D.new()
-			mi.mesh = sph
-			n.add_child(mi)
-		"Canon":
-			var cyl = CylinderMesh.new()
-			cyl.top_radius = 0.010
-			cyl.bottom_radius = 0.014
-			cyl.height = 0.044
-			cyl.material = _shared_mats["brass"]
-			var mi = MeshInstance3D.new()
-			mi.mesh = cyl
-			mi.rotation_degrees = Vector3(0.0, 0.0, 65.0)
-			n.add_child(mi)
-		_:
-			var gem = CylinderMesh.new()
-			gem.top_radius = 0.020
-			gem.bottom_radius = 0.020
-			gem.height = 0.010
-			gem.radial_segments = 6
-			gem.material = _shared_mats["crown_gold"]
-			var mi = MeshInstance3D.new()
-			mi.mesh = gem
-			n.add_child(mi)
-	return n
+		opp_positions = [
+			Vector3(-0.42, 0.026, -0.54),
+			Vector3(0.0, 0.026, -0.55),
+			Vector3(0.42, 0.026, -0.54),
+		]
+
+	for i in range(opponents.size()):
+		var opp_id: int = opponents[i]
+		var pos: Vector3 = opp_positions[min(i, opp_positions.size() - 1)]
+		_station_nodes[opp_id] = Risk3DFactory.build_player_station(
+			self,
+			opp_id,
+			pos,
+			0.0,
+			false,
+			_mats,
+			FontHekayat,
+			_king_mesh
+		)
+
 # ==============================================================================
-# 2D GUIDED COMMAND HUD & ENEMY CARDS INSPECTOR
+# 2. MINIMAL FLOATING TABLETOP HUD
 # ==============================================================================
-func _build_2d_command_hud() -> void:
-	_ui_root = Control.new()
-	_ui_root.name = "RiskCommandHUD"
-	_ui_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_ui_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_ui_root.visible = false
-	# Parent directly inside BaseGameHUD below StartGameOverlay so modals are ALWAYS on top!
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
-	if is_instance_valid(hud):
-		hud.add_child(_ui_root)
-		var start_ov = hud.get_node_or_null("StartGameOverlay")
-		if is_instance_valid(start_ov):
-			hud.move_child(_ui_root, start_ov.get_index())
-	else:
-		_fallback_canvas = CanvasLayer.new()
-		_fallback_canvas.layer = 0
-		add_child(_fallback_canvas)
-		_fallback_canvas.add_child(_ui_root)
-	# --------------------------------------------------------------------------
-	# 1. TOP COMPACT BAR (Opponent Visible Cards Strip + Guided Step Banner)
-	# --------------------------------------------------------------------------
-	var top_container = VBoxContainer.new()
-	top_container.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_container.offset_left = 18.0
-	top_container.offset_right = -18.0
-	top_container.offset_top = 382.0
-	top_container.offset_bottom = 548.0
-	top_container.add_theme_constant_override("separation", 6)
-	top_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_ui_root.add_child(top_container)
-	# Row A: Live Opponent Cards Strip + "👁️ کارت‌های حریفان" Button
-	var opp_panel = PanelContainer.new()
-	var opp_sb = StyleBoxFlat.new()
-	opp_sb.bg_color = Color(0.08, 0.05, 0.03, 0.92)
-	opp_sb.border_color = Color(0.85, 0.68, 0.28, 0.85)
-	opp_sb.set_border_width_all(2)
-	opp_sb.set_corner_radius_all(14)
-	opp_sb.content_margin_left = 12
-	opp_sb.content_margin_right = 12
-	opp_sb.content_margin_top = 6
-	opp_sb.content_margin_bottom = 6
-	opp_panel.add_theme_stylebox_override("panel", opp_sb)
-	top_container.add_child(opp_panel)
-	var opp_outer_row = HBoxContainer.new()
-	opp_outer_row.add_theme_constant_override("separation", 10)
-	opp_panel.add_child(opp_outer_row)
-	_btn_enemy_inspector = _make_styled_button(
-		"👁️ کارت‌های حریفان",
-		Color(0.18, 0.36, 0.62, 0.98),
-		Color(0.45, 0.78, 1.0, 0.95),
-		22
-	)
-	_btn_enemy_inspector.custom_minimum_size = Vector2(185, 48)
-	_btn_enemy_inspector.pressed.connect(func():
+
+func _build_floating_ui() -> void:
+	_fallback_canvas = CanvasLayer.new()
+	_fallback_canvas.layer = 5
+	add_child(_fallback_canvas)
+
+	_hud_root = Control.new()
+	_hud_root.name = "RiskTabletopHUD"
+	_hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud_root.visible = false
+	_fallback_canvas.add_child(_hud_root)
+
+	# Top-Right Compact Utility Buttons (Camera Angle Toggle, Reset View, Opponents Inspector, Battle Log)
+	var util_bar = HBoxContainer.new()
+	util_bar.anchor_left = 0.03
+	util_bar.anchor_right = 0.97
+	util_bar.anchor_top = 0.165
+	util_bar.anchor_bottom = 0.205
+	util_bar.alignment = BoxContainer.ALIGNMENT_END
+	util_bar.add_theme_constant_override("separation", 10)
+	util_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud_root.add_child(util_bar)
+
+	var btn_cam = _make_bronze_button("🎥 زاویه دوربین", Color(0.18, 0.13, 0.08, 0.90), Color(0.86, 0.70, 0.30), 20)
+	btn_cam.custom_minimum_size = Vector2(180, 48)
+	btn_cam.pressed.connect(_on_toggle_camera_angle)
+	util_bar.add_child(btn_cam)
+
+	var btn_reset_cam = _make_bronze_button("🎯 نمای میز", Color(0.16, 0.12, 0.08, 0.90), Color(0.76, 0.60, 0.28), 20)
+	btn_reset_cam.custom_minimum_size = Vector2(135, 48)
+	btn_reset_cam.pressed.connect(_on_reset_camera_pressed)
+	util_bar.add_child(btn_reset_cam)
+
+	var btn_opponents = _make_bronze_button("👁️ کارت‌های حریفان", Color(0.14, 0.22, 0.18, 0.92), Color(0.38, 0.86, 0.58), 20)
+	btn_opponents.custom_minimum_size = Vector2(200, 48)
+	btn_opponents.pressed.connect(func():
 		AudioManager.sfx_button()
-		_open_enemy_cards_modal()
+		_toggle_opponent_inspector(0)
 	)
-	opp_outer_row.add_child(_btn_enemy_inspector)
-	var opp_scroll = ScrollContainer.new()
-	opp_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	opp_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	opp_scroll.custom_minimum_size = Vector2(0, 48)
-	opp_outer_row.add_child(opp_scroll)
-	_opponent_strip_box = HBoxContainer.new()
-	_opponent_strip_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_opponent_strip_box.alignment = BoxContainer.ALIGNMENT_END
-	_opponent_strip_box.add_theme_constant_override("separation", 8)
-	opp_scroll.add_child(_opponent_strip_box)
-	# Row B: Guided Step-by-Step Banner
-	var step_panel = PanelContainer.new()
-	step_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var step_sb = StyleBoxFlat.new()
-	step_sb.bg_color = Color(0.12, 0.08, 0.04, 0.90)
-	step_sb.border_color = Color(0.95, 0.78, 0.32, 0.80)
-	step_sb.set_border_width_all(2)
-	step_sb.set_corner_radius_all(14)
-	step_sb.content_margin_left = 14
-	step_sb.content_margin_right = 14
-	step_sb.content_margin_top = 6
-	step_sb.content_margin_bottom = 6
-	step_panel.add_theme_stylebox_override("panel", step_sb)
-	top_container.add_child(step_panel)
-	var step_vbox = VBoxContainer.new()
-	step_vbox.add_theme_constant_override("separation", 2)
-	step_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	step_panel.add_child(step_vbox)
-	var step_top_row = HBoxContainer.new()
-	step_top_row.add_theme_constant_override("separation", 10)
-	step_vbox.add_child(step_top_row)
-	_battle_feed_lbl = Label.new()
-	_battle_feed_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_battle_feed_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_battle_feed_lbl.add_theme_font_override("font", _font_hekayat)
-	_battle_feed_lbl.add_theme_font_size_override("font_size", 22)
-	_battle_feed_lbl.add_theme_color_override("font_color", Color(0.95, 0.86, 0.68))
-	_battle_feed_lbl.text = "👑 هدف پیروزی: کسب ۲ تاج سلطه"
-	step_top_row.add_child(_battle_feed_lbl)
-	_step_badge_lbl = Label.new()
-	_step_badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_step_badge_lbl.add_theme_font_override("font", _font_hekayat)
-	_step_badge_lbl.add_theme_font_size_override("font_size", 24)
-	_step_badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
-	_step_badge_lbl.text = "مرحله ۱ از ۳: دریافت کارت"
-	step_top_row.add_child(_step_badge_lbl)
-	_step_guide_lbl = Label.new()
-	_step_guide_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_step_guide_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_step_guide_lbl.add_theme_font_override("font", _font_hekayat)
-	_step_guide_lbl.add_theme_font_size_override("font_size", 25)
-	_step_guide_lbl.add_theme_color_override("font_color", Color(0.55, 1.0, 0.68))
-	_step_guide_lbl.text = ""
-	step_vbox.add_child(_step_guide_lbl)
-	# --------------------------------------------------------------------------
-	# 2. BOTTOM COMPACT CONTEXTUAL COMMAND BAR (Only 148px tall above BottomBar)
-	# --------------------------------------------------------------------------
-	_bottom_panel = PanelContainer.new()
-	_bottom_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	_bottom_panel.offset_left = 18.0
-	_bottom_panel.offset_right = -18.0
-	_bottom_panel.offset_top = -308.0
-	_bottom_panel.offset_bottom = -160.0
-	var dock_sb = StyleBoxFlat.new()
-	dock_sb.bg_color = Color(0.10, 0.06, 0.04, 0.95)
-	dock_sb.border_color = Color(0.92, 0.74, 0.30, 0.92)
-	dock_sb.set_border_width_all(2)
-	dock_sb.set_corner_radius_all(18)
-	dock_sb.shadow_color = Color(0, 0, 0, 0.65)
-	dock_sb.shadow_size = 12
-	dock_sb.content_margin_left = 16
-	dock_sb.content_margin_right = 16
-	dock_sb.content_margin_top = 8
-	dock_sb.content_margin_bottom = 8
-	_bottom_panel.add_theme_stylebox_override("panel", dock_sb)
-	_ui_root.add_child(_bottom_panel)
+	util_bar.add_child(btn_opponents)
+
+	var btn_log = _make_bronze_button("📜 گزارش نبرد", Color(0.18, 0.13, 0.09, 0.90), Color(0.84, 0.68, 0.32), 20)
+	btn_log.custom_minimum_size = Vector2(155, 48)
+	btn_log.pressed.connect(func():
+		AudioManager.sfx_button()
+		_toggle_battle_log_panel()
+	)
+	util_bar.add_child(btn_log)
+
+	# Floating Combat Resolution Toast Banner (Upper-Mid Screen, never blocks central board)
+	_combat_banner_panel = PanelContainer.new()
+	_combat_banner_panel.anchor_left = 0.08
+	_combat_banner_panel.anchor_right = 0.92
+	_combat_banner_panel.anchor_top = 0.215
+	_combat_banner_panel.anchor_bottom = 0.285
+	_combat_banner_panel.visible = false
+	_combat_banner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_combat_banner_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.12, 0.07, 0.05, 0.94), Color(0.95, 0.72, 0.24), 16, 2))
+	_hud_root.add_child(_combat_banner_panel)
+
+	_combat_banner_lbl = Label.new()
+	_combat_banner_lbl.add_theme_font_override("font", FontHekayat)
+	_combat_banner_lbl.add_theme_font_size_override("font_size", 24)
+	_combat_banner_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.84))
+	_combat_banner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_combat_banner_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_combat_banner_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_combat_banner_panel.add_child(_combat_banner_lbl)
+
+	# Opponent Station & Public Cards Inspector Modal
+	_inspector_panel = PanelContainer.new()
+	_inspector_panel.anchor_left = 0.06
+	_inspector_panel.anchor_right = 0.94
+	_inspector_panel.anchor_top = 0.29
+	_inspector_panel.anchor_bottom = 0.56
+	_inspector_panel.visible = false
+	_inspector_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.10, 0.07, 0.05, 0.96), Color(0.88, 0.72, 0.30), 18, 2))
+	_hud_root.add_child(_inspector_panel)
+
+	var insp_vbox = VBoxContainer.new()
+	insp_vbox.add_theme_constant_override("separation", 10)
+	_inspector_panel.add_child(insp_vbox)
+
+	var insp_header = HBoxContainer.new()
+	insp_vbox.add_child(insp_header)
+
+	var btn_close_insp = _make_bronze_button("✖ بستن", Color(0.36, 0.12, 0.12, 0.92), Color(0.95, 0.42, 0.42), 18)
+	btn_close_insp.custom_minimum_size = Vector2(110, 42)
+	btn_close_insp.pressed.connect(func(): _inspector_panel.visible = false)
+	insp_header.add_child(btn_close_insp)
+
+	_inspector_title_lbl = Label.new()
+	_inspector_title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_inspector_title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_inspector_title_lbl.add_theme_font_override("font", FontHekayat)
+	_inspector_title_lbl.add_theme_font_size_override("font_size", 25)
+	_inspector_title_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42))
+	insp_header.add_child(_inspector_title_lbl)
+
+	_inspector_body_lbl = Label.new()
+	_inspector_body_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_inspector_body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_inspector_body_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_inspector_body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_inspector_body_lbl.add_theme_font_override("font", FontHekayat)
+	_inspector_body_lbl.add_theme_font_size_override("font_size", 22)
+	_inspector_body_lbl.add_theme_color_override("font_color", Color(0.96, 0.93, 0.86))
+	insp_vbox.add_child(_inspector_body_lbl)
+
+	# Battle Log Floating Drawer
+	_log_panel = PanelContainer.new()
+	_log_panel.anchor_left = 0.08
+	_log_panel.anchor_right = 0.92
+	_log_panel.anchor_top = 0.30
+	_log_panel.anchor_bottom = 0.58
+	_log_panel.visible = false
+	_log_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.09, 0.06, 0.04, 0.95), Color(0.82, 0.66, 0.28), 18, 2))
+	_hud_root.add_child(_log_panel)
+
+	var log_outer = VBoxContainer.new()
+	log_outer.add_theme_constant_override("separation", 8)
+	_log_panel.add_child(log_outer)
+
+	var log_top = HBoxContainer.new()
+	log_outer.add_child(log_top)
+	var btn_close_log = _make_bronze_button("✖ بستن", Color(0.36, 0.12, 0.12, 0.92), Color(0.95, 0.42, 0.42), 18)
+	btn_close_log.custom_minimum_size = Vector2(110, 42)
+	btn_close_log.pressed.connect(func(): _log_panel.visible = false)
+	log_top.add_child(btn_close_log)
+
+	var log_title = Label.new()
+	log_title.text = "📜 وقایع‌نگار فرماندهی"
+	log_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	log_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	log_title.add_theme_font_override("font", FontHekayat)
+	log_title.add_theme_font_size_override("font_size", 25)
+	log_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42))
+	log_top.add_child(log_title)
+
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	log_outer.add_child(scroll)
+	_log_vbox = VBoxContainer.new()
+	_log_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_log_vbox.add_theme_constant_override("separation", 6)
+	scroll.add_child(_log_vbox)
+
+	# Bottom Translucent Antique Bronze Tactical Command Bar (Docked cleanly at bottom 17% of screen)
+	var bottom_dock = PanelContainer.new()
+	bottom_dock.name = "BottomCommandDock"
+	bottom_dock.anchor_left = 0.025
+	bottom_dock.anchor_right = 0.975
+	bottom_dock.anchor_top = 0.815
+	bottom_dock.anchor_bottom = 0.985
+	bottom_dock.add_theme_stylebox_override("panel", _make_panel_style(Color(0.10, 0.07, 0.05, 0.91), Color(0.86, 0.68, 0.28), 20, 2))
+	_hud_root.add_child(bottom_dock)
+
 	var dock_vbox = VBoxContainer.new()
-	dock_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	dock_vbox.add_theme_constant_override("separation", 6)
-	_bottom_panel.add_child(dock_vbox)
-	_action_title_lbl = Label.new()
-	_action_title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_action_title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_action_title_lbl.add_theme_font_override("font", _font_hekayat)
-	_action_title_lbl.add_theme_font_size_override("font_size", 24)
-	_action_title_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
-	dock_vbox.add_child(_action_title_lbl)
-	var btn_scroll = ScrollContainer.new()
-	btn_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	btn_scroll.custom_minimum_size = Vector2(0, 68)
-	dock_vbox.add_child(btn_scroll)
+	dock_vbox.add_theme_constant_override("separation", 8)
+	bottom_dock.add_child(dock_vbox)
+
+	_phase_banner_lbl = Label.new()
+	_phase_banner_lbl.add_theme_font_override("font", FontHekayat)
+	_phase_banner_lbl.add_theme_font_size_override("font_size", 25)
+	_phase_banner_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.56))
+	_phase_banner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_phase_banner_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dock_vbox.add_child(_phase_banner_lbl)
+
+	_selection_info_lbl = Label.new()
+	_selection_info_lbl.add_theme_font_override("font", FontHekayat)
+	_selection_info_lbl.add_theme_font_size_override("font_size", 20)
+	_selection_info_lbl.add_theme_color_override("font_color", Color(0.90, 0.86, 0.76))
+	_selection_info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_selection_info_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dock_vbox.add_child(_selection_info_lbl)
+
+	var sub_scroll = ScrollContainer.new()
+	sub_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sub_scroll.custom_minimum_size = Vector2(0, 50)
+	dock_vbox.add_child(sub_scroll)
+
+	_sub_options_row = HBoxContainer.new()
+	_sub_options_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sub_options_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_sub_options_row.add_theme_constant_override("separation", 10)
+	sub_scroll.add_child(_sub_options_row)
+
+	var act_scroll = ScrollContainer.new()
+	act_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	act_scroll.custom_minimum_size = Vector2(0, 58)
+	dock_vbox.add_child(act_scroll)
+
 	_action_buttons_row = HBoxContainer.new()
 	_action_buttons_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_action_buttons_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_action_buttons_row.add_theme_constant_override("separation", 10)
-	btn_scroll.add_child(_action_buttons_row)
-	# --------------------------------------------------------------------------
-	# 3. ENEMY CARDS INSPECTOR MODAL ("👁️ وضعیت کارت‌های حریفان")
-	# --------------------------------------------------------------------------
-	_build_enemy_cards_modal()
-	# --------------------------------------------------------------------------
-	# 4. STRATEGY TARGET PICKER MODAL
-	# --------------------------------------------------------------------------
-	_build_strategy_target_modal()
-func _build_enemy_cards_modal() -> void:
-	_enemy_modal_backdrop = ColorRect.new()
-	_enemy_modal_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_enemy_modal_backdrop.color = Color(0, 0, 0, 0.74)
-	_enemy_modal_backdrop.visible = false
-	_ui_root.add_child(_enemy_modal_backdrop)
-	_enemy_modal_panel = PanelContainer.new()
-	_enemy_modal_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_enemy_modal_panel.custom_minimum_size = Vector2(920, 760)
-	_enemy_modal_panel.offset_left = -460.0
-	_enemy_modal_panel.offset_right = 460.0
-	_enemy_modal_panel.offset_top = -380.0
-	_enemy_modal_panel.offset_bottom = 380.0
-	var m_sb = StyleBoxFlat.new()
-	m_sb.bg_color = Color(0.11, 0.07, 0.04, 0.98)
-	m_sb.border_color = Color(0.95, 0.78, 0.32, 0.98)
-	m_sb.set_border_width_all(3)
-	m_sb.set_corner_radius_all(24)
-	m_sb.content_margin_left = 24
-	m_sb.content_margin_right = 24
-	m_sb.content_margin_top = 20
-	m_sb.content_margin_bottom = 20
-	_enemy_modal_panel.add_theme_stylebox_override("panel", m_sb)
-	_enemy_modal_backdrop.add_child(_enemy_modal_panel)
-	var m_vbox = VBoxContainer.new()
-	m_vbox.add_theme_constant_override("separation", 14)
-	_enemy_modal_panel.add_child(m_vbox)
-	var header_lbl = Label.new()
-	header_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header_lbl.add_theme_font_override("font", _font_hekayat)
-	header_lbl.add_theme_font_size_override("font_size", 36)
-	header_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
-	header_lbl.text = "👁️ وضعیت کارت‌های قاره و تاج‌های همه بازیکنان"
-	m_vbox.add_child(header_lbl)
-	var sub_lbl = Label.new()
-	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub_lbl.add_theme_font_override("font", _font_hekayat)
-	sub_lbl.add_theme_font_size_override("font_size", 24)
-	sub_lbl.add_theme_color_override("font_color", Color(0.88, 0.82, 0.72))
-	sub_lbl.text = "کارت‌های قاره همه بازیکنان عمومی و قابل مشاهده است؛ کارت‌های استراتژی تا زمان اجرا مخفی هستند."
-	m_vbox.add_child(sub_lbl)
-	var scroll = ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	m_vbox.add_child(scroll)
-	_enemy_modal_body = VBoxContainer.new()
-	_enemy_modal_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_enemy_modal_body.add_theme_constant_override("separation", 14)
-	scroll.add_child(_enemy_modal_body)
-	var btn_close = _make_styled_button("بستن پنجره", Color(0.55, 0.18, 0.18), Color(0.95, 0.45, 0.45), 28)
-	btn_close.custom_minimum_size = Vector2(260, 62)
-	btn_close.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	btn_close.pressed.connect(func():
-		AudioManager.sfx_button()
-		_enemy_modal_backdrop.visible = false
-	)
-	m_vbox.add_child(btn_close)
-func _open_enemy_cards_modal() -> void:
-	if not is_instance_valid(_enemy_modal_body):
-		return
-	for child in _enemy_modal_body.get_children():
-		child.queue_free()
-	for p_idx in range(1, _player_count + 1):
-		var is_me: bool = (p_idx == my_player_index)
-		var p_card = PanelContainer.new()
-		var p_sb = StyleBoxFlat.new()
-		var f_col: Color = FACTION_COLORS.get(p_idx, Color.WHITE)
-		p_sb.bg_color = Color(0.16, 0.11, 0.07, 0.96)
-		p_sb.border_color = f_col
-		p_sb.set_border_width_all(2)
-		p_sb.set_corner_radius_all(16)
-		p_sb.content_margin_left = 16
-		p_sb.content_margin_right = 16
-		p_sb.content_margin_top = 12
-		p_sb.content_margin_bottom = 12
-		p_card.add_theme_stylebox_override("panel", p_sb)
-		_enemy_modal_body.add_child(p_card)
-		var p_vbox = VBoxContainer.new()
-		p_vbox.add_theme_constant_override("separation", 10)
-		p_card.add_child(p_vbox)
-		var t_cnt = _to_int(_tokens[p_idx - 1]) if (p_idx - 1) < _tokens.size() else 0
-		var s_cnt = _to_int(_strategy_counts[p_idx - 1]) if (p_idx - 1) < _strategy_counts.size() else 0
-		var top_row = HBoxContainer.new()
-		top_row.add_theme_constant_override("separation", 14)
-		p_vbox.add_child(top_row)
-		var crown_lbl = Label.new()
-		crown_lbl.add_theme_font_override("font", _font_hekayat)
-		crown_lbl.add_theme_font_size_override("font_size", 26)
-		crown_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.32))
-		crown_lbl.text = "👑 تاج سلطه: %s از ۲  |  🃏 کارت استراتژی مخفی: %s" % [_fa_digits(t_cnt), _fa_digits(s_cnt)]
-		top_row.add_child(crown_lbl)
-		var name_lbl = Label.new()
-		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		name_lbl.add_theme_font_override("font", _font_hekayat)
-		name_lbl.add_theme_font_size_override("font_size", 28)
-		name_lbl.add_theme_color_override("font_color", f_col.lightened(0.25))
-		name_lbl.text = "%s %s %s" % [
-			FACTION_DOTS.get(p_idx, ""),
-			_get_player_name(p_idx),
-			"(شما)" if is_me else "(حریف)"
-		]
-		top_row.add_child(name_lbl)
-		# Visible Continent Cards Row
-		var cont_row = HBoxContainer.new()
-		cont_row.alignment = BoxContainer.ALIGNMENT_END
-		cont_row.add_theme_constant_override("separation", 8)
-		p_vbox.add_child(cont_row)
-		var p_conts: Dictionary = _all_continents[p_idx - 1] if (p_idx - 1) < _all_continents.size() else {}
-		var any_cont = false
-		for cont in ALL_CONTINENTS:
-			var cnt = _to_int(p_conts.get(cont, 0))
-			if cnt <= 0:
-				continue
-			any_cont = true
-			var c_badge = PanelContainer.new()
-			var c_col: Color = CONTINENT_COLORS.get(cont, Color.WHITE)
-			var cb_sb = StyleBoxFlat.new()
-			cb_sb.bg_color = c_col.darkened(0.45)
-			cb_sb.border_color = c_col.lightened(0.22)
-			cb_sb.set_border_width_all(2)
-			cb_sb.set_corner_radius_all(12)
-			cb_sb.content_margin_left = 12
-			cb_sb.content_margin_right = 12
-			cb_sb.content_margin_top = 6
-			cb_sb.content_margin_bottom = 6
-			c_badge.add_theme_stylebox_override("panel", cb_sb)
-			var c_lbl = Label.new()
-			c_lbl.add_theme_font_override("font", _font_hekayat)
-			c_lbl.add_theme_font_size_override("font_size", 24)
-			c_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.90))
-			c_lbl.text = "🗺️ %s ×%s" % [CONTINENT_NAMES_FA.get(cont, cont), _fa_digits(cnt)]
-			c_badge.add_child(c_lbl)
-			cont_row.add_child(c_badge)
-		if not any_cont:
-			var empty_lbl = Label.new()
-			empty_lbl.add_theme_font_override("font", _font_hekayat)
-			empty_lbl.add_theme_font_size_override("font_size", 23)
-			empty_lbl.add_theme_color_override("font_color", Color(0.75, 0.68, 0.62))
-			empty_lbl.text = "بدون کارت قاره"
-			cont_row.add_child(empty_lbl)
-		# If Spy revealed any enemy strategy cards, show them!
-		if not is_me and _revealed_enemy_strategies.has(p_idx):
-			var rev_dict: Dictionary = _revealed_enemy_strategies[p_idx]
-			var rev_parts: Array[String] = []
-			for sk in rev_dict.keys():
-				if _to_int(rev_dict[sk]) > 0:
-					var s_info = STRATEGY_INFO.get(sk, {})
-					rev_parts.append("%s ×%s" % [s_info.get("name_fa", sk), _fa_digits(_to_int(rev_dict[sk]))])
-			if not rev_parts.is_empty():
-				var rev_lbl = Label.new()
-				rev_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-				rev_lbl.add_theme_font_override("font", _font_hekayat)
-				rev_lbl.add_theme_font_size_override("font_size", 23)
-				rev_lbl.add_theme_color_override("font_color", Color(0.55, 0.95, 1.0))
-				rev_lbl.text = "🕵️ کارت‌های استراتژی لو رفته: " + " ، ".join(rev_parts)
-				p_vbox.add_child(rev_lbl)
-	_enemy_modal_backdrop.visible = true
-func _build_strategy_target_modal() -> void:
-	_target_modal_backdrop = ColorRect.new()
-	_target_modal_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_target_modal_backdrop.color = Color(0, 0, 0, 0.72)
-	_target_modal_backdrop.visible = false
-	_ui_root.add_child(_target_modal_backdrop)
-	_target_modal_panel = PanelContainer.new()
-	_target_modal_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_target_modal_panel.custom_minimum_size = Vector2(820, 560)
-	_target_modal_panel.offset_left = -410.0
-	_target_modal_panel.offset_right = 410.0
-	_target_modal_panel.offset_top = -280.0
-	_target_modal_panel.offset_bottom = 280.0
-	var m_sb = StyleBoxFlat.new()
-	m_sb.bg_color = Color(0.12, 0.07, 0.04, 0.98)
-	m_sb.border_color = Color(0.95, 0.78, 0.32, 0.98)
-	m_sb.set_border_width_all(3)
-	m_sb.set_corner_radius_all(22)
-	m_sb.content_margin_left = 24
-	m_sb.content_margin_right = 24
-	m_sb.content_margin_top = 20
-	m_sb.content_margin_bottom = 20
-	_target_modal_panel.add_theme_stylebox_override("panel", m_sb)
-	_target_modal_backdrop.add_child(_target_modal_panel)
-	var m_vbox = VBoxContainer.new()
-	m_vbox.add_theme_constant_override("separation", 14)
-	_target_modal_panel.add_child(m_vbox)
-	_target_modal_title = Label.new()
-	_target_modal_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_target_modal_title.add_theme_font_override("font", _font_hekayat)
-	_target_modal_title.add_theme_font_size_override("font_size", 34)
-	_target_modal_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
-	m_vbox.add_child(_target_modal_title)
-	_target_modal_sub = Label.new()
-	_target_modal_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_target_modal_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_target_modal_sub.add_theme_font_override("font", _font_hekayat)
-	_target_modal_sub.add_theme_font_size_override("font_size", 25)
-	_target_modal_sub.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
-	m_vbox.add_child(_target_modal_sub)
-	var m_scroll = ScrollContainer.new()
-	m_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	m_vbox.add_child(m_scroll)
-	_target_modal_body = VBoxContainer.new()
-	_target_modal_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_target_modal_body.add_theme_constant_override("separation", 10)
-	m_scroll.add_child(_target_modal_body)
-	var btn_cancel = _make_styled_button("انصراف", Color(0.55, 0.16, 0.16), Color(0.95, 0.42, 0.42), 26)
-	btn_cancel.custom_minimum_size = Vector2(220, 58)
-	btn_cancel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	btn_cancel.pressed.connect(func():
-		AudioManager.sfx_button()
-		_target_modal_backdrop.visible = false
-	)
-	m_vbox.add_child(btn_cancel)
-func _make_styled_button(text_str: String, bg_col: Color, border_col: Color, font_sz: int = 24) -> Button:
+	_action_buttons_row.add_theme_constant_override("separation", 12)
+	act_scroll.add_child(_action_buttons_row)
+
+	var hand_scroll = ScrollContainer.new()
+	hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	hand_scroll.custom_minimum_size = Vector2(0, 50)
+	dock_vbox.add_child(hand_scroll)
+
+	_hand_filter_bar = HBoxContainer.new()
+	_hand_filter_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_hand_filter_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	_hand_filter_bar.add_theme_constant_override("separation", 8)
+	hand_scroll.add_child(_hand_filter_bar)
+
+func _make_panel_style(bg: Color, border: Color, radius: int = 16, border_w: int = 2) -> StyleBoxFlat:
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(border_w)
+	sb.set_corner_radius_all(radius)
+	sb.content_margin_left = 14
+	sb.content_margin_right = 14
+	sb.content_margin_top = 8
+	sb.content_margin_bottom = 8
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
+	sb.shadow_size = 10
+	return sb
+
+func _make_bronze_button(text: String, bg: Color, border: Color, font_sz: int = 22) -> Button:
 	var btn = Button.new()
-	btn.text = text_str
+	btn.text = text
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.add_theme_font_override("font", _font_hekayat)
+	btn.add_theme_font_override("font", FontHekayat)
 	btn.add_theme_font_size_override("font_size", font_sz)
-	btn.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
-	var sb_n = StyleBoxFlat.new()
-	sb_n.bg_color = bg_col
-	sb_n.border_color = border_col
-	sb_n.set_border_width_all(2)
-	sb_n.set_corner_radius_all(14)
-	sb_n.content_margin_left = 16
-	sb_n.content_margin_right = 16
-	sb_n.content_margin_top = 8
-	sb_n.content_margin_bottom = 8
-	var sb_h = sb_n.duplicate()
-	sb_h.bg_color = bg_col.lightened(0.14)
-	sb_h.border_color = border_col.lightened(0.22)
-	var sb_p = sb_n.duplicate()
-	sb_p.bg_color = bg_col.darkened(0.15)
-	btn.add_theme_stylebox_override("normal", sb_n)
-	btn.add_theme_stylebox_override("hover", sb_h)
-	btn.add_theme_stylebox_override("pressed", sb_p)
+	btn.add_theme_color_override("font_color", Color(1.0, 0.96, 0.86))
+	var sb_norm = _make_panel_style(bg, border, 14, 2)
+	var sb_hover = _make_panel_style(bg.lightened(0.14), border.lightened(0.20), 14, 2)
+	var sb_press = _make_panel_style(bg.darkened(0.15), border, 14, 2)
+	btn.add_theme_stylebox_override("normal", sb_norm)
+	btn.add_theme_stylebox_override("hover", sb_hover)
+	btn.add_theme_stylebox_override("pressed", sb_press)
 	return btn
+
 # ==============================================================================
-# 3D RAYCAST INTERACTION (CONTINENTS, 3D CARDS IN HAND & 3D DRAW DECKS)
+# 3. BASE_GAME_BOARD HOOKS & NETWORK SYNCHRONIZATION
 # ==============================================================================
+
+func setup_board(game_data: Dictionary) -> void:
+	_detect_players_and_local_id()
+	_sync_full_game_data(game_data)
+	_update_hud_visibility()
+	_refresh_all_3d_and_hud()
+
+func on_start_game() -> void:
+	_match_started = true
+	if game_state == "StartGame":
+		game_state = "Draw"
+	_update_hud_visibility()
+	_refresh_all_3d_and_hud()
+
+func on_turn_changed(turn: int, is_me: bool) -> void:
+	_active_turn = turn
+	is_my_turn = is_me
+	if GameManager.is_game_active and turn > 0:
+		_match_started = true
+	_update_hud_visibility()
+	_refresh_all_3d_and_hud()
+
+func on_reconnect_data(payload: Dictionary) -> void:
+	_match_started = true
+	_detect_players_and_local_id()
+	var g_data = payload.get("game_data", payload)
+	if typeof(g_data) == TYPE_DICTIONARY:
+		_sync_full_game_data(g_data)
+	var u_data = payload.get("user_data", {})
+	if typeof(u_data) == TYPE_DICTIONARY and not u_data.is_empty():
+		_sync_private_user_data(u_data)
+	_update_hud_visibility()
+	_refresh_all_3d_and_hud()
+
+func on_roll_result(payload: Dictionary) -> void:
+	_handle_combat_resolution_payload(payload)
+
+func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
+	if GameManager.my_player_index > 0:
+		my_player_index = GameManager.my_player_index
+	if cmd_id != Commands.User_Data and cmd_id != Commands.Game_Data:
+		_match_started = true
+
+	match cmd_id:
+		Commands.User_Data:
+			_sync_private_user_data(payload)
+			_refresh_all_3d_and_hud()
+
+		Commands.Draw_Card:
+			_active_turn = _to_int(payload.get("turn", _active_turn))
+			game_state = str(payload.get("game_state", "Draw"))
+			expand_ignore_adjacency = false
+			active_attack.clear()
+			selected_source_continent = ""
+			selected_target_continent = ""
+			selected_hand_card_idx = -1
+			selected_strategy_name = ""
+			_first_3d_deck_picked = ""
+			_restart_hud_turn_timer()
+			if _active_turn == my_player_index:
+				AudioManager.sfx_bell()
+			_append_battle_log("🔄 آغاز نوبت %s (فاز کشیدن کارت)" % _get_player_name(_active_turn))
+			_update_hud_visibility()
+			_refresh_all_3d_and_hud()
+
+		Commands.Draw_Result:
+			var gid = _to_int(payload.get("gamer_id", _active_turn))
+			var dtype = _to_int(payload.get("draw_type", 1))
+			if payload.has("new_data") and typeof(payload["new_data"]) == TYPE_DICTIONARY:
+				_apply_single_player_public_data(gid, payload["new_data"])
+			if payload.has("tokens") and typeof(payload["tokens"]) == TYPE_ARRAY:
+				_parse_board_tokens(payload["tokens"])
+			game_state = str(payload.get("game_state", "SelectAction"))
+			AudioManager.sfx_add_piece()
+			_animate_deck_draw_pulse(dtype)
+			_restart_hud_turn_timer()
+			_append_battle_log("🃏 %s از دسته کارت کشید." % _get_player_name(gid))
+			_refresh_all_3d_and_hud()
+
+		Commands.Draw_Result_Private:
+			if payload.has("new_user_data") and typeof(payload["new_user_data"]) == TYPE_DICTIONARY:
+				_sync_private_user_data(payload["new_user_data"])
+			_refresh_all_3d_and_hud()
+
+		Commands.Declare_Attack:
+			var atk_id = _to_int(payload.get("gamer_id", _active_turn))
+			var def_id = _to_int(payload.get("target_index", 0))
+			var src_c = str(payload.get("source_continent", ""))
+			var tgt_c = str(payload.get("target_continent", ""))
+			game_state = str(payload.get("game_state", "AttackerArmy"))
+			active_attack = {
+				"attacker_id": atk_id,
+				"defender_id": def_id,
+				"source_continent": src_c,
+				"target_continent": tgt_c,
+				"attacker_army": 0,
+				"defender_army": 0,
+			}
+			selected_army_commit = 0
+			_restart_hud_turn_timer()
+			_show_combat_toast("⚔️ اعلان حمله: %s از «%s» به «%s» (%s) یورش برد!" % [
+				_get_player_name(atk_id),
+				_continent_fa(src_c),
+				_continent_fa(tgt_c),
+				_get_player_name(def_id)
+			])
+			_append_battle_log("⚔️ %s از %s به %s (%s) حمله کرد." % [
+				_get_player_name(atk_id), _continent_fa(src_c), _continent_fa(tgt_c), _get_player_name(def_id)
+			])
+			_refresh_all_3d_and_hud()
+
+		Commands.AttackerArmy:
+			var atk_id = _to_int(payload.get("gamer_id", active_attack.get("attacker_id", _active_turn)))
+			var def_id = _to_int(payload.get("target_index", active_attack.get("defender_id", 0)))
+			var committed = _to_int(payload.get("count", 0))
+			active_attack["attacker_id"] = atk_id
+			active_attack["defender_id"] = def_id
+			active_attack["attacker_army"] = committed
+			game_state = str(payload.get("game_state", "DefenderArmy"))
+			selected_army_commit = 0
+			_restart_hud_turn_timer()
+			_show_combat_toast("🗡️ مهاجم %s کارت ارتش کمکی وارد نبرد کرد. اکنون نوبت تصمیم مدافع (%s) است!" % [
+				Risk3DFactory.fa_digits(committed),
+				_get_player_name(def_id)
+			])
+			_refresh_all_3d_and_hud()
+
+		Commands.Attack, Commands.Cancel_Attack:
+			_handle_combat_resolution_payload(payload)
+
+		Commands.Strategy_Result:
+			_handle_strategy_result_payload(payload)
+
+		Commands.Pass_Turn:
+			var gid = _to_int(payload.get("gamer_id", payload.get("gamer_index", _active_turn)))
+			if payload.has("new_data") and typeof(payload["new_data"]) == TYPE_DICTIONARY:
+				_apply_single_player_public_data(gid, payload["new_data"])
+			if payload.has("tokens") and typeof(payload["tokens"]) == TYPE_ARRAY:
+				_parse_board_tokens(payload["tokens"])
+			_append_battle_log("⏭️ %s نوبت خود را به پایان رساند." % _get_player_name(gid))
+			_refresh_all_3d_and_hud()
+
+func _sync_full_game_data(g_data: Dictionary) -> void:
+	if g_data.has("current_turn"):
+		_active_turn = _to_int(g_data.get("current_turn", 1))
+	if g_data.has("active_player_indexes") and typeof(g_data["active_player_indexes"]) == TYPE_ARRAY:
+		active_player_indexes.clear()
+		for idx in g_data["active_player_indexes"]:
+			active_player_indexes.append(_to_int(idx))
+		if active_player_indexes.size() >= 2:
+			var max_idx = 2
+			for idx in active_player_indexes:
+				max_idx = max(max_idx, idx)
+			if max_idx != total_players:
+				total_players = clampi(max_idx, 2, 4)
+				_rebuild_player_stations_3d()
+	if g_data.has("continents"):
+		continent_deck_count = _to_int(g_data.get("continents", continent_deck_count))
+	if g_data.has("strategies"):
+		strategy_deck_count = _to_int(g_data.get("strategies", strategy_deck_count))
+	if g_data.has("tokens") and typeof(g_data["tokens"]) == TYPE_ARRAY:
+		_parse_board_tokens(g_data["tokens"])
+	if g_data.has("game_state"):
+		game_state = str(g_data.get("game_state", game_state))
+	if g_data.has("players_data") and typeof(g_data["players_data"]) == TYPE_ARRAY:
+		_parse_players_data_array(g_data["players_data"])
+	if g_data.has("active_attack"):
+		if typeof(g_data["active_attack"]) == TYPE_DICTIONARY:
+			active_attack = g_data["active_attack"].duplicate(true)
+		else:
+			active_attack.clear()
+
+func _parse_board_tokens(raw_tokens: Array) -> void:
+	board_tokens.clear()
+	for t in raw_tokens:
+		board_tokens.append(str(t))
+
+func _parse_players_data_array(p_list: Array) -> void:
+	for item in p_list:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+		var p_idx = _to_int(item.get("index", 0))
+		if p_idx >= 1 and p_idx <= 4:
+			_apply_single_player_public_data(p_idx, item)
+
+func _apply_single_player_public_data(p_idx: int, item: Dictionary) -> void:
+	var c_dict: Dictionary = {}
+	var raw_c = item.get("continents", {})
+	if typeof(raw_c) == TYPE_DICTIONARY:
+		for k in raw_c.keys():
+			var cnt = _to_int(raw_c[k])
+			if cnt > 0:
+				c_dict[str(k)] = cnt
+
+	var t_arr: Array = []
+	var raw_t = item.get("tokens", [])
+	if typeof(raw_t) == TYPE_ARRAY:
+		for t in raw_t:
+			t_arr.append(str(t))
+
+	var s_cnt: int = _to_int(item.get("strategies_count", 0))
+	if item.has("strategies") and typeof(item["strategies"]) == TYPE_ARRAY:
+		s_cnt = item["strategies"].size()
+
+	players_state[p_idx] = {
+		"continents": c_dict,
+		"strategies_count": s_cnt,
+		"tokens": t_arr,
+	}
+
+func _sync_private_user_data(u_data: Dictionary) -> void:
+	var old_id = my_player_index
+	if u_data.has("index"):
+		var idx = _to_int(u_data.get("index", my_player_index))
+		if idx >= 1 and idx <= 4:
+			my_player_index = idx
+			GameManager.my_player_index = idx
+	if my_player_index != old_id:
+		_rebuild_player_stations_3d()
+
+	if u_data.has("continents") and typeof(u_data["continents"]) == TYPE_DICTIONARY:
+		my_continents.clear()
+		for k in u_data["continents"].keys():
+			var cnt = _to_int(u_data["continents"][k])
+			if cnt > 0:
+				my_continents[str(k)] = cnt
+
+	if u_data.has("strategies"):
+		my_strategies.clear()
+		var raw_s = u_data["strategies"]
+		if typeof(raw_s) == TYPE_ARRAY:
+			for s_name in raw_s:
+				my_strategies.append(str(s_name))
+		elif typeof(raw_s) == TYPE_DICTIONARY:
+			for s_name in raw_s.keys():
+				var c = _to_int(raw_s[s_name])
+				for _i in range(c):
+					my_strategies.append(str(s_name))
+
+	if u_data.has("tokens") and typeof(u_data["tokens"]) == TYPE_ARRAY:
+		my_tokens.clear()
+		for t in u_data["tokens"]:
+			my_tokens.append(str(t))
+
+	var my_id = clampi(my_player_index, 1, 4)
+	players_state[my_id] = {
+		"continents": my_continents.duplicate(true),
+		"strategies_count": my_strategies.size(),
+		"tokens": my_tokens.duplicate(),
+	}
+	_rebuild_3d_hand_rack()
+
+func _handle_combat_resolution_payload(data: Dictionary) -> void:
+	if data.has("players_data") and typeof(data["players_data"]) == TYPE_ARRAY:
+		_parse_players_data_array(data["players_data"])
+	if data.has("tokens") and typeof(data["tokens"]) == TYPE_ARRAY:
+		_parse_board_tokens(data["tokens"])
+	if data.has("game_state"):
+		game_state = str(data.get("game_state", "SelectAction"))
+	else:
+		game_state = "SelectAction"
+
+	var canceled = bool(data.get("canceled", false))
+	var atk_id = _to_int(data.get("attacker_id", active_attack.get("attacker_id", _active_turn)))
+	var def_id = _to_int(data.get("defender_id", active_attack.get("defender_id", 0)))
+	var src_c = str(data.get("source_continent", active_attack.get("source_continent", "")))
+	var tgt_c = str(data.get("target_continent", active_attack.get("target_continent", "")))
+
+	active_attack.clear()
+	selected_source_continent = ""
+	selected_target_continent = ""
+	selected_army_commit = 0
+	_restart_hud_turn_timer()
+
+	if canceled:
+		_show_combat_toast("🛡️ مدافع (%s) با کارت «لغو تهاجم» حمله را متوقف کرد!" % _get_player_name(def_id))
+		_append_battle_log("🛡️ %s حمله به %s را با کارت Cancel لغو کرد." % [_get_player_name(def_id), _continent_fa(tgt_c)])
+		_refresh_all_3d_and_hud()
+		return
+
+	var atk_dice: Array = data.get("attacker_dice", []) if typeof(data.get("attacker_dice", [])) == TYPE_ARRAY else []
+	var def_dice: Array = data.get("defender_dice", []) if typeof(data.get("defender_dice", [])) == TYPE_ARRAY else []
+	var atk_loss = _to_int(data.get("attacker_losses", 0))
+	var def_loss = _to_int(data.get("defender_losses", 0))
+	var conquered = bool(data.get("conquered", false))
+
+	if not atk_dice.is_empty() or not def_dice.is_empty():
+		_spawn_and_roll_3d_dice(atk_dice, def_dice)
+
+	var atk_str = _format_dice_list(atk_dice)
+	var def_str = _format_dice_list(def_dice)
+	var msg = "🎲 نتیجه نبرد در «%s»:\nتاس مهاجم (%s): %s | تاس مدافع (%s): %s\nتلفات مهاجم: %s | تلفات مدافع: %s" % [
+		_continent_fa(tgt_c),
+		_get_player_name(atk_id),
+		atk_str,
+		_get_player_name(def_id),
+		def_str,
+		Risk3DFactory.fa_digits(atk_loss),
+		Risk3DFactory.fa_digits(def_loss),
+	]
+	if conquered:
+		msg += "  🏆 قاره فتح شد!"
+	_show_combat_toast(msg, 5.2)
+	_append_battle_log("🎲 نبرد %s -> %s: تاس مهاجم %s، مدافع %s (تلفات %s/%s)" % [
+		_continent_fa(src_c), _continent_fa(tgt_c), atk_str, def_str,
+		Risk3DFactory.fa_digits(atk_loss), Risk3DFactory.fa_digits(def_loss)
+	])
+	_refresh_all_3d_and_hud()
+
+func _handle_strategy_result_payload(data: Dictionary) -> void:
+	var gid = _to_int(data.get("gamer_id", _active_turn))
+	var strat = str(data.get("strategy", ""))
+	var tgt_id = _to_int(data.get("target_index", 0))
+	if data.has("players_data") and typeof(data["players_data"]) == TYPE_ARRAY:
+		_parse_players_data_array(data["players_data"])
+	if data.has("tokens") and typeof(data["tokens"]) == TYPE_ARRAY:
+		_parse_board_tokens(data["tokens"])
+	if data.has("game_state"):
+		game_state = str(data["game_state"])
+
+	if strat == "Expand" and gid == my_player_index:
+		expand_ignore_adjacency = true
+
+	var strat_fa = Risk3DFactory.STRATEGY_META.get(strat, {}).get("fa", strat)
+	var target_txt = (" علیه " + _get_player_name(tgt_id)) if tgt_id > 0 else ""
+	_show_combat_toast("⚡ %s کارت استراتژی «%s»%s را بازی کرد!" % [_get_player_name(gid), strat_fa, target_txt])
+	_append_battle_log("⚡ %s کارت «%s»%s را اجرا کرد." % [_get_player_name(gid), strat_fa, target_txt])
+
+	selected_hand_card_idx = -1
+	selected_strategy_name = ""
+	selected_target_player = 0
+	selected_target_continent = ""
+	_refresh_all_3d_and_hud()
+
+func _restart_hud_turn_timer() -> void:
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud) and hud.has_method("start_turn_timer"):
+		hud.start_turn_timer(30.0)
+
+# ==============================================================================
+# 4. 3D VISUAL REFRESH (CONTINENTS, STATIONS, DECKS, BRIDGES, 3D HAND RACK)
+# ==============================================================================
+
+func _refresh_all_3d_and_hud() -> void:
+	_refresh_3d_decks()
+	_refresh_3d_continents_and_bridges()
+	_refresh_3d_player_stations()
+	_refresh_top_header()
+	_refresh_floating_hud()
+
+func _refresh_3d_decks() -> void:
+	if _table_refs.has("continent_deck"):
+		var cd = _table_refs["continent_deck"]
+		cd["count_lbl"].text = Risk3DFactory.fa_digits(continent_deck_count)
+		cd["glow"].visible = (_is_my_turn() and game_state == "Draw")
+		var vis_layers = clampi(int(ceil(float(continent_deck_count) / 4.0)), 1, 10)
+		for i in range(cd["layers"].size()):
+			cd["layers"][i].visible = (i < vis_layers and continent_deck_count > 0)
+
+	if _table_refs.has("strategy_deck"):
+		var sd = _table_refs["strategy_deck"]
+		sd["count_lbl"].text = Risk3DFactory.fa_digits(strategy_deck_count)
+		sd["glow"].visible = (_is_my_turn() and game_state == "Draw")
+		var vis_layers = clampi(int(ceil(float(strategy_deck_count) / 4.0)), 1, 10)
+		for i in range(sd["layers"].size()):
+			sd["layers"][i].visible = (i < vis_layers and strategy_deck_count > 0)
+
+func _refresh_3d_continents_and_bridges() -> void:
+	var valid_targets: Array[String] = _get_valid_attack_target_continents(selected_source_continent)
+
+	for c_id in _continent_nodes.keys():
+		var c_ref: Dictionary = _continent_nodes[c_id]
+		c_ref["token_node"].visible = board_tokens.has(c_id)
+
+		var garrisons: Dictionary = c_ref["garrisons"]
+		for p_idx in [1, 2, 3, 4]:
+			var g_ref: Dictionary = garrisons[p_idx]
+			var p_conts: Dictionary = players_state.get(p_idx, {}).get("continents", {})
+			var cnt: int = _to_int(p_conts.get(c_id, 0))
+			if cnt > 0 and p_idx <= total_players:
+				g_ref["node"].visible = true
+				g_ref["label"].text = "×" + Risk3DFactory.fa_digits(cnt)
+			else:
+				g_ref["node"].visible = false
+
+		var aura: MeshInstance3D = c_ref["aura"]
+		var is_atk_src = (active_attack.get("source_continent", "") == c_id)
+		var is_atk_tgt = (active_attack.get("target_continent", "") == c_id)
+		if is_atk_src or c_id == selected_source_continent:
+			aura.visible = true
+			aura.material_override = _mats["glow_gold"]
+		elif is_atk_tgt or c_id == selected_target_continent:
+			aura.visible = true
+			aura.material_override = _mats["glow_crimson"]
+		elif valid_targets.has(c_id):
+			aura.visible = true
+			aura.material_override = _mats["glow_emerald"]
+		else:
+			aura.visible = false
+
+	for pair_key in _bridge_nodes.keys():
+		var b_mi: MeshInstance3D = _bridge_nodes[pair_key]
+		var highlight: bool = false
+		if not active_attack.is_empty():
+			var sc = str(active_attack.get("source_continent", ""))
+			var tc = str(active_attack.get("target_continent", ""))
+			if pair_key == (sc + "_" + tc) or pair_key == (tc + "_" + sc):
+				highlight = true
+		elif selected_source_continent != "":
+			if pair_key.begins_with(selected_source_continent + "_") or pair_key.ends_with("_" + selected_source_continent):
+				highlight = true
+		b_mi.material_override = _mats["bridge_active"] if highlight else _mats["bridge_idle"]
+
+func _refresh_3d_player_stations() -> void:
+	var needs_opp_target: bool = (selected_strategy_name in ["Bomb", "Destroy", "Spy"])
+
+	for p_idx in _station_nodes.keys():
+		var st_ref: Dictionary = _station_nodes[p_idx]
+		var p_data: Dictionary = players_state.get(p_idx, {"continents": {}, "strategies_count": 0, "tokens": []})
+		var c_total: int = _sum_dict_values(p_data.get("continents", {}))
+		var s_total: int = _to_int(p_data.get("strategies_count", 0))
+		var t_total: int = (p_data.get("tokens", []) as Array).size()
+
+		var p_name = _get_player_name(p_idx)
+		st_ref["name_lbl"].text = ("%s (شما)" % p_name) if p_idx == my_player_index else p_name
+		st_ref["stats_lbl"].text = "👑%s  🗺️%s  🃏%s" % [
+			Risk3DFactory.fa_digits(t_total),
+			Risk3DFactory.fa_digits(c_total),
+			Risk3DFactory.fa_digits(s_total),
+		]
+
+		var is_turn = (_active_turn == p_idx)
+		st_ref["active_glow"].visible = is_turn
+		st_ref["commander_mi"].material_override = st_ref["f_mat_active"] if is_turn else st_ref["f_mat_idle"]
+		st_ref["target_glow"].visible = (needs_opp_target and p_idx != my_player_index) or (selected_target_player == p_idx)
+
+		Risk3DFactory.populate_station_assets_3d(st_ref, p_data, _mats, FontHekayat, _crown_mesh)
+
+func _rebuild_3d_hand_rack() -> void:
+	if not is_instance_valid(_hand_rack_root):
+		return
+	for child in _hand_rack_root.get_children():
+		if child.name.begins_with("Card3D_"):
+			child.queue_free()
+	_hand_card_nodes.clear()
+
+	var entries: Array = []
+	var c_keys = my_continents.keys()
+	c_keys.sort()
+	for c_id in c_keys:
+		var cnt = _to_int(my_continents[c_id])
+		if cnt > 0:
+			entries.append({"kind": "continent", "id": str(c_id), "count": cnt})
+
+	var strat_counts: Dictionary = {}
+	for s_name in my_strategies:
+		var sn = str(s_name)
+		strat_counts[sn] = _to_int(strat_counts.get(sn, 0)) + 1
+	var s_keys = strat_counts.keys()
+	s_keys.sort()
+	for sn in s_keys:
+		entries.append({"kind": "strategy", "id": str(sn), "count": _to_int(strat_counts[sn])})
+
+	var total_cards = entries.size()
+	if total_cards == 0:
+		return
+
+	var max_span: float = 0.88
+	var step_x: float = minf(0.128, max_span / float(max(1, total_cards - 1))) if total_cards > 1 else 0.0
+
+	for i in range(total_cards):
+		var item = entries[i]
+		var card_ref = Risk3DFactory.build_3d_card(
+			item["kind"],
+			item["id"],
+			item["count"],
+			i,
+			_mats,
+			FontHekayat,
+			_rook_mesh,
+			_knight_mesh
+		)
+		var offset_idx = float(i) - float(total_cards - 1) * 0.5
+		var bx = offset_idx * step_x
+		var by = -absf(offset_idx) * 0.004
+		var bz = float(i) * 0.0015
+		var brot = Vector3(0.0, -offset_idx * 2.8, 0.0)
+
+		card_ref["base_pos"] = Vector3(bx, by, bz)
+		card_ref["base_rot"] = brot
+		var c_node: Node3D = card_ref["root"]
+		c_node.position = card_ref["base_pos"]
+		c_node.rotation_degrees = card_ref["base_rot"]
+		_hand_rack_root.add_child(c_node)
+		_hand_card_nodes.append(card_ref)
+
+	_update_3d_hand_selection_visuals()
+
+func _update_3d_hand_selection_visuals() -> void:
+	for i in range(_hand_card_nodes.size()):
+		var c_ref: Dictionary = _hand_card_nodes[i]
+		var c_node: Node3D = c_ref["root"]
+		if not is_instance_valid(c_node):
+			continue
+		var is_sel: bool = (i == selected_hand_card_idx) or (c_ref["card_kind"] == "continent" and c_ref["card_id"] == selected_source_continent) or (c_ref["card_kind"] == "strategy" and c_ref["card_id"] == selected_strategy_name)
+		var is_hov: bool = (i == hovered_card_idx)
+		c_ref["glow"].visible = is_sel or is_hov
+
+		var target_pos: Vector3 = c_ref["base_pos"]
+		if is_sel:
+			target_pos += Vector3(0.0, 0.036, 0.025)
+		elif is_hov:
+			target_pos += Vector3(0.0, 0.018, 0.012)
+		c_node.position = c_node.position.lerp(target_pos, 0.35)
+
+func _refresh_top_header() -> void:
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if not is_instance_valid(hud):
+		return
+	var header = hud.get_node_or_null("TopHeader")
+	if not is_instance_valid(header):
+		return
+
+	var t_counts = [0, 0, 0, 0]
+	var c_counts = [0, 0, 0, 0]
+	var s_counts = [0, 0, 0, 0]
+	for idx in [1, 2, 3, 4]:
+		var st = players_state.get(idx, {})
+		t_counts[idx - 1] = (st.get("tokens", []) as Array).size()
+		c_counts[idx - 1] = _sum_dict_values(st.get("continents", {}))
+		s_counts[idx - 1] = _to_int(st.get("strategies_count", 0))
+
+	if header.has_method("update_risk_player_stats"):
+		header.update_risk_player_stats(t_counts, c_counts, s_counts)
+	elif header.has_method("update_risk_stats"):
+		header.update_risk_stats(t_counts, c_counts, s_counts)
+
+# ==============================================================================
+# 5. CONTEXTUAL FLOATING HUD & LEGAL ACTIONS
+# ==============================================================================
+
+func _refresh_floating_hud() -> void:
+	_update_hud_visibility()
+	if not is_instance_valid(_hud_root):
+		return
+
+	for ch in _action_buttons_row.get_children():
+		ch.queue_free()
+	for ch in _sub_options_row.get_children():
+		ch.queue_free()
+	for ch in _hand_filter_bar.get_children():
+		ch.queue_free()
+
+	# Populate Quick Hand Strip Mirror
+	for i in range(_hand_card_nodes.size()):
+		var c_ref: Dictionary = _hand_card_nodes[i]
+		var c_kind: String = c_ref["card_kind"]
+		var c_id: String = c_ref["card_id"]
+		var cnt: int = c_ref["count"]
+		var title_fa: String = _continent_fa(c_id) if c_kind == "continent" else Risk3DFactory.STRATEGY_META.get(c_id, {}).get("fa", c_id)
+		var icon_prefix: String = "🗺️ " if c_kind == "continent" else "⚡ "
+		var is_sel: bool = (i == selected_hand_card_idx) or (c_kind == "continent" and c_id == selected_source_continent) or (c_kind == "strategy" and c_id == selected_strategy_name)
+		var bg_col = Color(0.28, 0.22, 0.08, 0.96) if is_sel else (Color(0.10, 0.24, 0.16, 0.90) if c_kind == "continent" else Color(0.26, 0.12, 0.14, 0.90))
+		var brd_col = Color(1.0, 0.88, 0.32) if is_sel else (Color(0.35, 0.82, 0.52) if c_kind == "continent" else Color(0.90, 0.42, 0.42))
+		var chip = _make_bronze_button("%s%s ×%s" % [icon_prefix, title_fa, Risk3DFactory.fa_digits(cnt)], bg_col, brd_col, 18)
+		chip.custom_minimum_size = Vector2(145, 42)
+		var card_idx = i
+		chip.pressed.connect(func():
+			AudioManager.sfx_tap()
+			_on_3d_hand_card_clicked(card_idx)
+		)
+		_hand_filter_bar.add_child(chip)
+
+	var def_id = _to_int(active_attack.get("defender_id", 0))
+	var atk_id = _to_int(active_attack.get("attacker_id", _active_turn))
+
+	# 1. DEFENDER PHASE (`DefenderArmy`)
+	if game_state == "DefenderArmy":
+		var src_fa = _continent_fa(str(active_attack.get("source_continent", "")))
+		var tgt_fa = _continent_fa(str(active_attack.get("target_continent", "")))
+		if def_id == my_player_index:
+			var my_army_cards = _count_my_strategy("Army")
+			var has_cancel = (_count_my_strategy("Cancel") > 0)
+			var base_def_dice = clampi(_to_int(my_continents.get(str(active_attack.get("target_continent", "")), 1)), 1, 2)
+			_phase_banner_lbl.text = "🛡️ دفاع در برابر حمله به «%s»! (تاس پایه دفاع: %s)" % [tgt_fa, Risk3DFactory.fa_digits(base_def_dice)]
+			_selection_info_lbl.text = "مهاجم %s کارت ارتش کمکی بازی کرده است. تعداد کارت ارتش کمکی دفاع یا لغو حمله را انتخاب کنید:" % Risk3DFactory.fa_digits(_to_int(active_attack.get("attacker_army", 0)))
+
+			for c in range(my_army_cards + 1):
+				var is_picked = (selected_army_commit == c)
+				var b = _make_bronze_button(
+					"🛡️ +%s ارتش کمکی" % Risk3DFactory.fa_digits(c),
+					Color(0.26, 0.20, 0.08, 0.95) if is_picked else Color(0.14, 0.12, 0.10, 0.90),
+					Color(1.0, 0.86, 0.28) if is_picked else Color(0.65, 0.55, 0.35),
+					19
+				)
+				b.custom_minimum_size = Vector2(150, 42)
+				var count_val = c
+				b.pressed.connect(func():
+					AudioManager.sfx_tap()
+					selected_army_commit = count_val
+					_refresh_floating_hud()
+				)
+				_sub_options_row.add_child(b)
+
+			var btn_defend = _make_bronze_button(
+				"🎲 تایید دفاع و پرتاب تاس (%s ارتش کمکی)" % Risk3DFactory.fa_digits(selected_army_commit),
+				Color(0.14, 0.38, 0.22, 0.96),
+				Color(0.42, 0.95, 0.58),
+				21
+			)
+			btn_defend.custom_minimum_size = Vector2(310, 52)
+			btn_defend.pressed.connect(func():
+				AudioManager.sfx_button()
+				send_move(Commands.DefenderArmy, {"count": selected_army_commit})
+			)
+			_action_buttons_row.add_child(btn_defend)
+
+			if has_cancel:
+				var btn_cancel_atk = _make_bronze_button(
+					"🛡️ لغو کامل حمله (کارت Cancel)",
+					Color(0.14, 0.34, 0.42, 0.96),
+					Color(0.36, 0.92, 0.98),
+					21
+				)
+				btn_cancel_atk.custom_minimum_size = Vector2(270, 52)
+				btn_cancel_atk.pressed.connect(func():
+					AudioManager.sfx_button()
+					send_move(Commands.DefenderArmy, {"count": 0, "cancel": true})
+				)
+				_action_buttons_row.add_child(btn_cancel_atk)
+		else:
+			_phase_banner_lbl.text = "⏳ در انتظار تصمیم دفاعی %s در قاره «%s»..." % [_get_player_name(def_id), tgt_fa]
+			_selection_info_lbl.text = "حمله از «%s» به «%s» در جریان است." % [src_fa, tgt_fa]
+		return
+
+	# 2. ATTACKER REINFORCEMENT PHASE (`AttackerArmy`)
+	if game_state == "AttackerArmy":
+		var src_fa = _continent_fa(str(active_attack.get("source_continent", "")))
+		var tgt_fa = _continent_fa(str(active_attack.get("target_continent", "")))
+		if atk_id == my_player_index:
+			var my_army_cards = _count_my_strategy("Army")
+			var base_atk_dice = clampi(_to_int(my_continents.get(str(active_attack.get("source_continent", "")), 1)), 1, 3)
+			_phase_banner_lbl.text = "⚔️ تقویت ارتش مهاجم از «%s» به «%s» (تاس پایه: %s)" % [src_fa, tgt_fa, Risk3DFactory.fa_digits(base_atk_dice)]
+			_selection_info_lbl.text = "تعداد کارت «ارتش کمکی» برای افزودن تاس به این حمله را انتخاب کنید:"
+
+			for c in range(my_army_cards + 1):
+				var is_picked = (selected_army_commit == c)
+				var b = _make_bronze_button(
+					"⚔️ +%s ارتش کمکی" % Risk3DFactory.fa_digits(c),
+					Color(0.32, 0.16, 0.08, 0.95) if is_picked else Color(0.14, 0.12, 0.10, 0.90),
+					Color(1.0, 0.84, 0.28) if is_picked else Color(0.65, 0.55, 0.35),
+					19
+				)
+				b.custom_minimum_size = Vector2(150, 42)
+				var count_val = c
+				b.pressed.connect(func():
+					AudioManager.sfx_tap()
+					selected_army_commit = count_val
+					_refresh_floating_hud()
+				)
+				_sub_options_row.add_child(b)
+
+			var btn_commit = _make_bronze_button(
+				"⚔️ تایید ارتش مهاجم (+%s تاس)" % Risk3DFactory.fa_digits(selected_army_commit),
+				Color(0.46, 0.14, 0.14, 0.96),
+				Color(1.0, 0.48, 0.36),
+				21
+			)
+			btn_commit.custom_minimum_size = Vector2(300, 52)
+			btn_commit.pressed.connect(func():
+				AudioManager.sfx_button()
+				send_move(Commands.AttackerArmy, {"count": selected_army_commit})
+			)
+			_action_buttons_row.add_child(btn_commit)
+
+			if _count_my_strategy("Canon") > 0:
+				var btn_canon = _make_bronze_button(
+					"💣 شلیک توپخانه (+۱ به بالاترین تاس)",
+					Color(0.36, 0.26, 0.08, 0.96),
+					Color(1.0, 0.84, 0.26),
+					20
+				)
+				btn_canon.custom_minimum_size = Vector2(280, 52)
+				btn_canon.pressed.connect(func():
+					AudioManager.sfx_button()
+					send_move(Commands.Use_Strategy, {"strategy": "Canon"})
+				)
+				_action_buttons_row.add_child(btn_canon)
+		else:
+			_phase_banner_lbl.text = "⏳ %s در حال انتخاب ارتش کمکی برای حمله به «%s» است..." % [_get_player_name(atk_id), tgt_fa]
+			_selection_info_lbl.text = "حمله از «%s» به «%s»." % [src_fa, tgt_fa]
+		return
+
+	# 3. NOT MY TURN
+	if not _is_my_turn():
+		_phase_banner_lbl.text = "⏳ نوبت فرماندهی %s (%s)" % [_get_player_name(_active_turn), _phase_fa(game_state)]
+		_selection_info_lbl.text = "می‌توانید روی قاره‌ها یا ایستگاه سه بعدی حریفان روی میز کلیک کنید تا جزئیات آن‌ها را بررسی کنید."
+		return
+
+	# 4. MY TURN - DRAW PHASE (`Draw`)
+	if game_state == "Draw":
+		_phase_banner_lbl.text = "🃏 فاز کشیدن کارت: روی دسته‌های کارت روی میز کلیک کنید یا ترکیب دلخواه را انتخاب نمایید:"
+		if not _first_3d_deck_picked.is_empty():
+			var first_fa = "قاره 🗺️" if _first_3d_deck_picked == "continent" else "استراتژی ⚡"
+			_selection_info_lbl.text = "✅ کارت اول (%s) انتخاب شد؛ اکنون روی دسته دوم کلیک کنید!" % first_fa
+		else:
+			_selection_info_lbl.text = "هر نوبت با دریافت ۲ کارت آغاز می‌شود (قاره، استراتژی، یا ترکیبی)."
+
+		var btn_d1 = _make_bronze_button("🗺️ ۲ کارت قاره", Color(0.12, 0.34, 0.22, 0.96), Color(0.38, 0.92, 0.58), 21)
+		btn_d1.custom_minimum_size = Vector2(200, 52)
+		btn_d1.pressed.connect(func(): _send_draw_card(1))
+		_action_buttons_row.add_child(btn_d1)
+
+		var btn_d3 = _make_bronze_button("⚖️ ۱ قاره + ۱ استراتژی", Color(0.28, 0.22, 0.10, 0.96), Color(0.96, 0.82, 0.32), 21)
+		btn_d3.custom_minimum_size = Vector2(235, 52)
+		btn_d3.pressed.connect(func(): _send_draw_card(3))
+		_action_buttons_row.add_child(btn_d3)
+
+		var btn_d2 = _make_bronze_button("⚡ ۲ کارت استراتژی", Color(0.38, 0.14, 0.16, 0.96), Color(0.95, 0.44, 0.44), 21)
+		btn_d2.custom_minimum_size = Vector2(215, 52)
+		btn_d2.pressed.connect(func(): _send_draw_card(2))
+		_action_buttons_row.add_child(btn_d2)
+		return
+
+	# 5. MY TURN - SELECT ACTION PHASE (`SelectAction`)
+	_phase_banner_lbl.text = "⚔️ فاز عملیات تاکتیکی: یک قاره خودی یا یک کارت استراتژی سه بعدی را انتخاب کنید"
+	if selected_strategy_name != "":
+		_populate_strategy_action_controls()
+	elif selected_source_continent != "":
+		_populate_attack_action_controls()
+	else:
+		_selection_info_lbl.text = "برای حمله، روی یکی از قاره‌های خود روی تخته سه‌بعدی کلیک کنید؛ یا کارت استراتژی بازی کنید."
+
+	var btn_pass = _make_bronze_button("⏭️ پایان نوبت", Color(0.22, 0.16, 0.10, 0.95), Color(0.84, 0.68, 0.34), 21)
+	btn_pass.custom_minimum_size = Vector2(175, 52)
+	btn_pass.pressed.connect(func():
+		AudioManager.sfx_button()
+		send_move(Commands.Pass_Turn, {})
+	)
+	_action_buttons_row.add_child(btn_pass)
+
+func _populate_attack_action_controls() -> void:
+	var src_fa = _continent_fa(selected_source_continent)
+	var my_cnt = _to_int(my_continents.get(selected_source_continent, 0))
+	if selected_target_continent == "":
+		_selection_info_lbl.text = "قاره مبدا: «%s» (%s کارت). اکنون روی یکی از قاره‌های هدف (حلقه‌های سبز روی تخته) کلیک کنید." % [
+			src_fa, Risk3DFactory.fa_digits(my_cnt)
+		]
+		var valid_targets = _get_valid_attack_target_continents(selected_source_continent)
+		for tc in valid_targets:
+			var b_t = _make_bronze_button("🎯 حمله به %s" % _continent_fa(tc), Color(0.14, 0.30, 0.20, 0.94), Color(0.42, 0.92, 0.58), 19)
+			b_t.custom_minimum_size = Vector2(165, 42)
+			var target_c = tc
+			b_t.pressed.connect(func():
+				AudioManager.sfx_tap()
+				_select_target_continent_for_attack(target_c)
+			)
+			_sub_options_row.add_child(b_t)
+		return
+
+	var tgt_fa = _continent_fa(selected_target_continent)
+	var defenders = _get_defenders_on_continent(selected_target_continent)
+	if defenders.is_empty():
+		_selection_info_lbl.text = "در قاره «%s» هیچ نیروی دشمنی حضور ندارد. قاره دیگری را هدف بگیرید." % tgt_fa
+		return
+
+	if selected_target_player == 0 or not defenders.has(selected_target_player):
+		selected_target_player = defenders[0]
+
+	_selection_info_lbl.text = "آماده حمله از «%s» به «%s» علیه %s!" % [
+		src_fa, tgt_fa, _get_player_name(selected_target_player)
+	]
+
+	if defenders.size() > 1:
+		for d_id in defenders:
+			var is_sel = (selected_target_player == d_id)
+			var b_d = _make_bronze_button(
+				"🎯 %s" % _get_player_name(d_id),
+				Color(0.36, 0.16, 0.12, 0.95) if is_sel else Color(0.16, 0.12, 0.10, 0.90),
+				Color(1.0, 0.82, 0.28) if is_sel else Color(0.70, 0.55, 0.35),
+				19
+			)
+			b_d.custom_minimum_size = Vector2(150, 42)
+			var def_p = d_id
+			b_d.pressed.connect(func():
+				AudioManager.sfx_tap()
+				selected_target_player = def_p
+				_refresh_all_3d_and_hud()
+			)
+			_sub_options_row.add_child(b_d)
+
+	var btn_atk = _make_bronze_button(
+		"⚔️ اعلان حمله به «%s» (%s)" % [tgt_fa, _get_player_name(selected_target_player)],
+		Color(0.50, 0.14, 0.14, 0.98),
+		Color(1.0, 0.52, 0.36),
+		21
+	)
+	btn_atk.custom_minimum_size = Vector2(300, 52)
+	btn_atk.pressed.connect(_send_declare_attack)
+	_action_buttons_row.add_child(btn_atk)
+
+func _populate_strategy_action_controls() -> void:
+	var sm: Dictionary = Risk3DFactory.STRATEGY_META.get(selected_strategy_name, {})
+	var strat_fa = sm.get("fa", selected_strategy_name)
+	var desc = sm.get("desc", "")
+	_selection_info_lbl.text = "⚡ کارت «%s»: %s" % [strat_fa, desc]
+
+	if bool(sm.get("combat_only", false)):
+		_selection_info_lbl.text = "🛡️ کارت «%s» فقط در زمان دفاع در برابر حمله دشمن قابل استفاده است." % strat_fa
+		return
+
+	var needs_p = bool(sm.get("needs_target_player", false))
+	var needs_c = bool(sm.get("needs_target_continent", false))
+
+	if needs_p:
+		var opps = _get_valid_opponent_targets_for_strategy(selected_strategy_name)
+		if opps.is_empty():
+			_selection_info_lbl.text = "هیچ حریفی کارت واجد شرایط برای اجرای «%s» ندارد." % strat_fa
+			return
+		if selected_target_player == 0 or not opps.has(selected_target_player):
+			selected_target_player = opps[0]
+
+		for op_id in opps:
+			var is_sel = (selected_target_player == op_id)
+			var b_op = _make_bronze_button(
+				"🎯 حریف: %s" % _get_player_name(op_id),
+				Color(0.36, 0.16, 0.12, 0.95) if is_sel else Color(0.16, 0.12, 0.10, 0.90),
+				Color(1.0, 0.84, 0.28) if is_sel else Color(0.68, 0.52, 0.32),
+				19
+			)
+			b_op.custom_minimum_size = Vector2(155, 42)
+			var target_p = op_id
+			b_op.pressed.connect(func():
+				AudioManager.sfx_tap()
+				selected_target_player = target_p
+				selected_target_continent = ""
+				_refresh_all_3d_and_hud()
+			)
+			_sub_options_row.add_child(b_op)
+
+	if needs_c and selected_target_player > 0:
+		var opp_conts: Dictionary = players_state.get(selected_target_player, {}).get("continents", {})
+		var valid_c: Array[String] = []
+		for ck in opp_conts.keys():
+			if _to_int(opp_conts[ck]) > 0:
+				valid_c.append(str(ck))
+		valid_c.sort()
+		if valid_c.is_empty():
+			_selection_info_lbl.text = "%s هیچ کارت قاره‌ای برای تخریب ندارد." % _get_player_name(selected_target_player)
+			return
+		if selected_target_continent == "" or not valid_c.has(selected_target_continent):
+			selected_target_continent = valid_c[0]
+
+		for ck in valid_c:
+			var is_c_sel = (selected_target_continent == ck)
+			var b_c = _make_bronze_button(
+				"🗺️ %s" % _continent_fa(ck),
+				Color(0.32, 0.14, 0.20, 0.95) if is_c_sel else Color(0.14, 0.14, 0.14, 0.90),
+				Color(1.0, 0.78, 0.30) if is_c_sel else Color(0.60, 0.50, 0.35),
+				19
+			)
+			b_c.custom_minimum_size = Vector2(145, 42)
+			var c_val = ck
+			b_c.pressed.connect(func():
+				AudioManager.sfx_tap()
+				selected_target_continent = c_val
+				_refresh_all_3d_and_hud()
+			)
+			_sub_options_row.add_child(b_c)
+
+	var btn_play = _make_bronze_button(
+		"⚡ اجرای کارت «%s»" % strat_fa,
+		Color(0.16, 0.38, 0.24, 0.96),
+		Color(0.45, 0.96, 0.62),
+		21
+	)
+	btn_play.custom_minimum_size = Vector2(250, 52)
+	btn_play.pressed.connect(_send_use_strategy)
+	_action_buttons_row.add_child(btn_play)
+
+# ==============================================================================
+# 6. 3D RAYCAST INTERACTION (TABLE, CONTINENTS, CARDS, DECKS, STATIONS)
+# ==============================================================================
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_hud_overlay_blocking():
 		return
-	if is_instance_valid(_enemy_modal_backdrop) and _enemy_modal_backdrop.visible:
-		return
-	if is_instance_valid(_target_modal_backdrop) and _target_modal_backdrop.visible:
-		return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_handle_3d_pointer_tap(event.position)
-	elif event is InputEventScreenTouch and event.pressed:
-		_handle_3d_pointer_tap(event.position)
-func _handle_3d_pointer_tap(screen_pos: Vector2) -> void:
-	var vp = get_viewport()
-	if not vp:
-		return
-	var cam = vp.get_camera_3d()
+
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_pointer_down_pos = event.position
+			_pointer_is_down = true
+		else:
+			if _pointer_is_down and event.position.distance_to(_pointer_down_pos) <= TAP_MAX_DRAG_PX:
+				_perform_3d_tabletop_raycast(event.position, true)
+			_pointer_is_down = false
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			_pointer_down_pos = event.position
+			_pointer_is_down = true
+		else:
+			if _pointer_is_down and event.position.distance_to(_pointer_down_pos) <= TAP_MAX_DRAG_PX:
+				_perform_3d_tabletop_raycast(event.position, true)
+			_pointer_is_down = false
+	elif event is InputEventMouseMotion:
+		_perform_3d_tabletop_raycast(event.position, false)
+
+func _perform_3d_tabletop_raycast(screen_pos: Vector2, is_click: bool) -> void:
+	var cam = get_viewport().get_camera_3d()
 	if not cam:
 		return
 	var from = cam.project_ray_origin(screen_pos)
 	var to = from + cam.project_ray_normal(screen_pos) * 12.0
 	var space = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
-	var result = space.intersect_ray(query)
-	if result.is_empty():
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	var hit = space.intersect_ray(query)
+
+	if hit.is_empty() or not hit.has("collider"):
+		if not is_click and hovered_card_idx != -1:
+			hovered_card_idx = -1
+			_update_3d_hand_selection_visuals()
 		return
-	var collider = result.get("collider")
-	if not is_instance_valid(collider):
+
+	var col: Object = hit["collider"]
+	if not (col is Node) or not col.has_meta("interact_type"):
 		return
-	# 1. Tapped a 3D Continent Card in Player's Hand
-	if collider.has_meta("card_continent"):
-		var cont: String = str(collider.get_meta("card_continent"))
-		_on_my_3d_continent_card_tapped(cont)
+
+	var itype = str(col.get_meta("interact_type"))
+	if not is_click:
+		if itype == "hand_card":
+			var h_idx = _to_int(col.get_meta("hand_idx"))
+			if h_idx != hovered_card_idx:
+				hovered_card_idx = h_idx
+				_update_3d_hand_selection_visuals()
+		elif hovered_card_idx != -1:
+			hovered_card_idx = -1
+			_update_3d_hand_selection_visuals()
 		return
-	# 2. Tapped a 3D Strategy Card in Player's Hand
-	if collider.has_meta("card_strategy"):
-		var s_key: String = str(collider.get_meta("card_strategy"))
-		_on_my_3d_strategy_card_tapped(s_key)
-		return
-	# 3. Tapped a 3D Draw Deck on the Table
-	if collider.has_meta("deck_type"):
-		var deck_type: String = str(collider.get_meta("deck_type"))
-		_on_3d_deck_tapped(deck_type)
-		return
-	# 4. Tapped a 3D Continent Citadel on the War-Table Map
-	if collider.has_meta("continent"):
-		var cont_map: String = str(collider.get_meta("continent"))
-		_on_3d_map_continent_tapped(cont_map)
-		return
-func _on_my_3d_continent_card_tapped(cont: String) -> void:
+
 	AudioManager.sfx_tap()
-	_selected_strategy_card = ""
-	if _active_turn != my_player_index:
-		show_hint("⏳ اکنون نوبت شما نیست.")
+	match itype:
+		"deck":
+			var dtype_str = str(col.get_meta("deck_type"))
+			_on_3d_deck_clicked(dtype_str)
+		"hand_card":
+			var c_idx = _to_int(col.get_meta("hand_idx"))
+			_on_3d_hand_card_clicked(c_idx)
+		"continent":
+			var c_id = str(col.get_meta("continent"))
+			_on_3d_continent_clicked(c_id)
+		"station":
+			var p_idx = _to_int(col.get_meta("player_index"))
+			_on_3d_station_clicked(p_idx)
+
+func _on_3d_deck_clicked(deck_type: String) -> void:
+	if not _is_my_turn() or game_state != "Draw":
+		show_hint("🃏 کشیدن کارت فقط در ابتدای نوبت شما (فاز کشیدن کارت) مجاز است.")
 		return
-	if _game_phase == "Draw":
-		show_hint("🎴 ابتدا ۲ کارت ابتدای نوبت خود را دریافت کنید!")
-		return
-	if _game_phase != "Attack":
-		return
-	if _selected_my_continent == cont:
-		_selected_my_continent = ""
-		_selected_target_continent = ""
-		_selected_target_defender = 0
-	else:
-		_selected_my_continent = cont
-		_selected_target_continent = ""
-		_selected_target_defender = 0
-	_refresh_all_visuals()
-func _on_my_3d_strategy_card_tapped(s_key: String) -> void:
-	AudioManager.sfx_tap()
-	if _selected_strategy_card == s_key:
-		_selected_strategy_card = ""
-	else:
-		_selected_strategy_card = s_key
-	_refresh_all_visuals()
-func _on_3d_deck_tapped(deck_type: String) -> void:
-	if _active_turn != my_player_index or _game_phase != "Draw":
-		show_hint("🃏 کشیدن کارت فقط در مرحله ۱ (ابتدای نوبت شما) مجاز است.")
-		return
-	AudioManager.sfx_tap()
-	var pick = "continent" if deck_type == "deck_continent" else "strategy"
+	var pick = "continent" if deck_type == "continent" else "strategy"
 	if _first_3d_deck_picked.is_empty():
 		_first_3d_deck_picked = pick
-		var pick_fa = "قاره 🗺️" if pick == "continent" else "استراتژی 🃏"
-		show_hint("✅ کارت اول (%s) انتخاب شد؛ حالا روی دسته دوم بزنید!" % pick_fa)
-		_refresh_all_visuals()
+		_refresh_floating_hud()
 	else:
 		var first = _first_3d_deck_picked
 		_first_3d_deck_picked = ""
@@ -1600,932 +1487,384 @@ func _on_3d_deck_tapped(deck_type: String) -> void:
 			draw_type = 2
 		else:
 			draw_type = 3
-		send_move(Commands.Draw_Card, {"draw_type": draw_type})
-func _on_3d_map_continent_tapped(cont: String) -> void:
-	AudioManager.sfx_tap()
-	if _active_turn != my_player_index or _game_phase != "Attack":
+		_send_draw_card(draw_type)
+
+func _on_3d_hand_card_clicked(card_idx: int) -> void:
+	if card_idx < 0 or card_idx >= _hand_card_nodes.size():
 		return
-	_selected_strategy_card = ""
-	var my_conts = _get_my_continents_dict()
-	var my_cnt = _to_int(my_conts.get(cont, 0))
-	# If nothing selected yet and we own this continent -> select it as source
-	if _selected_my_continent.is_empty():
-		if my_cnt > 0:
-			_selected_my_continent = cont
-			_selected_target_continent = ""
-			_selected_target_defender = 0
-			_refresh_all_visuals()
-		else:
-			show_hint("🗺️ ابتدا یکی از قاره‌های خودتان را برای شروع حمله انتخاب کنید.")
-		return
-	# Clicking the already-selected source continent deselects it
-	if cont == _selected_my_continent:
-		_selected_my_continent = ""
-		_selected_target_continent = ""
-		_selected_target_defender = 0
-		_refresh_all_visuals()
-		return
-	# Check if cont is adjacent to _selected_my_continent and has an enemy owner
-	var adj: Array = CONTINENT_ADJACENCY.get(_selected_my_continent, [])
-	var defenders = _get_defenders_with_continent(cont)
-	if cont in adj and not defenders.is_empty():
-		_selected_target_continent = cont
-		_selected_target_defender = defenders[0]
-		_refresh_all_visuals()
-		return
-	# Otherwise if the player tapped another of their own continents, switch source continent
-	if my_cnt > 0:
-		_selected_my_continent = cont
-		_selected_target_continent = ""
-		_selected_target_defender = 0
-		_refresh_all_visuals()
+	var c_ref: Dictionary = _hand_card_nodes[card_idx]
+	var kind: String = c_ref["card_kind"]
+	var cid: String = c_ref["card_id"]
+
+	if selected_hand_card_idx == card_idx:
+		selected_hand_card_idx = -1
+		selected_source_continent = ""
+		selected_target_continent = ""
+		selected_strategy_name = ""
 	else:
-		show_hint("⚠️ قاره «%s» با «%s» هم‌مرز نیست یا هیچ حریفی در آن کارت ندارد." % [
-			CONTINENT_NAMES_FA.get(cont, cont),
-			CONTINENT_NAMES_FA.get(_selected_my_continent, _selected_my_continent)
-		])
-# ==============================================================================
-# SERVER COMMAND & STATE SYNCHRONIZATION
-# ==============================================================================
-func on_start_game() -> void:
-	_match_started = true
-	_update_hud_visibility()
-	_refresh_all_visuals()
-func on_game_data(payload: Dictionary) -> void:
-	my_player_index = GameManager.my_player_index
-	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
-		_player_count = clampi((payload["gamers"] as Array).size(), 2, 4)
-		_init_default_state()
-	_refresh_all_visuals()
-func on_turn_changed(turn: int, is_me: bool) -> void:
-	_active_turn = turn
-	is_my_turn = is_me
-	if GameManager.is_game_active and turn > 0:
-		_match_started = true
-	_refresh_all_visuals()
-func on_reconnect_data(payload: Dictionary) -> void:
-	_match_started = true
-	my_player_index = GameManager.my_player_index
-	var g_data = payload.get("game_data", payload)
-	if typeof(g_data) == TYPE_DICTIONARY:
-		_apply_public_state_snapshot(g_data)
-		if g_data.has("my_strategies") and typeof(g_data["my_strategies"]) == TYPE_DICTIONARY:
-			_my_strategies = (g_data["my_strategies"] as Dictionary).duplicate()
-		if g_data.has("turn"):
-			_active_turn = _to_int(g_data["turn"])
-		if g_data.has("game_state"):
-			_game_phase = _to_str(g_data["game_state"], "")
-		if g_data.has("attacker"):
-			_current_battle_attacker = _to_int(g_data["attacker"])
-		if g_data.has("defender"):
-			_current_battle_defender = _to_int(g_data["defender"])
-		if g_data.has("attacker_continent"):
-			_current_battle_attacker_continent = _to_str(g_data["attacker_continent"], "")
-		if g_data.has("target_continent"):
-			_current_battle_target_continent = _to_str(g_data["target_continent"], "")
-		if g_data.has("attacker_army"):
-			_current_battle_attacker_army = _to_int(g_data["attacker_army"])
-	_update_hud_visibility()
-	_refresh_all_visuals()
-func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
-	my_player_index = GameManager.my_player_index
-	if cmd_id != Commands.User_Data and cmd_id != Commands.Game_Data:
-		_match_started = true
-	_apply_public_state_snapshot(payload)
-	match cmd_id:
-		Commands.User_Data:
-			if payload.has("index"):
-				var idx = _to_int(payload["index"])
-				if idx > 0:
-					my_player_index = idx
-			if payload.has("strategies") and typeof(payload["strategies"]) == TYPE_DICTIONARY:
-				_my_strategies = (payload["strategies"] as Dictionary).duplicate()
-			if payload.has("continents") and typeof(payload["continents"]) == TYPE_DICTIONARY:
-				var p0 = clampi(my_player_index - 1, 0, 3)
-				while _all_continents.size() <= p0:
-					_all_continents.append({})
-				_all_continents[p0] = (payload["continents"] as Dictionary).duplicate()
-			if payload.has("tokens"):
-				if typeof(payload["tokens"]) == TYPE_ARRAY:
-					_tokens = (payload["tokens"] as Array).duplicate()
-				elif payload["tokens"] != null:
-					var p0 = clampi(my_player_index - 1, 0, 3)
-					while _tokens.size() <= p0:
-						_tokens.append(0)
-					_tokens[p0] = _to_int(payload["tokens"], 0)
-		Commands.Draw_Card:
-			_active_turn = _to_int(payload.get("turn"), _active_turn)
-			_game_phase = _to_str(payload.get("game_state"), "Draw")
-			_selected_my_continent = ""
-			_selected_target_continent = ""
-			_selected_target_defender = 0
-			_selected_strategy_card = ""
-			_first_3d_deck_picked = ""
-			_won_attack_this_turn = false
-			_eliminated_continent_this_turn = false
-			_hide_battle_dice()
-			_restart_hud_turn_timer()
-			if _active_turn == my_player_index:
-				AudioManager.play_sound("bell")
-		Commands.Draw_Result_Private:
-			if payload.has("my_strategies") and typeof(payload["my_strategies"]) == TYPE_DICTIONARY:
-				_my_strategies = (payload["my_strategies"] as Dictionary).duplicate()
-			if payload.has("my_continents") and typeof(payload["my_continents"]) == TYPE_DICTIONARY:
-				var p0 = clampi(my_player_index - 1, 0, 3)
-				if p0 < _all_continents.size():
-					_all_continents[p0] = (payload["my_continents"] as Dictionary).duplicate()
-		Commands.Draw_Result:
-			_active_turn = _to_int(payload.get("turn"), _active_turn)
-			_game_phase = _to_str(payload.get("game_state"), "Attack")
-			var dr_user = _to_int(payload.get("user"), _active_turn)
-			var drawn_c: Array = payload.get("drawn_continents", []) if typeof(payload.get("drawn_continents", [])) == TYPE_ARRAY else []
-			var s_drawn = _to_int(payload.get("strategy_drawn_count"), 0)
-			_set_battle_feed_text(_format_draw_feed(dr_user, drawn_c, s_drawn))
-			AudioManager.play_sound("add_peace")
-			_restart_hud_turn_timer()
-		Commands.Declare_Attack:
-			_current_battle_attacker = _to_int(payload.get("attacker"), _active_turn)
-			_current_battle_defender = _to_int(payload.get("defender"), 0)
-			_current_battle_attacker_continent = _to_str(payload.get("attacker_continent"), "")
-			_current_battle_target_continent = _to_str(payload.get("target_continent"), "")
-			_game_phase = "AttackArmy"
-			_set_battle_feed_text("⚔️ %s از «%s» به «%s» (%s) حمله کرد!" % [
-				_get_player_name(_current_battle_attacker),
-				CONTINENT_NAMES_FA.get(_current_battle_attacker_continent, _current_battle_attacker_continent),
-				CONTINENT_NAMES_FA.get(_current_battle_target_continent, _current_battle_target_continent),
-				_get_player_name(_current_battle_defender)
-			])
-			_restart_hud_turn_timer()
-		Commands.AttackerArmy:
-			_current_battle_attacker = _to_int(payload.get("attacker"), _current_battle_attacker)
-			_current_battle_defender = _to_int(payload.get("defender"), _current_battle_defender)
-			_current_battle_attacker_army = _to_int(payload.get("attacker_army"), 1)
-			_game_phase = "DefenderArmy"
-			_set_battle_feed_text("🎲 %s با %s لشکر وارد میدان شد! منتظر واکنش %s..." % [
-				_get_player_name(_current_battle_attacker),
-				_fa_digits(_current_battle_attacker_army),
-				_get_player_name(_current_battle_defender)
-			])
-		Commands.QuestArmy:
-			_current_battle_attacker = _to_int(payload.get("attacker"), _current_battle_attacker)
-			_current_battle_defender = _to_int(payload.get("defender"), my_player_index)
-			_current_battle_attacker_continent = _to_str(payload.get("attacker_continent"), _current_battle_attacker_continent)
-			_current_battle_target_continent = _to_str(payload.get("target_continent"), _current_battle_target_continent)
-			_current_battle_attacker_army = _to_int(payload.get("attacker_army"), 1)
-			_game_phase = "QuestArmy"
-			if _current_battle_defender == my_player_index:
-				AudioManager.play_sound("bell")
-			_restart_hud_turn_timer()
-		Commands.DefenderArmy:
-			var d_army = _to_int(payload.get("defender_army"), 1)
-			_set_battle_feed_text("🛡️ %s با %s لشکر دفاع می‌کند!" % [
-				_get_player_name(_current_battle_defender),
-				_fa_digits(d_army)
-			])
-		Commands.Cancel_Attack:
-			_active_turn = _to_int(payload.get("turn"), _active_turn)
-			_game_phase = _to_str(payload.get("game_state"), "Attack")
-			var c_by = _to_int(payload.get("canceled_by"), _current_battle_defender)
-			_set_battle_feed_text("🕊️ %s با کارت «آتش‌بس» حمله را متوقف کرد!" % _get_player_name(c_by))
-			_hide_battle_dice()
-			_restart_hud_turn_timer()
-		Commands.Attack:
-			_active_turn = _to_int(payload.get("turn"), _active_turn)
-			_game_phase = _to_str(payload.get("game_state"), "Attack")
-			var a_dices: Array = payload.get("attacker_dices", []) if typeof(payload.get("attacker_dices", [])) == TYPE_ARRAY else []
-			var d_dices: Array = payload.get("defender_dices", []) if typeof(payload.get("defender_dices", [])) == TYPE_ARRAY else []
-			var a_losses = _to_int(payload.get("attacker_losses"), 0)
-			var d_losses = _to_int(payload.get("defender_losses"), 0)
-			var captured = bool(payload.get("captured", false))
-			var def_elim = bool(payload.get("defender_continent_eliminated", false))
-			if _current_battle_attacker == my_player_index and (d_losses > 0 or captured):
-				_won_attack_this_turn = true
-			if _current_battle_attacker == my_player_index and def_elim:
-				_eliminated_continent_this_turn = true
-			_animate_3d_battle_dice(a_dices, d_dices, a_losses, d_losses, captured)
-			_selected_my_continent = ""
-			_selected_target_continent = ""
-			_selected_target_defender = 0
-			_restart_hud_turn_timer()
-		Commands.Strategy_Result:
-			var s_user = _to_int(payload.get("user"), _active_turn)
-			var s_card = _to_str(payload.get("strategy"), "")
-			if payload.has("game_state"):
-				_game_phase = _to_str(payload["game_state"], "")
-			# Record revealed enemy strategy cards if Spy was used
-			if s_card == "Spy" and payload.has("target_strategies") and typeof(payload["target_strategies"]) == TYPE_DICTIONARY:
-				var t_p = _to_int(payload.get("target_player"), 0)
-				if t_p > 0:
-					_revealed_enemy_strategies[t_p] = (payload["target_strategies"] as Dictionary).duplicate()
-			var s_info = STRATEGY_INFO.get(s_card, {})
-			var s_name_fa = str(s_info.get("name_fa", s_card))
-			_set_battle_feed_text("🃏 %s کارت استراتژی «%s» را اجرا کرد!" % [_get_player_name(s_user), s_name_fa])
-			AudioManager.play_sound("add_peace")
-		Commands.Pass_Turn:
-			_active_turn = _to_int(payload.get("turn"), _active_turn)
-			var awarded_to = _to_int(payload.get("token_awarded_to"), 0)
-			if awarded_to > 0:
-				_set_battle_feed_text("👑 %s به دلیل تسلط بر ۴ قاره، ۱ تاج سلطه دریافت کرد!" % _get_player_name(awarded_to))
-				AudioManager.play_sound("win")
-	_update_hud_visibility()
-	_refresh_all_visuals()
-func _apply_public_state_snapshot(payload: Dictionary) -> void:
-	if payload.has("tokens") and typeof(payload["tokens"]) == TYPE_ARRAY:
-		_tokens = (payload["tokens"] as Array).duplicate()
-		_player_count = max(_player_count, _tokens.size())
-	if payload.has("all_continents") and typeof(payload["all_continents"]) == TYPE_ARRAY:
-		_all_continents = (payload["all_continents"] as Array).duplicate()
-		_player_count = max(_player_count, _all_continents.size())
-	elif payload.has("continents") and typeof(payload["continents"]) == TYPE_ARRAY:
-		_all_continents = (payload["continents"] as Array).duplicate()
-		_player_count = max(_player_count, _all_continents.size())
-	if payload.has("strategies_count") and typeof(payload["strategies_count"]) == TYPE_ARRAY:
-		_strategy_counts = (payload["strategies_count"] as Array).duplicate()
-	elif payload.has("strategies") and typeof(payload["strategies"]) == TYPE_ARRAY:
-		var s_arr: Array = payload["strategies"]
-		_strategy_counts.clear()
-		for item in s_arr:
-			if typeof(item) == TYPE_DICTIONARY:
-				var sum_s = 0
-				for v in (item as Dictionary).values():
-					sum_s += _to_int(v)
-				_strategy_counts.append(sum_s)
-				if _strategy_counts.size() == my_player_index:
-					_my_strategies = (item as Dictionary).duplicate()
-			else:
-				_strategy_counts.append(_to_int(item))
-	_sync_top_header_stats()
-func _sync_top_header_stats() -> void:
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
-	if not is_instance_valid(hud):
-		return
-	var header = hud.get("current_top_header")
-	if is_instance_valid(header) and header.has_method("update_risk_stats"):
-		var cont_totals: Array = []
-		for i in range(_player_count):
-			var d: Dictionary = _all_continents[i] if i < _all_continents.size() and typeof(_all_continents[i]) == TYPE_DICTIONARY else {}
-			var sum_c = 0
-			for v in d.values():
-				sum_c += _to_int(v)
-			cont_totals.append(sum_c)
-		header.update_risk_stats(_tokens, cont_totals, _strategy_counts)
-func _restart_hud_turn_timer() -> void:
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
-	if is_instance_valid(hud) and hud.has_method("start_turn_timer"):
-		hud.start_turn_timer(30.0)
-# ==============================================================================
-# VISUAL REFRESH (3D MAP, 3D HAND CARDS, ENEMY STRIP & GUIDED ACTION BAR)
-# ==============================================================================
-func _refresh_all_visuals() -> void:
-	_refresh_3d_continents_and_troops()
-	_refresh_3d_sea_lane_bridges()
-	_refresh_3d_crowns()
-	_rebuild_3d_hand_cards()
-	_refresh_opponent_strip()
-	_refresh_guided_step_and_actions()
-func _refresh_3d_continents_and_troops() -> void:
-	var adj_from_sel: Array = CONTINENT_ADJACENCY.get(_selected_my_continent, []) if not _selected_my_continent.is_empty() else []
-	var is_my_attack_phase: bool = (_active_turn == my_player_index and _game_phase == "Attack")
-	for cont in ALL_CONTINENTS:
-		if not _continent_nodes.has(cont):
-			continue
-		var info: Dictionary = _continent_nodes[cont]
-		var ring: MeshInstance3D = info["select_ring"]
-		var ring_mat: StandardMaterial3D = info["ring_mat"]
-		var lbl_counts: Label3D = info["lbl_counts"]
-		var target_badge: Label3D = info["target_badge"]
-		var troops_holder: Node3D = info["troops_holder"]
-		for ch in troops_holder.get_children():
-			ch.queue_free()
-		var parts: Array[String] = []
-		var active_players_in_cont: Array[int] = []
-		for p_i in range(_player_count):
-			var d: Dictionary = _all_continents[p_i] if p_i < _all_continents.size() and typeof(_all_continents[p_i]) == TYPE_DICTIONARY else {}
-			var cnt = _to_int(d.get(cont, 0))
-			if cnt > 0:
-				var p_num = p_i + 1
-				var tag = "شما" if p_num == my_player_index else ("حریف" if _player_count == 2 else ("ب" + _fa_digits(p_num)))
-				parts.append("%s%s:%s" % [FACTION_DOTS.get(p_num, ""), tag, _fa_digits(cnt)])
-				active_players_in_cont.append(p_num)
-		if parts.is_empty():
-			lbl_counts.text = "خالی"
-			lbl_counts.modulate = Color(0.72, 0.72, 0.72, 0.80)
+		selected_hand_card_idx = card_idx
+		if kind == "continent":
+			selected_source_continent = cid
+			selected_target_continent = ""
+			selected_strategy_name = ""
 		else:
-			lbl_counts.text = " | ".join(parts)
-			lbl_counts.modulate = Color(1.0, 0.94, 0.58)
-		# Spawn 3D Faction Troop Miniatures around the citadel
-		for idx_slot in range(active_players_in_cont.size()):
-			var p_num = active_players_in_cont[idx_slot]
-			var d: Dictionary = _all_continents[p_num - 1]
-			var cnt = _to_int(d.get(cont, 0))
-			var angle = float(idx_slot) * (TAU / maxf(1.0, float(active_players_in_cont.size()))) - 0.6
-			var radius = 0.068
-			var t_pos = Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
-			var pawn = _create_3d_faction_troop(p_num, cnt)
-			pawn.position = t_pos
-			troops_holder.add_child(pawn)
-		# Highlight source continent or valid adjacent enemy target continents
-		var defenders = _get_defenders_with_continent(cont)
-		var is_valid_target: bool = (is_my_attack_phase and not _selected_my_continent.is_empty() and cont in adj_from_sel and not defenders.is_empty())
-		if cont == _selected_my_continent:
-			ring.visible = true
-			ring_mat.albedo_color = Color(0.28, 1.0, 0.48, 0.95)
-			ring_mat.emission = Color(0.20, 0.95, 0.40)
-			target_badge.visible = false
-		elif cont == _selected_target_continent:
-			ring.visible = true
-			ring_mat.albedo_color = Color(1.0, 0.22, 0.22, 0.98)
-			ring_mat.emission = Color(1.0, 0.18, 0.18)
-			target_badge.visible = true
-			target_badge.text = "⚔️ هدف انتخاب‌شده"
-		elif is_valid_target:
-			ring.visible = true
-			ring_mat.albedo_color = Color(1.0, 0.78, 0.22, 0.92)
-			ring_mat.emission = Color(1.0, 0.68, 0.15)
-			target_badge.visible = true
-			target_badge.text = "🎯 هدف قابل حمله (بزنید)"
-		else:
-			ring.visible = false
-			target_badge.visible = false
-func _create_3d_faction_troop(player_num: int, count: int) -> Node3D:
-	var root = Node3D.new()
-	var col: Color = FACTION_COLORS.get(player_num, Color.WHITE)
-	var mat = StandardMaterial3D.new()
-	mat.albedo_color = col
-	mat.roughness = 0.25
-	mat.metallic = 0.22
-	var stacks = clampi(count, 1, 3)
-	for s_i in range(stacks):
-		var cyl = CylinderMesh.new()
-		cyl.top_radius = 0.017
-		cyl.bottom_radius = 0.020
-		cyl.height = 0.012
-		cyl.radial_segments = 14
-		cyl.material = mat
-		var mi = MeshInstance3D.new()
-		mi.mesh = cyl
-		mi.position = Vector3(0.0, float(s_i) * 0.013 + 0.006, 0.0)
-		root.add_child(mi)
-	var head = SphereMesh.new()
-	head.radius = 0.013
-	head.height = 0.026
-	head.material = mat
-	var h_mi = MeshInstance3D.new()
-	h_mi.mesh = head
-	h_mi.position = Vector3(0.0, float(stacks) * 0.013 + 0.010, 0.0)
-	root.add_child(h_mi)
-	return root
-func _refresh_3d_sea_lane_bridges() -> void:
-	for k in _bridge_meshes.keys():
-		var mi: MeshInstance3D = _bridge_meshes[k]
-		if is_instance_valid(mi):
-			mi.material_override = _shared_mats["bridge_idle"]
-	if not _selected_my_continent.is_empty():
-		var adj: Array = CONTINENT_ADJACENCY.get(_selected_my_continent, [])
-		for target_c in adj:
-			var key = _selected_my_continent + "_" + str(target_c)
-			if _bridge_meshes.has(key):
-				var mi: MeshInstance3D = _bridge_meshes[key]
-				if is_instance_valid(mi):
-					mi.material_override = _shared_mats["bridge_active"]
-func _refresh_3d_crowns() -> void:
-	for p_idx in [1, 2, 3, 4]:
-		if not _player_crown_nodes.has(p_idx):
-			continue
-		var t_cnt = _to_int(_tokens[p_idx - 1]) if (p_idx - 1) < _tokens.size() else 0
-		var arr: Array = _player_crown_nodes[p_idx]
-		for slot_i in range(arr.size()):
-			var c_node: Node3D = arr[slot_i]
-			if is_instance_valid(c_node):
-				c_node.visible = (p_idx <= _player_count and slot_i < t_cnt)
-# Live Opponent Cards Strip at Top (Shows Opponent Continent Cards right on screen!)
-func _refresh_opponent_strip() -> void:
-	if not is_instance_valid(_opponent_strip_box):
-		return
-	for ch in _opponent_strip_box.get_children():
-		ch.queue_free()
-	for p_idx in range(1, _player_count + 1):
-		if p_idx == my_player_index:
-			continue
-		var p_conts: Dictionary = _all_continents[p_idx - 1] if (p_idx - 1) < _all_continents.size() else {}
-		var t_cnt = _to_int(_tokens[p_idx - 1]) if (p_idx - 1) < _tokens.size() else 0
-		var s_cnt = _to_int(_strategy_counts[p_idx - 1]) if (p_idx - 1) < _strategy_counts.size() else 0
-		var cont_parts: Array[String] = []
-		for c in ALL_CONTINENTS:
-			var cnt = _to_int(p_conts.get(c, 0))
-			if cnt > 0:
-				cont_parts.append("%s×%s" % [CONTINENT_NAMES_FA.get(c, c), _fa_digits(cnt)])
-		var cont_summary = " ، ".join(cont_parts) if not cont_parts.is_empty() else "بدون قاره"
-		var btn_text = "%s %s (👑%s | 🃏%s): %s" % [
-			FACTION_DOTS.get(p_idx, ""),
-			_get_player_name(p_idx),
-			_fa_digits(t_cnt),
-			_fa_digits(s_cnt),
-			cont_summary
-		]
-		var f_col: Color = FACTION_COLORS.get(p_idx, Color.WHITE)
-		var opp_btn = _make_styled_button(btn_text, f_col.darkened(0.62), f_col.lightened(0.15), 21)
-		opp_btn.pressed.connect(func():
-			AudioManager.sfx_button()
-			_open_enemy_cards_modal()
-		)
-		_opponent_strip_box.add_child(opp_btn)
-func _refresh_guided_step_and_actions() -> void:
-	if not is_instance_valid(_action_buttons_row):
-		return
-	for ch in _action_buttons_row.get_children():
-		ch.queue_free()
-	var is_my_draw: bool = (_active_turn == my_player_index and _game_phase == "Draw")
-	if is_instance_valid(_deck_continent_hint_3d):
-		_deck_continent_hint_3d.visible = is_my_draw
-	if is_instance_valid(_deck_strategy_hint_3d):
-		_deck_strategy_hint_3d.visible = is_my_draw
-	# CASE 1: Urgent Defense Phase (Even when _active_turn is the attacker!)
-	if (_game_phase in ["DefenderArmy", "QuestArmy"]) and _current_battle_defender == my_player_index:
-		_step_badge_lbl.text = "🛡️ فاز دفاع فوری شما!"
-		_step_guide_lbl.text = "%s از «%s» با %s لشکر به «%s» شما حمله کرده است!" % [
-			_get_player_name(_current_battle_attacker),
-			CONTINENT_NAMES_FA.get(_current_battle_attacker_continent, _current_battle_attacker_continent),
-			_fa_digits(_current_battle_attacker_army),
-			CONTINENT_NAMES_FA.get(_current_battle_target_continent, _current_battle_target_continent)
-		]
-		_action_title_lbl.text = "🛡️ واکنش دفاعی خود را انتخاب کنید (حداکثر ۲ لشکر یا کارت آتش‌بس):"
-		var my_conts = _get_my_continents_dict()
-		var max_def = clampi(min(2, _to_int(my_conts.get(_current_battle_target_continent, 1))), 1, 2)
-		for army_cnt in range(1, max_def + 1):
-			var d_icons = "🛡️".repeat(army_cnt)
-			var btn_def = _make_styled_button(
-				"%s دفاع با %s لشکر (%s تاس)" % [d_icons, _fa_digits(army_cnt), _fa_digits(army_cnt)],
-				Color(0.14, 0.42, 0.72),
-				Color(0.42, 0.78, 1.0),
-				25
-			)
-			var chosen_d = army_cnt
-			btn_def.pressed.connect(func():
-				AudioManager.sfx_button()
-				send_move(Commands.DefenderArmy, {"defender_army": chosen_d})
-			)
-			_action_buttons_row.add_child(btn_def)
-		if _to_int(_my_strategies.get("Cancel", 0)) > 0:
-			var btn_cancel = _make_styled_button(
-				"🕊️ کارت آتش‌بس (لغو کامل حمله)",
-				Color(0.16, 0.56, 0.32),
-				Color(0.45, 0.96, 0.62),
-				25
-			)
-			btn_cancel.pressed.connect(func():
-				AudioManager.sfx_button()
-				send_move(Commands.Cancel_Attack, {})
-			)
-			_action_buttons_row.add_child(btn_cancel)
-		if _to_int(_my_strategies.get("Canon", 0)) > 0:
-			var btn_canon = _make_styled_button(
-				"💥 کارت توپخانه (+۱ به تاس دفاع)",
-				Color(0.62, 0.34, 0.12),
-				Color(1.0, 0.76, 0.30),
-				24
-			)
-			btn_canon.pressed.connect(func():
-				AudioManager.sfx_button()
-				send_move(Commands.Use_Strategy, {"strategy": "Canon"})
-			)
-			_action_buttons_row.add_child(btn_canon)
-		return
-	# CASE 2: A 3D Strategy Card is currently selected for inspection/play
-	if not _selected_strategy_card.is_empty():
-		var s_key = _selected_strategy_card
-		var info: Dictionary = STRATEGY_INFO.get(s_key, {})
-		var s_name_fa = str(info.get("name_fa", s_key))
-		var s_desc = str(info.get("desc", ""))
-		var can_play = _can_play_strategy_now(s_key)
-		_step_badge_lbl.text = "🃏 کارت استراتژی: «%s»" % s_name_fa
-		_step_guide_lbl.text = s_desc
-		_action_title_lbl.text = "🃏 %s — %s" % [s_name_fa, s_desc]
-		if can_play:
-			var btn_play = _make_styled_button(
-				"⚡ اجرای کارت «%s»" % s_name_fa,
-				Color(0.16, 0.56, 0.28),
-				Color(0.45, 0.98, 0.60),
-				26
-			)
-			btn_play.pressed.connect(func():
-				AudioManager.sfx_button()
-				_execute_strategy_card(s_key)
-			)
-			_action_buttons_row.add_child(btn_play)
-		else:
-			var lbl_wait = Label.new()
-			lbl_wait.add_theme_font_override("font", _font_hekayat)
-			lbl_wait.add_theme_font_size_override("font_size", 23)
-			lbl_wait.add_theme_color_override("font_color", Color(1.0, 0.68, 0.42))
-			lbl_wait.text = "⏳ این کارت در این لحظه قابل اجرا نیست."
-			_action_buttons_row.add_child(lbl_wait)
-		var btn_back = _make_styled_button("بستن کارت", Color(0.42, 0.22, 0.18), Color(0.85, 0.55, 0.45), 24)
-		btn_back.pressed.connect(func():
-			AudioManager.sfx_tap()
-			_selected_strategy_card = ""
-			_refresh_all_visuals()
-		)
-		_action_buttons_row.add_child(btn_back)
-		return
-	# CASE 3: Not My Turn
-	if _active_turn != my_player_index:
-		var active_name = _get_player_name(_active_turn)
-		_step_badge_lbl.text = "⏳ نوبت %s" % active_name
-		_step_guide_lbl.text = "منتظر تصمیم %s باشید. می‌توانید کارت‌های حریفان یا کارت‌های سه‌بعدی خود را بررسی کنید." % active_name
-		_action_title_lbl.text = "⏳ نوبت فرماندهی %s است..." % active_name
-		var btn_inspect = _make_styled_button(
-			"👁️ مشاهده کارت‌های حریفان",
-			Color(0.18, 0.36, 0.62),
-			Color(0.48, 0.80, 1.0),
-			24
-		)
-		btn_inspect.pressed.connect(func():
-			AudioManager.sfx_button()
-			_open_enemy_cards_modal()
-		)
-		_action_buttons_row.add_child(btn_inspect)
-		return
-	# CASE 4: My Turn — Step 1: Rally Draw Phase ("Draw")
-	if _game_phase == "Draw":
-		_step_badge_lbl.text = "مرحله ۱ از ۳: دریافت ۲ کارت"
-		_step_guide_lbl.text = "ترکیب ۲ کارت ورودی این نوبت را از دکمه‌های زیر انتخاب کنید (یا روی دسته‌های کارت سه‌بعدی بزنید):"
-		_action_title_lbl.text = "🎴 دریافت نیرو — ۲ کارت خود را انتخاب کنید:"
-		var btn_d1 = _make_styled_button("🗺️+🗺️  ۲ کارت قاره", Color(0.14, 0.48, 0.30), Color(0.38, 0.92, 0.58), 25)
-		btn_d1.pressed.connect(func():
-			AudioManager.sfx_button()
-			send_move(Commands.Draw_Card, {"draw_type": 1})
-		)
-		_action_buttons_row.add_child(btn_d1)
-		var btn_d3 = _make_styled_button("🗺️+🃏  ۱ قاره + ۱ استراتژی", Color(0.52, 0.36, 0.12), Color(0.98, 0.78, 0.30), 25)
-		btn_d3.pressed.connect(func():
-			AudioManager.sfx_button()
-			send_move(Commands.Draw_Card, {"draw_type": 3})
-		)
-		_action_buttons_row.add_child(btn_d3)
-		var btn_d2 = _make_styled_button("🃏+🃏  ۲ کارت استراتژی", Color(0.46, 0.16, 0.34), Color(0.95, 0.45, 0.72), 25)
-		btn_d2.pressed.connect(func():
-			AudioManager.sfx_button()
-			send_move(Commands.Draw_Card, {"draw_type": 2})
-		)
-		_action_buttons_row.add_child(btn_d2)
-		return
-	# CASE 5: My Turn — Step 2: Attack / Strategy Phase ("Attack")
-	if _game_phase == "Attack":
-		_step_badge_lbl.text = "مرحله ۲ از ۳: انتخاب قاره و حمله"
-		if _selected_my_continent.is_empty():
-			_step_guide_lbl.text = "👇 روی یکی از «کارت‌های قاره سه‌بعدی» خود در پایین میز (یا قلعه قاره‌تان روی نقشه) بزنید تا قاره مهاجم انتخاب شود."
-			_action_title_lbl.text = "⚔️ قاره مهاجم را از روی کارت‌های سه‌بعدی خود انتخاب کنید یا نوبت را پایان دهید:"
-			var btn_enemies = _make_styled_button(
-				"👁️ کارت‌های حریفان",
-				Color(0.18, 0.36, 0.62),
-				Color(0.48, 0.80, 1.0),
-				24
-			)
-			btn_enemies.pressed.connect(func():
-				AudioManager.sfx_button()
-				_open_enemy_cards_modal()
-			)
-			_action_buttons_row.add_child(btn_enemies)
-			var btn_pass = _make_styled_button(
-				"⏭️ پایان نوبت (بررسی دریافت تاج 👑)",
-				Color(0.48, 0.28, 0.14),
-				Color(0.95, 0.68, 0.32),
-				25
-			)
-			btn_pass.pressed.connect(func():
-				AudioManager.sfx_button()
-				send_move(Commands.Pass_Turn, {})
-			)
-			_action_buttons_row.add_child(btn_pass)
+			selected_strategy_name = cid
+			selected_source_continent = ""
+			selected_target_continent = ""
+
+	_refresh_all_3d_and_hud()
+
+func _on_3d_continent_clicked(c_id: String) -> void:
+	if _is_my_turn() and game_state == "SelectAction" and selected_strategy_name == "Destroy":
+		if selected_target_player > 0:
+			var opp_c: Dictionary = players_state.get(selected_target_player, {}).get("continents", {})
+			if _to_int(opp_c.get(c_id, 0)) > 0:
+				selected_target_continent = c_id
+				_refresh_all_3d_and_hud()
+				return
+
+	if _is_my_turn() and game_state == "SelectAction":
+		selected_strategy_name = ""
+		selected_hand_card_idx = -1
+		var valid_targets = _get_valid_attack_target_continents(selected_source_continent)
+		if selected_source_continent != "" and valid_targets.has(c_id):
+			_select_target_continent_for_attack(c_id)
 			return
-		# A source continent IS selected -> show 1-tap attack buttons for every adjacent enemy continent!
-		var src_fa = CONTINENT_NAMES_FA.get(_selected_my_continent, _selected_my_continent)
-		var adj_list: Array = CONTINENT_ADJACENCY.get(_selected_my_continent, [])
-		_step_guide_lbl.text = "✅ قاره مهاجم: «%s» — حالا قاره هدف را روی نقشه سه‌بعدی یا از دکمه‌های زیر انتخاب کنید:" % src_fa
-		_action_title_lbl.text = "⚔️ حمله از «%s» به کدام قاره هم‌مرز حریف؟" % src_fa
-		var any_target_btn = false
-		for t_cont in adj_list:
-			var defs = _get_defenders_with_continent(t_cont)
-			for def_idx in defs:
-				any_target_btn = true
-				var def_conts: Dictionary = _all_continents[def_idx - 1]
-				var def_cnt = _to_int(def_conts.get(t_cont, 0))
-				var t_fa = CONTINENT_NAMES_FA.get(t_cont, t_cont)
-				var btn_atk = _make_styled_button(
-					"⚔️ حمله به %s (%s - %s کارت)" % [t_fa, _get_player_name(def_idx), _fa_digits(def_cnt)],
-					Color(0.68, 0.16, 0.18),
-					Color(1.0, 0.48, 0.42),
-					24
-				)
-				var chosen_src = _selected_my_continent
-				var chosen_tgt = t_cont
-				var chosen_def = def_idx
-				btn_atk.pressed.connect(func():
-					AudioManager.sfx_button()
-					send_move(Commands.Declare_Attack, {
-						"attacker_continent": chosen_src,
-						"target_continent": chosen_tgt,
-						"defender": chosen_def
-					})
-				)
-				_action_buttons_row.add_child(btn_atk)
-		if not any_target_btn:
-			var lbl_no = Label.new()
-			lbl_no.add_theme_font_override("font", _font_hekayat)
-			lbl_no.add_theme_font_size_override("font_size", 23)
-			lbl_no.add_theme_color_override("font_color", Color(1.0, 0.72, 0.42))
-			lbl_no.text = "هیچ حریفی در قاره‌های هم‌مرز «%s» کارت ندارد!" % src_fa
-			_action_buttons_row.add_child(lbl_no)
-		var btn_change = _make_styled_button("تغییر قاره", Color(0.32, 0.25, 0.20), Color(0.78, 0.65, 0.50), 23)
-		btn_change.pressed.connect(func():
-			AudioManager.sfx_tap()
-			_selected_my_continent = ""
-			_selected_target_continent = ""
-			_refresh_all_visuals()
-		)
-		_action_buttons_row.add_child(btn_change)
-		var btn_pass2 = _make_styled_button("⏭️ پایان نوبت", Color(0.48, 0.28, 0.14), Color(0.95, 0.68, 0.32), 23)
-		btn_pass2.pressed.connect(func():
-			AudioManager.sfx_button()
-			send_move(Commands.Pass_Turn, {})
-		)
-		_action_buttons_row.add_child(btn_pass2)
-		return
-	# CASE 6: My Turn — Step 3: Attacker Army Commitment ("AttackArmy")
-	if _game_phase == "AttackArmy":
-		_step_badge_lbl.text = "مرحله ۳ از ۳: اعزام لشکر و پرتاب تاس"
-		_step_guide_lbl.text = "مشخص کنید با چند لشکر (تاس حمله) از «%s» به «%s» حمله می‌کنید:" % [
-			CONTINENT_NAMES_FA.get(_current_battle_attacker_continent, _current_battle_attacker_continent),
-			CONTINENT_NAMES_FA.get(_current_battle_target_continent, _current_battle_target_continent)
-		]
-		_action_title_lbl.text = "🎲 تعداد لشکر (تاس‌های حمله) را انتخاب کنید:"
-		var my_conts = _get_my_continents_dict()
-		var max_atk = clampi(min(3, _to_int(my_conts.get(_current_battle_attacker_continent, 1))), 1, 3)
-		for army_cnt in range(1, max_atk + 1):
-			var dice_icons = "🎲".repeat(army_cnt)
-			var btn_army = _make_styled_button(
-				"%s حمله با %s لشکر (%s تاس)" % [dice_icons, _fa_digits(army_cnt), _fa_digits(army_cnt)],
-				Color(0.68, 0.16, 0.18),
-				Color(1.0, 0.50, 0.42),
-				25
-			)
-			var chosen_a = army_cnt
-			btn_army.pressed.connect(func():
-				AudioManager.sfx_button()
-				send_move(Commands.AttackerArmy, {"attacker_army": chosen_a})
-			)
-			_action_buttons_row.add_child(btn_army)
-		return
-	# CASE 7: Waiting for Defender to Respond
-	_step_badge_lbl.text = "🎲 در انتظار واکنش مدافع..."
-	_step_guide_lbl.text = "منتظر تصمیم دفاعی %s در برابر حمله شما..." % _get_player_name(_current_battle_defender)
-	_action_title_lbl.text = "⏳ در انتظار انتخاب لشکر مدافع (%s)..." % _get_player_name(_current_battle_defender)
+		elif _to_int(my_continents.get(c_id, 0)) > 0:
+			selected_source_continent = c_id
+			selected_target_continent = ""
+			_refresh_all_3d_and_hud()
+			return
+
+	_inspect_continent_summary(c_id)
+
+func _select_target_continent_for_attack(c_id: String) -> void:
+	selected_target_continent = c_id
+	var defs = _get_defenders_on_continent(c_id)
+	if not defs.is_empty():
+		selected_target_player = defs[0]
+	_refresh_all_3d_and_hud()
+
+func _on_3d_station_clicked(p_idx: int) -> void:
+	if _is_my_turn() and game_state == "SelectAction" and selected_strategy_name in ["Bomb", "Destroy", "Spy"]:
+		if p_idx != my_player_index:
+			selected_target_player = p_idx
+			_refresh_all_3d_and_hud()
+			return
+	_toggle_opponent_inspector(p_idx)
+
 # ==============================================================================
-# STRATEGY CARD EXECUTION & TARGET SELECTION
+# 7. COMMAND DISPATCHERS & GAME RULES HELPERS
 # ==============================================================================
-func _can_play_strategy_now(s_key: String) -> bool:
-	if _to_int(_my_strategies.get(s_key, 0)) <= 0:
-		return false
-	# Defender can play Cancel / Canon / Army during DefenderArmy / QuestArmy
-	if (_game_phase in ["DefenderArmy", "QuestArmy"]) and _current_battle_defender == my_player_index:
-		return s_key in ["Cancel", "Canon", "Army"]
-	if _active_turn != my_player_index:
-		return false
-	var info: Dictionary = STRATEGY_INFO.get(s_key, {})
-	var phases: Array = info.get("phases", [])
-	if not (_game_phase in phases):
-		return false
-	if s_key == "Target" and not _won_attack_this_turn:
-		return false
-	if s_key == "Insurgence" and not _eliminated_continent_this_turn:
-		return false
-	if s_key in ["Backup", "Army"] and _get_my_owned_continents_list().is_empty():
-		return false
-	return true
-func _execute_strategy_card(s_key: String) -> void:
-	_selected_strategy_card = ""
-	match s_key:
-		"Expand", "Destroy", "Target", "Canon":
-			send_move(Commands.Use_Strategy, {"strategy": s_key})
-		"Cancel":
-			send_move(Commands.Cancel_Attack, {})
-		"Backup", "Army":
-			_open_my_continent_picker_for_strategy(s_key)
-		"Bomb":
-			_open_enemy_continent_picker_for_bomb()
-		"Spy":
-			_open_enemy_player_picker_for_strategy("Spy", "🕵️ کارت جاسوس — انتخاب حریف", "یکی از حریفان را که کارت استراتژی دارد انتخاب کنید:")
-		"Insurgence":
-			_open_enemy_player_picker_for_strategy("Insurgence", "🔥 کارت کودتا — ربودن تاج", "حریفی که تاج سلطه دارد را انتخاب کنید:")
-	_refresh_all_visuals()
-func _open_my_continent_picker_for_strategy(s_key: String) -> void:
-	for ch in _target_modal_body.get_children():
-		ch.queue_free()
-	var s_info = STRATEGY_INFO.get(s_key, {})
-	_target_modal_title.text = "🃏 اجرای کارت «%s»" % s_info.get("name_fa", s_key)
-	_target_modal_sub.text = "یکی از قاره‌های خود را انتخاب کنید:"
-	var my_conts = _get_my_continents_dict()
-	for cont in ALL_CONTINENTS:
-		var cnt = _to_int(my_conts.get(cont, 0))
-		if cnt <= 0:
-			continue
-		var btn = _make_styled_button(
-			"🗺️ %s (دارای %s کارت)" % [CONTINENT_NAMES_FA.get(cont, cont), _fa_digits(cnt)],
-			CONTINENT_COLORS.get(cont, Color.BLUE).darkened(0.38),
-			CONTINENT_COLORS.get(cont, Color.BLUE).lightened(0.22),
-			26
-		)
-		var c_choice = cont
-		btn.pressed.connect(func():
-			AudioManager.sfx_button()
-			_target_modal_backdrop.visible = false
-			send_move(Commands.Use_Strategy, {"strategy": s_key, "continent": c_choice})
-		)
-		_target_modal_body.add_child(btn)
-	_target_modal_backdrop.visible = true
-func _open_enemy_continent_picker_for_bomb() -> void:
-	for ch in _target_modal_body.get_children():
-		ch.queue_free()
-	_target_modal_title.text = "💣 کارت بمباران — انتخاب قاره حریف"
-	_target_modal_sub.text = "قاره و حریف مورد نظر برای حذف ۱ کارت قاره را انتخاب کنید:"
-	var count_targets = 0
-	for p_idx in range(1, _player_count + 1):
-		if p_idx == my_player_index:
-			continue
-		var p_conts: Dictionary = _all_continents[p_idx - 1] if (p_idx - 1) < _all_continents.size() else {}
-		for cont in ALL_CONTINENTS:
-			var cnt = _to_int(p_conts.get(cont, 0))
-			if cnt <= 0:
-				continue
-			count_targets += 1
-			var btn = _make_styled_button(
-				"💣 %s — قاره %s (%s کارت)" % [_get_player_name(p_idx), CONTINENT_NAMES_FA.get(cont, cont), _fa_digits(cnt)],
-				Color(0.55, 0.16, 0.18),
-				Color(1.0, 0.48, 0.42),
-				25
-			)
-			var target_p = p_idx
-			var target_c = cont
-			btn.pressed.connect(func():
-				AudioManager.sfx_button()
-				_target_modal_backdrop.visible = false
-				send_move(Commands.Use_Strategy, {
-					"strategy": "Bomb",
-					"target_player": target_p,
-					"target_continent": target_c
-				})
-			)
-			_target_modal_body.add_child(btn)
-	if count_targets == 0:
-		show_hint("هیچ‌یک از حریفان کارت قاره‌ای در دست ندارند!")
+
+func _send_draw_card(draw_type: int) -> void:
+	if not _is_my_turn() or game_state != "Draw":
 		return
-	_target_modal_backdrop.visible = true
-func _open_enemy_player_picker_for_strategy(s_key: String, title_str: String, sub_str: String) -> void:
-	for ch in _target_modal_body.get_children():
-		ch.queue_free()
-	_target_modal_title.text = title_str
-	_target_modal_sub.text = sub_str
-	var valid_count = 0
-	for p_idx in range(1, _player_count + 1):
-		if p_idx == my_player_index:
-			continue
-		var s_cnt = _to_int(_strategy_counts[p_idx - 1]) if (p_idx - 1) < _strategy_counts.size() else 0
-		var t_cnt = _to_int(_tokens[p_idx - 1]) if (p_idx - 1) < _tokens.size() else 0
-		if s_key == "Spy" and s_cnt <= 0:
-			continue
-		if s_key == "Insurgence" and t_cnt <= 0:
-			continue
-		valid_count += 1
-		var btn = _make_styled_button(
-			"%s %s (👑%s | 🃏%s)" % [FACTION_DOTS.get(p_idx, ""), _get_player_name(p_idx), _fa_digits(t_cnt), _fa_digits(s_cnt)],
-			Color(0.24, 0.36, 0.58),
-			Color(0.52, 0.78, 1.0),
-			26
-		)
-		var chosen_p = p_idx
-		btn.pressed.connect(func():
-			AudioManager.sfx_button()
-			_target_modal_backdrop.visible = false
-			send_move(Commands.Use_Strategy, {"strategy": s_key, "target_player": chosen_p})
-		)
-		_target_modal_body.add_child(btn)
-	if valid_count == 0:
-		show_hint("هیچ حریفی شرایط اجرای این کارت را ندارد!")
+	AudioManager.sfx_button()
+	_first_3d_deck_picked = ""
+	send_move(Commands.Draw_Card, {"draw_type": draw_type})
+
+func _send_declare_attack() -> void:
+	if not _is_my_turn() or game_state != "SelectAction":
 		return
-	_target_modal_backdrop.visible = true
-# ==============================================================================
-# 3D BATTLE DICE ANIMATION & HELPERS
-# ==============================================================================
-func _animate_3d_battle_dice(a_dices: Array, d_dices: Array, a_losses: int, d_losses: int, captured: bool) -> void:
-	AudioManager.play_sound("dice")
-	for i in range(3):
-		var d_node = _attacker_dice_nodes[i]
-		if i < a_dices.size():
-			d_node.visible = true
-			var val = _to_int(a_dices[i])
-			var v_lbl = d_node.get_node_or_null("DieValueLabel") as Label3D
-			if is_instance_valid(v_lbl):
-				v_lbl.text = "🎲" + _fa_digits(val)
-			var tw = create_tween()
-			tw.tween_property(d_node, "position:y", 0.19, 0.14)
-			tw.parallel().tween_property(d_node, "rotation_degrees", Vector3(360.0, 180.0, 0.0), 0.26)
-			tw.tween_property(d_node, "position:y", 0.088, 0.14)
-		else:
-			d_node.visible = false
-	for i in range(2):
-		var d_node = _defender_dice_nodes[i]
-		if i < d_dices.size():
-			d_node.visible = true
-			var val = _to_int(d_dices[i])
-			var v_lbl = d_node.get_node_or_null("DieValueLabel") as Label3D
-			if is_instance_valid(v_lbl):
-				v_lbl.text = "🛡️" + _fa_digits(val)
-			var tw = create_tween()
-			tw.tween_property(d_node, "position:y", 0.18, 0.14)
-			tw.parallel().tween_property(d_node, "rotation_degrees", Vector3(-360.0, -180.0, 0.0), 0.26)
-			tw.tween_property(d_node, "position:y", 0.088, 0.14)
-		else:
-			d_node.visible = false
-	var a_str_arr: Array[String] = []
-	for v in a_dices:
-		a_str_arr.append(_fa_digits(v))
-	var d_str_arr: Array[String] = []
-	for v in d_dices:
-		d_str_arr.append(_fa_digits(v))
-	if is_instance_valid(_dice_result_lbl_3d):
-		_dice_result_lbl_3d.visible = true
-		_dice_result_lbl_3d.text = "⚔️ [%s] در برابر 🛡️ [%s]" % ["-".join(a_str_arr), "-".join(d_str_arr)]
-	var summary = "🎲 حمله [%s] مقابل دفاع [%s] ← تلفات مهاجم:%s | مدافع:%s" % [
-		" ، ".join(a_str_arr),
-		" ، ".join(d_str_arr),
-		_fa_digits(a_losses),
-		_fa_digits(d_losses)
-	]
-	if captured:
-		summary += " (🏳️ فتح قاره!)"
-	_set_battle_feed_text(summary)
-func _hide_battle_dice() -> void:
-	for d in _attacker_dice_nodes:
-		if is_instance_valid(d):
-			d.visible = false
-	for d in _defender_dice_nodes:
-		if is_instance_valid(d):
-			d.visible = false
-	if is_instance_valid(_dice_result_lbl_3d):
-		_dice_result_lbl_3d.visible = false
-func _get_my_continents_dict() -> Dictionary:
-	var p0 = clampi(my_player_index - 1, 0, _all_continents.size() - 1)
-	if p0 >= 0 and p0 < _all_continents.size() and typeof(_all_continents[p0]) == TYPE_DICTIONARY:
-		return _all_continents[p0]
-	return {}
-func _get_my_owned_continents_list() -> Array[String]:
+	if selected_source_continent == "" or selected_target_continent == "" or selected_target_player <= 0:
+		return
+	AudioManager.sfx_button()
+	send_move(Commands.Declare_Attack, {
+		"source_continent": selected_source_continent,
+		"target_continent": selected_target_continent,
+		"target_index": selected_target_player,
+	})
+
+func _send_use_strategy() -> void:
+	if not _is_my_turn() or game_state != "SelectAction" or selected_strategy_name == "":
+		return
+	var payload: Dictionary = {"strategy": selected_strategy_name}
+	var sm: Dictionary = Risk3DFactory.STRATEGY_META.get(selected_strategy_name, {})
+	if bool(sm.get("needs_target_player", false)):
+		if selected_target_player <= 0:
+			return
+		payload["target_index"] = selected_target_player
+	if bool(sm.get("needs_target_continent", false)):
+		if selected_target_continent == "":
+			return
+		payload["target_continent"] = selected_target_continent
+	AudioManager.sfx_button()
+	send_move(Commands.Use_Strategy, payload)
+
+func _get_valid_attack_target_continents(src_c: String) -> Array[String]:
 	var res: Array[String] = []
-	var d = _get_my_continents_dict()
-	for c in ALL_CONTINENTS:
-		if _to_int(d.get(c, 0)) > 0:
-			res.append(c)
+	if src_c == "" or _to_int(my_continents.get(src_c, 0)) <= 0:
+		return res
+
+	var candidates: Array = []
+	if expand_ignore_adjacency:
+		candidates = Risk3DFactory.CONTINENT_META.keys()
+	else:
+		candidates = Risk3DFactory.CONTINENT_ADJACENCY.get(src_c, []).duplicate()
+		if not candidates.has(src_c):
+			candidates.append(src_c)
+
+	for tc in candidates:
+		var c_str = str(tc)
+		if not _get_defenders_on_continent(c_str).is_empty():
+			res.append(c_str)
 	return res
-func _get_defenders_with_continent(cont: String) -> Array[int]:
-	var res: Array[int] = []
-	for p_i in range(_player_count):
-		var p_num = p_i + 1
-		if p_num == my_player_index:
+
+func _get_defenders_on_continent(c_id: String) -> Array[int]:
+	var defs: Array[int] = []
+	for p_idx in range(1, total_players + 1):
+		if p_idx == my_player_index:
 			continue
-		var d: Dictionary = _all_continents[p_i] if p_i < _all_continents.size() and typeof(_all_continents[p_i]) == TYPE_DICTIONARY else {}
-		if _to_int(d.get(cont, 0)) > 0:
-			res.append(p_num)
-	return res
-func _get_player_name(p_idx: int) -> String:
-	var p_data = GameManager.get_player_data_by_gamer_id(p_idx)
-	var p_name = str(p_data.get("name", p_data.get("username", "")))
-	if p_name.is_empty():
-		return "بازیکن %s" % _fa_digits(p_idx)
-	return p_name
-func _format_draw_feed(user_idx: int, drawn_continents: Array, strat_count: int) -> String:
-	var u_name = _get_player_name(user_idx)
+		var p_conts: Dictionary = players_state.get(p_idx, {}).get("continents", {})
+		if _to_int(p_conts.get(c_id, 0)) > 0:
+			defs.append(p_idx)
+	return defs
+
+func _get_valid_opponent_targets_for_strategy(strat: String) -> Array[int]:
+	var opps: Array[int] = []
+	for p_idx in range(1, total_players + 1):
+		if p_idx == my_player_index:
+			continue
+		var st = players_state.get(p_idx, {})
+		var c_sum = _sum_dict_values(st.get("continents", {}))
+		var s_sum = _to_int(st.get("strategies_count", 0))
+		if strat == "Destroy":
+			if c_sum > 0:
+				opps.append(p_idx)
+		else:
+			if c_sum > 0 or s_sum > 0:
+				opps.append(p_idx)
+	return opps
+
+func _count_my_strategy(strat_name: String) -> int:
+	var c: int = 0
+	for s in my_strategies:
+		if str(s) == strat_name:
+			c += 1
+	return c
+
+# ==============================================================================
+# 8. 3D DICE ROLLING & TABLETOP ANIMATIONS
+# ==============================================================================
+
+func _spawn_and_roll_3d_dice(atk_dice: Array, def_dice: Array) -> void:
+	if not _table_refs.has("dice_arena"):
+		return
+	var arena: Node3D = _table_refs["dice_arena"]
+	for d in _dice_nodes:
+		if is_instance_valid(d):
+			d.queue_free()
+	_dice_nodes.clear()
+
+	AudioManager.sfx_dice()
+
+	var total_atk = atk_dice.size()
+	for i in range(total_atk):
+		var val = _to_int(atk_dice[i], 1)
+		var die = Risk3DFactory.build_3d_die(true, _mats)
+		arena.add_child(die)
+		_dice_nodes.append(die)
+		var target_pos = Vector3(-0.042 + float(i) * 0.038, 0.032, -0.024)
+		_animate_single_3d_die(die, target_pos, val, float(i) * 0.06)
+
+	var total_def = def_dice.size()
+	for i in range(total_def):
+		var val = _to_int(def_dice[i], 1)
+		var die = Risk3DFactory.build_3d_die(false, _mats)
+		arena.add_child(die)
+		_dice_nodes.append(die)
+		var target_pos = Vector3(-0.024 + float(i) * 0.042, 0.032, 0.026)
+		_animate_single_3d_die(die, target_pos, val, 0.08 + float(i) * 0.06)
+
+func _animate_single_3d_die(die: Node3D, final_pos: Vector3, final_val: int, delay: float) -> void:
+	die.position = final_pos + Vector3(randf_range(-0.04, 0.04), 0.18, randf_range(-0.03, 0.03))
+	die.rotation_degrees = Vector3(randf_range(0, 360), randf_range(0, 360), randf_range(0, 360))
+	var final_rot = Risk3DFactory.get_die_rotation_for_value(final_val)
+	var tw = create_tween()
+	if delay > 0.0:
+		tw.tween_interval(delay)
+	tw.tween_property(die, "position", final_pos, 0.52).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(
+		die,
+		"rotation_degrees",
+		final_rot + Vector3(360.0, 360.0, 0.0),
+		0.50
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+func _animate_deck_draw_pulse(draw_type: int) -> void:
+	var targets: Array = []
+	if draw_type in [1, 3] and _table_refs.has("continent_deck"):
+		targets.append(_table_refs["continent_deck"]["stack"])
+	if draw_type in [2, 3] and _table_refs.has("strategy_deck"):
+		targets.append(_table_refs["strategy_deck"]["stack"])
+	for st in targets:
+		if is_instance_valid(st):
+			var tw = create_tween()
+			tw.tween_property(st, "scale", Vector3(1.14, 1.22, 1.14), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw.tween_property(st, "scale", Vector3.ONE, 0.18)
+
+func _process(delta: float) -> void:
+	_anim_clock += delta
+	_update_hud_visibility()
+
+	for c_id in _continent_nodes.keys():
+		var tok: Node3D = _continent_nodes[c_id]["token_node"]
+		if is_instance_valid(tok) and tok.visible:
+			tok.rotation.y = _anim_clock * 1.1
+			tok.position.y = 0.068 + sin(_anim_clock * 2.4) * 0.004
+
+# ==============================================================================
+# 9. INSPECTORS & CAMERA CONTROLS
+# ==============================================================================
+
+func _toggle_opponent_inspector(target_p: int = 0) -> void:
+	if not is_instance_valid(_inspector_panel):
+		return
+	if _inspector_panel.visible and target_p == 0:
+		_inspector_panel.visible = false
+		return
+
+	_inspector_panel.visible = true
+	_log_panel.visible = false
+	_inspector_title_lbl.text = "👁️ وضعیت ایستگاه‌ها و کارت‌های بازیکنان روی میز"
+
+	var lines: Array[String] = []
+	for p_idx in range(1, total_players + 1):
+		if target_p > 0 and p_idx != target_p:
+			continue
+		var st: Dictionary = players_state.get(p_idx, {"continents": {}, "strategies_count": 0, "tokens": []})
+		var p_name = _get_player_name(p_idx)
+		var tag = " (شما)" if p_idx == my_player_index else ""
+		var toks: Array = st.get("tokens", [])
+		var tok_names: Array[String] = []
+		for t in toks:
+			tok_names.append(_continent_fa(str(t)))
+		var tok_str = "، ".join(tok_names) if not tok_names.is_empty() else "ندارد"
+
+		var conts: Dictionary = st.get("continents", {})
+		var c_parts: Array[String] = []
+		for ck in conts.keys():
+			var cnt = _to_int(conts[ck])
+			if cnt > 0:
+				c_parts.append("%s (×%s)" % [_continent_fa(str(ck)), Risk3DFactory.fa_digits(cnt)])
+		var c_str = "، ".join(c_parts) if not c_parts.is_empty() else "بدون کارت قاره"
+		var s_cnt = _to_int(st.get("strategies_count", 0))
+
+		lines.append("🔹 %s%s:\n   👑 نشان‌های سلطه (%s/۲): %s\n   🗺️ کارت‌های قاره (رو): %s\n   🃏 کارت‌های استراتژی در دست (مخفی): %s کارت" % [
+			p_name, tag, Risk3DFactory.fa_digits(toks.size()), tok_str, c_str, Risk3DFactory.fa_digits(s_cnt)
+		])
+
+	_inspector_body_lbl.text = "\n\n".join(lines)
+
+func _inspect_continent_summary(c_id: String) -> void:
+	var c_fa = _continent_fa(c_id)
+	var has_tok = board_tokens.has(c_id)
 	var parts: Array[String] = []
-	for c in drawn_continents:
-		parts.append("قاره «%s»" % CONTINENT_NAMES_FA.get(str(c), str(c)))
-	if strat_count > 0:
-		parts.append("%s کارت استراتژی" % _fa_digits(strat_count))
-	if parts.is_empty():
-		return "🎴 %s کارت کشید." % u_name
-	return "🎴 %s دریافت کرد: %s" % [u_name, " + ".join(parts)]
-func _set_battle_feed_text(msg: String) -> void:
-	if is_instance_valid(_battle_feed_lbl):
-		_battle_feed_lbl.text = msg
-func show_hint(msg: String) -> void:
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
-	if is_instance_valid(hud) and hud.has_method("show_toast_hint"):
-		hud.show_toast_hint(msg)
-func _to_str(val: Variant, default_val: String = "") -> String:
-	if val == null:
-		return default_val
-	var res = str(val)
-	if res == "<null>" or res == "null":
-		return default_val
-	return res
+	for p_idx in range(1, total_players + 1):
+		var cnt = _to_int(players_state.get(p_idx, {}).get("continents", {}).get(c_id, 0))
+		if cnt > 0:
+			parts.append("%s: ×%s" % [_get_player_name(p_idx), Risk3DFactory.fa_digits(cnt)])
+	var garrison_str = " | ".join(parts) if not parts.is_empty() else "بدون نیرو"
+	var tok_str = "👑 نشان سلطه روی قاره موجود است" if has_tok else "نشان سلطه تصاحب شده است"
+	if is_instance_valid(_selection_info_lbl):
+		_selection_info_lbl.text = "🗺️ قاره «%s» — %s — نیروها: %s" % [c_fa, tok_str, garrison_str]
+
+func _toggle_battle_log_panel() -> void:
+	if is_instance_valid(_log_panel):
+		_log_panel.visible = not _log_panel.visible
+		if _log_panel.visible and is_instance_valid(_inspector_panel):
+			_inspector_panel.visible = false
+
+func _append_battle_log(entry: String) -> void:
+	_battle_logs.push_front(entry)
+	if _battle_logs.size() > 30:
+		_battle_logs.pop_back()
+	if not is_instance_valid(_log_vbox):
+		return
+	for ch in _log_vbox.get_children():
+		ch.queue_free()
+	for line in _battle_logs:
+		var l = Label.new()
+		l.text = line
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.add_theme_font_override("font", FontHekayat)
+		l.add_theme_font_size_override("font_size", 20)
+		l.add_theme_color_override("font_color", Color(0.95, 0.90, 0.80))
+		_log_vbox.add_child(l)
+
+func _show_combat_toast(text: String, duration: float = 3.8) -> void:
+	if not is_instance_valid(_combat_banner_panel) or not is_instance_valid(_combat_banner_lbl):
+		return
+	_combat_banner_lbl.text = text
+	_combat_banner_panel.visible = true
+	_combat_banner_panel.modulate.a = 1.0
+	var tw = create_tween()
+	tw.tween_interval(duration)
+	tw.tween_property(_combat_banner_panel, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(func():
+		if is_instance_valid(_combat_banner_panel):
+			_combat_banner_panel.visible = false
+	)
+
+func _on_toggle_camera_angle() -> void:
+	AudioManager.sfx_button()
+	var table = get_tree().get_first_node_in_group("cafe_table")
+	if table and table.has_method("toggle_top_down_view"):
+		table.toggle_top_down_view()
+
+func _on_reset_camera_pressed() -> void:
+	AudioManager.sfx_button()
+	var table = get_tree().get_first_node_in_group("cafe_table")
+	if table:
+		if table.has_method("set_top_down_view"):
+			table.set_top_down_view(false, 0.5)
+		if table.has_method("reset_camera_orbit"):
+			table.reset_camera_orbit()
+
+# ==============================================================================
+# 10. UTILITY HELPERS
+# ==============================================================================
+
+func _is_my_turn() -> bool:
+	return _active_turn == my_player_index
+
+func _get_player_name(p_idx: int) -> String:
+	var d = GameManager.get_player_data_by_gamer_id(p_idx)
+	var n = str(d.get("name", d.get("username", "")))
+	if n.strip_edges() == "":
+		return "فرمانده %s" % Risk3DFactory.fa_digits(p_idx)
+	return n
+
+func _continent_fa(c_id: String) -> String:
+	return Risk3DFactory.CONTINENT_META.get(c_id, {}).get("fa", c_id)
+
+func _phase_fa(st: String) -> String:
+	match st:
+		"Draw":
+			return "فاز کشیدن کارت"
+		"SelectAction":
+			return "فاز عملیات"
+		"AttackerArmy":
+			return "تقویت ارتش مهاجم"
+		"DefenderArmy":
+			return "تصمیم دفاعی"
+	return "در حال بازی"
+
+func _format_dice_list(arr: Array) -> String:
+	if arr.is_empty():
+		return "-"
+	var parts: Array[String] = []
+	for v in arr:
+		parts.append(Risk3DFactory.fa_digits(_to_int(v)))
+	return "[" + "، ".join(parts) + "]"
+
+func _sum_dict_values(d: Dictionary) -> int:
+	var total: int = 0
+	for k in d.keys():
+		total += _to_int(d[k])
+	return total
 
 func _to_int(val: Variant, default_val: int = 0) -> int:
 	if val == null:
@@ -2537,6 +1876,10 @@ func _to_int(val: Variant, default_val: int = 0) -> int:
 		return int(val)
 	if t == TYPE_BOOL:
 		return 1 if val else 0
+	if t == TYPE_ARRAY:
+		return (val as Array).size()
+	if t == TYPE_DICTIONARY:
+		return (val as Dictionary).size()
 	if t == TYPE_STRING or t == TYPE_STRING_NAME:
 		var st = str(val).strip_edges()
 		if st.is_valid_int():
@@ -2545,11 +1888,3 @@ func _to_int(val: Variant, default_val: int = 0) -> int:
 			return int(st.to_float())
 		return default_val
 	return default_val
-
-func _fa_digits(val: Variant) -> String:
-	var s = str(val)
-	var en = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-	var fa = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
-	for i in range(10):
-		s = s.replace(en[i], fa[i])
-	return s

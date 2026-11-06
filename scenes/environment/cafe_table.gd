@@ -325,12 +325,16 @@ func transition_to_board_view(duration: float = 1.2) -> void:
 	_kill_camera_tween()
 	is_transitioning = true
 	set_menu_showcase_visible(false)
-	is_top_down_view = true
+	var prefer_three_quarter: bool = false
+	if current_board_node and ("default_three_quarter_view" in current_board_node):
+		prefer_three_quarter = bool(current_board_node.default_three_quarter_view)
+	is_top_down_view = not prefer_three_quarter
 	if _dynamic_props_root and is_instance_valid(_dynamic_props_root):
-		_dynamic_props_root.visible = not is_top_down_view
+		var hide_props = (current_board_node and "default_three_quarter_view" in current_board_node and bool(current_board_node.default_three_quarter_view))
+		_dynamic_props_root.visible = (not is_top_down_view) and (not hide_props)
 	top_down_target_height = TOP_DOWN_HEIGHT_DEFAULT
 	top_down_current_height = TOP_DOWN_HEIGHT_DEFAULT
-	camera_mode_changed.emit(true)
+	camera_mode_changed.emit(is_top_down_view)
 	var use_pitch = PITCH_DEFAULT
 	var use_dist = ZOOM_DEFAULT
 	if current_board_node:
@@ -347,6 +351,20 @@ func transition_to_board_view(duration: float = 1.2) -> void:
 
 	var end_pos = Vector3(TARGET_FOCUS.x, TARGET_FOCUS.y + top_down_target_height, TARGET_FOCUS.z)
 	var end_rot_deg = Vector3(-90.0, 0.0, 0.0)
+	if not is_top_down_view:
+		var cos_pitch = cos(-target_pitch)
+		var sin_pitch = sin(-target_pitch)
+		end_pos = Vector3(
+			TARGET_FOCUS.x + target_distance * sin(target_yaw) * cos_pitch,
+			TARGET_FOCUS.y + target_distance * sin_pitch,
+			TARGET_FOCUS.z + target_distance * cos(target_yaw) * cos_pitch
+		)
+		var temp_cam = Camera3D.new()
+		add_child(temp_cam)
+		temp_cam.position = end_pos
+		temp_cam.look_at(TARGET_FOCUS, Vector3.UP)
+		end_rot_deg = temp_cam.rotation_degrees
+		temp_cam.queue_free()
 
 	_camera_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_camera_tween.tween_property(camera, "position", end_pos, duration)
@@ -418,7 +436,8 @@ func set_top_down_view(enabled: bool, duration: float = 0.55) -> void:
 	_kill_camera_tween()
 	is_top_down_view = enabled
 	if _dynamic_props_root and is_instance_valid(_dynamic_props_root):
-		_dynamic_props_root.visible = not is_top_down_view
+		var hide_props = (current_board_node and "default_three_quarter_view" in current_board_node and bool(current_board_node.default_three_quarter_view))
+		_dynamic_props_root.visible = (not is_top_down_view) and (not hide_props)
 	camera_mode_changed.emit(is_top_down_view)
 	is_transitioning = true
 
