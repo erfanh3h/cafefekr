@@ -37,6 +37,8 @@ signal mine_selected_received(payload: Dictionary)
 signal select_mine_correct_received(payload: Dictionary)
 signal select_mine_wrong_received(payload: Dictionary)
 signal player_score_received(payload: Dictionary)
+signal risk_event_received(cmd_id: String, payload: Dictionary)
+signal user_data_received(payload: Dictionary)
 signal classic_rank_match_ready(game_id: String, game_type: String)
 signal queue_accept_game_received()
 signal pre_game_started(pre_game_id: String, queuers: Array)
@@ -436,6 +438,31 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				turn_data_received.emit(payload)
 			turn_changed.emit(turn)
 
+		Commands.User_Data:
+			if typeof(payload) == TYPE_DICTIONARY:
+				if payload.has("index") and not payload.has("board"):
+					var p_idx = int(payload["index"])
+					if p_idx > 0:
+						GameManager.my_player_index = p_idx
+				user_data_received.emit(payload)
+				risk_event_received.emit(cmd_id, payload)
+		Commands.Draw_Card:
+			if typeof(payload) == TYPE_DICTIONARY:
+				if payload.has("turn"):
+					var d_turn = int(payload["turn"])
+					GameManager.current_turn = d_turn
+					turn_changed.emit(d_turn)
+				risk_event_received.emit(cmd_id, payload)
+		Commands.Draw_Result, Commands.Draw_Result_Private, Commands.Declare_Attack, \
+		Commands.AttackerArmy, Commands.DefenderArmy, Commands.QuestArmy, \
+		Commands.Attack, Commands.Pass_Turn, Commands.Strategy_Result, Commands.Cancel_Attack:
+			var r_payload: Dictionary = payload if typeof(payload) == TYPE_DICTIONARY else {"value": payload}
+			if cmd_id in [Commands.Declare_Attack, Commands.Attack, Commands.Pass_Turn, Commands.Strategy_Result, Commands.Cancel_Attack] and r_payload.has("turn"):
+				var next_t = int(r_payload["turn"])
+				if next_t > 0 and next_t != GameManager.current_turn:
+					GameManager.current_turn = next_t
+					turn_changed.emit(next_t)
+			risk_event_received.emit(cmd_id, r_payload)
 		Commands.Roll_Result:
 			roll_result_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
 
@@ -563,6 +590,10 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 						GameManager.current_turn = turn
 						print("[NetworkManager] Reconnect Current Turn: %d | My Index: %d | Is My Turn: %s" % [turn, GameManager.my_player_index, str(GameManager.is_my_turn)])
 						turn_changed.emit(turn)
+					elif g_data.has("turn"):
+						var t_num = int(g_data["turn"])
+						GameManager.current_turn = max(1, t_num)
+						turn_changed.emit(GameManager.current_turn)
 					elif g_data.has("current_round"):
 						var r_num = int(g_data["current_round"])
 						GameManager.current_round = max(1, r_num)

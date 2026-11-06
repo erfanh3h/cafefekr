@@ -1784,7 +1784,7 @@ func _on_surrender_requested() -> void:
 
 func _on_player_surrendered(gamer_id: int) -> void:
 
-	if GameManager.current_game_type == GameTypes.LUDO and GameManager.match_players.size() > 2 and gamer_id != GameManager.my_player_index:
+	if GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK] and GameManager.match_players.size() > 2 and gamer_id != GameManager.my_player_index:
 
 		var p_data = GameManager.get_player_data_by_gamer_id(gamer_id)
 
@@ -2086,6 +2086,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameTypes.YINSH
 		elif g_data.has("players_out_pieces") or g_data.has("start_board"):
 			inferred_type = GameTypes.LUDO
+		elif g_data.has("tokens") and g_data.has("continents") and g_data.has("strategies"):
+			inferred_type = GameTypes.RISK
 		elif g_data.has("rotation_played") or g_data.has("selection_played") or g_data.has("pawns"):
 			inferred_type = GameTypes.PENTAGO
 		elif g_data.has("player1_choices") or g_data.has("player2_choices"):

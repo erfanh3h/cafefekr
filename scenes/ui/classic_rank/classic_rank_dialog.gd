@@ -43,6 +43,7 @@ const AVAILABLE_GAMES: Array[String] = [
 	GameTypes.YINSH,
 	GameTypes.YATZY,
 	GameTypes.LUDO,
+	GameTypes.RISK,
 	GameTypes.BATTLESHIP,
 	GameTypes.FEKRBEKR,
 	GameTypes.RPC,

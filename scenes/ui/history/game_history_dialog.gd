@@ -190,6 +190,8 @@ static func _get_game_icon_texture(game_type: String) -> Texture2D:
 		norm = "ludo"
 	elif norm == "sudoku" or norm == "سودوکو":
 		norm = "sudoku"
+	elif norm == "risk" or norm == "riskstrike" or norm == "ریسک" or norm == "ریسکاسترایک":
+		norm = "risk"
 	
 	var png_path = "res://assets/images/games/%s.png" % norm
 	if ResourceLoader.exists(png_path):

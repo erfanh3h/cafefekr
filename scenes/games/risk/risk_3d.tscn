@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://risk3dscene01"]
+
+[ext_resource type="Script" path="res://scenes/games/risk/risk_3d.gd" id="1_risk_script"]
+
+[node name="Risk3D" type="Node3D"]
+script = ExtResource("1_risk_script")

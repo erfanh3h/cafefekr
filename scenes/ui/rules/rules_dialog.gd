@@ -43,6 +43,7 @@ const GAME_KEYS = [
 	{"key": "yatzy", "name": "یاتزی", "time": "۱۲ دقیقه", "diff": "متوسط"},
 	{"key": "battleship", "name": "نبرد کشتی", "time": "۱۵ دقیقه", "diff": "متوسط"},
 	{"key": "ludo", "name": "منچ", "time": "۱۵ الی ۲۵ دقیقه", "diff": "آسان"},
+	{"key": "risk", "name": "ریسک استرایک", "time": "۱۰ الی ۲۰ دقیقه", "diff": "سخت"},
 	{"key": "sudoku", "name": "سودوکو", "time": "۱۰ دقیقه", "diff": "سخت"},
 	{"key": "yinsh", "name": "یینش", "time": "۱۵ دقیقه", "diff": "سخت"},
 	{"key": "rpc", "name": "سنگ کاغذ قیچی", "time": "۲ دقیقه", "diff": "آسان"},

@@ -28,6 +28,8 @@ const YINSH_SCENE: String = "res://scenes/games/yinsh/yinsh_3d.tscn"
 const PENTAGO_SCENE: String = "res://scenes/games/pentago/pentago_3d.tscn"
 const LUDO_SCENE: String = "res://scenes/games/ludo/ludo_3d.tscn"
 const LUDO_TOP_HEADER_SCENE: String = "res://scenes/games/ludo/ludo_top_header.tscn"
+const RISK_SCENE: String = "res://scenes/games/risk/risk_3d.tscn"
+const RISK_TOP_HEADER_SCENE: String = "res://scenes/games/risk/risk_top_header.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -343,6 +345,21 @@ static var _registry: Dictionary = {
 		"min_players": 2,
 		"max_players": 4,
 		"is_3d": true
+	},
+	GameTypes.RISK: {
+		"id": GameTypes.RISK,
+		"name_fa": "ریسک استرایک",
+		"narrative": "در تالار فرماندهی، شش قاره چشم‌به‌راه تصرف‌اند؛ جایی که کارت‌های استراتژی و تاس‌های نبرد سرنوشت امپراتوری‌ها را رقم می‌زنند.",
+		"board_scene": RISK_SCENE,
+		"top_header_scene": RISK_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 30.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/risk.jpg",
+		"min_players": 2,
+		"max_players": 4,
+		"is_3d": true
 	}
 }
 
@@ -453,7 +470,7 @@ static func get_difficulty(game_type: String) -> String:
 		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY:
 			return "normal"
 		GameTypes.CHESS, GameTypes.CHECKERS, GameTypes.OTHELLO, GameTypes.BACKGAMMON, \
-		GameTypes.YINSH, GameTypes.MILL:
+		GameTypes.YINSH, GameTypes.MILL, GameTypes.RISK:
 			return "hard"
 		_:
 			return "normal"
