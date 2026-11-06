@@ -170,8 +170,8 @@ func _get_total_players() -> int:
 	return clampi(max(2, GameManager.match_players.size()), 2, 4)
 
 func _format_role_text(idx: int) -> String:
-	var c_cnt: int = int(_continent_counts[idx - 1]) if idx - 1 < _continent_counts.size() else 0
-	var s_cnt: int = int(_strategy_counts[idx - 1]) if idx - 1 < _strategy_counts.size() else 0
+	var c_cnt: int = _to_int(_continent_counts[idx - 1]) if idx - 1 < _continent_counts.size() else 0
+	var s_cnt: int = _to_int(_strategy_counts[idx - 1]) if idx - 1 < _strategy_counts.size() else 0
 	return "%s 🗺️%s 🃏%s" % [FACTION_DOTS.get(idx, ""), _fa_digits(c_cnt), _fa_digits(s_cnt)]
 
 func _apply_layout_for_player_count(total_players: int) -> void:
@@ -254,7 +254,7 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 			info["name"].text = p_name
 		if is_instance_valid(info["role"]):
 			info["role"].text = _format_role_text(idx)
-		var av_id = int(p_data.get("image", p_data.get("user_image", 0)))
+		var av_id = _to_int(p_data.get("image", p_data.get("user_image", 0)))
 		var tex = _get_cached_avatar(av_id)
 		if tex and is_instance_valid(info["avatar"]):
 			info["avatar"].texture = tex
@@ -274,11 +274,11 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 
 func update_risk_player_stats(token_counts: Array, continent_counts: Array, strategy_counts: Array, rank1: int = 0, rank2: int = 0) -> void:
 	for i in range(min(4, token_counts.size())):
-		_token_counts[i] = int(token_counts[i])
+		_token_counts[i] = _to_int(token_counts[i])
 	for i in range(min(4, continent_counts.size())):
-		_continent_counts[i] = int(continent_counts[i])
+		_continent_counts[i] = _to_int(continent_counts[i])
 	for i in range(min(4, strategy_counts.size())):
-		_strategy_counts[i] = int(strategy_counts[i])
+		_strategy_counts[i] = _to_int(strategy_counts[i])
 
 	var score_labels = {1: p1_score_lbl, 2: p2_score_lbl}
 	var role_labels = {1: p1_role_badge, 2: p2_role_badge}
@@ -290,7 +290,7 @@ func update_risk_player_stats(token_counts: Array, continent_counts: Array, stra
 	for idx in score_labels.keys():
 		var lbl: Label = score_labels[idx]
 		if is_instance_valid(lbl):
-			var t_cnt: int = int(_token_counts[idx - 1]) if idx - 1 < _token_counts.size() else 0
+			var t_cnt: int = _to_int(_token_counts[idx - 1]) if idx - 1 < _token_counts.size() else 0
 			if rank1 == idx:
 				lbl.text = "👑۲"
 			elif rank2 == idx and t_cnt < 2:
@@ -379,7 +379,7 @@ func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 		_timer_vfx_overlay.theme_color = base_col
 
 	if is_instance_valid(lbl_timer):
-		var sec_ceil = int(ceil(remaining_sec))
+		var sec_ceil = _to_int(ceil(remaining_sec))
 		if sec_ceil != _last_displayed_sec:
 			_last_displayed_sec = sec_ceil
 			lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % sec_ceil)
@@ -416,7 +416,7 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 	if not is_instance_valid(bubble) or not is_instance_valid(icon):
 		return
 
-	_reaction_seqs[user_index] = int(_reaction_seqs.get(user_index, 0)) + 1
+	_reaction_seqs[user_index] = _to_int(_reaction_seqs.get(user_index, 0)) + 1
 	var my_seq: int = _reaction_seqs[user_index]
 
 	var bubble_frame = bubble.get_node_or_null("BubbleFrame") as PanelContainer
@@ -490,7 +490,26 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 	tw.tween_property(bubble, "scale", Vector2.ONE, 0.1)
 
 	await get_tree().create_timer(hold_duration).timeout
-	if int(_reaction_seqs.get(user_index, 0)) != my_seq:
+	if _to_int(_reaction_seqs.get(user_index, 0)) != my_seq:
 		return
 	if is_instance_valid(bubble):
 		bubble.visible = false
+
+func _to_int(val: Variant, default_val: int = 0) -> int:
+	if val == null:
+		return default_val
+	var t = typeof(val)
+	if t == TYPE_INT:
+		return val
+	if t == TYPE_FLOAT:
+		return int(val)
+	if t == TYPE_BOOL:
+		return 1 if val else 0
+	if t == TYPE_STRING or t == TYPE_STRING_NAME:
+		var st = str(val).strip_edges()
+		if st.is_valid_int():
+			return st.to_int()
+		if st.is_valid_float():
+			return int(st.to_float())
+		return default_val
+	return default_val
