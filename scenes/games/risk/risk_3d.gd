@@ -13,7 +13,7 @@ const FontHekayat: Font = preload("res://assets/fonts/hekayat.ttf")
 # Camera Defaults for CafeTable (Elevated Three-Quarter Tabletop Perspective)
 @export var default_three_quarter_view: bool = true
 @export var camera_pitch: float = -0.89   # ~ -51 deg elevated three-quarter tabletop perspective
-@export var camera_distance: float = 3.12 # Frames the entire walnut table, central board, player stations & 3D card rack
+@export var camera_distance: float = 3.08 # Frames the entire walnut table, central board, player stations & 3D card rack
 
 # Shared 3D Meshes & PBR Materials
 var _mats: Dictionary = {}
@@ -80,8 +80,10 @@ const TAP_MAX_DRAG_PX: float = 16.0
 # Floating UI Layer & HUD References (Parented inside BaseGameHUD below StartGameOverlay)
 var _fallback_canvas: CanvasLayer = null
 var _hud_root: Control = null
+var _opponent_quick_row: HBoxContainer = null
 var _phase_banner_lbl: Label = null
 var _selection_info_lbl: Label = null
+var _sub_scroll: ScrollContainer = null
 var _action_buttons_row: HBoxContainer = null
 var _sub_options_row: HBoxContainer = null
 var _hand_filter_bar: HBoxContainer = null
@@ -200,19 +202,19 @@ func _build_3d_tabletop_world() -> void:
 	# 4. 3D Player Stations Around the Table
 	_rebuild_player_stations_3d()
 
-	# 5. Local Player's Tilted 3D Card Rack at the Near Edge of the Table
+	# 5. Local Player's Tilted 3D Card Rack (Positioned at z=+0.48 so it sits clearly above the command panel)
 	_hand_rack_root = Node3D.new()
 	_hand_rack_root.name = "LocalPlayerCardRack3D"
-	_hand_rack_root.position = Vector3(0.0, 0.085, 0.62)
-	_hand_rack_root.rotation_degrees = Vector3(32.0, 0.0, 0.0) # Tilted towards the elevated 3/4 camera for clear reading
+	_hand_rack_root.position = Vector3(0.0, 0.095, 0.48)
+	_hand_rack_root.rotation_degrees = Vector3(34.0, 0.0, 0.0) # Tilted towards the elevated 3/4 camera for clear reading
 	add_child(_hand_rack_root)
 
 	var ledge_mi = MeshInstance3D.new()
 	var ledge_bm = BoxMesh.new()
-	ledge_bm.size = Vector3(1.06, 0.014, 0.045)
+	ledge_bm.size = Vector3(1.10, 0.014, 0.045)
 	ledge_bm.material = _mats["mahogany"]
 	ledge_mi.mesh = ledge_bm
-	ledge_mi.position = Vector3(0.0, -0.048, 0.035)
+	ledge_mi.position = Vector3(0.0, -0.052, 0.036)
 	_hand_rack_root.add_child(ledge_mi)
 
 func _rebuild_player_stations_3d() -> void:
@@ -228,11 +230,11 @@ func _rebuild_player_stations_3d() -> void:
 		if idx != my_id:
 			opponents.append(idx)
 
-	# Local Player Station at Near Side of Table
+	# Local Player Station at Near Side of Central Board
 	_station_nodes[my_id] = Risk3DFactory.build_player_station(
 		self,
 		my_id,
-		Vector3(0.0, 0.026, 0.45),
+		Vector3(0.0, 0.026, 0.35),
 		0.0,
 		true,
 		_mats,
@@ -268,8 +270,14 @@ func _rebuild_player_stations_3d() -> void:
 		)
 
 # ==============================================================================
-# 2. MINIMAL FLOATING TABLETOP HUD
+# 2. RESTRUCTURED FLOATING TABLETOP HUD (ZERO OVERLAP WITH BOTTOM 8 BUTTONS)
 # ==============================================================================
+# Screen Layout (1080x1920):
+# - 0 .. 335px: BaseGameHUD TopHeader (Player cards, crowns, timer)
+# - 340 .. 412px: Top Tactical Strip (Opponent cards inspector, Battle log, Opponent chips)
+# - 415 .. 1445px: Unobstructed 3D Tabletop, Central Board, Stations & 3D Hand Rack
+# - 1450 .. 1750px: Elevated Command Panel (sits cleanly ABOVE BaseGameHUD's BottomBar!)
+# - 1766 .. 1920px: BaseGameHUD BottomBar (the 8 standard game scene buttons)
 
 func _build_floating_ui() -> void:
 	_fallback_canvas = CanvasLayer.new()
@@ -283,82 +291,87 @@ func _build_floating_ui() -> void:
 	_hud_root.visible = false
 	_fallback_canvas.add_child(_hud_root)
 
-	# Top-Right Compact Utility Buttons (Camera Angle Toggle, Reset View, Opponents Inspector, Battle Log)
-	var util_bar = HBoxContainer.new()
-	util_bar.anchor_left = 0.03
-	util_bar.anchor_right = 0.97
-	util_bar.anchor_top = 0.165
-	util_bar.anchor_bottom = 0.205
-	util_bar.alignment = BoxContainer.ALIGNMENT_END
-	util_bar.add_theme_constant_override("separation", 10)
-	util_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hud_root.add_child(util_bar)
+	# 1. Top Tactical Bar (Right below TopHeader: y = 340..410px)
+	var top_bar = HBoxContainer.new()
+	top_bar.anchor_left = 0.025
+	top_bar.anchor_right = 0.975
+	top_bar.anchor_top = 0.0
+	top_bar.anchor_bottom = 0.0
+	top_bar.offset_top = 340.0
+	top_bar.offset_bottom = 408.0
+	top_bar.alignment = BoxContainer.ALIGNMENT_END
+	top_bar.add_theme_constant_override("separation", 10)
+	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud_root.add_child(top_bar)
 
-	var btn_cam = _make_bronze_button("🎥 زاویه دوربین", Color(0.18, 0.13, 0.08, 0.90), Color(0.86, 0.70, 0.30), 20)
-	btn_cam.custom_minimum_size = Vector2(180, 48)
-	btn_cam.pressed.connect(_on_toggle_camera_angle)
-	util_bar.add_child(btn_cam)
+	var opp_scroll = ScrollContainer.new()
+	opp_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	opp_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	opp_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
+	top_bar.add_child(opp_scroll)
 
-	var btn_reset_cam = _make_bronze_button("🎯 نمای میز", Color(0.16, 0.12, 0.08, 0.90), Color(0.76, 0.60, 0.28), 20)
-	btn_reset_cam.custom_minimum_size = Vector2(135, 48)
-	btn_reset_cam.pressed.connect(_on_reset_camera_pressed)
-	util_bar.add_child(btn_reset_cam)
+	_opponent_quick_row = HBoxContainer.new()
+	_opponent_quick_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_opponent_quick_row.add_theme_constant_override("separation", 8)
+	opp_scroll.add_child(_opponent_quick_row)
 
-	var btn_opponents = _make_bronze_button("👁️ کارت‌های حریفان", Color(0.14, 0.22, 0.18, 0.92), Color(0.38, 0.86, 0.58), 20)
-	btn_opponents.custom_minimum_size = Vector2(200, 48)
+	var btn_opponents = _make_bronze_button("👁️ کارت‌های حریفان", Color(0.12, 0.26, 0.18, 0.95), Color(0.42, 0.92, 0.60), 26)
+	btn_opponents.custom_minimum_size = Vector2(220, 60)
 	btn_opponents.pressed.connect(func():
 		AudioManager.sfx_button()
 		_toggle_opponent_inspector(0)
 	)
-	util_bar.add_child(btn_opponents)
+	top_bar.add_child(btn_opponents)
 
-	var btn_log = _make_bronze_button("📜 گزارش نبرد", Color(0.18, 0.13, 0.09, 0.90), Color(0.84, 0.68, 0.32), 20)
-	btn_log.custom_minimum_size = Vector2(155, 48)
+	var btn_log = _make_bronze_button("📜 گزارش نبرد", Color(0.20, 0.14, 0.08, 0.95), Color(0.90, 0.72, 0.32), 26)
+	btn_log.custom_minimum_size = Vector2(180, 60)
 	btn_log.pressed.connect(func():
 		AudioManager.sfx_button()
 		_toggle_battle_log_panel()
 	)
-	util_bar.add_child(btn_log)
+	top_bar.add_child(btn_log)
 
-	# Floating Combat Resolution Toast Banner (Upper-Mid Screen, never blocks central board)
+	# 2. Floating Combat Resolution Toast Banner (y = 420..540px)
 	_combat_banner_panel = PanelContainer.new()
-	_combat_banner_panel.anchor_left = 0.08
-	_combat_banner_panel.anchor_right = 0.92
-	_combat_banner_panel.anchor_top = 0.215
-	_combat_banner_panel.anchor_bottom = 0.285
+	_combat_banner_panel.anchor_left = 0.05
+	_combat_banner_panel.anchor_right = 0.95
+	_combat_banner_panel.anchor_top = 0.0
+	_combat_banner_panel.anchor_bottom = 0.0
+	_combat_banner_panel.offset_top = 418.0
+	_combat_banner_panel.offset_bottom = 548.0
 	_combat_banner_panel.visible = false
 	_combat_banner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_combat_banner_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.12, 0.07, 0.05, 0.94), Color(0.95, 0.72, 0.24), 16, 2))
+	_combat_banner_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.12, 0.07, 0.05, 0.95), Color(0.98, 0.76, 0.26), 18, 3))
 	_hud_root.add_child(_combat_banner_panel)
 
 	_combat_banner_lbl = Label.new()
 	_combat_banner_lbl.add_theme_font_override("font", FontHekayat)
-	_combat_banner_lbl.add_theme_font_size_override("font_size", 24)
-	_combat_banner_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.84))
+	_combat_banner_lbl.add_theme_font_size_override("font_size", 30)
+	_combat_banner_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.86))
 	_combat_banner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_combat_banner_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_combat_banner_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_combat_banner_panel.add_child(_combat_banner_lbl)
 
-	# Opponent Station & Public Cards Inspector Modal
+	# 3. Opponent Station & Public Cards Inspector Modal
 	_inspector_panel = PanelContainer.new()
-	_inspector_panel.anchor_left = 0.06
-	_inspector_panel.anchor_right = 0.94
-	_inspector_panel.anchor_top = 0.29
-	_inspector_panel.anchor_bottom = 0.56
+	_inspector_panel.anchor_left = 0.05
+	_inspector_panel.anchor_right = 0.95
+	_inspector_panel.anchor_top = 0.24
+	_inspector_panel.anchor_bottom = 0.62
 	_inspector_panel.visible = false
-	_inspector_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.10, 0.07, 0.05, 0.96), Color(0.88, 0.72, 0.30), 18, 2))
+	_inspector_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.10, 0.07, 0.05, 0.97), Color(0.92, 0.74, 0.30), 20, 3))
 	_hud_root.add_child(_inspector_panel)
 
 	var insp_vbox = VBoxContainer.new()
-	insp_vbox.add_theme_constant_override("separation", 10)
+	insp_vbox.add_theme_constant_override("separation", 12)
 	_inspector_panel.add_child(insp_vbox)
 
 	var insp_header = HBoxContainer.new()
 	insp_vbox.add_child(insp_header)
 
-	var btn_close_insp = _make_bronze_button("✖ بستن", Color(0.36, 0.12, 0.12, 0.92), Color(0.95, 0.42, 0.42), 18)
-	btn_close_insp.custom_minimum_size = Vector2(110, 42)
+	var btn_close_insp = _make_bronze_button("✖ بستن", Color(0.40, 0.12, 0.12, 0.95), Color(0.98, 0.45, 0.45), 25)
+	btn_close_insp.custom_minimum_size = Vector2(130, 52)
 	btn_close_insp.pressed.connect(func(): _inspector_panel.visible = false)
 	insp_header.add_child(btn_close_insp)
 
@@ -366,38 +379,43 @@ func _build_floating_ui() -> void:
 	_inspector_title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_inspector_title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_inspector_title_lbl.add_theme_font_override("font", FontHekayat)
-	_inspector_title_lbl.add_theme_font_size_override("font_size", 25)
+	_inspector_title_lbl.add_theme_font_size_override("font_size", 32)
 	_inspector_title_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42))
 	insp_header.add_child(_inspector_title_lbl)
 
+	var insp_scroll = ScrollContainer.new()
+	insp_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	insp_vbox.add_child(insp_scroll)
+
 	_inspector_body_lbl = Label.new()
+	_inspector_body_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_inspector_body_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_inspector_body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_inspector_body_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	_inspector_body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_inspector_body_lbl.add_theme_font_override("font", FontHekayat)
-	_inspector_body_lbl.add_theme_font_size_override("font_size", 22)
-	_inspector_body_lbl.add_theme_color_override("font_color", Color(0.96, 0.93, 0.86))
-	insp_vbox.add_child(_inspector_body_lbl)
+	_inspector_body_lbl.add_theme_font_size_override("font_size", 28)
+	_inspector_body_lbl.add_theme_color_override("font_color", Color(0.98, 0.95, 0.88))
+	insp_scroll.add_child(_inspector_body_lbl)
 
-	# Battle Log Floating Drawer
+	# 4. Battle Log Floating Drawer
 	_log_panel = PanelContainer.new()
-	_log_panel.anchor_left = 0.08
-	_log_panel.anchor_right = 0.92
-	_log_panel.anchor_top = 0.30
-	_log_panel.anchor_bottom = 0.58
+	_log_panel.anchor_left = 0.05
+	_log_panel.anchor_right = 0.95
+	_log_panel.anchor_top = 0.24
+	_log_panel.anchor_bottom = 0.62
 	_log_panel.visible = false
-	_log_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.09, 0.06, 0.04, 0.95), Color(0.82, 0.66, 0.28), 18, 2))
+	_log_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.09, 0.06, 0.04, 0.97), Color(0.86, 0.70, 0.30), 20, 3))
 	_hud_root.add_child(_log_panel)
 
 	var log_outer = VBoxContainer.new()
-	log_outer.add_theme_constant_override("separation", 8)
+	log_outer.add_theme_constant_override("separation", 10)
 	_log_panel.add_child(log_outer)
 
 	var log_top = HBoxContainer.new()
 	log_outer.add_child(log_top)
-	var btn_close_log = _make_bronze_button("✖ بستن", Color(0.36, 0.12, 0.12, 0.92), Color(0.95, 0.42, 0.42), 18)
-	btn_close_log.custom_minimum_size = Vector2(110, 42)
+	var btn_close_log = _make_bronze_button("✖ بستن", Color(0.40, 0.12, 0.12, 0.95), Color(0.98, 0.45, 0.45), 25)
+	btn_close_log.custom_minimum_size = Vector2(130, 52)
 	btn_close_log.pressed.connect(func(): _log_panel.visible = false)
 	log_top.add_child(btn_close_log)
 
@@ -406,7 +424,7 @@ func _build_floating_ui() -> void:
 	log_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	log_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	log_title.add_theme_font_override("font", FontHekayat)
-	log_title.add_theme_font_size_override("font_size", 25)
+	log_title.add_theme_font_size_override("font_size", 32)
 	log_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42))
 	log_top.add_child(log_title)
 
@@ -415,53 +433,59 @@ func _build_floating_ui() -> void:
 	log_outer.add_child(scroll)
 	_log_vbox = VBoxContainer.new()
 	_log_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_log_vbox.add_theme_constant_override("separation", 6)
+	_log_vbox.add_theme_constant_override("separation", 8)
 	scroll.add_child(_log_vbox)
 
-	# Bottom Translucent Antique Bronze Tactical Command Bar (Docked cleanly at bottom 17% of screen)
-	var bottom_dock = PanelContainer.new()
-	bottom_dock.name = "BottomCommandDock"
-	bottom_dock.anchor_left = 0.025
-	bottom_dock.anchor_right = 0.975
-	bottom_dock.anchor_top = 0.815
-	bottom_dock.anchor_bottom = 0.985
-	bottom_dock.add_theme_stylebox_override("panel", _make_panel_style(Color(0.10, 0.07, 0.05, 0.91), Color(0.86, 0.68, 0.28), 20, 2))
-	_hud_root.add_child(bottom_dock)
+	# 5. Elevated Tactical Command Panel (Docked cleanly ABOVE the bottom 8 buttons of BaseGameHUD!)
+	# BaseGameHUD BottomBar occupies offset_top = -154.0 .. 0.0.
+	# Placing our command dock at offset_bottom = -168.0 guarantees ZERO overlap with the 8 bottom buttons!
+	var command_dock = PanelContainer.new()
+	command_dock.name = "ElevatedCommandDock"
+	command_dock.anchor_left = 0.02
+	command_dock.anchor_right = 0.98
+	command_dock.anchor_top = 1.0
+	command_dock.anchor_bottom = 1.0
+	command_dock.offset_top = -468.0
+	command_dock.offset_bottom = -168.0
+	command_dock.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	command_dock.add_theme_stylebox_override("panel", _make_panel_style(Color(0.10, 0.07, 0.05, 0.93), Color(0.88, 0.70, 0.30), 22, 3))
+	_hud_root.add_child(command_dock)
 
 	var dock_vbox = VBoxContainer.new()
 	dock_vbox.add_theme_constant_override("separation", 8)
-	bottom_dock.add_child(dock_vbox)
+	command_dock.add_child(dock_vbox)
 
 	_phase_banner_lbl = Label.new()
 	_phase_banner_lbl.add_theme_font_override("font", FontHekayat)
-	_phase_banner_lbl.add_theme_font_size_override("font_size", 25)
-	_phase_banner_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.56))
+	_phase_banner_lbl.add_theme_font_size_override("font_size", 32)
+	_phase_banner_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.52))
 	_phase_banner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_phase_banner_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dock_vbox.add_child(_phase_banner_lbl)
 
 	_selection_info_lbl = Label.new()
 	_selection_info_lbl.add_theme_font_override("font", FontHekayat)
-	_selection_info_lbl.add_theme_font_size_override("font_size", 20)
-	_selection_info_lbl.add_theme_color_override("font_color", Color(0.90, 0.86, 0.76))
+	_selection_info_lbl.add_theme_font_size_override("font_size", 26)
+	_selection_info_lbl.add_theme_color_override("font_color", Color(0.95, 0.91, 0.82))
 	_selection_info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_selection_info_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dock_vbox.add_child(_selection_info_lbl)
 
-	var sub_scroll = ScrollContainer.new()
-	sub_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	sub_scroll.custom_minimum_size = Vector2(0, 50)
-	dock_vbox.add_child(sub_scroll)
+	_sub_scroll = ScrollContainer.new()
+	_sub_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_sub_scroll.custom_minimum_size = Vector2(0, 58)
+	_sub_scroll.visible = false
+	dock_vbox.add_child(_sub_scroll)
 
 	_sub_options_row = HBoxContainer.new()
 	_sub_options_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_sub_options_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_sub_options_row.add_theme_constant_override("separation", 10)
-	sub_scroll.add_child(_sub_options_row)
+	_sub_scroll.add_child(_sub_options_row)
 
 	var act_scroll = ScrollContainer.new()
 	act_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	act_scroll.custom_minimum_size = Vector2(0, 58)
+	act_scroll.custom_minimum_size = Vector2(0, 66)
 	dock_vbox.add_child(act_scroll)
 
 	_action_buttons_row = HBoxContainer.new()
@@ -472,13 +496,13 @@ func _build_floating_ui() -> void:
 
 	var hand_scroll = ScrollContainer.new()
 	hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	hand_scroll.custom_minimum_size = Vector2(0, 50)
+	hand_scroll.custom_minimum_size = Vector2(0, 56)
 	dock_vbox.add_child(hand_scroll)
 
 	_hand_filter_bar = HBoxContainer.new()
 	_hand_filter_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_hand_filter_bar.alignment = BoxContainer.ALIGNMENT_CENTER
-	_hand_filter_bar.add_theme_constant_override("separation", 8)
+	_hand_filter_bar.add_theme_constant_override("separation", 10)
 	hand_scroll.add_child(_hand_filter_bar)
 
 func _make_panel_style(bg: Color, border: Color, radius: int = 16, border_w: int = 2) -> StyleBoxFlat:
@@ -487,21 +511,21 @@ func _make_panel_style(bg: Color, border: Color, radius: int = 16, border_w: int
 	sb.border_color = border
 	sb.set_border_width_all(border_w)
 	sb.set_corner_radius_all(radius)
-	sb.content_margin_left = 14
-	sb.content_margin_right = 14
-	sb.content_margin_top = 8
-	sb.content_margin_bottom = 8
+	sb.content_margin_left = 16
+	sb.content_margin_right = 16
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
 	sb.shadow_size = 10
 	return sb
 
-func _make_bronze_button(text: String, bg: Color, border: Color, font_sz: int = 22) -> Button:
+func _make_bronze_button(text: String, bg: Color, border: Color, font_sz: int = 26) -> Button:
 	var btn = Button.new()
 	btn.text = text
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.add_theme_font_override("font", FontHekayat)
 	btn.add_theme_font_size_override("font_size", font_sz)
-	btn.add_theme_color_override("font_color", Color(1.0, 0.96, 0.86))
+	btn.add_theme_color_override("font_color", Color(1.0, 0.97, 0.88))
 	var sb_norm = _make_panel_style(bg, border, 14, 2)
 	var sb_hover = _make_panel_style(bg.lightened(0.14), border.lightened(0.20), 14, 2)
 	var sb_press = _make_panel_style(bg.darkened(0.15), border, 14, 2)
@@ -980,8 +1004,8 @@ func _rebuild_3d_hand_rack() -> void:
 	if total_cards == 0:
 		return
 
-	var max_span: float = 0.88
-	var step_x: float = minf(0.128, max_span / float(max(1, total_cards - 1))) if total_cards > 1 else 0.0
+	var max_span: float = 0.92
+	var step_x: float = minf(0.140, max_span / float(max(1, total_cards - 1))) if total_cards > 1 else 0.0
 
 	for i in range(total_cards):
 		var item = entries[i]
@@ -1023,9 +1047,9 @@ func _update_3d_hand_selection_visuals() -> void:
 
 		var target_pos: Vector3 = c_ref["base_pos"]
 		if is_sel:
-			target_pos += Vector3(0.0, 0.036, 0.025)
+			target_pos += Vector3(0.0, 0.042, 0.028)
 		elif is_hov:
-			target_pos += Vector3(0.0, 0.018, 0.012)
+			target_pos += Vector3(0.0, 0.020, 0.014)
 		c_node.position = c_node.position.lerp(target_pos, 0.35)
 
 func _refresh_top_header() -> void:
@@ -1065,8 +1089,41 @@ func _refresh_floating_hud() -> void:
 		ch.queue_free()
 	for ch in _hand_filter_bar.get_children():
 		ch.queue_free()
+	if is_instance_valid(_opponent_quick_row):
+		for ch in _opponent_quick_row.get_children():
+			ch.queue_free()
 
-	# Populate Quick Hand Strip Mirror
+	# 1. Populate Top Opponent Quick Status Chips
+	if is_instance_valid(_opponent_quick_row):
+		for p_idx in range(1, total_players + 1):
+			if p_idx == my_player_index:
+				continue
+			var st: Dictionary = players_state.get(p_idx, {})
+			var t_cnt: int = (st.get("tokens", []) as Array).size()
+			var s_cnt: int = _to_int(st.get("strategies_count", 0))
+			var conts: Dictionary = st.get("continents", {})
+			var c_parts: Array[String] = []
+			for ck in conts.keys():
+				var cnt = _to_int(conts[ck])
+				if cnt > 0:
+					c_parts.append("%s×%s" % [_continent_fa(str(ck)), Risk3DFactory.fa_digits(cnt)])
+			var c_summary = "، ".join(c_parts) if not c_parts.is_empty() else "بدون قاره"
+			var f_col: Color = RiskMaterials.FACTION_COLORS.get(p_idx, Color.WHITE)
+			var opp_btn = _make_bronze_button(
+				"%s (👑%s | 🃏%s): %s" % [_get_player_name(p_idx), Risk3DFactory.fa_digits(t_cnt), Risk3DFactory.fa_digits(s_cnt), c_summary],
+				f_col.darkened(0.65),
+				f_col.lightened(0.20),
+				23
+			)
+			opp_btn.custom_minimum_size = Vector2(210, 56)
+			var target_p = p_idx
+			opp_btn.pressed.connect(func():
+				AudioManager.sfx_tap()
+				_on_3d_station_clicked(target_p)
+			)
+			_opponent_quick_row.add_child(opp_btn)
+
+	# 2. Populate Quick Hand Strip Mirror
 	for i in range(_hand_card_nodes.size()):
 		var c_ref: Dictionary = _hand_card_nodes[i]
 		var c_kind: String = c_ref["card_kind"]
@@ -1075,10 +1132,10 @@ func _refresh_floating_hud() -> void:
 		var title_fa: String = _continent_fa(c_id) if c_kind == "continent" else Risk3DFactory.STRATEGY_META.get(c_id, {}).get("fa", c_id)
 		var icon_prefix: String = "🗺️ " if c_kind == "continent" else "⚡ "
 		var is_sel: bool = (i == selected_hand_card_idx) or (c_kind == "continent" and c_id == selected_source_continent) or (c_kind == "strategy" and c_id == selected_strategy_name)
-		var bg_col = Color(0.28, 0.22, 0.08, 0.96) if is_sel else (Color(0.10, 0.24, 0.16, 0.90) if c_kind == "continent" else Color(0.26, 0.12, 0.14, 0.90))
-		var brd_col = Color(1.0, 0.88, 0.32) if is_sel else (Color(0.35, 0.82, 0.52) if c_kind == "continent" else Color(0.90, 0.42, 0.42))
-		var chip = _make_bronze_button("%s%s ×%s" % [icon_prefix, title_fa, Risk3DFactory.fa_digits(cnt)], bg_col, brd_col, 18)
-		chip.custom_minimum_size = Vector2(145, 42)
+		var bg_col = Color(0.32, 0.24, 0.08, 0.98) if is_sel else (Color(0.10, 0.26, 0.18, 0.92) if c_kind == "continent" else Color(0.28, 0.12, 0.14, 0.92))
+		var brd_col = Color(1.0, 0.88, 0.32) if is_sel else (Color(0.38, 0.86, 0.56) if c_kind == "continent" else Color(0.92, 0.45, 0.45))
+		var chip = _make_bronze_button("%s%s ×%s" % [icon_prefix, title_fa, Risk3DFactory.fa_digits(cnt)], bg_col, brd_col, 25)
+		chip.custom_minimum_size = Vector2(175, 52)
 		var card_idx = i
 		chip.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -1089,7 +1146,7 @@ func _refresh_floating_hud() -> void:
 	var def_id = _to_int(active_attack.get("defender_id", 0))
 	var atk_id = _to_int(active_attack.get("attacker_id", _active_turn))
 
-	# 1. DEFENDER PHASE (`DefenderArmy`)
+	# 3. DEFENDER PHASE (`DefenderArmy`)
 	if game_state == "DefenderArmy":
 		var src_fa = _continent_fa(str(active_attack.get("source_continent", "")))
 		var tgt_fa = _continent_fa(str(active_attack.get("target_continent", "")))
@@ -1104,11 +1161,11 @@ func _refresh_floating_hud() -> void:
 				var is_picked = (selected_army_commit == c)
 				var b = _make_bronze_button(
 					"🛡️ +%s ارتش کمکی" % Risk3DFactory.fa_digits(c),
-					Color(0.26, 0.20, 0.08, 0.95) if is_picked else Color(0.14, 0.12, 0.10, 0.90),
-					Color(1.0, 0.86, 0.28) if is_picked else Color(0.65, 0.55, 0.35),
-					19
+					Color(0.28, 0.22, 0.08, 0.96) if is_picked else Color(0.14, 0.12, 0.10, 0.92),
+					Color(1.0, 0.86, 0.28) if is_picked else Color(0.68, 0.56, 0.36),
+					26
 				)
-				b.custom_minimum_size = Vector2(150, 42)
+				b.custom_minimum_size = Vector2(180, 54)
 				var count_val = c
 				b.pressed.connect(func():
 					AudioManager.sfx_tap()
@@ -1119,11 +1176,11 @@ func _refresh_floating_hud() -> void:
 
 			var btn_defend = _make_bronze_button(
 				"🎲 تایید دفاع و پرتاب تاس (%s ارتش کمکی)" % Risk3DFactory.fa_digits(selected_army_commit),
-				Color(0.14, 0.38, 0.22, 0.96),
-				Color(0.42, 0.95, 0.58),
-				21
+				Color(0.14, 0.40, 0.22, 0.98),
+				Color(0.45, 0.96, 0.60),
+				28
 			)
-			btn_defend.custom_minimum_size = Vector2(310, 52)
+			btn_defend.custom_minimum_size = Vector2(360, 62)
 			btn_defend.pressed.connect(func():
 				AudioManager.sfx_button()
 				send_move(Commands.DefenderArmy, {"count": selected_army_commit})
@@ -1133,11 +1190,11 @@ func _refresh_floating_hud() -> void:
 			if has_cancel:
 				var btn_cancel_atk = _make_bronze_button(
 					"🛡️ لغو کامل حمله (کارت Cancel)",
-					Color(0.14, 0.34, 0.42, 0.96),
-					Color(0.36, 0.92, 0.98),
-					21
+					Color(0.14, 0.36, 0.44, 0.98),
+					Color(0.38, 0.94, 1.0),
+					28
 				)
-				btn_cancel_atk.custom_minimum_size = Vector2(270, 52)
+				btn_cancel_atk.custom_minimum_size = Vector2(310, 62)
 				btn_cancel_atk.pressed.connect(func():
 					AudioManager.sfx_button()
 					send_move(Commands.DefenderArmy, {"count": 0, "cancel": true})
@@ -1146,9 +1203,10 @@ func _refresh_floating_hud() -> void:
 		else:
 			_phase_banner_lbl.text = "⏳ در انتظار تصمیم دفاعی %s در قاره «%s»..." % [_get_player_name(def_id), tgt_fa]
 			_selection_info_lbl.text = "حمله از «%s» به «%s» در جریان است." % [src_fa, tgt_fa]
+		_update_sub_scroll_visibility()
 		return
 
-	# 2. ATTACKER REINFORCEMENT PHASE (`AttackerArmy`)
+	# 4. ATTACKER REINFORCEMENT PHASE (`AttackerArmy`)
 	if game_state == "AttackerArmy":
 		var src_fa = _continent_fa(str(active_attack.get("source_continent", "")))
 		var tgt_fa = _continent_fa(str(active_attack.get("target_continent", "")))
@@ -1162,11 +1220,11 @@ func _refresh_floating_hud() -> void:
 				var is_picked = (selected_army_commit == c)
 				var b = _make_bronze_button(
 					"⚔️ +%s ارتش کمکی" % Risk3DFactory.fa_digits(c),
-					Color(0.32, 0.16, 0.08, 0.95) if is_picked else Color(0.14, 0.12, 0.10, 0.90),
-					Color(1.0, 0.84, 0.28) if is_picked else Color(0.65, 0.55, 0.35),
-					19
+					Color(0.34, 0.16, 0.08, 0.96) if is_picked else Color(0.14, 0.12, 0.10, 0.92),
+					Color(1.0, 0.84, 0.28) if is_picked else Color(0.68, 0.56, 0.36),
+					26
 				)
-				b.custom_minimum_size = Vector2(150, 42)
+				b.custom_minimum_size = Vector2(180, 54)
 				var count_val = c
 				b.pressed.connect(func():
 					AudioManager.sfx_tap()
@@ -1177,11 +1235,11 @@ func _refresh_floating_hud() -> void:
 
 			var btn_commit = _make_bronze_button(
 				"⚔️ تایید ارتش مهاجم (+%s تاس)" % Risk3DFactory.fa_digits(selected_army_commit),
-				Color(0.46, 0.14, 0.14, 0.96),
-				Color(1.0, 0.48, 0.36),
-				21
+				Color(0.48, 0.14, 0.14, 0.98),
+				Color(1.0, 0.50, 0.38),
+				28
 			)
-			btn_commit.custom_minimum_size = Vector2(300, 52)
+			btn_commit.custom_minimum_size = Vector2(340, 62)
 			btn_commit.pressed.connect(func():
 				AudioManager.sfx_button()
 				send_move(Commands.AttackerArmy, {"count": selected_army_commit})
@@ -1191,11 +1249,11 @@ func _refresh_floating_hud() -> void:
 			if _count_my_strategy("Canon") > 0:
 				var btn_canon = _make_bronze_button(
 					"💣 شلیک توپخانه (+۱ به بالاترین تاس)",
-					Color(0.36, 0.26, 0.08, 0.96),
-					Color(1.0, 0.84, 0.26),
-					20
+					Color(0.38, 0.28, 0.08, 0.98),
+					Color(1.0, 0.86, 0.28),
+					27
 				)
-				btn_canon.custom_minimum_size = Vector2(280, 52)
+				btn_canon.custom_minimum_size = Vector2(320, 62)
 				btn_canon.pressed.connect(func():
 					AudioManager.sfx_button()
 					send_move(Commands.Use_Strategy, {"strategy": "Canon"})
@@ -1204,15 +1262,17 @@ func _refresh_floating_hud() -> void:
 		else:
 			_phase_banner_lbl.text = "⏳ %s در حال انتخاب ارتش کمکی برای حمله به «%s» است..." % [_get_player_name(atk_id), tgt_fa]
 			_selection_info_lbl.text = "حمله از «%s» به «%s»." % [src_fa, tgt_fa]
+		_update_sub_scroll_visibility()
 		return
 
-	# 3. NOT MY TURN
+	# 5. NOT MY TURN
 	if not _is_my_turn():
 		_phase_banner_lbl.text = "⏳ نوبت فرماندهی %s (%s)" % [_get_player_name(_active_turn), _phase_fa(game_state)]
 		_selection_info_lbl.text = "می‌توانید روی قاره‌ها یا ایستگاه سه بعدی حریفان روی میز کلیک کنید تا جزئیات آن‌ها را بررسی کنید."
+		_update_sub_scroll_visibility()
 		return
 
-	# 4. MY TURN - DRAW PHASE (`Draw`)
+	# 6. MY TURN - DRAW PHASE (`Draw`)
 	if game_state == "Draw":
 		_phase_banner_lbl.text = "🃏 فاز کشیدن کارت: روی دسته‌های کارت روی میز کلیک کنید یا ترکیب دلخواه را انتخاب نمایید:"
 		if not _first_3d_deck_picked.is_empty():
@@ -1221,23 +1281,24 @@ func _refresh_floating_hud() -> void:
 		else:
 			_selection_info_lbl.text = "هر نوبت با دریافت ۲ کارت آغاز می‌شود (قاره، استراتژی، یا ترکیبی)."
 
-		var btn_d1 = _make_bronze_button("🗺️ ۲ کارت قاره", Color(0.12, 0.34, 0.22, 0.96), Color(0.38, 0.92, 0.58), 21)
-		btn_d1.custom_minimum_size = Vector2(200, 52)
+		var btn_d1 = _make_bronze_button("🗺️ ۲ کارت قاره", Color(0.12, 0.36, 0.22, 0.98), Color(0.40, 0.94, 0.60), 28)
+		btn_d1.custom_minimum_size = Vector2(235, 62)
 		btn_d1.pressed.connect(func(): _send_draw_card(1))
 		_action_buttons_row.add_child(btn_d1)
 
-		var btn_d3 = _make_bronze_button("⚖️ ۱ قاره + ۱ استراتژی", Color(0.28, 0.22, 0.10, 0.96), Color(0.96, 0.82, 0.32), 21)
-		btn_d3.custom_minimum_size = Vector2(235, 52)
+		var btn_d3 = _make_bronze_button("⚖️ ۱ قاره + ۱ استراتژی", Color(0.30, 0.24, 0.10, 0.98), Color(0.98, 0.84, 0.34), 28)
+		btn_d3.custom_minimum_size = Vector2(280, 62)
 		btn_d3.pressed.connect(func(): _send_draw_card(3))
 		_action_buttons_row.add_child(btn_d3)
 
-		var btn_d2 = _make_bronze_button("⚡ ۲ کارت استراتژی", Color(0.38, 0.14, 0.16, 0.96), Color(0.95, 0.44, 0.44), 21)
-		btn_d2.custom_minimum_size = Vector2(215, 52)
+		var btn_d2 = _make_bronze_button("⚡ ۲ کارت استراتژی", Color(0.40, 0.14, 0.16, 0.98), Color(0.96, 0.46, 0.46), 28)
+		btn_d2.custom_minimum_size = Vector2(255, 62)
 		btn_d2.pressed.connect(func(): _send_draw_card(2))
 		_action_buttons_row.add_child(btn_d2)
+		_update_sub_scroll_visibility()
 		return
 
-	# 5. MY TURN - SELECT ACTION PHASE (`SelectAction`)
+	# 7. MY TURN - SELECT ACTION PHASE (`SelectAction`)
 	_phase_banner_lbl.text = "⚔️ فاز عملیات تاکتیکی: یک قاره خودی یا یک کارت استراتژی سه بعدی را انتخاب کنید"
 	if selected_strategy_name != "":
 		_populate_strategy_action_controls()
@@ -1246,13 +1307,18 @@ func _refresh_floating_hud() -> void:
 	else:
 		_selection_info_lbl.text = "برای حمله، روی یکی از قاره‌های خود روی تخته سه‌بعدی کلیک کنید؛ یا کارت استراتژی بازی کنید."
 
-	var btn_pass = _make_bronze_button("⏭️ پایان نوبت", Color(0.22, 0.16, 0.10, 0.95), Color(0.84, 0.68, 0.34), 21)
-	btn_pass.custom_minimum_size = Vector2(175, 52)
+	var btn_pass = _make_bronze_button("⏭️ پایان نوبت", Color(0.24, 0.18, 0.10, 0.96), Color(0.88, 0.70, 0.36), 28)
+	btn_pass.custom_minimum_size = Vector2(210, 62)
 	btn_pass.pressed.connect(func():
 		AudioManager.sfx_button()
 		send_move(Commands.Pass_Turn, {})
 	)
 	_action_buttons_row.add_child(btn_pass)
+	_update_sub_scroll_visibility()
+
+func _update_sub_scroll_visibility() -> void:
+	if is_instance_valid(_sub_scroll) and is_instance_valid(_sub_options_row):
+		_sub_scroll.visible = (_sub_options_row.get_child_count() > 0)
 
 func _populate_attack_action_controls() -> void:
 	var src_fa = _continent_fa(selected_source_continent)
@@ -1263,8 +1329,8 @@ func _populate_attack_action_controls() -> void:
 		]
 		var valid_targets = _get_valid_attack_target_continents(selected_source_continent)
 		for tc in valid_targets:
-			var b_t = _make_bronze_button("🎯 حمله به %s" % _continent_fa(tc), Color(0.14, 0.30, 0.20, 0.94), Color(0.42, 0.92, 0.58), 19)
-			b_t.custom_minimum_size = Vector2(165, 42)
+			var b_t = _make_bronze_button("🎯 حمله به %s" % _continent_fa(tc), Color(0.14, 0.32, 0.20, 0.96), Color(0.44, 0.94, 0.60), 26)
+			b_t.custom_minimum_size = Vector2(195, 54)
 			var target_c = tc
 			b_t.pressed.connect(func():
 				AudioManager.sfx_tap()
@@ -1291,11 +1357,11 @@ func _populate_attack_action_controls() -> void:
 			var is_sel = (selected_target_player == d_id)
 			var b_d = _make_bronze_button(
 				"🎯 %s" % _get_player_name(d_id),
-				Color(0.36, 0.16, 0.12, 0.95) if is_sel else Color(0.16, 0.12, 0.10, 0.90),
-				Color(1.0, 0.82, 0.28) if is_sel else Color(0.70, 0.55, 0.35),
-				19
+				Color(0.38, 0.16, 0.12, 0.96) if is_sel else Color(0.16, 0.12, 0.10, 0.92),
+				Color(1.0, 0.84, 0.28) if is_sel else Color(0.70, 0.56, 0.36),
+				26
 			)
-			b_d.custom_minimum_size = Vector2(150, 42)
+			b_d.custom_minimum_size = Vector2(180, 54)
 			var def_p = d_id
 			b_d.pressed.connect(func():
 				AudioManager.sfx_tap()
@@ -1306,11 +1372,11 @@ func _populate_attack_action_controls() -> void:
 
 	var btn_atk = _make_bronze_button(
 		"⚔️ اعلان حمله به «%s» (%s)" % [tgt_fa, _get_player_name(selected_target_player)],
-		Color(0.50, 0.14, 0.14, 0.98),
-		Color(1.0, 0.52, 0.36),
-		21
+		Color(0.52, 0.14, 0.14, 0.98),
+		Color(1.0, 0.54, 0.38),
+		28
 	)
-	btn_atk.custom_minimum_size = Vector2(300, 52)
+	btn_atk.custom_minimum_size = Vector2(340, 62)
 	btn_atk.pressed.connect(_send_declare_attack)
 	_action_buttons_row.add_child(btn_atk)
 
@@ -1339,11 +1405,11 @@ func _populate_strategy_action_controls() -> void:
 			var is_sel = (selected_target_player == op_id)
 			var b_op = _make_bronze_button(
 				"🎯 حریف: %s" % _get_player_name(op_id),
-				Color(0.36, 0.16, 0.12, 0.95) if is_sel else Color(0.16, 0.12, 0.10, 0.90),
+				Color(0.38, 0.16, 0.12, 0.96) if is_sel else Color(0.16, 0.12, 0.10, 0.92),
 				Color(1.0, 0.84, 0.28) if is_sel else Color(0.68, 0.52, 0.32),
-				19
+				26
 			)
-			b_op.custom_minimum_size = Vector2(155, 42)
+			b_op.custom_minimum_size = Vector2(185, 54)
 			var target_p = op_id
 			b_op.pressed.connect(func():
 				AudioManager.sfx_tap()
@@ -1370,11 +1436,11 @@ func _populate_strategy_action_controls() -> void:
 			var is_c_sel = (selected_target_continent == ck)
 			var b_c = _make_bronze_button(
 				"🗺️ %s" % _continent_fa(ck),
-				Color(0.32, 0.14, 0.20, 0.95) if is_c_sel else Color(0.14, 0.14, 0.14, 0.90),
+				Color(0.34, 0.14, 0.20, 0.96) if is_c_sel else Color(0.14, 0.14, 0.14, 0.92),
 				Color(1.0, 0.78, 0.30) if is_c_sel else Color(0.60, 0.50, 0.35),
-				19
+				26
 			)
-			b_c.custom_minimum_size = Vector2(145, 42)
+			b_c.custom_minimum_size = Vector2(175, 54)
 			var c_val = ck
 			b_c.pressed.connect(func():
 				AudioManager.sfx_tap()
@@ -1385,11 +1451,11 @@ func _populate_strategy_action_controls() -> void:
 
 	var btn_play = _make_bronze_button(
 		"⚡ اجرای کارت «%s»" % strat_fa,
-		Color(0.16, 0.38, 0.24, 0.96),
-		Color(0.45, 0.96, 0.62),
-		21
+		Color(0.16, 0.40, 0.24, 0.98),
+		Color(0.46, 0.96, 0.62),
+		28
 	)
-	btn_play.custom_minimum_size = Vector2(250, 52)
+	btn_play.custom_minimum_size = Vector2(290, 62)
 	btn_play.pressed.connect(_send_use_strategy)
 	_action_buttons_row.add_child(btn_play)
 
@@ -1712,10 +1778,10 @@ func _process(delta: float) -> void:
 		var tok: Node3D = _continent_nodes[c_id]["token_node"]
 		if is_instance_valid(tok) and tok.visible:
 			tok.rotation.y = _anim_clock * 1.1
-			tok.position.y = 0.068 + sin(_anim_clock * 2.4) * 0.004
+			tok.position.y = 0.070 + sin(_anim_clock * 2.4) * 0.004
 
 # ==============================================================================
-# 9. INSPECTORS & CAMERA CONTROLS
+# 9. INSPECTORS & LOG PANEL
 # ==============================================================================
 
 func _toggle_opponent_inspector(target_p: int = 0) -> void:
@@ -1790,8 +1856,8 @@ func _append_battle_log(entry: String) -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.add_theme_font_override("font", FontHekayat)
-		l.add_theme_font_size_override("font_size", 20)
-		l.add_theme_color_override("font_color", Color(0.95, 0.90, 0.80))
+		l.add_theme_font_size_override("font_size", 26)
+		l.add_theme_color_override("font_color", Color(0.96, 0.92, 0.82))
 		_log_vbox.add_child(l)
 
 func _show_combat_toast(text: String, duration: float = 3.8) -> void:
@@ -1807,21 +1873,6 @@ func _show_combat_toast(text: String, duration: float = 3.8) -> void:
 		if is_instance_valid(_combat_banner_panel):
 			_combat_banner_panel.visible = false
 	)
-
-func _on_toggle_camera_angle() -> void:
-	AudioManager.sfx_button()
-	var table = get_tree().get_first_node_in_group("cafe_table")
-	if table and table.has_method("toggle_top_down_view"):
-		table.toggle_top_down_view()
-
-func _on_reset_camera_pressed() -> void:
-	AudioManager.sfx_button()
-	var table = get_tree().get_first_node_in_group("cafe_table")
-	if table:
-		if table.has_method("set_top_down_view"):
-			table.set_top_down_view(false, 0.5)
-		if table.has_method("reset_camera_orbit"):
-			table.reset_camera_orbit()
 
 # ==============================================================================
 # 10. UTILITY HELPERS

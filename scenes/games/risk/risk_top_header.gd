@@ -213,10 +213,10 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			av_c.custom_minimum_size = Vector2(av_sz, av_sz)
 		var nm: Label = item["name"]
 		if is_instance_valid(nm):
-			nm.add_theme_font_size_override("font_size", 22 if total_players == 4 else (25 if total_players == 3 else 32))
+			nm.add_theme_font_size_override("font_size", 26 if total_players == 4 else (30 if total_players == 3 else 36))
 		var rl: Label = item["role"]
 		if is_instance_valid(rl):
-			rl.add_theme_font_size_override("font_size", 17 if is_compact else 21)
+			rl.add_theme_font_size_override("font_size", 22 if is_compact else 26)
 			rl.text = _format_role_text(idx)
 		var sb: PanelContainer = item["score_b"]
 		if is_instance_valid(sb):
@@ -225,7 +225,7 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			sb.custom_minimum_size = Vector2(b_sz, b_sz)
 		var sc: Label = item["score"]
 		if is_instance_valid(sc):
-			sc.add_theme_font_size_override("font_size", 22 if is_compact else 28)
+			sc.add_theme_font_size_override("font_size", 26 if is_compact else 34)
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_my_player_index = my_idx
