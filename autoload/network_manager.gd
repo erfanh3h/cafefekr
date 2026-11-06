@@ -440,16 +440,16 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 
 		Commands.User_Data:
 			if typeof(payload) == TYPE_DICTIONARY:
-				if payload.has("index") and not payload.has("board"):
-					var p_idx = int(payload["index"])
+				if payload.has("index") and payload["index"] != null and not payload.has("board"):
+					var p_idx = int(payload["index"]) if typeof(payload["index"]) in [TYPE_INT, TYPE_FLOAT] else str(payload["index"]).to_int()
 					if p_idx > 0:
 						GameManager.my_player_index = p_idx
 				user_data_received.emit(payload)
 				risk_event_received.emit(cmd_id, payload)
 		Commands.Draw_Card:
 			if typeof(payload) == TYPE_DICTIONARY:
-				if payload.has("turn"):
-					var d_turn = int(payload["turn"])
+				if payload.has("turn") and payload["turn"] != null:
+					var d_turn = int(payload["turn"]) if typeof(payload["turn"]) in [TYPE_INT, TYPE_FLOAT] else str(payload["turn"]).to_int()
 					GameManager.current_turn = d_turn
 					turn_changed.emit(d_turn)
 				risk_event_received.emit(cmd_id, payload)
@@ -457,8 +457,8 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.AttackerArmy, Commands.DefenderArmy, Commands.QuestArmy, \
 		Commands.Attack, Commands.Pass_Turn, Commands.Strategy_Result, Commands.Cancel_Attack:
 			var r_payload: Dictionary = payload if typeof(payload) == TYPE_DICTIONARY else {"value": payload}
-			if cmd_id in [Commands.Declare_Attack, Commands.Attack, Commands.Pass_Turn, Commands.Strategy_Result, Commands.Cancel_Attack] and r_payload.has("turn"):
-				var next_t = int(r_payload["turn"])
+			if cmd_id in [Commands.Declare_Attack, Commands.Attack, Commands.Pass_Turn, Commands.Strategy_Result, Commands.Cancel_Attack] and r_payload.has("turn") and r_payload["turn"] != null:
+				var next_t = int(r_payload["turn"]) if typeof(r_payload["turn"]) in [TYPE_INT, TYPE_FLOAT] else str(r_payload["turn"]).to_int()
 				if next_t > 0 and next_t != GameManager.current_turn:
 					GameManager.current_turn = next_t
 					turn_changed.emit(next_t)
