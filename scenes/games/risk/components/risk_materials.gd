@@ -17,9 +17,12 @@ const CONTINENT_COLORS: Dictionary = {
 const FACTION_COLORS: Dictionary = {
 	1: Color(0.90, 0.20, 0.24), # Player 1: Imperial Crimson
 	2: Color(0.20, 0.58, 0.96), # Player 2: Royal Sapphire
-	3: Color(0.18, 0.80, 0.40), # Player 3: EmeraldJade
+	3: Color(0.18, 0.80, 0.40), # Player 3: Emerald Jade
 	4: Color(0.96, 0.76, 0.18)  # Player 4: Sovereign Gold
 }
+
+static var _continent_mat_cache: Dictionary = {}
+static var _faction_mat_cache: Dictionary = {}
 
 static func create_palette() -> Dictionary:
 	var mats: Dictionary = {}
@@ -37,6 +40,7 @@ static func create_palette() -> Dictionary:
 	dark_wood.roughness = 0.42
 	dark_wood.metallic = 0.05
 	mats["dark_wood"] = dark_wood
+	mats["mahogany"] = dark_wood
 
 	# Dark Emerald Green Baize Velvet (Central Board Bed)
 	var emerald_velvet = StandardMaterial3D.new()
@@ -147,3 +151,30 @@ static func create_palette() -> Dictionary:
 	mats["pip_ivory"] = pip_ivory
 
 	return mats
+
+static func get_continent_material(c_id: String) -> StandardMaterial3D:
+	if _continent_mat_cache.has(c_id) and is_instance_valid(_continent_mat_cache[c_id]):
+		return _continent_mat_cache[c_id]
+	var col: Color = CONTINENT_COLORS.get(c_id, Color(0.28, 0.56, 0.42))
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = col
+	mat.roughness = 0.44
+	mat.metallic = 0.18
+	_continent_mat_cache[c_id] = mat
+	return mat
+
+static func get_faction_material(p_idx: int, is_active: bool = false) -> StandardMaterial3D:
+	var cache_key = "%d_%s" % [p_idx, "act" if is_active else "idl"]
+	if _faction_mat_cache.has(cache_key) and is_instance_valid(_faction_mat_cache[cache_key]):
+		return _faction_mat_cache[cache_key]
+	var col: Color = FACTION_COLORS.get(p_idx, Color(0.85, 0.85, 0.85))
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = col.lightened(0.12) if is_active else col
+	mat.metallic = 0.72
+	mat.roughness = 0.22 if is_active else 0.28
+	if is_active:
+		mat.emission_enabled = true
+		mat.emission = col
+		mat.emission_energy_multiplier = 0.55
+	_faction_mat_cache[cache_key] = mat
+	return mat
