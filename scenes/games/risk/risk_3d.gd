@@ -2198,7 +2198,7 @@ func _animate_deck_draw_pulse(draw_type: int) -> void:
 
 
 func _animate_returned_continent_cards_to_table(from_continent_id: String, count: int) -> void:
-	if count <= 0 or not is_instance_valid(_board_root):
+	if count <= 0 or not is_inside_tree():
 		return
 	var start_pos := Vector3(0.0, 0.08, 0.0)
 	if from_continent_id != "" and _continent_nodes.has(from_continent_id):
@@ -2225,7 +2225,7 @@ func _animate_returned_continent_cards_to_table(from_continent_id: String, count
 		rim_mesh.material_override = _mats.get("gold", null)
 		fly_card.add_child(rim_mesh)
 
-		_board_root.add_child(fly_card)
+		add_child(fly_card)
 		fly_card.position = start_pos + Vector3(float(i) * 0.015, float(i) * 0.008, 0.0)
 		var mid_pos = (start_pos + end_pos) * 0.5 + Vector3(0.0, 0.18, 0.0)
 		var delay_s: float = float(i) * 0.09
@@ -2241,7 +2241,7 @@ func _animate_returned_continent_cards_to_table(from_continent_id: String, count
 			if is_instance_valid(fly_card):
 				fly_card.queue_free()
 			_animate_deck_draw_pulse(1)
-			_sync_3d_board_from_state()
+			_refresh_3d_decks()
 		)
 
 func _process(delta: float) -> void:
