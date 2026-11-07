@@ -2,56 +2,57 @@ class_name Risk3DFactory
 extends RefCounted
 
 # ==============================================================================
-# RISK STRIKE — PREMIUM 3D TABLETOP & BOARD COMPONENT BUILDER
-# Clean, spacious, non-overlapping 3D architecture for mobile portrait view
+# RISK STRIKE — SIMPLIFIED, HIGH-CLARITY 3D TABLETOP & REGION BUILDER
+# Design Principle: ONE REGION = ONE CLEAR VISUAL UNIT
 # ==============================================================================
 
 const CONTINENT_META: Dictionary = {
 	"NorthAmerica": {
 		"fa": "آمریکای شمالی",
-		"pos": Vector3(-0.37, 0.048, -0.23),
-		"radius": 0.136,
+		"pos": Vector3(-0.39, 0.048, -0.22),
+		"radius": 0.124,
 		"domination": 6,
 	},
 	"Europe": {
 		"fa": "اروپا",
-		"pos": Vector3(0.00, 0.048, -0.25),
-		"radius": 0.132,
+		"pos": Vector3(0.00, 0.048, -0.24),
+		"radius": 0.122,
 		"domination": 5,
 	},
 	"Asia": {
 		"fa": "آسیا",
-		"pos": Vector3(0.37, 0.048, -0.23),
-		"radius": 0.136,
+		"pos": Vector3(0.39, 0.048, -0.22),
+		"radius": 0.124,
 		"domination": 8,
 	},
 	"SouthAmerica": {
 		"fa": "آمریکای جنوبی",
-		"pos": Vector3(-0.36, 0.048, 0.15),
-		"radius": 0.132,
+		"pos": Vector3(-0.38, 0.048, 0.17),
+		"radius": 0.122,
 		"domination": 3,
 	},
 	"Africa": {
 		"fa": "آفریقا",
-		"pos": Vector3(0.00, 0.048, 0.17),
-		"radius": 0.132,
+		"pos": Vector3(0.00, 0.048, 0.19),
+		"radius": 0.122,
 		"domination": 4,
 	},
 	"Australia": {
 		"fa": "اقیانوسیه",
-		"pos": Vector3(0.36, 0.048, 0.15),
-		"radius": 0.132,
+		"pos": Vector3(0.38, 0.048, 0.17),
+		"radius": 0.122,
 		"domination": 3,
 	},
 }
 
+# Exact original backend adjacency relationships (Entities/Games/Risk/Handlers/risk_attack_handler.py)
 const CONTINENT_ADJACENCY: Dictionary = {
 	"NorthAmerica": ["SouthAmerica", "Europe", "Asia"],
 	"SouthAmerica": ["NorthAmerica", "Africa"],
 	"Europe": ["NorthAmerica", "Africa", "Asia"],
-	"Africa": ["SouthAmerica", "Europe", "Asia", "Australia"],
+	"Africa": ["SouthAmerica", "Europe", "Asia"],
 	"Asia": ["NorthAmerica", "Europe", "Africa", "Australia"],
-	"Australia": ["Asia", "Africa"],
+	"Australia": ["Asia"],
 }
 
 const STRATEGY_META: Dictionary = {
@@ -162,7 +163,7 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 	table_slab.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(table_slab)
 
-	# 2. Central Raised Physical Game Board (Walnut & Mahogany Plinth + Emerald Baize)
+	# 2. Central Raised Physical Game Board (Walnut & Mahogany Plinth + Quiet Emerald Baize)
 	var board_shadow = MeshInstance3D.new()
 	var bs_box = BoxMesh.new()
 	bs_box.size = Vector3(1.22, 0.012, 1.04)
@@ -183,12 +184,12 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 
 	# Muted Antique Brass Outer Moulding Around the Raised Board
 	var bezel_specs = [
-		{"pos": Vector3(0.0, 0.048, -0.590), "size": Vector3(1.16, 0.008, 0.016)},
-		{"pos": Vector3(0.0, 0.048, 0.390), "size": Vector3(1.16, 0.008, 0.016)},
-		{"pos": Vector3(-0.576, 0.048, -0.10), "size": Vector3(0.016, 0.008, 0.98)},
-		{"pos": Vector3(0.576, 0.048, -0.10), "size": Vector3(0.016, 0.008, 0.98)},
-		# Divider rail separating the Upper Deck/Dice Bay (z=-0.48) from the Map Arena (z=-0.04)
-		{"pos": Vector3(0.0, 0.048, -0.392), "size": Vector3(1.14, 0.007, 0.012)},
+		{"pos": Vector3(0.0, 0.048, -0.590), "size": Vector3(1.16, 0.006, 0.012)},
+		{"pos": Vector3(0.0, 0.048, 0.390), "size": Vector3(1.16, 0.006, 0.012)},
+		{"pos": Vector3(-0.576, 0.048, -0.10), "size": Vector3(0.012, 0.006, 0.98)},
+		{"pos": Vector3(0.576, 0.048, -0.10), "size": Vector3(0.012, 0.006, 0.98)},
+		# Subtle divider rail separating the Upper Deck Bay (z=-0.49) from the Central Map Arena
+		{"pos": Vector3(0.0, 0.047, -0.395), "size": Vector3(1.14, 0.005, 0.008)},
 	]
 	for bspec in bezel_specs:
 		var bz_mi = MeshInstance3D.new()
@@ -200,61 +201,32 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 		bz_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		root.add_child(bz_mi)
 
-	# 4 Corner Brass Medallions on the Raised Board Frame
-	for cx in [-0.572, 0.572]:
-		for cz in [-0.586, 0.386]:
-			var c_mi = MeshInstance3D.new()
-			var c_cyl = CylinderMesh.new()
-			c_cyl.top_radius = 0.020
-			c_cyl.bottom_radius = 0.023
-			c_cyl.height = 0.012
-			c_cyl.radial_segments = 16
-			c_cyl.material = mats["brass"]
-			c_mi.mesh = c_cyl
-			c_mi.position = Vector3(cx, 0.049, cz)
-			c_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			root.add_child(c_mi)
-
-	# Dark Emerald Green Baize Velvet Playing Bed (Map Area)
+	# Quiet, Uncluttered Dark Emerald Green Baize Velvet Playing Bed (No center decorative rings!)
 	var velvet_bed = MeshInstance3D.new()
 	var vb_box = BoxMesh.new()
-	vb_box.size = Vector3(1.13, 0.006, 0.76)
+	vb_box.size = Vector3(1.14, 0.005, 0.77)
 	vb_box.material = mats["emerald_velvet"]
 	velvet_bed.mesh = vb_box
-	velvet_bed.position = Vector3(0.0, 0.045, -0.005)
+	velvet_bed.position = Vector3(0.0, 0.0445, -0.005)
 	velvet_bed.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(velvet_bed)
 
-	# Upper Recessed Leather Command Bay (Holds Continent Deck, Dice Arena, Strategy Deck cleanly above the map!)
+	# Upper Recessed Leather Bay (Holds Continent Deck & Strategy Deck cleanly outside the map)
 	var upper_bay = MeshInstance3D.new()
 	var ub_box = BoxMesh.new()
-	ub_box.size = Vector3(1.13, 0.005, 0.18)
+	ub_box.size = Vector3(1.14, 0.005, 0.18)
 	ub_box.material = mats["leather"]
 	upper_bay.mesh = ub_box
-	upper_bay.position = Vector3(0.0, 0.045, -0.49)
+	upper_bay.position = Vector3(0.0, 0.0445, -0.49)
 	upper_bay.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(upper_bay)
 
-	# Subtle Engraved Brass Compass Ring on the Emerald Map Bed
-	for ring_r in [0.18, 0.32]:
-		var ring_mi = MeshInstance3D.new()
-		var ring_torus = TorusMesh.new()
-		ring_torus.inner_radius = ring_r
-		ring_torus.outer_radius = ring_r + 0.003
-		ring_torus.rings = 28
-		ring_torus.ring_segments = 10
-		ring_torus.material = mats["bronze"]
-		ring_mi.mesh = ring_torus
-		ring_mi.position = Vector3(0.0, 0.048, -0.04)
-		ring_mi.scale = Vector3(1.38, 1.0, 0.92)
-		ring_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(ring_mi)
-
-	# 3. Dedicated 3D Octagonal Leather & Brass Dice Rolling Tray (Centered in Upper Bay at z=-0.49)
+	# 3. Dedicated 3D Dice Rolling Tray (Hidden when idle so the board stays quiet; appears during combat rolls)
 	var dice_arena = Node3D.new()
 	dice_arena.name = "CentralDiceArena"
 	dice_arena.position = Vector3(0.0, 0.048, -0.49)
 	dice_arena.scale = Vector3(0.62, 0.62, 0.62)
+	dice_arena.visible = false
 	root.add_child(dice_arena)
 	refs["dice_arena"] = dice_arena
 
@@ -262,44 +234,33 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 	var ar_cyl = CylinderMesh.new()
 	ar_cyl.top_radius = 0.148
 	ar_cyl.bottom_radius = 0.158
-	ar_cyl.height = 0.018
-	ar_cyl.radial_segments = 16
+	ar_cyl.height = 0.016
+	ar_cyl.radial_segments = 18
 	ar_cyl.material = mats["bronze"]
 	arena_rim.mesh = ar_cyl
-	arena_rim.position = Vector3(0.0, 0.009, 0.0)
+	arena_rim.position = Vector3(0.0, 0.008, 0.0)
 	dice_arena.add_child(arena_rim)
-
-	var arena_gold_lip = MeshInstance3D.new()
-	var ag_cyl = CylinderMesh.new()
-	ag_cyl.top_radius = 0.138
-	ag_cyl.bottom_radius = 0.140
-	ag_cyl.height = 0.019
-	ag_cyl.radial_segments = 16
-	ag_cyl.material = mats["brass"]
-	arena_gold_lip.mesh = ag_cyl
-	arena_gold_lip.position = Vector3(0.0, 0.0095, 0.0)
-	dice_arena.add_child(arena_gold_lip)
 
 	var arena_bed = MeshInstance3D.new()
 	var ab_cyl = CylinderMesh.new()
-	ab_cyl.top_radius = 0.130
-	ab_cyl.bottom_radius = 0.130
-	ab_cyl.height = 0.020
-	ab_cyl.radial_segments = 16
+	ab_cyl.top_radius = 0.134
+	ab_cyl.bottom_radius = 0.134
+	ab_cyl.height = 0.018
+	ab_cyl.radial_segments = 18
 	ab_cyl.material = mats["emerald_velvet"]
 	arena_bed.mesh = ab_cyl
-	arena_bed.position = Vector3(0.0, 0.010, 0.0)
+	arena_bed.position = Vector3(0.0, 0.009, 0.0)
 	dice_arena.add_child(arena_bed)
 
 	var dice_light = OmniLight3D.new()
 	dice_light.name = "DiceSpotlight"
 	dice_light.light_color = Color(1.0, 0.95, 0.82)
-	dice_light.light_energy = 1.35
+	dice_light.light_energy = 1.25
 	dice_light.omni_range = 0.65
 	dice_light.position = Vector3(0.0, 0.24, 0.0)
 	dice_arena.add_child(dice_light)
 
-	# 4. Left & Right 3D Draw Decks in the Upper Command Bay (Zero overlap with continents!)
+	# 4. Left & Right 3D Draw Decks in the Upper Command Bay (Zero overlap with the 6 regions!)
 	refs["continent_deck"] = _build_draw_deck(
 		root,
 		Vector3(-0.36, 0.048, -0.49),
@@ -335,86 +296,69 @@ static func _build_draw_deck(
 	deck_root.position = pos
 	parent.add_child(deck_root)
 
-	# Brass Card Shoe Base
 	var tray_mi = MeshInstance3D.new()
 	var tray_bm = BoxMesh.new()
-	tray_bm.size = Vector3(0.130, 0.006, 0.106)
+	tray_bm.size = Vector3(0.128, 0.005, 0.102)
 	tray_bm.material = mats["bronze"]
 	tray_mi.mesh = tray_bm
-	tray_mi.position = Vector3(0.0, 0.003, 0.0)
+	tray_mi.position = Vector3(0.0, 0.0025, 0.0)
 	deck_root.add_child(tray_mi)
 
-	# Layered 3D Card Stack
 	var stack_node = Node3D.new()
 	stack_node.name = "CardStackVisual"
 	deck_root.add_child(stack_node)
 
 	var top_mat = StandardMaterial3D.new()
 	top_mat.albedo_color = back_col
-	top_mat.roughness = 0.36
-	top_mat.metallic = 0.14
+	top_mat.roughness = 0.38
+	top_mat.metallic = 0.12
 
 	var card_layers: Array = []
 	for i in range(8):
 		var layer_mi = MeshInstance3D.new()
 		var layer_bm = BoxMesh.new()
-		layer_bm.size = Vector3(0.114, 0.0024, 0.090)
+		layer_bm.size = Vector3(0.112, 0.0022, 0.088)
 		layer_bm.material = mats["parchment"] if i < 7 else top_mat
 		layer_mi.mesh = layer_bm
-		layer_mi.position = Vector3(0.0, 0.007 + float(i) * 0.0025, 0.0)
+		layer_mi.position = Vector3(0.0, 0.006 + float(i) * 0.0023, 0.0)
 		stack_node.add_child(layer_mi)
 		card_layers.append(layer_mi)
 
-	# Subtle Brass Medallion on Top Card
-	var crest_mi = MeshInstance3D.new()
-	var crest_cyl = CylinderMesh.new()
-	crest_cyl.top_radius = 0.018
-	crest_cyl.bottom_radius = 0.018
-	crest_cyl.height = 0.003
-	crest_cyl.radial_segments = 16
-	crest_cyl.material = mats["gold"]
-	crest_mi.mesh = crest_cyl
-	crest_mi.position = Vector3(-0.026, 0.028, 0.0)
-	stack_node.add_child(crest_mi)
-
-	# Restrained Selection / Draw Ready Glow Frame
 	var glow_mi = MeshInstance3D.new()
 	var glow_bm = BoxMesh.new()
-	glow_bm.size = Vector3(0.142, 0.004, 0.118)
+	glow_bm.size = Vector3(0.138, 0.003, 0.112)
 	glow_bm.material = mats["glow_gold"]
 	glow_mi.mesh = glow_bm
-	glow_mi.position = Vector3(0.0, 0.004, 0.0)
+	glow_mi.position = Vector3(0.0, 0.003, 0.0)
 	glow_mi.visible = false
 	deck_root.add_child(glow_mi)
 
-	# Flat-Tilted Count Badge on Top of Deck (Large, high-contrast, never floats into other labels)
 	var count_lbl = Label3D.new()
 	count_lbl.text = "۴۲"
 	if font:
 		count_lbl.font = font
-	count_lbl.font_size = 56
-	count_lbl.pixel_size = 0.00130
+	count_lbl.font_size = 52
+	count_lbl.pixel_size = 0.00125
 	count_lbl.modulate = Color(1.0, 0.96, 0.62)
-	count_lbl.outline_size = 16
+	count_lbl.outline_size = 14
 	count_lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.99)
 	count_lbl.rotation_degrees = Vector3(-68.0, 0.0, 0.0)
-	count_lbl.position = Vector3(0.016, 0.034, -0.004)
+	count_lbl.position = Vector3(0.0, 0.032, -0.002)
 	deck_root.add_child(count_lbl)
 
 	var title_lbl = Label3D.new()
 	title_lbl.text = title_fa
 	if font:
 		title_lbl.font = font
-	title_lbl.font_size = 34
-	title_lbl.pixel_size = 0.00112
-	title_lbl.modulate = Color(0.96, 0.88, 0.62)
+	title_lbl.font_size = 32
+	title_lbl.pixel_size = 0.00108
+	title_lbl.modulate = Color(0.94, 0.86, 0.64)
 	title_lbl.outline_size = 10
 	title_lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98)
 	title_lbl.rotation_degrees = Vector3(-68.0, 0.0, 0.0)
-	title_lbl.position = Vector3(0.0, 0.020, 0.070)
+	title_lbl.position = Vector3(0.0, 0.018, 0.066)
 	deck_root.add_child(title_lbl)
 
-	# Interactive Area3D for clicking the 3D Deck directly
 	var area = Area3D.new()
 	area.name = "DeckHitArea"
 	area.set_meta("interact_type", "deck")
@@ -431,10 +375,13 @@ static func _build_draw_deck(
 		"root": deck_root,
 		"stack": stack_node,
 		"layers": card_layers,
-		"crest": crest_mi,
 		"glow": glow_mi,
 		"count_lbl": count_lbl,
 	}
+
+# ==============================================================================
+# REGION CONNECTORS — THIN, SUBTLE, BEHIND REGIONS, NEVER CROSSING LABELS
+# ==============================================================================
 
 static func build_sea_lane_bridges(parent: Node3D, mats: Dictionary) -> Dictionary:
 	var bridges: Dictionary = {}
@@ -449,19 +396,78 @@ static func build_sea_lane_bridges(parent: Node3D, mats: Dictionary) -> Dictiona
 			if built_pairs.has(pair_key):
 				continue
 			built_pairs[pair_key] = true
+
 			var pos_a: Vector3 = CONTINENT_META[c_a]["pos"]
 			var pos_b: Vector3 = CONTINENT_META[c_b]["pos"]
-			var mid = (pos_a + pos_b) * 0.5
+			var rad_a: float = float(CONTINENT_META[c_a]["radius"])
+			var rad_b: float = float(CONTINENT_META[c_b]["radius"])
+
+			# Special Case: Asia <-> NorthAmerica wraps along the northern perimeter behind Europe
+			# so the connector line NEVER crosses over Europe!
+			if pair_key == "Asia_NorthAmerica":
+				var wrap_node = Node3D.new()
+				wrap_node.name = "Bridge_" + pair_key
+				bridges_root.add_child(wrap_node)
+				var z_north: float = -0.368
+				var y_line: float = 0.0462
+
+				# Left riser from NorthAmerica north rim to z_north
+				var z_na_top: float = pos_a.z - rad_a - 0.012
+				var len_l: float = absf(z_na_top - z_north)
+				var seg_l = MeshInstance3D.new()
+				var bm_l = BoxMesh.new()
+				bm_l.size = Vector3(0.0065, 0.002, maxf(0.01, len_l))
+				bm_l.material = mats["bridge_idle"]
+				seg_l.mesh = bm_l
+				seg_l.position = Vector3(pos_a.x, y_line, (z_na_top + z_north) * 0.5)
+				seg_l.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				wrap_node.add_child(seg_l)
+
+				# Right riser from Asia north rim to z_north
+				var z_as_top: float = pos_b.z - rad_b - 0.012
+				var len_r: float = absf(z_as_top - z_north)
+				var seg_r = MeshInstance3D.new()
+				var bm_r = BoxMesh.new()
+				bm_r.size = Vector3(0.0065, 0.002, maxf(0.01, len_r))
+				bm_r.material = mats["bridge_idle"]
+				seg_r.mesh = bm_r
+				seg_r.position = Vector3(pos_b.x, y_line, (z_as_top + z_north) * 0.5)
+				seg_r.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				wrap_node.add_child(seg_r)
+
+				# Northern horizontal span behind Europe
+				var span_w: float = absf(pos_b.x - pos_a.x) + 0.0065
+				var seg_m = MeshInstance3D.new()
+				var bm_m = BoxMesh.new()
+				bm_m.size = Vector3(span_w, 0.002, 0.0065)
+				bm_m.material = mats["bridge_idle"]
+				seg_m.mesh = bm_m
+				seg_m.position = Vector3((pos_a.x + pos_b.x) * 0.5, y_line, z_north)
+				seg_m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				wrap_node.add_child(seg_m)
+
+				bridges[pair_key] = wrap_node
+				continue
+
 			var diff = pos_b - pos_a
 			var dist = Vector2(diff.x, diff.z).length()
+			var dir = Vector2(diff.x, diff.z).normalized()
+			var start_trim = rad_a + 0.022
+			var end_trim = rad_b + 0.022
+			var seg_len = maxf(0.02, dist - (start_trim + end_trim))
+			var p_start = Vector2(pos_a.x, pos_a.z) + dir * start_trim
+			var p_end = Vector2(pos_b.x, pos_b.z) - dir * end_trim
+			var mid_2d = (p_start + p_end) * 0.5
 			var angle_y = atan2(diff.x, diff.z)
 
 			var bridge_mi = MeshInstance3D.new()
+			bridge_mi.name = "Bridge_" + pair_key
 			var bm = BoxMesh.new()
-			bm.size = Vector3(0.012, 0.004, maxf(0.04, dist - 0.25))
+			bm.size = Vector3(0.0065, 0.002, seg_len)
 			bm.material = mats["bridge_idle"]
 			bridge_mi.mesh = bm
-			bridge_mi.position = Vector3(mid.x, 0.049, mid.z)
+			# Placed at y=0.0462, strictly beneath the region plinths (y=0.048+)
+			bridge_mi.position = Vector3(mid_2d.x, 0.0462, mid_2d.y)
 			bridge_mi.rotation.y = angle_y
 			bridge_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			bridges_root.add_child(bridge_mi)
@@ -469,14 +475,32 @@ static func build_sea_lane_bridges(parent: Node3D, mats: Dictionary) -> Dictiona
 
 	return bridges
 
+static func set_bridge_material(bridge_obj: Node, mat: Material) -> void:
+	if not is_instance_valid(bridge_obj):
+		return
+	if bridge_obj is MeshInstance3D:
+		(bridge_obj as MeshInstance3D).material_override = mat
+	for ch in bridge_obj.get_children():
+		if ch is MeshInstance3D:
+			(ch as MeshInstance3D).material_override = mat
+
+# ==============================================================================
+# SIX CLEAN 3D REGIONS — ONE REGION = ONE CLEAR VISUAL UNIT
+# Contains ONLY:
+# 1. Region Name (clean front plaque at south edge)
+# 2. Ownership Indicator (colored region base bezel + small top-left ownership crest)
+# 3. Main Unit / Stacked Token Representation + Small Quantity Badge
+# 4. Small Domination Coin Status Icon at north edge
+# ==============================================================================
+
 static func build_continent_node(
 	parent: Node3D,
 	c_id: String,
 	mats: Dictionary,
 	font: Font,
-	rook_mesh: Mesh,
+	_rook_mesh: Mesh,
 	knight_mesh: Mesh,
-	king_mesh: Mesh
+	_king_mesh: Mesh
 ) -> Dictionary:
 	var meta: Dictionary = CONTINENT_META[c_id]
 	var pos: Vector3 = meta["pos"]
@@ -488,149 +512,101 @@ static func build_continent_node(
 	root.position = pos
 	parent.add_child(root)
 
-	# 1. Dark Charcoal Contact Shadow Plinth
+	# 1. Subtle Contact Shadow Plinth
 	var shadow_plinth = MeshInstance3D.new()
 	var sp_cyl = CylinderMesh.new()
-	sp_cyl.top_radius = rad + 0.013
-	sp_cyl.bottom_radius = rad + 0.017
-	sp_cyl.height = 0.008
+	sp_cyl.top_radius = rad + 0.012
+	sp_cyl.bottom_radius = rad + 0.016
+	sp_cyl.height = 0.006
 	sp_cyl.radial_segments = 28
 	sp_cyl.material = mats["charcoal"]
 	shadow_plinth.mesh = sp_cyl
-	shadow_plinth.position = Vector3(0.0, 0.004, 0.0)
+	shadow_plinth.position = Vector3(0.0, 0.003, 0.0)
 	shadow_plinth.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(shadow_plinth)
 
-	# 2. Warm Antique Bronze Stepped Rim
-	var base_bezel = MeshInstance3D.new()
+	# 2. Ownership Indicator Border/Base (Dynamically colored by controlling player or neutral bronze)
+	var ownership_bezel = MeshInstance3D.new()
 	var bz_cyl = CylinderMesh.new()
-	bz_cyl.top_radius = rad + 0.006
-	bz_cyl.bottom_radius = rad + 0.011
+	bz_cyl.top_radius = rad + 0.007
+	bz_cyl.bottom_radius = rad + 0.010
 	bz_cyl.height = 0.015
 	bz_cyl.radial_segments = 28
 	bz_cyl.material = mats["bronze"]
-	base_bezel.mesh = bz_cyl
-	base_bezel.position = Vector3(0.0, 0.008, 0.0)
-	base_bezel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	root.add_child(base_bezel)
+	ownership_bezel.mesh = bz_cyl
+	ownership_bezel.position = Vector3(0.0, 0.008, 0.0)
+	ownership_bezel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(ownership_bezel)
 
-	# 3. Raised Colored Territory Plateau
+	# 3. Clean Colored Territory Plateau (No inner decorative rings or fake citadel towers!)
 	var plateau = MeshInstance3D.new()
 	var pl_cyl = CylinderMesh.new()
 	pl_cyl.top_radius = rad
-	pl_cyl.bottom_radius = rad + 0.003
-	pl_cyl.height = 0.022
+	pl_cyl.bottom_radius = rad + 0.002
+	pl_cyl.height = 0.020
 	pl_cyl.radial_segments = 28
 	pl_cyl.material = cont_mat
 	plateau.mesh = pl_cyl
-	plateau.position = Vector3(0.0, 0.012, 0.0)
+	plateau.position = Vector3(0.0, 0.011, 0.0)
 	plateau.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(plateau)
 
-	# Subtle Inner Brass Inlay Ring on Plateau Top
-	var inner_ring = MeshInstance3D.new()
-	var ir_torus = TorusMesh.new()
-	ir_torus.inner_radius = rad - 0.010
-	ir_torus.outer_radius = rad - 0.006
-	ir_torus.rings = 28
-	ir_torus.ring_segments = 10
-	ir_torus.material = mats["brass"]
-	inner_ring.mesh = ir_torus
-	inner_ring.position = Vector3(0.0, 0.023, 0.0)
-	inner_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	root.add_child(inner_ring)
-
-	# 4. Restrained Selection / Valid Target / Attack Ring
+	# 4. Tasteful Selection / Valid Target Outline Ring (Hidden unless selected or targeted)
 	var aura_ring = MeshInstance3D.new()
 	var torus = TorusMesh.new()
 	torus.inner_radius = rad + 0.008
-	torus.outer_radius = rad + 0.020
+	torus.outer_radius = rad + 0.017
 	torus.rings = 28
 	torus.ring_segments = 10
 	torus.material = mats["glow_gold"]
 	aura_ring.mesh = torus
-	aura_ring.position = Vector3(0.0, 0.014, 0.0)
+	aura_ring.position = Vector3(0.0, 0.012, 0.0)
 	aura_ring.visible = false
 	root.add_child(aura_ring)
 
-	# 5. Compact Sculpted Citadel Keep at North-Center of Territory
-	var citadel = Node3D.new()
-	citadel.name = "CitadelKeep"
-	citadel.position = Vector3(-0.032, 0.023, -rad * 0.46)
-	root.add_child(citadel)
-
-	if rook_mesh:
-		var keep_mi = MeshInstance3D.new()
-		keep_mi.mesh = rook_mesh
-		keep_mi.material_override = mats["parchment"]
-		keep_mi.scale = Vector3(0.28, 0.28, 0.28)
-		citadel.add_child(keep_mi)
-	else:
-		var fallback_keep = MeshInstance3D.new()
-		var fk_cyl = CylinderMesh.new()
-		fk_cyl.top_radius = 0.015
-		fk_cyl.bottom_radius = 0.018
-		fk_cyl.height = 0.030
-		fk_cyl.material = mats["parchment"]
-		fallback_keep.mesh = fk_cyl
-		fallback_keep.position = Vector3(0.0, 0.015, 0.0)
-		citadel.add_child(fallback_keep)
-
-	# 6. Dedicated Domination Coin Socket at North-Right of Territory
-	var token_socket = MeshInstance3D.new()
-	var ts_cyl = CylinderMesh.new()
-	ts_cyl.top_radius = 0.024
-	ts_cyl.bottom_radius = 0.026
-	ts_cyl.height = 0.004
-	ts_cyl.radial_segments = 18
-	ts_cyl.material = mats["charcoal"]
-	token_socket.mesh = ts_cyl
-	token_socket.position = Vector3(0.032, 0.023, -rad * 0.46)
-	root.add_child(token_socket)
-
-	var token_node = build_domination_token_3d(c_id, mats, king_mesh, 0.90)
-	token_node.position = Vector3(0.032, 0.028, -rad * 0.46)
+	# 5. Small Status Icon: Flat Domination Coin Medallion at North Edge (No tall chess pieces!)
+	var token_node = build_domination_token_3d(c_id, mats, null, 0.78)
+	token_node.position = Vector3(0.0, 0.023, -rad * 0.66)
 	root.add_child(token_node)
 
-	# 7. Dedicated Front Name Plaque (Mounted on South Edge — NEVER overlaps pieces!)
+	# 6. Single Clean Region Name Plaque at South Edge (ONLY the region name, never obscured!)
 	var plaque_base = MeshInstance3D.new()
 	var pb_box = BoxMesh.new()
-	pb_box.size = Vector3(rad * 1.48, 0.008, 0.038)
+	pb_box.size = Vector3(rad * 1.18, 0.007, 0.032)
 	pb_box.material = mats["charcoal"]
 	plaque_base.mesh = pb_box
-	plaque_base.position = Vector3(0.0, 0.022, rad * 0.78)
+	plaque_base.position = Vector3(0.0, 0.021, rad * 0.82)
 	plaque_base.rotation_degrees = Vector3(18.0, 0.0, 0.0)
 	root.add_child(plaque_base)
 
 	var plaque_trim = MeshInstance3D.new()
 	var pt_box = BoxMesh.new()
-	pt_box.size = Vector3(rad * 1.52, 0.006, 0.042)
+	pt_box.size = Vector3(rad * 1.22, 0.005, 0.035)
 	pt_box.material = mats["bronze"]
 	plaque_trim.mesh = pt_box
-	plaque_trim.position = Vector3(0.0, 0.020, rad * 0.78)
+	plaque_trim.position = Vector3(0.0, 0.0195, rad * 0.82)
 	plaque_trim.rotation_degrees = Vector3(18.0, 0.0, 0.0)
 	root.add_child(plaque_trim)
 
-	var dom_req: int = int(meta.get("domination", 4))
 	var name_lbl = Label3D.new()
-	name_lbl.text = "%s (👑%s)" % [meta["fa"], fa_digits(dom_req)]
+	name_lbl.text = str(meta["fa"])
 	if font:
 		name_lbl.font = font
 	name_lbl.font_size = 38
-	name_lbl.pixel_size = 0.00105
-	name_lbl.modulate = Color(0.98, 0.95, 0.86)
-	name_lbl.outline_size = 11
+	name_lbl.pixel_size = 0.00104
+	name_lbl.modulate = Color(0.98, 0.95, 0.88)
+	name_lbl.outline_size = 10
 	name_lbl.outline_modulate = Color(0.03, 0.02, 0.01, 0.98)
 	name_lbl.rotation_degrees = Vector3(-72.0, 0.0, 0.0)
-	name_lbl.position = Vector3(0.0, 0.028, rad * 0.79)
+	name_lbl.position = Vector3(0.0, 0.026, rad * 0.83)
 	root.add_child(name_lbl)
 
-	# 8. Four Faction Garrison Nodes (Dynamically arranged via layout_continent_garrisons)
+	# 7. Clean Stacked Player Unit Tokens + Small Readable Quantity Badge (Centered on Plateau)
 	var default_slots = {
-		1: Vector3(-0.052, 0.023, 0.010),
-		2: Vector3(0.052, 0.023, 0.010),
-		3: Vector3(-0.052, 0.023, -0.036),
-		4: Vector3(0.052, 0.023, -0.036),
+		1: Vector3(-0.044, 0.021, -0.006),
+		2: Vector3(0.044, 0.021, -0.006),
+		3: Vector3(-0.044, 0.021, -0.042),
+		4: Vector3(0.044, 0.021, -0.042),
 	}
 	var garrisons: Dictionary = {}
 	for p_idx in [1, 2, 3, 4]:
@@ -642,71 +618,77 @@ static func build_continent_node(
 
 		var f_mat = RiskMaterials.get_faction_material(p_idx, false)
 
-		var ped_mi = MeshInstance3D.new()
-		var ped_cyl = CylinderMesh.new()
-		ped_cyl.top_radius = 0.020
-		ped_cyl.bottom_radius = 0.023
-		ped_cyl.height = 0.007
-		ped_cyl.radial_segments = 16
-		ped_cyl.material = mats["brass"]
-		ped_mi.mesh = ped_cyl
-		ped_mi.position = Vector3(0.0, 0.0035, 0.0)
-		g_node.add_child(ped_mi)
+		# Clean Stacked Ownership Discs (1 to 3 stacked discs representing unit volume cleanly)
+		var stack_discs: Array[MeshInstance3D] = []
+		for s_i in range(3):
+			var disc_mi = MeshInstance3D.new()
+			var disc_cyl = CylinderMesh.new()
+			disc_cyl.top_radius = 0.018
+			disc_cyl.bottom_radius = 0.019
+			disc_cyl.height = 0.0045
+			disc_cyl.radial_segments = 18
+			disc_cyl.material = f_mat
+			disc_mi.mesh = disc_cyl
+			disc_mi.position = Vector3(0.0, 0.0025 + float(s_i) * 0.005, -0.008)
+			g_node.add_child(disc_mi)
+			stack_discs.append(disc_mi)
 
+		# Consistent Miniature Unit Silhouette on Top of Stack
 		var piece_mi = MeshInstance3D.new()
 		if knight_mesh:
 			piece_mi.mesh = knight_mesh
-			piece_mi.scale = Vector3(0.30, 0.30, 0.30)
-			piece_mi.position = Vector3(0.0, 0.007, 0.0)
+			piece_mi.scale = Vector3(0.24, 0.24, 0.24)
+			piece_mi.position = Vector3(0.0, 0.012, -0.008)
 		else:
 			var sc = SphereMesh.new()
-			sc.radius = 0.014
-			sc.height = 0.028
+			sc.radius = 0.012
+			sc.height = 0.024
 			piece_mi.mesh = sc
-			piece_mi.position = Vector3(0.0, 0.018, 0.0)
+			piece_mi.position = Vector3(0.0, 0.018, -0.008)
 		piece_mi.material_override = f_mat
 		g_node.add_child(piece_mi)
 
-		# Dark Charcoal Badge Pill Behind Quantity Number
+		# Small, High-Contrast Quantity Badge Pill Mounted cleanly in front of the unit stack
 		var badge_bg = MeshInstance3D.new()
 		var bb_box = BoxMesh.new()
-		bb_box.size = Vector3(0.056, 0.006, 0.034)
+		bb_box.size = Vector3(0.048, 0.005, 0.028)
 		bb_box.material = mats["charcoal"]
 		badge_bg.mesh = bb_box
-		badge_bg.position = Vector3(0.0, 0.013, 0.030)
-		badge_bg.rotation_degrees = Vector3(22.0, 0.0, 0.0)
+		badge_bg.position = Vector3(0.0, 0.010, 0.024)
+		badge_bg.rotation_degrees = Vector3(20.0, 0.0, 0.0)
 		g_node.add_child(badge_bg)
 
 		var cnt_lbl = Label3D.new()
 		cnt_lbl.text = "×۱"
 		if font:
 			cnt_lbl.font = font
-		cnt_lbl.font_size = 52
-		cnt_lbl.pixel_size = 0.00130
-		cnt_lbl.modulate = RiskMaterials.FACTION_COLORS[p_idx].lightened(0.45)
-		cnt_lbl.outline_size = 14
+		cnt_lbl.font_size = 46
+		cnt_lbl.pixel_size = 0.00118
+		cnt_lbl.modulate = RiskMaterials.FACTION_COLORS[p_idx].lightened(0.48)
+		cnt_lbl.outline_size = 12
 		cnt_lbl.outline_modulate = Color(0.02, 0.01, 0.01, 0.99)
-		cnt_lbl.rotation_degrees = Vector3(-68.0, 0.0, 0.0)
-		cnt_lbl.position = Vector3(0.0, 0.020, 0.031)
+		cnt_lbl.rotation_degrees = Vector3(-70.0, 0.0, 0.0)
+		cnt_lbl.position = Vector3(0.0, 0.016, 0.025)
 		g_node.add_child(cnt_lbl)
 
 		garrisons[p_idx] = {
 			"node": g_node,
 			"piece": piece_mi,
+			"stack_discs": stack_discs,
 			"label": cnt_lbl,
 		}
 
-	# 9. Raycast Area3D for Continent Selection & Attack Targeting
+	# 8. Generous Mobile-Friendly Raycast Area3D for Tapping the Region
 	var area = Area3D.new()
 	area.name = "ContinentHitArea"
 	area.set_meta("interact_type", "continent")
 	area.set_meta("continent", c_id)
 	var col = CollisionShape3D.new()
 	var cyl_shape = CylinderShape3D.new()
-	cyl_shape.radius = rad + 0.018
+	cyl_shape.radius = rad + 0.020
 	cyl_shape.height = 0.090
 	col.shape = cyl_shape
-	col.position = Vector3(0.0, 0.032, 0.0)
+	col.position = Vector3(0.0, 0.030, 0.0)
 	area.add_child(col)
 	root.add_child(area)
 
@@ -714,37 +696,38 @@ static func build_continent_node(
 		"root": root,
 		"base_pos": pos,
 		"plateau": plateau,
+		"ownership_bezel": ownership_bezel,
+		"plaque_trim": plaque_trim,
 		"aura": aura_ring,
-		"citadel": citadel,
 		"token_node": token_node,
 		"name_lbl": name_lbl,
 		"garrisons": garrisons,
 	}
 
-# Intelligently positions occupied garrisons on a continent so pieces & badges never overlap
+# Intelligently positions occupied garrisons inside the upper/center plateau so units NEVER touch the south name plaque
 static func layout_continent_garrisons(c_ref: Dictionary, present_players: Array[int]) -> void:
 	var garrisons: Dictionary = c_ref["garrisons"]
 	var count = present_players.size()
 	var positions: Array[Vector3] = []
 	if count == 1:
-		positions = [Vector3(0.0, 0.023, 0.008)]
+		positions = [Vector3(0.0, 0.021, -0.004)]
 	elif count == 2:
 		positions = [
-			Vector3(-0.048, 0.023, 0.008),
-			Vector3(0.048, 0.023, 0.008),
+			Vector3(-0.044, 0.021, -0.004),
+			Vector3(0.044, 0.021, -0.004),
 		]
 	elif count == 3:
 		positions = [
-			Vector3(-0.058, 0.023, 0.014),
-			Vector3(0.0, 0.023, -0.010),
-			Vector3(0.058, 0.023, 0.014),
+			Vector3(-0.050, 0.021, 0.004),
+			Vector3(0.0, 0.021, -0.032),
+			Vector3(0.050, 0.021, 0.004),
 		]
 	else:
 		positions = [
-			Vector3(-0.056, 0.023, 0.020),
-			Vector3(0.056, 0.023, 0.020),
-			Vector3(-0.056, 0.023, -0.022),
-			Vector3(0.056, 0.023, -0.022),
+			Vector3(-0.048, 0.021, 0.008),
+			Vector3(0.048, 0.021, 0.008),
+			Vector3(-0.048, 0.021, -0.034),
+			Vector3(0.048, 0.021, -0.034),
 		]
 
 	for i in range(present_players.size()):
@@ -753,10 +736,11 @@ static func layout_continent_garrisons(c_ref: Dictionary, present_players: Array
 			var g_node: Node3D = garrisons[p_idx]["node"]
 			g_node.position = positions[min(i, positions.size() - 1)]
 
+# Clean, Flat Golden Medallion for Domination Coin Status (No tall decorative chess piece on top!)
 static func build_domination_token_3d(
 	c_id: String,
 	mats: Dictionary,
-	king_mesh: Mesh,
+	_king_mesh: Mesh,
 	scale_mult: float = 1.0
 ) -> Node3D:
 	var token = Node3D.new()
@@ -765,164 +749,83 @@ static func build_domination_token_3d(
 
 	var coin_mi = MeshInstance3D.new()
 	var coin_cyl = CylinderMesh.new()
-	coin_cyl.top_radius = 0.020
-	coin_cyl.bottom_radius = 0.022
-	coin_cyl.height = 0.006
-	coin_cyl.radial_segments = 20
+	coin_cyl.top_radius = 0.018
+	coin_cyl.bottom_radius = 0.020
+	coin_cyl.height = 0.005
+	coin_cyl.radial_segments = 18
 	coin_cyl.material = mats["gold"]
 	coin_mi.mesh = coin_cyl
 	token.add_child(coin_mi)
 
 	var jewel_mi = MeshInstance3D.new()
 	var jewel_cyl = CylinderMesh.new()
-	jewel_cyl.top_radius = 0.015
-	jewel_cyl.bottom_radius = 0.015
-	jewel_cyl.height = 0.007
-	jewel_cyl.radial_segments = 18
+	jewel_cyl.top_radius = 0.012
+	jewel_cyl.bottom_radius = 0.012
+	jewel_cyl.height = 0.006
+	jewel_cyl.radial_segments = 16
 	jewel_cyl.material = RiskMaterials.get_continent_material(c_id, false)
 	jewel_mi.mesh = jewel_cyl
 	jewel_mi.position = Vector3(0.0, 0.001, 0.0)
 	token.add_child(jewel_mi)
 
-	if king_mesh:
-		var crown_mi = MeshInstance3D.new()
-		crown_mi.mesh = king_mesh
-		crown_mi.material_override = mats["gold"]
-		crown_mi.scale = Vector3(0.18, 0.16, 0.18)
-		crown_mi.position = Vector3(0.0, 0.004, 0.0)
-		token.add_child(crown_mi)
-
 	return token
 
-# Compact, Clutter-Free 3D Faction Crest Pedestals (No overlapping floating text billboards!)
+# Kept as a lightweight no-op stub if called externally; 3D board perimeter is kept free of extra pieces
 static func build_player_station(
 	parent: Node3D,
 	p_idx: int,
 	pos: Vector3,
 	rot_y_deg: float,
 	is_local: bool,
-	mats: Dictionary,
+	_mats: Dictionary,
 	_font: Font,
-	king_mesh: Mesh
+	_king_mesh: Mesh
 ) -> Dictionary:
 	var station = Node3D.new()
 	station.name = "PlayerStation_P%d" % p_idx
 	station.position = pos
 	station.rotation_degrees.y = rot_y_deg
+	station.visible = false
 	parent.add_child(station)
 
-	var f_mat_idle = RiskMaterials.get_faction_material(p_idx, false)
-	var f_mat_active = RiskMaterials.get_faction_material(p_idx, true)
-
-	var base_w: float = 0.16
-	var base_d: float = 0.08
-
-	var wood_base = MeshInstance3D.new()
-	var wb_box = BoxMesh.new()
-	wb_box.size = Vector3(base_w, 0.012, base_d)
-	wb_box.material = mats["mahogany"]
-	wood_base.mesh = wb_box
-	wood_base.position = Vector3(0.0, 0.006, 0.0)
-	station.add_child(wood_base)
-
-	var active_glow = MeshInstance3D.new()
-	var ag_box = BoxMesh.new()
-	ag_box.size = Vector3(base_w + 0.012, 0.004, base_d + 0.012)
-	ag_box.material = mats["glow_gold"]
-	active_glow.mesh = ag_box
-	active_glow.position = Vector3(0.0, 0.003, 0.0)
-	active_glow.visible = false
-	station.add_child(active_glow)
-
-	var target_glow = MeshInstance3D.new()
-	var tg_box = BoxMesh.new()
-	tg_box.size = Vector3(base_w + 0.018, 0.006, base_d + 0.018)
-	tg_box.material = mats["glow_crimson"]
-	target_glow.mesh = tg_box
-	target_glow.position = Vector3(0.0, 0.004, 0.0)
-	target_glow.visible = false
-	station.add_child(target_glow)
-
-	var commander_mi = MeshInstance3D.new()
-	if king_mesh:
-		commander_mi.mesh = king_mesh
-		commander_mi.scale = Vector3(0.28, 0.28, 0.28)
-	else:
-		var cm_cyl = CylinderMesh.new()
-		cm_cyl.top_radius = 0.012
-		cm_cyl.bottom_radius = 0.015
-		cm_cyl.height = 0.032
-		commander_mi.mesh = cm_cyl
-	commander_mi.material_override = f_mat_idle
-	commander_mi.position = Vector3(-0.042, 0.012, 0.0)
-	station.add_child(commander_mi)
-
+	var dummy_mi = MeshInstance3D.new()
+	station.add_child(dummy_mi)
 	var assets_container = Node3D.new()
-	assets_container.name = "StationAssets3D"
-	assets_container.position = Vector3(0.010, 0.013, 0.0)
 	station.add_child(assets_container)
-
-	# Kept as hidden dummy labels for backwards-compatibility if referenced
 	var name_lbl = Label3D.new()
-	name_lbl.visible = false
 	station.add_child(name_lbl)
-
 	var stats_lbl = Label3D.new()
-	stats_lbl.visible = false
 	station.add_child(stats_lbl)
-
-	var area = Area3D.new()
-	area.name = "StationHitArea"
-	area.set_meta("interact_type", "station")
-	area.set_meta("player_index", p_idx)
-	var col = CollisionShape3D.new()
-	var box_shape = BoxShape3D.new()
-	box_shape.size = Vector3(base_w + 0.02, 0.06, base_d + 0.02)
-	col.shape = box_shape
-	col.position = Vector3(0.0, 0.025, 0.0)
-	area.add_child(col)
-	station.add_child(area)
 
 	return {
 		"root": station,
-		"active_glow": active_glow,
-		"target_glow": target_glow,
+		"active_glow": dummy_mi,
+		"target_glow": dummy_mi,
 		"name_lbl": name_lbl,
 		"stats_lbl": stats_lbl,
-		"commander_mi": commander_mi,
-		"f_mat_idle": f_mat_idle,
-		"f_mat_active": f_mat_active,
+		"commander_mi": dummy_mi,
+		"f_mat_idle": RiskMaterials.get_faction_material(p_idx, false),
+		"f_mat_active": RiskMaterials.get_faction_material(p_idx, true),
 		"assets_container": assets_container,
 		"is_local": is_local,
-		"base_w": base_w,
+		"base_w": 0.12,
 	}
 
 static func populate_station_assets_3d(
-	station_ref: Dictionary,
-	p_data: Dictionary,
-	mats: Dictionary,
+	_station_ref: Dictionary,
+	_p_data: Dictionary,
+	_mats: Dictionary,
 	_font: Font,
-	king_mesh: Mesh
+	_king_mesh: Mesh
 ) -> void:
-	var container: Node3D = station_ref["assets_container"]
-	for child in container.get_children():
-		child.queue_free()
-
-	var tokens: Array = p_data.get("tokens", [])
-	for i in range(tokens.size()):
-		var c_id = str(tokens[i])
-		var tok = build_domination_token_3d(c_id, mats, king_mesh, 0.78)
-		tok.position = Vector3(float(i) * 0.038, 0.004, 0.0)
-		container.add_child(tok)
+	pass
 
 static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null, final_val: int = 1) -> Node3D:
 	var die_root = Node3D.new()
 	die_root.name = "BattleDie3D"
-	# 2x larger linear size (8x larger volume) so dice are bold and unmistakable
 	var s: float = 0.068
 	var half: float = s * 0.5
 
-	# Rotate this inner pivot for the 3D die cube & pips so the floating badge above stays upright
 	var cube_pivot = Node3D.new()
 	cube_pivot.name = "CubePivot"
 	die_root.add_child(cube_pivot)
@@ -934,7 +837,6 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null,
 	body_mi.mesh = bm
 	cube_pivot.add_child(body_mi)
 
-	# Sculpted Brass Corner Studs
 	for cx in [-half * 0.94, half * 0.94]:
 		for cy in [-half * 0.94, half * 0.94]:
 			for cz in [-half * 0.94, half * 0.94]:
@@ -947,7 +849,6 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null,
 				stud_mi.position = Vector3(cx, cy, cz)
 				cube_pivot.add_child(stud_mi)
 
-	# 12 Brass Edge Bevel Bars for crisp 3D cube definition
 	var edge_t: float = 0.0046
 	var edge_l: float = s * 0.94
 	var trim_mat = mats["gold"] if is_attacker else mats["brass"]
@@ -977,7 +878,6 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null,
 			ez.position = Vector3(s1, s2, 0.0)
 			cube_pivot.add_child(ez)
 
-	# High-Contrast Raised Ivory Pips with Gold Collar Rings
 	var d: float = s * 0.265
 	var face_pips = {
 		Vector3(0, 1, 0): [Vector2(0, 0)],
@@ -1006,7 +906,6 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null,
 			pip_mi.position = p3
 			cube_pivot.add_child(pip_mi)
 
-	# Floating High-Contrast Value Badge above each die (pops in on landing)
 	var badge_lbl = make_label_3d(
 		"%s %s" % ["⚔️" if is_attacker else "🛡️", fa_digits(clampi(final_val, 1, 6))],
 		font,

@@ -121,20 +121,20 @@ static func create_palette() -> Dictionary:
 	parchment.roughness = 0.56
 	mats["parchment"] = parchment
 
-	# Sea-Lane Bridges (Idle & Active)
+	# Sea-Lane Bridges (Idle: thin, subtle & secondary; Active: highlighted only during interaction)
 	var bridge_idle = StandardMaterial3D.new()
-	bridge_idle.albedo_color = Color(0.74, 0.58, 0.28, 0.62)
+	bridge_idle.albedo_color = Color(0.62, 0.50, 0.26, 0.36)
 	bridge_idle.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	bridge_idle.metallic = 0.65
-	bridge_idle.roughness = 0.32
+	bridge_idle.metallic = 0.45
+	bridge_idle.roughness = 0.48
 	mats["bridge_idle"] = bridge_idle
 
 	var bridge_active = StandardMaterial3D.new()
-	bridge_active.albedo_color = Color(0.96, 0.46, 0.20, 0.95)
+	bridge_active.albedo_color = Color(0.96, 0.78, 0.28, 0.92)
 	bridge_active.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	bridge_active.emission_enabled = true
-	bridge_active.emission = Color(0.94, 0.38, 0.14)
-	bridge_active.emission_energy_multiplier = 1.40
+	bridge_active.emission = Color(0.92, 0.68, 0.20)
+	bridge_active.emission_energy_multiplier = 1.05
 	mats["bridge_active"] = bridge_active
 
 	# 3D Battle Dice Materials (High-Contrast Attacker Ruby-Crimson & Defender Royal Cobalt-Obsidian)
@@ -171,15 +171,15 @@ static func get_continent_material(c_id: String, is_highlighted: bool = false) -
 	if _continent_mat_cache.has(key) and is_instance_valid(_continent_mat_cache[key]):
 		return _continent_mat_cache[key]
 	var base_col: Color = CONTINENT_COLORS.get(c_id, Color(0.26, 0.48, 0.36))
-	var col: Color = base_col.lightened(0.14) if is_highlighted else base_col
+	var col: Color = base_col.lightened(0.12) if is_highlighted else base_col
 	var mat = StandardMaterial3D.new()
 	mat.albedo_color = col
-	mat.roughness = 0.38 if is_highlighted else 0.46
-	mat.metallic = 0.14
+	mat.roughness = 0.40 if is_highlighted else 0.48
+	mat.metallic = 0.12
 	if is_highlighted:
 		mat.emission_enabled = true
 		mat.emission = base_col
-		mat.emission_energy_multiplier = 0.28
+		mat.emission_energy_multiplier = 0.22
 	_continent_mat_cache[key] = mat
 	return mat
 
@@ -190,11 +190,29 @@ static func get_faction_material(p_idx: int, is_active: bool = false) -> Standar
 	var col: Color = FACTION_COLORS.get(p_idx, Color(0.82, 0.82, 0.82))
 	var mat = StandardMaterial3D.new()
 	mat.albedo_color = col.lightened(0.10) if is_active else col
-	mat.metallic = 0.62
-	mat.roughness = 0.24 if is_active else 0.30
+	mat.metallic = 0.55
+	mat.roughness = 0.26 if is_active else 0.32
 	if is_active:
 		mat.emission_enabled = true
 		mat.emission = col
-		mat.emission_energy_multiplier = 0.30
+		mat.emission_energy_multiplier = 0.25
 	_faction_mat_cache[cache_key] = mat
 	return mat
+
+static func get_ownership_bezel_material(owner_p_idx: int, mats: Dictionary) -> StandardMaterial3D:
+	if owner_p_idx <= 0:
+		return mats["bronze"]
+	var cache_key = "bezel_%d" % owner_p_idx
+	if _faction_mat_cache.has(cache_key) and is_instance_valid(_faction_mat_cache[cache_key]):
+		return _faction_mat_cache[cache_key]
+	var col: Color = FACTION_COLORS.get(owner_p_idx, Color(0.58, 0.41, 0.20))
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = col.darkened(0.08)
+	mat.metallic = 0.68
+	mat.roughness = 0.28
+	mat.emission_enabled = true
+	mat.emission = col
+	mat.emission_energy_multiplier = 0.14
+	_faction_mat_cache[cache_key] = mat
+	return mat
+

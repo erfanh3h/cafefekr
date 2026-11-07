@@ -14,8 +14,8 @@ const FontHekayat: Font = preload("res://assets/fonts/hekayat.ttf")
 
 # Camera Defaults for CafeTable (Elevated Three-Quarter Tabletop Perspective)
 @export var default_three_quarter_view: bool = true
-@export var camera_pitch: float = -1.03    # ~ -59 deg elevated tabletop perspective framing the central board
-@export var camera_distance: float = 2.66  # Makes the 3D Risk board large, crisp, and the visual centerpiece
+@export var camera_pitch: float = -1.08    # ~ -62 deg elevated tabletop perspective for crisp, non-overlapping regions
+@export var camera_distance: float = 2.60  # Optimal portrait mobile framing of the 6 regions
 
 # Shared 3D Meshes & PBR Materials
 var _mats: Dictionary = {}
@@ -27,7 +27,7 @@ var _crown_mesh: Mesh = null
 # 3D Scene Graph References
 var _table_refs: Dictionary = {}
 var _continent_nodes: Dictionary = {} # continent_id -> Dictionary from Risk3DFactory
-var _bridge_nodes: Dictionary = {}    # "ContA_ContB" -> MeshInstance3D
+var _bridge_nodes: Dictionary = {}    # "ContA_ContB" -> Node (MeshInstance3D or Node3D)
 var _station_nodes: Dictionary = {}   # player_idx (1..4) -> Dictionary from Risk3DFactory
 var _dice_nodes: Array = []           # Active 3D Dice inside _table_refs["dice_arena"]
 
@@ -35,9 +35,9 @@ var _dice_nodes: Array = []           # Active 3D Dice inside _table_refs["dice_
 var total_players: int = 2
 var active_player_indexes: Array = [1, 2]
 var _active_turn: int = 1
-var game_state: String = "Draw" # "StartGame", "Draw", "SelectAction", "AttackerArmy", "DefenderArmy"
+var game_state: String = "Draw" # "StartGame", "Draw", "SelectAction", "AttackerArmy", "DefenderArmy", "Attack"
 var continent_deck_count: int = 42
-var strategy_deck_count: int = 40
+var strategy_deck_count: int = 38
 var board_tokens: Array = ["Asia", "NorthAmerica", "Europe", "Africa", "Australia", "SouthAmerica"]
 
 # Public Per-Player Data: player_idx (1..4) -> {"continents": Dictionary, "strategies_count": int, "tokens": Array}
@@ -66,6 +66,8 @@ var selected_hand_card_idx: int = -1
 var selected_strategy_name: String = ""
 var selected_army_commit: int = 0
 var _first_3d_deck_picked: String = ""
+var _inspected_continent_id: String = ""
+var _is_zoomed_in: bool = false
 
 # Match Lifecycle & Animation Clock
 var _match_started: bool = false
@@ -82,6 +84,10 @@ var _fallback_canvas: CanvasLayer = null
 var _hud_root: Control = null
 var _top_turn_lbl: Label = null
 var _top_decks_lbl: Label = null
+var _btn_zoom: Button = null
+var _region_inspector_panel: PanelContainer = null
+var _region_inspector_title_lbl: Label = null
+var _region_inspector_detail_lbl: Label = null
 var _opponent_quick_row: HBoxContainer = null
 var _card_tray_panel: PanelContainer = null
 var _card_tray_count_lbl: Label = null
@@ -322,17 +328,28 @@ func _build_floating_ui() -> void:
 		22,
 		10
 	)
-	btn_opponents.custom_minimum_size = Vector2(174, 44)
+	btn_opponents.custom_minimum_size = Vector2(168, 44)
 	btn_opponents.pressed.connect(func():
 		AudioManager.sfx_button()
 		_toggle_opponent_inspector(0)
 	)
 	top_hbox.add_child(btn_opponents)
 
+	_btn_zoom = _make_styled_button(
+		"🔍 زوم",
+		Color(0.14, 0.12, 0.08, 0.95),
+		Color(0.72, 0.56, 0.28),
+		21,
+		10
+	)
+	_btn_zoom.custom_minimum_size = Vector2(92, 44)
+	_btn_zoom.pressed.connect(_toggle_camera_zoom)
+	top_hbox.add_child(_btn_zoom)
+
 	_top_decks_lbl = Label.new()
 	_top_decks_lbl.text = "👑 ۰/۲  |  🗺️ ۴۲  |  ⚡ ۳۸"
 	_top_decks_lbl.add_theme_font_override("font", FontHekayat)
-	_top_decks_lbl.add_theme_font_size_override("font_size", 26)
+	_top_decks_lbl.add_theme_font_size_override("font_size", 24)
 	_top_decks_lbl.add_theme_color_override("font_color", Color(0.98, 0.92, 0.74))
 	_top_decks_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	top_hbox.add_child(_top_decks_lbl)
@@ -342,20 +359,81 @@ func _build_floating_ui() -> void:
 	_top_turn_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_top_turn_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_top_turn_lbl.add_theme_font_override("font", FontHekayat)
-	_top_turn_lbl.add_theme_font_size_override("font_size", 24)
+	_top_turn_lbl.add_theme_font_size_override("font_size", 23)
 	_top_turn_lbl.add_theme_color_override("font_color", Color(0.98, 0.88, 0.48))
 	top_hbox.add_child(_top_turn_lbl)
 
 	# --------------------------------------------------------------------------
-	# B. FLOATING COMBAT RESOLUTION TOAST BANNER (y = 406 .. 508px)
+	# A2. COMPACT SELECTED REGION CONTEXTUAL INSPECTOR OUTSIDE THE MAIN BOARD
+	# (y = 402 .. 456px — Appears ONLY when a region is selected; hidden otherwise)
+	# --------------------------------------------------------------------------
+	_region_inspector_panel = PanelContainer.new()
+	_region_inspector_panel.name = "SelectedRegionInspector"
+	_region_inspector_panel.anchor_left = 0.03
+	_region_inspector_panel.anchor_right = 0.97
+	_region_inspector_panel.anchor_top = 0.0
+	_region_inspector_panel.anchor_bottom = 0.0
+	_region_inspector_panel.offset_top = 402.0
+	_region_inspector_panel.offset_bottom = 456.0
+	_region_inspector_panel.visible = false
+	_region_inspector_panel.mouse_filter = Control.MOUSE_FILTER_PASS
+	_region_inspector_panel.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(Color(0.08, 0.06, 0.04, 0.94), Color(0.84, 0.66, 0.28, 0.92), 12, 1, 12, 4)
+	)
+	_hud_root.add_child(_region_inspector_panel)
+
+	var reg_hbox = HBoxContainer.new()
+	reg_hbox.add_theme_constant_override("separation", 10)
+	reg_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	_region_inspector_panel.add_child(reg_hbox)
+
+	var btn_dismiss_reg = _make_styled_button(
+		"✖",
+		Color(0.24, 0.12, 0.10, 0.92),
+		Color(0.72, 0.44, 0.34),
+		20,
+		8
+	)
+	btn_dismiss_reg.custom_minimum_size = Vector2(40, 38)
+	btn_dismiss_reg.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_inspected_continent_id = ""
+		selected_source_continent = ""
+		selected_target_continent = ""
+		selected_hand_card_idx = -1
+		_refresh_all_3d_and_hud()
+	)
+	reg_hbox.add_child(btn_dismiss_reg)
+
+	_region_inspector_detail_lbl = Label.new()
+	_region_inspector_detail_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_region_inspector_detail_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_region_inspector_detail_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_region_inspector_detail_lbl.clip_text = true
+	_region_inspector_detail_lbl.add_theme_font_override("font", FontHekayat)
+	_region_inspector_detail_lbl.add_theme_font_size_override("font_size", 21)
+	_region_inspector_detail_lbl.add_theme_color_override("font_color", Color(0.95, 0.91, 0.80))
+	reg_hbox.add_child(_region_inspector_detail_lbl)
+
+	_region_inspector_title_lbl = Label.new()
+	_region_inspector_title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_region_inspector_title_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_region_inspector_title_lbl.add_theme_font_override("font", FontHekayat)
+	_region_inspector_title_lbl.add_theme_font_size_override("font_size", 24)
+	_region_inspector_title_lbl.add_theme_color_override("font_color", Color(0.99, 0.88, 0.46))
+	reg_hbox.add_child(_region_inspector_title_lbl)
+
+	# --------------------------------------------------------------------------
+	# B. FLOATING COMBAT RESOLUTION TOAST BANNER (y = 460 .. 560px)
 	# --------------------------------------------------------------------------
 	_combat_banner_panel = PanelContainer.new()
 	_combat_banner_panel.anchor_left = 0.06
 	_combat_banner_panel.anchor_right = 0.94
 	_combat_banner_panel.anchor_top = 0.0
 	_combat_banner_panel.anchor_bottom = 0.0
-	_combat_banner_panel.offset_top = 406.0
-	_combat_banner_panel.offset_bottom = 508.0
+	_combat_banner_panel.offset_top = 460.0
+	_combat_banner_panel.offset_bottom = 560.0
 	_combat_banner_panel.visible = false
 	_combat_banner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_combat_banner_panel.add_theme_stylebox_override(
@@ -1299,12 +1377,41 @@ func _refresh_3d_decks() -> void:
 		for i in range(sd["layers"].size()):
 			sd["layers"][i].visible = (i < vis_layers and strategy_deck_count > 0)
 
+func _get_continent_owner_player(c_id: String) -> int:
+	# 1. If a player holds the Domination Coin for this continent, they are the sovereign owner
+	for p_idx in range(1, total_players + 1):
+		var p_toks: Array = players_state.get(p_idx, {}).get("tokens", [])
+		if p_toks.has(c_id):
+			return p_idx
+	# 2. Otherwise, if a single player has the strictly largest unit count on this continent, show their ownership border
+	var best_p: int = 0
+	var best_cnt: int = 0
+	var tied: bool = false
+	for p_idx in range(1, total_players + 1):
+		var cnt: int = _to_int(players_state.get(p_idx, {}).get("continents", {}).get(c_id, 0))
+		if cnt > best_cnt:
+			best_cnt = cnt
+			best_p = p_idx
+			tied = false
+		elif cnt > 0 and cnt == best_cnt:
+			tied = true
+	return best_p if (best_cnt > 0 and not tied) else 0
+
 func _refresh_3d_continents_and_bridges() -> void:
+	var focus_source: String = selected_source_continent if selected_source_continent != "" else _inspected_continent_id
 	var valid_targets: Array[String] = _get_valid_attack_target_continents(selected_source_continent)
 
 	for c_id in _continent_nodes.keys():
 		var c_ref: Dictionary = _continent_nodes[c_id]
 		c_ref["token_node"].visible = board_tokens.has(c_id)
+
+		# Update Ownership Border & Plaque Trim Color
+		var owner_p: int = _get_continent_owner_player(c_id)
+		var bezel_mat: StandardMaterial3D = RiskMaterials.get_ownership_bezel_material(owner_p, _mats)
+		if c_ref.has("ownership_bezel") and is_instance_valid(c_ref["ownership_bezel"]):
+			(c_ref["ownership_bezel"] as MeshInstance3D).material_override = bezel_mat
+		if c_ref.has("plaque_trim") and is_instance_valid(c_ref["plaque_trim"]):
+			(c_ref["plaque_trim"] as MeshInstance3D).material_override = bezel_mat
 
 		var garrisons: Dictionary = c_ref["garrisons"]
 		var present_players: Array[int] = []
@@ -1315,6 +1422,14 @@ func _refresh_3d_continents_and_bridges() -> void:
 			if cnt > 0 and p_idx <= total_players:
 				g_ref["node"].visible = true
 				g_ref["label"].text = "×" + Risk3DFactory.fa_digits(cnt)
+				# Show 1..3 stacked discs proportional to unit count
+				var vis_discs: int = clampi(cnt, 1, 3)
+				if g_ref.has("stack_discs"):
+					var discs: Array = g_ref["stack_discs"]
+					for d_i in range(discs.size()):
+						discs[d_i].visible = (d_i < vis_discs)
+				if g_ref.has("piece") and is_instance_valid(g_ref["piece"]):
+					(g_ref["piece"] as Node3D).position.y = 0.003 + float(vis_discs) * 0.005
 				present_players.append(p_idx)
 			else:
 				g_ref["node"].visible = false
@@ -1327,7 +1442,7 @@ func _refresh_3d_continents_and_bridges() -> void:
 		var is_atk_src = (active_attack.get("source_continent", "") == c_id)
 		var is_atk_tgt = (active_attack.get("target_continent", "") == c_id)
 		var is_highlighted = false
-		if is_atk_src or c_id == selected_source_continent:
+		if is_atk_src or c_id == selected_source_continent or c_id == _inspected_continent_id:
 			aura.visible = true
 			aura.material_override = _mats["glow_gold"]
 			is_highlighted = true
@@ -1344,17 +1459,17 @@ func _refresh_3d_continents_and_bridges() -> void:
 		plateau.material_override = RiskMaterials.get_continent_material(c_id, is_highlighted)
 
 	for pair_key in _bridge_nodes.keys():
-		var b_mi: MeshInstance3D = _bridge_nodes[pair_key]
+		var b_node: Node = _bridge_nodes[pair_key]
 		var highlight: bool = false
 		if not active_attack.is_empty():
 			var sc = str(active_attack.get("source_continent", ""))
 			var tc = str(active_attack.get("target_continent", ""))
 			if pair_key == (sc + "_" + tc) or pair_key == (tc + "_" + sc):
 				highlight = true
-		elif selected_source_continent != "":
-			if pair_key.begins_with(selected_source_continent + "_") or pair_key.ends_with("_" + selected_source_continent):
+		elif focus_source != "":
+			if pair_key.begins_with(focus_source + "_") or pair_key.ends_with("_" + focus_source):
 				highlight = true
-		b_mi.material_override = _mats["bridge_active"] if highlight else _mats["bridge_idle"]
+		Risk3DFactory.set_bridge_material(b_node, _mats["bridge_active"] if highlight else _mats["bridge_idle"])
 
 func _refresh_3d_player_stations() -> void:
 	var needs_opp_target: bool = (selected_strategy_name in ["Bomb", "Destroy", "Spy"])
@@ -1415,6 +1530,9 @@ func _refresh_floating_hud() -> void:
 		else:
 			_top_turn_lbl.text = "⏳ نوبت %s • %s" % [_get_player_name(_active_turn), _phase_fa(game_state)]
 			_top_turn_lbl.add_theme_color_override("font_color", Color(0.96, 0.84, 0.48))
+
+	# 1B. Update Compact Selected Region Contextual Inspector (Outside the Board)
+	_refresh_selected_region_inspector()
 
 	# 2. Populate Dedicated Card Hand Tray
 	if is_instance_valid(_hand_cards_hbox):
@@ -1988,12 +2106,14 @@ func _on_hand_card_selected(card_idx: int) -> void:
 		selected_source_continent = ""
 		selected_target_continent = ""
 		selected_strategy_name = ""
+		_inspected_continent_id = ""
 	else:
 		selected_hand_card_idx = card_idx
 		if kind == "continent":
 			selected_source_continent = cid
 			selected_target_continent = ""
 			selected_strategy_name = ""
+			_inspected_continent_id = cid
 		else:
 			selected_strategy_name = cid
 			selected_source_continent = ""
@@ -2002,6 +2122,7 @@ func _on_hand_card_selected(card_idx: int) -> void:
 	_refresh_all_3d_and_hud()
 
 func _on_3d_continent_clicked(c_id: String) -> void:
+	_inspected_continent_id = c_id
 	if _is_my_turn() and game_state == "SelectAction" and selected_strategy_name == "Destroy":
 		if selected_target_player > 0:
 			var opp_c: Dictionary = players_state.get(selected_target_player, {}).get("continents", {})
@@ -2024,9 +2145,11 @@ func _on_3d_continent_clicked(c_id: String) -> void:
 			return
 
 	_inspect_continent_summary(c_id)
+	_refresh_all_3d_and_hud()
 
 func _select_target_continent_for_attack(c_id: String) -> void:
 	selected_target_continent = c_id
+	_inspected_continent_id = c_id
 	var defs = _get_defenders_on_continent(c_id)
 	if not defs.is_empty():
 		selected_target_player = defs[0]
@@ -2145,6 +2268,7 @@ func _spawn_and_roll_3d_dice(atk_dice: Array, def_dice: Array) -> void:
 	_dice_nodes.clear()
 
 	AudioManager.sfx_dice()
+	arena.visible = true
 
 	# Elevate & scale the 3D Dice Arena to the center-front stage of the board during combat!
 	if _dice_arena_tween and _dice_arena_tween.is_valid():
@@ -2186,11 +2310,15 @@ func _spawn_and_roll_3d_dice(atk_dice: Array, def_dice: Array) -> void:
 		var target_pos = Vector3(def_start_x + float(i) * def_spacing, 0.046, 0.048)
 		_animate_single_3d_die(die, target_pos, val, 0.08 + float(i) * 0.06)
 
-	# Smoothly return the Dice Arena to its upper command bay dock after the player inspects the roll
+	# Smoothly return and hide the Dice Arena after the player inspects the roll
 	var return_tw = create_tween()
 	return_tw.tween_interval(4.8)
-	return_tw.tween_property(arena, "position", Vector3(0.0, 0.048, -0.49), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	return_tw.parallel().tween_property(arena, "scale", Vector3(0.62, 0.62, 0.62), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	return_tw.tween_property(arena, "position", Vector3(0.0, 0.048, -0.49), 0.42).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	return_tw.parallel().tween_property(arena, "scale", Vector3(0.62, 0.62, 0.62), 0.42).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	return_tw.tween_callback(func():
+		if is_instance_valid(arena):
+			arena.visible = false
+	)
 
 func _animate_single_3d_die(die: Node3D, final_pos: Vector3, final_val: int, delay: float) -> void:
 	die.position = final_pos + Vector3(randf_range(-0.04, 0.04), 0.22, randf_range(-0.03, 0.03))
@@ -2689,7 +2817,81 @@ func _build_inspector_card_widget(
 	return card_panel
 
 
+func _toggle_camera_zoom() -> void:
+	AudioManager.sfx_tap()
+	_is_zoomed_in = not _is_zoomed_in
+	if is_instance_valid(_btn_zoom):
+		_btn_zoom.text = "🔍 نمای کلی" if _is_zoomed_in else "🔍 زوم"
+	var table = get_tree().root.find_child("CafeTable", true, false)
+	if is_instance_valid(table):
+		if _is_zoomed_in and table.has_method("zoom_in"):
+			table.zoom_in(0.36)
+		elif not _is_zoomed_in and table.has_method("reset_camera_orbit"):
+			table.reset_camera_orbit()
+
+func _get_active_inspected_continent() -> String:
+	if selected_target_continent != "":
+		return selected_target_continent
+	if selected_source_continent != "":
+		return selected_source_continent
+	if _inspected_continent_id != "":
+		return _inspected_continent_id
+	if not active_attack.is_empty():
+		return str(active_attack.get("target_continent", active_attack.get("source_continent", "")))
+	return ""
+
+func _refresh_selected_region_inspector() -> void:
+	if not is_instance_valid(_region_inspector_panel):
+		return
+	var c_id: String = _get_active_inspected_continent()
+	if c_id == "" or not Risk3DFactory.CONTINENT_META.has(c_id):
+		_region_inspector_panel.visible = false
+		return
+
+	_region_inspector_panel.visible = true
+	var c_fa: String = _continent_fa(c_id)
+	var dom_req: int = int(Risk3DFactory.CONTINENT_META.get(c_id, {}).get("domination", 4))
+	var owner_p: int = _get_continent_owner_player(c_id)
+	var owner_str: String = _get_player_name(owner_p) if owner_p > 0 else "بدون مالک"
+
+	var tok_owner: int = 0
+	for p_idx in range(1, total_players + 1):
+		if (players_state.get(p_idx, {}).get("tokens", []) as Array).has(c_id):
+			tok_owner = p_idx
+			break
+	var dom_str: String = ("👑 سلطه: %s" % _get_player_name(tok_owner)) if tok_owner > 0 else ("👑 حد نصاب: %s کارت" % Risk3DFactory.fa_digits(dom_req))
+
+	var unit_parts: Array[String] = []
+	for p_idx in range(1, total_players + 1):
+		var cnt = _to_int(players_state.get(p_idx, {}).get("continents", {}).get(c_id, 0))
+		if cnt > 0:
+			unit_parts.append("%s ×%s" % [_get_player_name(p_idx), Risk3DFactory.fa_digits(cnt)])
+	var units_str: String = " ، ".join(unit_parts) if not unit_parts.is_empty() else "خالی"
+
+	var status_str: String = "بررسی منطقه"
+	if c_id == selected_source_continent:
+		status_str = "⚔️ مبدا حمله"
+	elif c_id == selected_target_continent:
+		status_str = "🎯 هدف حمله"
+	elif _get_valid_attack_target_continents(selected_source_continent).has(c_id):
+		status_str = "🟢 قابل حمله"
+
+	if is_instance_valid(_region_inspector_title_lbl):
+		_region_inspector_title_lbl.text = "🗺️ %s" % c_fa
+		var c_col: Color = RiskMaterials.CONTINENT_COLORS.get(c_id, Color(0.98, 0.88, 0.46)).lightened(0.35)
+		_region_inspector_title_lbl.add_theme_color_override("font_color", c_col)
+
+	if is_instance_valid(_region_inspector_detail_lbl):
+		_region_inspector_detail_lbl.text = "مالک: %s  |  ⚔️ نیروها: %s  |  %s  |  %s" % [
+			owner_str,
+			units_str,
+			dom_str,
+			status_str,
+		]
+
 func _inspect_continent_summary(c_id: String) -> void:
+	_inspected_continent_id = c_id
+	_refresh_selected_region_inspector()
 	var c_fa = _continent_fa(c_id)
 	var dom_req: int = int(Risk3DFactory.CONTINENT_META.get(c_id, {}).get("domination", 4))
 	var has_tok = board_tokens.has(c_id)
