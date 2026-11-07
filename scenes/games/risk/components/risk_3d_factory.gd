@@ -248,30 +248,50 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 	var dice_arena = Node3D.new()
 	dice_arena.name = "CentralDiceArena"
 	dice_arena.position = Vector3(0.0, 0.048, -0.49)
+	dice_arena.scale = Vector3(0.62, 0.62, 0.62)
 	root.add_child(dice_arena)
 	refs["dice_arena"] = dice_arena
 
 	var arena_rim = MeshInstance3D.new()
 	var ar_cyl = CylinderMesh.new()
-	ar_cyl.top_radius = 0.088
-	ar_cyl.bottom_radius = 0.094
-	ar_cyl.height = 0.014
-	ar_cyl.radial_segments = 8
+	ar_cyl.top_radius = 0.148
+	ar_cyl.bottom_radius = 0.158
+	ar_cyl.height = 0.018
+	ar_cyl.radial_segments = 16
 	ar_cyl.material = mats["bronze"]
 	arena_rim.mesh = ar_cyl
-	arena_rim.position = Vector3(0.0, 0.007, 0.0)
+	arena_rim.position = Vector3(0.0, 0.009, 0.0)
 	dice_arena.add_child(arena_rim)
+
+	var arena_gold_lip = MeshInstance3D.new()
+	var ag_cyl = CylinderMesh.new()
+	ag_cyl.top_radius = 0.138
+	ag_cyl.bottom_radius = 0.140
+	ag_cyl.height = 0.019
+	ag_cyl.radial_segments = 16
+	ag_cyl.material = mats["brass"]
+	arena_gold_lip.mesh = ag_cyl
+	arena_gold_lip.position = Vector3(0.0, 0.0095, 0.0)
+	dice_arena.add_child(arena_gold_lip)
 
 	var arena_bed = MeshInstance3D.new()
 	var ab_cyl = CylinderMesh.new()
-	ab_cyl.top_radius = 0.078
-	ab_cyl.bottom_radius = 0.078
-	ab_cyl.height = 0.015
-	ab_cyl.radial_segments = 8
+	ab_cyl.top_radius = 0.130
+	ab_cyl.bottom_radius = 0.130
+	ab_cyl.height = 0.020
+	ab_cyl.radial_segments = 16
 	ab_cyl.material = mats["emerald_velvet"]
 	arena_bed.mesh = ab_cyl
-	arena_bed.position = Vector3(0.0, 0.0075, 0.0)
+	arena_bed.position = Vector3(0.0, 0.010, 0.0)
 	dice_arena.add_child(arena_bed)
+
+	var dice_light = OmniLight3D.new()
+	dice_light.name = "DiceSpotlight"
+	dice_light.light_color = Color(1.0, 0.95, 0.82)
+	dice_light.light_energy = 1.35
+	dice_light.omni_range = 0.65
+	dice_light.position = Vector3(0.0, 0.24, 0.0)
+	dice_arena.add_child(dice_light)
 
 	# 4. Left & Right 3D Draw Decks in the Upper Command Bay (Zero overlap with continents!)
 	refs["continent_deck"] = _build_draw_deck(
@@ -888,32 +908,70 @@ static func populate_station_assets_3d(
 		tok.position = Vector3(float(i) * 0.038, 0.004, 0.0)
 		container.add_child(tok)
 
-static func build_3d_die(is_attacker: bool, mats: Dictionary) -> Node3D:
+static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null, final_val: int = 1) -> Node3D:
 	var die_root = Node3D.new()
 	die_root.name = "BattleDie3D"
-	var s: float = 0.034
+	# 2x larger linear size (8x larger volume) so dice are bold and unmistakable
+	var s: float = 0.068
 	var half: float = s * 0.5
+
+	# Rotate this inner pivot for the 3D die cube & pips so the floating badge above stays upright
+	var cube_pivot = Node3D.new()
+	cube_pivot.name = "CubePivot"
+	die_root.add_child(cube_pivot)
 
 	var body_mi = MeshInstance3D.new()
 	var bm = BoxMesh.new()
 	bm.size = Vector3(s, s, s)
 	bm.material = mats["die_attacker"] if is_attacker else mats["die_defender"]
 	body_mi.mesh = bm
-	die_root.add_child(body_mi)
+	cube_pivot.add_child(body_mi)
 
-	for cx in [-half * 0.92, half * 0.92]:
-		for cy in [-half * 0.92, half * 0.92]:
-			for cz in [-half * 0.92, half * 0.92]:
+	# Sculpted Brass Corner Studs
+	for cx in [-half * 0.94, half * 0.94]:
+		for cy in [-half * 0.94, half * 0.94]:
+			for cz in [-half * 0.94, half * 0.94]:
 				var stud_mi = MeshInstance3D.new()
 				var sm = SphereMesh.new()
-				sm.radius = 0.0030
-				sm.height = 0.0060
-				sm.material = mats["brass"]
+				sm.radius = 0.0064
+				sm.height = 0.0128
+				sm.material = mats["gold"] if is_attacker else mats["brass"]
 				stud_mi.mesh = sm
 				stud_mi.position = Vector3(cx, cy, cz)
-				die_root.add_child(stud_mi)
+				cube_pivot.add_child(stud_mi)
 
-	var d: float = s * 0.26
+	# 12 Brass Edge Bevel Bars for crisp 3D cube definition
+	var edge_t: float = 0.0046
+	var edge_l: float = s * 0.94
+	var trim_mat = mats["gold"] if is_attacker else mats["brass"]
+	for s1 in [-half * 0.96, half * 0.96]:
+		for s2 in [-half * 0.96, half * 0.96]:
+			var ex = MeshInstance3D.new()
+			var bx = BoxMesh.new()
+			bx.size = Vector3(edge_l, edge_t, edge_t)
+			bx.material = trim_mat
+			ex.mesh = bx
+			ex.position = Vector3(0.0, s1, s2)
+			cube_pivot.add_child(ex)
+
+			var ey = MeshInstance3D.new()
+			var by = BoxMesh.new()
+			by.size = Vector3(edge_t, edge_l, edge_t)
+			by.material = trim_mat
+			ey.mesh = by
+			ey.position = Vector3(s1, 0.0, s2)
+			cube_pivot.add_child(ey)
+
+			var ez = MeshInstance3D.new()
+			var bz = BoxMesh.new()
+			bz.size = Vector3(edge_t, edge_t, edge_l)
+			bz.material = trim_mat
+			ez.mesh = bz
+			ez.position = Vector3(s1, s2, 0.0)
+			cube_pivot.add_child(ez)
+
+	# High-Contrast Raised Ivory Pips with Gold Collar Rings
+	var d: float = s * 0.265
 	var face_pips = {
 		Vector3(0, 1, 0): [Vector2(0, 0)],
 		Vector3(0, -1, 0): [Vector2(-d, -d), Vector2(-d, 0), Vector2(-d, d), Vector2(d, -d), Vector2(d, 0), Vector2(d, d)],
@@ -923,22 +981,37 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary) -> Node3D:
 		Vector3(-1, 0, 0): [Vector2(-d, -d), Vector2(d, -d), Vector2(-d, d), Vector2(d, d)],
 	}
 	for normal in face_pips.keys():
+		var is_one_face = (normal == Vector3(0, 1, 0))
 		for uv in face_pips[normal]:
 			var pip_mi = MeshInstance3D.new()
 			var pm = SphereMesh.new()
-			pm.radius = 0.0030
-			pm.height = 0.0060
+			pm.radius = 0.0086 if is_one_face else 0.0068
+			pm.height = 0.0172 if is_one_face else 0.0136
 			pm.material = mats["pip_ivory"]
 			pip_mi.mesh = pm
 			var p3 = Vector3.ZERO
 			if absf(normal.y) > 0.5:
-				p3 = Vector3(uv.x, normal.y * (half + 0.0008), uv.y)
+				p3 = Vector3(uv.x, normal.y * (half + 0.0018), uv.y)
 			elif absf(normal.z) > 0.5:
-				p3 = Vector3(uv.x, uv.y, normal.z * (half + 0.0008))
+				p3 = Vector3(uv.x, uv.y, normal.z * (half + 0.0018))
 			else:
-				p3 = Vector3(normal.x * (half + 0.0008), uv.y, uv.x)
+				p3 = Vector3(normal.x * (half + 0.0018), uv.y, uv.x)
 			pip_mi.position = p3
-			die_root.add_child(pip_mi)
+			cube_pivot.add_child(pip_mi)
+
+	# Floating High-Contrast Value Badge above each die (pops in on landing)
+	var badge_lbl = make_label_3d(
+		"%s %s" % ["⚔️" if is_attacker else "🛡️", fa_digits(clampi(final_val, 1, 6))],
+		font,
+		56,
+		Color(1.0, 0.92, 0.46) if is_attacker else Color(0.58, 0.92, 1.0),
+		0.0012
+	)
+	badge_lbl.name = "DieValueBadge"
+	badge_lbl.position = Vector3(0.0, half + 0.042, 0.0)
+	badge_lbl.outline_size = 18
+	badge_lbl.visible = false
+	die_root.add_child(badge_lbl)
 
 	return die_root
 

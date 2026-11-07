@@ -137,24 +137,31 @@ static func create_palette() -> Dictionary:
 	bridge_active.emission_energy_multiplier = 1.40
 	mats["bridge_active"] = bridge_active
 
-	# 3D Battle Dice Materials (Attacker Crimson & Defender Charcoal-Obsidian)
+	# 3D Battle Dice Materials (High-Contrast Attacker Ruby-Crimson & Defender Royal Cobalt-Obsidian)
 	var die_attacker = StandardMaterial3D.new()
-	die_attacker.albedo_color = Color(0.78, 0.14, 0.16)
-	die_attacker.roughness = 0.20
-	die_attacker.metallic = 0.14
+	die_attacker.albedo_color = Color(0.88, 0.14, 0.16)
+	die_attacker.roughness = 0.18
+	die_attacker.metallic = 0.18
+	die_attacker.emission_enabled = true
+	die_attacker.emission = Color(0.75, 0.10, 0.12)
+	die_attacker.emission_energy_multiplier = 0.28
 	mats["die_attacker"] = die_attacker
 
 	var die_defender = StandardMaterial3D.new()
-	die_defender.albedo_color = Color(0.14, 0.16, 0.20)
-	die_defender.roughness = 0.22
-	die_defender.metallic = 0.24
+	die_defender.albedo_color = Color(0.14, 0.34, 0.68)
+	die_defender.roughness = 0.20
+	die_defender.metallic = 0.26
+	die_defender.emission_enabled = true
+	die_defender.emission = Color(0.10, 0.28, 0.58)
+	die_defender.emission_energy_multiplier = 0.26
 	mats["die_defender"] = die_defender
 
 	var pip_ivory = StandardMaterial3D.new()
-	pip_ivory.albedo_color = Color(0.96, 0.93, 0.85)
+	pip_ivory.albedo_color = Color(1.0, 0.98, 0.92)
+	pip_ivory.roughness = 0.12
 	pip_ivory.emission_enabled = true
-	pip_ivory.emission = Color(0.92, 0.88, 0.76)
-	pip_ivory.emission_energy_multiplier = 0.20
+	pip_ivory.emission = Color(1.0, 0.96, 0.84)
+	pip_ivory.emission_energy_multiplier = 0.65
 	mats["pip_ivory"] = pip_ivory
 
 	return mats

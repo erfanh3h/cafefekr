@@ -96,7 +96,9 @@ var _combat_banner_panel: PanelContainer = null
 var _combat_banner_lbl: Label = null
 var _inspector_panel: PanelContainer = null
 var _inspector_title_lbl: Label = null
-var _inspector_body_lbl: Label = null
+var _inspector_cards_vbox: VBoxContainer = null
+var _inspected_player_filter: int = 0
+var _dice_arena_tween: Tween = null
 var _log_panel: PanelContainer = null
 var _log_vbox: VBoxContainer = null
 
@@ -314,13 +316,13 @@ func _build_floating_ui() -> void:
 	top_hbox.add_child(btn_log)
 
 	var btn_opponents = _make_styled_button(
-		"👁️ وضعیت حریفان",
+		"👁️ وضعیت بازیکنان",
 		Color(0.10, 0.22, 0.16, 0.95),
 		Color(0.38, 0.76, 0.52),
 		22,
 		10
 	)
-	btn_opponents.custom_minimum_size = Vector2(168, 44)
+	btn_opponents.custom_minimum_size = Vector2(174, 44)
 	btn_opponents.pressed.connect(func():
 		AudioManager.sfx_button()
 		_toggle_opponent_inspector(0)
@@ -372,17 +374,18 @@ func _build_floating_ui() -> void:
 	_combat_banner_panel.add_child(_combat_banner_lbl)
 
 	# --------------------------------------------------------------------------
-	# C. EXPANDABLE MODAL: OPPONENT CARDS & ASSETS INSPECTOR
+	# C. EXPANDABLE MODAL: PLAYERS CARDS & ASSETS VISUAL SHOWCASE (وضعیت بازیکنان)
 	# --------------------------------------------------------------------------
 	_inspector_panel = PanelContainer.new()
-	_inspector_panel.anchor_left = 0.05
-	_inspector_panel.anchor_right = 0.95
-	_inspector_panel.anchor_top = 0.23
-	_inspector_panel.anchor_bottom = 0.64
+	_inspector_panel.anchor_left = 0.035
+	_inspector_panel.anchor_right = 0.965
+	_inspector_panel.anchor_top = 0.21
+	_inspector_panel.anchor_bottom = 0.71
 	_inspector_panel.visible = false
+	_inspector_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_inspector_panel.add_theme_stylebox_override(
 		"panel",
-		_make_panel_style(Color(0.09, 0.06, 0.04, 0.97), Color(0.82, 0.64, 0.28), 18, 2, 18, 14)
+		_make_panel_style(Color(0.08, 0.055, 0.038, 0.98), Color(0.84, 0.66, 0.28), 20, 2, 16, 12)
 	)
 	_hud_root.add_child(_inspector_panel)
 
@@ -406,7 +409,7 @@ func _build_floating_ui() -> void:
 	_inspector_title_lbl.add_theme_color_override("font_color", Color(0.96, 0.84, 0.42))
 	insp_header.add_child(_inspector_title_lbl)
 
-	# Quick Opponent Filter Chips inside Inspector
+	# Quick Player Filter Tabs inside Inspector
 	var opp_chip_scroll = ScrollContainer.new()
 	opp_chip_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	opp_chip_scroll.custom_minimum_size = Vector2(0, 50)
@@ -421,18 +424,15 @@ func _build_floating_ui() -> void:
 
 	var insp_scroll = ScrollContainer.new()
 	insp_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	insp_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	insp_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	insp_vbox.add_child(insp_scroll)
 
-	_inspector_body_lbl = Label.new()
-	_inspector_body_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_inspector_body_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_inspector_body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_inspector_body_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	_inspector_body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_inspector_body_lbl.add_theme_font_override("font", FontHekayat)
-	_inspector_body_lbl.add_theme_font_size_override("font_size", 26)
-	_inspector_body_lbl.add_theme_color_override("font_color", Color(0.96, 0.93, 0.86))
-	insp_scroll.add_child(_inspector_body_lbl)
+	_inspector_cards_vbox = VBoxContainer.new()
+	_inspector_cards_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_inspector_cards_vbox.add_theme_constant_override("separation", 14)
+	_inspector_cards_vbox.mouse_filter = Control.MOUSE_FILTER_PASS
+	insp_scroll.add_child(_inspector_cards_vbox)
 
 	# --------------------------------------------------------------------------
 	# D. EXPANDABLE MODAL: BATTLE LOG DRAWER
@@ -1320,27 +1320,11 @@ func _refresh_floating_hud() -> void:
 		for ch in _opponent_quick_row.get_children():
 			ch.queue_free()
 
-	# Populate Opponent Quick Filter Chips inside Inspector Modal
-	if is_instance_valid(_opponent_quick_row):
-		for p_idx in range(1, total_players + 1):
-			var st: Dictionary = players_state.get(p_idx, {})
-			var t_cnt: int = (st.get("tokens", []) as Array).size()
-			var s_cnt: int = _to_int(st.get("strategies_count", 0))
-			var f_col: Color = RiskMaterials.FACTION_COLORS.get(p_idx, Color.WHITE)
-			var opp_btn = _make_styled_button(
-				"%s (👑%s | 🃏%s)" % [_get_player_name(p_idx), Risk3DFactory.fa_digits(t_cnt), Risk3DFactory.fa_digits(s_cnt)],
-				f_col.darkened(0.62),
-				f_col.lightened(0.18),
-				21,
-				10
-			)
-			opp_btn.custom_minimum_size = Vector2(180, 42)
-			var target_p = p_idx
-			opp_btn.pressed.connect(func():
-				AudioManager.sfx_tap()
-				_toggle_opponent_inspector(target_p)
-			)
-			_opponent_quick_row.add_child(opp_btn)
+	# Populate Player Filter Tabs inside Inspector Modal (and refresh open inspector card view)
+	_populate_inspector_filter_chips()
+	if is_instance_valid(_inspector_panel) and _inspector_panel.visible:
+		_rebuild_inspector_cards_view(_inspected_player_filter)
+
 
 	var def_id = _to_int(active_attack.get("defender_id", 0))
 	var atk_id = _to_int(active_attack.get("attacker_id", _active_turn))
@@ -1945,38 +1929,94 @@ func _spawn_and_roll_3d_dice(atk_dice: Array, def_dice: Array) -> void:
 
 	AudioManager.sfx_dice()
 
+	# Elevate & scale the 3D Dice Arena to the center-front stage of the board during combat!
+	if _dice_arena_tween and _dice_arena_tween.is_valid():
+		_dice_arena_tween.kill()
+	_dice_arena_tween = create_tween()
+	_dice_arena_tween.set_parallel(true)
+	_dice_arena_tween.tween_property(
+		arena,
+		"position",
+		Vector3(0.0, 0.115, -0.02),
+		0.22
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_dice_arena_tween.tween_property(
+		arena,
+		"scale",
+		Vector3(1.18, 1.18, 1.18),
+		0.22
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
 	var total_atk = atk_dice.size()
+	var atk_spacing: float = 0.084
+	var atk_start_x: float = -float(max(0, total_atk - 1)) * atk_spacing * 0.5
 	for i in range(total_atk):
 		var val = _to_int(atk_dice[i], 1)
-		var die = Risk3DFactory.build_3d_die(true, _mats)
+		var die = Risk3DFactory.build_3d_die(true, _mats, FontHekayat, val)
 		arena.add_child(die)
 		_dice_nodes.append(die)
-		var target_pos = Vector3(-0.038 + float(i) * 0.036, 0.028, -0.020)
+		var target_pos = Vector3(atk_start_x + float(i) * atk_spacing, 0.046, -0.048)
 		_animate_single_3d_die(die, target_pos, val, float(i) * 0.06)
 
 	var total_def = def_dice.size()
+	var def_spacing: float = 0.088
+	var def_start_x: float = -float(max(0, total_def - 1)) * def_spacing * 0.5
 	for i in range(total_def):
 		var val = _to_int(def_dice[i], 1)
-		var die = Risk3DFactory.build_3d_die(false, _mats)
+		var die = Risk3DFactory.build_3d_die(false, _mats, FontHekayat, val)
 		arena.add_child(die)
 		_dice_nodes.append(die)
-		var target_pos = Vector3(-0.022 + float(i) * 0.040, 0.028, 0.022)
+		var target_pos = Vector3(def_start_x + float(i) * def_spacing, 0.046, 0.048)
 		_animate_single_3d_die(die, target_pos, val, 0.08 + float(i) * 0.06)
 
+	# Smoothly return the Dice Arena to its upper command bay dock after the player inspects the roll
+	var return_tw = create_tween()
+	return_tw.tween_interval(4.8)
+	return_tw.tween_property(arena, "position", Vector3(0.0, 0.048, -0.49), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	return_tw.parallel().tween_property(arena, "scale", Vector3(0.62, 0.62, 0.62), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+
 func _animate_single_3d_die(die: Node3D, final_pos: Vector3, final_val: int, delay: float) -> void:
-	die.position = final_pos + Vector3(randf_range(-0.03, 0.03), 0.16, randf_range(-0.02, 0.02))
-	die.rotation_degrees = Vector3(randf_range(0, 360), randf_range(0, 360), randf_range(0, 360))
+	die.position = final_pos + Vector3(randf_range(-0.04, 0.04), 0.22, randf_range(-0.03, 0.03))
+	var cube_pivot: Node3D = die.get_node_or_null("CubePivot") as Node3D
+	var badge_lbl: Label3D = die.get_node_or_null("DieValueBadge") as Label3D
+	if is_instance_valid(badge_lbl):
+		badge_lbl.visible = false
+		badge_lbl.scale = Vector3.ZERO
+
 	var final_rot = Risk3DFactory.get_die_rotation_for_value(final_val)
+	if is_instance_valid(cube_pivot):
+		cube_pivot.rotation_degrees = Vector3(randf_range(0, 360), randf_range(0, 360), randf_range(0, 360))
+	else:
+		die.rotation_degrees = Vector3(randf_range(0, 360), randf_range(0, 360), randf_range(0, 360))
+
 	var tw = create_tween()
 	if delay > 0.0:
 		tw.tween_interval(delay)
-	tw.tween_property(die, "position", final_pos, 0.48).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(
-		die,
-		"rotation_degrees",
-		final_rot + Vector3(360.0, 360.0, 0.0),
-		0.46
-	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(die, "position", final_pos, 0.52).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	if is_instance_valid(cube_pivot):
+		tw.parallel().tween_property(
+			cube_pivot,
+			"rotation_degrees",
+			final_rot + Vector3(720.0, 360.0, 0.0),
+			0.50
+		).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	else:
+		tw.parallel().tween_property(
+			die,
+			"rotation_degrees",
+			final_rot + Vector3(720.0, 360.0, 0.0),
+			0.50
+		).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+	# Pop in the floating Persian numeral badge right above the landed die
+	tw.tween_callback(func():
+		if is_instance_valid(badge_lbl):
+			badge_lbl.visible = true
+			var b_tw = create_tween()
+			b_tw.tween_property(badge_lbl, "scale", Vector3(1.18, 1.18, 1.18), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			b_tw.tween_property(badge_lbl, "scale", Vector3.ONE, 0.10)
+	)
+
 
 func _animate_deck_draw_pulse(draw_type: int) -> void:
 	var targets: Array = []
@@ -2012,44 +2052,369 @@ func _process(delta: float) -> void:
 # 9. INSPECTORS & LOG PANEL
 # ==============================================================================
 
+func _populate_inspector_filter_chips() -> void:
+	if not is_instance_valid(_opponent_quick_row):
+		return
+	for ch in _opponent_quick_row.get_children():
+		ch.queue_free()
+
+	var is_all = (_inspected_player_filter == 0)
+	var btn_all = _make_styled_button(
+		"👥 همه بازیکنان",
+		Color(0.28, 0.20, 0.08, 0.96) if is_all else Color(0.14, 0.10, 0.07, 0.92),
+		Color(0.98, 0.84, 0.30) if is_all else Color(0.56, 0.42, 0.24),
+		21,
+		10,
+		is_all
+	)
+	btn_all.custom_minimum_size = Vector2(150, 42)
+	btn_all.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_inspected_player_filter = 0
+		_populate_inspector_filter_chips()
+		_rebuild_inspector_cards_view(0)
+	)
+	_opponent_quick_row.add_child(btn_all)
+
+	for p_idx in range(1, total_players + 1):
+		var st: Dictionary = players_state.get(p_idx, {})
+		var t_cnt: int = (st.get("tokens", []) as Array).size()
+		var c_cnt: int = _sum_dict_values(st.get("continents", {}))
+		var s_cnt: int = _to_int(st.get("strategies_count", 0))
+		var f_col: Color = RiskMaterials.FACTION_COLORS.get(p_idx, Color.WHITE)
+		var is_sel: bool = (_inspected_player_filter == p_idx)
+		var opp_btn = _make_styled_button(
+			"%s (👑%s | 🃏%s)" % [_get_player_name(p_idx), Risk3DFactory.fa_digits(t_cnt), Risk3DFactory.fa_digits(c_cnt + s_cnt)],
+			f_col.darkened(0.45) if is_sel else f_col.darkened(0.68),
+			Color(0.98, 0.86, 0.32) if is_sel else f_col.lightened(0.18),
+			21,
+			10,
+			is_sel
+		)
+		opp_btn.custom_minimum_size = Vector2(184, 42)
+		var target_p = p_idx
+		opp_btn.pressed.connect(func():
+			AudioManager.sfx_tap()
+			_inspected_player_filter = target_p
+			_populate_inspector_filter_chips()
+			_rebuild_inspector_cards_view(target_p)
+		)
+		_opponent_quick_row.add_child(opp_btn)
+
 func _toggle_opponent_inspector(target_p: int = 0) -> void:
 	if not is_instance_valid(_inspector_panel):
 		return
-	if _inspector_panel.visible and target_p == 0:
+	if _inspector_panel.visible and target_p == 0 and _inspected_player_filter == 0:
 		_inspector_panel.visible = false
 		return
 
+	_inspected_player_filter = target_p
 	_inspector_panel.visible = true
-	_log_panel.visible = false
+	if is_instance_valid(_log_panel):
+		_log_panel.visible = false
 	_inspector_title_lbl.text = "👁️ وضعیت کارت‌ها و دارایی‌های بازیکنان"
+	_populate_inspector_filter_chips()
+	_rebuild_inspector_cards_view(_inspected_player_filter)
 
-	var lines: Array[String] = []
+func _rebuild_inspector_cards_view(target_p: int = 0) -> void:
+	if not is_instance_valid(_inspector_cards_vbox):
+		return
+	for ch in _inspector_cards_vbox.get_children():
+		ch.queue_free()
+
 	for p_idx in range(1, total_players + 1):
 		if target_p > 0 and p_idx != target_p:
 			continue
-		var st: Dictionary = players_state.get(p_idx, {"continents": {}, "strategies_count": 0, "tokens": []})
-		var p_name = _get_player_name(p_idx)
-		var tag = " (شما)" if p_idx == my_player_index else ""
-		var toks: Array = st.get("tokens", [])
-		var tok_names: Array[String] = []
-		for t in toks:
-			tok_names.append(_continent_fa(str(t)))
-		var tok_str = "، ".join(tok_names) if not tok_names.is_empty() else "ندارد"
+		var player_card_box = _build_player_inspector_section(p_idx)
+		_inspector_cards_vbox.add_child(player_card_box)
 
-		var conts: Dictionary = st.get("continents", {})
-		var c_parts: Array[String] = []
-		for ck in conts.keys():
-			var cnt = _to_int(conts[ck])
-			if cnt > 0:
-				c_parts.append("%s (×%s)" % [_continent_fa(str(ck)), Risk3DFactory.fa_digits(cnt)])
-		var c_str = "، ".join(c_parts) if not c_parts.is_empty() else "بدون کارت قاره"
-		var s_cnt = _to_int(st.get("strategies_count", 0))
+func _build_player_inspector_section(p_idx: int) -> Control:
+	var st: Dictionary = players_state.get(p_idx, {"continents": {}, "strategies_count": 0, "tokens": []})
+	var p_name: String = _get_player_name(p_idx)
+	var is_me: bool = (p_idx == my_player_index)
+	var is_turn: bool = (_active_turn == p_idx)
+	var f_col: Color = RiskMaterials.FACTION_COLORS.get(p_idx, Color(0.84, 0.68, 0.28))
 
-		lines.append("🔹 %s%s:\n   👑 نشان‌های سلطه (%s/۲): %s\n   🗺️ کارت‌های قاره (رو): %s\n   🃏 کارت‌های استراتژی در دست: %s کارت" % [
-			p_name, tag, Risk3DFactory.fa_digits(toks.size()), tok_str, c_str, Risk3DFactory.fa_digits(s_cnt)
-		])
+	var section_panel = PanelContainer.new()
+	section_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	section_panel.mouse_filter = Control.MOUSE_FILTER_PASS
+	section_panel.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(
+			Color(0.12, 0.085, 0.058, 0.96),
+			Color(0.98, 0.84, 0.32) if is_turn else f_col.lightened(0.12),
+			16,
+			2,
+			14,
+			10
+		)
+	)
 
-	_inspector_body_lbl.text = "\n\n".join(lines)
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	vbox.mouse_filter = Control.MOUSE_FILTER_PASS
+	section_panel.add_child(vbox)
+
+	# 1. Player Header Strip (Stats summary on left, Player Name & Turn badge on right)
+	var header_hbox = HBoxContainer.new()
+	header_hbox.add_theme_constant_override("separation", 10)
+	vbox.add_child(header_hbox)
+
+	var toks: Array = st.get("tokens", [])
+	var conts: Dictionary = st.get("continents", {})
+	var total_c: int = _sum_dict_values(conts)
+	var total_s: int = my_strategies.size() if is_me else _to_int(st.get("strategies_count", 0))
+
+	var stats_lbl = Label.new()
+	stats_lbl.text = "👑 %s/۲ نشان سلطه   |   🗺️ %s کارت قاره   |   ⚡ %s کارت استراتژی" % [
+		Risk3DFactory.fa_digits(toks.size()),
+		Risk3DFactory.fa_digits(total_c),
+		Risk3DFactory.fa_digits(total_s)
+	]
+	stats_lbl.add_theme_font_override("font", FontHekayat)
+	stats_lbl.add_theme_font_size_override("font_size", 21)
+	stats_lbl.add_theme_color_override("font_color", Color(0.95, 0.89, 0.74))
+	header_hbox.add_child(stats_lbl)
+
+	var name_lbl = Label.new()
+	var turn_badge = " • 🟢 نوبت فعال" if is_turn else ""
+	var me_badge = " (شما)" if is_me else ""
+	name_lbl.text = "🛡️ %s%s%s" % [p_name, me_badge, turn_badge]
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	name_lbl.add_theme_font_override("font", FontHekayat)
+	name_lbl.add_theme_font_size_override("font_size", 25)
+	name_lbl.add_theme_color_override("font_color", f_col.lightened(0.38))
+	header_hbox.add_child(name_lbl)
+
+	# 2. Domination Tokens Row (if player owns any conquered continent tokens)
+	if not toks.is_empty():
+		var tok_row = HBoxContainer.new()
+		tok_row.alignment = BoxContainer.ALIGNMENT_END
+		tok_row.add_theme_constant_override("separation", 8)
+		vbox.add_child(tok_row)
+		for t_id in toks:
+			var c_str = str(t_id)
+			var c_col: Color = RiskMaterials.CONTINENT_COLORS.get(c_str, Color(0.85, 0.68, 0.22))
+			var tok_chip = PanelContainer.new()
+			tok_chip.add_theme_stylebox_override(
+				"panel",
+				_make_panel_style(c_col.darkened(0.45), Color(0.98, 0.84, 0.28), 10, 2, 10, 4)
+			)
+			var tl = Label.new()
+			tl.text = "👑 نشان سلطه %s" % _continent_fa(c_str)
+			tl.add_theme_font_override("font", FontHekayat)
+			tl.add_theme_font_size_override("font_size", 20)
+			tl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72))
+			tok_chip.add_child(tl)
+			tok_row.add_child(tok_chip)
+
+	# 3. Horizontally Scrollable Visual Card View Tray for this Player
+	var cards_scroll = ScrollContainer.new()
+	cards_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	cards_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	cards_scroll.custom_minimum_size = Vector2(0, 148)
+	cards_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
+	vbox.add_child(cards_scroll)
+
+	var cards_hbox = HBoxContainer.new()
+	cards_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cards_hbox.alignment = BoxContainer.ALIGNMENT_END
+	cards_hbox.add_theme_constant_override("separation", 10)
+	cards_hbox.mouse_filter = Control.MOUSE_FILTER_PASS
+	cards_scroll.add_child(cards_hbox)
+
+	var has_any_card: bool = false
+
+	# 3A. Public Face-Up Continent Cards (Visible as rich tabletop cards for EVERY player)
+	var c_keys = conts.keys()
+	c_keys.sort()
+	for ck in c_keys:
+		var c_id = str(ck)
+		var cnt = _to_int(conts[ck])
+		if cnt <= 0:
+			continue
+		has_any_card = true
+		var c_col: Color = RiskMaterials.CONTINENT_COLORS.get(c_id, Color(0.24, 0.54, 0.36))
+		var card_ctrl = _build_inspector_card_widget(
+			"🗺️",
+			_continent_fa(c_id),
+			"کارت قاره (رو)",
+			cnt,
+			c_col,
+			false,
+			p_idx,
+			c_id
+		)
+		cards_hbox.add_child(card_ctrl)
+
+	# 3B. Strategy Cards (Face-Up for Local Player; Ornate Mystery Strategy Card View for Opponents)
+	if is_me:
+		var strat_counts: Dictionary = {}
+		for s_name in my_strategies:
+			var sn = str(s_name)
+			strat_counts[sn] = _to_int(strat_counts.get(sn, 0)) + 1
+		var s_keys = strat_counts.keys()
+		s_keys.sort()
+		for sn in s_keys:
+			has_any_card = true
+			var sm: Dictionary = Risk3DFactory.STRATEGY_META.get(str(sn), {})
+			var s_col: Color = sm.get("color", Color(0.76, 0.24, 0.24))
+			var s_icon: String = str(sm.get("icon", "⚡"))
+			var s_title: String = str(sm.get("fa", sn))
+			var s_sub: String = str(sm.get("short", "کارت استراتژی"))
+			var card_ctrl = _build_inspector_card_widget(
+				s_icon,
+				s_title,
+				s_sub,
+				_to_int(strat_counts[sn]),
+				s_col,
+				false,
+				p_idx,
+				""
+			)
+			cards_hbox.add_child(card_ctrl)
+	else:
+		if total_s > 0:
+			has_any_card = true
+			# Show individual visual face-down Strategy Cards (up to 5 cards, or grouped if more)
+			if total_s <= 5:
+				for _i in range(total_s):
+					var mystery_card = _build_inspector_card_widget(
+						"⚡",
+						"کارت استراتژی",
+						"مخفی در دست حریف",
+						1,
+						Color(0.56, 0.16, 0.22),
+						true,
+						p_idx,
+						""
+					)
+					cards_hbox.add_child(mystery_card)
+			else:
+				var mystery_stack = _build_inspector_card_widget(
+					"⚡",
+					"کارت استراتژی",
+					"مخفی در دست حریف",
+					total_s,
+					Color(0.56, 0.16, 0.22),
+					true,
+					p_idx,
+					""
+				)
+				cards_hbox.add_child(mystery_stack)
+
+	if not has_any_card:
+		var empty_lbl = Label.new()
+		empty_lbl.text = "هیچ کارتی در دست این بازیکن نیست"
+		empty_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		empty_lbl.add_theme_font_override("font", FontHekayat)
+		empty_lbl.add_theme_font_size_override("font_size", 22)
+		empty_lbl.add_theme_color_override("font_color", Color(0.72, 0.66, 0.58))
+		cards_hbox.add_child(empty_lbl)
+
+	return section_panel
+
+func _build_inspector_card_widget(
+	icon_txt: String,
+	title_txt: String,
+	sub_txt: String,
+	count: int,
+	accent_col: Color,
+	is_mystery_back: bool,
+	owner_p_idx: int,
+	continent_id: String
+) -> Control:
+	var card_panel = PanelContainer.new()
+	card_panel.custom_minimum_size = Vector2(128, 138)
+	card_panel.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	var card_bg = Color(0.17, 0.08, 0.10, 0.97) if is_mystery_back else Color(0.13, 0.095, 0.065, 0.97)
+	var border_col = Color(0.86, 0.66, 0.28) if is_mystery_back else accent_col.lightened(0.22)
+	card_panel.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(card_bg, border_col, 14, 2, 8, 6)
+	)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 3)
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_panel.add_child(vbox)
+
+	# Colored Top Banner Strip with Icon & Count Badge
+	var banner = PanelContainer.new()
+	banner.custom_minimum_size = Vector2(0, 34)
+	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var banner_sb = StyleBoxFlat.new()
+	banner_sb.bg_color = accent_col.darkened(0.10)
+	banner_sb.set_corner_radius_all(8)
+	banner_sb.content_margin_left = 8
+	banner_sb.content_margin_right = 8
+	banner_sb.content_margin_top = 2
+	banner_sb.content_margin_bottom = 2
+	banner.add_theme_stylebox_override("panel", banner_sb)
+	vbox.add_child(banner)
+
+	var banner_hbox = HBoxContainer.new()
+	banner_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner.add_child(banner_hbox)
+
+	var badge_lbl = Label.new()
+	badge_lbl.text = "❓×" + Risk3DFactory.fa_digits(count) if is_mystery_back else "×" + Risk3DFactory.fa_digits(count)
+	badge_lbl.add_theme_font_override("font", FontHekayat)
+	badge_lbl.add_theme_font_size_override("font_size", 21)
+	badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.52) if count > 1 else Color(0.96, 0.93, 0.86))
+	badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner_hbox.add_child(badge_lbl)
+
+	var ic_lbl = Label.new()
+	ic_lbl.text = icon_txt
+	ic_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ic_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	ic_lbl.add_theme_font_size_override("font_size", 19)
+	ic_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner_hbox.add_child(ic_lbl)
+
+	# Card Title
+	var title_lbl = Label.new()
+	title_lbl.text = title_txt
+	title_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title_lbl.add_theme_font_override("font", FontHekayat)
+	title_lbl.add_theme_font_size_override("font_size", 22)
+	title_lbl.add_theme_color_override("font_color", Color(0.99, 0.95, 0.84))
+	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(title_lbl)
+
+	# Card Subtitle
+	var sub_lbl = Label.new()
+	sub_lbl.text = sub_txt
+	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub_lbl.clip_text = true
+	sub_lbl.add_theme_font_override("font", FontHekayat)
+	sub_lbl.add_theme_font_size_override("font_size", 17)
+	sub_lbl.add_theme_color_override("font_color", Color(0.94, 0.80, 0.48) if is_mystery_back else accent_col.lightened(0.42))
+	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(sub_lbl)
+
+	# Allow tapping an opponent's continent card in the inspector to select it as a target when using Destroy/Attack
+	if continent_id != "" and owner_p_idx != my_player_index:
+		card_panel.gui_input.connect(func(ev: InputEvent):
+			if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
+				if _is_my_turn() and game_state == "SelectAction" and selected_strategy_name == "Destroy":
+					AudioManager.sfx_tap()
+					selected_target_player = owner_p_idx
+					selected_target_continent = continent_id
+					_inspector_panel.visible = false
+					_refresh_all_3d_and_hud()
+		)
+
+	return card_panel
+
 
 func _inspect_continent_summary(c_id: String) -> void:
 	var c_fa = _continent_fa(c_id)
@@ -2134,10 +2499,12 @@ func _phase_fa(st: String) -> String:
 func _format_dice_list(arr: Array) -> String:
 	if arr.is_empty():
 		return "-"
+	var die_icons = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"]
 	var parts: Array[String] = []
 	for v in arr:
-		parts.append(Risk3DFactory.fa_digits(_to_int(v)))
-	return "[" + "، ".join(parts) + "]"
+		var iv = clampi(_to_int(v, 1), 1, 6)
+		parts.append("%s%s" % [die_icons[iv - 1], Risk3DFactory.fa_digits(iv)])
+	return "[" + " ، ".join(parts) + "]"
 
 func _sum_dict_values(d: Dictionary) -> int:
 	var total: int = 0
