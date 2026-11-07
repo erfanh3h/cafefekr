@@ -1015,6 +1015,26 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null,
 
 	return die_root
 
+static func make_label_3d(
+	text_str: String,
+	font: Font,
+	font_sz: int = 42,
+	col: Color = Color.WHITE,
+	px_size: float = 0.0012
+) -> Label3D:
+	var lbl = Label3D.new()
+	lbl.text = text_str
+	if font:
+		lbl.font = font
+	lbl.font_size = font_sz
+	lbl.pixel_size = px_size
+	lbl.modulate = col
+	lbl.outline_size = 14
+	lbl.outline_modulate = Color(0.03, 0.02, 0.01, 0.98)
+	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lbl.no_depth_test = true
+	return lbl
+
 static func get_die_rotation_for_value(val: int) -> Vector3:
 	match clampi(val, 1, 6):
 		1:
