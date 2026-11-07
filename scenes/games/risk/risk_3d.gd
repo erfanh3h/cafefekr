@@ -667,9 +667,14 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	var sub_txt: String = ""
 	if kind == "continent":
 		accent_col = RiskMaterials.CONTINENT_COLORS.get(cid, Color(0.24, 0.54, 0.36))
-		icon_txt = "🗺️"
+		var dom_req: int = int(Risk3DFactory.CONTINENT_META.get(cid, {}).get("domination", 4))
+		var has_dom: bool = my_tokens.has(cid)
+		icon_txt = "👑" if has_dom else "🗺️"
 		title_txt = _continent_fa(cid)
-		sub_txt = "کارت قاره"
+		if has_dom:
+			sub_txt = "👑 سلطه شما (%s/%s)" % [Risk3DFactory.fa_digits(count), Risk3DFactory.fa_digits(dom_req)]
+		else:
+			sub_txt = "👑 حد نصاب: %s/%s" % [Risk3DFactory.fa_digits(count), Risk3DFactory.fa_digits(dom_req)]
 	else:
 		var sm: Dictionary = Risk3DFactory.STRATEGY_META.get(cid, {})
 		accent_col = sm.get("color", Color(0.76, 0.24, 0.24))
@@ -865,6 +870,7 @@ func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
 			_restart_hud_turn_timer()
 			_append_battle_log("🃏 %s از دسته کارت کشید." % _get_player_name(gid))
 			_refresh_all_3d_and_hud()
+			_announce_token_events_and_victory(payload)
 
 		Commands.Draw_Result_Private:
 			if payload.has("new_user_data") and typeof(payload["new_user_data"]) == TYPE_DICTIONARY:
@@ -1172,6 +1178,7 @@ func _handle_combat_resolution_payload(data: Dictionary) -> void:
 		Risk3DFactory.fa_digits(atk_loss), Risk3DFactory.fa_digits(def_loss)
 	])
 	_refresh_all_3d_and_hud()
+	_announce_token_events_and_victory(data)
 
 func _handle_strategy_result_payload(data: Dictionary) -> void:
 	var gid = _to_int(data.get("gamer_id", _active_turn))
@@ -1213,6 +1220,50 @@ func _handle_strategy_result_payload(data: Dictionary) -> void:
 	selected_target_player = 0
 	selected_target_continent = ""
 	_refresh_all_3d_and_hud()
+	_announce_token_events_and_victory(data)
+
+func _announce_token_events_and_victory(data: Dictionary) -> void:
+	var tok_msgs: Array[String] = []
+	if data.has("token_events") and typeof(data["token_events"]) == TYPE_ARRAY:
+		for ev in data["token_events"]:
+			if typeof(ev) != TYPE_DICTIONARY:
+				continue
+			var ev_type = str(ev.get("type", ""))
+			var c_id = str(ev.get("continent", ""))
+			var c_fa = _continent_fa(c_id)
+			var dom_req = int(Risk3DFactory.CONTINENT_META.get(c_id, {}).get("domination", 4))
+			var winner_p = _to_int(ev.get("winner", 0))
+			if winner_p > 0 and ev_type in ["claimed_by_threshold", "stolen_by_threshold", "claimed_by_conquest", "stolen_by_conquest"]:
+				var p_tok_cnt = (players_state.get(winner_p, {}).get("tokens", []) as Array).size()
+				var line = "👑 %s با رسیدن به حد نصاب «%s» (%s کارت)، نشان سلطه این قاره را تصاحب کرد! (%s/۲)" % [
+					_get_player_name(winner_p),
+					c_fa,
+					Risk3DFactory.fa_digits(dom_req),
+					Risk3DFactory.fa_digits(p_tok_cnt),
+				]
+				tok_msgs.append(line)
+				_append_battle_log(line)
+
+	var is_fin = bool(data.get("is_game_finished", false))
+	var win_id = _to_int(data.get("winner", 0))
+	if is_fin and win_id > 0:
+		var win_toks: Array = players_state.get(win_id, {}).get("tokens", [])
+		var tok_names: Array[String] = []
+		for t in win_toks:
+			tok_names.append(_continent_fa(str(t)))
+		var toks_joined = " و ".join(tok_names) if not tok_names.is_empty() else "۲ قاره"
+		var win_msg = "🏆 پایان بازی! %s با کسب ۲ نشان سلطه (%s) پیروز میدان شد!" % [
+			_get_player_name(win_id),
+			toks_joined,
+		]
+		_append_battle_log(win_msg)
+		if is_instance_valid(_phase_banner_lbl):
+			_phase_banner_lbl.text = win_msg
+		if is_instance_valid(_selection_info_lbl):
+			_selection_info_lbl.text = "شرط پیروزی طبق کتابچه قوانین: کسب ۲ نشان سلطه قاره‌ها (👑 ۲/۲)"
+		_show_combat_toast(win_msg, 5.5)
+	elif not tok_msgs.is_empty():
+		_show_combat_toast("\n".join(tok_msgs), 4.6)
 
 func _restart_hud_turn_timer() -> void:
 	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
@@ -2450,10 +2501,16 @@ func _build_player_inspector_section(p_idx: int) -> Control:
 			continue
 		has_any_card = true
 		var c_col: Color = RiskMaterials.CONTINENT_COLORS.get(c_id, Color(0.24, 0.54, 0.36))
+		var dom_req: int = int(Risk3DFactory.CONTINENT_META.get(c_id, {}).get("domination", 4))
+		var has_dom: bool = toks.has(c_id)
+		var sub_str: String = ("👑 سلطه تصاحب شد (%s/%s)" if has_dom else "حد نصاب سلطه: %s/%s 👑") % [
+			Risk3DFactory.fa_digits(cnt),
+			Risk3DFactory.fa_digits(dom_req),
+		]
 		var card_ctrl = _build_inspector_card_widget(
-			"🗺️",
+			"👑" if has_dom else "🗺️",
 			_continent_fa(c_id),
-			"کارت قاره (رو)",
+			sub_str,
 			cnt,
 			c_col,
 			false,
@@ -2634,14 +2691,18 @@ func _build_inspector_card_widget(
 
 func _inspect_continent_summary(c_id: String) -> void:
 	var c_fa = _continent_fa(c_id)
+	var dom_req: int = int(Risk3DFactory.CONTINENT_META.get(c_id, {}).get("domination", 4))
 	var has_tok = board_tokens.has(c_id)
 	var parts: Array[String] = []
 	for p_idx in range(1, total_players + 1):
 		var cnt = _to_int(players_state.get(p_idx, {}).get("continents", {}).get(c_id, 0))
 		if cnt > 0:
-			parts.append("%s: ×%s" % [_get_player_name(p_idx), Risk3DFactory.fa_digits(cnt)])
+			parts.append("%s: ×%s/%s" % [_get_player_name(p_idx), Risk3DFactory.fa_digits(cnt), Risk3DFactory.fa_digits(dom_req)])
 	var garrison_str = " | ".join(parts) if not parts.is_empty() else "بدون نیرو"
-	var tok_str = "👑 نشان سلطه موجود" if has_tok else "نشان سلطه تصاحب شده"
+	var tok_str = "👑 حد نصاب سلطه: %s کارت (%s)" % [
+		Risk3DFactory.fa_digits(dom_req),
+		"موجود روی تخته" if has_tok else "تصاحب شده"
+	]
 	if is_instance_valid(_selection_info_lbl):
 		_selection_info_lbl.text = "🗺️ «%s» — %s — نیروها: %s" % [c_fa, tok_str, garrison_str]
 

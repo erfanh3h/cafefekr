@@ -11,31 +11,37 @@ const CONTINENT_META: Dictionary = {
 		"fa": "آمریکای شمالی",
 		"pos": Vector3(-0.37, 0.048, -0.23),
 		"radius": 0.136,
+		"domination": 6,
 	},
 	"Europe": {
 		"fa": "اروپا",
 		"pos": Vector3(0.00, 0.048, -0.25),
 		"radius": 0.132,
+		"domination": 5,
 	},
 	"Asia": {
 		"fa": "آسیا",
 		"pos": Vector3(0.37, 0.048, -0.23),
 		"radius": 0.136,
+		"domination": 8,
 	},
 	"SouthAmerica": {
 		"fa": "آمریکای جنوبی",
 		"pos": Vector3(-0.36, 0.048, 0.15),
 		"radius": 0.132,
+		"domination": 3,
 	},
 	"Africa": {
 		"fa": "آفریقا",
 		"pos": Vector3(0.00, 0.048, 0.17),
 		"radius": 0.132,
+		"domination": 4,
 	},
 	"Australia": {
 		"fa": "اقیانوسیه",
 		"pos": Vector3(0.36, 0.048, 0.15),
 		"radius": 0.132,
+		"domination": 3,
 	},
 }
 
@@ -589,7 +595,7 @@ static func build_continent_node(
 	# 7. Dedicated Front Name Plaque (Mounted on South Edge — NEVER overlaps pieces!)
 	var plaque_base = MeshInstance3D.new()
 	var pb_box = BoxMesh.new()
-	pb_box.size = Vector3(rad * 1.32, 0.008, 0.036)
+	pb_box.size = Vector3(rad * 1.48, 0.008, 0.038)
 	pb_box.material = mats["charcoal"]
 	plaque_base.mesh = pb_box
 	plaque_base.position = Vector3(0.0, 0.022, rad * 0.78)
@@ -598,19 +604,20 @@ static func build_continent_node(
 
 	var plaque_trim = MeshInstance3D.new()
 	var pt_box = BoxMesh.new()
-	pt_box.size = Vector3(rad * 1.36, 0.006, 0.040)
+	pt_box.size = Vector3(rad * 1.52, 0.006, 0.042)
 	pt_box.material = mats["bronze"]
 	plaque_trim.mesh = pt_box
 	plaque_trim.position = Vector3(0.0, 0.020, rad * 0.78)
 	plaque_trim.rotation_degrees = Vector3(18.0, 0.0, 0.0)
 	root.add_child(plaque_trim)
 
+	var dom_req: int = int(meta.get("domination", 4))
 	var name_lbl = Label3D.new()
-	name_lbl.text = meta["fa"]
+	name_lbl.text = "%s (👑%s)" % [meta["fa"], fa_digits(dom_req)]
 	if font:
 		name_lbl.font = font
-	name_lbl.font_size = 42
-	name_lbl.pixel_size = 0.00108
+	name_lbl.font_size = 38
+	name_lbl.pixel_size = 0.00105
 	name_lbl.modulate = Color(0.98, 0.95, 0.86)
 	name_lbl.outline_size = 11
 	name_lbl.outline_modulate = Color(0.03, 0.02, 0.01, 0.98)
