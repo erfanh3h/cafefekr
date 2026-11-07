@@ -330,10 +330,10 @@ func _build_floating_ui() -> void:
 	top_hbox.add_child(btn_opponents)
 
 	_top_decks_lbl = Label.new()
-	_top_decks_lbl.text = "👑 ۰/۲  |  🗺️ ۴۲  |  ⚡ ۴۰"
+	_top_decks_lbl.text = "👑 ۰/۲  |  🗺️ ۴۲  |  ⚡ ۳۸"
 	_top_decks_lbl.add_theme_font_override("font", FontHekayat)
-	_top_decks_lbl.add_theme_font_size_override("font_size", 22)
-	_top_decks_lbl.add_theme_color_override("font_color", Color(0.94, 0.88, 0.72))
+	_top_decks_lbl.add_theme_font_size_override("font_size", 26)
+	_top_decks_lbl.add_theme_color_override("font_color", Color(0.98, 0.92, 0.74))
 	_top_decks_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	top_hbox.add_child(_top_decks_lbl)
 
@@ -507,7 +507,7 @@ func _build_floating_ui() -> void:
 	_card_preview_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_card_preview_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_card_preview_lbl.add_theme_font_override("font", FontHekayat)
-	_card_preview_lbl.add_theme_font_size_override("font_size", 21)
+	_card_preview_lbl.add_theme_font_size_override("font_size", 22)
 	_card_preview_lbl.add_theme_color_override("font_color", Color(0.94, 0.86, 0.62))
 	_card_preview_lbl.text = "برای انتخاب قاره یا اجرای استراتژی، روی کارت ضربه بزنید"
 	tray_header.add_child(_card_preview_lbl)
@@ -515,8 +515,8 @@ func _build_floating_ui() -> void:
 	_card_tray_count_lbl = Label.new()
 	_card_tray_count_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_card_tray_count_lbl.add_theme_font_override("font", FontHekayat)
-	_card_tray_count_lbl.add_theme_font_size_override("font_size", 22)
-	_card_tray_count_lbl.add_theme_color_override("font_color", Color(0.98, 0.94, 0.84))
+	_card_tray_count_lbl.add_theme_font_size_override("font_size", 26)
+	_card_tray_count_lbl.add_theme_color_override("font_color", Color(0.99, 0.95, 0.84))
 	_card_tray_count_lbl.text = "🃏 دست کارت‌ها (۰)"
 	tray_header.add_child(_card_tray_count_lbl)
 
@@ -525,7 +525,7 @@ func _build_floating_ui() -> void:
 	hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	hand_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	hand_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	hand_scroll.custom_minimum_size = Vector2(0, 154)
+	hand_scroll.custom_minimum_size = Vector2(0, 158)
 	hand_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	tray_vbox.add_child(hand_scroll)
 
@@ -655,7 +655,7 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	var count: int = _to_int(entry.get("count", 1))
 
 	var wrapper = MarginContainer.new()
-	wrapper.custom_minimum_size = Vector2(134, 148)
+	wrapper.custom_minimum_size = Vector2(146, 154)
 	wrapper.mouse_filter = Control.MOUSE_FILTER_PASS
 	# Smooth vertical elevation when selected (0px top margin when raised vs 12px when resting)
 	wrapper.add_theme_constant_override("margin_top", 0 if is_selected else 12)
@@ -704,10 +704,10 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card_btn.add_child(vbox)
 
-	# Colored Top Banner Strip with Icon & Count Badge
+	# Colored Top Banner Strip with Large, Bold Card Count Badge
 	var banner = PanelContainer.new()
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	banner.custom_minimum_size = Vector2(0, 36)
+	banner.custom_minimum_size = Vector2(0, 42)
 	var banner_sb = StyleBoxFlat.new()
 	banner_sb.bg_color = accent_col.darkened(0.12)
 	banner_sb.set_corner_radius_all(9)
@@ -725,8 +725,10 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	var badge_lbl = Label.new()
 	badge_lbl.text = "×" + Risk3DFactory.fa_digits(count)
 	badge_lbl.add_theme_font_override("font", FontHekayat)
-	badge_lbl.add_theme_font_size_override("font_size", 22)
-	badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.52) if count > 1 else Color(0.95, 0.92, 0.84))
+	badge_lbl.add_theme_font_size_override("font_size", 34)
+	badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.45) if count > 1 else Color(1.0, 0.98, 0.90))
+	badge_lbl.add_theme_constant_override("outline_size", 6)
+	badge_lbl.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.96))
 	badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_hbox.add_child(badge_lbl)
 
@@ -734,7 +736,7 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	ic_lbl.text = icon_txt
 	ic_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ic_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	ic_lbl.add_theme_font_size_override("font_size", 20)
+	ic_lbl.add_theme_font_size_override("font_size", 24)
 	ic_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_hbox.add_child(ic_lbl)
 
@@ -746,7 +748,7 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	title_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 23)
+	title_lbl.add_theme_font_size_override("font_size", 26)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72) if is_selected else Color(0.96, 0.93, 0.86))
 	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(title_lbl)
@@ -757,7 +759,7 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.clip_text = true
 	sub_lbl.add_theme_font_override("font", FontHekayat)
-	sub_lbl.add_theme_font_size_override("font_size", 18)
+	sub_lbl.add_theme_font_size_override("font_size", 20)
 	sub_lbl.add_theme_color_override("font_color", accent_col.lightened(0.42))
 	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(sub_lbl)
@@ -818,6 +820,10 @@ func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
 		Commands.Draw_Card:
 			_active_turn = _to_int(payload.get("turn", _active_turn))
 			game_state = str(payload.get("game_state", "Draw"))
+			if payload.has("continents"):
+				continent_deck_count = _to_int(payload.get("continents", continent_deck_count))
+			if payload.has("strategies"):
+				strategy_deck_count = _to_int(payload.get("strategies", strategy_deck_count))
 			expand_ignore_adjacency = false
 			active_attack.clear()
 			selected_source_continent = ""
@@ -835,10 +841,24 @@ func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
 		Commands.Draw_Result:
 			var gid = _to_int(payload.get("gamer_id", _active_turn))
 			var dtype = _to_int(payload.get("draw_type", 1))
-			if payload.has("new_data") and typeof(payload["new_data"]) == TYPE_DICTIONARY:
+			if payload.has("players_data") and typeof(payload["players_data"]) == TYPE_ARRAY:
+				_parse_players_data_array(payload["players_data"])
+			elif payload.has("new_data") and typeof(payload["new_data"]) == TYPE_DICTIONARY:
 				_apply_single_player_public_data(gid, payload["new_data"])
 			if payload.has("tokens") and typeof(payload["tokens"]) == TYPE_ARRAY:
 				_parse_board_tokens(payload["tokens"])
+			if payload.has("continents"):
+				continent_deck_count = _to_int(payload.get("continents", continent_deck_count))
+			elif dtype == 1:
+				continent_deck_count = max(0, continent_deck_count - 2)
+			elif dtype == 3:
+				continent_deck_count = max(0, continent_deck_count - 1)
+			if payload.has("strategies"):
+				strategy_deck_count = _to_int(payload.get("strategies", strategy_deck_count))
+			elif dtype == 2:
+				strategy_deck_count = max(0, strategy_deck_count - 2)
+			elif dtype in [3, 4]:
+				strategy_deck_count = max(0, strategy_deck_count - 1)
 			game_state = str(payload.get("game_state", "SelectAction"))
 			AudioManager.sfx_add_piece()
 			_animate_deck_draw_pulse(dtype)
@@ -849,6 +869,10 @@ func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
 		Commands.Draw_Result_Private:
 			if payload.has("new_user_data") and typeof(payload["new_user_data"]) == TYPE_DICTIONARY:
 				_sync_private_user_data(payload["new_user_data"])
+			if payload.has("continents"):
+				continent_deck_count = _to_int(payload.get("continents", continent_deck_count))
+			if payload.has("strategies"):
+				strategy_deck_count = _to_int(payload.get("strategies", strategy_deck_count))
 			_refresh_all_3d_and_hud()
 
 		Commands.Declare_Attack:
@@ -856,6 +880,10 @@ func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
 			var def_id = _to_int(payload.get("target_index", 0))
 			var src_c = str(payload.get("source_continent", ""))
 			var tgt_c = str(payload.get("target_continent", ""))
+			if payload.has("continents"):
+				continent_deck_count = _to_int(payload.get("continents", continent_deck_count))
+			if payload.has("strategies"):
+				strategy_deck_count = _to_int(payload.get("strategies", strategy_deck_count))
 			game_state = str(payload.get("game_state", "AttackerArmy"))
 			active_attack = {
 				"attacker_id": atk_id,
@@ -864,6 +892,7 @@ func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
 				"target_continent": tgt_c,
 				"attacker_army": 0,
 				"defender_army": 0,
+				"battle_started": false,
 			}
 			selected_army_commit = 0
 			_restart_hud_turn_timer()
@@ -882,6 +911,12 @@ func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
 			var atk_id = _to_int(payload.get("gamer_id", active_attack.get("attacker_id", _active_turn)))
 			var def_id = _to_int(payload.get("target_index", active_attack.get("defender_id", 0)))
 			var committed = _to_int(payload.get("count", 0))
+			if payload.has("players_data") and typeof(payload["players_data"]) == TYPE_ARRAY:
+				_parse_players_data_array(payload["players_data"])
+			if payload.has("continents"):
+				continent_deck_count = _to_int(payload.get("continents", continent_deck_count))
+			if payload.has("strategies"):
+				strategy_deck_count = _to_int(payload.get("strategies", strategy_deck_count))
 			active_attack["attacker_id"] = atk_id
 			active_attack["defender_id"] = def_id
 			active_attack["attacker_army"] = committed
@@ -902,10 +937,17 @@ func _on_risk_event_received(cmd_id: String, payload: Dictionary) -> void:
 
 		Commands.Pass_Turn:
 			var gid = _to_int(payload.get("gamer_id", payload.get("gamer_index", _active_turn)))
-			if payload.has("new_data") and typeof(payload["new_data"]) == TYPE_DICTIONARY:
+			if payload.has("players_data") and typeof(payload["players_data"]) == TYPE_ARRAY:
+				_parse_players_data_array(payload["players_data"])
+			elif payload.has("new_data") and typeof(payload["new_data"]) == TYPE_DICTIONARY:
 				_apply_single_player_public_data(gid, payload["new_data"])
 			if payload.has("tokens") and typeof(payload["tokens"]) == TYPE_ARRAY:
 				_parse_board_tokens(payload["tokens"])
+			if payload.has("continents"):
+				continent_deck_count = _to_int(payload.get("continents", continent_deck_count))
+			if payload.has("strategies"):
+				strategy_deck_count = _to_int(payload.get("strategies", strategy_deck_count))
+			active_attack.clear()
 			_append_battle_log("⏭️ %s نوبت خود را به پایان رساند." % _get_player_name(gid))
 			_refresh_all_3d_and_hud()
 
@@ -1048,16 +1090,49 @@ func _handle_combat_resolution_payload(data: Dictionary) -> void:
 		game_state = "SelectAction"
 
 	var canceled = bool(data.get("canceled", false))
+	var stopped = bool(data.get("stopped", false))
 	var atk_id = _to_int(data.get("attacker_id", active_attack.get("attacker_id", _active_turn)))
 	var def_id = _to_int(data.get("defender_id", active_attack.get("defender_id", 0)))
 	var src_c = str(data.get("source_continent", active_attack.get("source_continent", "")))
 	var tgt_c = str(data.get("target_continent", active_attack.get("target_continent", "")))
+	var battle_continues = bool(data.get("battle_continues", false)) and (game_state == "Attack")
 
-	active_attack.clear()
+	var atk_loss = _to_int(data.get("attacker_losses", 0))
+	var def_loss = _to_int(data.get("defender_losses", 0))
+	var atk_c_loss = _to_int(data.get("attacker_continent_losses", atk_loss))
+	var def_c_loss = _to_int(data.get("defender_continent_losses", def_loss))
+	var returned_c_count = _to_int(data.get("returned_continents_count", atk_c_loss + def_c_loss))
+
+	if data.has("continents"):
+		continent_deck_count = _to_int(data.get("continents", continent_deck_count))
+	elif returned_c_count > 0:
+		continent_deck_count += returned_c_count
+	if data.has("strategies"):
+		strategy_deck_count = _to_int(data.get("strategies", strategy_deck_count))
+
+	if battle_continues:
+		active_attack = {
+			"attacker_id": atk_id,
+			"defender_id": def_id,
+			"source_continent": src_c,
+			"target_continent": tgt_c,
+			"attacker_army": _to_int(data.get("attacker_army", 0)),
+			"defender_army": _to_int(data.get("defender_army", 0)),
+			"battle_started": true,
+		}
+	else:
+		active_attack.clear()
+
 	selected_source_continent = ""
 	selected_target_continent = ""
 	selected_army_commit = 0
 	_restart_hud_turn_timer()
+
+	if stopped:
+		_show_combat_toast("⏹️ %s ادامه نبرد در «%s» را متوقف کرد." % [_get_player_name(atk_id), _continent_fa(tgt_c)])
+		_append_battle_log("⏹️ %s ادامه حمله به %s را متوقف کرد." % [_get_player_name(atk_id), _continent_fa(tgt_c)])
+		_refresh_all_3d_and_hud()
+		return
 
 	if canceled:
 		_show_combat_toast("🛡️ مدافع (%s) با کارت «لغو تهاجم» حمله را متوقف کرد!" % _get_player_name(def_id))
@@ -1067,12 +1142,16 @@ func _handle_combat_resolution_payload(data: Dictionary) -> void:
 
 	var atk_dice: Array = data.get("attacker_dice", []) if typeof(data.get("attacker_dice", [])) == TYPE_ARRAY else []
 	var def_dice: Array = data.get("defender_dice", []) if typeof(data.get("defender_dice", [])) == TYPE_ARRAY else []
-	var atk_loss = _to_int(data.get("attacker_losses", 0))
-	var def_loss = _to_int(data.get("defender_losses", 0))
 	var conquered = bool(data.get("conquered", false))
 
 	if not atk_dice.is_empty() or not def_dice.is_empty():
 		_spawn_and_roll_3d_dice(atk_dice, def_dice)
+
+	# Visually return lost Continent (قاره) cards from the battlefield back to the center of the table!
+	if atk_c_loss > 0:
+		_animate_returned_continent_cards_to_table(src_c, atk_c_loss)
+	if def_c_loss > 0:
+		_animate_returned_continent_cards_to_table(tgt_c, def_c_loss)
 
 	var atk_str = _format_dice_list(atk_dice)
 	var def_str = _format_dice_list(def_dice)
@@ -1083,6 +1162,8 @@ func _handle_combat_resolution_payload(data: Dictionary) -> void:
 		Risk3DFactory.fa_digits(atk_loss),
 		Risk3DFactory.fa_digits(def_loss),
 	]
+	if returned_c_count > 0:
+		msg += "  (♻️ %s کارت قاره به مرکز میز برگشت)" % Risk3DFactory.fa_digits(returned_c_count)
 	if conquered:
 		msg += "  🏆 قاره فتح شد!"
 	_show_combat_toast(msg, 4.8)
@@ -1100,11 +1181,27 @@ func _handle_strategy_result_payload(data: Dictionary) -> void:
 		_parse_players_data_array(data["players_data"])
 	if data.has("tokens") and typeof(data["tokens"]) == TYPE_ARRAY:
 		_parse_board_tokens(data["tokens"])
+	if data.has("continents"):
+		continent_deck_count = _to_int(data.get("continents", continent_deck_count))
+	elif data.has("drawn_continents") and typeof(data["drawn_continents"]) == TYPE_ARRAY:
+		continent_deck_count = max(0, continent_deck_count - (data["drawn_continents"] as Array).size())
+	elif strat == "Destroy":
+		continent_deck_count += 1
+	if data.has("strategies"):
+		strategy_deck_count = _to_int(data.get("strategies", strategy_deck_count))
+
 	if data.has("game_state"):
 		game_state = str(data["game_state"])
 
 	if strat == "Expand" and gid == my_player_index:
 		expand_ignore_adjacency = true
+
+	# If Destroy or Bomb removed a Continent card, animate it returning to the center of the table!
+	if data.has("returned_continents") and typeof(data["returned_continents"]) == TYPE_ARRAY:
+		for rc in data["returned_continents"]:
+			_animate_returned_continent_cards_to_table(str(rc), 1)
+	elif strat == "Destroy" and data.has("target_continent"):
+		_animate_returned_continent_cards_to_table(str(data.get("target_continent", "")), 1)
 
 	var strat_fa = Risk3DFactory.STRATEGY_META.get(strat, {}).get("fa", strat)
 	var target_txt = (" علیه " + _get_player_name(tgt_id)) if tgt_id > 0 else ""
@@ -1325,11 +1422,72 @@ func _refresh_floating_hud() -> void:
 	if is_instance_valid(_inspector_panel) and _inspector_panel.visible:
 		_rebuild_inspector_cards_view(_inspected_player_filter)
 
-
 	var def_id = _to_int(active_attack.get("defender_id", 0))
 	var atk_id = _to_int(active_attack.get("attacker_id", _active_turn))
 
-	# 4. DEFENDER PHASE (`DefenderArmy`)
+	# 4A. ONGOING MULTI-ROUND BATTLE PHASE (`Attack` — No new Army cards allowed once attack starts!)
+	if game_state == "Attack":
+		var src_fa = _continent_fa(str(active_attack.get("source_continent", "")))
+		var tgt_fa = _continent_fa(str(active_attack.get("target_continent", "")))
+		if atk_id == my_player_index:
+			_phase_banner_lbl.text = "🎲 ادامه نبرد از «%s» به «%s» (افزودن ارتش کمکی جدید بسته شد)" % [src_fa, tgt_fa]
+			_selection_info_lbl.text = "پس از شروع نبرد، بازیکنان دیگر نمی‌توانند کارت ارتش کمکی جدید اضافه کنند. ادامه نبرد یا توقف؟"
+
+			var btn_roll_again = _make_styled_button(
+				"🎲 ادامه نبرد و پرتاب مجدد تاس",
+				Color(0.46, 0.14, 0.14, 0.98),
+				Color(0.96, 0.48, 0.36),
+				26,
+				12,
+				true
+			)
+			btn_roll_again.custom_minimum_size = Vector2(310, 54)
+			btn_roll_again.pressed.connect(func():
+				AudioManager.sfx_button()
+				send_move(Commands.Attack, {})
+			)
+			_action_buttons_row.add_child(btn_roll_again)
+
+			var btn_stop_atk = _make_styled_button(
+				"⏹️ توقف حمله",
+				Color(0.22, 0.16, 0.12, 0.96),
+				Color(0.78, 0.62, 0.34),
+				25,
+				12
+			)
+			btn_stop_atk.custom_minimum_size = Vector2(185, 54)
+			btn_stop_atk.pressed.connect(func():
+				AudioManager.sfx_button()
+				send_move(Commands.Cancel_Attack, {"stop": true})
+			)
+			_action_buttons_row.add_child(btn_stop_atk)
+		elif def_id == my_player_index:
+			_phase_banner_lbl.text = "🛡️ نبرد در قاره «%s» ادامه دارد (بدون امکان افزودن ارتش کمکی جدید)" % tgt_fa
+			_selection_info_lbl.text = "در انتظار تصمیم %s برای پرتاب مجدد تاس یا توقف حمله..." % _get_player_name(atk_id)
+			if _count_my_strategy("Cancel") > 0:
+				var btn_def_cancel = _make_styled_button(
+					"🛡️ لغو کامل حمله (Cancel)",
+					Color(0.14, 0.34, 0.42, 0.98),
+					Color(0.38, 0.88, 0.96),
+					25,
+					12,
+					true
+				)
+				btn_def_cancel.custom_minimum_size = Vector2(260, 54)
+				btn_def_cancel.pressed.connect(func():
+					AudioManager.sfx_button()
+					send_move(Commands.Cancel_Attack, {})
+				)
+				_action_buttons_row.add_child(btn_def_cancel)
+		else:
+			_phase_banner_lbl.text = "🎲 نبرد بین %s و %s در قاره «%s» ادامه دارد..." % [
+				_get_player_name(atk_id), _get_player_name(def_id), tgt_fa
+			]
+			_selection_info_lbl.text = "پس از شروع حمله، افزودن کارت ارتش کمکی جدید مجاز نیست."
+		_update_sub_scroll_visibility()
+		return
+
+	# 4B. DEFENDER PHASE (`DefenderArmy` — Only before dice rolling starts)
 	if game_state == "DefenderArmy":
 		var src_fa = _continent_fa(str(active_attack.get("source_continent", "")))
 		var tgt_fa = _continent_fa(str(active_attack.get("target_continent", "")))
@@ -1337,10 +1495,12 @@ func _refresh_floating_hud() -> void:
 			var my_army_cards = _count_my_strategy("Army")
 			var has_cancel = (_count_my_strategy("Cancel") > 0)
 			var base_def_dice = clampi(_to_int(my_continents.get(str(active_attack.get("target_continent", "")), 1)), 1, 2)
+			var max_def_extra = max(0, 4 - base_def_dice)
+			var allowed_def_army = min(my_army_cards, max_def_extra)
 			_phase_banner_lbl.text = "🛡️ دفاع از قاره «%s» (تاس پایه دفاع: %s)" % [tgt_fa, Risk3DFactory.fa_digits(base_def_dice)]
-			_selection_info_lbl.text = "مهاجم %s کارت ارتش کمکی افزوده است. ارتش کمکی دفاع یا لغو حمله را انتخاب کنید:" % Risk3DFactory.fa_digits(_to_int(active_attack.get("attacker_army", 0)))
+			_selection_info_lbl.text = "پیش از شروع پرتاب تاس، تعداد کارت ارتش کمکی دفاع یا لغو حمله را انتخاب کنید:"
 
-			for c in range(my_army_cards + 1):
+			for c in range(allowed_def_army + 1):
 				var is_picked = (selected_army_commit == c)
 				var b = _make_styled_button(
 					"🛡️ +%s ارتش کمکی" % Risk3DFactory.fa_digits(c),
@@ -1360,7 +1520,7 @@ func _refresh_floating_hud() -> void:
 				_sub_options_row.add_child(b)
 
 			var btn_defend = _make_styled_button(
-				"🎲 تایید دفاع و پرتاب تاس (+%s)" % Risk3DFactory.fa_digits(selected_army_commit),
+				"🎲 تایید دفاع و شروع نبرد (+%s)" % Risk3DFactory.fa_digits(selected_army_commit),
 				Color(0.14, 0.38, 0.22, 0.98),
 				Color(0.42, 0.90, 0.58),
 				26,
@@ -1391,21 +1551,23 @@ func _refresh_floating_hud() -> void:
 				_action_buttons_row.add_child(btn_cancel_atk)
 		else:
 			_phase_banner_lbl.text = "⏳ در انتظار تصمیم دفاعی %s در قاره «%s»..." % [_get_player_name(def_id), tgt_fa]
-			_selection_info_lbl.text = "نبرد از «%s» به «%s» در جریان است." % [src_fa, tgt_fa]
+			_selection_info_lbl.text = "نبرد از «%s» به «%s» در آستانه شروع است." % [src_fa, tgt_fa]
 		_update_sub_scroll_visibility()
 		return
 
-	# 5. ATTACKER REINFORCEMENT PHASE (`AttackerArmy`)
+	# 5. ATTACKER REINFORCEMENT PHASE (`AttackerArmy` — Only before dice rolling starts)
 	if game_state == "AttackerArmy":
 		var src_fa = _continent_fa(str(active_attack.get("source_continent", "")))
 		var tgt_fa = _continent_fa(str(active_attack.get("target_continent", "")))
 		if atk_id == my_player_index:
 			var my_army_cards = _count_my_strategy("Army")
 			var base_atk_dice = clampi(_to_int(my_continents.get(str(active_attack.get("source_continent", "")), 1)), 1, 3)
+			var max_atk_extra = max(0, 5 - base_atk_dice)
+			var allowed_atk_army = min(my_army_cards, max_atk_extra)
 			_phase_banner_lbl.text = "⚔️ تقویت حمله از «%s» به «%s» (تاس پایه: %s)" % [src_fa, tgt_fa, Risk3DFactory.fa_digits(base_atk_dice)]
-			_selection_info_lbl.text = "تعداد کارت «ارتش کمکی» برای افزودن تاس به این حمله را انتخاب کنید:"
+			_selection_info_lbl.text = "پیش از شروع نبرد، تعداد کارت «ارتش کمکی» را انتخاب کنید (پس از شروع نبرد قابل افزودن نیست):"
 
-			for c in range(my_army_cards + 1):
+			for c in range(allowed_atk_army + 1):
 				var is_picked = (selected_army_commit == c)
 				var b = _make_styled_button(
 					"⚔️ +%s ارتش کمکی" % Risk3DFactory.fa_digits(c),
@@ -1766,6 +1928,10 @@ func _on_hand_card_selected(card_idx: int) -> void:
 	var kind: String = str(entry["kind"])
 	var cid: String = str(entry["id"])
 
+	if game_state == "Attack" and cid == "Army":
+		show_hint("⚠️ پس از شروع نبرد، افزودن کارت ارتش کمکی جدید مجاز نیست!")
+		return
+
 	if selected_hand_card_idx == card_idx:
 		selected_hand_card_idx = -1
 		selected_source_continent = ""
@@ -2014,7 +2180,7 @@ func _animate_single_3d_die(die: Node3D, final_pos: Vector3, final_val: int, del
 			badge_lbl.visible = true
 			var b_tw = create_tween()
 			b_tw.tween_property(badge_lbl, "scale", Vector3(1.18, 1.18, 1.18), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			b_tw.tween_property(badge_lbl, "scale", Vector3.ONE, 0.10)
+			b_tw.tween_property(badge_lbl, "scale", Vector3(1.0, 1.0, 1.0), 0.10)
 	)
 
 
@@ -2029,6 +2195,54 @@ func _animate_deck_draw_pulse(draw_type: int) -> void:
 			var tw = create_tween()
 			tw.tween_property(st, "scale", Vector3(1.12, 1.18, 1.12), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			tw.tween_property(st, "scale", Vector3.ONE, 0.16)
+
+
+func _animate_returned_continent_cards_to_table(from_continent_id: String, count: int) -> void:
+	if count <= 0 or not is_instance_valid(_board_root):
+		return
+	var start_pos := Vector3(0.0, 0.08, 0.0)
+	if from_continent_id != "" and _continent_nodes.has(from_continent_id):
+		start_pos = _continent_nodes[from_continent_id]["base_pos"] + Vector3(0.0, 0.09, 0.0)
+	var end_pos := Vector3(-0.34, 0.09, -0.49)
+	if _table_refs.has("continent_deck") and is_instance_valid(_table_refs["continent_deck"].get("root", null)):
+		end_pos = _table_refs["continent_deck"]["root"].position + Vector3(0.0, 0.04, 0.0)
+
+	var cards_to_fly: int = mini(count, 4)
+	for i in range(cards_to_fly):
+		var fly_card = Node3D.new()
+		fly_card.name = "ReturnedContinentCard_%d" % i
+		var card_mesh = MeshInstance3D.new()
+		var b_mesh = BoxMesh.new()
+		b_mesh.size = Vector3(0.11, 0.006, 0.15)
+		card_mesh.mesh = b_mesh
+		card_mesh.material_override = _mats.get("continent_card_back", _mats.get("gold", null))
+		fly_card.add_child(card_mesh)
+
+		var rim_mesh = MeshInstance3D.new()
+		var r_box = BoxMesh.new()
+		r_box.size = Vector3(0.116, 0.004, 0.156)
+		rim_mesh.mesh = r_box
+		rim_mesh.material_override = _mats.get("gold", null)
+		fly_card.add_child(rim_mesh)
+
+		_board_root.add_child(fly_card)
+		fly_card.position = start_pos + Vector3(float(i) * 0.015, float(i) * 0.008, 0.0)
+		var mid_pos = (start_pos + end_pos) * 0.5 + Vector3(0.0, 0.18, 0.0)
+		var delay_s: float = float(i) * 0.09
+
+		var tw = create_tween()
+		if delay_s > 0.0:
+			tw.tween_interval(delay_s)
+		tw.tween_property(fly_card, "position", mid_pos, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(fly_card, "rotation_degrees", Vector3(0.0, 180.0, 0.0), 0.24)
+		tw.tween_property(fly_card, "position", end_pos, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.parallel().tween_property(fly_card, "rotation_degrees", Vector3(0.0, 360.0, 0.0), 0.24)
+		tw.tween_callback(func():
+			if is_instance_valid(fly_card):
+				fly_card.queue_free()
+			_animate_deck_draw_pulse(1)
+			_sync_3d_board_from_state()
+		)
 
 func _process(delta: float) -> void:
 	_anim_clock += delta
@@ -2213,7 +2427,7 @@ func _build_player_inspector_section(p_idx: int) -> Control:
 	var cards_scroll = ScrollContainer.new()
 	cards_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	cards_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	cards_scroll.custom_minimum_size = Vector2(0, 148)
+	cards_scroll.custom_minimum_size = Vector2(0, 156)
 	cards_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	vbox.add_child(cards_scroll)
 
@@ -2328,7 +2542,7 @@ func _build_inspector_card_widget(
 	continent_id: String
 ) -> Control:
 	var card_panel = PanelContainer.new()
-	card_panel.custom_minimum_size = Vector2(128, 138)
+	card_panel.custom_minimum_size = Vector2(138, 146)
 	card_panel.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var card_bg = Color(0.17, 0.08, 0.10, 0.97) if is_mystery_back else Color(0.13, 0.095, 0.065, 0.97)
@@ -2345,7 +2559,7 @@ func _build_inspector_card_widget(
 
 	# Colored Top Banner Strip with Icon & Count Badge
 	var banner = PanelContainer.new()
-	banner.custom_minimum_size = Vector2(0, 34)
+	banner.custom_minimum_size = Vector2(0, 42)
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var banner_sb = StyleBoxFlat.new()
 	banner_sb.bg_color = accent_col.darkened(0.10)
@@ -2364,8 +2578,10 @@ func _build_inspector_card_widget(
 	var badge_lbl = Label.new()
 	badge_lbl.text = "❓×" + Risk3DFactory.fa_digits(count) if is_mystery_back else "×" + Risk3DFactory.fa_digits(count)
 	badge_lbl.add_theme_font_override("font", FontHekayat)
-	badge_lbl.add_theme_font_size_override("font_size", 21)
-	badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.52) if count > 1 else Color(0.96, 0.93, 0.86))
+	badge_lbl.add_theme_font_size_override("font_size", 32)
+	badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.45) if count > 1 else Color(1.0, 0.98, 0.92))
+	badge_lbl.add_theme_color_override("font_outline_color", Color(0.06, 0.04, 0.02, 0.96))
+	badge_lbl.add_theme_constant_override("outline_size", 6)
 	badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_hbox.add_child(badge_lbl)
 
@@ -2373,7 +2589,7 @@ func _build_inspector_card_widget(
 	ic_lbl.text = icon_txt
 	ic_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ic_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	ic_lbl.add_theme_font_size_override("font_size", 19)
+	ic_lbl.add_theme_font_size_override("font_size", 22)
 	ic_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_hbox.add_child(ic_lbl)
 
@@ -2385,7 +2601,7 @@ func _build_inspector_card_widget(
 	title_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 22)
+	title_lbl.add_theme_font_size_override("font_size", 25)
 	title_lbl.add_theme_color_override("font_color", Color(0.99, 0.95, 0.84))
 	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(title_lbl)
@@ -2396,7 +2612,7 @@ func _build_inspector_card_widget(
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.clip_text = true
 	sub_lbl.add_theme_font_override("font", FontHekayat)
-	sub_lbl.add_theme_font_size_override("font_size", 17)
+	sub_lbl.add_theme_font_size_override("font_size", 19)
 	sub_lbl.add_theme_color_override("font_color", Color(0.94, 0.80, 0.48) if is_mystery_back else accent_col.lightened(0.42))
 	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(sub_lbl)
@@ -2494,6 +2710,8 @@ func _phase_fa(st: String) -> String:
 			return "تقویت ارتش مهاجم"
 		"DefenderArmy":
 			return "تصمیم دفاعی"
+		"Attack":
+			return "ادامه نبرد"
 	return "در حال بازی"
 
 func _format_dice_list(arr: Array) -> String:

@@ -381,31 +381,31 @@ static func _build_draw_deck(
 	glow_mi.visible = false
 	deck_root.add_child(glow_mi)
 
-	# Flat-Tilted Count Badge on Top of Deck (Never floats into other labels)
+	# Flat-Tilted Count Badge on Top of Deck (Large, high-contrast, never floats into other labels)
 	var count_lbl = Label3D.new()
 	count_lbl.text = "۴۲"
 	if font:
 		count_lbl.font = font
-	count_lbl.font_size = 38
-	count_lbl.pixel_size = 0.00105
-	count_lbl.modulate = Color(0.98, 0.94, 0.82)
-	count_lbl.outline_size = 10
-	count_lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98)
+	count_lbl.font_size = 56
+	count_lbl.pixel_size = 0.00130
+	count_lbl.modulate = Color(1.0, 0.96, 0.62)
+	count_lbl.outline_size = 16
+	count_lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.99)
 	count_lbl.rotation_degrees = Vector3(-68.0, 0.0, 0.0)
-	count_lbl.position = Vector3(0.018, 0.032, -0.004)
+	count_lbl.position = Vector3(0.016, 0.034, -0.004)
 	deck_root.add_child(count_lbl)
 
 	var title_lbl = Label3D.new()
 	title_lbl.text = title_fa
 	if font:
 		title_lbl.font = font
-	title_lbl.font_size = 28
-	title_lbl.pixel_size = 0.0010
-	title_lbl.modulate = Color(0.94, 0.84, 0.56)
-	title_lbl.outline_size = 8
+	title_lbl.font_size = 34
+	title_lbl.pixel_size = 0.00112
+	title_lbl.modulate = Color(0.96, 0.88, 0.62)
+	title_lbl.outline_size = 10
 	title_lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98)
 	title_lbl.rotation_degrees = Vector3(-68.0, 0.0, 0.0)
-	title_lbl.position = Vector3(0.0, 0.018, 0.068)
+	title_lbl.position = Vector3(0.0, 0.020, 0.070)
 	deck_root.add_child(title_lbl)
 
 	# Interactive Area3D for clicking the 3D Deck directly
@@ -609,10 +609,10 @@ static func build_continent_node(
 	name_lbl.text = meta["fa"]
 	if font:
 		name_lbl.font = font
-	name_lbl.font_size = 38
-	name_lbl.pixel_size = 0.00105
+	name_lbl.font_size = 42
+	name_lbl.pixel_size = 0.00108
 	name_lbl.modulate = Color(0.98, 0.95, 0.86)
-	name_lbl.outline_size = 10
+	name_lbl.outline_size = 11
 	name_lbl.outline_modulate = Color(0.03, 0.02, 0.01, 0.98)
 	name_lbl.rotation_degrees = Vector3(-72.0, 0.0, 0.0)
 	name_lbl.position = Vector3(0.0, 0.028, rad * 0.79)
@@ -660,13 +660,13 @@ static func build_continent_node(
 		piece_mi.material_override = f_mat
 		g_node.add_child(piece_mi)
 
-		# Small Dark Charcoal Badge Pill Behind Quantity Number
+		# Dark Charcoal Badge Pill Behind Quantity Number
 		var badge_bg = MeshInstance3D.new()
 		var bb_box = BoxMesh.new()
-		bb_box.size = Vector3(0.044, 0.005, 0.028)
+		bb_box.size = Vector3(0.056, 0.006, 0.034)
 		bb_box.material = mats["charcoal"]
 		badge_bg.mesh = bb_box
-		badge_bg.position = Vector3(0.0, 0.012, 0.028)
+		badge_bg.position = Vector3(0.0, 0.013, 0.030)
 		badge_bg.rotation_degrees = Vector3(22.0, 0.0, 0.0)
 		g_node.add_child(badge_bg)
 
@@ -674,13 +674,13 @@ static func build_continent_node(
 		cnt_lbl.text = "×۱"
 		if font:
 			cnt_lbl.font = font
-		cnt_lbl.font_size = 36
-		cnt_lbl.pixel_size = 0.00105
-		cnt_lbl.modulate = RiskMaterials.FACTION_COLORS[p_idx].lightened(0.38)
-		cnt_lbl.outline_size = 9
+		cnt_lbl.font_size = 52
+		cnt_lbl.pixel_size = 0.00130
+		cnt_lbl.modulate = RiskMaterials.FACTION_COLORS[p_idx].lightened(0.45)
+		cnt_lbl.outline_size = 14
 		cnt_lbl.outline_modulate = Color(0.02, 0.01, 0.01, 0.99)
 		cnt_lbl.rotation_degrees = Vector3(-68.0, 0.0, 0.0)
-		cnt_lbl.position = Vector3(0.0, 0.018, 0.029)
+		cnt_lbl.position = Vector3(0.0, 0.020, 0.031)
 		g_node.add_child(cnt_lbl)
 
 		garrisons[p_idx] = {
