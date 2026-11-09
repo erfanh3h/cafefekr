@@ -243,6 +243,9 @@ func _on_internal_reconnect_data(payload: Dictionary) -> void:
 	on_reconnect_data(payload)
 
 func _on_internal_game_data(payload: Dictionary) -> void:
+	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
+		GameManager.set_match_gamers(payload["gamers"])
+	my_player_index = GameManager.my_player_index
 	setup_board(payload)
 
 func _on_internal_start_game() -> void:

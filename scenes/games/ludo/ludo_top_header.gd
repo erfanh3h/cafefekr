@@ -6,31 +6,7 @@ extends "res://scenes/games/base/base_top_header.gd"
 # Dynamically creates P3Card (Emerald Green) and P4Card (Sunburst Yellow)
 # inside PlayersRow when a 3-player or 4-player Ludo match is active.
 
-signal player_profile_clicked(player_index: int)
-
-var p3_card: PanelContainer = null
-var p4_card: PanelContainer = null
-
-var _extra_cards: Dictionary = {} # idx (3,4) -> Dictionary of child node refs
-var _style_p3_active: StyleBoxFlat
-var _style_p3_inactive: StyleBoxFlat
-var _style_p4_active: StyleBoxFlat
-var _style_p4_inactive: StyleBoxFlat
-var _style_avatar_p3_active: StyleBoxFlat
-var _style_avatar_p3_idle: StyleBoxFlat
-var _style_avatar_p4_active: StyleBoxFlat
-var _style_avatar_p4_idle: StyleBoxFlat
-var _style_match_box_p3: StyleBoxFlat
-var _style_match_box_p4: StyleBoxFlat
-
-var _player_names: Dictionary = {
-	1: "بازیکن ۱",
-	2: "بازیکن ۲",
-	3: "بازیکن ۳",
-	4: "بازیکن ۴"
-}
 var _home_counts: Array = [0, 0, 0, 0]
-var _reaction_seqs: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
 
 const FACTION_COLORS: Dictionary = {
 	1: Color(0.95, 0.25, 0.30), # Ruby Red
@@ -278,6 +254,20 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
 
+func update_home_counts(counts: Variant, rank1: Variant = 0, rank2: Variant = 0) -> void:
+	var arr: Array = [0, 0, 0, 0]
+	if typeof(counts) == TYPE_DICTIONARY:
+		var d: Dictionary = counts
+		for idx in [1, 2, 3, 4]:
+			arr[idx - 1] = int(d.get(idx, d.get(str(idx), 0)))
+	elif typeof(counts) == TYPE_ARRAY:
+		var a: Array = counts
+		for i in range(min(4, a.size())):
+			arr[i] = int(a[i])
+	var r1: int = int(rank1) if rank1 != null else 0
+	var r2: int = int(rank2) if rank2 != null else 0
+	update_ludo_home_counts(arr, r1, r2)
+
 func update_ludo_home_counts(home_counts: Array, rank1: int = 0, rank2: int = 0) -> void:
 	_home_counts = home_counts.duplicate()
 	var labels = {
@@ -297,6 +287,25 @@ func update_ludo_home_counts(home_counts: Array, rank1: int = 0, rank2: int = 0)
 			lbl.text = "🥈"
 		else:
 			lbl.text = "%s/۴" % _fa_digits(cnt)
+
+func reset_header() -> void:
+	super.reset_header()
+	_home_counts = [0, 0, 0, 0]
+	for idx in [3, 4]:
+		if _extra_cards.has(idx):
+			var info = _extra_cards[idx]
+			var c: PanelContainer = info.get("card", null)
+			if is_instance_valid(c):
+				c.add_theme_stylebox_override("panel", _style_p3_inactive if idx == 3 else _style_p4_inactive)
+				c.scale = Vector2.ONE
+			var av: Panel = info.get("av_frame", null)
+			if is_instance_valid(av):
+				av.add_theme_stylebox_override("panel", _style_avatar_p3_idle if idx == 3 else _style_avatar_p4_idle)
+			var rb: Control = info.get("reaction_bubble", null)
+			if is_instance_valid(rb):
+				rb.visible = false
+	update_ludo_home_counts(_home_counts, 0, 0)
+	_apply_layout_for_player_count(_get_total_players())
 
 func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 	_current_turn = turn

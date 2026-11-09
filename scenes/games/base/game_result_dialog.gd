@@ -273,6 +273,10 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 			lbl_title.text = "🏳️ شما تسلیم شدید!"
 			lbl_title.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
 			lbl_subtitle.text = "شما از ادامه مسابقه انصراف دادید و بازی را به حریف واگذار کردید."
+		elif GameManager.match_players.size() > 2 and GameManager.ludo_rank2 == my_idx and my_idx > 0:
+			lbl_title.text = "🥈 کسب مقام دوم!"
+			lbl_title.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0))
+			lbl_subtitle.text = "آفرین! در این رقابت چندنفره به مقام دوم دست پیدا کردید."
 		else:
 			lbl_title.text = "👏 خسته نباشید!"
 			lbl_title.add_theme_color_override("font_color", Color(0.85, 0.85, 0.95))

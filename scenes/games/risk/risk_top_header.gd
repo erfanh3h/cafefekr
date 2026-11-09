@@ -272,6 +272,34 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 
 	update_risk_player_stats(_token_counts, _continent_counts, _strategy_counts)
 
+func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
+	super.setup_match(game_name_fa, mode_title, round_num, max_rounds, turn_time)
+	var total_players = _get_total_players()
+	_apply_layout_for_player_count(total_players)
+	if is_instance_valid(lbl_round):
+		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
+
+func reset_header() -> void:
+	super.reset_header()
+	_token_counts = [0, 0, 0, 0]
+	_continent_counts = [3, 3, 3, 3]
+	_strategy_counts = [3, 4, 4, 4]
+	for idx in [3, 4]:
+		if _extra_cards.has(idx):
+			var info = _extra_cards[idx]
+			var c: PanelContainer = info.get("card", null)
+			if is_instance_valid(c):
+				c.add_theme_stylebox_override("panel", _style_p3_inactive if idx == 3 else _style_p4_inactive)
+				c.scale = Vector2.ONE
+			var av: Panel = info.get("av_frame", null)
+			if is_instance_valid(av):
+				av.add_theme_stylebox_override("panel", _style_avatar_p3_idle if idx == 3 else _style_avatar_p4_idle)
+			var rb: Control = info.get("reaction_bubble", null)
+			if is_instance_valid(rb):
+				rb.visible = false
+	update_risk_player_stats(_token_counts, _continent_counts, _strategy_counts, 0, 0)
+	_apply_layout_for_player_count(_get_total_players())
+
 func update_risk_player_stats(token_counts: Array, continent_counts: Array, strategy_counts: Array, rank1: int = 0, rank2: int = 0) -> void:
 	for i in range(min(4, token_counts.size())):
 		_token_counts[i] = _to_int(token_counts[i])

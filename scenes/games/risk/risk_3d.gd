@@ -854,9 +854,18 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 # ==============================================================================
 
 func setup_board(game_data: Dictionary) -> void:
+	if game_data.has("gamers") and typeof(game_data["gamers"]) == TYPE_ARRAY:
+		GameManager.set_match_gamers(game_data["gamers"])
 	_detect_players_and_local_id()
-	_sync_full_game_data(game_data)
+	var inner_data = game_data.get("game_data", game_data)
+	if typeof(inner_data) == TYPE_DICTIONARY:
+		_sync_full_game_data(inner_data)
 	_update_hud_visibility()
+	_refresh_all_3d_and_hud()
+
+func on_player_surrendered(gamer_id: int) -> void:
+	if players_state.has(gamer_id):
+		players_state[gamer_id] = {"continents": {}, "strategies_count": 0, "tokens": []}
 	_refresh_all_3d_and_hud()
 
 func on_start_game() -> void:
@@ -1485,10 +1494,12 @@ func _refresh_3d_player_stations() -> void:
 		Risk3DFactory.populate_station_assets_3d(st_ref, p_data, _mats, FontHekayat, _crown_mesh)
 
 func _refresh_top_header() -> void:
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	var hud = get_tree().get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(hud):
+		hud = get_tree().root.find_child("BaseGameHUD", true, false)
 	if not is_instance_valid(hud):
 		return
-	var header = hud.get_node_or_null("TopHeader")
+	var header = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
 	if not is_instance_valid(header):
 		return
 
@@ -1502,7 +1513,7 @@ func _refresh_top_header() -> void:
 		s_counts[idx - 1] = _to_int(st.get("strategies_count", 0))
 
 	if header.has_method("update_risk_player_stats"):
-		header.update_risk_player_stats(t_counts, c_counts, s_counts)
+		header.update_risk_player_stats(t_counts, c_counts, s_counts, GameManager.ludo_rank1, GameManager.ludo_rank2)
 	elif header.has_method("update_risk_stats"):
 		header.update_risk_stats(t_counts, c_counts, s_counts)
 

@@ -33,6 +33,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/rank/ranked_breakout_dialog.tscn" id="31_breakout_dialog"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/history.png" id="32_history_tex"]
 [ext_resource type="PackedScene" path="res://scenes/ui/history/game_history_dialog.tscn" id="33_history_dialog"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/multi-rank.png" id="34_multi_rank_tex"]
+[ext_resource type="PackedScene" path="res://scenes/ui/multi_rank/multi_rank_dialog.tscn" id="35_multi_rank_dialog"]
 
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_white_icon"]
@@ -126,9 +128,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -485.0
-offset_top = -390.0
+offset_top = -415.0
 offset_right = 485.0
-offset_bottom = 390.0
+offset_bottom = 395.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 14
@@ -136,11 +138,11 @@ alignment = 1
 
 [node name="CardsContainer" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent"]
 layout_mode = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 18
 alignment = 1
 
 [node name="BtnRanked" type="Button" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer"]
-custom_minimum_size = Vector2(940, 212)
+custom_minimum_size = Vector2(940, 184)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
@@ -156,9 +158,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 64
-theme_override_constants/margin_top = 18
+theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 64
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_bottom = 14
 
 [node name="HBox" type="HBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin"]
 layout_mode = 2
@@ -205,7 +207,7 @@ text = "جستجوی حریف آنلاین و افزایش رتبه و امتی�
 horizontal_alignment = 2
 
 [node name="IconControl" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox"]
-custom_minimum_size = Vector2(110, 128)
+custom_minimum_size = Vector2(106, 114)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -235,8 +237,104 @@ texture = ExtResource("14_rank_tex")
 expand_mode = 1
 stretch_mode = 5
 
+[node name="BtnMultiRank" type="Button" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer"]
+custom_minimum_size = Vector2(940, 184)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_btn_pressed")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 64
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 64
+theme_override_constants/margin_bottom = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="Arrow" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin/HBox"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("15_right_tex")
+expand_mode = 1
+stretch_mode = 5
+flip_h = true
+
+[node name="TextCol" type="VBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+alignment = 1
+
+[node name="CardTitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin/HBox/TextCol"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 42
+text = "رنک چهارنفره آنلاین"
+horizontal_alignment = 2
+
+[node name="CardSubtitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin/HBox/TextCol"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("12_font_hekayat")
+theme_override_font_sizes/font_size = 24
+text = "رقابت ۴ نفره آنلاین در منچ و ریسک و کسب کاپ و سکه"
+horizontal_alignment = 2
+
+[node name="IconControl" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin/HBox"]
+custom_minimum_size = Vector2(106, 114)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Disc" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin/HBox/IconControl"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_button5_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Icon" type="TextureRect" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("34_multi_rank_tex")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="BtnClassicRank" type="Button" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer"]
-custom_minimum_size = Vector2(940, 212)
+custom_minimum_size = Vector2(940, 184)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
@@ -252,9 +350,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 64
-theme_override_constants/margin_top = 18
+theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 64
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_bottom = 14
 
 [node name="HBox" type="HBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin"]
 layout_mode = 2
@@ -301,7 +399,7 @@ text = "انتخاب بازی و رقابت با هوش مصنوعی و کسب �
 horizontal_alignment = 2
 
 [node name="IconControl" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank/Margin/HBox"]
-custom_minimum_size = Vector2(110, 128)
+custom_minimum_size = Vector2(106, 114)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -332,7 +430,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnLobby" type="Button" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer"]
-custom_minimum_size = Vector2(940, 212)
+custom_minimum_size = Vector2(940, 184)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
@@ -348,9 +446,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 64
-theme_override_constants/margin_top = 18
+theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 64
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_bottom = 14
 
 [node name="HBox" type="HBoxContainer" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin"]
 layout_mode = 2
@@ -397,7 +495,7 @@ text = "ساخت یا ورود به اتاق با شناسه دعوت ۶ رقم�
 horizontal_alignment = 2
 
 [node name="IconControl" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby/Margin/HBox"]
-custom_minimum_size = Vector2(110, 128)
+custom_minimum_size = Vector2(106, 114)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -626,6 +724,9 @@ visible = false
 [node name="ClassicRankDialog" parent="CanvasLayer" instance=ExtResource("29_classic_rank_dialog")]
 visible = false
 
+[node name="MultiRankDialog" parent="CanvasLayer" instance=ExtResource("35_multi_rank_dialog")]
+visible = false
+
 [node name="PickBanDialog" parent="CanvasLayer" instance=ExtResource("30_pick_ban_dialog")]
 visible = false
 
@@ -649,3 +750,4 @@ visible = false
 
 [node name="UserProfileDialog" parent="CanvasLayer" instance=ExtResource("25_profile_dlg")]
 visible = false
+

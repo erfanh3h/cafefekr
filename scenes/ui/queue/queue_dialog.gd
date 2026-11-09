@@ -27,6 +27,19 @@ var btn_reject: Button
 var accept_countdown: int = 10
 var accept_timer: Timer
 var is_accept_phase: bool = false
+var is_multi_rank_mode: bool = false
+var _multi_rank_game_type: String = ""
+
+static func _fa_digits(val: Variant) -> String:
+	var s = str(val)
+	var fa = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
+	var out = ""
+	for ch in s:
+		if ch >= "0" and ch <= "9":
+			out += fa[int(ch)]
+		else:
+			out += ch
+	return out
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -52,6 +65,8 @@ func _ready() -> void:
 	NetworkManager.queue_accept_game_received.connect(_on_accept_game_received)
 	NetworkManager.pre_game_started.connect(_on_pre_game_started)
 	NetworkManager.queue_game_canceled.connect(_on_game_canceled)
+	NetworkManager.multi_rank_queue_status.connect(_on_multi_rank_queue_status)
+	NetworkManager.multi_rank_match_ready.connect(_on_multi_rank_match_ready)
 	NetworkManager.ranked_locked_received.connect(func(_data):
 		stop_queue()
 	)
@@ -93,6 +108,8 @@ func _process(delta: float) -> void:
 		spinner.rotation += delta * 2.5
 
 func start_queue(requested_game_type: String = "") -> void:
+	is_multi_rank_mode = false
+	_multi_rank_game_type = ""
 	set_process(true)
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	elapsed_seconds = 0
@@ -126,13 +143,71 @@ func start_queue(requested_game_type: String = "") -> void:
 		AudioManager.play_queue_music()
 		NetworkManager.join_matchmaking_queue()
 
+func start_multi_rank_queue(requested_game_type: String) -> void:
+	var norm_type = GameRegistry.normalize_type(requested_game_type)
+	is_multi_rank_mode = true
+	_multi_rank_game_type = norm_type
+	GameManager.set_game_type(norm_type)
+	set_process(true)
+	ActionVFXManager.animate_dialog_open(self, null, true)
+	elapsed_seconds = 0
+	timer_active = true
+	is_accept_phase = false
+
+	var g_info = GameRegistry.get_game_info(norm_type)
+	var g_name = g_info.get("name_fa", norm_type)
+	lbl_title.text = "صف رنک چهارنفره (%s)" % g_name
+	spinner_container.visible = true
+	btn_cancel.visible = false
+	if is_instance_valid(btn_close_top):
+		btn_close_top.visible = true
+	accept_container.visible = false
+	btn_accept.disabled = false
+	btn_reject.disabled = false
+
+	_update_timer_label()
+	lbl_status.text = "در انتظار تکمیل ظرفیت ۴ بازیکن (%s): ۱ از ۴ نفر..." % g_name
+	lbl_status.modulate = Color(1.0, 0.94, 0.55)
+	search_timer.start()
+	AudioManager.play_queue_music()
+	NetworkManager.join_multi_rank_queue(norm_type)
+
+func _on_multi_rank_queue_status(queuers_count: int, required_count: int, game_type: String, _queuers: Array) -> void:
+	if not is_multi_rank_mode or not timer_active:
+		return
+	var norm_type = GameRegistry.normalize_type(game_type if not game_type.is_empty() else _multi_rank_game_type)
+	var g_info = GameRegistry.get_game_info(norm_type)
+	var g_name = g_info.get("name_fa", norm_type)
+	lbl_status.text = "در انتظار تکمیل ظرفیت (%s): %s از %s بازیکن..." % [g_name, _fa_digits(max(1, queuers_count)), _fa_digits(max(4, required_count))]
+	lbl_status.modulate = Color(0.45, 0.95, 0.65) if queuers_count >= 2 else Color(1.0, 0.94, 0.55)
+
+func _on_multi_rank_match_ready(_game_id: String, _game_type: String) -> void:
+	if not is_multi_rank_mode:
+		return
+	timer_active = false
+	is_accept_phase = false
+	search_timer.stop()
+	accept_timer.stop()
+	lbl_title.text = "⚡ ظرفیت تکمیل شد! (۴ از ۴) ⚡"
+	lbl_status.text = "هر ۴ بازیکن آماده هستند! ورود به میز مسابقه..."
+	lbl_status.modulate = Color(0.25, 0.95, 0.48)
+	AudioManager.sfx_queue_found()
+	AudioManager.stop_music()
+	await get_tree().create_timer(0.45).timeout
+	visible = false
+
 func stop_queue() -> void:
+	var was_multi = is_multi_rank_mode
+	is_multi_rank_mode = false
 	timer_active = false
 	is_accept_phase = false
 	search_timer.stop()
 	accept_timer.stop()
 	AudioManager.play_theme_music()
-	NetworkManager.leave_matchmaking_queue()
+	if was_multi:
+		NetworkManager.leave_multi_rank_queue()
+	else:
+		NetworkManager.leave_matchmaking_queue()
 	queue_cancelled.emit()
 	ActionVFXManager.animate_dialog_close(self, null, func():
 		visible = false

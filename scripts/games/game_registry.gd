@@ -499,3 +499,18 @@ static func get_lobby_xp(game_type: String, is_win: bool, is_draw: bool) -> int:
 		return 9 if is_win else (4 if is_draw else 2)
 	else:
 		return 14 if is_win else (7 if is_draw else 3)
+
+static func get_multiplayer_rank_games() -> Array[String]:
+	return [GameTypes.LUDO, GameTypes.RISK]
+
+static func is_multiplayer_rank_supported(game_type: String) -> bool:
+	var norm = normalize_type(game_type)
+	return norm in [GameTypes.LUDO, GameTypes.RISK]
+
+static func get_multi_rank_xp(is_rank1: bool, is_rank2: bool) -> int:
+	if is_rank1:
+		return 50
+	elif is_rank2:
+		return 30
+	return 10
+

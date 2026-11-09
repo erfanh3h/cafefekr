@@ -40,6 +40,8 @@ signal player_score_received(payload: Dictionary)
 signal risk_event_received(cmd_id: String, payload: Dictionary)
 signal user_data_received(payload: Dictionary)
 signal classic_rank_match_ready(game_id: String, game_type: String)
+signal multi_rank_match_ready(game_id: String, game_type: String)
+signal multi_rank_queue_status(queuers_count: int, required_count: int, game_type: String, queuers: Array)
 signal queue_accept_game_received()
 signal pre_game_started(pre_game_id: String, queuers: Array)
 signal system_banned_games_received(banned_games: Array)
@@ -52,6 +54,9 @@ signal queue_start_game_received(game_id: String)
 signal queue_user_disconnected(user_id: String, wait_time: int)
 signal queue_user_reconnected(user_id: String, remaining_time: int)
 signal ranked_locked_received(data: Dictionary)
+
+var is_in_multi_rank_queue: bool = false
+var current_multi_rank_game_type: String = ""
 
 var api: APIClient
 var socket: SocketIOClient
@@ -247,6 +252,24 @@ func start_classic_rank(game_type: String) -> void:
 	print("[NetworkManager] Requesting Classic Rank match for %s..." % game_type)
 	socket.connect_namespace("/classic-rank", auth)
 
+# --- MULTIPLAYER RANK MATCHMAKING (4-PLAYER LUDO / RISK) ---
+
+func join_multi_rank_queue(game_type: String) -> void:
+	is_in_multi_rank_queue = true
+	current_multi_rank_game_type = game_type
+	var auth = {
+		"token": GameManager.token,
+		"game_type": game_type
+	}
+	print("[NetworkManager] Joining 4-player Multi-Rank queue (/multi-queue) for %s..." % game_type)
+	socket.connect_namespace("/multi-queue", auth)
+
+func leave_multi_rank_queue() -> void:
+	if is_in_multi_rank_queue:
+		socket.emit_event("/multi-queue", "user_command", {"id": "Leave_Queue"})
+	is_in_multi_rank_queue = false
+	socket.disconnect_namespace("/multi-queue")
+
 # --- IN-GAME SESSION ---
 
 func join_active_game(game_id: String) -> void:
@@ -334,8 +357,30 @@ func _on_socket_event(ns: String, event_name: String, data: Variant) -> void:
 func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> void:
 	print("[NetworkManager] Command from %s: %s -> %s" % [ns, cmd_id, str(payload)])
 	
+	if ns == "/multi-queue" and cmd_id in ["Queue_Status", "QueueStatus"]:
+		if typeof(payload) == TYPE_DICTIONARY:
+			var q_cnt = int(payload.get("queuers_count", 1))
+			var req_cnt = int(payload.get("required_count", 4))
+			var g_type = str(payload.get("game_type", current_multi_rank_game_type))
+			var q_arr = payload.get("queuers", []) as Array
+			multi_rank_queue_status.emit(q_cnt, req_cnt, g_type, q_arr)
+		return
+
 	match cmd_id:
 		Commands.Start_Game:
+			if ns == "/multi-queue":
+				if typeof(payload) == TYPE_DICTIONARY and payload.has("game_id"):
+					var m_gid = str(payload["game_id"])
+					var m_gtype = str(payload.get("game_type", current_multi_rank_game_type))
+					if m_gtype.is_empty():
+						m_gtype = current_multi_rank_game_type if not current_multi_rank_game_type.is_empty() else GameTypes.LUDO
+					if payload.has("queuers") and typeof(payload["queuers"]) == TYPE_ARRAY and not (payload["queuers"] as Array).is_empty():
+						GameManager.set_match_gamers(payload["queuers"])
+					is_in_multi_rank_queue = false
+					socket.disconnect_namespace("/multi-queue")
+					print("[NetworkManager] 4-Player Multi-Rank match found: %s (%s)" % [m_gid, m_gtype])
+					multi_rank_match_ready.emit(m_gid, m_gtype)
+				return
 			if ns == "/classic-rank":
 				if typeof(payload) == TYPE_DICTIONARY and payload.has("game_id"):
 					var c_gid = str(payload["game_id"])

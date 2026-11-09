@@ -35,6 +35,7 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 @onready var btn_ranked = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked
 @onready var ranked_title: Label = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/TextCol/CardTitle
 @onready var ranked_subtitle: Label = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/TextCol/CardSubtitle
+@onready var btn_multi_rank = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank
 @onready var btn_classic_rank = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank
 @onready var btn_lobby = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby
 
@@ -67,6 +68,8 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 @onready var lobby_dialog = $CanvasLayer/LobbyDialog
 
 @onready var classic_rank_dialog = $CanvasLayer/ClassicRankDialog
+
+@onready var multi_rank_dialog = $CanvasLayer/MultiRankDialog
 
 @onready var ranking_dialog = $CanvasLayer/RankingDialog
 
@@ -390,6 +393,9 @@ func _setup_signals() -> void:
 
 	btn_ranked.pressed.connect(_on_ranked_pressed)
 
+	if is_instance_valid(btn_multi_rank):
+		btn_multi_rank.pressed.connect(_on_multi_rank_pressed)
+
 	btn_classic_rank.pressed.connect(_on_classic_rank_pressed)
 
 	btn_lobby.pressed.connect(_on_lobby_pressed)
@@ -478,9 +484,8 @@ func _setup_signals() -> void:
 	
 
 	queue_dialog.match_ready.connect(func(gid, gtype = ""):
-
-		_start_game_match(gid, gtype, "ranked")
-
+		var mode_to_use = "multi_rank" if current_match_mode == "multi_rank" else "ranked"
+		_start_game_match(gid, gtype, mode_to_use)
 	)
 
 	queue_dialog.queue_cancelled.connect(func():
@@ -556,6 +561,10 @@ func _setup_signals() -> void:
 
 	classic_rank_dialog.closed.connect(_update_backdrop_state)
 
+	if is_instance_valid(multi_rank_dialog):
+		multi_rank_dialog.start_multi_rank_requested.connect(_on_multi_rank_start_requested)
+		multi_rank_dialog.closed.connect(_update_backdrop_state)
+
 	NetworkManager.classic_rank_match_ready.connect(func(gid, gtype = ""):
 
 		_start_game_match(gid, gtype, "classic_rank")
@@ -594,6 +603,8 @@ func _setup_signals() -> void:
 					ranking_dialog.close()
 				elif is_instance_valid(game_history_dialog) and game_history_dialog.visible:
 					game_history_dialog.close()
+				elif is_instance_valid(multi_rank_dialog) and multi_rank_dialog.visible:
+					multi_rank_dialog.close()
 				elif is_instance_valid(classic_rank_dialog) and classic_rank_dialog.visible:
 					classic_rank_dialog.close()
 				else:
@@ -754,11 +765,11 @@ func _start_logo_animation() -> void:
 
 func _setup_button_juice() -> void:
 
-	var buttons = [btn_ranked, btn_classic_rank, btn_lobby, btn_ranking, btn_history, btn_rules, btn_audio, btn_exit]
+	var buttons = [btn_ranked, btn_multi_rank, btn_classic_rank, btn_lobby, btn_ranking, btn_history, btn_rules, btn_audio, btn_exit]
 
 	for b in buttons:
-
-		ActionVFXManager.apply_button_juice(b, "tap_button")
+		if is_instance_valid(b):
+			ActionVFXManager.apply_button_juice(b, "tap_button")
 
 
 
@@ -788,7 +799,44 @@ func _on_ranked_pressed() -> void:
 		_hide_backdrop()
 		_show_ranked_locked_dialog()
 		return
+	current_match_mode = "ranked"
 	queue_dialog.start_queue()
+
+func _on_multi_rank_pressed() -> void:
+	AudioManager.sfx_button()
+	if GameManager.is_force_update_required:
+		_show_force_update_dialog()
+		return
+	if not GameManager.is_queue_open:
+		_show_queue_closed_dialog()
+		return
+	if not NetworkManager.is_online:
+		NetworkManager.connect_to_game_server()
+		_show_offline_dialog()
+		return
+	_show_backdrop()
+	if not GameManager.is_logged_in:
+		login_dialog.open()
+		return
+	if GameManager.is_guest or not GameManager.has_phone():
+		login_dialog.open_for_phone_upgrade("برای شرکت در مسابقات رنک چهارنفره، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
+		return
+	if not GameManager.has_username():
+		login_dialog.open_for_username_completion()
+		return
+	if is_instance_valid(multi_rank_dialog):
+		multi_rank_dialog.open()
+
+func _on_multi_rank_start_requested(game_type: String) -> void:
+	if not NetworkManager.is_online:
+		NetworkManager.connect_to_game_server()
+		_show_offline_dialog()
+		return
+	print("[Main] Multi-Rank 4-player queue requested for game: %s" % game_type)
+	current_match_mode = "multi_rank"
+	GameManager.current_match_mode = "multi_rank"
+	_show_backdrop()
+	queue_dialog.start_multi_rank_queue(game_type)
 
 func _on_classic_rank_pressed() -> void:
 	AudioManager.sfx_button()
@@ -817,6 +865,8 @@ func _on_classic_rank_start_requested(game_type: String) -> void:
 		_show_offline_dialog()
 		return
 	print("[Main] Classic rank match requested for game: %s" % game_type)
+	current_match_mode = "classic_rank"
+	GameManager.current_match_mode = "classic_rank"
 	_show_backdrop()
 	_show_menu_toast("🎮 در حال آغاز رقابت رنک کلاسیک...")
 	NetworkManager.start_classic_rank(game_type)
@@ -903,7 +953,7 @@ func _update_backdrop_state() -> void:
 		var is_queue_active = is_open.call(queue_dialog)
 			
 		var any_open = is_queue_active or is_open.call(lobby_dialog) \
-			or is_open.call(classic_rank_dialog) or is_open.call(pick_ban_dialog) \
+			or is_open.call(classic_rank_dialog) or is_open.call(multi_rank_dialog) or is_open.call(pick_ban_dialog) \
 			or is_open.call(ranking_dialog) or is_open.call(game_history_dialog) or is_open.call(store_dialog) \
 			or is_open.call(rules_dialog) or is_open.call(login_dialog) \
 			or is_open.call(user_profile_dialog)
@@ -957,6 +1007,10 @@ func _get_mode_title() -> String:
 	if current_match_mode == "ranked":
 
 		return "بازی رقابتی"
+
+	elif current_match_mode == "multi_rank":
+
+		return "رنک چهارنفره"
 
 	elif current_match_mode == "classic_rank":
 
@@ -1035,6 +1089,10 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 	if is_instance_valid(classic_rank_dialog):
 
 		classic_rank_dialog.visible = false
+
+	if is_instance_valid(multi_rank_dialog):
+
+		multi_rank_dialog.visible = false
 
 	if is_instance_valid(pick_ban_dialog):
 
@@ -1521,6 +1579,9 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 	if score_type_str == "Rank":
 		current_match_mode = "ranked"
 		GameManager.current_match_mode = "ranked"
+	elif score_type_str == "MultiRANK":
+		current_match_mode = "multi_rank"
+		GameManager.current_match_mode = "multi_rank"
 	elif score_type_str == "ClassicRank":
 		current_match_mode = "classic_rank"
 		GameManager.current_match_mode = "classic_rank"
@@ -1934,16 +1995,21 @@ func _on_game_finished(data: Dictionary) -> void:
 		var is_draw = (winner == 0)
 		if current_match_mode == "classic_rank":
 			xp_earned = GameRegistry.get_classic_rank_xp(GameManager.current_game_type, is_win, is_draw)
+		elif current_match_mode == "multi_rank":
+			var is_second = (GameManager.ludo_rank2 == GameManager.my_player_index)
+			xp_earned = GameRegistry.get_multi_rank_xp(GameManager.current_game_type, is_win, is_second)
 		elif current_match_mode == "lobby":
 			xp_earned = GameRegistry.get_lobby_xp(GameManager.current_game_type, is_win, is_draw)
 
-	if xp_earned > 0:
-		GameManager.add_xp(xp_earned)
-	if coin_earned > 0:
-		GameManager.add_coins(coin_earned)
-
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
 		board.set_board_locked(true)
+
+	if current_match_mode == "multi_rank":
+		if not _ranked_rewards_applied:
+			_ranked_rewards_applied = true
+			GameManager.apply_ranked_rewards(score_earned, xp_earned, coin_earned)
+		base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned)
+		return
 
 	if current_match_mode == "ranked":
 		if not _ranked_rewards_applied:
@@ -1965,6 +2031,11 @@ func _on_game_finished(data: Dictionary) -> void:
 			else:
 				ranked_breakout_dialog.update_data(payload)
 		return
+
+	if xp_earned > 0:
+		GameManager.add_xp(xp_earned)
+	if coin_earned > 0:
+		GameManager.add_coins(coin_earned)
 
 	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned)
 
@@ -2059,6 +2130,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 		lobby_dialog.visible = false
 	if is_instance_valid(classic_rank_dialog):
 		classic_rank_dialog.visible = false
+	if is_instance_valid(multi_rank_dialog):
+		multi_rank_dialog.visible = false
 	if is_instance_valid(pick_ban_dialog):
 		pick_ban_dialog.visible = false
 	if is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.is_open():
@@ -2163,6 +2236,12 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 func _on_finish_reconnect_time(user_id: String) -> void:
 	print("[Main] Opponent reconnect time expired for user: %s." % user_id)
 	base_game_hud.hide_pause_dialog()
+	if GameManager.match_players.size() > 2 or current_match_mode == "multi_rank":
+		base_game_hud.show_toast_hint("⏱️ مهلت اتصال بازیکن قطع‌شده به پایان رسید!")
+		var board = cafe_table.current_board_node
+		if board and is_instance_valid(board) and board.has_method("sync_turn_state"):
+			board.sync_turn_state()
+		return
 	base_game_hud.show_toast_hint("🏆 مهلت اتصال حریف به پایان رسید!")
 	if current_match_mode == "ranked":
 		return

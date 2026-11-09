@@ -2696,29 +2696,17 @@ func update_turn(turn: int) -> void:
 
 
 
-	var p1_data = GameManager.get_my_player_data() if GameManager.my_player_index == 1 else GameManager.get_opponent_player_data()
+	var is_multi = GameManager.match_players.size() > 2
 
+	var p1_data = GameManager.get_player_data_by_gamer_id(1) if is_multi else (GameManager.get_my_player_data() if GameManager.my_player_index == 1 else GameManager.get_opponent_player_data())
 
+	var p2_data = GameManager.get_player_data_by_gamer_id(2) if is_multi else (GameManager.get_opponent_player_data() if GameManager.my_player_index == 1 else GameManager.get_my_player_data())
 
-	var p2_data = GameManager.get_opponent_player_data() if GameManager.my_player_index == 1 else GameManager.get_my_player_data()
+	var p1_n = str(p1_data.get("name", p1_data.get("username", "میزبان")))
 
-
-
-	var p1_n = p1_data.get("name", "میزبان")
-
-
-
-	var p2_n = p2_data.get("name", "مهمان")
-
-
-
-	
-
-
+	var p2_n = str(p2_data.get("name", p2_data.get("username", "مهمان")))
 
 	if is_instance_valid(current_top_header):
-
-
 
 		current_top_header.update_turn(turn, GameManager.my_player_index, p1_n, p2_n)
 

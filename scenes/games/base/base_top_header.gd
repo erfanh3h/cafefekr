@@ -9,6 +9,7 @@ extends Control
 
 signal p1_profile_clicked()
 signal p2_profile_clicked()
+signal player_profile_clicked(player_index: int)
 
 var _profile_clicks_enabled: bool = false
 
@@ -45,16 +46,34 @@ func _can_emit_profile_click() -> bool:
 @onready var lbl_timer: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/TimerRow/LblTimer
 @onready var turn_timer_bar: ProgressBar = $Margin/VBoxMain/MatchDetailsBox/VBox/TurnTimerBar
 
+# --- Dynamic Player 3 & Player 4 Cards (for 3-4 player games) ---
+var p3_card: PanelContainer = null
+var p4_card: PanelContainer = null
+var _extra_cards: Dictionary = {} # idx (3,4) -> Dictionary of child node refs
+var _player_names: Dictionary = {
+	1: "بازیکن ۱",
+	2: "بازیکن ۲",
+	3: "بازیکن ۳",
+	4: "بازیکن ۴"
+}
+var _reaction_seqs: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
+
 # --- Theme Styles ---
 var _style_p1_active: StyleBoxFlat
 var _style_p1_inactive: StyleBoxFlat
 var _style_p2_active: StyleBoxFlat
 var _style_p2_inactive: StyleBoxFlat
+var _style_p3_active: StyleBoxFlat
+var _style_p3_inactive: StyleBoxFlat
+var _style_p4_active: StyleBoxFlat
+var _style_p4_inactive: StyleBoxFlat
 var _timer_style_fill: StyleBoxFlat
 var _timer_style_bg: StyleBoxFlat
 var _style_match_box_normal: StyleBoxFlat
 var _style_match_box_p1: StyleBoxFlat
 var _style_match_box_p2: StyleBoxFlat
+var _style_match_box_p3: StyleBoxFlat
+var _style_match_box_p4: StyleBoxFlat
 var _style_match_box_danger: StyleBoxFlat
 var _style_timer_pill_normal: StyleBoxFlat
 var _style_timer_pill_danger: StyleBoxFlat
@@ -62,6 +81,10 @@ var _style_avatar_p1_active: StyleBoxFlat
 var _style_avatar_p1_idle: StyleBoxFlat
 var _style_avatar_p2_active: StyleBoxFlat
 var _style_avatar_p2_idle: StyleBoxFlat
+var _style_avatar_p3_active: StyleBoxFlat
+var _style_avatar_p3_idle: StyleBoxFlat
+var _style_avatar_p4_active: StyleBoxFlat
+var _style_avatar_p4_idle: StyleBoxFlat
 
 # --- Dynamic Game-UI Decorations ---
 var _p1_avatar_frame: Panel = null
@@ -730,9 +753,9 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 	_update_score_badges_visibility()
 
 	if is_instance_valid(p1_name):
-		p1_name.text = p1_data.get("name", "میزبان")
+		p1_name.text = str(p1_data.get("name", p1_data.get("username", "میزبان")))
 	if is_instance_valid(p2_name):
-		p2_name.text = p2_data.get("name", "مهمان")
+		p2_name.text = str(p2_data.get("name", p2_data.get("username", "مهمان")))
 
 	if is_instance_valid(p1_avatar):
 		var p1_img_id = int(p1_data.get("image", p1_data.get("user_image", 0)))
