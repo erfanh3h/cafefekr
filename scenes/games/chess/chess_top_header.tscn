@@ -16,7 +16,7 @@ alignment = 0
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.75, 0.6, 0.9)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "خطای نوبت:"
 
 [node name="P1Dot1" type="Panel" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="1"]
@@ -38,7 +38,7 @@ size_flags_vertical = 4
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "۰/۴"
 
 [node name="P2MissedTurns" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox" index="2"]
@@ -50,7 +50,7 @@ alignment = 0
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.75, 0.6, 0.9)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "خطای نوبت:"
 
 [node name="P2Dot1" type="Panel" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="1"]
@@ -72,7 +72,7 @@ size_flags_vertical = 4
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "۰/۴"
 
 [node name="AfkRuleRow" type="HBoxContainer" parent="Margin/VBoxMain/MatchDetailsBox/VBox" index="4"]
@@ -86,6 +86,6 @@ theme_override_colors/font_color = Color(1, 0.88, 0.55, 0.95)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 text = "⏱️ زمان نوبت: ۲۰ ثانیه  |  ⚠️ ۴ بار عدم حرکت = باخت مسابقه"
 horizontal_alignment = 1

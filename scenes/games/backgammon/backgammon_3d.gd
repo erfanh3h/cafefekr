@@ -780,7 +780,7 @@ func _build_24_points() -> void:
 
 		# 4. Larger Persian Point Number (۱..۲۴) on the outer wooden rail
 		var pt_num_fa = _fa_digits(24 - i)
-		var num_lbl = _create_3d_label(pt_num_fa, 22, Color(1.0, 0.90, 0.62))
+		var num_lbl = _create_3d_label(pt_num_fa, 24, Color(1.0, 0.90, 0.62))
 		num_lbl.position = Vector3(0, 0.030, -dir_z * 0.026)
 		pt_root.add_child(num_lbl)
 
@@ -912,11 +912,11 @@ func _build_bar_zones() -> void:
 			_bar_p2_ring = ring
 
 	# --- Hit / Out Piece Count on Center Bar (Sword icon and number directly on the piece) ---
-	_bar_p1_count_lbl = _create_3d_label("", 28, Color(0.82, 0.52, 0.04))
+	_bar_p1_count_lbl = _create_3d_label("", 30, Color(0.82, 0.52, 0.04))
 	_bar_p1_count_lbl.visible = false
 	add_child(_bar_p1_count_lbl)
 
-	_bar_p2_count_lbl = _create_3d_label("", 28, Color(0.82, 0.52, 0.04))
+	_bar_p2_count_lbl = _create_3d_label("", 30, Color(0.82, 0.52, 0.04))
 	_bar_p2_count_lbl.visible = false
 	add_child(_bar_p2_count_lbl)
 
@@ -941,7 +941,7 @@ func _build_bar_zones() -> void:
 	ros_inner.position = Vector3(BAR_X, SURFACE_Y + 0.031, CABINET_CENTER_Z)
 	add_child(ros_inner)
 
-	_center_rosette_lbl = _create_3d_label("🎲", 28, Color(1.0, 0.90, 0.45))
+	_center_rosette_lbl = _create_3d_label("🎲", 30, Color(1.0, 0.90, 0.45))
 	_center_rosette_lbl.position = Vector3(BAR_X, SURFACE_Y + 0.038, CABINET_CENTER_Z)
 	add_child(_center_rosette_lbl)
 
@@ -1039,7 +1039,7 @@ func _build_3d_roll_button(pos: Vector3) -> Dictionary:
 		mini_die.rotation_degrees = Vector3(18, 32, -15)
 		root.add_child(mini_die)
 
-	var lbl = _create_3d_label("🎲 پرتاب تاس", 32, Color(1.0, 0.98, 0.90))
+	var lbl = _create_3d_label("🎲 پرتاب تاس", 34, Color(1.0, 0.98, 0.90))
 	lbl.position = Vector3(0, btn_size.y * 0.5 + 0.010, 0)
 	root.add_child(lbl)
 
@@ -1145,7 +1145,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	badge_cap.position = Vector3(0, 0.006, 0.096)
 	slot_root.add_child(badge_cap)
 
-	var val_lbl = _create_3d_label("۱", 28, Color(1.0, 0.96, 0.86))
+	var val_lbl = _create_3d_label("۱", 30, Color(1.0, 0.96, 0.86))
 	val_lbl.position = Vector3(0, 0.013, 0.096)
 	slot_root.add_child(val_lbl)
 

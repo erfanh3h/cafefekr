@@ -269,7 +269,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.28, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 50
 text = "🏆 پیروزی درخشان!"
 horizontal_alignment = 1
 
@@ -277,7 +277,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.82, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "تبریک! با بازی هوشمندانه برنده این رقابت شدی."
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -301,7 +301,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.28, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "👑 برنده مسابقه"
 horizontal_alignment = 1
 
@@ -316,7 +316,7 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.96, 0.9, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "شما"
 horizontal_alignment = 1
 
@@ -325,7 +325,7 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.28, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 46
+theme_override_font_sizes/font_size = 48
 text = "۳"
 horizontal_alignment = 1
 
@@ -333,7 +333,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 34
 text = "VS"
 
 [node name="P2Card" type="PanelContainer" parent="CenterContainer/Panel/VBox/MatchupBox"]
@@ -350,7 +350,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.65, 0.55, 0.45, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "حریف"
 horizontal_alignment = 1
 
@@ -365,7 +365,7 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 0.8, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "حریف"
 horizontal_alignment = 1
 
@@ -374,7 +374,7 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.8, 0.7, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 46
+theme_override_font_sizes/font_size = 48
 text = "۰"
 horizontal_alignment = 1
 
@@ -393,7 +393,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "💰 +۵۰ سکه طلایی"
 
 [node name="XPChip" type="PanelContainer" parent="CenterContainer/Panel/VBox/RewardsHBox"]
@@ -404,7 +404,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.95, 0.55, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "⭐ +۱۵ امتیاز کافه"
 
 [node name="ButtonsRow" type="HBoxContainer" parent="CenterContainer/Panel/VBox"]
@@ -419,6 +419,6 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.05, 0.15, 0.35, 0.95)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 34
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "خروج از بازی"

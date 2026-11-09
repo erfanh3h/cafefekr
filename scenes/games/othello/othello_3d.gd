@@ -305,7 +305,7 @@ func _build_algebraic_coordinates() -> void:
 func _create_coord_label(txt: String, pos: Vector3) -> Label3D:
 	var lbl = Label3D.new()
 	lbl.text = txt
-	lbl.font_size = 30
+	lbl.font_size = 32
 	lbl.pixel_size = 0.0008
 	lbl.modulate = Color(0.95, 0.82, 0.48, 0.92)
 	lbl.outline_modulate = Color(0.10, 0.05, 0.02, 0.90)
@@ -439,7 +439,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	if _font_hekayat:
 		lbl.font = _font_hekayat
 	lbl.text = "%s: ۳۰" % label_fa
-	lbl.font_size = 24
+	lbl.font_size = 26
 	lbl.pixel_size = 0.00065
 	lbl.modulate = Color(0.98, 0.88, 0.45, 0.98)
 	lbl.outline_modulate = Color(0.10, 0.06, 0.03, 0.95)

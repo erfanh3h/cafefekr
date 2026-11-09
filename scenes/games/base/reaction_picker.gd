@@ -196,7 +196,7 @@ func _build_kori_list() -> void:
 		var lbl = Label.new()
 		lbl.text = KORIS[idx]
 		lbl.add_theme_font_override("font", FONT_FA)
-		lbl.add_theme_font_size_override("font_size", 32)
+		lbl.add_theme_font_size_override("font_size", 34)
 		lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 		lbl.add_theme_constant_override("shadow_offset_y", 2)

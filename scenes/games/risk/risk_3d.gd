@@ -311,7 +311,7 @@ func _build_floating_ui() -> void:
 		"📜 گزارش",
 		Color(0.16, 0.11, 0.07, 0.95),
 		Color(0.68, 0.52, 0.26),
-		22,
+		24,
 		10
 	)
 	btn_log.custom_minimum_size = Vector2(124, 44)
@@ -325,7 +325,7 @@ func _build_floating_ui() -> void:
 		"👁️ وضعیت بازیکنان",
 		Color(0.10, 0.22, 0.16, 0.95),
 		Color(0.38, 0.76, 0.52),
-		22,
+		24,
 		10
 	)
 	btn_opponents.custom_minimum_size = Vector2(168, 44)
@@ -339,7 +339,7 @@ func _build_floating_ui() -> void:
 		"🔍 زوم",
 		Color(0.14, 0.12, 0.08, 0.95),
 		Color(0.72, 0.56, 0.28),
-		21,
+		23,
 		10
 	)
 	_btn_zoom.custom_minimum_size = Vector2(92, 44)
@@ -349,7 +349,7 @@ func _build_floating_ui() -> void:
 	_top_decks_lbl = Label.new()
 	_top_decks_lbl.text = "👑 ۰/۲  |  🗺️ ۴۲  |  ⚡ ۳۸"
 	_top_decks_lbl.add_theme_font_override("font", FontHekayat)
-	_top_decks_lbl.add_theme_font_size_override("font_size", 24)
+	_top_decks_lbl.add_theme_font_size_override("font_size", 26)
 	_top_decks_lbl.add_theme_color_override("font_color", Color(0.98, 0.92, 0.74))
 	_top_decks_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	top_hbox.add_child(_top_decks_lbl)
@@ -359,7 +359,7 @@ func _build_floating_ui() -> void:
 	_top_turn_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_top_turn_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_top_turn_lbl.add_theme_font_override("font", FontHekayat)
-	_top_turn_lbl.add_theme_font_size_override("font_size", 23)
+	_top_turn_lbl.add_theme_font_size_override("font_size", 25)
 	_top_turn_lbl.add_theme_color_override("font_color", Color(0.98, 0.88, 0.48))
 	top_hbox.add_child(_top_turn_lbl)
 
@@ -392,7 +392,7 @@ func _build_floating_ui() -> void:
 		"✖",
 		Color(0.24, 0.12, 0.10, 0.92),
 		Color(0.72, 0.44, 0.34),
-		20,
+		22,
 		8
 	)
 	btn_dismiss_reg.custom_minimum_size = Vector2(40, 38)
@@ -412,7 +412,7 @@ func _build_floating_ui() -> void:
 	_region_inspector_detail_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_region_inspector_detail_lbl.clip_text = true
 	_region_inspector_detail_lbl.add_theme_font_override("font", FontHekayat)
-	_region_inspector_detail_lbl.add_theme_font_size_override("font_size", 21)
+	_region_inspector_detail_lbl.add_theme_font_size_override("font_size", 23)
 	_region_inspector_detail_lbl.add_theme_color_override("font_color", Color(0.95, 0.91, 0.80))
 	reg_hbox.add_child(_region_inspector_detail_lbl)
 
@@ -420,7 +420,7 @@ func _build_floating_ui() -> void:
 	_region_inspector_title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_region_inspector_title_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_region_inspector_title_lbl.add_theme_font_override("font", FontHekayat)
-	_region_inspector_title_lbl.add_theme_font_size_override("font_size", 24)
+	_region_inspector_title_lbl.add_theme_font_size_override("font_size", 26)
 	_region_inspector_title_lbl.add_theme_color_override("font_color", Color(0.99, 0.88, 0.46))
 	reg_hbox.add_child(_region_inspector_title_lbl)
 
@@ -444,7 +444,7 @@ func _build_floating_ui() -> void:
 
 	_combat_banner_lbl = Label.new()
 	_combat_banner_lbl.add_theme_font_override("font", FontHekayat)
-	_combat_banner_lbl.add_theme_font_size_override("font_size", 26)
+	_combat_banner_lbl.add_theme_font_size_override("font_size", 28)
 	_combat_banner_lbl.add_theme_color_override("font_color", Color(0.98, 0.95, 0.86))
 	_combat_banner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_combat_banner_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -474,7 +474,7 @@ func _build_floating_ui() -> void:
 	var insp_header = HBoxContainer.new()
 	insp_vbox.add_child(insp_header)
 
-	var btn_close_insp = _make_styled_button("✖ بستن", Color(0.36, 0.12, 0.12, 0.95), Color(0.88, 0.40, 0.40), 23, 10)
+	var btn_close_insp = _make_styled_button("✖ بستن", Color(0.36, 0.12, 0.12, 0.95), Color(0.88, 0.40, 0.40), 25, 10)
 	btn_close_insp.custom_minimum_size = Vector2(116, 46)
 	btn_close_insp.pressed.connect(func(): _inspector_panel.visible = false)
 	insp_header.add_child(btn_close_insp)
@@ -483,7 +483,7 @@ func _build_floating_ui() -> void:
 	_inspector_title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_inspector_title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_inspector_title_lbl.add_theme_font_override("font", FontHekayat)
-	_inspector_title_lbl.add_theme_font_size_override("font_size", 28)
+	_inspector_title_lbl.add_theme_font_size_override("font_size", 30)
 	_inspector_title_lbl.add_theme_color_override("font_color", Color(0.96, 0.84, 0.42))
 	insp_header.add_child(_inspector_title_lbl)
 
@@ -533,7 +533,7 @@ func _build_floating_ui() -> void:
 
 	var log_top = HBoxContainer.new()
 	log_outer.add_child(log_top)
-	var btn_close_log = _make_styled_button("✖ بستن", Color(0.36, 0.12, 0.12, 0.95), Color(0.88, 0.40, 0.40), 23, 10)
+	var btn_close_log = _make_styled_button("✖ بستن", Color(0.36, 0.12, 0.12, 0.95), Color(0.88, 0.40, 0.40), 25, 10)
 	btn_close_log.custom_minimum_size = Vector2(116, 46)
 	btn_close_log.pressed.connect(func(): _log_panel.visible = false)
 	log_top.add_child(btn_close_log)
@@ -543,7 +543,7 @@ func _build_floating_ui() -> void:
 	log_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	log_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	log_title.add_theme_font_override("font", FontHekayat)
-	log_title.add_theme_font_size_override("font_size", 28)
+	log_title.add_theme_font_size_override("font_size", 30)
 	log_title.add_theme_color_override("font_color", Color(0.96, 0.84, 0.42))
 	log_top.add_child(log_title)
 
@@ -585,7 +585,7 @@ func _build_floating_ui() -> void:
 	_card_preview_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_card_preview_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_card_preview_lbl.add_theme_font_override("font", FontHekayat)
-	_card_preview_lbl.add_theme_font_size_override("font_size", 22)
+	_card_preview_lbl.add_theme_font_size_override("font_size", 24)
 	_card_preview_lbl.add_theme_color_override("font_color", Color(0.94, 0.86, 0.62))
 	_card_preview_lbl.text = "برای انتخاب قاره یا اجرای استراتژی، روی کارت ضربه بزنید"
 	tray_header.add_child(_card_preview_lbl)
@@ -593,7 +593,7 @@ func _build_floating_ui() -> void:
 	_card_tray_count_lbl = Label.new()
 	_card_tray_count_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_card_tray_count_lbl.add_theme_font_override("font", FontHekayat)
-	_card_tray_count_lbl.add_theme_font_size_override("font_size", 26)
+	_card_tray_count_lbl.add_theme_font_size_override("font_size", 28)
 	_card_tray_count_lbl.add_theme_color_override("font_color", Color(0.99, 0.95, 0.84))
 	_card_tray_count_lbl.text = "🃏 دست کارت‌ها (۰)"
 	tray_header.add_child(_card_tray_count_lbl)
@@ -640,7 +640,7 @@ func _build_floating_ui() -> void:
 
 	_phase_banner_lbl = Label.new()
 	_phase_banner_lbl.add_theme_font_override("font", FontHekayat)
-	_phase_banner_lbl.add_theme_font_size_override("font_size", 26)
+	_phase_banner_lbl.add_theme_font_size_override("font_size", 28)
 	_phase_banner_lbl.add_theme_color_override("font_color", Color(0.98, 0.90, 0.54))
 	_phase_banner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_phase_banner_lbl.clip_text = true
@@ -648,7 +648,7 @@ func _build_floating_ui() -> void:
 
 	_selection_info_lbl = Label.new()
 	_selection_info_lbl.add_theme_font_override("font", FontHekayat)
-	_selection_info_lbl.add_theme_font_size_override("font_size", 21)
+	_selection_info_lbl.add_theme_font_size_override("font_size", 23)
 	_selection_info_lbl.add_theme_color_override("font_color", Color(0.92, 0.88, 0.78))
 	_selection_info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_selection_info_lbl.clip_text = true
@@ -706,7 +706,7 @@ func _make_styled_button(
 	text: String,
 	bg: Color,
 	border: Color,
-	font_sz: int = 25,
+	font_sz: int = 27,
 	radius: int = 12,
 	is_primary: bool = false
 ) -> Button:
@@ -808,7 +808,7 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	var badge_lbl = Label.new()
 	badge_lbl.text = "×" + Risk3DFactory.fa_digits(count)
 	badge_lbl.add_theme_font_override("font", FontHekayat)
-	badge_lbl.add_theme_font_size_override("font_size", 34)
+	badge_lbl.add_theme_font_size_override("font_size", 36)
 	badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.45) if count > 1 else Color(1.0, 0.98, 0.90))
 	badge_lbl.add_theme_constant_override("outline_size", 6)
 	badge_lbl.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.96))
@@ -819,7 +819,7 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	ic_lbl.text = icon_txt
 	ic_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ic_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	ic_lbl.add_theme_font_size_override("font_size", 24)
+	ic_lbl.add_theme_font_size_override("font_size", 26)
 	ic_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_hbox.add_child(ic_lbl)
 
@@ -831,7 +831,7 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	title_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 26)
+	title_lbl.add_theme_font_size_override("font_size", 28)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72) if is_selected else Color(0.96, 0.93, 0.86))
 	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(title_lbl)
@@ -842,7 +842,7 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.clip_text = true
 	sub_lbl.add_theme_font_override("font", FontHekayat)
-	sub_lbl.add_theme_font_size_override("font_size", 20)
+	sub_lbl.add_theme_font_size_override("font_size", 22)
 	sub_lbl.add_theme_color_override("font_color", accent_col.lightened(0.42))
 	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(sub_lbl)
@@ -1568,7 +1568,7 @@ func _refresh_floating_hud() -> void:
 			var empty_lbl = Label.new()
 			empty_lbl.text = "هیچ کارتی در دست شما نیست — در ابتدای نوبت از دسته‌های بالا کارت بکشید"
 			empty_lbl.add_theme_font_override("font", FontHekayat)
-			empty_lbl.add_theme_font_size_override("font_size", 22)
+			empty_lbl.add_theme_font_size_override("font_size", 24)
 			empty_lbl.add_theme_color_override("font_color", Color(0.75, 0.70, 0.62))
 			empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			empty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1606,7 +1606,7 @@ func _refresh_floating_hud() -> void:
 				"🎲 ادامه نبرد و پرتاب مجدد تاس",
 				Color(0.46, 0.14, 0.14, 0.98),
 				Color(0.96, 0.48, 0.36),
-				26,
+				28,
 				12,
 				true
 			)
@@ -1621,7 +1621,7 @@ func _refresh_floating_hud() -> void:
 				"⏹️ توقف حمله",
 				Color(0.22, 0.16, 0.12, 0.96),
 				Color(0.78, 0.62, 0.34),
-				25,
+				27,
 				12
 			)
 			btn_stop_atk.custom_minimum_size = Vector2(185, 54)
@@ -1638,7 +1638,7 @@ func _refresh_floating_hud() -> void:
 					"🛡️ لغو کامل حمله (Cancel)",
 					Color(0.14, 0.34, 0.42, 0.98),
 					Color(0.38, 0.88, 0.96),
-					25,
+					27,
 					12,
 					true
 				)
@@ -1675,7 +1675,7 @@ func _refresh_floating_hud() -> void:
 					"🛡️ +%s ارتش کمکی" % Risk3DFactory.fa_digits(c),
 					Color(0.28, 0.22, 0.08, 0.96) if is_picked else Color(0.14, 0.12, 0.10, 0.92),
 					Color(0.98, 0.84, 0.28) if is_picked else Color(0.58, 0.46, 0.30),
-					23,
+					25,
 					10,
 					is_picked
 				)
@@ -1692,7 +1692,7 @@ func _refresh_floating_hud() -> void:
 				"🎲 تایید دفاع و شروع نبرد (+%s)" % Risk3DFactory.fa_digits(selected_army_commit),
 				Color(0.14, 0.38, 0.22, 0.98),
 				Color(0.42, 0.90, 0.58),
-				26,
+				28,
 				12,
 				true
 			)
@@ -1708,7 +1708,7 @@ func _refresh_floating_hud() -> void:
 					"🛡️ لغو کامل حمله (Cancel)",
 					Color(0.14, 0.34, 0.42, 0.98),
 					Color(0.38, 0.88, 0.96),
-					25,
+					27,
 					12,
 					true
 				)
@@ -1742,7 +1742,7 @@ func _refresh_floating_hud() -> void:
 					"⚔️ +%s ارتش کمکی" % Risk3DFactory.fa_digits(c),
 					Color(0.34, 0.16, 0.08, 0.96) if is_picked else Color(0.14, 0.12, 0.10, 0.92),
 					Color(0.98, 0.82, 0.28) if is_picked else Color(0.58, 0.46, 0.30),
-					23,
+					25,
 					10,
 					is_picked
 				)
@@ -1759,7 +1759,7 @@ func _refresh_floating_hud() -> void:
 				"⚔️ تایید ارتش مهاجم (+%s تاس)" % Risk3DFactory.fa_digits(selected_army_commit),
 				Color(0.46, 0.14, 0.14, 0.98),
 				Color(0.96, 0.48, 0.36),
-				26,
+				28,
 				12,
 				true
 			)
@@ -1775,7 +1775,7 @@ func _refresh_floating_hud() -> void:
 					"🎯 توپخانه (+۱ به بالاترین تاس)",
 					Color(0.36, 0.26, 0.08, 0.98),
 					Color(0.96, 0.82, 0.28),
-					24,
+					26,
 					12
 				)
 				btn_canon.custom_minimum_size = Vector2(270, 54)
@@ -1806,17 +1806,17 @@ func _refresh_floating_hud() -> void:
 		else:
 			_selection_info_lbl.text = "می‌توانید روی دسته‌های بالای تخته بزنید یا یکی از گزینه‌های زیر را انتخاب کنید:"
 
-		var btn_d1 = _make_styled_button("🗺️ ۲ کارت قاره", Color(0.12, 0.34, 0.22, 0.98), Color(0.38, 0.88, 0.56), 25, 12, true)
+		var btn_d1 = _make_styled_button("🗺️ ۲ کارت قاره", Color(0.12, 0.34, 0.22, 0.98), Color(0.38, 0.88, 0.56), 27, 12, true)
 		btn_d1.custom_minimum_size = Vector2(215, 54)
 		btn_d1.pressed.connect(func(): _send_draw_card(1))
 		_action_buttons_row.add_child(btn_d1)
 
-		var btn_d3 = _make_styled_button("⚖️ ۱ قاره + ۱ استراتژی", Color(0.28, 0.22, 0.10, 0.98), Color(0.94, 0.78, 0.32), 25, 12, true)
+		var btn_d3 = _make_styled_button("⚖️ ۱ قاره + ۱ استراتژی", Color(0.28, 0.22, 0.10, 0.98), Color(0.94, 0.78, 0.32), 27, 12, true)
 		btn_d3.custom_minimum_size = Vector2(250, 54)
 		btn_d3.pressed.connect(func(): _send_draw_card(3))
 		_action_buttons_row.add_child(btn_d3)
 
-		var btn_d2 = _make_styled_button("⚡ ۲ کارت استراتژی", Color(0.38, 0.14, 0.16, 0.98), Color(0.90, 0.44, 0.44), 25, 12, true)
+		var btn_d2 = _make_styled_button("⚡ ۲ کارت استراتژی", Color(0.38, 0.14, 0.16, 0.98), Color(0.90, 0.44, 0.44), 27, 12, true)
 		btn_d2.custom_minimum_size = Vector2(225, 54)
 		btn_d2.pressed.connect(func(): _send_draw_card(2))
 		_action_buttons_row.add_child(btn_d2)
@@ -1833,7 +1833,7 @@ func _refresh_floating_hud() -> void:
 		_selection_info_lbl.text = "روی یکی از قاره‌های خود روی تخته یا کارت‌های دستتان ضربه بزنید."
 
 	if selected_source_continent != "" or selected_strategy_name != "":
-		var btn_clear = _make_styled_button("✖ لغو انتخاب", Color(0.20, 0.14, 0.12, 0.94), Color(0.62, 0.46, 0.34), 23, 12)
+		var btn_clear = _make_styled_button("✖ لغو انتخاب", Color(0.20, 0.14, 0.12, 0.94), Color(0.62, 0.46, 0.34), 25, 12)
 		btn_clear.custom_minimum_size = Vector2(145, 54)
 		btn_clear.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -1845,7 +1845,7 @@ func _refresh_floating_hud() -> void:
 		)
 		_action_buttons_row.add_child(btn_clear)
 
-	var btn_pass = _make_styled_button("⏭️ پایان نوبت", Color(0.22, 0.16, 0.10, 0.95), Color(0.78, 0.62, 0.32), 25, 12)
+	var btn_pass = _make_styled_button("⏭️ پایان نوبت", Color(0.22, 0.16, 0.10, 0.95), Color(0.78, 0.62, 0.32), 27, 12)
 	btn_pass.custom_minimum_size = Vector2(185, 54)
 	btn_pass.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -1870,7 +1870,7 @@ func _populate_attack_action_controls() -> void:
 			src_fa, Risk3DFactory.fa_digits(my_cnt)
 		]
 		for tc in valid_targets:
-			var b_t = _make_styled_button("🎯 %s" % _continent_fa(tc), Color(0.12, 0.30, 0.18, 0.96), Color(0.40, 0.88, 0.56), 23, 10)
+			var b_t = _make_styled_button("🎯 %s" % _continent_fa(tc), Color(0.12, 0.30, 0.18, 0.96), Color(0.40, 0.88, 0.56), 25, 10)
 			b_t.custom_minimum_size = Vector2(165, 44)
 			var target_c = tc
 			b_t.pressed.connect(func():
@@ -1900,7 +1900,7 @@ func _populate_attack_action_controls() -> void:
 				"🎯 %s" % _get_player_name(d_id),
 				Color(0.36, 0.16, 0.12, 0.96) if is_sel else Color(0.15, 0.12, 0.10, 0.92),
 				Color(0.98, 0.82, 0.28) if is_sel else Color(0.62, 0.50, 0.32),
-				23,
+				25,
 				10,
 				is_sel
 			)
@@ -1917,7 +1917,7 @@ func _populate_attack_action_controls() -> void:
 		"⚔️ اعلان حمله به «%s» (%s)" % [tgt_fa, _get_player_name(selected_target_player)],
 		Color(0.48, 0.14, 0.14, 0.98),
 		Color(0.96, 0.50, 0.36),
-		26,
+		28,
 		12,
 		true
 	)
@@ -1952,7 +1952,7 @@ func _populate_strategy_action_controls() -> void:
 				"🎯 %s" % _get_player_name(op_id),
 				Color(0.36, 0.16, 0.12, 0.96) if is_sel else Color(0.15, 0.12, 0.10, 0.92),
 				Color(0.98, 0.82, 0.28) if is_sel else Color(0.62, 0.48, 0.30),
-				23,
+				25,
 				10,
 				is_sel
 			)
@@ -1985,7 +1985,7 @@ func _populate_strategy_action_controls() -> void:
 				"🗺️ %s" % _continent_fa(ck),
 				Color(0.32, 0.14, 0.20, 0.96) if is_c_sel else Color(0.14, 0.13, 0.13, 0.92),
 				Color(0.98, 0.78, 0.30) if is_c_sel else Color(0.56, 0.46, 0.32),
-				23,
+				25,
 				10,
 				is_c_sel
 			)
@@ -2002,7 +2002,7 @@ func _populate_strategy_action_controls() -> void:
 		"⚡ اجرای «%s»" % strat_fa,
 		Color(0.14, 0.38, 0.22, 0.98),
 		Color(0.42, 0.92, 0.58),
-		26,
+		28,
 		12,
 		true
 	)
@@ -2456,7 +2456,7 @@ func _populate_inspector_filter_chips() -> void:
 		"👥 همه بازیکنان",
 		Color(0.28, 0.20, 0.08, 0.96) if is_all else Color(0.14, 0.10, 0.07, 0.92),
 		Color(0.98, 0.84, 0.30) if is_all else Color(0.56, 0.42, 0.24),
-		21,
+		23,
 		10,
 		is_all
 	)
@@ -2480,7 +2480,7 @@ func _populate_inspector_filter_chips() -> void:
 			"%s (👑%s | 🃏%s)" % [_get_player_name(p_idx), Risk3DFactory.fa_digits(t_cnt), Risk3DFactory.fa_digits(c_cnt + s_cnt)],
 			f_col.darkened(0.45) if is_sel else f_col.darkened(0.68),
 			Color(0.98, 0.86, 0.32) if is_sel else f_col.lightened(0.18),
-			21,
+			23,
 			10,
 			is_sel
 		)
@@ -2565,7 +2565,7 @@ func _build_player_inspector_section(p_idx: int) -> Control:
 		Risk3DFactory.fa_digits(total_s)
 	]
 	stats_lbl.add_theme_font_override("font", FontHekayat)
-	stats_lbl.add_theme_font_size_override("font_size", 21)
+	stats_lbl.add_theme_font_size_override("font_size", 23)
 	stats_lbl.add_theme_color_override("font_color", Color(0.95, 0.89, 0.74))
 	header_hbox.add_child(stats_lbl)
 
@@ -2576,7 +2576,7 @@ func _build_player_inspector_section(p_idx: int) -> Control:
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	name_lbl.add_theme_font_override("font", FontHekayat)
-	name_lbl.add_theme_font_size_override("font_size", 25)
+	name_lbl.add_theme_font_size_override("font_size", 27)
 	name_lbl.add_theme_color_override("font_color", f_col.lightened(0.38))
 	header_hbox.add_child(name_lbl)
 
@@ -2597,7 +2597,7 @@ func _build_player_inspector_section(p_idx: int) -> Control:
 			var tl = Label.new()
 			tl.text = "👑 نشان سلطه %s" % _continent_fa(c_str)
 			tl.add_theme_font_override("font", FontHekayat)
-			tl.add_theme_font_size_override("font_size", 20)
+			tl.add_theme_font_size_override("font_size", 22)
 			tl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72))
 			tok_chip.add_child(tl)
 			tok_row.add_child(tok_chip)
@@ -2710,7 +2710,7 @@ func _build_player_inspector_section(p_idx: int) -> Control:
 		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		empty_lbl.add_theme_font_override("font", FontHekayat)
-		empty_lbl.add_theme_font_size_override("font_size", 22)
+		empty_lbl.add_theme_font_size_override("font_size", 24)
 		empty_lbl.add_theme_color_override("font_color", Color(0.72, 0.66, 0.58))
 		cards_hbox.add_child(empty_lbl)
 
@@ -2763,7 +2763,7 @@ func _build_inspector_card_widget(
 	var badge_lbl = Label.new()
 	badge_lbl.text = "❓×" + Risk3DFactory.fa_digits(count) if is_mystery_back else "×" + Risk3DFactory.fa_digits(count)
 	badge_lbl.add_theme_font_override("font", FontHekayat)
-	badge_lbl.add_theme_font_size_override("font_size", 32)
+	badge_lbl.add_theme_font_size_override("font_size", 34)
 	badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.45) if count > 1 else Color(1.0, 0.98, 0.92))
 	badge_lbl.add_theme_color_override("font_outline_color", Color(0.06, 0.04, 0.02, 0.96))
 	badge_lbl.add_theme_constant_override("outline_size", 6)
@@ -2774,7 +2774,7 @@ func _build_inspector_card_widget(
 	ic_lbl.text = icon_txt
 	ic_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ic_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	ic_lbl.add_theme_font_size_override("font_size", 22)
+	ic_lbl.add_theme_font_size_override("font_size", 24)
 	ic_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_hbox.add_child(ic_lbl)
 
@@ -2786,7 +2786,7 @@ func _build_inspector_card_widget(
 	title_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 25)
+	title_lbl.add_theme_font_size_override("font_size", 27)
 	title_lbl.add_theme_color_override("font_color", Color(0.99, 0.95, 0.84))
 	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(title_lbl)
@@ -2797,7 +2797,7 @@ func _build_inspector_card_widget(
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.clip_text = true
 	sub_lbl.add_theme_font_override("font", FontHekayat)
-	sub_lbl.add_theme_font_size_override("font_size", 19)
+	sub_lbl.add_theme_font_size_override("font_size", 21)
 	sub_lbl.add_theme_color_override("font_color", Color(0.94, 0.80, 0.48) if is_mystery_back else accent_col.lightened(0.42))
 	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(sub_lbl)
@@ -2928,7 +2928,7 @@ func _append_battle_log(entry: String) -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.add_theme_font_override("font", FontHekayat)
-		l.add_theme_font_size_override("font_size", 24)
+		l.add_theme_font_size_override("font_size", 26)
 		l.add_theme_color_override("font_color", Color(0.95, 0.91, 0.82))
 		_log_vbox.add_child(l)
 

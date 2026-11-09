@@ -337,7 +337,7 @@ static func _build_draw_deck(
 	count_lbl.text = "۴۲"
 	if font:
 		count_lbl.font = font
-	count_lbl.font_size = 52
+	count_lbl.font_size = 54
 	count_lbl.pixel_size = 0.00125
 	count_lbl.modulate = Color(1.0, 0.96, 0.62)
 	count_lbl.outline_size = 14
@@ -350,7 +350,7 @@ static func _build_draw_deck(
 	title_lbl.text = title_fa
 	if font:
 		title_lbl.font = font
-	title_lbl.font_size = 32
+	title_lbl.font_size = 34
 	title_lbl.pixel_size = 0.00108
 	title_lbl.modulate = Color(0.94, 0.86, 0.64)
 	title_lbl.outline_size = 10
@@ -592,7 +592,7 @@ static func build_continent_node(
 	name_lbl.text = str(meta["fa"])
 	if font:
 		name_lbl.font = font
-	name_lbl.font_size = 38
+	name_lbl.font_size = 40
 	name_lbl.pixel_size = 0.00104
 	name_lbl.modulate = Color(0.98, 0.95, 0.88)
 	name_lbl.outline_size = 10
@@ -662,7 +662,7 @@ static func build_continent_node(
 		cnt_lbl.text = "×۱"
 		if font:
 			cnt_lbl.font = font
-		cnt_lbl.font_size = 46
+		cnt_lbl.font_size = 48
 		cnt_lbl.pixel_size = 0.00118
 		cnt_lbl.modulate = RiskMaterials.FACTION_COLORS[p_idx].lightened(0.48)
 		cnt_lbl.outline_size = 12
@@ -909,7 +909,7 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null,
 	var badge_lbl = make_label_3d(
 		"%s %s" % ["⚔️" if is_attacker else "🛡️", fa_digits(clampi(final_val, 1, 6))],
 		font,
-		56,
+		58,
 		Color(1.0, 0.92, 0.46) if is_attacker else Color(0.58, 0.92, 1.0),
 		0.0012
 	)
@@ -924,7 +924,7 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null,
 static func make_label_3d(
 	text_str: String,
 	font: Font,
-	font_sz: int = 42,
+	font_sz: int = 44,
 	col: Color = Color.WHITE,
 	px_size: float = 0.0012
 ) -> Label3D:

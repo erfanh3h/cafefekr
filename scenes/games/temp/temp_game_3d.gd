@@ -95,7 +95,7 @@ func _build_temp_board() -> void:
 	var title_lbl = Label3D.new()
 	title_lbl.text = game_name_fa
 	title_lbl.font = _FONT_FA
-	title_lbl.font_size = 54
+	title_lbl.font_size = 56
 	title_lbl.pixel_size = 0.00085
 	title_lbl.modulate = Color(1.0, 0.92, 0.65)
 	title_lbl.outline_size = 5
@@ -108,7 +108,7 @@ func _build_temp_board() -> void:
 	var banner_lbl = Label3D.new()
 	banner_lbl.text = "این بازی به زودی در کافه فکر فعال خواهد شد"
 	banner_lbl.font = _FONT_FA
-	banner_lbl.font_size = 30
+	banner_lbl.font_size = 32
 	banner_lbl.pixel_size = 0.00075
 	banner_lbl.modulate = Color(0.95, 0.75, 0.35)
 	banner_lbl.outline_size = 3

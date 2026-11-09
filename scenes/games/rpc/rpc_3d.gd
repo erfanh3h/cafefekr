@@ -525,7 +525,7 @@ func _build_selection_pedestals() -> void:
 		var lbl = Label3D.new()
 		lbl.text = c_name
 		lbl.font = _FONT_FA
-		lbl.font_size = 46
+		lbl.font_size = 48
 		lbl.pixel_size = 0.0008
 		lbl.modulate = Color(1.0, 0.92, 0.70)
 		lbl.outline_size = 4
@@ -623,7 +623,7 @@ func _build_score_trackers() -> void:
 	lbl_turn_round_status = Label3D.new()
 	lbl_turn_round_status.text = "دست %s از ۵" % _fa_digits(1)
 	lbl_turn_round_status.font = _FONT_FA
-	lbl_turn_round_status.font_size = 38
+	lbl_turn_round_status.font_size = 40
 	lbl_turn_round_status.pixel_size = 0.00075
 	lbl_turn_round_status.modulate = Color(1.0, 0.88, 0.45)
 	lbl_turn_round_status.outline_size = 4

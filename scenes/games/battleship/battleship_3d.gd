@@ -364,18 +364,18 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 	container.add_child(basin)
 
 	# Top Title Plaque (Large & Bold!)
-	var lbl_title = _create_3d_label(title_text, 30, title_color, 0.00185)
+	var lbl_title = _create_3d_label(title_text, 32, title_color, 0.00185)
 	lbl_title.position = Vector3(0, 0.026, -board_span * 0.5 - 0.075)
 	container.add_child(lbl_title)
 
 	# Column Coordinate Labels (A..H) and Row Coordinate Labels (۱..۸)
 	var cols_text = ["A", "B", "C", "D", "E", "F", "G", "H"]
 	for i in range(GRID_SIZE):
-		var lbl_c = _create_3d_label(cols_text[i], 24, Color(0.96, 0.84, 0.48), 0.00170)
+		var lbl_c = _create_3d_label(cols_text[i], 26, Color(0.96, 0.84, 0.48), 0.00170)
 		lbl_c.position = Vector3((float(i) - 3.5) * CELL_PITCH, 0.026, -board_span * 0.5 - 0.034)
 		container.add_child(lbl_c)
 
-		var lbl_r = _create_3d_label(_fa_num(i + 1), 26, Color(0.96, 0.84, 0.48), 0.00175)
+		var lbl_r = _create_3d_label(_fa_num(i + 1), 28, Color(0.96, 0.84, 0.48), 0.00175)
 		lbl_r.position = Vector3(-board_span * 0.5 - 0.042, 0.026, (float(i) - 3.5) * CELL_PITCH)
 		container.add_child(lbl_r)
 
@@ -482,7 +482,7 @@ func _build_phase1_setup_ui() -> void:
 	drydock_root.add_child(dock_inner)
 
 	# Status Hint Label along top edge of Command Bar
-	lbl_phase1_hint = _create_3d_label("برای جابجایی کشتی را بکشید • برای چرخش روی کشتی کلیک کنید", 20, Color(0.85, 0.95, 1.0), 0.00155)
+	lbl_phase1_hint = _create_3d_label("برای جابجایی کشتی را بکشید • برای چرخش روی کشتی کلیک کنید", 22, Color(0.85, 0.95, 1.0), 0.00155)
 	lbl_phase1_hint.position = Vector3(0, 0.027, -0.052)
 	drydock_root.add_child(lbl_phase1_hint)
 
@@ -503,7 +503,7 @@ func _build_phase1_setup_ui() -> void:
 		drydock_root.add_child(slot_box)
 		drydock_slot_highlights[s_len] = slot_box
 
-		var lbl_s = _create_3d_label("ناو %s" % _fa_num(s_len), 22, Color(1.0, 0.92, 0.48), 0.00160)
+		var lbl_s = _create_3d_label("ناو %s" % _fa_num(s_len), 24, Color(1.0, 0.92, 0.48), 0.00160)
 		lbl_s.position = Vector3(bx, 0.036, 0.022)
 		drydock_root.add_child(lbl_s)
 
@@ -530,7 +530,7 @@ func _create_selected_ship_rotate_indicator() -> Node3D:
 	ring.material_override = mat
 	root.add_child(ring)
 
-	var lbl = _create_3d_label("🔄", 22, Color(1.0, 0.95, 0.55), 0.00165)
+	var lbl = _create_3d_label("🔄", 24, Color(1.0, 0.95, 0.55), 0.00165)
 	lbl.position = Vector3(0, 0.012, 0)
 	root.add_child(lbl)
 	return root
@@ -548,7 +548,7 @@ func _create_drydock_3d_button(pos: Vector3, sz: Vector3, text_str: String, bg_c
 	btn_mesh.material_override = mat
 	drydock_root.add_child(btn_mesh)
 
-	var lbl = _create_3d_label(text_str, 24, Color.WHITE, 0.00165)
+	var lbl = _create_3d_label(text_str, 26, Color.WHITE, 0.00165)
 	lbl.position = pos + Vector3(0, 0.008, 0)
 	drydock_root.add_child(lbl)
 
@@ -612,7 +612,7 @@ func _build_fleet_status_strip(parent_board: Node3D, badge_dict: Dictionary) -> 
 		pill.material_override = pmat
 		parent_board.add_child(pill)
 
-		var slbl = _create_3d_label("ناو %s" % _fa_num(s_len), 24, Color(0.84, 1.0, 0.90), 0.00165)
+		var slbl = _create_3d_label("ناو %s" % _fa_num(s_len), 26, Color(0.84, 1.0, 0.90), 0.00165)
 		slbl.position = Vector3(x_positions[i], 0.029, strip_z)
 		parent_board.add_child(slbl)
 

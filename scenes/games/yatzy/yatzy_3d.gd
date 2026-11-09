@@ -483,17 +483,17 @@ func _build_3d_arena() -> void:
 	for col_idx in range(2):
 		var col_x = -0.248 if col_idx == 0 else 0.248
 		var hdr_z = -0.742
-		var lbl_p2 = _create_3d_label("🔵 حریف", 24, Color(0.52, 0.84, 1.0))
+		var lbl_p2 = _create_3d_label("🔵 حریف", 26, Color(0.52, 0.84, 1.0))
 		lbl_p2.position = Vector3(col_x - 0.180, BOARD_H + 0.014, hdr_z)
 		add_child(lbl_p2)
 		_col_header_labels.append(lbl_p2)
 
-		var lbl_p1 = _create_3d_label("🔴 شما", 24, Color(1.0, 0.52, 0.56))
+		var lbl_p1 = _create_3d_label("🔴 شما", 26, Color(1.0, 0.52, 0.56))
 		lbl_p1.position = Vector3(col_x - 0.082, BOARD_H + 0.014, hdr_z)
 		add_child(lbl_p1)
 		_col_header_labels.append(lbl_p1)
 
-		var lbl_cat = _create_3d_label("خانه امتیاز", 24, Color(0.98, 0.88, 0.58))
+		var lbl_cat = _create_3d_label("خانه امتیاز", 26, Color(0.98, 0.88, 0.58))
 		lbl_cat.position = Vector3(col_x + 0.100, BOARD_H + 0.014, hdr_z)
 		add_child(lbl_cat)
 
@@ -544,7 +544,7 @@ func _build_3d_arena() -> void:
 		add_child(trim_inst)
 
 	# Status / Guidance Label inside the Top Rim of the Dice Tray
-	_status_lbl_3d = _create_3d_label("تاس‌ها را لمس کنید تا برای پرتاب بعدی قفل شوند", 23, Color(0.98, 0.92, 0.72))
+	_status_lbl_3d = _create_3d_label("تاس‌ها را لمس کنید تا برای پرتاب بعدی قفل شوند", 25, Color(0.98, 0.92, 0.72))
 	_status_lbl_3d.position = Vector3(0, BOARD_H + 0.016, 0.252)
 	add_child(_status_lbl_3d)
 
@@ -627,7 +627,7 @@ func _build_category_row(cat_idx: int, col_x: float, row_z: float) -> Dictionary
 
 	# Cleanly Proportioned Persian Category Name centered in the 0.160m left compartment (x = -0.038)
 	var cat_name_str: String = CATEGORY_NAMES_FA[cat_idx]
-	var cat_font_size: int = 21 if cat_name_str.length() >= 7 else 24
+	var cat_font_size: int = 23 if cat_name_str.length() >= 7 else 26
 	var cat_lbl = _create_3d_label(cat_name_str, cat_font_size, Color(0.98, 0.94, 0.84))
 	cat_lbl.position = Vector3(-0.038, 0.016, 0.0)
 	cat_card.add_child(cat_lbl)
@@ -846,7 +846,7 @@ func _build_score_cell_plaque(parent: Node3D, pos: Vector3, player_num: int, _ca
 	cell_root.add_child(cell_mesh)
 
 	# Clean Persian Score Value Label that fits comfortably inside the 0.084m plaque
-	var score_lbl = _create_3d_label("۰", 28, Color(0.95, 0.92, 0.82))
+	var score_lbl = _create_3d_label("۰", 30, Color(0.95, 0.92, 0.82))
 	score_lbl.position = Vector3(0, 0.017, 0)
 	cell_root.add_child(score_lbl)
 
@@ -949,7 +949,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	badge_cap.position = Vector3(0, 0.006, 0.112)
 	slot_root.add_child(badge_cap)
 
-	var val_lbl = _create_3d_label("۱", 26, Color(1.0, 0.96, 0.86))
+	var val_lbl = _create_3d_label("۱", 28, Color(1.0, 0.96, 0.86))
 	val_lbl.position = Vector3(0, 0.013, 0.112)
 	slot_root.add_child(val_lbl)
 
@@ -1060,7 +1060,7 @@ func _build_3d_action_button(btn_name: String, pos: Vector3, btn_size: Vector3, 
 	cap.position = Vector3(0, 0.005, 0)
 	root.add_child(cap)
 
-	var lbl = _create_3d_label(title_text, 27, Color(1.0, 0.98, 0.90))
+	var lbl = _create_3d_label(title_text, 29, Color(1.0, 0.98, 0.90))
 	lbl.position = Vector3(0, btn_size.y * 0.5 + 0.008, 0)
 	root.add_child(lbl)
 

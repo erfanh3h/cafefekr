@@ -350,7 +350,7 @@ func _create_3d_label(text: String, font: Font, col: Color, outline_col: Color, 
 	var lbl = Label3D.new()
 	lbl.text = text
 	lbl.font = font
-	lbl.font_size = 22
+	lbl.font_size = 24
 	lbl.pixel_size = 0.0011
 	lbl.modulate = col
 	lbl.outline_modulate = outline_col
@@ -446,7 +446,7 @@ func _build_single_graveyard_tray(gamer_id: int, node_name: String) -> Node3D:
 	lbl.name = "TrayLabel"
 	lbl.text = "قرمز" if gamer_id == 1 else "آبی"
 	lbl.font = font
-	lbl.font_size = 18
+	lbl.font_size = 20
 	lbl.pixel_size = 0.0010
 	lbl.modulate = Color(0.96, 0.84, 0.42, 0.95)
 	lbl.outline_modulate = Color(0.12, 0.08, 0.04, 0.95)

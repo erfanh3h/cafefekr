@@ -421,7 +421,7 @@ func _build_phase1_tray(root: Node3D) -> void:
 
 	_create_zone_frame(root, Vector3(0, 0.020, TRAY_SECRET_Z - 0.025), TRAY_W - 0.076, 0.315, mat_gold_ring)
 
-	var lbl_vault = _create_3d_label("🔐 رمز ۴ رنگ مخفی برای حریف", 44, Color(1.0, 0.90, 0.38))
+	var lbl_vault = _create_3d_label("🔐 رمز ۴ رنگ مخفی برای حریف", 46, Color(1.0, 0.90, 0.38))
 	lbl_vault.position = Vector3(0, 0.023, TRAY_SECRET_Z - 0.130)
 	root.add_child(lbl_vault)
 
@@ -442,7 +442,7 @@ func _build_phase1_tray(root: Node3D) -> void:
 		root.add_child(hover_ring)
 		phase1_slot_rings.append(hover_ring)
 
-		var num_lbl = _create_3d_label(FA_DIGITS[col + 1], 36, Color(0.96, 0.84, 0.46))
+		var num_lbl = _create_3d_label(FA_DIGITS[col + 1], 38, Color(0.96, 0.84, 0.46))
 		num_lbl.position = Vector3(pos_x, 0.023, sock_z - 0.068)
 		root.add_child(num_lbl)
 
@@ -465,7 +465,7 @@ func _build_phase1_tray(root: Node3D) -> void:
 
 	_create_zone_frame(root, Vector3(0, 0.020, pal_center_z), TRAY_W - 0.076, 0.445, mat_brass_trim)
 
-	var lbl_pal = _create_3d_label("🎨 مهره را لمس کنید یا به جایگاه بکشید", 36, Color(0.92, 0.88, 0.78))
+	var lbl_pal = _create_3d_label("🎨 مهره را لمس کنید یا به جایگاه بکشید", 38, Color(0.92, 0.88, 0.78))
 	lbl_pal.position = Vector3(0, 0.023, TRAY_PALETTE_R1_Z - 0.115)
 	root.add_child(lbl_pal)
 
@@ -646,12 +646,12 @@ func _build_top_mystery_vault_hood(root: Node3D, is_player_board: bool) -> void:
 		badge.position = Vector3(px, 0.021, hood_z)
 		root.add_child(badge)
 
-		var q_lbl = _create_3d_label("؟", 34, Color(1.0, 0.88, 0.35))
+		var q_lbl = _create_3d_label("؟", 36, Color(1.0, 0.88, 0.35))
 		q_lbl.position = Vector3(px, 0.025, hood_z)
 		root.add_child(q_lbl)
 
 	var title_str = "🔐 رمز مخفی" if is_player_board else "🎯 صفحه حریف"
-	var vault_lbl = _create_3d_label(title_str, 30, Color(0.98, 0.88, 0.45))
+	var vault_lbl = _create_3d_label(title_str, 32, Color(0.98, 0.88, 0.45))
 	vault_lbl.position = Vector3(PIN_GRID_X + 0.005, 0.025, hood_z)
 	root.add_child(vault_lbl)
 
@@ -678,7 +678,7 @@ func _build_12_rows(root: Node3D, containers: Array[Node3D], pin_arrays: Array[A
 		row_node.add_child(pieces_container)
 
 		# Large, High-Contrast 3D Row Number Badge (۱ .. ۱۲)
-		var r_lbl = _create_3d_label(FA_DIGITS[r + 1], 32, Color(0.76, 0.70, 0.58))
+		var r_lbl = _create_3d_label(FA_DIGITS[r + 1], 34, Color(0.76, 0.70, 0.58))
 		r_lbl.position = Vector3(ROW_NUM_X, 0.006, 0)
 		row_node.add_child(r_lbl)
 		row_labels.append(r_lbl)
@@ -756,7 +756,7 @@ func _build_active_input_row(root: Node3D) -> void:
 
 	_create_zone_frame(root, Vector3(0, 0.017, ACTIVE_ROW_Z), BOARD_W - 0.056, 0.099, mat_gold_ring)
 
-	var dock_lbl = _create_3d_label("حدس فعلی", 30, Color(1.0, 0.90, 0.38))
+	var dock_lbl = _create_3d_label("حدس فعلی", 32, Color(1.0, 0.90, 0.38))
 	dock_lbl.position = Vector3(PIN_GRID_X + 0.005, 0.021, ACTIVE_ROW_Z)
 	root.add_child(dock_lbl)
 

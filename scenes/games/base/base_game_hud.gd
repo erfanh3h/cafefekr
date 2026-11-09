@@ -1261,7 +1261,7 @@ func reset_for_new_match() -> void:
 
 		intro_countdown_lbl.text = "⏳"
 
-		intro_countdown_lbl.add_theme_font_size_override("font_size", 54)
+		intro_countdown_lbl.add_theme_font_size_override("font_size", 56)
 
 	_ensure_top_header_for_current_game()
 
@@ -1325,7 +1325,7 @@ func _ensure_intro_extra_col(idx: int) -> Dictionary:
 
 	nm.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 
-	nm.add_theme_font_size_override("font_size", 28)
+	nm.add_theme_font_size_override("font_size", 30)
 
 	nm.add_theme_color_override("font_color", Color(1.0, 0.90, 0.80, 1.0))
 
@@ -1341,7 +1341,7 @@ func _ensure_intro_extra_col(idx: int) -> Dictionary:
 
 	rl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 
-	rl.add_theme_font_size_override("font_size", 24)
+	rl.add_theme_font_size_override("font_size", 26)
 
 	rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
@@ -1487,7 +1487,7 @@ func setup_match(game_title: String = "تیک تاک تو", mode_title: String =
 
 		intro_countdown_lbl.text = "⏳"
 
-		intro_countdown_lbl.add_theme_font_size_override("font_size", 54)
+		intro_countdown_lbl.add_theme_font_size_override("font_size", 56)
 
 	
 
@@ -1728,7 +1728,7 @@ func show_match_loading(status_text: String = "در حال آماده‌سازی
 
 	intro_countdown_lbl.text = "⏳"
 
-	intro_countdown_lbl.add_theme_font_size_override("font_size", 54)
+	intro_countdown_lbl.add_theme_font_size_override("font_size", 56)
 
 	intro_countdown_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.25))
 
@@ -1783,7 +1783,7 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 		lbl_turn_banner.text = "بازی درحال آغاز است"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	_stop_loading_pulse()
-	intro_countdown_lbl.add_theme_font_size_override("font_size", 96)
+	intro_countdown_lbl.add_theme_font_size_override("font_size", 98)
 	start_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	if not start_overlay.visible:
 		ActionVFXManager.animate_dialog_open(intro_card, start_overlay, true)

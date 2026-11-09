@@ -891,7 +891,7 @@ func _build_side_trays_and_plaques() -> void:
 		# Tray Score Label
 		var lbl = Label3D.new()
 		lbl.font = _font_hekayat
-		lbl.font_size = 38
+		lbl.font_size = 40
 		lbl.outline_size = 8
 		lbl.modulate = Color(1.0, 0.55, 0.55) if side == 1 else Color(0.55, 0.82, 1.0)
 		lbl.outline_modulate = Color(0.06, 0.03, 0.02, 0.95)
@@ -919,7 +919,7 @@ func _build_side_trays_and_plaques() -> void:
 
 	lbl_phase_3d = Label3D.new()
 	lbl_phase_3d.font = _font_hekayat
-	lbl_phase_3d.font_size = 38
+	lbl_phase_3d.font_size = 40
 	lbl_phase_3d.outline_size = 8
 	lbl_phase_3d.modulate = Color(0.96, 0.94, 0.88)
 	lbl_phase_3d.outline_modulate = Color(0.08, 0.04, 0.02, 0.95)
@@ -1026,7 +1026,7 @@ func _build_disk_box() -> void:
 
 	lbl_disks_3d = Label3D.new()
 	lbl_disks_3d.font = _font_hekayat
-	lbl_disks_3d.font_size = 44
+	lbl_disks_3d.font_size = 46
 	lbl_disks_3d.outline_size = 8
 	lbl_disks_3d.modulate = Color(1.0, 0.94, 0.48)
 	lbl_disks_3d.outline_modulate = Color(0.08, 0.04, 0.02, 0.95)

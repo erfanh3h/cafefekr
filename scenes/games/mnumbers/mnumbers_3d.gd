@@ -454,7 +454,7 @@ func _build_36_memory_wells_and_medallions() -> void:
 		var lbl := Label3D.new()
 		lbl.name = "NumberLabel"
 		lbl.font = _font_hekayat
-		lbl.font_size = 76
+		lbl.font_size = 78
 		lbl.outline_size = 18
 		lbl.modulate = Color(1.0, 0.98, 0.92, 1.0)
 		lbl.outline_modulate = Color(0.04, 0.03, 0.05, 0.98)

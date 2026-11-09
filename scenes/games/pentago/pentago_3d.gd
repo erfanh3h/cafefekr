@@ -637,7 +637,7 @@ func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_f
 	var lbl = Label3D.new()
 	lbl.name = "DirLabel"
 	lbl.font = _font_hekayat
-	lbl.font_size = 34
+	lbl.font_size = 36
 	lbl.outline_size = 10
 	lbl.modulate = Color(1.0, 0.96, 0.74)
 	lbl.outline_modulate = Color(0.04, 0.03, 0.02, 0.98)
@@ -1021,7 +1021,7 @@ func _build_side_trays_and_plaques() -> void:
 		# Header Label on Tray
 		var lbl = Label3D.new()
 		lbl.font = _font_hekayat
-		lbl.font_size = 34
+		lbl.font_size = 36
 		lbl.outline_size = 10
 		lbl.modulate = Color(1.0, 0.52, 0.55) if side == 1 else Color(0.52, 0.82, 1.0)
 		lbl.outline_modulate = Color(0.05, 0.03, 0.02, 0.96)
@@ -1077,7 +1077,7 @@ func _build_side_trays_and_plaques() -> void:
 
 	lbl_title_3d = Label3D.new()
 	lbl_title_3d.font = _font_hekayat
-	lbl_title_3d.font_size = 38
+	lbl_title_3d.font_size = 40
 	lbl_title_3d.outline_size = 10
 	lbl_title_3d.modulate = Color(1.0, 0.90, 0.45)
 	lbl_title_3d.outline_modulate = Color(0.06, 0.03, 0.02, 0.98)
@@ -1106,7 +1106,7 @@ func _build_side_trays_and_plaques() -> void:
 
 	lbl_phase_3d = Label3D.new()
 	lbl_phase_3d.font = _font_hekayat
-	lbl_phase_3d.font_size = 38
+	lbl_phase_3d.font_size = 40
 	lbl_phase_3d.outline_size = 10
 	lbl_phase_3d.modulate = Color(0.95, 0.96, 1.0)
 	lbl_phase_3d.outline_modulate = Color(0.05, 0.03, 0.02, 0.98)

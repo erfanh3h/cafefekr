@@ -525,7 +525,7 @@ func _build_sudoku_grid() -> void:
 			var lbl = Label3D.new()
 			if _game_font:
 				lbl.font = _game_font
-			lbl.font_size = 52
+			lbl.font_size = 54
 			lbl.pixel_size = 0.00125
 			lbl.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 			lbl.rotation_degrees = Vector3(-90, 0, 0)
@@ -560,7 +560,7 @@ func _build_bottom_console() -> void:
 	lbl_status_hint = Label3D.new()
 	if _game_font:
 		lbl_status_hint.font = _game_font
-	lbl_status_hint.font_size = 26
+	lbl_status_hint.font_size = 28
 	lbl_status_hint.pixel_size = 0.00135
 	lbl_status_hint.rotation_degrees = Vector3(-90, 0, 0)
 	lbl_status_hint.position = Vector3(0, 0.040, CONSOLE_Z - 0.062)
@@ -616,7 +616,7 @@ func _build_bottom_console() -> void:
 		var lbl_d = Label3D.new()
 		if _game_font:
 			lbl_d.font = _game_font
-		lbl_d.font_size = 58
+		lbl_d.font_size = 60
 		lbl_d.pixel_size = 0.00140
 		lbl_d.rotation_degrees = Vector3(-90, 0, 0)
 		lbl_d.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, -0.016)
@@ -631,7 +631,7 @@ func _build_bottom_console() -> void:
 		var lbl_cnt = Label3D.new()
 		if _game_font:
 			lbl_cnt.font = _game_font
-		lbl_cnt.font_size = 22
+		lbl_cnt.font_size = 24
 		lbl_cnt.pixel_size = 0.00125
 		lbl_cnt.rotation_degrees = Vector3(-90, 0, 0)
 		lbl_cnt.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, 0.028)
@@ -661,7 +661,7 @@ func _build_bottom_console() -> void:
 	btn_solve_label = Label3D.new()
 	if _game_font:
 		btn_solve_label.font = _game_font
-	btn_solve_label.font_size = 32
+	btn_solve_label.font_size = 34
 	btn_solve_label.pixel_size = 0.00140
 	btn_solve_label.rotation_degrees = Vector3(-90, 0, 0)
 	btn_solve_label.position = Vector3(0, 0.016, 0)

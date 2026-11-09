@@ -590,7 +590,7 @@ alignment = 1
 [node name="Icon" type="Label" parent="DisconnectPauseDialog/Card/VBox"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 56
+theme_override_font_sizes/font_size = 58
 text = "⏸️"
 horizontal_alignment = 1
 
@@ -600,7 +600,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 42
 text = "📡 وقفه موقت در مسابقه"
 horizontal_alignment = 1
 
@@ -608,7 +608,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "ارتباط اینترنتی حریف موقتاً قطع شده است. لطفاً تا بازگشت حریف شکیبا باشید..."
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -625,7 +625,7 @@ show_percentage = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.82, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "⏳ مهلت بازگشت به بازی: ۳۰ ثانیه"
 horizontal_alignment = 1
 
@@ -674,7 +674,7 @@ theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 42
 text = "🏳️ واگذاری مسابقه"
 horizontal_alignment = 1
 
@@ -682,7 +682,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.82, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "آیا از واگذاری این مسابقه اطمینان دارید؟
 با تأیید انصراف، بازی به پایان رسیده و پیروزی برای حریف ثبت خواهد شد."
 horizontal_alignment = 1
@@ -700,7 +700,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.35, 0.05, 0.05, 0.95)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "🏳️ بله، واگذار می‌کنم"
 
@@ -711,7 +711,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.1, 0.95)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "بازگشت به بازی"
 
@@ -758,7 +758,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 34
 text = "☕ کافه فکر — مسابقه آنلاین"
 horizontal_alignment = 1
 
@@ -766,7 +766,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 46
+theme_override_font_sizes/font_size = 48
 text = "تیک تاک تو (دوز ۳×۳)"
 horizontal_alignment = 1
 
@@ -791,7 +791,7 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.8, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 34
 text = "بازیکن ۱"
 horizontal_alignment = 1
 
@@ -799,7 +799,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 text = "🔴 مهره قرمز"
 horizontal_alignment = 1
 
@@ -807,7 +807,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.82, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 68
+theme_override_font_sizes/font_size = 70
 text = "⚔️"
 horizontal_alignment = 1
 
@@ -827,7 +827,7 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.8, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 34
 text = "بازیکن ۲"
 horizontal_alignment = 1
 
@@ -835,7 +835,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.75, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 text = "🔵 مهره آبی"
 horizontal_alignment = 1
 
@@ -843,7 +843,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.78, 0.65, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "آماده‌باشید... بازی به‌زودی آغاز می‌شود"
 horizontal_alignment = 1
 
@@ -853,7 +853,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.88, 0.25, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 96
+theme_override_font_sizes/font_size = 98
 text = "..."
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -903,7 +903,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 46
+theme_override_font_sizes/font_size = 48
 text = "✨ پایان راند ۱"
 horizontal_alignment = 1
 
@@ -913,7 +913,7 @@ theme_override_colors/font_color = Color(0.35, 0.95, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 38
 text = "🎉 این راند را شما بردید!"
 horizontal_alignment = 1
 
@@ -923,7 +923,7 @@ theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 34
 text = "مجموع امتیاز راندها: ۱ - ۰"
 horizontal_alignment = 1
 
@@ -950,7 +950,7 @@ theme_override_colors/font_color = Color(1, 0.94, 0.55, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 34
 text = "نوبتت نیست!"
 horizontal_alignment = 1
 vertical_alignment = 1

@@ -699,7 +699,7 @@ func _update_single_cell_visual(idx: int, animate: bool = false) -> void:
 	var num_lbl = Label3D.new()
 	num_lbl.font = _font_hekayat
 	num_lbl.text = _fa_digits(val)
-	num_lbl.font_size = 54 if val < 3 else 60
+	num_lbl.font_size = 76 if val < 3 else 62
 	num_lbl.pixel_size = 0.0019
 	num_lbl.modulate = Color(1.0, 0.98, 0.90) if val < 3 else Color(1.0, 0.94, 0.52)
 	num_lbl.outline_modulate = Color(0.18, 0.04, 0.04) if owner_id == 1 else Color(0.03, 0.08, 0.24)

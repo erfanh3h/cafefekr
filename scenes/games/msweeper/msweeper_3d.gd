@@ -510,7 +510,7 @@ func _build_minefield_grid() -> void:
 			var lbl = Label3D.new()
 			if _game_font:
 				lbl.font = _game_font
-			lbl.font_size = 64
+			lbl.font_size = 66
 			lbl.pixel_size = 0.00142
 			lbl.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 			lbl.rotation_degrees = Vector3(-90, 0, 0)
@@ -612,7 +612,7 @@ func _build_bottom_console() -> void:
 	badge_mines_lbl = Label3D.new()
 	if _game_font:
 		badge_mines_lbl.font = _game_font
-	badge_mines_lbl.font_size = 36
+	badge_mines_lbl.font_size = 38
 	badge_mines_lbl.pixel_size = 0.00142
 	badge_mines_lbl.rotation_degrees = Vector3(-90, 0, 0)
 	badge_mines_lbl.position = left_badge_pos + Vector3(0, 0.012, 0)
@@ -639,7 +639,7 @@ func _build_bottom_console() -> void:
 	badge_safe_lbl = Label3D.new()
 	if _game_font:
 		badge_safe_lbl.font = _game_font
-	badge_safe_lbl.font_size = 36
+	badge_safe_lbl.font_size = 38
 	badge_safe_lbl.pixel_size = 0.00142
 	badge_safe_lbl.rotation_degrees = Vector3(-90, 0, 0)
 	badge_safe_lbl.position = right_badge_pos + Vector3(0, 0.012, 0)
@@ -653,7 +653,7 @@ func _build_bottom_console() -> void:
 	lbl_status_hint = Label3D.new()
 	if _game_font:
 		lbl_status_hint.font = _game_font
-	lbl_status_hint.font_size = 28
+	lbl_status_hint.font_size = 30
 	lbl_status_hint.pixel_size = 0.00136
 	lbl_status_hint.rotation_degrees = Vector3(-90, 0, 0)
 	lbl_status_hint.position = Vector3(0, 0.040, 0.532)

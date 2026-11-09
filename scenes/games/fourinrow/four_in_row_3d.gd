@@ -523,7 +523,7 @@ func _build_gravity_rack() -> void:
 		var col_lbl = Label3D.new()
 		col_lbl.text = PERSIAN_COLS[r_idx]
 		col_lbl.font = _FONT_FA
-		col_lbl.font_size = 34
+		col_lbl.font_size = 36
 		col_lbl.pixel_size = 0.00065
 		col_lbl.modulate = Color(0.22, 0.14, 0.08)
 		col_lbl.outline_size = 2
@@ -663,7 +663,7 @@ func _build_side_dispensers() -> void:
 		var counter_lbl = Label3D.new()
 		counter_lbl.text = _fa_digits(32)
 		counter_lbl.font = _FONT_FA
-		counter_lbl.font_size = 44
+		counter_lbl.font_size = 46
 		counter_lbl.pixel_size = 0.0008
 		counter_lbl.modulate = Color(1.0, 0.45, 0.48) if is_p1 else Color(0.48, 0.75, 1.0)
 		counter_lbl.outline_size = 6

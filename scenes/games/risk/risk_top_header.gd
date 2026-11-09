@@ -213,10 +213,10 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			av_c.custom_minimum_size = Vector2(av_sz, av_sz)
 		var nm: Label = item["name"]
 		if is_instance_valid(nm):
-			nm.add_theme_font_size_override("font_size", 26 if total_players == 4 else (30 if total_players == 3 else 36))
+			nm.add_theme_font_size_override("font_size", 30 if total_players == 4 else (32 if total_players == 3 else 40))
 		var rl: Label = item["role"]
 		if is_instance_valid(rl):
-			rl.add_theme_font_size_override("font_size", 22 if is_compact else 26)
+			rl.add_theme_font_size_override("font_size", 24 if is_compact else 28)
 			rl.text = _format_role_text(idx)
 		var sb: PanelContainer = item["score_b"]
 		if is_instance_valid(sb):
@@ -225,7 +225,7 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			sb.custom_minimum_size = Vector2(b_sz, b_sz)
 		var sc: Label = item["score"]
 		if is_instance_valid(sc):
-			sc.add_theme_font_size_override("font_size", 26 if is_compact else 34)
+			sc.add_theme_font_size_override("font_size", 28 if is_compact else 36)
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_my_player_index = my_idx
@@ -431,7 +431,7 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			kori_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			kori_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			bubble_frame.add_child(kori_lbl)
-		kori_lbl.add_theme_font_size_override("font_size", 30)
+		kori_lbl.add_theme_font_size_override("font_size", 32)
 		kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.88, 1.0))
 		kori_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 		kori_lbl.add_theme_constant_override("shadow_outline_size", 3)

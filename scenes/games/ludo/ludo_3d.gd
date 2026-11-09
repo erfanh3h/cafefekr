@@ -730,7 +730,7 @@ func _build_3d_roll_dice_button() -> void:
 	lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	lbl.pixel_size = 0.00082
 	lbl.font = preload("res://assets/fonts/hekayat.ttf")
-	lbl.font_size = 44
+	lbl.font_size = 46
 	lbl.outline_size = 10
 	lbl.modulate = Color(1.0, 0.96, 0.86)
 	lbl.outline_modulate = Color(0.06, 0.03, 0.01, 0.95)
@@ -913,7 +913,7 @@ func _create_royal_pawn_node(g_id: int, stack_count: int = 1) -> Node3D:
 		lbl.no_depth_test = true
 		lbl.pixel_size = 0.0009
 		lbl.font = preload("res://assets/fonts/hekayat.ttf")
-		lbl.font_size = 42
+		lbl.font_size = 44
 		lbl.outline_size = 10
 		lbl.modulate = Color(1.0, 0.95, 0.40)
 		lbl.outline_modulate = Color(0.08, 0.04, 0.02, 0.98)

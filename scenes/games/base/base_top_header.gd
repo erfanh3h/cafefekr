@@ -578,7 +578,7 @@ func _enhance_player_card(player_idx: int) -> void:
 			side_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			if _font_hekayat:
 				side_lbl.add_theme_font_override("font", _font_hekayat)
-			side_lbl.add_theme_font_size_override("font_size", 18)
+			side_lbl.add_theme_font_size_override("font_size", 20)
 			side_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.85))
 			side_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.04, 0.02, 0.95))
 			side_lbl.add_theme_constant_override("outline_size", 2)
@@ -611,7 +611,7 @@ func _enhance_player_card(player_idx: int) -> void:
 		name_lbl.clip_text = true
 
 	if is_instance_valid(role_lbl):
-		role_lbl.add_theme_font_size_override("font_size", 22)
+		role_lbl.add_theme_font_size_override("font_size", 24)
 		role_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78))
 		role_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.04, 0.02, 0.9))
 		role_lbl.add_theme_constant_override("outline_size", 2)
@@ -655,7 +655,7 @@ func _enhance_player_card(player_idx: int) -> void:
 			score_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
 			score_lbl.add_theme_color_override("font_outline_color", Color(0.12, 0.06, 0.02, 0.95))
 			score_lbl.add_theme_constant_override("outline_size", 3)
-			score_lbl.add_theme_font_size_override("font_size", 40)
+			score_lbl.add_theme_font_size_override("font_size", 42)
 			score_lbl.text = _fa_digits(0)
 
 func _is_score_based_game() -> bool:
@@ -1117,7 +1117,7 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			kori_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			kori_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			bubble_frame.add_child(kori_lbl)
-		kori_lbl.add_theme_font_size_override("font_size", 32)
+		kori_lbl.add_theme_font_size_override("font_size", 34)
 		kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.88, 1.0))
 		kori_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 		kori_lbl.add_theme_constant_override("shadow_offset_y", 2)
