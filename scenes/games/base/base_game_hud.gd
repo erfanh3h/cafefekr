@@ -2995,4 +2995,3 @@ func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 	if is_instance_valid(btn_fekr_dual):
 
 		btn_fekr_dual.visible = is_play_phase
-
