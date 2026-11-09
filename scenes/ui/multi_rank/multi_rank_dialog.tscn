@@ -110,7 +110,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("4_font_hekayat")
 theme_override_font_sizes/font_size = 46
-text = "رنک چندنفره (۴ نفره)"
+text = "رقابت چند نفره آنلاین"
 horizontal_alignment = 1
 
 [node name="LblSubtitle" type="Label" parent="Margin/VBox/TopRow/TitleBox"]
@@ -118,7 +118,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.88, 0.8, 0.65, 0.9)
 theme_override_fonts/font = ExtResource("4_font_hekayat")
 theme_override_font_sizes/font_size = 28
-text = "رقابت آنلاین ۴ نفره — با تکمیل ظرفیت ۴ بازیکن بازی آغاز می‌شود"
+text = "جدال هیجان‌انگیز ۴ نفره — با تکمیل ظرفیت ۴ بازیکن نبرد آغاز می‌شود"
 horizontal_alignment = 1
 
 [node name="Placeholder" type="Control" parent="Margin/VBox/TopRow"]

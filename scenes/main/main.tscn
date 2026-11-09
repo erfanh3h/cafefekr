@@ -192,7 +192,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("12_font_hekayat")
 theme_override_font_sizes/font_size = 42
-text = "بازی دونفره آنلاین"
+text = "رقابت دو نفره آنلاین"
 horizontal_alignment = 2
 
 [node name="CardSubtitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/TextCol"]
@@ -203,7 +203,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("12_font_hekayat")
 theme_override_font_sizes/font_size = 24
-text = "جستجوی حریف آنلاین و افزایش رتبه و امتیاز"
+text = "دوئل نفس‌گیر تن‌به‌تن، کسب کاپ و صعود به صدر جدول قهرمانان"
 horizontal_alignment = 2
 
 [node name="IconControl" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox"]
@@ -288,7 +288,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("12_font_hekayat")
 theme_override_font_sizes/font_size = 42
-text = "رنک چهارنفره آنلاین"
+text = "رقابت چند نفره آنلاین"
 horizontal_alignment = 2
 
 [node name="CardSubtitle" type="Label" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin/HBox/TextCol"]
@@ -299,7 +299,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("12_font_hekayat")
 theme_override_font_sizes/font_size = 24
-text = "رقابت ۴ نفره آنلاین در منچ و ریسک و کسب کاپ و سکه"
+text = "جدال هیجان‌انگیز ۴ نفره، شکست رقبا و تصاحب کاپ و جوایز بزرگ"
 horizontal_alignment = 2
 
 [node name="IconControl" type="Control" parent="CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank/Margin/HBox"]

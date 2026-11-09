@@ -156,7 +156,7 @@ func start_multi_rank_queue(requested_game_type: String) -> void:
 
 	var g_info = GameRegistry.get_game_info(norm_type)
 	var g_name = g_info.get("name_fa", norm_type)
-	lbl_title.text = "صف رنک چهارنفره (%s)" % g_name
+	lbl_title.text = "صف رقابت چند نفره (%s)" % g_name
 	spinner_container.visible = true
 	btn_cancel.visible = false
 	if is_instance_valid(btn_close_top):

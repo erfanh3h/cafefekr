@@ -2631,7 +2631,7 @@ func _update_ranked_button_state() -> void:
 	
 	if not GameManager.is_queue_open:
 		if is_instance_valid(title_lbl):
-			title_lbl.text = "⛔ بازی دونفره آنلاین (بسته است)"
+			title_lbl.text = "⛔ رقابت دو نفره آنلاین (بسته است)"
 		if is_instance_valid(sub_lbl):
 			sub_lbl.text = "صف مسابقات رده‌بندی در حال حاضر بسته است."
 			sub_lbl.add_theme_color_override("font_color", Color(1.0, 0.60, 0.50, 1.0))
@@ -2642,15 +2642,15 @@ func _update_ranked_button_state() -> void:
 	
 	if is_unlocked:
 		if is_instance_valid(title_lbl):
-			title_lbl.text = "بازی دونفره آنلاین"
+			title_lbl.text = "رقابت دو نفره آنلاین"
 		if is_instance_valid(sub_lbl):
-			sub_lbl.text = "جستجوی حریف آنلاین و افزایش رتبه و امتیاز"
+			sub_lbl.text = "دوئل نفس‌گیر تن‌به‌تن، کسب کاپ و صعود به صدر جدول قهرمانان"
 			sub_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55, 1.0))
 		btn_ranked.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	else:
 		var prog = GameManager.get_ranked_unlock_progress()
 		if is_instance_valid(title_lbl):
-			title_lbl.text = "🔒 بازی دونفره آنلاین (رنک)"
+			title_lbl.text = "🔒 رقابت دو نفره آنلاین (رنک)"
 		if is_instance_valid(sub_lbl):
 			sub_lbl.text = "قفل است • بازگشایی در سطح ۳ (%s / %s XP)" % [GameManager.to_fa_num(prog.current_xp), GameManager.to_fa_num(prog.target_xp)]
 			sub_lbl.add_theme_color_override("font_color", Color(1.0, 0.72, 0.38, 1.0))
