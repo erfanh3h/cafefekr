@@ -5,34 +5,9 @@ extends "res://scenes/games/base/base_top_header.gd"
 # Displays each commander's Domination Tokens (0/2 to win), Continent & Strategy card counts,
 # active turn / defense phase banner, and 30s countdown timer.
 
-signal player_profile_clicked(player_index: int)
-
-var p3_card: PanelContainer = null
-var p4_card: PanelContainer = null
-
-var _extra_cards: Dictionary = {} # idx (3,4) -> Dictionary of child node refs
-
-var _style_p3_active: StyleBoxFlat
-var _style_p3_inactive: StyleBoxFlat
-var _style_p4_active: StyleBoxFlat
-var _style_p4_inactive: StyleBoxFlat
-var _style_avatar_p3_active: StyleBoxFlat
-var _style_avatar_p3_idle: StyleBoxFlat
-var _style_avatar_p4_active: StyleBoxFlat
-var _style_avatar_p4_idle: StyleBoxFlat
-var _style_match_box_p3: StyleBoxFlat
-var _style_match_box_p4: StyleBoxFlat
-
-var _player_names: Dictionary = {
-	1: "بازیکن ۱",
-	2: "بازیکن ۲",
-	3: "بازیکن ۳",
-	4: "بازیکن ۴"
-}
 var _token_counts: Array = [0, 0, 0, 0]
 var _continent_counts: Array = [3, 3, 3, 3]
 var _strategy_counts: Array = [3, 4, 4, 4]
-var _reaction_seqs: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
 
 const FACTION_COLORS: Dictionary = {
 	1: Color(0.95, 0.25, 0.30), # Ruby Red

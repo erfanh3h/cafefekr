@@ -507,7 +507,7 @@ static func is_multiplayer_rank_supported(game_type: String) -> bool:
 	var norm = normalize_type(game_type)
 	return norm in [GameTypes.LUDO, GameTypes.RISK]
 
-static func get_multi_rank_xp(is_rank1: bool, is_rank2: bool) -> int:
+static func get_multi_rank_xp(_game_type: String, is_rank1: bool, is_rank2: bool = false) -> int:
 	if is_rank1:
 		return 50
 	elif is_rank2:
