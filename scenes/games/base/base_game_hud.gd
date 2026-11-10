@@ -2988,3 +2988,14 @@ func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 	if is_instance_valid(btn_fekr_dual):
 
 		btn_fekr_dual.visible = is_play_phase
+
+static func _fa_digits(val: Variant) -> String:
+	var s = str(val)
+	var fa = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
+	var out = ""
+	for ch in s:
+		if ch >= "0" and ch <= "9":
+			out += fa[int(ch)]
+		else:
+			out += ch
+	return out
