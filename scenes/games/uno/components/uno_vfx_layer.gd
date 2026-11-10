@@ -54,7 +54,7 @@ func _build_overlays() -> void:
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_toast_label.add_theme_font_override("font", FontHekayat)
-	_toast_label.add_theme_font_size_override("font_size", 19)
+	_toast_label.add_theme_font_size_override("font_size", 22)
 	_toast_label.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
 	_toast_panel.add_child(_toast_label)
 
@@ -87,7 +87,7 @@ func _build_overlays() -> void:
 	_special_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_special_badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_special_badge_label.add_theme_font_override("font", FontHekayat)
-	_special_badge_label.add_theme_font_size_override("font_size", 28)
+	_special_badge_label.add_theme_font_size_override("font_size", 31)
 	_special_badge_label.add_theme_color_override("font_color", Color.WHITE)
 	_special_badge_panel.add_child(_special_badge_label)
 
@@ -164,7 +164,7 @@ func animate_card_flight(from_global: Vector2, to_global: Vector2, card_data: Di
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_override("font", FontHekayat)
-	lbl.add_theme_font_size_override("font_size", 28 if face_up else 24)
+	lbl.add_theme_font_size_override("font_size", 31 if face_up else 27)
 	lbl.add_theme_color_override("font_color", Color.WHITE if face_up else Color(1.0, 0.86, 0.20))
 	lbl.text = UnoCardWidget.format_center_symbol(c_val_str) if face_up else "UNO"
 	flyer.add_child(lbl)

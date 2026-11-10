@@ -187,10 +187,10 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			av_c.custom_minimum_size = Vector2(av_sz, av_sz)
 		var nm: Label = item["name"]
 		if is_instance_valid(nm):
-			nm.add_theme_font_size_override("font_size", 26 if total_players == 4 else (27 if total_players == 3 else 36))
+			nm.add_theme_font_size_override("font_size", 29 if total_players == 4 else (30 if total_players == 3 else 39))
 		var rl: Label = item["role"]
 		if is_instance_valid(rl):
-			rl.add_theme_font_size_override("font_size", 20 if is_compact else 24)
+			rl.add_theme_font_size_override("font_size", 23 if is_compact else 27)
 			var cnt = int(_hand_counts[idx - 1]) if idx - 1 < _hand_counts.size() else 7
 			if cnt == 1:
 				rl.text = "🔥 اونو!"
@@ -203,7 +203,7 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			sb.custom_minimum_size = Vector2(b_sz, b_sz)
 		var sc: Label = item["score"]
 		if is_instance_valid(sc):
-			sc.add_theme_font_size_override("font_size", 28 if is_compact else 34)
+			sc.add_theme_font_size_override("font_size", 31 if is_compact else 37)
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_my_player_index = my_idx
@@ -445,7 +445,7 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 			kori_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			kori_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			bubble_frame.add_child(kori_lbl)
-		kori_lbl.add_theme_font_size_override("font_size", 32)
+		kori_lbl.add_theme_font_size_override("font_size", 35)
 		kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.88, 1.0))
 		kori_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 		kori_lbl.add_theme_constant_override("shadow_outline_size", 3)

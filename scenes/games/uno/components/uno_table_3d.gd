@@ -59,7 +59,7 @@ var _opponent_fans: Dictionary = {} # seat_idx (1=Top, 2=Left, 3=Right) -> Node3
 func _ready() -> void:
 	_build_tabletop()
 
-func _create_label_3d(txt: String, f_size: int = 36, col: Color = Color.WHITE, p_size: float = 0.0012) -> Label3D:
+func _create_label_3d(txt: String, f_size: int = 39, col: Color = Color.WHITE, p_size: float = 0.0012) -> Label3D:
 	var lbl = Label3D.new()
 	lbl.font = FontHekayat
 	lbl.text = txt
@@ -157,7 +157,7 @@ func _build_tabletop() -> void:
 	_direction_pivot.position = Vector3(-0.01, y_base + 0.018, 0.195)
 	add_child(_direction_pivot)
 
-	_direction_arrow_lbl = _create_label_3d("↻ جهت چرخش: ساعتگرد", 24, Color(0.90, 0.84, 0.64), 0.0011)
+	_direction_arrow_lbl = _create_label_3d("↻ جهت چرخش: ساعتگرد", 27, Color(0.90, 0.84, 0.64), 0.0011)
 	_direction_arrow_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_direction_pivot.add_child(_direction_arrow_lbl)
 
@@ -234,13 +234,13 @@ func _build_tabletop() -> void:
 	dt_oval.material_override = mat_uno_red
 	_draw_top_card.add_child(dt_oval)
 
-	var uno_logo_3d = _create_label_3d("UNO", 42, Color(1.0, 0.86, 0.18), 0.00115)
+	var uno_logo_3d = _create_label_3d("UNO", 45, Color(1.0, 0.86, 0.18), 0.00115)
 	uno_logo_3d.outline_size = 12
 	uno_logo_3d.position = Vector3(0.0, 0.004, 0.0)
 	uno_logo_3d.rotation_degrees = Vector3(-90.0, 0.0, -15.0)
 	_draw_top_card.add_child(uno_logo_3d)
 
-	_draw_count_label = _create_label_3d("۸۰ کارت", 22, Color(0.92, 0.95, 0.90), 0.00105)
+	_draw_count_label = _create_label_3d("۸۰ کارت", 25, Color(0.92, 0.95, 0.90), 0.00105)
 	_draw_count_label.position = Vector3(0.0, 0.004, 0.155)
 	_draw_count_label.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	draw_pile_root.add_child(_draw_count_label)
@@ -360,19 +360,19 @@ func _build_tabletop() -> void:
 		_discard_wild_quads.add_child(q_mi)
 
 	# Top-Left, Center, and Bottom-Right 3D Symbols on Discard Card
-	_discard_corner_tl = _create_label_3d("۷", 28, Color.WHITE, 0.0011)
+	_discard_corner_tl = _create_label_3d("۷", 31, Color.WHITE, 0.0011)
 	_discard_corner_tl.position = Vector3(-0.062, 0.0055, -0.098)
 	_discard_corner_tl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_discard_top_pivot.add_child(_discard_corner_tl)
 
-	_discard_center_lbl = _create_label_3d("۷", 68, UNO_COLORS["red"], 0.00125)
+	_discard_center_lbl = _create_label_3d("۷", 71, UNO_COLORS["red"], 0.00125)
 	_discard_center_lbl.outline_size = 6
 	_discard_center_lbl.outline_modulate = Color(1.0, 1.0, 1.0, 0.92)
 	_discard_center_lbl.position = Vector3(0.0, 0.006, 0.0)
 	_discard_center_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_discard_top_pivot.add_child(_discard_center_lbl)
 
-	_discard_corner_br = _create_label_3d("۷", 28, Color.WHITE, 0.0011)
+	_discard_corner_br = _create_label_3d("۷", 31, Color.WHITE, 0.0011)
 	_discard_corner_br.position = Vector3(0.062, 0.0055, 0.098)
 	_discard_corner_br.rotation_degrees = Vector3(-90.0, 180.0, 0.0)
 	_discard_top_pivot.add_child(_discard_corner_br)
@@ -412,7 +412,7 @@ func _build_tabletop() -> void:
 	ci_gem.material_override = _color_gem_mat
 	color_indicator_root.add_child(ci_gem)
 
-	_color_name_3d = _create_label_3d("قرمز", 24, Color.WHITE, 0.00105)
+	_color_name_3d = _create_label_3d("قرمز", 27, Color.WHITE, 0.00105)
 	_color_name_3d.position = Vector3(0.0, 0.016, 0.082)
 	_color_name_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	color_indicator_root.add_child(_color_name_3d)

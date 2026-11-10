@@ -1613,33 +1613,38 @@ func update_not_played_turns(gamer_id: int, count: int) -> void:
 
 		current_top_header.update_not_played_turns(gamer_id, count)
 
+	var cafe_table = get_parent()
+	if cafe_table and "current_board_node" in cafe_table and is_instance_valid(cafe_table.current_board_node):
+		var b_node = cafe_table.current_board_node
+		if b_node.has_method("on_not_played_turns_updated"):
+			b_node.on_not_played_turns_updated(gamer_id, count)
 
+	var max_turns: int = max(2, GameRegistry.get_max_missed_turns(GameManager.current_game_type))
 
 	# Warnings & Sound Juice
-
 	if count > 0:
 
 		if gamer_id == GameManager.my_player_index:
 
 			AudioManager.play_sound("bell")
 
-			if count == 1:
+			if count < max_turns:
 
-				show_toast_hint("⚠️ نوبت شما سپری شد! در صورت عدم حرکت در نوبت بعد، بازنده خواهید شد (خطای ۱ از ۲)")
+				show_toast_hint("⚠️ نوبت شما سپری شد! در صورت عدم حرکت در %s نوبت، بازنده خواهید شد (خطای %s از %s)" % [_fa_digits(max_turns), _fa_digits(count), _fa_digits(max_turns)])
 
-			elif count >= 2:
+			else:
 
-				show_toast_hint("🚨 اخطار نهایی! عدم حرکت مکرر منجر به باخت فنی شد.")
+				show_toast_hint("🚨 اخطار نهایی! عدم حرکت در %s نوبت پیاپی منجر به باخت فنی شد." % _fa_digits(max_turns))
 
 		else:
 
-			if count == 1:
+			if count < max_turns:
 
-				show_toast_hint("⚠️ حریف در زمان مجاز حرکت نکرد (خطای ۱ از ۲)")
+				show_toast_hint("⚠️ حریف در زمان مجاز حرکت نکرد (خطای %s از %s)" % [_fa_digits(count), _fa_digits(max_turns)])
 
-			elif count >= 2:
+			else:
 
-				show_toast_hint("⚠️ حریف به دلیل عدم حرکت مکرر بازنده اعلام شد.")
+				show_toast_hint("⚠️ حریف به دلیل عدم حرکت در %s نوبت پیاپی بازنده اعلام شد." % _fa_digits(max_turns))
 
 
 

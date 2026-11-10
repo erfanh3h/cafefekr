@@ -15,6 +15,7 @@ const UnoTable3DScript = preload("res://scenes/games/uno/components/uno_table_3d
 const UnoVFXLayerScript = preload("res://scenes/games/uno/components/uno_vfx_layer.gd")
 
 @export var default_three_quarter_view: bool = true
+@export var has_missed_turns_limit: bool = true
 @export var camera_pitch: float = -1.10    # ~ -63 deg elevated tabletop perspective focused on central cards
 @export var camera_distance: float = 2.46  # Crisp, balanced mobile framing for the walnut & emerald card mat
 
@@ -252,7 +253,7 @@ func _build_2d_interface() -> void:
 	active_color_label = Label.new()
 	active_color_label.text = "رنگ: قرمز"
 	active_color_label.add_theme_font_override("font", FontHekayat)
-	active_color_label.add_theme_font_size_override("font_size", 18)
+	active_color_label.add_theme_font_size_override("font_size", 21)
 	active_color_label.add_theme_color_override("font_color", Color.WHITE)
 	active_color_swatch.add_child(active_color_label)
 
@@ -262,7 +263,7 @@ func _build_2d_interface() -> void:
 	turn_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	turn_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	turn_status_label.add_theme_font_override("font", FontHekayat)
-	turn_status_label.add_theme_font_size_override("font_size", 20)
+	turn_status_label.add_theme_font_size_override("font_size", 23)
 	turn_status_label.add_theme_color_override("font_color", Color(0.42, 0.98, 0.62))
 	status_hbox.add_child(turn_status_label)
 
@@ -270,7 +271,7 @@ func _build_2d_interface() -> void:
 	direction_icon_label = Label.new()
 	direction_icon_label.text = "↻ ساعتگرد"
 	direction_icon_label.add_theme_font_override("font", FontHekayat)
-	direction_icon_label.add_theme_font_size_override("font_size", 17)
+	direction_icon_label.add_theme_font_size_override("font_size", 20)
 	direction_icon_label.add_theme_color_override("font_color", Color(0.94, 0.86, 0.64))
 	status_hbox.add_child(direction_icon_label)
 
@@ -281,7 +282,7 @@ func _build_2d_interface() -> void:
 	zoom_btn.focus_mode = Control.FOCUS_NONE
 	zoom_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	zoom_btn.add_theme_font_override("font", FontHekayat)
-	zoom_btn.add_theme_font_size_override("font_size", 16)
+	zoom_btn.add_theme_font_size_override("font_size", 19)
 	zoom_btn.add_theme_color_override("font_color", Color(0.96, 0.90, 0.72))
 	var z_st = StyleBoxFlat.new()
 	z_st.bg_color = Color(0.14, 0.18, 0.16, 0.95)
@@ -339,7 +340,7 @@ func _build_2d_interface() -> void:
 	draw_action_btn.focus_mode = Control.FOCUS_NONE
 	draw_action_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	draw_action_btn.add_theme_font_override("font", FontHekayat)
-	draw_action_btn.add_theme_font_size_override("font_size", 21)
+	draw_action_btn.add_theme_font_size_override("font_size", 24)
 	draw_action_btn.add_theme_color_override("font_color", Color.WHITE)
 	draw_action_style = StyleBoxFlat.new()
 	draw_action_style.bg_color = Color(0.12, 0.38, 0.26, 0.96)
@@ -365,7 +366,7 @@ func _build_2d_interface() -> void:
 	pass_turn_btn.focus_mode = Control.FOCUS_NONE
 	pass_turn_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	pass_turn_btn.add_theme_font_override("font", FontHekayat)
-	pass_turn_btn.add_theme_font_size_override("font_size", 21)
+	pass_turn_btn.add_theme_font_size_override("font_size", 24)
 	pass_turn_btn.add_theme_color_override("font_color", Color.WHITE)
 	var pass_st = StyleBoxFlat.new()
 	pass_st.bg_color = Color(0.78, 0.42, 0.10, 0.96)
@@ -388,7 +389,7 @@ func _build_2d_interface() -> void:
 	call_uno_btn.focus_mode = Control.FOCUS_NONE
 	call_uno_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	call_uno_btn.add_theme_font_override("font", FontHekayat)
-	call_uno_btn.add_theme_font_size_override("font_size", 21)
+	call_uno_btn.add_theme_font_size_override("font_size", 24)
 	call_uno_btn.add_theme_color_override("font_color", Color.WHITE)
 	var uno_st = StyleBoxFlat.new()
 	uno_st.bg_color = Color(0.90, 0.16, 0.19, 0.98)
@@ -435,14 +436,14 @@ func _build_2d_interface() -> void:
 	hand_phase_label.text = "روی کارت بزنید تا انتخاب و بازی شود"
 	hand_phase_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hand_phase_label.add_theme_font_override("font", FontHekayat)
-	hand_phase_label.add_theme_font_size_override("font_size", 18)
+	hand_phase_label.add_theme_font_size_override("font_size", 21)
 	hand_phase_label.add_theme_color_override("font_color", Color(0.78, 0.88, 0.82))
 	tray_header.add_child(hand_phase_label)
 
 	hand_count_pill_label = Label.new()
 	hand_count_pill_label.text = "دست شما: ۷ کارت"
 	hand_count_pill_label.add_theme_font_override("font", FontHekayat)
-	hand_count_pill_label.add_theme_font_size_override("font_size", 18)
+	hand_count_pill_label.add_theme_font_size_override("font_size", 21)
 	hand_count_pill_label.add_theme_color_override("font_color", Color(0.96, 0.86, 0.52))
 	tray_header.add_child(hand_count_pill_label)
 
@@ -505,7 +506,7 @@ func _build_wild_color_modal() -> void:
 	wild_modal_title.text = "🎨 رنگ فعال بعدی را انتخاب کنید"
 	wild_modal_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	wild_modal_title.add_theme_font_override("font", FontHekayat)
-	wild_modal_title.add_theme_font_size_override("font_size", 24)
+	wild_modal_title.add_theme_font_size_override("font_size", 27)
 	wild_modal_title.add_theme_color_override("font_color", Color(1.0, 0.92, 0.68))
 	m_vbox.add_child(wild_modal_title)
 
@@ -529,7 +530,7 @@ func _build_wild_color_modal() -> void:
 		c_btn.focus_mode = Control.FOCUS_NONE
 		c_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		c_btn.add_theme_font_override("font", FontHekayat)
-		c_btn.add_theme_font_size_override("font_size", 26)
+		c_btn.add_theme_font_size_override("font_size", 29)
 		c_btn.add_theme_color_override("font_color", Color.WHITE if c_key != "yellow" else Color(0.14, 0.11, 0.04))
 
 		var c_style = StyleBoxFlat.new()
@@ -551,7 +552,7 @@ func _build_wild_color_modal() -> void:
 	cancel_btn.focus_mode = Control.FOCUS_NONE
 	cancel_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	cancel_btn.add_theme_font_override("font", FontHekayat)
-	cancel_btn.add_theme_font_size_override("font_size", 18)
+	cancel_btn.add_theme_font_size_override("font_size", 21)
 	var cancel_st = StyleBoxFlat.new()
 	cancel_st.bg_color = Color(0.16, 0.20, 0.18)
 	cancel_st.border_color = Color(0.65, 0.68, 0.65, 0.6)
@@ -1163,6 +1164,27 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 
 		Commands.User_Data:
 			_apply_uno_state_dict(p)
+
+func on_not_played_turns_updated(gamer_id: int, count: int) -> void:
+	if count <= 0 or not is_instance_valid(vfx_layer):
+		return
+	var p_name = _get_player_short_name(gamer_id)
+	var fa_cnt = UnoCardWidgetScript.to_fa_digits(str(count))
+	if gamer_id == my_player_index:
+		if count < 3:
+			vfx_layer.show_contextual_toast("⚠️ نوبت شما سوخت! (%s از ۳ خطای عدم بازی)" % fa_cnt, Color(1.0, 0.78, 0.25), 2.4)
+		else:
+			vfx_layer.show_contextual_toast("🚨 ۳ نوبت بازی نکردید؛ شما بازنده اعلام شدید", Color(1.0, 0.35, 0.35), 2.8)
+	else:
+		if count < 3:
+			vfx_layer.show_contextual_toast("⚠️ %s در زمان مجاز بازی نکرد (%s از ۳)" % [p_name, fa_cnt], Color(1.0, 0.80, 0.32), 2.2)
+		else:
+			vfx_layer.show_contextual_toast("🏳️ %s به دلیل ۳ نوبت عدم بازی حذف شد!" % p_name, Color(1.0, 0.42, 0.42), 2.6)
+
+func on_player_surrendered(gamer_id: int) -> void:
+	if is_instance_valid(vfx_layer):
+		vfx_layer.show_contextual_toast("🏳️ %s از بازی خارج شد" % _get_player_short_name(gamer_id), Color(1.0, 0.45, 0.45), 2.3)
+	_refresh_all_visuals()
 
 func _on_win_happened(payload: Dictionary) -> void:
 	if payload.has("rank1") and payload["rank1"] != null:

@@ -291,7 +291,7 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		ActionVFXManager.shake_camera(0.2, 0.25)
 		
 	# Setup player cards (supports both standard 2-player and 3-4 player Ludo podium)
-	var is_multi_ludo = (GameManager.match_players.size() > 2 or GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK]) and (GameManager.ludo_rank1 > 0 or winner_player_index > 2)
+	var is_multi_ludo = (GameManager.match_players.size() > 2 or GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO]) and (GameManager.ludo_rank1 > 0 or winner_player_index > 2)
 	var p1_data: Dictionary = {}
 	var p2_data: Dictionary = {}
 	if is_multi_ludo:

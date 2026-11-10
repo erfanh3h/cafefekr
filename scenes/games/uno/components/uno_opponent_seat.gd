@@ -105,14 +105,14 @@ func _build_ui() -> void:
 	_name_label.text = "حریف"
 	_name_label.clip_text = true
 	_name_label.add_theme_font_override("font", FontHekayat)
-	_name_label.add_theme_font_size_override("font_size", 20)
+	_name_label.add_theme_font_size_override("font_size", 23)
 	_name_label.add_theme_color_override("font_color", Color(0.96, 0.95, 0.90))
 	info_vbox.add_child(_name_label)
 
 	_turn_tag = Label.new()
 	_turn_tag.text = "در انتظار نوبت"
 	_turn_tag.add_theme_font_override("font", FontHekayat)
-	_turn_tag.add_theme_font_size_override("font_size", 14)
+	_turn_tag.add_theme_font_size_override("font_size", 17)
 	_turn_tag.add_theme_color_override("font_color", Color(0.68, 0.76, 0.72))
 	info_vbox.add_child(_turn_tag)
 
@@ -136,7 +136,7 @@ func _build_ui() -> void:
 	_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_count_label.add_theme_font_override("font", FontHekayat)
-	_count_label.add_theme_font_size_override("font_size", 24)
+	_count_label.add_theme_font_size_override("font_size", 27)
 	_count_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.55))
 	count_panel.add_child(_count_label)
 

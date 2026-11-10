@@ -89,7 +89,7 @@ func _build_ui() -> void:
 	_play_badge.focus_mode = Control.FOCUS_NONE
 	_play_badge.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_play_badge.add_theme_font_override("font", FontHekayat)
-	_play_badge.add_theme_font_size_override("font_size", 18)
+	_play_badge.add_theme_font_size_override("font_size", 21)
 	_play_badge.add_theme_color_override("font_color", Color(0.06, 0.12, 0.08))
 	var pb_style = StyleBoxFlat.new()
 	pb_style.bg_color = Color(0.32, 0.96, 0.56)
@@ -126,7 +126,7 @@ func _build_ui() -> void:
 	_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_status_label.add_theme_font_override("font", FontHekayat)
-	_status_label.add_theme_font_size_override("font_size", 15)
+	_status_label.add_theme_font_size_override("font_size", 18)
 	_status_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.72))
 	_status_tag.add_child(_status_label)
 
@@ -175,7 +175,7 @@ func _build_ui() -> void:
 	top_corner.text = format_corner_symbol(card_value)
 	top_corner.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	top_corner.add_theme_font_override("font", FontHekayat)
-	top_corner.add_theme_font_size_override("font_size", 22)
+	top_corner.add_theme_font_size_override("font_size", 25)
 	top_corner.add_theme_color_override("font_color", Color.WHITE if card_color != "yellow" else Color(0.14, 0.12, 0.05))
 	top_corner.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.65) if card_color != "yellow" else Color(1, 1, 1, 0.4))
 	top_corner.add_theme_constant_override("outline_size", 3)
@@ -213,7 +213,7 @@ func _build_ui() -> void:
 		lbl4.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl4.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		lbl4.add_theme_font_override("font", FontHekayat)
-		lbl4.add_theme_font_size_override("font_size", 42)
+		lbl4.add_theme_font_size_override("font_size", 45)
 		lbl4.add_theme_color_override("font_color", Color.WHITE)
 		lbl4.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.08, 0.95))
 		lbl4.add_theme_constant_override("outline_size", 6)
@@ -224,7 +224,7 @@ func _build_ui() -> void:
 		center_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		center_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		center_lbl.add_theme_font_override("font", FontHekayat)
-		center_lbl.add_theme_font_size_override("font_size", 44 if card_value.length() <= 2 else 34)
+		center_lbl.add_theme_font_size_override("font_size", 47 if card_value.length() <= 2 else 37)
 		var txt_col = base_col.darkened(0.08) if card_color != "yellow" else Color(0.78, 0.54, 0.02)
 		center_lbl.add_theme_color_override("font_color", txt_col)
 		center_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -240,7 +240,7 @@ func _build_ui() -> void:
 	sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	sub_lbl.add_theme_font_override("font", FontHekayat)
-	sub_lbl.add_theme_font_size_override("font_size", 14)
+	sub_lbl.add_theme_font_size_override("font_size", 17)
 	sub_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.92) if card_color != "yellow" else Color(0.14, 0.12, 0.05))
 	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bot_row.add_child(sub_lbl)
@@ -249,7 +249,7 @@ func _build_ui() -> void:
 	bot_corner.text = format_corner_symbol(card_value)
 	bot_corner.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	bot_corner.add_theme_font_override("font", FontHekayat)
-	bot_corner.add_theme_font_size_override("font_size", 18)
+	bot_corner.add_theme_font_size_override("font_size", 21)
 	bot_corner.add_theme_color_override("font_color", Color.WHITE if card_color != "yellow" else Color(0.14, 0.12, 0.05))
 	bot_corner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bot_row.add_child(bot_corner)
