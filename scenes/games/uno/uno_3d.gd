@@ -32,7 +32,7 @@ const UNO_COLOR_EMOJIS: Dictionary = {
 
 # --- Game State ---
 var my_hand: Array = []
-var hands_count: Dictionary = {}
+var hands_count: Dictionary = {"1": 7, "2": 7, "3": 7, "4": 7}
 var top_card: Dictionary = {}
 var current_color: String = "red"
 var direction: int = 1
@@ -89,10 +89,7 @@ func _ready() -> void:
 	_build_2d_hud()
 	super._ready()
 	_connect_uno_signals()
-	if not GameManager.last_reconnect_payload.is_empty():
-		var g_data = GameManager.last_reconnect_payload.get("game_data", {})
-		if typeof(g_data) == TYPE_DICTIONARY and g_data.get("game_type", "") == GameTypes.UNO:
-			on_reconnect_data(GameManager.last_reconnect_payload)
+	_refresh_all_visuals()
 
 func _exit_tree() -> void:
 	_disconnect_uno_signals()
@@ -105,6 +102,8 @@ func _connect_uno_signals() -> void:
 		NetworkManager.risk_event_received.connect(_on_uno_event_received)
 	if not NetworkManager.win_happened_received.is_connected(_on_win_happened):
 		NetworkManager.win_happened_received.connect(_on_win_happened)
+	if not NetworkManager.reconnect_data_received.is_connected(_on_internal_reconnect_data):
+		NetworkManager.reconnect_data_received.connect(_on_internal_reconnect_data)
 
 func _disconnect_uno_signals() -> void:
 	if NetworkManager.user_data_received.is_connected(_on_user_data_received):
@@ -113,6 +112,8 @@ func _disconnect_uno_signals() -> void:
 		NetworkManager.risk_event_received.disconnect(_on_uno_event_received)
 	if NetworkManager.win_happened_received.is_connected(_on_win_happened):
 		NetworkManager.win_happened_received.disconnect(_on_win_happened)
+	if NetworkManager.reconnect_data_received.is_connected(_on_internal_reconnect_data):
+		NetworkManager.reconnect_data_received.disconnect(_on_internal_reconnect_data)
 
 # ==============================================================================
 # 1. 3D TABLETOP ARENA
@@ -499,11 +500,11 @@ func _build_2d_hud() -> void:
 	hand_tray.add_child(tray_vbox)
 
 	var tray_header = HBoxContainer.new()
-	tray_header.alignment = BoxContainer.ALIGNMENT_SPACE_BETWEEN
 	tray_vbox.add_child(tray_header)
 
 	turn_hint_label = Label.new()
 	turn_hint_label.text = "در انتظار شروع بازی..."
+	turn_hint_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	turn_hint_label.add_theme_font_size_override("font_size", 17)
 	turn_hint_label.add_theme_color_override("font_color", Color(0.45, 0.95, 0.62))
 	tray_header.add_child(turn_hint_label)
@@ -624,7 +625,7 @@ func _is_card_playable(card: Dictionary) -> bool:
 		return false
 	var c_color = String(card.get("color", ""))
 	var c_value = String(card.get("value", ""))
-	if c_color == "wild":
+	if c_color == "wild" or c_value in ["wild", "wild_draw4"]:
 		return true
 	if c_color == current_color:
 		return true
@@ -677,6 +678,23 @@ func _to_persian_digits(input_str: String) -> String:
 		res = res.replace(eng[i], per[i])
 	return res
 
+func _update_hands_count_from_variant(raw: Variant) -> void:
+	if typeof(raw) == TYPE_ARRAY:
+		var arr: Array = raw
+		for i in range(arr.size()):
+			hands_count[str(i + 1)] = int(arr[i])
+	elif typeof(raw) == TYPE_DICTIONARY:
+		var d: Dictionary = raw
+		for k in d.keys():
+			hands_count[str(k)] = int(d[k])
+
+func _get_hands_count_array() -> Array:
+	var arr: Array = []
+	var total_p = clampi(max(2, GameManager.match_players.size()), 2, 4)
+	for i in range(1, total_p + 1):
+		arr.append(int(hands_count.get(str(i), hands_count.get(i, 7))))
+	return arr
+
 # ==============================================================================
 # 4. RENDERING & UI REFRESH
 # ==============================================================================
@@ -718,7 +736,7 @@ func _refresh_3d_centerpiece() -> void:
 		top_card_sub_3d.text = "رنگ: " + cname
 
 func _refresh_3d_opponents() -> void:
-	var total_p = max(2, GameManager.match_gamers.size())
+	var total_p = clampi(max(2, GameManager.match_players.size()), 2, 4)
 	players_count = total_p
 
 	for seat_idx in opponent_stacks_3d.keys():
@@ -891,7 +909,6 @@ func _create_hand_card_widget(card: Dictionary, playable: bool) -> Control:
 	vbox.offset_top = 6
 	vbox.offset_bottom = -6
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.alignment = BoxContainer.ALIGNMENT_SPACE_BETWEEN
 	btn.add_child(vbox)
 
 	# Top-left corner symbol
@@ -936,20 +953,22 @@ func _create_hand_card_widget(card: Dictionary, playable: bool) -> Control:
 	return wrapper
 
 func _refresh_top_header_badges() -> void:
-	var main_node = get_tree().root.get_node_or_null("Main")
-	if main_node and main_node.get("top_header") != null:
-		var th = main_node.top_header
-		if th and th.has_method("update_uno_hands"):
-			th.update_uno_hands(hands_count, rank1_player, rank2_player)
+	var hud = get_tree().get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(hud):
+		hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		var header = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
+		if is_instance_valid(header) and header.has_method("update_uno_hands"):
+			header.update_uno_hands(_get_hands_count_array(), rank1_player, rank2_player)
 
 func _get_player_short_name(pid: int) -> String:
 	if pid == my_player_index:
 		return "شما"
-	for g in GameManager.match_gamers:
-		if typeof(g) == TYPE_DICTIONARY and int(g.get("id", g.get("gamer_id", 0))) == pid:
-			var n = String(g.get("name", g.get("username", "")))
-			if not n.is_empty():
-				return n
+	var p_data = GameManager.get_player_data_by_gamer_id(pid)
+	if not p_data.is_empty():
+		var n = String(p_data.get("name", p_data.get("username", "")))
+		if not n.is_empty():
+			return n
 	return "بازیکن %s" % _to_persian_digits(str(pid))
 
 # ==============================================================================
@@ -968,9 +987,10 @@ func _on_hand_card_clicked(card_uid: int, card: Dictionary) -> void:
 		return
 
 	var c_color = String(card.get("color", ""))
-	if c_color == "wild":
+	var c_val = String(card.get("value", ""))
+	if c_color == "wild" or c_val in ["wild", "wild_draw4"]:
 		pending_wild_card = card.duplicate()
-		var is_plus4 = (String(card.get("value", "")) == "wild_draw4")
+		var is_plus4 = (c_val == "wild_draw4")
 		if wild_modal_card_label:
 			wild_modal_card_label.text = "🎨 رنگ بعدی را برای کارت «%s» انتخاب کنید:" % ("+۴ جریمه" if is_plus4 else "تغییر رنگ")
 		wild_modal_backdrop.visible = true
@@ -1027,26 +1047,39 @@ func _apply_uno_state_dict(data: Dictionary) -> void:
 		return
 	if data.has("my_hand") and typeof(data["my_hand"]) == TYPE_ARRAY:
 		my_hand = data["my_hand"].duplicate(true)
-	if data.has("hands_count") and typeof(data["hands_count"]) == TYPE_DICTIONARY:
-		hands_count = data["hands_count"].duplicate(true)
+	elif data.has("hand") and typeof(data["hand"]) == TYPE_ARRAY:
+		my_hand = data["hand"].duplicate(true)
+
+	if data.has("hands_count"):
+		_update_hands_count_from_variant(data["hands_count"])
+
 	if data.has("top_card") and typeof(data["top_card"]) == TYPE_DICTIONARY:
 		top_card = data["top_card"].duplicate(true)
-	if data.has("current_color"):
+	if data.has("current_color") and data["current_color"] != null:
 		current_color = String(data["current_color"])
-	if data.has("direction"):
+	if data.has("direction") and data["direction"] != null:
 		direction = int(data["direction"])
-	if data.has("deck_remaining"):
+	if data.has("deck_remaining") and data["deck_remaining"] != null:
 		deck_remaining = int(data["deck_remaining"])
+	elif data.has("draw_pile_count") and data["draw_pile_count"] != null:
+		deck_remaining = int(data["draw_pile_count"])
+
 	if data.has("has_drawn_this_turn"):
 		has_drawn_this_turn = bool(data["has_drawn_this_turn"])
 	if data.has("uno_called") and typeof(data["uno_called"]) == TYPE_DICTIONARY:
 		uno_called = data["uno_called"].duplicate(true)
 	if data.has("rank1") and data["rank1"] != null:
 		rank1_player = int(data["rank1"])
+		GameManager.ludo_rank1 = rank1_player
 	if data.has("rank2") and data["rank2"] != null:
 		rank2_player = int(data["rank2"])
-	if data.has("current_turn"):
+		GameManager.ludo_rank2 = rank2_player
+
+	if data.has("current_turn") and data["current_turn"] != null:
 		current_turn = int(data["current_turn"])
+		GameManager.current_turn = current_turn
+	elif data.has("turn") and data["turn"] != null:
+		current_turn = int(data["turn"])
 		GameManager.current_turn = current_turn
 
 	is_my_turn = (current_turn == GameManager.my_player_index) and GameManager.is_game_active
@@ -1054,9 +1087,13 @@ func _apply_uno_state_dict(data: Dictionary) -> void:
 	_refresh_all_visuals()
 
 func setup_board(game_data: Dictionary) -> void:
+	if game_data.has("gamers") and typeof(game_data["gamers"]) == TYPE_ARRAY:
+		GameManager.set_match_gamers(game_data["gamers"])
 	var inner = game_data.get("game_data", game_data)
 	if typeof(inner) == TYPE_DICTIONARY:
 		_apply_uno_state_dict(inner)
+	if game_data.has("user_data") and typeof(game_data["user_data"]) == TYPE_DICTIONARY:
+		_apply_uno_state_dict(game_data["user_data"])
 
 func _on_user_data_received(data: Dictionary) -> void:
 	_apply_uno_state_dict(data)
@@ -1074,9 +1111,13 @@ func on_turn_changed(turn: int, _is_me: bool) -> void:
 	_refresh_all_visuals()
 
 func on_reconnect_data(payload: Dictionary) -> void:
+	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
+		GameManager.set_match_gamers(payload["gamers"])
 	var g_data = payload.get("game_data", payload)
 	if typeof(g_data) == TYPE_DICTIONARY:
 		_apply_uno_state_dict(g_data)
+	if payload.has("user_data") and typeof(payload["user_data"]) == TYPE_DICTIONARY:
+		_apply_uno_state_dict(payload["user_data"])
 
 func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 	if typeof(payload) != TYPE_DICTIONARY:
@@ -1085,37 +1126,38 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 
 	match event_type:
 		Commands.Card_Played:
-			var pid = int(p.get("player", 0))
+			var pid = int(p.get("player", p.get("gamer_id", 0)))
 			var card: Dictionary = p.get("card", {}) if typeof(p.get("card")) == TYPE_DICTIONARY else {}
 			if not card.is_empty():
 				top_card = card.duplicate(true)
-			if p.has("current_color"):
+			if p.has("current_color") and p["current_color"] != null:
 				current_color = String(p["current_color"])
-			if p.has("direction"):
+			if p.has("direction") and p["direction"] != null:
 				direction = int(p["direction"])
-			if p.has("hands_count") and typeof(p["hands_count"]) == TYPE_DICTIONARY:
-				hands_count = p["hands_count"].duplicate(true)
-			if p.has("deck_remaining"):
+			if p.has("hands_count"):
+				_update_hands_count_from_variant(p["hands_count"])
+			if p.has("deck_remaining") and p["deck_remaining"] != null:
 				deck_remaining = int(p["deck_remaining"])
+			elif p.has("draw_pile_count") and p["draw_pile_count"] != null:
+				deck_remaining = int(p["draw_pile_count"])
 
-			# Describe the move in the toast banner
 			var actor_name = _get_player_short_name(pid)
 			var val_str = String(card.get("value", ""))
 			var cname = UNO_COLOR_NAMES_FA.get(current_color, "قرمز")
 			var msg = "%s کارت «%s» بازی کرد (رنگ: %s)" % [actor_name, _format_card_subtitle_text(val_str), cname]
 
 			var effect: Dictionary = p.get("effect", {}) if typeof(p.get("effect")) == TYPE_DICTIONARY else {}
-			var eff_type = String(effect.get("type", ""))
+			var eff_type = String(effect.get("type", val_str))
 			if eff_type == "skip":
-				var sk_p = int(effect.get("skipped_player", 0))
+				var sk_p = int(effect.get("skipped_player", p.get("skipped_player", 0)))
 				msg = "🚫 %s نوبت %s را سوزاند!" % [actor_name, _get_player_short_name(sk_p)]
 			elif eff_type == "reverse":
 				msg = "🔄 %s جهت چرخش بازی را برعکس کرد!" % actor_name
 			elif eff_type == "draw2":
-				var tp = int(effect.get("target_player", 0))
+				var tp = int(effect.get("target_player", p.get("penalty_target", 0)))
 				msg = "💥 %s به %s جریمه +۲ کارت زد!" % [actor_name, _get_player_short_name(tp)]
 			elif eff_type == "wild_draw4":
-				var tp4 = int(effect.get("target_player", 0))
+				var tp4 = int(effect.get("target_player", p.get("penalty_target", 0)))
 				msg = "🔥 %s کارت +۴ بازی کرد و رنگ را «%s» کرد! (%s ۴ کارت کشید)" % [actor_name, cname, _get_player_short_name(tp4)]
 			elif eff_type == "wild":
 				msg = "🎨 %s رنگ بازی را به «%s» تغییر داد!" % [actor_name, cname]
@@ -1125,36 +1167,46 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 			_refresh_all_visuals()
 
 		Commands.Draw_Result_Private:
+			if p.has("user_data") and typeof(p["user_data"]) == TYPE_DICTIONARY:
+				_apply_uno_state_dict(p["user_data"])
 			if p.has("my_hand") and typeof(p["my_hand"]) == TYPE_ARRAY:
 				my_hand = p["my_hand"].duplicate(true)
-			var playable = bool(p.get("playable", false))
+			elif p.has("hand") and typeof(p["hand"]) == TYPE_ARRAY:
+				my_hand = p["hand"].duplicate(true)
+
+			var turn_passed = bool(p.get("turn_passed", false))
+			var playable = bool(p.get("playable", p.get("drawn_is_playable", false))) and not turn_passed
 			has_drawn_this_turn = playable
-			is_board_locked = false
+			is_board_locked = not (is_my_turn and playable)
 			if action_toast_label:
 				if playable:
 					action_toast_label.text = "✨ کارت جدید قابل بازی است! می‌توانید بازی کنید یا «رد نوبت» بزنید."
 				else:
-					action_toast_label.text = "🃏 یک کارت از دسته کشیدید."
+					action_toast_label.text = "🃏 یک کارت کشیدید؛ کارت قابل بازی نبود و نوبت رد شد."
 			_refresh_all_visuals()
 
 		Commands.Draw_Result:
-			var d_pid = int(p.get("player", 0))
-			if p.has("hands_count") and typeof(p["hands_count"]) == TYPE_DICTIONARY:
-				hands_count = p["hands_count"].duplicate(true)
-			if p.has("deck_remaining"):
+			var d_pid = int(p.get("player", p.get("gamer_id", 0)))
+			if p.has("hands_count"):
+				_update_hands_count_from_variant(p["hands_count"])
+			if p.has("deck_remaining") and p["deck_remaining"] != null:
 				deck_remaining = int(p["deck_remaining"])
+			elif p.has("draw_pile_count") and p["draw_pile_count"] != null:
+				deck_remaining = int(p["draw_pile_count"])
 			if d_pid != my_player_index and action_toast_label:
 				action_toast_label.text = "🃏 %s یک کارت از دسته کشید." % _get_player_short_name(d_pid)
 			_refresh_all_visuals()
 
 		Commands.Pass_Turn:
-			var pass_pid = int(p.get("player", 0))
+			var pass_pid = int(p.get("player", p.get("gamer_id", 0)))
+			if p.has("hands_count"):
+				_update_hands_count_from_variant(p["hands_count"])
 			if action_toast_label:
 				action_toast_label.text = "⏭️ %s نوبت را رد کرد." % _get_player_short_name(pass_pid)
 			_refresh_all_visuals()
 
 		Commands.Uno_Called:
-			var u_pid = int(p.get("player", 0))
+			var u_pid = int(p.get("player", p.get("gamer_id", 0)))
 			uno_called[str(u_pid)] = true
 			if action_toast_label:
 				action_toast_label.text = "🔥 %s فریاد زد: اونو (UNO)!" % _get_player_short_name(u_pid)
@@ -1168,13 +1220,19 @@ func _on_win_happened(payload: Dictionary) -> void:
 		rank1_player = int(payload["rank1"])
 	elif payload.has("winner_id") and payload["winner_id"] != null:
 		rank1_player = int(payload["winner_id"])
+	elif payload.has("Winner") and payload["Winner"] != null:
+		rank1_player = int(payload["Winner"])
 	if payload.has("rank2") and payload["rank2"] != null:
 		rank2_player = int(payload["rank2"])
+	if rank1_player > 0:
+		GameManager.ludo_rank1 = rank1_player
+	if rank2_player > 0:
+		GameManager.ludo_rank2 = rank2_player
 	_refresh_all_visuals()
 
 func reset_board() -> void:
 	my_hand.clear()
-	hands_count.clear()
+	hands_count = {"1": 7, "2": 7, "3": 7, "4": 7}
 	top_card.clear()
 	has_drawn_this_turn = false
 	pending_wild_card.clear()

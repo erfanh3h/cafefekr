@@ -257,9 +257,19 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
 	update_uno_hands(_hand_counts, 0, 0)
 
-func update_uno_hands(hands_count: Array, rank1: int = 0, rank2: int = 0) -> void:
-	if not hands_count.is_empty():
-		_hand_counts = hands_count.duplicate()
+func update_uno_hands(hands_data: Variant, rank1: int = 0, rank2: int = 0) -> void:
+	if typeof(hands_data) == TYPE_ARRAY:
+		var arr: Array = hands_data
+		if not arr.is_empty():
+			_hand_counts = arr.duplicate()
+	elif typeof(hands_data) == TYPE_DICTIONARY:
+		var d: Dictionary = hands_data
+		if not d.is_empty():
+			for i in [1, 2, 3, 4]:
+				if d.has(str(i)):
+					_hand_counts[i - 1] = int(d[str(i)])
+				elif d.has(i):
+					_hand_counts[i - 1] = int(d[i])
 	var total_players = _get_total_players()
 	var is_compact = (total_players > 2)
 	var score_labels = {
