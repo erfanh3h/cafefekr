@@ -88,6 +88,7 @@ var available_games = [
 	GameTypes.YATZY,
 	GameTypes.LUDO,
 	GameTypes.RISK,
+	GameTypes.UNO,
 	GameTypes.BATTLESHIP,
 	GameTypes.FEKRBEKR,
 	GameTypes.RPC,
@@ -353,15 +354,9 @@ func _update_selected_game_display() -> void:
 	if not is_instance_valid(lbl_selected_game) or not is_instance_valid(selected_game_icon):
 		return
 	lbl_selected_game.text = GameTypes.get_display_name_fa(selected_create_game_type)
-	var icon_path = "res://assets/images/games/%s.png" % selected_create_game_type.to_lower()
-	if not ResourceLoader.exists(icon_path):
-		icon_path = "res://assets/images/games/%s.jpg" % selected_create_game_type.to_lower()
-	if ResourceLoader.exists(icon_path):
-		selected_game_icon.texture = load(icon_path)
-	else:
-		selected_game_icon.texture = load("res://assets/icons/General/lobby.png")
+	selected_game_icon.texture = _get_game_texture(selected_create_game_type)
 	if is_instance_valid(player_count_container):
-		var is_multi = (selected_create_game_type in [GameTypes.LUDO, GameTypes.RISK])
+		var is_multi = (selected_create_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO])
 		player_count_container.visible = is_multi
 		if not is_multi:
 			selected_create_player_count = 2
@@ -379,7 +374,15 @@ func _get_game_texture(g_type: String) -> Texture2D:
 	var tex: Texture2D = null
 	if ResourceLoader.exists(icon_path):
 		tex = load(icon_path)
-	else:
+	if not tex:
+		for ext in ["png", "jpg"]:
+			var raw_path = ProjectSettings.globalize_path("res://assets/images/games/%s.%s" % [g_type.to_lower(), ext])
+			if FileAccess.file_exists(raw_path):
+				var img = Image.load_from_file(raw_path)
+				if img and not img.is_empty():
+					tex = ImageTexture.create_from_image(img)
+					break
+	if not tex:
 		tex = load("res://assets/icons/General/lobby.png")
 	_cached_game_textures[g_type] = tex
 	return tex
@@ -528,7 +531,7 @@ func _create_game_card(g_type: String) -> Control:
 	p_style.content_margin_bottom = 4
 	mode_pill.add_theme_stylebox_override("panel", p_style)
 	var mode_lbl = Label.new()
-	mode_lbl.text = "۲ تا ۴ نفره" if g_type in [GameTypes.LUDO, GameTypes.RISK] else "۲ نفره"
+	mode_lbl.text = "۲ تا ۴ نفره" if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO] else "۲ نفره"
 	mode_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 	mode_lbl.add_theme_font_size_override("font_size", 18)
 	mode_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
@@ -860,7 +863,7 @@ func _on_create_pressed() -> void:
 	var r_pwd = input_room_password.text.strip_edges() if is_instance_valid(input_room_password) else ""
 	
 	lbl_status.text = "در حال ساخت اتاق..."
-	var l_count = selected_create_player_count if g_type in [GameTypes.LUDO, GameTypes.RISK] else 2
+	var l_count = selected_create_player_count if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO] else 2
 	var payload = {
 		"id": Commands.Lobby_Create,
 		"data": {

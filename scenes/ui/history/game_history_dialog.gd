@@ -192,6 +192,8 @@ static func _get_game_icon_texture(game_type: String) -> Texture2D:
 		norm = "sudoku"
 	elif norm == "risk" or norm == "riskstrike" or norm == "ریسک" or norm == "ریسکاسترایک":
 		norm = "risk"
+	elif norm == "uno" or norm == "اونو":
+		norm = "uno"
 	
 	var png_path = "res://assets/images/games/%s.png" % norm
 	if ResourceLoader.exists(png_path):
@@ -199,6 +201,12 @@ static func _get_game_icon_texture(game_type: String) -> Texture2D:
 	var jpg_path = "res://assets/images/games/%s.jpg" % norm
 	if ResourceLoader.exists(jpg_path):
 		return load(jpg_path)
+	for ext in ["png", "jpg"]:
+		var raw_path = ProjectSettings.globalize_path("res://assets/images/games/%s.%s" % [norm, ext])
+		if FileAccess.file_exists(raw_path):
+			var img = Image.load_from_file(raw_path)
+			if img and not img.is_empty():
+				return ImageTexture.create_from_image(img)
 	return load("res://assets/images/games/tictactoe.png")
 
 static func _get_mode_badge_texture(mode_raw: String) -> Texture2D:

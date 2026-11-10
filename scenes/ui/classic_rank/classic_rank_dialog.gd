@@ -44,6 +44,7 @@ const AVAILABLE_GAMES: Array[String] = [
 	GameTypes.YATZY,
 	GameTypes.LUDO,
 	GameTypes.RISK,
+	GameTypes.UNO,
 	GameTypes.BATTLESHIP,
 	GameTypes.FEKRBEKR,
 	GameTypes.RPC,
@@ -67,7 +68,15 @@ func _get_game_texture(g_type: String) -> Texture2D:
 	var tex: Texture2D = null
 	if ResourceLoader.exists(icon_path):
 		tex = load(icon_path)
-	else:
+	if not tex:
+		for ext in ["png", "jpg"]:
+			var raw_path = ProjectSettings.globalize_path("res://assets/images/games/%s.%s" % [g_type.to_lower(), ext])
+			if FileAccess.file_exists(raw_path):
+				var img = Image.load_from_file(raw_path)
+				if img and not img.is_empty():
+					tex = ImageTexture.create_from_image(img)
+					break
+	if not tex:
 		tex = load("res://assets/icons/General/lobby.png")
 	_cached_game_textures[g_type] = tex
 	return tex

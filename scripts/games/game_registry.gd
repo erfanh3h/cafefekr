@@ -360,6 +360,21 @@ static var _registry: Dictionary = {
 		"min_players": 2,
 		"max_players": 4,
 		"is_3d": true
+	},
+	GameTypes.UNO: {
+		"id": GameTypes.UNO,
+		"name_fa": "اونو",
+		"narrative": "رقص رنگ‌ها و کارت‌های غافلگیرکننده در بازی پرهیجان اونو؛ جایی که یک تغییر رنگ یا کارت +۴ در لحظه آخر معادله را دگرگون می‌سازد!",
+		"board_scene": "res://scenes/games/uno/uno_3d.tscn",
+		"top_header_scene": "res://scenes/games/uno/uno_top_header.tscn",
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 20.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/uno.png",
+		"min_players": 2,
+		"max_players": 4,
+		"is_3d": true
 	}
 }
 
@@ -464,7 +479,7 @@ static func is_cumulative_score(game_type: String = "") -> bool:
 
 static func get_difficulty(game_type: String) -> String:
 	match normalize_type(game_type):
-		GameTypes.TIC_TAC_TOE, GameTypes.RPC, GameTypes.DOTBOX, GameTypes.LUDO, GameTypes.MNUMBERS:
+		GameTypes.TIC_TAC_TOE, GameTypes.RPC, GameTypes.DOTBOX, GameTypes.LUDO, GameTypes.MNUMBERS, GameTypes.UNO:
 			return "easy"
 		GameTypes.FEKRBEKR, GameTypes.PENTAGO, GameTypes.MSWEEPER, GameTypes.BATTLESHIP, \
 		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY:
@@ -501,11 +516,11 @@ static func get_lobby_xp(game_type: String, is_win: bool, is_draw: bool) -> int:
 		return 14 if is_win else (7 if is_draw else 3)
 
 static func get_multiplayer_rank_games() -> Array[String]:
-	return [GameTypes.LUDO, GameTypes.RISK]
+	return [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO]
 
 static func is_multiplayer_rank_supported(game_type: String) -> bool:
 	var norm = normalize_type(game_type)
-	return norm in [GameTypes.LUDO, GameTypes.RISK]
+	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO]
 
 static func get_multi_rank_xp(_game_type: String, is_rank1: bool, is_rank2: bool = false) -> int:
 	if is_rank1:

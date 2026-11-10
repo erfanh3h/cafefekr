@@ -22,6 +22,7 @@ const MILL = "Mill"
 const LUDO = "Ludo"
 const BACKGAMMON = "BackGammon"
 const RISK = "Risk"
+const UNO = "Uno"
 
 static func get_display_name_fa(game_type: String) -> String:
 	match game_type:
@@ -45,4 +46,6 @@ static func get_display_name_fa(game_type: String) -> String:
 		LUDO: return "منچ"
 		BACKGAMMON: return "تخته نرد"
 		RISK: return "ریسک استرایک"
+		UNO: return "اونو"
 		_: return game_type
+

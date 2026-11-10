@@ -500,7 +500,8 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				risk_event_received.emit(cmd_id, payload)
 		Commands.Draw_Result, Commands.Draw_Result_Private, Commands.Declare_Attack, \
 		Commands.AttackerArmy, Commands.DefenderArmy, Commands.QuestArmy, \
-		Commands.Attack, Commands.Pass_Turn, Commands.Strategy_Result, Commands.Cancel_Attack:
+		Commands.Attack, Commands.Pass_Turn, Commands.Strategy_Result, Commands.Cancel_Attack, \
+		Commands.Card_Played, Commands.Uno_Called:
 			var r_payload: Dictionary = payload if typeof(payload) == TYPE_DICTIONARY else {"value": payload}
 			if cmd_id in [Commands.Declare_Attack, Commands.Attack, Commands.Pass_Turn, Commands.Strategy_Result, Commands.Cancel_Attack] and r_payload.has("turn") and r_payload["turn"] != null:
 				var next_t = int(r_payload["turn"]) if typeof(r_payload["turn"]) in [TYPE_INT, TYPE_FLOAT] else str(r_payload["turn"]).to_int()

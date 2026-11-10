@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://uno3dscene0001"]
+
+[ext_resource type="Script" path="res://scenes/games/uno/uno_3d.gd" id="1_uno_script"]
+
+[node name="Uno3D" type="Node3D"]
+script = ExtResource("1_uno_script")
