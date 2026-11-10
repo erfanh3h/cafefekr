@@ -1,10 +1,15 @@
 class_name Uno3D
 extends "res://scripts/games/base_game_board.gd"
 
-# Uno3D - Gamer-Friendly, Clean 2-4 Player UNO Game Scene
-# Combines a tactile 3D cafe table centerpiece (Draw Deck, Top Discard Card, Active Color Ring,
-# Direction Indicator, and Opponent Card Stacks) with a crystal-clear, responsive 2D Card Dock
-# so players can read and play their cards effortlessly within 1 second.
+# Uno3D - Luxury Cafe Fekr 2-4 Player UNO Game Scene
+# Built to true Cafe Table physical scale (1.10m diameter arena on the 1.20m table mat)
+# with HUD overlay protection so top/bottom panels never appear over StartGameOverlay or GameResultDialog.
+
+const FontHekayat: Font = preload("res://assets/fonts/hekayat.ttf")
+
+@export var default_three_quarter_view: bool = true
+@export var camera_pitch: float = -1.06    # ~ -61 deg elevated tabletop perspective
+@export var camera_distance: float = 2.75  # Ideal portrait framing for 1.10m UNO arena
 
 const UNO_COLORS: Dictionary = {
 	"red": Color(0.92, 0.20, 0.22),
@@ -43,17 +48,24 @@ var rank1_player: int = 0
 var rank2_player: int = 0
 var players_count: int = 2
 var pending_wild_card: Dictionary = {}
+var _match_started: bool = false
+var _zoom_preset_idx: int = 0
 
 # --- 3D Nodes ---
 var board_root: Node3D
 var color_ring_mesh: MeshInstance3D
 var color_ring_mat: StandardMaterial3D
 var direction_label_3d: Label3D
+var discard_pile_node: Node3D
 var top_card_mesh: MeshInstance3D
 var top_card_mat: StandardMaterial3D
+var top_card_oval_mat: StandardMaterial3D
 var top_card_value_3d: Label3D
+var top_card_corner_tl_3d: Label3D
 var top_card_sub_3d: Label3D
 var deck_stack_node: Node3D
+var deck_glow_mesh: MeshInstance3D
+var deck_glow_mat: StandardMaterial3D
 var deck_count_3d: Label3D
 var opponent_stacks_3d: Dictionary = {} # seat_idx -> Node3D
 
@@ -66,6 +78,7 @@ var color_badge_style: StyleBoxFlat
 var color_badge_label: Label
 var direction_badge_label: Label
 var deck_badge_label: Label
+var zoom_cycle_btn: Button
 var turn_hint_label: Label
 var action_toast_label: Label
 
@@ -90,9 +103,17 @@ func _ready() -> void:
 	super._ready()
 	_connect_uno_signals()
 	_refresh_all_visuals()
+	_update_hud_visibility()
+
+func _process(_delta: float) -> void:
+	_update_hud_visibility()
 
 func _exit_tree() -> void:
 	_disconnect_uno_signals()
+	if hud_root and is_instance_valid(hud_root):
+		hud_root.queue_free()
+	if hud_layer and is_instance_valid(hud_layer):
+		hud_layer.queue_free()
 	super._exit_tree()
 
 func _connect_uno_signals() -> void:
@@ -116,123 +137,230 @@ func _disconnect_uno_signals() -> void:
 		NetworkManager.reconnect_data_received.disconnect(_on_internal_reconnect_data)
 
 # ==============================================================================
-# 1. 3D TABLETOP ARENA
+# HUD VISIBILITY & OVERLAY PROTECTION (Prevents showing boxes over Start/End dialogs)
 # ==============================================================================
+
+func _is_hud_overlay_blocking() -> bool:
+	if not _match_started or not GameManager.is_game_active:
+		return true
+	var tree = get_tree()
+	if not tree:
+		return false
+	var hud = tree.get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(hud):
+		hud = tree.root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
+			return true
+		var start_ov = hud.get_node_or_null("StartGameOverlay")
+		if is_instance_valid(start_ov) and start_ov.visible:
+			return true
+		var res_dlg = hud.get_node_or_null("GameResultDialog")
+		if is_instance_valid(res_dlg) and res_dlg.visible:
+			return true
+	return false
+
+func _update_hud_visibility() -> void:
+	if not is_instance_valid(hud_root):
+		return
+	var tree = get_tree()
+	if tree:
+		var hud = tree.get_first_node_in_group("base_game_hud")
+		if not is_instance_valid(hud):
+			hud = tree.root.find_child("BaseGameHUD", true, false)
+		if is_instance_valid(hud) and hud_root.get_parent() != hud:
+			if hud_root.get_parent():
+				hud_root.get_parent().remove_child(hud_root)
+			hud.add_child(hud_root)
+			var start_ov = hud.get_node_or_null("StartGameOverlay")
+			if is_instance_valid(start_ov):
+				hud.move_child(hud_root, start_ov.get_index())
+			if is_instance_valid(hud_layer):
+				hud_layer.queue_free()
+				hud_layer = null
+	var should_show = not _is_hud_overlay_blocking()
+	if hud_root.visible != should_show:
+		hud_root.visible = should_show
+
+# ==============================================================================
+# 1. 3D TABLETOP ARENA (True Cafe Table Scale: 1.08m diameter, y_base = 0.064m)
+# ==============================================================================
+
+func _create_label_3d(text_str: String, f_size: int = 36, col: Color = Color.WHITE, p_size: float = 0.0012) -> Label3D:
+	var lbl = Label3D.new()
+	lbl.font = FontHekayat
+	lbl.text = text_str
+	lbl.font_size = f_size
+	lbl.pixel_size = p_size
+	lbl.modulate = col
+	lbl.outline_size = 10
+	lbl.outline_modulate = Color(0.04, 0.05, 0.08, 0.96)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return lbl
 
 func _build_3d_arena() -> void:
 	board_root = Node3D.new()
 	board_root.name = "UnoBoardRoot"
 	add_child(board_root)
 
-	# 1. Circular Mahogany & Velvet Felt Table Mat
+	var y_base: float = 0.064
+
+	# 1. Luxury Circular Mahogany & Brushed Brass Table Plinth (1.08m diameter)
 	var outer_rim = MeshInstance3D.new()
 	var outer_cyl = CylinderMesh.new()
-	outer_cyl.top_radius = 4.6
-	outer_cyl.bottom_radius = 4.75
-	outer_cyl.height = 0.16
-	outer_cyl.radial_segments = 48
+	outer_cyl.top_radius = 0.54
+	outer_cyl.bottom_radius = 0.56
+	outer_cyl.height = 0.016
+	outer_cyl.radial_segments = 36
 	outer_rim.mesh = outer_cyl
-	outer_rim.position = Vector3(0, 0.08, 0)
+	outer_rim.position = Vector3(0.0, y_base + 0.008, 0.0)
 	var rim_mat = StandardMaterial3D.new()
-	rim_mat.albedo_color = Color(0.16, 0.10, 0.08)
-	rim_mat.roughness = 0.35
-	rim_mat.metallic = 0.2
+	rim_mat.albedo_color = Color(0.22, 0.11, 0.07)
+	rim_mat.roughness = 0.34
+	rim_mat.metallic = 0.12
 	outer_rim.material_override = rim_mat
 	board_root.add_child(outer_rim)
 
+	# Brushed Brass Bezel Ring around the Arena
+	var brass_ring = MeshInstance3D.new()
+	var brass_torus = TorusMesh.new()
+	brass_torus.inner_radius = 0.505
+	brass_torus.outer_radius = 0.525
+	brass_torus.rings = 36
+	brass_torus.ring_segments = 16
+	brass_ring.mesh = brass_torus
+	brass_ring.position = Vector3(0.0, y_base + 0.016, 0.0)
+	var brass_mat = StandardMaterial3D.new()
+	brass_mat.albedo_color = Color(0.85, 0.68, 0.30)
+	brass_mat.metallic = 0.82
+	brass_mat.roughness = 0.24
+	brass_ring.material_override = brass_mat
+	board_root.add_child(brass_ring)
+
+	# Deep Royal Navy-Emerald Velvet Felt Surface
 	var felt_mesh = MeshInstance3D.new()
 	var felt_cyl = CylinderMesh.new()
-	felt_cyl.top_radius = 4.35
-	felt_cyl.bottom_radius = 4.35
-	felt_cyl.height = 0.18
-	felt_cyl.radial_segments = 48
+	felt_cyl.top_radius = 0.508
+	felt_cyl.bottom_radius = 0.508
+	felt_cyl.height = 0.006
+	felt_cyl.radial_segments = 36
 	felt_mesh.mesh = felt_cyl
-	felt_mesh.position = Vector3(0, 0.09, 0)
+	felt_mesh.position = Vector3(0.0, y_base + 0.015, 0.0)
 	var felt_mat = StandardMaterial3D.new()
-	felt_mat.albedo_color = Color(0.09, 0.13, 0.20)
-	felt_mat.roughness = 0.85
+	felt_mat.albedo_color = Color(0.08, 0.13, 0.20)
+	felt_mat.roughness = 0.88
 	felt_mesh.material_override = felt_mat
 	board_root.add_child(felt_mesh)
+
+	# Subtle Inner Gold Pinstripe Ring on Felt
+	var inner_gold_ring = MeshInstance3D.new()
+	var ig_torus = TorusMesh.new()
+	ig_torus.inner_radius = 0.275
+	ig_torus.outer_radius = 0.283
+	ig_torus.rings = 32
+	ig_torus.ring_segments = 12
+	inner_gold_ring.mesh = ig_torus
+	inner_gold_ring.position = Vector3(0.0, y_base + 0.019, -0.015)
+	inner_gold_ring.material_override = brass_mat
+	board_root.add_child(inner_gold_ring)
 
 	# 2. Glowing Active Color Ring in the Center
 	color_ring_mesh = MeshInstance3D.new()
 	var torus = TorusMesh.new()
-	torus.inner_radius = 2.05
-	torus.outer_radius = 2.32
-	torus.rings = 48
-	torus.ring_segments = 24
+	torus.inner_radius = 0.232
+	torus.outer_radius = 0.262
+	torus.rings = 36
+	torus.ring_segments = 16
 	color_ring_mesh.mesh = torus
-	color_ring_mesh.position = Vector3(0, 0.20, -0.25)
+	color_ring_mesh.position = Vector3(0.0, y_base + 0.020, -0.015)
 	color_ring_mat = StandardMaterial3D.new()
 	color_ring_mat.albedo_color = UNO_COLORS["red"]
 	color_ring_mat.emission_enabled = true
 	color_ring_mat.emission = UNO_COLORS["red"]
-	color_ring_mat.emission_energy_multiplier = 0.85
-	color_ring_mat.roughness = 0.25
+	color_ring_mat.emission_energy_multiplier = 0.95
+	color_ring_mat.roughness = 0.22
 	color_ring_mesh.material_override = color_ring_mat
 	board_root.add_child(color_ring_mesh)
 
-	# Direction Label in 3D Center
-	direction_label_3d = Label3D.new()
-	direction_label_3d.text = "↻ جهت بازی: ساعتگرد"
-	direction_label_3d.font_size = 46
-	direction_label_3d.outline_size = 10
-	direction_label_3d.modulate = Color(0.95, 0.92, 0.82)
-	direction_label_3d.position = Vector3(0, 0.24, 1.55)
-	direction_label_3d.rotation_degrees = Vector3(-90, 0, 0)
+	# Direction Label in 3D Center (Front of the ring)
+	direction_label_3d = _create_label_3d("↻ جهت بازی: ساعتگرد", 30, Color(0.98, 0.93, 0.78), 0.00115)
+	direction_label_3d.position = Vector3(0.0, y_base + 0.024, 0.205)
+	direction_label_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	board_root.add_child(direction_label_3d)
 
-	# 3. 3D Draw Pile (Left of Center) - Also clickable in 3D!
+	# 3. 3D Draw Pile (Left of Center) - Layered Card Stack + Clickable StaticBody3D
 	deck_stack_node = Node3D.new()
-	deck_stack_node.position = Vector3(-1.05, 0.20, -0.25)
+	deck_stack_node.position = Vector3(-0.115, y_base + 0.019, -0.025)
 	board_root.add_child(deck_stack_node)
 
-	var deck_box = MeshInstance3D.new()
-	var d_mesh = BoxMesh.new()
-	d_mesh.size = Vector3(1.35, 0.28, 1.95)
-	deck_box.mesh = d_mesh
-	deck_box.position = Vector3(0, 0.14, 0)
-	var d_mat = StandardMaterial3D.new()
-	d_mat.albedo_color = Color(0.14, 0.14, 0.20)
-	d_mat.roughness = 0.4
-	deck_box.material_override = d_mat
-	deck_stack_node.add_child(deck_box)
+	# Golden Pulse Highlight Frame under Draw Pile (lights up when player needs to draw)
+	deck_glow_mesh = MeshInstance3D.new()
+	var dg_box = BoxMesh.new()
+	dg_box.size = Vector3(0.158, 0.003, 0.222)
+	deck_glow_mesh.mesh = dg_box
+	deck_glow_mesh.position = Vector3(0.0, 0.002, 0.0)
+	deck_glow_mat = StandardMaterial3D.new()
+	deck_glow_mat.albedo_color = Color(0.35, 0.75, 1.0, 0.85)
+	deck_glow_mat.emission_enabled = true
+	deck_glow_mat.emission = Color(0.25, 0.68, 1.0)
+	deck_glow_mat.emission_energy_multiplier = 1.4
+	deck_glow_mesh.material_override = deck_glow_mat
+	deck_glow_mesh.visible = false
+	deck_stack_node.add_child(deck_glow_mesh)
 
+	# Layered Paper Card Stack
+	var paper_mat = StandardMaterial3D.new()
+	paper_mat.albedo_color = Color(0.95, 0.93, 0.88)
+	paper_mat.roughness = 0.45
+
+	var dark_back_mat = StandardMaterial3D.new()
+	dark_back_mat.albedo_color = Color(0.12, 0.13, 0.18)
+	dark_back_mat.roughness = 0.30
+
+	for layer_i in range(6):
+		var slab = MeshInstance3D.new()
+		var s_mesh = BoxMesh.new()
+		s_mesh.size = Vector3(0.136, 0.0045, 0.196)
+		slab.mesh = s_mesh
+		slab.position = Vector3(0.0, 0.004 + float(layer_i) * 0.005, 0.0)
+		slab.rotation_degrees = Vector3(0.0, sin(float(layer_i) * 1.7) * 1.8, 0.0)
+		slab.material_override = dark_back_mat if layer_i == 5 else paper_mat
+		deck_stack_node.add_child(slab)
+
+	# Red Oval Accent on Top of Draw Deck
 	var deck_top_accent = MeshInstance3D.new()
-	var dt_mesh = BoxMesh.new()
-	dt_mesh.size = Vector3(1.18, 0.02, 1.76)
-	deck_top_accent.mesh = dt_mesh
-	deck_top_accent.position = Vector3(0, 0.29, 0)
+	var dt_cyl = CylinderMesh.new()
+	dt_cyl.top_radius = 0.052
+	dt_cyl.bottom_radius = 0.052
+	dt_cyl.height = 0.002
+	dt_cyl.radial_segments = 24
+	deck_top_accent.mesh = dt_cyl
+	deck_top_accent.scale = Vector3(1.0, 1.0, 1.42)
+	deck_top_accent.position = Vector3(0.0, 0.033, -0.008)
+	deck_top_accent.rotation_degrees = Vector3(0.0, -18.0, 0.0)
 	var dt_mat = StandardMaterial3D.new()
-	dt_mat.albedo_color = Color(0.85, 0.18, 0.22)
-	dt_mat.roughness = 0.3
+	dt_mat.albedo_color = Color(0.88, 0.18, 0.22)
+	dt_mat.roughness = 0.28
 	deck_top_accent.material_override = dt_mat
 	deck_stack_node.add_child(deck_top_accent)
 
-	var deck_title_3d = Label3D.new()
-	deck_title_3d.text = "UNO"
-	deck_title_3d.font_size = 56
-	deck_title_3d.outline_size = 12
-	deck_title_3d.modulate = Color(1.0, 0.86, 0.22)
-	deck_title_3d.position = Vector3(0, 0.32, -0.18)
-	deck_title_3d.rotation_degrees = Vector3(-90, 0, -15)
+	var deck_title_3d = _create_label_3d("UNO", 36, Color(1.0, 0.86, 0.22), 0.0011)
+	deck_title_3d.position = Vector3(0.0, 0.036, -0.008)
+	deck_title_3d.rotation_degrees = Vector3(-90.0, 0.0, -14.0)
 	deck_stack_node.add_child(deck_title_3d)
 
-	deck_count_3d = Label3D.new()
-	deck_count_3d.text = "۸۰ کارت"
-	deck_count_3d.font_size = 38
-	deck_count_3d.outline_size = 8
-	deck_count_3d.modulate = Color.WHITE
-	deck_count_3d.position = Vector3(0, 0.32, 0.48)
-	deck_count_3d.rotation_degrees = Vector3(-90, 0, 0)
+	deck_count_3d = _create_label_3d("۸۰ کارت", 26, Color.WHITE, 0.0011)
+	deck_count_3d.position = Vector3(0.0, 0.036, 0.068)
+	deck_count_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	deck_stack_node.add_child(deck_count_3d)
 
 	var deck_body = StaticBody3D.new()
 	var deck_col = CollisionShape3D.new()
 	var deck_shape = BoxShape3D.new()
-	deck_shape.size = Vector3(1.5, 0.5, 2.1)
+	deck_shape.size = Vector3(0.16, 0.06, 0.22)
 	deck_col.shape = deck_shape
-	deck_col.position = Vector3(0, 0.2, 0)
+	deck_col.position = Vector3(0.0, 0.025, 0.0)
 	deck_body.add_child(deck_col)
 	deck_body.input_event.connect(func(_cam, event, _pos, _norm, _idx):
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -241,173 +369,241 @@ func _build_3d_arena() -> void:
 	deck_stack_node.add_child(deck_body)
 
 	# 4. 3D Top Discard Card (Right of Center)
-	var discard_node = Node3D.new()
-	discard_node.position = Vector3(0.95, 0.20, -0.25)
-	board_root.add_child(discard_node)
+	discard_pile_node = Node3D.new()
+	discard_pile_node.position = Vector3(0.115, y_base + 0.019, -0.025)
+	board_root.add_child(discard_pile_node)
+
+	# Subtle previously played cards underneath for 3D depth
+	for u_idx in range(2):
+		var under_card = MeshInstance3D.new()
+		var uc_mesh = BoxMesh.new()
+		uc_mesh.size = Vector3(0.138, 0.003, 0.198)
+		under_card.mesh = uc_mesh
+		under_card.position = Vector3(0.0, 0.002 + float(u_idx) * 0.0035, 0.0)
+		under_card.rotation_degrees = Vector3(0.0, -10.0 + float(u_idx) * 16.0, 0.0)
+		under_card.material_override = paper_mat
+		discard_pile_node.add_child(under_card)
 
 	var card_base = MeshInstance3D.new()
 	var cb_mesh = BoxMesh.new()
-	cb_mesh.size = Vector3(1.50, 0.06, 2.12)
+	cb_mesh.size = Vector3(0.144, 0.004, 0.204)
 	card_base.mesh = cb_mesh
-	card_base.position = Vector3(0, 0.03, 0)
+	card_base.position = Vector3(0.0, 0.010, 0.0)
 	var cb_mat = StandardMaterial3D.new()
 	cb_mat.albedo_color = Color.WHITE
-	cb_mat.roughness = 0.25
+	cb_mat.roughness = 0.22
 	card_base.material_override = cb_mat
-	discard_node.add_child(card_base)
+	discard_pile_node.add_child(card_base)
 
 	top_card_mesh = MeshInstance3D.new()
 	var tc_mesh = BoxMesh.new()
-	tc_mesh.size = Vector3(1.34, 0.07, 1.94)
+	tc_mesh.size = Vector3(0.130, 0.0045, 0.190)
 	top_card_mesh.mesh = tc_mesh
-	top_card_mesh.position = Vector3(0, 0.04, 0)
+	top_card_mesh.position = Vector3(0.0, 0.0115, 0.0)
 	top_card_mat = StandardMaterial3D.new()
 	top_card_mat.albedo_color = UNO_COLORS["red"]
-	top_card_mat.roughness = 0.28
+	top_card_mat.roughness = 0.25
 	top_card_mesh.material_override = top_card_mat
-	discard_node.add_child(top_card_mesh)
+	discard_pile_node.add_child(top_card_mesh)
 
-	top_card_value_3d = Label3D.new()
-	top_card_value_3d.text = "۷"
-	top_card_value_3d.font_size = 96
-	top_card_value_3d.outline_size = 16
-	top_card_value_3d.modulate = Color.WHITE
-	top_card_value_3d.position = Vector3(0, 0.10, -0.10)
-	top_card_value_3d.rotation_degrees = Vector3(-90, 0, 0)
-	discard_node.add_child(top_card_value_3d)
+	# White Inner Oval on 3D Top Card
+	var top_oval = MeshInstance3D.new()
+	var to_cyl = CylinderMesh.new()
+	to_cyl.top_radius = 0.050
+	to_cyl.bottom_radius = 0.050
+	to_cyl.height = 0.0015
+	to_cyl.radial_segments = 24
+	top_oval.mesh = to_cyl
+	top_oval.scale = Vector3(1.0, 1.0, 1.38)
+	top_oval.position = Vector3(0.0, 0.0142, -0.006)
+	top_oval.rotation_degrees = Vector3(0.0, -14.0, 0.0)
+	top_card_oval_mat = StandardMaterial3D.new()
+	top_card_oval_mat.albedo_color = Color(0.98, 0.98, 0.98)
+	top_card_oval_mat.roughness = 0.20
+	top_oval.material_override = top_card_oval_mat
+	discard_pile_node.add_child(top_oval)
 
-	top_card_sub_3d = Label3D.new()
-	top_card_sub_3d.text = "قرمز"
-	top_card_sub_3d.font_size = 40
-	top_card_sub_3d.outline_size = 10
-	top_card_sub_3d.modulate = Color(1.0, 0.96, 0.85)
-	top_card_sub_3d.position = Vector3(0, 0.10, 0.62)
-	top_card_sub_3d.rotation_degrees = Vector3(-90, 0, 0)
-	discard_node.add_child(top_card_sub_3d)
+	top_card_corner_tl_3d = _create_label_3d("۷", 22, Color.WHITE, 0.00105)
+	top_card_corner_tl_3d.position = Vector3(-0.044, 0.016, -0.072)
+	top_card_corner_tl_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	discard_pile_node.add_child(top_card_corner_tl_3d)
 
-	# 5. Opponent 3D Card Stacks around the Top/Sides of the Table
-	# Seat 1 = Top, Seat 2 = Left, Seat 3 = Right
-	var opp_positions = {
-		1: Vector3(0.0, 0.22, -3.25),
-		2: Vector3(-3.35, 0.22, -0.35),
-		3: Vector3(3.35, 0.22, -0.35)
+	top_card_value_3d = _create_label_3d("۷", 54, UNO_COLORS["red"], 0.0012)
+	top_card_value_3d.outline_size = 6
+	top_card_value_3d.outline_modulate = Color(1.0, 1.0, 1.0, 0.95)
+	top_card_value_3d.position = Vector3(0.0, 0.0165, -0.006)
+	top_card_value_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	discard_pile_node.add_child(top_card_value_3d)
+
+	top_card_sub_3d = _create_label_3d("رنگ: قرمز", 24, Color(1.0, 0.96, 0.85), 0.00105)
+	top_card_sub_3d.position = Vector3(0.0, 0.0165, 0.072)
+	top_card_sub_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	discard_pile_node.add_child(top_card_sub_3d)
+
+	# 5. Opponent 3D Card Stacks & Active Turn Pedestals around the Table Rim
+	# Seat 1 = Top (Across), Seat 2 = Left, Seat 3 = Right
+	var opp_configs = {
+		1: {"pos": Vector3(0.0, y_base + 0.020, -0.385), "rot_y": 0.0},
+		2: {"pos": Vector3(-0.385, y_base + 0.020, -0.025), "rot_y": -90.0},
+		3: {"pos": Vector3(0.385, y_base + 0.020, -0.025), "rot_y": 90.0}
 	}
-	for seat_idx in opp_positions.keys():
+	for seat_idx in opp_configs.keys():
+		var cfg: Dictionary = opp_configs[seat_idx]
 		var holder = Node3D.new()
-		holder.position = opp_positions[seat_idx]
+		holder.position = cfg["pos"]
 		board_root.add_child(holder)
 
-		var badge_lbl = Label3D.new()
+		# Glowing Turn Plinth under Opponent Fan
+		var turn_plinth = MeshInstance3D.new()
+		turn_plinth.name = "TurnPlinth"
+		var tp_cyl = CylinderMesh.new()
+		tp_cyl.top_radius = 0.095
+		tp_cyl.bottom_radius = 0.105
+		tp_cyl.height = 0.004
+		tp_cyl.radial_segments = 24
+		turn_plinth.mesh = tp_cyl
+		turn_plinth.scale = Vector3(1.45, 1.0, 0.72)
+		var tp_mat = StandardMaterial3D.new()
+		tp_mat.albedo_color = Color(0.22, 0.28, 0.38, 0.85)
+		tp_mat.roughness = 0.35
+		turn_plinth.material_override = tp_mat
+		holder.add_child(turn_plinth)
+
+		var badge_lbl = _create_label_3d("", 26, Color(1.0, 0.92, 0.68), 0.0011)
 		badge_lbl.name = "BadgeLabel"
-		badge_lbl.text = ""
-		badge_lbl.font_size = 44
-		badge_lbl.outline_size = 12
-		badge_lbl.modulate = Color(1.0, 0.92, 0.65)
-		badge_lbl.position = Vector3(0, 0.35, 0)
-		badge_lbl.rotation_degrees = Vector3(-75, 0, 0)
+		badge_lbl.position = Vector3(0.0, 0.052, 0.0)
+		badge_lbl.rotation_degrees = Vector3(-62.0, 0.0, 0.0)
 		holder.add_child(badge_lbl)
 
 		var fan_container = Node3D.new()
 		fan_container.name = "FanContainer"
+		fan_container.rotation_degrees = Vector3(0.0, float(cfg["rot_y"]), 0.0)
 		holder.add_child(fan_container)
 		holder.visible = false
 		opponent_stacks_3d[seat_idx] = holder
 
 # ==============================================================================
 # 2. 2D GAMER-FRIENDLY HUD & INTERACTIVE CARD DOCK
+# (Strictly positioned between TopHeader [0..335px] and BottomBar [1766..1920px])
 # ==============================================================================
 
 func _build_2d_hud() -> void:
 	hud_layer = CanvasLayer.new()
-	hud_layer.layer = 5
+	hud_layer.layer = 2
 	add_child(hud_layer)
 
 	hud_root = Control.new()
+	hud_root.name = "UnoHUDRoot"
 	hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.visible = false
 	hud_layer.add_child(hud_root)
 
-	# --- A. Compact Top-Center Table Status Bar (Below TopHeader) ---
+	# --- A. Compact Top-Center Table Status Bar (Strictly below TopHeader y=335px) ---
 	status_banner_panel = PanelContainer.new()
 	status_banner_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	status_banner_panel.offset_left = -330
-	status_banner_panel.offset_right = 330
-	status_banner_panel.offset_top = 156
-	status_banner_panel.offset_bottom = 252
+	status_banner_panel.offset_left = -355.0
+	status_banner_panel.offset_right = 355.0
+	status_banner_panel.offset_top = 340.0
+	status_banner_panel.offset_bottom = 414.0
 	status_banner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var sb_style = StyleBoxFlat.new()
 	sb_style.bg_color = Color(0.07, 0.09, 0.14, 0.92)
 	sb_style.border_color = Color(0.83, 0.69, 0.38, 0.55)
 	sb_style.set_border_width_all(2)
-	sb_style.set_corner_radius_all(18)
-	sb_style.content_margin_left = 16
-	sb_style.content_margin_right = 16
-	sb_style.content_margin_top = 8
-	sb_style.content_margin_bottom = 8
+	sb_style.set_corner_radius_all(16)
+	sb_style.content_margin_left = 14
+	sb_style.content_margin_right = 14
+	sb_style.content_margin_top = 6
+	sb_style.content_margin_bottom = 6
 	status_banner_panel.add_theme_stylebox_override("panel", sb_style)
 	hud_root.add_child(status_banner_panel)
 
 	var sb_vbox = VBoxContainer.new()
-	sb_vbox.add_theme_constant_override("separation", 4)
+	sb_vbox.add_theme_constant_override("separation", 3)
+	sb_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	status_banner_panel.add_child(sb_vbox)
 
 	var top_info_row = HBoxContainer.new()
 	top_info_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	top_info_row.add_theme_constant_override("separation", 14)
+	top_info_row.add_theme_constant_override("separation", 12)
+	top_info_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	sb_vbox.add_child(top_info_row)
 
-	# Active Color Pill
+	# Active Color Badge
 	color_badge_panel = PanelContainer.new()
+	color_badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	color_badge_style = StyleBoxFlat.new()
 	color_badge_style.bg_color = UNO_COLORS["red"]
-	color_badge_style.set_corner_radius_all(12)
+	color_badge_style.set_corner_radius_all(10)
 	color_badge_style.set_border_width_all(2)
 	color_badge_style.border_color = Color.WHITE
-	color_badge_style.content_margin_left = 14
-	color_badge_style.content_margin_right = 14
-	color_badge_style.content_margin_top = 4
-	color_badge_style.content_margin_bottom = 4
+	color_badge_style.content_margin_left = 12
+	color_badge_style.content_margin_right = 12
+	color_badge_style.content_margin_top = 2
+	color_badge_style.content_margin_bottom = 2
 	color_badge_panel.add_theme_stylebox_override("panel", color_badge_style)
 	top_info_row.add_child(color_badge_panel)
 
 	color_badge_label = Label.new()
 	color_badge_label.text = "🔴 رنگ فعال: قرمز"
-	color_badge_label.add_theme_font_size_override("font_size", 18)
+	color_badge_label.add_theme_font_size_override("font_size", 16)
 	color_badge_label.add_theme_color_override("font_color", Color.WHITE)
 	color_badge_panel.add_child(color_badge_label)
 
 	direction_badge_label = Label.new()
 	direction_badge_label.text = "↻ ساعتگرد"
-	direction_badge_label.add_theme_font_size_override("font_size", 17)
+	direction_badge_label.add_theme_font_size_override("font_size", 15)
 	direction_badge_label.add_theme_color_override("font_color", Color(0.95, 0.88, 0.68))
 	top_info_row.add_child(direction_badge_label)
 
 	deck_badge_label = Label.new()
 	deck_badge_label.text = "📚 دسته: ۸۰"
-	deck_badge_label.add_theme_font_size_override("font_size", 17)
+	deck_badge_label.add_theme_font_size_override("font_size", 15)
 	deck_badge_label.add_theme_color_override("font_color", Color(0.82, 0.88, 0.96))
 	top_info_row.add_child(deck_badge_label)
+
+	# Quick Camera Zoom/Angle Cycle Button
+	zoom_cycle_btn = Button.new()
+	zoom_cycle_btn.custom_minimum_size = Vector2(96, 28)
+	zoom_cycle_btn.text = "🔍 نمای میز"
+	zoom_cycle_btn.focus_mode = Control.FOCUS_NONE
+	zoom_cycle_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	zoom_cycle_btn.add_theme_font_size_override("font_size", 14)
+	zoom_cycle_btn.add_theme_color_override("font_color", Color(1.0, 0.92, 0.72))
+	var z_style = StyleBoxFlat.new()
+	z_style.bg_color = Color(0.16, 0.20, 0.28, 0.95)
+	z_style.border_color = Color(0.83, 0.69, 0.38, 0.70)
+	z_style.set_border_width_all(1)
+	z_style.set_corner_radius_all(8)
+	z_style.content_margin_left = 8
+	z_style.content_margin_right = 8
+	zoom_cycle_btn.add_theme_stylebox_override("normal", z_style)
+	zoom_cycle_btn.add_theme_stylebox_override("hover", z_style)
+	zoom_cycle_btn.add_theme_stylebox_override("pressed", z_style)
+	zoom_cycle_btn.pressed.connect(_on_zoom_cycle_pressed)
+	top_info_row.add_child(zoom_cycle_btn)
 
 	action_toast_label = Label.new()
 	action_toast_label.text = "کارت هم‌رنگ یا هم‌عدد با کارت وسط بازی کنید!"
 	action_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	action_toast_label.add_theme_font_size_override("font_size", 16)
+	action_toast_label.add_theme_font_size_override("font_size", 15)
 	action_toast_label.add_theme_color_override("font_color", Color(0.92, 0.95, 1.0))
 	sb_vbox.add_child(action_toast_label)
 
-	# --- B. Bottom Interactive Area (Above the 8-button BottomBar) ---
+	# --- B. Bottom Interactive Area (Strictly above the 8-button BottomBar at -154px) ---
 	var bottom_dock = VBoxContainer.new()
 	bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_dock.offset_left = 14
-	bottom_dock.offset_right = -14
-	bottom_dock.offset_top = -410
-	bottom_dock.offset_bottom = -118
-	bottom_dock.add_theme_constant_override("separation", 8)
+	bottom_dock.offset_left = 14.0
+	bottom_dock.offset_right = -14.0
+	bottom_dock.offset_top = -456.0
+	bottom_dock.offset_bottom = -162.0
+	bottom_dock.add_theme_constant_override("separation", 6)
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(bottom_dock)
 
-	# 1. Action Controls Row (Draw Card, Pass Turn, Call UNO, Turn Status)
+	# 1. Action Controls Row (Draw Card, Pass Turn, Call UNO)
 	var action_row = HBoxContainer.new()
 	action_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	action_row.add_theme_constant_override("separation", 12)
@@ -416,11 +612,11 @@ func _build_2d_hud() -> void:
 
 	# Draw Card Button
 	draw_btn = Button.new()
-	draw_btn.custom_minimum_size = Vector2(186, 52)
+	draw_btn.custom_minimum_size = Vector2(184, 48)
 	draw_btn.text = "🃏 کشیدن کارت"
 	draw_btn.focus_mode = Control.FOCUS_NONE
 	draw_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	draw_btn.add_theme_font_size_override("font_size", 19)
+	draw_btn.add_theme_font_size_override("font_size", 18)
 	draw_btn.add_theme_color_override("font_color", Color.WHITE)
 	var draw_style = StyleBoxFlat.new()
 	draw_style.bg_color = Color(0.16, 0.44, 0.84)
@@ -441,11 +637,11 @@ func _build_2d_hud() -> void:
 
 	# Pass Turn Button (Visible after drawing a card)
 	pass_btn = Button.new()
-	pass_btn.custom_minimum_size = Vector2(160, 52)
+	pass_btn.custom_minimum_size = Vector2(156, 48)
 	pass_btn.text = "⏭️ رد نوبت"
 	pass_btn.focus_mode = Control.FOCUS_NONE
 	pass_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	pass_btn.add_theme_font_size_override("font_size", 19)
+	pass_btn.add_theme_font_size_override("font_size", 18)
 	pass_btn.add_theme_color_override("font_color", Color.WHITE)
 	var pass_style = StyleBoxFlat.new()
 	pass_style.bg_color = Color(0.76, 0.42, 0.12)
@@ -461,11 +657,11 @@ func _build_2d_hud() -> void:
 
 	# UNO Shout Button
 	uno_btn = Button.new()
-	uno_btn.custom_minimum_size = Vector2(148, 52)
+	uno_btn.custom_minimum_size = Vector2(146, 48)
 	uno_btn.text = "🔥 اونو! (UNO)"
 	uno_btn.focus_mode = Control.FOCUS_NONE
 	uno_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	uno_btn.add_theme_font_size_override("font_size", 19)
+	uno_btn.add_theme_font_size_override("font_size", 18)
 	uno_btn.add_theme_color_override("font_color", Color.WHITE)
 	var uno_style = StyleBoxFlat.new()
 	uno_style.bg_color = Color(0.88, 0.18, 0.22)
@@ -481,17 +677,17 @@ func _build_2d_hud() -> void:
 
 	# 2. Player's Card Hand Tray Panel
 	var hand_tray = PanelContainer.new()
-	hand_tray.custom_minimum_size = Vector2(0, 224)
+	hand_tray.custom_minimum_size = Vector2(0, 228)
 	hand_tray.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var tray_style = StyleBoxFlat.new()
-	tray_style.bg_color = Color(0.06, 0.08, 0.13, 0.90)
-	tray_style.border_color = Color(0.83, 0.69, 0.38, 0.50)
+	tray_style.bg_color = Color(0.06, 0.08, 0.13, 0.92)
+	tray_style.border_color = Color(0.83, 0.69, 0.38, 0.52)
 	tray_style.set_border_width_all(2)
 	tray_style.set_corner_radius_all(20)
 	tray_style.content_margin_left = 14
 	tray_style.content_margin_right = 14
 	tray_style.content_margin_top = 8
-	tray_style.content_margin_bottom = 10
+	tray_style.content_margin_bottom = 8
 	hand_tray.add_theme_stylebox_override("panel", tray_style)
 	bottom_dock.add_child(hand_tray)
 
@@ -505,13 +701,13 @@ func _build_2d_hud() -> void:
 	turn_hint_label = Label.new()
 	turn_hint_label.text = "در انتظار شروع بازی..."
 	turn_hint_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	turn_hint_label.add_theme_font_size_override("font_size", 17)
+	turn_hint_label.add_theme_font_size_override("font_size", 16)
 	turn_hint_label.add_theme_color_override("font_color", Color(0.45, 0.95, 0.62))
 	tray_header.add_child(turn_hint_label)
 
 	hand_count_badge = Label.new()
 	hand_count_badge.text = "دست شما: ۷ کارت"
-	hand_count_badge.add_theme_font_size_override("font_size", 17)
+	hand_count_badge.add_theme_font_size_override("font_size", 16)
 	hand_count_badge.add_theme_color_override("font_color", Color(0.95, 0.85, 0.55))
 	tray_header.add_child(hand_count_badge)
 
@@ -709,6 +905,7 @@ func _refresh_all_visuals() -> void:
 	_refresh_status_banner()
 	_refresh_hand_dock()
 	_refresh_top_header_badges()
+	_update_hud_visibility()
 
 func _refresh_3d_centerpiece() -> void:
 	var active_col: Color = UNO_COLORS.get(current_color, UNO_COLORS["red"])
@@ -722,18 +919,40 @@ func _refresh_3d_centerpiece() -> void:
 	if deck_count_3d:
 		deck_count_3d.text = "%s کارت" % _to_persian_digits(str(deck_remaining))
 
+	if deck_glow_mesh:
+		var must_draw = is_my_turn and (not has_drawn_this_turn) and (not _has_any_playable_card())
+		deck_glow_mesh.visible = must_draw
+
 	if top_card_mat and not top_card.is_empty():
 		var tc_color_key = String(top_card.get("color", current_color))
 		var display_key = current_color if tc_color_key == "wild" else tc_color_key
-		top_card_mat.albedo_color = UNO_COLORS.get(display_key, active_col)
+		var face_col: Color = UNO_COLORS.get(display_key, active_col)
+		top_card_mat.albedo_color = face_col
+		if top_card_value_3d:
+			top_card_value_3d.modulate = face_col if tc_color_key != "wild" else Color(1.0, 0.88, 0.25)
+		if top_card_oval_mat:
+			top_card_oval_mat.albedo_color = Color(0.98, 0.98, 0.98) if tc_color_key != "wild" else Color(0.14, 0.14, 0.20)
 
-	if top_card_value_3d and not top_card.is_empty():
+	if not top_card.is_empty():
 		var val_str = String(top_card.get("value", "0"))
-		top_card_value_3d.text = _format_card_center_text(val_str)
+		var center_txt = _format_card_center_text(val_str)
+		if top_card_value_3d:
+			top_card_value_3d.text = center_txt
+		if top_card_corner_tl_3d:
+			top_card_corner_tl_3d.text = center_txt
 
 	if top_card_sub_3d:
 		var cname = UNO_COLOR_NAMES_FA.get(current_color, "قرمز")
 		top_card_sub_3d.text = "رنگ: " + cname
+
+func _animate_discard_card_pop() -> void:
+	if not discard_pile_node or not is_instance_valid(discard_pile_node):
+		return
+	discard_pile_node.scale = Vector3(0.75, 0.75, 0.75)
+	discard_pile_node.rotation_degrees.y = randf_range(-10.0, 10.0)
+	var tw = create_tween()
+	tw.tween_property(discard_pile_node, "scale", Vector3(1.12, 1.12, 1.12), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(discard_pile_node, "scale", Vector3.ONE, 0.12).set_trans(Tween.TRANS_SINE)
 
 func _refresh_3d_opponents() -> void:
 	var total_p = clampi(max(2, GameManager.match_players.size()), 2, 4)
@@ -766,12 +985,31 @@ func _refresh_3d_opponents() -> void:
 
 		var c_count = int(hands_count.get(str(pid), hands_count.get(pid, 7)))
 		var p_name = _get_player_short_name(pid)
+		var is_opp_turn: bool = (current_turn == pid) and GameManager.is_game_active
+
+		var turn_plinth: MeshInstance3D = holder.get_node_or_null("TurnPlinth")
+		if turn_plinth and turn_plinth.material_override is StandardMaterial3D:
+			var tp_mat: StandardMaterial3D = turn_plinth.material_override
+			if is_opp_turn:
+				tp_mat.albedo_color = Color(0.22, 0.92, 0.52)
+				tp_mat.emission_enabled = true
+				tp_mat.emission = Color(0.18, 0.85, 0.45)
+				tp_mat.emission_energy_multiplier = 1.15
+			elif c_count == 1:
+				tp_mat.albedo_color = Color(0.92, 0.22, 0.22)
+				tp_mat.emission_enabled = true
+				tp_mat.emission = Color(0.92, 0.18, 0.18)
+				tp_mat.emission_energy_multiplier = 1.0
+			else:
+				tp_mat.albedo_color = Color(0.18, 0.24, 0.34)
+				tp_mat.emission_enabled = false
+
 		var badge_lbl: Label3D = holder.get_node_or_null("BadgeLabel")
 		if badge_lbl:
-			var turn_prefix = "⏳ " if current_turn == pid else ""
+			var turn_prefix = "⏳ " if is_opp_turn else ""
 			var uno_suffix = " 🔥UNO!" if c_count == 1 else ""
 			badge_lbl.text = "%s%s: %s کارت%s" % [turn_prefix, p_name, _to_persian_digits(str(c_count)), uno_suffix]
-			badge_lbl.modulate = Color(0.45, 1.0, 0.65) if current_turn == pid else Color(1.0, 0.92, 0.72)
+			badge_lbl.modulate = Color(0.45, 1.0, 0.65) if is_opp_turn else (Color(1.0, 0.48, 0.48) if c_count == 1 else Color(1.0, 0.92, 0.72))
 
 		var fan_container: Node3D = holder.get_node_or_null("FanContainer")
 		if fan_container:
@@ -781,12 +1019,16 @@ func _refresh_3d_opponents() -> void:
 			for c_idx in range(visible_cards):
 				var mini_card = MeshInstance3D.new()
 				var m_box = BoxMesh.new()
-				m_box.size = Vector3(0.46, 0.03, 0.68)
+				m_box.size = Vector3(0.062, 0.003, 0.092)
 				mini_card.mesh = m_box
-				var spread = (float(c_idx) - float(visible_cards - 1) * 0.5) * 0.24
-				mini_card.position = Vector3(spread, 0.02 * c_idx, 0)
+				var norm_idx: float = float(c_idx) - float(visible_cards - 1) * 0.5
+				var spread_x: float = norm_idx * 0.024
+				var arch_z: float = absf(norm_idx) * 0.004
+				mini_card.position = Vector3(spread_x, 0.006 + 0.0018 * float(c_idx), arch_z)
+				mini_card.rotation_degrees = Vector3(18.0, -norm_idx * 5.5, 0.0)
 				var m_mat = StandardMaterial3D.new()
-				m_mat.albedo_color = Color(0.86, 0.16, 0.20) if c_count == 1 else Color(0.18, 0.22, 0.34)
+				m_mat.albedo_color = Color(0.88, 0.16, 0.20) if c_count == 1 else Color(0.16, 0.20, 0.32)
+				m_mat.roughness = 0.32
 				mini_card.material_override = m_mat
 				fan_container.add_child(mini_card)
 
@@ -829,7 +1071,7 @@ func _refresh_hand_dock() -> void:
 				turn_hint_label.text = "🟡 کارت قابل بازی ندارید؛ روی «رد نوبت» بزنید"
 				turn_hint_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.35))
 			else:
-				turn_hint_label.text = "🔵 کارت قابل بازی ندارید؛ روی «کشیدن کارت» بزنید"
+				turn_hint_label.text = "🔵 کارت قابل بازی ندارید؛ روی «کشیدن کارت» یا دسته وسط بزنید"
 				turn_hint_label.add_theme_color_override("font_color", Color(0.52, 0.84, 1.0))
 		else:
 			var active_name = _get_player_short_name(current_turn)
@@ -866,12 +1108,12 @@ func _create_hand_card_widget(card: Dictionary, playable: bool) -> Control:
 
 	# Wrapper adds top padding so playable cards visually pop UP towards the table
 	var wrapper = Control.new()
-	wrapper.custom_minimum_size = Vector2(114, 168)
+	wrapper.custom_minimum_size = Vector2(110, 162)
 	wrapper.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var btn = Button.new()
-	btn.custom_minimum_size = Vector2(110, 152)
-	btn.position = Vector2(2, 2 if playable else 16)
+	btn.custom_minimum_size = Vector2(106, 146)
+	btn.position = Vector2(2, 2 if playable else 14)
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if playable else Control.CURSOR_ARROW
 
@@ -915,7 +1157,7 @@ func _create_hand_card_widget(card: Dictionary, playable: bool) -> Control:
 	var corner_top = Label.new()
 	corner_top.text = _format_card_center_text(c_value)
 	corner_top.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	corner_top.add_theme_font_size_override("font_size", 16)
+	corner_top.add_theme_font_size_override("font_size", 15)
 	corner_top.add_theme_color_override("font_color", Color.WHITE)
 	corner_top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(corner_top)
@@ -926,7 +1168,7 @@ func _create_hand_card_widget(card: Dictionary, playable: bool) -> Control:
 	center_oval.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var oval_style = StyleBoxFlat.new()
 	oval_style.bg_color = Color(1.0, 1.0, 1.0, 0.94) if c_color != "wild" else Color(0.14, 0.14, 0.20, 0.95)
-	oval_style.set_corner_radius_all(28)
+	oval_style.set_corner_radius_all(26)
 	center_oval.add_theme_stylebox_override("panel", oval_style)
 	vbox.add_child(center_oval)
 
@@ -934,7 +1176,7 @@ func _create_hand_card_widget(card: Dictionary, playable: bool) -> Control:
 	center_lbl.text = _format_card_center_text(c_value)
 	center_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	center_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	center_lbl.add_theme_font_size_override("font_size", 34)
+	center_lbl.add_theme_font_size_override("font_size", 32)
 	center_lbl.add_theme_color_override("font_color", base_color if c_color != "wild" else Color(1.0, 0.88, 0.28))
 	center_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	center_oval.add_child(center_lbl)
@@ -943,7 +1185,7 @@ func _create_hand_card_widget(card: Dictionary, playable: bool) -> Control:
 	var bottom_lbl = Label.new()
 	bottom_lbl.text = _format_card_subtitle_text(c_value)
 	bottom_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bottom_lbl.add_theme_font_size_override("font_size", 13)
+	bottom_lbl.add_theme_font_size_override("font_size", 12)
 	bottom_lbl.add_theme_color_override("font_color", Color.WHITE)
 	bottom_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(bottom_lbl)
@@ -972,8 +1214,42 @@ func _get_player_short_name(pid: int) -> String:
 	return "بازیکن %s" % _to_persian_digits(str(pid))
 
 # ==============================================================================
-# 5. USER INTERACTIONS (PLAY CARD, WILD COLOR, DRAW, PASS, CALL UNO)
+# 5. USER INTERACTIONS (PLAY CARD, WILD COLOR, DRAW, PASS, CALL UNO, ZOOM)
 # ==============================================================================
+
+func _on_zoom_cycle_pressed() -> void:
+	var table = get_tree().get_first_node_in_group("cafe_table")
+	if not is_instance_valid(table):
+		return
+	_zoom_preset_idx = (_zoom_preset_idx + 1) % 3
+	if _zoom_preset_idx == 0:
+		# Default Balanced Tabletop View
+		camera_distance = 2.75
+		camera_pitch = -1.06
+		if table.is_top_down_view:
+			table.set_top_down_view(false, 0.45)
+		table.target_distance = 2.75
+		table.target_pitch = -1.06
+		table.target_yaw = 0.0
+		if zoom_cycle_btn:
+			zoom_cycle_btn.text = "🔍 نمای میز"
+	elif _zoom_preset_idx == 1:
+		# Wide Zoomed-Out Cafe View
+		camera_distance = 3.55
+		camera_pitch = -0.96
+		if table.is_top_down_view:
+			table.set_top_down_view(false, 0.45)
+		table.target_distance = 3.55
+		table.target_pitch = -0.96
+		table.target_yaw = 0.0
+		if zoom_cycle_btn:
+			zoom_cycle_btn.text = "🔍 نمای دور"
+	else:
+		# Direct Top-Down 2D View
+		table.top_down_target_height = 2.85
+		table.set_top_down_view(true, 0.45)
+		if zoom_cycle_btn:
+			zoom_cycle_btn.text = "🔍 نمای بالا"
 
 func _on_hand_card_clicked(card_uid: int, card: Dictionary) -> void:
 	if not is_my_turn:
@@ -1045,6 +1321,7 @@ func _on_uno_button_pressed() -> void:
 func _apply_uno_state_dict(data: Dictionary) -> void:
 	if data.is_empty():
 		return
+	_match_started = true
 	if data.has("my_hand") and typeof(data["my_hand"]) == TYPE_ARRAY:
 		my_hand = data["my_hand"].duplicate(true)
 	elif data.has("hand") and typeof(data["hand"]) == TYPE_ARRAY:
@@ -1087,6 +1364,7 @@ func _apply_uno_state_dict(data: Dictionary) -> void:
 	_refresh_all_visuals()
 
 func setup_board(game_data: Dictionary) -> void:
+	_match_started = true
 	if game_data.has("gamers") and typeof(game_data["gamers"]) == TYPE_ARRAY:
 		GameManager.set_match_gamers(game_data["gamers"])
 	var inner = game_data.get("game_data", game_data)
@@ -1094,6 +1372,13 @@ func setup_board(game_data: Dictionary) -> void:
 		_apply_uno_state_dict(inner)
 	if game_data.has("user_data") and typeof(game_data["user_data"]) == TYPE_DICTIONARY:
 		_apply_uno_state_dict(game_data["user_data"])
+	_update_hud_visibility()
+
+func on_start_game() -> void:
+	_match_started = true
+	super.on_start_game()
+	_refresh_all_visuals()
+	_update_hud_visibility()
 
 func _on_user_data_received(data: Dictionary) -> void:
 	_apply_uno_state_dict(data)
@@ -1102,6 +1387,7 @@ func on_turn_data(payload: Dictionary) -> void:
 	_apply_uno_state_dict(payload)
 
 func on_turn_changed(turn: int, _is_me: bool) -> void:
+	_match_started = true
 	current_turn = turn
 	is_my_turn = (turn == GameManager.my_player_index) and GameManager.is_game_active
 	is_board_locked = not is_my_turn
@@ -1109,8 +1395,10 @@ func on_turn_changed(turn: int, _is_me: bool) -> void:
 		has_drawn_this_turn = false
 		wild_modal_backdrop.visible = false
 	_refresh_all_visuals()
+	_update_hud_visibility()
 
 func on_reconnect_data(payload: Dictionary) -> void:
+	_match_started = true
 	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 		GameManager.set_match_gamers(payload["gamers"])
 	var g_data = payload.get("game_data", payload)
@@ -1118,11 +1406,13 @@ func on_reconnect_data(payload: Dictionary) -> void:
 		_apply_uno_state_dict(g_data)
 	if payload.has("user_data") and typeof(payload["user_data"]) == TYPE_DICTIONARY:
 		_apply_uno_state_dict(payload["user_data"])
+	_update_hud_visibility()
 
 func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 	if typeof(payload) != TYPE_DICTIONARY:
 		return
 	var p: Dictionary = payload
+	_match_started = true
 
 	match event_type:
 		Commands.Card_Played:
@@ -1165,6 +1455,7 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 			if action_toast_label:
 				action_toast_label.text = msg
 			_refresh_all_visuals()
+			_animate_discard_card_pop()
 
 		Commands.Draw_Result_Private:
 			if p.has("user_data") and typeof(p["user_data"]) == TYPE_DICTIONARY:
@@ -1231,6 +1522,7 @@ func _on_win_happened(payload: Dictionary) -> void:
 	_refresh_all_visuals()
 
 func reset_board() -> void:
+	_match_started = false
 	my_hand.clear()
 	hands_count = {"1": 7, "2": 7, "3": 7, "4": 7}
 	top_card.clear()
@@ -1239,7 +1531,10 @@ func reset_board() -> void:
 	if wild_modal_backdrop:
 		wild_modal_backdrop.visible = false
 	_refresh_all_visuals()
+	_update_hud_visibility()
 
 func cleanup_board() -> void:
+	if hud_root and is_instance_valid(hud_root):
+		hud_root.queue_free()
 	if hud_layer and is_instance_valid(hud_layer):
 		hud_layer.queue_free()

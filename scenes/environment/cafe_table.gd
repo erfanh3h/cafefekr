@@ -15,8 +15,8 @@ const CAM_ROT_MENU: Vector3 = Vector3(-28.0, 0.0, 0.0)
 # Distance 3.20 guarantees a 1.3m wide 3D board + outer frame + side trays fit 100% inside the screen width!
 const TARGET_FOCUS: Vector3 = Vector3(0.0, 0.08, 0.0)
 const ZOOM_DEFAULT: float = 3.20
-const ZOOM_MIN: float = 2.40
-const ZOOM_MAX: float = 4.20
+const ZOOM_MIN: float = 2.00
+const ZOOM_MAX: float = 4.60
 
 const YAW_DEFAULT: float = 0.0
 const YAW_MIN: float = -0.55        # -31.5 degrees (Tighter yaw so board corners never clip horizontally)
@@ -48,9 +48,9 @@ func _kill_camera_tween() -> void:
 # - Default (3.60m): Balanced view with comfortable wooden cafe table border around board
 # - Max (5.20m): Max zoom out -> wide far view showing board, cafe table, and surrounding cafe environment
 const TOP_DOWN_HEIGHT_DEFAULT: float = 3.60
-const TOP_DOWN_HEIGHT_MIN: float = 2.75
+const TOP_DOWN_HEIGHT_MIN: float = 2.35
 const TOP_DOWN_HEIGHT_MAX: float = 5.20
-const TOP_DOWN_ZOOM_STEP: float = 0.50
+const TOP_DOWN_ZOOM_STEP: float = 0.45
 var top_down_target_height: float = TOP_DOWN_HEIGHT_DEFAULT
 var top_down_current_height: float = TOP_DOWN_HEIGHT_DEFAULT
 
@@ -877,6 +877,8 @@ func _get_themed_props_for_game(game_type: String) -> Array:
 			return ["scorebook", "vintage_abacus", "chronometer", "cafe_pastry_plate"]
 		"TicTacToe":
 			return ["tea", "scorebook", "hourglass", "cafe_pastry_plate"]
+		"Uno":
+			return ["tokens", "hourglass", "tea", "cafe_pastry_plate"]
 		_:
 			return ["scorebook", "hourglass", "dice", "tea"]
 
