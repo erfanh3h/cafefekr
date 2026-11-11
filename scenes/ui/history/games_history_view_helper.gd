@@ -58,7 +58,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 	target_container.add_child(mode_summary_title)
 
 	var modes_vbox = VBoxContainer.new()
-	modes_vbox.theme_override_constants/separation = 12
+	modes_vbox.add_theme_constant_override("separation", 12)
 	target_container.add_child(modes_vbox)
 
 	# Card A: Rank (دو نفره)
@@ -157,7 +157,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 	)
 
 	var games_cards_vbox = VBoxContainer.new()
-	games_cards_vbox.theme_override_constants/separation = 10
+	games_cards_vbox.add_theme_constant_override("separation", 10)
 	target_container.add_child(games_cards_vbox)
 
 	if played_games.is_empty():
@@ -171,7 +171,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 	# If there are unplayed games, offer an expandable toggle section
 	if not unplayed_games.is_empty() and not played_games.is_empty():
 		var unplayed_container = VBoxContainer.new()
-		unplayed_container.theme_override_constants/separation = 10
+		unplayed_container.add_theme_constant_override("separation", 10)
 		unplayed_container.visible = false
 		target_container.add_child(unplayed_container)
 
@@ -215,7 +215,7 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 	panel.add_theme_stylebox_override("panel", sb)
 
 	var vbox = VBoxContainer.new()
-	vbox.theme_override_constants/separation = 8
+	vbox.add_theme_constant_override("separation", 8)
 	panel.add_child(vbox)
 
 	# Header row
@@ -242,7 +242,7 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 
 	# Stats pill row
 	var stats_row = HBoxContainer.new()
-	stats_row.theme_override_constants/separation = 12
+	stats_row.add_theme_constant_override("separation", 12)
 	stats_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(stats_row)
 
@@ -284,7 +284,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	panel.add_theme_stylebox_override("panel", sb)
 
 	var hbox = HBoxContainer.new()
-	hbox.theme_override_constants/separation = 16
+	hbox.add_theme_constant_override("separation", 16)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_child(hbox)
 
@@ -317,7 +317,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	# Center / Right Column: Info & Stats
 	var col = VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.theme_override_constants/separation = 6
+	col.add_theme_constant_override("separation", 6)
 	hbox.add_child(col)
 
 	# Row 1: Game Persian Name + Total matches badge
@@ -347,7 +347,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 
 	# Row 2: Stat Pills
 	var row2 = HBoxContainer.new()
-	row2.theme_override_constants/separation = 8
+	row2.add_theme_constant_override("separation", 8)
 	col.add_child(row2)
 
 	var is_multi = bool(info.get("multi", false))
