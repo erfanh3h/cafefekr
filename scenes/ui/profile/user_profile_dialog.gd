@@ -17,6 +17,9 @@ signal change_username_requested()
 @onready var lbl_coins: Label = $CenterContainer/Panel/Margin/VBox/StatsGrid/CoinsCard/LblCoins
 @onready var btn_copy_id: Button = $CenterContainer/Panel/Margin/VBox/UserIdBox/BtnCopyId
 @onready var btn_close_top: TextureButton = $CenterContainer/Panel/Margin/VBox/TopRow/BtnCloseTop
+@onready var scroll_stats: ScrollContainer = $CenterContainer/Panel/Margin/VBox/ScrollStats
+@onready var lbl_stats_loading: Label = $CenterContainer/Panel/Margin/VBox/ScrollStats/StatsVBox/LblStatsLoading
+@onready var games_history_container: VBoxContainer = $CenterContainer/Panel/Margin/VBox/ScrollStats/StatsVBox/GamesHistoryContainer
 
 var _current_user_id: String = ""
 
@@ -109,13 +112,62 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 				close()
 				change_username_requested.emit()
 			)
-			vbox_root.add_child(btn_edit_name)
+			# Insert before ScrollStats if valid
+			if is_instance_valid(scroll_stats):
+				vbox_root.add_child(btn_edit_name)
+				vbox_root.move_child(btn_edit_name, scroll_stats.get_index())
+			else:
+				vbox_root.add_child(btn_edit_name)
 		btn_edit_name.visible = true
 	elif is_instance_valid(btn_edit_name):
 		btn_edit_name.visible = false
+
+	# === Load Games History & Statistics for this player ===
+	_load_player_history(user_dict)
 	
 	# Entrance VFX Animation
 	ActionVFXManager.animate_dialog_open(panel, self, true)
+
+func _load_player_history(user_dict: Dictionary) -> void:
+	if not is_instance_valid(games_history_container):
+		return
+
+	for child in games_history_container.get_children():
+		child.queue_free()
+
+	if user_dict.has("history") and typeof(user_dict["history"]) == TYPE_DICTIONARY:
+		if is_instance_valid(lbl_stats_loading):
+			lbl_stats_loading.visible = false
+		GamesHistoryViewHelper.populate_games_history(games_history_container, user_dict["history"])
+		return
+
+	if _current_user_id.is_empty() or _current_user_id.begins_with("bot_") or _current_user_id.begins_with("test_bot"):
+		if is_instance_valid(lbl_stats_loading):
+			lbl_stats_loading.visible = false
+		GamesHistoryViewHelper.populate_games_history(games_history_container, {})
+		return
+
+	if is_instance_valid(lbl_stats_loading):
+		lbl_stats_loading.visible = true
+		lbl_stats_loading.text = "در حال دریافت آمار بازی‌ها..."
+
+	var req_uid = _current_user_id
+	NetworkManager.api.get_user_data(req_uid, func(success: bool, _code: int, data: Variant):
+		if not is_instance_valid(self) or not visible or _current_user_id != req_uid:
+			return
+		if is_instance_valid(lbl_stats_loading):
+			lbl_stats_loading.visible = false
+		if success and typeof(data) == TYPE_DICTIONARY and data.has("result"):
+			var res = data["result"]
+			var hist_dict = {}
+			if typeof(res) == TYPE_DICTIONARY and res.has("history") and typeof(res["history"]) == TYPE_DICTIONARY:
+				hist_dict = res["history"]
+			GamesHistoryViewHelper.populate_games_history(games_history_container, hist_dict)
+		else:
+			if is_instance_valid(lbl_stats_loading):
+				lbl_stats_loading.text = "آمار بازی‌ها در دسترس نیست"
+				lbl_stats_loading.visible = true
+	)
 
 func close() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

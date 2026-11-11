@@ -29,14 +29,37 @@ signal user_profile_requested(user_data: Dictionary)
 @onready var details_container: VBoxContainer = $Margin/VBox/ScrollDetails/DetailsContainer
 @onready var btn_close: Button = $Margin/VBox/BtnClose
 @onready var btn_back: Button = $Margin/VBox/BtnBack
+@onready var sub_tabs_row: HBoxContainer = $Margin/VBox/SubTabsRow
+@onready var btn_tab_matches: Button = $Margin/VBox/SubTabsRow/BtnTabMatches
+@onready var btn_tab_games_history: Button = $Margin/VBox/SubTabsRow/BtnTabGamesHistory
+@onready var scroll_games_history: ScrollContainer = $Margin/VBox/ScrollGamesHistory
+@onready var games_history_container: VBoxContainer = $Margin/VBox/ScrollGamesHistory/GamesHistoryContainer
 
 var _font_hekayat = preload("res://assets/fonts/hekayat.ttf")
 var _history_items: Array = []
 var _selected_game: Dictionary = {}
+var _my_games_history_data: Dictionary = {}
+var _active_tab: int = 0  # 0: Matches, 1: Games History
 
 func _ready() -> void:
 	KenneyUI.style_button(btn_close, KenneyUI.COLOR_BLUE)
 	KenneyUI.style_button(btn_back, KenneyUI.COLOR_YELLOW)
+	
+	_update_tab_styles()
+
+	btn_tab_matches.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_active_tab = 0
+		_update_tab_styles()
+		show_list_view()
+	)
+
+	btn_tab_games_history.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_active_tab = 1
+		_update_tab_styles()
+		show_games_history_view()
+	)
 	
 	btn_close.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -51,7 +74,21 @@ func _ready() -> void:
 		show_list_view()
 	)
 
+func _update_tab_styles() -> void:
+	if _active_tab == 0:
+		KenneyUI.style_button(btn_tab_matches, KenneyUI.COLOR_YELLOW)
+		btn_tab_matches.add_theme_color_override("font_color", Color(0.18, 0.1, 0.02, 1.0))
+		KenneyUI.style_button(btn_tab_games_history, KenneyUI.COLOR_GREY)
+		btn_tab_games_history.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72, 0.85))
+	else:
+		KenneyUI.style_button(btn_tab_games_history, KenneyUI.COLOR_YELLOW)
+		btn_tab_games_history.add_theme_color_override("font_color", Color(0.18, 0.1, 0.02, 1.0))
+		KenneyUI.style_button(btn_tab_matches, KenneyUI.COLOR_GREY)
+		btn_tab_matches.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72, 0.85))
+
 func open() -> void:
+	_active_tab = 0
+	_update_tab_styles()
 	show_list_view()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	load_history()
@@ -62,18 +99,57 @@ func close() -> void:
 	)
 
 func show_list_view() -> void:
-	lbl_title.text = "📜 تاریخچه بازی‌ها"
+	lbl_title.text = "📜 تاریخچه مسابقات"
 	scroll_list.visible = true
 	scroll_details.visible = false
+	scroll_games_history.visible = false
 	btn_close.visible = true
 	btn_back.visible = false
+	sub_tabs_row.visible = true
 
 func show_details_view() -> void:
 	lbl_title.text = "🔍 جزئیات مسابقه"
 	scroll_list.visible = false
 	scroll_details.visible = true
+	scroll_games_history.visible = false
 	btn_close.visible = false
 	btn_back.visible = true
+	sub_tabs_row.visible = false
+
+func show_games_history_view() -> void:
+	lbl_title.text = "🎮 آمار بازی‌های شما"
+	scroll_list.visible = false
+	scroll_details.visible = false
+	scroll_games_history.visible = true
+	btn_close.visible = true
+	btn_back.visible = false
+	sub_tabs_row.visible = true
+	load_games_history()
+
+func load_games_history() -> void:
+	if not _my_games_history_data.is_empty():
+		lbl_loading.visible = false
+		GamesHistoryViewHelper.populate_games_history(games_history_container, _my_games_history_data)
+		return
+
+	lbl_loading.visible = true
+	lbl_loading.text = "در حال بارگذاری آمار بازی‌ها..."
+
+	NetworkManager.api.get_my_history(func(success: bool, _code: int, data: Variant):
+		if not is_instance_valid(self) or not visible:
+			return
+		lbl_loading.visible = false
+		if success and typeof(data) == TYPE_DICTIONARY and data.has("result"):
+			var res = data["result"]
+			if typeof(res) == TYPE_DICTIONARY:
+				_my_games_history_data = res
+			else:
+				_my_games_history_data = {}
+			GamesHistoryViewHelper.populate_games_history(games_history_container, _my_games_history_data)
+		else:
+			lbl_loading.text = "خطا در دریافت آمار بازی‌ها"
+			lbl_loading.visible = true
+	)
 
 func load_history() -> void:
 	for child in list_container.get_children():

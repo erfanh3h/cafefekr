@@ -63,6 +63,9 @@ func get_my_history(callback: Callable) -> void:
 func get_my_game_history(callback: Callable) -> void:
 	_http_get("/my-game-history", _get_auth_headers(), callback)
 
+func get_user_data(user_id: String, callback: Callable) -> void:
+	_http_get("/user-data/%s" % user_id, PackedStringArray(), callback)
+
 func claim_free_coin(callback: Callable) -> void:
 	_http_get("/get-free-coin", _get_auth_headers(), callback)
 
