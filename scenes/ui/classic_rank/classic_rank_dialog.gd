@@ -29,7 +29,7 @@ signal start_game_requested(game_type: String)
 var selected_game_type: String = GameTypes.TIC_TAC_TOE
 var _game_cards: Dictionary = {} # game_type -> Button card
 
-# All 19 playable games ordered logically
+# All playable games ordered logically
 const AVAILABLE_GAMES: Array[String] = [
 	GameTypes.TIC_TAC_TOE,
 	GameTypes.CHESS,
@@ -45,6 +45,7 @@ const AVAILABLE_GAMES: Array[String] = [
 	GameTypes.LUDO,
 	GameTypes.RISK,
 	GameTypes.UNO,
+	GameTypes.QUIZ,
 	GameTypes.BATTLESHIP,
 	GameTypes.FEKRBEKR,
 	GameTypes.RPC,

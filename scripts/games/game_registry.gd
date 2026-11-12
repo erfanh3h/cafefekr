@@ -30,6 +30,8 @@ const LUDO_SCENE: String = "res://scenes/games/ludo/ludo_3d.tscn"
 const LUDO_TOP_HEADER_SCENE: String = "res://scenes/games/ludo/ludo_top_header.tscn"
 const RISK_SCENE: String = "res://scenes/games/risk/risk_3d.tscn"
 const RISK_TOP_HEADER_SCENE: String = "res://scenes/games/risk/risk_top_header.tscn"
+const QUIZ_SCENE: String = "res://scenes/games/quiz/quiz_3d.tscn"
+const QUIZ_TOP_HEADER_SCENE: String = "res://scenes/games/quiz/quiz_top_header.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -376,6 +378,22 @@ static var _registry: Dictionary = {
 		"min_players": 2,
 		"max_players": 4,
 		"is_3d": true
+	},
+	GameTypes.QUIZ: {
+		"id": GameTypes.QUIZ,
+		"name_fa": "کوییز",
+		"narrative": "مسابقه مهیج اطلاعات عمومی در کافه فکر؛ ۱۰ سوال با پاسخگویی هم‌زمان. پاسخ درست ۱+، نادرست ۱- و بی‌پاسخ ۰ امتیاز!",
+		"board_scene": QUIZ_SCENE,
+		"top_header_scene": QUIZ_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": true,
+		"is_simultaneous": true,
+		"turn_time": 15.0,
+		"has_missed_turns_limit": false,
+		"icon": "res://assets/images/games/quiz.png",
+		"min_players": 2,
+		"max_players": 4,
+		"is_3d": true
 	}
 }
 
@@ -391,36 +409,38 @@ static func register_game(game_type: String, info: Dictionary) -> void:
 			info["name_fa"] = GameTypes.get_display_name_fa(norm)
 		_registry[norm] = info
 
-static func normalize_type(raw_type: String) -> String:
-	if raw_type.is_empty():
+static func normalize_type(raw_type: Variant) -> String:
+	var s_type = str(raw_type).strip_edges() if raw_type != null else ""
+	if s_type.is_empty():
 		return DEFAULT_GAME_TYPE
-	var clean = raw_type.to_lower().replace("_", "").replace("-", "").strip_edges()
+	var clean = s_type.to_lower().replace("_", "").replace("-", "")
 	for key in _registry.keys():
-		var k_clean = key.to_lower().replace("_", "").replace("-", "")
+		var k_clean = str(key).to_lower().replace("_", "").replace("-", "")
 		if clean == k_clean:
-			return key
-	return raw_type
+			return str(key)
+	return s_type
 
-static func get_game_info(game_type: String) -> Dictionary:
+static func get_game_info(game_type: Variant = "") -> Dictionary:
 	var normalized = normalize_type(game_type)
-	if _registry.has(normalized):
+	if _registry.has(normalized) and typeof(_registry[normalized]) == TYPE_DICTIONARY:
 		return _registry[normalized]
 	# Fallback info for unregistered games
 	return {
 		"id": normalized,
-		"name_fa": GameTypes.get_display_name_fa(normalized),
+		"name_fa": "",
 		"narrative": "",
 		"board_scene": TEMP_SCENE,
 		"max_rounds": 3,
 		"has_round_score": true,
 		"turn_time": 15.0,
+		"is_simultaneous": false,
 		"icon": "res://assets/images/games/%s.jpg" % normalized.to_lower(),
 		"min_players": 2,
 		"max_players": 2,
 		"is_3d": true
 	}
 
-static func get_board_packed_scene(game_type: String) -> PackedScene:
+static func get_board_packed_scene(game_type: Variant = "") -> PackedScene:
 	var info = get_game_info(game_type)
 	var scene_path: String = str(info.get("board_scene", ""))
 	if not scene_path.is_empty() and ResourceLoader.exists(scene_path):
@@ -430,7 +450,7 @@ static func get_board_packed_scene(game_type: String) -> PackedScene:
 		return load(TEMP_SCENE) as PackedScene
 	return load(TICTACTOE_SCENE) as PackedScene
 
-static func get_top_header_packed_scene(game_type: String) -> PackedScene:
+static func get_top_header_packed_scene(game_type: Variant = "") -> PackedScene:
 	var info = get_game_info(game_type)
 	var scene_path: String = str(info.get("top_header_scene", ""))
 	if not scene_path.is_empty() and ResourceLoader.exists(scene_path):
@@ -438,52 +458,58 @@ static func get_top_header_packed_scene(game_type: String) -> PackedScene:
 	# Default fallback to BaseTopHeader
 	return load(BASE_TOP_HEADER_SCENE) as PackedScene
 
-static func get_display_name_fa(game_type: String) -> String:
-	var info = get_game_info(game_type)
-	return info.get("name_fa", GameTypes.get_display_name_fa(game_type))
+static func get_display_name_fa(game_type: Variant = "") -> String:
+	var normalized = normalize_type(game_type)
+	if _registry.has(normalized) and typeof(_registry[normalized]) == TYPE_DICTIONARY:
+		return _registry[normalized].get("name_fa", str(normalized))
+	return str(normalized)
 
-static func get_narrative(game_type: String) -> String:
+static func get_narrative(game_type: Variant = "") -> String:
 	var info = get_game_info(game_type)
 	return info.get("narrative", "")
 
-static func get_max_rounds(game_type: String) -> int:
+static func get_max_rounds(game_type: Variant = "") -> int:
 	var info = get_game_info(game_type)
 	return int(info.get("max_rounds", 3))
 
-static func has_round_score(game_type: String = "") -> bool:
+static func has_round_score(game_type: Variant = "") -> bool:
 	var info = get_game_info(game_type)
 	if info.has("has_round_score"):
 		return bool(info.get("has_round_score", false))
 	return int(info.get("max_rounds", 1)) > 1
 
-static func get_turn_time(game_type: String) -> float:
+static func get_turn_time(game_type: Variant = "") -> float:
 	var info = get_game_info(game_type)
 	return float(info.get("turn_time", 10.0))
 
-static func has_missed_turns_limit(game_type: String = "") -> bool:
+static func has_missed_turns_limit(game_type: Variant = "") -> bool:
 	var info = get_game_info(game_type)
 	return bool(info.get("has_missed_turns_limit", false))
 
-static func get_max_missed_turns(game_type: String = "") -> int:
+static func get_max_missed_turns(game_type: Variant = "") -> int:
 	var info = get_game_info(game_type)
 	if not has_missed_turns_limit(game_type):
 		return 0
 	return int(info.get("max_missed_turns", 2))
 
-static func is_simultaneous(game_type: String = "") -> bool:
+static func is_simultaneous(game_type: Variant = "") -> bool:
 	var info = get_game_info(game_type)
-	return bool(info.get("is_simultaneous", false))
+	if typeof(info) == TYPE_DICTIONARY:
+		return bool(info.get("is_simultaneous", false))
+	return false
 
-static func is_cumulative_score(game_type: String = "") -> bool:
+static func is_cumulative_score(game_type: Variant = "") -> bool:
 	var info = get_game_info(game_type)
-	return bool(info.get("is_cumulative_score", false))
+	if typeof(info) == TYPE_DICTIONARY:
+		return bool(info.get("is_cumulative_score", false))
+	return false
 
-static func get_difficulty(game_type: String) -> String:
+static func get_difficulty(game_type: Variant = "") -> String:
 	match normalize_type(game_type):
 		GameTypes.TIC_TAC_TOE, GameTypes.RPC, GameTypes.DOTBOX, GameTypes.LUDO, GameTypes.MNUMBERS, GameTypes.UNO:
 			return "easy"
 		GameTypes.FEKRBEKR, GameTypes.PENTAGO, GameTypes.MSWEEPER, GameTypes.BATTLESHIP, \
-		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY:
+		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY, GameTypes.QUIZ:
 			return "normal"
 		GameTypes.CHESS, GameTypes.CHECKERS, GameTypes.OTHELLO, GameTypes.BACKGAMMON, \
 		GameTypes.YINSH, GameTypes.MILL, GameTypes.RISK:
@@ -491,14 +517,14 @@ static func get_difficulty(game_type: String) -> String:
 		_:
 			return "normal"
 
-static func get_difficulty_name_fa(game_type: String) -> String:
+static func get_difficulty_name_fa(game_type: Variant = "") -> String:
 	match get_difficulty(game_type):
 		"easy": return "آسان"
 		"normal": return "متوسط"
 		"hard": return "سخت"
 		_: return "متوسط"
 
-static func get_classic_rank_xp(game_type: String, is_win: bool, is_draw: bool) -> int:
+static func get_classic_rank_xp(game_type: Variant = "", is_win: bool = false, is_draw: bool = false) -> int:
 	var diff = get_difficulty(game_type)
 	if diff == "easy":
 		return 8 if is_win else (4 if is_draw else 2)
@@ -507,7 +533,7 @@ static func get_classic_rank_xp(game_type: String, is_win: bool, is_draw: bool) 
 	else:
 		return 20 if is_win else (10 if is_draw else 5)
 
-static func get_lobby_xp(game_type: String, is_win: bool, is_draw: bool) -> int:
+static func get_lobby_xp(game_type: Variant = "", is_win: bool = false, is_draw: bool = false) -> int:
 	var diff = get_difficulty(game_type)
 	if diff == "easy":
 		return 5 if is_win else (2 if is_draw else 1)
@@ -517,16 +543,19 @@ static func get_lobby_xp(game_type: String, is_win: bool, is_draw: bool) -> int:
 		return 14 if is_win else (7 if is_draw else 3)
 
 static func get_multiplayer_rank_games() -> Array[String]:
-	return [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO]
+	return [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ]
 
-static func is_multiplayer_rank_supported(game_type: String) -> bool:
+static func is_multiplayer_game(game_type: Variant = "") -> bool:
 	var norm = normalize_type(game_type)
-	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO]
+	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ]
 
-static func get_multi_rank_xp(_game_type: String, is_rank1: bool, is_rank2: bool = false) -> int:
+static func is_multiplayer_rank_supported(game_type: Variant = "") -> bool:
+	var norm = normalize_type(game_type)
+	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ]
+
+static func get_multi_rank_xp(_game_type: Variant = "", is_rank1: bool = false, is_rank2: bool = false) -> int:
 	if is_rank1:
 		return 50
 	elif is_rank2:
 		return 30
 	return 10
-

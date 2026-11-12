@@ -151,7 +151,7 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 
 	var resolved_winner = winner_player_index
 	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
-		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.QUIZ]:
 			if p1_score > p2_score:
 				resolved_winner = 1
 			elif p2_score > p1_score:
@@ -291,7 +291,7 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		ActionVFXManager.shake_camera(0.2, 0.25)
 		
 	# Setup player cards (supports both standard 2-player and 3-4 player Ludo podium)
-	var is_multi_ludo = (GameManager.match_players.size() > 2 or GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO]) and (GameManager.ludo_rank1 > 0 or winner_player_index > 2)
+	var is_multi_ludo = (GameManager.match_players.size() > 2 or GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ]) and (GameManager.ludo_rank1 > 0 or winner_player_index > 2)
 	var p1_data: Dictionary = {}
 	var p2_data: Dictionary = {}
 	if is_multi_ludo:
@@ -464,7 +464,7 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 			lbl_p2_score.text = prefix % _fa_digits(p2_score)
 	if visible and is_instance_valid(panel) and panel.visible:
 		if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
-			if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
+			if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.QUIZ]:
 				var score_winner = _current_winner_index
 				if p1_score > p2_score:
 					score_winner = 1

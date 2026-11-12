@@ -89,6 +89,7 @@ var available_games = [
 	GameTypes.LUDO,
 	GameTypes.RISK,
 	GameTypes.UNO,
+	GameTypes.QUIZ,
 	GameTypes.BATTLESHIP,
 	GameTypes.FEKRBEKR,
 	GameTypes.RPC,
@@ -356,7 +357,7 @@ func _update_selected_game_display() -> void:
 	lbl_selected_game.text = GameTypes.get_display_name_fa(selected_create_game_type)
 	selected_game_icon.texture = _get_game_texture(selected_create_game_type)
 	if is_instance_valid(player_count_container):
-		var is_multi = (selected_create_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO])
+		var is_multi = (selected_create_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ])
 		player_count_container.visible = is_multi
 		if not is_multi:
 			selected_create_player_count = 2
@@ -863,7 +864,7 @@ func _on_create_pressed() -> void:
 	var r_pwd = input_room_password.text.strip_edges() if is_instance_valid(input_room_password) else ""
 	
 	lbl_status.text = "در حال ساخت اتاق..."
-	var l_count = selected_create_player_count if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO] else 2
+	var l_count = selected_create_player_count if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ] else 2
 	var payload = {
 		"id": Commands.Lobby_Create,
 		"data": {

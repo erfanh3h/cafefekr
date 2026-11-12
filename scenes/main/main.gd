@@ -1845,7 +1845,7 @@ func _on_surrender_requested() -> void:
 
 func _on_player_surrendered(gamer_id: int) -> void:
 
-	if GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO] and GameManager.match_players.size() > 2 and gamer_id != GameManager.my_player_index:
+	if GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ] and GameManager.match_players.size() > 2 and gamer_id != GameManager.my_player_index:
 
 		var p_data = GameManager.get_player_data_by_gamer_id(gamer_id)
 
@@ -1967,7 +1967,7 @@ func _on_game_finished(data: Dictionary) -> void:
 
 	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
 
-		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.MSWEEPER, GameTypes.BOXFOUR]:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.MSWEEPER, GameTypes.BOXFOUR, GameTypes.QUIZ]:
 
 			if GameManager.p1_score > GameManager.p2_score:
 
@@ -2163,6 +2163,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameTypes.RISK
 		elif g_data.has("hands_count") and g_data.has("current_color") and g_data.has("top_card"):
 			inferred_type = GameTypes.UNO
+		elif g_data.has("current_question") or (g_data.has("total_questions") and g_data.has("scores")):
+			inferred_type = GameTypes.QUIZ
 		elif g_data.has("rotation_played") or g_data.has("selection_played") or g_data.has("pawns"):
 			inferred_type = GameTypes.PENTAGO
 		elif g_data.has("player1_choices") or g_data.has("player2_choices"):

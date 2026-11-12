@@ -32,7 +32,8 @@ var _game_cards: Dictionary = {} # game_type -> Button card
 const AVAILABLE_MULTI_RANK_GAMES: Array[String] = [
 	GameTypes.LUDO,
 	GameTypes.RISK,
-	GameTypes.UNO
+	GameTypes.UNO,
+	GameTypes.QUIZ
 ]
 
 var _style_card_normal: StyleBoxFlat

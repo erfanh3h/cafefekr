@@ -98,7 +98,7 @@ const TWO_PLAYER_GAMES = [
 	"TicTacToe", "RPC", "DotBox", "MNumbers", "MSweeper",
 	"FekrBekr", "Yatzy", "Pentago", "FourInRow", "Sudoku",
 	"BattleShip", "BoxFour", "Yinsh", "Chess", "Checkers",
-	"Othello", "Mill", "BackGammon"
+	"Othello", "Mill", "BackGammon", "Quiz"
 ]
 
 const TIMELINE_CONFIG = [
