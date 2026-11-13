@@ -6,6 +6,7 @@ extends "res://scenes/games/base/base_top_header.gd"
 # Displays each player's live hand count (🃏۷) and UNO alert (🔥۱).
 
 var _hand_counts: Array = [7, 7, 7, 7]
+var _last_layout_players: int = -1
 
 const FACTION_COLORS: Dictionary = {
 	1: Color(0.95, 0.25, 0.30), # Ruby Red
@@ -149,6 +150,7 @@ func _get_total_players() -> int:
 	return clampi(max(2, GameManager.match_players.size()), 2, 4)
 
 func _apply_layout_for_player_count(total_players: int) -> void:
+	_last_layout_players = total_players
 	var players_row = get_node_or_null("Margin/VBoxMain/PlayersRow") as HBoxContainer
 	var is_compact = (total_players > 2)
 	if is_instance_valid(players_row):
@@ -271,6 +273,8 @@ func update_uno_hands(hands_data: Variant, rank1: int = 0, rank2: int = 0) -> vo
 				elif d.has(i):
 					_hand_counts[i - 1] = int(d[i])
 	var total_players = _get_total_players()
+	if total_players != _last_layout_players:
+		_apply_layout_for_player_count(total_players)
 	var is_compact = (total_players > 2)
 	var score_labels = {
 		1: p1_score_lbl,
@@ -302,6 +306,9 @@ func update_uno_hands(hands_data: Variant, rank1: int = 0, rank2: int = 0) -> vo
 				rl.text = "🔥 اونو!"
 			else:
 				rl.text = SEAT_BADGES_COMPACT[idx] if is_compact else SEAT_BADGES_2P[idx]
+
+func update_scores(_p1_score: int, _p2_score: int) -> void:
+	update_uno_hands(_hand_counts, 0, 0)
 
 func reset_header() -> void:
 	super.reset_header()

@@ -58,7 +58,8 @@ class WildColorWheelGraphic extends Control:
 
 # --- Authoritative UNO Match State ---
 var my_hand: Array = []
-var hands_count: Dictionary = {"1": 7, "2": 7, "3": 7, "4": 7}
+var hands_count: Dictionary = {}
+var total_players: int = 2
 var top_card: Dictionary = {"color": "red", "value": "7", "uid": 0}
 var current_color: String = "red"
 var direction: int = 1
@@ -140,8 +141,10 @@ func _enforce_camera_framing() -> void:
 		table.target_distance = camera_distance
 		table.target_pitch = camera_pitch
 		table.target_yaw = 0.0
-		if table.has_method("set_player_seats_count"):
-			var p_cnt: int = clampi(max(2, GameManager.match_players.size()), 2, 4)
+		var p_cnt: int = _get_total_players()
+		if table.has_method("set_player_chair_count"):
+			table.set_player_chair_count(p_cnt)
+		elif table.has_method("set_player_seats_count"):
 			table.set_player_seats_count(p_cnt)
 
 func _process(_delta: float) -> void:
@@ -533,14 +536,26 @@ func _get_playable_count() -> int:
 			count += 1
 	return count
 
+func _get_total_players() -> int:
+	if GameManager.match_players.size() >= 2:
+		total_players = clampi(GameManager.match_players.size(), 2, 4)
+		return total_players
+	var inferred: int = 2
+	for k: Variant in hands_count.keys():
+		var ki: int = int(str(k))
+		if ki >= 2 and ki <= 4 and int(hands_count[k]) > 0 and ki > inferred:
+			inferred = ki
+	total_players = clampi(inferred, 2, 4)
+	return total_players
+
 func _get_card_count_for_player(pid: int) -> int:
-	if pid == my_player_index and not my_hand.is_empty():
-		return my_hand.size()
 	var s_key: String = str(pid)
 	if hands_count.has(s_key):
 		return int(hands_count[s_key])
 	if hands_count.has(pid):
 		return int(hands_count[pid])
+	if pid == my_player_index and (_match_started or not my_hand.is_empty()):
+		return my_hand.size()
 	return 7
 
 func _has_player_called_uno(pid: int) -> bool:
@@ -563,12 +578,35 @@ func _get_player_short_name(pid: int) -> String:
 func _update_hands_count_from_variant(raw_counts: Variant) -> void:
 	if typeof(raw_counts) == TYPE_DICTIONARY:
 		var d: Dictionary = raw_counts as Dictionary
-		for k: Variant in d.keys():
-			hands_count[str(k)] = int(d[k])
+		if not d.is_empty():
+			hands_count.clear()
+			for k: Variant in d.keys():
+				hands_count[str(k)] = int(d[k])
 	elif typeof(raw_counts) == TYPE_ARRAY:
 		var arr: Array = raw_counts as Array
-		for i: int in range(arr.size()):
-			hands_count[str(i + 1)] = int(arr[i])
+		if not arr.is_empty():
+			hands_count.clear()
+			for i: int in range(arr.size()):
+				hands_count[str(i + 1)] = int(arr[i])
+
+func _get_hands_count_array() -> Array:
+	var arr: Array = []
+	var total_p: int = _get_total_players()
+	for i: int in range(1, total_p + 1):
+		arr.append(_get_card_count_for_player(i))
+	return arr
+
+func _refresh_top_header_badges() -> void:
+	var tree: SceneTree = get_tree()
+	if not tree:
+		return
+	var hud: Node = tree.get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(hud):
+		hud = tree.root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
+		if is_instance_valid(header) and header.has_method("update_uno_hands"):
+			header.update_uno_hands(_get_hands_count_array(), rank1_player, rank2_player)
 
 # ==============================================================================
 # 4. VISUAL REFRESH (3D TABLETOP, 3D OPPONENTS & FLOATING CURVED CARD HAND)
@@ -613,6 +651,8 @@ func _update_hud_visibility() -> void:
 	var should_show: bool = not _is_hud_overlay_blocking()
 	if hud_root.visible != should_show:
 		hud_root.visible = should_show
+		if should_show:
+			_refresh_top_header_badges()
 
 func _refresh_all_visuals() -> void:
 	my_player_index = max(1, GameManager.my_player_index)
@@ -636,6 +676,9 @@ func _refresh_all_visuals() -> void:
 
 	# 5. Refresh Contextual Action Pills
 	_refresh_action_buttons(playable_cnt)
+
+	# 6. Refresh Player Card Count Badges in Top Header
+	_refresh_top_header_badges()
 
 func _refresh_top_status_pill(playable_cnt: int) -> void:
 	if not is_instance_valid(turn_status_label):
@@ -672,15 +715,14 @@ func _refresh_top_status_pill(playable_cnt: int) -> void:
 
 func _refresh_3d_opponents() -> void:
 	_pid_to_seat_slot.clear()
-	var total_p: int = clampi(max(2, GameManager.match_players.size()), 2, 4)
-	for k: Variant in hands_count.keys():
-		var ki: int = int(str(k))
-		if ki > total_p and int(hands_count[k]) > 0:
-			total_p = ki
+	var total_p: int = _get_total_players()
 
 	var table_node: Node = get_tree().get_first_node_in_group("cafe_table")
-	if is_instance_valid(table_node) and table_node.has_method("set_player_seats_count"):
-		table_node.set_player_seats_count(total_p)
+	if is_instance_valid(table_node):
+		if table_node.has_method("set_player_chair_count"):
+			table_node.set_player_chair_count(total_p)
+		elif table_node.has_method("set_player_seats_count"):
+			table_node.set_player_seats_count(total_p)
 
 	var opp_pids: Array[int] = []
 	for offset: int in range(1, total_p):
@@ -981,6 +1023,8 @@ func _apply_uno_state_dict(data: Dictionary) -> void:
 
 	if data.has("hands_count"):
 		_update_hands_count_from_variant(data["hands_count"])
+	elif (data.has("my_hand") or data.has("hand")) and my_player_index >= 1:
+		hands_count[str(my_player_index)] = my_hand.size()
 
 	if data.has("top_card") and typeof(data["top_card"]) == TYPE_DICTIONARY:
 		top_card = (data["top_card"] as Dictionary).duplicate(true)
@@ -1080,12 +1124,21 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 			var card: Dictionary = (p.get("card", {}) as Dictionary) if typeof(p.get("card")) == TYPE_DICTIONARY else {}
 			if not card.is_empty():
 				top_card = card.duplicate(true)
+			if pid == my_player_index and card.has("uid"):
+				var played_uid: int = int(card["uid"])
+				for h_i: int in range(my_hand.size() - 1, -1, -1):
+					var hc: Variant = my_hand[h_i]
+					if typeof(hc) == TYPE_DICTIONARY and int((hc as Dictionary).get("uid", -1)) == played_uid:
+						my_hand.remove_at(h_i)
+						break
 			if p.has("current_color") and p["current_color"] != null:
 				current_color = String(p["current_color"])
 			if p.has("direction") and p["direction"] != null:
 				direction = int(p["direction"])
 			if p.has("hands_count"):
 				_update_hands_count_from_variant(p["hands_count"])
+			elif pid > 0 and hands_count.has(str(pid)):
+				hands_count[str(pid)] = maxi(0, int(hands_count[str(pid)]) - 1)
 			if p.has("deck_remaining") and p["deck_remaining"] != null:
 				deck_remaining = int(p["deck_remaining"])
 			elif p.has("draw_pile_count") and p["draw_pile_count"] != null:
@@ -1139,8 +1192,10 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 				_apply_uno_state_dict(p["user_data"] as Dictionary)
 			if p.has("my_hand") and typeof(p["my_hand"]) == TYPE_ARRAY:
 				my_hand = (p["my_hand"] as Array).duplicate(true)
+				hands_count[str(my_player_index)] = my_hand.size()
 			elif p.has("hand") and typeof(p["hand"]) == TYPE_ARRAY:
 				my_hand = (p["hand"] as Array).duplicate(true)
+				hands_count[str(my_player_index)] = my_hand.size()
 
 			var turn_passed: bool = bool(p.get("turn_passed", false))
 			var playable: bool = bool(p.get("playable", p.get("drawn_is_playable", false))) and not turn_passed
@@ -1157,6 +1212,9 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 			var d_pid: int = int(p.get("player", p.get("gamer_id", 0)))
 			if p.has("hands_count"):
 				_update_hands_count_from_variant(p["hands_count"])
+			elif d_pid > 0 and hands_count.has(str(d_pid)):
+				var d_cnt: int = int(p.get("count", p.get("drawn_count", 1)))
+				hands_count[str(d_pid)] = int(hands_count[str(d_pid)]) + maxi(1, d_cnt)
 			if p.has("deck_remaining") and p["deck_remaining"] != null:
 				deck_remaining = int(p["deck_remaining"])
 			elif p.has("draw_pile_count") and p["draw_pile_count"] != null:
@@ -1226,7 +1284,7 @@ func reset_board() -> void:
 	_match_started = false
 	selected_card_uid = -1
 	my_hand.clear()
-	hands_count = {"1": 7, "2": 7, "3": 7, "4": 7}
+	hands_count.clear()
 	top_card.clear()
 	has_drawn_this_turn = false
 	pending_wild_card.clear()

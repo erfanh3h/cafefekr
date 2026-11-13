@@ -675,6 +675,7 @@ func update_3d_opponent_fans(seat_counts: Dictionary, active_seat: int, seat_nam
 	for s_idx: int in _opponent_fans.keys():
 		var holder: Node3D = _opponent_fans[s_idx]
 		for ch: Node in holder.get_children():
+			holder.remove_child(ch)
 			ch.queue_free()
 		if not seat_counts.has(s_idx):
 			holder.visible = false
