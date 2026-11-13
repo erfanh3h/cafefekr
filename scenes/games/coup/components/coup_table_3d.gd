@@ -59,15 +59,15 @@ func _process(delta: float) -> void:
 			var pulse: float = 1.0 + sin(_anim_time * 6.0) * 0.08
 			ring.scale = Vector3(pulse, 1.0, pulse)
 
-func _create_label_3d(txt: String, f_size: int = 34, col: Color = Color.WHITE, p_size: float = 0.0011) -> Label3D:
+func _create_label_3d(txt: String, f_size: int = 40, col: Color = Color.WHITE, p_size: float = 0.00125) -> Label3D:
 	var lbl: Label3D = Label3D.new()
 	lbl.font = FontHekayat
 	lbl.text = txt
 	lbl.font_size = f_size
 	lbl.pixel_size = p_size
 	lbl.modulate = col
-	lbl.outline_size = 10
-	lbl.outline_modulate = Color(0.03, 0.03, 0.05, 0.96)
+	lbl.outline_size = 14
+	lbl.outline_modulate = Color(0.03, 0.03, 0.05, 0.98)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	return lbl
@@ -161,7 +161,7 @@ func _build_tabletop() -> void:
 	_add_torus(self, 0.332, 0.340, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
 	_add_torus(self, 0.240, 0.246, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
 
-	var crest_lbl: Label3D = _create_label_3d("👑 دیوان کودتا", 33, Color(0.98, 0.86, 0.46, 0.90), 0.00105)
+	var crest_lbl: Label3D = _create_label_3d("👑 دیوان کودتا", 40, Color(0.98, 0.88, 0.50, 0.94), 0.0012)
 	crest_lbl.position = Vector3(0.0, y_base + 0.006, -0.20)
 	crest_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	add_child(crest_lbl)
@@ -188,13 +188,13 @@ func _build_tabletop() -> void:
 	_add_box(_deck_top_card, Vector3(0.142, 0.0035, 0.212), Vector3(0.0, 0.0005, 0.0), mat_card_back)
 	_add_torus(_deck_top_card, 0.036, 0.042, Vector3(0.0, 0.0025, 0.0), mat_gold)
 
-	var coup_logo: Label3D = _create_label_3d("COUP", 39, Color(1.0, 0.86, 0.32), 0.0011)
+	var coup_logo: Label3D = _create_label_3d("COUP", 46, Color(1.0, 0.88, 0.36), 0.00125)
 	coup_logo.position = Vector3(0.0, 0.004, 0.0)
 	coup_logo.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_deck_top_card.add_child(coup_logo)
 
-	_deck_count_lbl = _create_label_3d("۷ کارت دربار", 27, Color(0.98, 0.94, 0.84), 0.0010)
-	_deck_count_lbl.position = Vector3(0.0, 0.007, 0.152)
+	_deck_count_lbl = _create_label_3d("۷ کارت دربار", 34, Color(0.98, 0.95, 0.86), 0.0012)
+	_deck_count_lbl.position = Vector3(0.0, 0.007, 0.155)
 	_deck_count_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_deck_root.add_child(_deck_count_lbl)
 
@@ -229,8 +229,8 @@ func _build_tabletop() -> void:
 			)
 			_treasury_coins.append(c_mesh)
 
-	var tr_lbl: Label3D = _create_label_3d("خزانه سکه", 27, Color(1.0, 0.88, 0.45), 0.0010)
-	tr_lbl.position = Vector3(0.0, 0.012, 0.122)
+	var tr_lbl: Label3D = _create_label_3d("خزانه سکه", 34, Color(1.0, 0.90, 0.48), 0.0012)
+	tr_lbl.position = Vector3(0.0, 0.012, 0.125)
 	tr_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_treasury_root.add_child(tr_lbl)
 
@@ -263,8 +263,8 @@ func _build_tabletop() -> void:
 	_phase_crystal.material_override = _phase_gem_mat
 	beacon_root.add_child(_phase_crystal)
 
-	_phase_name_3d = _create_label_3d("نوبت اقدام", 29, Color(0.95, 0.98, 0.92), 0.0010)
-	_phase_name_3d.position = Vector3(0.0, 0.014, 0.078)
+	_phase_name_3d = _create_label_3d("نوبت اقدام", 36, Color(0.95, 0.98, 0.92), 0.0012)
+	_phase_name_3d.position = Vector3(0.0, 0.014, 0.080)
 	_phase_name_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	beacon_root.add_child(_phase_name_3d)
 
@@ -431,7 +431,7 @@ func update_opponent_stations(seat_data: Dictionary, active_seat: int) -> void:
 				_add_box(flat_piv, Vector3(0.072, 0.003, 0.098), Vector3.ZERO, mat_dead_back)
 				_add_box(flat_piv, Vector3(0.064, 0.0036, 0.090), Vector3(0.0, 0.0005, 0.0), role_mat)
 
-				var r_lbl: Label3D = _create_label_3d("💀 " + CoupCardWidgetScript.get_role_name_fa(role_str), 25, Color(1.0, 0.78, 0.78), 0.00095)
+				var r_lbl: Label3D = _create_label_3d("💀 " + CoupCardWidgetScript.get_role_name_fa(role_str), 28, Color(1.0, 0.82, 0.82), 0.0011)
 				r_lbl.position = Vector3(0.0, 0.004, 0.0)
 				r_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 				flat_piv.add_child(r_lbl)
@@ -456,13 +456,13 @@ func update_opponent_stations(seat_data: Dictionary, active_seat: int) -> void:
 		elif is_turn:
 			badge_txt = "🟢 " + badge_txt
 
-		var badge_col: Color = Color(1.0, 0.45, 0.40) if not alive else (
-			Color(1.0, 0.88, 0.25) if is_targetable else (
-				Color(0.46, 0.98, 0.66) if is_turn else Color(0.96, 0.92, 0.80)
+		var badge_col: Color = Color(1.0, 0.48, 0.42) if not alive else (
+			Color(1.0, 0.90, 0.28) if is_targetable else (
+				Color(0.48, 0.98, 0.68) if is_turn else Color(0.98, 0.94, 0.84)
 			)
 		)
-		var seat_lbl: Label3D = _create_label_3d(badge_txt, 33, badge_col, 0.0011)
-		seat_lbl.position = Vector3(0.0, 0.125, 0.0)
+		var seat_lbl: Label3D = _create_label_3d(badge_txt, 42, badge_col, 0.00125)
+		seat_lbl.position = Vector3(0.0, 0.142, 0.0)
 		seat_lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		seat_lbl.no_depth_test = true
 		holder.add_child(seat_lbl)

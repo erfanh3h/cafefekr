@@ -177,18 +177,20 @@ func _make_glass_style(bg: Color, border: Color, radius: int = 18, border_w: int
 	s.shadow_offset = Vector2(0, 3)
 	return s
 
-func _style_action_button(btn: Button, bg: Color, border: Color, text_col: Color = Color.WHITE, f_size: int = 24, disabled: bool = false) -> void:
+func _style_action_button(btn: Button, bg: Color, border: Color, text_col: Color = Color.WHITE, f_size: int = 25, disabled: bool = false) -> void:
 	btn.add_theme_font_override("font", FontHekayat)
 	btn.add_theme_font_size_override("font_size", f_size)
 	btn.add_theme_color_override("font_color", text_col)
 	btn.add_theme_color_override("font_hover_color", text_col.lightened(0.12))
 	btn.add_theme_color_override("font_pressed_color", text_col)
-	btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.55, 0.58, 0.72))
+	btn.add_theme_color_override("font_disabled_color", Color(0.62, 0.62, 0.66, 0.78))
+	btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.88))
+	btn.add_theme_constant_override("outline_size", 3)
 
-	var st_norm: StyleBoxFlat = _make_glass_style(bg, border, 14, 2)
-	var st_hov: StyleBoxFlat = _make_glass_style(bg.lightened(0.10), border.lightened(0.18), 14, 2)
-	var st_press: StyleBoxFlat = _make_glass_style(bg.darkened(0.10), border, 14, 2)
-	var st_dis: StyleBoxFlat = _make_glass_style(Color(0.14, 0.13, 0.15, 0.65), Color(0.35, 0.32, 0.32, 0.45), 14, 1)
+	var st_norm: StyleBoxFlat = _make_glass_style(bg, border, 16, 2)
+	var st_hov: StyleBoxFlat = _make_glass_style(bg.lightened(0.10), border.lightened(0.18), 16, 2)
+	var st_press: StyleBoxFlat = _make_glass_style(bg.darkened(0.10), border, 16, 2)
+	var st_dis: StyleBoxFlat = _make_glass_style(Color(0.13, 0.12, 0.14, 0.72), Color(0.36, 0.34, 0.34, 0.50), 16, 1)
 
 	btn.add_theme_stylebox_override("normal", st_norm)
 	btn.add_theme_stylebox_override("hover", st_hov)
@@ -197,6 +199,115 @@ func _style_action_button(btn: Button, bg: Color, border: Color, text_col: Color
 	btn.disabled = disabled
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_ARROW if disabled else Control.CURSOR_POINTING_HAND
+
+func _make_gamer_action_btn(
+	title_txt: String,
+	cost_txt: String,
+	badge_txt: String,
+	badge_bg: Color,
+	badge_bd: Color,
+	bg: Color,
+	bd: Color,
+	btn_height: float = 84.0,
+	is_dis: bool = false,
+	title_size: int = 25
+) -> Button:
+	var btn: Button = Button.new()
+	btn.custom_minimum_size = Vector2(0, btn_height)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.text = ""
+	_style_action_button(btn, bg, bd, Color.WHITE, title_size, is_dis)
+
+	var m: MarginContainer = MarginContainer.new()
+	m.set_anchors_preset(Control.PRESET_FULL_RECT)
+	m.add_theme_constant_override("margin_left", 10)
+	m.add_theme_constant_override("margin_right", 10)
+	m.add_theme_constant_override("margin_top", 6)
+	m.add_theme_constant_override("margin_bottom", 6)
+	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(m)
+
+	var vb: VBoxContainer = VBoxContainer.new()
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_theme_constant_override("separation", 4)
+	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	m.add_child(vb)
+
+	var top_hb: HBoxContainer = HBoxContainer.new()
+	top_hb.add_theme_constant_override("separation", 6)
+	top_hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(top_hb)
+
+	if not cost_txt.is_empty():
+		var c_pill: PanelContainer = PanelContainer.new()
+		c_pill.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		c_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var cp_st: StyleBoxFlat = StyleBoxFlat.new()
+		cp_st.bg_color = Color(0.06, 0.05, 0.04, 0.72) if not is_dis else Color(0.10, 0.10, 0.12, 0.55)
+		cp_st.border_color = Color(1.0, 0.84, 0.34, 0.72) if not is_dis else Color(0.45, 0.45, 0.48, 0.45)
+		cp_st.set_border_width_all(1)
+		cp_st.set_corner_radius_all(9)
+		cp_st.content_margin_left = 8
+		cp_st.content_margin_right = 8
+		cp_st.content_margin_top = 1
+		cp_st.content_margin_bottom = 1
+		c_pill.add_theme_stylebox_override("panel", cp_st)
+		top_hb.add_child(c_pill)
+
+		var c_lbl: Label = Label.new()
+		c_lbl.text = cost_txt
+		c_lbl.add_theme_font_override("font", FontHekayat)
+		c_lbl.add_theme_font_size_override("font_size", 22)
+		c_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.44) if not is_dis else Color(0.66, 0.66, 0.70))
+		c_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.88))
+		c_lbl.add_theme_constant_override("outline_size", 2)
+		c_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		c_pill.add_child(c_lbl)
+
+	var t_lbl: Label = Label.new()
+	t_lbl.text = title_txt
+	t_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if not cost_txt.is_empty() else HORIZONTAL_ALIGNMENT_CENTER
+	t_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	t_lbl.add_theme_font_override("font", FontHekayat)
+	t_lbl.add_theme_font_size_override("font_size", title_size)
+	t_lbl.add_theme_color_override("font_color", Color.WHITE if not is_dis else Color(0.68, 0.68, 0.72))
+	t_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
+	t_lbl.add_theme_constant_override("outline_size", 3)
+	t_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_hb.add_child(t_lbl)
+
+	if not badge_txt.is_empty():
+		var bot_hb: HBoxContainer = HBoxContainer.new()
+		bot_hb.alignment = BoxContainer.ALIGNMENT_END if not cost_txt.is_empty() else BoxContainer.ALIGNMENT_CENTER
+		bot_hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vb.add_child(bot_hb)
+
+		var b_pill: PanelContainer = PanelContainer.new()
+		b_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var bp_st: StyleBoxFlat = StyleBoxFlat.new()
+		bp_st.bg_color = badge_bg if not is_dis else Color(0.18, 0.16, 0.18, 0.82)
+		bp_st.border_color = badge_bd if not is_dis else Color(0.45, 0.42, 0.45, 0.65)
+		bp_st.set_border_width_all(1)
+		bp_st.set_corner_radius_all(8)
+		bp_st.content_margin_left = 8
+		bp_st.content_margin_right = 8
+		bp_st.content_margin_top = 1
+		bp_st.content_margin_bottom = 1
+		b_pill.add_theme_stylebox_override("panel", bp_st)
+		bot_hb.add_child(b_pill)
+
+		var b_lbl: Label = Label.new()
+		b_lbl.text = badge_txt
+		b_lbl.add_theme_font_override("font", FontHekayat)
+		b_lbl.add_theme_font_size_override("font_size", 19)
+		b_lbl.add_theme_color_override("font_color", Color(0.98, 0.98, 0.94) if not is_dis else Color(0.84, 0.74, 0.72))
+		b_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+		b_lbl.add_theme_constant_override("outline_size", 2)
+		b_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b_pill.add_child(b_lbl)
+
+	return btn
 
 func _build_hud() -> void:
 	hud_layer = CanvasLayer.new()
@@ -210,25 +321,25 @@ func _build_hud() -> void:
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(hud_root)
 
-	# 1. Compact Floating Top Status Pill (Below TopHeader, keeps 3D table clear)
+	# 1. Floating Top Status & Utility Bar (Below TopHeader, keeps 3D table clear)
 	status_pill = PanelContainer.new()
 	status_pill.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	status_pill.offset_left = 48
-	status_pill.offset_right = -48
-	status_pill.offset_top = 336
-	status_pill.offset_bottom = 388
+	status_pill.offset_left = 24
+	status_pill.offset_right = -24
+	status_pill.offset_top = 316
+	status_pill.offset_bottom = 392
 	status_pill.mouse_filter = Control.MOUSE_FILTER_PASS
 	status_pill.add_theme_stylebox_override(
 		"panel",
-		_make_glass_style(Color(0.08, 0.06, 0.05, 0.88), Color(0.88, 0.68, 0.28, 0.72), 22, 1)
+		_make_glass_style(Color(0.07, 0.05, 0.04, 0.92), Color(0.90, 0.72, 0.30, 0.82), 24, 2)
 	)
 	hud_root.add_child(status_pill)
 
 	var pill_m: MarginContainer = MarginContainer.new()
-	pill_m.add_theme_constant_override("margin_left", 12)
-	pill_m.add_theme_constant_override("margin_right", 14)
-	pill_m.add_theme_constant_override("margin_top", 4)
-	pill_m.add_theme_constant_override("margin_bottom", 4)
+	pill_m.add_theme_constant_override("margin_left", 14)
+	pill_m.add_theme_constant_override("margin_right", 16)
+	pill_m.add_theme_constant_override("margin_top", 6)
+	pill_m.add_theme_constant_override("margin_bottom", 6)
 	status_pill.add_child(pill_m)
 
 	var pill_hbox: HBoxContainer = HBoxContainer.new()
@@ -237,51 +348,69 @@ func _build_hud() -> void:
 
 	zoom_btn = Button.new()
 	zoom_btn.text = "🔍 نما"
-	zoom_btn.custom_minimum_size = Vector2(82, 34)
-	_style_action_button(zoom_btn, Color(0.14, 0.19, 0.25, 0.92), Color(0.55, 0.74, 0.90, 0.70), Color(0.92, 0.96, 1.0), 22)
+	zoom_btn.custom_minimum_size = Vector2(106, 50)
+	_style_action_button(zoom_btn, Color(0.14, 0.21, 0.28, 0.95), Color(0.56, 0.78, 0.94, 0.80), Color(0.94, 0.98, 1.0), 23)
 	zoom_btn.pressed.connect(_on_zoom_cycle_pressed)
 	pill_hbox.add_child(zoom_btn)
 
 	rules_btn = Button.new()
 	rules_btn.text = "📜 نقش‌ها"
-	rules_btn.custom_minimum_size = Vector2(96, 34)
-	_style_action_button(rules_btn, Color(0.32, 0.16, 0.42, 0.92), Color(0.76, 0.54, 0.92, 0.75), Color(0.98, 0.92, 1.0), 22)
+	rules_btn.custom_minimum_size = Vector2(126, 50)
+	_style_action_button(rules_btn, Color(0.36, 0.16, 0.46, 0.95), Color(0.80, 0.58, 0.96, 0.85), Color(0.98, 0.94, 1.0), 23)
 	rules_btn.pressed.connect(_on_open_roles_modal)
 	pill_hbox.add_child(rules_btn)
+
+	var deck_pill: PanelContainer = PanelContainer.new()
+	deck_pill.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var deck_st: StyleBoxFlat = StyleBoxFlat.new()
+	deck_st.bg_color = Color(0.18, 0.13, 0.06, 0.90)
+	deck_st.border_color = Color(0.90, 0.72, 0.30, 0.68)
+	deck_st.set_border_width_all(1)
+	deck_st.set_corner_radius_all(12)
+	deck_st.content_margin_left = 10
+	deck_st.content_margin_right = 10
+	deck_st.content_margin_top = 4
+	deck_st.content_margin_bottom = 4
+	deck_pill.add_theme_stylebox_override("panel", deck_st)
+	pill_hbox.add_child(deck_pill)
 
 	deck_badge_lbl = Label.new()
 	deck_badge_lbl.text = "🃏 دربار: ۱۱"
 	deck_badge_lbl.add_theme_font_override("font", FontHekayat)
-	deck_badge_lbl.add_theme_font_size_override("font_size", 23)
-	deck_badge_lbl.add_theme_color_override("font_color", Color(0.96, 0.86, 0.54))
-	pill_hbox.add_child(deck_badge_lbl)
+	deck_badge_lbl.add_theme_font_size_override("font_size", 24)
+	deck_badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.48))
+	deck_badge_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.88))
+	deck_badge_lbl.add_theme_constant_override("outline_size", 2)
+	deck_pill.add_child(deck_badge_lbl)
 
 	status_label = Label.new()
 	status_label.text = "در انتظار شروع بازی..."
 	status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	status_label.clip_text = true
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status_label.add_theme_font_override("font", FontHekayat)
 	status_label.add_theme_font_size_override("font_size", 26)
-	status_label.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
+	status_label.add_theme_color_override("font_color", Color(0.99, 0.97, 0.92))
+	status_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
+	status_label.add_theme_constant_override("outline_size", 3)
 	pill_hbox.add_child(status_label)
 
 	var dot_p: PanelContainer = PanelContainer.new()
-	dot_p.custom_minimum_size = Vector2(14, 14)
+	dot_p.custom_minimum_size = Vector2(18, 18)
 	dot_p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	status_dot_style = StyleBoxFlat.new()
 	status_dot_style.bg_color = Color(0.32, 0.96, 0.56)
-	status_dot_style.set_corner_radius_all(7)
+	status_dot_style.set_corner_radius_all(9)
 	dot_p.add_theme_stylebox_override("panel", status_dot_style)
 	pill_hbox.add_child(dot_p)
 
-	# 2. Bottom Floating Player Dock (Hand Cards + Coin Purse + Action Controls)
+	# 2. Roomy Bottom Floating Player Dock (Hand Cards + Coin Purse + Rich Command Deck)
 	bottom_dock = Control.new()
 	bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_dock.offset_left = 18
-	bottom_dock.offset_right = -18
-	bottom_dock.offset_top = -454
+	bottom_dock.offset_left = 14
+	bottom_dock.offset_right = -14
+	bottom_dock.offset_top = -596
 	bottom_dock.offset_bottom = -154
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(bottom_dock)
@@ -290,25 +419,26 @@ func _build_hud() -> void:
 	dock_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dock_panel.add_theme_stylebox_override(
 		"panel",
-		_make_glass_style(Color(0.07, 0.05, 0.04, 0.86), Color(0.88, 0.68, 0.28, 0.68), 24, 2)
+		_make_glass_style(Color(0.06, 0.045, 0.04, 0.90), Color(0.90, 0.72, 0.30, 0.76), 26, 2)
 	)
 	bottom_dock.add_child(dock_panel)
 
 	var dock_m: MarginContainer = MarginContainer.new()
 	dock_m.add_theme_constant_override("margin_left", 14)
 	dock_m.add_theme_constant_override("margin_right", 14)
-	dock_m.add_theme_constant_override("margin_top", 10)
-	dock_m.add_theme_constant_override("margin_bottom", 10)
+	dock_m.add_theme_constant_override("margin_top", 12)
+	dock_m.add_theme_constant_override("margin_bottom", 12)
 	dock_panel.add_child(dock_m)
 
 	var dock_hbox: HBoxContainer = HBoxContainer.new()
 	dock_hbox.add_theme_constant_override("separation", 14)
 	dock_m.add_child(dock_hbox)
 
-	# Left Column: Player Coins & 2 Influence Cards
+	# Left Column: Player Coins & 2 Large Influence Cards
 	var left_col: VBoxContainer = VBoxContainer.new()
-	left_col.add_theme_constant_override("separation", 8)
-	left_col.custom_minimum_size = Vector2(276, 0)
+	left_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	left_col.add_theme_constant_override("separation", 10)
+	left_col.custom_minimum_size = Vector2(342, 0)
 	dock_hbox.add_child(left_col)
 
 	var left_top_row: HBoxContainer = HBoxContainer.new()
@@ -317,43 +447,49 @@ func _build_hud() -> void:
 
 	coins_pill_panel = PanelContainer.new()
 	coins_pill_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	coins_pill_panel.custom_minimum_size = Vector2(0, 52)
 	coins_pill_style = StyleBoxFlat.new()
-	coins_pill_style.bg_color = Color(0.24, 0.17, 0.05, 0.95)
-	coins_pill_style.border_color = Color(0.95, 0.78, 0.28)
+	coins_pill_style.bg_color = Color(0.24, 0.17, 0.05, 0.96)
+	coins_pill_style.border_color = Color(0.98, 0.80, 0.30)
 	coins_pill_style.set_border_width_all(2)
-	coins_pill_style.set_corner_radius_all(12)
-	coins_pill_style.content_margin_left = 10
-	coins_pill_style.content_margin_right = 10
-	coins_pill_style.content_margin_top = 4
-	coins_pill_style.content_margin_bottom = 4
+	coins_pill_style.set_corner_radius_all(14)
+	coins_pill_style.content_margin_left = 12
+	coins_pill_style.content_margin_right = 12
+	coins_pill_style.content_margin_top = 6
+	coins_pill_style.content_margin_bottom = 6
 	coins_pill_panel.add_theme_stylebox_override("panel", coins_pill_style)
 	left_top_row.add_child(coins_pill_panel)
 
 	coins_pill_lbl = Label.new()
 	coins_pill_lbl.text = "🪙 ۲ سکه"
 	coins_pill_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	coins_pill_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	coins_pill_lbl.add_theme_font_override("font", FontHekayat)
-	coins_pill_lbl.add_theme_font_size_override("font_size", 25)
-	coins_pill_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
+	coins_pill_lbl.add_theme_font_size_override("font_size", 28)
+	coins_pill_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.48))
+	coins_pill_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.88))
+	coins_pill_lbl.add_theme_constant_override("outline_size", 3)
 	coins_pill_panel.add_child(coins_pill_lbl)
 
 	hand_prompt_lbl = Label.new()
-	hand_prompt_lbl.text = "کارت‌های شما"
+	hand_prompt_lbl.text = "کارت‌های نفوذ شما"
 	hand_prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hand_prompt_lbl.add_theme_font_override("font", FontHekayat)
-	hand_prompt_lbl.add_theme_font_size_override("font_size", 22)
-	hand_prompt_lbl.add_theme_color_override("font_color", Color(0.95, 0.90, 0.78))
+	hand_prompt_lbl.add_theme_font_size_override("font_size", 24)
+	hand_prompt_lbl.add_theme_color_override("font_color", Color(0.96, 0.92, 0.82))
+	hand_prompt_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.82))
+	hand_prompt_lbl.add_theme_constant_override("outline_size", 2)
 	left_col.add_child(hand_prompt_lbl)
 
 	my_cards_hbox = HBoxContainer.new()
 	my_cards_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	my_cards_hbox.add_theme_constant_override("separation", 10)
+	my_cards_hbox.add_theme_constant_override("separation", 12)
 	my_cards_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left_col.add_child(my_cards_hbox)
 
 	# Vertical Divider
 	var v_sep: VSeparator = VSeparator.new()
-	v_sep.modulate = Color(0.90, 0.72, 0.34, 0.40)
+	v_sep.modulate = Color(0.92, 0.74, 0.36, 0.45)
 	dock_hbox.add_child(v_sep)
 
 	# Right Column: Context-Aware Action / Target / Response Dock
@@ -375,7 +511,7 @@ func _build_hud() -> void:
 func _build_exchange_modal() -> void:
 	exchange_backdrop = ColorRect.new()
 	exchange_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	exchange_backdrop.color = Color(0.02, 0.04, 0.03, 0.80)
+	exchange_backdrop.color = Color(0.02, 0.04, 0.03, 0.84)
 	exchange_backdrop.visible = false
 	exchange_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	hud_root.add_child(exchange_backdrop)
@@ -385,135 +521,209 @@ func _build_exchange_modal() -> void:
 	exchange_backdrop.add_child(center)
 
 	var modal_panel: PanelContainer = PanelContainer.new()
-	modal_panel.custom_minimum_size = Vector2(680, 440)
+	modal_panel.custom_minimum_size = Vector2(920, 560)
 	modal_panel.add_theme_stylebox_override(
 		"panel",
-		_make_glass_style(Color(0.07, 0.14, 0.10, 0.98), Color(0.45, 0.94, 0.62, 0.90), 26, 3)
+		_make_glass_style(Color(0.06, 0.14, 0.10, 0.98), Color(0.48, 0.96, 0.64, 0.92), 28, 3)
 	)
 	center.add_child(modal_panel)
 
 	var m: MarginContainer = MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 24)
-	m.add_theme_constant_override("margin_right", 24)
-	m.add_theme_constant_override("margin_top", 22)
-	m.add_theme_constant_override("margin_bottom", 22)
+	m.add_theme_constant_override("margin_left", 28)
+	m.add_theme_constant_override("margin_right", 28)
+	m.add_theme_constant_override("margin_top", 26)
+	m.add_theme_constant_override("margin_bottom", 26)
 	modal_panel.add_child(m)
 
 	var vbox: VBoxContainer = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 16)
+	vbox.add_theme_constant_override("separation", 20)
 	m.add_child(vbox)
 
 	var title_lbl: Label = Label.new()
 	title_lbl.text = "📜 مبادله کارت با سفیر"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 35)
-	title_lbl.add_theme_color_override("font_color", Color(0.54, 0.98, 0.68))
+	title_lbl.add_theme_font_size_override("font_size", 38)
+	title_lbl.add_theme_color_override("font_color", Color(0.56, 0.98, 0.70))
+	title_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
+	title_lbl.add_theme_constant_override("outline_size", 4)
 	vbox.add_child(title_lbl)
 
 	exchange_subtitle_lbl = Label.new()
 	exchange_subtitle_lbl.text = "۲ کارت را برای نگه داشتن انتخاب کنید؛ بقیه به دیوان برمی‌گردند."
 	exchange_subtitle_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	exchange_subtitle_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	exchange_subtitle_lbl.add_theme_font_override("font", FontHekayat)
-	exchange_subtitle_lbl.add_theme_font_size_override("font_size", 26)
-	exchange_subtitle_lbl.add_theme_color_override("font_color", Color(0.95, 0.94, 0.88))
+	exchange_subtitle_lbl.add_theme_font_size_override("font_size", 27)
+	exchange_subtitle_lbl.add_theme_color_override("font_color", Color(0.96, 0.95, 0.90))
+	exchange_subtitle_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	exchange_subtitle_lbl.add_theme_constant_override("outline_size", 3)
 	vbox.add_child(exchange_subtitle_lbl)
 
 	exchange_cards_hbox = HBoxContainer.new()
 	exchange_cards_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	exchange_cards_hbox.add_theme_constant_override("separation", 14)
+	exchange_cards_hbox.add_theme_constant_override("separation", 18)
 	vbox.add_child(exchange_cards_hbox)
+
+	var btn_row: HBoxContainer = HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 16)
+	vbox.add_child(btn_row)
+
+	var peek_btn: Button = Button.new()
+	peek_btn.text = "👀 دیدن میز"
+	peek_btn.custom_minimum_size = Vector2(200, 72)
+	_style_action_button(peek_btn, Color(0.18, 0.24, 0.30), Color(0.56, 0.76, 0.92), Color.WHITE, 25, false)
+	peek_btn.pressed.connect(func() -> void:
+		AudioManager.sfx_tap()
+		exchange_backdrop.visible = false
+	)
+	btn_row.add_child(peek_btn)
 
 	exchange_confirm_btn = Button.new()
 	exchange_confirm_btn.text = "✅ تایید و ثبت دست جدید"
-	exchange_confirm_btn.custom_minimum_size = Vector2(300, 62)
-	exchange_confirm_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	exchange_confirm_btn.custom_minimum_size = Vector2(390, 72)
 	_style_action_button(exchange_confirm_btn, Color(0.12, 0.56, 0.28), Color(0.48, 0.96, 0.64), Color.WHITE, 28, true)
 	exchange_confirm_btn.pressed.connect(_on_confirm_exchange_pressed)
-	vbox.add_child(exchange_confirm_btn)
+	btn_row.add_child(exchange_confirm_btn)
 
 func _build_roles_modal() -> void:
 	roles_modal_backdrop = ColorRect.new()
 	roles_modal_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	roles_modal_backdrop.color = Color(0.02, 0.03, 0.04, 0.80)
+	roles_modal_backdrop.color = Color(0.02, 0.03, 0.04, 0.84)
 	roles_modal_backdrop.visible = false
 	roles_modal_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	roles_modal_backdrop.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			AudioManager.sfx_tap()
+			roles_modal_backdrop.visible = false
+	)
 	hud_root.add_child(roles_modal_backdrop)
 
 	var center: CenterContainer = CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	roles_modal_backdrop.add_child(center)
 
 	var modal_panel: PanelContainer = PanelContainer.new()
-	modal_panel.custom_minimum_size = Vector2(720, 620)
+	modal_panel.custom_minimum_size = Vector2(940, 860)
+	modal_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	modal_panel.add_theme_stylebox_override(
 		"panel",
-		_make_glass_style(Color(0.09, 0.07, 0.06, 0.98), Color(0.92, 0.74, 0.30, 0.92), 26, 3)
+		_make_glass_style(Color(0.08, 0.06, 0.05, 0.98), Color(0.94, 0.76, 0.32, 0.94), 28, 3)
 	)
 	center.add_child(modal_panel)
 
 	var m: MarginContainer = MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 24)
-	m.add_theme_constant_override("margin_right", 24)
-	m.add_theme_constant_override("margin_top", 20)
-	m.add_theme_constant_override("margin_bottom", 20)
+	m.add_theme_constant_override("margin_left", 28)
+	m.add_theme_constant_override("margin_right", 28)
+	m.add_theme_constant_override("margin_top", 24)
+	m.add_theme_constant_override("margin_bottom", 24)
 	modal_panel.add_child(m)
 
 	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
+	vbox.add_theme_constant_override("separation", 14)
 	m.add_child(vbox)
 
 	var title_lbl: Label = Label.new()
-	title_lbl.text = "📜 راهنمای سریع نقش‌ها و قوانین کودتا"
+	title_lbl.text = "📜 راهنمای نقش‌ها و قوانین کودتا"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 33)
+	title_lbl.add_theme_font_size_override("font_size", 36)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42))
+	title_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
+	title_lbl.add_theme_constant_override("outline_size", 4)
 	vbox.add_child(title_lbl)
 
 	var roles_info: Array[Dictionary] = [
-		{"role": "duke", "txt": "👑 دوک: گرفتن ۳ سکه مالیات • مسدود کردن کمک خارجی (+۲)"},
-		{"role": "assassin", "txt": "🗡️ آدم‌کش: پرداخت ۳ سکه و حذف یک کارت حریف (دفاع با کنتس)"},
-		{"role": "captain", "txt": "⚓ کاپیتان: سرقت تا ۲ سکه از حریف • مسدود کردن سرقت"},
-		{"role": "ambassador", "txt": "📜 سفیر: کشیدن ۲ کارت و تعویض دلخواه با دیوان • مسدود کردن سرقت"},
-		{"role": "contessa", "txt": "🛡️ کنتس: مسدود کردن حمله آدم‌کش (فقط برای خودتان)"},
+		{"role": "duke", "title": "👑 دوک", "txt": "گرفتن ۳ سکه مالیات  •  مسدود کردن کمک خارجی (+۲🪙)"},
+		{"role": "assassin", "title": "🗡️ آدم‌کش", "txt": "پرداخت ۳ سکه و حذف یک کارت حریف (دفاع با کنتس)"},
+		{"role": "captain", "title": "⚓ کاپیتان", "txt": "سرقت تا ۲ سکه از حریف  •  مسدود کردن سرقت"},
+		{"role": "ambassador", "title": "📜 سفیر", "txt": "تعویض دلخواه کارت‌ها با دیوان  •  مسدود کردن سرقت"},
+		{"role": "contessa", "title": "🛡️ کنتس", "txt": "مسدود کردن حمله آدم‌کش (فقط برای خودتان)"},
 	]
 	for ri: Dictionary in roles_info:
 		var r_id: String = String(ri["role"])
 		var r_col: Color = CoupCardWidgetScript.get_role_color(r_id)
 		var row_p: PanelContainer = PanelContainer.new()
-		row_p.add_theme_stylebox_override("panel", _make_glass_style(r_col.darkened(0.55), r_col.lightened(0.25), 14, 1))
+		row_p.add_theme_stylebox_override("panel", _make_glass_style(r_col.darkened(0.55), r_col.lightened(0.28), 16, 2))
 		var rl_m: MarginContainer = MarginContainer.new()
-		rl_m.add_theme_constant_override("margin_left", 14)
-		rl_m.add_theme_constant_override("margin_right", 14)
-		rl_m.add_theme_constant_override("margin_top", 8)
-		rl_m.add_theme_constant_override("margin_bottom", 8)
+		rl_m.add_theme_constant_override("margin_left", 16)
+		rl_m.add_theme_constant_override("margin_right", 16)
+		rl_m.add_theme_constant_override("margin_top", 12)
+		rl_m.add_theme_constant_override("margin_bottom", 12)
 		row_p.add_child(rl_m)
+
+		var row_hb: HBoxContainer = HBoxContainer.new()
+		row_hb.add_theme_constant_override("separation", 14)
+		rl_m.add_child(row_hb)
+
 		var lbl: Label = Label.new()
 		lbl.text = String(ri["txt"])
+		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		lbl.add_theme_font_override("font", FontHekayat)
-		lbl.add_theme_font_size_override("font_size", 25)
+		lbl.add_theme_font_size_override("font_size", 24)
 		lbl.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
-		rl_m.add_child(lbl)
+		lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+		lbl.add_theme_constant_override("outline_size", 2)
+		row_hb.add_child(lbl)
+
+		var badge_p: PanelContainer = PanelContainer.new()
+		badge_p.custom_minimum_size = Vector2(150, 0)
+		badge_p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var b_st: StyleBoxFlat = StyleBoxFlat.new()
+		b_st.bg_color = r_col
+		b_st.border_color = r_col.lightened(0.40)
+		b_st.set_border_width_all(1)
+		b_st.set_corner_radius_all(12)
+		b_st.content_margin_left = 10
+		b_st.content_margin_right = 10
+		b_st.content_margin_top = 6
+		b_st.content_margin_bottom = 6
+		badge_p.add_theme_stylebox_override("panel", b_st)
+		row_hb.add_child(badge_p)
+
+		var r_title_lbl: Label = Label.new()
+		r_title_lbl.text = String(ri["title"])
+		r_title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		r_title_lbl.add_theme_font_override("font", FontHekayat)
+		r_title_lbl.add_theme_font_size_override("font_size", 26)
+		r_title_lbl.add_theme_color_override("font_color", Color.WHITE)
+		r_title_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.88))
+		r_title_lbl.add_theme_constant_override("outline_size", 3)
+		badge_p.add_child(r_title_lbl)
+
 		vbox.add_child(row_p)
 
+	var note_p: PanelContainer = PanelContainer.new()
+	note_p.add_theme_stylebox_override("panel", _make_glass_style(Color(0.18, 0.13, 0.04, 0.90), Color(0.95, 0.78, 0.28, 0.78), 16, 1))
+	var n_m: MarginContainer = MarginContainer.new()
+	n_m.add_theme_constant_override("margin_left", 16)
+	n_m.add_theme_constant_override("margin_right", 16)
+	n_m.add_theme_constant_override("margin_top", 10)
+	n_m.add_theme_constant_override("margin_bottom", 10)
+	note_p.add_child(n_m)
 	var note_lbl: Label = Label.new()
-	note_lbl.text = "💡 نکته: می‌توانید با هر نقشی «بلوف» بزنید! اگر با ۱۰ سکه یا بیشتر نوبت را شروع کنید، اجرای «کودتا» (۷ سکه) اجباری و غیرقابل دفاع است."
+	note_lbl.text = "💡 نکته کلیدی: می‌توانید با هر نقشی «بلوف» بزنید! اما اگر با ۱۰ سکه یا بیشتر نوبت را شروع کنید، اجرای «کودتا» (۷ سکه) اجباری و غیرقابل دفاع است."
 	note_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	note_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note_lbl.add_theme_font_override("font", FontHekayat)
 	note_lbl.add_theme_font_size_override("font_size", 23)
-	note_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.56))
-	vbox.add_child(note_lbl)
+	note_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.56))
+	note_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	note_lbl.add_theme_constant_override("outline_size", 2)
+	n_m.add_child(note_lbl)
+	vbox.add_child(note_p)
 
 	var close_btn: Button = Button.new()
 	close_btn.text = "متوجه شدم"
-	close_btn.custom_minimum_size = Vector2(220, 56)
+	close_btn.custom_minimum_size = Vector2(280, 68)
 	close_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_style_action_button(close_btn, Color(0.14, 0.52, 0.28), Color(0.45, 0.92, 0.58), Color.WHITE, 27)
+	_style_action_button(close_btn, Color(0.14, 0.54, 0.28), Color(0.45, 0.94, 0.60), Color.WHITE, 28)
 	close_btn.pressed.connect(func() -> void:
 		AudioManager.sfx_tap()
 		roles_modal_backdrop.visible = false
@@ -804,25 +1014,28 @@ func _refresh_my_cards_and_coins() -> void:
 	if is_instance_valid(coins_pill_lbl):
 		if not my_alive:
 			coins_pill_lbl.text = "💀 حذف شدید"
-			coins_pill_style.bg_color = Color(0.28, 0.10, 0.12, 0.92)
+			coins_pill_lbl.add_theme_font_size_override("font_size", 26)
+			coins_pill_style.bg_color = Color(0.28, 0.10, 0.12, 0.94)
 			coins_pill_style.border_color = Color(0.95, 0.35, 0.35)
 		elif coins >= 10:
 			coins_pill_lbl.text = "🪙 %s سکه (کودتا اجباری!)" % CoupCardWidgetScript.to_fa_digits(str(coins))
-			coins_pill_style.bg_color = Color(0.55, 0.16, 0.10, 0.96)
-			coins_pill_style.border_color = Color(1.0, 0.78, 0.22)
+			coins_pill_lbl.add_theme_font_size_override("font_size", 24)
+			coins_pill_style.bg_color = Color(0.58, 0.16, 0.10, 0.98)
+			coins_pill_style.border_color = Color(1.0, 0.80, 0.24)
 		else:
 			coins_pill_lbl.text = "🪙 %s سکه" % CoupCardWidgetScript.to_fa_digits(str(coins))
-			coins_pill_style.bg_color = Color(0.24, 0.17, 0.05, 0.95)
-			coins_pill_style.border_color = Color(0.95, 0.78, 0.28)
+			coins_pill_lbl.add_theme_font_size_override("font_size", 28)
+			coins_pill_style.bg_color = Color(0.24, 0.17, 0.05, 0.96)
+			coins_pill_style.border_color = Color(0.98, 0.80, 0.30)
 
 	var must_sacrifice: bool = GameManager.is_game_active and (phase == "lose_influence") and (pending_loss_player == my_player_index)
 	if is_instance_valid(hand_prompt_lbl):
 		if must_sacrifice:
 			hand_prompt_lbl.text = "💔 کارت قربانی را لمس کنید!"
-			hand_prompt_lbl.add_theme_color_override("font_color", Color(1.0, 0.50, 0.48))
+			hand_prompt_lbl.add_theme_color_override("font_color", Color(1.0, 0.54, 0.52))
 		else:
 			hand_prompt_lbl.text = "کارت‌های نفوذ شما"
-			hand_prompt_lbl.add_theme_color_override("font_color", Color(0.95, 0.90, 0.78))
+			hand_prompt_lbl.add_theme_color_override("font_color", Color(0.96, 0.92, 0.82))
 
 	if not is_instance_valid(my_cards_hbox):
 		return
@@ -835,7 +1048,7 @@ func _refresh_my_cards_and_coins() -> void:
 			continue
 		var c_dict: Dictionary = c_var as Dictionary
 		var card_w: CoupCardWidget = CoupCardWidgetScript.new()
-		card_w.setup_card(idx, c_dict, must_sacrifice, false, Vector2(124, 168))
+		card_w.setup_card(idx, c_dict, must_sacrifice, false, Vector2(158, 230))
 		card_w.card_clicked.connect(_on_my_card_clicked)
 		my_cards_hbox.add_child(card_w)
 
@@ -846,18 +1059,18 @@ func _rebuild_action_dock() -> void:
 		ch.queue_free()
 
 	if not _is_player_alive(my_player_index) and GameManager.is_game_active:
-		_add_dock_info_label("💀 تمام کارت‌های نفوذ شما سوخته است.\nدر حال تماشای ادامه نبرد...", Color(0.92, 0.62, 0.62))
+		_add_dock_info_panel("💀 تمام کارت‌های نفوذ شما سوخته است.\nدر حال تماشای ادامه نبرد...", Color(1.0, 0.66, 0.66), Color(0.28, 0.10, 0.12, 0.86), Color(0.90, 0.36, 0.36, 0.78), 27)
 		return
 
 	# 1. Target Selection Strip (when player clicked Coup / Assassinate / Steal with >=2 opponents alive)
 	if not _pending_target_action.is_empty() and phase == "action" and is_my_turn:
 		var act_fa: String = String(ACTION_NAMES_FA.get(_pending_target_action, _pending_target_action))
-		_add_dock_info_label("🎯 هدف %s را انتخاب کنید (روی بازیکن یا میز بزنید):" % act_fa, Color(1.0, 0.88, 0.42))
+		_add_dock_info_panel("🎯 هدف %s را انتخاب کنید (روی بازیکن یا دکمه بزنید):" % act_fa, Color(1.0, 0.90, 0.44), Color(0.22, 0.15, 0.05, 0.92), Color(0.98, 0.78, 0.28, 0.85), 25)
 		var opps: Array[int] = _get_alive_opponents()
 		var t_grid: GridContainer = GridContainer.new()
 		t_grid.columns = 2
-		t_grid.add_theme_constant_override("h_separation", 8)
-		t_grid.add_theme_constant_override("v_separation", 8)
+		t_grid.add_theme_constant_override("h_separation", 10)
+		t_grid.add_theme_constant_override("v_separation", 10)
 		t_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		actions_container.add_child(t_grid)
 
@@ -865,11 +1078,20 @@ func _rebuild_action_dock() -> void:
 			var p_entry: Dictionary = _get_player_entry(opp_pid)
 			var c_cnt: int = int(p_entry.get("coins", 0))
 			var h_cnt: int = int(p_entry.get("alive_cards", 2))
-			var btn: Button = Button.new()
-			btn.custom_minimum_size = Vector2(0, 58)
-			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			btn.text = "🎯 %s  (🪙%s | ♥%s)" % [_get_player_short_name(opp_pid), CoupCardWidgetScript.to_fa_digits(str(c_cnt)), CoupCardWidgetScript.to_fa_digits(str(h_cnt))]
-			_style_action_button(btn, Color(0.62, 0.16, 0.16), Color(1.0, 0.62, 0.42), Color.WHITE, 24)
+			var t_stats: String = "🪙 %s   |   ♥ %s" % [CoupCardWidgetScript.to_fa_digits(str(c_cnt)), CoupCardWidgetScript.to_fa_digits(str(h_cnt))]
+			var f_col: Color = CoupTable3DScript.FACTION_COLORS.get(opp_pid, Color(0.95, 0.42, 0.38))
+			var btn: Button = _make_gamer_action_btn(
+				"🎯 " + _get_player_short_name(opp_pid),
+				"",
+				t_stats,
+				Color(0.08, 0.06, 0.06, 0.72),
+				f_col.lightened(0.32),
+				f_col.darkened(0.45),
+				f_col.lightened(0.25),
+				84.0,
+				false,
+				26
+			)
 			var target_id_cap: int = opp_pid
 			btn.pressed.connect(func() -> void:
 				_dispatch_action(_pending_target_action, target_id_cap)
@@ -878,8 +1100,8 @@ func _rebuild_action_dock() -> void:
 
 		var cancel_btn: Button = Button.new()
 		cancel_btn.text = "↩ بازگشت به اقدامات"
-		cancel_btn.custom_minimum_size = Vector2(0, 48)
-		_style_action_button(cancel_btn, Color(0.20, 0.22, 0.26), Color(0.62, 0.66, 0.72), Color.WHITE, 23)
+		cancel_btn.custom_minimum_size = Vector2(0, 62)
+		_style_action_button(cancel_btn, Color(0.20, 0.23, 0.28), Color(0.66, 0.70, 0.78), Color.WHITE, 25)
 		cancel_btn.pressed.connect(func() -> void:
 			AudioManager.sfx_tap()
 			_pending_target_action = ""
@@ -892,56 +1114,57 @@ func _rebuild_action_dock() -> void:
 	# 2. Sacrifice Card Prompt
 	if phase == "lose_influence":
 		if pending_loss_player == my_player_index:
-			_add_dock_info_label("💔 باید یک کارت نفوذ از دست بدهید!\nروی یکی از کارت‌های سمت چپ بزنید تا سوزانده شود.", Color(1.0, 0.52, 0.52))
+			_add_dock_info_panel("💔 زمان از دست دادن نفوذ!\nروی یکی از کارت‌های درخشان سمت چپ بزنید تا سوزانده شود.", Color(1.0, 0.62, 0.60), Color(0.32, 0.09, 0.11, 0.92), Color(1.0, 0.42, 0.40, 0.88), 27)
 		else:
-			_add_dock_info_label("⏳ منتظر هستیم %s یکی از کارت‌های خود را انتخاب کند..." % _get_player_short_name(pending_loss_player), Color(0.95, 0.86, 0.62))
+			_add_dock_info_panel("⏳ %s در حال انتخاب کارت برای حذف شدن است..." % _get_player_short_name(pending_loss_player), Color(1.0, 0.88, 0.56), Color(0.16, 0.12, 0.07, 0.85), Color(0.90, 0.72, 0.34, 0.65), 27)
 		return
 
 	# 3. Ambassador Exchange Phase
 	if phase == "exchange":
 		if current_turn == my_player_index:
-			_add_dock_info_label("📜 در حال مبادله کارت با دیوان دربار...", Color(0.52, 0.96, 0.68))
+			_add_dock_info_panel("📜 نوبت مبادله کارت با دیوان دربار است!", Color(0.56, 0.98, 0.72), Color(0.08, 0.24, 0.14, 0.90), Color(0.45, 0.94, 0.62, 0.85), 27)
 			var open_ex: Button = Button.new()
-			open_ex.text = "📜 نمایش کارت‌های مبادله"
-			open_ex.custom_minimum_size = Vector2(260, 56)
+			open_ex.text = "📜 انتخاب کارت‌های جدید"
+			open_ex.custom_minimum_size = Vector2(330, 72)
 			open_ex.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			_style_action_button(open_ex, Color(0.12, 0.52, 0.28), Color(0.45, 0.94, 0.62), Color.WHITE, 25)
+			_style_action_button(open_ex, Color(0.12, 0.54, 0.28), Color(0.48, 0.96, 0.64), Color.WHITE, 27)
 			open_ex.pressed.connect(func() -> void:
 				if is_instance_valid(exchange_backdrop):
 					exchange_backdrop.visible = true
 			)
 			actions_container.add_child(open_ex)
 		else:
-			_add_dock_info_label("📜 %s در حال انتخاب کارت‌های جدید با سفیر است..." % _get_player_short_name(current_turn), Color(0.88, 0.92, 0.86))
+			_add_dock_info_panel("📜 %s در حال انتخاب کارت‌های جدید با سفیر است..." % _get_player_short_name(current_turn), Color(0.90, 0.95, 0.88), Color(0.10, 0.16, 0.12, 0.85), Color(0.48, 0.84, 0.58, 0.65), 27)
 		return
 
 	# 4. Challenge / Block Response Window
 	if phase in ["challenge_action", "block_action", "challenge_block"]:
 		if _is_my_response_needed():
 			var desc: String = _build_response_prompt_detail()
-			_add_dock_info_label(desc, Color(1.0, 0.90, 0.48))
+			var p_bd: Color = Color(1.0, 0.74, 0.26, 0.90) if phase != "block_action" else Color(0.36, 0.76, 1.0, 0.90)
+			_add_dock_info_panel(desc, Color(1.0, 0.94, 0.58), Color(0.18, 0.12, 0.06, 0.92), p_bd, 26)
 
 			var resp_grid: GridContainer = GridContainer.new()
 			resp_grid.columns = 2
-			resp_grid.add_theme_constant_override("h_separation", 8)
-			resp_grid.add_theme_constant_override("v_separation", 8)
+			resp_grid.add_theme_constant_override("h_separation", 10)
+			resp_grid.add_theme_constant_override("v_separation", 10)
 			resp_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			actions_container.add_child(resp_grid)
 
 			var pass_btn: Button = Button.new()
 			pass_btn.text = "✅ قبول / رد شدن"
-			pass_btn.custom_minimum_size = Vector2(0, 58)
+			pass_btn.custom_minimum_size = Vector2(0, 86)
 			pass_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_action_button(pass_btn, Color(0.14, 0.48, 0.26), Color(0.42, 0.92, 0.56), Color.WHITE, 25)
+			_style_action_button(pass_btn, Color(0.14, 0.50, 0.27), Color(0.44, 0.94, 0.58), Color.WHITE, 26)
 			pass_btn.pressed.connect(_on_pass_pressed)
 			resp_grid.add_child(pass_btn)
 
 			if phase in ["challenge_action", "challenge_block"]:
 				var chal_btn: Button = Button.new()
 				chal_btn.text = "⚡ بلوف می‌گیرد! (چالش)"
-				chal_btn.custom_minimum_size = Vector2(0, 58)
+				chal_btn.custom_minimum_size = Vector2(0, 86)
 				chal_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				_style_action_button(chal_btn, Color(0.74, 0.18, 0.18), Color(1.0, 0.56, 0.42), Color.WHITE, 25)
+				_style_action_button(chal_btn, Color(0.76, 0.18, 0.18), Color(1.0, 0.58, 0.42), Color.WHITE, 26)
 				chal_btn.pressed.connect(_on_challenge_pressed)
 				resp_grid.add_child(chal_btn)
 			elif phase == "block_action":
@@ -949,13 +1172,22 @@ func _rebuild_action_dock() -> void:
 				for r_var: Variant in allowed_roles:
 					var r_id: String = String(r_var)
 					var has_r: bool = _has_my_hidden_role(r_id)
-					var hint: String = "✓ دارید" if has_r else "🎭 بلوف"
-					var blk_btn: Button = Button.new()
-					blk_btn.text = "🛡️ دفاع با %s (%s)" % [CoupCardWidgetScript.get_role_name_fa(r_id), hint]
-					blk_btn.custom_minimum_size = Vector2(0, 58)
-					blk_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					var hint_txt: String = "✓ کارت دارید" if has_r else "🎭 ادعای بلوف"
+					var h_bg: Color = Color(0.10, 0.52, 0.24, 0.95) if has_r else Color(0.42, 0.16, 0.52, 0.92)
+					var h_bd: Color = Color(0.45, 0.98, 0.62) if has_r else Color(0.86, 0.62, 1.0)
 					var r_col: Color = CoupCardWidgetScript.get_role_color(r_id)
-					_style_action_button(blk_btn, r_col, r_col.lightened(0.40), Color.WHITE, 23)
+					var blk_btn: Button = _make_gamer_action_btn(
+						"🛡️ دفاع با %s" % CoupCardWidgetScript.get_role_name_fa(r_id),
+						"",
+						hint_txt,
+						h_bg,
+						h_bd,
+						r_col,
+						r_col.lightened(0.40),
+						86.0,
+						false,
+						25
+					)
 					var role_cap: String = r_id
 					blk_btn.pressed.connect(func() -> void:
 						_on_block_pressed(role_cap)
@@ -964,29 +1196,39 @@ func _rebuild_action_dock() -> void:
 		else:
 			var passed_cnt: int = passed_players.size()
 			var elig_cnt: int = max(1, eligible_responders.size())
-			_add_dock_info_label("⏳ در انتظار پاسخ بازیکنان (%s از %s رد شده‌اند)..." % [CoupCardWidgetScript.to_fa_digits(str(passed_cnt)), CoupCardWidgetScript.to_fa_digits(str(elig_cnt))], Color(0.92, 0.90, 0.80))
+			_add_dock_info_panel("⏳ در انتظار پاسخ سایر بازیکنان (%s از %s رد شده‌اند)..." % [CoupCardWidgetScript.to_fa_digits(str(passed_cnt)), CoupCardWidgetScript.to_fa_digits(str(elig_cnt))], Color(0.96, 0.92, 0.80), Color(0.12, 0.10, 0.08, 0.85), Color(0.75, 0.64, 0.42, 0.55), 26)
 		return
 
 	# 5. Main Action Turn
 	if phase == "action" and is_my_turn:
 		var coins: int = _get_my_coins()
 		var must_coup: bool = (coins >= 10)
+
+		var turn_lbl: Label = Label.new()
+		turn_lbl.text = "⚠️ ۱۰+ سکه دارید! اجرای «کودتا» اجباری است:" if must_coup else "🎭 نوبت شماست — اقدام خود را انتخاب کنید:"
+		turn_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		turn_lbl.add_theme_font_override("font", FontHekayat)
+		turn_lbl.add_theme_font_size_override("font_size", 25)
+		turn_lbl.add_theme_color_override("font_color", Color(1.0, 0.68, 0.36) if must_coup else Color(0.60, 0.98, 0.72))
+		turn_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.88))
+		turn_lbl.add_theme_constant_override("outline_size", 3)
+		actions_container.add_child(turn_lbl)
+
 		var grid: GridContainer = GridContainer.new()
 		grid.columns = 2
 		grid.add_theme_constant_override("h_separation", 8)
-		grid.add_theme_constant_override("v_separation", 7)
+		grid.add_theme_constant_override("v_separation", 8)
 		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		actions_container.add_child(grid)
 
 		var action_specs: Array[Dictionary] = [
-			{"id": "income", "txt": "🪙 درآمد (+۱)", "role": "", "min_c": 0, "bg": Color(0.18, 0.36, 0.24), "bd": Color(0.46, 0.84, 0.56)},
-			{"id": "foreign_aid", "txt": "🤝 کمک خارجی (+۲)", "role": "", "min_c": 0, "bg": Color(0.16, 0.36, 0.44), "bd": Color(0.46, 0.82, 0.95)},
-			{"id": "tax", "txt": "👑 مالیات دوک (+۳)", "role": "duke", "min_c": 0, "bg": Color(0.42, 0.16, 0.62), "bd": Color(0.82, 0.58, 1.0)},
-			{"id": "steal", "txt": "⚓ سرقت کاپیتان (+۲)", "role": "captain", "min_c": 0, "bg": Color(0.10, 0.34, 0.66), "bd": Color(0.48, 0.82, 1.0)},
-			{"id": "assassinate", "txt": "🗡️ ترور آدم‌کش (-۳)", "role": "assassin", "min_c": 3, "bg": Color(0.56, 0.12, 0.20), "bd": Color(1.0, 0.52, 0.56)},
-			{"id": "exchange", "txt": "📜 مبادله سفیر", "role": "ambassador", "min_c": 0, "bg": Color(0.12, 0.44, 0.26), "bd": Color(0.48, 0.92, 0.64)},
-			{"id": "coup", "txt": "💥 کودتا (-۷ سکه)", "role": "", "min_c": 7, "bg": Color(0.76, 0.30, 0.08), "bd": Color(1.0, 0.84, 0.28)},
+			{"id": "income", "title": "🪙 درآمد", "cost": "+۱🪙", "hint": "امن • بدون دفاع", "role": "", "min_c": 0, "bg": Color(0.16, 0.36, 0.24), "bd": Color(0.48, 0.88, 0.58)},
+			{"id": "foreign_aid", "title": "🤝 کمک خارجی", "cost": "+۲🪙", "hint": "دفاع با دوک", "role": "", "min_c": 0, "bg": Color(0.14, 0.34, 0.46), "bd": Color(0.48, 0.84, 0.98)},
+			{"id": "tax", "title": "👑 مالیات دوک", "cost": "+۳🪙", "hint": "", "role": "duke", "min_c": 0, "bg": Color(0.42, 0.16, 0.62), "bd": Color(0.84, 0.60, 1.0)},
+			{"id": "steal", "title": "⚓ سرقت کاپیتان", "cost": "+۲🪙", "hint": "", "role": "captain", "min_c": 0, "bg": Color(0.10, 0.34, 0.68), "bd": Color(0.50, 0.84, 1.0)},
+			{"id": "assassinate", "title": "🗡️ ترور آدم‌کش", "cost": "-۳🪙", "hint": "", "role": "assassin", "min_c": 3, "bg": Color(0.56, 0.12, 0.20), "bd": Color(1.0, 0.54, 0.58)},
+			{"id": "exchange", "title": "📜 مبادله سفیر", "cost": "تعویض", "hint": "", "role": "ambassador", "min_c": 0, "bg": Color(0.12, 0.46, 0.27), "bd": Color(0.50, 0.94, 0.66)},
 		]
 
 		for spec: Dictionary in action_specs:
@@ -994,28 +1236,67 @@ func _rebuild_action_dock() -> void:
 			var role_req: String = String(spec["role"])
 			var min_c: int = int(spec["min_c"])
 			var is_dis: bool = (coins < min_c) or (must_coup and act_id != "coup")
-			var label_txt: String = String(spec["txt"])
-			if not role_req.is_empty():
-				var own_tag: String = "✓" if _has_my_hidden_role(role_req) else "🎭"
-				label_txt += " [%s]" % own_tag
-			if must_coup and act_id == "coup":
-				label_txt = "⚡ " + label_txt + " (اجباری)"
 
-			var btn: Button = Button.new()
-			btn.text = label_txt
-			btn.custom_minimum_size = Vector2(0, 48)
-			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_action_button(btn, spec["bg"], spec["bd"], Color.WHITE, 22, is_dis)
+			var badge_txt: String = String(spec["hint"])
+			var badge_bg: Color = Color(0.08, 0.14, 0.14, 0.72)
+			var badge_bd: Color = Color(0.55, 0.78, 0.80, 0.60)
+			if is_dis:
+				badge_txt = "⚠️ فقط کودتا مجاز است" if must_coup else ("🔒 نیاز به %s سکه" % CoupCardWidgetScript.to_fa_digits(str(min_c)))
+			elif not role_req.is_empty():
+				var owns: bool = _has_my_hidden_role(role_req)
+				badge_txt = "✓ کارت دارید" if owns else "🎭 بلوف"
+				badge_bg = Color(0.10, 0.54, 0.24, 0.94) if owns else Color(0.42, 0.14, 0.52, 0.90)
+				badge_bd = Color(0.48, 0.98, 0.64) if owns else Color(0.86, 0.60, 1.0)
+
+			var btn: Button = _make_gamer_action_btn(
+				String(spec["title"]),
+				String(spec["cost"]),
+				badge_txt,
+				badge_bg,
+				badge_bd,
+				spec["bg"],
+				spec["bd"],
+				84.0,
+				is_dis,
+				25
+			)
 			var cap_act: String = act_id
 			btn.pressed.connect(func() -> void:
 				_on_action_button_pressed(cap_act)
 			)
 			grid.add_child(btn)
+
+		# Full-width Hero Coup Button
+		var coup_dis: bool = (coins < 7)
+		var coup_badge: String = "🔒 نیاز به ۷ سکه (فعلاً %s سکه)" % CoupCardWidgetScript.to_fa_digits(str(coins)) if coup_dis else ("⚡ کودتای اجباری — غیرقابل دفاع!" if must_coup else "🔥 غیرقابل دفاع • حذف فوری ۱ کارت حریف")
+		var coup_btn: Button = _make_gamer_action_btn(
+			"💥 اجرای کودتا" + (" (اجباری)" if must_coup else ""),
+			"-۷🪙",
+			coup_badge,
+			Color(0.62, 0.16, 0.06, 0.95) if not coup_dis else Color(0.18, 0.16, 0.18, 0.82),
+			Color(1.0, 0.86, 0.34),
+			Color(0.78, 0.28, 0.08) if not must_coup else Color(0.88, 0.22, 0.10),
+			Color(1.0, 0.84, 0.28),
+			74.0,
+			coup_dis,
+			27
+		)
+		coup_btn.pressed.connect(func() -> void:
+			_on_action_button_pressed("coup")
+		)
+		actions_container.add_child(coup_btn)
 		return
 
 	# 6. Default Waiting State (Opponent's Action Turn)
 	var active_name: String = _get_player_short_name(current_turn)
-	_add_dock_info_label("⏳ نوبت «%s» است؛ آماده پاسخ یا بلوف‌گیری بمانید!" % active_name, Color(0.94, 0.90, 0.78))
+	var opp_info: Dictionary = _get_player_entry(current_turn)
+	var opp_coins: int = int(opp_info.get("coins", 0))
+	var wait_txt: String = "⏳ نوبت «%s» است؛ آماده پاسخ یا بلوف‌گیری بمانید!" % active_name
+	if opp_coins >= 10:
+		wait_txt += "\n⚠️ %s بالای ۱۰ سکه دارد و مجبور به اجرای کودتاست!" % active_name
+	elif opp_coins >= 7:
+		wait_txt += "\n🪙 %s اکنون %s سکه دارد (امکان اجرای کودتا یا ترور)." % [active_name, CoupCardWidgetScript.to_fa_digits(str(opp_coins))]
+	_add_dock_info_panel(wait_txt, Color(0.96, 0.93, 0.82), Color(0.11, 0.09, 0.07, 0.82), Color(0.82, 0.66, 0.32, 0.52), 26)
 
 func _add_dock_info_label(txt: String, col: Color) -> void:
 	var lbl: Label = Label.new()
@@ -1024,9 +1305,34 @@ func _add_dock_info_label(txt: String, col: Color) -> void:
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lbl.add_theme_font_override("font", FontHekayat)
-	lbl.add_theme_font_size_override("font_size", 25)
+	lbl.add_theme_font_size_override("font_size", 26)
 	lbl.add_theme_color_override("font_color", col)
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.88))
+	lbl.add_theme_constant_override("outline_size", 3)
 	actions_container.add_child(lbl)
+
+func _add_dock_info_panel(txt: String, text_col: Color, bg_col: Color, bd_col: Color, f_size: int = 26) -> void:
+	var p: PanelContainer = PanelContainer.new()
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var st: StyleBoxFlat = _make_glass_style(bg_col, bd_col, 16, 2)
+	st.content_margin_left = 14
+	st.content_margin_right = 14
+	st.content_margin_top = 10
+	st.content_margin_bottom = 10
+	p.add_theme_stylebox_override("panel", st)
+	actions_container.add_child(p)
+
+	var lbl: Label = Label.new()
+	lbl.text = txt
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.add_theme_font_override("font", FontHekayat)
+	lbl.add_theme_font_size_override("font_size", f_size)
+	lbl.add_theme_color_override("font_color", text_col)
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
+	lbl.add_theme_constant_override("outline_size", 3)
+	p.add_child(lbl)
 
 func _build_response_prompt_detail() -> String:
 	var actor_n: String = _get_player_short_name(pending_actor)
@@ -1086,7 +1392,7 @@ func _refresh_exchange_modal() -> void:
 			var cd: Dictionary = cv as Dictionary
 			var is_sel: bool = idx in _selected_exchange_indices
 			var cw: CoupCardWidget = CoupCardWidgetScript.new()
-			cw.setup_card(idx, cd, true, is_sel, Vector2(132, 186))
+			cw.setup_card(idx, cd, true, is_sel, Vector2(174, 248))
 			cw.card_clicked.connect(_on_exchange_card_clicked)
 			exchange_cards_hbox.add_child(cw)
 
@@ -1097,7 +1403,7 @@ func _refresh_exchange_modal() -> void:
 			Color(0.12, 0.56, 0.28),
 			Color(0.48, 0.96, 0.64),
 			Color.WHITE,
-			27,
+			28,
 			not ready
 		)
 

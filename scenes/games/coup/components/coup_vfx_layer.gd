@@ -21,61 +21,64 @@ func _init() -> void:
 	_build_overlays()
 
 func _build_overlays() -> void:
-	# 1. Contextual Auto-Dismissing Event Toast (Centered above dock, clear of 3D table)
+	# 1. Contextual Auto-Dismissing Event Toast (Centered cleanly below Status Bar)
 	_toast_panel = PanelContainer.new()
 	_toast_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_toast_panel.offset_left = -310.0
-	_toast_panel.offset_right = 310.0
-	_toast_panel.offset_top = 410.0
-	_toast_panel.offset_bottom = 462.0
-	_toast_panel.pivot_offset = Vector2(310.0, 26.0)
+	_toast_panel.offset_left = -450.0
+	_toast_panel.offset_right = 450.0
+	_toast_panel.offset_top = 404.0
+	_toast_panel.offset_bottom = 482.0
+	_toast_panel.pivot_offset = Vector2(450.0, 39.0)
 	_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toast_panel.visible = false
 
 	_toast_style = StyleBoxFlat.new()
-	_toast_style.bg_color = Color(0.08, 0.06, 0.05, 0.94)
-	_toast_style.border_color = Color(0.92, 0.76, 0.34, 0.90)
+	_toast_style.bg_color = Color(0.06, 0.05, 0.04, 0.95)
+	_toast_style.border_color = Color(0.95, 0.78, 0.34, 0.95)
 	_toast_style.set_border_width_all(2)
-	_toast_style.set_corner_radius_all(22)
-	_toast_style.shadow_color = Color(0, 0, 0, 0.45)
-	_toast_style.shadow_size = 10
-	_toast_style.content_margin_left = 18
-	_toast_style.content_margin_right = 18
-	_toast_style.content_margin_top = 6
-	_toast_style.content_margin_bottom = 6
+	_toast_style.set_corner_radius_all(24)
+	_toast_style.shadow_color = Color(0, 0, 0, 0.55)
+	_toast_style.shadow_size = 12
+	_toast_style.content_margin_left = 22
+	_toast_style.content_margin_right = 22
+	_toast_style.content_margin_top = 10
+	_toast_style.content_margin_bottom = 10
 	_toast_panel.add_theme_stylebox_override("panel", _toast_style)
 	add_child(_toast_panel)
 
 	_toast_label = Label.new()
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_toast_label.add_theme_font_override("font", FontHekayat)
-	_toast_label.add_theme_font_size_override("font_size", 26)
-	_toast_label.add_theme_color_override("font_color", Color(0.99, 0.96, 0.88))
+	_toast_label.add_theme_font_size_override("font_size", 29)
+	_toast_label.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
+	_toast_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.92))
+	_toast_label.add_theme_constant_override("outline_size", 4)
 	_toast_panel.add_child(_toast_label)
 
 	# 2. Dramatic Coup / Challenge / Block Callout Badge
 	_special_badge_panel = PanelContainer.new()
 	_special_badge_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_special_badge_panel.offset_left = -210.0
-	_special_badge_panel.offset_right = 210.0
-	_special_badge_panel.offset_top = -245.0
-	_special_badge_panel.offset_bottom = -175.0
-	_special_badge_panel.pivot_offset = Vector2(210.0, 35.0)
+	_special_badge_panel.offset_left = -310.0
+	_special_badge_panel.offset_right = 310.0
+	_special_badge_panel.offset_top = -230.0
+	_special_badge_panel.offset_bottom = -134.0
+	_special_badge_panel.pivot_offset = Vector2(310.0, 48.0)
 	_special_badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_special_badge_panel.visible = false
 
 	_special_badge_style = StyleBoxFlat.new()
-	_special_badge_style.bg_color = Color(0.14, 0.10, 0.12, 0.96)
+	_special_badge_style.bg_color = Color(0.14, 0.10, 0.12, 0.97)
 	_special_badge_style.border_color = Color(1.0, 0.86, 0.28)
 	_special_badge_style.set_border_width_all(3)
-	_special_badge_style.set_corner_radius_all(28)
-	_special_badge_style.shadow_color = Color(0, 0, 0, 0.55)
-	_special_badge_style.shadow_size = 14
-	_special_badge_style.content_margin_left = 20
-	_special_badge_style.content_margin_right = 20
-	_special_badge_style.content_margin_top = 8
-	_special_badge_style.content_margin_bottom = 8
+	_special_badge_style.set_corner_radius_all(30)
+	_special_badge_style.shadow_color = Color(0, 0, 0, 0.65)
+	_special_badge_style.shadow_size = 18
+	_special_badge_style.content_margin_left = 24
+	_special_badge_style.content_margin_right = 24
+	_special_badge_style.content_margin_top = 10
+	_special_badge_style.content_margin_bottom = 10
 	_special_badge_panel.add_theme_stylebox_override("panel", _special_badge_style)
 	add_child(_special_badge_panel)
 
@@ -83,8 +86,10 @@ func _build_overlays() -> void:
 	_special_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_special_badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_special_badge_label.add_theme_font_override("font", FontHekayat)
-	_special_badge_label.add_theme_font_size_override("font_size", 35)
+	_special_badge_label.add_theme_font_size_override("font_size", 40)
 	_special_badge_label.add_theme_color_override("font_color", Color.WHITE)
+	_special_badge_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.94))
+	_special_badge_label.add_theme_constant_override("outline_size", 5)
 	_special_badge_panel.add_child(_special_badge_label)
 
 func show_contextual_toast(message: String, accent_col: Color = Color(0.92, 0.76, 0.34), duration: float = 2.4) -> void:

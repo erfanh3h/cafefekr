@@ -167,28 +167,34 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 		if not is_instance_valid(c):
 			continue
 		c.visible = (idx <= total_players)
-		c.custom_minimum_size = Vector2(0, 118 if is_compact else 140)
+		c.custom_minimum_size = Vector2(0, 128 if is_compact else 148)
 		var hbox = c.get_node_or_null("HBox") as HBoxContainer
 		if hbox:
 			hbox.add_theme_constant_override("separation", 6 if is_compact else 12)
 		var av_c: Control = item["av_c"]
 		if is_instance_valid(av_c):
-			var av_sz = 68.0 if total_players == 4 else (76.0 if total_players == 3 else 96.0)
+			var av_sz = 64.0 if total_players == 4 else (74.0 if total_players == 3 else 96.0)
 			av_c.custom_minimum_size = Vector2(av_sz, av_sz)
 		var nm: Label = item["name"]
 		if is_instance_valid(nm):
-			nm.add_theme_font_size_override("font_size", 28 if total_players == 4 else (30 if total_players == 3 else 38))
+			nm.add_theme_font_size_override("font_size", 32 if total_players == 4 else (34 if total_players == 3 else 40))
+			nm.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+			nm.add_theme_constant_override("outline_size", 3)
 		var rl: Label = item["role"]
 		if is_instance_valid(rl):
-			rl.add_theme_font_size_override("font_size", 22 if is_compact else 26)
+			rl.add_theme_font_size_override("font_size", 24 if total_players == 4 else (26 if total_players == 3 else 28))
+			rl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.82))
+			rl.add_theme_constant_override("outline_size", 2)
 		var sb: PanelContainer = item["score_b"]
 		if is_instance_valid(sb):
 			sb.visible = true
-			var b_sz = 46.0 if total_players == 4 else (50.0 if total_players == 3 else 60.0)
+			var b_sz = 52.0 if total_players == 4 else (56.0 if total_players == 3 else 64.0)
 			sb.custom_minimum_size = Vector2(b_sz, b_sz)
 		var sc: Label = item["score"]
 		if is_instance_valid(sc):
-			sc.add_theme_font_size_override("font_size", 28 if is_compact else 34)
+			sc.add_theme_font_size_override("font_size", 31 if total_players == 4 else (33 if total_players == 3 else 36))
+			sc.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+			sc.add_theme_constant_override("outline_size", 3)
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_my_player_index = my_idx
