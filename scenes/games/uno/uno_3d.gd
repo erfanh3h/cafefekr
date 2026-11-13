@@ -8,7 +8,7 @@ extends BaseGameBoard
 
 const UnoCardWidgetScript = preload("res://scenes/games/uno/components/uno_card_widget.gd")
 const UnoTable3DScript = preload("res://scenes/games/uno/components/uno_table_3d.gd")
-const UnoVFXOverlayScript = preload("res://scenes/games/uno/components/uno_vfx_overlay.gd")
+const UnoVFXOverlayScript = preload("res://scenes/games/uno/components/uno_vfx_layer.gd")
 const FontHekayat: Font = preload("res://assets/fonts/hekayat.ttf")
 
 const UNO_COLORS: Dictionary = {
@@ -111,6 +111,9 @@ var _pid_to_seat_slot: Dictionary = {} # gamer_id -> 1 (Top), 2 (Left), 3 (Right
 var _card_widgets_by_uid: Dictionary = {}
 var _sort_by_value_first: bool = false
 var _zoom_preset_idx: int = 0
+
+var camera_distance: float = 2.42
+var camera_pitch: float = -0.82
 
 # ==============================================================================
 # 1. INITIALIZATION & LIFECYCLE

@@ -104,6 +104,9 @@ var _log_panel: PanelContainer
 var _log_vbox: VBoxContainer
 var _battle_logs: Array[String] = []
 
+var camera_distance: float = 2.52
+var camera_pitch: float = -0.88
+
 # ==============================================================================
 # 1. INITIALIZATION & SCENE CONSTRUCTION
 # ==============================================================================
@@ -115,7 +118,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	super._ready()
-	_mats = RiskMaterials.build_palette()
+	_mats = RiskMaterials.create_palette()
 	_load_3d_meshes()
 	_detect_players_and_local_id()
 	_build_3d_war_room()
