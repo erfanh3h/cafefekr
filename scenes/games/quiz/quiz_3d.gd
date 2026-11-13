@@ -46,6 +46,7 @@ var has_answered_this_turn: bool = false
 var is_in_reveal_phase: bool = false
 var player_scores: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
 var player_locked_in: Dictionary = {1: false, 2: false, 3: false, 4: false}
+var surrendered_players: Dictionary = {1: false, 2: false, 3: false, 4: false}
 var _match_started: bool = false
 var _requested_gamer_id_sync: bool = false
 
@@ -825,6 +826,10 @@ func _refresh_pedestals_text_and_lights() -> void:
 		if is_instance_valid(lbl_name):
 			var p_name = _short_name(_get_player_name(gid))
 			lbl_name.text = ("%s (شما)" % p_name) if gid == my_player_index else p_name
+		if bool(surrendered_players.get(gid, false)):
+			_update_crystal_light(gid, false)
+			_set_pedestal_status(gid, "🏳️ انصراف", Color(1.0, 0.45, 0.45))
+			continue
 		var locked = bool(player_locked_in.get(gid, false))
 		_update_crystal_light(gid, locked)
 		if not is_in_reveal_phase:
@@ -1130,6 +1135,15 @@ func _sync_header_for_question(q_num: int, q_total: int) -> void:
 		_set_header_local_answered(true)
 	else:
 		_set_header_banner("🤔 گزینه درست را روی میز انتخاب کنید", Color(1.0, 0.90, 0.45))
+
+func on_player_surrendered(gamer_id: int) -> void:
+	if gamer_id <= 0:
+		return
+	surrendered_players[gamer_id] = true
+	player_locked_in[gamer_id] = false
+	_update_crystal_light(gamer_id, false)
+	_set_pedestal_status(gamer_id, "🏳️ انصراف", Color(1.0, 0.45, 0.45))
+	_set_header_player_surrendered(gamer_id)
 
 func on_piece_selected(user_id: int, _target_peace: int, _extra: Dictionary = {}) -> void:
 	# Server notifies which gamer_id locked an answer (never exposes chosen option)
@@ -1515,6 +1529,14 @@ func _set_header_round_label(turn_num: int, total: int) -> void:
 	elif is_instance_valid(header.get("lbl_round")):
 		header.lbl_round.text = "سوال %s از %s" % [_fa_digits(turn_num), _fa_digits(total)]
 
+func _set_header_player_surrendered(gid: int) -> void:
+	var hud = _get_active_hud()
+	if not is_instance_valid(hud):
+		return
+	var header = hud.get("current_top_header")
+	if is_instance_valid(header) and header.has_method("set_player_surrendered"):
+		header.set_player_surrendered(gid)
+
 func _set_header_player_answered(gid: int, answered: bool) -> void:
 	var hud = _get_active_hud()
 	if not is_instance_valid(hud):
@@ -1566,11 +1588,49 @@ func on_reconnect_data(payload: Dictionary) -> void:
 	elif src.has("question") or src.has("turn"):
 		_handle_new_question_turn(src, true)
 
+	# Restore surrendered players list
+	var surr_list = src.get("surrendered_players", [])
+	if typeof(surr_list) == TYPE_ARRAY:
+		for g_val in surr_list:
+			var sgid = int(g_val)
+			if sgid > 0:
+				on_player_surrendered(sgid)
+
+	# Restore players who already locked in their answer this question
+	var ans_list = src.get("answered_players", [])
+	if typeof(ans_list) == TYPE_ARRAY:
+		for g_val in ans_list:
+			var agid = int(g_val)
+			if agid > 0:
+				player_locked_in[agid] = true
+				_update_crystal_light(agid, true)
+				_set_pedestal_status(agid, "🔒 ثبت شد", Color(0.45, 0.95, 1.0))
+				_set_header_player_answered(agid, true)
+
+	var round_finished = bool(src.get("is_turn_round_finished", payload.get("is_turn_round_finished", false)))
+	var my_opt = int(src.get("my_option", 0))
+
 	# Restore reveal state if server is currently inside the 4s Finish_Turn_Round sleep window
-	if bool(src.get("is_turn_round_finished", false)):
+	if round_finished:
+		if my_opt >= 1 and my_opt <= 4:
+			selected_option_idx = my_opt
+			has_answered_this_turn = true
 		var last_res = src.get("last_turn_results", {})
 		if typeof(last_res) == TYPE_DICTIONARY and not last_res.is_empty():
 			_apply_finish_turn_round(last_res, false)
+	elif my_opt >= 1 and my_opt <= 4 and not has_answered_this_turn:
+		# Restore local player's hidden locked choice if reconnecting mid-question
+		has_answered_this_turn = true
+		selected_option_idx = my_opt
+		set_board_locked(true)
+		player_locked_in[my_player_index] = true
+		_style_keycaps_selected(my_opt)
+		_spawn_local_lock_seal(my_opt)
+		var letter = OPTION_LETTERS[clampi(my_opt - 1, 0, 3)]
+		_lectern_status_text = "🔒 انتخاب شما («%s») ثبت شد — در انتظار سایر بازیکنان..." % letter
+		_lectern_status_color = Color(0.55, 0.92, 1.0)
+		_lectern_show_reveal_bar = false
+		_refresh_lectern_labels()
 
 	_rebuild_player_pedestals()
 	_refresh_pedestals_text_and_lights()
@@ -1597,6 +1657,7 @@ func reset_board() -> void:
 	is_in_reveal_phase = false
 	selected_option_idx = 0
 	player_scores = {1: 0, 2: 0, 3: 0, 4: 0}
+	surrendered_players = {1: false, 2: false, 3: false, 4: false}
 	for gid in player_locked_in.keys():
 		player_locked_in[gid] = false
 	_clear_header_answered_states()

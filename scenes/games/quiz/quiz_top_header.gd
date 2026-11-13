@@ -7,6 +7,7 @@ extends "res://scenes/games/base/base_top_header.gd"
 
 var _quiz_scores: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
 var _player_answered: Dictionary = {1: false, 2: false, 3: false, 4: false}
+var _surrendered_players: Dictionary = {1: false, 2: false, 3: false, 4: false}
 var _local_answered_confirmed: bool = false
 var _role_styles_default: Dictionary = {}
 var _role_style_answered: StyleBoxFlat = null
@@ -268,7 +269,12 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 		var rl: Label = item["role"]
 		if is_instance_valid(rl):
 			rl.add_theme_font_size_override("font_size", 19 if is_compact else 23)
-			rl.text = "🔒 ثبت شد" if bool(_player_answered.get(idx, false)) else (FACTION_BADGES_COMPACT[idx] if is_compact else FACTION_BADGES_2P[idx])
+			if bool(_surrendered_players.get(idx, false)):
+				rl.text = "🏳️ انصراف"
+			elif bool(_player_answered.get(idx, false)):
+				rl.text = "🔒 ثبت شد"
+			else:
+				rl.text = FACTION_BADGES_COMPACT[idx] if is_compact else FACTION_BADGES_2P[idx]
 		var sb: PanelContainer = item["score_b"]
 		if is_instance_valid(sb):
 			sb.visible = true
@@ -375,7 +381,23 @@ func _sync_all_cards_visual() -> void:
 		if is_instance_valid(av_f) and av_active_styles.get(gid):
 			av_f.add_theme_stylebox_override("panel", av_active_styles[gid])
 
+func set_player_surrendered(gid: int) -> void:
+	if gid <= 0:
+		return
+	_surrendered_players[gid] = true
+	_player_answered[gid] = false
+	var refs = _get_card_refs(gid)
+	var role_lbl: Label = refs.get("role")
+	if is_instance_valid(role_lbl):
+		role_lbl.text = "🏳️ انصراف"
+		role_lbl.add_theme_color_override("font_color", Color(1.0, 0.56, 0.56))
+	var card: Control = refs.get("card")
+	if is_instance_valid(card):
+		card.modulate = Color(0.75, 0.72, 0.72, 0.78)
+
 func set_player_answered(gid: int, answered: bool) -> void:
+	if bool(_surrendered_players.get(gid, false)):
+		return
 	var was_answered = bool(_player_answered.get(gid, false))
 	_player_answered[gid] = answered
 	var refs = _get_card_refs(gid)
@@ -400,7 +422,8 @@ func set_player_answered(gid: int, answered: bool) -> void:
 func clear_answered_states() -> void:
 	_local_answered_confirmed = false
 	for gid in [1, 2, 3, 4]:
-		set_player_answered(gid, false)
+		if not bool(_surrendered_players.get(gid, false)):
+			set_player_answered(gid, false)
 
 func update_scores(p1_score: int, p2_score: int) -> void:
 	# Preserve multiplayer scores while keeping 2-player updates accurate
@@ -451,6 +474,11 @@ func set_question_number(turn_num: int, total: int = 10) -> void:
 func reset_header() -> void:
 	_local_answered_confirmed = false
 	_quiz_scores = {1: 0, 2: 0, 3: 0, 4: 0}
+	_surrendered_players = {1: false, 2: false, 3: false, 4: false}
+	for gid in [1, 2]:
+		var refs = _get_card_refs(gid)
+		if is_instance_valid(refs.get("card")):
+			refs["card"].modulate = Color.WHITE
 	super.reset_header()
 	clear_answered_states()
 	update_quiz_scores(_quiz_scores)
@@ -459,6 +487,7 @@ func reset_header() -> void:
 			var info = _extra_cards[idx]
 			if is_instance_valid(info.get("card")):
 				info["card"].scale = Vector2.ONE
+				info["card"].modulate = Color.WHITE
 			if is_instance_valid(info.get("reaction_bubble")):
 				info["reaction_bubble"].top_level = true
 				info["reaction_bubble"].visible = false
