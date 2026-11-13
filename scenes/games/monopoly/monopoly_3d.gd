@@ -91,10 +91,15 @@ var card_popup_title: Label
 var card_popup_desc: Label
 var _card_popup_seq: int = 0
 
+var hint_banner_panel: PanelContainer
+var hint_banner_style: StyleBoxFlat
+var hint_banner_lbl: Label
+var _hint_banner_seq: int = 0
+
 
 func _init() -> void:
-	camera_distance = 2.68
-	camera_pitch = -0.84
+	camera_distance = 2.26
+	camera_pitch = -0.86
 
 
 func _ready() -> void:
@@ -221,64 +226,65 @@ func _build_hud() -> void:
 	hud_root.name = "MonopolyHUDRoot"
 	hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.visible = false
 	hud_layer.add_child(hud_root)
 
-	# 1. Floating Top Utility & Live Event Bar
+	# 1. Floating Top Utility & Live Event Bar (Cleanly below TopHeader)
 	status_pill = PanelContainer.new()
 	status_pill.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	status_pill.offset_left = 20
-	status_pill.offset_right = -20
-	status_pill.offset_top = 316
-	status_pill.offset_bottom = 398
+	status_pill.offset_left = 18
+	status_pill.offset_right = -18
+	status_pill.offset_top = 312
+	status_pill.offset_bottom = 402
 	status_pill.add_theme_stylebox_override(
 		"panel",
-		_make_glass_style(Color(0.07, 0.05, 0.04, 0.92), Color(0.92, 0.74, 0.32, 0.85), 22, 2)
+		_make_glass_style(Color(0.07, 0.05, 0.04, 0.94), Color(0.92, 0.74, 0.32, 0.88), 22, 2)
 	)
 	hud_root.add_child(status_pill)
 
 	var pm := MarginContainer.new()
-	pm.add_theme_constant_override("margin_left", 12)
+	pm.add_theme_constant_override("margin_left", 14)
 	pm.add_theme_constant_override("margin_right", 14)
-	pm.add_theme_constant_override("margin_top", 6)
-	pm.add_theme_constant_override("margin_bottom", 6)
+	pm.add_theme_constant_override("margin_top", 8)
+	pm.add_theme_constant_override("margin_bottom", 8)
 	status_pill.add_child(pm)
 
 	var phb := HBoxContainer.new()
-	phb.add_theme_constant_override("separation", 8)
+	phb.add_theme_constant_override("separation", 10)
 	pm.add_child(phb)
 
 	zoom_btn = Button.new()
 	zoom_btn.text = "🔍 نما"
-	zoom_btn.custom_minimum_size = Vector2(102, 54)
-	_style_btn(zoom_btn, Color(0.14, 0.22, 0.30, 0.95), Color(0.56, 0.78, 0.95, 0.85), Color(0.95, 0.98, 1.0), 24)
+	zoom_btn.custom_minimum_size = Vector2(114, 58)
+	_style_btn(zoom_btn, Color(0.14, 0.22, 0.30, 0.95), Color(0.56, 0.78, 0.95, 0.85), Color(0.95, 0.98, 1.0), 25)
 	zoom_btn.pressed.connect(_on_zoom_cycle_pressed)
 	phb.add_child(zoom_btn)
 
 	portfolio_btn = Button.new()
 	portfolio_btn.text = "🏘️ املاک من"
-	portfolio_btn.custom_minimum_size = Vector2(142, 54)
-	_style_btn(portfolio_btn, Color(0.16, 0.34, 0.22, 0.96), Color(0.45, 0.90, 0.56, 0.88), Color(0.96, 1.0, 0.96), 24)
+	portfolio_btn.custom_minimum_size = Vector2(166, 58)
+	_style_btn(portfolio_btn, Color(0.16, 0.34, 0.22, 0.96), Color(0.45, 0.90, 0.56, 0.88), Color(0.96, 1.0, 0.96), 25)
 	portfolio_btn.pressed.connect(_open_portfolio_modal)
 	phb.add_child(portfolio_btn)
 
 	trade_btn = Button.new()
 	trade_btn.text = "🤝 معامله"
-	trade_btn.custom_minimum_size = Vector2(126, 54)
-	_style_btn(trade_btn, Color(0.38, 0.22, 0.08, 0.96), Color(0.96, 0.74, 0.28, 0.88), Color(1.0, 0.96, 0.86), 24)
+	trade_btn.custom_minimum_size = Vector2(144, 58)
+	_style_btn(trade_btn, Color(0.38, 0.22, 0.08, 0.96), Color(0.96, 0.74, 0.28, 0.88), Color(1.0, 0.96, 0.86), 25)
 	trade_btn.pressed.connect(_open_trade_builder_modal)
 	phb.add_child(trade_btn)
 
-	status_label = _make_lbl(_last_feed_text, 25, Color(1.0, 0.95, 0.82), HORIZONTAL_ALIGNMENT_RIGHT, 3)
+	status_label = _make_lbl(_last_feed_text, 27, Color(1.0, 0.96, 0.84), HORIZONTAL_ALIGNMENT_RIGHT, 3)
 	status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	phb.add_child(status_label)
 
-	# 2. Bottom Floating Gamer Action Dock
+	# 2. Bottom Floating Gamer Action Dock (Cleanly above the 8 BottomBar buttons!)
 	bottom_dock = Control.new()
 	bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_dock.offset_left = 20
-	bottom_dock.offset_right = -20
+	bottom_dock.offset_left = 18
+	bottom_dock.offset_right = -18
 	bottom_dock.offset_top = -470
-	bottom_dock.offset_bottom = -130
+	bottom_dock.offset_bottom = -170
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(bottom_dock)
 
@@ -297,8 +303,8 @@ func _build_hud() -> void:
 	dock_vb.add_child(dock_panel)
 
 	var dm := MarginContainer.new()
-	dm.add_theme_constant_override("margin_left", 16)
-	dm.add_theme_constant_override("margin_right", 16)
+	dm.add_theme_constant_override("margin_left", 18)
+	dm.add_theme_constant_override("margin_right", 18)
 	dm.add_theme_constant_override("margin_top", 12)
 	dm.add_theme_constant_override("margin_bottom", 14)
 	dock_panel.add_child(dm)
@@ -312,29 +318,30 @@ func _build_hud() -> void:
 	stats_hb.add_theme_constant_override("separation", 12)
 	inner_vb.add_child(stats_hb)
 
-	my_cash_lbl = _make_lbl("💵 ۱۵۰۰$", 30, Color(0.45, 0.98, 0.56), HORIZONTAL_ALIGNMENT_LEFT, 3)
+	my_cash_lbl = _make_lbl("💵 ۱۵۰۰$", 34, Color(0.45, 0.98, 0.56), HORIZONTAL_ALIGNMENT_LEFT, 3)
 	stats_hb.add_child(my_cash_lbl)
 
-	my_props_lbl = _make_lbl("🏠 ۰ ملک", 26, Color(1.0, 0.90, 0.45), HORIZONTAL_ALIGNMENT_CENTER, 3)
+	my_props_lbl = _make_lbl("🏠 ۰ ملک", 29, Color(1.0, 0.90, 0.45), HORIZONTAL_ALIGNMENT_CENTER, 3)
 	my_props_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stats_hb.add_child(my_props_lbl)
 
-	my_jail_lbl = _make_lbl("🎫 کارت آزادی: ۰", 24, Color(0.70, 0.88, 1.0), HORIZONTAL_ALIGNMENT_RIGHT, 2)
+	my_jail_lbl = _make_lbl("🎫 آزادی: ۰", 27, Color(0.70, 0.88, 1.0), HORIZONTAL_ALIGNMENT_RIGHT, 3)
 	stats_hb.add_child(my_jail_lbl)
 
-	dock_info_lbl = _make_lbl("برای مشاهده سند هر خانه، روی آن در صفحه ضربه بزنید.", 25, Color(0.95, 0.93, 0.88), HORIZONTAL_ALIGNMENT_CENTER, 2)
+	dock_info_lbl = _make_lbl("برای مشاهده سند هر خانه، روی آن در صفحه ضربه بزنید.", 28, Color(0.96, 0.94, 0.88), HORIZONTAL_ALIGNMENT_CENTER, 3)
 	inner_vb.add_child(dock_info_lbl)
 
 	actions_vbox = VBoxContainer.new()
 	actions_vbox.add_theme_constant_override("separation", 10)
 	inner_vb.add_child(actions_vbox)
 
-	# 3. Centered Modals
+	# 3. Centered Modals & Upper-Mid Contextual Hints
 	_build_portfolio_modal()
 	_build_inspector_modal()
 	_build_trade_builder_modal()
 	_build_trade_incoming_modal()
 	_build_card_popup()
+	_build_hint_banner()
 
 
 func _build_portfolio_modal() -> void:
@@ -378,11 +385,11 @@ func _build_portfolio_modal() -> void:
 	btn_x.pressed.connect(func(): portfolio_backdrop.visible = false)
 	hdr.add_child(btn_x)
 
-	portfolio_title_lbl = _make_lbl("🏘️ مدیریت املاک و ساخت‌وساز", 34, Color(1.0, 0.88, 0.42), HORIZONTAL_ALIGNMENT_RIGHT, 3)
+	portfolio_title_lbl = _make_lbl("🏘️ مدیریت املاک و ساخت‌وساز", 38, Color(1.0, 0.88, 0.42), HORIZONTAL_ALIGNMENT_RIGHT, 3)
 	portfolio_title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hdr.add_child(portfolio_title_lbl)
 
-	var sub := _make_lbl("ساخت خانه فقط پس از مالکیت هر ۲ ملک هم‌رنگ و به‌صورت متعادل مجاز است.", 24, Color(0.84, 0.88, 0.92), HORIZONTAL_ALIGNMENT_RIGHT, 2)
+	var sub := _make_lbl("ساخت خانه فقط پس از مالکیت هر ۲ ملک هم‌رنگ و به‌صورت متعادل مجاز است.", 27, Color(0.88, 0.91, 0.94), HORIZONTAL_ALIGNMENT_RIGHT, 2)
 	vb.add_child(sub)
 
 	var sc := ScrollContainer.new()
@@ -411,7 +418,7 @@ func _build_inspector_modal() -> void:
 	inspector_backdrop.add_child(cc)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(760, 0)
+	panel.custom_minimum_size = Vector2(880, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.09, 0.08, 0.07, 0.98), Color(0.95, 0.80, 0.36, 0.94), 24, 3))
 	cc.add_child(panel)
@@ -498,12 +505,14 @@ func _build_trade_incoming_modal() -> void:
 func _build_card_popup() -> void:
 	card_popup_panel = PanelContainer.new()
 	card_popup_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	card_popup_panel.offset_left = -360
-	card_popup_panel.offset_right = 360
-	card_popup_panel.offset_top = 420
-	card_popup_panel.offset_bottom = 620
+	card_popup_panel.offset_left = -430
+	card_popup_panel.offset_right = 430
+	card_popup_panel.offset_top = 414
+	card_popup_panel.offset_bottom = 414
+	card_popup_panel.grow_vertical = Control.GROW_DIRECTION_END
+	card_popup_panel.custom_minimum_size = Vector2(860, 200)
 	card_popup_panel.visible = false
-	card_popup_panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.14, 0.08, 0.04, 0.97), Color(1.0, 0.82, 0.28, 0.96), 22, 3))
+	card_popup_panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.14, 0.08, 0.04, 0.98), Color(1.0, 0.82, 0.28, 0.96), 24, 3))
 	card_popup_panel.gui_input.connect(func(ev: InputEvent):
 		if ev is InputEventMouseButton and ev.pressed:
 			card_popup_panel.visible = false
@@ -511,22 +520,45 @@ func _build_card_popup() -> void:
 	hud_root.add_child(card_popup_panel)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 22)
-	m.add_theme_constant_override("margin_right", 22)
-	m.add_theme_constant_override("margin_top", 16)
-	m.add_theme_constant_override("margin_bottom", 16)
+	m.add_theme_constant_override("margin_left", 26)
+	m.add_theme_constant_override("margin_right", 26)
+	m.add_theme_constant_override("margin_top", 18)
+	m.add_theme_constant_override("margin_bottom", 18)
 	card_popup_panel.add_child(m)
 
 	var vb := VBoxContainer.new()
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
-	vb.add_theme_constant_override("separation", 8)
+	vb.add_theme_constant_override("separation", 10)
 	m.add_child(vb)
 
-	card_popup_title = _make_lbl("🎴 کارت شانس", 34, Color(1.0, 0.88, 0.36), HORIZONTAL_ALIGNMENT_CENTER, 3)
+	card_popup_title = _make_lbl("🎴 کارت شانس", 38, Color(1.0, 0.88, 0.36), HORIZONTAL_ALIGNMENT_CENTER, 4)
 	vb.add_child(card_popup_title)
 
-	card_popup_desc = _make_lbl("", 26, Color(0.98, 0.96, 0.92), HORIZONTAL_ALIGNMENT_CENTER, 2)
+	card_popup_desc = _make_lbl("", 30, Color(0.98, 0.96, 0.92), HORIZONTAL_ALIGNMENT_CENTER, 3)
 	vb.add_child(card_popup_desc)
+
+
+func _build_hint_banner() -> void:
+	hint_banner_panel = PanelContainer.new()
+	hint_banner_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	hint_banner_panel.offset_left = -450
+	hint_banner_panel.offset_right = 450
+	hint_banner_panel.offset_top = 414
+	hint_banner_panel.offset_bottom = 414
+	hint_banner_panel.grow_vertical = Control.GROW_DIRECTION_END
+	hint_banner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint_banner_panel.visible = false
+	hint_banner_style = _make_glass_style(Color(0.08, 0.06, 0.05, 0.96), Color(1.0, 0.80, 0.28, 0.95), 22, 3)
+	hint_banner_style.content_margin_left = 26
+	hint_banner_style.content_margin_right = 26
+	hint_banner_style.content_margin_top = 14
+	hint_banner_style.content_margin_bottom = 14
+	hint_banner_panel.add_theme_stylebox_override("panel", hint_banner_style)
+	hud_root.add_child(hint_banner_panel)
+
+	hint_banner_lbl = _make_lbl("", 30, Color(1.0, 0.96, 0.86), HORIZONTAL_ALIGNMENT_CENTER, 4)
+	hint_banner_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint_banner_panel.add_child(hint_banner_lbl)
 
 
 # ==============================================================================
@@ -695,7 +727,7 @@ func _refresh_hud_dock() -> void:
 				btn_rj.text = "🎲 تاس جفت (رایگان)"
 				btn_rj.custom_minimum_size = Vector2(0, 82)
 				btn_rj.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				_style_btn(btn_rj, Color(0.14, 0.44, 0.72, 0.96), Color(0.50, 0.84, 1.0, 0.90), Color.WHITE, 26)
+				_style_btn(btn_rj, Color(0.14, 0.44, 0.72, 0.96), Color(0.50, 0.84, 1.0, 0.90), Color.WHITE, 28)
 				btn_rj.pressed.connect(func(): _send_monopoly_action("roll_jail"))
 				hb.add_child(btn_rj)
 
@@ -703,7 +735,7 @@ func _refresh_hud_dock() -> void:
 				btn_bail.text = "💰 وثیقه ۵۰$"
 				btn_bail.custom_minimum_size = Vector2(0, 82)
 				btn_bail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				_style_btn(btn_bail, Color(0.68, 0.42, 0.08, 0.96), Color(1.0, 0.82, 0.30, 0.92), Color.WHITE, 26, my_cash < 50)
+				_style_btn(btn_bail, Color(0.68, 0.42, 0.08, 0.96), Color(1.0, 0.82, 0.30, 0.92), Color.WHITE, 28, my_cash < 50)
 				btn_bail.pressed.connect(func(): _send_monopoly_action("pay_bail"))
 				hb.add_child(btn_bail)
 
@@ -711,7 +743,7 @@ func _refresh_hud_dock() -> void:
 					var btn_jc := Button.new()
 					btn_jc.text = "🎫 استفاده از کارت آزادی زندان"
 					btn_jc.custom_minimum_size = Vector2(0, 74)
-					_style_btn(btn_jc, Color(0.16, 0.56, 0.28, 0.96), Color(0.52, 0.96, 0.62, 0.92), Color.WHITE, 26)
+					_style_btn(btn_jc, Color(0.16, 0.56, 0.28, 0.96), Color(0.52, 0.96, 0.62, 0.92), Color.WHITE, 28)
 					btn_jc.pressed.connect(func(): _send_monopoly_action("use_jail_card"))
 					actions_vbox.add_child(btn_jc)
 			else:
@@ -724,7 +756,7 @@ func _refresh_hud_dock() -> void:
 				btn_roll.text = "🎲 پرتاب تاس"
 				btn_roll.custom_minimum_size = Vector2(0, 86)
 				btn_roll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				_style_btn(btn_roll, Color(0.12, 0.58, 0.28, 0.98), Color(0.46, 0.98, 0.58, 0.95), Color.WHITE, 30)
+				_style_btn(btn_roll, Color(0.12, 0.58, 0.28, 0.98), Color(0.46, 0.98, 0.58, 0.95), Color.WHITE, 32)
 				btn_roll.pressed.connect(_on_roll_pressed)
 				hb.add_child(btn_roll)
 
@@ -732,7 +764,7 @@ func _refresh_hud_dock() -> void:
 					var btn_bld := Button.new()
 					btn_bld.text = "🏗️ ساخت‌وساز (%s)" % MonopolyData.fa_num(buildable_tiles.size())
 					btn_bld.custom_minimum_size = Vector2(260, 86)
-					_style_btn(btn_bld, Color(0.18, 0.34, 0.58, 0.96), Color(0.55, 0.80, 1.0, 0.90), Color.WHITE, 25)
+					_style_btn(btn_bld, Color(0.18, 0.34, 0.58, 0.96), Color(0.55, 0.80, 1.0, 0.90), Color.WHITE, 27)
 					btn_bld.pressed.connect(_open_portfolio_modal)
 					hb.add_child(btn_bld)
 		else:
@@ -759,7 +791,7 @@ func _refresh_hud_dock() -> void:
 			btn_buy.text = "✅ خرید ملک ($%s)" % MonopolyData.fa_num(price)
 			btn_buy.custom_minimum_size = Vector2(0, 86)
 			btn_buy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_btn(btn_buy, Color(0.12, 0.58, 0.28, 0.98), Color(0.46, 0.98, 0.58, 0.95), Color.WHITE, 28, not can_buy)
+			_style_btn(btn_buy, Color(0.12, 0.58, 0.28, 0.98), Color(0.46, 0.98, 0.58, 0.95), Color.WHITE, 30, not can_buy)
 			btn_buy.pressed.connect(func(): _send_monopoly_action("buy_property"))
 			hb.add_child(btn_buy)
 
@@ -767,7 +799,7 @@ func _refresh_hud_dock() -> void:
 			btn_auc.text = "🔨 ارسال به مزایده"
 			btn_auc.custom_minimum_size = Vector2(0, 86)
 			btn_auc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_btn(btn_auc, Color(0.68, 0.36, 0.08, 0.96), Color(1.0, 0.76, 0.28, 0.92), Color.WHITE, 28)
+			_style_btn(btn_auc, Color(0.68, 0.36, 0.08, 0.96), Color(1.0, 0.76, 0.28, 0.92), Color.WHITE, 30)
 			btn_auc.pressed.connect(func(): _send_monopoly_action("decline_buy"))
 			hb.add_child(btn_auc)
 		else:
@@ -838,14 +870,14 @@ func _refresh_hud_dock() -> void:
 			var btn_raise := Button.new()
 			btn_raise.text = "🏚️ فروش / رهن"
 			btn_raise.custom_minimum_size = Vector2(230, 84)
-			_style_btn(btn_raise, Color(0.66, 0.40, 0.08, 0.96), Color(1.0, 0.80, 0.28, 0.92), Color.WHITE, 25)
+			_style_btn(btn_raise, Color(0.66, 0.40, 0.08, 0.96), Color(1.0, 0.80, 0.28, 0.92), Color.WHITE, 27)
 			btn_raise.pressed.connect(_open_portfolio_modal)
 			hb.add_child(btn_raise)
 
 			var btn_bk := Button.new()
 			btn_bk.text = "🏳️ ورشکستگی"
 			btn_bk.custom_minimum_size = Vector2(200, 84)
-			_style_btn(btn_bk, Color(0.56, 0.14, 0.16, 0.96), Color(0.96, 0.44, 0.44, 0.92), Color.WHITE, 25)
+			_style_btn(btn_bk, Color(0.56, 0.14, 0.16, 0.96), Color(0.96, 0.44, 0.44, 0.92), Color.WHITE, 27)
 			btn_bk.pressed.connect(func(): _send_monopoly_action("declare_bankruptcy"))
 			hb.add_child(btn_bk)
 		else:
@@ -871,7 +903,7 @@ func _refresh_hud_dock() -> void:
 			btn_end.text = "✅ پایان نوبت"
 			btn_end.custom_minimum_size = Vector2(0, 86)
 			btn_end.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_btn(btn_end, Color(0.14, 0.58, 0.28, 0.98), Color(0.46, 0.98, 0.58, 0.95), Color.WHITE, 30)
+			_style_btn(btn_end, Color(0.14, 0.58, 0.28, 0.98), Color(0.46, 0.98, 0.58, 0.95), Color.WHITE, 32)
 			btn_end.pressed.connect(func(): _send_monopoly_action("end_turn"))
 			hb.add_child(btn_end)
 
@@ -879,7 +911,7 @@ func _refresh_hud_dock() -> void:
 			var btn_mgr := Button.new()
 			btn_mgr.text = "🏗️ ساخت و رهن (%s)" % MonopolyData.fa_num(bld_cnt) if bld_cnt > 0 else "🏘️ مدیریت املاک"
 			btn_mgr.custom_minimum_size = Vector2(280, 86)
-			_style_btn(btn_mgr, Color(0.18, 0.34, 0.58, 0.96), Color(0.55, 0.80, 1.0, 0.90), Color.WHITE, 25)
+			_style_btn(btn_mgr, Color(0.18, 0.34, 0.58, 0.96), Color(0.55, 0.80, 1.0, 0.90), Color.WHITE, 27)
 			btn_mgr.pressed.connect(_open_portfolio_modal)
 			hb.add_child(btn_mgr)
 		else:
@@ -963,10 +995,10 @@ func _populate_portfolio_list() -> void:
 		else:
 			house_txt = "گروه %s" % MonopolyData.GROUP_NAMES_FA.get(grp, "")
 
-		var status_l := _make_lbl(house_txt, 24, Color(1.0, 0.72, 0.42) if mortgaged else Color(0.75, 0.96, 0.78), HORIZONTAL_ALIGNMENT_LEFT, 2)
+		var status_l := _make_lbl(house_txt, 27, Color(1.0, 0.72, 0.42) if mortgaged else Color(0.75, 0.96, 0.78), HORIZONTAL_ALIGNMENT_LEFT, 2)
 		top_hb.add_child(status_l)
 
-		var name_l := _make_lbl(str(meta.get("name", "")), 30, Color(1.0, 0.96, 0.88), HORIZONTAL_ALIGNMENT_RIGHT, 3)
+		var name_l := _make_lbl(str(meta.get("name", "")), 33, Color(1.0, 0.96, 0.88), HORIZONTAL_ALIGNMENT_RIGHT, 3)
 		name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		top_hb.add_child(name_l)
 
@@ -984,7 +1016,7 @@ func _populate_portfolio_list() -> void:
 			btn_b.text = b_lbl
 			btn_b.custom_minimum_size = Vector2(0, 62)
 			btn_b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_btn(btn_b, Color(0.12, 0.54, 0.26, 0.96), Color(0.46, 0.96, 0.56, 0.9), Color.WHITE, 23)
+			_style_btn(btn_b, Color(0.12, 0.54, 0.26, 0.96), Color(0.46, 0.96, 0.56, 0.9), Color.WHITE, 26)
 			var t_cap: int = tid
 			btn_b.pressed.connect(func(): _send_monopoly_action("build_house", {"tile_id": t_cap}))
 			btns_hb.add_child(btn_b)
@@ -994,7 +1026,7 @@ func _populate_portfolio_list() -> void:
 			btn_s.text = "🏚️ فروش خانه (+$%s)" % MonopolyData.fa_num(h_cost / 2)
 			btn_s.custom_minimum_size = Vector2(0, 62)
 			btn_s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_btn(btn_s, Color(0.58, 0.34, 0.10, 0.96), Color(1.0, 0.72, 0.28, 0.9), Color.WHITE, 23)
+			_style_btn(btn_s, Color(0.58, 0.34, 0.10, 0.96), Color(1.0, 0.72, 0.28, 0.9), Color.WHITE, 26)
 			var t_cap2: int = tid
 			btn_s.pressed.connect(func(): _send_monopoly_action("sell_house", {"tile_id": t_cap2}))
 			btns_hb.add_child(btn_s)
@@ -1004,7 +1036,7 @@ func _populate_portfolio_list() -> void:
 			btn_m.text = "🏦 رهن (+$%s)" % MonopolyData.fa_num(m_val)
 			btn_m.custom_minimum_size = Vector2(0, 62)
 			btn_m.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_btn(btn_m, Color(0.48, 0.20, 0.16, 0.96), Color(0.95, 0.54, 0.44, 0.9), Color.WHITE, 23)
+			_style_btn(btn_m, Color(0.48, 0.20, 0.16, 0.96), Color(0.95, 0.54, 0.44, 0.9), Color.WHITE, 26)
 			var t_cap3: int = tid
 			btn_m.pressed.connect(func(): _send_monopoly_action("mortgage", {"tile_id": t_cap3}))
 			btns_hb.add_child(btn_m)
@@ -1014,7 +1046,7 @@ func _populate_portfolio_list() -> void:
 			btn_u.text = "🔓 فک رهن (-$%s)" % MonopolyData.fa_num(u_cost)
 			btn_u.custom_minimum_size = Vector2(0, 62)
 			btn_u.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_btn(btn_u, Color(0.16, 0.38, 0.62, 0.96), Color(0.52, 0.82, 1.0, 0.9), Color.WHITE, 23)
+			_style_btn(btn_u, Color(0.16, 0.38, 0.62, 0.96), Color(0.52, 0.82, 1.0, 0.9), Color.WHITE, 26)
 			var t_cap4: int = tid
 			btn_u.pressed.connect(func(): _send_monopoly_action("unmortgage", {"tile_id": t_cap4}))
 			btns_hb.add_child(btn_u)
@@ -1038,17 +1070,19 @@ func _on_3d_tile_clicked(tid: int) -> void:
 	bm.add_theme_constant_override("margin_top", 12)
 	bm.add_theme_constant_override("margin_bottom", 12)
 	banner.add_child(bm)
-	bm.add_child(_make_lbl(str(meta.get("name", "")), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 3))
+	bm.add_child(_make_lbl(str(meta.get("name", "")), 42, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 3))
 
 	var owner_id := int(ts.get("owner", 0))
 	var owner_str: String = "آزاد (قابل خرید)" if owner_id == 0 else ("مالک: %s" % _get_player_name(owner_id))
+	if t_type in ["chance", "chest", "tax", "go", "jail", "parking", "goto_jail"]:
+		owner_str = "خانه ویژه صفحه"
 	if bool(ts.get("mortgaged", false)):
 		owner_str += " (🔒 در رهن)"
-	inspector_card_vbox.add_child(_make_lbl(owner_str, 26, Color(1.0, 0.88, 0.45), HORIZONTAL_ALIGNMENT_CENTER, 2))
+	inspector_card_vbox.add_child(_make_lbl(owner_str, 30, Color(1.0, 0.88, 0.45), HORIZONTAL_ALIGNMENT_CENTER, 3))
 
 	if t_type in ["street", "railroad", "utility"]:
 		var price := int(meta.get("price", 0))
-		inspector_card_vbox.add_child(_make_lbl("💰 قیمت خرید: $%s  |  🏦 ارزش رهن: $%s" % [MonopolyData.fa_num(price), MonopolyData.fa_num(price / 2)], 25, Color(0.92, 0.96, 0.92), HORIZONTAL_ALIGNMENT_CENTER, 2))
+		inspector_card_vbox.add_child(_make_lbl("💰 قیمت خرید: $%s  |  🏦 ارزش رهن: $%s" % [MonopolyData.fa_num(price), MonopolyData.fa_num(price / 2)], 29, Color(0.92, 0.98, 0.92), HORIZONTAL_ALIGNMENT_CENTER, 2))
 
 	if t_type == "street":
 		var rents: Array = meta.get("rents", [])
@@ -1060,22 +1094,30 @@ func _on_3d_tile_clicked(tid: int) -> void:
 				"🏨 با هتل: $%s  |  هزینه هر خانه: $%s" % [MonopolyData.fa_num(rents[5]), MonopolyData.fa_num(meta.get("house_cost", 0))],
 			]
 			for ln in lines:
-				inspector_card_vbox.add_child(_make_lbl(ln, 24, Color(0.94, 0.92, 0.86), HORIZONTAL_ALIGNMENT_CENTER, 2))
+				inspector_card_vbox.add_child(_make_lbl(ln, 28, Color(0.96, 0.94, 0.88), HORIZONTAL_ALIGNMENT_CENTER, 2))
 	elif t_type == "railroad":
-		inspector_card_vbox.add_child(_make_lbl("۱ ایستگاه: ۲۵$ | ۲ ایستگاه: ۵۰$ | ۳ ایستگاه: ۱۰۰$ | ۴ ایستگاه: ۲۰۰$", 24, Color(0.94, 0.92, 0.86), HORIZONTAL_ALIGNMENT_CENTER, 2))
+		inspector_card_vbox.add_child(_make_lbl("۱ ایستگاه: ۲۵$ | ۲ ایستگاه: ۵۰$ | ۳ ایستگاه: ۱۰۰$ | ۴ ایستگاه: ۲۰۰$", 28, Color(0.96, 0.94, 0.88), HORIZONTAL_ALIGNMENT_CENTER, 2))
 	elif t_type == "utility":
-		inspector_card_vbox.add_child(_make_lbl("۱ شرکت: ۴× مجموع تاس | هر ۲ شرکت: ۱۰× مجموع تاس", 24, Color(0.94, 0.92, 0.86), HORIZONTAL_ALIGNMENT_CENTER, 2))
+		inspector_card_vbox.add_child(_make_lbl("۱ شرکت: ۴× مجموع تاس | هر ۲ شرکت: ۱۰× مجموع تاس", 28, Color(0.96, 0.94, 0.88), HORIZONTAL_ALIGNMENT_CENTER, 2))
 	elif t_type == "tax":
-		inspector_card_vbox.add_child(_make_lbl("مبلغ مالیات: $%s پرداخت به بانک" % MonopolyData.fa_num(meta.get("tax_amount", 0)), 26, Color(1.0, 0.72, 0.72), HORIZONTAL_ALIGNMENT_CENTER, 2))
+		inspector_card_vbox.add_child(_make_lbl("مبلغ مالیات: $%s پرداخت به بانک" % MonopolyData.fa_num(meta.get("tax_amount", 0)), 30, Color(1.0, 0.72, 0.72), HORIZONTAL_ALIGNMENT_CENTER, 2))
+	elif t_type == "chance":
+		inspector_card_vbox.add_child(_make_lbl("با فرود روی این خانه یک کارت «شانس» می‌کشید!", 28, Color(1.0, 0.86, 0.45), HORIZONTAL_ALIGNMENT_CENTER, 2))
+	elif t_type == "chest":
+		inspector_card_vbox.add_child(_make_lbl("با فرود روی این خانه یک کارت «صندوق شانس» دریافت می‌کنید!", 28, Color(0.62, 0.88, 1.0), HORIZONTAL_ALIGNMENT_CENTER, 2))
 	elif tid == 0:
-		inspector_card_vbox.add_child(_make_lbl("هر بار عبور یا فرود روی خانه شروع ۲۰۰$ جایزه دریافت می‌کنید!", 25, Color(0.60, 0.98, 0.65), HORIZONTAL_ALIGNMENT_CENTER, 2))
+		inspector_card_vbox.add_child(_make_lbl("هر بار عبور یا فرود روی خانه شروع ۲۰۰$ جایزه دریافت می‌کنید!", 29, Color(0.60, 0.98, 0.65), HORIZONTAL_ALIGNMENT_CENTER, 2))
 	elif tid == 8:
-		inspector_card_vbox.add_child(_make_lbl("ملاقات آزاد است؛ اگر زندانی شوید با تاس جفت، وثیقه ۵۰$ یا کارت آزادی خارج می‌شوید.", 24, Color(0.94, 0.92, 0.86), HORIZONTAL_ALIGNMENT_CENTER, 2))
+		inspector_card_vbox.add_child(_make_lbl("ملاقات آزاد است؛ اگر زندانی شوید با تاس جفت، وثیقه ۵۰$ یا کارت آزادی خارج می‌شوید.", 28, Color(0.96, 0.94, 0.88), HORIZONTAL_ALIGNMENT_CENTER, 2))
+	elif tid == 16:
+		inspector_card_vbox.add_child(_make_lbl("استراحتگاه امن؛ بدون پرداخت یا دریافت هزینه!", 28, Color(0.76, 0.98, 0.76), HORIZONTAL_ALIGNMENT_CENTER, 2))
+	elif tid == 24:
+		inspector_card_vbox.add_child(_make_lbl("مستقیماً به زندان منتقل می‌شوید و جایزه ۲۰۰$ عبور از شروع را نمی‌گیرید.", 28, Color(1.0, 0.72, 0.68), HORIZONTAL_ALIGNMENT_CENTER, 2))
 
 	var btn_close := Button.new()
-	btn_close.text = "بستن"
-	btn_close.custom_minimum_size = Vector2(0, 68)
-	_style_btn(btn_close, Color(0.24, 0.22, 0.26, 0.96), Color(0.85, 0.72, 0.36, 0.9), Color.WHITE, 26)
+	btn_close.text = "✕ بستن"
+	btn_close.custom_minimum_size = Vector2(0, 74)
+	_style_btn(btn_close, Color(0.24, 0.22, 0.26, 0.96), Color(0.85, 0.72, 0.36, 0.9), Color.WHITE, 30)
 	btn_close.pressed.connect(func(): inspector_backdrop.visible = false)
 	inspector_card_vbox.add_child(btn_close)
 
@@ -1096,7 +1138,7 @@ func _open_trade_builder_modal() -> void:
 				_trade_target_id = gid
 				break
 	if _trade_target_id <= 0:
-		show_hint("⚠️ حریف فعالی برای معامله وجود ندارد!")
+		_show_monopoly_hint("⚠️ حریف فعالی برای معامله وجود ندارد!", Color(1.0, 0.68, 0.32))
 		return
 	_rebuild_trade_builder_ui()
 	trade_builder_backdrop.visible = true
@@ -1165,7 +1207,7 @@ func _rebuild_trade_builder_ui() -> void:
 		btn_c.text = "%s%s$" % ["+" if delta > 0 else "", MonopolyData.fa_num(delta)]
 		btn_c.custom_minimum_size = Vector2(0, 58)
 		btn_c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_style_btn(btn_c, Color(0.24, 0.22, 0.18, 0.96), Color(0.90, 0.76, 0.36, 0.85), Color.WHITE, 24)
+		_style_btn(btn_c, Color(0.24, 0.22, 0.18, 0.96), Color(0.90, 0.76, 0.36, 0.85), Color.WHITE, 26)
 		var d_cap: int = int(delta)
 		btn_c.pressed.connect(func():
 			_trade_offer_cash = clampi(_trade_offer_cash + d_cap, 0, my_cash)
@@ -1183,7 +1225,7 @@ func _rebuild_trade_builder_ui() -> void:
 			var b := Button.new()
 			b.text = ("%s " % ("✓" if chosen else "")) + str(MonopolyData.get_tile(tid).get("name", ""))
 			b.custom_minimum_size = Vector2(180, 56)
-			_style_btn(b, Color(0.16, 0.50, 0.26, 0.96) if chosen else Color(0.18, 0.16, 0.16, 0.94), Color(0.55, 0.96, 0.62) if chosen else Color(0.65, 0.58, 0.45), Color.WHITE, 23)
+			_style_btn(b, Color(0.16, 0.50, 0.26, 0.96) if chosen else Color(0.18, 0.16, 0.16, 0.94), Color(0.55, 0.96, 0.62) if chosen else Color(0.65, 0.58, 0.45), Color.WHITE, 26)
 			var t_cap: int = int(tid)
 			b.pressed.connect(func():
 				if _trade_offer_tiles.has(t_cap):
@@ -1204,7 +1246,7 @@ func _rebuild_trade_builder_ui() -> void:
 		btn_c2.text = "%s%s$" % ["+" if delta > 0 else "", MonopolyData.fa_num(delta)]
 		btn_c2.custom_minimum_size = Vector2(0, 58)
 		btn_c2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_style_btn(btn_c2, Color(0.18, 0.24, 0.30, 0.96), Color(0.52, 0.80, 0.96, 0.85), Color.WHITE, 24)
+		_style_btn(btn_c2, Color(0.18, 0.24, 0.30, 0.96), Color(0.52, 0.80, 0.96, 0.85), Color.WHITE, 26)
 		var d_cap2: int = int(delta)
 		btn_c2.pressed.connect(func():
 			_trade_request_cash = clampi(_trade_request_cash + d_cap2, 0, their_cash)
@@ -1222,7 +1264,7 @@ func _rebuild_trade_builder_ui() -> void:
 			var b2 := Button.new()
 			b2.text = ("%s " % ("✓" if chosen2 else "")) + str(MonopolyData.get_tile(tid).get("name", ""))
 			b2.custom_minimum_size = Vector2(180, 56)
-			_style_btn(b2, Color(0.16, 0.42, 0.62, 0.96) if chosen2 else Color(0.18, 0.16, 0.16, 0.94), Color(0.52, 0.86, 1.0) if chosen2 else Color(0.65, 0.58, 0.45), Color.WHITE, 23)
+			_style_btn(b2, Color(0.16, 0.42, 0.62, 0.96) if chosen2 else Color(0.18, 0.16, 0.16, 0.94), Color(0.52, 0.86, 1.0) if chosen2 else Color(0.65, 0.58, 0.45), Color.WHITE, 26)
 			var t_cap2: int = int(tid)
 			b2.pressed.connect(func():
 				if _trade_request_tiles.has(t_cap2):
@@ -1269,7 +1311,7 @@ func _refresh_incoming_trade_modal() -> void:
 	var o_tiles: Array = pending_trade.get("offer_tiles", [])
 	var r_tiles: Array = pending_trade.get("request_tiles", [])
 
-	trade_incoming_vbox.add_child(_make_lbl("🤝 پیشنهاد معامله از %s" % _get_player_name(f_pid), 34, Color(1.0, 0.88, 0.38), HORIZONTAL_ALIGNMENT_CENTER, 3))
+	trade_incoming_vbox.add_child(_make_lbl("🤝 پیشنهاد معامله از %s" % _get_player_name(f_pid), 38, Color(1.0, 0.88, 0.38), HORIZONTAL_ALIGNMENT_CENTER, 3))
 
 	var give_names: Array[String] = []
 	if r_cash > 0:
@@ -1331,18 +1373,32 @@ func _show_chance_chest_card(card: Dictionary, deck: String) -> void:
 # 6. USER ACTIONS & 3D TAP INPUT
 # ==============================================================================
 
+func _show_monopoly_hint(message: String, accent: Color = Color(1.0, 0.80, 0.28), duration: float = 2.4) -> void:
+	if not is_instance_valid(hint_banner_panel) or not is_instance_valid(hint_banner_lbl):
+		return
+	_hint_banner_seq += 1
+	var my_seq: int = _hint_banner_seq
+	hint_banner_lbl.text = message
+	if hint_banner_style:
+		hint_banner_style.border_color = accent
+	hint_banner_panel.visible = true
+	await get_tree().create_timer(duration).timeout
+	if _hint_banner_seq == my_seq and is_instance_valid(hint_banner_panel):
+		hint_banner_panel.visible = false
+
+
 func _on_zoom_cycle_pressed() -> void:
 	AudioManager.sfx_tap()
 	_zoom_preset_idx = (_zoom_preset_idx + 1) % 3
 	match _zoom_preset_idx:
 		0:
-			camera_distance = 2.68
-			camera_pitch = -0.84
+			camera_distance = 2.26
+			camera_pitch = -0.86
 		1:
-			camera_distance = 2.25
+			camera_distance = 1.90
 			camera_pitch = -0.78
 		2:
-			camera_distance = 3.05
+			camera_distance = 2.62
 			camera_pitch = -0.92
 	_enforce_camera_framing()
 
@@ -1360,7 +1416,7 @@ func _on_roll_pressed() -> void:
 	if is_board_locked or not GameManager.is_game_active or _is_animating_turn:
 		return
 	if current_turn != GameManager.my_player_index or phase != "roll":
-		show_hint("⏳ اکنون نوبت پرتاب تاس شما نیست!")
+		_show_monopoly_hint("⏳ اکنون نوبت پرتاب تاس شما نیست!", Color(1.0, 0.56, 0.42))
 		AudioManager.play_sound("wrong_Touch")
 		return
 	AudioManager.play_sound("dice")
@@ -1384,8 +1440,19 @@ func _send_monopoly_auction(decision: String, amount: int) -> void:
 	send_move(Commands.Monopoly_Auction, {"decision": decision, "amount": amount})
 
 
+func _is_point_over_hud(pos: Vector2) -> bool:
+	var vp_h: float = get_viewport().get_visible_rect().size.y
+	if pos.y < 406.0 or pos.y > vp_h - 168.0:
+		return true
+	if is_instance_valid(status_pill) and status_pill.visible and status_pill.get_global_rect().has_point(pos):
+		return true
+	if is_instance_valid(dock_panel) and dock_panel.visible and dock_panel.get_global_rect().has_point(pos):
+		return true
+	return false
+
+
 func _input(event: InputEvent) -> void:
-	if not visible or not is_inside_tree():
+	if not visible or not is_inside_tree() or _is_hud_overlay_blocking():
 		return
 	if portfolio_backdrop.visible or inspector_backdrop.visible or trade_builder_backdrop.visible or trade_incoming_backdrop.visible:
 		return
@@ -1393,8 +1460,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		var mb := event as InputEventMouseButton
 		if mb.pressed:
-			# Ignore clicks on HUD top header or bottom dock area
-			if mb.position.y < 410.0 or mb.position.y > get_viewport().get_visible_rect().size.y - 470.0:
+			if _is_point_over_hud(mb.position):
 				_is_pointer_down = false
 				return
 			_is_pointer_down = true
@@ -1409,7 +1475,7 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventScreenTouch:
 		var st := event as InputEventScreenTouch
 		if st.pressed:
-			if st.position.y < 410.0 or st.position.y > get_viewport().get_visible_rect().size.y - 470.0:
+			if _is_point_over_hud(st.position):
 				_is_pointer_down = false
 				return
 			_is_pointer_down = true
@@ -1656,11 +1722,46 @@ func _on_win_happened(payload: Dictionary) -> void:
 	_refresh_hud_dock()
 
 
+func _is_hud_overlay_blocking() -> bool:
+	if not visible or not is_inside_tree():
+		return true
+	if not _match_started and not GameManager.is_game_active:
+		return true
+	var tree: SceneTree = get_tree()
+	if not tree:
+		return false
+	var hud: Node = tree.get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(hud):
+		hud = tree.root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		for ov_name in ["StartGameOverlay", "GameResultDialog", "RoundFinishBanner", "SurrenderDialog", "ExitDialog"]:
+			var ov: Control = hud.get_node_or_null(ov_name) as Control
+			if is_instance_valid(ov) and ov.visible:
+				return true
+	return false
+
+
 func _update_hud_visibility() -> void:
-	if not is_instance_valid(hud_layer):
+	if not is_instance_valid(hud_root):
 		return
-	var should_show := visible and is_inside_tree()
-	hud_layer.visible = should_show
+	var tree: SceneTree = get_tree()
+	if tree:
+		var hud: Node = tree.get_first_node_in_group("base_game_hud")
+		if not is_instance_valid(hud):
+			hud = tree.root.find_child("BaseGameHUD", true, false)
+		if is_instance_valid(hud) and hud_root.get_parent() != hud:
+			if hud_root.get_parent():
+				hud_root.get_parent().remove_child(hud_root)
+			hud.add_child(hud_root)
+			var start_ov: Node = hud.get_node_or_null("StartGameOverlay")
+			if is_instance_valid(start_ov):
+				hud.move_child(hud_root, start_ov.get_index())
+			if is_instance_valid(hud_layer):
+				hud_layer.queue_free()
+				hud_layer = null
+	var should_show: bool = not _is_hud_overlay_blocking()
+	if hud_root.visible != should_show:
+		hud_root.visible = should_show
 
 
 # ==============================================================================
@@ -1676,6 +1777,7 @@ func setup_board(game_data: Dictionary) -> void:
 	if game_data.has("game_data") and typeof(game_data["game_data"]) == TYPE_DICTIONARY:
 		_apply_monopoly_state(game_data["game_data"])
 	_refresh_all_visuals()
+	_update_hud_visibility()
 
 
 func on_start_game() -> void:
@@ -1683,12 +1785,14 @@ func on_start_game() -> void:
 	set_board_locked(false)
 	_enforce_camera_framing()
 	_refresh_all_visuals()
+	_update_hud_visibility()
 
 
 func on_turn_data(payload: Dictionary) -> void:
 	_match_started = true
 	_apply_monopoly_state(payload)
 	_refresh_all_visuals()
+	_update_hud_visibility()
 
 
 func on_turn_changed(_turn: int, _is_me: bool) -> void:
@@ -1702,10 +1806,32 @@ func on_reconnect_data(payload: Dictionary) -> void:
 		_apply_monopoly_state(g_data)
 	_enforce_camera_framing()
 	_refresh_all_visuals()
+	_update_hud_visibility()
 
 
 func reset_board() -> void:
+	_match_started = false
 	_is_animating_turn = false
 	_last_timer_seq = -1
 	_last_event_seq = -1
+	if is_instance_valid(portfolio_backdrop):
+		portfolio_backdrop.visible = false
+	if is_instance_valid(inspector_backdrop):
+		inspector_backdrop.visible = false
+	if is_instance_valid(trade_builder_backdrop):
+		trade_builder_backdrop.visible = false
+	if is_instance_valid(trade_incoming_backdrop):
+		trade_incoming_backdrop.visible = false
+	if is_instance_valid(card_popup_panel):
+		card_popup_panel.visible = false
+	if is_instance_valid(hint_banner_panel):
+		hint_banner_panel.visible = false
 	_refresh_all_visuals()
+	_update_hud_visibility()
+
+
+func cleanup_board() -> void:
+	if is_instance_valid(hud_root):
+		hud_root.queue_free()
+	if is_instance_valid(hud_layer):
+		hud_layer.queue_free()

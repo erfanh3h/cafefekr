@@ -311,12 +311,12 @@ func _build_center_card_stack(pos: Vector3, col: Color, title_fa: String) -> voi
 	var lbl = Label3D.new()
 	lbl.text = title_fa
 	lbl.font = FontHekayat
-	lbl.font_size = 38
-	lbl.outline_size = 10
-	lbl.pixel_size = 0.00085
-	lbl.modulate = Color(1.0, 0.96, 0.82)
-	lbl.outline_modulate = Color(0.05, 0.03, 0.02, 0.95)
-	lbl.position = Vector3(0.0, 0.016, 0.0)
+	lbl.font_size = 54
+	lbl.outline_size = 15
+	lbl.pixel_size = 0.00112
+	lbl.modulate = Color(1.0, 0.97, 0.86)
+	lbl.outline_modulate = Color(0.05, 0.03, 0.02, 0.96)
+	lbl.position = Vector3(0.0, 0.017, 0.0)
 	lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	st.add_child(lbl)
 
@@ -438,13 +438,14 @@ func _build_single_tile(tid: int) -> void:
 	# Tile Name + Price Label3D (Large, Crisp, High-Contrast!)
 	var lbl = Label3D.new()
 	lbl.font = FontHekayat
-	lbl.font_size = 40 if is_corner else 34
-	lbl.outline_size = 11
-	lbl.pixel_size = 0.00058 if is_corner else 0.00050
-	lbl.modulate = Color(1.0, 0.98, 0.92) if is_corner else Color(0.10, 0.07, 0.04)
-	lbl.outline_modulate = Color(0.05, 0.03, 0.02, 0.95) if is_corner else Color(1.0, 0.97, 0.88, 0.92)
+	lbl.font_size = 66 if is_corner else 58
+	lbl.outline_size = 18 if is_corner else 16
+	lbl.pixel_size = 0.00102 if is_corner else 0.00086
+	lbl.line_spacing = -6.0
+	lbl.modulate = Color(1.0, 0.98, 0.92) if is_corner else Color(0.08, 0.05, 0.03)
+	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98) if is_corner else Color(1.0, 0.98, 0.90, 0.96)
 	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	lbl.width = 230.0 if is_corner else 200.0
+	lbl.width = 190.0 if is_corner else 136.0
 	var price: int = int(meta.get("price", 0))
 	var tax_amt: int = int(meta.get("tax_amount", 0))
 	var name_txt: String = str(meta.get("name", ""))
@@ -456,7 +457,7 @@ func _build_single_tile(tid: int) -> void:
 		lbl.text = "شروع\n+۲۰۰$"
 	else:
 		lbl.text = name_txt
-	lbl.position = Vector3(0.0, 0.0155, 0.006 if not is_corner else 0.0)
+	lbl.position = Vector3(0.0, 0.0165, 0.016 if not is_corner else 0.0)
 	# Keep Top edge text right-side up for the player's camera view!
 	var text_yaw: float = 0.0
 	if tid >= 17 and tid <= 23:
@@ -505,11 +506,11 @@ func _build_center_dice_sanctuary() -> void:
 
 	# Dual Yatzy-Style 3D Ivory Dice
 	_dice_pivots.clear()
-	for offset_x in [-0.052, 0.052]:
+	for offset_x in [-0.056, 0.056]:
 		var piv = Node3D.new()
-		piv.position = Vector3(offset_x, 0.044, -0.010)
+		piv.position = Vector3(offset_x, 0.048, -0.010)
 		_dice_sanctuary.add_child(piv)
-		var die_mesh = _create_yatzy_die_model(0.064)
+		var die_mesh = _create_yatzy_die_model(0.072)
 		piv.add_child(die_mesh)
 		_dice_pivots.append(piv)
 
@@ -517,12 +518,12 @@ func _build_center_dice_sanctuary() -> void:
 	var crest = Label3D.new()
 	crest.text = "مونوپولی"
 	crest.font = FontHekayat
-	crest.font_size = 54
-	crest.outline_size = 14
-	crest.pixel_size = 0.00090
+	crest.font_size = 70
+	crest.outline_size = 18
+	crest.pixel_size = 0.00128
 	crest.modulate = Color(1.0, 0.88, 0.38)
-	crest.outline_modulate = Color(0.08, 0.04, 0.02, 0.96)
-	crest.position = Vector3(0.0, 0.014, -0.225)
+	crest.outline_modulate = Color(0.06, 0.03, 0.01, 0.98)
+	crest.position = Vector3(0.0, 0.016, -0.225)
 	crest.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_dice_sanctuary.add_child(crest)
 
@@ -530,12 +531,12 @@ func _build_center_dice_sanctuary() -> void:
 	_center_roll_label = Label3D.new()
 	_center_roll_label.text = "آماده پرتاب تاس"
 	_center_roll_label.font = FontHekayat
-	_center_roll_label.font_size = 40
-	_center_roll_label.outline_size = 12
-	_center_roll_label.pixel_size = 0.00080
-	_center_roll_label.modulate = Color(0.98, 0.95, 0.86)
-	_center_roll_label.outline_modulate = Color(0.04, 0.02, 0.01, 0.95)
-	_center_roll_label.position = Vector3(0.0, 0.014, 0.210)
+	_center_roll_label.font_size = 56
+	_center_roll_label.outline_size = 16
+	_center_roll_label.pixel_size = 0.00110
+	_center_roll_label.modulate = Color(0.99, 0.96, 0.88)
+	_center_roll_label.outline_modulate = Color(0.04, 0.02, 0.01, 0.96)
+	_center_roll_label.position = Vector3(0.0, 0.016, 0.215)
 	_center_roll_label.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_dice_sanctuary.add_child(_center_roll_label)
 
