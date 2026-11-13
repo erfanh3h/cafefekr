@@ -366,7 +366,7 @@ func _build_single_tile(tid: int) -> void:
 		band.position = Vector3(0.0, 0.013, -d * 0.5 + 0.020)
 		band.material_override = _mat_group_mats[grp]
 		tile_root.add_child(band)
-	elif t_type in ("railroad", "utility"):
+	elif t_type in ["railroad", "utility"]:
 		var b_mat: StandardMaterial3D = _mat_group_mats.get(t_type, _mat_brass_gold)
 		var band2 = MeshInstance3D.new()
 		var bnd_m2 = BoxMesh.new()
@@ -375,7 +375,7 @@ func _build_single_tile(tid: int) -> void:
 		band2.position = Vector3(0.0, 0.013, -d * 0.5 + 0.017)
 		band2.material_override = b_mat
 		tile_root.add_child(band2)
-	elif t_type in ("chance", "chest", "tax"):
+	elif t_type in ["chance", "chest", "tax"]:
 		var accent = StandardMaterial3D.new()
 		if t_type == "chance":
 			accent.albedo_color = Color(0.90, 0.45, 0.12)
@@ -905,7 +905,7 @@ func handle_board_tap(screen_pos: Vector2) -> bool:
 	var hit: Variant = plane.intersects_ray(ray_orig, ray_dir)
 	if hit == null:
 		return false
-	var local_pt: Vector3 = to_local(hit)
+	var local_pt: Vector3 = to_local(hit as Vector3)
 	var pt2 := Vector2(local_pt.x, local_pt.z)
 
 	# 1. Center Dice Sanctuary tap

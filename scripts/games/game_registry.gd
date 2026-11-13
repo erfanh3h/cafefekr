@@ -444,7 +444,7 @@ static var _registry: Dictionary = {
 		"turn_time": 28.0,
 		"has_missed_turns_limit": true,
 		"max_missed_turns": 3,
-		"icon": "res://assets/images/games/monopoly.jpg",
+		"icon": "res://assets/images/games/monopoly.png",
 		"min_players": 2,
 		"max_players": 4,
 		"is_3d": true

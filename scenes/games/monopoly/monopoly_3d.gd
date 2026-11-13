@@ -985,7 +985,7 @@ func _populate_portfolio_list() -> void:
 			btn_b.custom_minimum_size = Vector2(0, 62)
 			btn_b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			_style_btn(btn_b, Color(0.12, 0.54, 0.26, 0.96), Color(0.46, 0.96, 0.56, 0.9), Color.WHITE, 23)
-			var t_cap := tid
+			var t_cap: int = tid
 			btn_b.pressed.connect(func(): _send_monopoly_action("build_house", {"tile_id": t_cap}))
 			btns_hb.add_child(btn_b)
 
@@ -995,7 +995,7 @@ func _populate_portfolio_list() -> void:
 			btn_s.custom_minimum_size = Vector2(0, 62)
 			btn_s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			_style_btn(btn_s, Color(0.58, 0.34, 0.10, 0.96), Color(1.0, 0.72, 0.28, 0.9), Color.WHITE, 23)
-			var t_cap2 := tid
+			var t_cap2: int = tid
 			btn_s.pressed.connect(func(): _send_monopoly_action("sell_house", {"tile_id": t_cap2}))
 			btns_hb.add_child(btn_s)
 
@@ -1005,7 +1005,7 @@ func _populate_portfolio_list() -> void:
 			btn_m.custom_minimum_size = Vector2(0, 62)
 			btn_m.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			_style_btn(btn_m, Color(0.48, 0.20, 0.16, 0.96), Color(0.95, 0.54, 0.44, 0.9), Color.WHITE, 23)
-			var t_cap3 := tid
+			var t_cap3: int = tid
 			btn_m.pressed.connect(func(): _send_monopoly_action("mortgage", {"tile_id": t_cap3}))
 			btns_hb.add_child(btn_m)
 
@@ -1015,7 +1015,7 @@ func _populate_portfolio_list() -> void:
 			btn_u.custom_minimum_size = Vector2(0, 62)
 			btn_u.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			_style_btn(btn_u, Color(0.16, 0.38, 0.62, 0.96), Color(0.52, 0.82, 1.0, 0.9), Color.WHITE, 23)
-			var t_cap4 := tid
+			var t_cap4: int = tid
 			btn_u.pressed.connect(func(): _send_monopoly_action("unmortgage", {"tile_id": t_cap4}))
 			btns_hb.add_child(btn_u)
 
@@ -1146,7 +1146,7 @@ func _rebuild_trade_builder_ui() -> void:
 			Color.WHITE,
 			24
 		)
-		var g_cap := gid
+		var g_cap: int = gid
 		btn_op.pressed.connect(func():
 			_trade_target_id = g_cap
 			_trade_request_tiles.clear()
@@ -1166,7 +1166,7 @@ func _rebuild_trade_builder_ui() -> void:
 		btn_c.custom_minimum_size = Vector2(0, 58)
 		btn_c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_style_btn(btn_c, Color(0.24, 0.22, 0.18, 0.96), Color(0.90, 0.76, 0.36, 0.85), Color.WHITE, 24)
-		var d_cap := delta
+		var d_cap: int = int(delta)
 		btn_c.pressed.connect(func():
 			_trade_offer_cash = clampi(_trade_offer_cash + d_cap, 0, my_cash)
 			_rebuild_trade_builder_ui()
@@ -1184,7 +1184,7 @@ func _rebuild_trade_builder_ui() -> void:
 			b.text = ("%s " % ("✓" if chosen else "")) + str(MonopolyData.get_tile(tid).get("name", ""))
 			b.custom_minimum_size = Vector2(180, 56)
 			_style_btn(b, Color(0.16, 0.50, 0.26, 0.96) if chosen else Color(0.18, 0.16, 0.16, 0.94), Color(0.55, 0.96, 0.62) if chosen else Color(0.65, 0.58, 0.45), Color.WHITE, 23)
-			var t_cap := tid
+			var t_cap: int = int(tid)
 			b.pressed.connect(func():
 				if _trade_offer_tiles.has(t_cap):
 					_trade_offer_tiles.erase(t_cap)
@@ -1205,7 +1205,7 @@ func _rebuild_trade_builder_ui() -> void:
 		btn_c2.custom_minimum_size = Vector2(0, 58)
 		btn_c2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_style_btn(btn_c2, Color(0.18, 0.24, 0.30, 0.96), Color(0.52, 0.80, 0.96, 0.85), Color.WHITE, 24)
-		var d_cap2 := delta
+		var d_cap2: int = int(delta)
 		btn_c2.pressed.connect(func():
 			_trade_request_cash = clampi(_trade_request_cash + d_cap2, 0, their_cash)
 			_rebuild_trade_builder_ui()
@@ -1223,7 +1223,7 @@ func _rebuild_trade_builder_ui() -> void:
 			b2.text = ("%s " % ("✓" if chosen2 else "")) + str(MonopolyData.get_tile(tid).get("name", ""))
 			b2.custom_minimum_size = Vector2(180, 56)
 			_style_btn(b2, Color(0.16, 0.42, 0.62, 0.96) if chosen2 else Color(0.18, 0.16, 0.16, 0.94), Color(0.52, 0.86, 1.0) if chosen2 else Color(0.65, 0.58, 0.45), Color.WHITE, 23)
-			var t_cap2 := tid
+			var t_cap2: int = int(tid)
 			b2.pressed.connect(func():
 				if _trade_request_tiles.has(t_cap2):
 					_trade_request_tiles.erase(t_cap2)
