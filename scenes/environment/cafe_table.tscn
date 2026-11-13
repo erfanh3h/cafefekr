@@ -17,19 +17,19 @@ sky_material = SubResource("ProceduralSkyMaterial_sky")
 background_mode = 2
 sky = SubResource("Sky_env")
 ambient_light_source = 3
-ambient_light_color = Color(0.72, 0.55, 0.38, 1)
-ambient_light_energy = 1.18
+ambient_light_color = Color(0.75, 0.59, 0.42, 1)
+ambient_light_energy = 1.22
 tonemap_mode = 3
-tonemap_exposure = 1.08
+tonemap_exposure = 1.04
 glow_enabled = false
-glow_intensity = 0.18
-glow_bloom = 0.04
+glow_intensity = 0.15
+glow_bloom = 0.03
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_table_wood"]
 albedo_color = Color(0.56, 0.32, 0.16, 1)
 albedo_texture = ExtResource("2_wood_tex")
-metallic = 0.05
-roughness = 0.28
+metallic = 0.04
+roughness = 0.32
 uv1_scale = Vector3(1.4, 1.4, 1.4)
 
 [sub_resource type="BoxMesh" id="BoxMesh_table"]
@@ -38,7 +38,7 @@ size = Vector3(2.04, 0.09, 1.92)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_wood"]
 albedo_color = Color(0.28, 0.15, 0.08, 1)
-roughness = 0.36
+roughness = 0.38
 
 [sub_resource type="BoxMesh" id="BoxMesh_table_rim"]
 material = SubResource("StandardMaterial3D_dark_wood")
@@ -46,7 +46,7 @@ size = Vector3(2.12, 0.06, 2.00)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_table_mat"]
 albedo_color = Color(0.08, 0.27, 0.15, 1)
-roughness = 0.86
+roughness = 0.88
 
 [sub_resource type="BoxMesh" id="BoxMesh_table_mat"]
 material = SubResource("StandardMaterial3D_table_mat")
@@ -69,7 +69,7 @@ size = Vector3(0.24, 0.08, 1.4)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
 albedo_color = Color(0.42, 0.25, 0.14, 1)
 albedo_texture = ExtResource("3_wall_tex")
-roughness = 0.48
+roughness = 0.50
 uv1_scale = Vector3(2.5, 2.0, 1.0)
 
 [sub_resource type="BoxMesh" id="BoxMesh_wall"]
@@ -82,7 +82,7 @@ size = Vector3(10.0, 1.6, 0.24)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
 albedo_color = Color(0.14, 0.08, 0.04, 1)
-roughness = 0.55
+roughness = 0.58
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 material = SubResource("StandardMaterial3D_floor")
@@ -96,28 +96,30 @@ environment = SubResource("Environment_cafe")
 
 [node name="SunLight" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.906308, -0.211309, 0.365998, 0, 0.866025, 0.5, -0.422618, -0.453154, 0.784886, 1.5, 3.8, 2.6)
-light_color = Color(1, 0.91, 0.78, 1)
-light_energy = 0.68
+light_color = Color(1, 0.93, 0.82, 1)
+light_energy = 0.65
+light_specular = 0.25
 shadow_enabled = true
 directional_shadow_mode = 0
-directional_shadow_max_distance = 7.0
+directional_shadow_max_distance = 6.5
 
 [node name="TableLampLight" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.24, -0.16)
-light_color = Color(1, 0.88, 0.66, 1)
-light_energy = 1.35
-light_specular = 0.45
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.72, 0.38, -0.78)
+light_color = Color(1, 0.86, 0.60, 1)
+light_energy = 0.82
+light_specular = 0.0
 shadow_enabled = false
-omni_range = 4.8
+omni_range = 3.8
 omni_attenuation = 1.35
 
 [node name="WallFillLight" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.18, -1.68)
 light_color = Color(1, 0.84, 0.58, 1)
-light_energy = 1.10
-light_specular = 0.35
-omni_range = 5.5
-omni_attenuation = 1.15
+light_energy = 0.88
+light_specular = 0.0
+shadow_enabled = false
+omni_range = 5.2
+omni_attenuation = 1.2
 
 [node name="FloorMesh" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.88, 0)
