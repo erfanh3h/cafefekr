@@ -85,6 +85,7 @@ var available_games = [
 	GameTypes.DOTBOX,
 	GameTypes.PENTAGO,
 	GameTypes.YINSH,
+	GameTypes.QUORIDOR,
 	GameTypes.YATZY,
 	GameTypes.LUDO,
 	GameTypes.RISK,

@@ -2195,6 +2195,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameTypes.UNO
 		elif g_data.has("current_question") or (g_data.has("total_questions") and g_data.has("scores")):
 			inferred_type = GameTypes.QUIZ
+		elif g_data.has("walls_left") or (g_data.has("h_walls") and g_data.has("v_walls")):
+			inferred_type = GameTypes.QUORIDOR
 		elif g_data.has("rotation_played") or g_data.has("selection_played") or g_data.has("pawns"):
 			inferred_type = GameTypes.PENTAGO
 		elif g_data.has("player1_choices") or g_data.has("player2_choices"):

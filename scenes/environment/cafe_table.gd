@@ -881,6 +881,8 @@ func _get_themed_props_for_game(game_type: String) -> Array:
 			return ["tokens", "hourglass", "tea", "cafe_pastry_plate"]
 		"Risk":
 			return ["naval_cannon", "brass_spyglass", "royal_crown_scepter", "dice"]
+		"Quoridor":
+			return ["hourglass", "fortune_astrolabe", "royal_crown_scepter", "tokens"]
 		_:
 			return ["scorebook", "hourglass", "dice", "tea"]
 

@@ -29,6 +29,7 @@ const GAMES_LIST: Array[Dictionary] = [
 	{"id": "MSweeper", "key": "msweeper", "name_fa": "مین یاب", "multi": false},
 	{"id": "BoxFour", "key": "boxfour", "name_fa": "چهارطرفه", "multi": false},
 	{"id": "Yinsh", "key": "yinsh", "name_fa": "یینش", "multi": false},
+	{"id": "Quoridor", "key": "quoridor", "name_fa": "کوریدور", "multi": false},
 ]
 
 static func populate_games_history(target_container: VBoxContainer, history_data: Dictionary) -> void:

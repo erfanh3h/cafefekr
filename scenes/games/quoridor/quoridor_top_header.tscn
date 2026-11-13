@@ -1,0 +1,95 @@
+[gd_scene load_steps=4 format=3 uid="uid://quoridortopheader01"]
+
+[ext_resource type="PackedScene" path="res://scenes/games/base/base_top_header.tscn" id="1_base"]
+[ext_resource type="Script" path="res://scenes/games/quoridor/quoridor_top_header.gd" id="2_quoridor_script"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font"]
+
+[node name="QuoridorTopHeader" instance=ExtResource("1_base")]
+script = ExtResource("2_quoridor_script")
+
+[node name="P1QuoridorRow" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox" index="2"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 0
+
+[node name="P1WallsLbl" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1QuoridorRow" index="0"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.48, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 24
+text = "🧱 ۱۰ دیوار"
+
+[node name="P1MissedTurns" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox" index="3"]
+layout_mode = 2
+theme_override_constants/separation = 5
+alignment = 0
+
+[node name="P1Dot1" type="Panel" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="0"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="P1Dot2" type="Panel" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="1"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="P1StrikeCount" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 20
+text = "خطا: ۰/۲"
+
+[node name="P2QuoridorRow" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox" index="2"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 0
+
+[node name="P2WallsLbl" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2QuoridorRow" index="0"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.90, 1.0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 24
+text = "🧱 ۱۰ دیوار"
+
+[node name="P2MissedTurns" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox" index="3"]
+layout_mode = 2
+theme_override_constants/separation = 5
+alignment = 0
+
+[node name="P2Dot1" type="Panel" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="0"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="P2Dot2" type="Panel" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="1"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="P2StrikeCount" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 20
+text = "خطا: ۰/۲"
+
+[node name="AfkRuleRow" type="HBoxContainer" parent="Margin/VBoxMain/MatchDetailsBox/VBox" index="4"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="LblAfkRule" type="Label" parent="Margin/VBoxMain/MatchDetailsBox/VBox/AfkRuleRow" index="0"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 22
+text = "هر نوبت: ۳۰ ثانیه  |  ۱۰ دیوار برای هر بازیکن"
+horizontal_alignment = 1

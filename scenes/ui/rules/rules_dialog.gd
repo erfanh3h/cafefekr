@@ -48,6 +48,7 @@ const GAME_KEYS = [
 	{"key": "quiz", "name": "کوییز", "time": "۳ الی ۵ دقیقه", "diff": "متوسط"},
 	{"key": "sudoku", "name": "سودوکو", "time": "۱۰ دقیقه", "diff": "سخت"},
 	{"key": "yinsh", "name": "یینش", "time": "۱۵ دقیقه", "diff": "سخت"},
+	{"key": "quoridor", "name": "کوریدور", "time": "۱۰ الی ۱۵ دقیقه", "diff": "سخت"},
 	{"key": "rpc", "name": "سنگ کاغذ قیچی", "time": "۲ دقیقه", "diff": "آسان"},
 	{"key": "fekrbekr", "name": "فکر بکر", "time": "۸ دقیقه", "diff": "متوسط"},
 	{"key": "boxfour", "name": "چهارطرفه", "time": "۵ الی ۱۰ دقیقه", "diff": "متوسط"},

@@ -32,6 +32,8 @@ const RISK_SCENE: String = "res://scenes/games/risk/risk_3d.tscn"
 const RISK_TOP_HEADER_SCENE: String = "res://scenes/games/risk/risk_top_header.tscn"
 const QUIZ_SCENE: String = "res://scenes/games/quiz/quiz_3d.tscn"
 const QUIZ_TOP_HEADER_SCENE: String = "res://scenes/games/quiz/quiz_top_header.tscn"
+const QUORIDOR_SCENE: String = "res://scenes/games/quoridor/quoridor_3d.tscn"
+const QUORIDOR_TOP_HEADER_SCENE: String = "res://scenes/games/quoridor/quoridor_top_header.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -248,6 +250,22 @@ static var _registry: Dictionary = {
 		"turn_time": 30.0,
 		"has_missed_turns_limit": false,
 		"icon": "res://assets/images/games/yinsh.jpg",
+		"min_players": 2,
+		"max_players": 2,
+		"is_3d": true
+	},
+	GameTypes.QUORIDOR: {
+		"id": GameTypes.QUORIDOR,
+		"name_fa": "کوریدور",
+		"narrative": "در هزارتوی پررمز و راز کوریدور، هر دیوار دژی است در برابر حریف و هر گام، جهشی به سوی خط پایان.",
+		"board_scene": QUORIDOR_SCENE,
+		"top_header_scene": QUORIDOR_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 30.0,
+		"has_missed_turns_limit": true,
+		"max_missed_turns": 2,
+		"icon": "res://assets/images/games/quoridor.jpg",
 		"min_players": 2,
 		"max_players": 2,
 		"is_3d": true
@@ -512,7 +530,7 @@ static func get_difficulty(game_type: Variant = "") -> String:
 		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY, GameTypes.QUIZ:
 			return "normal"
 		GameTypes.CHESS, GameTypes.CHECKERS, GameTypes.OTHELLO, GameTypes.BACKGAMMON, \
-		GameTypes.YINSH, GameTypes.MILL, GameTypes.RISK:
+		GameTypes.YINSH, GameTypes.MILL, GameTypes.RISK, GameTypes.QUORIDOR:
 			return "hard"
 		_:
 			return "normal"

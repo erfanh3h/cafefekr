@@ -24,6 +24,7 @@ const BACKGAMMON = "BackGammon"
 const RISK = "Risk"
 const UNO = "Uno"
 const QUIZ = "Quiz"
+const QUORIDOR = "Quoridor"
 
 static func get_display_name_fa(game_type: String) -> String:
 	match game_type:
@@ -49,5 +50,6 @@ static func get_display_name_fa(game_type: String) -> String:
 		RISK: return "ریسک استرایک"
 		UNO: return "اونو"
 		QUIZ: return "کوییز"
+		QUORIDOR: return "کوریدور"
 		_: return game_type
 

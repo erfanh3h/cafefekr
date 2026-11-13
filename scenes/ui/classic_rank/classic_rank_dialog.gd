@@ -41,6 +41,7 @@ const AVAILABLE_GAMES: Array[String] = [
 	GameTypes.DOTBOX,
 	GameTypes.PENTAGO,
 	GameTypes.YINSH,
+	GameTypes.QUORIDOR,
 	GameTypes.YATZY,
 	GameTypes.LUDO,
 	GameTypes.RISK,
