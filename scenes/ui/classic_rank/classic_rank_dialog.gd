@@ -47,6 +47,7 @@ const AVAILABLE_GAMES: Array[String] = [
 	GameTypes.RISK,
 	GameTypes.UNO,
 	GameTypes.COUP,
+	GameTypes.MONOPOLY,
 	GameTypes.QUIZ,
 	GameTypes.BATTLESHIP,
 	GameTypes.FEKRBEKR,

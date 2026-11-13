@@ -36,6 +36,8 @@ const QUORIDOR_SCENE: String = "res://scenes/games/quoridor/quoridor_3d.tscn"
 const QUORIDOR_TOP_HEADER_SCENE: String = "res://scenes/games/quoridor/quoridor_top_header.tscn"
 const COUP_SCENE: String = "res://scenes/games/coup/coup_3d.tscn"
 const COUP_TOP_HEADER_SCENE: String = "res://scenes/games/coup/coup_top_header.tscn"
+const MONOPOLY_SCENE: String = "res://scenes/games/monopoly/monopoly_3d.tscn"
+const MONOPOLY_TOP_HEADER_SCENE: String = "res://scenes/games/monopoly/monopoly_top_header.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -430,6 +432,22 @@ static var _registry: Dictionary = {
 		"min_players": 2,
 		"max_players": 4,
 		"is_3d": true
+	},
+	GameTypes.MONOPOLY: {
+		"id": GameTypes.MONOPOLY,
+		"name_fa": "مونوپولی",
+		"narrative": "ساختمان‌ها را تصاحب کنید، با هوش اقتصادی معامله و مزایده ببندید و به بزرگ‌ترین سرمایه‌دار پایتخت تبدیل شوید!",
+		"board_scene": MONOPOLY_SCENE,
+		"top_header_scene": MONOPOLY_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 28.0,
+		"has_missed_turns_limit": true,
+		"max_missed_turns": 3,
+		"icon": "res://assets/images/games/monopoly.jpg",
+		"min_players": 2,
+		"max_players": 4,
+		"is_3d": true
 	}
 }
 
@@ -545,7 +563,7 @@ static func get_difficulty(game_type: Variant = "") -> String:
 		GameTypes.TIC_TAC_TOE, GameTypes.RPC, GameTypes.DOTBOX, GameTypes.LUDO, GameTypes.MNUMBERS, GameTypes.UNO:
 			return "easy"
 		GameTypes.FEKRBEKR, GameTypes.PENTAGO, GameTypes.MSWEEPER, GameTypes.BATTLESHIP, \
-		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY, GameTypes.QUIZ, GameTypes.COUP:
+		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY, GameTypes.QUIZ, GameTypes.COUP, GameTypes.MONOPOLY:
 			return "normal"
 		GameTypes.CHESS, GameTypes.CHECKERS, GameTypes.OTHELLO, GameTypes.BACKGAMMON, \
 		GameTypes.YINSH, GameTypes.MILL, GameTypes.RISK, GameTypes.QUORIDOR:
@@ -579,15 +597,15 @@ static func get_lobby_xp(game_type: Variant = "", is_win: bool = false, is_draw:
 		return 14 if is_win else (7 if is_draw else 3)
 
 static func get_multiplayer_rank_games() -> Array[String]:
-	return [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP]
+	return [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP, GameTypes.MONOPOLY]
 
 static func is_multiplayer_game(game_type: Variant = "") -> bool:
 	var norm = normalize_type(game_type)
-	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP]
+	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP, GameTypes.MONOPOLY]
 
 static func is_multiplayer_rank_supported(game_type: Variant = "") -> bool:
 	var norm = normalize_type(game_type)
-	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP]
+	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP, GameTypes.MONOPOLY]
 
 static func get_multi_rank_xp(_game_type: Variant = "", is_rank1: bool = false, is_rank2: bool = false) -> int:
 	if is_rank1:

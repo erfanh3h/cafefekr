@@ -39,6 +39,7 @@ signal select_mine_wrong_received(payload: Dictionary)
 signal player_score_received(payload: Dictionary)
 signal risk_event_received(cmd_id: String, payload: Dictionary)
 signal coup_event_received(cmd_id: String, payload: Dictionary)
+signal monopoly_event_received(cmd_id: String, payload: Dictionary)
 signal user_data_received(payload: Dictionary)
 signal classic_rank_match_ready(game_id: String, game_type: String)
 signal multi_rank_match_ready(game_id: String, game_type: String)
@@ -527,6 +528,15 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 					GameManager.current_turn = c_turn
 					turn_changed.emit(c_turn)
 			coup_event_received.emit(cmd_id, c_payload)
+		Commands.Monopoly_State, Commands.Monopoly_Event:
+			var m_payload: Dictionary = payload if typeof(payload) == TYPE_DICTIONARY else {}
+			var m_state: Dictionary = m_payload.get("state", m_payload) if (cmd_id == Commands.Monopoly_Event and typeof(m_payload.get("state")) == TYPE_DICTIONARY) else m_payload
+			if m_state.has("current_turn") and m_state["current_turn"] != null:
+				var m_turn = int(m_state["current_turn"])
+				if m_turn > 0 and m_turn != GameManager.current_turn:
+					GameManager.current_turn = m_turn
+					turn_changed.emit(m_turn)
+			monopoly_event_received.emit(cmd_id, m_payload)
 		Commands.Roll_Result:
 			roll_result_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
 

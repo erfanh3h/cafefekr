@@ -26,6 +26,7 @@ const UNO = "Uno"
 const QUIZ = "Quiz"
 const QUORIDOR = "Quoridor"
 const COUP = "Coup"
+const MONOPOLY = "Monopoly"
 
 static func get_display_name_fa(game_type: String) -> String:
 	match game_type:
@@ -53,5 +54,6 @@ static func get_display_name_fa(game_type: String) -> String:
 		QUIZ: return "کوییز"
 		QUORIDOR: return "کوریدور"
 		COUP: return "کودتا"
+		MONOPOLY: return "مونوپولی"
 		_: return game_type
 

@@ -20,6 +20,7 @@ const GAMES_LIST: Array[Dictionary] = [
 	{"id": "Risk", "key": "risk", "name_fa": "ریسک استرایک", "multi": true},
 	{"id": "Uno", "key": "uno", "name_fa": "اونو", "multi": true},
 	{"id": "Coup", "key": "coup", "name_fa": "کودتا", "multi": true},
+	{"id": "Monopoly", "key": "monopoly", "name_fa": "مونوپولی", "multi": true},
 	{"id": "Pentago", "key": "pentago", "name_fa": "پنتاگو", "multi": false},
 	{"id": "FekrBekr", "key": "fekrbekr", "name_fa": "فکر بکر", "multi": false},
 	{"id": "BattleShip", "key": "battleship", "name_fa": "نبرد کشتی", "multi": false},
@@ -90,7 +91,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 	var r2 = int(history_data.get("rank2_multi_rank", 0))
 	var rn = int(history_data.get("rankn_multi_rank", 0))
 	var card_mr = _create_mode_card(
-		"👥 رده‌بندی چندنفره (منچ، ریسک، اونو، کودتا)",
+		"👥 رده‌بندی چندنفره (منچ، ریسک، اونو، کودتا، مونوپولی)",
 		r1, r2, rn,
 		"اول 🥇", "دوم 🥈", "سایر 🥉"
 	)
