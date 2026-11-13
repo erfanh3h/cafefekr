@@ -248,7 +248,7 @@ func _build_cabinet_and_tiles() -> void:
 	var bez_m = BoxMesh.new()
 	bez_m.size = Vector3(1.22, 0.008, 1.22)
 	bezel.mesh = bez_m
-	bez.position = Vector3(0.0, SURFACE_Y - 0.003, 0.0)
+	bezel.position = Vector3(0.0, SURFACE_Y - 0.003, 0.0)
 	bezel.material_override = _mat_brass_gold
 	_board_root.add_child(bezel)
 
