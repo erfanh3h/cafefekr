@@ -1858,7 +1858,7 @@ func _on_surrender_requested() -> void:
 
 func _on_player_surrendered(gamer_id: int) -> void:
 
-	if GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ] and GameManager.match_players.size() > 2 and gamer_id != GameManager.my_player_index:
+	if GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP] and GameManager.match_players.size() > 2 and gamer_id != GameManager.my_player_index:
 
 		var p_data = GameManager.get_player_data_by_gamer_id(gamer_id)
 
@@ -2193,6 +2193,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameTypes.RISK
 		elif g_data.has("hands_count") and g_data.has("current_color") and g_data.has("top_card"):
 			inferred_type = GameTypes.UNO
+		elif g_data.has("phase") and g_data.has("players") and g_data.has("deck_remaining"):
+			inferred_type = GameTypes.COUP
 		elif g_data.has("current_question") or (g_data.has("total_questions") and g_data.has("scores")):
 			inferred_type = GameTypes.QUIZ
 		elif g_data.has("walls_left") or (g_data.has("h_walls") and g_data.has("v_walls")):

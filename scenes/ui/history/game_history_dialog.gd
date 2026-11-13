@@ -270,6 +270,8 @@ static func _get_game_icon_texture(game_type: String) -> Texture2D:
 		norm = "risk"
 	elif norm == "uno" or norm == "اونو":
 		norm = "uno"
+	elif norm == "coup" or norm == "کودتا":
+		norm = "coup"
 	elif norm == "quoridor" or norm == "کوریدور":
 		norm = "quoridor"
 	

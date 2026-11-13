@@ -38,6 +38,7 @@ signal select_mine_correct_received(payload: Dictionary)
 signal select_mine_wrong_received(payload: Dictionary)
 signal player_score_received(payload: Dictionary)
 signal risk_event_received(cmd_id: String, payload: Dictionary)
+signal coup_event_received(cmd_id: String, payload: Dictionary)
 signal user_data_received(payload: Dictionary)
 signal classic_rank_match_ready(game_id: String, game_type: String)
 signal multi_rank_match_ready(game_id: String, game_type: String)
@@ -517,6 +518,15 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 					GameManager.current_turn = next_t
 					turn_changed.emit(next_t)
 			risk_event_received.emit(cmd_id, r_payload)
+		Commands.Coup_State, Commands.Coup_Event:
+			var c_payload: Dictionary = payload if typeof(payload) == TYPE_DICTIONARY else {}
+			var c_state: Dictionary = c_payload.get("state", c_payload) if (cmd_id == Commands.Coup_Event and typeof(c_payload.get("state")) == TYPE_DICTIONARY) else c_payload
+			if str(c_state.get("phase", "")) == "action" and c_state.has("current_turn") and c_state["current_turn"] != null:
+				var c_turn = int(c_state["current_turn"])
+				if c_turn > 0 and c_turn != GameManager.current_turn:
+					GameManager.current_turn = c_turn
+					turn_changed.emit(c_turn)
+			coup_event_received.emit(cmd_id, c_payload)
 		Commands.Roll_Result:
 			roll_result_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
 

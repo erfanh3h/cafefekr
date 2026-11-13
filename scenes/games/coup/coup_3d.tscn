@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://coup3dscene0001"]
+
+[ext_resource type="Script" path="res://scenes/games/coup/coup_3d.gd" id="1_coup_script"]
+
+[node name="Coup3D" type="Node3D"]
+script = ExtResource("1_coup_script")

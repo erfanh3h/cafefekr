@@ -33,6 +33,7 @@ const AVAILABLE_MULTI_RANK_GAMES: Array[String] = [
 	GameTypes.LUDO,
 	GameTypes.RISK,
 	GameTypes.UNO,
+	GameTypes.COUP,
 	GameTypes.QUIZ
 ]
 

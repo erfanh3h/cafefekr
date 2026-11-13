@@ -34,6 +34,8 @@ const QUIZ_SCENE: String = "res://scenes/games/quiz/quiz_3d.tscn"
 const QUIZ_TOP_HEADER_SCENE: String = "res://scenes/games/quiz/quiz_top_header.tscn"
 const QUORIDOR_SCENE: String = "res://scenes/games/quoridor/quoridor_3d.tscn"
 const QUORIDOR_TOP_HEADER_SCENE: String = "res://scenes/games/quoridor/quoridor_top_header.tscn"
+const COUP_SCENE: String = "res://scenes/games/coup/coup_3d.tscn"
+const COUP_TOP_HEADER_SCENE: String = "res://scenes/games/coup/coup_top_header.tscn"
 const TEMP_SCENE: String = "res://scenes/games/temp/temp_game_3d.tscn"
 
 # Top Header scenes (Inheritance-based: BaseTopHeader vs Game-Specific Extensions)
@@ -412,6 +414,22 @@ static var _registry: Dictionary = {
 		"min_players": 2,
 		"max_players": 4,
 		"is_3d": true
+	},
+	GameTypes.COUP: {
+		"id": GameTypes.COUP,
+		"name_fa": "کودتا",
+		"narrative": "در تالار پررمز و راز قدرت، جایی که هر کارت نفوذی پنهان است؛ بلوف بزنید، مچ حریفان را بگیرید و آخرین نفوذی باشید که در دیوان باقی می‌ماند.",
+		"board_scene": COUP_SCENE,
+		"top_header_scene": COUP_TOP_HEADER_SCENE,
+		"max_rounds": 1,
+		"has_round_score": false,
+		"turn_time": 25.0,
+		"has_missed_turns_limit": true,
+		"max_missed_turns": 3,
+		"icon": "res://assets/images/games/coup.jpg",
+		"min_players": 2,
+		"max_players": 4,
+		"is_3d": true
 	}
 }
 
@@ -527,7 +545,7 @@ static func get_difficulty(game_type: Variant = "") -> String:
 		GameTypes.TIC_TAC_TOE, GameTypes.RPC, GameTypes.DOTBOX, GameTypes.LUDO, GameTypes.MNUMBERS, GameTypes.UNO:
 			return "easy"
 		GameTypes.FEKRBEKR, GameTypes.PENTAGO, GameTypes.MSWEEPER, GameTypes.BATTLESHIP, \
-		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY, GameTypes.QUIZ:
+		GameTypes.FOURINROW, GameTypes.BOXFOUR, GameTypes.SUDOKU, GameTypes.YATZY, GameTypes.QUIZ, GameTypes.COUP:
 			return "normal"
 		GameTypes.CHESS, GameTypes.CHECKERS, GameTypes.OTHELLO, GameTypes.BACKGAMMON, \
 		GameTypes.YINSH, GameTypes.MILL, GameTypes.RISK, GameTypes.QUORIDOR:
@@ -561,15 +579,15 @@ static func get_lobby_xp(game_type: Variant = "", is_win: bool = false, is_draw:
 		return 14 if is_win else (7 if is_draw else 3)
 
 static func get_multiplayer_rank_games() -> Array[String]:
-	return [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ]
+	return [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP]
 
 static func is_multiplayer_game(game_type: Variant = "") -> bool:
 	var norm = normalize_type(game_type)
-	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ]
+	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP]
 
 static func is_multiplayer_rank_supported(game_type: Variant = "") -> bool:
 	var norm = normalize_type(game_type)
-	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ]
+	return norm in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP]
 
 static func get_multi_rank_xp(_game_type: Variant = "", is_rank1: bool = false, is_rank2: bool = false) -> int:
 	if is_rank1:

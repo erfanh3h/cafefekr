@@ -90,6 +90,7 @@ var available_games = [
 	GameTypes.LUDO,
 	GameTypes.RISK,
 	GameTypes.UNO,
+	GameTypes.COUP,
 	GameTypes.QUIZ,
 	GameTypes.BATTLESHIP,
 	GameTypes.FEKRBEKR,
@@ -358,7 +359,7 @@ func _update_selected_game_display() -> void:
 	lbl_selected_game.text = GameTypes.get_display_name_fa(selected_create_game_type)
 	selected_game_icon.texture = _get_game_texture(selected_create_game_type)
 	if is_instance_valid(player_count_container):
-		var is_multi = (selected_create_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ])
+		var is_multi = (selected_create_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP])
 		player_count_container.visible = is_multi
 		if not is_multi:
 			selected_create_player_count = 2
@@ -533,7 +534,7 @@ func _create_game_card(g_type: String) -> Control:
 	p_style.content_margin_bottom = 4
 	mode_pill.add_theme_stylebox_override("panel", p_style)
 	var mode_lbl = Label.new()
-	mode_lbl.text = "۲ تا ۴ نفره" if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO] else "۲ نفره"
+	mode_lbl.text = "۲ تا ۴ نفره" if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP] else "۲ نفره"
 	mode_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 	mode_lbl.add_theme_font_size_override("font_size", 18)
 	mode_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
@@ -865,7 +866,7 @@ func _on_create_pressed() -> void:
 	var r_pwd = input_room_password.text.strip_edges() if is_instance_valid(input_room_password) else ""
 	
 	lbl_status.text = "در حال ساخت اتاق..."
-	var l_count = selected_create_player_count if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ] else 2
+	var l_count = selected_create_player_count if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP] else 2
 	var payload = {
 		"id": Commands.Lobby_Create,
 		"data": {

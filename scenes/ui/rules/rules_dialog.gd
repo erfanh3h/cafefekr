@@ -45,6 +45,7 @@ const GAME_KEYS = [
 	{"key": "ludo", "name": "منچ", "time": "۱۵ الی ۲۵ دقیقه", "diff": "آسان"},
 	{"key": "risk", "name": "ریسک استرایک", "time": "۱۰ الی ۲۰ دقیقه", "diff": "سخت"},
 	{"key": "uno", "name": "اونو", "time": "۵ الی ۱۰ دقیقه", "diff": "آسان"},
+	{"key": "coup", "name": "کودتا", "time": "۵ الی ۱۰ دقیقه", "diff": "متوسط"},
 	{"key": "quiz", "name": "کوییز", "time": "۳ الی ۵ دقیقه", "diff": "متوسط"},
 	{"key": "sudoku", "name": "سودوکو", "time": "۱۰ دقیقه", "diff": "سخت"},
 	{"key": "yinsh", "name": "یینش", "time": "۱۵ دقیقه", "diff": "سخت"},
