@@ -177,7 +177,7 @@ func _make_glass_style(bg: Color, border: Color, radius: int = 18, border_w: int
 	s.shadow_offset = Vector2(0, 3)
 	return s
 
-func _style_action_button(btn: Button, bg: Color, border: Color, text_col: Color = Color.WHITE, f_size: int = 21, disabled: bool = false) -> void:
+func _style_action_button(btn: Button, bg: Color, border: Color, text_col: Color = Color.WHITE, f_size: int = 24, disabled: bool = false) -> void:
 	btn.add_theme_font_override("font", FontHekayat)
 	btn.add_theme_font_size_override("font_size", f_size)
 	btn.add_theme_color_override("font_color", text_col)
@@ -238,21 +238,21 @@ func _build_hud() -> void:
 	zoom_btn = Button.new()
 	zoom_btn.text = "🔍 نما"
 	zoom_btn.custom_minimum_size = Vector2(82, 34)
-	_style_action_button(zoom_btn, Color(0.14, 0.19, 0.25, 0.92), Color(0.55, 0.74, 0.90, 0.70), Color(0.92, 0.96, 1.0), 19)
+	_style_action_button(zoom_btn, Color(0.14, 0.19, 0.25, 0.92), Color(0.55, 0.74, 0.90, 0.70), Color(0.92, 0.96, 1.0), 22)
 	zoom_btn.pressed.connect(_on_zoom_cycle_pressed)
 	pill_hbox.add_child(zoom_btn)
 
 	rules_btn = Button.new()
 	rules_btn.text = "📜 نقش‌ها"
 	rules_btn.custom_minimum_size = Vector2(96, 34)
-	_style_action_button(rules_btn, Color(0.32, 0.16, 0.42, 0.92), Color(0.76, 0.54, 0.92, 0.75), Color(0.98, 0.92, 1.0), 19)
+	_style_action_button(rules_btn, Color(0.32, 0.16, 0.42, 0.92), Color(0.76, 0.54, 0.92, 0.75), Color(0.98, 0.92, 1.0), 22)
 	rules_btn.pressed.connect(_on_open_roles_modal)
 	pill_hbox.add_child(rules_btn)
 
 	deck_badge_lbl = Label.new()
 	deck_badge_lbl.text = "🃏 دربار: ۱۱"
 	deck_badge_lbl.add_theme_font_override("font", FontHekayat)
-	deck_badge_lbl.add_theme_font_size_override("font_size", 20)
+	deck_badge_lbl.add_theme_font_size_override("font_size", 23)
 	deck_badge_lbl.add_theme_color_override("font_color", Color(0.96, 0.86, 0.54))
 	pill_hbox.add_child(deck_badge_lbl)
 
@@ -263,7 +263,7 @@ func _build_hud() -> void:
 	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	status_label.clip_text = true
 	status_label.add_theme_font_override("font", FontHekayat)
-	status_label.add_theme_font_size_override("font_size", 23)
+	status_label.add_theme_font_size_override("font_size", 26)
 	status_label.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
 	pill_hbox.add_child(status_label)
 
@@ -333,7 +333,7 @@ func _build_hud() -> void:
 	coins_pill_lbl.text = "🪙 ۲ سکه"
 	coins_pill_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	coins_pill_lbl.add_theme_font_override("font", FontHekayat)
-	coins_pill_lbl.add_theme_font_size_override("font_size", 22)
+	coins_pill_lbl.add_theme_font_size_override("font_size", 25)
 	coins_pill_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 	coins_pill_panel.add_child(coins_pill_lbl)
 
@@ -341,7 +341,7 @@ func _build_hud() -> void:
 	hand_prompt_lbl.text = "کارت‌های شما"
 	hand_prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hand_prompt_lbl.add_theme_font_override("font", FontHekayat)
-	hand_prompt_lbl.add_theme_font_size_override("font_size", 19)
+	hand_prompt_lbl.add_theme_font_size_override("font_size", 22)
 	hand_prompt_lbl.add_theme_color_override("font_color", Color(0.95, 0.90, 0.78))
 	left_col.add_child(hand_prompt_lbl)
 
@@ -408,7 +408,7 @@ func _build_exchange_modal() -> void:
 	title_lbl.text = "📜 مبادله کارت با سفیر"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 32)
+	title_lbl.add_theme_font_size_override("font_size", 35)
 	title_lbl.add_theme_color_override("font_color", Color(0.54, 0.98, 0.68))
 	vbox.add_child(title_lbl)
 
@@ -416,7 +416,7 @@ func _build_exchange_modal() -> void:
 	exchange_subtitle_lbl.text = "۲ کارت را برای نگه داشتن انتخاب کنید؛ بقیه به دیوان برمی‌گردند."
 	exchange_subtitle_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	exchange_subtitle_lbl.add_theme_font_override("font", FontHekayat)
-	exchange_subtitle_lbl.add_theme_font_size_override("font_size", 23)
+	exchange_subtitle_lbl.add_theme_font_size_override("font_size", 26)
 	exchange_subtitle_lbl.add_theme_color_override("font_color", Color(0.95, 0.94, 0.88))
 	vbox.add_child(exchange_subtitle_lbl)
 
@@ -429,7 +429,7 @@ func _build_exchange_modal() -> void:
 	exchange_confirm_btn.text = "✅ تایید و ثبت دست جدید"
 	exchange_confirm_btn.custom_minimum_size = Vector2(300, 62)
 	exchange_confirm_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_style_action_button(exchange_confirm_btn, Color(0.12, 0.56, 0.28), Color(0.48, 0.96, 0.64), Color.WHITE, 25, true)
+	_style_action_button(exchange_confirm_btn, Color(0.12, 0.56, 0.28), Color(0.48, 0.96, 0.64), Color.WHITE, 28, true)
 	exchange_confirm_btn.pressed.connect(_on_confirm_exchange_pressed)
 	vbox.add_child(exchange_confirm_btn)
 
@@ -468,7 +468,7 @@ func _build_roles_modal() -> void:
 	title_lbl.text = "📜 راهنمای سریع نقش‌ها و قوانین کودتا"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 30)
+	title_lbl.add_theme_font_size_override("font_size", 33)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42))
 	vbox.add_child(title_lbl)
 
@@ -495,7 +495,7 @@ func _build_roles_modal() -> void:
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		lbl.add_theme_font_override("font", FontHekayat)
-		lbl.add_theme_font_size_override("font_size", 22)
+		lbl.add_theme_font_size_override("font_size", 25)
 		lbl.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
 		rl_m.add_child(lbl)
 		vbox.add_child(row_p)
@@ -505,7 +505,7 @@ func _build_roles_modal() -> void:
 	note_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	note_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note_lbl.add_theme_font_override("font", FontHekayat)
-	note_lbl.add_theme_font_size_override("font_size", 20)
+	note_lbl.add_theme_font_size_override("font_size", 23)
 	note_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.56))
 	vbox.add_child(note_lbl)
 
@@ -513,7 +513,7 @@ func _build_roles_modal() -> void:
 	close_btn.text = "متوجه شدم"
 	close_btn.custom_minimum_size = Vector2(220, 56)
 	close_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_style_action_button(close_btn, Color(0.14, 0.52, 0.28), Color(0.45, 0.92, 0.58), Color.WHITE, 24)
+	_style_action_button(close_btn, Color(0.14, 0.52, 0.28), Color(0.45, 0.92, 0.58), Color.WHITE, 27)
 	close_btn.pressed.connect(func() -> void:
 		AudioManager.sfx_tap()
 		roles_modal_backdrop.visible = false
@@ -869,7 +869,7 @@ func _rebuild_action_dock() -> void:
 			btn.custom_minimum_size = Vector2(0, 58)
 			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			btn.text = "🎯 %s  (🪙%s | ♥%s)" % [_get_player_short_name(opp_pid), CoupCardWidgetScript.to_fa_digits(str(c_cnt)), CoupCardWidgetScript.to_fa_digits(str(h_cnt))]
-			_style_action_button(btn, Color(0.62, 0.16, 0.16), Color(1.0, 0.62, 0.42), Color.WHITE, 21)
+			_style_action_button(btn, Color(0.62, 0.16, 0.16), Color(1.0, 0.62, 0.42), Color.WHITE, 24)
 			var target_id_cap: int = opp_pid
 			btn.pressed.connect(func() -> void:
 				_dispatch_action(_pending_target_action, target_id_cap)
@@ -879,7 +879,7 @@ func _rebuild_action_dock() -> void:
 		var cancel_btn: Button = Button.new()
 		cancel_btn.text = "↩ بازگشت به اقدامات"
 		cancel_btn.custom_minimum_size = Vector2(0, 48)
-		_style_action_button(cancel_btn, Color(0.20, 0.22, 0.26), Color(0.62, 0.66, 0.72), Color.WHITE, 20)
+		_style_action_button(cancel_btn, Color(0.20, 0.22, 0.26), Color(0.62, 0.66, 0.72), Color.WHITE, 23)
 		cancel_btn.pressed.connect(func() -> void:
 			AudioManager.sfx_tap()
 			_pending_target_action = ""
@@ -905,7 +905,7 @@ func _rebuild_action_dock() -> void:
 			open_ex.text = "📜 نمایش کارت‌های مبادله"
 			open_ex.custom_minimum_size = Vector2(260, 56)
 			open_ex.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			_style_action_button(open_ex, Color(0.12, 0.52, 0.28), Color(0.45, 0.94, 0.62), Color.WHITE, 22)
+			_style_action_button(open_ex, Color(0.12, 0.52, 0.28), Color(0.45, 0.94, 0.62), Color.WHITE, 25)
 			open_ex.pressed.connect(func() -> void:
 				if is_instance_valid(exchange_backdrop):
 					exchange_backdrop.visible = true
@@ -932,7 +932,7 @@ func _rebuild_action_dock() -> void:
 			pass_btn.text = "✅ قبول / رد شدن"
 			pass_btn.custom_minimum_size = Vector2(0, 58)
 			pass_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_action_button(pass_btn, Color(0.14, 0.48, 0.26), Color(0.42, 0.92, 0.56), Color.WHITE, 22)
+			_style_action_button(pass_btn, Color(0.14, 0.48, 0.26), Color(0.42, 0.92, 0.56), Color.WHITE, 25)
 			pass_btn.pressed.connect(_on_pass_pressed)
 			resp_grid.add_child(pass_btn)
 
@@ -941,7 +941,7 @@ func _rebuild_action_dock() -> void:
 				chal_btn.text = "⚡ بلوف می‌گیرد! (چالش)"
 				chal_btn.custom_minimum_size = Vector2(0, 58)
 				chal_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				_style_action_button(chal_btn, Color(0.74, 0.18, 0.18), Color(1.0, 0.56, 0.42), Color.WHITE, 22)
+				_style_action_button(chal_btn, Color(0.74, 0.18, 0.18), Color(1.0, 0.56, 0.42), Color.WHITE, 25)
 				chal_btn.pressed.connect(_on_challenge_pressed)
 				resp_grid.add_child(chal_btn)
 			elif phase == "block_action":
@@ -955,7 +955,7 @@ func _rebuild_action_dock() -> void:
 					blk_btn.custom_minimum_size = Vector2(0, 58)
 					blk_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 					var r_col: Color = CoupCardWidgetScript.get_role_color(r_id)
-					_style_action_button(blk_btn, r_col, r_col.lightened(0.40), Color.WHITE, 20)
+					_style_action_button(blk_btn, r_col, r_col.lightened(0.40), Color.WHITE, 23)
 					var role_cap: String = r_id
 					blk_btn.pressed.connect(func() -> void:
 						_on_block_pressed(role_cap)
@@ -1005,7 +1005,7 @@ func _rebuild_action_dock() -> void:
 			btn.text = label_txt
 			btn.custom_minimum_size = Vector2(0, 48)
 			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_style_action_button(btn, spec["bg"], spec["bd"], Color.WHITE, 19, is_dis)
+			_style_action_button(btn, spec["bg"], spec["bd"], Color.WHITE, 22, is_dis)
 			var cap_act: String = act_id
 			btn.pressed.connect(func() -> void:
 				_on_action_button_pressed(cap_act)
@@ -1024,7 +1024,7 @@ func _add_dock_info_label(txt: String, col: Color) -> void:
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lbl.add_theme_font_override("font", FontHekayat)
-	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_font_size_override("font_size", 25)
 	lbl.add_theme_color_override("font_color", col)
 	actions_container.add_child(lbl)
 
@@ -1097,7 +1097,7 @@ func _refresh_exchange_modal() -> void:
 			Color(0.12, 0.56, 0.28),
 			Color(0.48, 0.96, 0.64),
 			Color.WHITE,
-			24,
+			27,
 			not ready
 		)
 

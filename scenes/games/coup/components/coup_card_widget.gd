@@ -161,7 +161,7 @@ func _build_ui(card_size: Vector2) -> void:
 	icon_lbl.text = "💀" if is_revealed else String(meta["icon"])
 	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	icon_lbl.add_theme_font_size_override("font_size", 28)
+	icon_lbl.add_theme_font_size_override("font_size", 31)
 	icon_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	crest_box.add_child(icon_lbl)
 
@@ -170,7 +170,7 @@ func _build_ui(card_size: Vector2) -> void:
 	name_lbl.text = String(meta["name_fa"])
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_lbl.add_theme_font_override("font", FontHekayat)
-	name_lbl.add_theme_font_size_override("font_size", 25 if card_size.x >= 120.0 else 22)
+	name_lbl.add_theme_font_size_override("font_size", 28 if card_size.x >= 120.0 else 25)
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.86) if not is_revealed else Color(0.82, 0.68, 0.68))
 	name_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.75))
 	name_lbl.add_theme_constant_override("outline_size", 3)
@@ -183,7 +183,7 @@ func _build_ui(card_size: Vector2) -> void:
 	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc_lbl.add_theme_font_override("font", FontHekayat)
-	desc_lbl.add_theme_font_size_override("font_size", 16 if card_size.x >= 120.0 else 15)
+	desc_lbl.add_theme_font_size_override("font_size", 19 if card_size.x >= 120.0 else 18)
 	desc_lbl.add_theme_color_override("font_color", Color(1.0, 0.56, 0.56) if is_revealed else Color(0.95, 0.94, 0.88, 0.92))
 	desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(desc_lbl)
@@ -206,7 +206,7 @@ func _build_ui(card_size: Vector2) -> void:
 		var b_lbl: Label = Label.new()
 		b_lbl.text = "✓ انتخاب" if is_selected else "لمس کنید"
 		b_lbl.add_theme_font_override("font", FontHekayat)
-		b_lbl.add_theme_font_size_override("font_size", 15)
+		b_lbl.add_theme_font_size_override("font_size", 18)
 		b_lbl.add_theme_color_override("font_color", Color.WHITE)
 		_sel_badge.add_child(b_lbl)
 		add_child(_sel_badge)

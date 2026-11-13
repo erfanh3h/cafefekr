@@ -50,7 +50,7 @@ func _build_overlays() -> void:
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_toast_label.add_theme_font_override("font", FontHekayat)
-	_toast_label.add_theme_font_size_override("font_size", 23)
+	_toast_label.add_theme_font_size_override("font_size", 26)
 	_toast_label.add_theme_color_override("font_color", Color(0.99, 0.96, 0.88))
 	_toast_panel.add_child(_toast_label)
 
@@ -83,7 +83,7 @@ func _build_overlays() -> void:
 	_special_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_special_badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_special_badge_label.add_theme_font_override("font", FontHekayat)
-	_special_badge_label.add_theme_font_size_override("font_size", 32)
+	_special_badge_label.add_theme_font_size_override("font_size", 35)
 	_special_badge_label.add_theme_color_override("font_color", Color.WHITE)
 	_special_badge_panel.add_child(_special_badge_label)
 
