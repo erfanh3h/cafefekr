@@ -51,7 +51,7 @@ func _init() -> void:
 	_build_ui()
 
 func _build_ui() -> void:
-	custom_minimum_size = Vector2(228, 72)
+	custom_minimum_size = Vector2(204, 70)
 	_panel_style = StyleBoxFlat.new()
 	_panel_style.bg_color = Color(0.08, 0.11, 0.10, 0.92)
 	_panel_style.border_color = Color(0.78, 0.64, 0.32, 0.48)

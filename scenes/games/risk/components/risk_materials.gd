@@ -164,6 +164,50 @@ static func create_palette() -> Dictionary:
 	pip_ivory.emission_energy_multiplier = 0.65
 	mats["pip_ivory"] = pip_ivory
 
+	# Cartography Inlay Lines (Subtle Brass Compass Rose & Meridian Grid)
+	var ocean_line = StandardMaterial3D.new()
+	ocean_line.albedo_color = Color(0.80, 0.64, 0.26, 0.30)
+	ocean_line.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ocean_line.metallic = 0.72
+	ocean_line.roughness = 0.34
+	mats["ocean_line"] = ocean_line
+
+	# Forged Gunmetal Iron (Cannons, Balls, Hardware)
+	var iron = StandardMaterial3D.new()
+	iron.albedo_color = Color(0.14, 0.15, 0.18)
+	iron.metallic = 0.86
+	iron.roughness = 0.30
+	mats["iron"] = iron
+
+	# Spyglass Optical Lens
+	var glass = StandardMaterial3D.new()
+	glass.albedo_color = Color(0.55, 0.82, 0.94, 0.80)
+	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glass.metallic = 0.14
+	glass.roughness = 0.08
+	mats["glass"] = glass
+
+	# Tactical Scroll Sealing Wax
+	var crimson_wax = StandardMaterial3D.new()
+	crimson_wax.albedo_color = Color(0.76, 0.12, 0.14)
+	crimson_wax.roughness = 0.28
+	crimson_wax.metallic = 0.05
+	mats["crimson_wax"] = crimson_wax
+
+	# Bone Ivory (Surround Prop Dice & Cup Accents)
+	var ivory = StandardMaterial3D.new()
+	ivory.albedo_color = Color(0.95, 0.91, 0.80)
+	ivory.roughness = 0.24
+	ivory.metallic = 0.04
+	mats["ivory"] = ivory
+
+	# Continent Card Back Material for Return Animations
+	var cont_card_back = StandardMaterial3D.new()
+	cont_card_back.albedo_color = Color(0.12, 0.44, 0.28)
+	cont_card_back.roughness = 0.38
+	cont_card_back.metallic = 0.14
+	mats["continent_card_back"] = cont_card_back
+
 	return mats
 
 static func get_continent_material(c_id: String, is_highlighted: bool = false) -> StandardMaterial3D:

@@ -14,8 +14,8 @@ const FontHekayat: Font = preload("res://assets/fonts/hekayat.ttf")
 
 # Camera Defaults for CafeTable (Elevated Three-Quarter Tabletop Perspective)
 @export var default_three_quarter_view: bool = true
-@export var camera_pitch: float = -1.08    # ~ -62 deg elevated tabletop perspective for crisp, non-overlapping regions
-@export var camera_distance: float = 2.60  # Optimal portrait mobile framing of the 6 regions
+@export var camera_pitch: float = -1.04    # ~ -60 deg elevated war-room perspective showing surround props & board
+@export var camera_distance: float = 2.92  # Optimal portrait framing of expanded tabletop, stations, and 6 regions
 
 # Shared 3D Meshes & PBR Materials
 var _mats: Dictionary = {}
@@ -67,7 +67,7 @@ var selected_strategy_name: String = ""
 var selected_army_commit: int = 0
 var _first_3d_deck_picked: String = ""
 var _inspected_continent_id: String = ""
-var _is_zoomed_in: bool = false
+var _camera_zoom_mode: int = 0
 
 # Match Lifecycle & Animation Clock
 var _match_started: bool = false
@@ -93,6 +93,7 @@ var _card_tray_panel: PanelContainer = null
 var _card_tray_count_lbl: Label = null
 var _card_preview_lbl: Label = null
 var _hand_cards_hbox: HBoxContainer = null
+var _phase_step_lbls: Array[Label] = []
 var _phase_banner_lbl: Label = null
 var _selection_info_lbl: Label = null
 var _sub_scroll: ScrollContainer = null
@@ -229,11 +230,11 @@ func _rebuild_player_stations_3d() -> void:
 		if idx != my_id:
 			opponents.append(idx)
 
-	# Local Player Token Pedestal on Bottom-Right Board Rim
+	# Local Player Commander Bastion on Bottom-Right Outer Walnut Ledge (Balances Dice Cup at Bottom-Left)
 	_station_nodes[my_id] = Risk3DFactory.build_player_station(
 		self,
 		my_id,
-		Vector3(0.46, 0.046, 0.34),
+		Vector3(0.48, 0.024, 0.52),
 		0.0,
 		true,
 		_mats,
@@ -241,11 +242,11 @@ func _rebuild_player_stations_3d() -> void:
 		_king_mesh
 	)
 
-	# Opponent Token Pedestals Along Outer Top Rim
+	# Opponent Commander Bastions Along Outer Top Walnut Shelf
 	var opp_positions: Array = [
-		Vector3(-0.48, 0.046, -0.64),
-		Vector3(0.0, 0.046, -0.64),
-		Vector3(0.48, 0.046, -0.64),
+		Vector3(-0.48, 0.024, -0.70),
+		Vector3(0.0, 0.024, -0.70),
+		Vector3(0.48, 0.024, -0.70),
 	]
 	for i in range(opponents.size()):
 		var opp_id: int = opponents[i]
@@ -634,13 +635,36 @@ func _build_floating_ui() -> void:
 	_hud_root.add_child(command_dock)
 
 	var dock_vbox = VBoxContainer.new()
-	dock_vbox.add_theme_constant_override("separation", 4)
+	dock_vbox.add_theme_constant_override("separation", 3)
 	dock_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	command_dock.add_child(dock_vbox)
 
+	# Visual Turn Phase Stepper Bar (3 clear steps for gamer-friendly pacing)
+	var stepper_row = HBoxContainer.new()
+	stepper_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	stepper_row.add_theme_constant_override("separation", 8)
+	dock_vbox.add_child(stepper_row)
+
+	_phase_step_lbls.clear()
+	var step_titles = ["۱. کشیدن کارت", "۲. نبرد / استراتژی", "۳. پایان نوبت"]
+	for st_txt in step_titles:
+		var st_lbl = Label.new()
+		st_lbl.text = st_txt
+		st_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		st_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		st_lbl.add_theme_font_override("font", FontHekayat)
+		st_lbl.add_theme_font_size_override("font_size", 20)
+		st_lbl.add_theme_stylebox_override(
+			"normal",
+			_make_panel_style(Color(0.14, 0.11, 0.08, 0.85), Color(0.45, 0.36, 0.22, 0.70), 8, 1, 10, 2)
+		)
+		st_lbl.add_theme_color_override("font_color", Color(0.68, 0.64, 0.56))
+		stepper_row.add_child(st_lbl)
+		_phase_step_lbls.append(st_lbl)
+
 	_phase_banner_lbl = Label.new()
 	_phase_banner_lbl.add_theme_font_override("font", FontHekayat)
-	_phase_banner_lbl.add_theme_font_size_override("font_size", 28)
+	_phase_banner_lbl.add_theme_font_size_override("font_size", 26)
 	_phase_banner_lbl.add_theme_color_override("font_color", Color(0.98, 0.90, 0.54))
 	_phase_banner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_phase_banner_lbl.clip_text = true
@@ -648,7 +672,7 @@ func _build_floating_ui() -> void:
 
 	_selection_info_lbl = Label.new()
 	_selection_info_lbl.add_theme_font_override("font", FontHekayat)
-	_selection_info_lbl.add_theme_font_size_override("font_size", 23)
+	_selection_info_lbl.add_theme_font_size_override("font_size", 22)
 	_selection_info_lbl.add_theme_color_override("font_color", Color(0.92, 0.88, 0.78))
 	_selection_info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_selection_info_lbl.clip_text = true
@@ -656,7 +680,7 @@ func _build_floating_ui() -> void:
 
 	_sub_scroll = ScrollContainer.new()
 	_sub_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_sub_scroll.custom_minimum_size = Vector2(0, 48)
+	_sub_scroll.custom_minimum_size = Vector2(0, 42)
 	_sub_scroll.visible = false
 	_sub_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	dock_vbox.add_child(_sub_scroll)
@@ -670,7 +694,7 @@ func _build_floating_ui() -> void:
 
 	var act_scroll = ScrollContainer.new()
 	act_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	act_scroll.custom_minimum_size = Vector2(0, 58)
+	act_scroll.custom_minimum_size = Vector2(0, 50)
 	act_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	dock_vbox.add_child(act_scroll)
 
@@ -743,26 +767,55 @@ func _build_hand_card_widget(entry: Dictionary, card_idx: int, is_selected: bool
 	var icon_txt: String = "🏰"
 	var title_txt: String = cid
 	var sub_txt: String = ""
+	var is_ready_now: bool = true
+	var my_turn_now: bool = _is_my_turn()
+	var is_defending_me: bool = (game_state in ["DefenderArmy", "Attack"] and _to_int(active_attack.get("defender_id", 0)) == my_player_index)
+
 	if kind == "continent":
 		accent_col = RiskMaterials.CONTINENT_COLORS.get(cid, Color(0.24, 0.54, 0.36))
 		var dom_req: int = int(Risk3DFactory.CONTINENT_META.get(cid, {}).get("domination", 4))
 		var has_dom: bool = my_tokens.has(cid)
 		icon_txt = "👑" if has_dom else "🗺️"
 		title_txt = _continent_fa(cid)
-		if has_dom:
+		var has_targets: bool = not _get_valid_attack_target_continents(cid).is_empty()
+		if my_turn_now and game_state == "SelectAction":
+			if has_targets:
+				sub_txt = "⚔️ آماده حمله (%s/%s)" % [Risk3DFactory.fa_digits(count), Risk3DFactory.fa_digits(dom_req)]
+			else:
+				sub_txt = "🛡️ بی هدف مجاور (%s/%s)" % [Risk3DFactory.fa_digits(count), Risk3DFactory.fa_digits(dom_req)]
+				is_ready_now = false
+		elif has_dom:
 			sub_txt = "👑 سلطه شما (%s/%s)" % [Risk3DFactory.fa_digits(count), Risk3DFactory.fa_digits(dom_req)]
 		else:
 			sub_txt = "👑 حد نصاب: %s/%s" % [Risk3DFactory.fa_digits(count), Risk3DFactory.fa_digits(dom_req)]
+			if my_turn_now and game_state == "Draw":
+				is_ready_now = false
 	else:
 		var sm: Dictionary = Risk3DFactory.STRATEGY_META.get(cid, {})
 		accent_col = sm.get("color", Color(0.76, 0.24, 0.24))
 		icon_txt = str(sm.get("icon", "⚡"))
 		title_txt = str(sm.get("fa", cid))
 		sub_txt = str(sm.get("short", "استراتژی"))
+		if cid == "Cancel":
+			is_ready_now = is_defending_me
+			sub_txt = "🛡️ فعال در دفاع!" if is_defending_me else "🛡️ مخصوص زمان دفاع"
+		elif game_state == "Attack" and cid == "Army":
+			is_ready_now = false
+			sub_txt = "🔒 قفل در حین نبرد"
+		elif my_turn_now and game_state == "SelectAction":
+			if bool(sm.get("needs_target_player", false)) and _get_valid_opponent_targets_for_strategy(cid).is_empty():
+				is_ready_now = false
+				sub_txt = "⛔ حریف هدف ندارد"
+			else:
+				sub_txt = "⚡ آماده: " + sub_txt
+		else:
+			is_ready_now = (is_defending_me and cid == "Cancel") or (my_turn_now and cid == "Army" and game_state in ["AttackerArmy", "DefenderArmy"]) or (is_defending_me and cid == "Army" and game_state == "DefenderArmy")
 
-	var card_bg = Color(0.16, 0.12, 0.08, 0.98) if is_selected else Color(0.11, 0.08, 0.055, 0.95)
-	var border_col = Color(0.98, 0.84, 0.30) if is_selected else accent_col.lightened(0.15)
-	var border_w = 3 if is_selected else 1
+	wrapper.modulate = Color(1.0, 1.0, 1.0, 1.0) if (is_ready_now or is_selected) else Color(0.78, 0.80, 0.84, 0.90)
+
+	var card_bg = Color(0.18, 0.13, 0.08, 0.99) if is_selected else Color(0.11, 0.08, 0.055, 0.96)
+	var border_col = Color(0.99, 0.86, 0.30) if is_selected else (accent_col.lightened(0.24) if is_ready_now else accent_col.darkened(0.10))
+	var border_w = 3 if is_selected else (2 if is_ready_now else 1)
 
 	var card_btn = Button.new()
 	card_btn.focus_mode = Control.FOCUS_NONE
@@ -1414,13 +1467,15 @@ func _refresh_3d_continents_and_bridges() -> void:
 		var c_ref: Dictionary = _continent_nodes[c_id]
 		c_ref["token_node"].visible = board_tokens.has(c_id)
 
-		# Update Ownership Border & Plaque Trim Color
+		# Update Ownership Border, Plaque Trim & Miniature Citadel Tint
 		var owner_p: int = _get_continent_owner_player(c_id)
 		var bezel_mat: StandardMaterial3D = RiskMaterials.get_ownership_bezel_material(owner_p, _mats)
 		if c_ref.has("ownership_bezel") and is_instance_valid(c_ref["ownership_bezel"]):
 			(c_ref["ownership_bezel"] as MeshInstance3D).material_override = bezel_mat
 		if c_ref.has("plaque_trim") and is_instance_valid(c_ref["plaque_trim"]):
 			(c_ref["plaque_trim"] as MeshInstance3D).material_override = bezel_mat
+		if c_ref.has("citadel") and is_instance_valid(c_ref["citadel"]):
+			(c_ref["citadel"] as MeshInstance3D).material_override = bezel_mat if owner_p > 0 else _mats["parchment"]
 
 		var garrisons: Dictionary = c_ref["garrisons"]
 		var present_players: Array[int] = []
@@ -1535,12 +1590,15 @@ func _refresh_floating_hud() -> void:
 			Risk3DFactory.fa_digits(strategy_deck_count),
 		]
 	if is_instance_valid(_top_turn_lbl):
+		var expand_tag = " 🧭" if expand_ignore_adjacency else ""
 		if _is_my_turn():
-			_top_turn_lbl.text = "🟢 نوبت شما • %s" % _phase_fa(game_state)
+			_top_turn_lbl.text = "🟢 نوبت شما • %s%s" % [_phase_fa(game_state), expand_tag]
 			_top_turn_lbl.add_theme_color_override("font_color", Color(0.52, 0.96, 0.66))
 		else:
 			_top_turn_lbl.text = "⏳ نوبت %s • %s" % [_get_player_name(_active_turn), _phase_fa(game_state)]
 			_top_turn_lbl.add_theme_color_override("font_color", Color(0.96, 0.84, 0.48))
+
+	_refresh_phase_stepper()
 
 	# 1B. Update Compact Selected Region Contextual Inspector (Outside the Board)
 	_refresh_selected_region_inspector()
@@ -1900,8 +1958,15 @@ func _populate_attack_action_controls() -> void:
 	if selected_target_player == 0 or not defenders.has(selected_target_player):
 		selected_target_player = defenders[0]
 
-	_selection_info_lbl.text = "آماده یورش از «%s» به «%s» علیه %s!" % [
-		src_fa, tgt_fa, _get_player_name(selected_target_player)
+	var my_base_dice = clampi(my_cnt, 1, 3)
+	var def_cnt = _to_int(players_state.get(selected_target_player, {}).get("continents", {}).get(selected_target_continent, 1))
+	var def_base_dice = clampi(def_cnt, 1, 2)
+	_selection_info_lbl.text = "یورش از «%s» به «%s» (%s)  |  🎲 تاس پایه: شما %s در برابر %s" % [
+		src_fa,
+		tgt_fa,
+		_get_player_name(selected_target_player),
+		Risk3DFactory.fa_digits(my_base_dice),
+		Risk3DFactory.fa_digits(def_base_dice),
 	]
 
 	if defenders.size() > 1:
@@ -2828,17 +2893,71 @@ func _build_inspector_card_widget(
 	return card_panel
 
 
+func _refresh_phase_stepper() -> void:
+	if _phase_step_lbls.size() < 3:
+		return
+	var active_step: int = -1
+	var my_turn_now: bool = _is_my_turn()
+	var is_combat: bool = (game_state in ["AttackerArmy", "DefenderArmy", "Attack"])
+	if is_combat:
+		active_step = 1
+	elif my_turn_now:
+		if game_state == "Draw":
+			active_step = 0
+		elif game_state == "SelectAction":
+			active_step = 1
+	_phase_step_lbls[1].text = "۲. ⚔️ نبرد فعال" if is_combat else "۲. نبرد / استراتژی"
+
+	for i in range(3):
+		var lbl = _phase_step_lbls[i]
+		if not is_instance_valid(lbl):
+			continue
+		var is_act = (i == active_step)
+		var is_done = (active_step > i)
+		if is_act:
+			var bg = Color(0.42, 0.14, 0.12, 0.96) if is_combat else Color(0.14, 0.34, 0.20, 0.96)
+			var br = Color(0.98, 0.48, 0.32, 1.0) if is_combat else Color(0.98, 0.84, 0.30, 1.0)
+			lbl.add_theme_stylebox_override("normal", _make_panel_style(bg, br, 8, 2, 10, 2))
+			lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.82))
+		elif is_done:
+			lbl.add_theme_stylebox_override("normal", _make_panel_style(Color(0.10, 0.20, 0.14, 0.88), Color(0.32, 0.68, 0.44, 0.78), 8, 1, 10, 2))
+			lbl.add_theme_color_override("font_color", Color(0.62, 0.92, 0.72))
+		else:
+			lbl.add_theme_stylebox_override("normal", _make_panel_style(Color(0.14, 0.11, 0.08, 0.82), Color(0.42, 0.34, 0.22, 0.62), 8, 1, 10, 2))
+			lbl.add_theme_color_override("font_color", Color(0.66, 0.62, 0.54))
+
 func _toggle_camera_zoom() -> void:
 	AudioManager.sfx_tap()
-	_is_zoomed_in = not _is_zoomed_in
-	if is_instance_valid(_btn_zoom):
-		_btn_zoom.text = "🔍 نمای کلی" if _is_zoomed_in else "🔍 زوم"
-	var table = get_tree().root.find_child("CafeTable", true, false)
+	_camera_zoom_mode = (_camera_zoom_mode + 1) % 3
+	var table = get_tree().get_first_node_in_group("cafe_table")
+	if not is_instance_valid(table):
+		table = get_tree().root.find_child("CafeTable", true, false)
+
+	if _camera_zoom_mode == 0:
+		camera_distance = 2.92
+		camera_pitch = -1.04
+		if is_instance_valid(_btn_zoom):
+			_btn_zoom.text = "🔍 نما"
+	elif _camera_zoom_mode == 1:
+		camera_distance = 2.38
+		camera_pitch = -1.10
+		if is_instance_valid(_btn_zoom):
+			_btn_zoom.text = "🔍 زوم"
+	else:
+		camera_distance = 3.40
+		camera_pitch = -0.94
+		if is_instance_valid(_btn_zoom):
+			_btn_zoom.text = "🔍 میز"
+
 	if is_instance_valid(table):
-		if _is_zoomed_in and table.has_method("zoom_in"):
-			table.zoom_in(0.36)
-		elif not _is_zoomed_in and table.has_method("reset_camera_orbit"):
-			table.reset_camera_orbit()
+		if "is_top_down_view" in table and table.is_top_down_view and table.has_method("set_top_down_view"):
+			table.set_top_down_view(false, 0.45)
+		if "target_distance" in table:
+			table.target_distance = camera_distance
+		if "target_pitch" in table:
+			table.target_pitch = camera_pitch
+		if "target_yaw" in table:
+			table.target_yaw = 0.0
 
 func _get_active_inspected_continent() -> String:
 	if selected_target_continent != "":

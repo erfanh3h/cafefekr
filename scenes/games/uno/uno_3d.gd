@@ -16,8 +16,8 @@ const UnoVFXLayerScript = preload("res://scenes/games/uno/components/uno_vfx_lay
 
 @export var default_three_quarter_view: bool = true
 @export var has_missed_turns_limit: bool = true
-@export var camera_pitch: float = -1.10    # ~ -63 deg elevated tabletop perspective focused on central cards
-@export var camera_distance: float = 2.46  # Crisp, balanced mobile framing for the walnut & emerald card mat
+@export var camera_pitch: float = -1.05    # ~ -60 deg elevated tabletop perspective showing board + surrounding props
+@export var camera_distance: float = 2.74  # Balanced portrait mobile framing for the card mat & tabletop props
 
 const UNO_COLORS: Dictionary = {
 	"red": Color(0.90, 0.16, 0.19),
@@ -84,10 +84,15 @@ var call_uno_btn: Button
 var hand_tray_panel: PanelContainer
 var hand_tray_style: StyleBoxFlat
 var hand_phase_label: Label
+var hand_playable_pill: PanelContainer
+var hand_playable_label: Label
+var sort_hand_btn: Button
+var focus_playable_btn: Button
 var hand_count_pill_label: Label
 var hand_scroll: ScrollContainer
 var hand_hbox: HBoxContainer
 var _card_widgets_by_uid: Dictionary = {}
+var _uno_btn_pulse_time: float = 0.0
 
 # Wild Color Selection Modal
 var wild_modal_backdrop: ColorRect
@@ -103,8 +108,14 @@ func _ready() -> void:
 	_refresh_all_visuals()
 	_update_hud_visibility()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_update_hud_visibility()
+	if is_instance_valid(call_uno_btn) and call_uno_btn.visible:
+		_uno_btn_pulse_time += delta * 6.0
+		var s = 1.0 + sin(_uno_btn_pulse_time) * 0.045
+		call_uno_btn.scale = Vector2(s, s)
+	elif is_instance_valid(call_uno_btn):
+		call_uno_btn.scale = Vector2.ONE
 
 func _exit_tree() -> void:
 	_disconnect_uno_signals()
@@ -188,6 +199,7 @@ func _build_3d_table() -> void:
 	table_3d = UnoTable3DScript.new()
 	table_3d.name = "UnoTable3D"
 	table_3d.draw_pile_clicked.connect(_on_draw_button_pressed)
+	table_3d.uno_bell_clicked.connect(_on_3d_uno_bell_clicked)
 	add_child(table_3d)
 
 # ==============================================================================
@@ -429,16 +441,77 @@ func _build_2d_interface() -> void:
 	hand_tray_panel.add_child(tray_vbox)
 
 	var tray_header = HBoxContainer.new()
-	tray_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tray_header.add_theme_constant_override("separation", 8)
 	tray_vbox.add_child(tray_header)
+
+	sort_hand_btn = Button.new()
+	sort_hand_btn.custom_minimum_size = Vector2(96, 32)
+	sort_hand_btn.text = "🔀 مرتب"
+	sort_hand_btn.focus_mode = Control.FOCUS_NONE
+	sort_hand_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	sort_hand_btn.add_theme_font_override("font", FontHekayat)
+	sort_hand_btn.add_theme_font_size_override("font_size", 19)
+	sort_hand_btn.add_theme_color_override("font_color", Color(0.98, 0.92, 0.72))
+	var sort_st = StyleBoxFlat.new()
+	sort_st.bg_color = Color(0.13, 0.19, 0.16, 0.95)
+	sort_st.border_color = Color(0.78, 0.64, 0.30, 0.70)
+	sort_st.set_border_width_all(1)
+	sort_st.set_corner_radius_all(10)
+	sort_hand_btn.add_theme_stylebox_override("normal", sort_st)
+	sort_hand_btn.add_theme_stylebox_override("hover", sort_st)
+	sort_hand_btn.add_theme_stylebox_override("pressed", sort_st)
+	sort_hand_btn.pressed.connect(_on_sort_hand_pressed)
+	tray_header.add_child(sort_hand_btn)
+
+	focus_playable_btn = Button.new()
+	focus_playable_btn.custom_minimum_size = Vector2(102, 32)
+	focus_playable_btn.text = "💡 مجاز"
+	focus_playable_btn.focus_mode = Control.FOCUS_NONE
+	focus_playable_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	focus_playable_btn.add_theme_font_override("font", FontHekayat)
+	focus_playable_btn.add_theme_font_size_override("font_size", 19)
+	focus_playable_btn.add_theme_color_override("font_color", Color(0.45, 0.98, 0.65))
+	var fp_st = sort_st.duplicate()
+	fp_st.bg_color = Color(0.08, 0.24, 0.15, 0.96)
+	fp_st.border_color = Color(0.38, 0.96, 0.58, 0.85)
+	focus_playable_btn.add_theme_stylebox_override("normal", fp_st)
+	focus_playable_btn.add_theme_stylebox_override("hover", fp_st)
+	focus_playable_btn.add_theme_stylebox_override("pressed", fp_st)
+	focus_playable_btn.visible = false
+	focus_playable_btn.pressed.connect(_on_focus_next_playable_pressed)
+	tray_header.add_child(focus_playable_btn)
 
 	hand_phase_label = Label.new()
 	hand_phase_label.text = "روی کارت بزنید تا انتخاب و بازی شود"
 	hand_phase_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hand_phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hand_phase_label.clip_text = true
 	hand_phase_label.add_theme_font_override("font", FontHekayat)
 	hand_phase_label.add_theme_font_size_override("font_size", 21)
 	hand_phase_label.add_theme_color_override("font_color", Color(0.78, 0.88, 0.82))
 	tray_header.add_child(hand_phase_label)
+
+	hand_playable_pill = PanelContainer.new()
+	hand_playable_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hp_st = StyleBoxFlat.new()
+	hp_st.bg_color = Color(0.08, 0.22, 0.14, 0.95)
+	hp_st.border_color = Color(0.36, 0.92, 0.56, 0.72)
+	hp_st.set_border_width_all(1)
+	hp_st.set_corner_radius_all(10)
+	hp_st.content_margin_left = 10
+	hp_st.content_margin_right = 10
+	hp_st.content_margin_top = 2
+	hp_st.content_margin_bottom = 2
+	hand_playable_pill.add_theme_stylebox_override("panel", hp_st)
+	hand_playable_pill.visible = false
+	tray_header.add_child(hand_playable_pill)
+
+	hand_playable_label = Label.new()
+	hand_playable_label.text = "✨ ۰ مجاز"
+	hand_playable_label.add_theme_font_override("font", FontHekayat)
+	hand_playable_label.add_theme_font_size_override("font_size", 19)
+	hand_playable_label.add_theme_color_override("font_color", Color(0.45, 0.98, 0.65))
+	hand_playable_pill.add_child(hand_playable_label)
 
 	hand_count_pill_label = Label.new()
 	hand_count_pill_label.text = "دست شما: ۷ کارت"
@@ -517,10 +590,10 @@ func _build_wild_color_modal() -> void:
 	m_vbox.add_child(grid)
 
 	var color_choices = [
-		{"key": "red", "label": "قرمز"},
-		{"key": "yellow", "label": "زرد"},
-		{"key": "green", "label": "سبز"},
-		{"key": "blue", "label": "آبی"}
+		{"key": "red", "label": "🔴 قرمز"},
+		{"key": "yellow", "label": "🟡 زرد"},
+		{"key": "green", "label": "🟢 سبز"},
+		{"key": "blue", "label": "🔵 آبی"}
 	]
 	for item in color_choices:
 		var c_key: String = item["key"]
@@ -732,8 +805,20 @@ func _refresh_hand_dock(any_playable: bool, highlight_draw: bool) -> void:
 	_card_widgets_by_uid.clear()
 
 	var my_count = my_hand.size()
+	var playable_count: int = 0
+	for c in my_hand:
+		if typeof(c) == TYPE_DICTIONARY and _is_card_playable(c):
+			playable_count += 1
+
 	if hand_count_pill_label:
-		hand_count_pill_label.text = "دست شما: %s کارت" % UnoCardWidgetScript.to_fa_digits(str(my_count))
+		hand_count_pill_label.text = "%s کارت" % UnoCardWidgetScript.to_fa_digits(str(my_count))
+
+	if is_instance_valid(hand_playable_pill) and is_instance_valid(hand_playable_label):
+		hand_playable_pill.visible = is_my_turn and playable_count > 0
+		hand_playable_label.text = "✨ %s مجاز" % UnoCardWidgetScript.to_fa_digits(str(playable_count))
+
+	if is_instance_valid(focus_playable_btn):
+		focus_playable_btn.visible = is_my_turn and playable_count > 0 and my_count >= 5
 
 	if hand_phase_label:
 		if rank1_player == my_player_index:
@@ -756,7 +841,7 @@ func _refresh_hand_dock(any_playable: bool, highlight_draw: bool) -> void:
 	if hand_tray_style:
 		hand_tray_style.border_color = Color(0.38, 0.96, 0.58, 0.85) if is_my_turn else Color(0.82, 0.68, 0.32, 0.55)
 
-	# Update Draw / Pass / UNO Buttons
+	# Update Draw / Pass / UNO Buttons & 3D UNO Bell Alert
 	if draw_action_btn:
 		draw_action_btn.disabled = (not is_my_turn) or has_drawn_this_turn or is_board_locked
 		if highlight_draw:
@@ -771,9 +856,13 @@ func _refresh_hand_dock(any_playable: bool, highlight_draw: bool) -> void:
 	if pass_turn_btn:
 		pass_turn_btn.visible = is_my_turn and has_drawn_this_turn
 
+	var already_called = bool(uno_called.get(str(my_player_index), uno_called.get(my_player_index, false)))
+	var can_uno_now = (my_count <= 2 and my_count >= 1 and not already_called)
 	if call_uno_btn:
-		var already_called = bool(uno_called.get(str(my_player_index), uno_called.get(my_player_index, false)))
-		call_uno_btn.visible = (my_count <= 2 and my_count >= 1 and not already_called)
+		call_uno_btn.visible = can_uno_now
+		call_uno_btn.pivot_offset = call_uno_btn.size * 0.5
+	if is_instance_valid(table_3d) and table_3d.has_method("set_uno_bell_alert"):
+		table_3d.set_uno_bell_alert(can_uno_now)
 
 	# Keep selection valid if card still exists in hand
 	var still_has_selected = false
@@ -906,9 +995,68 @@ func _on_pass_button_pressed() -> void:
 func _on_uno_button_pressed() -> void:
 	send_move(Commands.Call_Uno, {})
 	call_uno_btn.visible = false
+	if is_instance_valid(table_3d) and table_3d.has_method("set_uno_bell_alert"):
+		table_3d.set_uno_bell_alert(false)
+		table_3d.animate_uno_bell_tap()
 	if is_instance_valid(vfx_layer):
 		vfx_layer.play_special_effect_badge("🔥 UNO!", UNO_COLORS["red"], 1.35)
 		vfx_layer.show_contextual_toast("🔥 شما «اونو!» اعلام کردید", Color(1.0, 0.86, 0.28), 2.0)
+
+func _on_3d_uno_bell_clicked() -> void:
+	var my_count = my_hand.size()
+	var already_called = bool(uno_called.get(str(my_player_index), uno_called.get(my_player_index, false)))
+	if my_count <= 2 and my_count >= 1 and not already_called:
+		_on_uno_button_pressed()
+	elif is_instance_valid(vfx_layer):
+		vfx_layer.show_contextual_toast("🔔 زنگ اونو! وقتی ۱ یا ۲ کارت داشتید بزنید", Color(0.98, 0.86, 0.42), 1.9)
+
+func _on_sort_hand_pressed() -> void:
+	if my_hand.size() <= 1:
+		return
+	var color_rank = {"red": 0, "yellow": 1, "green": 2, "blue": 3, "wild": 4}
+	var val_rank = {
+		"0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9,
+		"skip": 10, "reverse": 11, "draw2": 12, "wild": 13, "wild_draw4": 14
+	}
+	my_hand.sort_custom(func(a: Variant, b: Variant) -> bool:
+		if typeof(a) != TYPE_DICTIONARY or typeof(b) != TYPE_DICTIONARY:
+			return false
+		var ca = String(a.get("color", "wild"))
+		var cb = String(b.get("color", "wild"))
+		var va = String(a.get("value", "0"))
+		var vb = String(b.get("value", "0"))
+		if va in ["wild", "wild_draw4"]:
+			ca = "wild"
+		if vb in ["wild", "wild_draw4"]:
+			cb = "wild"
+		var ra = int(color_rank.get(ca, 5))
+		var rb = int(color_rank.get(cb, 5))
+		if ra != rb:
+			return ra < rb
+		return int(val_rank.get(va, 99)) < int(val_rank.get(vb, 99))
+	)
+	_refresh_all_visuals()
+	if is_instance_valid(vfx_layer):
+		vfx_layer.show_contextual_toast("🔀 کارت‌ها بر اساس رنگ و شماره مرتب شدند", Color(0.94, 0.86, 0.50), 1.4)
+
+func _on_focus_next_playable_pressed() -> void:
+	if not is_my_turn:
+		return
+	var playable_uids: Array[int] = []
+	for c in my_hand:
+		if typeof(c) == TYPE_DICTIONARY and _is_card_playable(c):
+			playable_uids.append(int(c.get("uid", -1)))
+	if playable_uids.is_empty():
+		return
+	var next_uid = playable_uids[0]
+	var cur_idx = playable_uids.find(selected_card_uid)
+	if cur_idx >= 0:
+		next_uid = playable_uids[(cur_idx + 1) % playable_uids.size()]
+	var widget = _card_widgets_by_uid.get(next_uid)
+	if is_instance_valid(widget):
+		_on_hand_card_tapped(next_uid, widget.card_data, widget)
+		if is_instance_valid(hand_scroll):
+			hand_scroll.ensure_control_visible(widget)
 
 func _on_zoom_cycle_pressed() -> void:
 	var table = get_tree().get_first_node_in_group("cafe_table")
@@ -916,27 +1064,27 @@ func _on_zoom_cycle_pressed() -> void:
 		return
 	_zoom_preset_idx = (_zoom_preset_idx + 1) % 3
 	if _zoom_preset_idx == 0:
-		camera_distance = 2.46
-		camera_pitch = -1.10
+		camera_distance = 2.74
+		camera_pitch = -1.05
 		if table.is_top_down_view:
 			table.set_top_down_view(false, 0.45)
-		table.target_distance = 2.46
-		table.target_pitch = -1.10
+		table.target_distance = 2.74
+		table.target_pitch = -1.05
 		table.target_yaw = 0.0
 		if zoom_btn:
 			zoom_btn.text = "🔍 نما"
 	elif _zoom_preset_idx == 1:
-		camera_distance = 3.15
-		camera_pitch = -0.98
+		camera_distance = 3.25
+		camera_pitch = -0.94
 		if table.is_top_down_view:
 			table.set_top_down_view(false, 0.45)
-		table.target_distance = 3.15
-		table.target_pitch = -0.98
+		table.target_distance = 3.25
+		table.target_pitch = -0.94
 		table.target_yaw = 0.0
 		if zoom_btn:
-			zoom_btn.text = "🔍 دور"
+			zoom_btn.text = "🔍 میز"
 	else:
-		table.top_down_target_height = 2.60
+		table.top_down_target_height = 2.75
 		table.set_top_down_view(true, 0.45)
 		if zoom_btn:
 			zoom_btn.text = "🔍 بالا"

@@ -271,41 +271,43 @@ func _apply_visual_state(animate: bool) -> void:
 	var target_modulate: Color = Color.WHITE
 
 	if is_selected:
-		target_y = 14.0
-		target_scale = Vector2(1.08, 1.08)
+		target_y = 10.0
+		target_scale = Vector2(1.09, 1.09)
 		_card_style.set_border_width_all(6)
-		_card_style.border_color = Color(1.0, 0.92, 0.35) if is_playable else Color(1.0, 0.55, 0.55)
-		_card_style.shadow_color = Color(1.0, 0.86, 0.25, 0.55) if is_playable else Color(0, 0, 0, 0.55)
-		_card_style.shadow_size = 14
+		_card_style.border_color = Color(0.42, 0.98, 0.64) if is_playable else Color(1.0, 0.50, 0.50)
+		_card_style.shadow_color = Color(0.32, 0.96, 0.58, 0.60) if is_playable else Color(0, 0, 0, 0.55)
+		_card_style.shadow_size = 16
 		_play_badge.visible = is_playable and is_my_turn_active
 		_status_tag.visible = (not is_playable) and is_my_turn_active
 	else:
 		_play_badge.visible = false
 		_status_tag.visible = false
 		if is_playable and is_my_turn_active:
-			target_y = 26.0
-			_card_style.set_border_width_all(5)
-			_card_style.border_color = Color(1.0, 0.96, 0.72)
-			_card_style.shadow_color = Color(1.0, 0.88, 0.35, 0.35)
-			_card_style.shadow_size = 10
+			target_y = 22.0
+			target_scale = Vector2(1.02, 1.02)
+			_card_style.set_border_width_all(6)
+			_card_style.border_color = Color(1.0, 0.92, 0.36)
+			_card_style.shadow_color = Color(1.0, 0.88, 0.25, 0.52)
+			_card_style.shadow_size = 12
 		elif is_my_turn_active:
-			target_y = 42.0
-			target_modulate = Color(0.72, 0.74, 0.78, 0.94)
+			target_y = 44.0
+			target_scale = Vector2(0.96, 0.96)
+			target_modulate = Color(0.58, 0.60, 0.66, 0.90)
 			_card_style.set_border_width_all(4)
-			_card_style.border_color = Color(0.92, 0.92, 0.94, 0.75)
-			_card_style.shadow_size = 6
+			_card_style.border_color = Color(0.84, 0.84, 0.88, 0.62)
+			_card_style.shadow_size = 4
 		else:
-			target_y = 38.0
-			target_modulate = Color(0.88, 0.90, 0.92, 0.96)
+			target_y = 36.0
+			target_modulate = Color(0.90, 0.92, 0.94, 0.96)
 			_card_style.set_border_width_all(4)
 			_card_style.border_color = Color(0.96, 0.96, 0.96, 0.88)
 			_card_style.shadow_size = 6
 
 	if animate and is_inside_tree():
 		_anim_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		_anim_tween.tween_property(_card_face, "position:y", target_y, 0.18)
-		_anim_tween.tween_property(_card_face, "scale", target_scale, 0.18)
-		_anim_tween.tween_property(_card_face, "modulate", target_modulate, 0.15)
+		_anim_tween.tween_property(_card_face, "position:y", target_y, 0.17)
+		_anim_tween.tween_property(_card_face, "scale", target_scale, 0.17)
+		_anim_tween.tween_property(_card_face, "modulate", target_modulate, 0.14)
 	else:
 		_card_face.position.y = target_y
 		_card_face.scale = target_scale

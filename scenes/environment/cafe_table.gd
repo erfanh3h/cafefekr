@@ -330,7 +330,7 @@ func transition_to_board_view(duration: float = 1.2) -> void:
 		prefer_three_quarter = bool(current_board_node.default_three_quarter_view)
 	is_top_down_view = not prefer_three_quarter
 	if _dynamic_props_root and is_instance_valid(_dynamic_props_root):
-		var hide_props = (current_board_node and "default_three_quarter_view" in current_board_node and bool(current_board_node.default_three_quarter_view))
+		var hide_props = (current_board_node and "hide_table_props" in current_board_node and bool(current_board_node.hide_table_props))
 		_dynamic_props_root.visible = (not is_top_down_view) and (not hide_props)
 	top_down_target_height = TOP_DOWN_HEIGHT_DEFAULT
 	top_down_current_height = TOP_DOWN_HEIGHT_DEFAULT
@@ -436,7 +436,7 @@ func set_top_down_view(enabled: bool, duration: float = 0.55) -> void:
 	_kill_camera_tween()
 	is_top_down_view = enabled
 	if _dynamic_props_root and is_instance_valid(_dynamic_props_root):
-		var hide_props = (current_board_node and "default_three_quarter_view" in current_board_node and bool(current_board_node.default_three_quarter_view))
+		var hide_props = (current_board_node and "hide_table_props" in current_board_node and bool(current_board_node.hide_table_props))
 		_dynamic_props_root.visible = (not is_top_down_view) and (not hide_props)
 	camera_mode_changed.emit(is_top_down_view)
 	is_transitioning = true
@@ -879,6 +879,8 @@ func _get_themed_props_for_game(game_type: String) -> Array:
 			return ["tea", "scorebook", "hourglass", "cafe_pastry_plate"]
 		"Uno":
 			return ["tokens", "hourglass", "tea", "cafe_pastry_plate"]
+		"Risk":
+			return ["naval_cannon", "brass_spyglass", "royal_crown_scepter", "dice"]
 		_:
 			return ["scorebook", "hourglass", "dice", "tea"]
 
@@ -913,7 +915,7 @@ func populate_props_for_game(game_type: String = "") -> void:
 		"royal_crown_scepter", "vintage_abacus", "magnifying_loupe", "persian_tar",
 		"fortune_astrolabe", "cafe_pastry_plate", "incense_burner"
 	]
-	if game_type in ["BattleShip", "MSweeper", "BoxFour", "Chess", "Checkers", "RPC", ""]:
+	if game_type in ["BattleShip", "MSweeper", "BoxFour", "Chess", "Checkers", "RPC", "Risk", ""]:
 		all_movable_props.append_array(["naval_cannon", "brass_spyglass", "dagger_and_shield"])
 
 	var selected_ids: Array = []
