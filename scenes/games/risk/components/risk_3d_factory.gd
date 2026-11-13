@@ -831,6 +831,19 @@ static func build_continent_node(
 			"label": cnt_lbl,
 		}
 
+	var status_lbl: Label3D = make_label_3d(
+		"",
+		font,
+		34,
+		Color(1.0, 0.94, 0.72),
+		0.00105
+	)
+	status_lbl.name = "TacticalStatusLabel"
+	status_lbl.position = Vector3(0.0, 0.088, -0.004)
+	status_lbl.outline_size = 14
+	status_lbl.visible = false
+	root.add_child(status_lbl)
+
 	# 8. Generous Mobile-Friendly Raycast Area3D for Tapping the Region
 	var area: Area3D = Area3D.new()
 	area.name = "ContinentHitArea"
@@ -855,6 +868,7 @@ static func build_continent_node(
 		"aura": aura_ring,
 		"token_node": token_node,
 		"name_lbl": name_lbl,
+		"status_lbl": status_lbl,
 		"garrisons": garrisons,
 	}
 
@@ -1132,7 +1146,7 @@ static func populate_station_assets_3d(
 		s_mi.position = Vector3(0.014, 0.014 + float(i) * 0.0026, -0.010)
 		container.add_child(s_mi)
 
-static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null, final_val: int = 1) -> Node3D:
+static func build_3d_die(is_attacker: bool, mats: Dictionary, _font: Font = null, _final_val: int = 1) -> Node3D:
 	var die_root: Node3D = Node3D.new()
 	die_root.name = "BattleDie3D"
 	var s: float = 0.068
@@ -1217,19 +1231,6 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary, font: Font = null,
 				p3 = Vector3(normal.x * (half + 0.0018), uv.y, uv.x)
 			pip_mi.position = p3
 			cube_pivot.add_child(pip_mi)
-
-	var badge_lbl: Label3D = make_label_3d(
-		"%s %s" % ["⚔️" if is_attacker else "🛡️", fa_digits(clampi(final_val, 1, 6))],
-		font,
-		58,
-		Color(1.0, 0.92, 0.46) if is_attacker else Color(0.58, 0.92, 1.0),
-		0.0012
-	)
-	badge_lbl.name = "DieValueBadge"
-	badge_lbl.position = Vector3(0.0, half + 0.042, 0.0)
-	badge_lbl.outline_size = 18
-	badge_lbl.visible = false
-	die_root.add_child(badge_lbl)
 
 	return die_root
 
