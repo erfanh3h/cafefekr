@@ -383,9 +383,9 @@ func _build_board_3d() -> void:
 	goal_strip_bottom = _add_box_mesh(decor_root, Vector3(0.81, 0.006, 0.016), Vector3(0.0, BOARD_SURFACE_Y + 0.024, 0.422), _mat_goal_crimson)
 
 	# Carved Brass Goal Gate Posts flanking top (finish) and bottom (origin) edges
-	for z_gate in [-0.462, 0.462]:
-		var g_mat := _mat_goal_emerald if z_gate < 0.0 else _mat_brass_gold
-		for x_post in [-0.21, 0.21]:
+	for z_gate: float in [-0.462, 0.462]:
+		var g_mat: StandardMaterial3D = _mat_goal_emerald if z_gate < 0.0 else _mat_brass_gold
+		for x_post: float in [-0.21, 0.21]:
 			_add_cyl_mesh(decor_root, 0.014, 0.018, 0.036, Vector3(x_post, BOARD_SURFACE_Y + 0.036, z_gate), _mat_brass_gold, 12)
 			var finial := MeshInstance3D.new()
 			var fm := SphereMesh.new()
@@ -396,7 +396,7 @@ func _build_board_3d() -> void:
 			finial.material_override = g_mat
 			decor_root.add_child(finial)
 
-	var corner_coords := [
+	var corner_coords: Array[Vector2] = [
 		Vector2(-0.462, -0.462), Vector2(0.462, -0.462),
 		Vector2(-0.462, 0.462),  Vector2(0.462, 0.462)
 	]
@@ -463,7 +463,7 @@ func _build_board_3d() -> void:
 	_build_wall_racks()
 
 	# 4. Sculpted Ludo Royal Pawn Pieces (Player 1 Ruby vs Player 2 Sapphire)
-	for p_id in [1, 2]:
+	for p_id: int in [1, 2]:
 		var holder := Node3D.new()
 		holder.name = "PawnHolder_P%d" % p_id
 		pawns_root.add_child(holder)
@@ -722,32 +722,32 @@ func _has_v(wr: int, wc: int, extra_v: Dictionary) -> bool:
 	var k := _wall_key(wr, wc)
 	return _v_set.has(k) or extra_v.has(k)
 
-func get_legal_pawn_moves(g_id: int) -> Array:
+func get_legal_pawn_moves(g_id: int) -> Array[Vector2i]:
 	var p_rc: Array = pawns[g_id - 1]
 	var opp_rc: Array = pawns[2 - g_id]
-	var r := int(p_rc[0])
-	var c := int(p_rc[1])
-	var orow := int(opp_rc[0])
-	var ocol := int(opp_rc[1])
-	var legal: Array = []
-	var dirs := [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
-	for d in dirs:
-		var nr := r + d.x
-		var nc := c + d.y
+	var r: int = int(p_rc[0])
+	var c: int = int(p_rc[1])
+	var orow: int = int(opp_rc[0])
+	var ocol: int = int(opp_rc[1])
+	var legal: Array[Vector2i] = []
+	var dirs: Array[Vector2i] = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
+	for d: Vector2i in dirs:
+		var nr: int = r + d.x
+		var nc: int = c + d.y
 		if _is_blocked(r, c, nr, nc):
 			continue
 		if nr == orow and nc == ocol:
-			var jr := nr + d.x
-			var jc := nc + d.y
+			var jr: int = nr + d.x
+			var jc: int = nc + d.y
 			if not _is_blocked(nr, nc, jr, jc):
 				legal.append(Vector2i(jr, jc))
 			else:
 				if d.x != 0:
-					for sc in [-1, 1]:
+					for sc: int in [-1, 1]:
 						if not _is_blocked(nr, nc, nr, nc + sc):
 							legal.append(Vector2i(nr, nc + sc))
 				else:
-					for sr in [-1, 1]:
+					for sr: int in [-1, 1]:
 						if not _is_blocked(nr, nc, nr + sr, nc):
 							legal.append(Vector2i(nr + sr, nc))
 		else:
@@ -758,16 +758,16 @@ func _has_path_to_goal(start_r: int, start_c: int, goal_row: int, extra_h: Dicti
 	if start_r == goal_row:
 		return true
 	var visited: Dictionary = {_wall_key(start_r, start_c): true}
-	var queue: Array = [Vector2i(start_r, start_c)]
-	var head := 0
-	var dirs := [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
+	var queue: Array[Vector2i] = [Vector2i(start_r, start_c)]
+	var head: int = 0
+	var dirs: Array[Vector2i] = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
 	while head < queue.size():
 		var cur: Vector2i = queue[head]
 		head += 1
-		for d in dirs:
-			var nr := cur.x + d.x
-			var nc := cur.y + d.y
-			var vk := _wall_key(nr, nc)
+		for d: Vector2i in dirs:
+			var nr: int = cur.x + d.x
+			var nc: int = cur.y + d.y
+			var vk: String = _wall_key(nr, nc)
 			if visited.has(vk):
 				continue
 			if _is_blocked(cur.x, cur.y, nr, nc, extra_h, extra_v):
@@ -891,9 +891,9 @@ func _local_pos_to_canonical_wall(local_v: Vector3) -> Vector2i:
 	return _visual_to_canonical_wall(vwr, vwc)
 
 func _attempt_pawn_move(r: int, c: int) -> void:
-	var legal := get_legal_pawn_moves(my_player_index)
-	var is_ok := false
-	for m in legal:
+	var legal: Array[Vector2i] = get_legal_pawn_moves(my_player_index)
+	var is_ok: bool = false
+	for m: Vector2i in legal:
 		if m.x == r and m.y == c:
 			is_ok = true
 			break
@@ -1146,7 +1146,7 @@ func _sync_all_visuals(skip_pawn_snap: bool = false) -> void:
 		lbl_bottom_start_3d.text = "▲ جهت حرکت شما ▲"
 
 	if not skip_pawn_snap:
-		for p_id in [1, 2]:
+		for p_id: int in [1, 2]:
 			var node: Node3D = pawn_nodes[p_id - 1]
 			if is_instance_valid(node):
 				var rc: Array = pawns[p_id - 1]
@@ -1159,24 +1159,24 @@ func _sync_all_visuals(skip_pawn_snap: bool = false) -> void:
 	_refresh_dock_buttons()
 
 func _rebuild_placed_walls_visual() -> void:
-	for n in placed_wall_nodes:
+	for n: Node3D in placed_wall_nodes:
 		if is_instance_valid(n):
 			n.queue_free()
 	placed_wall_nodes.clear()
 
 	for w in h_walls:
-		var wr := int(w[0])
-		var wc := int(w[1])
-		var f := _create_fence_3d(_mat_wall_default)
+		var wr: int = int(w[0])
+		var wc: int = int(w[1])
+		var f: Node3D = _create_fence_3d(_mat_wall_default)
 		f.position = _wall_to_local_pos(wr, wc, 0.002)
 		f.rotation_degrees = Vector3.ZERO
 		walls_root.add_child(f)
 		placed_wall_nodes.append(f)
 
 	for w in v_walls:
-		var wr := int(w[0])
-		var wc := int(w[1])
-		var f := _create_fence_3d(_mat_wall_default)
+		var wr: int = int(w[0])
+		var wc: int = int(w[1])
+		var f: Node3D = _create_fence_3d(_mat_wall_default)
 		f.position = _wall_to_local_pos(wr, wc, 0.002)
 		f.rotation_degrees = Vector3(0.0, 90.0, 0.0)
 		walls_root.add_child(f)
@@ -1236,15 +1236,17 @@ func _refresh_highlights_and_preview() -> void:
 		return
 
 	if current_mode == ACTION_MOVE and is_my_turn and not is_board_locked:
-		var legal := get_legal_pawn_moves(my_player_index)
+		var legal: Array[Vector2i] = get_legal_pawn_moves(my_player_index)
 		var my_rc: Array = pawns[my_player_index - 1]
-		for m in legal:
-			var vr_vc := _canonical_to_visual_rc(m.x, m.y)
-			var pad_idx := vr_vc.x * BOARD_SIZE + vr_vc.y
+		var my_r: int = int(my_rc[0])
+		var my_c: int = int(my_rc[1])
+		for m: Vector2i in legal:
+			var vr_vc: Vector2i = _canonical_to_visual_rc(m.x, m.y)
+			var pad_idx: int = vr_vc.x * BOARD_SIZE + vr_vc.y
 			if pad_idx >= 0 and pad_idx < legal_move_pads.size():
 				var pad: MeshInstance3D = legal_move_pads[pad_idx]
-				var dist := abs(m.x - int(my_rc[0])) + abs(m.y - int(my_rc[1]))
-				var is_hov := (hovered_cell_rc.x == m.x and hovered_cell_rc.y == m.y)
+				var dist: int = absi(m.x - my_r) + absi(m.y - my_c)
+				var is_hov: bool = (hovered_cell_rc.x == m.x and hovered_cell_rc.y == m.y)
 				if is_hov:
 					pad.material_override = _mat_hover_pad
 				elif dist >= 2:
