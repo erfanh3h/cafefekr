@@ -117,18 +117,14 @@ func _init() -> void:
 	camera_pitch = -0.88
 
 func _ready() -> void:
-	super._ready()
+	game_type = GameTypes.RISK
 	_mats = RiskMaterials.create_palette()
 	_load_3d_meshes()
 	_detect_players_and_local_id()
 	_build_3d_war_room()
 	_build_floating_ui()
 	_connect_signals()
-
-	if not GameManager.last_board_data.is_empty():
-		setup_board(GameManager.last_board_data)
-	if not GameManager.my_user_data.is_empty():
-		_sync_private_user_data(GameManager.my_user_data)
+	super._ready()
 
 	_update_hud_visibility()
 	_refresh_all_3d_and_hud()
@@ -153,20 +149,29 @@ func _enforce_camera_framing() -> void:
 func _exit_tree() -> void:
 	if NetworkManager and NetworkManager.risk_event_received.is_connected(_on_risk_event_received):
 		NetworkManager.risk_event_received.disconnect(_on_risk_event_received)
-	if GameManager and GameManager.user_data_received.is_connected(_sync_private_user_data):
-		GameManager.user_data_received.disconnect(_sync_private_user_data)
+	if NetworkManager and NetworkManager.user_data_received.is_connected(_sync_private_user_data):
+		NetworkManager.user_data_received.disconnect(_sync_private_user_data)
+	if NetworkManager and NetworkManager.player_surrendered.is_connected(on_player_surrendered):
+		NetworkManager.player_surrendered.disconnect(on_player_surrendered)
+	if NetworkManager and NetworkManager.reconnect_data_received.is_connected(_on_internal_reconnect_data):
+		NetworkManager.reconnect_data_received.disconnect(_on_internal_reconnect_data)
+	if is_instance_valid(_hud_root):
+		_hud_root.queue_free()
 	if is_instance_valid(_hud_layer):
 		_hud_layer.queue_free()
+	super._exit_tree()
 
 func _load_3d_meshes() -> void:
-	if ResourceLoader.exists("res://assets/models/chess/Rook.obj"):
-		_rook_mesh = load("res://assets/models/chess/Rook.obj")
-	if ResourceLoader.exists("res://assets/models/chess/Knight.obj"):
-		_knight_mesh = load("res://assets/models/chess/Knight.obj")
-	if ResourceLoader.exists("res://assets/models/chess/King.obj"):
-		_king_mesh = load("res://assets/models/chess/King.obj")
-	if ResourceLoader.exists("res://assets/models/checkers/crown.obj"):
-		_crown_mesh = load("res://assets/models/checkers/crown.obj")
+	if ResourceLoader.exists("res://assets/models/chess/rook.obj"):
+		_rook_mesh = load("res://assets/models/chess/rook.obj")
+	if ResourceLoader.exists("res://assets/models/chess/knight.obj"):
+		_knight_mesh = load("res://assets/models/chess/knight.obj")
+	if ResourceLoader.exists("res://assets/models/chess/king.obj"):
+		_king_mesh = load("res://assets/models/chess/king.obj")
+	if ResourceLoader.exists("res://assets/models/risk/crown.obj"):
+		_crown_mesh = load("res://assets/models/risk/crown.obj")
+	else:
+		_crown_mesh = _king_mesh
 
 func _detect_players_and_local_id() -> void:
 	if GameManager.my_player_index >= 1 and GameManager.my_player_index <= 4:
@@ -174,10 +179,7 @@ func _detect_players_and_local_id() -> void:
 	else:
 		my_player_index = 1
 
-	var p_cnt: int = GameManager.selected_With_Count_Players
-	if GameManager.match_gamers.size() >= 2:
-		p_cnt = GameManager.match_gamers.size()
-	total_players = clampi(p_cnt, 2, 4)
+	total_players = clampi(max(2, GameManager.match_players.size()), 2, 4)
 
 	active_player_indexes.clear()
 	for i: int in range(1, total_players + 1):
@@ -186,8 +188,12 @@ func _detect_players_and_local_id() -> void:
 func _connect_signals() -> void:
 	if NetworkManager and not NetworkManager.risk_event_received.is_connected(_on_risk_event_received):
 		NetworkManager.risk_event_received.connect(_on_risk_event_received)
-	if GameManager and not GameManager.user_data_received.is_connected(_sync_private_user_data):
-		GameManager.user_data_received.connect(_sync_private_user_data)
+	if NetworkManager and not NetworkManager.user_data_received.is_connected(_sync_private_user_data):
+		NetworkManager.user_data_received.connect(_sync_private_user_data)
+	if NetworkManager and not NetworkManager.player_surrendered.is_connected(on_player_surrendered):
+		NetworkManager.player_surrendered.connect(on_player_surrendered)
+	if NetworkManager and not NetworkManager.reconnect_data_received.is_connected(_on_internal_reconnect_data):
+		NetworkManager.reconnect_data_received.connect(_on_internal_reconnect_data)
 
 func _build_3d_war_room() -> void:
 	if is_instance_valid(_board_root):
@@ -688,10 +694,29 @@ func _build_inspector_and_log_modals() -> void:
 func _update_hud_visibility() -> void:
 	if not is_instance_valid(_hud_root):
 		return
+	var tree: SceneTree = get_tree()
 	var lobby_open: bool = false
-	var base_hud: Node = get_tree().root.find_child("BaseGameHUD", true, false)
-	if is_instance_valid(base_hud) and "start_overlay" in base_hud and is_instance_valid(base_hud.start_overlay):
-		lobby_open = base_hud.start_overlay.visible
+	if tree:
+		var base_hud: Node = tree.get_first_node_in_group("base_game_hud")
+		if not is_instance_valid(base_hud):
+			base_hud = tree.root.find_child("BaseGameHUD", true, false)
+		if is_instance_valid(base_hud):
+			if _hud_root.get_parent() != base_hud:
+				if _hud_root.get_parent():
+					_hud_root.get_parent().remove_child(_hud_root)
+				base_hud.add_child(_hud_root)
+				var start_ov_node: Node = base_hud.get_node_or_null("StartGameOverlay")
+				if is_instance_valid(start_ov_node):
+					base_hud.move_child(_hud_root, start_ov_node.get_index())
+				if is_instance_valid(_hud_layer):
+					_hud_layer.queue_free()
+					_hud_layer = null
+			var s_ov: Control = base_hud.get_node_or_null("StartGameOverlay") as Control
+			if is_instance_valid(s_ov) and s_ov.visible:
+				lobby_open = true
+			var r_dlg: Control = base_hud.get_node_or_null("GameResultDialog") as Control
+			if is_instance_valid(r_dlg) and r_dlg.visible:
+				lobby_open = true
 	_hud_root.visible = (GameManager.is_game_active or _match_started) and not lobby_open
 
 func _is_hud_overlay_blocking() -> bool:

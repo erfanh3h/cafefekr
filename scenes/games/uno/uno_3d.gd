@@ -125,11 +125,11 @@ func _init() -> void:
 	camera_pitch = -0.82
 
 func _ready() -> void:
-	super._ready()
+	game_type = GameTypes.UNO
 	_setup_table_3d()
 	_build_hud()
-	_connect_network_signals()
-	_apply_initial_cached_data()
+	super._ready()
+	_connect_uno_signals()
 	_refresh_all_visuals()
 	_update_hud_visibility()
 	call_deferred("_enforce_camera_framing")
@@ -141,7 +141,7 @@ func _enforce_camera_framing() -> void:
 		table.target_pitch = camera_pitch
 		table.target_yaw = 0.0
 		if table.has_method("set_player_seats_count"):
-			var p_cnt: int = max(2, GameManager.selected_With_Count_Players)
+			var p_cnt: int = clampi(max(2, GameManager.match_players.size()), 2, 4)
 			table.set_player_seats_count(p_cnt)
 
 func _process(_delta: float) -> void:
@@ -154,32 +154,29 @@ func _setup_table_3d() -> void:
 	table_3d.draw_pile_clicked.connect(_on_draw_action_pressed)
 	table_3d.uno_bell_clicked.connect(_on_uno_button_pressed)
 
-func _connect_network_signals() -> void:
-	if not NetworkManager.uno_event_received.is_connected(_on_uno_event_received):
-		NetworkManager.uno_event_received.connect(_on_uno_event_received)
-	if not GameManager.user_data_received.is_connected(_on_user_data_received):
-		GameManager.user_data_received.connect(_on_user_data_received)
-	if not NetworkManager.win_happened.is_connected(_on_win_happened):
-		NetworkManager.win_happened.connect(_on_win_happened)
+func _connect_uno_signals() -> void:
+	if not NetworkManager.user_data_received.is_connected(_on_user_data_received):
+		NetworkManager.user_data_received.connect(_on_user_data_received)
+	if not NetworkManager.risk_event_received.is_connected(_on_uno_event_received):
+		NetworkManager.risk_event_received.connect(_on_uno_event_received)
+	if not NetworkManager.win_happened_received.is_connected(_on_win_happened):
+		NetworkManager.win_happened_received.connect(_on_win_happened)
+	if not NetworkManager.reconnect_data_received.is_connected(_on_internal_reconnect_data):
+		NetworkManager.reconnect_data_received.connect(_on_internal_reconnect_data)
+
+func _disconnect_uno_signals() -> void:
+	if NetworkManager.user_data_received.is_connected(_on_user_data_received):
+		NetworkManager.user_data_received.disconnect(_on_user_data_received)
+	if NetworkManager.risk_event_received.is_connected(_on_uno_event_received):
+		NetworkManager.risk_event_received.disconnect(_on_uno_event_received)
+	if NetworkManager.win_happened_received.is_connected(_on_win_happened):
+		NetworkManager.win_happened_received.disconnect(_on_win_happened)
+	if NetworkManager.reconnect_data_received.is_connected(_on_internal_reconnect_data):
+		NetworkManager.reconnect_data_received.disconnect(_on_internal_reconnect_data)
 
 func _exit_tree() -> void:
-	if NetworkManager.uno_event_received.is_connected(_on_uno_event_received):
-		NetworkManager.uno_event_received.disconnect(_on_uno_event_received)
-	if GameManager.user_data_received.is_connected(_on_user_data_received):
-		GameManager.user_data_received.disconnect(_on_user_data_received)
-	if NetworkManager.win_happened.is_connected(_on_win_happened):
-		NetworkManager.win_happened.disconnect(_on_win_happened)
-	cleanup_board()
-
-func _apply_initial_cached_data() -> void:
-	if not GameManager.last_board_data.is_empty():
-		var b_data: Variant = GameManager.last_board_data.get("game_data", GameManager.last_board_data)
-		if typeof(b_data) == TYPE_DICTIONARY and not (b_data as Dictionary).is_empty():
-			_match_started = true
-			_apply_uno_state_dict(b_data as Dictionary)
-	if not GameManager.my_user_data.is_empty():
-		_match_started = true
-		_apply_uno_state_dict(GameManager.my_user_data)
+	_disconnect_uno_signals()
+	super._exit_tree()
 
 # ==============================================================================
 # 2. MINIMAL, GAMER-FRIENDLY FLOATING HUD ARCHITECTURE
@@ -577,14 +574,45 @@ func _update_hands_count_from_variant(raw_counts: Variant) -> void:
 # 4. VISUAL REFRESH (3D TABLETOP, 3D OPPONENTS & FLOATING CURVED CARD HAND)
 # ==============================================================================
 
+func _is_hud_overlay_blocking() -> bool:
+	if not _match_started and not GameManager.is_game_active:
+		return true
+	var tree: SceneTree = get_tree()
+	if not tree:
+		return false
+	var hud: Node = tree.get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(hud):
+		hud = tree.root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		var start_ov: Control = hud.get_node_or_null("StartGameOverlay") as Control
+		if is_instance_valid(start_ov) and start_ov.visible:
+			return true
+		var res_dlg: Control = hud.get_node_or_null("GameResultDialog") as Control
+		if is_instance_valid(res_dlg) and res_dlg.visible:
+			return true
+	return false
+
 func _update_hud_visibility() -> void:
 	if not is_instance_valid(hud_root):
 		return
-	var lobby_open: bool = false
-	var base_hud: Node = get_tree().root.find_child("BaseGameHUD", true, false)
-	if is_instance_valid(base_hud) and "start_overlay" in base_hud and is_instance_valid(base_hud.start_overlay):
-		lobby_open = base_hud.start_overlay.visible
-	hud_root.visible = (GameManager.is_game_active or _match_started) and not lobby_open
+	var tree: SceneTree = get_tree()
+	if tree:
+		var hud: Node = tree.get_first_node_in_group("base_game_hud")
+		if not is_instance_valid(hud):
+			hud = tree.root.find_child("BaseGameHUD", true, false)
+		if is_instance_valid(hud) and hud_root.get_parent() != hud:
+			if hud_root.get_parent():
+				hud_root.get_parent().remove_child(hud_root)
+			hud.add_child(hud_root)
+			var start_ov: Node = hud.get_node_or_null("StartGameOverlay")
+			if is_instance_valid(start_ov):
+				hud.move_child(hud_root, start_ov.get_index())
+			if is_instance_valid(hud_layer):
+				hud_layer.queue_free()
+				hud_layer = null
+	var should_show: bool = not _is_hud_overlay_blocking()
+	if hud_root.visible != should_show:
+		hud_root.visible = should_show
 
 func _refresh_all_visuals() -> void:
 	my_player_index = max(1, GameManager.my_player_index)
@@ -644,7 +672,7 @@ func _refresh_top_status_pill(playable_cnt: int) -> void:
 
 func _refresh_3d_opponents() -> void:
 	_pid_to_seat_slot.clear()
-	var total_p: int = max(2, GameManager.selected_With_Count_Players)
+	var total_p: int = clampi(max(2, GameManager.match_players.size()), 2, 4)
 	for k: Variant in hands_count.keys():
 		var ki: int = int(str(k))
 		if ki > total_p and int(hands_count[k]) > 0:
@@ -830,7 +858,7 @@ func _on_wild_color_selected(chosen_color: String) -> void:
 func _dispatch_play_card(uid: int, chosen_color: String, card_data: Dictionary, widget: Control) -> void:
 	if uid < 0:
 		return
-	AudioManager.sfx_move()
+	AudioManager.sfx_move_piece()
 
 	if is_instance_valid(vfx_layer) and is_instance_valid(table_3d):
 		var start_pos: Vector2 = Vector2(540, 1520)
