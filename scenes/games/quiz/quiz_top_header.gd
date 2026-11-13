@@ -2,10 +2,14 @@ class_name QuizTopHeader
 extends "res://scenes/games/base/base_top_header.gd"
 
 # Quiz Multi-Player Top Header (Supports 2, 3, or 4 Players)
-# Displays player avatars, names, role tags, and live quiz scores (+1 / -1 / 0).
-# Inherits BaseTopHeader structurally without altering 2-player headers.
+# Displays player avatars, names, live lock-in status, and color-coded quiz scores (+1 / -1 / 0).
+# Inherits BaseTopHeader structurally without altering other games.
 
 var _quiz_scores: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
+var _player_answered: Dictionary = {1: false, 2: false, 3: false, 4: false}
+var _role_styles_default: Dictionary = {}
+var _role_style_answered: StyleBoxFlat = null
+var _score_styles: Dictionary = {}
 
 const FACTION_COLORS: Dictionary = {
 	1: Color(0.95, 0.25, 0.30), # Ruby Red
@@ -36,6 +40,12 @@ func _ready() -> void:
 
 func _is_score_based_game() -> bool:
 	return true
+
+func _get_role_badge_text(player_idx: int) -> String:
+	var total_players = _get_total_players()
+	if total_players > 2:
+		return FACTION_BADGES_COMPACT.get(player_idx, "بازیکن")
+	return FACTION_BADGES_2P.get(player_idx, "بازیکن")
 
 func _setup_multiplayer_styles() -> void:
 	# P3 Active (Emerald Jade Illuminated Plaque)
@@ -69,6 +79,45 @@ func _setup_multiplayer_styles() -> void:
 	_style_match_box_p3.border_color = Color(0.35, 0.92, 0.52, 0.95)
 	_style_match_box_p4 = _style_match_box_normal.duplicate()
 	_style_match_box_p4.border_color = Color(1.0, 0.86, 0.28, 0.95)
+
+	_role_style_answered = StyleBoxFlat.new()
+	_role_style_answered.bg_color = Color(0.08, 0.34, 0.22, 0.92)
+	_role_style_answered.border_color = Color(0.35, 0.98, 0.62, 0.92)
+	_role_style_answered.set_border_width_all(1)
+	_role_style_answered.set_corner_radius_all(10)
+	_role_style_answered.content_margin_left = 8
+	_role_style_answered.content_margin_right = 8
+	_role_style_answered.content_margin_top = 2
+	_role_style_answered.content_margin_bottom = 2
+
+	for idx in [1, 2]:
+		var role_lbl = p1_role_badge if idx == 1 else p2_role_badge
+		if is_instance_valid(role_lbl):
+			var sb = role_lbl.get_theme_stylebox("normal")
+			if sb is StyleBoxFlat:
+				_role_styles_default[idx] = sb.duplicate()
+
+	for k in ["pos", "neg", "zero"]:
+		var sb_s = StyleBoxFlat.new()
+		sb_s.set_border_width_all(2)
+		sb_s.border_width_bottom = 3
+		sb_s.set_corner_radius_all(14)
+		sb_s.shadow_color = Color(0, 0, 0, 0.42)
+		sb_s.shadow_size = 4
+		sb_s.content_margin_left = 6
+		sb_s.content_margin_right = 6
+		sb_s.content_margin_top = 4
+		sb_s.content_margin_bottom = 4
+		if k == "pos":
+			sb_s.bg_color = Color(0.06, 0.22, 0.11, 0.95)
+			sb_s.border_color = Color(0.35, 0.96, 0.55, 0.95)
+		elif k == "neg":
+			sb_s.bg_color = Color(0.24, 0.06, 0.08, 0.95)
+			sb_s.border_color = Color(1.0, 0.38, 0.40, 0.95)
+		else:
+			sb_s.bg_color = Color(0.09, 0.05, 0.03, 0.92)
+			sb_s.border_color = Color(0.94, 0.76, 0.28, 0.90)
+		_score_styles[k] = sb_s
 
 func _build_extra_player_cards() -> void:
 	var players_row = get_node_or_null("Margin/VBoxMain/PlayersRow") as HBoxContainer
@@ -121,6 +170,7 @@ func _build_extra_player_cards() -> void:
 			sb_role.content_margin_top = 2
 			sb_role.content_margin_bottom = 2
 			role_lbl.add_theme_stylebox_override("normal", sb_role)
+			_role_styles_default[idx] = sb_role.duplicate()
 			role_lbl.text = FACTION_BADGES_COMPACT[idx]
 
 		if is_instance_valid(score_lbl):
@@ -151,6 +201,29 @@ func _build_extra_player_cards() -> void:
 func _get_total_players() -> int:
 	return clampi(max(2, GameManager.match_players.size()), 2, 4)
 
+func _get_card_refs(gid: int) -> Dictionary:
+	if gid == 1:
+		return {
+			"card": p1_card,
+			"av_frame": _p1_avatar_frame,
+			"name": p1_name,
+			"role": p1_role_badge,
+			"score_badge": _p1_score_badge,
+			"score": p1_score_lbl,
+		}
+	elif gid == 2:
+		return {
+			"card": p2_card,
+			"av_frame": _p2_avatar_frame,
+			"name": p2_name,
+			"role": p2_role_badge,
+			"score_badge": _p2_score_badge,
+			"score": p2_score_lbl,
+		}
+	elif _extra_cards.has(gid):
+		return _extra_cards[gid]
+	return {}
+
 func _apply_layout_for_player_count(total_players: int) -> void:
 	var players_row = get_node_or_null("Margin/VBoxMain/PlayersRow") as HBoxContainer
 	var is_compact = (total_players > 2)
@@ -180,21 +253,21 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 		if not is_instance_valid(c):
 			continue
 		c.visible = (idx <= total_players)
-		c.custom_minimum_size = Vector2(0, 118 if is_compact else 140)
+		c.custom_minimum_size = Vector2(0, 114 if is_compact else 136)
 		var hbox = c.get_node_or_null("HBox") as HBoxContainer
 		if hbox:
 			hbox.add_theme_constant_override("separation", 6 if is_compact else 12)
 		var av_c: Control = item["av_c"]
 		if is_instance_valid(av_c):
-			var av_sz = 68.0 if total_players == 4 else (76.0 if total_players == 3 else 96.0)
+			var av_sz = 64.0 if total_players == 4 else (74.0 if total_players == 3 else 94.0)
 			av_c.custom_minimum_size = Vector2(av_sz, av_sz)
 		var nm: Label = item["name"]
 		if is_instance_valid(nm):
-			nm.add_theme_font_size_override("font_size", 26 if total_players == 4 else (27 if total_players == 3 else 36))
+			nm.add_theme_font_size_override("font_size", 24 if total_players == 4 else (26 if total_players == 3 else 34))
 		var rl: Label = item["role"]
 		if is_instance_valid(rl):
-			rl.add_theme_font_size_override("font_size", 20 if is_compact else 24)
-			rl.text = FACTION_BADGES_COMPACT[idx] if is_compact else FACTION_BADGES_2P[idx]
+			rl.add_theme_font_size_override("font_size", 19 if is_compact else 23)
+			rl.text = "🔒 ثبت شد" if bool(_player_answered.get(idx, false)) else (FACTION_BADGES_COMPACT[idx] if is_compact else FACTION_BADGES_2P[idx])
 		var sb: PanelContainer = item["score_b"]
 		if is_instance_valid(sb):
 			sb.visible = true
@@ -202,7 +275,7 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			sb.custom_minimum_size = Vector2(b_sz, b_sz)
 		var sc: Label = item["score"]
 		if is_instance_valid(sc):
-			sc.add_theme_font_size_override("font_size", 30 if is_compact else 40)
+			sc.add_theme_font_size_override("font_size", 28 if is_compact else 38)
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_my_player_index = my_idx
@@ -247,6 +320,7 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 			info["side_tag"].add_theme_stylebox_override("normal", sb_side)
 
 	update_quiz_scores(_quiz_scores)
+	_sync_all_cards_visual()
 
 func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
 	super.setup_match(game_name_fa, mode_title, round_num, max_rounds, turn_time)
@@ -255,31 +329,104 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
 	update_quiz_scores(_quiz_scores)
+	_sync_all_cards_visual()
+
+func _on_turn_changed(_turn: int) -> void:
+	# Simultaneous quiz: illuminate all active player cards uniformly and preserve quiz status banner
+	_sync_all_cards_visual()
+	if is_instance_valid(match_details_box):
+		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
+	if is_instance_valid(lbl_turn_banner) and GameManager.is_game_active:
+		if bool(_player_answered.get(_my_player_index, false)):
+			lbl_turn_banner.text = "🔒 پاسخ شما ثبت شد — منتظر پایان زمان..."
+			lbl_turn_banner.add_theme_color_override("font_color", Color(0.42, 0.95, 0.65))
+		else:
+			lbl_turn_banner.text = "🤔 گزینه درست را انتخاب کنید"
+			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
+
+func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
+	super.update_timer(remaining_sec, total_sec, turn)
+	# Keep royal gold match box border when not in final 4-second danger countdown
+	var is_danger = (remaining_sec <= 4.0 and remaining_sec > 0.0)
+	if not is_danger and is_instance_valid(match_details_box):
+		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
+
+func _sync_all_cards_visual() -> void:
+	var active_styles = {1: _style_p1_active, 2: _style_p2_active, 3: _style_p3_active, 4: _style_p4_active}
+	var av_active_styles = {1: _style_avatar_p1_active, 2: _style_avatar_p2_active, 3: _style_avatar_p3_active, 4: _style_avatar_p4_active}
+	var total_players = _get_total_players()
+	for gid in range(1, total_players + 1):
+		var refs = _get_card_refs(gid)
+		var c: PanelContainer = refs.get("card")
+		var av_f: Panel = refs.get("av_frame")
+		if is_instance_valid(c) and active_styles.get(gid):
+			c.add_theme_stylebox_override("panel", active_styles[gid])
+			c.scale = Vector2.ONE
+		if is_instance_valid(av_f) and av_active_styles.get(gid):
+			av_f.add_theme_stylebox_override("panel", av_active_styles[gid])
+
+func set_player_answered(gid: int, answered: bool) -> void:
+	var was_answered = bool(_player_answered.get(gid, false))
+	_player_answered[gid] = answered
+	var refs = _get_card_refs(gid)
+	var role_lbl: Label = refs.get("role")
+	var total_players = _get_total_players()
+	if is_instance_valid(role_lbl):
+		if answered:
+			role_lbl.text = "🔒 ثبت شد"
+			if is_instance_valid(_role_style_answered):
+				role_lbl.add_theme_stylebox_override("normal", _role_style_answered)
+			role_lbl.add_theme_color_override("font_color", Color(0.55, 1.0, 0.72))
+		else:
+			role_lbl.text = FACTION_BADGES_COMPACT.get(gid, "") if total_players > 2 else FACTION_BADGES_2P.get(gid, "")
+			if _role_styles_default.has(gid):
+				role_lbl.add_theme_stylebox_override("normal", _role_styles_default[gid])
+			role_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78))
+	if answered and not was_answered:
+		var card: Control = refs.get("card")
+		if is_instance_valid(card):
+			_animate_card_pulse(card)
+
+func clear_answered_states() -> void:
+	for gid in [1, 2, 3, 4]:
+		set_player_answered(gid, false)
+
+func update_scores(p1_score: int, p2_score: int) -> void:
+	# Preserve multiplayer scores while keeping 2-player updates accurate
+	var next_scores = _quiz_scores.duplicate()
+	next_scores[1] = p1_score
+	next_scores[2] = p2_score
+	update_quiz_scores(next_scores)
 
 func update_quiz_scores(scores: Dictionary) -> void:
 	for gid in [1, 2, 3, 4]:
-		var val = 0
+		var val = _quiz_scores.get(gid, 0)
 		if scores.has(gid):
 			val = int(scores[gid])
 		elif scores.has(str(gid)):
 			val = int(scores[str(gid)])
+		var prev_val = int(_quiz_scores.get(gid, 0))
 		_quiz_scores[gid] = val
 
-		var lbl: Label = null
-		if gid == 1 and is_instance_valid(p1_score_lbl):
-			lbl = p1_score_lbl
-		elif gid == 2 and is_instance_valid(p2_score_lbl):
-			lbl = p2_score_lbl
-		elif _extra_cards.has(gid):
-			lbl = _extra_cards[gid]["score"]
+		var refs = _get_card_refs(gid)
+		var lbl: Label = refs.get("score")
+		var badge: PanelContainer = refs.get("score_badge")
 
 		if is_instance_valid(lbl):
 			var formatted = _fa_digits(val) if val >= 0 else ("-%s" % _fa_digits(abs(val)))
 			lbl.text = formatted
-			# Quick bounce animation
-			var tw = create_tween()
-			tw.tween_property(lbl, "scale", Vector2(1.25, 1.25), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw.tween_property(lbl, "scale", Vector2.ONE, 0.15)
+			var txt_col = Color(0.45, 0.98, 0.58) if val > 0 else (Color(1.0, 0.42, 0.45) if val < 0 else Color(1.0, 0.90, 0.35))
+			lbl.add_theme_color_override("font_color", txt_col)
+			if is_instance_valid(badge):
+				var sb_key = "pos" if val > 0 else ("neg" if val < 0 else "zero")
+				if _score_styles.has(sb_key):
+					badge.add_theme_stylebox_override("panel", _score_styles[sb_key])
+			if val != prev_val:
+				var anim_target: Control = badge if is_instance_valid(badge) else lbl
+				anim_target.pivot_offset = anim_target.size * 0.5
+				var tw = create_tween()
+				tw.tween_property(anim_target, "scale", Vector2(1.22, 1.22), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				tw.tween_property(anim_target, "scale", Vector2.ONE, 0.16)
 
 func set_quiz_turn_banner(text: String, col: Color = Color(1.0, 0.88, 0.45)) -> void:
 	if is_instance_valid(lbl_turn_banner):
@@ -289,6 +436,20 @@ func set_quiz_turn_banner(text: String, col: Color = Color(1.0, 0.88, 0.45)) -> 
 func set_question_number(turn_num: int, total: int = 10) -> void:
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "سوال %s از %s" % [_fa_digits(turn_num), _fa_digits(total)]
+
+func reset_header() -> void:
+	_quiz_scores = {1: 0, 2: 0, 3: 0, 4: 0}
+	super.reset_header()
+	clear_answered_states()
+	update_quiz_scores(_quiz_scores)
+	for idx in [3, 4]:
+		if _extra_cards.has(idx):
+			var info = _extra_cards[idx]
+			if is_instance_valid(info.get("card")):
+				info["card"].scale = Vector2.ONE
+			if is_instance_valid(info.get("reaction_bubble")):
+				info["reaction_bubble"].top_level = true
+				info["reaction_bubble"].visible = false
 
 func show_reaction(user_index: int, reaction_id: int) -> void:
 	if user_index <= 2 or not _extra_cards.has(user_index):
