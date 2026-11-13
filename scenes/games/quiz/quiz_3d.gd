@@ -2,11 +2,11 @@ class_name Quiz3D
 extends "res://scripts/games/base_game_board.gd"
 
 # Quiz3D - Cafe Fekr Royal 3D Tabletop Trivia Board
-# Pure 3D board architecture (zero 2D CanvasLayer gameplay cards):
-# - Carved mahogany, brushed brass & emerald velvet tabletop console within [-0.64..+0.64] x [-0.58..+0.58]
+# Pure 3D board architecture using native Godot 4 Label3D & PBR meshes (zero SubViewport/CanvasLayer bugs):
+# - Carved mahogany, brushed brass & emerald velvet tabletop console within [-0.64..+0.64] x [-0.67..+0.67]
 # - 10 physical brass & glowing jewel progress sockets along the upper crown bar
-# - Inclined walnut-and-brass 3D Question Lectern with crisp SubViewport parchment tablet
-# - 4 physical 3D interactive Answer Keycaps (الف، ب، ج، د) with single-source _unhandled_input raycasting
+# - Inclined walnut-and-brass 3D Question Lectern with large, pure-white unshaded Label3D text
+# - 4 large physical 3D interactive Answer Keycaps (الف، ب، ج، د) with pure-white unshaded Label3D text
 # - 2-4 physical 3D Player Crystal Pedestals & nameplates with live lock-in beacons & reveal answer pucks
 # - Full 1:1 protocol sync with kafehfekrbackend/Controllers/GameSession/quiz_game_session.py
 
@@ -22,11 +22,18 @@ const FACTION_COLORS: Dictionary = {
 }
 
 const KEYCAP_COORDS: Array[Vector3] = [
-	Vector3(0.285, 0.052, 0.090),   # Option 1 (الف) - Top-Right (RTL)
-	Vector3(-0.285, 0.052, 0.090),  # Option 2 (ب)   - Top-Left
-	Vector3(0.285, 0.052, 0.305),   # Option 3 (ج)   - Bottom-Right
-	Vector3(-0.285, 0.052, 0.305),  # Option 4 (د)   - Bottom-Left
+	Vector3(0.298, 0.052, 0.105),   # Option 1 (الف) - Top-Right (RTL)
+	Vector3(-0.298, 0.052, 0.105),  # Option 2 (ب)   - Top-Left
+	Vector3(0.298, 0.052, 0.375),   # Option 3 (ج)   - Bottom-Right
+	Vector3(-0.298, 0.052, 0.375),  # Option 4 (د)   - Bottom-Left
 ]
+
+const FACE_COL_DEFAULT: Color = Color(0.065, 0.045, 0.032)
+const FACE_COL_HOVER: Color = Color(0.120, 0.082, 0.052)
+const FACE_COL_SELECTED: Color = Color(0.06, 0.19, 0.36)
+const FACE_COL_DIMMED: Color = Color(0.05, 0.038, 0.030)
+const FACE_COL_CORRECT: Color = Color(0.05, 0.26, 0.12)
+const FACE_COL_WRONG: Color = Color(0.28, 0.05, 0.07)
 
 # --- Game State ---
 var current_question_num: int = 1
@@ -42,19 +49,17 @@ var player_locked_in: Dictionary = {1: false, 2: false, 3: false, 4: false}
 var _match_started: bool = false
 var _requested_gamer_id_sync: bool = false
 
-# --- Lectern Status / Reveal Progress State ---
+# --- Lectern Status & 3D Reveal Progress Bar ---
 var _lectern_status_text: String = "⏳ گزینه درست را روی کلیدهای پایین لمس کنید"
-var _lectern_status_color: Color = Color(0.96, 0.86, 0.52)
-var _lectern_reveal_pct: float = 0.0
+var _lectern_status_color: Color = Color(1.0, 0.92, 0.58)
 var _lectern_show_reveal_bar: bool = false
 var _reveal_timer_tween: Tween = null
 var _reveal_tween_pct: float = 0.0:
 	set(v):
-		_reveal_tween_pct = v
-		_lectern_reveal_pct = v
-		if is_instance_valid(_lectern_reveal_fill):
-			_lectern_reveal_fill.value = v
-			_queue_vp_redraw(_lectern_vp)
+		_reveal_tween_pct = clampf(v, 0.0, 100.0)
+		if is_instance_valid(_lectern_reveal_bar_fill):
+			var ratio = clampf(_reveal_tween_pct / 100.0, 0.001, 1.0)
+			_lectern_reveal_bar_fill.scale.x = ratio
 
 # --- Input Tracking (Single-Source Camera Raycasting) ---
 var hovered_option_idx: int = 0
@@ -70,11 +75,11 @@ var _mat_mahogany: StandardMaterial3D
 var _mat_walnut: StandardMaterial3D
 var _mat_brass: StandardMaterial3D
 var _mat_emerald_felt: StandardMaterial3D
+var _mat_obsidian_slate: StandardMaterial3D
 var _mat_socket_bronze: StandardMaterial3D
 var _mat_gem_unlit: StandardMaterial3D
 var _mat_gem_done: StandardMaterial3D
 var _mat_gem_active: StandardMaterial3D
-var _mat_seal_sapphire: StandardMaterial3D
 
 # --- 3D Board Scene References ---
 var stand_root: Node3D
@@ -83,26 +88,23 @@ var center_medallion_mat: StandardMaterial3D
 var lbl_crown_counter: Label3D
 var progress_gems: Array[MeshInstance3D] = []
 
-# --- 3D Question Lectern ---
+# --- 3D Question Lectern (Pure Label3D) ---
 var lectern_root: Node3D
-var _lectern_vp: SubViewport
-var _lectern_cat_lbl: Label
-var _lectern_cnt_lbl: Label
-var _lectern_q_lbl: Label
-var _lectern_status_lbl: Label
-var _lectern_reveal_bar_bg: PanelContainer
-var _lectern_reveal_fill: ProgressBar
+var _lectern_cat_lbl: Label3D
+var _lectern_cnt_lbl: Label3D
+var _lectern_q_lbl: Label3D
+var _lectern_status_lbl: Label3D
+var _lectern_reveal_bar_bg: MeshInstance3D
+var _lectern_reveal_bar_fill: MeshInstance3D
 
-# --- 4 Physical 3D Keycaps ---
+# --- 4 Physical 3D Keycaps (Pure Label3D) ---
 var keycap_nodes: Array[Node3D] = []
 var keycap_rim_mats: Array[StandardMaterial3D] = []
+var keycap_face_mats: Array[StandardMaterial3D] = []
 var keycap_hover_rings: Array[MeshInstance3D] = []
 var keycap_badge_mats: Array[StandardMaterial3D] = []
 var keycap_badge_labels: Array[Label3D] = []
-var keycap_vps: Array[SubViewport] = []
-var keycap_text_labels: Array[Label] = []
-var keycap_bg_panels: Array[PanelContainer] = []
-var keycap_bg_styles: Array[StyleBoxFlat] = []
+var keycap_text_labels: Array[Label3D] = []
 var keycap_token_anchors: Array[Node3D] = []
 var keycap_areas: Array[Area3D] = []
 var _spawned_answer_tokens: Array[Node3D] = []
@@ -124,7 +126,7 @@ func _ready() -> void:
 	super._ready()
 	sync_turn_state()
 	_rebuild_player_pedestals()
-	_refresh_lectern_viewport()
+	_refresh_lectern_labels()
 
 func _exit_tree() -> void:
 	_kill_all_tweens()
@@ -212,6 +214,11 @@ func _setup_materials() -> void:
 	_mat_emerald_felt.albedo_color = Color(0.055, 0.165, 0.11)
 	_mat_emerald_felt.roughness = 0.92
 
+	_mat_obsidian_slate = StandardMaterial3D.new()
+	_mat_obsidian_slate.albedo_color = Color(0.055, 0.038, 0.028)
+	_mat_obsidian_slate.roughness = 0.62
+	_mat_obsidian_slate.metallic = 0.04
+
 	_mat_socket_bronze = StandardMaterial3D.new()
 	_mat_socket_bronze.albedo_color = Color(0.32, 0.24, 0.13)
 	_mat_socket_bronze.metallic = 0.75
@@ -238,23 +245,15 @@ func _setup_materials() -> void:
 	_mat_gem_active.emission = Color(1.0, 0.78, 0.20)
 	_mat_gem_active.emission_energy_multiplier = 2.6
 
-	_mat_seal_sapphire = StandardMaterial3D.new()
-	_mat_seal_sapphire.albedo_color = Color(0.20, 0.68, 1.0)
-	_mat_seal_sapphire.metallic = 0.45
-	_mat_seal_sapphire.roughness = 0.18
-	_mat_seal_sapphire.emission_enabled = true
-	_mat_seal_sapphire.emission = Color(0.25, 0.75, 1.0)
-	_mat_seal_sapphire.emission_energy_multiplier = 1.8
-
 # --- 3D Tabletop Board Construction ---
 func _build_3d_board() -> void:
 	stand_root = Node3D.new()
 	stand_root.name = "StandRoot"
 	add_child(stand_root)
 
-	# 1. Brass Outer Trim Base (1.28 x 1.16 footprint strictly within cafe_table safe zone)
+	# 1. Brass Outer Trim Base (1.28 x 1.34 footprint strictly within cafe_table safe zone)
 	var rim_mesh = BoxMesh.new()
-	rim_mesh.size = Vector3(1.28, 0.016, 1.16)
+	rim_mesh.size = Vector3(1.28, 0.016, 1.34)
 	var rim_inst = MeshInstance3D.new()
 	rim_inst.mesh = rim_mesh
 	rim_inst.material_override = _mat_brass
@@ -263,7 +262,7 @@ func _build_3d_board() -> void:
 
 	# 2. Carved Mahogany Board Chassis
 	var chassis_mesh = BoxMesh.new()
-	chassis_mesh.size = Vector3(1.24, 0.036, 1.12)
+	chassis_mesh.size = Vector3(1.24, 0.036, 1.30)
 	var chassis_inst = MeshInstance3D.new()
 	chassis_inst.mesh = chassis_mesh
 	chassis_inst.material_override = _mat_mahogany
@@ -272,7 +271,7 @@ func _build_3d_board() -> void:
 
 	# 3. Recessed Emerald Velvet Felt Playing Bed
 	var felt_mesh = BoxMesh.new()
-	felt_mesh.size = Vector3(1.14, 0.012, 1.02)
+	felt_mesh.size = Vector3(1.16, 0.012, 1.20)
 	var felt_inst = MeshInstance3D.new()
 	felt_inst.mesh = felt_mesh
 	felt_inst.material_override = _mat_emerald_felt
@@ -289,16 +288,16 @@ func _build_3d_board() -> void:
 			var bolster = MeshInstance3D.new()
 			bolster.mesh = corner_mesh
 			bolster.material_override = _mat_brass
-			bolster.position = Vector3(sx * 0.59, 0.044, sz * 0.53)
+			bolster.position = Vector3(sx * 0.59, 0.044, sz * 0.61)
 			stand_root.add_child(bolster)
 
 	# 5. Top Crown Bar (10 Question Progress Sockets + Center Rotating Medallion)
 	_build_top_crown_bar()
 
-	# 6. Inclined 3D Walnut & Brass Question Lectern
+	# 6. Inclined 3D Walnut & Brass Question Lectern (Pure White Label3D)
 	_build_question_lectern()
 
-	# 7. Four Physical 3D Interactive Answer Keycaps (الف، ب، ج، د)
+	# 7. Four Larger Physical 3D Interactive Answer Keycaps (الف، ب، ج، د)
 	_build_answer_keycaps()
 
 	# 8. Dynamic 2-4 Player Crystal Pedestals Container
@@ -309,18 +308,18 @@ func _build_3d_board() -> void:
 func _build_top_crown_bar() -> void:
 	var crown = Node3D.new()
 	crown.name = "TopCrownBar"
-	crown.position = Vector3(0.0, 0.045, -0.495)
+	crown.position = Vector3(0.0, 0.045, -0.585)
 	stand_root.add_child(crown)
 
 	var rail_mesh = BoxMesh.new()
-	rail_mesh.size = Vector3(0.76, 0.018, 0.072)
+	rail_mesh.size = Vector3(0.78, 0.018, 0.076)
 	var rail = MeshInstance3D.new()
 	rail.mesh = rail_mesh
 	rail.material_override = _mat_walnut
 	crown.add_child(rail)
 
 	var rail_trim = BoxMesh.new()
-	rail_trim.size = Vector3(0.78, 0.008, 0.080)
+	rail_trim.size = Vector3(0.80, 0.008, 0.084)
 	var trim_inst = MeshInstance3D.new()
 	trim_inst.mesh = rail_trim
 	trim_inst.material_override = _mat_brass
@@ -342,7 +341,7 @@ func _build_top_crown_bar() -> void:
 	center_medallion = MeshInstance3D.new()
 	center_medallion.mesh = torus
 	center_medallion.material_override = center_medallion_mat
-	center_medallion.position = Vector3(0.0, 0.026, -0.028)
+	center_medallion.position = Vector3(0.0, 0.026, -0.032)
 	center_medallion.rotation_degrees.x = 70.0
 	crown.add_child(center_medallion)
 
@@ -364,249 +363,209 @@ func _build_top_crown_bar() -> void:
 		var sock = MeshInstance3D.new()
 		sock.mesh = sock_mesh
 		sock.material_override = _mat_socket_bronze
-		sock.position = Vector3(x_pos, 0.010, 0.010)
+		sock.position = Vector3(x_pos, 0.010, 0.014)
 		crown.add_child(sock)
 
 		var gem = MeshInstance3D.new()
 		gem.mesh = gem_mesh
 		gem.material_override = _mat_gem_unlit
-		gem.position = Vector3(x_pos, 0.017, 0.010)
+		gem.position = Vector3(x_pos, 0.017, 0.014)
 		crown.add_child(gem)
 		progress_gems.append(gem)
 
 	lbl_crown_counter = Label3D.new()
 	lbl_crown_counter.text = "سوال ۱ از ۱۰"
 	lbl_crown_counter.font = FontHekayat
-	lbl_crown_counter.font_size = 36
-	lbl_crown_counter.pixel_size = 0.0011
-	lbl_crown_counter.modulate = Color(1.0, 0.90, 0.50)
-	lbl_crown_counter.outline_modulate = Color(0.05, 0.02, 0.01, 0.95)
-	lbl_crown_counter.outline_size = 6
+	lbl_crown_counter.font_size = 44
+	lbl_crown_counter.pixel_size = 0.00120
+	lbl_crown_counter.modulate = Color.WHITE
+	lbl_crown_counter.outline_modulate = Color(0.03, 0.02, 0.01, 1.0)
+	lbl_crown_counter.outline_size = 10
+	lbl_crown_counter.shaded = false
 	lbl_crown_counter.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	lbl_crown_counter.position = Vector3(0.0, 0.013, -0.018)
+	lbl_crown_counter.position = Vector3(0.0, 0.015, -0.020)
 	crown.add_child(lbl_crown_counter)
 
 func _build_question_lectern() -> void:
-	# Sculpted Lectern Placement (clean clearance from crown bar above & keycaps below)
+	# Sculpted Lectern Placement (tall 0.44m tablet, clean clearance from crown & keycaps)
 	lectern_root = Node3D.new()
 	lectern_root.name = "QuestionLectern"
-	lectern_root.position = Vector3(0.0, 0.058, -0.215)
-	lectern_root.rotation_degrees = Vector3(7.0, 0.0, 0.0)
+	lectern_root.position = Vector3(0.0, 0.058, -0.265)
+	lectern_root.rotation_degrees = Vector3(5.0, 0.0, 0.0)
 	stand_root.add_child(lectern_root)
 
 	# Carved Walnut Lectern Body
 	var slab_mesh = BoxMesh.new()
-	slab_mesh.size = Vector3(1.10, 0.036, 0.335)
+	slab_mesh.size = Vector3(1.18, 0.038, 0.44)
 	var slab = MeshInstance3D.new()
 	slab.mesh = slab_mesh
 	slab.material_override = _mat_walnut
 	lectern_root.add_child(slab)
 
+	# Recessed Dark Obsidian Slate Tablet (high contrast against pure white Label3D)
+	var slate_mesh = BoxMesh.new()
+	slate_mesh.size = Vector3(1.13, 0.006, 0.39)
+	var slate = MeshInstance3D.new()
+	slate.mesh = slate_mesh
+	slate.material_override = _mat_obsidian_slate
+	slate.position = Vector3(0.0, 0.0195, 0.0)
+	lectern_root.add_child(slate)
+
 	# Raised Brushed Brass Bezel Rim (4 Bars)
 	var w_bar = BoxMesh.new()
-	w_bar.size = Vector3(1.12, 0.014, 0.020)
+	w_bar.size = Vector3(1.20, 0.016, 0.022)
 	for sz in [-1.0, 1.0]:
 		var bar = MeshInstance3D.new()
 		bar.mesh = w_bar
 		bar.material_override = _mat_brass
-		bar.position = Vector3(0.0, 0.018, sz * 0.160)
+		bar.position = Vector3(0.0, 0.019, sz * 0.212)
 		lectern_root.add_child(bar)
 
 	var h_bar = BoxMesh.new()
-	h_bar.size = Vector3(0.020, 0.014, 0.340)
+	h_bar.size = Vector3(0.022, 0.016, 0.445)
 	for sx in [-1.0, 1.0]:
 		var bar = MeshInstance3D.new()
 		bar.mesh = h_bar
 		bar.material_override = _mat_brass
-		bar.position = Vector3(sx * 0.550, 0.018, 0.0)
+		bar.position = Vector3(sx * 0.590, 0.019, 0.0)
 		lectern_root.add_child(bar)
 
-	# SubViewport High-DPI Lectern Display
-	_lectern_vp = SubViewport.new()
-	_lectern_vp.name = "LecternViewport"
-	_lectern_vp.size = Vector2i(1040, 300)
-	_lectern_vp.transparent_bg = false
-	_lectern_vp.msaa_2d = Viewport.MSAA_DISABLED
-	_lectern_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
-	lectern_root.add_child(_lectern_vp)
+	# Brass Header Divider Strip inside Lectern
+	var div_mesh = BoxMesh.new()
+	div_mesh.size = Vector3(1.06, 0.003, 0.005)
+	var div_bar = MeshInstance3D.new()
+	div_bar.mesh = div_mesh
+	div_bar.material_override = _mat_brass
+	div_bar.position = Vector3(0.0, 0.023, -0.118)
+	lectern_root.add_child(div_bar)
 
-	var root_ctrl = Control.new()
-	root_ctrl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root_ctrl.size = Vector2(1040, 300)
-	_lectern_vp.add_child(root_ctrl)
-
-	var bg_panel = PanelContainer.new()
-	bg_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg_panel.size = Vector2(1040, 300)
-	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.08, 0.05, 0.035, 1.0)
-	sb.border_color = Color(0.88, 0.72, 0.32, 0.92)
-	sb.set_border_width_all(6)
-	sb.set_corner_radius_all(18)
-	sb.content_margin_left = 26
-	sb.content_margin_right = 26
-	sb.content_margin_top = 14
-	sb.content_margin_bottom = 14
-	bg_panel.add_theme_stylebox_override("panel", sb)
-	root_ctrl.add_child(bg_panel)
-
-	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
-	bg_panel.add_child(vbox)
-
-	# Header Row inside 3D Lectern
-	var hbox = HBoxContainer.new()
-	vbox.add_child(hbox)
-
-	var sb_cnt = StyleBoxFlat.new()
-	sb_cnt.bg_color = Color(0.08, 0.18, 0.30, 0.95)
-	sb_cnt.border_color = Color(0.40, 0.78, 1.0, 0.90)
-	sb_cnt.set_border_width_all(2)
-	sb_cnt.set_corner_radius_all(12)
-	sb_cnt.content_margin_left = 14
-	sb_cnt.content_margin_right = 14
-	sb_cnt.content_margin_top = 4
-	sb_cnt.content_margin_bottom = 4
-	var cnt_pill = PanelContainer.new()
-	cnt_pill.add_theme_stylebox_override("panel", sb_cnt)
-	hbox.add_child(cnt_pill)
-
-	_lectern_cnt_lbl = Label.new()
+	# Question Counter Label3D (Left Top inside Lectern)
+	_lectern_cnt_lbl = Label3D.new()
 	_lectern_cnt_lbl.text = "سوال ۱ از ۱۰"
-	_lectern_cnt_lbl.add_theme_font_override("font", FontHekayat)
-	_lectern_cnt_lbl.add_theme_font_size_override("font_size", 26)
-	_lectern_cnt_lbl.add_theme_color_override("font_color", Color(0.84, 0.95, 1.0))
-	cnt_pill.add_child(_lectern_cnt_lbl)
+	_lectern_cnt_lbl.font = FontHekayat
+	_lectern_cnt_lbl.font_size = 42
+	_lectern_cnt_lbl.pixel_size = 0.00112
+	_lectern_cnt_lbl.modulate = Color(0.75, 0.94, 1.0)
+	_lectern_cnt_lbl.outline_modulate = Color(0.02, 0.01, 0.01, 1.0)
+	_lectern_cnt_lbl.outline_size = 10
+	_lectern_cnt_lbl.shaded = false
+	_lectern_cnt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_lectern_cnt_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_lectern_cnt_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	_lectern_cnt_lbl.position = Vector3(-0.34, 0.026, -0.156)
+	lectern_root.add_child(_lectern_cnt_lbl)
 
-	var spacer = Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox.add_child(spacer)
-
-	var sb_cat = StyleBoxFlat.new()
-	sb_cat.bg_color = Color(0.24, 0.15, 0.06, 0.95)
-	sb_cat.border_color = Color(0.92, 0.75, 0.32, 0.90)
-	sb_cat.set_border_width_all(2)
-	sb_cat.set_corner_radius_all(12)
-	sb_cat.content_margin_left = 14
-	sb_cat.content_margin_right = 14
-	sb_cat.content_margin_top = 4
-	sb_cat.content_margin_bottom = 4
-	var cat_pill = PanelContainer.new()
-	cat_pill.add_theme_stylebox_override("panel", sb_cat)
-	hbox.add_child(cat_pill)
-
-	_lectern_cat_lbl = Label.new()
+	# Category Label3D (Right Top inside Lectern)
+	_lectern_cat_lbl = Label3D.new()
 	_lectern_cat_lbl.text = "✨ پرسش مسابقه"
-	_lectern_cat_lbl.add_theme_font_override("font", FontHekayat)
-	_lectern_cat_lbl.add_theme_font_size_override("font_size", 26)
-	_lectern_cat_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-	cat_pill.add_child(_lectern_cat_lbl)
+	_lectern_cat_lbl.font = FontHekayat
+	_lectern_cat_lbl.font_size = 42
+	_lectern_cat_lbl.pixel_size = 0.00112
+	_lectern_cat_lbl.modulate = Color(1.0, 0.90, 0.48)
+	_lectern_cat_lbl.outline_modulate = Color(0.02, 0.01, 0.01, 1.0)
+	_lectern_cat_lbl.outline_size = 10
+	_lectern_cat_lbl.shaded = false
+	_lectern_cat_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_lectern_cat_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_lectern_cat_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	_lectern_cat_lbl.position = Vector3(0.32, 0.026, -0.156)
+	lectern_root.add_child(_lectern_cat_lbl)
 
-	# Question Body Text
-	_lectern_q_lbl = Label.new()
+	# Main Question Body Label3D (Pure White, Large, Unshaded, Word-Wrapped)
+	_lectern_q_lbl = Label3D.new()
 	_lectern_q_lbl.text = "در حال بارگذاری سوال..."
-	_lectern_q_lbl.add_theme_font_override("font", FontHekayat)
-	_lectern_q_lbl.add_theme_font_size_override("font_size", 38)
-	_lectern_q_lbl.add_theme_constant_override("line_spacing", 4)
-	_lectern_q_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
-	_lectern_q_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-	_lectern_q_lbl.add_theme_constant_override("shadow_offset_x", 2)
-	_lectern_q_lbl.add_theme_constant_override("shadow_offset_y", 2)
+	_lectern_q_lbl.font = FontHekayat
+	_lectern_q_lbl.font_size = 66
+	_lectern_q_lbl.pixel_size = 0.00138
+	_lectern_q_lbl.width = 760.0
+	_lectern_q_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lectern_q_lbl.text_direction = TextServer.DIRECTION_AUTO
+	_lectern_q_lbl.line_spacing = 6.0
+	_lectern_q_lbl.modulate = Color.WHITE
+	_lectern_q_lbl.outline_modulate = Color(0.02, 0.01, 0.01, 1.0)
+	_lectern_q_lbl.outline_size = 15
+	_lectern_q_lbl.shaded = false
 	_lectern_q_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lectern_q_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_lectern_q_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_lectern_q_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lectern_q_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(_lectern_q_lbl)
+	_lectern_q_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	_lectern_q_lbl.position = Vector3(0.0, 0.027, -0.008)
+	lectern_root.add_child(_lectern_q_lbl)
 
-	# Lectern Bottom Status & Reveal Bar
-	_lectern_reveal_bar_bg = PanelContainer.new()
-	var sb_st = StyleBoxFlat.new()
-	sb_st.bg_color = Color(0.13, 0.09, 0.06, 0.95)
-	sb_st.border_color = Color(0.65, 0.52, 0.26, 0.70)
-	sb_st.set_border_width_all(1)
-	sb_st.set_corner_radius_all(10)
-	sb_st.content_margin_left = 14
-	sb_st.content_margin_right = 14
-	sb_st.content_margin_top = 4
-	sb_st.content_margin_bottom = 4
-	_lectern_reveal_bar_bg.add_theme_stylebox_override("panel", sb_st)
-	vbox.add_child(_lectern_reveal_bar_bg)
-
-	var st_vbox = VBoxContainer.new()
-	st_vbox.add_theme_constant_override("separation", 4)
-	_lectern_reveal_bar_bg.add_child(st_vbox)
-
-	_lectern_status_lbl = Label.new()
+	# Lectern Bottom Status Strip
+	_lectern_status_lbl = Label3D.new()
 	_lectern_status_lbl.text = _lectern_status_text
-	_lectern_status_lbl.add_theme_font_override("font", FontHekayat)
-	_lectern_status_lbl.add_theme_font_size_override("font_size", 24)
-	_lectern_status_lbl.add_theme_color_override("font_color", _lectern_status_color)
+	_lectern_status_lbl.font = FontHekayat
+	_lectern_status_lbl.font_size = 38
+	_lectern_status_lbl.pixel_size = 0.00105
+	_lectern_status_lbl.width = 980.0
+	_lectern_status_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lectern_status_lbl.text_direction = TextServer.DIRECTION_AUTO
+	_lectern_status_lbl.modulate = _lectern_status_color
+	_lectern_status_lbl.outline_modulate = Color(0.02, 0.01, 0.01, 1.0)
+	_lectern_status_lbl.outline_size = 10
+	_lectern_status_lbl.shaded = false
 	_lectern_status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	st_vbox.add_child(_lectern_status_lbl)
+	_lectern_status_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_lectern_status_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	_lectern_status_lbl.position = Vector3(0.0, 0.026, 0.142)
+	lectern_root.add_child(_lectern_status_lbl)
 
-	_lectern_reveal_fill = ProgressBar.new()
-	_lectern_reveal_fill.custom_minimum_size = Vector2(0, 6)
-	_lectern_reveal_fill.show_percentage = false
-	_lectern_reveal_fill.visible = false
-	_lectern_reveal_fill.min_value = 0.0
-	_lectern_reveal_fill.max_value = 100.0
-	_lectern_reveal_fill.value = 100.0
-	var sb_rb = StyleBoxFlat.new()
-	sb_rb.bg_color = Color(0.05, 0.04, 0.03, 0.85)
-	sb_rb.set_corner_radius_all(3)
-	var sb_rf = StyleBoxFlat.new()
-	sb_rf.bg_color = Color(1.0, 0.84, 0.30, 1.0)
-	sb_rf.set_corner_radius_all(3)
-	_lectern_reveal_fill.add_theme_stylebox_override("background", sb_rb)
-	_lectern_reveal_fill.add_theme_stylebox_override("fill", sb_rf)
-	st_vbox.add_child(_lectern_reveal_fill)
+	# 3D Golden Reveal Countdown Progress Bar
+	var bar_bg_mesh = BoxMesh.new()
+	bar_bg_mesh.size = Vector3(1.02, 0.004, 0.014)
+	var bar_bg_mat = StandardMaterial3D.new()
+	bar_bg_mat.albedo_color = Color(0.14, 0.10, 0.07)
+	bar_bg_mat.roughness = 0.6
 
-	# 3D Screen Surface mapped onto Lectern Top
-	var quad = QuadMesh.new()
-	quad.size = Vector2(1.04, 0.295)
-	var scr_mat = StandardMaterial3D.new()
-	scr_mat.albedo_color = Color.WHITE
-	scr_mat.albedo_texture = _lectern_vp.get_texture()
-	scr_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	scr_mat.roughness = 0.45
-	scr_mat.emission_enabled = true
-	scr_mat.emission_texture = _lectern_vp.get_texture()
-	scr_mat.emission_energy_multiplier = 0.58
+	_lectern_reveal_bar_bg = MeshInstance3D.new()
+	_lectern_reveal_bar_bg.mesh = bar_bg_mesh
+	_lectern_reveal_bar_bg.material_override = bar_bg_mat
+	_lectern_reveal_bar_bg.position = Vector3(0.0, 0.024, 0.178)
+	_lectern_reveal_bar_bg.visible = false
+	lectern_root.add_child(_lectern_reveal_bar_bg)
 
-	var scr_mesh = MeshInstance3D.new()
-	scr_mesh.mesh = quad
-	scr_mesh.material_override = scr_mat
-	scr_mesh.position = Vector3(0.0, 0.0195, 0.0)
-	scr_mesh.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	lectern_root.add_child(scr_mesh)
+	var bar_fill_mesh = BoxMesh.new()
+	bar_fill_mesh.size = Vector3(1.00, 0.005, 0.010)
+	var bar_fill_mat = StandardMaterial3D.new()
+	bar_fill_mat.albedo_color = Color(1.0, 0.85, 0.30)
+	bar_fill_mat.emission_enabled = true
+	bar_fill_mat.emission = Color(1.0, 0.82, 0.25)
+	bar_fill_mat.emission_energy_multiplier = 1.6
+
+	_lectern_reveal_bar_fill = MeshInstance3D.new()
+	_lectern_reveal_bar_fill.mesh = bar_fill_mesh
+	_lectern_reveal_bar_fill.material_override = bar_fill_mat
+	_lectern_reveal_bar_fill.position = Vector3(0.0, 0.025, 0.178)
+	_lectern_reveal_bar_fill.visible = false
+	lectern_root.add_child(_lectern_reveal_bar_fill)
 
 func _build_answer_keycaps() -> void:
 	keycap_nodes.clear()
 	keycap_rim_mats.clear()
+	keycap_face_mats.clear()
 	keycap_hover_rings.clear()
 	keycap_badge_mats.clear()
 	keycap_badge_labels.clear()
-	keycap_vps.clear()
 	keycap_text_labels.clear()
-	keycap_bg_panels.clear()
-	keycap_bg_styles.clear()
 	keycap_token_anchors.clear()
 	keycap_areas.clear()
 
 	var body_mesh = BoxMesh.new()
-	body_mesh.size = Vector3(0.515, 0.032, 0.175)
+	body_mesh.size = Vector3(0.562, 0.034, 0.238)
+
+	var face_mesh = BoxMesh.new()
+	face_mesh.size = Vector3(0.530, 0.006, 0.206)
 
 	var rim_mesh = BoxMesh.new()
-	rim_mesh.size = Vector3(0.532, 0.016, 0.192)
+	rim_mesh.size = Vector3(0.580, 0.018, 0.256)
 
 	var badge_mesh = CylinderMesh.new()
-	badge_mesh.top_radius = 0.026
-	badge_mesh.bottom_radius = 0.029
-	badge_mesh.height = 0.014
+	badge_mesh.top_radius = 0.029
+	badge_mesh.bottom_radius = 0.033
+	badge_mesh.height = 0.016
 
 	var hover_mesh = BoxMesh.new()
-	hover_mesh.size = Vector3(0.546, 0.008, 0.204)
+	hover_mesh.size = Vector3(0.596, 0.008, 0.270)
 	var hover_mat = StandardMaterial3D.new()
 	hover_mat.albedo_color = Color(1.0, 0.85, 0.30, 0.85)
 	hover_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -615,20 +574,20 @@ func _build_answer_keycaps() -> void:
 	hover_mat.emission_energy_multiplier = 1.9
 
 	var col_shape = BoxShape3D.new()
-	col_shape.size = Vector3(0.54, 0.10, 0.20)
+	col_shape.size = Vector3(0.57, 0.12, 0.25)
 
 	for i in range(4):
 		var opt_idx: int = i + 1
 		var cap = Node3D.new()
 		cap.name = "AnswerKeycap%d" % opt_idx
 		cap.position = KEYCAP_COORDS[i]
-		cap.rotation_degrees = Vector3(5.0, 0.0, 0.0)
+		cap.rotation_degrees = Vector3(4.5, 0.0, 0.0)
 		stand_root.add_child(cap)
 		keycap_nodes.append(cap)
 
 		# Metallic Status Collar Rim
 		var r_mat = StandardMaterial3D.new()
-		r_mat.albedo_color = Color(0.80, 0.64, 0.26)
+		r_mat.albedo_color = Color(0.84, 0.67, 0.28)
 		r_mat.metallic = 0.86
 		r_mat.roughness = 0.24
 		keycap_rim_mats.append(r_mat)
@@ -654,74 +613,41 @@ func _build_answer_keycaps() -> void:
 		body.material_override = _mat_walnut
 		cap.add_child(body)
 
-		# SubViewport for Engraved Option Text
-		var vp = SubViewport.new()
-		vp.name = "OptionVP%d" % opt_idx
-		vp.size = Vector2i(460, 160)
-		vp.transparent_bg = false
-		vp.msaa_2d = Viewport.MSAA_DISABLED
-		vp.render_target_update_mode = SubViewport.UPDATE_ONCE
-		cap.add_child(vp)
-		keycap_vps.append(vp)
+		# Dark Inlaid Slate Face Plate (High contrast for pure white option text)
+		var f_mat = StandardMaterial3D.new()
+		f_mat.albedo_color = FACE_COL_DEFAULT
+		f_mat.roughness = 0.62
+		f_mat.metallic = 0.04
+		keycap_face_mats.append(f_mat)
 
-		var vp_root = Control.new()
-		vp_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		vp_root.size = Vector2(460, 160)
-		vp.add_child(vp_root)
+		var face_plate = MeshInstance3D.new()
+		face_plate.mesh = face_mesh
+		face_plate.material_override = f_mat
+		face_plate.position = Vector3(0.0, 0.018, 0.0)
+		cap.add_child(face_plate)
 
-		var p_bg = PanelContainer.new()
-		p_bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		p_bg.size = Vector2(460, 160)
-		var p_sb = StyleBoxFlat.new()
-		p_sb.bg_color = Color(0.11, 0.07, 0.045, 1.0)
-		p_sb.border_color = Color(0.75, 0.58, 0.28, 0.88)
-		p_sb.set_border_width_all(4)
-		p_sb.set_corner_radius_all(14)
-		p_sb.content_margin_left = 42
-		p_sb.content_margin_right = 76
-		p_sb.content_margin_top = 10
-		p_sb.content_margin_bottom = 10
-		p_bg.add_theme_stylebox_override("panel", p_sb)
-		vp_root.add_child(p_bg)
-		keycap_bg_panels.append(p_bg)
-		keycap_bg_styles.append(p_sb)
-
-		var o_lbl = Label.new()
+		# Pure White Large Unshaded Label3D for Option Text
+		var o_lbl = Label3D.new()
 		o_lbl.text = "گزینه %s" % OPTION_LETTERS[i]
-		o_lbl.add_theme_font_override("font", FontHekayat)
-		o_lbl.add_theme_font_size_override("font_size", 32)
-		o_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
-		o_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-		o_lbl.add_theme_constant_override("shadow_offset_x", 2)
-		o_lbl.add_theme_constant_override("shadow_offset_y", 2)
-		o_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		o_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		o_lbl.font = FontHekayat
+		o_lbl.font_size = 58
+		o_lbl.pixel_size = 0.00128
+		o_lbl.width = 330.0
 		o_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		o_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		o_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		p_bg.add_child(o_lbl)
+		o_lbl.text_direction = TextServer.DIRECTION_AUTO
+		o_lbl.line_spacing = 4.0
+		o_lbl.modulate = Color.WHITE
+		o_lbl.outline_modulate = Color(0.02, 0.01, 0.01, 1.0)
+		o_lbl.outline_size = 14
+		o_lbl.shaded = false
+		o_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		o_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		o_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+		o_lbl.position = Vector3(-0.042, 0.025, 0.0)
+		cap.add_child(o_lbl)
 		keycap_text_labels.append(o_lbl)
 
-		# Top Face Quad
-		var quad = QuadMesh.new()
-		quad.size = Vector2(0.485, 0.155)
-		var face_mat = StandardMaterial3D.new()
-		face_mat.albedo_color = Color.WHITE
-		face_mat.albedo_texture = vp.get_texture()
-		face_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-		face_mat.roughness = 0.44
-		face_mat.emission_enabled = true
-		face_mat.emission_texture = vp.get_texture()
-		face_mat.emission_energy_multiplier = 0.56
-
-		var face_mesh = MeshInstance3D.new()
-		face_mesh.mesh = quad
-		face_mesh.material_override = face_mat
-		face_mesh.position = Vector3(0.0, 0.0175, 0.0)
-		face_mesh.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-		cap.add_child(face_mesh)
-
-		# Raised 3D Letter Medallion on Top-Right of Keycap
+		# Raised 3D Letter Medallion on Right Side of Keycap
 		var b_mat = StandardMaterial3D.new()
 		b_mat.albedo_color = Color(0.24, 0.15, 0.08)
 		b_mat.metallic = 0.45
@@ -731,26 +657,27 @@ func _build_answer_keycaps() -> void:
 		var b_cyl = MeshInstance3D.new()
 		b_cyl.mesh = badge_mesh
 		b_cyl.material_override = b_mat
-		b_cyl.position = Vector3(0.205, 0.022, 0.0)
+		b_cyl.position = Vector3(0.226, 0.024, 0.0)
 		cap.add_child(b_cyl)
 
 		var b_lbl = Label3D.new()
 		b_lbl.text = OPTION_LETTERS[i]
 		b_lbl.font = FontHekayat
-		b_lbl.font_size = 44
-		b_lbl.pixel_size = 0.0008
-		b_lbl.modulate = Color(1.0, 0.88, 0.42)
-		b_lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.95)
-		b_lbl.outline_size = 6
+		b_lbl.font_size = 54
+		b_lbl.pixel_size = 0.00095
+		b_lbl.modulate = Color.WHITE
+		b_lbl.outline_modulate = Color(0.03, 0.015, 0.01, 1.0)
+		b_lbl.outline_size = 10
+		b_lbl.shaded = false
 		b_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-		b_lbl.position = Vector3(0.205, 0.031, 0.0)
+		b_lbl.position = Vector3(0.226, 0.034, 0.0)
 		cap.add_child(b_lbl)
 		keycap_badge_labels.append(b_lbl)
 
 		# Token Anchor for Lock Seal & Reveal Player Pucks
 		var anchor = Node3D.new()
 		anchor.name = "TokenAnchor"
-		anchor.position = Vector3(-0.175, 0.022, 0.045)
+		anchor.position = Vector3(-0.205, 0.024, 0.076)
 		cap.add_child(anchor)
 		keycap_token_anchors.append(anchor)
 
@@ -786,14 +713,14 @@ func _rebuild_player_pedestals() -> void:
 		_built_pedestal_count = total_p
 
 		var coords_2p: Dictionary = {
-			1: Vector3(-0.34, 0.045, 0.485),
-			2: Vector3(0.34, 0.045, 0.485),
+			1: Vector3(-0.34, 0.045, 0.580),
+			2: Vector3(0.34, 0.045, 0.580),
 		}
 		var coords_4p: Dictionary = {
-			1: Vector3(-0.34, 0.045, 0.485),
-			2: Vector3(0.34, 0.045, 0.485),
-			3: Vector3(-0.505, 0.045, -0.495),
-			4: Vector3(0.505, 0.045, -0.495),
+			1: Vector3(-0.34, 0.045, 0.580),
+			2: Vector3(0.34, 0.045, 0.580),
+			3: Vector3(-0.505, 0.045, -0.585),
+			4: Vector3(0.505, 0.045, -0.585),
 		}
 		var coords = coords_2p if total_p <= 2 else coords_4p
 
@@ -858,28 +785,30 @@ func _rebuild_player_pedestals() -> void:
 
 			var lbl_name = Label3D.new()
 			lbl_name.font = FontHekayat
-			lbl_name.font_size = 32
-			lbl_name.pixel_size = 0.00105
-			lbl_name.modulate = col.lightened(0.35)
-			lbl_name.outline_modulate = Color(0.04, 0.02, 0.01, 0.96)
-			lbl_name.outline_size = 6
+			lbl_name.font_size = 38
+			lbl_name.pixel_size = 0.00112
+			lbl_name.modulate = Color.WHITE
+			lbl_name.outline_modulate = Color(0.03, 0.015, 0.01, 1.0)
+			lbl_name.outline_size = 9
+			lbl_name.shaded = false
 			lbl_name.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-			var text_x_offset: float = 0.14 if gid == 1 else -0.14
+			var text_x_offset: float = 0.15 if gid == 1 else -0.15
 			if total_p > 2 and gid >= 3:
 				text_x_offset = 0.0
-			var text_z_offset: float = 0.018 if gid <= 2 else 0.048
-			lbl_name.position = Vector3(text_x_offset, 0.014, text_z_offset - 0.016)
+			var text_z_offset: float = 0.016 if gid <= 2 else 0.052
+			lbl_name.position = Vector3(text_x_offset, 0.016, text_z_offset - 0.018)
 			ped.add_child(lbl_name)
 
 			var lbl_st = Label3D.new()
 			lbl_st.font = FontHekayat
-			lbl_st.font_size = 28
-			lbl_st.pixel_size = 0.0010
-			lbl_st.modulate = Color(0.95, 0.88, 0.60)
-			lbl_st.outline_modulate = Color(0.04, 0.02, 0.01, 0.96)
-			lbl_st.outline_size = 5
+			lbl_st.font_size = 34
+			lbl_st.pixel_size = 0.00108
+			lbl_st.modulate = Color(1.0, 0.92, 0.62)
+			lbl_st.outline_modulate = Color(0.03, 0.015, 0.01, 1.0)
+			lbl_st.outline_size = 8
+			lbl_st.shaded = false
 			lbl_st.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-			lbl_st.position = Vector3(text_x_offset, 0.014, text_z_offset + 0.020)
+			lbl_st.position = Vector3(text_x_offset, 0.016, text_z_offset + 0.024)
 			ped.add_child(lbl_st)
 
 			player_crystals[gid] = crys
@@ -899,7 +828,7 @@ func _refresh_pedestals_text_and_lights() -> void:
 		var locked = bool(player_locked_in.get(gid, false))
 		_update_crystal_light(gid, locked)
 		if not is_in_reveal_phase:
-			_set_pedestal_status(gid, "🔒 ثبت شد" if locked else "⏳ آماده", Color(0.45, 0.95, 1.0) if locked else Color(0.92, 0.82, 0.56))
+			_set_pedestal_status(gid, "🔒 ثبت شد" if locked else "⏳ آماده", Color(0.45, 0.95, 1.0) if locked else Color(1.0, 0.92, 0.62))
 
 func _set_pedestal_status(gid: int, text: String, col: Color) -> void:
 	var lbl = player_status_3d.get(gid)
@@ -986,6 +915,8 @@ func _handle_pointer_hover(screen_pos: Vector2) -> void:
 		var is_h = (i + 1 == hovered_option_idx and not is_board_locked and not has_answered_this_turn and not is_in_reveal_phase)
 		if i < keycap_hover_rings.size() and is_instance_valid(keycap_hover_rings[i]):
 			keycap_hover_rings[i].visible = is_h
+		if i < keycap_face_mats.size() and not has_answered_this_turn and not is_in_reveal_phase:
+			keycap_face_mats[i].albedo_color = FACE_COL_HOVER if is_h else FACE_COL_DEFAULT
 		if i < keycap_nodes.size() and is_instance_valid(keycap_nodes[i]) and not has_answered_this_turn and not is_in_reveal_phase:
 			keycap_nodes[i].position.y = KEYCAP_COORDS[i].y + (0.008 if is_h else 0.0)
 
@@ -996,6 +927,8 @@ func _clear_hover() -> void:
 	for i in range(4):
 		if i < keycap_hover_rings.size() and is_instance_valid(keycap_hover_rings[i]):
 			keycap_hover_rings[i].visible = false
+		if i < keycap_face_mats.size() and not has_answered_this_turn and not is_in_reveal_phase:
+			keycap_face_mats[i].albedo_color = FACE_COL_DEFAULT
 		if i < keycap_nodes.size() and is_instance_valid(keycap_nodes[i]) and not has_answered_this_turn and not is_in_reveal_phase:
 			keycap_nodes[i].position.y = KEYCAP_COORDS[i].y
 
@@ -1030,7 +963,7 @@ func _select_option(opt_idx: int) -> void:
 	_lectern_status_text = "🔒 انتخاب شما («%s») ثبت شد — در انتظار سایر بازیکنان..." % letter
 	_lectern_status_color = Color(0.55, 0.92, 1.0)
 	_lectern_show_reveal_bar = false
-	_refresh_lectern_viewport()
+	_refresh_lectern_labels()
 
 	_set_header_local_answered(true)
 	send_move(Commands.Select_Peace, {"option": opt_idx})
@@ -1040,31 +973,31 @@ func _style_keycaps_selected(opt_idx: int) -> void:
 		var is_sel = ((i + 1) == opt_idx)
 		var cap = keycap_nodes[i]
 		var r_mat = keycap_rim_mats[i]
+		var f_mat = keycap_face_mats[i]
 		var b_mat = keycap_badge_mats[i]
 		var b_lbl = keycap_badge_labels[i]
-		var sb = keycap_bg_styles[i]
+		var t_lbl = keycap_text_labels[i]
 
 		if is_sel:
 			r_mat.albedo_color = Color(0.32, 0.80, 1.0)
 			r_mat.emission_enabled = true
 			r_mat.emission = Color(0.24, 0.72, 1.0)
 			r_mat.emission_energy_multiplier = 2.0
+			f_mat.albedo_color = FACE_COL_SELECTED
 			b_mat.albedo_color = Color(0.14, 0.44, 0.78)
 			b_lbl.modulate = Color.WHITE
-			sb.bg_color = Color(0.07, 0.19, 0.34, 1.0)
-			sb.border_color = Color(0.38, 0.86, 1.0, 1.0)
+			t_lbl.modulate = Color.WHITE
 			var tw = _create_tracked_tween()
 			tw.tween_property(cap, "position:y", KEYCAP_COORDS[i].y - 0.008, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 			tw.tween_property(cap, "position:y", KEYCAP_COORDS[i].y + 0.004, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		else:
 			r_mat.albedo_color = Color(0.32, 0.26, 0.16)
 			r_mat.emission_enabled = false
+			f_mat.albedo_color = FACE_COL_DIMMED
 			b_mat.albedo_color = Color(0.16, 0.11, 0.07)
-			b_lbl.modulate = Color(0.68, 0.60, 0.44)
-			sb.bg_color = Color(0.08, 0.055, 0.04, 1.0)
-			sb.border_color = Color(0.35, 0.28, 0.18, 0.75)
+			b_lbl.modulate = Color(0.85, 0.82, 0.76)
+			t_lbl.modulate = Color(0.82, 0.82, 0.82)
 			cap.position.y = KEYCAP_COORDS[i].y - 0.003
-		_queue_vp_redraw(keycap_vps[i])
 
 func _spawn_local_lock_seal(opt_idx: int) -> void:
 	_clear_answer_tokens()
@@ -1090,9 +1023,7 @@ func on_start_game() -> void:
 	_match_started = true
 	_rebuild_player_pedestals()
 	_trigger_silent_gamer_id_sync()
-	_refresh_lectern_viewport()
-	for vp in keycap_vps:
-		_queue_vp_redraw(vp)
+	_refresh_lectern_labels()
 	super.on_start_game()
 
 func on_turn_data(payload: Dictionary) -> void:
@@ -1144,23 +1075,23 @@ func _handle_new_question_turn(payload: Dictionary, preserve_if_same_turn: bool 
 
 	if not same_active_turn:
 		_lectern_status_text = "⏳ گزینه درست را روی کلیدهای پایین لمس کنید"
-		_lectern_status_color = Color(0.98, 0.88, 0.48)
+		_lectern_status_color = Color(1.0, 0.92, 0.58)
 		_lectern_show_reveal_bar = false
 		_reset_keycaps_for_question()
 	else:
 		_refresh_option_texts_only()
 
-	_refresh_lectern_viewport()
+	_refresh_lectern_labels()
 	call_deferred("_sync_header_for_question", current_question_num, total_questions_count)
 
 func _reset_keycaps_for_question() -> void:
 	for i in range(4):
 		var cap = keycap_nodes[i]
 		var r_mat = keycap_rim_mats[i]
+		var f_mat = keycap_face_mats[i]
 		var b_mat = keycap_badge_mats[i]
 		var b_lbl = keycap_badge_labels[i]
 		var lbl = keycap_text_labels[i]
-		var sb = keycap_bg_styles[i]
 		var area = keycap_areas[i]
 
 		var has_opt = (i < current_options.size())
@@ -1172,25 +1103,24 @@ func _reset_keycaps_for_question() -> void:
 		if has_opt:
 			var opt_text = str(current_options[i])
 			lbl.text = opt_text
-			lbl.add_theme_font_size_override("font_size", _fit_option_font_size(opt_text))
-			r_mat.albedo_color = Color(0.82, 0.65, 0.26)
+			lbl.font_size = _fit_option_font_size(opt_text)
+			lbl.modulate = Color.WHITE
+			r_mat.albedo_color = Color(0.84, 0.67, 0.28)
 			r_mat.emission_enabled = false
+			f_mat.albedo_color = FACE_COL_DEFAULT
 			b_mat.albedo_color = Color(0.24, 0.15, 0.08)
 			b_lbl.text = OPTION_LETTERS[i]
-			b_lbl.modulate = Color(1.0, 0.88, 0.45)
-			sb.bg_color = Color(0.11, 0.07, 0.045, 1.0)
-			sb.border_color = Color(0.75, 0.58, 0.28, 0.90)
+			b_lbl.modulate = Color.WHITE
 			cap.position = KEYCAP_COORDS[i] + Vector3(0.0, 0.016, 0.0)
 			var tw = _create_tracked_tween()
 			tw.tween_property(cap, "position:y", KEYCAP_COORDS[i].y, 0.20 + float(i) * 0.04).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			_queue_vp_redraw(keycap_vps[i])
 
 func _refresh_option_texts_only() -> void:
 	for i in range(min(4, current_options.size())):
 		var opt_text = str(current_options[i])
 		keycap_text_labels[i].text = opt_text
-		keycap_text_labels[i].add_theme_font_size_override("font_size", _fit_option_font_size(opt_text))
-		_queue_vp_redraw(keycap_vps[i])
+		keycap_text_labels[i].font_size = _fit_option_font_size(opt_text)
+		keycap_text_labels[i].modulate = Color.WHITE
 
 func _sync_header_for_question(q_num: int, q_total: int) -> void:
 	if is_in_reveal_phase:
@@ -1239,27 +1169,28 @@ func _apply_finish_turn_round(data: Dictionary, play_sfx: bool = true) -> void:
 
 	_clear_answer_tokens()
 
-	# Style 3D Keycaps for Reveal
+	# Style 3D Keycaps for Reveal (keep answer text pure white & prominent)
 	for i in range(4):
 		var opt_num = i + 1
 		var cap = keycap_nodes[i]
 		if not cap.visible:
 			continue
 		var r_mat = keycap_rim_mats[i]
+		var f_mat = keycap_face_mats[i]
 		var b_mat = keycap_badge_mats[i]
 		var b_lbl = keycap_badge_labels[i]
-		var sb = keycap_bg_styles[i]
+		var t_lbl = keycap_text_labels[i]
 
 		if opt_num == correct_opt:
 			r_mat.albedo_color = Color(0.28, 0.98, 0.50)
 			r_mat.emission_enabled = true
 			r_mat.emission = Color(0.22, 0.92, 0.44)
 			r_mat.emission_energy_multiplier = 2.4
+			f_mat.albedo_color = FACE_COL_CORRECT
 			b_mat.albedo_color = Color(0.10, 0.60, 0.26)
 			b_lbl.text = "✓"
 			b_lbl.modulate = Color.WHITE
-			sb.bg_color = Color(0.06, 0.25, 0.12, 1.0)
-			sb.border_color = Color(0.35, 0.98, 0.54, 1.0)
+			t_lbl.modulate = Color.WHITE
 			var tw = _create_tracked_tween()
 			tw.tween_property(cap, "position:y", KEYCAP_COORDS[i].y + 0.018, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			_spawn_3d_ring_burst(cap.global_position + Vector3(0.0, 0.025, 0.0), Color(0.30, 0.98, 0.52))
@@ -1269,11 +1200,11 @@ func _apply_finish_turn_round(data: Dictionary, play_sfx: bool = true) -> void:
 			r_mat.emission_enabled = true
 			r_mat.emission = Color(0.95, 0.22, 0.26)
 			r_mat.emission_energy_multiplier = 2.0
+			f_mat.albedo_color = FACE_COL_WRONG
 			b_mat.albedo_color = Color(0.68, 0.14, 0.18)
 			b_lbl.text = "✕"
 			b_lbl.modulate = Color.WHITE
-			sb.bg_color = Color(0.27, 0.06, 0.08, 1.0)
-			sb.border_color = Color(1.0, 0.36, 0.40, 1.0)
+			t_lbl.modulate = Color.WHITE
 			var tw = _create_tracked_tween()
 			tw.tween_property(cap, "position:x", KEYCAP_COORDS[i].x + 0.014, 0.045)
 			tw.tween_property(cap, "position:x", KEYCAP_COORDS[i].x - 0.014, 0.045)
@@ -1283,12 +1214,11 @@ func _apply_finish_turn_round(data: Dictionary, play_sfx: bool = true) -> void:
 		else:
 			r_mat.albedo_color = Color(0.28, 0.24, 0.18)
 			r_mat.emission_enabled = false
+			f_mat.albedo_color = FACE_COL_DIMMED
 			b_mat.albedo_color = Color(0.14, 0.11, 0.08)
-			b_lbl.modulate = Color(0.62, 0.55, 0.42)
-			sb.bg_color = Color(0.075, 0.055, 0.04, 1.0)
-			sb.border_color = Color(0.32, 0.26, 0.18, 0.70)
+			b_lbl.modulate = Color(0.85, 0.82, 0.76)
+			t_lbl.modulate = Color(0.88, 0.88, 0.88)
 			cap.position.y = KEYCAP_COORDS[i].y - 0.004
-		_queue_vp_redraw(keycap_vps[i])
 
 	# Place physical 3D player answer pucks on chosen keycaps & update 3D pedestals
 	var opt_slot_counts: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
@@ -1306,7 +1236,7 @@ func _apply_finish_turn_round(data: Dictionary, play_sfx: bool = true) -> void:
 		elif delta < 0:
 			_set_pedestal_status(gid, "❌ -۱", Color(1.0, 0.44, 0.46))
 		else:
-			_set_pedestal_status(gid, "⏱️ ۰", Color(0.75, 0.75, 0.78))
+			_set_pedestal_status(gid, "⏱️ ۰", Color(0.85, 0.85, 0.88))
 
 		if chosen_opt >= 1 and chosen_opt <= 4:
 			var anchor = keycap_token_anchors[chosen_opt - 1]
@@ -1343,12 +1273,11 @@ func _apply_finish_turn_round(data: Dictionary, play_sfx: bool = true) -> void:
 		_set_header_banner("❌ متأسفانه پاسخ نادرست بود (-۱)", Color(1.0, 0.35, 0.38))
 	else:
 		_lectern_status_text = "⏱️ مهلت تمام شد (۰) • گزینه صحیح: «%s»" % correct_letter
-		_lectern_status_color = Color(1.0, 0.88, 0.52)
-		_set_header_banner("⏳ مهلت پاسخ پایان یافت (۰)", Color(0.85, 0.85, 0.85))
+		_lectern_status_color = Color(1.0, 0.92, 0.58)
+		_set_header_banner("⏳ مهلت پاسخ پایان یافت (۰)", Color(0.90, 0.90, 0.90))
 
 	_lectern_show_reveal_bar = true
-	_lectern_reveal_pct = 100.0
-	_refresh_lectern_viewport()
+	_refresh_lectern_labels()
 
 	if _reveal_timer_tween and _reveal_timer_tween.is_valid():
 		_reveal_timer_tween.kill()
@@ -1390,11 +1319,12 @@ func _create_token_chip(gid: int, label_text: String, text_col: Color, is_seal: 
 	var lbl = Label3D.new()
 	lbl.text = label_text
 	lbl.font = FontHekayat
-	lbl.font_size = 28
-	lbl.pixel_size = 0.00095
+	lbl.font_size = 32
+	lbl.pixel_size = 0.00105
 	lbl.modulate = text_col
-	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98)
-	lbl.outline_size = 6
+	lbl.outline_modulate = Color(0.03, 0.015, 0.01, 1.0)
+	lbl.outline_size = 8
+	lbl.shaded = false
 	lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	lbl.position = Vector3(0.0, 0.018, -0.032)
 	holder.add_child(lbl)
@@ -1438,11 +1368,12 @@ func _spawn_floating_3d_text(text: String, world_pos: Vector3, col: Color) -> vo
 	var lbl = Label3D.new()
 	lbl.text = text
 	lbl.font = FontHekayat
-	lbl.font_size = 68
-	lbl.pixel_size = 0.0014
+	lbl.font_size = 76
+	lbl.pixel_size = 0.00145
 	lbl.modulate = col
-	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98)
-	lbl.outline_size = 8
+	lbl.outline_modulate = Color(0.03, 0.015, 0.01, 1.0)
+	lbl.outline_size = 10
+	lbl.shaded = false
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	stand_root.add_child(lbl)
 	lbl.global_position = world_pos
@@ -1452,7 +1383,7 @@ func _spawn_floating_3d_text(text: String, world_pos: Vector3, col: Color) -> vo
 	tw.tween_property(lbl, "modulate:a", 0.0, 0.45).set_delay(0.50)
 	tw.chain().tween_callback(lbl.queue_free)
 
-# --- Progress Gems, Pedestal Lights & SubViewport Rendering ---
+# --- Progress Gems, Pedestal Lights & 3D Lectern Labels ---
 func _update_progress_gems() -> void:
 	for i in range(progress_gems.size()):
 		var gem = progress_gems[i]
@@ -1488,9 +1419,7 @@ func _update_crystal_light(gid: int, is_active: bool) -> void:
 		tw.tween_property(mat, "emission", col.darkened(0.65), 0.25)
 		tw.tween_property(mat, "emission_energy_multiplier", 0.45, 0.25)
 
-func _refresh_lectern_viewport() -> void:
-	if not is_instance_valid(_lectern_vp):
-		return
+func _refresh_lectern_labels() -> void:
 	var cat_display: String = current_category_title
 	if cat_display.is_empty():
 		cat_display = "✨ پرسش مسابقه"
@@ -1504,29 +1433,24 @@ func _refresh_lectern_viewport() -> void:
 	if is_instance_valid(_lectern_q_lbl):
 		var q_str = current_question_text if not current_question_text.is_empty() else "در حال بارگذاری سوال..."
 		_lectern_q_lbl.text = q_str
+		_lectern_q_lbl.modulate = Color.WHITE
 		var l_len = q_str.length()
-		var q_sz = 38 if l_len <= 68 else (32 if l_len <= 115 else 26)
-		_lectern_q_lbl.add_theme_font_size_override("font_size", q_sz)
+		_lectern_q_lbl.font_size = 66 if l_len <= 46 else (56 if l_len <= 90 else 48)
 	if is_instance_valid(_lectern_status_lbl):
 		_lectern_status_lbl.text = _lectern_status_text
-		_lectern_status_lbl.add_theme_color_override("font_color", _lectern_status_color)
-	if is_instance_valid(_lectern_reveal_fill):
-		_lectern_reveal_fill.visible = _lectern_show_reveal_bar
-		_lectern_reveal_fill.value = _lectern_reveal_pct
-
-	_queue_vp_redraw(_lectern_vp)
-
-func _queue_vp_redraw(vp: SubViewport) -> void:
-	if is_instance_valid(vp):
-		vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+		_lectern_status_lbl.modulate = _lectern_status_color
+	if is_instance_valid(_lectern_reveal_bar_bg):
+		_lectern_reveal_bar_bg.visible = _lectern_show_reveal_bar
+	if is_instance_valid(_lectern_reveal_bar_fill):
+		_lectern_reveal_bar_fill.visible = _lectern_show_reveal_bar
 
 func _fit_option_font_size(text: String) -> int:
 	var n = text.length()
-	if n <= 22:
-		return 34
-	elif n <= 44:
-		return 28
-	return 23
+	if n <= 14:
+		return 58
+	elif n <= 26:
+		return 48
+	return 40
 
 func _short_name(s: String, max_len: int = 12) -> String:
 	var trimmed = s.strip_edges()
