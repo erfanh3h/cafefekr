@@ -7,6 +7,7 @@ extends "res://scenes/games/base/base_top_header.gd"
 
 var _quiz_scores: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
 var _player_answered: Dictionary = {1: false, 2: false, 3: false, 4: false}
+var _local_answered_confirmed: bool = false
 var _role_styles_default: Dictionary = {}
 var _role_style_answered: StyleBoxFlat = null
 var _score_styles: Dictionary = {}
@@ -320,6 +321,9 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 			info["side_tag"].add_theme_stylebox_override("normal", sb_side)
 
 	update_quiz_scores(_quiz_scores)
+	for gid in range(1, total_players + 1):
+		if bool(_player_answered.get(gid, false)):
+			set_player_answered(gid, true)
 	_sync_all_cards_visual()
 
 func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
@@ -331,17 +335,23 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	update_quiz_scores(_quiz_scores)
 	_sync_all_cards_visual()
 
+func set_local_answered(answered: bool) -> void:
+	_local_answered_confirmed = answered
+	if answered:
+		set_player_answered(_my_player_index, true)
+		set_quiz_turn_banner("🔒 پاسخ شما ثبت شد — منتظر سایر بازیکنان...", Color(0.42, 0.95, 0.65))
+
 func _on_turn_changed(_turn: int) -> void:
 	# Simultaneous quiz: illuminate all active player cards uniformly and preserve quiz status banner
 	_sync_all_cards_visual()
 	if is_instance_valid(match_details_box):
 		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
 	if is_instance_valid(lbl_turn_banner) and GameManager.is_game_active:
-		if bool(_player_answered.get(_my_player_index, false)):
-			lbl_turn_banner.text = "🔒 پاسخ شما ثبت شد — منتظر پایان زمان..."
+		if _local_answered_confirmed:
+			lbl_turn_banner.text = "🔒 پاسخ شما ثبت شد — منتظر سایر بازیکنان..."
 			lbl_turn_banner.add_theme_color_override("font_color", Color(0.42, 0.95, 0.65))
 		else:
-			lbl_turn_banner.text = "🤔 گزینه درست را انتخاب کنید"
+			lbl_turn_banner.text = "🤔 گزینه درست را روی میز انتخاب کنید"
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
@@ -388,6 +398,7 @@ func set_player_answered(gid: int, answered: bool) -> void:
 			_animate_card_pulse(card)
 
 func clear_answered_states() -> void:
+	_local_answered_confirmed = false
 	for gid in [1, 2, 3, 4]:
 		set_player_answered(gid, false)
 
@@ -438,6 +449,7 @@ func set_question_number(turn_num: int, total: int = 10) -> void:
 		lbl_round.text = "سوال %s از %s" % [_fa_digits(turn_num), _fa_digits(total)]
 
 func reset_header() -> void:
+	_local_answered_confirmed = false
 	_quiz_scores = {1: 0, 2: 0, 3: 0, 4: 0}
 	super.reset_header()
 	clear_answered_states()

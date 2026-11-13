@@ -1,15 +1,17 @@
 class_name Quiz3D
 extends "res://scripts/games/base_game_board.gd"
 
-# Quiz3D - Cafe Fekr Royal Trivia Game
-# Complete 2-4 Player Quiz Experience:
-# - Procedural 3D luxury walnut & brass table console with 4 player crystal pedestals
-# - Responsive safe-area 2D mobile CanvasLayer UI (strictly bounded between TopHeader & BottomBar)
-# - Live 2-4 player lock-in status strip, rich Persian typography, and full reveal/VFX feedback
-# - Scores: +1 for correct, -1 for wrong, 0 for timeout
+# Quiz3D - Cafe Fekr Royal 3D Tabletop Trivia Board
+# Pure 3D board architecture (zero 2D CanvasLayer gameplay cards):
+# - Carved mahogany, brushed brass & emerald velvet tabletop console within [-0.64..+0.64] x [-0.58..+0.58]
+# - 10 physical brass & glowing jewel progress sockets along the upper crown bar
+# - Inclined walnut-and-brass 3D Question Lectern with crisp SubViewport parchment tablet
+# - 4 physical 3D interactive Answer Keycaps (الف، ب، ج، د) with single-source _unhandled_input raycasting
+# - 2-4 physical 3D Player Crystal Pedestals & nameplates with live lock-in beacons & reveal answer pucks
+# - Full 1:1 protocol sync with kafehfekrbackend/Controllers/GameSession/quiz_game_session.py
 
 const FontHekayat: Font = preload("res://assets/fonts/hekayat.ttf")
-
+const DRAG_THRESHOLD: float = 16.0
 const OPTION_LETTERS: Array[String] = ["الف", "ب", "ج", "د"]
 
 const FACTION_COLORS: Dictionary = {
@@ -19,10 +21,18 @@ const FACTION_COLORS: Dictionary = {
 	4: Color(1.00, 0.80, 0.18), # Sunburst Yellow
 }
 
-# --- State ---
+const KEYCAP_COORDS: Array[Vector3] = [
+	Vector3(0.285, 0.052, 0.090),   # Option 1 (الف) - Top-Right (RTL)
+	Vector3(-0.285, 0.052, 0.090),  # Option 2 (ب)   - Top-Left
+	Vector3(0.285, 0.052, 0.305),   # Option 3 (ج)   - Bottom-Right
+	Vector3(-0.285, 0.052, 0.305),  # Option 4 (د)   - Bottom-Left
+]
+
+# --- Game State ---
 var current_question_num: int = 1
 var total_questions_count: int = 10
 var current_question_text: String = ""
+var current_category_title: String = ""
 var current_options: Array = []
 var selected_option_idx: int = 0
 var has_answered_this_turn: bool = false
@@ -30,1154 +40,1258 @@ var is_in_reveal_phase: bool = false
 var player_scores: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
 var player_locked_in: Dictionary = {1: false, 2: false, 3: false, 4: false}
 var _match_started: bool = false
-var _reveal_timer_tween: Tween = null
-var _reveal_remaining: float = 0.0
+var _requested_gamer_id_sync: bool = false
 
-# --- 3D Scene Elements ---
+# --- Lectern Status / Reveal Progress State ---
+var _lectern_status_text: String = "⏳ گزینه درست را روی کلیدهای پایین لمس کنید"
+var _lectern_status_color: Color = Color(0.96, 0.86, 0.52)
+var _lectern_reveal_pct: float = 0.0
+var _lectern_show_reveal_bar: bool = false
+var _reveal_timer_tween: Tween = null
+var _reveal_tween_pct: float = 0.0:
+	set(v):
+		_reveal_tween_pct = v
+		_lectern_reveal_pct = v
+		if is_instance_valid(_lectern_reveal_fill):
+			_lectern_reveal_fill.value = v
+			_queue_vp_redraw(_lectern_vp)
+
+# --- Input Tracking (Single-Source Camera Raycasting) ---
+var hovered_option_idx: int = 0
+var _is_pointer_down: bool = false
+var _press_screen_pos: Vector2 = Vector2.ZERO
+var _press_down_time: float = 0.0
+var _last_click_time: float = 0.0
+var _anim_time: float = 0.0
+var _active_tweens: Array[Tween] = []
+
+# --- Shared Procedural PBR Materials ---
+var _mat_mahogany: StandardMaterial3D
+var _mat_walnut: StandardMaterial3D
+var _mat_brass: StandardMaterial3D
+var _mat_emerald_felt: StandardMaterial3D
+var _mat_socket_bronze: StandardMaterial3D
+var _mat_gem_unlit: StandardMaterial3D
+var _mat_gem_done: StandardMaterial3D
+var _mat_gem_active: StandardMaterial3D
+var _mat_seal_sapphire: StandardMaterial3D
+
+# --- 3D Board Scene References ---
 var stand_root: Node3D
 var center_medallion: MeshInstance3D
 var center_medallion_mat: StandardMaterial3D
-var player_crystals: Dictionary = {} # gamer_id -> MeshInstance3D
-var crystal_materials: Dictionary = {}
+var lbl_crown_counter: Label3D
+var progress_gems: Array[MeshInstance3D] = []
 
-# --- 2D UI Elements ---
-var canvas_layer: CanvasLayer
-var main_container: Control
-var safe_margin: MarginContainer
-var scroll_container: ScrollContainer
-var content_box: VBoxContainer
+# --- 3D Question Lectern ---
+var lectern_root: Node3D
+var _lectern_vp: SubViewport
+var _lectern_cat_lbl: Label
+var _lectern_cnt_lbl: Label
+var _lectern_q_lbl: Label
+var _lectern_status_lbl: Label
+var _lectern_reveal_bar_bg: PanelContainer
+var _lectern_reveal_fill: ProgressBar
 
-var player_status_row: HBoxContainer
-var player_status_chips: Dictionary = {} # gid -> Dictionary of chip refs
+# --- 4 Physical 3D Keycaps ---
+var keycap_nodes: Array[Node3D] = []
+var keycap_rim_mats: Array[StandardMaterial3D] = []
+var keycap_hover_rings: Array[MeshInstance3D] = []
+var keycap_badge_mats: Array[StandardMaterial3D] = []
+var keycap_badge_labels: Array[Label3D] = []
+var keycap_vps: Array[SubViewport] = []
+var keycap_text_labels: Array[Label] = []
+var keycap_bg_panels: Array[PanelContainer] = []
+var keycap_bg_styles: Array[StyleBoxFlat] = []
+var keycap_token_anchors: Array[Node3D] = []
+var keycap_areas: Array[Area3D] = []
+var _spawned_answer_tokens: Array[Node3D] = []
 
-var question_card: PanelContainer
-var lbl_category: Label
-var lbl_question: Label
-var lbl_question_tag: Label
-var question_progress_bar: ProgressBar
-
-var status_banner_card: PanelContainer
-var lbl_status_banner: Label
-var reveal_progress_bar: ProgressBar
-
-var options_container: VBoxContainer
-var option_cards: Array[PanelContainer] = []
-var option_buttons: Array[Button] = []
-var option_badges: Array[PanelContainer] = []
-var option_badge_labels: Array[Label] = []
-var option_labels: Array[Label] = []
-var option_player_tags: Array[HBoxContainer] = []
-var option_hovered: Array[bool] = [false, false, false, false]
-
-var vfx_particles_container: Control
-
-# --- Styles ---
-var _style_card_bg: StyleBoxFlat
-var _style_category_pill: StyleBoxFlat
-var _style_counter_pill: StyleBoxFlat
-var _style_option_normal: StyleBoxFlat
-var _style_option_hover: StyleBoxFlat
-var _style_option_selected: StyleBoxFlat
-var _style_option_correct: StyleBoxFlat
-var _style_option_wrong: StyleBoxFlat
-var _style_option_dimmed: StyleBoxFlat
-var _style_badge_normal: StyleBoxFlat
-var _style_badge_selected: StyleBoxFlat
-var _style_badge_correct: StyleBoxFlat
-var _style_badge_wrong: StyleBoxFlat
-var _style_banner_locked: StyleBoxFlat
-var _style_banner_correct: StyleBoxFlat
-var _style_banner_wrong: StyleBoxFlat
-var _style_banner_timeout: StyleBoxFlat
+# --- 2-4 Physical 3D Player Pedestals ---
+var pedestals_container: Node3D
+var player_pedestal_nodes: Dictionary = {}   # gid -> Node3D
+var player_crystals: Dictionary = {}         # gid -> MeshInstance3D
+var crystal_materials: Dictionary = {}       # gid -> StandardMaterial3D
+var crystal_halos: Dictionary = {}           # gid -> MeshInstance3D
+var player_nameplates: Dictionary = {}       # gid -> Label3D
+var player_status_3d: Dictionary = {}        # gid -> Label3D
+var _built_pedestal_count: int = 0
 
 func _ready() -> void:
 	game_type = GameTypes.QUIZ
+	_setup_materials()
+	_build_3d_board()
 	super._ready()
-	_setup_styles()
-	_build_3d_tabletop_stand()
-	_build_2d_ui()
-	if is_instance_valid(main_container):
-		main_container.visible = false
 	sync_turn_state()
-	_refresh_player_status_strip()
+	_rebuild_player_pedestals()
+	_refresh_lectern_viewport()
 
 func _exit_tree() -> void:
+	_kill_all_tweens()
 	if _reveal_timer_tween and _reveal_timer_tween.is_valid():
 		_reveal_timer_tween.kill()
 		_reveal_timer_tween = null
-	if is_instance_valid(main_container):
-		main_container.queue_free()
-	if is_instance_valid(canvas_layer):
-		canvas_layer.queue_free()
 	cleanup_board()
 	super._exit_tree()
 
+func _process(delta: float) -> void:
+	_anim_time += delta * 2.8
+	if is_instance_valid(center_medallion):
+		center_medallion.rotate_y(delta * (1.5 if is_in_reveal_phase else 0.45))
+
+	for gid in player_crystals.keys():
+		var crys: MeshInstance3D = player_crystals[gid]
+		if is_instance_valid(crys):
+			var is_locked: bool = bool(player_locked_in.get(gid, false))
+			crys.rotate_y(delta * (2.6 if is_locked else 0.7))
+			crys.position.y = 0.062 + sin(_anim_time + float(gid) * 1.1) * (0.006 if is_locked else 0.0025)
+
+		var halo = crystal_halos.get(gid)
+		if is_instance_valid(halo) and halo.visible:
+			var sc = 1.0 + sin(_anim_time * 2.2) * 0.09
+			halo.scale = Vector3(sc, 1.0, sc)
+
+# --- Turn & Network Sync ---
+func _needs_gamer_id_sync() -> bool:
+	if GameManager.match_players.is_empty():
+		return true
+	for p in GameManager.match_players:
+		if typeof(p) == TYPE_DICTIONARY and int(p.get("gamer_id", 0)) <= 0:
+			return true
+	return false
+
+func _trigger_silent_gamer_id_sync() -> void:
+	if _requested_gamer_id_sync or not GameManager.is_game_active:
+		return
+	if not _needs_gamer_id_sync():
+		return
+	_requested_gamer_id_sync = true
+	NetworkManager.silent_quiz_sync_pending = true
+	NetworkManager.send_game_command("RequestReconnectData", {})
+
 func sync_turn_state() -> void:
-	# For Quiz (simultaneous game), skip super.sync_turn_state() to avoid
-	# the base class calling on_turn_changed() which would create infinite recursion.
+	# Simultaneous game: skip super.sync_turn_state() to prevent on_turn_changed infinite recursion
 	my_player_index = GameManager.my_player_index
 	current_turn = GameManager.current_turn
 	if not GameManager.is_game_active:
 		is_my_turn = false
 		is_board_locked = true
 		return
-	is_my_turn = true
-	is_board_locked = false
 	_match_started = true
+	is_my_turn = true
+	is_board_locked = is_in_reveal_phase or has_answered_this_turn
+	_trigger_silent_gamer_id_sync()
+	_rebuild_player_pedestals()
+	_refresh_pedestals_text_and_lights()
 
-func _process(delta: float) -> void:
-	_update_hud_visibility()
-	_update_responsive_margins()
-	if is_instance_valid(center_medallion):
-		center_medallion.rotate_y(delta * (1.2 if is_in_reveal_phase else 0.35))
+func _sync_hud_scores() -> void:
+	var s1 = _get_score_for_gid(1)
+	var s2 = _get_score_for_gid(2)
+	GameManager.p1_score = s1
+	GameManager.p2_score = s2
+	_update_header_scores()
 
-func _is_hud_overlay_blocking() -> bool:
-	if not _match_started or not GameManager.is_game_active:
-		return true
-	var tree = get_tree()
-	if not tree:
-		return false
-	var hud = tree.get_first_node_in_group("base_game_hud")
-	if not is_instance_valid(hud):
-		hud = tree.root.find_child("BaseGameHUD", true, false)
-	if is_instance_valid(hud):
-		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
-			return true
-		var start_ov = hud.get_node_or_null("StartGameOverlay")
-		if is_instance_valid(start_ov) and start_ov.visible:
-			return true
-		var res_dlg = hud.get_node_or_null("GameResultDialog")
-		if is_instance_valid(res_dlg) and res_dlg.visible:
-			return true
-		var surr_dlg = hud.get_node_or_null("SurrenderDialog")
-		if is_instance_valid(surr_dlg) and surr_dlg.visible:
-			return true
-		var pause_dlg = hud.get_node_or_null("DisconnectPauseDialog")
-		if is_instance_valid(pause_dlg) and pause_dlg.visible:
-			return true
-	return false
+# --- Materials ---
+func _setup_materials() -> void:
+	_mat_mahogany = StandardMaterial3D.new()
+	_mat_mahogany.albedo_color = Color(0.16, 0.085, 0.05)
+	_mat_mahogany.roughness = 0.36
+	_mat_mahogany.metallic = 0.06
 
-func _update_hud_visibility() -> void:
-	if not is_instance_valid(main_container):
-		return
-	var tree = get_tree()
-	if tree:
-		var hud = tree.get_first_node_in_group("base_game_hud")
-		if not is_instance_valid(hud):
-			hud = tree.root.find_child("BaseGameHUD", true, false)
-		if is_instance_valid(hud) and main_container.get_parent() != hud:
-			if main_container.get_parent():
-				main_container.get_parent().remove_child(main_container)
-			hud.add_child(main_container)
-			var start_ov = hud.get_node_or_null("StartGameOverlay")
-			if is_instance_valid(start_ov):
-				hud.move_child(main_container, start_ov.get_index())
-			if is_instance_valid(canvas_layer):
-				canvas_layer.queue_free()
-				canvas_layer = null
-	var should_show = not _is_hud_overlay_blocking()
-	if main_container.visible != should_show:
-		main_container.visible = should_show
+	_mat_walnut = StandardMaterial3D.new()
+	_mat_walnut.albedo_color = Color(0.24, 0.135, 0.075)
+	_mat_walnut.roughness = 0.32
+	_mat_walnut.metallic = 0.05
 
-func _update_responsive_margins() -> void:
-	if not is_instance_valid(safe_margin) or not is_instance_valid(main_container):
-		return
-	var total_w = main_container.size.x
-	if total_w <= 0.0:
-		return
-	var target_max_w = 992.0
-	var side_pad = maxf(36.0, (total_w - target_max_w) * 0.5)
-	if absf(float(safe_margin.get_theme_constant("margin_left")) - side_pad) > 2.0:
-		safe_margin.add_theme_constant_override("margin_left", int(side_pad))
-		safe_margin.add_theme_constant_override("margin_right", int(side_pad))
+	_mat_brass = StandardMaterial3D.new()
+	_mat_brass.albedo_color = Color(0.86, 0.69, 0.28)
+	_mat_brass.metallic = 0.88
+	_mat_brass.roughness = 0.24
 
-func _setup_styles() -> void:
-	# Question Card Background (Deep Royal Walnut & Brass Trim)
-	_style_card_bg = StyleBoxFlat.new()
-	_style_card_bg.bg_color = Color(0.10, 0.07, 0.05, 0.96)
-	_style_card_bg.set_corner_radius_all(24)
-	_style_card_bg.set_border_width_all(3)
-	_style_card_bg.border_width_bottom = 6
-	_style_card_bg.border_color = Color(0.88, 0.72, 0.34, 0.92)
-	_style_card_bg.shadow_color = Color(0, 0, 0, 0.65)
-	_style_card_bg.shadow_size = 14
-	_style_card_bg.shadow_offset = Vector2(0, 6)
-	_style_card_bg.content_margin_left = 26
-	_style_card_bg.content_margin_right = 26
-	_style_card_bg.content_margin_top = 20
-	_style_card_bg.content_margin_bottom = 22
+	_mat_emerald_felt = StandardMaterial3D.new()
+	_mat_emerald_felt.albedo_color = Color(0.055, 0.165, 0.11)
+	_mat_emerald_felt.roughness = 0.92
 
-	_style_category_pill = StyleBoxFlat.new()
-	_style_category_pill.bg_color = Color(0.24, 0.15, 0.06, 0.95)
-	_style_category_pill.border_color = Color(0.92, 0.75, 0.32, 0.85)
-	_style_category_pill.set_border_width_all(1)
-	_style_category_pill.set_corner_radius_all(14)
-	_style_category_pill.content_margin_left = 14
-	_style_category_pill.content_margin_right = 14
-	_style_category_pill.content_margin_top = 5
-	_style_category_pill.content_margin_bottom = 5
+	_mat_socket_bronze = StandardMaterial3D.new()
+	_mat_socket_bronze.albedo_color = Color(0.32, 0.24, 0.13)
+	_mat_socket_bronze.metallic = 0.75
+	_mat_socket_bronze.roughness = 0.35
 
-	_style_counter_pill = StyleBoxFlat.new()
-	_style_counter_pill.bg_color = Color(0.09, 0.17, 0.28, 0.95)
-	_style_counter_pill.border_color = Color(0.40, 0.75, 0.98, 0.85)
-	_style_counter_pill.set_border_width_all(1)
-	_style_counter_pill.set_corner_radius_all(14)
-	_style_counter_pill.content_margin_left = 14
-	_style_counter_pill.content_margin_right = 14
-	_style_counter_pill.content_margin_top = 5
-	_style_counter_pill.content_margin_bottom = 5
+	_mat_gem_unlit = StandardMaterial3D.new()
+	_mat_gem_unlit.albedo_color = Color(0.16, 0.14, 0.12)
+	_mat_gem_unlit.roughness = 0.40
+	_mat_gem_unlit.metallic = 0.20
 
-	# Option Card Styles
-	_style_option_normal = StyleBoxFlat.new()
-	_style_option_normal.bg_color = Color(0.15, 0.10, 0.07, 0.95)
-	_style_option_normal.set_corner_radius_all(18)
-	_style_option_normal.set_border_width_all(2)
-	_style_option_normal.border_width_bottom = 4
-	_style_option_normal.border_color = Color(0.66, 0.52, 0.28, 0.78)
-	_style_option_normal.shadow_color = Color(0, 0, 0, 0.45)
-	_style_option_normal.shadow_size = 6
-	_style_option_normal.shadow_offset = Vector2(0, 3)
+	_mat_gem_done = StandardMaterial3D.new()
+	_mat_gem_done.albedo_color = Color(0.20, 0.84, 0.45)
+	_mat_gem_done.roughness = 0.18
+	_mat_gem_done.metallic = 0.35
+	_mat_gem_done.emission_enabled = true
+	_mat_gem_done.emission = Color(0.15, 0.72, 0.38)
+	_mat_gem_done.emission_energy_multiplier = 1.2
 
-	_style_option_hover = _style_option_normal.duplicate()
-	_style_option_hover.bg_color = Color(0.22, 0.14, 0.09, 0.98)
-	_style_option_hover.border_color = Color(1.0, 0.86, 0.40, 1.0)
-	_style_option_hover.shadow_color = Color(0.95, 0.78, 0.25, 0.35)
-	_style_option_hover.shadow_size = 10
+	_mat_gem_active = StandardMaterial3D.new()
+	_mat_gem_active.albedo_color = Color(1.0, 0.86, 0.28)
+	_mat_gem_active.roughness = 0.12
+	_mat_gem_active.metallic = 0.45
+	_mat_gem_active.emission_enabled = true
+	_mat_gem_active.emission = Color(1.0, 0.78, 0.20)
+	_mat_gem_active.emission_energy_multiplier = 2.6
 
-	_style_option_selected = _style_option_normal.duplicate()
-	_style_option_selected.bg_color = Color(0.08, 0.20, 0.36, 0.98)
-	_style_option_selected.set_border_width_all(3)
-	_style_option_selected.border_width_bottom = 5
-	_style_option_selected.border_color = Color(0.36, 0.82, 1.0, 1.0)
-	_style_option_selected.shadow_color = Color(0.20, 0.65, 1.0, 0.50)
-	_style_option_selected.shadow_size = 12
+	_mat_seal_sapphire = StandardMaterial3D.new()
+	_mat_seal_sapphire.albedo_color = Color(0.20, 0.68, 1.0)
+	_mat_seal_sapphire.metallic = 0.45
+	_mat_seal_sapphire.roughness = 0.18
+	_mat_seal_sapphire.emission_enabled = true
+	_mat_seal_sapphire.emission = Color(0.25, 0.75, 1.0)
+	_mat_seal_sapphire.emission_energy_multiplier = 1.8
 
-	_style_option_correct = _style_option_normal.duplicate()
-	_style_option_correct.bg_color = Color(0.07, 0.29, 0.14, 0.98)
-	_style_option_correct.set_border_width_all(3)
-	_style_option_correct.border_width_bottom = 5
-	_style_option_correct.border_color = Color(0.35, 0.98, 0.54, 1.0)
-	_style_option_correct.shadow_color = Color(0.20, 0.90, 0.42, 0.58)
-	_style_option_correct.shadow_size = 14
-
-	_style_option_wrong = _style_option_normal.duplicate()
-	_style_option_wrong.bg_color = Color(0.30, 0.07, 0.09, 0.98)
-	_style_option_wrong.set_border_width_all(3)
-	_style_option_wrong.border_width_bottom = 5
-	_style_option_wrong.border_color = Color(1.0, 0.32, 0.36, 1.0)
-	_style_option_wrong.shadow_color = Color(0.95, 0.20, 0.25, 0.50)
-	_style_option_wrong.shadow_size = 12
-
-	_style_option_dimmed = _style_option_normal.duplicate()
-	_style_option_dimmed.bg_color = Color(0.10, 0.07, 0.05, 0.72)
-	_style_option_dimmed.border_color = Color(0.35, 0.28, 0.18, 0.45)
-	_style_option_dimmed.shadow_size = 2
-
-	# Option Letter Medallion Badges
-	_style_badge_normal = StyleBoxFlat.new()
-	_style_badge_normal.bg_color = Color(0.26, 0.16, 0.09, 0.98)
-	_style_badge_normal.set_corner_radius_all(26)
-	_style_badge_normal.set_border_width_all(2)
-	_style_badge_normal.border_color = Color(0.88, 0.72, 0.34, 1.0)
-
-	_style_badge_selected = _style_badge_normal.duplicate()
-	_style_badge_selected.bg_color = Color(0.14, 0.44, 0.76, 0.98)
-	_style_badge_selected.border_color = Color(0.55, 0.90, 1.0, 1.0)
-
-	_style_badge_correct = _style_badge_normal.duplicate()
-	_style_badge_correct.bg_color = Color(0.12, 0.62, 0.28, 0.98)
-	_style_badge_correct.border_color = Color(0.50, 1.0, 0.65, 1.0)
-
-	_style_badge_wrong = _style_badge_normal.duplicate()
-	_style_badge_wrong.bg_color = Color(0.68, 0.14, 0.18, 0.98)
-	_style_badge_wrong.border_color = Color(1.0, 0.55, 0.55, 1.0)
-
-	# Status / Reveal Banner Styles
-	_style_banner_locked = StyleBoxFlat.new()
-	_style_banner_locked.bg_color = Color(0.08, 0.18, 0.30, 0.95)
-	_style_banner_locked.border_color = Color(0.36, 0.80, 1.0, 0.92)
-	_style_banner_locked.set_border_width_all(2)
-	_style_banner_locked.set_corner_radius_all(16)
-	_style_banner_locked.content_margin_left = 18
-	_style_banner_locked.content_margin_right = 18
-	_style_banner_locked.content_margin_top = 10
-	_style_banner_locked.content_margin_bottom = 10
-
-	_style_banner_correct = _style_banner_locked.duplicate()
-	_style_banner_correct.bg_color = Color(0.07, 0.28, 0.14, 0.97)
-	_style_banner_correct.border_color = Color(0.35, 0.98, 0.54, 1.0)
-
-	_style_banner_wrong = _style_banner_locked.duplicate()
-	_style_banner_wrong.bg_color = Color(0.28, 0.08, 0.10, 0.97)
-	_style_banner_wrong.border_color = Color(1.0, 0.36, 0.40, 1.0)
-
-	_style_banner_timeout = _style_banner_locked.duplicate()
-	_style_banner_timeout.bg_color = Color(0.16, 0.13, 0.09, 0.96)
-	_style_banner_timeout.border_color = Color(0.86, 0.72, 0.36, 0.90)
-
-# --- 3D Tabletop Stand Construction ---
-func _build_3d_tabletop_stand() -> void:
+# --- 3D Tabletop Board Construction ---
+func _build_3d_board() -> void:
 	stand_root = Node3D.new()
 	stand_root.name = "StandRoot"
 	add_child(stand_root)
 
-	var gold_mat = StandardMaterial3D.new()
-	gold_mat.albedo_color = Color(0.86, 0.70, 0.26)
-	gold_mat.metallic = 0.88
-	gold_mat.roughness = 0.22
+	# 1. Brass Outer Trim Base (1.28 x 1.16 footprint strictly within cafe_table safe zone)
+	var rim_mesh = BoxMesh.new()
+	rim_mesh.size = Vector3(1.28, 0.016, 1.16)
+	var rim_inst = MeshInstance3D.new()
+	rim_inst.mesh = rim_mesh
+	rim_inst.material_override = _mat_brass
+	rim_inst.position = Vector3(0.0, 0.008, 0.0)
+	stand_root.add_child(rim_inst)
 
-	# Central Mahogany Console Base on Cafe Table
-	var base_mesh = BoxMesh.new()
-	base_mesh.size = Vector3(1.15, 0.08, 0.85)
-	var base_mat = StandardMaterial3D.new()
-	base_mat.albedo_color = Color(0.20, 0.10, 0.055)
-	base_mat.roughness = 0.34
-	base_mat.metallic = 0.15
-	var base_inst = MeshInstance3D.new()
-	base_inst.mesh = base_mesh
-	base_inst.material_override = base_mat
-	base_inst.position = Vector3(0.0, 0.04, -0.05)
-	stand_root.add_child(base_inst)
+	# 2. Carved Mahogany Board Chassis
+	var chassis_mesh = BoxMesh.new()
+	chassis_mesh.size = Vector3(1.24, 0.036, 1.12)
+	var chassis_inst = MeshInstance3D.new()
+	chassis_inst.mesh = chassis_mesh
+	chassis_inst.material_override = _mat_mahogany
+	chassis_inst.position = Vector3(0.0, 0.022, 0.0)
+	stand_root.add_child(chassis_inst)
 
-	# Inlaid Gold Border Frame
-	var frame_mesh = BoxMesh.new()
-	frame_mesh.size = Vector3(1.19, 0.02, 0.89)
-	var frame_inst = MeshInstance3D.new()
-	frame_inst.mesh = frame_mesh
-	frame_inst.material_override = gold_mat
-	frame_inst.position = Vector3(0.0, 0.01, -0.05)
-	stand_root.add_child(frame_inst)
+	# 3. Recessed Emerald Velvet Felt Playing Bed
+	var felt_mesh = BoxMesh.new()
+	felt_mesh.size = Vector3(1.14, 0.012, 1.02)
+	var felt_inst = MeshInstance3D.new()
+	felt_inst.mesh = felt_mesh
+	felt_inst.material_override = _mat_emerald_felt
+	felt_inst.position = Vector3(0.0, 0.038, 0.0)
+	stand_root.add_child(felt_inst)
 
-	# Central Emerald Velvet Placard
-	var mat_mesh = BoxMesh.new()
-	mat_mesh.size = Vector3(0.95, 0.015, 0.65)
-	var mat_mat = StandardMaterial3D.new()
-	mat_mat.albedo_color = Color(0.05, 0.16, 0.11)
-	mat_mat.roughness = 0.88
-	var mat_inst = MeshInstance3D.new()
-	mat_inst.mesh = mat_mesh
-	mat_inst.material_override = mat_mat
-	mat_inst.position = Vector3(0.0, 0.085, -0.05)
-	stand_root.add_child(mat_inst)
+	# 4. Corner Brass Bolsters
+	var corner_mesh = CylinderMesh.new()
+	corner_mesh.top_radius = 0.022
+	corner_mesh.bottom_radius = 0.028
+	corner_mesh.height = 0.018
+	for sx in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			var bolster = MeshInstance3D.new()
+			bolster.mesh = corner_mesh
+			bolster.material_override = _mat_brass
+			bolster.position = Vector3(sx * 0.59, 0.044, sz * 0.53)
+			stand_root.add_child(bolster)
 
-	# Floating Rotating Golden Brass Ring Medallion in Center
-	var torus_mesh = TorusMesh.new()
-	torus_mesh.inner_radius = 0.14
-	torus_mesh.outer_radius = 0.175
+	# 5. Top Crown Bar (10 Question Progress Sockets + Center Rotating Medallion)
+	_build_top_crown_bar()
+
+	# 6. Inclined 3D Walnut & Brass Question Lectern
+	_build_question_lectern()
+
+	# 7. Four Physical 3D Interactive Answer Keycaps (الف، ب، ج، د)
+	_build_answer_keycaps()
+
+	# 8. Dynamic 2-4 Player Crystal Pedestals Container
+	pedestals_container = Node3D.new()
+	pedestals_container.name = "PlayerPedestals"
+	stand_root.add_child(pedestals_container)
+
+func _build_top_crown_bar() -> void:
+	var crown = Node3D.new()
+	crown.name = "TopCrownBar"
+	crown.position = Vector3(0.0, 0.045, -0.495)
+	stand_root.add_child(crown)
+
+	var rail_mesh = BoxMesh.new()
+	rail_mesh.size = Vector3(0.76, 0.018, 0.072)
+	var rail = MeshInstance3D.new()
+	rail.mesh = rail_mesh
+	rail.material_override = _mat_walnut
+	crown.add_child(rail)
+
+	var rail_trim = BoxMesh.new()
+	rail_trim.size = Vector3(0.78, 0.008, 0.080)
+	var trim_inst = MeshInstance3D.new()
+	trim_inst.mesh = rail_trim
+	trim_inst.material_override = _mat_brass
+	trim_inst.position = Vector3(0.0, -0.004, 0.0)
+	crown.add_child(trim_inst)
+
+	# Rotating Golden Medallion at Crown Center
+	var torus = TorusMesh.new()
+	torus.inner_radius = 0.020
+	torus.outer_radius = 0.028
 	center_medallion_mat = StandardMaterial3D.new()
-	center_medallion_mat.albedo_color = Color(0.92, 0.76, 0.30)
+	center_medallion_mat.albedo_color = Color(0.94, 0.78, 0.30)
 	center_medallion_mat.metallic = 0.90
-	center_medallion_mat.roughness = 0.20
+	center_medallion_mat.roughness = 0.18
 	center_medallion_mat.emission_enabled = true
-	center_medallion_mat.emission = Color(0.75, 0.55, 0.15)
-	center_medallion_mat.emission_energy_multiplier = 0.45
+	center_medallion_mat.emission = Color(0.75, 0.56, 0.16)
+	center_medallion_mat.emission_energy_multiplier = 0.55
+
 	center_medallion = MeshInstance3D.new()
-	center_medallion.mesh = torus_mesh
+	center_medallion.mesh = torus
 	center_medallion.material_override = center_medallion_mat
-	center_medallion.position = Vector3(0.0, 0.11, -0.05)
-	stand_root.add_child(center_medallion)
+	center_medallion.position = Vector3(0.0, 0.026, -0.028)
+	center_medallion.rotation_degrees.x = 70.0
+	crown.add_child(center_medallion)
 
-	# 4 Player Crystal Pedestals around the table console
-	var pedestal_coords: Dictionary = {
-		1: Vector3(-0.46, 0.10, 0.32),  # P1 Front-Left
-		2: Vector3(0.46, 0.10, 0.32),   # P2 Front-Right
-		3: Vector3(-0.46, 0.10, -0.42), # P3 Back-Left
-		4: Vector3(0.46, 0.10, -0.42),  # P4 Back-Right
-	}
+	# 10 Physical Brass Sockets & Gems across the Crown Bar
+	progress_gems.clear()
+	var sock_mesh = CylinderMesh.new()
+	sock_mesh.top_radius = 0.015
+	sock_mesh.bottom_radius = 0.018
+	sock_mesh.height = 0.010
 
-	for gid in pedestal_coords.keys():
-		var pos: Vector3 = pedestal_coords[gid]
+	var gem_mesh = SphereMesh.new()
+	gem_mesh.radius = 0.011
+	gem_mesh.height = 0.016
+	gem_mesh.radial_segments = 10
+	gem_mesh.rings = 6
 
-		var sock_mesh = CylinderMesh.new()
-		sock_mesh.top_radius = 0.065
-		sock_mesh.bottom_radius = 0.075
-		sock_mesh.height = 0.05
-		var sock_inst = MeshInstance3D.new()
-		sock_inst.mesh = sock_mesh
-		sock_inst.material_override = gold_mat
-		sock_inst.position = pos
-		stand_root.add_child(sock_inst)
+	for i in range(10):
+		var x_pos = -0.315 + float(i) * 0.070
+		var sock = MeshInstance3D.new()
+		sock.mesh = sock_mesh
+		sock.material_override = _mat_socket_bronze
+		sock.position = Vector3(x_pos, 0.010, 0.010)
+		crown.add_child(sock)
 
-		var sph_mesh = SphereMesh.new()
-		sph_mesh.radius = 0.05
-		sph_mesh.height = 0.10
-		var sph_mat = StandardMaterial3D.new()
-		var col: Color = FACTION_COLORS.get(gid, Color.WHITE)
-		sph_mat.albedo_color = col.darkened(0.45)
-		sph_mat.roughness = 0.15
-		sph_mat.metallic = 0.4
-		sph_mat.emission_enabled = true
-		sph_mat.emission = col.darkened(0.7)
-		sph_mat.emission_energy_multiplier = 0.5
+		var gem = MeshInstance3D.new()
+		gem.mesh = gem_mesh
+		gem.material_override = _mat_gem_unlit
+		gem.position = Vector3(x_pos, 0.017, 0.010)
+		crown.add_child(gem)
+		progress_gems.append(gem)
 
-		var sph_inst = MeshInstance3D.new()
-		sph_inst.mesh = sph_mesh
-		sph_inst.material_override = sph_mat
-		sph_inst.position = pos + Vector3(0.0, 0.055, 0.0)
-		stand_root.add_child(sph_inst)
+	lbl_crown_counter = Label3D.new()
+	lbl_crown_counter.text = "سوال ۱ از ۱۰"
+	lbl_crown_counter.font = FontHekayat
+	lbl_crown_counter.font_size = 36
+	lbl_crown_counter.pixel_size = 0.0011
+	lbl_crown_counter.modulate = Color(1.0, 0.90, 0.50)
+	lbl_crown_counter.outline_modulate = Color(0.05, 0.02, 0.01, 0.95)
+	lbl_crown_counter.outline_size = 6
+	lbl_crown_counter.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	lbl_crown_counter.position = Vector3(0.0, 0.013, -0.018)
+	crown.add_child(lbl_crown_counter)
 
-		player_crystals[gid] = sph_inst
-		crystal_materials[gid] = sph_mat
+func _build_question_lectern() -> void:
+	# Sculpted Lectern Placement (clean clearance from crown bar above & keycaps below)
+	lectern_root = Node3D.new()
+	lectern_root.name = "QuestionLectern"
+	lectern_root.position = Vector3(0.0, 0.058, -0.215)
+	lectern_root.rotation_degrees = Vector3(7.0, 0.0, 0.0)
+	stand_root.add_child(lectern_root)
 
-# --- 2D UI Setup ---
-func _build_2d_ui() -> void:
-	canvas_layer = CanvasLayer.new()
-	canvas_layer.layer = 1
-	add_child(canvas_layer)
+	# Carved Walnut Lectern Body
+	var slab_mesh = BoxMesh.new()
+	slab_mesh.size = Vector3(1.10, 0.036, 0.335)
+	var slab = MeshInstance3D.new()
+	slab.mesh = slab_mesh
+	slab.material_override = _mat_walnut
+	lectern_root.add_child(slab)
 
-	main_container = Control.new()
-	main_container.name = "MainContainer"
-	main_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	main_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	main_container.visible = false
-	canvas_layer.add_child(main_container)
+	# Raised Brushed Brass Bezel Rim (4 Bars)
+	var w_bar = BoxMesh.new()
+	w_bar.size = Vector3(1.12, 0.014, 0.020)
+	for sz in [-1.0, 1.0]:
+		var bar = MeshInstance3D.new()
+		bar.mesh = w_bar
+		bar.material_override = _mat_brass
+		bar.position = Vector3(0.0, 0.018, sz * 0.160)
+		lectern_root.add_child(bar)
 
-	# Strictly bounded Safe-Area Container between TopHeaderSlot (~308px) & BottomBar (154px)
-	safe_margin = MarginContainer.new()
-	safe_margin.name = "SafeAreaMargin"
-	safe_margin.anchor_left = 0.0
-	safe_margin.anchor_right = 1.0
-	safe_margin.anchor_top = 0.0
-	safe_margin.anchor_bottom = 1.0
-	safe_margin.offset_top = 314.0
-	safe_margin.offset_bottom = -168.0
-	safe_margin.add_theme_constant_override("margin_left", 44)
-	safe_margin.add_theme_constant_override("margin_right", 44)
-	safe_margin.add_theme_constant_override("margin_top", 8)
-	safe_margin.add_theme_constant_override("margin_bottom", 8)
-	safe_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	main_container.add_child(safe_margin)
+	var h_bar = BoxMesh.new()
+	h_bar.size = Vector3(0.020, 0.014, 0.340)
+	for sx in [-1.0, 1.0]:
+		var bar = MeshInstance3D.new()
+		bar.mesh = h_bar
+		bar.material_override = _mat_brass
+		bar.position = Vector3(sx * 0.550, 0.018, 0.0)
+		lectern_root.add_child(bar)
 
-	scroll_container = ScrollContainer.new()
-	scroll_container.name = "QuizScroll"
-	scroll_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll_container.mouse_filter = Control.MOUSE_FILTER_PASS
-	safe_margin.add_child(scroll_container)
+	# SubViewport High-DPI Lectern Display
+	_lectern_vp = SubViewport.new()
+	_lectern_vp.name = "LecternViewport"
+	_lectern_vp.size = Vector2i(1040, 300)
+	_lectern_vp.transparent_bg = false
+	_lectern_vp.msaa_2d = Viewport.MSAA_DISABLED
+	_lectern_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	lectern_root.add_child(_lectern_vp)
 
-	content_box = VBoxContainer.new()
-	content_box.name = "ContentBox"
-	content_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	content_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	content_box.add_theme_constant_override("separation", 16)
-	content_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	scroll_container.add_child(content_box)
+	var root_ctrl = Control.new()
+	root_ctrl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root_ctrl.size = Vector2(1040, 300)
+	_lectern_vp.add_child(root_ctrl)
 
-	# --- 1. Live Player Status Strip (2-4 Players Lock-In & Turn Result) ---
-	player_status_row = HBoxContainer.new()
-	player_status_row.name = "PlayerStatusRow"
-	player_status_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	player_status_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	player_status_row.add_theme_constant_override("separation", 10)
-	player_status_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content_box.add_child(player_status_row)
+	var bg_panel = PanelContainer.new()
+	bg_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg_panel.size = Vector2(1040, 300)
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.05, 0.035, 1.0)
+	sb.border_color = Color(0.88, 0.72, 0.32, 0.92)
+	sb.set_border_width_all(6)
+	sb.set_corner_radius_all(18)
+	sb.content_margin_left = 26
+	sb.content_margin_right = 26
+	sb.content_margin_top = 14
+	sb.content_margin_bottom = 14
+	bg_panel.add_theme_stylebox_override("panel", sb)
+	root_ctrl.add_child(bg_panel)
 
-	# --- 2. Question Card ---
-	question_card = PanelContainer.new()
-	question_card.name = "QuestionCard"
-	question_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	question_card.custom_minimum_size = Vector2(0, 176)
-	question_card.add_theme_stylebox_override("panel", _style_card_bg)
-	question_card.mouse_filter = Control.MOUSE_FILTER_PASS
-	content_box.add_child(question_card)
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	bg_panel.add_child(vbox)
 
-	var q_vbox = VBoxContainer.new()
-	q_vbox.add_theme_constant_override("separation", 12)
-	q_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	question_card.add_child(q_vbox)
+	# Header Row inside 3D Lectern
+	var hbox = HBoxContainer.new()
+	vbox.add_child(hbox)
 
-	# Header Row: Category Pill + Question Counter Pill
-	var q_header = HBoxContainer.new()
-	q_header.add_theme_constant_override("separation", 12)
-	q_vbox.add_child(q_header)
+	var sb_cnt = StyleBoxFlat.new()
+	sb_cnt.bg_color = Color(0.08, 0.18, 0.30, 0.95)
+	sb_cnt.border_color = Color(0.40, 0.78, 1.0, 0.90)
+	sb_cnt.set_border_width_all(2)
+	sb_cnt.set_corner_radius_all(12)
+	sb_cnt.content_margin_left = 14
+	sb_cnt.content_margin_right = 14
+	sb_cnt.content_margin_top = 4
+	sb_cnt.content_margin_bottom = 4
+	var cnt_pill = PanelContainer.new()
+	cnt_pill.add_theme_stylebox_override("panel", sb_cnt)
+	hbox.add_child(cnt_pill)
 
-	var cat_pill = PanelContainer.new()
-	cat_pill.add_theme_stylebox_override("panel", _style_category_pill)
-	q_header.add_child(cat_pill)
-
-	lbl_category = Label.new()
-	lbl_category.text = "💡 اطلاعات عمومی"
-	lbl_category.add_theme_font_override("font", FontHekayat)
-	lbl_category.add_theme_font_size_override("font_size", 24)
-	lbl_category.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-	cat_pill.add_child(lbl_category)
+	_lectern_cnt_lbl = Label.new()
+	_lectern_cnt_lbl.text = "سوال ۱ از ۱۰"
+	_lectern_cnt_lbl.add_theme_font_override("font", FontHekayat)
+	_lectern_cnt_lbl.add_theme_font_size_override("font_size", 26)
+	_lectern_cnt_lbl.add_theme_color_override("font_color", Color(0.84, 0.95, 1.0))
+	cnt_pill.add_child(_lectern_cnt_lbl)
 
 	var spacer = Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	q_header.add_child(spacer)
+	hbox.add_child(spacer)
 
-	var cnt_pill = PanelContainer.new()
-	cnt_pill.add_theme_stylebox_override("panel", _style_counter_pill)
-	q_header.add_child(cnt_pill)
+	var sb_cat = StyleBoxFlat.new()
+	sb_cat.bg_color = Color(0.24, 0.15, 0.06, 0.95)
+	sb_cat.border_color = Color(0.92, 0.75, 0.32, 0.90)
+	sb_cat.set_border_width_all(2)
+	sb_cat.set_corner_radius_all(12)
+	sb_cat.content_margin_left = 14
+	sb_cat.content_margin_right = 14
+	sb_cat.content_margin_top = 4
+	sb_cat.content_margin_bottom = 4
+	var cat_pill = PanelContainer.new()
+	cat_pill.add_theme_stylebox_override("panel", sb_cat)
+	hbox.add_child(cat_pill)
 
-	lbl_question_tag = Label.new()
-	lbl_question_tag.text = "سوال ۱ از ۱۰"
-	lbl_question_tag.add_theme_font_override("font", FontHekayat)
-	lbl_question_tag.add_theme_font_size_override("font_size", 24)
-	lbl_question_tag.add_theme_color_override("font_color", Color(0.82, 0.93, 1.0))
-	cnt_pill.add_child(lbl_question_tag)
+	_lectern_cat_lbl = Label.new()
+	_lectern_cat_lbl.text = "✨ پرسش مسابقه"
+	_lectern_cat_lbl.add_theme_font_override("font", FontHekayat)
+	_lectern_cat_lbl.add_theme_font_size_override("font_size", 26)
+	_lectern_cat_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	cat_pill.add_child(_lectern_cat_lbl)
 
-	# Subtle Question Progress Line
-	question_progress_bar = ProgressBar.new()
-	question_progress_bar.custom_minimum_size = Vector2(0, 6)
-	question_progress_bar.show_percentage = false
-	question_progress_bar.min_value = 0.0
-	question_progress_bar.max_value = 100.0
-	question_progress_bar.value = 10.0
-	var sb_q_bg = StyleBoxFlat.new()
-	sb_q_bg.bg_color = Color(0.22, 0.16, 0.10, 0.75)
-	sb_q_bg.set_corner_radius_all(3)
-	var sb_q_fill = StyleBoxFlat.new()
-	sb_q_fill.bg_color = Color(0.95, 0.76, 0.28, 0.95)
-	sb_q_fill.set_corner_radius_all(3)
-	question_progress_bar.add_theme_stylebox_override("background", sb_q_bg)
-	question_progress_bar.add_theme_stylebox_override("fill", sb_q_fill)
-	q_vbox.add_child(question_progress_bar)
+	# Question Body Text
+	_lectern_q_lbl = Label.new()
+	_lectern_q_lbl.text = "در حال بارگذاری سوال..."
+	_lectern_q_lbl.add_theme_font_override("font", FontHekayat)
+	_lectern_q_lbl.add_theme_font_size_override("font_size", 38)
+	_lectern_q_lbl.add_theme_constant_override("line_spacing", 4)
+	_lectern_q_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
+	_lectern_q_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	_lectern_q_lbl.add_theme_constant_override("shadow_offset_x", 2)
+	_lectern_q_lbl.add_theme_constant_override("shadow_offset_y", 2)
+	_lectern_q_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lectern_q_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_lectern_q_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lectern_q_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lectern_q_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(_lectern_q_lbl)
 
-	# Question Text Label
-	lbl_question = Label.new()
-	lbl_question.name = "LblQuestion"
-	lbl_question.text = "در حال بارگذاری سوال..."
-	lbl_question.add_theme_font_override("font", FontHekayat)
-	lbl_question.add_theme_font_size_override("font_size", 35)
-	lbl_question.add_theme_constant_override("line_spacing", 6)
-	lbl_question.add_theme_color_override("font_color", Color(1.0, 0.97, 0.92))
-	lbl_question.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
-	lbl_question.add_theme_constant_override("shadow_offset_x", 1)
-	lbl_question.add_theme_constant_override("shadow_offset_y", 2)
-	lbl_question.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_question.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	lbl_question.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	lbl_question.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl_question.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	q_vbox.add_child(lbl_question)
-
-	# --- 3. Compact Status / Reveal Banner Card ---
-	status_banner_card = PanelContainer.new()
-	status_banner_card.name = "StatusBannerCard"
-	status_banner_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	status_banner_card.visible = false
-	status_banner_card.add_theme_stylebox_override("panel", _style_banner_locked)
-	status_banner_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content_box.add_child(status_banner_card)
+	# Lectern Bottom Status & Reveal Bar
+	_lectern_reveal_bar_bg = PanelContainer.new()
+	var sb_st = StyleBoxFlat.new()
+	sb_st.bg_color = Color(0.13, 0.09, 0.06, 0.95)
+	sb_st.border_color = Color(0.65, 0.52, 0.26, 0.70)
+	sb_st.set_border_width_all(1)
+	sb_st.set_corner_radius_all(10)
+	sb_st.content_margin_left = 14
+	sb_st.content_margin_right = 14
+	sb_st.content_margin_top = 4
+	sb_st.content_margin_bottom = 4
+	_lectern_reveal_bar_bg.add_theme_stylebox_override("panel", sb_st)
+	vbox.add_child(_lectern_reveal_bar_bg)
 
 	var st_vbox = VBoxContainer.new()
-	st_vbox.add_theme_constant_override("separation", 6)
-	status_banner_card.add_child(st_vbox)
+	st_vbox.add_theme_constant_override("separation", 4)
+	_lectern_reveal_bar_bg.add_child(st_vbox)
 
-	lbl_status_banner = Label.new()
-	lbl_status_banner.text = ""
-	lbl_status_banner.add_theme_font_override("font", FontHekayat)
-	lbl_status_banner.add_theme_font_size_override("font_size", 25)
-	lbl_status_banner.add_theme_color_override("font_color", Color(0.88, 0.96, 1.0))
-	lbl_status_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_status_banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	st_vbox.add_child(lbl_status_banner)
+	_lectern_status_lbl = Label.new()
+	_lectern_status_lbl.text = _lectern_status_text
+	_lectern_status_lbl.add_theme_font_override("font", FontHekayat)
+	_lectern_status_lbl.add_theme_font_size_override("font_size", 24)
+	_lectern_status_lbl.add_theme_color_override("font_color", _lectern_status_color)
+	_lectern_status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	st_vbox.add_child(_lectern_status_lbl)
 
-	reveal_progress_bar = ProgressBar.new()
-	reveal_progress_bar.custom_minimum_size = Vector2(0, 5)
-	reveal_progress_bar.show_percentage = false
-	reveal_progress_bar.visible = false
-	reveal_progress_bar.min_value = 0.0
-	reveal_progress_bar.max_value = 100.0
-	reveal_progress_bar.value = 100.0
-	var sb_rev_bg = StyleBoxFlat.new()
-	sb_rev_bg.bg_color = Color(0.05, 0.04, 0.03, 0.70)
-	sb_rev_bg.set_corner_radius_all(3)
-	var sb_rev_fill = StyleBoxFlat.new()
-	sb_rev_fill.bg_color = Color(1.0, 0.84, 0.32, 0.95)
-	sb_rev_fill.set_corner_radius_all(3)
-	reveal_progress_bar.add_theme_stylebox_override("background", sb_rev_bg)
-	reveal_progress_bar.add_theme_stylebox_override("fill", sb_rev_fill)
-	st_vbox.add_child(reveal_progress_bar)
+	_lectern_reveal_fill = ProgressBar.new()
+	_lectern_reveal_fill.custom_minimum_size = Vector2(0, 6)
+	_lectern_reveal_fill.show_percentage = false
+	_lectern_reveal_fill.visible = false
+	_lectern_reveal_fill.min_value = 0.0
+	_lectern_reveal_fill.max_value = 100.0
+	_lectern_reveal_fill.value = 100.0
+	var sb_rb = StyleBoxFlat.new()
+	sb_rb.bg_color = Color(0.05, 0.04, 0.03, 0.85)
+	sb_rb.set_corner_radius_all(3)
+	var sb_rf = StyleBoxFlat.new()
+	sb_rf.bg_color = Color(1.0, 0.84, 0.30, 1.0)
+	sb_rf.set_corner_radius_all(3)
+	_lectern_reveal_fill.add_theme_stylebox_override("background", sb_rb)
+	_lectern_reveal_fill.add_theme_stylebox_override("fill", sb_rf)
+	st_vbox.add_child(_lectern_reveal_fill)
 
-	# --- 4. Four Interactive Option Cards ---
-	options_container = VBoxContainer.new()
-	options_container.name = "OptionsContainer"
-	options_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	options_container.add_theme_constant_override("separation", 13)
-	options_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content_box.add_child(options_container)
+	# 3D Screen Surface mapped onto Lectern Top
+	var quad = QuadMesh.new()
+	quad.size = Vector2(1.04, 0.295)
+	var scr_mat = StandardMaterial3D.new()
+	scr_mat.albedo_color = Color.WHITE
+	scr_mat.albedo_texture = _lectern_vp.get_texture()
+	scr_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	scr_mat.roughness = 0.45
+	scr_mat.emission_enabled = true
+	scr_mat.emission_texture = _lectern_vp.get_texture()
+	scr_mat.emission_energy_multiplier = 0.58
 
-	option_cards.clear()
-	option_buttons.clear()
-	option_badges.clear()
-	option_badge_labels.clear()
-	option_labels.clear()
-	option_player_tags.clear()
+	var scr_mesh = MeshInstance3D.new()
+	scr_mesh.mesh = quad
+	scr_mesh.material_override = scr_mat
+	scr_mesh.position = Vector3(0.0, 0.0195, 0.0)
+	scr_mesh.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	lectern_root.add_child(scr_mesh)
 
-	var empty_sb = StyleBoxEmpty.new()
+func _build_answer_keycaps() -> void:
+	keycap_nodes.clear()
+	keycap_rim_mats.clear()
+	keycap_hover_rings.clear()
+	keycap_badge_mats.clear()
+	keycap_badge_labels.clear()
+	keycap_vps.clear()
+	keycap_text_labels.clear()
+	keycap_bg_panels.clear()
+	keycap_bg_styles.clear()
+	keycap_token_anchors.clear()
+	keycap_areas.clear()
+
+	var body_mesh = BoxMesh.new()
+	body_mesh.size = Vector3(0.515, 0.032, 0.175)
+
+	var rim_mesh = BoxMesh.new()
+	rim_mesh.size = Vector3(0.532, 0.016, 0.192)
+
+	var badge_mesh = CylinderMesh.new()
+	badge_mesh.top_radius = 0.026
+	badge_mesh.bottom_radius = 0.029
+	badge_mesh.height = 0.014
+
+	var hover_mesh = BoxMesh.new()
+	hover_mesh.size = Vector3(0.546, 0.008, 0.204)
+	var hover_mat = StandardMaterial3D.new()
+	hover_mat.albedo_color = Color(1.0, 0.85, 0.30, 0.85)
+	hover_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	hover_mat.emission_enabled = true
+	hover_mat.emission = Color(1.0, 0.82, 0.25)
+	hover_mat.emission_energy_multiplier = 1.9
+
+	var col_shape = BoxShape3D.new()
+	col_shape.size = Vector3(0.54, 0.10, 0.20)
 
 	for i in range(4):
-		var opt_idx = i + 1
+		var opt_idx: int = i + 1
+		var cap = Node3D.new()
+		cap.name = "AnswerKeycap%d" % opt_idx
+		cap.position = KEYCAP_COORDS[i]
+		cap.rotation_degrees = Vector3(5.0, 0.0, 0.0)
+		stand_root.add_child(cap)
+		keycap_nodes.append(cap)
 
-		var card = PanelContainer.new()
-		card.name = "OptionCard%d" % opt_idx
-		card.visible = false
-		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.custom_minimum_size = Vector2(0, 88)
-		card.add_theme_stylebox_override("panel", _style_option_normal)
-		card.mouse_filter = Control.MOUSE_FILTER_PASS
-		options_container.add_child(card)
+		# Metallic Status Collar Rim
+		var r_mat = StandardMaterial3D.new()
+		r_mat.albedo_color = Color(0.80, 0.64, 0.26)
+		r_mat.metallic = 0.86
+		r_mat.roughness = 0.24
+		keycap_rim_mats.append(r_mat)
 
-		var margin = MarginContainer.new()
-		margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		margin.add_theme_constant_override("margin_left", 18)
-		margin.add_theme_constant_override("margin_right", 18)
-		margin.add_theme_constant_override("margin_top", 12)
-		margin.add_theme_constant_override("margin_bottom", 12)
-		card.add_child(margin)
+		var rim = MeshInstance3D.new()
+		rim.mesh = rim_mesh
+		rim.material_override = r_mat
+		rim.position = Vector3(0.0, -0.004, 0.0)
+		cap.add_child(rim)
 
-		var btn_hbox = HBoxContainer.new()
-		btn_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		btn_hbox.add_theme_constant_override("separation", 14)
-		btn_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		margin.add_child(btn_hbox)
+		# Subtle Hover Highlight Plate
+		var h_ring = MeshInstance3D.new()
+		h_ring.mesh = hover_mesh
+		h_ring.material_override = hover_mat
+		h_ring.position = Vector3(0.0, -0.009, 0.0)
+		h_ring.visible = false
+		cap.add_child(h_ring)
+		keycap_hover_rings.append(h_ring)
 
-		# Left side: player answer pills or "انتخاب شما" badge
-		var p_tags = HBoxContainer.new()
-		p_tags.name = "PlayerTags"
-		p_tags.add_theme_constant_override("separation", 6)
-		p_tags.alignment = BoxContainer.ALIGNMENT_BEGIN
-		p_tags.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		p_tags.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		btn_hbox.add_child(p_tags)
+		# Walnut Keycap Body
+		var body = MeshInstance3D.new()
+		body.mesh = body_mesh
+		body.material_override = _mat_walnut
+		cap.add_child(body)
 
-		# Middle: Expanding & Smart-Wrapping Persian Option Text
+		# SubViewport for Engraved Option Text
+		var vp = SubViewport.new()
+		vp.name = "OptionVP%d" % opt_idx
+		vp.size = Vector2i(460, 160)
+		vp.transparent_bg = false
+		vp.msaa_2d = Viewport.MSAA_DISABLED
+		vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+		cap.add_child(vp)
+		keycap_vps.append(vp)
+
+		var vp_root = Control.new()
+		vp_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		vp_root.size = Vector2(460, 160)
+		vp.add_child(vp_root)
+
+		var p_bg = PanelContainer.new()
+		p_bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		p_bg.size = Vector2(460, 160)
+		var p_sb = StyleBoxFlat.new()
+		p_sb.bg_color = Color(0.11, 0.07, 0.045, 1.0)
+		p_sb.border_color = Color(0.75, 0.58, 0.28, 0.88)
+		p_sb.set_border_width_all(4)
+		p_sb.set_corner_radius_all(14)
+		p_sb.content_margin_left = 42
+		p_sb.content_margin_right = 76
+		p_sb.content_margin_top = 10
+		p_sb.content_margin_bottom = 10
+		p_bg.add_theme_stylebox_override("panel", p_sb)
+		vp_root.add_child(p_bg)
+		keycap_bg_panels.append(p_bg)
+		keycap_bg_styles.append(p_sb)
+
 		var o_lbl = Label.new()
-		o_lbl.name = "LblOptionText"
-		o_lbl.text = "گزینه %d" % opt_idx
-		o_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		o_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		o_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		o_lbl.text = "گزینه %s" % OPTION_LETTERS[i]
 		o_lbl.add_theme_font_override("font", FontHekayat)
-		o_lbl.add_theme_font_size_override("font_size", 30)
-		o_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.90))
-		o_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
-		o_lbl.add_theme_constant_override("shadow_offset_x", 1)
+		o_lbl.add_theme_font_size_override("font_size", 32)
+		o_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
+		o_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		o_lbl.add_theme_constant_override("shadow_offset_x", 2)
 		o_lbl.add_theme_constant_override("shadow_offset_y", 2)
 		o_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		o_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		btn_hbox.add_child(o_lbl)
+		o_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		o_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		o_lbl.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		p_bg.add_child(o_lbl)
+		keycap_text_labels.append(o_lbl)
 
-		# Right side: Circular Letter Medallion (الف، ب، ج، د)
-		var badge = PanelContainer.new()
-		badge.custom_minimum_size = Vector2(52, 52)
-		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		badge.add_theme_stylebox_override("panel", _style_badge_normal)
-		var b_lbl = Label.new()
+		# Top Face Quad
+		var quad = QuadMesh.new()
+		quad.size = Vector2(0.485, 0.155)
+		var face_mat = StandardMaterial3D.new()
+		face_mat.albedo_color = Color.WHITE
+		face_mat.albedo_texture = vp.get_texture()
+		face_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		face_mat.roughness = 0.44
+		face_mat.emission_enabled = true
+		face_mat.emission_texture = vp.get_texture()
+		face_mat.emission_energy_multiplier = 0.56
+
+		var face_mesh = MeshInstance3D.new()
+		face_mesh.mesh = quad
+		face_mesh.material_override = face_mat
+		face_mesh.position = Vector3(0.0, 0.0175, 0.0)
+		face_mesh.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+		cap.add_child(face_mesh)
+
+		# Raised 3D Letter Medallion on Top-Right of Keycap
+		var b_mat = StandardMaterial3D.new()
+		b_mat.albedo_color = Color(0.24, 0.15, 0.08)
+		b_mat.metallic = 0.45
+		b_mat.roughness = 0.28
+		keycap_badge_mats.append(b_mat)
+
+		var b_cyl = MeshInstance3D.new()
+		b_cyl.mesh = badge_mesh
+		b_cyl.material_override = b_mat
+		b_cyl.position = Vector3(0.205, 0.022, 0.0)
+		cap.add_child(b_cyl)
+
+		var b_lbl = Label3D.new()
 		b_lbl.text = OPTION_LETTERS[i]
-		b_lbl.add_theme_font_override("font", FontHekayat)
-		b_lbl.add_theme_font_size_override("font_size", 26)
-		b_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-		b_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		b_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		badge.add_child(b_lbl)
-		btn_hbox.add_child(badge)
+		b_lbl.font = FontHekayat
+		b_lbl.font_size = 44
+		b_lbl.pixel_size = 0.0008
+		b_lbl.modulate = Color(1.0, 0.88, 0.42)
+		b_lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.95)
+		b_lbl.outline_size = 6
+		b_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+		b_lbl.position = Vector3(0.205, 0.031, 0.0)
+		cap.add_child(b_lbl)
+		keycap_badge_labels.append(b_lbl)
 
-		# Invisible Click Hitbox Overlay (lets PanelContainer styleboxes & auto-height shine)
-		var btn = Button.new()
-		btn.name = "BtnOption%d" % opt_idx
-		btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-		btn.flat = true
-		btn.focus_mode = Control.FOCUS_NONE
-		btn.mouse_filter = Control.MOUSE_FILTER_PASS
-		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		for state_name in ["normal", "hover", "pressed", "disabled", "focus"]:
-			btn.add_theme_stylebox_override(state_name, empty_sb)
-		card.add_child(btn)
+		# Token Anchor for Lock Seal & Reveal Player Pucks
+		var anchor = Node3D.new()
+		anchor.name = "TokenAnchor"
+		anchor.position = Vector3(-0.175, 0.022, 0.045)
+		cap.add_child(anchor)
+		keycap_token_anchors.append(anchor)
 
-		var idx_capture = i
-		var opt_capture = opt_idx
-		btn.pressed.connect(func(): _on_option_pressed(opt_capture))
-		btn.mouse_entered.connect(func(): _on_option_hover(idx_capture, true))
-		btn.mouse_exited.connect(func(): _on_option_hover(idx_capture, false))
-		btn.button_down.connect(func(): _on_option_press_anim(idx_capture, true))
-		btn.button_up.connect(func(): _on_option_press_anim(idx_capture, false))
+		# Raycast Area3D Collider (input via _unhandled_input ONLY)
+		var area = Area3D.new()
+		area.name = "AreaOption%d" % opt_idx
+		area.set_meta("option_idx", opt_idx)
+		area.input_ray_pickable = true
+		var cs = CollisionShape3D.new()
+		cs.shape = col_shape
+		cs.position = Vector3(0.0, 0.02, 0.0)
+		area.add_child(cs)
+		cap.add_child(area)
+		keycap_areas.append(area)
 
-		option_cards.append(card)
-		option_buttons.append(btn)
-		option_badges.append(badge)
-		option_badge_labels.append(b_lbl)
-		option_labels.append(o_lbl)
-		option_player_tags.append(p_tags)
-
-	# VFX Layer
-	vfx_particles_container = Control.new()
-	vfx_particles_container.name = "QuizVFXLayer"
-	vfx_particles_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vfx_particles_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	main_container.add_child(vfx_particles_container)
-
-func _on_option_hover(idx: int, hovered: bool) -> void:
-	if idx < 0 or idx >= option_cards.size():
-		return
-	option_hovered[idx] = hovered
-	if is_board_locked or has_answered_this_turn or is_in_reveal_phase:
-		return
-	var card = option_cards[idx]
-	card.add_theme_stylebox_override("panel", _style_option_hover if hovered else _style_option_normal)
-	card.pivot_offset = card.size * 0.5
-	var tw = create_tween()
-	tw.tween_property(card, "scale", Vector2(1.015, 1.015) if hovered else Vector2.ONE, 0.10).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-func _on_option_press_anim(idx: int, down: bool) -> void:
-	if idx < 0 or idx >= option_cards.size():
-		return
-	if is_board_locked or has_answered_this_turn or is_in_reveal_phase:
-		return
-	var card = option_cards[idx]
-	card.pivot_offset = card.size * 0.5
-	var target_s = Vector2(0.975, 0.975) if down else (Vector2(1.015, 1.015) if option_hovered[idx] else Vector2.ONE)
-	var tw = create_tween()
-	tw.tween_property(card, "scale", target_s, 0.07)
-
-# --- Live Player Status Strip (2-4 Players) ---
+# --- 2-4 Player Crystal Pedestals ---
 func _get_total_players() -> int:
 	return clampi(max(2, GameManager.match_players.size()), 2, 4)
 
-func _refresh_player_status_strip() -> void:
-	if not is_instance_valid(player_status_row):
+func _rebuild_player_pedestals() -> void:
+	if not is_instance_valid(pedestals_container):
 		return
-	var total_p = _get_total_players()
-	if player_status_chips.size() != total_p:
-		for c in player_status_row.get_children():
-			c.queue_free()
-		player_status_chips.clear()
+	var total_p: int = _get_total_players()
+	if _built_pedestal_count != total_p:
+		for child in pedestals_container.get_children():
+			child.queue_free()
+		player_pedestal_nodes.clear()
+		player_crystals.clear()
+		crystal_materials.clear()
+		crystal_halos.clear()
+		player_nameplates.clear()
+		player_status_3d.clear()
+		_built_pedestal_count = total_p
+
+		var coords_2p: Dictionary = {
+			1: Vector3(-0.34, 0.045, 0.485),
+			2: Vector3(0.34, 0.045, 0.485),
+		}
+		var coords_4p: Dictionary = {
+			1: Vector3(-0.34, 0.045, 0.485),
+			2: Vector3(0.34, 0.045, 0.485),
+			3: Vector3(-0.505, 0.045, -0.495),
+			4: Vector3(0.505, 0.045, -0.495),
+		}
+		var coords = coords_2p if total_p <= 2 else coords_4p
+
+		var sock_mesh = CylinderMesh.new()
+		sock_mesh.top_radius = 0.036
+		sock_mesh.bottom_radius = 0.044
+		sock_mesh.height = 0.022
+
+		var crystal_mesh = SphereMesh.new()
+		crystal_mesh.radius = 0.030
+		crystal_mesh.height = 0.068
+		crystal_mesh.radial_segments = 6
+		crystal_mesh.rings = 2
+
+		var halo_mesh = TorusMesh.new()
+		halo_mesh.inner_radius = 0.038
+		halo_mesh.outer_radius = 0.048
+		halo_mesh.rings = 20
+
 		for gid in range(1, total_p + 1):
-			var chip = _create_status_chip(gid)
-			player_status_row.add_child(chip["panel"])
-			player_status_chips[gid] = chip
+			var pos: Vector3 = coords.get(gid, Vector3.ZERO)
+			var col: Color = FACTION_COLORS.get(gid, Color.WHITE)
 
-	for gid in player_status_chips.keys():
-		_update_status_chip(gid, false, false, 0, 0)
+			var ped = Node3D.new()
+			ped.name = "PedestalP%d" % gid
+			ped.position = pos
+			pedestals_container.add_child(ped)
+			player_pedestal_nodes[gid] = ped
 
-func _create_status_chip(gid: int) -> Dictionary:
-	var col: Color = FACTION_COLORS.get(gid, Color.WHITE)
-	var is_me = (gid == my_player_index)
+			var sock = MeshInstance3D.new()
+			sock.mesh = sock_mesh
+			sock.material_override = _mat_brass
+			sock.position = Vector3(0.0, 0.011, 0.0)
+			ped.add_child(sock)
 
-	var panel = PanelContainer.new()
-	panel.name = "StatusChip%d" % gid
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.custom_minimum_size = Vector2(0, 56)
+			var c_mat = StandardMaterial3D.new()
+			c_mat.albedo_color = col.darkened(0.35)
+			c_mat.metallic = 0.45
+			c_mat.roughness = 0.14
+			c_mat.emission_enabled = true
+			c_mat.emission = col.darkened(0.65)
+			c_mat.emission_energy_multiplier = 0.45
 
-	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.11, 0.08, 0.06, 0.90)
-	sb.border_color = col.lightened(0.15) if is_me else Color(col.r, col.g, col.b, 0.55)
-	sb.set_border_width_all(2 if is_me else 1)
-	sb.border_width_bottom = 3
-	sb.set_corner_radius_all(14)
-	sb.content_margin_left = 10
-	sb.content_margin_right = 10
-	sb.content_margin_top = 6
-	sb.content_margin_bottom = 6
-	panel.add_theme_stylebox_override("panel", sb)
+			var crys = MeshInstance3D.new()
+			crys.mesh = crystal_mesh
+			crys.material_override = c_mat
+			crys.position = Vector3(0.0, 0.062, 0.0)
+			ped.add_child(crys)
 
-	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 8)
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	panel.add_child(hbox)
+			var h_mat = StandardMaterial3D.new()
+			h_mat.albedo_color = col
+			h_mat.emission_enabled = true
+			h_mat.emission = col
+			h_mat.emission_energy_multiplier = 2.4
 
-	var dot = Panel.new()
-	dot.custom_minimum_size = Vector2(12, 12)
-	dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var d_sb = StyleBoxFlat.new()
-	d_sb.bg_color = col
-	d_sb.set_corner_radius_all(6)
-	dot.add_theme_stylebox_override("panel", d_sb)
-	hbox.add_child(dot)
+			var halo = MeshInstance3D.new()
+			halo.mesh = halo_mesh
+			halo.material_override = h_mat
+			halo.position = Vector3(0.0, 0.022, 0.0)
+			halo.visible = false
+			ped.add_child(halo)
 
-	var name_lbl = Label.new()
-	name_lbl.text = _get_player_name(gid)
-	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_lbl.clip_text = true
-	name_lbl.add_theme_font_override("font", FontHekayat)
-	name_lbl.add_theme_font_size_override("font_size", 20)
-	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
-	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hbox.add_child(name_lbl)
+			var lbl_name = Label3D.new()
+			lbl_name.font = FontHekayat
+			lbl_name.font_size = 32
+			lbl_name.pixel_size = 0.00105
+			lbl_name.modulate = col.lightened(0.35)
+			lbl_name.outline_modulate = Color(0.04, 0.02, 0.01, 0.96)
+			lbl_name.outline_size = 6
+			lbl_name.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+			var text_x_offset: float = 0.14 if gid == 1 else -0.14
+			if total_p > 2 and gid >= 3:
+				text_x_offset = 0.0
+			var text_z_offset: float = 0.018 if gid <= 2 else 0.048
+			lbl_name.position = Vector3(text_x_offset, 0.014, text_z_offset - 0.016)
+			ped.add_child(lbl_name)
 
-	var state_lbl = Label.new()
-	state_lbl.text = "⏳"
-	state_lbl.add_theme_font_override("font", FontHekayat)
-	state_lbl.add_theme_font_size_override("font_size", 20)
-	state_lbl.add_theme_color_override("font_color", Color(0.90, 0.82, 0.60))
-	state_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	state_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hbox.add_child(state_lbl)
+			var lbl_st = Label3D.new()
+			lbl_st.font = FontHekayat
+			lbl_st.font_size = 28
+			lbl_st.pixel_size = 0.0010
+			lbl_st.modulate = Color(0.95, 0.88, 0.60)
+			lbl_st.outline_modulate = Color(0.04, 0.02, 0.01, 0.96)
+			lbl_st.outline_size = 5
+			lbl_st.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+			lbl_st.position = Vector3(text_x_offset, 0.014, text_z_offset + 0.020)
+			ped.add_child(lbl_st)
 
-	return {
-		"panel": panel,
-		"style": sb,
-		"name": name_lbl,
-		"state": state_lbl,
-		"color": col,
-	}
+			player_crystals[gid] = crys
+			crystal_materials[gid] = c_mat
+			crystal_halos[gid] = halo
+			player_nameplates[gid] = lbl_name
+			player_status_3d[gid] = lbl_st
 
-func _update_status_chip(gid: int, is_locked: bool, reveal: bool, chosen_opt: int, delta: int) -> void:
-	if not player_status_chips.has(gid):
+	_refresh_pedestals_text_and_lights()
+
+func _refresh_pedestals_text_and_lights() -> void:
+	for gid in player_nameplates.keys():
+		var lbl_name: Label3D = player_nameplates[gid]
+		if is_instance_valid(lbl_name):
+			var p_name = _short_name(_get_player_name(gid))
+			lbl_name.text = ("%s (شما)" % p_name) if gid == my_player_index else p_name
+		var locked = bool(player_locked_in.get(gid, false))
+		_update_crystal_light(gid, locked)
+		if not is_in_reveal_phase:
+			_set_pedestal_status(gid, "🔒 ثبت شد" if locked else "⏳ آماده", Color(0.45, 0.95, 1.0) if locked else Color(0.92, 0.82, 0.56))
+
+func _set_pedestal_status(gid: int, text: String, col: Color) -> void:
+	var lbl = player_status_3d.get(gid)
+	if is_instance_valid(lbl):
+		lbl.text = text
+		lbl.modulate = col
+
+# --- Single-Source Input Raycasting ---
+func _is_hud_overlay_blocking() -> bool:
+	if not _match_started or not GameManager.is_game_active:
+		return true
+	var hud = _get_active_hud()
+	if is_instance_valid(hud):
+		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
+			return true
+		for dlg_name in ["StartGameOverlay", "GameResultDialog", "SurrenderDialog", "DisconnectPauseDialog", "UserProfileDialog", "ReactionPicker"]:
+			var dlg = hud.get_node_or_null(dlg_name)
+			if is_instance_valid(dlg) and dlg.visible:
+				return true
+	return false
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _is_hud_overlay_blocking() or is_board_locked or has_answered_this_turn or is_in_reveal_phase:
+		_clear_hover()
 		return
-	var chip: Dictionary = player_status_chips[gid]
-	var panel: PanelContainer = chip["panel"]
-	var sb: StyleBoxFlat = chip["style"]
-	var name_lbl: Label = chip["name"]
-	var state_lbl: Label = chip["state"]
-	var col: Color = chip["color"]
-	if not is_instance_valid(panel):
+
+	if event is InputEventMouseMotion:
+		_handle_pointer_hover(event.position)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_is_pointer_down = true
+			_press_screen_pos = event.position
+			_press_down_time = Time.get_ticks_msec() / 1000.0
+			_handle_pointer_hover(event.position)
+		elif _is_pointer_down:
+			_is_pointer_down = false
+			var dist = _press_screen_pos.distance_to(event.position)
+			var elapsed = (Time.get_ticks_msec() / 1000.0) - _press_down_time
+			if dist <= DRAG_THRESHOLD and elapsed < 0.75:
+				_handle_pointer_tap(event.position)
+	elif event is InputEventScreenTouch and event.index == 0:
+		if event.pressed:
+			_is_pointer_down = true
+			_press_screen_pos = event.position
+			_press_down_time = Time.get_ticks_msec() / 1000.0
+			_handle_pointer_hover(event.position)
+		elif _is_pointer_down:
+			_is_pointer_down = false
+			var dist = _press_screen_pos.distance_to(event.position)
+			var elapsed = (Time.get_ticks_msec() / 1000.0) - _press_down_time
+			if dist <= DRAG_THRESHOLD and elapsed < 0.75:
+				_handle_pointer_tap(event.position)
+
+func _raycast_option_at(screen_pos: Vector2) -> int:
+	var vp = get_viewport()
+	if not vp:
+		return 0
+	var cam = vp.get_camera_3d()
+	if not cam:
+		return 0
+	var from = cam.project_ray_origin(screen_pos)
+	var to = from + cam.project_ray_normal(screen_pos) * 14.0
+	var space_state = get_world_3d().direct_space_state
+	if not space_state:
+		return 0
+	var query = PhysicsRayQueryParameters3D.create(from, to)
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	var result = space_state.intersect_ray(query)
+	if result and result.has("collider"):
+		var col_obj = result["collider"]
+		if col_obj and col_obj.has_meta("option_idx"):
+			var idx = int(col_obj.get_meta("option_idx"))
+			if idx >= 1 and idx <= current_options.size():
+				return idx
+	return 0
+
+func _handle_pointer_hover(screen_pos: Vector2) -> void:
+	var opt = _raycast_option_at(screen_pos)
+	if opt == hovered_option_idx:
 		return
+	hovered_option_idx = opt
+	for i in range(4):
+		var is_h = (i + 1 == hovered_option_idx and not is_board_locked and not has_answered_this_turn and not is_in_reveal_phase)
+		if i < keycap_hover_rings.size() and is_instance_valid(keycap_hover_rings[i]):
+			keycap_hover_rings[i].visible = is_h
+		if i < keycap_nodes.size() and is_instance_valid(keycap_nodes[i]) and not has_answered_this_turn and not is_in_reveal_phase:
+			keycap_nodes[i].position.y = KEYCAP_COORDS[i].y + (0.008 if is_h else 0.0)
 
-	name_lbl.text = _get_player_name(gid)
-
-	if reveal:
-		var opt_tag = (" (%s)" % OPTION_LETTERS[clampi(chosen_opt - 1, 0, 3)]) if chosen_opt >= 1 and chosen_opt <= 4 else ""
-		if delta > 0:
-			sb.bg_color = Color(0.06, 0.25, 0.12, 0.95)
-			sb.border_color = Color(0.35, 0.98, 0.54, 1.0)
-			state_lbl.text = "✅ +۱%s" % opt_tag
-			state_lbl.add_theme_color_override("font_color", Color(0.45, 1.0, 0.62))
-		elif delta < 0:
-			sb.bg_color = Color(0.26, 0.06, 0.08, 0.95)
-			sb.border_color = Color(1.0, 0.36, 0.40, 1.0)
-			state_lbl.text = "❌ -۱%s" % opt_tag
-			state_lbl.add_theme_color_override("font_color", Color(1.0, 0.48, 0.50))
-		else:
-			sb.bg_color = Color(0.13, 0.11, 0.09, 0.90)
-			sb.border_color = Color(0.55, 0.50, 0.45, 0.70)
-			state_lbl.text = "⏱️ ۰"
-			state_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.78))
-	elif is_locked:
-		sb.bg_color = Color(0.08, 0.20, 0.30, 0.95)
-		sb.border_color = Color(0.36, 0.84, 1.0, 0.95)
-		state_lbl.text = "🔒 ثبت شد"
-		state_lbl.add_theme_color_override("font_color", Color(0.52, 0.92, 1.0))
-	else:
-		var is_me = (gid == my_player_index)
-		sb.bg_color = Color(0.11, 0.08, 0.06, 0.90)
-		sb.border_color = col.lightened(0.15) if is_me else Color(col.r, col.g, col.b, 0.55)
-		state_lbl.text = "⏳"
-		state_lbl.add_theme_color_override("font_color", Color(0.95, 0.85, 0.55))
-
-	panel.add_theme_stylebox_override("panel", sb)
-
-# --- Option Click Handler ---
-func _on_option_pressed(opt_idx: int) -> void:
-	if is_board_locked or has_answered_this_turn or is_in_reveal_phase:
+func _clear_hover() -> void:
+	if hovered_option_idx == 0:
 		return
-	if not GameManager.is_game_active:
+	hovered_option_idx = 0
+	for i in range(4):
+		if i < keycap_hover_rings.size() and is_instance_valid(keycap_hover_rings[i]):
+			keycap_hover_rings[i].visible = false
+		if i < keycap_nodes.size() and is_instance_valid(keycap_nodes[i]) and not has_answered_this_turn and not is_in_reveal_phase:
+			keycap_nodes[i].position.y = KEYCAP_COORDS[i].y
+
+func _handle_pointer_tap(screen_pos: Vector2) -> void:
+	var now: float = Time.get_ticks_msec() / 1000.0
+	if now - _last_click_time < 0.25:
+		return
+	var opt = _raycast_option_at(screen_pos)
+	if opt <= 0 or opt > current_options.size():
+		return
+	_last_click_time = now
+	_select_option(opt)
+
+# --- Local Player Selection ---
+func _select_option(opt_idx: int) -> void:
+	if is_board_locked or has_answered_this_turn or is_in_reveal_phase or not GameManager.is_game_active:
 		return
 
 	has_answered_this_turn = true
 	selected_option_idx = opt_idx
+	set_board_locked(true)
+	_clear_hover()
 	player_locked_in[my_player_index] = true
 	AudioManager.play_sound("add_peace")
 
-	_highlight_selected_button(opt_idx)
+	_style_keycaps_selected(opt_idx)
+	_spawn_local_lock_seal(opt_idx)
 	_update_crystal_light(my_player_index, true)
-	_update_status_chip(my_player_index, true, false, 0, 0)
-	_set_header_player_answered(my_player_index, true)
+	_set_pedestal_status(my_player_index, "🔒 ثبت شد", Color(0.45, 0.95, 1.0))
 
-	# Show inline confirmation pill
-	if is_instance_valid(status_banner_card) and is_instance_valid(lbl_status_banner):
-		status_banner_card.add_theme_stylebox_override("panel", _style_banner_locked)
-		var letter = OPTION_LETTERS[clampi(opt_idx - 1, 0, 3)]
-		lbl_status_banner.text = "🔒 پاسخ شما (گزینه «%s») ثبت شد — منتظر سایر بازیکنان..." % letter
-		lbl_status_banner.add_theme_color_override("font_color", Color(0.58, 0.92, 1.0))
-		if is_instance_valid(reveal_progress_bar):
-			reveal_progress_bar.visible = false
-		status_banner_card.visible = true
-		status_banner_card.modulate.a = 0.0
-		var tw = create_tween()
-		tw.tween_property(status_banner_card, "modulate:a", 1.0, 0.18)
+	var letter = OPTION_LETTERS[clampi(opt_idx - 1, 0, 3)]
+	_lectern_status_text = "🔒 انتخاب شما («%s») ثبت شد — در انتظار سایر بازیکنان..." % letter
+	_lectern_status_color = Color(0.55, 0.92, 1.0)
+	_lectern_show_reveal_bar = false
+	_refresh_lectern_viewport()
 
-	# Dispatch answer to server
+	_set_header_local_answered(true)
 	send_move(Commands.Select_Peace, {"option": opt_idx})
-	_set_header_banner("🔒 پاسخ شما ثبت شد — منتظر پایان زمان...", Color(0.42, 0.95, 0.65))
 
-func _highlight_selected_button(opt_idx: int) -> void:
-	for i in range(option_cards.size()):
-		var card = option_cards[i]
-		var btn = option_buttons[i]
-		var badge = option_badges[i]
-		var b_lbl = option_badge_labels[i]
-		var tags = option_player_tags[i]
+func _style_keycaps_selected(opt_idx: int) -> void:
+	for i in range(4):
+		var is_sel = ((i + 1) == opt_idx)
+		var cap = keycap_nodes[i]
+		var r_mat = keycap_rim_mats[i]
+		var b_mat = keycap_badge_mats[i]
+		var b_lbl = keycap_badge_labels[i]
+		var sb = keycap_bg_styles[i]
 
-		btn.disabled = true
-		btn.mouse_default_cursor_shape = Control.CURSOR_ARROW
-		for child in tags.get_children():
-			child.queue_free()
-
-		if (i + 1) == opt_idx:
-			card.add_theme_stylebox_override("panel", _style_option_selected)
-			card.modulate = Color.WHITE
-			badge.add_theme_stylebox_override("panel", _style_badge_selected)
-			b_lbl.add_theme_color_override("font_color", Color.WHITE)
-			tags.add_child(_create_simple_tag("🔒 انتخاب شما", Color(0.14, 0.42, 0.72, 0.95), Color(0.50, 0.88, 1.0)))
-			card.pivot_offset = card.size * 0.5
-			var tw = create_tween()
-			tw.tween_property(card, "scale", Vector2(1.025, 1.025), 0.11).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw.tween_property(card, "scale", Vector2.ONE, 0.12)
+		if is_sel:
+			r_mat.albedo_color = Color(0.32, 0.80, 1.0)
+			r_mat.emission_enabled = true
+			r_mat.emission = Color(0.24, 0.72, 1.0)
+			r_mat.emission_energy_multiplier = 2.0
+			b_mat.albedo_color = Color(0.14, 0.44, 0.78)
+			b_lbl.modulate = Color.WHITE
+			sb.bg_color = Color(0.07, 0.19, 0.34, 1.0)
+			sb.border_color = Color(0.38, 0.86, 1.0, 1.0)
+			var tw = _create_tracked_tween()
+			tw.tween_property(cap, "position:y", KEYCAP_COORDS[i].y - 0.008, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw.tween_property(cap, "position:y", KEYCAP_COORDS[i].y + 0.004, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		else:
-			card.add_theme_stylebox_override("panel", _style_option_dimmed)
-			card.modulate = Color(1, 1, 1, 0.78)
-			card.scale = Vector2.ONE
-			badge.add_theme_stylebox_override("panel", _style_badge_normal)
-			b_lbl.add_theme_color_override("font_color", Color(0.85, 0.76, 0.55))
+			r_mat.albedo_color = Color(0.32, 0.26, 0.16)
+			r_mat.emission_enabled = false
+			b_mat.albedo_color = Color(0.16, 0.11, 0.07)
+			b_lbl.modulate = Color(0.68, 0.60, 0.44)
+			sb.bg_color = Color(0.08, 0.055, 0.04, 1.0)
+			sb.border_color = Color(0.35, 0.28, 0.18, 0.75)
+			cap.position.y = KEYCAP_COORDS[i].y - 0.003
+		_queue_vp_redraw(keycap_vps[i])
 
-func _create_simple_tag(txt: String, bg_col: Color, border_col: Color) -> PanelContainer:
-	var pill = PanelContainer.new()
-	var sb = StyleBoxFlat.new()
-	sb.bg_color = bg_col
-	sb.border_color = border_col
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(12)
-	sb.content_margin_left = 10
-	sb.content_margin_right = 10
-	sb.content_margin_top = 3
-	sb.content_margin_bottom = 3
-	pill.add_theme_stylebox_override("panel", sb)
-
-	var lbl = Label.new()
-	lbl.text = txt
-	lbl.add_theme_font_override("font", FontHekayat)
-	lbl.add_theme_font_size_override("font_size", 19)
-	lbl.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0))
-	pill.add_child(lbl)
-	return pill
+func _spawn_local_lock_seal(opt_idx: int) -> void:
+	_clear_answer_tokens()
+	var idx = opt_idx - 1
+	if idx < 0 or idx >= keycap_token_anchors.size():
+		return
+	var anchor = keycap_token_anchors[idx]
+	var seal = _create_token_chip(my_player_index, "انتخاب شما", Color(0.55, 0.92, 1.0), true)
+	anchor.add_child(seal)
+	_spawned_answer_tokens.append(seal)
+	seal.position = Vector3(0.0, 0.09, 0.0)
+	seal.scale = Vector3(0.4, 0.4, 0.4)
+	var tw = _create_tracked_tween().set_parallel(true)
+	tw.tween_property(seal, "position:y", 0.010, 0.22).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.tween_property(seal, "scale", Vector3.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 # --- Server Signal Hooks ---
 func setup_board(_game_data: Dictionary) -> void:
-	_refresh_player_status_strip()
+	_rebuild_player_pedestals()
+	_trigger_silent_gamer_id_sync()
 
 func on_start_game() -> void:
 	_match_started = true
-	_refresh_player_status_strip()
+	_rebuild_player_pedestals()
+	_trigger_silent_gamer_id_sync()
+	_refresh_lectern_viewport()
+	for vp in keycap_vps:
+		_queue_vp_redraw(vp)
 	super.on_start_game()
 
 func on_turn_data(payload: Dictionary) -> void:
-	_handle_new_question_turn(payload)
+	_handle_new_question_turn(payload, false)
 
 func on_turn_changed(_turn: int, _is_me: bool) -> void:
-	# Quiz is simultaneous — all players are always active.
 	is_my_turn = true
-	is_board_locked = false
+	is_board_locked = is_in_reveal_phase or has_answered_this_turn
 
-func _handle_new_question_turn(payload: Dictionary) -> void:
-	if _reveal_timer_tween and _reveal_timer_tween.is_valid():
-		_reveal_timer_tween.kill()
-		_reveal_timer_tween = null
+func _handle_new_question_turn(payload: Dictionary, preserve_if_same_turn: bool = false) -> void:
+	var incoming_turn = int(payload.get("turn", payload.get("current_turn", current_question_num)))
+	var same_active_turn: bool = preserve_if_same_turn and incoming_turn == current_question_num and not is_in_reveal_phase and has_answered_this_turn
+
+	if not same_active_turn:
+		if _reveal_timer_tween and _reveal_timer_tween.is_valid():
+			_reveal_timer_tween.kill()
+			_reveal_timer_tween = null
+		_clear_answer_tokens()
+		is_in_reveal_phase = false
+		has_answered_this_turn = false
+		selected_option_idx = 0
+		set_board_locked(false)
+		_clear_header_answered_states()
+		for gid in player_locked_in.keys():
+			player_locked_in[gid] = false
 
 	_match_started = true
-	is_in_reveal_phase = false
-	has_answered_this_turn = false
-	selected_option_idx = 0
-	set_board_locked(false)
-
-	current_question_num = int(payload.get("turn", current_question_num))
+	my_player_index = GameManager.my_player_index
+	current_question_num = max(1, incoming_turn)
 	total_questions_count = max(1, int(payload.get("total_questions", 10)))
 	current_question_text = str(payload.get("question", ""))
 	current_options = payload.get("options", [])
+	current_category_title = str(payload.get("category_title", "")).strip_edges()
 
 	if payload.has("scores") and typeof(payload["scores"]) == TYPE_DICTIONARY:
 		player_scores = payload["scores"]
-		_update_header_scores()
+		_sync_hud_scores()
 
-	_refresh_player_status_strip()
-	_clear_header_answered_states()
-
-	for gid in player_locked_in.keys():
-		player_locked_in[gid] = false
-		_update_crystal_light(gid, false)
-	for gid in player_status_chips.keys():
-		_update_status_chip(gid, false, false, 0, 0)
+	_trigger_silent_gamer_id_sync()
+	_rebuild_player_pedestals()
+	_refresh_pedestals_text_and_lights()
+	_update_progress_gems()
 
 	if is_instance_valid(center_medallion_mat):
-		center_medallion_mat.emission = Color(0.75, 0.55, 0.15)
-		center_medallion_mat.emission_energy_multiplier = 0.45
+		center_medallion_mat.emission = Color(0.75, 0.56, 0.16)
+		center_medallion_mat.emission_energy_multiplier = 0.55
+	if is_instance_valid(lbl_crown_counter):
+		lbl_crown_counter.text = "سوال %s از %s" % [_fa_digits(current_question_num), _fa_digits(total_questions_count)]
 
-	# Update Question Card
-	if is_instance_valid(lbl_category):
-		var cat_name = str(payload.get("category_title", "")).strip_edges()
-		if cat_name.is_empty():
-			cat_name = "اطلاعات عمومی"
-		if not cat_name.begins_with("💡") and not ("🎥" in cat_name or "📺" in cat_name or "🖋" in cat_name or "🎧" in cat_name or "🗿" in cat_name or "🔠" in cat_name or "📡" in cat_name or "🔬" in cat_name or "🎨" in cat_name or "📚" in cat_name or "🏓" in cat_name or "🤓" in cat_name or "📖" in cat_name):
-			lbl_category.text = "💡 " + cat_name
-		else:
-			lbl_category.text = cat_name
+	if not same_active_turn:
+		_lectern_status_text = "⏳ گزینه درست را روی کلیدهای پایین لمس کنید"
+		_lectern_status_color = Color(0.98, 0.88, 0.48)
+		_lectern_show_reveal_bar = false
+		_reset_keycaps_for_question()
+	else:
+		_refresh_option_texts_only()
 
-	if is_instance_valid(lbl_question):
-		lbl_question.text = current_question_text
-	if is_instance_valid(lbl_question_tag):
-		lbl_question_tag.text = "سوال %s از %s" % [_fa_digits(current_question_num), _fa_digits(total_questions_count)]
-	if is_instance_valid(question_progress_bar):
-		var pct = clampf((float(current_question_num) / float(total_questions_count)) * 100.0, 0.0, 100.0)
-		var p_tw = create_tween()
-		p_tw.tween_property(question_progress_bar, "value", pct, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-	if is_instance_valid(status_banner_card):
-		status_banner_card.visible = false
-	if is_instance_valid(reveal_progress_bar):
-		reveal_progress_bar.visible = false
-
-	# Reset Options UI
-	for i in range(option_cards.size()):
-		var card = option_cards[i]
-		var btn = option_buttons[i]
-		var badge = option_badges[i]
-		var b_lbl = option_badge_labels[i]
-		var lbl = option_labels[i]
-		var tags = option_player_tags[i]
-		option_hovered[i] = false
-
-		if i < current_options.size():
-			card.visible = true
-			card.modulate = Color.WHITE
-			card.scale = Vector2.ONE
-			card.rotation_degrees = 0.0
-			card.add_theme_stylebox_override("panel", _style_option_normal)
-			badge.add_theme_stylebox_override("panel", _style_badge_normal)
-			b_lbl.text = OPTION_LETTERS[i]
-			b_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-			lbl.text = str(current_options[i])
-			btn.disabled = false
-			btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			for child in tags.get_children():
-				child.queue_free()
-		else:
-			card.visible = false
-
-	# Scroll back to top gently if needed
-	if is_instance_valid(scroll_container):
-		scroll_container.scroll_vertical = 0
-
-	AudioManager.play_sound("start_turn")
+	_refresh_lectern_viewport()
 	call_deferred("_sync_header_for_question", current_question_num, total_questions_count)
 
-	# Smooth card entrance animation
-	if is_instance_valid(question_card):
-		question_card.pivot_offset = question_card.size * 0.5
-		question_card.scale = Vector2(0.96, 0.96)
-		question_card.modulate.a = 0.85
-		var tw = create_tween().set_parallel(true)
-		tw.tween_property(question_card, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tw.tween_property(question_card, "modulate:a", 1.0, 0.18)
+func _reset_keycaps_for_question() -> void:
+	for i in range(4):
+		var cap = keycap_nodes[i]
+		var r_mat = keycap_rim_mats[i]
+		var b_mat = keycap_badge_mats[i]
+		var b_lbl = keycap_badge_labels[i]
+		var lbl = keycap_text_labels[i]
+		var sb = keycap_bg_styles[i]
+		var area = keycap_areas[i]
+
+		var has_opt = (i < current_options.size())
+		cap.visible = has_opt
+		area.monitoring = has_opt
+		area.input_ray_pickable = has_opt
+		keycap_hover_rings[i].visible = false
+
+		if has_opt:
+			var opt_text = str(current_options[i])
+			lbl.text = opt_text
+			lbl.add_theme_font_size_override("font_size", _fit_option_font_size(opt_text))
+			r_mat.albedo_color = Color(0.82, 0.65, 0.26)
+			r_mat.emission_enabled = false
+			b_mat.albedo_color = Color(0.24, 0.15, 0.08)
+			b_lbl.text = OPTION_LETTERS[i]
+			b_lbl.modulate = Color(1.0, 0.88, 0.45)
+			sb.bg_color = Color(0.11, 0.07, 0.045, 1.0)
+			sb.border_color = Color(0.75, 0.58, 0.28, 0.90)
+			cap.position = KEYCAP_COORDS[i] + Vector3(0.0, 0.016, 0.0)
+			var tw = _create_tracked_tween()
+			tw.tween_property(cap, "position:y", KEYCAP_COORDS[i].y, 0.20 + float(i) * 0.04).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			_queue_vp_redraw(keycap_vps[i])
+
+func _refresh_option_texts_only() -> void:
+	for i in range(min(4, current_options.size())):
+		var opt_text = str(current_options[i])
+		keycap_text_labels[i].text = opt_text
+		keycap_text_labels[i].add_theme_font_size_override("font_size", _fit_option_font_size(opt_text))
+		_queue_vp_redraw(keycap_vps[i])
 
 func _sync_header_for_question(q_num: int, q_total: int) -> void:
-	if is_in_reveal_phase or has_answered_this_turn:
+	if is_in_reveal_phase:
 		return
-	_set_header_banner("🤔 گزینه درست را انتخاب کنید", Color(1.0, 0.90, 0.45))
 	_set_header_round_label(q_num, q_total)
+	if has_answered_this_turn:
+		_set_header_local_answered(true)
+	else:
+		_set_header_banner("🤔 گزینه درست را روی میز انتخاب کنید", Color(1.0, 0.90, 0.45))
 
 func on_piece_selected(user_id: int, _target_peace: int, _extra: Dictionary = {}) -> void:
-	# Broadcast from server that a player locked in their answer (option remains secret)
+	# Server notifies which gamer_id locked an answer (never exposes chosen option)
+	if user_id <= 0:
+		return
 	player_locked_in[user_id] = true
 	_update_crystal_light(user_id, true)
-	_update_status_chip(user_id, true, false, 0, 0)
+	_set_pedestal_status(user_id, "🔒 ثبت شد", Color(0.45, 0.95, 1.0))
 	_set_header_player_answered(user_id, true)
 
-	if player_status_chips.has(user_id):
-		var p_panel: Control = player_status_chips[user_id].get("panel")
-		if is_instance_valid(p_panel):
-			p_panel.pivot_offset = p_panel.size * 0.5
-			var tw = create_tween()
-			tw.tween_property(p_panel, "scale", Vector2(1.06, 1.06), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw.tween_property(p_panel, "scale", Vector2.ONE, 0.14)
+	# Defense in depth: if server says my_player_index locked in before user tapped, our gamer_id must have shuffled
+	if user_id == my_player_index and not has_answered_this_turn:
+		_trigger_silent_gamer_id_sync()
 
 func on_finish_turn_round(data: Dictionary) -> void:
+	_apply_finish_turn_round(data, true)
+
+func _apply_finish_turn_round(data: Dictionary, play_sfx: bool = true) -> void:
 	is_in_reveal_phase = true
 	set_board_locked(true)
+	_clear_hover()
+	my_player_index = GameManager.my_player_index
 
 	var correct_opt = int(data.get("correct_option", 0))
-	var player_answers: Dictionary = data.get("player_answers", {})
+	var player_answers: Dictionary = data.get("player_answers", {}) if typeof(data.get("player_answers", {})) == TYPE_DICTIONARY else {}
 	if data.has("scores") and typeof(data["scores"]) == TYPE_DICTIONARY:
 		player_scores = data["scores"]
+		_sync_hud_scores()
+
+	var cat = str(data.get("category_title", "")).strip_edges()
+	if not cat.is_empty():
+		current_category_title = cat
 
 	if is_instance_valid(center_medallion_mat):
 		center_medallion_mat.emission = Color(0.25, 0.95, 0.50)
 		center_medallion_mat.emission_energy_multiplier = 2.0
 
-	# Style Option Cards accurately for Reveal
-	for i in range(option_cards.size()):
-		var opt_num = i + 1
-		var card = option_cards[i]
-		var btn = option_buttons[i]
-		var badge = option_badges[i]
-		var b_lbl = option_badge_labels[i]
-		var tags = option_player_tags[i]
+	_clear_answer_tokens()
 
-		btn.disabled = true
-		btn.mouse_default_cursor_shape = Control.CURSOR_ARROW
-		for child in tags.get_children():
-			child.queue_free()
+	# Style 3D Keycaps for Reveal
+	for i in range(4):
+		var opt_num = i + 1
+		var cap = keycap_nodes[i]
+		if not cap.visible:
+			continue
+		var r_mat = keycap_rim_mats[i]
+		var b_mat = keycap_badge_mats[i]
+		var b_lbl = keycap_badge_labels[i]
+		var sb = keycap_bg_styles[i]
 
 		if opt_num == correct_opt:
-			card.add_theme_stylebox_override("panel", _style_option_correct)
-			card.modulate = Color.WHITE
-			badge.add_theme_stylebox_override("panel", _style_badge_correct)
+			r_mat.albedo_color = Color(0.28, 0.98, 0.50)
+			r_mat.emission_enabled = true
+			r_mat.emission = Color(0.22, 0.92, 0.44)
+			r_mat.emission_energy_multiplier = 2.4
+			b_mat.albedo_color = Color(0.10, 0.60, 0.26)
 			b_lbl.text = "✓"
-			b_lbl.add_theme_color_override("font_color", Color.WHITE)
-			_trigger_correct_vfx(card)
+			b_lbl.modulate = Color.WHITE
+			sb.bg_color = Color(0.06, 0.25, 0.12, 1.0)
+			sb.border_color = Color(0.35, 0.98, 0.54, 1.0)
+			var tw = _create_tracked_tween()
+			tw.tween_property(cap, "position:y", KEYCAP_COORDS[i].y + 0.018, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			_spawn_3d_ring_burst(cap.global_position + Vector3(0.0, 0.025, 0.0), Color(0.30, 0.98, 0.52))
+			_spawn_floating_3d_text("+۱", cap.global_position + Vector3(0.0, 0.06, 0.0), Color(0.35, 0.98, 0.55))
 		elif opt_num == selected_option_idx:
-			card.add_theme_stylebox_override("panel", _style_option_wrong)
-			card.modulate = Color.WHITE
-			badge.add_theme_stylebox_override("panel", _style_badge_wrong)
+			r_mat.albedo_color = Color(1.0, 0.30, 0.34)
+			r_mat.emission_enabled = true
+			r_mat.emission = Color(0.95, 0.22, 0.26)
+			r_mat.emission_energy_multiplier = 2.0
+			b_mat.albedo_color = Color(0.68, 0.14, 0.18)
 			b_lbl.text = "✕"
-			b_lbl.add_theme_color_override("font_color", Color.WHITE)
-			_trigger_wrong_vfx(card)
+			b_lbl.modulate = Color.WHITE
+			sb.bg_color = Color(0.27, 0.06, 0.08, 1.0)
+			sb.border_color = Color(1.0, 0.36, 0.40, 1.0)
+			var tw = _create_tracked_tween()
+			tw.tween_property(cap, "position:x", KEYCAP_COORDS[i].x + 0.014, 0.045)
+			tw.tween_property(cap, "position:x", KEYCAP_COORDS[i].x - 0.014, 0.045)
+			tw.tween_property(cap, "position:x", KEYCAP_COORDS[i].x + 0.008, 0.04)
+			tw.tween_property(cap, "position:x", KEYCAP_COORDS[i].x, 0.04)
+			_spawn_floating_3d_text("-۱", cap.global_position + Vector3(0.0, 0.06, 0.0), Color(1.0, 0.36, 0.38))
 		else:
-			card.add_theme_stylebox_override("panel", _style_option_dimmed)
-			card.modulate = Color(1, 1, 1, 0.65)
-			badge.add_theme_stylebox_override("panel", _style_badge_normal)
-			b_lbl.text = OPTION_LETTERS[i]
-			b_lbl.add_theme_color_override("font_color", Color(0.78, 0.68, 0.48))
+			r_mat.albedo_color = Color(0.28, 0.24, 0.18)
+			r_mat.emission_enabled = false
+			b_mat.albedo_color = Color(0.14, 0.11, 0.08)
+			b_lbl.modulate = Color(0.62, 0.55, 0.42)
+			sb.bg_color = Color(0.075, 0.055, 0.04, 1.0)
+			sb.border_color = Color(0.32, 0.26, 0.18, 0.70)
+			cap.position.y = KEYCAP_COORDS[i].y - 0.004
+		_queue_vp_redraw(keycap_vps[i])
 
-	_display_player_answers(player_answers, correct_opt)
-	_update_header_scores()
-
-	# Audio + Status Banner feedback based on local result
-	var my_result = player_answers.get(str(my_player_index), player_answers.get(my_player_index, {}))
-	var correct_letter = OPTION_LETTERS[clampi(correct_opt - 1, 0, 3)]
-	var is_corr = bool(my_result.get("is_correct", false)) if typeof(my_result) == TYPE_DICTIONARY else false
-	var delta = int(my_result.get("score_delta", 0)) if typeof(my_result) == TYPE_DICTIONARY else 0
-
-	if is_corr:
-		AudioManager.play_sound("win")
-		_set_header_banner("🎉 آفرین! پاسخ شما صحیح بود (+۱)", Color(0.35, 0.98, 0.52))
-		_show_reveal_banner("🎉 آفرین! پاسخ درست بود (+۱ امتیاز)  •  گزینه صحیح: «%s»" % correct_letter, _style_banner_correct, Color(0.62, 1.0, 0.72))
-	elif delta < 0:
-		AudioManager.play_sound("lose")
-		_set_header_banner("❌ متأسفانه پاسخ نادرست بود (-۱)", Color(1.0, 0.35, 0.38))
-		_show_reveal_banner("❌ پاسخ نادرست بود (-۱ امتیاز)  •  گزینه صحیح: «%s»" % correct_letter, _style_banner_wrong, Color(1.0, 0.68, 0.68))
-	else:
-		_set_header_banner("⏳ مهلت پاسخ پایان یافت (۰)", Color(0.85, 0.85, 0.85))
-		_show_reveal_banner("⏱️ زمان پاسخ‌گویی تمام شد (۰ امتیاز)  •  گزینه صحیح: «%s»" % correct_letter, _style_banner_timeout, Color(1.0, 0.90, 0.62))
-
-func _show_reveal_banner(msg: String, sb: StyleBoxFlat, txt_col: Color) -> void:
-	if not is_instance_valid(status_banner_card) or not is_instance_valid(lbl_status_banner):
-		return
-	status_banner_card.add_theme_stylebox_override("panel", sb)
-	lbl_status_banner.text = msg
-	lbl_status_banner.add_theme_color_override("font_color", txt_col)
-	status_banner_card.visible = true
-	status_banner_card.modulate.a = 0.0
-
-	if _reveal_timer_tween and _reveal_timer_tween.is_valid():
-		_reveal_timer_tween.kill()
-
-	if is_instance_valid(reveal_progress_bar):
-		reveal_progress_bar.visible = true
-		reveal_progress_bar.value = 100.0
-		_reveal_timer_tween = create_tween()
-		_reveal_timer_tween.tween_property(reveal_progress_bar, "value", 0.0, 3.8)
-
-	var fade_tw = create_tween()
-	fade_tw.tween_property(status_banner_card, "modulate:a", 1.0, 0.20)
-
-func _display_player_answers(player_answers: Dictionary, _correct_opt: int) -> void:
+	# Place physical 3D player answer pucks on chosen keycaps & update 3D pedestals
+	var opt_slot_counts: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
 	for p_key in player_answers.keys():
 		var p_info = player_answers[p_key]
 		if typeof(p_info) != TYPE_DICTIONARY:
@@ -1187,117 +1301,242 @@ func _display_player_answers(player_answers: Dictionary, _correct_opt: int) -> v
 		var is_corr = bool(p_info.get("is_correct", false))
 		var delta = int(p_info.get("score_delta", 0))
 
-		_update_status_chip(gid, true, true, chosen_opt, delta)
+		if delta > 0:
+			_set_pedestal_status(gid, "✅ +۱", Color(0.40, 1.0, 0.58))
+		elif delta < 0:
+			_set_pedestal_status(gid, "❌ -۱", Color(1.0, 0.44, 0.46))
+		else:
+			_set_pedestal_status(gid, "⏱️ ۰", Color(0.75, 0.75, 0.78))
 
-		if 1 <= chosen_opt and chosen_opt <= option_player_tags.size():
-			var tag_container = option_player_tags[chosen_opt - 1]
-			var pill = _create_player_pill(gid, is_corr, delta)
-			tag_container.add_child(pill)
+		if chosen_opt >= 1 and chosen_opt <= 4:
+			var anchor = keycap_token_anchors[chosen_opt - 1]
+			var slot_i = int(opt_slot_counts.get(chosen_opt, 0))
+			opt_slot_counts[chosen_opt] = slot_i + 1
+			var d_str = "+۱" if delta > 0 else ("-۱" if delta < 0 else "۰")
+			var chip_lbl = "%s (%s)" % [_short_name(_get_player_name(gid), 8), d_str]
+			var col = Color(0.45, 1.0, 0.62) if is_corr else Color(1.0, 0.45, 0.48)
+			var chip = _create_token_chip(gid, chip_lbl, col, false)
+			anchor.add_child(chip)
+			_spawned_answer_tokens.append(chip)
+			var target_x = float(slot_i) * 0.088
+			chip.position = Vector3(target_x, 0.085, 0.0)
+			var tw = _create_tracked_tween()
+			tw.tween_property(chip, "position:y", 0.010, 0.24).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 
-func _get_player_name(gid: int) -> String:
-	var p_data = GameManager.get_player_data_by_gamer_id(gid)
-	return str(p_data.get("name", p_data.get("username", "بازیکن %s" % _fa_digits(gid))))
+	# Local result audio & 3D lectern reveal banner
+	var my_result = player_answers.get(str(my_player_index), player_answers.get(my_player_index, {}))
+	var correct_letter = OPTION_LETTERS[clampi(correct_opt - 1, 0, 3)]
+	var my_corr = bool(my_result.get("is_correct", false)) if typeof(my_result) == TYPE_DICTIONARY else false
+	var my_delta = int(my_result.get("score_delta", 0)) if typeof(my_result) == TYPE_DICTIONARY else 0
 
-func _create_player_pill(gid: int, is_corr: bool, delta: int) -> PanelContainer:
-	var pill = PanelContainer.new()
-	var sb = StyleBoxFlat.new()
-	var base_col: Color = FACTION_COLORS.get(gid, Color.WHITE)
-	sb.bg_color = base_col.darkened(0.68)
-	sb.border_color = base_col
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(12)
-	sb.content_margin_left = 10
-	sb.content_margin_right = 10
-	sb.content_margin_top = 3
-	sb.content_margin_bottom = 3
-	pill.add_theme_stylebox_override("panel", sb)
+	if my_corr:
+		if play_sfx:
+			AudioManager.play_sound("win")
+		_lectern_status_text = "🎉 آفرین! پاسخ درست بود (+۱) • گزینه صحیح: «%s»" % correct_letter
+		_lectern_status_color = Color(0.48, 1.0, 0.66)
+		_set_header_banner("🎉 آفرین! پاسخ شما صحیح بود (+۱)", Color(0.35, 0.98, 0.52))
+	elif my_delta < 0:
+		if play_sfx:
+			AudioManager.play_sound("lose")
+		_lectern_status_text = "❌ پاسخ نادرست بود (-۱) • گزینه صحیح: «%s»" % correct_letter
+		_lectern_status_color = Color(1.0, 0.52, 0.54)
+		_set_header_banner("❌ متأسفانه پاسخ نادرست بود (-۱)", Color(1.0, 0.35, 0.38))
+	else:
+		_lectern_status_text = "⏱️ مهلت تمام شد (۰) • گزینه صحیح: «%s»" % correct_letter
+		_lectern_status_color = Color(1.0, 0.88, 0.52)
+		_set_header_banner("⏳ مهلت پاسخ پایان یافت (۰)", Color(0.85, 0.85, 0.85))
 
-	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 6)
-	pill.add_child(hbox)
+	_lectern_show_reveal_bar = true
+	_lectern_reveal_pct = 100.0
+	_refresh_lectern_viewport()
 
-	var name_lbl = Label.new()
-	name_lbl.text = _get_player_name(gid)
-	name_lbl.add_theme_font_override("font", FontHekayat)
-	name_lbl.add_theme_font_size_override("font_size", 19)
-	name_lbl.add_theme_color_override("font_color", Color.WHITE)
-	hbox.add_child(name_lbl)
+	if _reveal_timer_tween and _reveal_timer_tween.is_valid():
+		_reveal_timer_tween.kill()
+	_reveal_tween_pct = 100.0
+	_reveal_timer_tween = create_tween()
+	_reveal_timer_tween.tween_property(self, "_reveal_tween_pct", 0.0, 3.8)
 
-	var score_lbl = Label.new()
-	score_lbl.text = ("+%s" % _fa_digits(delta)) if delta > 0 else (("-%s" % _fa_digits(abs(delta))) if delta < 0 else "۰")
-	score_lbl.add_theme_font_override("font", FontHekayat)
-	score_lbl.add_theme_font_size_override("font_size", 19)
-	score_lbl.add_theme_color_override("font_color", Color(0.45, 1.0, 0.62) if is_corr else (Color(1.0, 0.45, 0.45) if delta < 0 else Color(0.85, 0.85, 0.85)))
-	hbox.add_child(score_lbl)
+# --- 3D Token & VFX Helpers ---
+func _create_token_chip(gid: int, label_text: String, text_col: Color, is_seal: bool) -> Node3D:
+	var holder = Node3D.new()
+	var f_col: Color = FACTION_COLORS.get(gid, Color(0.25, 0.72, 1.0))
 
-	return pill
+	var base_cyl = CylinderMesh.new()
+	base_cyl.top_radius = 0.022 if is_seal else 0.018
+	base_cyl.bottom_radius = 0.025 if is_seal else 0.021
+	base_cyl.height = 0.012
+	var chip_mat = StandardMaterial3D.new()
+	chip_mat.albedo_color = f_col
+	chip_mat.metallic = 0.35
+	chip_mat.roughness = 0.22
+	chip_mat.emission_enabled = true
+	chip_mat.emission = f_col
+	chip_mat.emission_energy_multiplier = 0.9 if is_seal else 0.7
 
-# --- Visual Effects ---
-func _trigger_correct_vfx(card: Control) -> void:
-	if not is_instance_valid(card):
+	var base_inst = MeshInstance3D.new()
+	base_inst.mesh = base_cyl
+	base_inst.material_override = chip_mat
+	holder.add_child(base_inst)
+
+	var ring = TorusMesh.new()
+	ring.inner_radius = 0.020 if is_seal else 0.016
+	ring.outer_radius = 0.025 if is_seal else 0.021
+	var ring_inst = MeshInstance3D.new()
+	ring_inst.mesh = ring
+	ring_inst.material_override = _mat_brass
+	ring_inst.position = Vector3(0.0, 0.006, 0.0)
+	holder.add_child(ring_inst)
+
+	var lbl = Label3D.new()
+	lbl.text = label_text
+	lbl.font = FontHekayat
+	lbl.font_size = 28
+	lbl.pixel_size = 0.00095
+	lbl.modulate = text_col
+	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98)
+	lbl.outline_size = 6
+	lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	lbl.position = Vector3(0.0, 0.018, -0.032)
+	holder.add_child(lbl)
+
+	return holder
+
+func _clear_answer_tokens() -> void:
+	for t in _spawned_answer_tokens:
+		if is_instance_valid(t):
+			t.queue_free()
+	_spawned_answer_tokens.clear()
+
+func _spawn_3d_ring_burst(world_pos: Vector3, col: Color) -> void:
+	if not is_instance_valid(stand_root):
 		return
-	card.pivot_offset = card.size * 0.5
-	var tw = create_tween()
-	tw.tween_property(card, "scale", Vector2(1.035, 1.035), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(card, "scale", Vector2.ONE, 0.18)
+	var torus = TorusMesh.new()
+	torus.inner_radius = 0.08
+	torus.outer_radius = 0.10
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = col
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.emission_enabled = true
+	mat.emission = col
+	mat.emission_energy_multiplier = 2.6
 
-	var vfx_origin = card.global_position + Vector2(card.size.x * 0.5, 12.0)
-	_spawn_floating_text("+۱", vfx_origin, Color(0.35, 0.98, 0.52))
+	var ring = MeshInstance3D.new()
+	ring.mesh = torus
+	ring.material_override = mat
+	stand_root.add_child(ring)
+	ring.global_position = world_pos
+	ring.scale = Vector3(0.5, 1.0, 0.5)
 
-func _trigger_wrong_vfx(card: Control) -> void:
-	if not is_instance_valid(card):
+	var tw = _create_tracked_tween().set_parallel(true)
+	tw.tween_property(ring, "scale", Vector3(2.4, 1.0, 2.4), 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.55)
+	tw.chain().tween_callback(ring.queue_free)
+
+func _spawn_floating_3d_text(text: String, world_pos: Vector3, col: Color) -> void:
+	if not is_instance_valid(stand_root):
 		return
-	# Gentle rotational shake around center pivot (safe inside VBoxContainer without layout fight)
-	card.pivot_offset = card.size * 0.5
-	var tw = create_tween()
-	tw.tween_property(card, "rotation_degrees", 1.4, 0.045)
-	tw.tween_property(card, "rotation_degrees", -1.4, 0.045)
-	tw.tween_property(card, "rotation_degrees", 0.9, 0.04)
-	tw.tween_property(card, "rotation_degrees", -0.9, 0.04)
-	tw.tween_property(card, "rotation_degrees", 0.0, 0.04)
-
-	var vfx_origin = card.global_position + Vector2(card.size.x * 0.5, 12.0)
-	_spawn_floating_text("-۱", vfx_origin, Color(1.0, 0.35, 0.38))
-
-func _spawn_floating_text(text: String, global_pos: Vector2, col: Color) -> void:
-	if not is_instance_valid(vfx_particles_container):
-		return
-	var local_pos = global_pos - vfx_particles_container.global_position
-	var lbl = Label.new()
+	var lbl = Label3D.new()
 	lbl.text = text
-	lbl.add_theme_font_override("font", FontHekayat)
-	lbl.add_theme_font_size_override("font_size", 46)
-	lbl.add_theme_color_override("font_color", col)
-	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-	lbl.add_theme_constant_override("shadow_offset_x", 2)
-	lbl.add_theme_constant_override("shadow_offset_y", 2)
-	lbl.custom_minimum_size = Vector2(90, 56)
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	lbl.pivot_offset = Vector2(45, 28)
-	lbl.position = local_pos - lbl.pivot_offset
-	lbl.scale = Vector2(0.5, 0.5)
-	vfx_particles_container.add_child(lbl)
+	lbl.font = FontHekayat
+	lbl.font_size = 68
+	lbl.pixel_size = 0.0014
+	lbl.modulate = col
+	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98)
+	lbl.outline_size = 8
+	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	stand_root.add_child(lbl)
+	lbl.global_position = world_pos
 
-	var tw = create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(lbl, "position:y", lbl.position.y - 68.0, 0.85).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(lbl, "scale", Vector2(1.22, 1.22), 0.20).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(lbl, "modulate:a", 0.0, 0.38).set_delay(0.48)
+	var tw = _create_tracked_tween().set_parallel(true)
+	tw.tween_property(lbl, "global_position:y", world_pos.y + 0.16, 0.95).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(lbl, "modulate:a", 0.0, 0.45).set_delay(0.50)
 	tw.chain().tween_callback(lbl.queue_free)
+
+# --- Progress Gems, Pedestal Lights & SubViewport Rendering ---
+func _update_progress_gems() -> void:
+	for i in range(progress_gems.size()):
+		var gem = progress_gems[i]
+		if not is_instance_valid(gem):
+			continue
+		var q_idx = i + 1
+		gem.visible = (q_idx <= total_questions_count)
+		if q_idx < current_question_num:
+			gem.material_override = _mat_gem_done
+			gem.scale = Vector3.ONE
+		elif q_idx == current_question_num:
+			gem.material_override = _mat_gem_active
+			gem.scale = Vector3(1.32, 1.32, 1.32)
+		else:
+			gem.material_override = _mat_gem_unlit
+			gem.scale = Vector3(0.85, 0.85, 0.85)
 
 func _update_crystal_light(gid: int, is_active: bool) -> void:
 	if not crystal_materials.has(gid):
 		return
 	var mat: StandardMaterial3D = crystal_materials[gid]
 	var col: Color = FACTION_COLORS.get(gid, Color.WHITE)
-	var tw = create_tween()
+	var halo = crystal_halos.get(gid)
+	if is_instance_valid(halo):
+		halo.visible = is_active
+	var tw = _create_tracked_tween().set_parallel(true)
 	if is_active:
-		tw.tween_property(mat, "emission_energy_multiplier", 3.5, 0.2)
-		tw.tween_property(mat, "emission", col, 0.2)
+		tw.tween_property(mat, "albedo_color", col.lightened(0.25), 0.18)
+		tw.tween_property(mat, "emission", col, 0.18)
+		tw.tween_property(mat, "emission_energy_multiplier", 3.4, 0.18)
 	else:
-		tw.tween_property(mat, "emission_energy_multiplier", 0.5, 0.3)
-		tw.tween_property(mat, "emission", col.darkened(0.7), 0.3)
+		tw.tween_property(mat, "albedo_color", col.darkened(0.35), 0.25)
+		tw.tween_property(mat, "emission", col.darkened(0.65), 0.25)
+		tw.tween_property(mat, "emission_energy_multiplier", 0.45, 0.25)
+
+func _refresh_lectern_viewport() -> void:
+	if not is_instance_valid(_lectern_vp):
+		return
+	var cat_display: String = current_category_title
+	if cat_display.is_empty():
+		cat_display = "✨ پرسش مسابقه"
+	elif not ("🎥" in cat_display or "📺" in cat_display or "🖋" in cat_display or "🎧" in cat_display or "🗿" in cat_display or "🔠" in cat_display or "📡" in cat_display or "🔬" in cat_display or "🎨" in cat_display or "📚" in cat_display or "🏓" in cat_display or "🤓" in cat_display or "📖" in cat_display or "💡" in cat_display):
+		cat_display = "💡 " + cat_display
+
+	if is_instance_valid(_lectern_cat_lbl):
+		_lectern_cat_lbl.text = cat_display
+	if is_instance_valid(_lectern_cnt_lbl):
+		_lectern_cnt_lbl.text = "سوال %s از %s" % [_fa_digits(current_question_num), _fa_digits(total_questions_count)]
+	if is_instance_valid(_lectern_q_lbl):
+		var q_str = current_question_text if not current_question_text.is_empty() else "در حال بارگذاری سوال..."
+		_lectern_q_lbl.text = q_str
+		var l_len = q_str.length()
+		var q_sz = 38 if l_len <= 68 else (32 if l_len <= 115 else 26)
+		_lectern_q_lbl.add_theme_font_size_override("font_size", q_sz)
+	if is_instance_valid(_lectern_status_lbl):
+		_lectern_status_lbl.text = _lectern_status_text
+		_lectern_status_lbl.add_theme_color_override("font_color", _lectern_status_color)
+	if is_instance_valid(_lectern_reveal_fill):
+		_lectern_reveal_fill.visible = _lectern_show_reveal_bar
+		_lectern_reveal_fill.value = _lectern_reveal_pct
+
+	_queue_vp_redraw(_lectern_vp)
+
+func _queue_vp_redraw(vp: SubViewport) -> void:
+	if is_instance_valid(vp):
+		vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+
+func _fit_option_font_size(text: String) -> int:
+	var n = text.length()
+	if n <= 22:
+		return 34
+	elif n <= 44:
+		return 28
+	return 23
+
+func _short_name(s: String, max_len: int = 12) -> String:
+	var trimmed = s.strip_edges()
+	if trimmed.length() <= max_len:
+		return trimmed
+	return trimmed.substr(0, max_len - 1) + "…"
+
+func _get_player_name(gid: int) -> String:
+	var p_data = GameManager.get_player_data_by_gamer_id(gid)
+	return str(p_data.get("name", p_data.get("username", "بازیکن %s" % _fa_digits(gid))))
 
 # --- Header Communication Helpers ---
 func _update_header_scores() -> void:
@@ -1331,6 +1570,14 @@ func _set_header_banner(text: String, col: Color = Color(1.0, 0.88, 0.45)) -> vo
 	elif is_instance_valid(header.get("lbl_turn_banner")):
 		header.lbl_turn_banner.text = text
 		header.lbl_turn_banner.add_theme_color_override("font_color", col)
+
+func _set_header_local_answered(answered: bool) -> void:
+	var hud = _get_active_hud()
+	if not is_instance_valid(hud):
+		return
+	var header = hud.get("current_top_header")
+	if is_instance_valid(header) and header.has_method("set_local_answered"):
+		header.set_local_answered(answered)
 
 func _set_header_round_label(turn_num: int, total: int) -> void:
 	var hud = _get_active_hud()
@@ -1379,24 +1626,48 @@ func _fa_digits(val: Variant) -> String:
 # --- Reconnection ---
 func on_reconnect_data(payload: Dictionary) -> void:
 	var src: Dictionary = payload
-	if payload.has("game_data") and typeof(payload["game_data"]) == TYPE_DICTIONARY:
-		src = payload["game_data"]
+	var gd = payload.get("game_data", {})
+	if typeof(gd) == TYPE_DICTIONARY and not gd.is_empty():
+		src = gd
 
-	if src.has("current_question") and typeof(src["current_question"]) == TYPE_DICTIONARY:
-		_handle_new_question_turn(src["current_question"])
-	elif payload.has("current_question") and typeof(payload["current_question"]) == TYPE_DICTIONARY:
-		_handle_new_question_turn(payload["current_question"])
-	elif src.has("question") or src.has("turn"):
-		_handle_new_question_turn(src)
-
+	my_player_index = GameManager.my_player_index
 	if src.has("scores") and typeof(src["scores"]) == TYPE_DICTIONARY:
 		player_scores = src["scores"]
-		_update_header_scores()
-	elif payload.has("scores") and typeof(payload["scores"]) == TYPE_DICTIONARY:
-		player_scores = payload["scores"]
-		_update_header_scores()
+		_sync_hud_scores()
+
+	if src.has("current_question") and typeof(src["current_question"]) == TYPE_DICTIONARY:
+		_handle_new_question_turn(src["current_question"], true)
+	elif payload.has("current_question") and typeof(payload["current_question"]) == TYPE_DICTIONARY:
+		_handle_new_question_turn(payload["current_question"], true)
+	elif src.has("question") or src.has("turn"):
+		_handle_new_question_turn(src, true)
+
+	# Restore reveal state if server is currently inside the 4s Finish_Turn_Round sleep window
+	if bool(src.get("is_turn_round_finished", false)):
+		var last_res = src.get("last_turn_results", {})
+		if typeof(last_res) == TYPE_DICTIONARY and not last_res.is_empty():
+			_apply_finish_turn_round(last_res, false)
+
+	_rebuild_player_pedestals()
+	_refresh_pedestals_text_and_lights()
+	if has_answered_this_turn and not is_in_reveal_phase:
+		_set_header_local_answered(true)
+
+# --- Cleanup & Reset ---
+func _create_tracked_tween() -> Tween:
+	var tw = create_tween()
+	_active_tweens.append(tw)
+	return tw
+
+func _kill_all_tweens() -> void:
+	for tw in _active_tweens:
+		if tw and tw.is_valid():
+			tw.kill()
+	_active_tweens.clear()
 
 func reset_board() -> void:
+	_kill_all_tweens()
+	_clear_answer_tokens()
 	current_question_num = 1
 	has_answered_this_turn = false
 	is_in_reveal_phase = false
@@ -1404,12 +1675,12 @@ func reset_board() -> void:
 	player_scores = {1: 0, 2: 0, 3: 0, 4: 0}
 	for gid in player_locked_in.keys():
 		player_locked_in[gid] = false
-		_update_crystal_light(gid, false)
-		_update_status_chip(gid, false, false, 0, 0)
 	_clear_header_answered_states()
+	_rebuild_player_pedestals()
+	_refresh_pedestals_text_and_lights()
 
 func cleanup_board() -> void:
-	if is_instance_valid(canvas_layer):
-		canvas_layer.queue_free()
+	_kill_all_tweens()
+	_clear_answer_tokens()
 	if is_instance_valid(stand_root):
 		stand_root.queue_free()

@@ -219,6 +219,11 @@ func _on_internal_reconnect_data(payload: Dictionary) -> void:
 		current_turn = max(1, r_num)
 		GameManager.current_turn = current_turn
 		GameManager.current_round = r_num
+	elif GameManager.current_game_type == GameTypes.QUIZ:
+		var q_turn = int(g_data.get("current_turn", payload.get("current_turn", GameManager.current_turn))) if typeof(g_data) == TYPE_DICTIONARY else int(payload.get("current_turn", GameManager.current_turn))
+		current_turn = max(1, q_turn)
+		GameManager.current_turn = current_turn
+		GameManager.current_round = current_turn
 	elif typeof(g_data) == TYPE_DICTIONARY and g_data.has("current_turn"):
 		current_turn = int(g_data["current_turn"])
 		GameManager.current_turn = current_turn

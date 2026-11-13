@@ -329,6 +329,8 @@ var turn_time_left: float = 10.0
 
 var is_timer_active: bool = false
 
+var is_wait_timer_mode: bool = false
+
 var is_round_finished: bool = false
 
 var last_second_ticked: int = -1
@@ -555,7 +557,7 @@ func _process(delta: float) -> void:
 
 			current_top_header.update_timer(turn_time_left, turn_duration, GameManager.current_turn)
 
-		if turn_time_left <= 3.0 and turn_time_left > 0.0:
+		if turn_time_left <= 3.0 and turn_time_left > 0.0 and not is_wait_timer_mode:
 
 			if sec != last_second_ticked:
 
@@ -1179,6 +1181,8 @@ func reset_for_new_match() -> void:
 
 	is_timer_active = false
 
+	is_wait_timer_mode = false
+
 	turn_duration = GameRegistry.get_turn_time(GameManager.current_game_type)
 
 	turn_time_left = turn_duration
@@ -1604,6 +1608,17 @@ func setup_match(game_title: String = "تیک تاک تو", mode_title: String =
 		_turn_glow_tween.kill()
 
 		_turn_glow_tween = null
+
+
+func refresh_players_only() -> void:
+	var my_idx = GameManager.my_player_index
+	var is_multi = GameManager.match_players.size() > 2
+	var p1_data = GameManager.get_player_data_by_gamer_id(1) if is_multi else (GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data())
+	var p2_data = GameManager.get_player_data_by_gamer_id(2) if is_multi else (GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data())
+	if is_instance_valid(current_top_header):
+		current_top_header.setup_players(p1_data, p2_data, my_idx)
+		if current_top_header.has_method("set_profile_clicks_enabled"):
+			current_top_header.set_profile_clicks_enabled(is_game_started)
 
 
 
@@ -2198,6 +2213,8 @@ func resume_timer_on_user_reconnected(remaining_time: int) -> void:
 
 	is_pause_active = false
 
+	is_wait_timer_mode = false
+
 	is_timer_active = true
 
 	last_second_ticked = -1
@@ -2223,6 +2240,8 @@ func resume_timer_on_user_reconnected(remaining_time: int) -> void:
 func sync_reconnect_timer(payload: Dictionary) -> void:
 
 	var max_time = GameRegistry.get_turn_time(GameManager.current_game_type)
+	var is_quiz_payload: bool = (GameManager.current_game_type == GameTypes.QUIZ or str(payload.get("game_type", "")).to_lower() == "quiz" or payload.has("current_question"))
+	var is_quiz_wait: bool = is_quiz_payload and bool(payload.get("is_turn_round_finished", false))
 
 	if GameManager.current_game_type == GameTypes.BATTLESHIP:
 
@@ -2231,6 +2250,10 @@ func sync_reconnect_timer(payload: Dictionary) -> void:
 		if typeof(gd) == TYPE_DICTIONARY and not bool(gd.get("is_play_phase", false)):
 
 			max_time = 60.0
+
+	elif is_quiz_wait:
+
+		max_time = 4.0
 
 	turn_duration = max_time
 
@@ -2241,6 +2264,11 @@ func sync_reconnect_timer(payload: Dictionary) -> void:
 		var elapsed = float(timer_data.get("time", 0))
 
 		turn_time_left = clampf(max_time - elapsed, 1.0, max_time)
+
+	elif is_quiz_payload and payload.has("time") and float(payload.get("time", 0)) > 0.0:
+
+		# Quiz backend sends direct remaining seconds at top level "time"
+		turn_time_left = clampf(float(payload.get("time", max_time)), 1.0, max_time)
 
 	elif _last_reconnect_remaining_time > 0.0:
 
@@ -2259,6 +2287,8 @@ func sync_reconnect_timer(payload: Dictionary) -> void:
 	is_round_finished = false
 
 	is_pause_active = false
+
+	is_wait_timer_mode = is_quiz_wait
 
 	is_timer_active = true
 
@@ -2284,7 +2314,7 @@ func sync_reconnect_timer(payload: Dictionary) -> void:
 
 # Handles full game reconnect data payload (re-syncs gamers, round, scores, turn, and timer)
 
-func handle_reconnect_data(payload: Dictionary) -> void:
+func handle_reconnect_data(payload: Dictionary, show_toast: bool = true) -> void:
 
 	visible = true
 
@@ -2302,7 +2332,10 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 
 		GameManager.set_match_gamers(payload["gamers"])
 
-		setup_match(GameManager.get_game_display_name(), "مسابقه زنده")
+		if show_toast:
+			setup_match(GameManager.get_game_display_name(), "مسابقه زنده")
+		else:
+			refresh_players_only()
 
 		
 
@@ -2321,12 +2354,32 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 		hide_pause_dialog()
 
 	var game_data = payload.get("game_data", {})
+	var is_quiz_reconnect = (GameManager.current_game_type == GameTypes.QUIZ or str(payload.get("game_type", "")).to_lower() == "quiz" or payload.has("current_question"))
 
-	if typeof(game_data) == TYPE_DICTIONARY:
+	if is_quiz_reconnect:
+
+		var q_src = game_data if (typeof(game_data) == TYPE_DICTIONARY and not game_data.is_empty()) else payload
+		var q_scores = q_src.get("scores", {})
+		if typeof(q_scores) == TYPE_DICTIONARY:
+			var s1 = int(q_scores.get(1, q_scores.get("1", 0)))
+			var s2 = int(q_scores.get(2, q_scores.get("2", 0)))
+			update_scores(s1, s2)
+			if is_instance_valid(current_top_header) and current_top_header.has_method("update_quiz_scores"):
+				current_top_header.update_quiz_scores(q_scores)
+		elif typeof(q_scores) == TYPE_ARRAY and (q_scores as Array).size() >= 2:
+			update_scores(int(q_scores[0]), int(q_scores[1]))
+		var q_turn = max(1, int(q_src.get("current_turn", GameManager.current_turn)))
+		var q_total = max(1, int(q_src.get("total_questions", 10)))
+		if is_instance_valid(current_top_header) and current_top_header.has_method("set_question_number"):
+			current_top_header.set_question_number(q_turn, q_total)
+		if not bool(q_src.get("is_turn_round_finished", false)):
+			update_turn(q_turn)
+
+	elif typeof(game_data) == TYPE_DICTIONARY:
 
 		var scores = game_data.get("scores", [0, 0])
 
-		if scores.size() >= 2:
+		if typeof(scores) == TYPE_ARRAY and scores.size() >= 2:
 
 			update_scores(int(scores[0]), int(scores[1]))
 
@@ -2396,7 +2449,8 @@ func handle_reconnect_data(payload: Dictionary) -> void:
 
 	sync_reconnect_timer(payload)
 
-	show_toast_hint("✅ اتصال به مسابقه با موفقیت برقرار شد!")
+	if show_toast:
+		show_toast_hint("✅ اتصال به مسابقه با موفقیت برقرار شد!")
 
 
 
@@ -2536,6 +2590,8 @@ func start_turn_timer(duration: float, custom_banner: String = "") -> void:
 
 	last_second_ticked = -1
 
+	is_wait_timer_mode = false
+
 	is_timer_active = true
 
 	is_game_started = true
@@ -2558,6 +2614,10 @@ func start_turn_timer(duration: float, custom_banner: String = "") -> void:
 		elif GameManager.current_game_type == GameTypes.MSWEEPER:
 
 			banner = "خانه‌های امن را باز کنید و ۱۰ مین را پرچم‌گذاری نمایید"
+
+		elif GameManager.current_game_type == GameTypes.QUIZ:
+
+			banner = "🤔 گزینه درست را روی میز انتخاب کنید"
 
 		else:
 
@@ -2586,6 +2646,8 @@ func start_wait_timer(wait_sec: int, msg: String = "") -> void:
 	turn_time_left = float(wait_sec)
 
 	last_second_ticked = -1
+
+	is_wait_timer_mode = true
 
 	is_timer_active = true
 

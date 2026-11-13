@@ -151,11 +151,18 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 
 	var resolved_winner = winner_player_index
 	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
-		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.QUIZ]:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE]:
 			if p1_score > p2_score:
 				resolved_winner = 1
 			elif p2_score > p1_score:
 				resolved_winner = 2
+		elif GameManager.current_game_type == GameTypes.QUIZ and GameManager.match_players.size() <= 2:
+			if p1_score > p2_score:
+				resolved_winner = 1
+			elif p2_score > p1_score:
+				resolved_winner = 2
+			else:
+				resolved_winner = 0
 	winner_player_index = resolved_winner
 	_current_winner_index = winner_player_index
 	_current_is_friendly = is_friendly
@@ -290,8 +297,12 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		defeat_particles.emitting = true
 		ActionVFXManager.shake_camera(0.2, 0.25)
 		
-	# Setup player cards (supports both standard 2-player and 3-4 player Ludo podium)
-	var is_multi_ludo = (GameManager.match_players.size() > 2 or GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ]) and (GameManager.ludo_rank1 > 0 or winner_player_index > 2)
+	# Setup player cards (supports both standard 2-player and 3-4 player Ludo/Quiz podium)
+	var is_multi_ludo = false
+	if GameManager.current_game_type == GameTypes.QUIZ:
+		is_multi_ludo = (GameManager.match_players.size() > 2 and not is_draw and (GameManager.ludo_rank1 > 0 or winner_player_index > 2))
+	else:
+		is_multi_ludo = (GameManager.match_players.size() > 2 or GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO]) and (GameManager.ludo_rank1 > 0 or winner_player_index > 2)
 	var p1_data: Dictionary = {}
 	var p2_data: Dictionary = {}
 	if is_multi_ludo:
@@ -452,7 +463,7 @@ static func _fa_digits(val: Variant) -> String:
 	return out
 
 func update_scores(p1_score: int, p2_score: int) -> void:
-	var show_round_scores = GameRegistry.has_round_score(GameManager.current_game_type) and ((GameManager.max_rounds > 1) or (p1_score > 0 or p2_score > 0))
+	var show_round_scores = GameRegistry.has_round_score(GameManager.current_game_type) and ((GameManager.current_game_type == GameTypes.QUIZ) or (GameManager.max_rounds > 1) or (p1_score > 0 or p2_score > 0))
 	var prefix = "مجموع امتیاز: %s" if GameRegistry.is_cumulative_score(GameManager.current_game_type) else "امتیاز دست‌ها: %s"
 	if is_instance_valid(lbl_p1_score):
 		lbl_p1_score.visible = show_round_scores
@@ -464,13 +475,15 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 			lbl_p2_score.text = prefix % _fa_digits(p2_score)
 	if visible and is_instance_valid(panel) and panel.visible:
 		if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
-			if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.QUIZ]:
+			if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE] or (GameManager.current_game_type == GameTypes.QUIZ and GameManager.match_players.size() <= 2):
 				var score_winner = _current_winner_index
 				if p1_score > p2_score:
 					score_winner = 1
 				elif p2_score > p1_score:
 					score_winner = 2
-				if score_winner != _current_winner_index and score_winner > 0:
+				elif GameManager.current_game_type == GameTypes.QUIZ:
+					score_winner = 0
+				if score_winner != _current_winner_index and (score_winner > 0 or GameManager.current_game_type == GameTypes.QUIZ):
 					visible = false
 					panel.visible = false
 					show_result(score_winner, p1_score, p2_score, _current_is_friendly, _current_xp_earned)

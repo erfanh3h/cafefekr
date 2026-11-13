@@ -1489,6 +1489,17 @@ func _on_finish_turn_round_received(data: Dictionary) -> void:
 
 			base_game_hud.start_wait_timer(3, result_msg)
 
+	elif GameManager.current_game_type == GameTypes.QUIZ:
+
+		var my_idx = GameManager.my_player_index
+		var player_answers: Dictionary = data.get("player_answers", {}) if typeof(data.get("player_answers", {})) == TYPE_DICTIONARY else {}
+		var my_res = player_answers.get(str(my_idx), player_answers.get(my_idx, {}))
+		var is_corr = bool(my_res.get("is_correct", false)) if typeof(my_res) == TYPE_DICTIONARY else false
+		var delta = int(my_res.get("score_delta", 0)) if typeof(my_res) == TYPE_DICTIONARY else 0
+		var quiz_msg = "🎉 آفرین! پاسخ شما صحیح بود (+۱)" if is_corr else ("❌ پاسخ نادرست بود (-۱)" if delta < 0 else "⏳ مهلت پاسخ پایان یافت (۰)")
+		if is_instance_valid(base_game_hud) and not base_game_hud.is_round_finished and not base_game_hud.is_game_finished:
+			base_game_hud.start_wait_timer(4, quiz_msg)
+
 
 
 func _on_round_finished(payload: Variant) -> void:
@@ -1592,6 +1603,8 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 		GameManager.set_match_gamers(payload["gamers"])
 		_update_table_opponent_avatar()
+		if GameManager.is_game_active and GameManager.current_game_type == GameTypes.QUIZ and is_instance_valid(base_game_hud):
+			base_game_hud.refresh_players_only()
 
 	var current_idx = int(payload.get("current_game_index", 0))
 	var games_arr = payload.get("games", []) as Array
@@ -1967,7 +1980,7 @@ func _on_game_finished(data: Dictionary) -> void:
 
 	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and not base_game_hud.is_pause_active and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
 
-		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.MSWEEPER, GameTypes.BOXFOUR, GameTypes.QUIZ]:
+		if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.MNUMBERS, GameTypes.BATTLESHIP, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE, GameTypes.MSWEEPER, GameTypes.BOXFOUR]:
 
 			if GameManager.p1_score > GameManager.p2_score:
 
@@ -1982,6 +1995,20 @@ func _on_game_finished(data: Dictionary) -> void:
 				winner = 0
 
 			elif GameManager.current_game_type == GameTypes.MNUMBERS and (GameManager.p1_score + GameManager.p2_score) >= 18 and GameManager.p1_score == GameManager.p2_score:
+
+				winner = 0
+
+		elif GameManager.current_game_type == GameTypes.QUIZ and GameManager.match_players.size() <= 2:
+
+			if GameManager.p1_score > GameManager.p2_score:
+
+				winner = 1
+
+			elif GameManager.p2_score > GameManager.p1_score:
+
+				winner = 2
+
+			else:
 
 				winner = 0
 
@@ -2116,7 +2143,8 @@ func _on_user_reconnected(user_id: String, remaining_time: int) -> void:
 
 
 func _on_reconnect_data_received(payload: Dictionary) -> void:
-	print("[Main] Received Reconnect_Data from server. Restoring match state...")
+	var is_silent_sync: bool = NetworkManager.consume_silent_quiz_sync()
+	print("[Main] Received Reconnect_Data from server (silent_quiz_sync=%s). Restoring match state..." % str(is_silent_sync))
 	_pending_start_game = false
 	_pending_turn = -1
 	GameManager.is_game_active = true
@@ -2155,6 +2183,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 			inferred_type = GameRegistry.normalize_type(str(payload["game_type"]))
 		elif g_data.has("game_type") and not str(g_data["game_type"]).is_empty():
 			inferred_type = GameRegistry.normalize_type(str(g_data["game_type"]))
+		elif payload.has("current_question") or (payload.has("total_questions") and payload.has("scores")):
+			inferred_type = GameTypes.QUIZ
 		elif g_data.has("is_setup_ring_phase") or g_data.has("disk_count") or (g_data.has("board") and typeof(g_data["board"]) == TYPE_ARRAY and (g_data["board"] as Array).size() == 85):
 			inferred_type = GameTypes.YINSH
 		elif g_data.has("players_out_pieces") or g_data.has("start_board"):
@@ -2212,8 +2242,9 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 	base_game_hud.is_game_started = true
 	base_game_hud.is_start_overlay_dismissed = true
 	base_game_hud.force_dismiss_start_overlay(false)
-	base_game_hud.hide_turn_banner()
-	base_game_hud.handle_reconnect_data(payload)
+	if not is_silent_sync:
+		base_game_hud.hide_turn_banner()
+	base_game_hud.handle_reconnect_data(payload, not is_silent_sync)
 
 	var board = cafe_table.current_board_node
 	if board and is_instance_valid(board):

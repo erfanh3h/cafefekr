@@ -57,6 +57,12 @@ signal ranked_locked_received(data: Dictionary)
 
 var is_in_multi_rank_queue: bool = false
 var current_multi_rank_game_type: String = ""
+var silent_quiz_sync_pending: bool = false
+
+func consume_silent_quiz_sync() -> bool:
+	var val: bool = silent_quiz_sync_pending
+	silent_quiz_sync_pending = false
+	return val
 
 var api: APIClient
 var socket: SocketIOClient
@@ -281,6 +287,7 @@ func join_active_game(game_id: String) -> void:
 	socket.connect_namespace("/game", auth)
 
 func leave_active_game() -> void:
+	silent_quiz_sync_pending = false
 	GameManager.set_active_game("")
 	socket.disconnect_namespace("/game")
 
@@ -459,6 +466,7 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			game_play_navigate_received.emit(payload if typeof(payload) == TYPE_DICTIONARY else {})
 
 		Commands.Game_Data:
+			silent_quiz_sync_pending = false
 			if typeof(payload) == TYPE_DICTIONARY:
 				if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 					GameManager.set_match_gamers(payload["gamers"])
@@ -583,9 +591,11 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			not_played_turns_received.emit(g_id, cnt)
 
 		Commands.Finish_Game:
+			silent_quiz_sync_pending = false
 			game_finished.emit(payload if typeof(payload) == TYPE_DICTIONARY else {"winner": payload})
 
 		Commands.Game_Finished:
+			silent_quiz_sync_pending = false
 			if ns == "/queue":
 				print("[NetworkManager] Game_Finished received on /queue namespace.")
 				queue_game_finished.emit()
@@ -625,7 +635,7 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 					GameManager.set_match_gamers(payload["gamers"])
 				var g_data = payload.get("game_data", {})
-				if typeof(g_data) == TYPE_DICTIONARY:
+				if typeof(g_data) == TYPE_DICTIONARY and not g_data.is_empty():
 					if g_data.has("scores") and typeof(g_data["scores"]) == TYPE_ARRAY and (g_data["scores"] as Array).size() >= 2:
 						GameManager.p1_score = int(g_data["scores"][0])
 						GameManager.p2_score = int(g_data["scores"][1])
@@ -644,6 +654,17 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 						var r_num = int(g_data["current_round"])
 						GameManager.current_round = max(1, r_num)
 						GameManager.current_turn = max(1, r_num)
+				elif str(payload.get("game_type", "")).to_lower() == "quiz" or payload.has("current_question"):
+					# QuizGameSession.send_reconnect_data emits get_game_data() directly at top level without "game_data" wrapper
+					var q_scores = payload.get("scores", {})
+					if typeof(q_scores) == TYPE_DICTIONARY:
+						GameManager.p1_score = int(q_scores.get(1, q_scores.get("1", GameManager.p1_score)))
+						GameManager.p2_score = int(q_scores.get(2, q_scores.get("2", GameManager.p2_score)))
+					if payload.has("current_turn"):
+						var q_turn = max(1, int(payload.get("current_turn", 1)))
+						GameManager.current_round = q_turn
+						GameManager.current_turn = q_turn
+						turn_changed.emit(q_turn)
 				reconnect_data_received.emit(payload)
 
 		Commands.Finish_Reconnect_Time:
@@ -679,4 +700,5 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			var r_data = payload if typeof(payload) == TYPE_DICTIONARY else {}
 			ranked_locked_received.emit(r_data)
 		Commands.Logout:
+			silent_quiz_sync_pending = false
 			GameManager.logout()
