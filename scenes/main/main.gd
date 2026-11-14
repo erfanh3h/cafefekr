@@ -119,6 +119,9 @@ var _ranked_locked_panel: PanelContainer = null
 var _ranked_locked_bar: ProgressBar = null
 var _ranked_locked_progress_lbl: Label = null
 var _ranked_locked_remain_lbl: Label = null
+var social_dialog: Control = null
+var btn_social_hub: Button = null
+var _active_invite_banner: Control = null
 
 func _ready() -> void:
 	_setup_signals()
@@ -411,6 +414,7 @@ func _setup_signals() -> void:
 	btn_audio.pressed.connect(_on_audio_toggle)
 
 	btn_exit.pressed.connect(_on_exit_pressed)
+	_setup_social_hub_integration()
 
 	
 
@@ -3275,3 +3279,150 @@ func _show_change_username_dialog() -> void:
 
 	ui_canvas.add_child(_change_username_dialog)
 	ActionVFXManager.animate_dialog_open(panel, _change_username_dialog, true)
+
+
+func _setup_social_hub_integration() -> void:
+	var social_scene = load("res://scenes/ui/social/social_dialog.tscn")
+	if social_scene and is_instance_valid(ui_canvas):
+		social_dialog = social_scene.instantiate()
+		ui_canvas.add_child(social_dialog)
+
+	var dock_hbox = get_node_or_null("CanvasLayer/MenuContainer/BottomDock/HBoxDock")
+	if is_instance_valid(dock_hbox) and not is_instance_valid(btn_social_hub):
+		btn_social_hub = Button.new()
+		btn_social_hub.name = "BtnSocialHub"
+		btn_social_hub.text = "🛡️ کلن و دوستان"
+		btn_social_hub.custom_minimum_size = Vector2(168, 86)
+		btn_social_hub.focus_mode = Control.FOCUS_NONE
+		btn_social_hub.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		btn_social_hub.add_theme_font_size_override("font_size", 28)
+		btn_social_hub.add_theme_color_override("font_color", Color(1.0, 0.96, 0.84))
+		var st = StyleBoxFlat.new()
+		st.bg_color = Color(0.18, 0.42, 0.26, 0.96)
+		st.border_color = Color(0.55, 0.92, 0.65, 0.95)
+		st.set_border_width_all(2)
+		st.set_corner_radius_all(18)
+		btn_social_hub.add_theme_stylebox_override("normal", st)
+		btn_social_hub.add_theme_stylebox_override("hover", st)
+		btn_social_hub.add_theme_stylebox_override("pressed", st)
+		btn_social_hub.pressed.connect(func():
+			AudioManager.sfx_button()
+			if is_instance_valid(social_dialog) and social_dialog.has_method("open"):
+				social_dialog.open("friends")
+		)
+		dock_hbox.add_child(btn_social_hub)
+		dock_hbox.move_child(btn_social_hub, 0)
+
+	var update_social_badge = func(_p = null):
+		if not is_instance_valid(btn_social_hub):
+			return
+		var total_u = NetworkManager.unread_notifications_count + NetworkManager.unread_dms_count
+		if total_u > 0:
+			btn_social_hub.text = "🛡️ کلن و دوستان (%s)" % GameManager.to_fa_num(total_u)
+		else:
+			btn_social_hub.text = "🛡️ کلن و دوستان"
+
+	NetworkManager.social_init_received.connect(update_social_badge)
+	NetworkManager.social_notification_received.connect(update_social_badge)
+	NetworkManager.social_dm_received.connect(update_social_badge)
+	NetworkManager.social_game_invite_received.connect(_on_social_game_invite_received)
+	NetworkManager.social_game_invite_result.connect(_on_social_game_invite_result)
+	NetworkManager.social_spectate_data_received.connect(_on_social_spectate_data_received)
+
+
+func _on_social_game_invite_received(payload: Dictionary) -> void:
+	if is_instance_valid(_active_invite_banner):
+		_active_invite_banner.queue_free()
+	if not is_instance_valid(ui_canvas):
+		return
+
+	var inv_id = str(payload.get("invite_id", ""))
+	var from_name = str(payload.get("from_username", "دوست شما"))
+	var g_type = str(payload.get("game_type", "Monopoly"))
+	var g_title = GameRegistry.get_game_title(g_type)
+
+	var panel = PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	panel.offset_left = 40
+	panel.offset_right = -40
+	panel.offset_top = 28
+	panel.offset_bottom = 124
+	var st = StyleBoxFlat.new()
+	st.bg_color = Color(0.14, 0.10, 0.06, 0.98)
+	st.border_color = Color(1.0, 0.84, 0.32, 1.0)
+	st.set_border_width_all(3)
+	st.set_corner_radius_all(18)
+	st.content_margin_left = 20
+	st.content_margin_right = 20
+	st.content_margin_top = 12
+	st.content_margin_bottom = 12
+	panel.add_theme_stylebox_override("panel", st)
+	ui_canvas.add_child(panel)
+	_active_invite_banner = panel
+
+	var row = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	panel.add_child(row)
+
+	var lbl = Label.new()
+	lbl.text = "🎮 %s شما را به بازی «%s» دعوت کرد!" % [from_name, g_title]
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	lbl.add_theme_font_size_override("font_size", 28)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.78))
+	lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
+	row.add_child(lbl)
+
+	var b_acc = Button.new()
+	b_acc.text = "✅ قبول و شروع"
+	b_acc.custom_minimum_size = Vector2(150, 50)
+	b_acc.add_theme_font_override("font", preload("res://assets/fonts/shabnam.ttf"))
+	b_acc.add_theme_font_size_override("font_size", 22)
+	b_acc.pressed.connect(func():
+		NetworkManager.respond_game_invite_realtime(inv_id, "accept")
+		if is_instance_valid(_active_invite_banner):
+			_active_invite_banner.queue_free()
+	)
+	row.add_child(b_acc)
+
+	var b_rej = Button.new()
+	b_rej.text = "❌ رد"
+	b_rej.custom_minimum_size = Vector2(95, 50)
+	b_rej.add_theme_font_override("font", preload("res://assets/fonts/shabnam.ttf"))
+	b_rej.add_theme_font_size_override("font_size", 22)
+	b_rej.pressed.connect(func():
+		NetworkManager.respond_game_invite_realtime(inv_id, "reject")
+		if is_instance_valid(_active_invite_banner):
+			_active_invite_banner.queue_free()
+	)
+	row.add_child(b_rej)
+
+
+func _on_social_game_invite_result(payload: Dictionary) -> void:
+	var status = str(payload.get("status", ""))
+	if status != "accepted":
+		return
+	var gid = str(payload.get("game_id", ""))
+	var gtype = str(payload.get("game_type", "Monopoly"))
+	var lobby_id = str(payload.get("lobby_id", ""))
+	if is_instance_valid(social_dialog) and social_dialog.visible:
+		social_dialog.close()
+	if not gid.is_empty():
+		GameManager.current_game_type = gtype
+		GameManager.set_active_game(gid)
+		NetworkManager.join_active_game(gid)
+	elif not lobby_id.is_empty() and is_instance_valid(lobby_dialog):
+		lobby_dialog.open()
+
+
+func _on_social_spectate_data_received(payload: Dictionary) -> void:
+	var gid = str(payload.get("game_id", ""))
+	var gtype = str(payload.get("game_type", ""))
+	if gid.is_empty() or gtype.is_empty():
+		return
+	if is_instance_valid(social_dialog) and social_dialog.visible:
+		social_dialog.close()
+	GameManager.current_game_type = gtype
+	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
+		GameManager.set_match_gamers(payload["gamers"])
+	_launch_game_board(gtype)

@@ -14,9 +14,43 @@ signal user_selected(user_data: Dictionary)
 @onready var btn_close_top: TextureButton = $Margin/VBox/TopRow/BtnCloseTop
 @onready var lbl_loading: Label = $Margin/VBox/LblLoading
 
-var current_tab: String = "score" # "score" or "win"
+var current_tab: String = "score" # "score", "win", "friends", or "clans"
+var btn_tab_friends: Button = null
+var btn_tab_clans: Button = null
 
 func _ready() -> void:
+	var tab_box = $Margin/VBox/TabButtons
+	if is_instance_valid(tab_box):
+		btn_tab_friends = Button.new()
+		btn_tab_friends.text = "👥 دوستان"
+		btn_tab_friends.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn_tab_friends.custom_minimum_size = btn_tab_score.custom_minimum_size
+		btn_tab_friends.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		btn_tab_friends.add_theme_font_size_override("font_size", 26)
+		btn_tab_friends.focus_mode = Control.FOCUS_NONE
+		btn_tab_friends.pressed.connect(func():
+			AudioManager.sfx_tap()
+			current_tab = "friends"
+			_update_tab_styles()
+			load_ranking()
+		)
+		tab_box.add_child(btn_tab_friends)
+
+		btn_tab_clans = Button.new()
+		btn_tab_clans.text = "🛡️ کلن‌ها"
+		btn_tab_clans.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn_tab_clans.custom_minimum_size = btn_tab_score.custom_minimum_size
+		btn_tab_clans.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		btn_tab_clans.add_theme_font_size_override("font_size", 26)
+		btn_tab_clans.focus_mode = Control.FOCUS_NONE
+		btn_tab_clans.pressed.connect(func():
+			AudioManager.sfx_tap()
+			current_tab = "clans"
+			_update_tab_styles()
+			load_ranking()
+		)
+		tab_box.add_child(btn_tab_clans)
+
 	KenneyUI.style_button(btn_close, KenneyUI.COLOR_BLUE)
 	_update_tab_styles()
 	
@@ -42,17 +76,22 @@ func _ready() -> void:
 	)
 
 func _update_tab_styles() -> void:
-	# Active tab must be light (Kenney Yellow) and inactive tab dark (Kenney Grey)
-	if current_tab == "score":
-		KenneyUI.style_button(btn_tab_score, KenneyUI.COLOR_YELLOW)
-		btn_tab_score.add_theme_color_override("font_color", Color(0.18, 0.1, 0.02, 1.0))
-		KenneyUI.style_button(btn_tab_win, KenneyUI.COLOR_GREY)
-		btn_tab_win.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72, 0.85))
-	else:
-		KenneyUI.style_button(btn_tab_score, KenneyUI.COLOR_GREY)
-		btn_tab_score.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72, 0.85))
-		KenneyUI.style_button(btn_tab_win, KenneyUI.COLOR_YELLOW)
-		btn_tab_win.add_theme_color_override("font_color", Color(0.18, 0.1, 0.02, 1.0))
+	var map_btns = {
+		"score": btn_tab_score,
+		"win": btn_tab_win,
+		"friends": btn_tab_friends,
+		"clans": btn_tab_clans
+	}
+	for k in map_btns.keys():
+		var b: Button = map_btns[k]
+		if not is_instance_valid(b):
+			continue
+		if current_tab == k:
+			KenneyUI.style_button(b, KenneyUI.COLOR_YELLOW)
+			b.add_theme_color_override("font_color", Color(0.18, 0.1, 0.02, 1.0))
+		else:
+			KenneyUI.style_button(b, KenneyUI.COLOR_GREY)
+			b.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72, 0.85))
 
 func open() -> void:
 	ActionVFXManager.animate_dialog_open(self, null, true)
@@ -74,8 +113,12 @@ func load_ranking() -> void:
 	# Do NOT disable the active button (prevents Godot from rendering it dark)
 	if current_tab == "score":
 		NetworkManager.api.get_ranking_by_score(_on_ranking_received)
-	else:
+	elif current_tab == "win":
 		NetworkManager.api.get_ranking_by_win(_on_ranking_received)
+	elif current_tab == "friends":
+		NetworkManager.api.get_social_leaderboard("friends", "", "", _on_ranking_received)
+	elif current_tab == "clans":
+		NetworkManager.api.get_social_leaderboard("clans", "", "", _on_ranking_received)
 
 func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 	lbl_loading.visible = false
@@ -98,7 +141,13 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 		var img_id = 0
 		var u_dict = {}
 		
-		if current_tab == "score":
+		if current_tab == "clans":
+			username = "🛡️ %s [%s]" % [str(item.get("name", "کلن")), str(item.get("tag", ""))]
+			var c_score = int(item.get("clan_score", 0))
+			val_text = GameManager.to_fa_num(c_score)
+			img_id = int(item.get("emblem_id", 1))
+			u_dict = {"_id": "", "username": username, "score": c_score, "image": img_id, "level": int(item.get("clan_level", 1))}
+		elif current_tab in ["score", "friends"]:
 			var uid = str(item.get("_id", item.get("user_id", "")))
 			if uid.begins_with("bot_") or uid.begins_with("test_bot"):
 				continue

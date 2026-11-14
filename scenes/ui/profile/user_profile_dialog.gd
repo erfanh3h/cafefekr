@@ -122,6 +122,9 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 	elif is_instance_valid(btn_edit_name):
 		btn_edit_name.visible = false
 
+	# === Social Actions & Public Profile Enrichment ===
+	_setup_social_profile_actions(vbox_root, is_self, uname)
+
 	# === Load Games History & Statistics for this player ===
 	_load_player_history(user_dict)
 	
@@ -174,4 +177,105 @@ func close() -> void:
 	ActionVFXManager.animate_dialog_close(panel, self, func():
 		visible = false
 		closed.emit()
+	)
+
+func _setup_social_profile_actions(vbox_root: VBoxContainer, is_self: bool, uname: String) -> void:
+	var old_box = vbox_root.get_node_or_null("SocialProfileBox")
+	if is_instance_valid(old_box):
+		old_box.queue_free()
+	if _current_user_id.is_empty() or _current_user_id.begins_with("bot_") or _current_user_id.begins_with("test_bot"):
+		return
+
+	var social_box = VBoxContainer.new()
+	social_box.name = "SocialProfileBox"
+	social_box.add_theme_constant_override("separation", 8)
+	if is_instance_valid(scroll_stats):
+		vbox_root.add_child(social_box)
+		vbox_root.move_child(social_box, scroll_stats.get_index())
+	else:
+		vbox_root.add_child(social_box)
+
+	var lbl_clan_tier = Label.new()
+	lbl_clan_tier.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_clan_tier.add_theme_font_override("font", preload("res://assets/fonts/shabnam.ttf"))
+	lbl_clan_tier.add_theme_font_size_override("font_size", 22)
+	lbl_clan_tier.add_theme_color_override("font_color", Color(0.55, 0.92, 0.68))
+	lbl_clan_tier.autowrap_mode = TextServer.AUTOWRAP_OFF
+	social_box.add_child(lbl_clan_tier)
+
+	if not is_self:
+		var act_row = HBoxContainer.new()
+		act_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		act_row.add_theme_constant_override("separation", 8)
+		social_box.add_child(act_row)
+
+		var make_sbtn = func(txt: String, col_bg: Color) -> Button:
+			var b = Button.new()
+			b.text = txt
+			b.custom_minimum_size = Vector2(130, 48)
+			b.focus_mode = Control.FOCUS_NONE
+			b.add_theme_font_override("font", preload("res://assets/fonts/shabnam.ttf"))
+			b.add_theme_font_size_override("font_size", 20)
+			var st = StyleBoxFlat.new()
+			st.bg_color = col_bg
+			st.border_color = col_bg.lightened(0.35)
+			st.set_border_width_all(2)
+			st.set_corner_radius_all(12)
+			b.add_theme_stylebox_override("normal", st)
+			b.add_theme_stylebox_override("hover", st)
+			b.add_theme_stylebox_override("pressed", st)
+			return b
+
+		var btn_add_f = make_sbtn.call("➕ افزودن دوست", Color(0.18, 0.46, 0.26))
+		btn_add_f.pressed.connect(func():
+			AudioManager.sfx_tap()
+			NetworkManager.api.send_friend_request(_current_user_id, "", func(ok: bool, _c: int, _d: Variant):
+				btn_add_f.text = "✓ ارسال شد" if ok else "ارسال شده"
+				btn_add_f.disabled = true
+			)
+		)
+		act_row.add_child(btn_add_f)
+
+		var btn_dm = make_sbtn.call("💬 پیام خصوصی", Color(0.18, 0.36, 0.54))
+		btn_dm.pressed.connect(func():
+			AudioManager.sfx_tap()
+			var target_uid = _current_user_id
+			close()
+			var s_dlg = get_tree().root.find_child("SocialDialog", true, false)
+			if s_dlg and s_dlg.has_method("open_direct_message_with"):
+				s_dlg.open_direct_message_with(target_uid, uname)
+		)
+		act_row.add_child(btn_dm)
+
+		var btn_clan_inv = make_sbtn.call("🛡️ دعوت به کلن", Color(0.56, 0.38, 0.12))
+		btn_clan_inv.pressed.connect(func():
+			AudioManager.sfx_tap()
+			NetworkManager.api.invite_to_clan(_current_user_id, func(ok: bool, _c: int, _d: Variant):
+				btn_clan_inv.text = "✓ دعوت شد" if ok else "خطا"
+			)
+		)
+		act_row.add_child(btn_clan_inv)
+
+		var btn_rep = make_sbtn.call("🚩 گزارش", Color(0.46, 0.16, 0.16))
+		btn_rep.custom_minimum_size = Vector2(105, 48)
+		btn_rep.pressed.connect(func():
+			AudioManager.sfx_tap()
+			NetworkManager.api.report_social_target("user", _current_user_id, "inappropriate_behavior", "Reported from profile", func(_ok: bool, _c: int, _d: Variant):
+				btn_rep.text = "✓ ثبت شد"
+				btn_rep.disabled = true
+			)
+		)
+		act_row.add_child(btn_rep)
+
+	var req_uid = _current_user_id
+	NetworkManager.api.get_public_profile(req_uid, func(ok: bool, _c: int, data: Variant):
+		if not is_instance_valid(lbl_clan_tier) or _current_user_id != req_uid:
+			return
+		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+			var prof: Dictionary = data["result"]
+			var tier: Dictionary = prof.get("tier", {}) if typeof(prof.get("tier")) == TYPE_DICTIONARY else {}
+			var clan_d: Dictionary = prof.get("clan", {}) if typeof(prof.get("clan")) == TYPE_DICTIONARY else {}
+			var tier_txt = "%s %s" % [str(tier.get("icon", "🎖️")), str(tier.get("title_fa", "رقابتی"))]
+			var clan_txt = "🛡️ کلن: %s [%s]" % [str(clan_d.get("name", "")), str(clan_d.get("tag", ""))] if not clan_d.is_empty() else "بدون کلن"
+			lbl_clan_tier.text = "%s   |   %s" % [tier_txt, clan_txt]
 	)

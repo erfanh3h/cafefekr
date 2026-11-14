@@ -56,6 +56,21 @@ signal queue_start_game_received(game_id: String)
 signal queue_user_disconnected(user_id: String, wait_time: int)
 signal queue_user_reconnected(user_id: String, remaining_time: int)
 signal ranked_locked_received(data: Dictionary)
+signal social_init_received(payload: Dictionary)
+signal social_presence_changed(payload: Dictionary)
+signal social_dm_received(payload: Dictionary)
+signal social_dm_read_received(payload: Dictionary)
+signal social_clan_chat_received(payload: Dictionary)
+signal social_clan_chat_deleted(payload: Dictionary)
+signal social_clan_event_received(payload: Dictionary)
+signal social_notification_received(payload: Dictionary)
+signal social_game_invite_received(payload: Dictionary)
+signal social_game_invite_result(payload: Dictionary)
+signal social_spectate_data_received(payload: Dictionary)
+signal social_error_received(message: String)
+
+var unread_notifications_count: int = 0
+var unread_dms_count: int = 0
 
 var is_in_multi_rank_queue: bool = false
 var current_multi_rank_game_type: String = ""
@@ -105,6 +120,8 @@ func _ready() -> void:
 	
 	GameManager.user_logged_in.connect(func(_user_data):
 		api.set_token(GameManager.token)
+		if is_online:
+			connect_social_namespace()
 	)
 	
 	# Background reconnection timer
@@ -321,10 +338,68 @@ func send_game_reaction(reaction_id: Variant) -> void:
 
 # --- SOCKET EVENT DISPATCHER ---
 
+# --- SOCIAL & COMMUNITY REAL-TIME (/social namespace) ---
+
+func connect_social_namespace() -> void:
+	if GameManager.token.is_empty():
+		return
+	var auth = {"token": GameManager.token}
+	socket.connect_namespace("/social", auth)
+
+func disconnect_social_namespace() -> void:
+	socket.disconnect_namespace("/social")
+
+func send_social_command(command_id: String, data: Variant = {}) -> void:
+	var payload = {"id": command_id, "data": data}
+	socket.emit_event("/social", "user_command", payload)
+
+func update_social_presence(status: String, game_type: String = "", game_id: String = "", lobby_id: String = "") -> void:
+	send_social_command(Commands.Social_Presence_Update, {
+		"status": status,
+		"game_type": game_type,
+		"game_id": game_id,
+		"lobby_id": lobby_id
+	})
+
+func send_dm_realtime(to_user_id: String, text: String) -> void:
+	send_social_command(Commands.Social_DM_Send, {"to_user_id": to_user_id, "text": text})
+
+func mark_dm_read_realtime(partner_id: String) -> void:
+	send_social_command(Commands.Social_DM_Read, {"partner_id": partner_id})
+
+func send_clan_chat_realtime(text: String) -> void:
+	send_social_command(Commands.Social_Clan_Chat_Send, {"text": text})
+
+func join_clan_room_realtime(clan_id: String) -> void:
+	send_social_command(Commands.Social_Clan_Room_Join, {"clan_id": clan_id})
+
+func leave_clan_room_realtime(clan_id: String) -> void:
+	send_social_command(Commands.Social_Clan_Room_Leave, {"clan_id": clan_id})
+
+func send_game_invite_realtime(to_user_id: String, game_type: String, invite_mode: String = "direct_match", lobby_id: String = "", player_count: int = 2) -> void:
+	send_social_command(Commands.Social_Game_Invite_Send, {
+		"to_user_id": to_user_id,
+		"game_type": game_type,
+		"invite_mode": invite_mode,
+		"lobby_id": lobby_id,
+		"player_count": player_count
+	})
+
+func respond_game_invite_realtime(invite_id: String, action: String) -> void:
+	send_social_command(Commands.Social_Game_Invite_Respond, {
+		"invite_id": invite_id,
+		"action": action
+	})
+
+func request_spectate_game(game_id: String) -> void:
+	send_social_command(Commands.Social_Spectate_Request, {"game_id": game_id})
+
 func _on_socket_connected() -> void:
 	print("[NetworkManager] Connected to game backend!")
 	_reconnect_timer.stop()
 	connection_status_changed.emit(true)
+	if GameManager.is_logged_in and not GameManager.token.is_empty():
+		connect_social_namespace()
 	# Auto-rejoin active game namespace if socket reconnected during ongoing match (takes priority!)
 	var open_gid = GameManager.get_open_game_id()
 	var act_gid = GameManager.active_game_id
@@ -719,6 +794,47 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			print("[NetworkManager] Rank_Locked received from server!")
 			var r_data = payload if typeof(payload) == TYPE_DICTIONARY else {}
 			ranked_locked_received.emit(r_data)
+		Commands.Social_Init:
+			if typeof(payload) == TYPE_DICTIONARY:
+				unread_notifications_count = int(payload.get("unread_notifications", 0))
+				unread_dms_count = int(payload.get("unread_dms", 0))
+				social_init_received.emit(payload)
+		Commands.Social_Presence_Changed:
+			if typeof(payload) == TYPE_DICTIONARY:
+				social_presence_changed.emit(payload)
+		Commands.Social_DM_Received:
+			if typeof(payload) == TYPE_DICTIONARY:
+				if str(payload.get("from_user_id", "")) != str(GameManager.get_user_id()):
+					unread_dms_count += 1
+				social_dm_received.emit(payload)
+		Commands.Social_DM_Read:
+			if typeof(payload) == TYPE_DICTIONARY:
+				social_dm_read_received.emit(payload)
+		Commands.Social_Clan_Chat_Received:
+			if typeof(payload) == TYPE_DICTIONARY:
+				social_clan_chat_received.emit(payload)
+		Commands.Social_Clan_Chat_Deleted:
+			if typeof(payload) == TYPE_DICTIONARY:
+				social_clan_chat_deleted.emit(payload)
+		Commands.Social_Clan_Event:
+			if typeof(payload) == TYPE_DICTIONARY:
+				social_clan_event_received.emit(payload)
+		Commands.Social_Notification_Received:
+			if typeof(payload) == TYPE_DICTIONARY:
+				unread_notifications_count += 1
+				social_notification_received.emit(payload)
+		Commands.Social_Game_Invite_Received:
+			if typeof(payload) == TYPE_DICTIONARY:
+				social_game_invite_received.emit(payload)
+		Commands.Social_Game_Invite_Result:
+			if typeof(payload) == TYPE_DICTIONARY:
+				social_game_invite_result.emit(payload)
+		Commands.Social_Spectate_Data:
+			if typeof(payload) == TYPE_DICTIONARY:
+				social_spectate_data_received.emit(payload)
+		Commands.Social_Error:
+			var err_msg = str(payload.get("message", "خطای اجتماعی")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
+			social_error_received.emit(err_msg)
 		Commands.Logout:
 			silent_quiz_sync_pending = false
 			GameManager.logout()
