@@ -305,6 +305,9 @@ func join_active_game(game_id: String) -> void:
 	}
 	socket.connect_namespace("/game", auth)
 
+func leave_game() -> void:
+	leave_active_game()
+
 func leave_active_game() -> void:
 	silent_quiz_sync_pending = false
 	GameManager.set_active_game("")

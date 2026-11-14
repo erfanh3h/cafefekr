@@ -197,7 +197,7 @@ func _setup_social_profile_actions(vbox_root: VBoxContainer, is_self: bool, unam
 
 	var lbl_clan_tier = Label.new()
 	lbl_clan_tier.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_clan_tier.add_theme_font_override("font", preload("res://assets/fonts/shabnam.ttf"))
+	lbl_clan_tier.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
 	lbl_clan_tier.add_theme_font_size_override("font_size", 22)
 	lbl_clan_tier.add_theme_color_override("font_color", Color(0.55, 0.92, 0.68))
 	lbl_clan_tier.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -214,7 +214,7 @@ func _setup_social_profile_actions(vbox_root: VBoxContainer, is_self: bool, unam
 			b.text = txt
 			b.custom_minimum_size = Vector2(130, 48)
 			b.focus_mode = Control.FOCUS_NONE
-			b.add_theme_font_override("font", preload("res://assets/fonts/shabnam.ttf"))
+			b.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
 			b.add_theme_font_size_override("font_size", 20)
 			var st = StyleBoxFlat.new()
 			st.bg_color = col_bg

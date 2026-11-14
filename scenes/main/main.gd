@@ -3339,7 +3339,7 @@ func _on_social_game_invite_received(payload: Dictionary) -> void:
 	var inv_id = str(payload.get("invite_id", ""))
 	var from_name = str(payload.get("from_username", "دوست شما"))
 	var g_type = str(payload.get("game_type", "Monopoly"))
-	var g_title = GameRegistry.get_game_title(g_type)
+	var g_title = GameRegistry.get_display_name_fa(g_type)
 
 	var panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -3376,7 +3376,7 @@ func _on_social_game_invite_received(payload: Dictionary) -> void:
 	var b_acc = Button.new()
 	b_acc.text = "✅ قبول و شروع"
 	b_acc.custom_minimum_size = Vector2(150, 50)
-	b_acc.add_theme_font_override("font", preload("res://assets/fonts/shabnam.ttf"))
+	b_acc.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
 	b_acc.add_theme_font_size_override("font_size", 22)
 	b_acc.pressed.connect(func():
 		NetworkManager.respond_game_invite_realtime(inv_id, "accept")
@@ -3388,7 +3388,7 @@ func _on_social_game_invite_received(payload: Dictionary) -> void:
 	var b_rej = Button.new()
 	b_rej.text = "❌ رد"
 	b_rej.custom_minimum_size = Vector2(95, 50)
-	b_rej.add_theme_font_override("font", preload("res://assets/fonts/shabnam.ttf"))
+	b_rej.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
 	b_rej.add_theme_font_size_override("font_size", 22)
 	b_rej.pressed.connect(func():
 		NetworkManager.respond_game_invite_realtime(inv_id, "reject")
@@ -3408,9 +3408,7 @@ func _on_social_game_invite_result(payload: Dictionary) -> void:
 	if is_instance_valid(social_dialog) and social_dialog.visible:
 		social_dialog.close()
 	if not gid.is_empty():
-		GameManager.current_game_type = gtype
-		GameManager.set_active_game(gid)
-		NetworkManager.join_active_game(gid)
+		_start_game_match(gid, gtype, "lobby", false)
 	elif not lobby_id.is_empty() and is_instance_valid(lobby_dialog):
 		lobby_dialog.open()
 
@@ -3425,4 +3423,4 @@ func _on_social_spectate_data_received(payload: Dictionary) -> void:
 	GameManager.current_game_type = gtype
 	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 		GameManager.set_match_gamers(payload["gamers"])
-	_launch_game_board(gtype)
+	_spawn_board_for_game(gtype)

@@ -8,7 +8,7 @@ signal spectate_match_requested(game_id: String, game_type: String)
 
 const GameRegistry = preload("res://scripts/games/game_registry.gd")
 const FONT_TITLE = preload("res://assets/fonts/hekayat.ttf")
-const FONT_BODY = preload("res://assets/fonts/shabnam.ttf")
+const FONT_BODY = preload("res://assets/fonts/Vazir.ttf")
 
 var main_panel: PanelContainer
 var lbl_header_title: Label
@@ -356,7 +356,7 @@ func _format_presence_badge(presence: Dictionary) -> Dictionary:
 		"online":
 			return {"text": "🟢 آنلاین", "color": Color(0.45, 0.95, 0.55)}
 		"in_game":
-			var gt_fa = GameRegistry.get_game_title(gtype) if not gtype.is_empty() else "مسابقه"
+			var gt_fa = GameRegistry.get_display_name_fa(gtype) if not gtype.is_empty() else "مسابقه"
 			return {"text": "🎮 در بازی (%s)" % gt_fa, "color": Color(0.45, 0.85, 1.0)}
 		"in_lobby":
 			return {"text": "🏠 در لابی دوستانه", "color": Color(1.0, 0.85, 0.40)}
