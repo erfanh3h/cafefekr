@@ -780,7 +780,7 @@ func _build_my_clan_view(body_box: VBoxContainer) -> void:
 		)
 		act_row.add_child(btn_go_search)
 
-		var btn_go_create = _make_btn("➕ ساخت کلن جدید (۲۵۰ سکه)", 260, 56, Color(0.68, 0.46, 0.12), Color(1.0, 0.84, 0.36))
+		var btn_go_create = _make_btn("➕ ساخت کلن جدید (رایگان)", 260, 56, Color(0.68, 0.46, 0.12), Color(1.0, 0.84, 0.36))
 		btn_go_create.pressed.connect(func():
 			current_clans_subtab = "create"
 			_load_clans_data()
@@ -1209,7 +1209,7 @@ func _build_clan_create_view(body_box: VBoxContainer) -> void:
 	card.add_child(form)
 	body_box.add_child(card)
 
-	form.add_child(_make_lbl("➕ ساخت کلن جدید در کافه فکر (هزینه: ۲۵۰ سکه)", 30, Color(1.0, 0.88, 0.38), true))
+	form.add_child(_make_lbl("➕ ساخت کلن جدید در کافه فکر (رایگان — هر بازیکن حداکثر ۱ کلن)", 30, Color(1.0, 0.88, 0.38), true))
 
 	var inp_name = LineEdit.new()
 	inp_name.placeholder_text = "نام کلن (۳ تا ۲۸ حرف، مثلاً: قهرمانان کافه فکر)"
@@ -1251,7 +1251,7 @@ func _build_clan_create_view(body_box: VBoxContainer) -> void:
 	jt_row.add_child(btn_jt_open)
 	jt_row.add_child(btn_jt_req)
 
-	var btn_submit = _make_btn("🛡️ تاسیس کلن (۲۵۰ سکه)", 260, 58, Color(0.72, 0.48, 0.12), Color(1.0, 0.86, 0.38), 26)
+	var btn_submit = _make_btn("🛡️ تاسیس کلن (رایگان)", 260, 58, Color(0.72, 0.48, 0.12), Color(1.0, 0.86, 0.38), 26)
 	btn_submit.pressed.connect(func():
 		var payload = {
 			"name": inp_name.text.strip_edges(),
