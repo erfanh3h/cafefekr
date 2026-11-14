@@ -22,7 +22,7 @@ static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer)
 	hrow.add_theme_constant_override("separation", 12)
 	header_card.add_child(hrow)
 
-	var btn_new_dm := CafeSocialTheme.make_button("گفتگوی جدید", "gold", Vector2(185, 54), 21)
+	var btn_new_dm := CafeSocialTheme.make_button("گفتگوی جدید", "gold", Vector2(185, 54), 24)
 	btn_new_dm.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_open_friend_picker_modal(host)
@@ -34,9 +34,9 @@ static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer)
 	title_col.add_theme_constant_override("separation", 2)
 	hrow.add_child(title_col)
 
-	title_col.add_child(CafeSocialTheme.make_title("گفتگوهای خصوصی", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+	title_col.add_child(CafeSocialTheme.make_title("گفتگوهای خصوصی", 31, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
 	var sub_msg := "بدون پیام خوانده‌نشده" if NetworkManager.unread_dms_count <= 0 else "%s پیام جدید در انتظار خواندن" % GameManager.to_fa_num(NetworkManager.unread_dms_count)
-	title_col.add_child(CafeSocialTheme.make_body(sub_msg, 19, CafeSocialTheme.COL_EMERALD_TEXT if NetworkManager.unread_dms_count > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT))
+	title_col.add_child(CafeSocialTheme.make_body(sub_msg, 22, CafeSocialTheme.COL_EMERALD_TEXT if NetworkManager.unread_dms_count > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -131,7 +131,7 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	row.add_child(meta_col)
 
 	if not upd_time.is_empty():
-		var t_lbl := CafeSocialTheme.make_body(upd_time, 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+		var t_lbl := CafeSocialTheme.make_body(upd_time, 21, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
 		t_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		meta_col.add_child(t_lbl)
 	if unread > 0:
@@ -164,14 +164,14 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	st_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	name_row.add_child(st_badge)
 
-	var nm_lbl := CafeSocialTheme.make_title(pname, 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	var nm_lbl := CafeSocialTheme.make_title(pname, 29, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	nm_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	name_row.add_child(nm_lbl)
 
 	var preview_txt := last_msg if not last_msg.is_empty() else "گفتگو را شروع کنید..."
 	if preview_txt.length() > 54:
 		preview_txt = preview_txt.substr(0, 52) + "..."
-	var p_lbl := CafeSocialTheme.make_body(preview_txt, 20, CafeSocialTheme.COL_WARM_CREAM if unread > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	var p_lbl := CafeSocialTheme.make_body(preview_txt, 23, CafeSocialTheme.COL_WARM_CREAM if unread > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	p_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text_col.add_child(p_lbl)
 
@@ -209,7 +209,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	hrow.add_theme_constant_override("separation", 10)
 	hdr.add_child(hrow)
 
-	var btn_back := CafeSocialTheme.make_button("بازگشت", "bronze", Vector2(124, 54), 20)
+	var btn_back := CafeSocialTheme.make_button("بازگشت", "bronze", Vector2(124, 54), 23)
 	btn_back.pressed.connect(func():
 		AudioManager.sfx_tap()
 		host._active_dm_partner_id = ""
@@ -220,7 +220,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	)
 	hrow.add_child(btn_back)
 
-	var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(142, 54), 20)
+	var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(142, 54), 23)
 	btn_inv.pressed.connect(func():
 		AudioManager.sfx_tap()
 		CafeSocialTheme.show_game_invite_modal(host, pid, pname, func(gtitle: String):
@@ -235,7 +235,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	p_col.add_theme_constant_override("separation", 2)
 	hrow.add_child(p_col)
 
-	p_col.add_child(CafeSocialTheme.make_title(pname, 27, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	p_col.add_child(CafeSocialTheme.make_title(pname, 30, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
 	var st_badge_partner := CafeSocialTheme.make_status_badge(str(pres.get("status", "offline")), 26.0)
 	st_badge_partner.size_flags_horizontal = Control.SIZE_SHRINK_END
 	p_col.add_child(st_badge_partner)
@@ -281,10 +281,10 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	dm_input_row.add_theme_constant_override("separation", 10)
 	compose_card.add_child(dm_input_row)
 
-	var btn_send := CafeSocialTheme.make_button("ارسال", "emerald", Vector2(142, 64), 23)
+	var btn_send := CafeSocialTheme.make_button("ارسال", "emerald", Vector2(142, 64), 26)
 	dm_input_row.add_child(btn_send)
 
-	host._dm_input = CafeSocialTheme.make_line_edit("پیام خصوصی خود را بنویسید...", 64.0, 23)
+	host._dm_input = CafeSocialTheme.make_line_edit("پیام خصوصی خود را بنویسید...", 64.0, 25)
 	host._dm_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dm_input_row.add_child(host._dm_input)
 
@@ -363,13 +363,13 @@ static func render_messages(host: Control) -> void:
 		bv.add_theme_constant_override("separation", 6)
 		bubble.add_child(bv)
 
-		bv.add_child(CafeSocialTheme.make_body(txt, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
+		bv.add_child(CafeSocialTheme.make_body(txt, 25, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 		var meta := HBoxContainer.new()
 		meta.add_theme_constant_override("separation", 8)
 		bv.add_child(meta)
 		if not read_tick.is_empty():
-			meta.add_child(CafeSocialTheme.make_body(read_tick, 16, Color(0.56, 0.96, 0.72), HORIZONTAL_ALIGNMENT_LEFT, false))
+			meta.add_child(CafeSocialTheme.make_body(read_tick, 18, Color(0.56, 0.96, 0.72), HORIZONTAL_ALIGNMENT_LEFT, false))
 		var who_lbl := CafeSocialTheme.make_body(
 			("شما" if from_me else host._active_dm_partner_name) + (" • " + t_str if not t_str.is_empty() else ""),
 			16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false
@@ -439,7 +439,7 @@ static func _open_friend_picker_modal(host: Control) -> void:
 	)
 	top.add_child(bx)
 
-	var ttl := CafeSocialTheme.make_title("شروع گفتگو با دوست", 32, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
+	var ttl := CafeSocialTheme.make_title("شروع گفتگو با دوست", 35, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(ttl)
 
@@ -474,7 +474,7 @@ static func _open_friend_picker_modal(host: Control) -> void:
 				continue
 			var uid := str(f.get("user_id", f.get("_id", "")))
 			var uname := str(f.get("username", "بازیکن"))
-			var b := CafeSocialTheme.make_button(uname, "bronze", Vector2(0, 62), 23)
+			var b := CafeSocialTheme.make_button(uname, "bronze", Vector2(0, 62), 26)
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			b.pressed.connect(func():
 				AudioManager.sfx_tap()

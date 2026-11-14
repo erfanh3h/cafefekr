@@ -184,7 +184,7 @@ func _build_ui_shell() -> void:
 	top_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	header_row.add_child(top_spacer)
 
-	var btn_refresh := CafeSocialTheme.make_button("", "bronze", Vector2(56, 56), 20, CafeSocialTheme.ICO_REFRESH, false, 14)
+	var btn_refresh := CafeSocialTheme.make_button("", "bronze", Vector2(56, 56), 23, CafeSocialTheme.ICO_REFRESH, false, 14)
 	btn_refresh.tooltip_text = "بروزرسانی"
 	btn_refresh.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -198,7 +198,7 @@ func _build_ui_shell() -> void:
 	_toast_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(true))
 	root_vbox.add_child(_toast_panel)
 
-	lbl_status_toast = CafeSocialTheme.make_body("", 21, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
+	lbl_status_toast = CafeSocialTheme.make_body("", 24, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
 	_toast_panel.add_child(lbl_status_toast)
 
 	# 3. Primary 4-Hub Navigation Bar (Friends | Clans | Messages | Notifications)

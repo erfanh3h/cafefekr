@@ -3309,20 +3309,25 @@ func _setup_social_hub_integration() -> void:
 		btn_social_hub.add_theme_stylebox_override("disabled", empty_sb)
 		btn_social_hub.add_theme_stylebox_override("focus", empty_sb)
 
-		# Dedicated authentic Social Hub badge icon matching dock style
-		var holder := Control.new()
-		holder.set_anchors_preset(Control.PRESET_FULL_RECT)
-		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		btn_social_hub.add_child(holder)
+		# Dedicated authentic Social Hub badge icon matching dock style exactly
+		var vbox := VBoxContainer.new()
+		vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+		vbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		vbox.grow_vertical = Control.GROW_DIRECTION_BOTH
+		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		btn_social_hub.add_child(vbox)
 
 		var ico := TextureRect.new()
-		ico.set_anchors_preset(Control.PRESET_FULL_RECT)
+		ico.name = "Icon"
 		ico.custom_minimum_size = Vector2(136, 158)
+		ico.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		ico.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ico.texture = CafeSocialTheme.BADGE_SOCIAL
 		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		holder.add_child(ico)
+		vbox.add_child(ico)
 
 		social_badge_panel = PanelContainer.new()
 		social_badge_panel.visible = false
@@ -3340,7 +3345,7 @@ func _setup_social_hub_integration() -> void:
 		social_badge_panel.add_theme_stylebox_override("panel", bst)
 		social_badge_lbl = CafeSocialTheme.make_body("۰", 17, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
 		social_badge_panel.add_child(social_badge_lbl)
-		holder.add_child(social_badge_panel)
+		btn_social_hub.add_child(social_badge_panel)
 
 		ActionVFXManager.apply_button_juice(btn_social_hub, "tap_button")
 		btn_social_hub.pressed.connect(func():

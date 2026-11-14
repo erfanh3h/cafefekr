@@ -231,7 +231,7 @@ static func create_input_style(focused: bool = false) -> StyleBoxFlat:
 
 static func make_title(
 	txt: String,
-	font_size: int = 32,
+	font_size: int = 35,
 	col: Color = COL_GOLD_BRIGHT,
 	align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_RIGHT,
 	wrap: bool = false
@@ -252,7 +252,7 @@ static func make_title(
 
 static func make_body(
 	txt: String,
-	font_size: int = 22,
+	font_size: int = 25,
 	col: Color = COL_WARM_CREAM,
 	align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_RIGHT,
 	wrap: bool = true
@@ -273,7 +273,7 @@ static func make_body(
 static func make_line_edit(
 	placeholder: String,
 	min_height: float = 64.0,
-	font_size: int = 24,
+	font_size: int = 26,
 	align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_RIGHT
 ) -> LineEdit:
 	var le := LineEdit.new()
@@ -351,7 +351,7 @@ static func make_button(
 	txt: String,
 	variant: String = "emerald",
 	min_size: Vector2 = Vector2(140, 56),
-	font_size: int = 23,
+	font_size: int = 25,
 	icon_tex: Texture2D = null,
 	use_title_font: bool = false,
 	corner: int = 14
@@ -392,7 +392,7 @@ static func make_wood_hero_button(
 	txt: String,
 	color_name: String = KenneyUI.COLOR_GREEN,
 	min_size: Vector2 = Vector2(260, 96),
-	font_size: int = 30
+	font_size: int = 33
 ) -> Button:
 	var b := Button.new()
 	b.text = txt
@@ -487,7 +487,7 @@ static func make_nav_tab(
 		bl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		bl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		bl.add_theme_font_override("font", FONT_BODY)
-		bl.add_theme_font_size_override("font_size", 16)
+		bl.add_theme_font_size_override("font_size", 18)
 		bl.add_theme_color_override("font_color", COL_IVORY)
 		badge.add_child(bl)
 		holder.add_child(badge)
@@ -506,8 +506,8 @@ static func make_subtab(label_txt: String, is_active: bool = false, badge_count:
 	var b := make_button(
 		txt,
 		"emerald" if is_active else "muted",
-		Vector2(0, 52),
-		21,
+		Vector2(0, 56),
+		24,
 		null,
 		false,
 		13
@@ -542,9 +542,9 @@ static func make_ornate_section_header(title_txt: String, icon_tex: Texture2D = 
 	text_col.add_theme_constant_override("separation", 2)
 	row.add_child(text_col)
 
-	text_col.add_child(make_title(title_txt, 28, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	text_col.add_child(make_title(title_txt, 31, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true))
 	if not subtitle_txt.is_empty():
-		text_col.add_child(make_body(subtitle_txt, 19, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
+		text_col.add_child(make_body(subtitle_txt, 22, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	if icon_tex != null:
 		var ico := TextureRect.new()
@@ -721,7 +721,7 @@ static func make_friend_button(
 		lbl.text = label_txt
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		lbl.add_theme_font_override("font", FONT_BODY)
-		lbl.add_theme_font_size_override("font_size", 20)
+		lbl.add_theme_font_size_override("font_size", 23)
 		lbl.add_theme_color_override("font_color", COL_IVORY)
 		lbl.add_theme_color_override("font_shadow_color", Color(0.05, 0.02, 0.01, 0.92))
 		lbl.add_theme_constant_override("shadow_offset_y", 2)
@@ -732,7 +732,7 @@ static func make_friend_button(
 	return b
 
 
-static func make_badge_pill(txt: String, text_col: Color = COL_GOLD_BRIGHT, bg_col: Color = Color(0.10, 0.06, 0.03, 0.94), border_col: Color = Color(0.75, 0.58, 0.25, 0.80), font_size: int = 19) -> PanelContainer:
+static func make_badge_pill(txt: String, text_col: Color = COL_GOLD_BRIGHT, bg_col: Color = Color(0.10, 0.06, 0.03, 0.94), border_col: Color = Color(0.75, 0.58, 0.25, 0.80), font_size: int = 22) -> PanelContainer:
 	var pill := PanelContainer.new()
 	var st := StyleBoxFlat.new()
 	st.bg_color = bg_col
@@ -773,7 +773,7 @@ static func make_xp_progress_bar(progress_01: float, right_text: String = "", ba
 	box.add_child(pb)
 
 	if not right_text.is_empty():
-		box.add_child(make_body(right_text, 18, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
+		box.add_child(make_body(right_text, 21, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
 
 	return box
 
@@ -804,12 +804,12 @@ static func make_empty_state(
 		ico.modulate = Color(1.0, 0.92, 0.72, 0.88)
 		vbox.add_child(ico)
 
-	vbox.add_child(make_title(title_txt, 28, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_title(title_txt, 31, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
 	if not subtitle_txt.is_empty():
-		vbox.add_child(make_body(subtitle_txt, 21, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+		vbox.add_child(make_body(subtitle_txt, 24, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	if not cta_txt.is_empty() and cta_cb.is_valid():
-		var btn := make_button(cta_txt, cta_variant, Vector2(240, 56), 23)
+		var btn := make_button(cta_txt, cta_variant, Vector2(240, 56), 26)
 		btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		btn.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -823,7 +823,7 @@ static func make_empty_state(
 static func make_loading_state(msg: String = "در حال بارگذاری...") -> Control:
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", create_well_style(16, 20.0, 22.0))
-	var lbl := make_body(msg, 23, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	var lbl := make_body(msg, 26, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
 	p.add_child(lbl)
 	return p
 
@@ -870,22 +870,22 @@ static func show_confirm_modal(
 	vbox.add_theme_constant_override("separation", 18)
 	m.add_child(vbox)
 
-	vbox.add_child(make_title(title_txt, 34, COL_CRIMSON_TEXT if is_danger else COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
-	vbox.add_child(make_body(body_txt, 23, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_title(title_txt, 37, COL_CRIMSON_TEXT if is_danger else COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_body(body_txt, 26, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	var btn_row := HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	btn_row.add_theme_constant_override("separation", 18)
 	vbox.add_child(btn_row)
 
-	var b_cancel := make_button("انصراف", "bronze", Vector2(200, 60), 23)
+	var b_cancel := make_button("انصراف", "bronze", Vector2(200, 60), 25)
 	b_cancel.pressed.connect(func():
 		AudioManager.sfx_tap()
 		overlay.queue_free()
 	)
 	btn_row.add_child(b_cancel)
 
-	var b_ok := make_button(confirm_txt, "crimson" if is_danger else "emerald", Vector2(220, 60), 23)
+	var b_ok := make_button(confirm_txt, "crimson" if is_danger else "emerald", Vector2(220, 60), 25)
 	b_ok.pressed.connect(func():
 		AudioManager.sfx_button()
 		overlay.queue_free()
@@ -960,7 +960,6 @@ static func format_time_fa(iso_str: String) -> String:
 	var s := iso_str.strip_edges()
 	if s.is_empty():
 		return ""
-	# ISO formats like "2026-11-14T15:30:45.123456"
 	var t_idx := s.find("T")
 	if t_idx > 0 and s.length() >= t_idx + 6:
 		var time_part := s.substr(t_idx + 1, 5)
@@ -1033,7 +1032,7 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 	)
 	top_row.add_child(btn_x)
 
-	var ttl := make_title("دعوت «%s» به مسابقه دوستانه" % target_name, 34, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	var ttl := make_title("دعوت «%s» به مسابقه دوستانه" % target_name, 37, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_child(ttl)
 
@@ -1041,7 +1040,7 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 	sp.custom_minimum_size = Vector2(54, 54)
 	top_row.add_child(sp)
 
-	vbox.add_child(make_body("بازی مورد نظر خود را برای ارسال دعوت‌نامه مستقیم انتخاب کنید:", 22, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_body("بازی مورد نظر خود را برای ارسال دعوت‌نامه مستقیم انتخاب کنید:", 25, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -1087,11 +1086,11 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 		grow.alignment = BoxContainer.ALIGNMENT_END
 		gm.add_child(grow)
 
-		var lbl_go := make_body("دعوت", 19, COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_LEFT, false)
+		var lbl_go := make_body("دعوت", 22, COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_LEFT, false)
 		lbl_go.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		grow.add_child(lbl_go)
 
-		var lbl_g := make_title(gtitle, 26, COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+		var lbl_g := make_title(gtitle, 29, COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 		lbl_g.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl_g.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		grow.add_child(lbl_g)
@@ -1162,10 +1161,10 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 	vbox.add_theme_constant_override("separation", 14)
 	m.add_child(vbox)
 
-	vbox.add_child(make_title("گزارش تخلف: %s" % target_name, 34, COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_CENTER, true))
-	vbox.add_child(make_body("لطفاً دلیل گزارش را انتخاب کنید تا توسط تیم نظارت بررسی شود:", 22, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_title("گزارش تخلف: %s" % target_name, 37, COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_body("لطفاً دلیل گزارش را انتخاب کنید تا توسط تیم نظارت بررسی شود:", 25, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
-	var inp_details := make_line_edit("توضیحات تکمیلی (اختیاری)...", 58.0, 21)
+	var inp_details := make_line_edit("توضیحات تکمیلی (اختیاری)...", 58.0, 24)
 	var selected_reason := ["inappropriate_behavior"]
 	var reason_defs := [
 		{"id": "inappropriate_behavior", "label": "رفتار نامناسب یا توهین در گفتگو"},
@@ -1183,7 +1182,7 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 
 	for r in reason_defs:
 		var rid: String = r["id"]
-		var rb := make_button(r["label"], "muted", Vector2(0, 54), 21)
+		var rb := make_button(r["label"], "muted", Vector2(0, 54), 24)
 		rb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rb.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -1200,14 +1199,14 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 	btn_row.add_theme_constant_override("separation", 16)
 	vbox.add_child(btn_row)
 
-	var b_cancel := make_button("انصراف", "bronze", Vector2(200, 58), 22)
+	var b_cancel := make_button("انصراف", "bronze", Vector2(200, 58), 25)
 	b_cancel.pressed.connect(func():
 		AudioManager.sfx_tap()
 		overlay.queue_free()
 	)
 	btn_row.add_child(b_cancel)
 
-	var b_send := make_button("ثبت گزارش", "crimson", Vector2(240, 58), 22)
+	var b_send := make_button("ثبت گزارش", "crimson", Vector2(240, 58), 25)
 	b_send.pressed.connect(func():
 		AudioManager.sfx_button()
 		b_send.disabled = true
@@ -1218,6 +1217,206 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 		)
 	)
 	btn_row.add_child(b_send)
+
+	host.add_child(overlay)
+	ActionVFXManager.animate_dialog_open(card, overlay, true)
+	return overlay
+
+
+static func show_clan_details_modal(host: Node, clan_id: String, initial_data: Dictionary = {}) -> Control:
+	var overlay := Control.new()
+	overlay.name = "ClanDetailsModalOverlay"
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 80
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.02, 0.01, 0.01, 0.82)
+	dim.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.pressed:
+			AudioManager.sfx_tap()
+			overlay.queue_free()
+	)
+	overlay.add_child(dim)
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(center)
+
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(860, 0)
+	card.add_theme_stylebox_override("panel", create_board_shell_style())
+	center.add_child(card)
+
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_left", 42)
+	m.add_theme_constant_override("margin_right", 42)
+	m.add_theme_constant_override("margin_top", 34)
+	m.add_theme_constant_override("margin_bottom", 34)
+	card.add_child(m)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 16)
+	m.add_child(vbox)
+
+	# 1. Top bar with close button and title
+	var top_row := HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 12)
+	vbox.add_child(top_row)
+
+	var btn_x := TextureButton.new()
+	btn_x.texture_normal = TEX_CLOSE
+	btn_x.custom_minimum_size = Vector2(54, 54)
+	btn_x.ignore_texture_size = true
+	btn_x.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_x.focus_mode = Control.FOCUS_NONE
+	ActionVFXManager.apply_button_juice(btn_x, "tap_button")
+	btn_x.pressed.connect(func():
+		AudioManager.sfx_button()
+		overlay.queue_free()
+	)
+	top_row.add_child(btn_x)
+
+	var ttl := make_title("مشخصات کلن", 34, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_row.add_child(ttl)
+
+	var sp := Control.new()
+	sp.custom_minimum_size = Vector2(54, 54)
+	top_row.add_child(sp)
+
+	# Content Holder for live updating
+	var content_holder := VBoxContainer.new()
+	content_holder.add_theme_constant_override("separation", 16)
+	vbox.add_child(content_holder)
+
+	var populate_clan_ui = func(data: Dictionary):
+		for c in content_holder.get_children():
+			c.queue_free()
+
+		var cname := str(data.get("name", "کلن کافه فکر"))
+		var ctag := str(data.get("tag", ""))
+		var emb_id := int(data.get("emblem_id", 1))
+		var clvl := int(data.get("clan_level", 1))
+		var cscore := int(data.get("clan_score", 0))
+		var mem_cnt := int(data.get("member_count", 1))
+		var max_mem := int(data.get("max_members", 50))
+		var jtype := str(data.get("join_type", "open"))
+		var jtype_fa := "آزاد" if jtype == "open" else ("نیازمند تأیید درخواست" if jtype == "request" else "فقط دعوت‌نامه‌ای")
+		var desc := str(data.get("description", data.get("desc", "")))
+		var leader_name := str(data.get("leader_name", data.get("leader_username", "")))
+
+		# Hero Header
+		var hero := PanelContainer.new()
+		hero.add_theme_stylebox_override("panel", create_card_style(COL_MAHOGANY_CARD, COL_GOLD_ANTIQUE, 18, 2, 20.0, 16.0))
+		content_holder.add_child(hero)
+
+		var h_row := HBoxContainer.new()
+		h_row.add_theme_constant_override("separation", 18)
+		hero.add_child(h_row)
+
+		var info_vbox := VBoxContainer.new()
+		info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		info_vbox.add_theme_constant_override("separation", 6)
+		h_row.add_child(info_vbox)
+
+		var title_row := HBoxContainer.new()
+		title_row.alignment = BoxContainer.ALIGNMENT_END
+		title_row.add_theme_constant_override("separation", 10)
+		info_vbox.add_child(title_row)
+
+		if not ctag.is_empty():
+			title_row.add_child(make_badge_pill("[%s]" % ctag, COL_GOLD_BRIGHT, Color(0.12, 0.08, 0.04), COL_GOLD_ANTIQUE, 20))
+
+		var name_lbl := make_title(cname, 34, COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true)
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		title_row.add_child(name_lbl)
+
+		if not leader_name.is_empty():
+			info_vbox.add_child(make_body("رهبر کلن: %s" % leader_name, 22, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
+
+		if not desc.is_empty():
+			info_vbox.add_child(make_body("«%s»" % desc, 21, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
+		else:
+			info_vbox.add_child(make_body("باشگاه رسمی اعضای کافه فکر", 20, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
+
+		h_row.add_child(make_clan_emblem(emb_id, 96.0))
+
+		# Metrics Grid / Row
+		var chips_row := HBoxContainer.new()
+		chips_row.add_theme_constant_override("separation", 10)
+		content_holder.add_child(chips_row)
+
+		var make_chip = func(label_txt: String, val_txt: String, accent: Color) -> PanelContainer:
+			var cp := PanelContainer.new()
+			cp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			cp.add_theme_stylebox_override("panel", create_well_style(14, 10.0, 10.0))
+			var cv := VBoxContainer.new()
+			cv.alignment = BoxContainer.ALIGNMENT_CENTER
+			cv.add_theme_constant_override("separation", 2)
+			cp.add_child(cv)
+			cv.add_child(make_title(val_txt, 27, accent, HORIZONTAL_ALIGNMENT_CENTER, false))
+			cv.add_child(make_body(label_txt, 19, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false))
+			return cp
+
+		chips_row.add_child(make_chip.call("سطح کلن", GameManager.to_fa_num(clvl), COL_EMERALD_TEXT))
+		chips_row.add_child(make_chip.call("مجموع امتیاز", GameManager.to_fa_num(cscore), COL_GOLD_BRIGHT))
+		chips_row.add_child(make_chip.call("اعضای کلن", "%s / %s" % [GameManager.to_fa_num(mem_cnt), GameManager.to_fa_num(max_mem)], COL_IVORY))
+		chips_row.add_child(make_chip.call("نوع پذیرش", jtype_fa, COL_WARM_CREAM))
+
+		# Action buttons row
+		var btn_row := HBoxContainer.new()
+		btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		btn_row.add_theme_constant_override("separation", 16)
+		content_holder.add_child(btn_row)
+
+		var b_close := make_button("بستن", "bronze", Vector2(180, 56), 23)
+		b_close.pressed.connect(func():
+			AudioManager.sfx_tap()
+			overlay.queue_free()
+		)
+		btn_row.add_child(b_close)
+
+		# Join or Navigate button
+		var cid_str := str(data.get("clan_id", data.get("_id", clan_id)))
+		if not cid_str.is_empty():
+			if jtype != "invite_only":
+				var b_join := make_button("عضویت در کلن" if jtype == "open" else "ارسال درخواست عضویت", "emerald", Vector2(240, 56), 23)
+				b_join.pressed.connect(func():
+					AudioManager.sfx_button()
+					b_join.disabled = true
+					NetworkManager.api.join_or_request_clan(cid_str, "درخواست عضویت از مشخصات کلن", func(ok_j: bool, _cj: int, dj: Variant):
+						if ok_j:
+							overlay.queue_free()
+							var s_dlg = host.get_tree().root.find_child("SocialDialog", true, false)
+							if s_dlg and s_dlg.has_method("open"):
+								s_dlg.open("clans")
+						elif typeof(dj) == TYPE_DICTIONARY:
+							b_join.disabled = false
+					)
+				)
+				btn_row.add_child(b_join)
+
+	populate_clan_ui.call(initial_data)
+
+	# Fetch live details
+	var fetch_id := str(initial_data.get("clan_id", initial_data.get("_id", clan_id)))
+	if not fetch_id.is_empty():
+		NetworkManager.api.get_clan_details(fetch_id, func(ok: bool, _c: int, data: Variant):
+			if not is_instance_valid(overlay) or not overlay.is_inside_tree():
+				return
+			if ok and typeof(data) == TYPE_DICTIONARY:
+				var res = data.get("result", {})
+				if typeof(res) == TYPE_DICTIONARY and typeof(res.get("clan")) == TYPE_DICTIONARY and not res["clan"].is_empty():
+					var c_info: Dictionary = res["clan"]
+					for k in initial_data.keys():
+						if not c_info.has(k):
+							c_info[k] = initial_data[k]
+					populate_clan_ui.call(c_info)
+		)
 
 	host.add_child(overlay)
 	ActionVFXManager.animate_dialog_open(card, overlay, true)

@@ -15,7 +15,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	hrow.add_theme_constant_override("separation", 12)
 	header_bar.add_child(hrow)
 
-	var btn_read_all := CafeSocialTheme.make_button("خواندن همه", "emerald", Vector2(175, 52), 21)
+	var btn_read_all := CafeSocialTheme.make_button("خواندن همه", "emerald", Vector2(175, 52), 24)
 	btn_read_all.pressed.connect(func():
 		AudioManager.sfx_button()
 		btn_read_all.disabled = true
@@ -37,9 +37,9 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	title_col.add_theme_constant_override("separation", 2)
 	hrow.add_child(title_col)
 
-	title_col.add_child(CafeSocialTheme.make_title("مرکز اعلان‌های باشگاه", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+	title_col.add_child(CafeSocialTheme.make_title("مرکز اعلان‌های باشگاه", 31, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
 	var unread_str := "بدون اعلان خوانده‌نشده" if NetworkManager.unread_notifications_count <= 0 else "%s اعلان جدید" % GameManager.to_fa_num(NetworkManager.unread_notifications_count)
-	title_col.add_child(CafeSocialTheme.make_body(unread_str, 19, CafeSocialTheme.COL_EMERALD_TEXT if NetworkManager.unread_notifications_count > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT))
+	title_col.add_child(CafeSocialTheme.make_body(unread_str, 22, CafeSocialTheme.COL_EMERALD_TEXT if NetworkManager.unread_notifications_count > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -198,7 +198,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 	elif ntype == "clan_invitation_received" and payload.has("invite_id"):
 		has_acts = true
 		var inv_id := str(payload.get("invite_id", ""))
-		var b_join := CafeSocialTheme.make_button("پیوستن به کلن", "emerald", Vector2(0, 46), 19)
+		var b_join := CafeSocialTheme.make_button("پیوستن به کلن", "emerald", Vector2(0, 46), 22)
 		b_join.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_join.pressed.connect(func():
 			AudioManager.sfx_button()
@@ -213,7 +213,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 
 	elif ntype == "direct_message_received" and not actor_id.is_empty():
 		has_acts = true
-		var b_open_dm := CafeSocialTheme.make_button("مشاهده گفتگو", "sapphire", Vector2(0, 46), 19)
+		var b_open_dm := CafeSocialTheme.make_button("مشاهده گفتگو", "sapphire", Vector2(0, 46), 22)
 		b_open_dm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_open_dm.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -226,7 +226,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 	elif ntype == "game_invitation_received" and payload.has("invite_id"):
 		has_acts = true
 		var g_inv_id := str(payload.get("invite_id", ""))
-		var b_gacc := CafeSocialTheme.make_button("قبول دعوت بازی", "emerald", Vector2(0, 46), 19)
+		var b_gacc := CafeSocialTheme.make_button("قبول دعوت بازی", "emerald", Vector2(0, 46), 22)
 		b_gacc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_gacc.pressed.connect(func():
 			AudioManager.sfx_button()
@@ -238,7 +238,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 
 	if not is_read:
 		has_acts = true
-		var b_mark := CafeSocialTheme.make_button("خوانده شد", "bronze", Vector2(140, 46), 19)
+		var b_mark := CafeSocialTheme.make_button("خوانده شد", "bronze", Vector2(140, 46), 22)
 		b_mark.pressed.connect(func():
 			AudioManager.sfx_tap()
 			b_mark.disabled = true

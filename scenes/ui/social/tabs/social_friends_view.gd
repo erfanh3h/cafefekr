@@ -141,7 +141,7 @@ static func _populate_requests(host: Control, list_vbox: VBoxContainer) -> void:
 		"%s درخواست در انتظار پاسخ دیگران" % GameManager.to_fa_num(host._outgoing_requests.size())
 	))
 	if host._outgoing_requests.is_empty():
-		list_vbox.add_child(CafeSocialTheme.make_body("درخواست ارسالی در انتظاری ندارید.", 20, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
+		list_vbox.add_child(CafeSocialTheme.make_body("درخواست ارسالی در انتظاری ندارید.", 23, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
 	else:
 		for req in host._outgoing_requests:
 			if typeof(req) == TYPE_DICTIONARY and typeof(req.get("user")) == TYPE_DICTIONARY:
@@ -158,13 +158,13 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 	sc_vbox.add_theme_constant_override("separation", 10)
 	search_card.add_child(sc_vbox)
 
-	sc_vbox.add_child(CafeSocialTheme.make_title("جستجوی بازیکنان کافه فکر", 26, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+	sc_vbox.add_child(CafeSocialTheme.make_title("جستجوی بازیکنان کافه فکر", 29, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
 
 	var search_bar := HBoxContainer.new()
 	search_bar.add_theme_constant_override("separation", 10)
 	sc_vbox.add_child(search_bar)
 
-	var inp_q := CafeSocialTheme.make_line_edit("نام کاربری یا شناسه بازیکن را وارد کنید...", 62.0, 22)
+	var inp_q := CafeSocialTheme.make_line_edit("نام کاربری یا شناسه بازیکن را وارد کنید...", 62.0, 25)
 	inp_q.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	search_bar.add_child(inp_q)
 
@@ -198,7 +198,7 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 							results_box.add_child(_build_player_card(host, item, "search"))
 		)
 
-	var btn_search := CafeSocialTheme.make_button("جستجو", "gold", Vector2(150, 62), 23)
+	var btn_search := CafeSocialTheme.make_button("جستجو", "gold", Vector2(150, 62), 26)
 	btn_search.pressed.connect(func():
 		AudioManager.sfx_tap()
 		do_search.call()
@@ -226,7 +226,7 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 				"هم‌بازی‌های اخیر شما", CafeSocialTheme.ICO_HISTORY, "بازیکنانی که اخیراً با آن‌ها رقابت کرده‌اید"
 			))
 			if recent.is_empty():
-				discover_box.add_child(CafeSocialTheme.make_body("هنوز هم‌بازی اخیری ثبت نشده است.", 20, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
+				discover_box.add_child(CafeSocialTheme.make_body("هنوز هم‌بازی اخیری ثبت نشده است.", 23, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
 			else:
 				for r_u in recent:
 					if typeof(r_u) == TYPE_DICTIONARY:
@@ -236,7 +236,7 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 				"پیشنهادهای دوستی", CafeSocialTheme.ICO_RANKING, "بر اساس دوستان مشترک و هم‌سطحی شما"
 			))
 			if suggested.is_empty():
-				discover_box.add_child(CafeSocialTheme.make_body("در حال حاضر پیشنهاد جدیدی موجود نیست.", 20, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
+				discover_box.add_child(CafeSocialTheme.make_body("در حال حاضر پیشنهاد جدیدی موجود نیست.", 23, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
 			else:
 				for s_u in suggested:
 					if typeof(s_u) == TYPE_DICTIONARY:
@@ -286,8 +286,8 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	stat_pills.add_theme_constant_override("separation", 6)
 	stat_pills.alignment = BoxContainer.ALIGNMENT_CENTER
 	stats_col.add_child(stat_pills)
-	stat_pills.add_child(CafeSocialTheme.make_badge_pill("امتیاز %s" % GameManager.to_fa_num(score), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_BRONZE_BORDER, 17))
-	stat_pills.add_child(CafeSocialTheme.make_badge_pill("سطح %s" % GameManager.to_fa_num(lvl), CafeSocialTheme.COL_EMERALD_TEXT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_EMERALD_BORDER, 17))
+	stat_pills.add_child(CafeSocialTheme.make_badge_pill("امتیاز %s" % GameManager.to_fa_num(score), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_BRONZE_BORDER, 20))
+	stat_pills.add_child(CafeSocialTheme.make_badge_pill("سطح %s" % GameManager.to_fa_num(lvl), CafeSocialTheme.COL_EMERALD_TEXT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_EMERALD_BORDER, 20))
 
 	# Center/Right: Name + Clan + Title (expandable, right aligned, tappable for profile)
 	var info_col := VBoxContainer.new()
@@ -313,7 +313,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	var name_line := uname
 	if not clan_tag.is_empty():
 		name_line += "  [%s]" % clan_tag
-	info_col.add_child(CafeSocialTheme.make_title(name_line, 28, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	info_col.add_child(CafeSocialTheme.make_title(name_line, 31, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	var sub_parts: Array[String] = []
 	if not rank_title.is_empty():
@@ -325,7 +325,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		sub_parts.append("%s دوست مشترک" % GameManager.to_fa_num(int(u.get("mutual_friends", 0))))
 	if sub_parts.is_empty():
 		sub_parts.append("عضو باشگاه کافه فکر")
-	info_col.add_child(CafeSocialTheme.make_body(" • ".join(sub_parts), 19, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	info_col.add_child(CafeSocialTheme.make_body(" • ".join(sub_parts), 22, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	# Rightmost: Avatar Frame clickable to view profile
 	var av_btn := Button.new()
@@ -347,7 +347,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	act_row.add_theme_constant_override("separation", 8)
 	root.add_child(act_row)
 
-	var btn_prof := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(0, 50), 20)
+	var btn_prof := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(0, 50), 23)
 	btn_prof.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_prof.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -359,7 +359,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		extra_drawer.visible = false
 		extra_drawer.add_theme_constant_override("separation", 8)
 
-		var btn_more := CafeSocialTheme.make_button("بیشتر", "muted", Vector2(98, 50), 20)
+		var btn_more := CafeSocialTheme.make_button("بیشتر", "muted", Vector2(98, 50), 23)
 		btn_more.pressed.connect(func():
 			AudioManager.sfx_tap()
 			extra_drawer.visible = not extra_drawer.visible
@@ -368,7 +368,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 
 		act_row.add_child(btn_prof)
 
-		var btn_dm := CafeSocialTheme.make_button("پیام", "sapphire", Vector2(0, 50), 20)
+		var btn_dm := CafeSocialTheme.make_button("پیام", "sapphire", Vector2(0, 50), 23)
 		btn_dm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_dm.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -376,7 +376,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		)
 		act_row.add_child(btn_dm)
 
-		var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(0, 50), 20)
+		var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(0, 50), 23)
 		btn_inv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_inv.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -387,7 +387,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		act_row.add_child(btn_inv)
 
 		if p_info["is_in_game"]:
-			var btn_spec := CafeSocialTheme.make_button("تماشا", "gold", Vector2(118, 50), 20)
+			var btn_spec := CafeSocialTheme.make_button("تماشا", "gold", Vector2(118, 50), 23)
 			btn_spec.pressed.connect(func():
 				AudioManager.sfx_button()
 				NetworkManager.request_spectate_game(str(p_info["game_id"]))
@@ -414,7 +414,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		)
 		extra_drawer.add_child(b_rem)
 
-		var b_blk := CafeSocialTheme.make_button("مسدود کردن", "muted", Vector2(0, 48), 19)
+		var b_blk := CafeSocialTheme.make_button("مسدود کردن", "muted", Vector2(0, 48), 22)
 		b_blk.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_blk.pressed.connect(func():
 			CafeSocialTheme.show_confirm_modal(
@@ -431,7 +431,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		)
 		extra_drawer.add_child(b_blk)
 
-		var b_rep := CafeSocialTheme.make_button("گزارش تخلف", "muted", Vector2(0, 48), 19)
+		var b_rep := CafeSocialTheme.make_button("گزارش تخلف", "muted", Vector2(0, 48), 22)
 		b_rep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_rep.pressed.connect(func():
 			CafeSocialTheme.show_report_modal(host, "player", uid, uname, func(ok: bool):
@@ -487,11 +487,11 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		var p_req: Variant = u.get("pending_request", null)
 		var req_sent := bool(u.get("request_sent", false))
 		if is_fr:
-			var sp_ok := CafeSocialTheme.make_badge_pill("✓ دوست شما", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 20)
+			var sp_ok := CafeSocialTheme.make_badge_pill("✓ دوست شما", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 22)
 			sp_ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			act_row.add_child(sp_ok)
 		elif req_sent or typeof(p_req) == TYPE_DICTIONARY:
-			var sp_wait := CafeSocialTheme.make_badge_pill("در انتظار تایید", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.14, 0.06, 0.95), CafeSocialTheme.COL_GOLD_ANTIQUE, 20)
+			var sp_wait := CafeSocialTheme.make_badge_pill("در انتظار تایید", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.14, 0.06, 0.95), CafeSocialTheme.COL_GOLD_ANTIQUE, 22)
 			sp_wait.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			act_row.add_child(sp_wait)
 		else:
