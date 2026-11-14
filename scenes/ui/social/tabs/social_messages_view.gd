@@ -192,8 +192,8 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 
 static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> void:
 	var partner: Dictionary = host._active_dm_partner_info
-	var pid := host._active_dm_partner_id
-	var pname := host._active_dm_partner_name
+	var pid: String = str(host._active_dm_partner_id)
+	var pname: String = str(host._active_dm_partner_name)
 	var av_id := int(partner.get("image", 0))
 	var frame_id := int(partner.get("profile_frame", 0))
 	var pres: Dictionary = partner.get("presence", {}) if typeof(partner.get("presence")) == TYPE_DICTIONARY else {"status": str(partner.get("status", "online"))}

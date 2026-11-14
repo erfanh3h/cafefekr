@@ -200,7 +200,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 	var emb_id := int(cdict.get("emblem_id", 1))
 	var clan_lvl := int(cdict.get("clan_level", 1))
 	var clan_xp := int(cdict.get("clan_xp", 0))
-	var next_xp := max(100, clan_lvl * 500)
+	var next_xp: int = maxi(100, clan_lvl * 500)
 
 	# 1. Hero Guild Crest Plaque
 	var hero := PanelContainer.new()
@@ -347,7 +347,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 
 			cv.add_child(CafeSocialTheme.make_body(str(ch.get("desc", "")), 19, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
 			var prog := int(ch.get("progress", 0))
-			var targ := max(1, int(ch.get("target", 1)))
+			var targ: int = maxi(1, int(ch.get("target", 1)))
 			cv.add_child(CafeSocialTheme.make_xp_progress_bar(
 				float(prog) / float(targ),
 				"%s از %s" % [GameManager.to_fa_num(prog), GameManager.to_fa_num(targ)],
@@ -642,7 +642,7 @@ static func _build_clan_discover_view(host: Control, holder: VBoxContainer) -> v
 	mode_row.add_theme_constant_override("separation", 8)
 	holder.add_child(mode_row)
 
-	var is_lb := (host.current_clans_subtab == "leaderboard")
+	var is_lb: bool = (str(host.current_clans_subtab) == "leaderboard")
 	var btn_dir := CafeSocialTheme.make_button("فهرست و جستجو", "gold" if not is_lb else "muted", Vector2(0, 52), 21)
 	btn_dir.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_dir.pressed.connect(func():
@@ -846,7 +846,7 @@ static func _build_clan_leaderboard_inner(host: Control, holder: VBoxContainer) 
 	]
 	for m in modes:
 		var mid: String = m["id"]
-		var act := (host.current_clan_lb_mode == mid)
+		var act: bool = (str(host.current_clan_lb_mode) == mid)
 		var b := CafeSocialTheme.make_subtab(m["label"], act, 0)
 		b.pressed.connect(func():
 			AudioManager.sfx_tap()
