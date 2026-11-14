@@ -532,9 +532,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -460.0
+offset_left = -505.0
 offset_top = -225.0
-offset_right = 460.0
+offset_right = 505.0
 offset_bottom = -35.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -542,7 +542,7 @@ theme_override_constants/margin_bottom = 10
 
 [node name="HBoxDock" type="HBoxContainer" parent="CanvasLayer/MenuContainer/BottomDock"]
 layout_mode = 2
-theme_override_constants/separation = 28
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="BtnRanking" type="Button" parent="CanvasLayer/MenuContainer/BottomDock/HBoxDock"]

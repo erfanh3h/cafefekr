@@ -960,7 +960,7 @@ func _update_backdrop_state() -> void:
 			or is_open.call(classic_rank_dialog) or is_open.call(multi_rank_dialog) or is_open.call(pick_ban_dialog) \
 			or is_open.call(ranking_dialog) or is_open.call(game_history_dialog) or is_open.call(store_dialog) \
 			or is_open.call(rules_dialog) or is_open.call(login_dialog) \
-			or is_open.call(user_profile_dialog)
+			or is_open.call(user_profile_dialog) or is_open.call(social_dialog)
 			
 		if any_open:
 			_show_backdrop()
@@ -3286,41 +3286,101 @@ func _setup_social_hub_integration() -> void:
 	if social_scene and is_instance_valid(ui_canvas):
 		social_dialog = social_scene.instantiate()
 		ui_canvas.add_child(social_dialog)
+		if social_dialog.has_signal("closed"):
+			social_dialog.closed.connect(_update_backdrop_state)
 
 	var dock_hbox = get_node_or_null("CanvasLayer/MenuContainer/BottomDock/HBoxDock")
+	var social_badge_panel: PanelContainer = null
+	var social_badge_lbl: Label = null
+
 	if is_instance_valid(dock_hbox) and not is_instance_valid(btn_social_hub):
 		btn_social_hub = Button.new()
 		btn_social_hub.name = "BtnSocialHub"
-		btn_social_hub.text = "🛡️ کلن و دوستان"
-		btn_social_hub.custom_minimum_size = Vector2(168, 86)
+		btn_social_hub.custom_minimum_size = Vector2(136, 158)
 		btn_social_hub.focus_mode = Control.FOCUS_NONE
-		btn_social_hub.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		btn_social_hub.add_theme_font_size_override("font_size", 28)
-		btn_social_hub.add_theme_color_override("font_color", Color(1.0, 0.96, 0.84))
-		var st = StyleBoxFlat.new()
-		st.bg_color = Color(0.18, 0.42, 0.26, 0.96)
-		st.border_color = Color(0.55, 0.92, 0.65, 0.95)
-		st.set_border_width_all(2)
-		st.set_corner_radius_all(18)
-		btn_social_hub.add_theme_stylebox_override("normal", st)
-		btn_social_hub.add_theme_stylebox_override("hover", st)
-		btn_social_hub.add_theme_stylebox_override("pressed", st)
+		btn_social_hub.flat = true
+		btn_social_hub.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var empty_sb := StyleBoxEmpty.new()
+		btn_social_hub.add_theme_stylebox_override("normal", empty_sb)
+		btn_social_hub.add_theme_stylebox_override("hover", empty_sb)
+		btn_social_hub.add_theme_stylebox_override("pressed", empty_sb)
+		btn_social_hub.add_theme_stylebox_override("disabled", empty_sb)
+		btn_social_hub.add_theme_stylebox_override("focus", empty_sb)
+
+		# Antique wooden medallion matching existing dock icons
+		var holder := Control.new()
+		holder.set_anchors_preset(Control.PRESET_FULL_RECT)
+		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn_social_hub.add_child(holder)
+
+		var disc := TextureRect.new()
+		disc.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		disc.offset_left = 7
+		disc.offset_right = -7
+		disc.offset_top = 4
+		disc.offset_bottom = 126
+		disc.texture = CafeSocialTheme.TEX_BUTTON5
+		disc.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		disc.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.add_child(disc)
+
+		var ico := TextureRect.new()
+		ico.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		ico.offset_left = 25
+		ico.offset_right = -25
+		ico.offset_top = 20
+		ico.offset_bottom = 104
+		ico.texture = CafeSocialTheme.ICO_LOBBY
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.add_child(ico)
+
+		var cap := CafeSocialTheme.make_title("باشگاه", 26, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
+		cap.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		cap.offset_top = -36
+		cap.offset_bottom = 0
+		cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.add_child(cap)
+
+		social_badge_panel = PanelContainer.new()
+		social_badge_panel.visible = false
+		social_badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		social_badge_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		social_badge_panel.offset_left = -42
+		social_badge_panel.offset_top = 2
+		social_badge_panel.offset_right = -2
+		social_badge_panel.offset_bottom = 36
+		var bst := StyleBoxFlat.new()
+		bst.bg_color = Color(0.84, 0.16, 0.16, 0.98)
+		bst.border_color = Color(1.0, 0.85, 0.36, 1.0)
+		bst.set_border_width_all(2)
+		bst.set_corner_radius_all(14)
+		social_badge_panel.add_theme_stylebox_override("panel", bst)
+		social_badge_lbl = CafeSocialTheme.make_body("۰", 17, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
+		social_badge_panel.add_child(social_badge_lbl)
+		holder.add_child(social_badge_panel)
+
+		ActionVFXManager.apply_button_juice(btn_social_hub, "tap_button")
 		btn_social_hub.pressed.connect(func():
 			AudioManager.sfx_button()
 			if is_instance_valid(social_dialog) and social_dialog.has_method("open"):
+				_show_backdrop()
 				social_dialog.open("friends")
 		)
 		dock_hbox.add_child(btn_social_hub)
 		dock_hbox.move_child(btn_social_hub, 0)
 
 	var update_social_badge = func(_p = null):
-		if not is_instance_valid(btn_social_hub):
+		if not is_instance_valid(social_badge_panel) or not is_instance_valid(social_badge_lbl):
 			return
 		var total_u = NetworkManager.unread_notifications_count + NetworkManager.unread_dms_count
 		if total_u > 0:
-			btn_social_hub.text = "🛡️ کلن و دوستان (%s)" % GameManager.to_fa_num(total_u)
+			social_badge_panel.visible = true
+			social_badge_lbl.text = GameManager.to_fa_num(total_u) if total_u <= 99 else "۹۹+"
 		else:
-			btn_social_hub.text = "🛡️ کلن و دوستان"
+			social_badge_panel.visible = false
 
 	NetworkManager.social_init_received.connect(update_social_badge)
 	NetworkManager.social_notification_received.connect(update_social_badge)
@@ -3343,59 +3403,50 @@ func _on_social_game_invite_received(payload: Dictionary) -> void:
 
 	var panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	panel.offset_left = 40
-	panel.offset_right = -40
-	panel.offset_top = 28
-	panel.offset_bottom = 124
-	var st = StyleBoxFlat.new()
-	st.bg_color = Color(0.14, 0.10, 0.06, 0.98)
-	st.border_color = Color(1.0, 0.84, 0.32, 1.0)
-	st.set_border_width_all(3)
-	st.set_corner_radius_all(18)
-	st.content_margin_left = 20
-	st.content_margin_right = 20
-	st.content_margin_top = 12
-	st.content_margin_bottom = 12
-	panel.add_theme_stylebox_override("panel", st)
+	panel.offset_left = 32
+	panel.offset_right = -32
+	panel.offset_top = 24
+	panel.offset_bottom = 132
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(false))
 	ui_canvas.add_child(panel)
 	_active_invite_banner = panel
 
 	var row = HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
+	row.add_theme_constant_override("separation", 12)
 	panel.add_child(row)
 
-	var lbl = Label.new()
-	lbl.text = "🎮 %s شما را به بازی «%s» دعوت کرد!" % [from_name, g_title]
-	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl.add_theme_font_size_override("font_size", 28)
-	lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.78))
-	lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
-	row.add_child(lbl)
+	var b_rej = CafeSocialTheme.make_button("رد", "crimson", Vector2(96, 54), 21, CafeSocialTheme.ICO_CANCEL)
+	b_rej.pressed.connect(func():
+		AudioManager.sfx_tap()
+		NetworkManager.respond_game_invite_realtime(inv_id, "reject")
+		if is_instance_valid(_active_invite_banner):
+			_active_invite_banner.queue_free()
+	)
+	row.add_child(b_rej)
 
-	var b_acc = Button.new()
-	b_acc.text = "✅ قبول و شروع"
-	b_acc.custom_minimum_size = Vector2(150, 50)
-	b_acc.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
-	b_acc.add_theme_font_size_override("font_size", 22)
+	var b_acc = CafeSocialTheme.make_button("قبول و شروع", "emerald", Vector2(170, 54), 21, CafeSocialTheme.ICO_CHECK)
 	b_acc.pressed.connect(func():
+		AudioManager.sfx_button()
 		NetworkManager.respond_game_invite_realtime(inv_id, "accept")
 		if is_instance_valid(_active_invite_banner):
 			_active_invite_banner.queue_free()
 	)
 	row.add_child(b_acc)
 
-	var b_rej = Button.new()
-	b_rej.text = "❌ رد"
-	b_rej.custom_minimum_size = Vector2(95, 50)
-	b_rej.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
-	b_rej.add_theme_font_size_override("font_size", 22)
-	b_rej.pressed.connect(func():
-		NetworkManager.respond_game_invite_realtime(inv_id, "reject")
-		if is_instance_valid(_active_invite_banner):
-			_active_invite_banner.queue_free()
+	var lbl = CafeSocialTheme.make_title(
+		"%s شما را به بازی «%s» دعوت کرد!" % [from_name, g_title],
+		28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true
 	)
-	row.add_child(b_rej)
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(lbl)
+
+	var thumb := TextureRect.new()
+	thumb.texture = CafeSocialTheme.get_game_thumb(g_type)
+	thumb.custom_minimum_size = Vector2(58, 58)
+	thumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(thumb)
 
 
 func _on_social_game_invite_result(payload: Dictionary) -> void:
