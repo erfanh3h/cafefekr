@@ -3309,42 +3309,20 @@ func _setup_social_hub_integration() -> void:
 		btn_social_hub.add_theme_stylebox_override("disabled", empty_sb)
 		btn_social_hub.add_theme_stylebox_override("focus", empty_sb)
 
-		# Antique wooden medallion matching existing dock icons
+		# Dedicated authentic Social Hub badge icon matching dock style
 		var holder := Control.new()
 		holder.set_anchors_preset(Control.PRESET_FULL_RECT)
 		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn_social_hub.add_child(holder)
 
-		var disc := TextureRect.new()
-		disc.set_anchors_preset(Control.PRESET_TOP_WIDE)
-		disc.offset_left = 7
-		disc.offset_right = -7
-		disc.offset_top = 4
-		disc.offset_bottom = 126
-		disc.texture = CafeSocialTheme.TEX_BUTTON5
-		disc.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		disc.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		holder.add_child(disc)
-
 		var ico := TextureRect.new()
-		ico.set_anchors_preset(Control.PRESET_TOP_WIDE)
-		ico.offset_left = 25
-		ico.offset_right = -25
-		ico.offset_top = 20
-		ico.offset_bottom = 104
-		ico.texture = CafeSocialTheme.ICO_LOBBY
+		ico.set_anchors_preset(Control.PRESET_FULL_RECT)
+		ico.custom_minimum_size = Vector2(136, 158)
+		ico.texture = CafeSocialTheme.BADGE_SOCIAL
 		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		holder.add_child(ico)
-
-		var cap := CafeSocialTheme.make_title("باشگاه", 26, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
-		cap.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-		cap.offset_top = -36
-		cap.offset_bottom = 0
-		cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		holder.add_child(cap)
 
 		social_badge_panel = PanelContainer.new()
 		social_badge_panel.visible = false
@@ -3417,7 +3395,7 @@ func _on_social_game_invite_received(payload: Dictionary) -> void:
 	row.add_theme_constant_override("separation", 12)
 	panel.add_child(row)
 
-	var b_rej = CafeSocialTheme.make_button("رد", "crimson", Vector2(96, 54), 21, CafeSocialTheme.ICO_CANCEL)
+	var b_rej = CafeSocialTheme.make_button("رد", "crimson", Vector2(96, 54), 21)
 	b_rej.pressed.connect(func():
 		AudioManager.sfx_tap()
 		NetworkManager.respond_game_invite_realtime(inv_id, "reject")
@@ -3426,7 +3404,7 @@ func _on_social_game_invite_received(payload: Dictionary) -> void:
 	)
 	row.add_child(b_rej)
 
-	var b_acc = CafeSocialTheme.make_button("قبول و شروع", "emerald", Vector2(170, 54), 21, CafeSocialTheme.ICO_CHECK)
+	var b_acc = CafeSocialTheme.make_button("قبول و شروع", "emerald", Vector2(170, 54), 21)
 	b_acc.pressed.connect(func():
 		AudioManager.sfx_button()
 		NetworkManager.respond_game_invite_realtime(inv_id, "accept")

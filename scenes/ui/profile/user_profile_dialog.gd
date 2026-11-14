@@ -303,7 +303,7 @@ func _render_hero_plaque(src: Dictionary) -> void:
 	info_col.add_child(name_row)
 
 	if not _is_bot and not _is_self:
-		name_row.add_child(CafeSocialTheme.make_badge_pill(p_info["text"], p_info["color"], Color(0.08, 0.05, 0.03), p_info["dot_color"], 17))
+		name_row.add_child(CafeSocialTheme.make_status_badge(pres_status, 34.0))
 
 	var nm_lbl := CafeSocialTheme.make_title(uname, 32, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	nm_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -450,7 +450,7 @@ func _build_other_player_actions() -> void:
 		p_sent.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(p_sent)
 	elif rel == "request_received":
-		var b_acc := CafeSocialTheme.make_button("پذیرش دوستی", "emerald", Vector2(0, 52), 20, CafeSocialTheme.ICO_CHECK)
+		var b_acc := CafeSocialTheme.make_friend_button("accept", "پذیرش دوستی", Vector2(0, 52))
 		b_acc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_acc.pressed.connect(func():
 			AudioManager.sfx_button()
@@ -477,7 +477,7 @@ func _build_other_player_actions() -> void:
 		)
 		row.add_child(b_acc)
 	else:
-		var b_add := CafeSocialTheme.make_button("افزودن دوست", "emerald", Vector2(0, 52), 20, CafeSocialTheme.BADGE_PLUS)
+		var b_add := CafeSocialTheme.make_friend_button("add", "افزودن دوست", Vector2(0, 52))
 		b_add.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_add.pressed.connect(func():
 			AudioManager.sfx_button()
@@ -496,7 +496,7 @@ func _build_other_player_actions() -> void:
 		row.add_child(b_add)
 
 	if not GameManager.is_game_active:
-		var b_dm := CafeSocialTheme.make_button("پیام خصوصی", "sapphire", Vector2(0, 52), 20, CafeSocialTheme.BADGE_CHAT)
+		var b_dm := CafeSocialTheme.make_button("پیام خصوصی", "sapphire", Vector2(0, 52), 20)
 		b_dm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_dm.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -508,7 +508,7 @@ func _build_other_player_actions() -> void:
 		)
 		row.add_child(b_dm)
 
-		var b_ginv := CafeSocialTheme.make_button("دعوت بازی", "gold", Vector2(0, 52), 20, CafeSocialTheme.ICO_RANK)
+		var b_ginv := CafeSocialTheme.make_button("دعوت بازی", "gold", Vector2(0, 52), 20)
 		b_ginv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_ginv.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -520,7 +520,7 @@ func _build_other_player_actions() -> void:
 
 	_other_actions_holder.add_child(extra_row)
 
-	var b_clan := CafeSocialTheme.make_button("دعوت به کلن من", "bronze", Vector2(0, 48), 19, CafeSocialTheme.ICO_ARMY)
+	var b_clan := CafeSocialTheme.make_button("دعوت به کلن من", "bronze", Vector2(0, 48), 19)
 	b_clan.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_clan.pressed.connect(func():
 		AudioManager.sfx_tap()

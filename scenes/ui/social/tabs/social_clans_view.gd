@@ -99,7 +99,7 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	hv.add_child(btn_row)
 
-	var b_search := CafeSocialTheme.make_button("جستجو و عضویت در کلن", "emerald", Vector2(0, 58), 22, CafeSocialTheme.ICO_RANKING)
+	var b_search := CafeSocialTheme.make_button("جستجو و عضویت در کلن", "emerald", Vector2(0, 58), 22)
 	b_search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_search.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -108,7 +108,7 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 	)
 	btn_row.add_child(b_search)
 
-	var b_create := CafeSocialTheme.make_button("تاسیس کلن جدید (رایگان)", "gold", Vector2(0, 58), 22, CafeSocialTheme.BADGE_PLUS)
+	var b_create := CafeSocialTheme.make_button("تاسیس کلن جدید (رایگان)", "gold", Vector2(0, 58), 22)
 	b_create.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_create.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -149,7 +149,7 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 			)
 			irow.add_child(b_rej)
 
-			var b_acc := CafeSocialTheme.make_button("پیوستن", "emerald", Vector2(140, 48), 20, CafeSocialTheme.ICO_CHECK)
+			var b_acc := CafeSocialTheme.make_button("پیوستن", "emerald", Vector2(140, 48), 20)
 			b_acc.pressed.connect(func():
 				AudioManager.sfx_button()
 				NetworkManager.api.respond_clan_invitation(inv_id, "accept", func(ok: bool, _c: int, d: Variant):
@@ -298,7 +298,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 	act_row.add_child(b_leave)
 
 	if my_role in ["leader", "co_leader"]:
-		var b_settings := CafeSocialTheme.make_button("تنظیمات کلن", "bronze", Vector2(0, 50), 20, CafeSocialTheme.ICO_SETTING)
+		var b_settings := CafeSocialTheme.make_button("تنظیمات کلن", "bronze", Vector2(0, 50), 20)
 		b_settings.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_settings.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -306,7 +306,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 		)
 		act_row.add_child(b_settings)
 
-	var b_chal := CafeSocialTheme.make_button("چالش دوستانه", "emerald", Vector2(0, 50), 20, CafeSocialTheme.ICO_CUP)
+	var b_chal := CafeSocialTheme.make_button("چالش دوستانه", "emerald", Vector2(0, 50), 20)
 	b_chal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_chal.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -379,7 +379,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 			)
 			rrow.add_child(b_no)
 
-			var b_ok := CafeSocialTheme.make_button("پذیرش", "emerald", Vector2(120, 46), 19, CafeSocialTheme.ICO_CHECK)
+			var b_ok := CafeSocialTheme.make_button("پذیرش", "emerald", Vector2(120, 46), 19)
 			b_ok.pressed.connect(func():
 				NetworkManager.api.respond_clan_join_request(rid, "accept", func(ok: bool, _c: int, _d: Variant):
 					if ok:
@@ -462,7 +462,7 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 			or (my_role == "elder" and m_role == "member")
 		)
 		if can_manage:
-			var b_mgr := CafeSocialTheme.make_button("مدیریت", "gold", Vector2(120, 44), 19, CafeSocialTheme.ICO_SETTING)
+			var b_mgr := CafeSocialTheme.make_button("مدیریت", "gold", Vector2(120, 44), 19)
 			b_mgr.pressed.connect(func():
 				AudioManager.sfx_tap()
 				_open_member_manage_modal(host, m, my_role)
@@ -475,13 +475,21 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 		m_col.add_theme_constant_override("separation", 4)
 		mrow.add_child(m_col)
 
+		var title_row := HBoxContainer.new()
+		title_row.alignment = BoxContainer.ALIGNMENT_END
+		title_row.add_theme_constant_override("separation", 8)
+		m_col.add_child(title_row)
+
+		var st_badge := CafeSocialTheme.make_status_badge(str(m_pres.get("status", "offline")), 24.0)
+		title_row.add_child(st_badge)
+
+		title_row.add_child(CafeSocialTheme.make_title("%s  •  [%s]" % [m_name, m_role_fa], 25, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
+
 		var role_col := CafeSocialTheme.COL_GOLD_BRIGHT if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_TEXT if m_role == "co_leader" else CafeSocialTheme.COL_WARM_CREAM)
-		m_col.add_child(CafeSocialTheme.make_title("%s  •  [%s]" % [m_name, m_role_fa], 25, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
 		m_col.add_child(CafeSocialTheme.make_body(
-			"مشارکت هفتگی: %s  |  امتیاز: %s  |  %s" % [
+			"مشارکت هفتگی: %s  |  امتیاز: %s" % [
 				GameManager.to_fa_num(m_contrib),
-				GameManager.to_fa_num(int(m.get("score", 0))),
-				p_info["text"]
+				GameManager.to_fa_num(int(m.get("score", 0)))
 			],
 			19, role_col, HORIZONTAL_ALIGNMENT_RIGHT, true
 		))
@@ -516,7 +524,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	input_row.add_theme_constant_override("separation", 10)
 	compose.add_child(input_row)
 
-	var btn_send := CafeSocialTheme.make_button("ارسال", "emerald", Vector2(142, 64), 23, CafeSocialTheme.TEX_REPLY)
+	var btn_send := CafeSocialTheme.make_button("ارسال", "emerald", Vector2(142, 64), 23)
 	input_row.add_child(btn_send)
 
 	host._clan_chat_input = CafeSocialTheme.make_line_edit("پیام خود را برای اعضای کلن بنویسید (برای منشن از @ استفاده کنید)...", 64.0, 22)
@@ -608,7 +616,7 @@ static func render_clan_chat(host: Control) -> void:
 			var chal_gt := str(meta.get("game_type", "Monopoly"))
 			var chal_creator := str(meta.get("creator_id", ""))
 			if not chal_creator.is_empty() and chal_creator != my_uid:
-				var b_acc := CafeSocialTheme.make_button("قبول چالش", "emerald", Vector2(148, 46), 19, CafeSocialTheme.ICO_CUP)
+				var b_acc := CafeSocialTheme.make_button("قبول چالش", "emerald", Vector2(148, 46), 19)
 				b_acc.pressed.connect(func():
 					AudioManager.sfx_button()
 					NetworkManager.send_game_invite_realtime(chal_creator, chal_gt, "direct_match")
@@ -652,7 +660,7 @@ static func _build_clan_discover_view(host: Control, holder: VBoxContainer) -> v
 	)
 	mode_row.add_child(btn_dir)
 
-	var btn_lb := CafeSocialTheme.make_button("جدول برترین کلن‌ها", "gold" if is_lb else "muted", Vector2(0, 52), 21, CafeSocialTheme.ICO_FIRST)
+	var btn_lb := CafeSocialTheme.make_button("جدول برترین کلن‌ها", "gold" if is_lb else "muted", Vector2(0, 52), 21)
 	btn_lb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_lb.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -665,7 +673,7 @@ static func _build_clan_discover_view(host: Control, holder: VBoxContainer) -> v
 	if typeof(host._my_clan_data.get("clan")) == TYPE_DICTIONARY and not host._my_clan_data["clan"].is_empty():
 		has_clan = true
 	if not has_clan:
-		var btn_new_c := CafeSocialTheme.make_button("ساخت کلن (رایگان)", "emerald", Vector2(210, 52), 21, CafeSocialTheme.BADGE_PLUS)
+		var btn_new_c := CafeSocialTheme.make_button("ساخت کلن (رایگان)", "emerald", Vector2(210, 52), 21)
 		btn_new_c.pressed.connect(func():
 			AudioManager.sfx_button()
 			open_clan_create_modal(host)

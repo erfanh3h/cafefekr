@@ -60,6 +60,36 @@ const BADGE_PLUS = preload("res://assets/images/badges/plus.png")
 const BADGE_LOBBY = preload("res://assets/images/badges/lobby.png")
 const BADGE_RANK = preload("res://assets/images/badges/rank.png")
 
+# Authentic Cutout UI Assets
+const BADGE_SOCIAL = preload("res://assets/images/badges/social.png")
+
+const CLAN_BADGES := [
+	preload("res://assets/images/clans/badge_1.png"),
+	preload("res://assets/images/clans/badge_2.png"),
+	preload("res://assets/images/clans/badge_3.png"),
+	preload("res://assets/images/clans/badge_4.png"),
+	preload("res://assets/images/clans/badge_5.png"),
+	preload("res://assets/images/clans/badge_6.png"),
+	preload("res://assets/images/clans/badge_7.png"),
+	preload("res://assets/images/clans/badge_8.png"),
+	preload("res://assets/images/clans/badge_9.png"),
+]
+
+const TEX_STATUS_ONLINE = preload("res://assets/images/status/status_online.png")
+const TEX_STATUS_IN_GAME = preload("res://assets/images/status/status_in_game.png")
+const TEX_STATUS_IN_LOBBY = preload("res://assets/images/status/status_in_lobby.png")
+const TEX_STATUS_IN_QUEUE = preload("res://assets/images/status/status_in_queue.png")
+const TEX_STATUS_OFFLINE = preload("res://assets/images/status/status_offline.png")
+
+const TEX_TAB_FRIENDS = preload("res://assets/images/social/tab_friends.png")
+const TEX_TAB_CLANS = preload("res://assets/images/social/tab_clans.png")
+const TEX_TAB_MESSAGES = preload("res://assets/images/social/tab_messages.png")
+const TEX_TAB_NOTIFS = preload("res://assets/images/social/tab_notifs.png")
+
+const TEX_FRIEND_ADD = preload("res://assets/images/social/friend_add.png")
+const TEX_FRIEND_CANCEL = preload("res://assets/images/social/friend_cancel.png")
+const TEX_FRIEND_REJECT = preload("res://assets/images/social/friend_reject.png")
+
 # Rich Antique Palette (Dark Walnut / Mahogany + Aged Gold + Jewel Emerald)
 const COL_IVORY := Color(0.99, 0.96, 0.88, 1.0)
 const COL_WARM_CREAM := Color(0.91, 0.84, 0.72, 1.0)
@@ -90,16 +120,17 @@ const PROFILE_FRAMES := [
 	{"id": 5, "name": "لعل قهرمانان", "border": Color(0.98, 0.45, 0.55, 1.0), "glow": Color(0.95, 0.35, 0.45, 0.45)},
 ]
 
-# Clan Emblem configurations (1..8)
+# Clan Emblem configurations (1..9)
 const CLAN_EMBLEMS := [
-	{"id": 1, "name": "سپر شیر", "bg": Color(0.55, 0.34, 0.10), "ring": Color(0.98, 0.82, 0.34), "icon": ICO_RANK},
-	{"id": 2, "name": "جام زرین", "bg": Color(0.14, 0.40, 0.24), "ring": Color(0.48, 0.90, 0.62), "icon": ICO_CUP},
-	{"id": 3, "name": "تاج شاهی", "bg": Color(0.48, 0.14, 0.16), "ring": Color(0.98, 0.78, 0.36), "icon": ICO_KING},
-	{"id": 4, "name": "ملکه نبرد", "bg": Color(0.20, 0.30, 0.52), "ring": Color(0.65, 0.86, 1.0), "icon": ICO_QUEEN},
-	{"id": 5, "name": "ستاره شمال", "bg": Color(0.36, 0.20, 0.48), "ring": Color(0.92, 0.74, 1.0), "icon": ICO_STAR},
-	{"id": 6, "name": "سپاه کافه", "bg": Color(0.42, 0.26, 0.14), "ring": Color(0.92, 0.68, 0.36), "icon": ICO_ARMY},
-	{"id": 7, "name": "قهرمان اول", "bg": Color(0.52, 0.38, 0.08), "ring": Color(1.0, 0.90, 0.44), "icon": ICO_FIRST},
-	{"id": 8, "name": "درخشش جاوید", "bg": Color(0.14, 0.34, 0.36), "ring": Color(0.54, 0.94, 0.90), "icon": ICO_SPARKLE},
+	{"id": 1, "name": "پنجه شیر", "texture": preload("res://assets/images/clans/badge_1.png")},
+	{"id": 2, "name": "قلعه کافه", "texture": preload("res://assets/images/clans/badge_2.png")},
+	{"id": 3, "name": "شمشیر نبرد", "texture": preload("res://assets/images/clans/badge_3.png")},
+	{"id": 4, "name": "نشان هدف", "texture": preload("res://assets/images/clans/badge_4.png")},
+	{"id": 5, "name": "برگ زیتون", "texture": preload("res://assets/images/clans/badge_5.png")},
+	{"id": 6, "name": "الماس درخشان", "texture": preload("res://assets/images/clans/badge_6.png")},
+	{"id": 7, "name": "پیک شاهانه", "texture": preload("res://assets/images/clans/badge_7.png")},
+	{"id": 8, "name": "گشنیز کهن", "texture": preload("res://assets/images/clans/badge_8.png")},
+	{"id": 9, "name": "دل سرخ", "texture": preload("res://assets/images/clans/badge_9.png")},
 ]
 
 
@@ -346,11 +377,12 @@ static func make_button(
 	b.add_theme_stylebox_override("focus", _get_flat_btn_style(variant, "hover", corner))
 	b.add_theme_stylebox_override("disabled", _get_flat_btn_style(variant, "disabled", corner))
 
-	if icon_tex != null:
+	# User requested removing ugly icons from sub buttons; text alone is clean and sufficient.
+	# Only attach icon if button has NO text (pure icon button like refresh)
+	if txt.is_empty() and icon_tex != null:
 		b.icon = icon_tex
 		b.expand_icon = true
 		b.add_theme_constant_override("icon_max_width", int(clampf(min_size.y * 0.48, 22.0, 34.0)))
-		b.add_theme_constant_override("h_separation", 8)
 
 	ActionVFXManager.apply_button_juice(b, "tap_button")
 	return b
@@ -373,79 +405,66 @@ static func make_wood_hero_button(
 	return b
 
 
+static func get_nav_tab_texture(tab_id: String) -> Texture2D:
+	match tab_id:
+		"friends":
+			return TEX_TAB_FRIENDS
+		"clans":
+			return TEX_TAB_CLANS
+		"messages":
+			return TEX_TAB_MESSAGES
+		"notifs":
+			return TEX_TAB_NOTIFS
+		_:
+			return TEX_TAB_FRIENDS
+
+
 static func make_nav_tab(
-	label_txt: String,
-	icon_tex: Texture2D,
+	tab_id: String,
 	badge_count: int = 0,
 	is_active: bool = false
 ) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 82)
+	b.custom_minimum_size = Vector2(0, 92)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.focus_mode = Control.FOCUS_NONE
+	b.flat = true
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-	var st := StyleBoxFlat.new()
-	st.set_corner_radius_all(16)
-	st.set_border_width_all(3 if is_active else 2)
-	st.content_margin_left = 8.0
-	st.content_margin_right = 8.0
-	st.content_margin_top = 8.0
-	st.content_margin_bottom = 8.0
-	if is_active:
-		st.bg_color = Color(0.54, 0.37, 0.11, 0.98)
-		st.border_color = Color(1.0, 0.86, 0.36, 1.0)
-		st.shadow_color = Color(0.95, 0.75, 0.22, 0.30)
-		st.shadow_size = 8
+	var empty_sb := StyleBoxEmpty.new()
+	b.add_theme_stylebox_override("normal", empty_sb)
+	b.add_theme_stylebox_override("hover", empty_sb)
+	b.add_theme_stylebox_override("pressed", empty_sb)
+	b.add_theme_stylebox_override("disabled", empty_sb)
+	b.add_theme_stylebox_override("focus", empty_sb)
+
+	var holder := Control.new()
+	holder.set_anchors_preset(Control.PRESET_FULL_RECT)
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(holder)
+
+	var tr := TextureRect.new()
+	tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tr.texture = get_nav_tab_texture(tab_id)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not is_active:
+		tr.modulate = Color(0.68, 0.65, 0.62, 0.88)
 	else:
-		st.bg_color = Color(0.15, 0.10, 0.06, 0.94)
-		st.border_color = Color(0.50, 0.37, 0.20, 0.78)
-		st.shadow_color = Color(0, 0, 0, 0.35)
-		st.shadow_size = 4
-
-	var st_h := st.duplicate()
-	st_h.bg_color = st.bg_color.lightened(0.08)
-	b.add_theme_stylebox_override("normal", st)
-	b.add_theme_stylebox_override("hover", st_h)
-	b.add_theme_stylebox_override("pressed", st)
-	b.add_theme_stylebox_override("focus", st)
-
-	var vbox := VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_theme_constant_override("separation", 3)
-	b.add_child(vbox)
-
-	if icon_tex != null:
-		var ico := TextureRect.new()
-		ico.texture = icon_tex
-		ico.custom_minimum_size = Vector2(30, 30)
-		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		ico.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ico.modulate = Color(1.0, 0.96, 0.80) if is_active else Color(0.86, 0.80, 0.70, 0.85)
-		vbox.add_child(ico)
-
-	var lbl := Label.new()
-	lbl.text = label_txt
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	lbl.add_theme_font_override("font", FONT_TITLE)
-	lbl.add_theme_font_size_override("font_size", 25 if is_active else 23)
-	lbl.add_theme_color_override("font_color", COL_IVORY if is_active else COL_WARM_CREAM)
-	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
-	lbl.add_theme_constant_override("shadow_outline_size", 2)
-	vbox.add_child(lbl)
+		tr.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	holder.add_child(tr)
 
 	if is_active:
-		var emerald_bar := ColorRect.new()
-		emerald_bar.custom_minimum_size = Vector2(48, 4)
-		emerald_bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		emerald_bar.color = Color(0.42, 0.92, 0.60, 0.98)
-		emerald_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vbox.add_child(emerald_bar)
+		var highlight_bar := ColorRect.new()
+		highlight_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		highlight_bar.offset_top = -6
+		highlight_bar.offset_bottom = -1
+		highlight_bar.offset_left = 28
+		highlight_bar.offset_right = -28
+		highlight_bar.color = Color(0.42, 0.92, 0.60, 0.98)
+		highlight_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.add_child(highlight_bar)
 
 	if badge_count > 0:
 		var badge := PanelContainer.new()
@@ -471,7 +490,10 @@ static func make_nav_tab(
 		bl.add_theme_font_size_override("font_size", 16)
 		bl.add_theme_color_override("font_color", COL_IVORY)
 		badge.add_child(bl)
-		b.add_child(badge)
+		holder.add_child(badge)
+
+	ActionVFXManager.apply_button_juice(b, "tap_button")
+	return b
 
 	ActionVFXManager.apply_button_juice(b, "tap_button")
 	return b
@@ -597,37 +619,117 @@ static func make_avatar_badge(
 	return holder
 
 
+static func get_clan_emblem_texture(emblem_id: int = 1) -> Texture2D:
+	var idx := clampi(emblem_id - 1, 0, CLAN_BADGES.size() - 1)
+	return CLAN_BADGES[idx]
+
+
 static func make_clan_emblem(emblem_id: int = 1, size_px: float = 84.0) -> Control:
-	var idx := clampi(emblem_id - 1, 0, CLAN_EMBLEMS.size() - 1)
-	var cfg: Dictionary = CLAN_EMBLEMS[idx]
-
-	var shield := PanelContainer.new()
-	shield.custom_minimum_size = Vector2(size_px, size_px)
-	shield.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	shield.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-
-	var st := StyleBoxFlat.new()
-	st.bg_color = cfg["bg"]
-	st.border_color = cfg["ring"]
-	st.set_border_width_all(3)
-	st.corner_radius_top_left = int(size_px * 0.24)
-	st.corner_radius_top_right = int(size_px * 0.24)
-	st.corner_radius_bottom_left = int(size_px * 0.48)
-	st.corner_radius_bottom_right = int(size_px * 0.48)
-	st.shadow_color = Color(0, 0, 0, 0.55)
-	st.shadow_size = 8
-	st.content_margin_left = size_px * 0.18
-	st.content_margin_right = size_px * 0.18
-	st.content_margin_top = size_px * 0.16
-	st.content_margin_bottom = size_px * 0.18
-	shield.add_theme_stylebox_override("panel", st)
-
+	var tex := get_clan_emblem_texture(emblem_id)
 	var ico := TextureRect.new()
-	ico.texture = cfg["icon"]
+	var w := size_px * (88.0 / 108.0)
+	ico.custom_minimum_size = Vector2(w, size_px)
+	ico.texture = tex
 	ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	shield.add_child(ico)
-	return shield
+	ico.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	ico.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return ico
+
+
+static func get_status_texture(status: String) -> Texture2D:
+	match status:
+		"online":
+			return TEX_STATUS_ONLINE
+		"in_game":
+			return TEX_STATUS_IN_GAME
+		"in_lobby":
+			return TEX_STATUS_IN_LOBBY
+		"in_queue":
+			return TEX_STATUS_IN_QUEUE
+		_:
+			return TEX_STATUS_OFFLINE
+
+
+static func make_status_badge(status: String, custom_h: float = 34.0) -> Control:
+	var tr := TextureRect.new()
+	var w := custom_h * 2.4
+	tr.custom_minimum_size = Vector2(w, custom_h)
+	tr.texture = get_status_texture(status)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	tr.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return tr
+
+
+static func get_friend_button_texture(type: String) -> Texture2D:
+	match type:
+		"add", "accept":
+			return TEX_FRIEND_ADD
+		"cancel", "remove":
+			return TEX_FRIEND_CANCEL
+		"reject":
+			return TEX_FRIEND_REJECT
+		_:
+			return TEX_FRIEND_ADD
+
+
+static func make_friend_button(
+	type: String,
+	label_txt: String = "",
+	min_size: Vector2 = Vector2(0, 52)
+) -> Button:
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+	var variant := "emerald"
+	match type:
+		"add", "accept":
+			variant = "emerald"
+		"cancel", "remove", "reject":
+			variant = "crimson"
+
+	b.add_theme_stylebox_override("normal", _get_flat_btn_style(variant, "normal", 14))
+	b.add_theme_stylebox_override("hover", _get_flat_btn_style(variant, "hover", 14))
+	b.add_theme_stylebox_override("pressed", _get_flat_btn_style(variant, "pressed", 14))
+	b.add_theme_stylebox_override("focus", _get_flat_btn_style(variant, "hover", 14))
+	b.add_theme_stylebox_override("disabled", _get_flat_btn_style(variant, "disabled", 14))
+
+	b.custom_minimum_size = min_size
+
+	var hbox := HBoxContainer.new()
+	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hbox.add_theme_constant_override("separation", 8)
+	b.add_child(hbox)
+
+	var ico := TextureRect.new()
+	ico.texture = get_friend_button_texture(type)
+	ico.custom_minimum_size = Vector2(38, 32)
+	ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hbox.add_child(ico)
+
+	if not label_txt.is_empty():
+		var lbl := Label.new()
+		lbl.text = label_txt
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lbl.add_theme_font_override("font", FONT_BODY)
+		lbl.add_theme_font_size_override("font_size", 20)
+		lbl.add_theme_color_override("font_color", COL_IVORY)
+		lbl.add_theme_color_override("font_shadow_color", Color(0.05, 0.02, 0.01, 0.92))
+		lbl.add_theme_constant_override("shadow_offset_y", 2)
+		lbl.add_theme_constant_override("shadow_outline_size", 2)
+		hbox.add_child(lbl)
+
+	ActionVFXManager.apply_button_juice(b, "tap_button")
+	return b
 
 
 static func make_badge_pill(txt: String, text_col: Color = COL_GOLD_BRIGHT, bg_col: Color = Color(0.10, 0.06, 0.03, 0.94), border_col: Color = Color(0.75, 0.58, 0.25, 0.80), font_size: int = 19) -> PanelContainer:

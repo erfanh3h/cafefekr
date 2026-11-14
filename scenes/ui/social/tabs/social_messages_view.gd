@@ -22,7 +22,7 @@ static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer)
 	hrow.add_theme_constant_override("separation", 12)
 	header_card.add_child(hrow)
 
-	var btn_new_dm := CafeSocialTheme.make_button("گفتگوی جدید", "gold", Vector2(185, 54), 21, CafeSocialTheme.BADGE_PLUS)
+	var btn_new_dm := CafeSocialTheme.make_button("گفتگوی جدید", "gold", Vector2(185, 54), 21)
 	btn_new_dm.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_open_friend_picker_modal(host)
@@ -159,9 +159,10 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	name_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text_col.add_child(name_row)
 
-	var st_lbl := CafeSocialTheme.make_body("• " + p_info["text"], 17, p_info["color"], HORIZONTAL_ALIGNMENT_RIGHT, false)
-	st_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_row.add_child(st_lbl)
+	var raw_st := str(pres.get("status", "offline"))
+	var st_badge := CafeSocialTheme.make_status_badge(raw_st, 24.0)
+	st_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_row.add_child(st_badge)
 
 	var nm_lbl := CafeSocialTheme.make_title(pname, 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	nm_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -219,7 +220,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	)
 	hrow.add_child(btn_back)
 
-	var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(142, 54), 20, CafeSocialTheme.ICO_RANK)
+	var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(142, 54), 20)
 	btn_inv.pressed.connect(func():
 		AudioManager.sfx_tap()
 		CafeSocialTheme.show_game_invite_modal(host, pid, pname, func(gtitle: String):
@@ -235,8 +236,9 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	hrow.add_child(p_col)
 
 	p_col.add_child(CafeSocialTheme.make_title(pname, 27, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
-	var lbl_partner_status := CafeSocialTheme.make_body(p_info["text"], 18, p_info["color"], HORIZONTAL_ALIGNMENT_RIGHT)
-	p_col.add_child(lbl_partner_status)
+	var st_badge_partner := CafeSocialTheme.make_status_badge(str(pres.get("status", "offline")), 26.0)
+	st_badge_partner.size_flags_horizontal = Control.SIZE_SHRINK_END
+	p_col.add_child(st_badge_partner)
 
 	var av_btn := Button.new()
 	av_btn.flat = true
@@ -279,7 +281,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	dm_input_row.add_theme_constant_override("separation", 10)
 	compose_card.add_child(dm_input_row)
 
-	var btn_send := CafeSocialTheme.make_button("ارسال", "emerald", Vector2(142, 64), 23, CafeSocialTheme.TEX_REPLY)
+	var btn_send := CafeSocialTheme.make_button("ارسال", "emerald", Vector2(142, 64), 23)
 	dm_input_row.add_child(btn_send)
 
 	host._dm_input = CafeSocialTheme.make_line_edit("پیام خصوصی خود را بنویسید...", 64.0, 23)
@@ -301,10 +303,8 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 				host._active_dm_partner_info = res["partner"]
 				var p_fresh: Dictionary = res["partner"]
 				var pr_fresh: Dictionary = p_fresh.get("presence", {}) if typeof(p_fresh.get("presence")) == TYPE_DICTIONARY else {}
-				var pf := CafeSocialTheme.format_presence(pr_fresh)
-				if is_instance_valid(lbl_partner_status):
-					lbl_partner_status.text = pf["text"]
-					lbl_partner_status.add_theme_color_override("font_color", pf["color"])
+				if is_instance_valid(st_badge_partner) and st_badge_partner is TextureRect:
+					st_badge_partner.texture = CafeSocialTheme.get_status_texture(str(pr_fresh.get("status", "offline")))
 			host._active_dm_messages = res.get("messages", []) if typeof(res.get("messages")) == TYPE_ARRAY else []
 			NetworkManager.unread_dms_count = max(0, NetworkManager.unread_dms_count - 1)
 			host._update_main_tab_buttons()
@@ -474,7 +474,7 @@ static func _open_friend_picker_modal(host: Control) -> void:
 				continue
 			var uid := str(f.get("user_id", f.get("_id", "")))
 			var uname := str(f.get("username", "بازیکن"))
-			var b := CafeSocialTheme.make_button(uname, "bronze", Vector2(0, 62), 23, CafeSocialTheme.BADGE_CHAT)
+			var b := CafeSocialTheme.make_button(uname, "bronze", Vector2(0, 62), 23)
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			b.pressed.connect(func():
 				AudioManager.sfx_tap()

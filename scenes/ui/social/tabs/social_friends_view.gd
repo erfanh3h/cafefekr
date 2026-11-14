@@ -198,7 +198,7 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 							results_box.add_child(_build_player_card(host, item, "search"))
 		)
 
-	var btn_search := CafeSocialTheme.make_button("جستجو", "gold", Vector2(150, 62), 23, CafeSocialTheme.ICO_SPARKLE)
+	var btn_search := CafeSocialTheme.make_button("جستجو", "gold", Vector2(150, 62), 23)
 	btn_search.pressed.connect(func():
 		AudioManager.sfx_tap()
 		do_search.call()
@@ -279,13 +279,8 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	stats_col.add_theme_constant_override("separation", 6)
 	top_row.add_child(stats_col)
 
-	stats_col.add_child(CafeSocialTheme.make_badge_pill(
-		p_info["text"],
-		p_info["color"],
-		Color(0.08, 0.05, 0.03, 0.94),
-		p_info["dot_color"],
-		18
-	))
+	var raw_st := str(pres.get("status", "offline"))
+	stats_col.add_child(CafeSocialTheme.make_status_badge(raw_st, 32.0))
 
 	var stat_pills := HBoxContainer.new()
 	stat_pills.add_theme_constant_override("separation", 6)
@@ -352,7 +347,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	act_row.add_theme_constant_override("separation", 8)
 	root.add_child(act_row)
 
-	var btn_prof := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(0, 50), 20, CafeSocialTheme.ICO_INFO)
+	var btn_prof := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(0, 50), 20)
 	btn_prof.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_prof.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -373,7 +368,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 
 		act_row.add_child(btn_prof)
 
-		var btn_dm := CafeSocialTheme.make_button("پیام", "sapphire", Vector2(0, 50), 20, CafeSocialTheme.BADGE_CHAT)
+		var btn_dm := CafeSocialTheme.make_button("پیام", "sapphire", Vector2(0, 50), 20)
 		btn_dm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_dm.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -381,7 +376,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		)
 		act_row.add_child(btn_dm)
 
-		var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(0, 50), 20, CafeSocialTheme.ICO_RANK)
+		var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(0, 50), 20)
 		btn_inv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_inv.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -402,7 +397,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 
 		# Secondary More Drawer (Remove / Block / Report)
 		root.add_child(extra_drawer)
-		var b_rem := CafeSocialTheme.make_button("حذف دوست", "crimson", Vector2(0, 48), 19)
+		var b_rem := CafeSocialTheme.make_friend_button("remove", "حذف دوست", Vector2(0, 48))
 		b_rem.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_rem.pressed.connect(func():
 			CafeSocialTheme.show_confirm_modal(
@@ -448,7 +443,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 
 	elif mode == "incoming_req":
 		act_row.add_child(btn_prof)
-		var btn_rej := CafeSocialTheme.make_button("رد درخواست", "crimson", Vector2(0, 50), 20, CafeSocialTheme.ICO_CANCEL)
+		var btn_rej := CafeSocialTheme.make_friend_button("reject", "رد درخواست", Vector2(0, 50))
 		btn_rej.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_rej.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -460,7 +455,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		)
 		act_row.add_child(btn_rej)
 
-		var btn_acc := CafeSocialTheme.make_button("پذیرش دوستی", "emerald", Vector2(0, 50), 20, CafeSocialTheme.ICO_CHECK)
+		var btn_acc := CafeSocialTheme.make_friend_button("accept", "پذیرش دوستی", Vector2(0, 50))
 		btn_acc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_acc.pressed.connect(func():
 			AudioManager.sfx_button()
@@ -474,7 +469,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 
 	elif mode == "outgoing_req":
 		act_row.add_child(btn_prof)
-		var btn_cancel := CafeSocialTheme.make_button("لغو درخواست", "crimson", Vector2(0, 50), 20)
+		var btn_cancel := CafeSocialTheme.make_friend_button("cancel", "لغو درخواست", Vector2(0, 50))
 		btn_cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_cancel.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -500,7 +495,22 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 			sp_wait.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			act_row.add_child(sp_wait)
 		else:
-			var btn_add := CafeSocialTheme.make_button("افزودن دوست", "emerald", Vector2(0, 50), 20, CafeSocialTheme.BADGE_PLUS)
+			var btn_add := CafeSocialTheme.make_friend_button("add", "افزودن دوست", Vector2(0, 50))
+			btn_add.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			btn_add.pressed.connect(func():
+				AudioManager.sfx_button()
+				btn_add.disabled = true
+				NetworkManager.api.send_friend_request(uid, "", func(ok: bool, _c: int, d: Variant):
+					if ok:
+						host._show_toast("درخواست دوستی برای «%s» ارسال شد!" % uname)
+						btn_add.text = "✓ درخواست ارسال شد"
+					else:
+						btn_add.disabled = false
+						var detail := str(d.get("detail", "خطا در ارسال درخواست")) if typeof(d) == TYPE_DICTIONARY else "خطا در ارسال درخواست"
+						host._show_toast(detail, CafeSocialTheme.COL_CRIMSON_TEXT)
+				)
+			)
+			act_row.add_child(btn_add)
 			btn_add.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			btn_add.pressed.connect(func():
 				AudioManager.sfx_button()

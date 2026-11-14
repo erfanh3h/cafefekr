@@ -238,16 +238,15 @@ func _update_main_tab_buttons() -> void:
 		ch.queue_free()
 
 	var tab_defs := [
-		{"id": "friends", "label": "دوستان", "icon": CafeSocialTheme.ICO_LOBBY, "badge": _incoming_requests.size()},
-		{"id": "clans", "label": "کلن‌ها", "icon": CafeSocialTheme.ICO_RANK, "badge": 0},
-		{"id": "messages", "label": "پیام‌ها", "icon": CafeSocialTheme.BADGE_CHAT, "badge": NetworkManager.unread_dms_count},
-		{"id": "notifs", "label": "اعلان‌ها", "icon": CafeSocialTheme.ICO_STAR, "badge": NetworkManager.unread_notifications_count},
+		{"id": "friends", "badge": _incoming_requests.size()},
+		{"id": "clans", "badge": 0},
+		{"id": "messages", "badge": NetworkManager.unread_dms_count},
+		{"id": "notifs", "badge": NetworkManager.unread_notifications_count},
 	]
 	for td in tab_defs:
 		var tid: String = td["id"]
 		var btn := CafeSocialTheme.make_nav_tab(
-			td["label"],
-			td["icon"],
+			tid,
 			int(td["badge"]),
 			current_main_tab == tid
 		)

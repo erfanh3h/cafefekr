@@ -306,9 +306,12 @@ func _create_rank_row(rank: int, username: String, val_str: String, img_id: int,
 	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var av_path = "res://assets/icons/Avatars/%d.png" % img_id
-	if ResourceLoader.exists(av_path):
-		avatar.texture = load(av_path)
+	if current_tab == "clans":
+		avatar.texture = CafeSocialTheme.get_clan_emblem_texture(img_id)
+	else:
+		var av_path = "res://assets/icons/Avatars/%d.png" % img_id
+		if ResourceLoader.exists(av_path):
+			avatar.texture = load(av_path)
 	av_frame.add_child(avatar)
 	row.add_child(av_frame)
 	
