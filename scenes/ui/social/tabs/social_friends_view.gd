@@ -294,11 +294,25 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	stat_pills.add_child(CafeSocialTheme.make_badge_pill("امتیاز %s" % GameManager.to_fa_num(score), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_BRONZE_BORDER, 17))
 	stat_pills.add_child(CafeSocialTheme.make_badge_pill("سطح %s" % GameManager.to_fa_num(lvl), CafeSocialTheme.COL_EMERALD_TEXT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_EMERALD_BORDER, 17))
 
-	# Center/Right: Name + Clan + Title (expandable, right aligned)
+	# Center/Right: Name + Clan + Title (expandable, right aligned, tappable for profile)
 	var info_col := VBoxContainer.new()
 	info_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	info_col.mouse_filter = Control.MOUSE_FILTER_PASS
+	info_col.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	info_col.add_theme_constant_override("separation", 4)
+	var tap_start_y: Array[float] = [-1.0]
+	info_col.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
+			if ev.pressed:
+				tap_start_y[0] = ev.global_position.y
+			elif tap_start_y[0] >= 0.0:
+				var moved: float = absf(ev.global_position.y - tap_start_y[0])
+				tap_start_y[0] = -1.0
+				if moved <= 14.0:
+					AudioManager.sfx_tap()
+					host._open_player_profile(u)
+	)
 	top_row.add_child(info_col)
 
 	var name_line := uname

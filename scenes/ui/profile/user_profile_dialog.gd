@@ -166,6 +166,8 @@ func _build_shell() -> void:
 
 
 func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
+	z_index = maxi(z_index, 60)
+	move_to_front()
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	if is_instance_valid(_dim_overlay):

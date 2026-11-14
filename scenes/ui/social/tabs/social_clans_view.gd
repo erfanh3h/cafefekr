@@ -989,7 +989,7 @@ static func open_clan_create_modal(host: Control) -> void:
 	var inp_name := CafeSocialTheme.make_line_edit("نام کلن (۳ تا ۲۴ حرف، مثلاً: عقاب‌های کافه فکر)", 62.0, 22)
 	vbox.add_child(inp_name)
 
-	var inp_tag := CafeSocialTheme.make_line_edit("تگ یکتای کلن (۳ تا ۸ کاراکتر انگلیسی، مثلاً: CAFE1)", 62.0, 22)
+	var inp_tag := CafeSocialTheme.make_line_edit("تگ یکتای کلن (۲ تا ۱۰ حرف یا عدد، مثلاً: CAFE1)", 62.0, 22)
 	vbox.add_child(inp_tag)
 
 	var inp_desc := CafeSocialTheme.make_line_edit("معرفی کوتاه و قوانین کلن (اختیاری)...", 62.0, 21)
@@ -1022,14 +1022,33 @@ static func open_clan_create_modal(host: Control) -> void:
 	jt_row.add_child(b_jt_open)
 	jt_row.add_child(CafeSocialTheme.make_body("نوع عضویت:", 21, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
 
+	var err_panel := PanelContainer.new()
+	err_panel.visible = false
+	err_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(Color(0.28, 0.08, 0.08, 0.96), CafeSocialTheme.COL_CRIMSON_TEXT, 12, 2, 12.0, 8.0))
+	var err_lbl := CafeSocialTheme.make_body("", 19, CafeSocialTheme.COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	err_panel.add_child(err_lbl)
+	vbox.add_child(err_panel)
+
 	var b_submit := CafeSocialTheme.make_button("تاسیس کلن (رایگان)", "gold", Vector2(0, 66), 25, CafeSocialTheme.ICO_CHECK, true)
 	b_submit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_submit.pressed.connect(func():
 		AudioManager.sfx_button()
+		err_panel.visible = false
+		var c_name := inp_name.text.strip_edges()
+		var c_tag := inp_tag.text.strip_edges().lstrip("#").strip_edges()
+		if c_name.length() < 3:
+			err_lbl.text = "نام کلن باید حداقل ۳ حرف باشد."
+			err_panel.visible = true
+			return
+		if c_tag.length() < 2 or c_tag.length() > 10:
+			err_lbl.text = "تگ کلن باید بین ۲ تا ۱۰ حرف یا عدد باشد."
+			err_panel.visible = true
+			return
+
 		b_submit.disabled = true
 		var payload := {
-			"name": inp_name.text.strip_edges(),
-			"tag": inp_tag.text.strip_edges(),
+			"name": c_name,
+			"tag": c_tag,
 			"description": inp_desc.text.strip_edges(),
 			"emblem_id": selected_emblem[0],
 			"language": "fa",
@@ -1039,7 +1058,8 @@ static func open_clan_create_modal(host: Control) -> void:
 		}
 		NetworkManager.api.create_clan(payload, func(ok: bool, _c: int, data: Variant):
 			if ok:
-				overlay.queue_free()
+				if is_instance_valid(overlay):
+					overlay.queue_free()
 				host._show_toast("کلن شما با موفقیت تاسیس شد!")
 				host.current_clans_subtab = "my_clan"
 				host._refresh_current_tab()
@@ -1047,6 +1067,9 @@ static func open_clan_create_modal(host: Control) -> void:
 				if is_instance_valid(b_submit):
 					b_submit.disabled = false
 				var detail := str(data.get("detail", "خطا در ساخت کلن")) if typeof(data) == TYPE_DICTIONARY else "خطا در ساخت کلن"
+				if is_instance_valid(err_lbl) and is_instance_valid(err_panel):
+					err_lbl.text = detail
+					err_panel.visible = true
 				host._show_toast(detail, CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
 	)

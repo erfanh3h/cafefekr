@@ -10,7 +10,6 @@ signal spectate_match_requested(game_id: String, game_type: String)
 
 var _dim_overlay: ColorRect
 var main_panel: PanelContainer
-var lbl_header_title: Label
 var _toast_panel: PanelContainer
 var lbl_status_toast: Label
 
@@ -160,14 +159,10 @@ func _build_ui_shell() -> void:
 	root_vbox.add_theme_constant_override("separation", 12)
 	inner_margin.add_child(root_vbox)
 
-	# 1. Ornate Top Bar (Close left, Engraved Title center, Refresh right)
-	var header_bar := PanelContainer.new()
-	header_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(16, 12.0, 10.0))
-	root_vbox.add_child(header_bar)
-
+	# 1. Slim Top Utility Row (Close left, Refresh right — no oversized title bar)
 	var header_row := HBoxContainer.new()
 	header_row.add_theme_constant_override("separation", 12)
-	header_bar.add_child(header_row)
+	root_vbox.add_child(header_row)
 
 	var btn_close := TextureButton.new()
 	btn_close.name = "BtnCloseTop"
@@ -184,12 +179,10 @@ func _build_ui_shell() -> void:
 	)
 	header_row.add_child(btn_close)
 
-	lbl_header_title = CafeSocialTheme.make_title(
-		"باشگاه اجتماعی کافه فکر",
-		36, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false
-	)
-	lbl_header_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header_row.add_child(lbl_header_title)
+	var top_spacer := Control.new()
+	top_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	header_row.add_child(top_spacer)
 
 	var btn_refresh := CafeSocialTheme.make_button("", "bronze", Vector2(56, 56), 20, CafeSocialTheme.ICO_REFRESH, false, 14)
 	btn_refresh.tooltip_text = "بروزرسانی"
@@ -303,13 +296,19 @@ func _clear_content() -> VBoxContainer:
 
 
 func _open_player_profile(u_dict: Dictionary) -> void:
-	var prof_dlg := get_tree().root.find_child("UserProfileDialog", true, false)
+	var prof_dlg: Node = null
+	if is_instance_valid(get_parent()):
+		prof_dlg = get_parent().get_node_or_null("UserProfileDialog")
+	if prof_dlg == null:
+		prof_dlg = get_tree().root.find_child("UserProfileDialog", true, false)
 	if prof_dlg and prof_dlg.has_method("open_for_user"):
 		var uid := str(u_dict.get("_id", u_dict.get("user_id", u_dict.get("id", ""))))
 		var clean_dict := u_dict.duplicate(true)
 		clean_dict["_id"] = uid
 		clean_dict["user_id"] = uid
 		prof_dlg.open_for_user(clean_dict)
+	else:
+		_show_toast("خطا در باز کردن پروفایل بازیکن.", CafeSocialTheme.COL_CRIMSON_TEXT)
 
 
 # ==============================================================================

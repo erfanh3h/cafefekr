@@ -3286,6 +3286,8 @@ func _setup_social_hub_integration() -> void:
 	if social_scene and is_instance_valid(ui_canvas):
 		social_dialog = social_scene.instantiate()
 		ui_canvas.add_child(social_dialog)
+		if is_instance_valid(user_profile_dialog):
+			ui_canvas.move_child(user_profile_dialog, -1)
 		if social_dialog.has_signal("closed"):
 			social_dialog.closed.connect(_update_backdrop_state)
 
