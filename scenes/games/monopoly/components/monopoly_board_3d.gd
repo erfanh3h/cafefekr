@@ -435,17 +435,17 @@ func _build_single_tile(tid: int) -> void:
 	tile_root.add_child(h_root)
 	_tile_house_roots[tid] = h_root
 
-	# Tile Name + Price Label3D (Large, Crisp, High-Contrast!)
+	# Tile Name + Price Label3D (Crisp, Horizontal & Right-Side-Up on All 4 Board Sides)
 	var lbl = Label3D.new()
 	lbl.font = FontHekayat
-	lbl.font_size = 64 if is_corner else 56
-	lbl.outline_size = 16 if is_corner else 14
-	lbl.pixel_size = 0.00078 if is_corner else 0.00066
-	lbl.line_spacing = -6.0
+	lbl.font_size = 56 if is_corner else 48
+	lbl.outline_size = 14 if is_corner else 12
+	lbl.pixel_size = 0.00070 if is_corner else 0.00058
+	lbl.line_spacing = -8.0
 	lbl.modulate = Color(1.0, 0.98, 0.92) if is_corner else Color(0.08, 0.05, 0.03)
 	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98) if is_corner else Color(1.0, 0.98, 0.90, 0.96)
 	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	lbl.width = 200.0 if is_corner else 155.0
+	lbl.width = 210.0 if is_corner else 195.0
 	var price: int = int(meta.get("price", 0))
 	var tax_amt: int = int(meta.get("tax_amount", 0))
 	var name_txt: String = str(meta.get("name", ""))
@@ -457,11 +457,15 @@ func _build_single_tile(tid: int) -> void:
 		lbl.text = "شروع\n+۲۰۰$"
 	else:
 		lbl.text = name_txt
-	lbl.position = Vector3(0.0, 0.0165, 0.016 if not is_corner else 0.0)
-	# Keep Top edge text right-side up for the player's camera view!
+	lbl.position = Vector3(0.0, 0.0165, 0.014 if not is_corner else 0.0)
+	# Keep text horizontal and right-side up for the player on all 4 sides!
 	var text_yaw: float = 0.0
-	if tid >= 17 and tid <= 23:
+	if tid >= 9 and tid <= 15:
+		text_yaw = 90.0
+	elif tid >= 17 and tid <= 23:
 		text_yaw = 180.0
+	elif tid >= 25 and tid <= 31:
+		text_yaw = -90.0
 	lbl.rotation_degrees = Vector3(-90.0, text_yaw, 0.0)
 	tile_root.add_child(lbl)
 
@@ -499,18 +503,18 @@ func _build_center_dice_sanctuary() -> void:
 	pad.material_override = _mat_felt_emerald
 	_dice_sanctuary.add_child(pad)
 
-	_dice_halo_ring = _create_ring_mesh(0.152, 0.012, _mat_highlight_gold)
+	_dice_halo_ring = _create_ring_mesh(0.136, 0.010, _mat_highlight_gold)
 	_dice_halo_ring.position = Vector3(0.0, 0.013, 0.0)
 	_dice_halo_ring.visible = false
 	_dice_sanctuary.add_child(_dice_halo_ring)
 
 	# Dual Yatzy-Style 3D Ivory Dice
 	_dice_pivots.clear()
-	for offset_x in [-0.056, 0.056]:
+	for offset_x in [-0.054, 0.054]:
 		var piv = Node3D.new()
-		piv.position = Vector3(offset_x, 0.048, -0.010)
+		piv.position = Vector3(offset_x, 0.048, -0.006)
 		_dice_sanctuary.add_child(piv)
-		var die_mesh = _create_yatzy_die_model(0.072)
+		var die_mesh = _create_yatzy_die_model(0.070)
 		piv.add_child(die_mesh)
 		_dice_pivots.append(piv)
 
@@ -518,12 +522,12 @@ func _build_center_dice_sanctuary() -> void:
 	var crest = Label3D.new()
 	crest.text = "مونوپولی"
 	crest.font = FontHekayat
-	crest.font_size = 68
-	crest.outline_size = 16
-	crest.pixel_size = 0.00108
+	crest.font_size = 60
+	crest.outline_size = 14
+	crest.pixel_size = 0.00092
 	crest.modulate = Color(1.0, 0.88, 0.38)
 	crest.outline_modulate = Color(0.06, 0.03, 0.01, 0.98)
-	crest.position = Vector3(0.0, 0.016, -0.225)
+	crest.position = Vector3(0.0, 0.016, -0.215)
 	crest.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_dice_sanctuary.add_child(crest)
 
@@ -531,12 +535,12 @@ func _build_center_dice_sanctuary() -> void:
 	_center_roll_label = Label3D.new()
 	_center_roll_label.text = "آماده پرتاب تاس"
 	_center_roll_label.font = FontHekayat
-	_center_roll_label.font_size = 54
-	_center_roll_label.outline_size = 14
-	_center_roll_label.pixel_size = 0.00092
+	_center_roll_label.font_size = 48
+	_center_roll_label.outline_size = 12
+	_center_roll_label.pixel_size = 0.00080
 	_center_roll_label.modulate = Color(0.99, 0.96, 0.88)
 	_center_roll_label.outline_modulate = Color(0.04, 0.02, 0.01, 0.96)
-	_center_roll_label.position = Vector3(0.0, 0.016, 0.215)
+	_center_roll_label.position = Vector3(0.0, 0.016, 0.205)
 	_center_roll_label.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_dice_sanctuary.add_child(_center_roll_label)
 

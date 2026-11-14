@@ -59,7 +59,7 @@ var board_3d: Node3D
 # --- 2D HUD & Modals ---
 var hud_layer: CanvasLayer
 var hud_root: Control
-var status_pill: PanelContainer
+var status_pill: Panel
 var status_label: Label
 var zoom_btn: Button
 var phase_badge_panel: PanelContainer
@@ -69,12 +69,12 @@ var portfolio_btn: Button
 var trade_btn: Button
 
 var bottom_dock: Control
-var dock_panel: PanelContainer
+var dock_panel: Panel
 var dock_panel_style: StyleBoxFlat
 var my_cash_lbl: Label
 var my_props_lbl: Label
 var my_jail_lbl: Label
-var guide_banner_panel: PanelContainer
+var guide_banner_panel: Panel
 var guide_banner_style: StyleBoxFlat
 var dock_info_lbl: Label
 var actions_vbox: VBoxContainer
@@ -204,7 +204,7 @@ func _style_btn(btn: Button, bg: Color, border: Color, text_col: Color = Color.W
 	btn.mouse_default_cursor_shape = Control.CURSOR_ARROW if disabled else Control.CURSOR_POINTING_HAND
 
 
-func _make_lbl(txt: String, f_size: int = 26, col: Color = Color(0.98, 0.96, 0.90), align: int = HORIZONTAL_ALIGNMENT_RIGHT, outline: int = 3) -> Label:
+func _make_lbl(txt: String, f_size: int = 26, col: Color = Color(0.98, 0.96, 0.90), align: int = HORIZONTAL_ALIGNMENT_RIGHT, outline: int = 3, wrap: bool = false) -> Label:
 	var l := Label.new()
 	l.text = txt
 	l.add_theme_font_override("font", FontHekayat)
@@ -214,7 +214,7 @@ func _make_lbl(txt: String, f_size: int = 26, col: Color = Color(0.98, 0.96, 0.9
 	l.add_theme_constant_override("outline_size", outline)
 	l.horizontal_alignment = align
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
 	return l
 
 
@@ -250,12 +250,16 @@ func _make_gamer_action_btn(title_txt: String, sub_txt: String, bg: Color, borde
 
 	var t_col: Color = Color(0.62, 0.62, 0.66, 0.80) if disabled else Color.WHITE
 	var s_col: Color = Color(0.54, 0.54, 0.58, 0.75) if disabled else Color(1.0, 0.94, 0.74, 0.96)
-	var t_lbl := _make_lbl(title_txt, 30 if is_primary else 27, t_col, HORIZONTAL_ALIGNMENT_CENTER, 3)
+	var t_lbl := _make_lbl(title_txt, 28 if is_primary else 25, t_col, HORIZONTAL_ALIGNMENT_CENTER, 3, false)
+	t_lbl.clip_text = true
+	t_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	t_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vb.add_child(t_lbl)
 
 	if not sub_txt.is_empty():
-		var s_lbl := _make_lbl(sub_txt, 21, s_col, HORIZONTAL_ALIGNMENT_CENTER, 2)
+		var s_lbl := _make_lbl(sub_txt, 20, s_col, HORIZONTAL_ALIGNMENT_CENTER, 2, false)
+		s_lbl.clip_text = true
+		s_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		s_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		vb.add_child(s_lbl)
 
@@ -275,16 +279,16 @@ func _enforce_hud_geometry() -> void:
 		hud_root.offset_bottom = 0
 	if is_instance_valid(status_pill):
 		status_pill.set_anchors_preset(Control.PRESET_TOP_WIDE)
-		status_pill.offset_left = 16
-		status_pill.offset_right = -16
-		status_pill.offset_top = 314
-		status_pill.offset_bottom = 396
+		status_pill.offset_left = 18
+		status_pill.offset_right = -18
+		status_pill.offset_top = 312
+		status_pill.offset_bottom = 384
 	if is_instance_valid(bottom_dock):
 		bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 		bottom_dock.offset_left = 16
 		bottom_dock.offset_right = -16
-		bottom_dock.offset_top = -476
-		bottom_dock.offset_bottom = -164
+		bottom_dock.offset_top = -436
+		bottom_dock.offset_bottom = -168
 	if is_instance_valid(dock_panel):
 		dock_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 		dock_panel.offset_left = 0
@@ -306,13 +310,13 @@ func _build_hud() -> void:
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(hud_root)
 
-	# 1. Floating Top Live Event & Phase Indicator Bar (Cleanly below TopHeader)
-	status_pill = PanelContainer.new()
+	# 1. Sleek 72px Top Utility & Live Event Bar (Fixed Panel — never stretches onto the 3D board!)
+	status_pill = Panel.new()
 	status_pill.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	status_pill.offset_left = 16
-	status_pill.offset_right = -16
-	status_pill.offset_top = 314
-	status_pill.offset_bottom = 396
+	status_pill.offset_left = 18
+	status_pill.offset_right = -18
+	status_pill.offset_top = 312
+	status_pill.offset_bottom = 384
 	status_pill.add_theme_stylebox_override(
 		"panel",
 		_make_glass_style(Color(0.07, 0.05, 0.04, 0.94), Color(0.92, 0.74, 0.32, 0.88), 20, 2)
@@ -320,24 +324,28 @@ func _build_hud() -> void:
 	hud_root.add_child(status_pill)
 
 	var pm := MarginContainer.new()
+	pm.set_anchors_preset(Control.PRESET_FULL_RECT)
 	pm.add_theme_constant_override("margin_left", 12)
 	pm.add_theme_constant_override("margin_right", 14)
-	pm.add_theme_constant_override("margin_top", 6)
-	pm.add_theme_constant_override("margin_bottom", 6)
+	pm.add_theme_constant_override("margin_top", 8)
+	pm.add_theme_constant_override("margin_bottom", 8)
 	status_pill.add_child(pm)
 
 	var phb := HBoxContainer.new()
+	phb.alignment = BoxContainer.ALIGNMENT_CENTER
 	phb.add_theme_constant_override("separation", 10)
 	pm.add_child(phb)
 
 	zoom_btn = Button.new()
 	zoom_btn.text = "🔍 نما"
-	zoom_btn.custom_minimum_size = Vector2(118, 56)
-	_style_btn(zoom_btn, Color(0.14, 0.22, 0.32, 0.96), Color(0.56, 0.78, 0.95, 0.88), Color(0.95, 0.98, 1.0), 24)
+	zoom_btn.custom_minimum_size = Vector2(114, 52)
+	zoom_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_style_btn(zoom_btn, Color(0.14, 0.22, 0.32, 0.96), Color(0.56, 0.78, 0.95, 0.88), Color(0.95, 0.98, 1.0), 23)
 	zoom_btn.pressed.connect(_on_zoom_cycle_pressed)
 	phb.add_child(zoom_btn)
 
 	phase_badge_panel = PanelContainer.new()
+	phase_badge_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	phase_badge_style = _make_glass_style(Color(0.14, 0.36, 0.22, 0.96), Color(0.50, 0.96, 0.62, 0.92), 14, 2)
 	phase_badge_style.content_margin_left = 14
 	phase_badge_style.content_margin_right = 14
@@ -346,32 +354,35 @@ func _build_hud() -> void:
 	phase_badge_panel.add_theme_stylebox_override("panel", phase_badge_style)
 	phb.add_child(phase_badge_panel)
 
-	phase_badge_lbl = _make_lbl("🎯 آماده شروع", 23, Color(1.0, 0.98, 0.90), HORIZONTAL_ALIGNMENT_CENTER, 3)
+	phase_badge_lbl = _make_lbl("🎯 آماده شروع", 22, Color(1.0, 0.98, 0.90), HORIZONTAL_ALIGNMENT_CENTER, 3, false)
 	phase_badge_panel.add_child(phase_badge_lbl)
 
-	status_label = _make_lbl(_last_feed_text, 25, Color(1.0, 0.96, 0.84), HORIZONTAL_ALIGNMENT_RIGHT, 3)
+	status_label = _make_lbl(_last_feed_text, 24, Color(1.0, 0.96, 0.84), HORIZONTAL_ALIGNMENT_RIGHT, 3, false)
 	status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_label.clip_text = true
+	status_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	phb.add_child(status_label)
 
-	# 2. Bottom Floating Gamer Command Dock (Strictly y=1444..1756, 100% above the 8 BottomBar buttons!)
+	# 2. Bottom Floating Gamer Command Dock (Strictly y=1484..1752, 100% above the 8 BottomBar buttons!)
 	bottom_dock = Control.new()
 	bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_dock.offset_left = 16
 	bottom_dock.offset_right = -16
-	bottom_dock.offset_top = -476
-	bottom_dock.offset_bottom = -164
+	bottom_dock.offset_top = -436
+	bottom_dock.offset_bottom = -168
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(bottom_dock)
 
-	dock_panel = PanelContainer.new()
+	dock_panel = Panel.new()
 	dock_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dock_panel_style = _make_glass_style(Color(0.07, 0.06, 0.08, 0.96), Color(0.92, 0.74, 0.30, 0.92), 24, 3)
 	dock_panel.add_theme_stylebox_override("panel", dock_panel_style)
 	bottom_dock.add_child(dock_panel)
 
 	var dm := MarginContainer.new()
-	dm.add_theme_constant_override("margin_left", 16)
-	dm.add_theme_constant_override("margin_right", 16)
+	dm.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dm.add_theme_constant_override("margin_left", 14)
+	dm.add_theme_constant_override("margin_right", 14)
 	dm.add_theme_constant_override("margin_top", 10)
 	dm.add_theme_constant_override("margin_bottom", 10)
 	dock_panel.add_child(dm)
@@ -380,53 +391,75 @@ func _build_hud() -> void:
 	inner_vb.add_theme_constant_override("separation", 8)
 	dm.add_child(inner_vb)
 
-	# Row 1: Unified Player Stats + Quick Property & Trade Buttons (All in ONE place!)
+	# Row 1 (Height 52px): Quick Property & Trade Buttons + Sleek Horizontal Stats Strip
 	var stats_hb := HBoxContainer.new()
+	stats_hb.custom_minimum_size = Vector2(0, 52)
 	stats_hb.add_theme_constant_override("separation", 10)
 	inner_vb.add_child(stats_hb)
 
 	portfolio_btn = Button.new()
 	portfolio_btn.text = "🏘️ املاک من"
-	portfolio_btn.custom_minimum_size = Vector2(184, 54)
-	_style_btn(portfolio_btn, Color(0.15, 0.34, 0.52, 0.96), Color(0.52, 0.82, 1.0, 0.90), Color(0.96, 0.99, 1.0), 24)
+	portfolio_btn.custom_minimum_size = Vector2(180, 50)
+	portfolio_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_style_btn(portfolio_btn, Color(0.15, 0.34, 0.52, 0.96), Color(0.52, 0.82, 1.0, 0.90), Color(0.96, 0.99, 1.0), 23)
 	portfolio_btn.pressed.connect(_open_portfolio_modal)
 	stats_hb.add_child(portfolio_btn)
 
 	trade_btn = Button.new()
 	trade_btn.text = "🤝 معامله"
-	trade_btn.custom_minimum_size = Vector2(148, 54)
-	_style_btn(trade_btn, Color(0.42, 0.25, 0.08, 0.96), Color(0.98, 0.76, 0.28, 0.90), Color(1.0, 0.96, 0.86), 24)
+	trade_btn.custom_minimum_size = Vector2(146, 50)
+	trade_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_style_btn(trade_btn, Color(0.42, 0.25, 0.08, 0.96), Color(0.98, 0.76, 0.28, 0.90), Color(1.0, 0.96, 0.86), 23)
 	trade_btn.pressed.connect(_open_trade_builder_modal)
 	stats_hb.add_child(trade_btn)
 
-	my_jail_lbl = _make_lbl("🎫 ۰", 25, Color(0.72, 0.90, 1.0), HORIZONTAL_ALIGNMENT_CENTER, 3)
-	stats_hb.add_child(my_jail_lbl)
+	var stat_box := Panel.new()
+	stat_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stat_box.custom_minimum_size = Vector2(0, 50)
+	stat_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	stat_box.add_theme_stylebox_override("panel", _make_glass_style(Color(0.12, 0.10, 0.14, 0.94), Color(0.75, 0.62, 0.28, 0.72), 14, 1))
+	stats_hb.add_child(stat_box)
 
-	my_props_lbl = _make_lbl("🏠 ۰ ملک", 27, Color(1.0, 0.90, 0.45), HORIZONTAL_ALIGNMENT_CENTER, 3)
+	var sb_m := MarginContainer.new()
+	sb_m.set_anchors_preset(Control.PRESET_FULL_RECT)
+	sb_m.add_theme_constant_override("margin_left", 14)
+	sb_m.add_theme_constant_override("margin_right", 14)
+	stat_box.add_child(sb_m)
+
+	var sb_hb := HBoxContainer.new()
+	sb_hb.add_theme_constant_override("separation", 14)
+	sb_m.add_child(sb_hb)
+
+	my_jail_lbl = _make_lbl("🎫 آزادی: ۰", 22, Color(0.72, 0.90, 1.0), HORIZONTAL_ALIGNMENT_LEFT, 2, false)
+	sb_hb.add_child(my_jail_lbl)
+
+	my_props_lbl = _make_lbl("🏠 ۰ ملک", 24, Color(1.0, 0.90, 0.45), HORIZONTAL_ALIGNMENT_CENTER, 3, false)
 	my_props_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stats_hb.add_child(my_props_lbl)
+	sb_hb.add_child(my_props_lbl)
 
-	my_cash_lbl = _make_lbl("💵 ۱۵۰۰$", 32, Color(0.45, 0.98, 0.56), HORIZONTAL_ALIGNMENT_RIGHT, 3)
-	stats_hb.add_child(my_cash_lbl)
+	my_cash_lbl = _make_lbl("💵 ۱۵۰۰$", 28, Color(0.45, 0.98, 0.56), HORIZONTAL_ALIGNMENT_RIGHT, 3, false)
+	sb_hb.add_child(my_cash_lbl)
 
-	# Row 2: Highlighted Step-by-Step Guidance Callout Banner (Tells player WHERE to press!)
-	guide_banner_panel = PanelContainer.new()
-	guide_banner_style = _make_glass_style(Color(0.12, 0.24, 0.16, 0.94), Color(0.46, 0.94, 0.58, 0.88), 14, 2)
-	guide_banner_style.content_margin_left = 14
-	guide_banner_style.content_margin_right = 14
-	guide_banner_style.content_margin_top = 6
-	guide_banner_style.content_margin_bottom = 6
+	# Row 2 (Height 44px): Highlighted Step-by-Step Guidance Callout Strip
+	guide_banner_panel = Panel.new()
+	guide_banner_panel.custom_minimum_size = Vector2(0, 44)
+	guide_banner_style = _make_glass_style(Color(0.12, 0.24, 0.16, 0.94), Color(0.46, 0.94, 0.58, 0.88), 12, 2)
 	guide_banner_panel.add_theme_stylebox_override("panel", guide_banner_style)
 	inner_vb.add_child(guide_banner_panel)
 
-	dock_info_lbl = _make_lbl("برای مشاهده سند هر خانه، روی آن در صفحه ضربه بزنید.", 25, Color(0.99, 0.97, 0.90), HORIZONTAL_ALIGNMENT_CENTER, 3)
+	dock_info_lbl = _make_lbl("برای مشاهده سند هر خانه، روی آن در صفحه ضربه بزنید.", 23, Color(0.99, 0.97, 0.90), HORIZONTAL_ALIGNMENT_CENTER, 3, false)
+	dock_info_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dock_info_lbl.offset_left = 10
+	dock_info_lbl.offset_right = -10
+	dock_info_lbl.clip_text = true
+	dock_info_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	guide_banner_panel.add_child(dock_info_lbl)
 
-	# Row 3: Large Gamer Action Cards
+	# Row 3 (Remaining ~136px): Large Gamer Action Cards
 	actions_vbox = VBoxContainer.new()
 	actions_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	actions_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	actions_vbox.add_theme_constant_override("separation", 8)
+	actions_vbox.add_theme_constant_override("separation", 6)
 	inner_vb.add_child(actions_vbox)
 
 	# 3. Centered Modals & Upper-Mid Contextual Hints
@@ -629,7 +662,8 @@ func _build_card_popup() -> void:
 	card_popup_title = _make_lbl("🎴 کارت شانس", 38, Color(1.0, 0.88, 0.36), HORIZONTAL_ALIGNMENT_CENTER, 4)
 	vb.add_child(card_popup_title)
 
-	card_popup_desc = _make_lbl("", 30, Color(0.98, 0.96, 0.92), HORIZONTAL_ALIGNMENT_CENTER, 3)
+	card_popup_desc = _make_lbl("", 28, Color(0.98, 0.96, 0.92), HORIZONTAL_ALIGNMENT_CENTER, 3, true)
+	card_popup_desc.custom_minimum_size = Vector2(760, 0)
 	vb.add_child(card_popup_desc)
 
 
@@ -651,7 +685,8 @@ func _build_hint_banner() -> void:
 	hint_banner_panel.add_theme_stylebox_override("panel", hint_banner_style)
 	hud_root.add_child(hint_banner_panel)
 
-	hint_banner_lbl = _make_lbl("", 30, Color(1.0, 0.96, 0.86), HORIZONTAL_ALIGNMENT_CENTER, 4)
+	hint_banner_lbl = _make_lbl("", 28, Color(1.0, 0.96, 0.86), HORIZONTAL_ALIGNMENT_CENTER, 4, true)
+	hint_banner_lbl.custom_minimum_size = Vector2(780, 0)
 	hint_banner_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hint_banner_panel.add_child(hint_banner_lbl)
 
@@ -817,7 +852,7 @@ func _refresh_hud_dock() -> void:
 	if is_instance_valid(my_props_lbl):
 		my_props_lbl.text = "🏠 %s ملک" % MonopolyData.fa_num(my_owned)
 	if is_instance_valid(my_jail_lbl):
-		my_jail_lbl.text = "🎫 %s" % MonopolyData.fa_num(my_jcards)
+		my_jail_lbl.text = "🎫 آزادی: %s" % MonopolyData.fa_num(my_jcards)
 
 	if is_instance_valid(portfolio_btn):
 		var b_cnt: int = buildable_tiles.size() if my_turn_now else 0
@@ -1062,7 +1097,8 @@ func _populate_portfolio_list() -> void:
 			owned_ids.append(tid)
 
 	if owned_ids.is_empty():
-		var empty_lbl := _make_lbl("هنوز هیچ ملکی نخریده‌اید! با فرود روی خانه‌های آزاد یا شرکت در مزایده، املاک تهران را بخرید.", 28, Color(0.86, 0.84, 0.80), HORIZONTAL_ALIGNMENT_CENTER, 2)
+		var empty_lbl := _make_lbl("هنوز هیچ ملکی نخریده‌اید! با فرود روی خانه‌های آزاد یا شرکت در مزایده، املاک تهران را بخرید.", 28, Color(0.86, 0.84, 0.80), HORIZONTAL_ALIGNMENT_CENTER, 2, true)
+		empty_lbl.custom_minimum_size = Vector2(780, 0)
 		portfolio_list_vbox.add_child(empty_lbl)
 		return
 
