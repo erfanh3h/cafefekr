@@ -98,7 +98,7 @@ func _build_ui_shell() -> void:
 	title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	title_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 	title_lbl.add_theme_constant_override("shadow_outline_size", 2)
-	title_lbl.text = "باشگاه دوستان و کلن‌ها"
+	title_lbl.text = "باشگاه دوستان و اتحادها"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	top_row.add_child(title_lbl)
 
@@ -160,7 +160,6 @@ func _update_main_tab_buttons() -> void:
 		{"id": "friends", "badge": _incoming_requests.size()},
 		{"id": "clans", "badge": 0},
 		{"id": "messages", "badge": NetworkManager.unread_dms_count},
-		{"id": "notifs", "badge": NetworkManager.unread_notifications_count},
 	]
 	for td in tab_defs:
 		var tid: String = td["id"]
@@ -191,8 +190,8 @@ func _refresh_current_tab() -> void:
 			SocialClansView.render(self, body_vbox)
 		"messages":
 			SocialMessagesView.render(self, body_vbox)
-		"notifs":
-			SocialNotificationsView.render(self, body_vbox)
+		_:
+			SocialFriendsView.render(self, body_vbox)
 
 
 func _clear_content() -> VBoxContainer:
@@ -238,7 +237,7 @@ func _send_clan_chat_message() -> void:
 				_clan_chat_messages.append(data["result"])
 				SocialClansView.render_clan_chat(self)
 			elif typeof(data) == TYPE_DICTIONARY:
-				_show_toast(str(data.get("detail", "خطا در ارسال پیام کلن")), CafeSocialTheme.COL_CRIMSON_TEXT)
+				_show_toast(str(data.get("detail", "خطا در ارسال پیام اتحاد")), CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
 
 
@@ -295,10 +294,8 @@ func _on_realtime_clan_chat_deleted(message_id: String) -> void:
 
 
 func _on_realtime_clan_event(event: Dictionary) -> void:
-	_show_toast(str(event.get("message", "رویداد جدید در کلن")), CafeSocialTheme.COL_GOLD_BRIGHT)
+	_show_toast(str(event.get("message", "رویداد جدید در اتحاد")), CafeSocialTheme.COL_GOLD_BRIGHT)
 
 
 func _on_realtime_notification_received(_notif: Dictionary) -> void:
 	_update_main_tab_buttons()
-	if current_main_tab == "notifs":
-		_refresh_current_tab()

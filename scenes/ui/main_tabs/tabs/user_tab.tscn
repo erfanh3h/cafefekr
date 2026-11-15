@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/user_tab.gd" id="1_user_script"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
-[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font_vazir"]
+[ext_resource type="PackedScene" path="res://scenes/ui/header/user_header.tscn" id="2_user_header"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_board_shell"]
 
@@ -54,9 +55,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
+theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 24
+theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
 [node name="MainPanel" type="PanelContainer" parent="OuterMargin"]
@@ -65,28 +66,17 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_board_shell")
 
 [node name="InnerMargin" type="MarginContainer" parent="OuterMargin/MainPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
 [node name="VBox" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="TitleRow" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
+[node name="UserHeader" parent="OuterMargin/MainPanel/InnerMargin/VBox" instance=ExtResource("2_user_header")]
 layout_mode = 2
-alignment = 2
-
-[node name="LblTitle" type="Label" parent="OuterMargin/MainPanel/InnerMargin/VBox/TitleRow"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
-theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 30
-text = "حساب کاربری و مشخصات"
-horizontal_alignment = 2
 
 [node name="ToastPanel" type="PanelContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
 visible = false
@@ -96,7 +86,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_toast")
 [node name="LblToast" type="Label" parent="OuterMargin/MainPanel/InnerMargin/VBox/ToastPanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.90, 0.80, 1)
-theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_fonts/font = ExtResource("4_font_vazir")
 theme_override_font_sizes/font_size = 18
 text = "پیام سیستم"
 horizontal_alignment = 1
@@ -124,7 +114,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
-text = "آواتار"
+text = "ظاهر نمایه"
 
 [node name="BtnPrivacy" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
 custom_minimum_size = Vector2(0, 52)
@@ -134,13 +124,13 @@ focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "حریم خصوصی"
 
-[node name="BtnWallet" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
+[node name="BtnNotifications" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
-text = "کیف پول"
+text = "اعلان‌ها"
 
 [node name="BtnAccount" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
 custom_minimum_size = Vector2(0, 52)
@@ -178,7 +168,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 14
 
-[node name="WalletContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
+[node name="NotificationsContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3

@@ -26,8 +26,8 @@ signal spectate_match_requested(game_id: String, game_type: String)
 
 @onready var bg_rect: TextureRect = $BackgroundLayer/BgRect
 @onready var bg_rect_fade: TextureRect = $BackgroundLayer/BgRectFade
-@onready var top_utility_bar = $MainVBox/TopUtilityBar
-@onready var compact_user_header = $MainVBox/CompactUserHeader
+var top_utility_bar = null
+var compact_user_header = null
 @onready var tab_content_container: MarginContainer = $MainVBox/TabContentContainer
 @onready var bottom_navigation = $MainVBox/BottomNavigation
 
@@ -92,39 +92,9 @@ var active_tab_name: String:
 var _bg_tween: Tween = null
 
 func _ready() -> void:
-	# Wire Top Utility Bar
-	top_utility_bar.exit_requested.connect(func():
-		exit_confirm_dialog.open()
-	)
-	top_utility_bar.watch_live_requested.connect(func():
-		watch_live_requested.emit()
-	)
-	top_utility_bar.sound_settings_requested.connect(func():
-		sound_settings_popup.open()
-	)
-
-	# Wire Compact User Header
-	compact_user_header.header_clicked.connect(func():
-		switch_to_tab("user")
-	)
-	compact_user_header.store_requested.connect(func():
-		store_requested.emit()
-	)
-	compact_user_header.login_requested.connect(func():
-		login_requested.emit()
-	)
-	compact_user_header.change_username_requested.connect(func():
-		change_username_requested.emit()
-	)
-
 	# Wire Bottom Navigation
 	bottom_navigation.tab_selected.connect(func(t_name: String):
 		switch_to_tab(t_name)
-	)
-
-	# Sound Settings closed callback
-	sound_settings_popup.closed.connect(func():
-		top_utility_bar.update_sound_icon()
 	)
 
 	# Apply initial background color grading
@@ -184,6 +154,10 @@ func _wire_tab_signals(tab_name: String, tab_inst: Control) -> void:
 			tab_inst.multi_rank_pressed.connect(func(): multi_rank_pressed.emit())
 			tab_inst.classic_rank_pressed.connect(func(): classic_rank_pressed.emit())
 			tab_inst.lobby_pressed.connect(func(): lobby_pressed.emit())
+			if tab_inst.has_signal("watch_live_requested"):
+				tab_inst.watch_live_requested.connect(func(): watch_live_requested.emit())
+			if tab_inst.has_signal("exit_requested"):
+				tab_inst.exit_requested.connect(func(): exit_confirm_dialog.open())
 		"social":
 			tab_inst.spectate_match_requested.connect(func(gid: String, gtype: String):
 				spectate_match_requested.emit(gid, gtype)
@@ -191,8 +165,11 @@ func _wire_tab_signals(tab_name: String, tab_inst: Control) -> void:
 		"user":
 			tab_inst.change_username_requested.connect(func(): change_username_requested.emit())
 			tab_inst.phone_upgrade_requested.connect(func(): phone_upgrade_requested.emit())
+			if tab_inst.has_signal("store_requested"):
+				tab_inst.store_requested.connect(func(): store_requested.emit())
+			if tab_inst.has_signal("login_requested"):
+				tab_inst.login_requested.connect(func(): login_requested.emit())
 			tab_inst.logout_confirmed.connect(func():
-				compact_user_header.update_ui()
 				logout_confirmed.emit()
 			)
 		"history":

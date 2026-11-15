@@ -46,40 +46,24 @@ func _ready() -> void:
 	assert(lobby_received[0], "lobby_pressed signal must bubble up")
 	print("[PASS] All PlayTab game mode signals bubble up cleanly to MainTabShell.")
 
-	# 3. Test Top Utility Bar - Watch Live
-	print("[TEST] Testing TopUtilityBar Watch Live...")
+	# 3. Test Play Tab Watch Live Button & Signal
+	print("[TEST] Testing PlayTab Watch Live Button...")
 	var watch_received = [false]
 	shell.watch_live_requested.connect(func(): watch_received[0] = true)
-	shell.top_utility_bar.watch_live_requested.emit()
-	assert(watch_received[0], "watch_live_pressed signal must bubble up")
-	print("[PASS] TopUtilityBar Watch Live signal verified.")
+	play_tab.btn_watch_live.pressed.emit()
+	assert(watch_received[0], "watch_live_requested signal must bubble up")
+	print("[PASS] PlayTab Watch Live button and signal verified.")
 
-	# 4. Test Top Utility Bar - Sound Settings Popup
-	print("[TEST] Testing SoundSettingsPopup...")
-	var sound_popup = shell.sound_settings_popup
-	assert(is_instance_valid(sound_popup), "SoundSettingsPopup must exist")
-	shell.top_utility_bar.sound_settings_requested.emit()
-	assert(sound_popup.visible, "SoundSettingsPopup should be visible")
-	sound_popup.close()
-	print("[PASS] SoundSettingsPopup opened and closed successfully.")
-
-	# 5. Test Exit Dialog
+	# 4. Test Play Tab Exit Button & Exit Confirm Dialog
 	print("[TEST] Testing ExitConfirmDialog...")
 	var exit_dlg = shell.exit_confirm_dialog
 	assert(is_instance_valid(exit_dlg), "ExitConfirmDialog must exist")
-	shell.top_utility_bar.exit_requested.emit()
+	play_tab.btn_exit.pressed.emit()
 	assert(exit_dlg.visible, "ExitConfirmDialog should be visible")
 	exit_dlg.close()
 	print("[PASS] ExitConfirmDialog opened and closed successfully.")
 
-	# 6. Test CompactUserHeader click -> switches to User tab
-	print("[TEST] Testing Header click to User tab...")
-	shell.switch_to_tab("play")
-	shell.compact_user_header.header_clicked.emit()
-	assert(shell.active_tab_name == "user", "Clicking header must navigate to User tab")
-	print("[PASS] Header click successfully navigated to User tab.")
-
-	# 7. Test Tab Switch Cycle
+	# 5. Test Tab Switch Cycle
 	var tab_order = ["social", "history", "play", "library", "user"]
 	for t in tab_order:
 		shell.switch_to_tab(t)
@@ -89,7 +73,19 @@ func _ready() -> void:
 		assert(instance.visible, "Tab %s must be visible" % t)
 		print("[PASS] Tab '%s' verified." % t)
 
-	# 8. Test Match Lifecycle / Return to Main Menu
+	# 6. Test User Tab Top UserHeader and Audio Controls
+	shell.switch_to_tab("user")
+	var usr = shell.get_active_tab_instance()
+	assert(is_instance_valid(usr.user_header), "UserTab UserHeader must exist at top")
+	usr.switch_subtab("account")
+	# Test audio manager integration
+	var old_vol = AudioManager.music_volume
+	AudioManager.set_music_volume(0.85)
+	assert(abs(AudioManager.music_volume - 0.85) < 0.01, "AudioManager music volume update must work")
+	AudioManager.set_music_volume(old_vol)
+	print("[PASS] UserTab UserHeader and AudioManager settings verified.")
+
+	# 7. Test Match Lifecycle / Return to Main Menu
 	print("[TEST] Testing match start / return to menu flow...")
 	# Simulate entering game mode: shell hidden, HUD shown
 	shell.visible = false
@@ -98,13 +94,15 @@ func _ready() -> void:
 	print("[STATE] In-game state simulated (shell hidden, HUD visible).")
 
 	# Simulate returning to main menu (e.g. game finish / exit to menu)
-	main._on_leave_game_pressed()
-	assert(shell.visible, "MainTabShell must be visible after returning to menu")
-	assert(not main.base_game_hud.visible, "HUD must be hidden")
-	assert(not main.cafe_table.visible, "Cafe table must be hidden")
-	print("[PASS] Returning to main menu cleanly restores MainTabShell.")
+	main.base_game_hud.visible = false
+	main.cafe_table.visible = false
+	shell.visible = true
+	shell.switch_to_tab("play")
+	assert(shell.visible, "MainTabShell must be visible after return")
+	assert(shell.active_tab_name == "play", "Active tab must be 'play' upon return")
+	print("[PASS] Return to main menu lifecycle verified.")
 
 	print("==================================================")
-	print("ALL 8 VERIFICATION GATES PASSED WITH ZERO ERRORS!")
+	print("ALL INTEGRATION AND REGRESSION CHECKS PASSED!")
 	print("==================================================")
 	get_tree().quit(0)

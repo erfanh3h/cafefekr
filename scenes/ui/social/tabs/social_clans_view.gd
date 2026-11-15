@@ -19,10 +19,10 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	sub_bar.add_child(sub_row)
 
 	var subtabs := [
-		{"id": "my_clan", "label": "کلن من"},
+		{"id": "my_clan", "label": "اتحاد من"},
 		{"id": "members", "label": "اعضا"},
-		{"id": "chat", "label": "چت کلن"},
-		{"id": "discover", "label": "کلن‌ها و رتبه‌بندی"},
+		{"id": "chat", "label": "چت اتحاد"},
+		{"id": "discover", "label": "اتحادها و رتبه‌بندی"},
 	]
 	for sd in subtabs:
 		var sid: String = sd["id"]
@@ -42,7 +42,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	body_vbox.add_child(content_holder)
 
 	if host.current_clans_subtab in ["my_clan", "members"]:
-		content_holder.add_child(CafeSocialTheme.make_loading_state("در حال دریافت اطلاعات کلن..."))
+		content_holder.add_child(CafeSocialTheme.make_loading_state("در حال دریافت اطلاعات اتحاد..."))
 		NetworkManager.api.get_my_clan(func(ok: bool, _c: int, data: Variant):
 			if not is_instance_valid(content_holder):
 				return
@@ -57,7 +57,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 			else:
 				content_holder.add_child(CafeSocialTheme.make_empty_state(
 					CafeSocialTheme.ICO_INFO,
-					"خطا در دریافت اطلاعات کلن",
+					"خطا در دریافت اطلاعات اتحاد",
 					"لطفاً اتصال خود را بررسی کرده و دوباره تلاش کنید.",
 					"تلاش مجدد", "gold", func(): host._refresh_current_tab()
 				))
@@ -81,13 +81,13 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 	var shield := CafeSocialTheme.make_clan_emblem(1, 96.0)
 	hv.add_child(shield)
 
-	hv.add_child(CafeSocialTheme.make_title("به یک کلن بپیوندید یا کلن خودتان را بسازید!", 35, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	hv.add_child(CafeSocialTheme.make_title("به یک اتحاد بپیوندید یا اتحاد خودتان را بسازید!", 35, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
 	hv.add_child(CafeSocialTheme.make_body(
-		"در کلن‌های کافه فکر می‌توانید با دوستان و هم‌تیمی‌های خود چت کنید، چالش‌های هفتگی کلن را فتح نمایید، بازی دوستانه بسازید و نام کلن خود را در صدر جدول قهرمانان ثبت کنید.",
+		"در اتحادهای کافه فکر می‌توانید با دوستان و هم‌تیمی‌های خود چت کنید، چالش‌های هفتگی اتحاد را فتح نمایید، بازی دوستانه بسازید و نام اتحاد خود را در صدر جدول قهرمانان ثبت کنید.",
 		21, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true
 	))
 	hv.add_child(CafeSocialTheme.make_badge_pill(
-		"تاسیس کلن کاملاً رایگان است (سهمیه هر بازیکن: ۱ کلن)",
+		"تاسیس اتحاد کاملاً رایگان است (سهمیه هر بازیکن: ۱ اتحاد)",
 		CafeSocialTheme.COL_EMERALD_TEXT,
 		CafeSocialTheme.COL_EMERALD_BG,
 		CafeSocialTheme.COL_EMERALD_BORDER,
@@ -99,7 +99,7 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	hv.add_child(btn_row)
 
-	var b_search := CafeSocialTheme.make_button("جستجو و عضویت در کلن", "emerald", Vector2(0, 58), 25)
+	var b_search := CafeSocialTheme.make_button("جستجو و عضویت در اتحاد", "emerald", Vector2(0, 58), 25)
 	b_search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_search.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -108,7 +108,7 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 	)
 	btn_row.add_child(b_search)
 
-	var b_create := CafeSocialTheme.make_button("تاسیس کلن جدید (رایگان)", "gold", Vector2(0, 58), 25)
+	var b_create := CafeSocialTheme.make_button("تاسیس اتحاد جدید (رایگان)", "gold", Vector2(0, 58), 25)
 	b_create.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_create.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -120,14 +120,14 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 	var invs: Array = host._my_clan_data.get("invitations", []) if typeof(host._my_clan_data.get("invitations")) == TYPE_ARRAY else []
 	if not invs.is_empty():
 		vbox.add_child(CafeSocialTheme.make_ornate_section_header(
-			"دعوت‌نامه‌های کلن برای شما", CafeSocialTheme.ICO_STAR,
+			"دعوت‌نامه‌های اتحاد برای شما", CafeSocialTheme.ICO_STAR,
 			"%s دعوت‌نامه در انتظار پاسخ" % GameManager.to_fa_num(invs.size())
 		))
 		for inv in invs:
 			if typeof(inv) != TYPE_DICTIONARY:
 				continue
 			var c_sub: Dictionary = inv.get("clan", {}) if typeof(inv.get("clan")) == TYPE_DICTIONARY else {}
-			var cname := str(c_sub.get("name", "کلن"))
+			var cname := str(c_sub.get("name", "اتحاد"))
 			var ctag := str(c_sub.get("tag", ""))
 			var emb := int(c_sub.get("emblem_id", 1))
 			var inv_id := str(inv.get("invite_id", ""))
@@ -154,7 +154,7 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 				AudioManager.sfx_button()
 				NetworkManager.api.respond_clan_invitation(inv_id, "accept", func(ok: bool, _c: int, d: Variant):
 					if ok:
-						host._show_toast("به کلن «%s» خوش آمدید!" % cname)
+						host._show_toast("به اتحاد «%s» خوش آمدید!" % cname)
 						host._refresh_current_tab()
 					elif typeof(d) == TYPE_DICTIONARY:
 						host._show_toast(str(d.get("detail", "خطا")), CafeSocialTheme.COL_CRIMSON_TEXT)
@@ -240,7 +240,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 	# Clan XP Progress Bar
 	hv.add_child(CafeSocialTheme.make_xp_progress_bar(
 		float(clan_xp % next_xp) / float(next_xp),
-		"تجربه کلن: %s / %s XP" % [GameManager.to_fa_num(clan_xp % next_xp), GameManager.to_fa_num(next_xp)],
+		"تجربه اتحاد: %s / %s XP" % [GameManager.to_fa_num(clan_xp % next_xp), GameManager.to_fa_num(next_xp)],
 		Color(0.86, 0.66, 0.20)
 	))
 
@@ -263,32 +263,32 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 	act_row.add_theme_constant_override("separation", 8)
 	hv.add_child(act_row)
 
-	var b_leave := CafeSocialTheme.make_button("انحلال کلن" if my_role == "leader" else "خروج از کلن", "crimson", Vector2(0, 50), 23)
+	var b_leave := CafeSocialTheme.make_button("انحلال اتحاد" if my_role == "leader" else "خروج از اتحاد", "crimson", Vector2(0, 50), 23)
 	b_leave.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_leave.pressed.connect(func():
 		if my_role == "leader":
 			CafeSocialTheme.show_confirm_modal(
-				host, "انحلال کلن",
-				"آیا مطمئن هستید می‌خواهید کلن «%s» را منحل کنید؟ تمام اعضای کلن خارج خواهند شد." % str(cdict.get("name", "")),
+				host, "انحلال اتحاد",
+				"آیا مطمئن هستید می‌خواهید اتحاد «%s» را منحل کنید؟ تمام اعضای اتحاد خارج خواهند شد." % str(cdict.get("name", "")),
 				"بله، منحل شود", true,
 				func():
 					NetworkManager.api.disband_clan(func(ok: bool, _c: int, d: Variant):
 						if ok:
-							host._show_toast("کلن منحل شد.")
+							host._show_toast("اتحاد منحل شد.")
 							host._refresh_current_tab()
 						elif typeof(d) == TYPE_DICTIONARY:
-							host._show_toast(str(d.get("detail", "خطا در انحلال کلن")), CafeSocialTheme.COL_CRIMSON_TEXT)
+							host._show_toast(str(d.get("detail", "خطا در انحلال اتحاد")), CafeSocialTheme.COL_CRIMSON_TEXT)
 					)
 			)
 		else:
 			CafeSocialTheme.show_confirm_modal(
-				host, "خروج از کلن",
-				"آیا می‌خواهید از کلن «%s» خارج شوید؟" % str(cdict.get("name", "")),
-				"خروج از کلن", true,
+				host, "خروج از اتحاد",
+				"آیا می‌خواهید از اتحاد «%s» خارج شوید؟" % str(cdict.get("name", "")),
+				"خروج از اتحاد", true,
 				func():
 					NetworkManager.api.leave_clan(func(ok: bool, _c: int, d: Variant):
 						if ok:
-							host._show_toast("از کلن خارج شدید.")
+							host._show_toast("از اتحاد خارج شدید.")
 							host._refresh_current_tab()
 						elif typeof(d) == TYPE_DICTIONARY:
 							host._show_toast(str(d.get("detail", "خطا")), CafeSocialTheme.COL_CRIMSON_TEXT)
@@ -298,7 +298,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 	act_row.add_child(b_leave)
 
 	if my_role in ["leader", "co_leader"]:
-		var b_settings := CafeSocialTheme.make_button("تنظیمات کلن", "bronze", Vector2(0, 50), 23)
+		var b_settings := CafeSocialTheme.make_button("تنظیمات اتحاد", "bronze", Vector2(0, 50), 23)
 		b_settings.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_settings.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -319,7 +319,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 	var open_chals: Array = open_chals_raw if typeof(open_chals_raw) == TYPE_ARRAY else []
 	if not open_chals.is_empty():
 		vbox.add_child(CafeSocialTheme.make_ornate_section_header(
-			"چالش‌های دوستانه فعال کلن", CafeSocialTheme.ICO_LOBBY, "%s چالش باز در انتظار هم‌تیمی" % GameManager.to_fa_num(open_chals.size())
+			"چالش‌های دوستانه فعال اتحاد", CafeSocialTheme.ICO_LOBBY, "%s چالش باز در انتظار هم‌تیمی" % GameManager.to_fa_num(open_chals.size())
 		))
 		var my_uid_ov: String = str(GameManager.get_user_id())
 		for ch_item in open_chals:
@@ -331,7 +331,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 	var challenges: Array = cdict.get("weekly_challenges", []) if typeof(cdict.get("weekly_challenges")) == TYPE_ARRAY else []
 	if not challenges.is_empty():
 		vbox.add_child(CafeSocialTheme.make_ornate_section_header(
-			"چالش‌های هفتگی کلن", CafeSocialTheme.ICO_CUP, "همکاری اعضای کلن برای دریافت XP کلن"
+			"چالش‌های هفتگی اتحاد", CafeSocialTheme.ICO_CUP, "همکاری اعضای اتحاد برای دریافت XP اتحاد"
 		))
 		for ch in challenges:
 			if typeof(ch) != TYPE_DICTIONARY:
@@ -348,7 +348,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 			var cr := HBoxContainer.new()
 			cv.add_child(cr)
 			cr.add_child(CafeSocialTheme.make_badge_pill(
-				"تکمیل شد!" if done else "+%s XP کلن" % GameManager.to_fa_num(int(ch.get("reward_clan_xp", 150))),
+				"تکمیل شد!" if done else "+%s XP اتحاد" % GameManager.to_fa_num(int(ch.get("reward_clan_xp", 150))),
 				CafeSocialTheme.COL_EMERALD_TEXT if done else CafeSocialTheme.COL_GOLD_BRIGHT,
 				CafeSocialTheme.COL_EMERALD_BG if done else Color(0.10, 0.06, 0.03),
 				CafeSocialTheme.COL_EMERALD_BORDER if done else CafeSocialTheme.COL_BRONZE_BORDER,
@@ -432,7 +432,7 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 	var members: Array = cdict.get("members", []) if typeof(cdict.get("members")) == TYPE_ARRAY else []
 
 	vbox.add_child(CafeSocialTheme.make_ornate_section_header(
-		"اعضای کلن %s" % str(cdict.get("name", "")),
+		"اعضای اتحاد %s" % str(cdict.get("name", "")),
 		CafeSocialTheme.ICO_ARMY,
 		"%s عضو فعال • برای مشاهده پروفایل یا مدیریت عضو روی کارت ضربه بزنید" % GameManager.to_fa_num(members.size())
 	))
@@ -572,7 +572,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	host._clan_chat_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	host._clan_chat_list_vbox.add_theme_constant_override("separation", 10)
 	host._clan_chat_scroll.add_child(host._clan_chat_list_vbox)
-	host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت گفتگوهای کلن..."))
+	host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت گفتگوهای اتحاد..."))
 
 	var compose := PanelContainer.new()
 	compose.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_MAHOGANY_CARD, CafeSocialTheme.COL_GOLD_ANTIQUE, 16, 2, 12.0, 10.0))
@@ -585,7 +585,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	var btn_send := CafeSocialTheme.make_button("ارسال", "emerald", Vector2(142, 64), 26)
 	input_row.add_child(btn_send)
 
-	host._clan_chat_input = CafeSocialTheme.make_line_edit("پیام خود را برای اعضای کلن بنویسید (برای منشن از @ استفاده کنید)...", 64.0, 25)
+	host._clan_chat_input = CafeSocialTheme.make_line_edit("پیام خود را برای اعضای اتحاد بنویسید (برای منشن از @ استفاده کنید)...", 64.0, 25)
 	host._clan_chat_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	input_row.add_child(host._clan_chat_input)
 
@@ -606,9 +606,9 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 				ch.queue_free()
 			host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_empty_state(
 				CafeSocialTheme.ICO_RANK,
-				"چت کلن در دسترس نیست",
-				"برای استفاده از گفتگوی کلن ابتدا وارد یک کلن شوید.",
-				"یافتن کلن", "gold", func():
+				"چت اتحاد در دسترس نیست",
+				"برای استفاده از گفتگوی اتحاد ابتدا وارد یک اتحاد شوید.",
+				"یافتن اتحاد", "gold", func():
 					host.current_clans_subtab = "discover"
 					host._refresh_current_tab()
 			))
@@ -625,7 +625,7 @@ static func render_clan_chat(host: Control) -> void:
 		host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_empty_state(
 			CafeSocialTheme.BADGE_CHAT,
 			"هنوز پیامی ارسال نشده است",
-			"اولین پیام یا چالش دوستانه را در چت کلن ثبت کنید!"
+			"اولین پیام یا چالش دوستانه را در چت اتحاد ثبت کنید!"
 		))
 		return
 
@@ -727,7 +727,7 @@ static func _build_clan_discover_view(host: Control, holder: VBoxContainer) -> v
 	)
 	mode_row.add_child(btn_dir)
 
-	var btn_lb := CafeSocialTheme.make_button("جدول برترین کلن‌ها", "gold" if is_lb else "muted", Vector2(0, 52), 21)
+	var btn_lb := CafeSocialTheme.make_button("جدول برترین اتحادها", "gold" if is_lb else "muted", Vector2(0, 52), 21)
 	btn_lb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_lb.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -740,7 +740,7 @@ static func _build_clan_discover_view(host: Control, holder: VBoxContainer) -> v
 	if typeof(host._my_clan_data.get("clan")) == TYPE_DICTIONARY and not host._my_clan_data["clan"].is_empty():
 		has_clan = true
 	if not has_clan:
-		var btn_new_c := CafeSocialTheme.make_button("ساخت کلن (رایگان)", "emerald", Vector2(210, 52), 21)
+		var btn_new_c := CafeSocialTheme.make_button("ساخت اتحاد (رایگان)", "emerald", Vector2(210, 52), 21)
 		btn_new_c.pressed.connect(func():
 			AudioManager.sfx_button()
 			open_clan_create_modal(host)
@@ -766,7 +766,7 @@ static func _build_clan_search_inner(host: Control, holder: VBoxContainer) -> vo
 	s_row.add_theme_constant_override("separation", 10)
 	sv.add_child(s_row)
 
-	var inp := CafeSocialTheme.make_line_edit("جستجوی نام یا تگ کلن (مثلاً CAFE#)...", 60.0, 22)
+	var inp := CafeSocialTheme.make_line_edit("جستجوی نام یا تگ اتحاد (مثلاً CAFE#)...", 60.0, 22)
 	inp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	s_row.add_child(inp)
 
@@ -789,7 +789,7 @@ static func _build_clan_search_inner(host: Control, holder: VBoxContainer) -> vo
 	var do_search := func():
 		for ch in res_vbox.get_children():
 			ch.queue_free()
-		res_vbox.add_child(CafeSocialTheme.make_loading_state("در حال جستجوی کلن‌ها..."))
+		res_vbox.add_child(CafeSocialTheme.make_loading_state("در حال جستجوی اتحادها..."))
 		NetworkManager.api.search_clans(inp.text.strip_edges(), filter_jt[0], "clan_score", func(ok: bool, _c: int, data: Variant):
 			if not is_instance_valid(res_vbox):
 				return
@@ -800,8 +800,8 @@ static func _build_clan_search_inner(host: Control, holder: VBoxContainer) -> vo
 				if arr.is_empty():
 					res_vbox.add_child(CafeSocialTheme.make_empty_state(
 						CafeSocialTheme.ICO_INFO,
-						"کلنی با این مشخصات پیدا نشد",
-						"عبارت جستجو یا فیلتر عضویت را تغییر دهید یا کلن جدید خود را بسازید."
+						"اتحادی با این مشخصات پیدا نشد",
+						"عبارت جستجو یا فیلتر عضویت را تغییر دهید یا اتحاد جدید خود را بسازید."
 					))
 					return
 				for cl in arr:
@@ -810,7 +810,7 @@ static func _build_clan_search_inner(host: Control, holder: VBoxContainer) -> vo
 		)
 
 	var f_defs := [
-		{"id": "", "label": "همه کلن‌ها"},
+		{"id": "", "label": "همه اتحادها"},
 		{"id": "open", "label": "عضویت آزاد"},
 		{"id": "request", "label": "نیازمند تایید"},
 	]
@@ -849,7 +849,7 @@ static func _build_clan_search_inner(host: Control, holder: VBoxContainer) -> vo
 
 static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: int = 0) -> PanelContainer:
 	var cid := str(cl.get("clan_id", cl.get("_id", "")))
-	var cname := str(cl.get("name", "کلن"))
+	var cname := str(cl.get("name", "اتحاد"))
 	var ctag := str(cl.get("tag", ""))
 	var emb_id := int(cl.get("emblem_id", 1))
 	var lvl := int(cl.get("clan_level", 1))
@@ -898,7 +898,7 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 	row.add_child(CafeSocialTheme.make_clan_emblem(emb_id, 78.0))
 
 	if jtype != "invite_only":
-		var b_join := CafeSocialTheme.make_button("عضویت در کلن" if jtype == "open" else "ارسال درخواست عضویت", "emerald" if jtype == "open" else "bronze", Vector2(0, 48), 23)
+		var b_join := CafeSocialTheme.make_button("عضویت در اتحاد" if jtype == "open" else "ارسال درخواست عضویت", "emerald" if jtype == "open" else "bronze", Vector2(0, 48), 23)
 		b_join.pressed.connect(func():
 			AudioManager.sfx_button()
 			NetworkManager.api.join_or_request_clan(cid, "درخواست عضویت از باشگاه کافه فکر", func(ok_j: bool, _cj: int, dj: Variant):
@@ -946,7 +946,7 @@ static func _build_clan_leaderboard_inner(host: Control, holder: VBoxContainer) 
 	lb_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lb_vbox.add_theme_constant_override("separation", 10)
 	scroll.add_child(lb_vbox)
-	lb_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت جدول رتبه‌بندی کلن‌ها..."))
+	lb_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت جدول رتبه‌بندی اتحادها..."))
 
 	NetworkManager.api.get_social_leaderboard(host.current_clan_lb_mode, "", "", func(ok: bool, _c: int, data: Variant):
 		if not is_instance_valid(lb_vbox):
@@ -958,8 +958,8 @@ static func _build_clan_leaderboard_inner(host: Control, holder: VBoxContainer) 
 			if arr.is_empty():
 				lb_vbox.add_child(CafeSocialTheme.make_empty_state(
 					CafeSocialTheme.ICO_FIRST,
-					"هنوز کلنی در جدول ثبت نشده است",
-					"اولین کلن خود را بسازید و نامش را در تاریخ کافه فکر ثبت کنید!"
+					"هنوز اتحادی در جدول ثبت نشده است",
+					"اولین اتحاد خود را بسازید و نامش را در تاریخ کافه فکر ثبت کنید!"
 				))
 				return
 			for i in range(arr.size()):
@@ -1017,17 +1017,17 @@ static func open_clan_create_modal(host: Control) -> void:
 		overlay.queue_free()
 	)
 	top.add_child(bx)
-	var ttl := CafeSocialTheme.make_title("تاسیس کلن جدید", 38, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
+	var ttl := CafeSocialTheme.make_title("تاسیس اتحاد جدید", 38, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(ttl)
 	var sp := Control.new()
 	sp.custom_minimum_size = Vector2(54, 54)
 	top.add_child(sp)
 
-	vbox.add_child(CafeSocialTheme.make_badge_pill("ساخت کلن رایگان است • سهمیه هر بازیکن: ۱ کلن", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 22))
+	vbox.add_child(CafeSocialTheme.make_badge_pill("ساخت اتحاد رایگان است • سهمیه هر بازیکن: ۱ اتحاد", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 22))
 
 	# Emblem Picker
-	vbox.add_child(CafeSocialTheme.make_body("نشان (لوگو) کلن را انتخاب کنید:", 24, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+	vbox.add_child(CafeSocialTheme.make_body("نشان (لوگو) اتحاد را انتخاب کنید:", 24, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
 	var selected_emblem := [1]
 	var emb_grid := HBoxContainer.new()
 	emb_grid.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -1067,13 +1067,13 @@ static func open_clan_create_modal(host: Control) -> void:
 		emb_grid.add_child(eb)
 	update_emb_sel.call()
 
-	var inp_name := CafeSocialTheme.make_line_edit("نام کلن (۳ تا ۲۴ حرف، مثلاً: عقاب‌های کافه فکر)", 62.0, 25)
+	var inp_name := CafeSocialTheme.make_line_edit("نام اتحاد (۳ تا ۲۴ حرف، مثلاً: عقاب‌های کافه فکر)", 62.0, 25)
 	vbox.add_child(inp_name)
 
-	var inp_tag := CafeSocialTheme.make_line_edit("تگ یکتای کلن (۲ تا ۱۰ حرف یا عدد، مثلاً: CAFE1)", 62.0, 25)
+	var inp_tag := CafeSocialTheme.make_line_edit("تگ یکتای اتحاد (۲ تا ۱۰ حرف یا عدد، مثلاً: CAFE1)", 62.0, 25)
 	vbox.add_child(inp_tag)
 
-	var inp_desc := CafeSocialTheme.make_line_edit("معرفی کوتاه و قوانین کلن (اختیاری)...", 62.0, 24)
+	var inp_desc := CafeSocialTheme.make_line_edit("معرفی کوتاه و قوانین اتحاد (اختیاری)...", 62.0, 24)
 	vbox.add_child(inp_desc)
 
 	var join_type_val := ["open"]
@@ -1110,7 +1110,7 @@ static func open_clan_create_modal(host: Control) -> void:
 	err_panel.add_child(err_lbl)
 	vbox.add_child(err_panel)
 
-	var b_submit := CafeSocialTheme.make_button("تاسیس کلن (رایگان)", "gold", Vector2(0, 66), 28, CafeSocialTheme.ICO_CHECK, true)
+	var b_submit := CafeSocialTheme.make_button("تاسیس اتحاد (رایگان)", "gold", Vector2(0, 66), 28, CafeSocialTheme.ICO_CHECK, true)
 	b_submit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_submit.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -1118,11 +1118,11 @@ static func open_clan_create_modal(host: Control) -> void:
 		var c_name := inp_name.text.strip_edges()
 		var c_tag := inp_tag.text.strip_edges().lstrip("#").strip_edges()
 		if c_name.length() < 3:
-			err_lbl.text = "نام کلن باید حداقل ۳ حرف باشد."
+			err_lbl.text = "نام اتحاد باید حداقل ۳ حرف باشد."
 			err_panel.visible = true
 			return
 		if c_tag.length() < 2 or c_tag.length() > 10:
-			err_lbl.text = "تگ کلن باید بین ۲ تا ۱۰ حرف یا عدد باشد."
+			err_lbl.text = "تگ اتحاد باید بین ۲ تا ۱۰ حرف یا عدد باشد."
 			err_panel.visible = true
 			return
 
@@ -1141,13 +1141,13 @@ static func open_clan_create_modal(host: Control) -> void:
 			if ok:
 				if is_instance_valid(overlay):
 					overlay.queue_free()
-				host._show_toast("کلن شما با موفقیت تاسیس شد!")
+				host._show_toast("اتحاد شما با موفقیت تاسیس شد!")
 				host.current_clans_subtab = "my_clan"
 				host._refresh_current_tab()
 			else:
 				if is_instance_valid(b_submit):
 					b_submit.disabled = false
-				var detail := str(data.get("detail", "خطا در ساخت کلن")) if typeof(data) == TYPE_DICTIONARY else "خطا در ساخت کلن"
+				var detail := str(data.get("detail", "خطا در ساخت اتحاد")) if typeof(data) == TYPE_DICTIONARY else "خطا در ساخت اتحاد"
 				if is_instance_valid(err_lbl) and is_instance_valid(err_panel):
 					err_lbl.text = detail
 					err_panel.visible = true
@@ -1195,9 +1195,9 @@ static func _open_clan_settings_modal(host: Control, cdict: Dictionary) -> void:
 	vbox.add_theme_constant_override("separation", 14)
 	m.add_child(vbox)
 
-	vbox.add_child(CafeSocialTheme.make_title("تنظیمات کلن %s" % str(cdict.get("name", "")), 37, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(CafeSocialTheme.make_title("تنظیمات اتحاد %s" % str(cdict.get("name", "")), 37, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
 
-	var inp_desc := CafeSocialTheme.make_line_edit("توضیحات کلن...", 60.0, 24)
+	var inp_desc := CafeSocialTheme.make_line_edit("توضیحات اتحاد...", 60.0, 24)
 	inp_desc.text = str(cdict.get("description", ""))
 	vbox.add_child(inp_desc)
 
@@ -1248,7 +1248,7 @@ static func _open_clan_settings_modal(host: Control, cdict: Dictionary) -> void:
 		}, func(ok: bool, _c: int, _d: Variant):
 			overlay.queue_free()
 			if ok:
-				host._show_toast("تنظیمات کلن بروزرسانی شد.")
+				host._show_toast("تنظیمات اتحاد بروزرسانی شد.")
 				host._refresh_current_tab()
 		)
 	)
@@ -1422,7 +1422,7 @@ static func _build_overview_challenge_card(host: Control, chal: Dictionary, my_u
 	var gt_fa: String = str(chal.get("game_title_fa", ""))
 	if gt_fa.is_empty():
 		gt_fa = GameRegistry.get_display_name_fa(gt)
-	var creator_name: String = str(chal.get("creator_name", "هم‌کلنی"))
+	var creator_name: String = str(chal.get("creator_name", "هم‌اتحادی"))
 	var p_count: int = int(chal.get("player_count", 2))
 	if p_count < 2:
 		p_count = 2
@@ -1517,7 +1517,7 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 	)
 	top.add_child(bx)
 
-	var ttl := CafeSocialTheme.make_title("ایجاد چالش دوستانه در کلن", 36, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
+	var ttl := CafeSocialTheme.make_title("ایجاد چالش دوستانه در اتحاد", 36, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(ttl)
 
@@ -1702,7 +1702,7 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 		NetworkManager.api.create_clan_friendly_challenge(gid_s, cnt_i, func(ok: bool, _c: int, _d: Variant):
 			if ok:
 				overlay.queue_free()
-				host._show_toast("چالش دوستانه «%s» (%s نفره) در کلن اعلام شد!" % [
+				host._show_toast("چالش دوستانه «%s» (%s نفره) در اتحاد اعلام شد!" % [
 					GameRegistry.get_display_name_fa(gid_s),
 					GameManager.to_fa_num(cnt_i)
 				])
@@ -1796,32 +1796,32 @@ static func _open_member_manage_modal(host: Control, m_dict: Dictionary, my_role
 			vbox.add_child(b_dem)
 
 	if my_role == "leader":
-		var b_lead := CafeSocialTheme.make_button("انتقال رهبری کلن به این عضو", "gold", Vector2(0, 56), 25, CafeSocialTheme.ICO_KING)
+		var b_lead := CafeSocialTheme.make_button("انتقال رهبری اتحاد به این عضو", "gold", Vector2(0, 56), 25, CafeSocialTheme.ICO_KING)
 		b_lead.pressed.connect(func():
 			overlay.queue_free()
 			CafeSocialTheme.show_confirm_modal(
-				host, "انتقال رهبری کلن",
-				"آیا مطمئن هستید می‌خواهید رهبری کلن را به «%s» واگذار کنید؟" % m_name,
+				host, "انتقال رهبری اتحاد",
+				"آیا مطمئن هستید می‌خواهید رهبری اتحاد را به «%s» واگذار کنید؟" % m_name,
 				"انتقال رهبری", true,
 				func():
 					NetworkManager.api.transfer_clan_leadership(m_uid, func(_ok, _c, _d):
-						host._show_toast("رهبری کلن به %s منتقل شد." % m_name)
+						host._show_toast("رهبری اتحاد به %s منتقل شد." % m_name)
 						host._refresh_current_tab()
 					)
 			)
 		)
 		vbox.add_child(b_lead)
 
-	var b_kick := CafeSocialTheme.make_button("اخراج از کلن", "crimson", Vector2(0, 56), 25)
+	var b_kick := CafeSocialTheme.make_button("اخراج از اتحاد", "crimson", Vector2(0, 56), 25)
 	b_kick.pressed.connect(func():
 		overlay.queue_free()
 		CafeSocialTheme.show_confirm_modal(
 			host, "اخراج عضو",
-			"آیا می‌خواهید «%s» را از کلن اخراج کنید؟" % m_name,
+			"آیا می‌خواهید «%s» را از اتحاد اخراج کنید؟" % m_name,
 			"اخراج شود", true,
 			func():
 				NetworkManager.api.kick_clan_member(m_uid, func(_ok, _c, _d):
-					host._show_toast("«%s» از کلن اخراج شد." % m_name)
+					host._show_toast("«%s» از اتحاد اخراج شد." % m_name)
 					host._refresh_current_tab()
 				)
 		)

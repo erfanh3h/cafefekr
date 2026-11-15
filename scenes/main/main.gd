@@ -20,10 +20,25 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 
 
 
+class _UserHeaderProxy extends RefCounted:
+	signal store_requested()
+	signal profile_requested()
+	signal login_requested()
+	signal change_username_requested()
+	var visible: bool = true
+	var shell: Control = null
+	func update_ui() -> void:
+		if is_instance_valid(shell) and shell.has_method("get_tab_instance"):
+			var ut = shell.get_tab_instance("user")
+			if is_instance_valid(ut) and ut.has_node("OuterMargin/MainPanel/InnerMargin/VBox/UserHeader"):
+				var h = ut.get_node("OuterMargin/MainPanel/InnerMargin/VBox/UserHeader")
+				if h.has_method("update_ui"):
+					h.update_ui()
+
 # UI Components
 
 @onready var main_tab_shell = $CanvasLayer/MainTabShell
-@onready var user_header = $CanvasLayer/MainTabShell/MainVBox/CompactUserHeader
+var user_header = _UserHeaderProxy.new()
 @onready var menu_container = $CanvasLayer/MainTabShell
 @onready var logo_plate = null
 
@@ -115,6 +130,7 @@ var _active_invite_banner: Control = null
 var spectator_overlay: SpectatorOverlay = null
 
 func _ready() -> void:
+	user_header.shell = main_tab_shell
 	_setup_signals()
 	_start_logo_animation()
 	_setup_button_juice()

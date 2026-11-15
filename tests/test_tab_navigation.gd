@@ -20,15 +20,6 @@ func _ready() -> void:
 	add_child(shell)
 	print("[PASS] MainTabShell instantiated successfully.")
 
-	# Verify Top Utility Bar
-	assert(is_instance_valid(shell.top_utility_bar), "TopUtilityBar missing")
-	print("[PASS] TopUtilityBar is valid.")
-
-	# Verify Compact User Header
-	assert(is_instance_valid(shell.compact_user_header), "CompactUserHeader missing")
-	shell.compact_user_header.update_ui()
-	print("[PASS] CompactUserHeader is valid and update_ui() succeeded.")
-
 	# Verify Bottom Navigation
 	assert(is_instance_valid(shell.bottom_navigation), "BottomNavigation missing")
 	print("[PASS] BottomNavigation is valid.")
@@ -42,39 +33,52 @@ func _ready() -> void:
 		assert(act.visible, "Tab %s should be visible" % t)
 		print("[PASS] Tab '%s' activated and verified." % t)
 
-	# Verify Library Tab loaded 25 games
+	# Verify Play Tab has top utility buttons (Watch live, Exit) and authentic wooden buttons
+	shell.switch_to_tab("play")
+	var play = shell.get_active_tab_instance()
+	assert(is_instance_valid(play.btn_watch_live), "Play tab BtnWatchLive missing")
+	assert(is_instance_valid(play.btn_exit), "Play tab BtnExit missing")
+	assert(is_instance_valid(play.btn_ranked), "Play tab BtnRanked missing")
+	assert(is_instance_valid(play.btn_multi), "Play tab BtnMulti missing")
+	assert(is_instance_valid(play.btn_classic), "Play tab BtnClassic missing")
+	assert(is_instance_valid(play.btn_lobby), "Play tab BtnLobby missing")
+	print("[PASS] Play tab utility controls and game mode buttons verified.")
+
+	# Verify Library Tab loaded 25 games and larger search
 	shell.switch_to_tab("library")
 	var lib = shell.get_active_tab_instance()
 	assert(lib._all_games_data.size() == 25, "Library must have 25 games, found %d" % lib._all_games_data.size())
-	print("[PASS] Library tab holds all 25 registered board games.")
+	assert(lib.search_input.custom_minimum_size.y >= 60, "Search input should be enlarged")
+	print("[PASS] Library tab holds all 25 registered board games with enlarged search.")
 
-	# Verify History Tab sub-sections
+	# Verify History Tab sub-sections (matches and leaderboard; stats moved to user tab)
 	shell.switch_to_tab("history")
 	var hist = shell.get_active_tab_instance()
-	hist.switch_section("stats")
-	assert(hist.active_section == "stats", "History should switch to stats")
+	hist.switch_section("matches")
+	assert(hist.active_section == "matches", "History should switch to matches")
 	hist.switch_section("leaderboard")
 	assert(hist.active_section == "leaderboard", "History should switch to leaderboard")
-	print("[PASS] History tab sub-navigation verified.")
+	print("[PASS] History tab sub-navigation (matches, leaderboard) verified.")
 
-	# Verify User Tab sub-sections
+	# Verify User Tab: Top UserHeader, sub-sections, audio settings, privacy, centered cosmetics, notifications
 	shell.switch_to_tab("user")
 	var usr = shell.get_active_tab_instance()
+	assert(is_instance_valid(usr.user_header), "User tab top UserHeader missing")
+	usr.switch_subtab("profile")
+	assert(usr.active_subtab == "profile", "User should switch to profile")
 	usr.switch_subtab("cosmetics")
 	assert(usr.active_subtab == "cosmetics", "User should switch to cosmetics")
 	usr.switch_subtab("privacy")
 	assert(usr.active_subtab == "privacy", "User should switch to privacy")
-	usr.switch_subtab("wallet")
-	assert(usr.active_subtab == "wallet", "User should switch to wallet")
+	usr.switch_subtab("notifs")
+	assert(usr.active_subtab == "notifs", "User should switch to notifs")
 	usr.switch_subtab("account")
-	assert(usr.active_subtab == "account", "User should switch to account")
-	print("[PASS] User tab sub-navigation verified.")
+	assert(usr.active_subtab == "account", "User should switch to account (settings)")
+	print("[PASS] User tab (UserHeader, profile stats, centered cosmetics, privacy, notifications, audio settings) verified.")
 
 	# Return to Play tab (default)
 	shell.switch_to_tab("play")
-	var play = shell.get_active_tab_instance()
-	assert(is_instance_valid(play), "Play tab valid")
-	print("[PASS] Returned to Play tab.")
+	print("[PASS] Returned to default Play tab.")
 
 	print("========================================")
 	print("ALL FIVE TABS VALIDATED AND OPERATIONAL!")

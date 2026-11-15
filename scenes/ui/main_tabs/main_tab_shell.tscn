@@ -1,10 +1,8 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/main_tab_shell.gd" id="1_shell_script"]
 [ext_resource type="Texture2D" path="res://assets/images/menu_bg.jpg" id="2_menu_bg"]
 [ext_resource type="Texture2D" path="res://assets/particles/star_01.png" id="3_star_tex"]
-[ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/top_utility_bar.tscn" id="4_top_utility"]
-[ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/compact_user_header.tscn" id="5_compact_header"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/bottom_navigation.tscn" id="6_bottom_nav"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/sound_settings_popup.tscn" id="7_sound_popup"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/exit_confirm_dialog.tscn" id="8_exit_dialog"]
@@ -85,14 +83,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 0
 alignment = 0
-
-[node name="TopUtilityBar" parent="MainVBox" instance=ExtResource("4_top_utility")]
-layout_mode = 2
-
-[node name="CompactUserHeader" parent="MainVBox" instance=ExtResource("5_compact_header")]
-layout_mode = 2
 
 [node name="TabContentContainer" type="MarginContainer" parent="MainVBox"]
 layout_mode = 2

@@ -3,55 +3,39 @@
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/play_tab.gd" id="1_play_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font_vazir"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/rank.png" id="4_rank_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/multi-rank.png" id="5_multi_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/classic-rank.png" id="6_classic_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/lobby.png" id="7_lobby_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/right.png" id="8_arrow_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="4_button_frame"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/right.png" id="5_arrow_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/rank.png" id="6_rank_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/multi-rank.png" id="7_multi_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/classic-rank.png" id="8_classic_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/lobby.png" id="9_lobby_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/watch.png" id="10_watch_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/exit.png" id="11_exit_tex"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hero_panel"]
-bg_color = Color(0.14, 0.09, 0.05, 0.94)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.92, 0.74, 0.32, 0.95)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
-shadow_color = Color(0, 0, 0, 0.55)
-shadow_size = 10
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_btn"]
+texture = ExtResource("4_button_frame")
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_card_btn"]
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_btn_hover"]
+texture = ExtResource("4_button_frame")
+modulate_color = Color(1.15, 1.1, 1, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lock_bg"]
-bg_color = Color(0.06, 0.04, 0.02, 0.95)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_btn_pressed"]
+texture = ExtResource("4_button_frame")
+modulate_color = Color(0.85, 0.8, 0.75, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lock_fill"]
-bg_color = Color(0.92, 0.65, 0.22, 1)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_top_btn"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_secondary_card"]
-bg_color = Color(0.12, 0.08, 0.05, 0.92)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
+bg_color = Color(0.85, 0.15, 0.15, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.75, 0.58, 0.26, 0.82)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(0, 0, 0, 0.45)
-shadow_size = 6
+border_color = Color(1, 0.85, 0.4, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="PlayTab" type="Control"]
 layout_mode = 3
@@ -75,364 +59,453 @@ horizontal_scroll_mode = 0
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 20
+theme_override_constants/separation = 22
 alignment = 0
 
-[node name="TopMargin" type="Control" parent="Scroll/Content"]
-custom_minimum_size = Vector2(0, 10)
+[node name="TopBarRow" type="MarginContainer" parent="Scroll/Content"]
 layout_mode = 2
-mouse_filter = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 6
 
-[node name="RankedHeroCard" type="PanelContainer" parent="Scroll/Content"]
-custom_minimum_size = Vector2(980, 290)
+[node name="HBox" type="HBoxContainer" parent="Scroll/Content/TopBarRow"]
 layout_mode = 2
-size_flags_horizontal = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_hero_panel")
+alignment = 0
 
-[node name="CardClickArea" type="Button" parent="Scroll/Content/RankedHeroCard"]
+[node name="BtnWatchLive" type="Button" parent="Scroll/Content/TopBarRow/HBox"]
+custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
+size_flags_vertical = 4
 focus_mode = 0
 mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_card_btn")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_top_btn")
 flat = true
 
-[node name="Margin" type="MarginContainer" parent="Scroll/Content/RankedHeroCard"]
-layout_mode = 2
+[node name="IconWatch" type="TextureRect" parent="Scroll/Content/TopBarRow/HBox/BtnWatchLive"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 30
-theme_override_constants/margin_top = 22
-theme_override_constants/margin_right = 30
-theme_override_constants/margin_bottom = 22
+texture = ExtResource("10_watch_tex")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="VBox" type="VBoxContainer" parent="Scroll/Content/RankedHeroCard/Margin"]
-layout_mode = 2
+[node name="LiveBadge" type="PanelContainer" parent="Scroll/Content/TopBarRow/HBox/BtnWatchLive"]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -28.0
+offset_top = -2.0
+offset_right = 4.0
+offset_bottom = 26.0
+grow_horizontal = 0
 mouse_filter = 2
-theme_override_constants/separation = 14
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="LblBadge" type="Label" parent="Scroll/Content/TopBarRow/HBox/BtnWatchLive/LiveBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 18
+text = "۰"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Spacer" type="Control" parent="Scroll/Content/TopBarRow/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="BtnExit" type="Button" parent="Scroll/Content/TopBarRow/HBox"]
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_top_btn")
+flat = true
+
+[node name="IconExit" type="TextureRect" parent="Scroll/Content/TopBarRow/HBox/BtnExit"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_exit_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CardsContainer" type="VBoxContainer" parent="Scroll/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
 alignment = 1
 
-[node name="HeaderRow" type="HBoxContainer" parent="Scroll/Content/RankedHeroCard/Margin/VBox"]
+[node name="BtnRanked" type="Button" parent="Scroll/Content/CardsContainer"]
+custom_minimum_size = Vector2(940, 184)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_btn_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/focus = SubResource("StyleBoxTexture_wood_btn")
+
+[node name="Margin" type="MarginContainer" parent="Scroll/Content/CardsContainer/BtnRanked"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 64
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 64
+theme_override_constants/margin_bottom = 14
+
+[node name="HBox" type="HBoxContainer" parent="Scroll/Content/CardsContainer/BtnRanked/Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 24
 alignment = 1
 
-[node name="Arrow" type="TextureRect" parent="Scroll/Content/RankedHeroCard/Margin/VBox/HeaderRow"]
-custom_minimum_size = Vector2(36, 36)
+[node name="Arrow" type="TextureRect" parent="Scroll/Content/CardsContainer/BtnRanked/Margin/HBox"]
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
-texture = ExtResource("8_arrow_tex")
+texture = ExtResource("5_arrow_tex")
 expand_mode = 1
 stretch_mode = 5
 flip_h = true
 
-[node name="TitleCol" type="VBoxContainer" parent="Scroll/Content/RankedHeroCard/Margin/VBox/HeaderRow"]
+[node name="TextCol" type="VBoxContainer" parent="Scroll/Content/CardsContainer/BtnRanked/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
-theme_override_constants/separation = 4
 alignment = 1
 
-[node name="LblTitle" type="Label" parent="Scroll/Content/RankedHeroCard/Margin/VBox/HeaderRow/TitleCol"]
+[node name="CardTitle" type="Label" parent="Scroll/Content/CardsContainer/BtnRanked/Margin/HBox/TextCol"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 38
+theme_override_font_sizes/font_size = 42
 text = "رقابت دو نفره آنلاین"
 horizontal_alignment = 2
 
-[node name="LblDesc" type="Label" parent="Scroll/Content/RankedHeroCard/Margin/VBox/HeaderRow/TitleCol"]
+[node name="CardSubtitle" type="Label" parent="Scroll/Content/CardsContainer/BtnRanked/Margin/HBox/TextCol"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
-theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 24
 text = "دوئل نفس‌گیر تن‌به‌تن، کسب کاپ و صعود به صدر جدول قهرمانان"
 horizontal_alignment = 2
-autowrap_mode = 2
 
-[node name="IconRank" type="TextureRect" parent="Scroll/Content/RankedHeroCard/Margin/VBox/HeaderRow"]
-custom_minimum_size = Vector2(104, 104)
+[node name="IconControl" type="Control" parent="Scroll/Content/CardsContainer/BtnRanked/Margin/HBox"]
+custom_minimum_size = Vector2(106, 114)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
-texture = ExtResource("4_rank_tex")
+
+[node name="Icon" type="TextureRect" parent="Scroll/Content/CardsContainer/BtnRanked/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_rank_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="LockContainer" type="VBoxContainer" parent="Scroll/Content/RankedHeroCard/Margin/VBox"]
-visible = false
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 4
-
-[node name="LockBar" type="ProgressBar" parent="Scroll/Content/RankedHeroCard/Margin/VBox/LockContainer"]
-custom_minimum_size = Vector2(0, 16)
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_lock_bg")
-theme_override_styles/fill = SubResource("StyleBoxFlat_lock_fill")
-show_percentage = false
-
-[node name="LblLock" type="Label" parent="Scroll/Content/RankedHeroCard/Margin/VBox/LockContainer"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.5, 1)
-theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 18
-text = "۰ / ۱۸۰ XP"
-horizontal_alignment = 1
-
-[node name="BtnRankedAction" type="Button" parent="Scroll/Content/RankedHeroCard"]
-custom_minimum_size = Vector2(240, 58)
+[node name="BtnMultiRank" type="Button" parent="Scroll/Content/CardsContainer"]
+custom_minimum_size = Vector2(940, 184)
 layout_mode = 2
 size_flags_horizontal = 4
-size_flags_vertical = 8
 focus_mode = 0
 mouse_default_cursor_shape = 2
-text = "جستجوی حریف"
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_btn_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/focus = SubResource("StyleBoxTexture_wood_btn")
 
-[node name="SecondaryModes" type="VBoxContainer" parent="Scroll/Content"]
-layout_mode = 2
-theme_override_constants/separation = 16
-alignment = 1
+[node name="Margin" type="MarginContainer" parent="Scroll/Content/CardsContainer/BtnMultiRank"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 64
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 64
+theme_override_constants/margin_bottom = 14
 
-[node name="CardMulti" type="PanelContainer" parent="Scroll/Content/SecondaryModes"]
-custom_minimum_size = Vector2(980, 175)
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_secondary_card")
-
-[node name="CardClickArea" type="Button" parent="Scroll/Content/SecondaryModes/CardMulti"]
-layout_mode = 2
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_card_btn")
-flat = true
-
-[node name="Margin" type="MarginContainer" parent="Scroll/Content/SecondaryModes/CardMulti"]
+[node name="HBox" type="HBoxContainer" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 16
-
-[node name="HBox" type="HBoxContainer" parent="Scroll/Content/SecondaryModes/CardMulti/Margin"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 24
 alignment = 1
 
-[node name="BtnAction" type="Button" parent="Scroll/Content/SecondaryModes/CardMulti/Margin/HBox"]
-custom_minimum_size = Vector2(165, 54)
+[node name="Arrow" type="TextureRect" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin/HBox"]
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_vertical = 4
-focus_mode = 0
-mouse_default_cursor_shape = 2
-text = "ورود"
+mouse_filter = 2
+texture = ExtResource("5_arrow_tex")
+expand_mode = 1
+stretch_mode = 5
+flip_h = true
 
-[node name="TextCol" type="VBoxContainer" parent="Scroll/Content/SecondaryModes/CardMulti/Margin/HBox"]
+[node name="TextCol" type="VBoxContainer" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
-theme_override_constants/separation = 4
 alignment = 1
 
-[node name="Title" type="Label" parent="Scroll/Content/SecondaryModes/CardMulti/Margin/HBox/TextCol"]
+[node name="CardTitle" type="Label" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin/HBox/TextCol"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_outline_size = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 42
 text = "رقابت چند نفره آنلاین"
 horizontal_alignment = 2
 
-[node name="Subtitle" type="Label" parent="Scroll/Content/SecondaryModes/CardMulti/Margin/HBox/TextCol"]
+[node name="CardSubtitle" type="Label" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin/HBox/TextCol"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.9, 0.84, 0.72, 1)
-theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 18
-text = "جدال هیجان‌انگیز ۴ نفره، تصاحب کاپ و جوایز بزرگ"
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 24
+text = "نبرد همزمان ۳ و ۴ نفره، رقابت هوشمندانه برای تصاحب صدر"
 horizontal_alignment = 2
-autowrap_mode = 2
 
-[node name="Icon" type="TextureRect" parent="Scroll/Content/SecondaryModes/CardMulti/Margin/HBox"]
-custom_minimum_size = Vector2(80, 80)
+[node name="IconControl" type="Control" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin/HBox"]
+custom_minimum_size = Vector2(106, 114)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
-texture = ExtResource("5_multi_tex")
+
+[node name="Icon" type="TextureRect" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_multi_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CardClassic" type="PanelContainer" parent="Scroll/Content/SecondaryModes"]
-custom_minimum_size = Vector2(980, 175)
+[node name="BtnClassicRank" type="Button" parent="Scroll/Content/CardsContainer"]
+custom_minimum_size = Vector2(940, 184)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_secondary_card")
-
-[node name="CardClickArea" type="Button" parent="Scroll/Content/SecondaryModes/CardClassic"]
-layout_mode = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_card_btn")
-flat = true
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_btn_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/focus = SubResource("StyleBoxTexture_wood_btn")
 
-[node name="Margin" type="MarginContainer" parent="Scroll/Content/SecondaryModes/CardClassic"]
+[node name="Margin" type="MarginContainer" parent="Scroll/Content/CardsContainer/BtnClassicRank"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 64
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 64
+theme_override_constants/margin_bottom = 14
+
+[node name="HBox" type="HBoxContainer" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 16
-
-[node name="HBox" type="HBoxContainer" parent="Scroll/Content/SecondaryModes/CardClassic/Margin"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 24
 alignment = 1
 
-[node name="BtnAction" type="Button" parent="Scroll/Content/SecondaryModes/CardClassic/Margin/HBox"]
-custom_minimum_size = Vector2(165, 54)
+[node name="Arrow" type="TextureRect" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin/HBox"]
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_vertical = 4
-focus_mode = 0
-mouse_default_cursor_shape = 2
-text = "تمرین"
+mouse_filter = 2
+texture = ExtResource("5_arrow_tex")
+expand_mode = 1
+stretch_mode = 5
+flip_h = true
 
-[node name="TextCol" type="VBoxContainer" parent="Scroll/Content/SecondaryModes/CardClassic/Margin/HBox"]
+[node name="TextCol" type="VBoxContainer" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
-theme_override_constants/separation = 4
 alignment = 1
 
-[node name="Title" type="Label" parent="Scroll/Content/SecondaryModes/CardClassic/Margin/HBox/TextCol"]
+[node name="CardTitle" type="Label" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin/HBox/TextCol"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_outline_size = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 32
-text = "رنک کلاسیک"
+theme_override_font_sizes/font_size = 42
+text = "رنک کلاسیک / هوش مصنوعی"
 horizontal_alignment = 2
 
-[node name="Subtitle" type="Label" parent="Scroll/Content/SecondaryModes/CardClassic/Margin/HBox/TextCol"]
+[node name="CardSubtitle" type="Label" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin/HBox/TextCol"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.9, 0.84, 0.72, 1)
-theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 18
-text = "انتخاب بازی و رقابت با هوش مصنوعی و کسب تجربه (XP)"
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 24
+text = "رقابت در ۲۵ بازی با قوانین رسمی، بازی با حریف یا تمرین با هوش مصنوعی"
 horizontal_alignment = 2
-autowrap_mode = 2
 
-[node name="Icon" type="TextureRect" parent="Scroll/Content/SecondaryModes/CardClassic/Margin/HBox"]
-custom_minimum_size = Vector2(80, 80)
+[node name="IconControl" type="Control" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin/HBox"]
+custom_minimum_size = Vector2(106, 114)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
-texture = ExtResource("6_classic_tex")
+
+[node name="Icon" type="TextureRect" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_classic_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CardLobby" type="PanelContainer" parent="Scroll/Content/SecondaryModes"]
-custom_minimum_size = Vector2(980, 175)
+[node name="BtnLobby" type="Button" parent="Scroll/Content/CardsContainer"]
+custom_minimum_size = Vector2(940, 184)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_secondary_card")
-
-[node name="CardClickArea" type="Button" parent="Scroll/Content/SecondaryModes/CardLobby"]
-layout_mode = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_card_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_card_btn")
-flat = true
+theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/hover = SubResource("StyleBoxTexture_wood_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wood_btn_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxTexture_wood_btn")
+theme_override_styles/focus = SubResource("StyleBoxTexture_wood_btn")
 
-[node name="Margin" type="MarginContainer" parent="Scroll/Content/SecondaryModes/CardLobby"]
+[node name="Margin" type="MarginContainer" parent="Scroll/Content/CardsContainer/BtnLobby"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 64
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 64
+theme_override_constants/margin_bottom = 14
+
+[node name="HBox" type="HBoxContainer" parent="Scroll/Content/CardsContainer/BtnLobby/Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 16
-
-[node name="HBox" type="HBoxContainer" parent="Scroll/Content/SecondaryModes/CardLobby/Margin"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 24
 alignment = 1
 
-[node name="BtnAction" type="Button" parent="Scroll/Content/SecondaryModes/CardLobby/Margin/HBox"]
-custom_minimum_size = Vector2(165, 54)
+[node name="Arrow" type="TextureRect" parent="Scroll/Content/CardsContainer/BtnLobby/Margin/HBox"]
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 size_flags_vertical = 4
-focus_mode = 0
-mouse_default_cursor_shape = 2
-text = "اتاق‌ها"
+mouse_filter = 2
+texture = ExtResource("5_arrow_tex")
+expand_mode = 1
+stretch_mode = 5
+flip_h = true
 
-[node name="TextCol" type="VBoxContainer" parent="Scroll/Content/SecondaryModes/CardLobby/Margin/HBox"]
+[node name="TextCol" type="VBoxContainer" parent="Scroll/Content/CardsContainer/BtnLobby/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
-theme_override_constants/separation = 4
 alignment = 1
 
-[node name="Title" type="Label" parent="Scroll/Content/SecondaryModes/CardLobby/Margin/HBox/TextCol"]
+[node name="CardTitle" type="Label" parent="Scroll/Content/CardsContainer/BtnLobby/Margin/HBox/TextCol"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_outline_size = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 42
 text = "اتاق دوستانه (لابی)"
 horizontal_alignment = 2
 
-[node name="Subtitle" type="Label" parent="Scroll/Content/SecondaryModes/CardLobby/Margin/HBox/TextCol"]
+[node name="CardSubtitle" type="Label" parent="Scroll/Content/CardsContainer/BtnLobby/Margin/HBox/TextCol"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.9, 0.84, 0.72, 1)
-theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 24
 text = "ساخت یا ورود به اتاق با شناسه دعوت ۶ رقمی"
 horizontal_alignment = 2
-autowrap_mode = 2
 
-[node name="Icon" type="TextureRect" parent="Scroll/Content/SecondaryModes/CardLobby/Margin/HBox"]
-custom_minimum_size = Vector2(80, 80)
+[node name="IconControl" type="Control" parent="Scroll/Content/CardsContainer/BtnLobby/Margin/HBox"]
+custom_minimum_size = Vector2(106, 114)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
-texture = ExtResource("7_lobby_tex")
+
+[node name="Icon" type="TextureRect" parent="Scroll/Content/CardsContainer/BtnLobby/Margin/HBox/IconControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_lobby_tex")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="BottomMargin" type="Control" parent="Scroll/Content"]
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 mouse_filter = 2
