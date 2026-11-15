@@ -17,6 +17,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 
 	var subtab_defs := [
 		{"id": "list", "label": "دوستان من (%s)" % GameManager.to_fa_num(host._friends_list.size()), "badge": 0},
+		{"id": "live", "label": "بازی‌های زنده", "badge": 0},
 		{"id": "requests", "label": "درخواست‌ها", "badge": host._incoming_requests.size()},
 		{"id": "search", "label": "یافتن بازیکن", "badge": 0},
 	]
@@ -82,6 +83,8 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 					"تلاش مجدد", "gold", func(): host._refresh_current_tab()
 				))
 		)
+	elif host.current_friends_subtab == "live":
+		_populate_live_games_discovery(host, list_vbox)
 	else:
 		_populate_search_and_discover(host, list_vbox)
 
@@ -486,6 +489,15 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		var is_fr := bool(u.get("is_friend", false))
 		var p_req: Variant = u.get("pending_request", null)
 		var req_sent := bool(u.get("request_sent", false))
+		if p_info["is_in_game"]:
+			var btn_spec_s: Button = CafeSocialTheme.make_button("تماشا", "gold", Vector2(114, 50), 23)
+			btn_spec_s.pressed.connect(func():
+				AudioManager.sfx_button()
+				NetworkManager.request_spectate_game(str(p_info["game_id"]), uid)
+				host._show_toast("درخواست تماشای مسابقه ارسال شد...")
+			)
+			act_row.add_child(btn_spec_s)
+
 		if is_fr:
 			var sp_ok := CafeSocialTheme.make_badge_pill("✓ دوست شما", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 22)
 			sp_ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -511,20 +523,192 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 				)
 			)
 			act_row.add_child(btn_add)
-			btn_add.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			btn_add.pressed.connect(func():
-				AudioManager.sfx_button()
-				btn_add.disabled = true
-				NetworkManager.api.send_friend_request(uid, "", func(ok: bool, _c: int, d: Variant):
-					if ok:
-						host._show_toast("درخواست دوستی برای «%s» ارسال شد!" % uname)
-						btn_add.text = "✓ درخواست ارسال شد"
-					else:
-						btn_add.disabled = false
-						var detail := str(d.get("detail", "خطا در ارسال درخواست")) if typeof(d) == TYPE_DICTIONARY else "خطا در ارسال درخواست"
-						host._show_toast(detail, CafeSocialTheme.COL_CRIMSON_TEXT)
-				)
-			)
-			act_row.add_child(btn_add)
 
 	return card
+
+
+static func _populate_live_games_discovery(host: Control, list_vbox: VBoxContainer) -> void:
+	# Filter Plaque (Scope + Game Type)
+	var filter_card: PanelContainer = PanelContainer.new()
+	filter_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	list_vbox.add_child(filter_card)
+
+	var fv: VBoxContainer = VBoxContainer.new()
+	fv.add_theme_constant_override("separation", 10)
+	filter_card.add_child(fv)
+
+	fv.add_child(CafeSocialTheme.make_title("تماشای زنده مسابقات کافه فکر", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+
+	var scope_row: HBoxContainer = HBoxContainer.new()
+	scope_row.add_theme_constant_override("separation", 8)
+	fv.add_child(scope_row)
+
+	var scopes: Array = [
+		{"id": "all", "label": "همه بازی‌ها"},
+		{"id": "friends", "label": "دوستان در حال بازی"},
+		{"id": "clan", "label": "اعضای کلن من"},
+	]
+	for sc in scopes:
+		var sc_dict: Dictionary = sc
+		var sid: String = str(sc_dict["id"])
+		var is_sel: bool = (host.current_live_scope == sid)
+		var b_sc: Button = CafeSocialTheme.make_button(str(sc_dict["label"]), "gold" if is_sel else "muted", Vector2(0, 46), 21)
+		b_sc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b_sc.pressed.connect(func():
+			AudioManager.sfx_tap()
+			host.current_live_scope = sid
+			host._refresh_current_tab()
+		)
+		scope_row.add_child(b_sc)
+
+	var game_row: HBoxContainer = HBoxContainer.new()
+	game_row.add_theme_constant_override("separation", 6)
+	fv.add_child(game_row)
+
+	var game_filters: Array = [
+		{"id": "", "label": "همه"},
+		{"id": "Ludo", "label": "منچ"},
+		{"id": "Monopoly", "label": "مونوپولی"},
+		{"id": "Chess", "label": "شطرنج"},
+		{"id": "Backgammon", "label": "تخته‌نرد"},
+		{"id": "Risk", "label": "ریسک"},
+	]
+	for gf in game_filters:
+		var gf_dict: Dictionary = gf
+		var gid_f: String = str(gf_dict["id"])
+		var is_g_sel: bool = (host.current_live_game_type == gid_f)
+		var b_gf: Button = CafeSocialTheme.make_button(str(gf_dict["label"]), "emerald" if is_g_sel else "bronze", Vector2(0, 42), 19)
+		b_gf.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b_gf.pressed.connect(func():
+			AudioManager.sfx_tap()
+			host.current_live_game_type = gid_f
+			host._refresh_current_tab()
+		)
+		game_row.add_child(b_gf)
+
+	var games_box: VBoxContainer = VBoxContainer.new()
+	games_box.add_theme_constant_override("separation", 10)
+	games_box.add_child(CafeSocialTheme.make_loading_state("در حال جستجوی مسابقات زنده..."))
+	list_vbox.add_child(games_box)
+
+	NetworkManager.api.get_live_spectator_games(
+		host.current_live_scope,
+		host.current_live_game_type,
+		"",
+		"",
+		1,
+		25,
+		func(ok: bool, _code: int, data: Variant):
+			if not is_instance_valid(games_box):
+				return
+			for ch in games_box.get_children():
+				ch.queue_free()
+			var items: Array = []
+			if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+				var res: Dictionary = data["result"]
+				if typeof(res.get("items")) == TYPE_ARRAY:
+					items = res["items"]
+				elif typeof(res.get("games")) == TYPE_ARRAY:
+					items = res["games"]
+			if items.is_empty():
+				games_box.add_child(CafeSocialTheme.make_empty_state(
+					CafeSocialTheme.ICO_LOBBY,
+					"مسابقه زنده‌ای یافت نشد",
+					"در حال حاضر مسابقه فعالی با این فیلتر برای تماشا در جریان نیست.",
+					"بروزرسانی فهرست",
+					"gold",
+					func(): host._refresh_current_tab()
+				))
+				return
+
+			games_box.add_child(CafeSocialTheme.make_ornate_section_header(
+				"مسابقات در حال برگزاری",
+				CafeSocialTheme.ICO_CUP,
+				"%s مسابقه زنده آماده تماشا" % GameManager.to_fa_num(items.size())
+			))
+			for item in items:
+				if typeof(item) == TYPE_DICTIONARY:
+					games_box.add_child(_build_live_match_card(host, item))
+	)
+
+
+static func _build_live_match_card(host: Control, m: Dictionary) -> PanelContainer:
+	var gid: String = str(m.get("game_id", ""))
+	var gtype: String = str(m.get("game_type", "Ludo"))
+	var gtitle: String = GameRegistry.get_display_name_fa(gtype)
+	var spec_cnt: int = int(m.get("spectator_count", 0))
+	var has_friend: bool = bool(m.get("has_friend", false))
+	var has_clanmate: bool = bool(m.get("has_clanmate", false))
+	var players: Array = m.get("players", []) if typeof(m.get("players")) == TYPE_ARRAY else []
+
+	var card: PanelContainer = PanelContainer.new()
+	card.add_theme_stylebox_override(
+		"panel",
+		CafeSocialTheme.create_highlight_card_style(true) if (has_friend or has_clanmate) else CafeSocialTheme.create_card_style()
+	)
+
+	var root: VBoxContainer = VBoxContainer.new()
+	root.add_theme_constant_override("separation", 10)
+	card.add_child(root)
+
+	# Header Row: Spectator Count & Watch Button on Left, Game Title & Icon on Right
+	var top_row: HBoxContainer = HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 12)
+	root.add_child(top_row)
+
+	var btn_watch: Button = CafeSocialTheme.make_button("تماشای زنده", "gold", Vector2(164, 52), 23)
+	btn_watch.pressed.connect(func():
+		AudioManager.sfx_button()
+		NetworkManager.request_spectate_game(gid)
+		host._show_toast("در حال ورود به تماشای زنده «%s»..." % gtitle)
+	)
+	top_row.add_child(btn_watch)
+
+	top_row.add_child(CafeSocialTheme.make_badge_pill(
+		"👁️ %s تماشاگر" % GameManager.to_fa_num(spec_cnt),
+		CafeSocialTheme.COL_EMERALD_TEXT,
+		CafeSocialTheme.COL_EMERALD_BG,
+		CafeSocialTheme.COL_EMERALD_BORDER,
+		20
+	))
+
+	var title_col: VBoxContainer = VBoxContainer.new()
+	title_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	title_col.add_theme_constant_override("separation", 2)
+	top_row.add_child(title_col)
+
+	title_col.add_child(CafeSocialTheme.make_title(
+		"مسابقه %s" % gtitle,
+		28,
+		CafeSocialTheme.COL_GOLD_BRIGHT,
+		HORIZONTAL_ALIGNMENT_RIGHT,
+		false
+	))
+
+	var names_arr: Array[String] = []
+	for p in players:
+		if typeof(p) == TYPE_DICTIONARY:
+			var pd: Dictionary = p
+			var pname: String = str(pd.get("username", "بازیکن"))
+			var c_info: Variant = pd.get("clan", null)
+			if typeof(c_info) == TYPE_DICTIONARY and not str((c_info as Dictionary).get("tag", "")).is_empty():
+				pname += " [%s]" % str((c_info as Dictionary).get("tag", ""))
+			names_arr.append(pname)
+	title_col.add_child(CafeSocialTheme.make_body(
+		" ⚔️ ".join(names_arr) if not names_arr.is_empty() else "در حال رقابت",
+		22,
+		CafeSocialTheme.COL_IVORY,
+		HORIZONTAL_ALIGNMENT_RIGHT,
+		true
+	))
+
+	var thumb: TextureRect = TextureRect.new()
+	thumb.texture = CafeSocialTheme.get_game_thumb(gtype)
+	thumb.custom_minimum_size = Vector2(64, 64)
+	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	top_row.add_child(thumb)
+
+	return card
+

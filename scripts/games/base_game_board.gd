@@ -31,6 +31,11 @@ func _exit_tree() -> void:
 func sync_turn_state() -> void:
 	my_player_index = GameManager.my_player_index
 	current_turn = GameManager.current_turn
+	if GameManager.is_spectating:
+		is_my_turn = false
+		is_board_locked = true
+		on_turn_changed(current_turn, false)
+		return
 	if not GameManager.is_game_active:
 		is_my_turn = false
 		is_board_locked = true
@@ -160,6 +165,11 @@ func _on_internal_out_of_move(payload: Dictionary) -> void:
 func _on_internal_turn_changed(turn: int) -> void:
 	current_turn = turn
 	my_player_index = GameManager.my_player_index
+	if GameManager.is_spectating:
+		is_my_turn = false
+		is_board_locked = true
+		on_turn_changed(turn, false)
+		return
 	if GameRegistry.is_simultaneous(game_type):
 		is_my_turn = true
 		is_board_locked = false
@@ -182,7 +192,7 @@ func _on_internal_select_remove_peace(remover_id: int) -> void:
 	on_select_remove_peace(remover_id)
 
 func _on_internal_new_turn_round() -> void:
-	set_board_locked(false)
+	set_board_locked(GameManager.is_spectating)
 	on_new_turn_round()
 
 func _on_internal_finish_turn_round(data: Dictionary) -> void:
@@ -229,7 +239,10 @@ func _on_internal_reconnect_data(payload: Dictionary) -> void:
 		GameManager.current_turn = current_turn
 	else:
 		current_turn = GameManager.current_turn
-	if GameRegistry.is_simultaneous(GameManager.current_game_type):
+	if GameManager.is_spectating:
+		is_my_turn = false
+		is_board_locked = true
+	elif GameRegistry.is_simultaneous(GameManager.current_game_type):
 		is_my_turn = true
 		is_board_locked = false
 	else:
@@ -283,9 +296,11 @@ func _on_internal_wait_time(time_sec: int) -> void:
 # --- Public Helper Methods ---
 
 func set_board_locked(locked: bool) -> void:
-	is_board_locked = locked
+	is_board_locked = true if GameManager.is_spectating else locked
 
 func send_move(command_id: String, payload: Variant) -> void:
+	if GameManager.is_spectating:
+		return
 	NetworkManager.send_game_command(command_id, payload)
 	move_played.emit({"command": command_id, "data": payload})
 

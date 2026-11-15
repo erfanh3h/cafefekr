@@ -66,9 +66,14 @@ var opponent_player_surrendered: bool = false
 var ludo_rank1: int = 0
 var ludo_rank2: int = 0
 
+# Live Spectator State
+var is_spectating: bool = false
+var spectated_game_id: String = ""
+var spectator_count: int = 0
+
 var is_my_turn: bool:
 	get:
-		if not is_game_active:
+		if is_spectating or not is_game_active:
 			return false
 		if GameRegistry.is_simultaneous(current_game_type):
 			return true
@@ -85,6 +90,9 @@ func get_game_display_name() -> String:
 func reset_match_state() -> void:
 	active_game_id = ""
 	is_game_active = false
+	is_spectating = false
+	spectated_game_id = ""
+	spectator_count = 0
 	match_players.clear()
 	p1_score = 0
 	p2_score = 0
@@ -183,6 +191,10 @@ func set_match_gamers(gamers_list: Array) -> void:
 	var my_uid = str(get_user_id())
 	var my_uname = str(get_username())
 	
+	if is_spectating:
+		my_player_index = 1
+		return
+	
 	for i in range(match_players.size()):
 		var g = match_players[i]
 		var uid = str(g.get("user_id", ""))
@@ -193,6 +205,30 @@ func set_match_gamers(gamers_list: Array) -> void:
 			my_player_index = gid if gid > 0 else (i + 1)
 			print("[GameManager] Assigned local player index: Player %d" % my_player_index)
 			break
+
+func start_spectating_session(game_id: String, game_type: String, gamers_list: Array, spec_count: int = 1) -> void:
+	is_spectating = true
+	spectated_game_id = game_id
+	spectator_count = max(0, spec_count)
+	is_game_active = true
+	my_player_index = 1
+	if not game_type.is_empty():
+		set_game_type(game_type)
+	if not gamers_list.is_empty():
+		set_match_gamers(gamers_list)
+
+func stop_spectating_session() -> void:
+	is_spectating = false
+	spectated_game_id = ""
+	spectator_count = 0
+	is_game_active = false
+	match_players.clear()
+	p1_score = 0
+	p2_score = 0
+	current_round = 1
+	current_turn = 0
+	my_player_index = 1
+
 
 func get_player_data_by_gamer_id(gamer_id: int) -> Dictionary:
 	for p in match_players:

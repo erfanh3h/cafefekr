@@ -122,6 +122,7 @@ var _ranked_locked_remain_lbl: Label = null
 var social_dialog: Control = null
 var btn_social_hub: Button = null
 var _active_invite_banner: Control = null
+var spectator_overlay: SpectatorOverlay = null
 
 func _ready() -> void:
 	_setup_signals()
@@ -1913,6 +1914,9 @@ func _on_not_played_turns_received(gamer_id: int, count: int) -> void:
 
 
 func _on_game_finished(data: Dictionary) -> void:
+	if GameManager.is_spectating:
+		_on_spectator_game_ended(data)
+		return
 	AudioManager.stop_sound("time")
 	AudioManager.play_theme_music()
 	GameManager.is_game_active = false
@@ -2491,6 +2495,9 @@ func _on_offline_retry_pressed() -> void:
 	_show_menu_toast("ناموفق")
 
 func _on_leave_game_pressed() -> void:
+	if GameManager.is_spectating:
+		_on_leave_spectate_pressed()
+		return
 	AudioManager.sfx_button()
 	GameManager.clear_open_game_id()
 	GameManager.clear_open_pre_game_id()
@@ -3367,12 +3374,26 @@ func _setup_social_hub_integration() -> void:
 		else:
 			social_badge_panel.visible = false
 
+	if is_instance_valid(ui_canvas) and not is_instance_valid(spectator_overlay):
+		spectator_overlay = SpectatorOverlay.new()
+		ui_canvas.add_child(spectator_overlay)
+		spectator_overlay.leave_spectate_requested.connect(_on_leave_spectate_pressed)
+
 	NetworkManager.social_init_received.connect(update_social_badge)
 	NetworkManager.social_notification_received.connect(update_social_badge)
 	NetworkManager.social_dm_received.connect(update_social_badge)
 	NetworkManager.social_game_invite_received.connect(_on_social_game_invite_received)
 	NetworkManager.social_game_invite_result.connect(_on_social_game_invite_result)
 	NetworkManager.social_spectate_data_received.connect(_on_social_spectate_data_received)
+	NetworkManager.spectate_accepted.connect(_on_spectate_accepted)
+	NetworkManager.spectate_rejected.connect(_on_spectate_rejected)
+	NetworkManager.spectator_game_state_received.connect(_on_spectator_game_state_received)
+	NetworkManager.spectator_game_ended.connect(_on_spectator_game_ended)
+	NetworkManager.spectator_count_updated.connect(_on_spectator_count_updated)
+	NetworkManager.turn_changed.connect(func(t: int):
+		if GameManager.is_spectating and is_instance_valid(spectator_overlay):
+			spectator_overlay.update_turn_display(t)
+	)
 
 
 func _on_social_game_invite_received(payload: Dictionary) -> void:
@@ -3450,13 +3471,117 @@ func _on_social_game_invite_result(payload: Dictionary) -> void:
 
 
 func _on_social_spectate_data_received(payload: Dictionary) -> void:
-	var gid = str(payload.get("game_id", ""))
-	var gtype = str(payload.get("game_type", ""))
+	if not GameManager.is_spectating:
+		_on_spectate_accepted(payload)
+
+
+func _on_spectate_accepted(payload: Dictionary) -> void:
+	var gid: String = str(payload.get("game_id", ""))
+	var gtype: String = str(payload.get("game_type", ""))
 	if gid.is_empty() or gtype.is_empty():
 		return
+
+	var gamers_arr: Array = payload.get("gamers", []) if typeof(payload.get("gamers")) == TYPE_ARRAY else []
+	var spec_cnt: int = int(payload.get("spectator_count", 1))
+	GameManager.start_spectating_session(gid, gtype, gamers_arr, spec_cnt)
+	current_match_mode = "spectator"
+	GameManager.current_match_mode = "spectator"
+
+	_hide_backdrop()
 	if is_instance_valid(social_dialog) and social_dialog.visible:
 		social_dialog.close()
-	GameManager.current_game_type = gtype
-	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
-		GameManager.set_match_gamers(payload["gamers"])
-	_spawn_board_for_game(gtype)
+	if is_instance_valid(user_profile_dialog) and user_profile_dialog.visible:
+		user_profile_dialog.close()
+	if is_instance_valid(lobby_dialog):
+		lobby_dialog.visible = false
+	if is_instance_valid(queue_dialog):
+		queue_dialog.visible = false
+
+	menu_container.visible = false
+	user_header.visible = false
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = true
+	base_game_hud.visible = true
+	base_game_hud.reset_for_new_match()
+	base_game_hud.set_spectator_mode(true)
+	base_game_hud.setup_match(GameManager.get_game_display_name(), "تماشای زنده")
+
+	_spawn_board_for_game(GameManager.current_game_type)
+
+	var rec_payload: Dictionary = payload.get("reconnect_data", payload) if typeof(payload.get("reconnect_data")) == TYPE_DICTIONARY else payload
+	_on_reconnect_data_received(rec_payload)
+	base_game_hud.set_spectator_mode(true)
+
+	var b_node: Node = cafe_table.current_board_node
+	if b_node and is_instance_valid(b_node) and b_node.has_method("set_board_locked"):
+		b_node.set_board_locked(true)
+
+	if is_instance_valid(spectator_overlay):
+		spectator_overlay.open_for_match(payload)
+
+
+func _on_spectate_rejected(payload: Dictionary) -> void:
+	var msg: String = str(payload.get("message", "امکان تماشای این مسابقه وجود ندارد."))
+	_show_menu_toast(msg)
+
+
+func _on_spectator_game_state_received(payload: Dictionary) -> void:
+	if not GameManager.is_spectating:
+		return
+	var ev_type: String = str(payload.get("event_type", ""))
+	if ev_type in ["subgame_started", "resync_snapshot", "initial_snapshot"]:
+		var rec_payload: Dictionary = payload.get("reconnect_data", payload) if typeof(payload.get("reconnect_data")) == TYPE_DICTIONARY else payload
+		_on_reconnect_data_received(rec_payload)
+		base_game_hud.set_spectator_mode(true)
+		var b_node: Node = cafe_table.current_board_node
+		if b_node and is_instance_valid(b_node) and b_node.has_method("set_board_locked"):
+			b_node.set_board_locked(true)
+	if is_instance_valid(spectator_overlay):
+		spectator_overlay.update_from_snapshot(payload)
+
+
+func _on_spectator_count_updated(game_id: String, count: int) -> void:
+	if GameManager.is_spectating and (game_id.is_empty() or game_id == GameManager.spectated_game_id):
+		if is_instance_valid(spectator_overlay):
+			spectator_overlay.update_spectator_count(count)
+
+
+func _on_spectator_game_ended(payload: Dictionary) -> void:
+	if not GameManager.is_spectating:
+		return
+	AudioManager.stop_sound("time")
+	if is_instance_valid(base_game_hud):
+		base_game_hud.stop_timer()
+		base_game_hud.stop_round_timer()
+	var b_node: Node = cafe_table.current_board_node
+	if b_node and is_instance_valid(b_node) and b_node.has_method("set_board_locked"):
+		b_node.set_board_locked(true)
+	if is_instance_valid(spectator_overlay):
+		spectator_overlay.show_match_ended(payload)
+	else:
+		_on_leave_spectate_pressed()
+
+
+func _on_leave_spectate_pressed() -> void:
+	AudioManager.sfx_button()
+	var old_gid: String = GameManager.spectated_game_id
+	if not old_gid.is_empty():
+		NetworkManager.leave_spectate_game(old_gid)
+	GameManager.stop_spectating_session()
+	if is_instance_valid(spectator_overlay):
+		spectator_overlay.close_overlay()
+	base_game_hud.set_spectator_mode(false)
+	base_game_hud.reset_for_new_match()
+	base_game_hud.visible = false
+	cafe_table.clear_board()
+	cafe_table.reset_table_state()
+	cafe_table.transition_to_menu_view(1.0)
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = false
+	user_header.visible = true
+	menu_container.visible = true
+	_hide_backdrop()
+	user_header.update_ui()
+	_update_ranked_button_state()
+	AudioManager.play_theme_music()
+

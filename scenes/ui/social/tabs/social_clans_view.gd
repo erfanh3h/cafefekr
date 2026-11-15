@@ -473,6 +473,16 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 		)
 		act_col.add_child(b_prof)
 
+		var m_p_info: Dictionary = CafeSocialTheme.format_presence(m_pres if not m_pres.is_empty() else {"status": raw_st})
+		if m_uid != my_uid and bool(m_p_info.get("is_in_game", false)):
+			var b_spec_m: Button = CafeSocialTheme.make_button("تماشا", "emerald", Vector2(118, 42), 21)
+			b_spec_m.pressed.connect(func():
+				AudioManager.sfx_button()
+				NetworkManager.request_spectate_game(str(m_p_info.get("game_id", "")), m_uid)
+				host._show_toast("درخواست تماشای مسابقه ارسال شد...")
+			)
+			act_col.add_child(b_spec_m)
+
 		var can_manage: bool = (m_uid != my_uid) and (
 			my_role == "leader"
 			or (my_role == "co_leader" and m_role in ["elder", "member"])

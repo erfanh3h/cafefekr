@@ -614,6 +614,20 @@ func _build_other_player_actions() -> void:
 		)
 		row.add_child(b_ginv)
 
+		var pres_dict: Dictionary = prof.get("presence", {}) if typeof(prof.get("presence")) == TYPE_DICTIONARY else {"status": str(prof.get("status", "offline"))}
+		var p_info: Dictionary = CafeSocialTheme.format_presence(pres_dict)
+		if bool(p_info.get("is_in_game", false)):
+			var b_watch := CafeSocialTheme.make_button("تماشای زنده", "emerald", Vector2(0, 52), 23)
+			b_watch.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b_watch.pressed.connect(func():
+				AudioManager.sfx_button()
+				var target_uid: String = _current_user_id
+				var active_gid: String = str(p_info.get("game_id", prof.get("current_game_id", prof.get("game_id", ""))))
+				close()
+				NetworkManager.request_spectate_game(active_gid, target_uid)
+			)
+			row.add_child(b_watch)
+
 	_other_actions_holder.add_child(extra_row)
 
 	var b_clan := CafeSocialTheme.make_button("دعوت به کلن من", "bronze", Vector2(0, 48), 22)
@@ -1110,6 +1124,35 @@ func _render_self_privacy_tab() -> void:
 		dm_row.add_child(db)
 	refresh_dm_btns.call()
 
+	pv.add_child(CafeSocialTheme.make_body("چه کسانی بتوانند بازی‌های زنده شما را تماشا کنند؟", 23, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+	var spec_policy := [str(priv.get("allow_spectators", "everyone"))]
+	if spec_policy[0] not in ["everyone", "friends", "clan", "none"]:
+		spec_policy[0] = "everyone"
+
+	var spec_row := HBoxContainer.new()
+	spec_row.add_theme_constant_override("separation", 8)
+	pv.add_child(spec_row)
+	var spec_btns: Dictionary = {}
+	var refresh_spec_btns := func():
+		for sk in spec_btns.keys():
+			var sb: Button = spec_btns[sk]
+			var s_act: bool = (sk == spec_policy[0])
+			sb.add_theme_stylebox_override("normal", CafeSocialTheme._get_flat_btn_style("emerald" if s_act else "muted", "normal", 12))
+			sb.add_theme_stylebox_override("hover", CafeSocialTheme._get_flat_btn_style("emerald" if s_act else "muted", "hover", 12))
+
+	for sd in [{"id": "none", "l": "هیچ‌کس"}, {"id": "clan", "l": "هم‌کلنی‌ها"}, {"id": "friends", "l": "دوستان"}, {"id": "everyone", "l": "همه"}]:
+		var sid: String = sd["id"]
+		var sbtn := CafeSocialTheme.make_button(sd["l"], "muted", Vector2(0, 48), 21)
+		sbtn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sbtn.pressed.connect(func():
+			AudioManager.sfx_tap()
+			spec_policy[0] = sid
+			refresh_spec_btns.call()
+		)
+		spec_btns[sid] = sbtn
+		spec_row.add_child(sbtn)
+	refresh_spec_btns.call()
+
 	var b_save_priv := CafeSocialTheme.make_button("ذخیره تنظیمات حریم خصوصی", "gold", Vector2(0, 56), 25, CafeSocialTheme.ICO_CHECK)
 	b_save_priv.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -1118,6 +1161,7 @@ func _render_self_privacy_tab() -> void:
 			"privacy": {
 				"allow_friend_requests": chk_freq.button_pressed,
 				"allow_dms": dm_policy[0],
+				"allow_spectators": spec_policy[0],
 				"show_last_seen": chk_last.button_pressed,
 				"show_current_game": chk_game.button_pressed,
 				"show_match_history": chk_hist.button_pressed,

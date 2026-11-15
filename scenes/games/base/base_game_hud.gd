@@ -756,6 +756,9 @@ func _setup_connections() -> void:
 
 	btn_surrender.pressed.connect(func():
 
+		if GameManager.is_spectating:
+			return
+
 		if not GameManager.is_game_active:
 
 			show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
@@ -771,6 +774,9 @@ func _setup_connections() -> void:
 	
 
 	btn_confirm_surrender.pressed.connect(func():
+
+		if GameManager.is_spectating:
+			return
 
 		AudioManager.sfx_button()
 
@@ -796,6 +802,9 @@ func _setup_connections() -> void:
 
 		btn_kori.pressed.connect(func():
 
+			if GameManager.is_spectating:
+				return
+
 			if not GameManager.is_game_active:
 
 				show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
@@ -811,6 +820,9 @@ func _setup_connections() -> void:
 	
 
 	btn_reactions.pressed.connect(func():
+
+		if GameManager.is_spectating:
+			return
 
 		if not GameManager.is_game_active:
 
@@ -932,6 +944,9 @@ func _setup_connections() -> void:
 
 	reaction_picker.reaction_selected.connect(func(r_id):
 
+		if GameManager.is_spectating:
+			return
+
 		var now_ms = Time.get_ticks_msec()
 
 		if now_ms - _last_reaction_sent_msec < 3000:
@@ -1014,7 +1029,7 @@ func _show_player_profile(player_index: int) -> void:
 
 	var p_data = GameManager.get_player_data_by_gamer_id(player_index)
 
-	var side_tag = "(شما)" if player_index == my_idx else "(حریف)"
+	var side_tag = "(تماشای زنده)" if GameManager.is_spectating else ("(شما)" if player_index == my_idx else "(حریف)")
 
 	var role_str = ""
 
@@ -1152,9 +1167,24 @@ func _ensure_clean_white_fekr_icons() -> void:
 
 
 
+func set_spectator_mode(enabled: bool) -> void:
+	if is_instance_valid(btn_surrender):
+		btn_surrender.visible = not enabled
+	if is_instance_valid(btn_kori):
+		btn_kori.visible = not enabled
+	if is_instance_valid(btn_reactions):
+		btn_reactions.visible = not enabled
+	if enabled:
+		set_fekrbekr_hud_buttons(false)
+		if is_instance_valid(reaction_picker):
+			reaction_picker.visible = false
+		if is_instance_valid(surrender_dialog):
+			surrender_dialog.visible = false
+
 func reset_for_new_match() -> void:
 
 	set_fekrbekr_hud_buttons(false)
+	set_spectator_mode(GameManager.is_spectating)
 
 	_surrender_handled = false
 
@@ -1470,6 +1500,7 @@ func setup_match(game_title: String = "تیک تاک تو", mode_title: String =
 		user_profile_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	set_fekrbekr_hud_buttons(false)
+	set_spectator_mode(GameManager.is_spectating)
 
 	_ensure_top_header_for_current_game()
 

@@ -291,3 +291,27 @@ func mark_all_notifications_read(callback: Callable = Callable()) -> void:
 
 func update_notification_preferences(prefs: Dictionary, callback: Callable = Callable()) -> void:
 	_post_json("/notifications/preferences", prefs, _get_auth_headers(), callback)
+
+# Live Spectator Discovery
+func get_live_spectator_games(
+	visibility_filter: String = "all",
+	game_type: String = "",
+	player_id: String = "",
+	clan_id: String = "",
+	page: int = 1,
+	limit: int = 20,
+	callback: Callable = Callable()
+) -> void:
+	var params: Array[String] = []
+	params.append("visibility=" + visibility_filter.uri_encode())
+	if not game_type.is_empty():
+		params.append("game_type=" + game_type.uri_encode())
+	if not player_id.is_empty():
+		params.append("player_id=" + player_id.uri_encode())
+	if not clan_id.is_empty():
+		params.append("clan_id=" + clan_id.uri_encode())
+	params.append("page=" + str(max(1, page)))
+	params.append("limit=" + str(clampi(limit, 1, 50)))
+	var endpoint: String = "/spectator/live-games?" + "&".join(params)
+	_http_get(endpoint, _get_auth_headers(), callback)
+

@@ -18,7 +18,9 @@ var _nav_hbox: HBoxContainer
 var content_area: MarginContainer
 
 var current_main_tab: String = "friends"        # "friends" | "clans" | "messages" | "notifs"
-var current_friends_subtab: String = "list"     # "list" | "requests" | "search"
+var current_friends_subtab: String = "list"     # "list" | "requests" | "search" | "live"
+var current_live_scope: String = "all"          # "all" | "friends" | "clan"
+var current_live_game_type: String = ""         # "" or canonical game type
 var current_clans_subtab: String = "my_clan"    # "my_clan" | "members" | "chat" | "discover" | "leaderboard"
 var current_clan_lb_mode: String = "clans"      # "clans" | "clans_weekly" | "clans_monthly"
 

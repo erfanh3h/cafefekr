@@ -67,6 +67,11 @@ signal social_notification_received(payload: Dictionary)
 signal social_game_invite_received(payload: Dictionary)
 signal social_game_invite_result(payload: Dictionary)
 signal social_spectate_data_received(payload: Dictionary)
+signal spectate_accepted(payload: Dictionary)
+signal spectate_rejected(payload: Dictionary)
+signal spectator_game_state_received(payload: Dictionary)
+signal spectator_game_ended(payload: Dictionary)
+signal spectator_count_updated(game_id: String, spectator_count: int)
 signal social_error_received(message: String)
 
 var unread_notifications_count: int = 0
@@ -330,6 +335,9 @@ func send_select_mine(piece_data: Variant) -> void:
 	send_game_command(Commands.Select_Mine, piece_data)
 
 func send_game_command(command_id: String, data: Variant = null) -> void:
+	if GameManager.is_spectating:
+		print("[NetworkManager] Blocked outbound game command (%s) while in spectator mode." % command_id)
+		return
 	var payload = {
 		"id": command_id,
 		"data": data
@@ -337,6 +345,8 @@ func send_game_command(command_id: String, data: Variant = null) -> void:
 	socket.emit_event("/game", "user_command", payload)
 
 func send_game_reaction(reaction_id: Variant) -> void:
+	if GameManager.is_spectating:
+		return
 	socket.emit_event("/game", "user_reaction", reaction_id)
 
 # --- SOCKET EVENT DISPATCHER ---
@@ -397,8 +407,20 @@ func respond_game_invite_realtime(invite_id: String, action: String) -> void:
 func start_clan_challenge_realtime(challenge_id: String) -> void:
 	send_social_command(Commands.Social_Clan_Challenge_Start, {"challenge_id": challenge_id})
 
-func request_spectate_game(game_id: String) -> void:
-	send_social_command(Commands.Social_Spectate_Request, {"game_id": game_id})
+func request_spectate_game(game_id: String, player_id: String = "") -> void:
+	var req_payload: Dictionary = {"game_id": game_id}
+	if not player_id.is_empty():
+		req_payload["player_id"] = player_id
+	send_social_command(Commands.RequestSpectate, req_payload)
+
+func leave_spectate_game(game_id: String = "") -> void:
+	var gid: String = game_id if not game_id.is_empty() else GameManager.spectated_game_id
+	send_social_command(Commands.LeaveSpectate, {"game_id": gid})
+
+func request_spectator_state(game_id: String = "") -> void:
+	var gid: String = game_id if not game_id.is_empty() else GameManager.spectated_game_id
+	if not gid.is_empty():
+		send_social_command(Commands.RequestSpectatorState, {"game_id": gid})
 
 func _on_socket_connected() -> void:
 	print("[NetworkManager] Connected to game backend!")
@@ -406,6 +428,13 @@ func _on_socket_connected() -> void:
 	connection_status_changed.emit(true)
 	if GameManager.is_logged_in and not GameManager.token.is_empty():
 		connect_social_namespace()
+	if GameManager.is_spectating and not GameManager.spectated_game_id.is_empty():
+		print("[NetworkManager] Reconnected while spectating (%s). Requesting spectator state..." % GameManager.spectated_game_id)
+		get_tree().create_timer(0.35).timeout.connect(func():
+			if GameManager.is_spectating and not GameManager.spectated_game_id.is_empty():
+				request_spectator_state(GameManager.spectated_game_id)
+		)
+		return
 	# Auto-rejoin active game namespace if socket reconnected during ongoing match (takes priority!)
 	var open_gid = GameManager.get_open_game_id()
 	var act_gid = GameManager.active_game_id
@@ -805,6 +834,8 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				unread_notifications_count = int(payload.get("unread_notifications", 0))
 				unread_dms_count = int(payload.get("unread_dms", 0))
 				social_init_received.emit(payload)
+				if GameManager.is_spectating and not GameManager.spectated_game_id.is_empty():
+					request_spectator_state(GameManager.spectated_game_id)
 		Commands.Social_Presence_Changed:
 			if typeof(payload) == TYPE_DICTIONARY:
 				social_presence_changed.emit(payload)
@@ -838,6 +869,44 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.Social_Spectate_Data:
 			if typeof(payload) == TYPE_DICTIONARY:
 				social_spectate_data_received.emit(payload)
+		Commands.SpectateAccepted:
+			if typeof(payload) == TYPE_DICTIONARY:
+				GameManager.spectator_count = int(payload.get("spectator_count", GameManager.spectator_count))
+				spectate_accepted.emit(payload)
+		Commands.SpectateRejected:
+			var rej_dict: Dictionary = payload if typeof(payload) == TYPE_DICTIONARY else {"message": str(payload)}
+			spectate_rejected.emit(rej_dict)
+			var rej_msg: String = str(rej_dict.get("message", "امکان تماشای این مسابقه وجود ندارد."))
+			social_error_received.emit(rej_msg)
+		Commands.SpectatorCountUpdated:
+			if typeof(payload) == TYPE_DICTIONARY:
+				var c_gid: String = str(payload.get("game_id", ""))
+				var c_val: int = int(payload.get("spectator_count", 0))
+				if c_gid == GameManager.spectated_game_id or c_gid == GameManager.active_game_id:
+					GameManager.spectator_count = c_val
+				spectator_count_updated.emit(c_gid, c_val)
+		Commands.SpectatorGameState:
+			if typeof(payload) == TYPE_DICTIONARY:
+				if payload.has("spectator_count"):
+					GameManager.spectator_count = int(payload.get("spectator_count", GameManager.spectator_count))
+				spectator_game_state_received.emit(payload)
+				if GameManager.is_spectating:
+					var ev_type: String = str(payload.get("event_type", ""))
+					if ev_type == "game_command" and typeof(payload.get("event_command")) == TYPE_DICTIONARY:
+						var inner_cmd: Dictionary = payload["event_command"]
+						var inner_id: String = str(inner_cmd.get("id", inner_cmd.get("command_id", "")))
+						var inner_data: Variant = inner_cmd.get("data", null)
+						if not inner_id.is_empty() and inner_id != Commands.Finish_Game:
+							_handle_server_command("/game", inner_id, inner_data)
+					elif ev_type == "reaction" and typeof(payload.get("reaction")) == TYPE_DICTIONARY:
+						var r_obj: Dictionary = payload["reaction"]
+						reaction_received.emit({
+							"playerId": int(r_obj.get("player_id", 1)),
+							"reactionId": int(r_obj.get("reaction_id", 0))
+						})
+		Commands.SpectatorGameEnded:
+			if typeof(payload) == TYPE_DICTIONARY:
+				spectator_game_ended.emit(payload)
 		Commands.Social_Error:
 			var err_msg = str(payload.get("message", "خطای اجتماعی")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
 			social_error_received.emit(err_msg)

@@ -133,6 +133,32 @@ const Social_Game_Invite_Send = "SocialGameInviteSend"
 const Social_Game_Invite_Received = "SocialGameInviteReceived"
 const Social_Game_Invite_Respond = "SocialGameInviteRespond"
 const Social_Game_Invite_Result = "SocialGameInviteResult"
+const Social_Spectate_Join = "SocialSpectateJoin"
 const Social_Spectate_Request = "SocialSpectateRequest"
+const Social_Spectate_Leave = "SocialSpectateLeave"
 const Social_Spectate_Data = "SocialSpectateData"
+
+# Live Spectator Mode Commands (Client -> Server)
+const RequestSpectate = "RequestSpectate"
+const Request_Spectate = "RequestSpectate"
+const LeaveSpectate = "LeaveSpectate"
+const Leave_Spectate = "LeaveSpectate"
+const RequestSpectatorState = "RequestSpectatorState"
+const Request_Spectator_State = "RequestSpectatorState"
+
+# Live Spectator Mode Commands (Server -> Client)
+const SpectateAccepted = "SpectateAccepted"
+const Spectate_Accepted = "SpectateAccepted"
+const SpectateRejected = "SpectateRejected"
+const Spectate_Rejected = "SpectateRejected"
+const SpectatorGameState = "SpectatorGameState"
+const Spectator_Game_State = "SpectatorGameState"
+const SpectatorGameEnded = "SpectatorGameEnded"
+const Spectator_Game_Ended = "SpectatorGameEnded"
+const SpectatorCountUpdated = "SpectatorCountUpdated"
+const Spectator_Count_Updated = "SpectatorCountUpdated"
+
 const Social_Error = "SocialError"
+const Social_Ack = "SocialAck"
+
+
