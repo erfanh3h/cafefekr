@@ -3680,5 +3680,3 @@ func _on_watch_live_pressed() -> void:
 		return
 	if is_instance_valid(live_games_dialog):
 		live_games_dialog.open("all")
-
-
