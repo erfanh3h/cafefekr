@@ -250,6 +250,12 @@ func update_clan_settings(payload: Dictionary, callback: Callable = Callable()) 
 func create_clan_friendly_challenge(game_type: String = "Ludo", player_count: int = 2, callback: Callable = Callable()) -> void:
 	_post_json("/clans/friendly-challenge", {"game_type": game_type, "player_count": player_count}, _get_auth_headers(), callback)
 
+func join_clan_friendly_challenge(challenge_id: String, callback: Callable = Callable()) -> void:
+	_post_json("/clans/friendly-challenge/join", {"challenge_id": challenge_id}, _get_auth_headers(), callback)
+
+func close_clan_friendly_challenge(challenge_id: String, callback: Callable = Callable()) -> void:
+	_post_json("/clans/friendly-challenge/close", {"challenge_id": challenge_id}, _get_auth_headers(), callback)
+
 # Direct Messages & Clan Chat
 func get_conversations_list(callback: Callable) -> void:
 	_http_get("/messages/conversations", _get_auth_headers(), callback)

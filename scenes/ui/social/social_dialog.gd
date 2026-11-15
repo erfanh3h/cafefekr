@@ -202,13 +202,10 @@ func _build_ui_shell() -> void:
 	_toast_panel.add_child(lbl_status_toast)
 
 	# 3. Primary 4-Hub Navigation Bar (Friends | Clans | Messages | Notifications)
-	var nav_well := PanelContainer.new()
-	nav_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(18, 8.0, 8.0))
-	root_vbox.add_child(nav_well)
-
 	_nav_hbox = HBoxContainer.new()
-	_nav_hbox.add_theme_constant_override("separation", 8)
-	nav_well.add_child(_nav_hbox)
+	_nav_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	_nav_hbox.add_theme_constant_override("separation", 12)
+	root_vbox.add_child(_nav_hbox)
 
 	# 4. Content Container
 	content_area = MarginContainer.new()

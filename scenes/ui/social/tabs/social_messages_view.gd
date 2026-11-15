@@ -160,7 +160,7 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	text_col.add_child(name_row)
 
 	var raw_st := str(pres.get("status", "offline"))
-	var st_badge := CafeSocialTheme.make_status_badge(raw_st, 24.0)
+	var st_badge := CafeSocialTheme.make_status_badge(raw_st, 27.0)
 	st_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	name_row.add_child(st_badge)
 
@@ -236,7 +236,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	hrow.add_child(p_col)
 
 	p_col.add_child(CafeSocialTheme.make_title(pname, 30, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
-	var st_badge_partner := CafeSocialTheme.make_status_badge(str(pres.get("status", "offline")), 26.0)
+	var st_badge_partner := CafeSocialTheme.make_status_badge(str(pres.get("status", "offline")), 29.0)
 	st_badge_partner.size_flags_horizontal = Control.SIZE_SHRINK_END
 	p_col.add_child(st_badge_partner)
 

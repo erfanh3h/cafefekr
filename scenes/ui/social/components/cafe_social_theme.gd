@@ -105,6 +105,7 @@ const COL_EMERALD_BG := Color(0.12, 0.27, 0.18, 0.96)
 const COL_EMERALD_BORDER := Color(0.36, 0.78, 0.50, 0.92)
 const COL_CRIMSON_TEXT := Color(0.98, 0.54, 0.52, 1.0)
 const COL_CRIMSON_BG := Color(0.28, 0.10, 0.10, 0.95)
+const COL_CRIMSON_BORDER := Color(0.84, 0.34, 0.32, 0.90)
 
 static var _shell_style_cache: StyleBoxTexture = null
 static var _frame_banner_cache: StyleBoxTexture = null
@@ -425,7 +426,7 @@ static func make_nav_tab(
 	is_active: bool = false
 ) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 92)
+	b.custom_minimum_size = Vector2(0, 128)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.focus_mode = Control.FOCUS_NONE
 	b.flat = true
@@ -445,12 +446,16 @@ static func make_nav_tab(
 
 	var tr := TextureRect.new()
 	tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tr.offset_left = 2
+	tr.offset_right = -2
+	tr.offset_top = 0
+	tr.offset_bottom = -8
 	tr.texture = get_nav_tab_texture(tab_id)
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if not is_active:
-		tr.modulate = Color(0.68, 0.65, 0.62, 0.88)
+		tr.modulate = Color(0.76, 0.72, 0.68, 0.90)
 	else:
 		tr.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	holder.add_child(tr)
@@ -460,8 +465,8 @@ static func make_nav_tab(
 		highlight_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 		highlight_bar.offset_top = -6
 		highlight_bar.offset_bottom = -1
-		highlight_bar.offset_left = 28
-		highlight_bar.offset_right = -28
+		highlight_bar.offset_left = 26
+		highlight_bar.offset_right = -26
 		highlight_bar.color = Color(0.42, 0.92, 0.60, 0.98)
 		highlight_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		holder.add_child(highlight_bar)
@@ -470,10 +475,10 @@ static func make_nav_tab(
 		var badge := PanelContainer.new()
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-		badge.offset_left = -38
+		badge.offset_left = -42
 		badge.offset_top = 4
-		badge.offset_right = -4
-		badge.offset_bottom = 32
+		badge.offset_right = -6
+		badge.offset_bottom = 34
 		var bst := StyleBoxFlat.new()
 		bst.bg_color = Color(0.82, 0.18, 0.16, 0.98)
 		bst.border_color = Color(1.0, 0.86, 0.42, 0.95)
@@ -487,13 +492,10 @@ static func make_nav_tab(
 		bl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		bl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		bl.add_theme_font_override("font", FONT_BODY)
-		bl.add_theme_font_size_override("font_size", 18)
+		bl.add_theme_font_size_override("font_size", 19)
 		bl.add_theme_color_override("font_color", COL_IVORY)
 		badge.add_child(bl)
 		holder.add_child(badge)
-
-	ActionVFXManager.apply_button_juice(b, "tap_button")
-	return b
 
 	ActionVFXManager.apply_button_juice(b, "tap_button")
 	return b
@@ -652,7 +654,7 @@ static func get_status_texture(status: String) -> Texture2D:
 			return TEX_STATUS_OFFLINE
 
 
-static func make_status_badge(status: String, custom_h: float = 34.0) -> Control:
+static func make_status_badge(status: String, custom_h: float = 37.0) -> Control:
 	var tr := TextureRect.new()
 	var w := custom_h * 2.4
 	tr.custom_minimum_size = Vector2(w, custom_h)
@@ -1042,30 +1044,51 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 
 	vbox.add_child(make_body("بازی مورد نظر خود را برای ارسال دعوت‌نامه مستقیم انتخاب کنید:", 25, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
+	var g_scroll := ScrollContainer.new()
+	g_scroll.custom_minimum_size = Vector2(0, 560)
+	g_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	g_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(g_scroll)
+
 	var grid := GridContainer.new()
 	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 14)
 	grid.add_theme_constant_override("v_separation", 14)
-	vbox.add_child(grid)
+	g_scroll.add_child(grid)
 
-	var popular_games := [
-		{"id": "Monopoly", "title": "مونوپولی"},
-		{"id": "Ludo", "title": "منچ (لودو)"},
-		{"id": "BackGammon", "title": "تخته نرد"},
-		{"id": "Chess", "title": "شطرنج"},
-		{"id": "Coup", "title": "کودتا"},
-		{"id": "Uno", "title": "اونو"},
-		{"id": "BattleShip", "title": "نبرد کشتی"},
-		{"id": "Quoridor", "title": "کوریدور"},
-		{"id": "Risk", "title": "ریسک استرایک"},
-		{"id": "TicTacToe", "title": "تیک تاک تو"},
+	var all_invite_games: Array[String] = [
+		GameTypes.TIC_TAC_TOE,
+		GameTypes.CHESS,
+		GameTypes.BACKGAMMON,
+		GameTypes.CHECKERS,
+		GameTypes.FOURINROW,
+		GameTypes.OTHELLO,
+		GameTypes.MILL,
+		GameTypes.DOTBOX,
+		GameTypes.PENTAGO,
+		GameTypes.YINSH,
+		GameTypes.QUORIDOR,
+		GameTypes.YATZY,
+		GameTypes.LUDO,
+		GameTypes.RISK,
+		GameTypes.UNO,
+		GameTypes.COUP,
+		GameTypes.MONOPOLY,
+		GameTypes.QUIZ,
+		GameTypes.BATTLESHIP,
+		GameTypes.FEKRBEKR,
+		GameTypes.RPC,
+		GameTypes.SUDOKU,
+		GameTypes.BOXFOUR,
+		GameTypes.MNUMBERS,
+		GameTypes.MSWEEPER,
 	]
 
-	for g in popular_games:
-		var gid: String = str(g["id"])
-		var gtitle: String = str(g["title"])
+	for gid in all_invite_games:
+		var gtitle: String = GameRegistry.get_display_name_fa(gid)
 		var gbtn := Button.new()
-		gbtn.custom_minimum_size = Vector2(360, 82)
+		gbtn.custom_minimum_size = Vector2(0, 82)
 		gbtn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		gbtn.focus_mode = Control.FOCUS_NONE
 		gbtn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND

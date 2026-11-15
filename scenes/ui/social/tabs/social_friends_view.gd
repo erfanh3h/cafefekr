@@ -280,7 +280,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	top_row.add_child(stats_col)
 
 	var raw_st := str(pres.get("status", "offline"))
-	stats_col.add_child(CafeSocialTheme.make_status_badge(raw_st, 32.0))
+	stats_col.add_child(CafeSocialTheme.make_status_badge(raw_st, 35.0))
 
 	var stat_pills := HBoxContainer.new()
 	stat_pills.add_theme_constant_override("separation", 6)

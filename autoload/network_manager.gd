@@ -394,6 +394,9 @@ func respond_game_invite_realtime(invite_id: String, action: String) -> void:
 		"action": action
 	})
 
+func start_clan_challenge_realtime(challenge_id: String) -> void:
+	send_social_command(Commands.Social_Clan_Challenge_Start, {"challenge_id": challenge_id})
+
 func request_spectate_game(game_id: String) -> void:
 	send_social_command(Commands.Social_Spectate_Request, {"game_id": game_id})
 

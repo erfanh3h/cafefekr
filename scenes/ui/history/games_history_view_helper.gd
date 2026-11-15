@@ -46,7 +46,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 		empty_lbl.text = "هنوز آماری برای بازی‌ها ثبت نشده است."
 		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_lbl.add_theme_font_override("font", _font_hekayat)
-		empty_lbl.add_theme_font_size_override("font_size", 28)
+		empty_lbl.add_theme_font_size_override("font_size", 30)
 		empty_lbl.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72))
 		target_container.add_child(empty_lbl)
 		return
@@ -56,7 +56,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 	mode_summary_title.text = "🏆 آمار حالت‌های رتبه‌بندی"
 	mode_summary_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	mode_summary_title.add_theme_font_override("font", _font_hekayat)
-	mode_summary_title.add_theme_font_size_override("font_size", 34)
+	mode_summary_title.add_theme_font_size_override("font_size", 36)
 	mode_summary_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	target_container.add_child(mode_summary_title)
 
@@ -111,7 +111,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 	games_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	games_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	games_title.add_theme_font_override("font", _font_hekayat)
-	games_title.add_theme_font_size_override("font_size", 34)
+	games_title.add_theme_font_size_override("font_size", 36)
 	games_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	games_header_box.add_child(games_title)
 
@@ -187,7 +187,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 		btn_toggle.custom_minimum_size = Vector2(300, 60)
 		btn_toggle.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		btn_toggle.add_theme_font_override("font", _font_hekayat)
-		btn_toggle.add_theme_font_size_override("font_size", 24)
+		btn_toggle.add_theme_font_size_override("font_size", 26)
 		KenneyUI.style_button(btn_toggle, KenneyUI.COLOR_GREY)
 		btn_toggle.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -230,7 +230,7 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 		var lbl_total = Label.new()
 		lbl_total.text = "%s بازی" % GameManager.to_fa_num(total_matches)
 		lbl_total.add_theme_font_override("font", _font_hekayat)
-		lbl_total.add_theme_font_size_override("font_size", 24)
+		lbl_total.add_theme_font_size_override("font_size", 26)
 		lbl_total.add_theme_color_override("font_color", Color(0.85, 0.78, 0.65))
 		header_row.add_child(lbl_total)
 
@@ -239,7 +239,7 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_title.add_theme_font_override("font", _font_hekayat)
-	lbl_title.add_theme_font_size_override("font_size", 28)
+	lbl_title.add_theme_font_size_override("font_size", 30)
 	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.94, 0.82))
 	header_row.add_child(lbl_title)
 
@@ -336,7 +336,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 		lbl_matches.text = "بدون مسابقه"
 		lbl_matches.add_theme_color_override("font_color", Color(0.60, 0.55, 0.50))
 	lbl_matches.add_theme_font_override("font", _font_hekayat)
-	lbl_matches.add_theme_font_size_override("font_size", 22)
+	lbl_matches.add_theme_font_size_override("font_size", 24)
 	row1.add_child(lbl_matches)
 
 	var lbl_name = Label.new()
@@ -344,7 +344,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_name.add_theme_font_override("font", _font_hekayat)
-	lbl_name.add_theme_font_size_override("font_size", 30)
+	lbl_name.add_theme_font_size_override("font_size", 32)
 	lbl_name.add_theme_color_override("font_color", Color.WHITE if not is_dimmed else Color(0.75, 0.70, 0.65))
 	row1.add_child(lbl_name)
 
@@ -363,15 +363,15 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 		var d_cnt = int(info["draw"])
 		var l_cnt = int(info["lose"])
 
-		var p1 = _create_stat_pill("اول: %s" % GameManager.to_fa_num(max(r1_cnt, w_cnt)), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 20)
+		var p1 = _create_stat_pill("اول: %s" % GameManager.to_fa_num(max(r1_cnt, w_cnt)), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 22)
 		p1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p1)
 
-		var p2 = _create_stat_pill("دوم: %s" % GameManager.to_fa_num(max(r2_cnt, d_cnt)), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 20)
+		var p2 = _create_stat_pill("دوم: %s" % GameManager.to_fa_num(max(r2_cnt, d_cnt)), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 22)
 		p2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p2)
 
-		var p3 = _create_stat_pill("سایر: %s" % GameManager.to_fa_num(max(rn_cnt, l_cnt)), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 20)
+		var p3 = _create_stat_pill("سایر: %s" % GameManager.to_fa_num(max(rn_cnt, l_cnt)), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 22)
 		p3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p3)
 	else:
@@ -379,21 +379,21 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 		var d_cnt = int(info["draw"])
 		var l_cnt = int(info["lose"])
 
-		var p1 = _create_stat_pill("برد: %s" % GameManager.to_fa_num(w_cnt), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 20)
+		var p1 = _create_stat_pill("برد: %s" % GameManager.to_fa_num(w_cnt), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 22)
 		p1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p1)
 
-		var p2 = _create_stat_pill("مساوی: %s" % GameManager.to_fa_num(d_cnt), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 20)
+		var p2 = _create_stat_pill("مساوی: %s" % GameManager.to_fa_num(d_cnt), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 22)
 		p2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p2)
 
-		var p3 = _create_stat_pill("باخت: %s" % GameManager.to_fa_num(l_cnt), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 20)
+		var p3 = _create_stat_pill("باخت: %s" % GameManager.to_fa_num(l_cnt), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 22)
 		p3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p3)
 
 	return panel
 
-static func _create_stat_pill(text_content: String, text_color: Color, bg_color: Color, font_size: int = 22) -> PanelContainer:
+static func _create_stat_pill(text_content: String, text_color: Color, bg_color: Color, font_size: int = 24) -> PanelContainer:
 	var pill = PanelContainer.new()
 	var sb = StyleBoxFlat.new()
 	sb.bg_color = bg_color
@@ -440,7 +440,7 @@ static func _create_empty_card(msg: String) -> PanelContainer:
 	lbl.text = msg
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_override("font", _font_hekayat)
-	lbl.add_theme_font_size_override("font_size", 24)
+	lbl.add_theme_font_size_override("font_size", 26)
 	lbl.add_theme_color_override("font_color", Color(0.8, 0.75, 0.68))
 	p.add_child(lbl)
 	return p
