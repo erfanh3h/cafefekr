@@ -13,6 +13,8 @@ var current_sfx_index: int = 0
 
 var is_music_enabled: bool = true
 var is_sound_enabled: bool = true
+var music_volume: float = 1.0
+var sfx_volume: float = 1.0
 
 # Preloaded Sounds (.wav)
 var sounds: Dictionary = {}
@@ -187,15 +189,39 @@ func set_sound_enabled(enabled: bool) -> void:
 	is_sound_enabled = enabled
 	_save_settings()
 
+func set_music_volume(vol: float) -> void:
+	music_volume = clampf(vol, 0.0, 1.0)
+	if is_instance_valid(music_player):
+		music_player.volume_db = linear_to_db(music_volume) if music_volume > 0.001 else -80.0
+	_save_settings()
+
+func set_sfx_volume(vol: float) -> void:
+	sfx_volume = clampf(vol, 0.0, 1.0)
+	var db = linear_to_db(sfx_volume) if sfx_volume > 0.001 else -80.0
+	for player in sfx_players:
+		if is_instance_valid(player):
+			player.volume_db = db
+	_save_settings()
+
 func _load_settings() -> void:
 	var config = ConfigFile.new()
 	if config.load(SETTINGS_PATH) == OK:
 		is_music_enabled = config.get_value("audio", "music", true)
 		is_sound_enabled = config.get_value("audio", "sound", true)
+		music_volume = config.get_value("audio", "music_volume", 1.0)
+		sfx_volume = config.get_value("audio", "sfx_volume", 1.0)
+		if is_instance_valid(music_player):
+			music_player.volume_db = linear_to_db(music_volume) if music_volume > 0.001 else -80.0
+		var sfx_db = linear_to_db(sfx_volume) if sfx_volume > 0.001 else -80.0
+		for player in sfx_players:
+			if is_instance_valid(player):
+				player.volume_db = sfx_db
 
 func _save_settings() -> void:
 	var config = ConfigFile.new()
 	config.load(SETTINGS_PATH)
 	config.set_value("audio", "music", is_music_enabled)
 	config.set_value("audio", "sound", is_sound_enabled)
+	config.set_value("audio", "music_volume", music_volume)
+	config.set_value("audio", "sfx_volume", sfx_volume)
 	config.save(SETTINGS_PATH)

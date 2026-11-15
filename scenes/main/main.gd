@@ -22,38 +22,26 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 
 # UI Components
 
-@onready var user_header = $CanvasLayer/UserHeader
+@onready var main_tab_shell = $CanvasLayer/MainTabShell
+@onready var user_header = $CanvasLayer/MainTabShell/MainVBox/CompactUserHeader
+@onready var menu_container = $CanvasLayer/MainTabShell
+@onready var logo_plate = null
 
-@onready var menu_container = $CanvasLayer/MenuContainer
+# Menu Cards (Delegated to PlayTab in five-tab architecture)
+@onready var btn_ranked = null
+@onready var ranked_title: Label = null
+@onready var ranked_subtitle: Label = null
+@onready var btn_multi_rank = null
+@onready var btn_classic_rank = null
+@onready var btn_lobby = null
 
-@onready var logo_plate = get_node_or_null("CanvasLayer/MenuContainer/CenterContent/LogoSection/LogoPlate")
-
-
-
-# Menu Cards
-
-@onready var btn_ranked = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked
-@onready var ranked_title: Label = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/TextCol/CardTitle
-@onready var ranked_subtitle: Label = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnRanked/Margin/HBox/TextCol/CardSubtitle
-@onready var btn_multi_rank = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnMultiRank
-@onready var btn_classic_rank = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnClassicRank
-@onready var btn_lobby = $CanvasLayer/MenuContainer/CenterContent/CardsContainer/BtnLobby
-
-
-
-# Bottom Dock
-
-@onready var btn_ranking = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRanking
-
-@onready var btn_history = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnHistory
-
-@onready var btn_rules = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnRules
-
-@onready var btn_audio = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio
-
-@onready var btn_exit = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnExit
-
-@onready var img_audio = $CanvasLayer/MenuContainer/BottomDock/HBoxDock/BtnAudio/VBox/Icon
+# Bottom Dock (Replaced by five-tab persistent bottom navigation)
+@onready var btn_ranking = null
+@onready var btn_history = null
+@onready var btn_rules = null
+@onready var btn_audio = null
+@onready var btn_exit = null
+@onready var img_audio = null
 
 
 
@@ -395,55 +383,71 @@ func _dismiss_splash_overlay(callback: Callable = Callable()) -> void:
 
 func _setup_signals() -> void:
 
-	# Menu Button Connections
-
-	btn_ranked.pressed.connect(_on_ranked_pressed)
-
-	if is_instance_valid(btn_multi_rank):
-		btn_multi_rank.pressed.connect(_on_multi_rank_pressed)
-
-	btn_classic_rank.pressed.connect(_on_classic_rank_pressed)
-
-	btn_lobby.pressed.connect(_on_lobby_pressed)
-
-	
-
-	btn_ranking.pressed.connect(_on_ranking_pressed)
-
-	btn_history.pressed.connect(_on_history_pressed)
-
-	btn_rules.pressed.connect(_on_rules_pressed)
-
-	btn_audio.pressed.connect(_on_audio_toggle)
-
-	btn_exit.pressed.connect(_on_exit_pressed)
-	_setup_social_hub_integration()
-
-	
-
-	# Header events - tapping avatar image opens avatar list dialog directly
-
-	user_header.store_requested.connect(_on_store_pressed)
-
-	user_header.profile_requested.connect(func():
-		AudioManager.sfx_tap()
-		_on_store_pressed()
-	)
-
-	if user_header.has_signal("change_username_requested"):
-		user_header.change_username_requested.connect(_show_change_username_dialog)
-
-	if user_profile_dialog.has_signal("change_username_requested"):
-		user_profile_dialog.change_username_requested.connect(_show_change_username_dialog)
-
-	if user_header.has_signal("login_requested"):
-		user_header.login_requested.connect(func():
+	# Wire Five-Tab Application Shell Events
+	if is_instance_valid(main_tab_shell):
+		main_tab_shell.ranked_pressed.connect(_on_ranked_pressed)
+		main_tab_shell.multi_rank_pressed.connect(_on_multi_rank_pressed)
+		main_tab_shell.classic_rank_pressed.connect(_on_classic_rank_pressed)
+		main_tab_shell.lobby_pressed.connect(_on_lobby_pressed)
+		main_tab_shell.watch_live_requested.connect(_on_watch_live_pressed)
+		main_tab_shell.store_requested.connect(_on_store_pressed)
+		main_tab_shell.login_requested.connect(func():
 			_show_backdrop()
 			if not GameManager.is_logged_in:
 				login_dialog.open()
 			else:
 				login_dialog.open_for_phone_upgrade("برای ذخیره دائمی حساب و شرکت در رقابت‌ها، لطفاً شماره موبایل خود را ثبت کنید.")
 		)
+		main_tab_shell.change_username_requested.connect(_show_change_username_dialog)
+		main_tab_shell.phone_upgrade_requested.connect(func():
+			_show_backdrop()
+			login_dialog.open_for_phone_upgrade("برای ذخیره دائمی حساب، لطفاً شماره موبایل خود را ثبت کنید.")
+		)
+		main_tab_shell.spectate_match_requested.connect(func(gid: String, _gtype: String):
+			if not gid.is_empty():
+				NetworkManager.request_spectate_game(gid)
+		)
+
+	# Legacy Menu Button Connections (if present)
+	if is_instance_valid(btn_ranked):
+		btn_ranked.pressed.connect(_on_ranked_pressed)
+	if is_instance_valid(btn_multi_rank):
+		btn_multi_rank.pressed.connect(_on_multi_rank_pressed)
+	if is_instance_valid(btn_classic_rank):
+		btn_classic_rank.pressed.connect(_on_classic_rank_pressed)
+	if is_instance_valid(btn_lobby):
+		btn_lobby.pressed.connect(_on_lobby_pressed)
+	if is_instance_valid(btn_ranking):
+		btn_ranking.pressed.connect(_on_ranking_pressed)
+	if is_instance_valid(btn_history):
+		btn_history.pressed.connect(_on_history_pressed)
+	if is_instance_valid(btn_rules):
+		btn_rules.pressed.connect(_on_rules_pressed)
+	if is_instance_valid(btn_audio):
+		btn_audio.pressed.connect(_on_audio_toggle)
+	if is_instance_valid(btn_exit):
+		btn_exit.pressed.connect(_on_exit_pressed)
+
+	_setup_social_hub_integration()
+
+	# Header events - tapping avatar image switches to user tab
+	if is_instance_valid(user_header):
+		user_header.store_requested.connect(_on_store_pressed)
+		user_header.profile_requested.connect(func():
+			AudioManager.sfx_tap()
+			if is_instance_valid(main_tab_shell):
+				main_tab_shell.switch_to_tab("user")
+		)
+		if user_header.has_signal("change_username_requested"):
+			user_header.change_username_requested.connect(_show_change_username_dialog)
+		if user_header.has_signal("login_requested"):
+			user_header.login_requested.connect(func():
+				_show_backdrop()
+				if not GameManager.is_logged_in:
+					login_dialog.open()
+				else:
+					login_dialog.open_for_phone_upgrade("برای ذخیره دائمی حساب و شرکت در رقابت‌ها، لطفاً شماره موبایل خود را ثبت کنید.")
+			)
 
 	# User State & Progression Listeners
 	GameManager.user_logged_in.connect(func(_user_data):
@@ -903,6 +907,12 @@ func _on_lobby_pressed() -> void:
 
 func _on_ranking_pressed() -> void:
 	AudioManager.sfx_button()
+	if is_instance_valid(main_tab_shell):
+		main_tab_shell.switch_to_tab("history")
+		var h_tab = main_tab_shell.get_active_tab_instance()
+		if is_instance_valid(h_tab) and h_tab.has_method("switch_section"):
+			h_tab.switch_section("leaderboard")
+		return
 	if not NetworkManager.is_online:
 		NetworkManager.connect_to_game_server()
 		_show_offline_dialog()
@@ -912,6 +922,9 @@ func _on_ranking_pressed() -> void:
 
 func _on_history_pressed() -> void:
 	AudioManager.sfx_button()
+	if is_instance_valid(main_tab_shell):
+		main_tab_shell.switch_to_tab("history")
+		return
 	if not NetworkManager.is_online:
 		NetworkManager.connect_to_game_server()
 		_show_offline_dialog()
@@ -924,6 +937,12 @@ func _on_history_pressed() -> void:
 
 func _on_store_pressed() -> void:
 	AudioManager.sfx_button()
+	if is_instance_valid(main_tab_shell):
+		main_tab_shell.switch_to_tab("user")
+		var u_tab = main_tab_shell.get_active_tab_instance()
+		if is_instance_valid(u_tab) and u_tab.has_method("switch_subtab"):
+			u_tab.switch_subtab("wallet")
+		return
 	if not NetworkManager.is_online:
 		NetworkManager.connect_to_game_server()
 		_show_offline_dialog()
@@ -933,6 +952,9 @@ func _on_store_pressed() -> void:
 
 func _on_rules_pressed() -> void:
 	AudioManager.sfx_button()
+	if is_instance_valid(main_tab_shell):
+		main_tab_shell.switch_to_tab("library")
+		return
 	_show_backdrop()
 	rules_dialog.open()
 
@@ -989,14 +1011,13 @@ func _on_audio_toggle() -> void:
 
 
 func _update_audio_button_visual() -> void:
-
-	if AudioManager.is_music_enabled:
-
-		img_audio.texture = _sound_on_tex
-
-	else:
-
-		img_audio.texture = _sound_off_tex
+	if is_instance_valid(img_audio):
+		if AudioManager.is_music_enabled:
+			img_audio.texture = _sound_on_tex
+		else:
+			img_audio.texture = _sound_off_tex
+	if is_instance_valid(main_tab_shell) and is_instance_valid(main_tab_shell.top_utility_bar):
+		main_tab_shell.top_utility_bar.update_sound_icon()
 
 
 
@@ -2681,6 +2702,8 @@ func _on_ranked_breakout_exit_requested() -> void:
 	AudioManager.play_theme_music()
 
 func _update_ranked_button_state() -> void:
+	if is_instance_valid(main_tab_shell):
+		main_tab_shell.update_ranked_button_state()
 	if not is_instance_valid(btn_ranked):
 		return
 	var title_lbl = ranked_title if is_instance_valid(ranked_title) else btn_ranked.get_node_or_null("Margin/HBox/TextCol/CardTitle")

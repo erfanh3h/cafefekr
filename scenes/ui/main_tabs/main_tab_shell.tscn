@@ -1,0 +1,119 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/main_tabs/main_tab_shell.gd" id="1_shell_script"]
+[ext_resource type="Texture2D" path="res://assets/images/menu_bg.jpg" id="2_menu_bg"]
+[ext_resource type="Texture2D" path="res://assets/particles/star_01.png" id="3_star_tex"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/top_utility_bar.tscn" id="4_top_utility"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/compact_user_header.tscn" id="5_compact_header"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/bottom_navigation.tscn" id="6_bottom_nav"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/sound_settings_popup.tscn" id="7_sound_popup"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/exit_confirm_dialog.tscn" id="8_exit_dialog"]
+
+[node name="MainTabShell" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_shell_script")
+
+[node name="BackgroundLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BgRect" type="TextureRect" parent="BackgroundLayer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_menu_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="BgRectFade" type="TextureRect" parent="BackgroundLayer"]
+visible = false
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Vignette" type="ColorRect" parent="BackgroundLayer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.04, 0.02, 0.01, 0.20)
+
+[node name="Sparkles" type="CPUParticles2D" parent="BackgroundLayer"]
+position = Vector2(540, 960)
+amount = 24
+lifetime = 4.5
+preprocess = 2.0
+texture = ExtResource("3_star_tex")
+emission_shape = 3
+emission_rect_extents = Vector2(520, 920)
+gravity = Vector2(0, -18)
+initial_velocity_min = 6.0
+initial_velocity_max = 18.0
+scale_amount_min = 0.03
+scale_amount_max = 0.09
+color = Color(1, 0.88, 0.45, 0.5)
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 4
+alignment = 0
+
+[node name="TopUtilityBar" parent="MainVBox" instance=ExtResource("4_top_utility")]
+layout_mode = 2
+
+[node name="CompactUserHeader" parent="MainVBox" instance=ExtResource("5_compact_header")]
+layout_mode = 2
+
+[node name="TabContentContainer" type="MarginContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BottomNavigation" parent="MainVBox" instance=ExtResource("6_bottom_nav")]
+layout_mode = 2
+
+[node name="OverlayLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="SoundSettingsPopup" parent="OverlayLayer" instance=ExtResource("7_sound_popup")]
+visible = false
+layout_mode = 1
+
+[node name="ExitConfirmDialog" parent="OverlayLayer" instance=ExtResource("8_exit_dialog")]
+visible = false
+layout_mode = 1
