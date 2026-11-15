@@ -145,6 +145,8 @@ const LeaveSpectate = "LeaveSpectate"
 const Leave_Spectate = "LeaveSpectate"
 const RequestSpectatorState = "RequestSpectatorState"
 const Request_Spectator_State = "RequestSpectatorState"
+const RequestLiveGames = "RequestLiveGames"
+const Request_Live_Games = "RequestLiveGames"
 
 # Live Spectator Mode Commands (Server -> Client)
 const SpectateAccepted = "SpectateAccepted"
@@ -157,6 +159,8 @@ const SpectatorGameEnded = "SpectatorGameEnded"
 const Spectator_Game_Ended = "SpectatorGameEnded"
 const SpectatorCountUpdated = "SpectatorCountUpdated"
 const Spectator_Count_Updated = "SpectatorCountUpdated"
+const LiveGamesList = "LiveGamesList"
+const Live_Games_List = "LiveGamesList"
 
 const Social_Error = "SocialError"
 const Social_Ack = "SocialAck"

@@ -591,6 +591,51 @@ static func _populate_live_games_discovery(host: Control, list_vbox: VBoxContain
 	games_box.add_child(CafeSocialTheme.make_loading_state("در حال جستجوی مسابقات زنده..."))
 	list_vbox.add_child(games_box)
 
+	var merged_map: Dictionary = {}
+	var render_merged := func():
+		if not is_instance_valid(games_box):
+			return
+		for ch in games_box.get_children():
+			ch.queue_free()
+		var items: Array = merged_map.values()
+		if items.is_empty():
+			games_box.add_child(CafeSocialTheme.make_empty_state(
+				CafeSocialTheme.ICO_LOBBY,
+				"مسابقه زنده‌ای یافت نشد",
+				"در حال حاضر مسابقه فعالی با این فیلتر برای تماشا در جریان نیست.",
+				"بروزرسانی فهرست",
+				"gold",
+				func(): host._refresh_current_tab()
+			))
+			return
+		games_box.add_child(CafeSocialTheme.make_ornate_section_header(
+			"مسابقات در حال برگزاری",
+			CafeSocialTheme.ICO_CUP,
+			"%s مسابقه زنده آماده تماشا" % GameManager.to_fa_num(items.size())
+		))
+		for item in items:
+			if typeof(item) == TYPE_DICTIONARY:
+				games_box.add_child(_build_live_match_card(host, item))
+
+	var ingest_fn := func(arr: Array):
+		for it in arr:
+			if typeof(it) == TYPE_DICTIONARY:
+				var d: Dictionary = it
+				var g_id: String = str(d.get("game_id", ""))
+				if not g_id.is_empty() and not merged_map.has(g_id):
+					merged_map[g_id] = d
+
+	var rt_cb := func(payload: Dictionary):
+		if not is_instance_valid(games_box):
+			return
+		var arr: Array = payload.get("items", []) if typeof(payload.get("items")) == TYPE_ARRAY else []
+		ingest_fn.call(arr)
+		render_merged.call()
+
+	if NetworkManager.is_online:
+		NetworkManager.live_games_list_received.connect(rt_cb, CONNECT_ONE_SHOT)
+		NetworkManager.request_live_games_realtime(host.current_live_scope, host.current_live_game_type)
+
 	NetworkManager.api.get_live_spectator_games(
 		host.current_live_scope,
 		host.current_live_game_type,
@@ -601,34 +646,15 @@ static func _populate_live_games_discovery(host: Control, list_vbox: VBoxContain
 		func(ok: bool, _code: int, data: Variant):
 			if not is_instance_valid(games_box):
 				return
-			for ch in games_box.get_children():
-				ch.queue_free()
-			var items: Array = []
 			if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
 				var res: Dictionary = data["result"]
+				var arr: Array = []
 				if typeof(res.get("items")) == TYPE_ARRAY:
-					items = res["items"]
+					arr = res["items"]
 				elif typeof(res.get("games")) == TYPE_ARRAY:
-					items = res["games"]
-			if items.is_empty():
-				games_box.add_child(CafeSocialTheme.make_empty_state(
-					CafeSocialTheme.ICO_LOBBY,
-					"مسابقه زنده‌ای یافت نشد",
-					"در حال حاضر مسابقه فعالی با این فیلتر برای تماشا در جریان نیست.",
-					"بروزرسانی فهرست",
-					"gold",
-					func(): host._refresh_current_tab()
-				))
-				return
-
-			games_box.add_child(CafeSocialTheme.make_ornate_section_header(
-				"مسابقات در حال برگزاری",
-				CafeSocialTheme.ICO_CUP,
-				"%s مسابقه زنده آماده تماشا" % GameManager.to_fa_num(items.size())
-			))
-			for item in items:
-				if typeof(item) == TYPE_DICTIONARY:
-					games_box.add_child(_build_live_match_card(host, item))
+					arr = res["games"]
+				ingest_fn.call(arr)
+			render_merged.call()
 	)
 
 

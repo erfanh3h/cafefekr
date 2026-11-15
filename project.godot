@@ -36,6 +36,19 @@ NetworkManager="*res://autoload/network_manager.gd"
 AudioManager="*res://autoload/audio_manager.gd"
 ActionVFXManager="*res://autoload/action_vfx_manager.gd"
 
+[debug]
+
+gdscript/warnings/enable=false
+gdscript/warnings/shadowed_variable=0
+gdscript/warnings/shadowed_variable_base_class=0
+gdscript/warnings/shadowed_global_identifier=0
+gdscript/warnings/unused_parameter=0
+gdscript/warnings/unused_variable=0
+gdscript/warnings/unused_signal=0
+gdscript/warnings/unused_private_class_variable=0
+gdscript/warnings/integer_division=0
+gdscript/warnings/narrowing_conversion=0
+
 [display]
 
 window/size/viewport_width=1080
