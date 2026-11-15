@@ -2,7 +2,7 @@
 
 The **primary client application** for **Cafe Fekr (کافه فکر)** — an online, Persian-language collection of **25 board games** played within a shared, luxury 3D "Royal Persian Cafe" table experience.
 
-Built with **Godot 4.7** using **GDScript**, this mobile-first portrait application communicates with the companion Python REST server (`kafehfekrserver` on port `5001`) and the realtime Socket.IO game server (`kafehfekrbackend` on port `5000`).
+Built with **Godot 4.7** using **GDScript**, this mobile-first portrait application communicates with the companion Python REST server (`kafehfekrserver` on port `5001`) and the realtime Socket.IO game server (`kafehfekrbackend` on port `5000`). It features active competitive matches, a full-featured social & clan hub, and a complete **Live Spectator Mode** with game discovery and read-only 3D board viewing.
 
 ---
 
@@ -17,6 +17,7 @@ Built with **Godot 4.7** using **GDScript**, this mobile-first portrait applicat
 | **Persian Typography** | `res://assets/fonts/Vazir.ttf` (UI standard) & `res://assets/fonts/hekayat.ttf` (In-game 3D & score typography) |
 | **Networking** | REST HTTP (`APIClient`) + Custom WebSocket Socket.IO v4 client (`SocketIOClient`) |
 | **Active Games** | 25 distinct 3D board game scenes inheriting from `BaseGameBoard` |
+| **Live Spectator System** | Full spectator browser (`LiveGamesDialog`), in-game overlay (`SpectatorOverlay`), and read-only board sync |
 | **Core Directive** | **Zero Cross-Game Regressions** & Strict Game Isolation (see `GAME_SCENE_RULES.md`) |
 
 ---
@@ -32,7 +33,7 @@ The client follows a decoupled singleton-and-scene architecture:
 |  +----------------------------------------------------+  +--------------------------------------+  |
 |  |                 AUTOLOAD SINGLETONS                |  |           3D ENVIRONMENT             |  |
 |  |                                                    |  |  (scenes/environment/cafe_table.tscn)|  |
-|  |  - GameManager (Session, Level/XP, Match State)   |  |                                      |  |
+|  |  - GameManager (Session, Level/XP, Match & Spectate|  |                                      |  |
 |  |  - NetworkManager (Socket.IO + REST Dispatcher)   |  |  - Damped Orbit / Zoom Camera        |  |
 |  |  - AudioManager (Music, Ambience, SFX)            |  |  - Strict 2D Top-Down View Toggle    |  |
 |  |  - ActionVFXManager (Procedural Particle FX)       |  |  - Authentic Table Props & Lighting  |  |
@@ -48,16 +49,19 @@ The client follows a decoupled singleton-and-scene architecture:
 |  |  |                                       |      |  (scenes/games/base/base_game_hud.tscn) |  |  |
 |  |  | - UserHeader (Coins, Level, Avatar)   |      |                                         |  |  |
 |  |  | - Mode Cards (Rank, Classic, Lobby)   |      |  - TopHeaderSlot (Player Plaques)       |  |  |
-|  |  | - Bottom Dock (Ranking, History, etc.)|      |  - MatchDetailsBox (Turn/Timer Bar VFX) |  |  |
-|  |  +---------------------------------------+      |  - ToastHint (Floating Notifications)   |  |  |
-|  |                                                 |  - BottomBar (8 Wood Action Buttons)    |  |  |
-|  |  +---------------------------------------+      |  - Dialogs (Countdown, Disconnect Pause)|  |  |
-|  |  |           MODAL DIALOGS               |      |  - GameResultDialog (Victory/Defeat)    |  |  |
-|  |  |                                       |      +-----------------------------------------+  |  |
-|  |  | - LoginDialog, QueueDialog, PickBan   |                                                   |  |
-|  |  | - SocialDialog (Friends, Clans, Chat) |                                                   |  |
-|  |  | - UserProfileDialog, Store, Rules     |                                                   |  |
-|  |  +---------------------------------------+                                                   |  |
+|  |  | - Watch Live Button (Live Matches)    |      |  - MatchDetailsBox (Turn/Timer Bar VFX) |  |  |
+|  |  | - Bottom Dock (Ranking, History, etc.)|      |  - ToastHint (Floating Notifications)   |  |  |
+|  |  +---------------------------------------+      |  - BottomBar (8 Wood Action Buttons)    |  |  |
+|  |                                                 |  - Dialogs (Countdown, Disconnect Pause)|  |  |
+|  |  +---------------------------------------+      |  - GameResultDialog (Victory/Defeat)    |  |  |
+|  |  |           MODAL DIALOGS               |      +-----------------------------------------+  |  |
+|  |  |                                       |                                                   |  |
+|  |  | - LoginDialog, QueueDialog, PickBan   |      +-----------------------------------------+  |  |
+|  |  | - SocialDialog (Friends, Clans, Chat) |      |          SPECTATOR OVERLAY              |  |  |
+|  |  | - LiveGamesDialog (Spectator Browser) |      | (scenes/ui/spectator/spectator_overlay) |  |  |
+|  |  | - UserProfileDialog, Store, Rules     |      |  - Viewer Count Pill (👁️ %d تماشاگر)   |  |  |
+|  |  +---------------------------------------+      |  - Exit Button ("ترک تماشا")            |  |  |
+|  |                                                 +-----------------------------------------+  |  |
 |  +----------------------------------------------------------------------------------------------+  |
 +----------------------------------------------------------------------------------------------------+
 ```
@@ -68,7 +72,7 @@ The client follows a decoupled singleton-and-scene architecture:
 
 ```
 cafefekr/
-├── project.godot               # Godot 4.7 engine configuration file
+├── project.godot               # Godot 4.7 engine configuration file (warnings calibrated)
 ├── export_presets.cfg          # Android & Windows export build configurations
 ├── GAME_SCENE_RULES.md         # 68 KB mandatory engineering rules & standards document
 ├── icon.svg                    # Application icon
@@ -82,8 +86,8 @@ cafefekr/
 │   └── images/                 # Textured buttons, badges, frames, and game cards
 │
 ├── autoload/                   # Global singleton managers (autoload order matters)
-│   ├── game_manager.gd         # Session persistence, Level/XP curve, match state
-│   ├── network_manager.gd      # High-level network manager and command signal hub
+│   ├── game_manager.gd         # Session persistence, Level/XP curve, match & spectator state
+│   ├── network_manager.gd      # High-level network manager and command signal hub (~80 signals)
 │   ├── audio_manager.gd        # Sound effects and soundtrack audio player
 │   └── action_vfx_manager.gd   # Procedural particle and juice effects
 │
@@ -107,7 +111,7 @@ cafefekr/
 │   │
 │   ├── main/                   # Root scene
 │   │   ├── main.tscn           # Application entry point
-│   │   └── main.gd             # Master match coordinator (3,400+ lines)
+│   │   └── main.gd             # Master coordinator (match lifecycle, spectator flow)
 │   │
 │   └── ui/                     # Application dialogs & menus
 │       ├── auth/               # LoginDialog (Phone SMS OTP login)
@@ -116,12 +120,15 @@ cafefekr/
 │       ├── history/            # GameHistoryDialog (Match history records)
 │       ├── lobby/              # LobbyDialog (Custom rooms create/join)
 │       ├── multi_rank/         # MultiRankDialog (3-player queue)
-│       ├── profile/            # UserProfileDialog (Personalization & stats)
+│       ├── profile/            # UserProfileDialog (Personalization, stats, spectator privacy)
 │       ├── queue/              # QueueDialog (Ranked queue & acceptance)
 │       ├── rank/               # PickBanDialog (7-turn draft) & RankedBreakoutDialog
 │       ├── ranking/            # RankingDialog (Global leaderboards)
 │       ├── rules/              # RulesDialog (Game instructions viewer)
 │       ├── social/             # SocialDialog (Friends, Clans, DMs, Notifications)
+│       ├── spectator/          # Live Spectator UI components
+│       │   ├── live_games_dialog.gd # Match discovery browser modal
+│       │   └── spectator_overlay.gd # In-game live spectator HUD
 │       └── store/              # StoreDialog (Coin store & IAP)
 │
 ├── scripts/                    # Shared utility scripts and networking clients
@@ -132,7 +139,7 @@ cafefekr/
 │   ├── network/
 │   │   ├── api_client.gd       # REST HTTP client (kafehfekrserver:5001)
 │   │   ├── socketio_client.gd  # Hand-rolled Socket.IO v4 WebSocket client
-│   │   ├── commands.gd         # Client command string constants (~135 commands)
+│   │   ├── commands.gd         # Client command string constants (~140 commands)
 │   │   └── game_types.gd       # Client game type string constants
 │   └── shaders/
 │       └── solid_white_tint.gdshader
@@ -147,6 +154,7 @@ cafefekr/
 ### 4.1. `GameManager` (`autoload/game_manager.gd`)
 - **Session & Device:** Persists token and profile data in `user://session.cfg`; generates persistent UUID device identifier in `user://settings.cfg`.
 - **Match State:** Tracks `active_game_id`, `current_game_type`, `current_turn`, `my_player_index`, `p1_score`, `p2_score`, `match_players`, and surrender states.
+- **Spectator State:** Tracks `is_spectating: bool`, `spectated_game_id: String`, and `spectator_count: int`. Methods: `start_spectating_session(...)`, `stop_spectating_session()`.
 - **Progressive Level & XP Curve:**
   $$\text{Level}(\text{XP}) = \left\lfloor\sqrt{\frac{\text{XP}}{20} + 1}\right\rfloor$$
   $$\text{TotalXP}(L) = 20 \times (L^2 - 1)$$
@@ -159,8 +167,12 @@ cafefekr/
   - Manages `APIClient` for REST requests to `http://<host>:5001`.
   - Manages `SocketIOClient` for WebSocket connections to `ws://<host>:5000/socket.io/?EIO=4&transport=websocket`.
 - **Dynamic Host Resolution:** Host resolved from `user://server.cfg` (`[network] host`, default `192.168.1.2`).
-- **Signal Hub:** Declares ~70 signals dispatching all incoming Socket.IO events directly to UI and game boards.
-- **Auto-Reconnection:** Background 4-second reconnect loop restores active matches (`open_game_id` > `open_pre_game_id`).
+- **Signal Hub:** Declares ~80 signals dispatching all incoming Socket.IO events directly to UI and game boards.
+- **Spectator Controls & Safety:**
+  - `request_spectate_game(game_id, player_id)`: Sends `RequestSpectate` on `/social`.
+  - `leave_spectate_game()`: Sends `LeaveSpectate` and cleans up spectator room.
+  - `request_spectator_state()`: Re-synchronizes board after network interruptions.
+  - **Outbound Command Guard:** All outbound move commands (`Select_Peace`, `Surrender`, etc.) are **strictly blocked** while `is_spectating` is true.
 
 ### 4.3. `AudioManager` (`autoload/audio_manager.gd`)
 - Standardized sound keys (`add_peace`, `move_peace`, `remove_peace`, `win`, `lose`, `draw`, `time`, `miss_turn`, `chat`).
@@ -171,7 +183,52 @@ cafefekr/
 
 ---
 
-## 5. 3D Cafe Environment & Camera (`CafeTable`)
+## 5. Live Spectator Mode Architecture
+
+The client provides a complete spectator experience:
+
+```
+[Main Menu / Social Friends / Clan Tabs]
+                   │
+                   ▼ Tapping "تماشای زنده" (Watch Live) or "تماشا" on player card
+       LiveGamesDialog.open()
+       ├─ Queries REST /spectator/live-games
+       └─ Emits RequestLiveGames on Socket.IO /social
+                   │
+                   ▼ User selects a match to spectate
+       NetworkManager.request_spectate_game(game_id)
+                   │
+                   ▼ Backend validates access & emits SpectateAccepted {snapshot}
+       main.gd:_on_spectate_accepted(payload)
+       ├─ GameManager.start_spectating_session(game_id, ...)
+       ├─ Instantiates 3D Board in read-only mode (is_board_locked = true)
+       ├─ Syncs physical pieces via board.sync_board_state(board_data)
+       ├─ Hides interactive HUD elements (Bottom action bar)
+       └─ Displays SpectatorOverlay (👁️ viewer count pill, live banner, exit button)
+                   │
+                   ▼ Match updates arrive in real-time
+       NetworkManager.spectator_game_state_received
+       NetworkManager.spectator_count_updated
+                   │
+                   ▼ Match concludes or player taps "ترک تماشا"
+       SpectatorOverlay.leave_spectate_requested
+       └─ Clears 3D board, restores main menu cleanly without cross-game leaks!
+```
+
+### Spectator UI Components
+1. **`LiveGamesDialog` (`scenes/ui/spectator/live_games_dialog.gd`):**
+   - Filter tabs: **"همه" (All Matches)**, **"دوستان" (Friends)**, **"کلن" (Clan)**, plus game type selector.
+   - Shows active player plaques, avatars, scores, current game badge, and live spectator count.
+   - 1-tap "تماشا" button to join.
+2. **`SpectatorOverlay` (`scenes/ui/spectator/spectator_overlay.gd`):**
+   - Anchored at bottom-center so it never obscures the player plaques at the top.
+   - Displays live viewer count (`👁️ %d تماشاگر`), active turn indicator, and prominent red "ترک تماشا" button.
+3. **Player Privacy Controls (`UserProfileDialog`):**
+   - Configurable `allow_spectators` dropdown: `همه` (Everyone), `فقط دوستان` (Friends only), `فقط هم‌کلنی‌ها` (Clan only), `هیچ‌کس` (Nobody).
+
+---
+
+## 6. 3D Cafe Environment & Camera (`CafeTable`)
 
 The 3D environment (`scenes/environment/cafe_table.tscn` / `cafe_table.gd`) remains constant across all games:
 - **Central Focus:** Table center at `Vector3(0.0, 0.08, -0.04)`.
@@ -186,7 +243,7 @@ The 3D environment (`scenes/environment/cafe_table.tscn` / `cafe_table.gd`) rema
 
 ---
 
-## 6. The 2D In-Game HUD (`BaseGameHUD`)
+## 7. The 2D In-Game HUD (`BaseGameHUD`)
 
 Unified interface rendered on a `CanvasLayer` (`scenes/games/base/base_game_hud.tscn`):
 1. **Top Header Slot (`TopHeaderSlot`):** Instantiates `BaseTopHeader` or a specialized inherited header. Displays Royal Crimson (P1) and Sapphire (P2) player plaques, avatar frames, role pills, and scores (hidden if `GameRegistry.has_round_score` is false).
@@ -203,7 +260,7 @@ Unified interface rendered on a `CanvasLayer` (`scenes/games/base/base_game_hud.
 
 ---
 
-## 7. Base Game Board Contract (`BaseGameBoard`)
+## 8. Base Game Board Contract (`BaseGameBoard`)
 
 Every board extends `BaseGameBoard` (`scripts/games/base_game_board.gd`):
 
@@ -219,17 +276,13 @@ extends "res://scripts/games/base_game_board.gd"
 - `on_round_finished(payload)`: Locks board and highlights winning lines or pieces.
 - `on_new_round(round_num)`: Resets pieces and board state for the next round.
 - `on_reconnect_data(payload)`: Restores board state upon player reconnection (followed by `hud.sync_reconnect_timer(payload)`).
-- `sync_board_state(board_data)`: Reconstructs pieces from a raw board array.
+- `sync_board_state(board_data)`: Reconstructs pieces from a raw board array (used for both match reconnection and live spectating).
 - `reset_board()`: Clears pieces and internal state variables.
 - `cleanup_board()`: Kills running tweens, frees materials, and clears caches upon exiting to menu.
 
-### Input & Anti-Race-Condition Rule
-- Move detection uses **Camera Raycasting in `_unhandled_input`** (not physics `Area3D` clicks).
-- Boards must **immediately lock locally upon move dispatch** (`set_board_locked(true)`, `is_my_turn = false`) to drop rapid double-clicks while waiting for server ACK.
-
 ---
 
-## 8. Catalog of the 25 Board Games
+## 9. Catalog of the 25 Board Games
 
 | Game ID | Persian Title | Players | Turn Time | Rounds | Scoring Type | Header |
 |---|---|---|---|---|---|---|
@@ -258,28 +311,6 @@ extends "res://scripts/games/base_game_board.gd"
 | `Coup` | کودتا | 2–4 | 25s (Resp 12s) | 1 | Last standing | Specialized (Influence) |
 | `Quiz` | کوئیز | 2–4 | 15s | 10 | Answer points | Specialized (Questions) |
 | `Quoridor` | کریدور | 2–4 | 30s | 1 | Race to edge | Specialized (Walls) |
-
----
-
-## 9. In-Game Social & Community System (`SocialDialog`)
-
-The client features a full-screen antique club social interface (`scenes/ui/social/social_dialog.tscn`):
-1. **Friends Tab:**
-   - Active friends list with real-time presence indicators (`آنلاین`, `در حال بازی: شطرنج`, `آفلاین`).
-   - Pending friend requests (incoming/outgoing).
-   - Friend discovery and player search by username or ID.
-2. **Clans Tab:**
-   - My Clan hub: Emblem, trophies, clan level/XP, announcements, member roster, role badges (`رهبر کلن`, `قائم‌مقام`, `ارشد`, `عضو`).
-   - Integrated Clan Chat: Real-time messaging stream inside the clan room.
-   - Clan Directory: Search clans with filters (join type, language, minimum score).
-   - Clan Creation: Custom Persian/alphanumeric `#TAG` and emblem picker.
-3. **Messages Tab:**
-   - Direct message conversations list with unread counters.
-   - 1-on-1 private chat interface with friends.
-4. **Notifications Tab:**
-   - Real-time notification feed (friend requests, clan invitations, match rewards).
-5. **Live Spectator Mode:**
-   - Watch friends and clanmates play in authorized matches (`SocialSpectateJoin`).
 
 ---
 
