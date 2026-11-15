@@ -614,6 +614,8 @@ func _setup_signals() -> void:
 					multi_rank_dialog.close()
 				elif is_instance_valid(classic_rank_dialog) and classic_rank_dialog.visible:
 					classic_rank_dialog.close()
+				elif is_instance_valid(live_games_dialog) and live_games_dialog.visible:
+					live_games_dialog.close()
 				else:
 					_hide_backdrop()
 		)
@@ -3382,7 +3384,7 @@ func _setup_social_hub_integration() -> void:
 		ui_canvas.add_child(live_games_dialog)
 		live_games_dialog.closed.connect(_update_backdrop_state)
 
-	_setup_watch_live_menu_card()
+	_setup_watch_live_dock_button()
 
 	if is_instance_valid(ui_canvas) and not is_instance_valid(spectator_overlay):
 		spectator_overlay = SpectatorOverlay.new()
@@ -3598,107 +3600,69 @@ func _on_leave_spectate_pressed() -> void:
 	AudioManager.play_theme_music()
 
 
-func _setup_watch_live_menu_card() -> void:
-	var center_content := get_node_or_null("CanvasLayer/MenuContainer/CenterContent") as VBoxContainer
-	var cards_container := get_node_or_null("CanvasLayer/MenuContainer/CenterContent/CardsContainer") as VBoxContainer
-	if not is_instance_valid(cards_container) or is_instance_valid(btn_watch_live):
+func _setup_watch_live_dock_button() -> void:
+	var bottom_dock := get_node_or_null("CanvasLayer/MenuContainer/BottomDock") as MarginContainer
+	var dock_hbox := get_node_or_null("CanvasLayer/MenuContainer/BottomDock/HBoxDock") as HBoxContainer
+	if not is_instance_valid(dock_hbox) or is_instance_valid(btn_watch_live):
 		return
 
-	if is_instance_valid(center_content):
-		center_content.offset_top = -355.0
-		center_content.offset_bottom = 535.0
-	cards_container.add_theme_constant_override("separation", 14)
-
-	var tex_btn: Texture2D = CafeSocialTheme.TEX_BUTTON
-	var sb_n := StyleBoxTexture.new()
-	sb_n.texture = tex_btn
-	var sb_h := StyleBoxTexture.new()
-	sb_h.texture = tex_btn
-	sb_h.modulate_color = Color(1.15, 1.1, 1.0, 1.0)
-	var sb_p := StyleBoxTexture.new()
-	sb_p.texture = tex_btn
-	sb_p.modulate_color = Color(0.85, 0.8, 0.75, 1.0)
+	if is_instance_valid(bottom_dock):
+		bottom_dock.offset_left = -515.0
+		bottom_dock.offset_right = 515.0
+	dock_hbox.add_theme_constant_override("separation", 10)
 
 	btn_watch_live = Button.new()
 	btn_watch_live.name = "BtnWatchLive"
-	btn_watch_live.custom_minimum_size = Vector2(940, 146)
-	btn_watch_live.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	btn_watch_live.custom_minimum_size = Vector2(128, 150)
 	btn_watch_live.focus_mode = Control.FOCUS_NONE
+	btn_watch_live.flat = true
+	btn_watch_live.tooltip_text = "تماشای زنده بازی‌ها"
 	btn_watch_live.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn_watch_live.add_theme_stylebox_override("normal", sb_n)
-	btn_watch_live.add_theme_stylebox_override("hover", sb_h)
-	btn_watch_live.add_theme_stylebox_override("pressed", sb_p)
+	var empty_sb := StyleBoxEmpty.new()
+	btn_watch_live.add_theme_stylebox_override("normal", empty_sb)
+	btn_watch_live.add_theme_stylebox_override("hover", empty_sb)
+	btn_watch_live.add_theme_stylebox_override("pressed", empty_sb)
+	btn_watch_live.add_theme_stylebox_override("disabled", empty_sb)
+	btn_watch_live.add_theme_stylebox_override("focus", empty_sb)
 
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 64)
-	margin.add_theme_constant_override("margin_right", 64)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	btn_watch_live.add_child(margin)
+	var vbox := VBoxContainer.new()
+	vbox.name = "VBox"
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	vbox.grow_vertical = Control.GROW_DIRECTION_BOTH
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_watch_live.add_child(vbox)
 
-	var hbox := HBoxContainer.new()
-	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_theme_constant_override("separation", 24)
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	margin.add_child(hbox)
-
-	var arrow := TextureRect.new()
-	arrow.custom_minimum_size = Vector2(44, 44)
-	arrow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	arrow.texture = CafeSocialTheme.TEX_RIGHT
-	arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	arrow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	arrow.flip_h = true
-	hbox.add_child(arrow)
-
-	var text_col := VBoxContainer.new()
-	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	text_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_child(text_col)
-
-	var lbl_t := Label.new()
-	lbl_t.text = "تماشای زنده بازی‌ها"
-	lbl_t.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	lbl_t.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	lbl_t.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	lbl_t.add_theme_font_size_override("font_size", 38)
-	lbl_t.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))
-	lbl_t.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
-	lbl_t.add_theme_constant_override("shadow_outline_size", 3)
-	text_col.add_child(lbl_t)
-
-	var lbl_s := Label.new()
-	lbl_s.text = "مشاهده آنلاین مسابقات در حال برگزاری و رقابت دوستان"
-	lbl_s.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	lbl_s.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	lbl_s.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	lbl_s.add_theme_font_size_override("font_size", 23)
-	lbl_s.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55, 1.0))
-	lbl_s.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.75))
-	lbl_s.add_theme_constant_override("shadow_outline_size", 2)
-	text_col.add_child(lbl_s)
-
-	var ico_wrap := Control.new()
-	ico_wrap.custom_minimum_size = Vector2(96, 96)
-	ico_wrap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	ico_wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_child(ico_wrap)
+	var watch_tex: Texture2D = null
+	if ResourceLoader.exists("res://assets/images/badges/watch.png"):
+		watch_tex = load("res://assets/images/badges/watch.png") as Texture2D
+	if watch_tex == null:
+		watch_tex = CafeSocialTheme.ICO_CUP
 
 	var ico := TextureRect.new()
-	ico.set_anchors_preset(Control.PRESET_FULL_RECT)
-	ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ico.texture = CafeSocialTheme.ICO_CUP
+	ico.name = "Icon"
+	ico.custom_minimum_size = Vector2(128, 150)
+	ico.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	ico.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ico.texture = watch_tex
 	ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	ico_wrap.add_child(ico)
+	ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(ico)
 
 	ActionVFXManager.apply_button_juice(btn_watch_live, "tap_button")
 	btn_watch_live.pressed.connect(_on_watch_live_pressed)
-	cards_container.add_child(btn_watch_live)
+	dock_hbox.add_child(btn_watch_live)
+
+	# Keep all 7 bottom dock buttons cleanly proportioned side-by-side
+	for child in dock_hbox.get_children():
+		if child is Button:
+			var dock_btn: Button = child as Button
+			dock_btn.custom_minimum_size = Vector2(128, 150)
+			var dock_ico := dock_btn.get_node_or_null("VBox/Icon") as TextureRect
+			if is_instance_valid(dock_ico):
+				dock_ico.custom_minimum_size = Vector2(128, 150)
 
 
 func _on_watch_live_pressed() -> void:
@@ -3710,8 +3674,8 @@ func _on_watch_live_pressed() -> void:
 		NetworkManager.connect_to_game_server()
 		_show_offline_dialog()
 		return
-	_show_backdrop()
 	if not GameManager.is_logged_in:
+		_show_backdrop()
 		login_dialog.open()
 		return
 	if is_instance_valid(live_games_dialog):

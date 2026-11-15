@@ -1,18 +1,19 @@
 class_name LiveGamesDialog
 extends Control
 
-## Cafe Fekr — Live Spectator Browser Dialog
-## Displays ongoing online matches (from both Socket.IO backend RAM and REST API)
-## so players can discover active games and join to spectate in 1 tap.
+## Cafe Fekr — Centered Live Spectator Browser Dialog
+## Fetches ongoing active matches from both Socket.IO backend RAM and REST API,
+## and renders a centered antique Cafe Fekr card browser with clean hierarchy.
 
 signal closed()
 
 var _dim_overlay: ColorRect = null
 var main_panel: PanelContainer = null
 var _scope_row: HBoxContainer = null
-var _game_row: HBoxContainer = null
+var _game_flow: HFlowContainer = null
 var _list_vbox: VBoxContainer = null
 var _lbl_count: Label = null
+var _scroll_games: ScrollContainer = null
 
 var current_scope: String = "all"         # "all" | "friends" | "clan"
 var current_game_type: String = ""        # "" or canonical GameTypes string
@@ -35,10 +36,18 @@ func open(initial_scope: String = "all") -> void:
 	if not GameManager.is_logged_in:
 		return
 	current_scope = initial_scope
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	grow_horizontal = Control.GROW_DIRECTION_BOTH
+	grow_vertical = Control.GROW_DIRECTION_BOTH
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	if is_instance_valid(_dim_overlay):
 		_dim_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	if is_instance_valid(main_panel):
+		main_panel.scale = Vector2.ONE
+		if main_panel.size.x < 100.0 or main_panel.size.y < 100.0:
+			main_panel.size = main_panel.custom_minimum_size
+		main_panel.pivot_offset = main_panel.size * 0.5
 	_render_filters()
 	refresh()
 	ActionVFXManager.animate_dialog_open(main_panel, self, true)
@@ -56,6 +65,8 @@ func close() -> void:
 
 func close_immediate() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if is_instance_valid(_dim_overlay):
+		_dim_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 	closed.emit()
 
@@ -69,11 +80,11 @@ func refresh() -> void:
 	_is_loading = true
 	_show_loading_state()
 
-	# Source 1: Direct Socket.IO /social namespace query (reads live RAM games directly from game backend)
+	# Source 1: Direct Socket.IO /social query (live RAM games in kafehfekrbackend)
 	if NetworkManager.is_online:
 		NetworkManager.request_live_games_realtime(current_scope, current_game_type)
 
-	# Source 2: REST API query (/spectator/live-games)
+	# Source 2: REST API query (/spectator/live-games in kafehfekrserver)
 	NetworkManager.api.get_live_spectator_games(
 		current_scope,
 		current_game_type,
@@ -96,7 +107,6 @@ func refresh() -> void:
 			_render_games_list()
 	)
 
-	# Safety fallback if neither completes quickly
 	get_tree().create_timer(2.0).timeout.connect(func():
 		if req_token == _request_token and _is_loading and is_instance_valid(_list_vbox):
 			_is_loading = false
@@ -130,8 +140,10 @@ func _ingest_games_array(arr: Array) -> void:
 				var existing: Dictionary = _merged_games[gid]
 				if int(d.get("spectator_count", 0)) > int(existing.get("spectator_count", 0)):
 					existing["spectator_count"] = int(d.get("spectator_count", 0))
-				if (existing.get("players", []) as Array).is_empty() and not (d.get("players", []) as Array).is_empty():
-					existing["players"] = d["players"]
+				var ex_players: Array = existing.get("players", []) if typeof(existing.get("players")) == TYPE_ARRAY else []
+				var new_players: Array = d.get("players", []) if typeof(d.get("players")) == TYPE_ARRAY else []
+				if ex_players.is_empty() and not new_players.is_empty():
+					existing["players"] = new_players
 				_merged_games[gid] = existing
 
 
@@ -139,8 +151,14 @@ func _build_ui() -> void:
 	for c in get_children():
 		c.queue_free()
 
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	grow_horizontal = Control.GROW_DIRECTION_BOTH
+	grow_vertical = Control.GROW_DIRECTION_BOTH
+
 	_dim_overlay = ColorRect.new()
-	_dim_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_dim_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_dim_overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_dim_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
 	_dim_overlay.color = Color(0.03, 0.015, 0.01, 0.80)
 	_dim_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dim_overlay.gui_input.connect(func(ev: InputEvent):
@@ -150,39 +168,45 @@ func _build_ui() -> void:
 	)
 	add_child(_dim_overlay)
 
-	var margin_outer := MarginContainer.new()
-	margin_outer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin_outer.add_theme_constant_override("margin_left", 24)
-	margin_outer.add_theme_constant_override("margin_right", 24)
-	margin_outer.add_theme_constant_override("margin_top", 56)
-	margin_outer.add_theme_constant_override("margin_bottom", 56)
-	add_child(margin_outer)
+	# Centered Modal Host matching RankingDialog / LobbyDialog / StoreDialog
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	center.grow_vertical = Control.GROW_DIRECTION_BOTH
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(center)
 
 	main_panel = PanelContainer.new()
-	main_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	main_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_panel.custom_minimum_size = Vector2(920, 1220)
+	main_panel.size = Vector2(920, 1220)
+	main_panel.pivot_offset = Vector2(460, 610)
+	main_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	main_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	main_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	main_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
-	margin_outer.add_child(main_panel)
+	center.add_child(main_panel)
 
 	var inner := MarginContainer.new()
-	inner.add_theme_constant_override("margin_left", 32)
-	inner.add_theme_constant_override("margin_right", 32)
-	inner.add_theme_constant_override("margin_top", 30)
-	inner.add_theme_constant_override("margin_bottom", 30)
+	inner.add_theme_constant_override("margin_left", 42)
+	inner.add_theme_constant_override("margin_right", 42)
+	inner.add_theme_constant_override("margin_top", 38)
+	inner.add_theme_constant_override("margin_bottom", 38)
 	main_panel.add_child(inner)
 
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 14)
 	inner.add_child(root)
 
-	# Header Row
+	# 1. Header Row (Close left, Ornate Title + Subtitle center, Refresh right)
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 12)
+	header.alignment = BoxContainer.ALIGNMENT_CENTER
 	root.add_child(header)
 
 	var btn_close := TextureButton.new()
 	btn_close.texture_normal = CafeSocialTheme.TEX_CLOSE
 	btn_close.custom_minimum_size = Vector2(56, 56)
+	btn_close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	btn_close.ignore_texture_size = true
 	btn_close.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn_close.focus_mode = Control.FOCUS_NONE
@@ -194,67 +218,84 @@ func _build_ui() -> void:
 	)
 	header.add_child(btn_close)
 
-	var title_lbl := CafeSocialTheme.make_title(
+	var title_box := VBoxContainer.new()
+	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	title_box.add_theme_constant_override("separation", 2)
+	header.add_child(title_box)
+
+	title_box.add_child(CafeSocialTheme.make_title(
 		"تماشای زنده بازی‌ها",
-		38,
+		40,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
-	)
-	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title_lbl)
+	))
+	title_box.add_child(CafeSocialTheme.make_body(
+		"مسابقات در حال برگزاری کافه فکر را به صورت زنده تماشا کنید",
+		20,
+		CafeSocialTheme.COL_MUTED_SAND,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		false
+	))
 
 	var btn_ref := CafeSocialTheme.make_button("", "bronze", Vector2(56, 56), 22, CafeSocialTheme.ICO_REFRESH, false, 14)
-	btn_ref.tooltip_text = "بروزرسانی فهرست بازی‌ها"
+	btn_ref.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	btn_ref.tooltip_text = "بروزرسانی فهرست"
 	btn_ref.pressed.connect(func():
 		AudioManager.sfx_tap()
 		refresh()
 	)
 	header.add_child(btn_ref)
 
-	# Filters Plaque
-	var filter_card := PanelContainer.new()
-	filter_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(16, 14.0, 12.0))
-	root.add_child(filter_card)
-
-	var fv := VBoxContainer.new()
-	fv.add_theme_constant_override("separation", 10)
-	filter_card.add_child(fv)
+	# 2. Scope Subtab Bar (All | Friends | Clan)
+	var scope_well := PanelContainer.new()
+	scope_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 8.0, 8.0))
+	root.add_child(scope_well)
 
 	_scope_row = HBoxContainer.new()
 	_scope_row.add_theme_constant_override("separation", 8)
-	fv.add_child(_scope_row)
+	scope_well.add_child(_scope_row)
 
-	_game_row = HBoxContainer.new()
-	_game_row.add_theme_constant_override("separation", 6)
-	fv.add_child(_game_row)
+	# 3. Clean Wrapped Game Filter Chips inside Antique Well
+	var filter_well := PanelContainer.new()
+	filter_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 10.0, 8.0))
+	root.add_child(filter_well)
 
-	# Subheader Count Banner
-	var count_row := HBoxContainer.new()
-	count_row.add_theme_constant_override("separation", 10)
-	root.add_child(count_row)
+	_game_flow = HFlowContainer.new()
+	_game_flow.alignment = FlowContainer.ALIGNMENT_CENTER
+	_game_flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_game_flow.add_theme_constant_override("h_separation", 8)
+	_game_flow.add_theme_constant_override("v_separation", 8)
+	filter_well.add_child(_game_flow)
+
+	# 4. Active Count Strip
+	var status_plaque := PanelContainer.new()
+	status_plaque.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 14.0, 8.0))
+	root.add_child(status_plaque)
 
 	_lbl_count = CafeSocialTheme.make_body(
 		"در حال دریافت فهرست بازی‌های فعال...",
-		23,
+		22,
 		CafeSocialTheme.COL_WARM_CREAM,
-		HORIZONTAL_ALIGNMENT_RIGHT,
+		HORIZONTAL_ALIGNMENT_CENTER,
 		false
 	)
-	_lbl_count.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	count_row.add_child(_lbl_count)
+	status_plaque.add_child(_lbl_count)
 
-	# Scroll List
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	root.add_child(scroll)
+	# 5. Scrollable Matches Container
+	_scroll_games = ScrollContainer.new()
+	_scroll_games.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll_games.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll_games.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	root.add_child(_scroll_games)
 
 	_list_vbox = VBoxContainer.new()
 	_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_list_vbox.add_theme_constant_override("separation", 12)
-	scroll.add_child(_list_vbox)
+	_list_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	_list_vbox.add_theme_constant_override("separation", 14)
+	_scroll_games.add_child(_list_vbox)
 
 	_render_filters()
 
@@ -265,14 +306,13 @@ func _render_filters() -> void:
 			c.queue_free()
 		var scopes: Array = [
 			{"id": "all", "label": "همه بازی‌ها"},
-			{"id": "friends", "label": "دوستان در حال بازی"},
-			{"id": "clan", "label": "اعضای کلن من"},
+			{"id": "friends", "label": "دوستان"},
+			{"id": "clan", "label": "کلن من"},
 		]
 		for sc in scopes:
 			var sc_d: Dictionary = sc
 			var sid: String = str(sc_d["id"])
-			var b := CafeSocialTheme.make_button(str(sc_d["label"]), "gold" if current_scope == sid else "muted", Vector2(0, 50), 22)
-			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var b := CafeSocialTheme.make_subtab(str(sc_d["label"]), current_scope == sid)
 			b.pressed.connect(func():
 				AudioManager.sfx_tap()
 				current_scope = sid
@@ -281,8 +321,8 @@ func _render_filters() -> void:
 			)
 			_scope_row.add_child(b)
 
-	if is_instance_valid(_game_row):
-		for c in _game_row.get_children():
+	if is_instance_valid(_game_flow):
+		for c in _game_flow.get_children():
 			c.queue_free()
 		var gfilters: Array = [
 			{"id": "", "label": "همه"},
@@ -291,20 +331,34 @@ func _render_filters() -> void:
 			{"id": "Chess", "label": "شطرنج"},
 			{"id": "Backgammon", "label": "تخته‌نرد"},
 			{"id": "Risk", "label": "ریسک"},
-			{"id": "Uno", "label": "اونو"},
+			{"id": "Othello", "label": "اتللو"},
+			{"id": "FourInRow", "label": "چهار در ردیف"},
+			{"id": "Quoridor", "label": "کوریدور"},
+			{"id": "Yatzy", "label": "یاتزی"},
+			{"id": "Pentago", "label": "پنتاگو"},
+			{"id": "Yinsh", "label": "ینش"},
+			{"id": "DotBox", "label": "نقطه و خط"},
 		]
 		for gf in gfilters:
 			var gf_d: Dictionary = gf
 			var gid_f: String = str(gf_d["id"])
-			var b := CafeSocialTheme.make_button(str(gf_d["label"]), "emerald" if current_game_type == gid_f else "bronze", Vector2(0, 44), 20)
-			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var is_sel: bool = (current_game_type == gid_f)
+			var b := CafeSocialTheme.make_button(
+				str(gf_d["label"]),
+				"gold" if is_sel else "bronze",
+				Vector2(0, 40),
+				19,
+				null,
+				false,
+				11
+			)
 			b.pressed.connect(func():
 				AudioManager.sfx_tap()
 				current_game_type = gid_f
 				_render_filters()
 				refresh()
 			)
-			_game_row.add_child(b)
+			_game_flow.add_child(b)
 
 
 func _show_loading_state() -> void:
@@ -312,8 +366,9 @@ func _show_loading_state() -> void:
 		return
 	for c in _list_vbox.get_children():
 		c.queue_free()
+	_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	if is_instance_valid(_lbl_count):
-		_lbl_count.text = "در حال جستجوی بازی‌های فعال..."
+		_lbl_count.text = "در حال جستجوی مسابقات زنده..."
 	_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت فهرست بازی‌های در حال اجرا..."))
 
 
@@ -334,21 +389,23 @@ func _render_games_list() -> void:
 
 	if is_instance_valid(_lbl_count):
 		if items.is_empty():
-			_lbl_count.text = "هیچ مسابقه فعالی با این فیلتر پیدا نشد"
+			_lbl_count.text = "در حال حاضر مسابقه‌ای با این فیلتر فعال نیست"
 		else:
-			_lbl_count.text = "%s مسابقه زنده در حال برگزاری است" % GameManager.to_fa_num(items.size())
+			_lbl_count.text = "●  %s مسابقه زنده آماده تماشا" % GameManager.to_fa_num(items.size())
 
 	if items.is_empty():
+		_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		_list_vbox.add_child(CafeSocialTheme.make_empty_state(
-			CafeSocialTheme.ICO_LOBBY,
-			"در حال حاضر مسابقه‌ای در حال اجرا نیست",
-			"به محض شروع یک رقابت آنلاین بین بازیکنان، نام آن در این فهرست ظاهر می‌شود و می‌توانید وارد تماشای زنده شوید.",
+			CafeSocialTheme.ICO_CUP,
+			"مسابقه زنده‌ای در جریان نیست",
+			"با شروع هر رقابت آنلاین بین بازیکنان، کارت آن در اینجا نمایش داده می‌شود و می‌توانید زنده تماشا کنید.",
 			"بروزرسانی فهرست",
 			"gold",
 			func(): refresh()
 		))
 		return
 
+	_list_vbox.alignment = BoxContainer.ALIGNMENT_BEGIN
 	for item in items:
 		if typeof(item) == TYPE_DICTIONARY:
 			_list_vbox.add_child(_build_match_card(item))
@@ -369,25 +426,22 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 		CafeSocialTheme.create_highlight_card_style(true) if (has_friend or has_clanmate) else CafeSocialTheme.create_card_style()
 	)
 
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
-	card.add_child(row)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	card.add_child(vbox)
 
-	var btn_watch := CafeSocialTheme.make_button("تماشای زنده", "gold", Vector2(170, 58), 24)
-	btn_watch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	btn_watch.pressed.connect(func():
-		AudioManager.sfx_button()
-		close_immediate()
-		NetworkManager.request_spectate_game(gid)
-	)
-	row.add_child(btn_watch)
+	# Row 1: Badges left, Title + Thumbnail right
+	var top_row := HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 14)
+	vbox.add_child(top_row)
 
-	var meta_col := VBoxContainer.new()
-	meta_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	meta_col.add_theme_constant_override("separation", 6)
-	row.add_child(meta_col)
+	var badges_col := HBoxContainer.new()
+	badges_col.alignment = BoxContainer.ALIGNMENT_BEGIN
+	badges_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	badges_col.add_theme_constant_override("separation", 8)
+	top_row.add_child(badges_col)
 
-	meta_col.add_child(CafeSocialTheme.make_badge_pill(
+	badges_col.add_child(CafeSocialTheme.make_badge_pill(
 		"👁 %s تماشاگر" % GameManager.to_fa_num(spec_cnt),
 		CafeSocialTheme.COL_EMERALD_TEXT,
 		CafeSocialTheme.COL_EMERALD_BG,
@@ -395,8 +449,16 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 		20
 	))
 	if has_friend:
-		meta_col.add_child(CafeSocialTheme.make_badge_pill(
+		badges_col.add_child(CafeSocialTheme.make_badge_pill(
 			"دوست شما",
+			CafeSocialTheme.COL_GOLD_BRIGHT,
+			Color(0.18, 0.12, 0.05, 0.95),
+			CafeSocialTheme.COL_GOLD_ANTIQUE,
+			19
+		))
+	elif has_clanmate:
+		badges_col.add_child(CafeSocialTheme.make_badge_pill(
+			"هم‌کلنی",
 			CafeSocialTheme.COL_GOLD_BRIGHT,
 			Color(0.18, 0.12, 0.05, 0.95),
 			CafeSocialTheme.COL_GOLD_ANTIQUE,
@@ -406,40 +468,83 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	var title_col := VBoxContainer.new()
 	title_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	title_col.add_theme_constant_override("separation", 4)
-	row.add_child(title_col)
+	title_col.add_theme_constant_override("separation", 2)
+	top_row.add_child(title_col)
 
 	title_col.add_child(CafeSocialTheme.make_title(
 		"مسابقه %s" % gtitle,
-		30,
+		32,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		false
 	))
+	title_col.add_child(CafeSocialTheme.make_body(
+		"%s بازیکن • در حال رقابت" % GameManager.to_fa_num(maxi(2, players.size())),
+		20,
+		CafeSocialTheme.COL_MUTED_SAND,
+		HORIZONTAL_ALIGNMENT_RIGHT,
+		false
+	))
 
-	var names_arr: Array[String] = []
-	for p in players:
-		if typeof(p) == TYPE_DICTIONARY:
-			var pd: Dictionary = p
+	var thumb_wrap := PanelContainer.new()
+	thumb_wrap.custom_minimum_size = Vector2(70, 70)
+	thumb_wrap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	thumb_wrap.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(Color(0.08, 0.05, 0.03), CafeSocialTheme.COL_GOLD_ANTIQUE, 14, 2, 4.0, 4.0))
+	top_row.add_child(thumb_wrap)
+
+	var thumb := TextureRect.new()
+	thumb.texture = CafeSocialTheme.get_game_thumb(gtype)
+	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	thumb_wrap.add_child(thumb)
+
+	# Row 2: Players Matchup Strip
+	if not players.is_empty():
+		var players_well := PanelContainer.new()
+		players_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 12.0, 8.0))
+		vbox.add_child(players_well)
+
+		var players_row := HBoxContainer.new()
+		players_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		players_row.add_theme_constant_override("separation", 10)
+		players_well.add_child(players_row)
+
+		for i in range(players.size()):
+			var p_item: Variant = players[i]
+			if typeof(p_item) != TYPE_DICTIONARY:
+				continue
+			var pd: Dictionary = p_item
+			if i > 0:
+				var vs_lbl := CafeSocialTheme.make_title("⚔", 24, CafeSocialTheme.COL_GOLD_ANTIQUE, HORIZONTAL_ALIGNMENT_CENTER, false)
+				vs_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				players_row.add_child(vs_lbl)
+
+			var p_chip := HBoxContainer.new()
+			p_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			p_chip.alignment = BoxContainer.ALIGNMENT_CENTER
+			p_chip.add_theme_constant_override("separation", 8)
+			players_row.add_child(p_chip)
+
+			var av_id: int = int(pd.get("avatar", pd.get("image", 0)))
+			var fr_id: int = int(pd.get("profile_frame", 0))
+			p_chip.add_child(CafeSocialTheme.make_avatar_badge(av_id, fr_id, 44.0, "", false))
+
 			var pname: String = str(pd.get("username", "بازیکن"))
 			var c_info: Variant = pd.get("clan", null)
 			if typeof(c_info) == TYPE_DICTIONARY and not str((c_info as Dictionary).get("tag", "")).is_empty():
 				pname += " [%s]" % str((c_info as Dictionary).get("tag", ""))
-			names_arr.append(pname)
-	title_col.add_child(CafeSocialTheme.make_body(
-		" در برابر ".join(names_arr) if not names_arr.is_empty() else "مسابقه فعال آنلاین",
-		23,
-		CafeSocialTheme.COL_IVORY,
-		HORIZONTAL_ALIGNMENT_RIGHT,
-		true
-	))
+			var p_lbl := CafeSocialTheme.make_body(pname, 21, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
+			p_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			p_chip.add_child(p_lbl)
 
-	var thumb := TextureRect.new()
-	thumb.texture = CafeSocialTheme.get_game_thumb(gtype)
-	thumb.custom_minimum_size = Vector2(72, 72)
-	thumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	row.add_child(thumb)
+	# Row 3: Full-width Watch Action Button
+	var btn_watch := CafeSocialTheme.make_button("تماشای زنده مسابقه", "gold", Vector2(0, 54), 25)
+	btn_watch.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_watch.pressed.connect(func():
+		AudioManager.sfx_button()
+		close_immediate()
+		NetworkManager.request_spectate_game(gid)
+	)
+	vbox.add_child(btn_watch)
 
 	return card
