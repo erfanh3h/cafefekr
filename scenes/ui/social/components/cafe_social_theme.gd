@@ -96,6 +96,7 @@ const COL_WARM_CREAM := Color(0.91, 0.84, 0.72, 1.0)
 const COL_MUTED_SAND := Color(0.74, 0.67, 0.56, 1.0)
 const COL_GOLD_BRIGHT := Color(0.98, 0.83, 0.36, 1.0)
 const COL_GOLD_ANTIQUE := Color(0.80, 0.61, 0.25, 0.95)
+const COL_GOLD_FRAME := Color(0.80, 0.61, 0.25, 0.95)
 const COL_BRONZE_BORDER := Color(0.56, 0.41, 0.21, 0.88)
 const COL_WALNUT_DEEP := Color(0.11, 0.07, 0.04, 0.96)
 const COL_WALNUT_CARD := Color(0.16, 0.10, 0.06, 0.95)
@@ -146,6 +147,10 @@ static func create_board_shell_style() -> StyleBoxTexture:
 	sb.texture_margin_bottom = 60.0
 	_shell_style_cache = sb
 	return sb
+
+
+static func create_dialog_frame_style() -> StyleBoxTexture:
+	return create_board_shell_style()
 
 
 static func create_header_banner_style() -> StyleBoxTexture:

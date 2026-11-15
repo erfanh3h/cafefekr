@@ -57,7 +57,7 @@ func _build_ui() -> void:
 	var count_panel: PanelContainer = PanelContainer.new()
 	var count_style: StyleBoxFlat = StyleBoxFlat.new()
 	count_style.bg_color = Color(0.11, 0.07, 0.04, 0.94)
-	count_style.border_color = CafeSocialTheme.COL_GOLD_FRAME
+	count_style.border_color = CafeSocialTheme.COL_GOLD_ANTIQUE
 	count_style.set_border_width_all(2)
 	count_style.set_corner_radius_all(14)
 	count_style.content_margin_left = 16.0
@@ -141,13 +141,20 @@ func _build_ui() -> void:
 	end_modal_card = PanelContainer.new()
 	end_modal_card.custom_minimum_size = Vector2(680, 380)
 	end_modal_card.mouse_filter = Control.MOUSE_FILTER_STOP
-	end_modal_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_dialog_frame_style())
+	end_modal_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	center.add_child(end_modal_card)
+
+	var modal_margin: MarginContainer = MarginContainer.new()
+	modal_margin.add_theme_constant_override("margin_left", 40)
+	modal_margin.add_theme_constant_override("margin_right", 40)
+	modal_margin.add_theme_constant_override("margin_top", 34)
+	modal_margin.add_theme_constant_override("margin_bottom", 34)
+	end_modal_card.add_child(modal_margin)
 
 	var modal_vbox: VBoxContainer = VBoxContainer.new()
 	modal_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	modal_vbox.add_theme_constant_override("separation", 22)
-	end_modal_card.add_child(modal_vbox)
+	modal_margin.add_child(modal_vbox)
 
 	lbl_end_title = CafeSocialTheme.make_title(
 		"🏁 پایان مسابقه زنده",
