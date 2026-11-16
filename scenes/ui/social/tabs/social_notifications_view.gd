@@ -8,7 +8,7 @@ extends RefCounted
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Top header bar with Mark All Read
 	var header_bar := PanelContainer.new()
-	header_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 24.0, 10.0))
+	header_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 	body_vbox.add_child(header_bar)
 
 	var hrow := HBoxContainer.new()
@@ -117,10 +117,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 	var time_str := CafeSocialTheme.format_time_fa(str(n.get("created_at", "")))
 
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
-		CafeSocialTheme.COL_WALNUT_CARD if is_read else Color(0.22, 0.14, 0.07, 0.98),
-		CafeSocialTheme.COL_BRONZE_BORDER if is_read else CafeSocialTheme.COL_GOLD_BRIGHT
-	))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 10)

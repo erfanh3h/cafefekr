@@ -176,7 +176,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(460, 180)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 24.0, 16.0))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 
 	var click_btn := Button.new()
 	click_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -192,10 +192,10 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_top", 14)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_bottom", 14)
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_bottom", 16)
 	card.add_child(margin)
 
 	var hbox := HBoxContainer.new()

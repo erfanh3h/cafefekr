@@ -201,7 +201,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		ActionVFXManager.apply_button_juice(card, "tap_button")
 
-		var style_frame := CafeSocialTheme.create_frame_style(false, 36.0, 8.0)
+		var style_frame := CafeSocialTheme.create_frame_style(false, 20.0, 16.0)
 		card.add_theme_stylebox_override("normal", style_frame)
 		card.add_theme_stylebox_override("hover", style_frame)
 		card.add_theme_stylebox_override("pressed", style_frame)
@@ -210,10 +210,10 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		var pad := MarginContainer.new()
 		pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pad.add_theme_constant_override("margin_left", 38)
-		pad.add_theme_constant_override("margin_right", 38)
-		pad.add_theme_constant_override("margin_top", 10)
-		pad.add_theme_constant_override("margin_bottom", 10)
+		pad.add_theme_constant_override("margin_left", 20)
+		pad.add_theme_constant_override("margin_right", 20)
+		pad.add_theme_constant_override("margin_top", 16)
+		pad.add_theme_constant_override("margin_bottom", 16)
 		card.add_child(pad)
 
 		var row := HBoxContainer.new()
@@ -282,26 +282,19 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		av_frame.add_child(avatar)
 		row.add_child(av_frame)
 
-		# 3. Name (immediately to the left of avatar)
+		# 3. Name (immediately to the left of avatar, expanding to fill row)
 		var name_lbl := Label.new()
 		name_lbl.text = username
 		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		name_lbl.clip_text = true
-		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		name_lbl.add_theme_font_size_override("font_size", 28)
+		name_lbl.add_theme_font_size_override("font_size", 30)
 		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0) if not is_me else Color(1.0, 0.90, 0.35, 1.0))
 		row.add_child(name_lbl)
 
-		# 4. Space (pushes level and score to the far left)
-		var spacer := Control.new()
-		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(spacer)
-
-		# 5. Gamer Level (Icon + Level Number, no "سطح" word)
+		# 4. Gamer Level (Icon + Level Number, positioned to the left of name)
 		var lvl_box := HBoxContainer.new()
 		lvl_box.alignment = BoxContainer.ALIGNMENT_CENTER
 		lvl_box.add_theme_constant_override("separation", 6)

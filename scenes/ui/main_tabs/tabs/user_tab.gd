@@ -265,7 +265,7 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		else:
 			my_res = "unfinished"
 
-	var style_frame := CafeSocialTheme.create_frame_style(true, 24.0, 14.0)
+	var style_frame := CafeSocialTheme.create_frame_style(true, 20.0, 16.0)
 	btn.add_theme_stylebox_override("normal", style_frame)
 	btn.add_theme_stylebox_override("hover", style_frame)
 	btn.add_theme_stylebox_override("pressed", style_frame)
@@ -842,7 +842,7 @@ func _render_privacy() -> void:
 	var audio_card := PanelContainer.new()
 	audio_card.custom_minimum_size = Vector2(0, 220)
 	audio_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 24.0, 16.0))
+	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	content_privacy.add_child(audio_card)
 
 	var am := MarginContainer.new()
@@ -995,13 +995,13 @@ func _render_privacy() -> void:
 		var panel := PanelContainer.new()
 		panel.custom_minimum_size = Vector2(0, 110)
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 22.0, 14.0))
+		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 
 		var m := MarginContainer.new()
 		m.add_theme_constant_override("margin_left", 20)
-		m.add_theme_constant_override("margin_top", 14)
+		m.add_theme_constant_override("margin_top", 16)
 		m.add_theme_constant_override("margin_right", 20)
-		m.add_theme_constant_override("margin_bottom", 14)
+		m.add_theme_constant_override("margin_bottom", 16)
 		panel.add_child(m)
 
 		var h := HBoxContainer.new()

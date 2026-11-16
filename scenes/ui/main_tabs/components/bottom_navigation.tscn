@@ -15,8 +15,12 @@ texture_margin_left = 50.0
 texture_margin_top = 26.0
 texture_margin_right = 50.0
 texture_margin_bottom = 26.0
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
+axis_stretch_horizontal = 0
+axis_stretch_vertical = 0
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tab_btn"]
 
@@ -77,10 +81,10 @@ theme_override_styles/panel = SubResource("StyleBoxTexture_bar_bg")
 
 [node name="Margin" type="MarginContainer" parent="PanelFrame"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
 
 [node name="HBox" type="HBoxContainer" parent="PanelFrame/Margin"]
 layout_mode = 2

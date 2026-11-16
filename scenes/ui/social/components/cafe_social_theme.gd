@@ -172,7 +172,7 @@ static func create_header_banner_style() -> StyleBoxTexture:
 	return sb
 
 
-static func create_frame_style(is_tall: bool = false, pad_x: float = 32.0, pad_y: float = 14.0) -> StyleBoxTexture:
+static func create_frame_style(is_tall: bool = false, pad_x: float = 20.0, pad_y: float = 16.0) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	if is_tall:
 		sb.texture = TEX_FRAME_TALL

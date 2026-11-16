@@ -11,7 +11,7 @@ extends RefCounted
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Clean 4-item sub-navigation bar
 	var sub_bar := PanelContainer.new()
-	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 28.0, 6.0))
+	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 	body_vbox.add_child(sub_bar)
 
 	var sub_row := HBoxContainer.new()
@@ -70,7 +70,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 
 static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 	var hero := PanelContainer.new()
-	hero.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(false))
+	hero.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	vbox.add_child(hero)
 
 	var hv := VBoxContainer.new()
@@ -133,7 +133,7 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 			var inv_id := str(inv.get("invite_id", ""))
 
 			var icard := PanelContainer.new()
-			icard.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(true))
+			icard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 			vbox.add_child(icard)
 
 			var irow := HBoxContainer.new()
@@ -204,7 +204,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 
 	# 1. Hero Guild Crest Plaque
 	var hero := PanelContainer.new()
-	hero.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(false))
+	hero.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	vbox.add_child(hero)
 
 	var hv := VBoxContainer.new()
@@ -338,7 +338,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 				continue
 			var ch_card := PanelContainer.new()
 			var done := bool(ch.get("completed", false))
-			ch_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(done))
+			ch_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 			vbox.add_child(ch_card)
 
 			var cv := VBoxContainer.new()
@@ -379,7 +379,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 			var ru: Dictionary = req.get("user", {}) if typeof(req.get("user")) == TYPE_DICTIONARY else {}
 			var rid := str(req.get("request_id", ""))
 			var rcard := PanelContainer.new()
-			rcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+			rcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 			vbox.add_child(rcard)
 
 			var rrow := HBoxContainer.new()
@@ -453,7 +453,7 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 
 		var mcard := PanelContainer.new()
 		mcard.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		mcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(false) if m_role == "leader" else CafeSocialTheme.create_card_style())
+		mcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 		vbox.add_child(mcard)
 
 		var mrow := HBoxContainer.new()
@@ -575,7 +575,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت گفتگوهای اتحاد..."))
 
 	var compose := PanelContainer.new()
-	compose.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_MAHOGANY_CARD, CafeSocialTheme.COL_GOLD_ANTIQUE, 16, 2, 12.0, 10.0))
+	compose.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 	holder.add_child(compose)
 
 	var input_row := HBoxContainer.new()
@@ -755,7 +755,7 @@ static func _build_clan_discover_view(host: Control, holder: VBoxContainer) -> v
 
 static func _build_clan_search_inner(host: Control, holder: VBoxContainer) -> void:
 	var s_card := PanelContainer.new()
-	s_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	s_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	holder.add_child(s_card)
 
 	var sv := VBoxContainer.new()
@@ -860,7 +860,7 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 	var jtype_fa := "آزاد" if jtype == "open" else ("درخواستی" if jtype == "request" else "دعوت‌نامه‌ای")
 
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(false) if rank_num in [1, 2, 3] else CafeSocialTheme.create_card_style())
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 10)
@@ -1430,7 +1430,7 @@ static func _build_overview_challenge_card(host: Control, chal: Dictionary, my_u
 		p_count = 4
 
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(false))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 10)

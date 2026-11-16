@@ -772,7 +772,7 @@ func _render_overview_tab() -> void:
 		for si in sum_items:
 			var c := PanelContainer.new()
 			c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			c.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 14, 2, 10.0, 10.0))
+			c.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 			var cv := VBoxContainer.new()
 			cv.alignment = BoxContainer.ALIGNMENT_CENTER
 			cv.add_child(CafeSocialTheme.make_title(si["v"], 31, si["c"], HORIZONTAL_ALIGNMENT_CENTER, false))
@@ -793,7 +793,7 @@ func _render_overview_tab() -> void:
 				var gtype := str(fg.get("game_type", ""))
 				var g_card := PanelContainer.new()
 				g_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				g_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+				g_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 				var gr := HBoxContainer.new()
 				gr.add_theme_constant_override("separation", 10)
 				g_card.add_child(gr)
@@ -841,7 +841,7 @@ func _render_overview_tab() -> void:
 	var hist_dict: Dictionary = prof.get("history", {}) if typeof(prof.get("history")) == TYPE_DICTIONARY else {}
 	if not hist_dict.is_empty():
 		var hist_wrap := PanelContainer.new()
-		hist_wrap.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_DEEP, CafeSocialTheme.COL_BRONZE_BORDER, 18, 2, 16.0, 14.0))
+		hist_wrap.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 		_body_vbox.add_child(hist_wrap)
 		var hist_vbox := VBoxContainer.new()
 		hist_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -861,7 +861,7 @@ func _render_self_cosmetics_tab() -> void:
 
 	# Account Card: Change Username
 	var acc_card := PanelContainer.new()
-	acc_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	acc_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 	_body_vbox.add_child(acc_card)
 	var acc_row := HBoxContainer.new()
 	acc_row.add_theme_constant_override("separation", 12)
@@ -888,7 +888,7 @@ func _render_self_cosmetics_tab() -> void:
 		"انتخاب تصویر پروفایل (آواتار)", CafeSocialTheme.ICO_SPARKLE, "آواتار دلخواه خود را انتخاب و ذخیره کنید"
 	))
 	var av_card := PanelContainer.new()
-	av_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	av_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	_body_vbox.add_child(av_card)
 
 	var av_vbox := VBoxContainer.new()
@@ -967,7 +967,7 @@ func _render_self_cosmetics_tab() -> void:
 		"قاب آواتار، لقب افتخاری و وضعیت", CafeSocialTheme.ICO_KING
 	))
 	var cos_card := PanelContainer.new()
-	cos_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	cos_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	_body_vbox.add_child(cos_card)
 
 	var cos_v := VBoxContainer.new()
@@ -1069,7 +1069,7 @@ func _render_self_privacy_tab() -> void:
 		"تنظیمات حریم خصوصی", CafeSocialTheme.ICO_SETTING, "کنترل پیام‌ها، درخواست‌ها و نمایش فعالیت"
 	))
 	var priv_card := PanelContainer.new()
-	priv_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	priv_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	_body_vbox.add_child(priv_card)
 
 	var pv := VBoxContainer.new()
@@ -1182,7 +1182,7 @@ func _render_self_privacy_tab() -> void:
 		"تنظیمات اعلان‌ها", CafeSocialTheme.ICO_STAR
 	))
 	var np_card := PanelContainer.new()
-	np_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	np_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	_body_vbox.add_child(np_card)
 
 	var npv := VBoxContainer.new()
@@ -1257,7 +1257,7 @@ func _render_self_privacy_tab() -> void:
 			var bu_uid := str(bu.get("user_id", bu.get("_id", "")))
 			var bu_name := str(bu.get("username", "بازیکن"))
 			var card := PanelContainer.new()
-			card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+			card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 			var row := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 12)
 			card.add_child(row)

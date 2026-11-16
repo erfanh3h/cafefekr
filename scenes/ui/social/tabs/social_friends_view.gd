@@ -8,7 +8,7 @@ extends RefCounted
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Sub-navigation bar (3 antique subtabs)
 	var sub_bar := PanelContainer.new()
-	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 28.0, 6.0))
+	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 	body_vbox.add_child(sub_bar)
 
 	var sub_row := HBoxContainer.new()
@@ -153,7 +153,7 @@ static func _populate_requests(host: Control, list_vbox: VBoxContainer) -> void:
 static func _populate_search_and_discover(host: Control, list_vbox: VBoxContainer) -> void:
 	# Search box inside framed plaque
 	var search_card := PanelContainer.new()
-	search_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 24.0, 14.0))
+	search_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	list_vbox.add_child(search_card)
 
 	var sc_vbox := VBoxContainer.new()
@@ -261,10 +261,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 
 	var is_online_active := (str(pres.get("status", "offline")) != "offline")
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(true) if p_info["is_in_game"] else CafeSocialTheme.create_card_style(
-		CafeSocialTheme.COL_MAHOGANY_CARD if is_online_active else CafeSocialTheme.COL_WALNUT_CARD,
-		CafeSocialTheme.COL_GOLD_ANTIQUE if is_online_active else CafeSocialTheme.COL_BRONZE_BORDER
-	))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 12)
@@ -529,7 +526,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 static func _populate_live_games_discovery(host: Control, list_vbox: VBoxContainer) -> void:
 	# Filter Plaque (Scope + Game Type)
 	var filter_card: PanelContainer = PanelContainer.new()
-	filter_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	filter_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 	list_vbox.add_child(filter_card)
 
 	var fv: VBoxContainer = VBoxContainer.new()
@@ -669,7 +666,7 @@ static func _build_live_match_card(host: Control, m: Dictionary) -> PanelContain
 	var card: PanelContainer = PanelContainer.new()
 	card.add_theme_stylebox_override(
 		"panel",
-		CafeSocialTheme.create_highlight_card_style(true) if (has_friend or has_clanmate) else CafeSocialTheme.create_card_style()
+		CafeSocialTheme.create_frame_style(true, 20.0, 16.0)
 	)
 
 	var root: VBoxContainer = VBoxContainer.new()

@@ -73,8 +73,12 @@ func claim_free_coin(callback: Callable) -> void:
 
 func _get_auth_headers() -> PackedStringArray:
 	var headers = PackedStringArray()
-	if not auth_token.is_empty():
-		headers.append("Authorization: " + auth_token)
+	var t = auth_token
+	if t.is_empty() and is_instance_valid(GameManager) and not GameManager.token.is_empty():
+		t = GameManager.token
+		auth_token = t
+	if not t.is_empty():
+		headers.append("Authorization: " + t)
 	return headers
 
 func _http_get(endpoint: String, custom_headers: PackedStringArray, callback: Callable) -> void:

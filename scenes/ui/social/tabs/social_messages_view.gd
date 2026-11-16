@@ -15,7 +15,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 
 static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer) -> void:
 	var header_card := PanelContainer.new()
-	header_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 24.0, 10.0))
+	header_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 	body_vbox.add_child(header_card)
 
 	var hrow := HBoxContainer.new()
@@ -99,12 +99,9 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	btn.custom_minimum_size = Vector2(0, 108)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	var st_norm := CafeSocialTheme.create_highlight_card_style(true) if unread > 0 else CafeSocialTheme.create_card_style()
-	var st_hov := st_norm.duplicate()
-	st_hov.bg_color = st_norm.bg_color.lightened(0.08)
-	st_hov.border_color = CafeSocialTheme.COL_GOLD_BRIGHT
+	var st_norm := CafeSocialTheme.create_frame_style(false, 20.0, 16.0)
 	btn.add_theme_stylebox_override("normal", st_norm)
-	btn.add_theme_stylebox_override("hover", st_hov)
+	btn.add_theme_stylebox_override("hover", st_norm)
 	btn.add_theme_stylebox_override("pressed", st_norm)
 	btn.add_theme_stylebox_override("focus", st_norm)
 
@@ -202,7 +199,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 
 	# Conversation Top Header
 	var hdr := PanelContainer.new()
-	hdr.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(false))
+	hdr.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 	body_vbox.add_child(hdr)
 
 	var hrow := HBoxContainer.new()
@@ -274,7 +271,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 
 	# Sticky Bottom Input Bar
 	var compose_card := PanelContainer.new()
-	compose_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_MAHOGANY_CARD, CafeSocialTheme.COL_GOLD_ANTIQUE, 16, 2, 12.0, 10.0))
+	compose_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
 	body_vbox.add_child(compose_card)
 
 	var dm_input_row := HBoxContainer.new()
