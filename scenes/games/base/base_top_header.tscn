@@ -137,6 +137,7 @@ alignment = 1
 [node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox"]
 custom_minimum_size = Vector2(98, 98)
 layout_mode = 2
+size_flags_vertical = 4
 
 [node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer"]
 custom_minimum_size = Vector2(98, 98)
@@ -171,7 +172,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 34
-text = "شما"
+text = "بازیکن ۱"
 
 [node name="RoleBadge" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox"]
 layout_mode = 2
@@ -238,6 +239,7 @@ alignment = 1
 [node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox"]
 custom_minimum_size = Vector2(98, 98)
 layout_mode = 2
+size_flags_vertical = 4
 
 [node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer"]
 custom_minimum_size = Vector2(98, 98)
@@ -272,7 +274,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 34
-text = "حریف"
+text = "بازیکن ۲"
 
 [node name="RoleBadge" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox"]
 layout_mode = 2

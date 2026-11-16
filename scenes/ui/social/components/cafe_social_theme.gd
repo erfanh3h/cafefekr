@@ -687,48 +687,113 @@ static func get_frame_texture(frame_id: int) -> Texture2D:
 	return null
 
 
-static var _avatar_aperture_mat: ShaderMaterial = null
+static var _avatar_aperture_mats: Dictionary = {}
 
+# Exact per-frame aperture data inside a square KEEP_ASPECT_CENTERED container:
+# - "rect": superellipse clipping bounds (0 gaps inside bezel, 0 leaks outside silhouette)
+# - "hole": visible inner opening normalized inside "rect" (for clean portrait framing)
+# - "pow": superellipse exponent (2.0 = true oval, 2.2..3.6 = rounded-shield/squircle)
 const _FRAME_APERTURES: Dictionary = {
-	1: Vector4(0.119, 0.084, 0.867, 0.853),
-	2: Vector4(0.094, 0.039, 0.913, 0.874),
-	3: Vector4(0.141, 0.152, 0.845, 0.876),
-	4: Vector4(0.107, 0.097, 0.872, 0.855),
-	5: Vector4(0.088, 0.062, 0.912, 0.892),
-	6: Vector4(0.121, 0.131, 0.859, 0.897),
-	7: Vector4(0.118, 0.096, 0.860, 0.890),
-	8: Vector4(0.113, 0.085, 0.858, 0.830),
-	9: Vector4(0.099, 0.046, 0.916, 0.878),
-	10: Vector4(0.088, 0.081, 0.904, 0.860),
-	11: Vector4(0.105, 0.091, 0.881, 0.839),
-	12: Vector4(0.156, 0.136, 0.838, 0.864),
-	13: Vector4(0.167, 0.090, 0.808, 0.814),
-	14: Vector4(0.091, 0.101, 0.895, 0.884),
-	15: Vector4(0.158, 0.224, 0.842, 0.868),
-	16: Vector4(0.119, 0.094, 0.874, 0.878),
-	17: Vector4(0.119, 0.095, 0.867, 0.837),
-	18: Vector4(0.150, 0.073, 0.865, 0.891),
-	19: Vector4(0.114, 0.110, 0.838, 0.890),
-	20: Vector4(0.141, 0.116, 0.822, 0.877),
+	1:  {"rect": Vector4(0.189, 0.161, 0.797, 0.741), "hole": Vector4(0.023, 0.012, 0.977, 0.976), "pow": 2.0},
+	2:  {"rect": Vector4(0.102, 0.039, 0.898, 0.772), "hole": Vector4(0.059, 0.075, 0.950, 0.957), "pow": 2.8},
+	3:  {"rect": Vector4(0.197, 0.214, 0.797, 0.793), "hole": Vector4(0.011, 0.036, 0.977, 0.964), "pow": 2.0},
+	4:  {"rect": Vector4(0.148, 0.159, 0.803, 0.793), "hole": Vector4(0.021, 0.043, 0.979, 0.989), "pow": 2.0},
+	5:  {"rect": Vector4(0.104, 0.100, 0.896, 0.838), "hole": Vector4(0.068, 0.062, 0.932, 0.927), "pow": 3.0},
+	6:  {"rect": Vector4(0.141, 0.221, 0.838, 0.855), "hole": Vector4(0.069, 0.043, 0.931, 0.946), "pow": 2.2},
+	7:  {"rect": Vector4(0.169, 0.176, 0.801, 0.816), "hole": Vector4(0.070, 0.034, 0.930, 0.931), "pow": 3.6},
+	8:  {"rect": Vector4(0.177, 0.156, 0.787, 0.745), "hole": Vector4(0.023, 0.024, 0.977, 0.964), "pow": 2.0},
+	9:  {"rect": Vector4(0.115, 0.099, 0.878, 0.809), "hole": Vector4(0.070, 0.065, 0.960, 0.968), "pow": 2.8},
+	10: {"rect": Vector4(0.140, 0.132, 0.838, 0.787), "hole": Vector4(0.074, 0.056, 0.947, 0.966), "pow": 2.0},
+	11: {"rect": Vector4(0.126, 0.140, 0.860, 0.776), "hole": Vector4(0.067, 0.066, 0.943, 0.967), "pow": 2.8},
+	12: {"rect": Vector4(0.214, 0.188, 0.773, 0.779), "hole": Vector4(0.081, 0.077, 0.919, 0.956), "pow": 2.6},
+	13: {"rect": Vector4(0.218, 0.141, 0.763, 0.686), "hole": Vector4(0.082, 0.035, 0.918, 0.965), "pow": 2.0},
+	14: {"rect": Vector4(0.178, 0.174, 0.808, 0.790), "hole": Vector4(0.011, 0.035, 0.977, 0.965), "pow": 2.0},
+	15: {"rect": Vector4(0.184, 0.237, 0.809, 0.809), "hole": Vector4(0.032, 0.046, 0.968, 0.954), "pow": 2.0},
+	16: {"rect": Vector4(0.162, 0.165, 0.838, 0.806), "hole": Vector4(0.064, 0.045, 0.936, 0.921), "pow": 2.4},
+	17: {"rect": Vector4(0.187, 0.197, 0.793, 0.776), "hole": Vector4(0.034, 0.012, 0.966, 0.965), "pow": 2.0},
+	18: {"rect": Vector4(0.164, 0.153, 0.836, 0.788), "hole": Vector4(0.076, 0.011, 0.924, 0.954), "pow": 2.2},
+	19: {"rect": Vector4(0.183, 0.200, 0.769, 0.772), "hole": Vector4(0.012, 0.024, 0.976, 0.964), "pow": 2.0},
+	20: {"rect": Vector4(0.185, 0.196, 0.764, 0.783), "hole": Vector4(0.025, 0.025, 0.987, 0.963), "pow": 2.0},
 }
 
+static var _avatar_aperture_shader: Shader = null
 
-static func _get_avatar_aperture_material() -> ShaderMaterial:
-	if _avatar_aperture_mat != null:
-		return _avatar_aperture_mat
-	var sh := Shader.new()
-	sh.code = "shader_type canvas_item;\nvoid fragment() {\n\tvec2 p = abs(UV * 2.0 - vec2(1.0));\n\tfloat d = pow(p.x, 2.6) + pow(p.y, 2.6);\n\tfloat mask = 1.0 - smoothstep(0.90, 1.0, d);\n\tvec4 tex = texture(TEXTURE, UV);\n\tvec3 bg = vec3(0.11, 0.07, 0.04);\n\tvec3 rgb = mix(bg, tex.rgb, tex.a);\n\tCOLOR = vec4(rgb, mask);\n}\n"
+static func _get_avatar_aperture_material(frame_id: int = 1) -> ShaderMaterial:
+	var safe_fid: int = clampi(frame_id if frame_id >= 1 else 1, 1, 20)
+	if _avatar_aperture_mats.has(safe_fid):
+		return _avatar_aperture_mats[safe_fid]
+
+	if _avatar_aperture_shader == null:
+		var sh := Shader.new()
+		sh.code = """shader_type canvas_item;
+uniform float shape_pow = 2.0;
+uniform float box_aspect = 1.0;
+uniform vec4 hole_uv = vec4(0.02, 0.02, 0.98, 0.98);
+uniform float portrait_fit = 0.93;
+
+void fragment() {
+	vec2 p = abs(UV * 2.0 - vec2(1.0));
+	float d = pow(max(p.x, 0.0001), shape_pow) + pow(max(p.y, 0.0001), shape_pow);
+	float mask = 1.0 - smoothstep(0.94, 1.0, d);
+
+	vec2 hole_center = vec2(0.5 * (hole_uv.x + hole_uv.z), 0.5 * (hole_uv.y + hole_uv.w));
+	vec2 hole_half = max(vec2(0.1), 0.5 * (hole_uv.zw - hole_uv.xy));
+	float r_hole = length((UV - hole_center) / hole_half);
+	vec3 bg_center = vec3(0.22, 0.128, 0.072);
+	vec3 bg_edge = vec3(0.105, 0.056, 0.030);
+	vec3 bg = mix(bg_center, bg_edge, smoothstep(0.0, 1.05, r_hole));
+	bg *= mix(1.0, 0.80, smoothstep(0.76, 1.05, r_hole));
+
+	float px_w = max(TEXTURE_PIXEL_SIZE.x, 0.0001);
+	float px_h = max(TEXTURE_PIXEL_SIZE.y, 0.0001);
+	float tex_aspect = px_h / px_w;
+	float hole_w = max(0.05, hole_uv.z - hole_uv.x);
+	float hole_h = max(0.05, hole_uv.w - hole_uv.y);
+	float avail_w = hole_w * portrait_fit * box_aspect;
+	float avail_h = hole_h * portrait_fit;
+	vec2 draw_size;
+	if (avail_w / avail_h > tex_aspect) {
+		draw_size = vec2(avail_h * tex_aspect, avail_h);
+	} else {
+		draw_size = vec2(avail_w, avail_w / tex_aspect);
+	}
+	vec2 draw_uv_size = vec2(draw_size.x / max(box_aspect, 0.05), draw_size.y);
+	vec2 target_center = vec2(hole_center.x, hole_uv.w + 0.015 * hole_h - 0.5 * draw_uv_size.y);
+	vec2 tex_uv = (UV - target_center) / draw_uv_size + vec2(0.5);
+
+	vec4 tex = vec4(0.0);
+	if (tex_uv.x > 0.001 && tex_uv.x < 0.999 && tex_uv.y > 0.001 && tex_uv.y < 0.999) {
+		tex = texture(TEXTURE, tex_uv);
+	}
+
+	vec3 rgb = mix(bg, tex.rgb, tex.a);
+	COLOR = vec4(rgb, mask);
+}
+"""
+		_avatar_aperture_shader = sh
+
+	var ap_data: Dictionary = _FRAME_APERTURES.get(safe_fid, _FRAME_APERTURES[1])
+	var r: Vector4 = ap_data["rect"]
+	var hole: Vector4 = ap_data["hole"]
+	var spow: float = float(ap_data["pow"])
+	var box_aspect: float = maxf(0.1, (r.z - r.x) / maxf(0.05, r.w - r.y))
+
 	var mat := ShaderMaterial.new()
-	mat.shader = sh
-	_avatar_aperture_mat = mat
+	mat.shader = _avatar_aperture_shader
+	mat.set_shader_parameter("shape_pow", spow)
+	mat.set_shader_parameter("box_aspect", box_aspect)
+	mat.set_shader_parameter("hole_uv", hole)
+	mat.set_shader_parameter("portrait_fit", 0.93)
+	_avatar_aperture_mats[safe_fid] = mat
 	return mat
 
 
 static func _get_frame_aperture(frame_id: int) -> Vector4:
 	var safe_fid: int = clampi(frame_id if frame_id >= 1 else 1, 1, 20)
 	if _FRAME_APERTURES.has(safe_fid):
-		return _FRAME_APERTURES[safe_fid]
-	return Vector4(0.119, 0.084, 0.867, 0.853)
+		var ap_data: Dictionary = _FRAME_APERTURES[safe_fid]
+		return ap_data["rect"]
+	return Vector4(0.189, 0.161, 0.797, 0.741)
 
 
 static func make_avatar_badge(
@@ -738,7 +803,7 @@ static func make_avatar_badge(
 	presence_status: String = "",
 	show_dot: bool = false
 ) -> Control:
-	var final_sz: float = maxf(size_px, 66.0) + 4.0
+	var final_sz: float = maxf(size_px, 66.0) + 6.0
 	var holder := Control.new()
 	holder.custom_minimum_size = Vector2(final_sz, final_sz)
 	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -748,20 +813,20 @@ static func make_avatar_badge(
 	safe_fid = clampi(safe_fid, 1, 20)
 	var ap: Vector4 = _get_frame_aperture(safe_fid)
 
-	# 1. Avatar texture clipped cleanly to the frame's inner aperture (+2px inner boost)
+	# 1. Avatar texture framed and masked cleanly inside the frame's inner aperture
 	var av := TextureRect.new()
 	av.name = "Avatar"
 	av.anchor_left = ap.x
 	av.anchor_top = ap.y
 	av.anchor_right = ap.z
 	av.anchor_bottom = ap.w
-	av.offset_left = -1.0
-	av.offset_top = -1.0
-	av.offset_right = 1.0
-	av.offset_bottom = 1.0
+	av.offset_left = 0.0
+	av.offset_top = 0.0
+	av.offset_right = 0.0
+	av.offset_bottom = 0.0
 	av.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	av.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	av.material = _get_avatar_aperture_material()
+	av.stretch_mode = TextureRect.STRETCH_SCALE
+	av.material = _get_avatar_aperture_material(safe_fid)
 	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var safe_av_id := clampi(avatar_id, 0, 71)
 	var av_path := "res://assets/icons/Avatars/%d.png" % safe_av_id
@@ -771,14 +836,14 @@ static func make_avatar_badge(
 		av.texture = load("res://assets/icons/Avatars/0.png")
 	holder.add_child(av)
 
-	# 2. Frame Overlay Texture (Full size + 2px boost, on top)
+	# 2. Frame Overlay Texture (Locked 1:1 to holder rect so aperture coordinates align cleanly)
 	var frame_rect := TextureRect.new()
 	frame_rect.name = "FrameOverlay"
 	frame_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	frame_rect.offset_left = -1.0
-	frame_rect.offset_top = -1.0
-	frame_rect.offset_right = 1.0
-	frame_rect.offset_bottom = 1.0
+	frame_rect.offset_left = 0.0
+	frame_rect.offset_top = 0.0
+	frame_rect.offset_right = 0.0
+	frame_rect.offset_bottom = 0.0
 	frame_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	frame_rect.texture = get_frame_texture(safe_fid)
@@ -821,13 +886,20 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 			var p_ctrl: Control = p_node as Control
 			p_ctrl.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 			p_ctrl.clip_contents = false
-		if is_instance_valid(container):
+		var is_dedicated_slot: bool = is_instance_valid(container) and not (container is BoxContainer) and not (container is GridContainer) and not (container is MarginContainer)
+		if is_dedicated_slot:
 			if container is Panel or container is PanelContainer:
 				container.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 			container.clip_contents = false
 			if not container.has_meta("_av_box_boosted") and container.custom_minimum_size.x > 0.0 and container.custom_minimum_size.y > 0.0:
-				container.custom_minimum_size += Vector2(4.0, 4.0)
+				var sq_sz: float = maxf(container.custom_minimum_size.x, container.custom_minimum_size.y) + 6.0
+				container.custom_minimum_size = Vector2(sq_sz, sq_sz)
 				container.set_meta("_av_box_boosted", true)
+			if container.get_parent() is Container:
+				if container.size_flags_horizontal != Control.SIZE_EXPAND_FILL:
+					container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				if container.size_flags_vertical != Control.SIZE_EXPAND_FILL:
+					container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			for legacy_name in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc", "PlayerSideTag"]:
 				var leg: Node = container.get_node_or_null(legacy_name)
 				if is_instance_valid(leg) and leg is CanvasItem:
@@ -837,28 +909,39 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 		# wrap it inside a plain Control (AvatarInnerHost) so the Container does not override anchor/offset layout.
 		if p_node is Control and (p_node as Control).name == "AvatarInnerHost":
 			host_ctrl = p_node as Control
-			if avatar_rect.custom_minimum_size.x > 0.0 or avatar_rect.custom_minimum_size.y > 0.0:
-				host_ctrl.custom_minimum_size = avatar_rect.custom_minimum_size + Vector2(4.0, 4.0)
+			var grand_p: Node = host_ctrl.get_parent()
+			if grand_p is PanelContainer:
+				host_ctrl.custom_minimum_size = Vector2.ZERO
+				host_ctrl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				host_ctrl.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		elif p_node is Container:
 			var cont_parent: Container = p_node as Container
 			var existing_host: Node = cont_parent.get_node_or_null("AvatarInnerHost")
 			if is_instance_valid(existing_host) and existing_host is Control and cont_parent is PanelContainer:
 				host_ctrl = existing_host as Control
+				host_ctrl.custom_minimum_size = Vector2.ZERO
+				host_ctrl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				host_ctrl.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			else:
 				var wrapper := Control.new()
 				wrapper.name = "AvatarInnerHost"
 				wrapper.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				var min_sz: Vector2 = avatar_rect.custom_minimum_size
-				if min_sz.x <= 0.0 or min_sz.y <= 0.0:
-					min_sz = cont_parent.custom_minimum_size
-				if min_sz.x <= 0.0 or min_sz.y <= 0.0:
-					min_sz = Vector2(98.0, 98.0)
+				if cont_parent is PanelContainer:
+					wrapper.custom_minimum_size = Vector2.ZERO
+					wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
 				else:
-					min_sz += Vector2(4.0, 4.0)
-				if not (cont_parent is PanelContainer):
+					var min_sz: Vector2 = avatar_rect.custom_minimum_size
+					if min_sz.x <= 0.0 or min_sz.y <= 0.0:
+						min_sz = cont_parent.custom_minimum_size
+					if min_sz.x <= 0.0 or min_sz.y <= 0.0:
+						min_sz = Vector2(102.0, 102.0)
+					else:
+						var sq_w: float = maxf(min_sz.x, min_sz.y) + 6.0
+						min_sz = Vector2(sq_w, sq_w)
 					wrapper.custom_minimum_size = min_sz
-				wrapper.size_flags_horizontal = avatar_rect.size_flags_horizontal
-				wrapper.size_flags_vertical = avatar_rect.size_flags_vertical
+					wrapper.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+					wrapper.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 				var idx: int = avatar_rect.get_index()
 				cont_parent.add_child(wrapper)
 				cont_parent.move_child(wrapper, idx)
@@ -867,27 +950,33 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 		elif p_node is Control:
 			host_ctrl = p_node as Control
 			if not host_ctrl.has_meta("_av_box_boosted") and host_ctrl.custom_minimum_size.x > 0.0 and host_ctrl.custom_minimum_size.y > 0.0:
-				host_ctrl.custom_minimum_size += Vector2(4.0, 4.0)
+				var sq_h: float = maxf(host_ctrl.custom_minimum_size.x, host_ctrl.custom_minimum_size.y) + 6.0
+				host_ctrl.custom_minimum_size = Vector2(sq_h, sq_h)
 				host_ctrl.set_meta("_av_box_boosted", true)
+			if host_ctrl.get_parent() is Container:
+				if host_ctrl.size_flags_horizontal != Control.SIZE_EXPAND_FILL:
+					host_ctrl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				if host_ctrl.size_flags_vertical != Control.SIZE_EXPAND_FILL:
+					host_ctrl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 		for legacy_name2 in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc", "PlayerSideTag"]:
 			var leg2: Node = host_ctrl.get_node_or_null(legacy_name2)
 			if is_instance_valid(leg2) and leg2 is CanvasItem:
 				(leg2 as CanvasItem).visible = false
 
-		# Crucial: clear custom_minimum_size on avatar_rect so Godot Control does not clamp it to full container size
+		# Crucial: clear custom_minimum_size on avatar_rect and match 1:1 normalized coords inside square host_ctrl
 		avatar_rect.custom_minimum_size = Vector2.ZERO
 		avatar_rect.anchor_left = ap.x
 		avatar_rect.anchor_top = ap.y
 		avatar_rect.anchor_right = ap.z
 		avatar_rect.anchor_bottom = ap.w
-		avatar_rect.offset_left = -1.0
-		avatar_rect.offset_top = -1.0
-		avatar_rect.offset_right = 1.0
-		avatar_rect.offset_bottom = 1.0
+		avatar_rect.offset_left = 0.0
+		avatar_rect.offset_top = 0.0
+		avatar_rect.offset_right = 0.0
+		avatar_rect.offset_bottom = 0.0
 		avatar_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		avatar_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		avatar_rect.material = _get_avatar_aperture_material()
+		avatar_rect.stretch_mode = TextureRect.STRETCH_SCALE
+		avatar_rect.material = _get_avatar_aperture_material(safe_fid)
 
 	if not is_instance_valid(host_ctrl):
 		return null
@@ -896,25 +985,26 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 	var frame_rect: TextureRect = null
 	if is_instance_valid(frame_node) and frame_node is TextureRect:
 		frame_rect = frame_node as TextureRect
-		frame_rect.offset_left = -1.0
-		frame_rect.offset_top = -1.0
-		frame_rect.offset_right = 1.0
-		frame_rect.offset_bottom = 1.0
+		frame_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		frame_rect.offset_left = 0.0
+		frame_rect.offset_top = 0.0
+		frame_rect.offset_right = 0.0
+		frame_rect.offset_bottom = 0.0
 	else:
 		frame_rect = TextureRect.new()
 		frame_rect.name = "FrameOverlay"
 		frame_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-		frame_rect.offset_left = -1.0
-		frame_rect.offset_top = -1.0
-		frame_rect.offset_right = 1.0
-		frame_rect.offset_bottom = 1.0
+		frame_rect.offset_left = 0.0
+		frame_rect.offset_top = 0.0
+		frame_rect.offset_right = 0.0
+		frame_rect.offset_bottom = 0.0
 		frame_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		frame_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		frame_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		host_ctrl.add_child(frame_rect)
 
 	frame_rect.texture = get_frame_texture(safe_fid)
-	# Move frame above avatar, but keep side tags (Label) and profile buttons (BaseButton) on top
+	# Move frame above avatar, keeping profile buttons (BaseButton) on top for clicks
 	host_ctrl.move_child(frame_rect, host_ctrl.get_child_count() - 1)
 	for ch in host_ctrl.get_children():
 		if ch is Label or ch is BaseButton:

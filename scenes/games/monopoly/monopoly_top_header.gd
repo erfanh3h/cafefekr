@@ -175,8 +175,11 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			hbox.add_theme_constant_override("separation", 6 if is_compact else 12)
 		var av_c: Control = item["av_c"]
 		if is_instance_valid(av_c):
-			var av_sz = 62.0 if total_players == 4 else (72.0 if total_players == 3 else 96.0)
-			av_c.custom_minimum_size = Vector2(av_sz, av_sz)
+			var av_sz: float = 62.0 if total_players == 4 else (72.0 if total_players == 3 else 96.0)
+			av_c.custom_minimum_size = Vector2(av_sz + 6.0, av_sz + 6.0)
+			av_c.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			av_c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			av_c.set_meta("_av_box_boosted", true)
 		var nm: Label = item["name"]
 		if is_instance_valid(nm):
 			nm.add_theme_font_size_override("font_size", 30 if total_players == 4 else (33 if total_players == 3 else 40))

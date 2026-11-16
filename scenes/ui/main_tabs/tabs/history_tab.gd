@@ -300,7 +300,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 
 		var name_lbl := Label.new()
 		name_lbl.text = username
-		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_lbl.clip_text = false
@@ -321,7 +321,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 					tag_lbl.text = "[%s]" % clan_tag
 			else:
 				tag_lbl.text = "%s عضو" % GameManager.to_fa_num(int(mem_cnt))
-			tag_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			tag_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			tag_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			tag_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			tag_lbl.clip_text = false
@@ -335,7 +335,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		else:
 			var sub_lbl := Label.new()
 			sub_lbl.text = "سطح %s" % GameManager.to_fa_num(int(lvl_val))
-			sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			sub_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			sub_lbl.clip_text = false

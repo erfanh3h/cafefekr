@@ -314,7 +314,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 
 	var name_lbl := Label.new()
 	name_lbl.text = username
-	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.clip_text = false
@@ -337,7 +337,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 				tag_lbl.text = "[%s]" % clan_tag
 		else:
 			tag_lbl.text = "%s عضو" % GameManager.to_fa_num(mem_cnt)
-		tag_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		tag_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		tag_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		tag_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tag_lbl.clip_text = false
@@ -351,7 +351,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	elif not subtitle.is_empty():
 		var sub_lbl := Label.new()
 		sub_lbl.text = subtitle
-		sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		sub_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sub_lbl.clip_text = false
@@ -368,7 +368,6 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	val_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	val_box.add_theme_constant_override("separation", 6)
 	val_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(val_box)
 
 	if current_tab == "win":
 		var val_lbl := Label.new()
