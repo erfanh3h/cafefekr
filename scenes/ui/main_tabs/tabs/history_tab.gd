@@ -131,6 +131,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		var rank = rank_idx
 
 		var username: String = ""
+		var clan_tag: String = ""
 		var subtitle_extra: String = ""
 		var img_id: int = 0
 		var score_val: int = 0
@@ -141,9 +142,8 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		var entry_dict: Dictionary = {}
 
 		if lb_type == "clans":
-			var cname = str(raw_item.get("name", "اتحاد"))
-			var ctag = str(raw_item.get("tag", ""))
-			username = cname if ctag.is_empty() else "%s  [%s]" % [cname, ctag]
+			username = str(raw_item.get("name", "اتحاد"))
+			clan_tag = str(raw_item.get("tag", ""))
 			score_val = int(round(float(raw_item.get("clan_score", raw_item.get("score", 0)))))
 			lvl_val = int(raw_item.get("clan_level", raw_item.get("level", 1)))
 			mem_cnt = int(raw_item.get("member_count", raw_item.get("members_count", 1)))
@@ -202,14 +202,14 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 
 		# --- Outer Card with frame_small ---
 		var card := Button.new()
-		card.custom_minimum_size = Vector2(0, 122)
+		card.custom_minimum_size = Vector2(0, 148)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.flat = true
 		card.focus_mode = Control.FOCUS_NONE
 		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		ActionVFXManager.apply_button_juice(card, "tap_button")
 
-		var style_frame := CafeSocialTheme.create_frame_style(false, 38.0, 18.0)
+		var style_frame := CafeSocialTheme.create_frame_style(false, 40.0, 20.0)
 		card.add_theme_stylebox_override("normal", style_frame)
 		card.add_theme_stylebox_override("hover", style_frame)
 		card.add_theme_stylebox_override("pressed", style_frame)
@@ -218,10 +218,10 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		var pad := MarginContainer.new()
 		pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pad.add_theme_constant_override("margin_left", 40)
-		pad.add_theme_constant_override("margin_right", 40)
-		pad.add_theme_constant_override("margin_top", 16)
-		pad.add_theme_constant_override("margin_bottom", 22)
+		pad.add_theme_constant_override("margin_left", 42)
+		pad.add_theme_constant_override("margin_right", 42)
+		pad.add_theme_constant_override("margin_top", 20)
+		pad.add_theme_constant_override("margin_bottom", 26)
 		card.add_child(pad)
 
 		var row := HBoxContainer.new()
@@ -233,7 +233,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 
 		# 1. Number / Rank (Far Right in RTL)
 		var rank_frame := PanelContainer.new()
-		rank_frame.custom_minimum_size = Vector2(56, 56)
+		rank_frame.custom_minimum_size = Vector2(62, 62)
 		rank_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		rank_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -246,7 +246,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		rank_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		rank_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		rank_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		rank_lbl.add_theme_font_size_override("font_size", 34)
+		rank_lbl.add_theme_font_size_override("font_size", 38)
 
 		if rank == 1:
 			rank_lbl.text = "🥇"
@@ -263,13 +263,13 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 
 		# 2. Avatar / Clan Emblem Plaque
 		var av_frame := PanelContainer.new()
-		av_frame.custom_minimum_size = Vector2(76, 76)
+		av_frame.custom_minimum_size = Vector2(86, 86)
 		av_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		av_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 		var avatar := TextureRect.new()
-		avatar.custom_minimum_size = Vector2(68, 68)
+		avatar.custom_minimum_size = Vector2(78, 78)
 		avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -290,17 +290,39 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			CafeSocialTheme.apply_frame_to_container(av_frame, avatar, u_fid)
 		row.add_child(av_frame)
 
-		# 3. Name (immediately to the left of avatar, expanding to fill row)
+		# 3. Name (and Clan Tag underneath for clans) — strictly to the LEFT of the avatar in RTL
+		var name_col := VBoxContainer.new()
+		name_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		name_col.alignment = BoxContainer.ALIGNMENT_CENTER
+		name_col.add_theme_constant_override("separation", 2)
+		name_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(name_col)
+
 		var name_lbl := Label.new()
 		name_lbl.text = username
 		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_lbl.clip_text = true
+		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		name_lbl.add_theme_font_size_override("font_size", 30)
+		name_lbl.add_theme_font_size_override("font_size", 35)
 		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0) if not is_me else Color(1.0, 0.90, 0.35, 1.0))
-		row.add_child(name_lbl)
+		name_col.add_child(name_lbl)
+
+		if lb_type == "clans" and not clan_tag.is_empty():
+			var tag_lbl := Label.new()
+			tag_lbl.text = "[%s]" % clan_tag
+			tag_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			tag_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			tag_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			tag_lbl.clip_text = true
+			tag_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			tag_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
+			tag_lbl.add_theme_font_size_override("font_size", 25)
+			tag_lbl.add_theme_color_override("font_color", Color(0.95, 0.82, 0.44, 0.95))
+			name_col.add_child(tag_lbl)
 
 		# 4. Gamer Level (Icon + Level Number, positioned to the left of name)
 		var lvl_box := HBoxContainer.new()
@@ -313,20 +335,20 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			var lbl_mem := Label.new()
 			lbl_mem.text = "•  %s عضو" % GameManager.to_fa_num(int(mem_cnt))
 			lbl_mem.add_theme_font_override("font", _HEKAYAT_FONT)
-			lbl_mem.add_theme_font_size_override("font_size", 22)
-			lbl_mem.add_theme_color_override("font_color", Color(0.82, 0.75, 0.64, 1.0))
+			lbl_mem.add_theme_font_size_override("font_size", 25)
+			lbl_mem.add_theme_color_override("font_color", Color(0.86, 0.79, 0.68, 1.0))
 			lvl_box.add_child(lbl_mem)
 
 		var lbl_lvl_num := Label.new()
 		lbl_lvl_num.text = GameManager.to_fa_num(int(lvl_val))
 		lbl_lvl_num.add_theme_font_override("font", _HEKAYAT_FONT)
-		lbl_lvl_num.add_theme_font_size_override("font_size", 26)
+		lbl_lvl_num.add_theme_font_size_override("font_size", 30)
 		lbl_lvl_num.add_theme_color_override("font_color", Color(1.0, 0.88, 0.50, 1.0))
 		lvl_box.add_child(lbl_lvl_num)
 
 		var lvl_ico := TextureRect.new()
 		lvl_ico.texture = CafeSocialTheme.BADGE_LEVEL
-		lvl_ico.custom_minimum_size = Vector2(30, 30)
+		lvl_ico.custom_minimum_size = Vector2(34, 34)
 		lvl_ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		lvl_ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		lvl_ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -345,7 +367,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-			val_lbl.add_theme_font_size_override("font_size", 36)
+			val_lbl.add_theme_font_size_override("font_size", 42)
 			val_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.38, 1.0))
 			val_box.add_child(val_lbl)
 
@@ -353,13 +375,13 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			win_sub.text = "برد"
 			win_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			win_sub.add_theme_font_override("font", _HEKAYAT_FONT)
-			win_sub.add_theme_font_size_override("font_size", 22)
+			win_sub.add_theme_font_size_override("font_size", 26)
 			win_sub.add_theme_color_override("font_color", Color(0.55, 0.92, 0.64, 1.0))
 			val_box.add_child(win_sub)
 		else:
 			var sc_icon := TextureRect.new()
 			sc_icon.texture = _SCORE_ICON
-			sc_icon.custom_minimum_size = Vector2(40, 42)
+			sc_icon.custom_minimum_size = Vector2(44, 46)
 			sc_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			sc_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			sc_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -370,7 +392,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-			val_lbl.add_theme_font_size_override("font_size", 30)
+			val_lbl.add_theme_font_size_override("font_size", 34)
 			val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
 
 			var sc_pill := StyleBoxFlat.new()
@@ -378,10 +400,10 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			sc_pill.border_color = Color(0.85, 0.68, 0.28, 0.88)
 			sc_pill.set_border_width_all(1)
 			sc_pill.set_corner_radius_all(10)
-			sc_pill.content_margin_left = 12
-			sc_pill.content_margin_right = 12
-			sc_pill.content_margin_top = 2
-			sc_pill.content_margin_bottom = 2
+			sc_pill.content_margin_left = 14
+			sc_pill.content_margin_right = 14
+			sc_pill.content_margin_top = 4
+			sc_pill.content_margin_bottom = 4
 			val_lbl.add_theme_stylebox_override("normal", sc_pill)
 			val_box.add_child(val_lbl)
 

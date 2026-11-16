@@ -318,19 +318,19 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 
 	# 1. LEFT SIDE: Opponent Avatar + Name directly underneath
 	var opp_col := VBoxContainer.new()
-	opp_col.custom_minimum_size = Vector2(105, 126)
+	opp_col.custom_minimum_size = Vector2(108, 130)
 	opp_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	opp_col.add_theme_constant_override("separation", 4)
 	opp_col.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var av_panel := PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(88, 88)
+	av_panel.custom_minimum_size = Vector2(92, 92)
 	av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 	var av_img := TextureRect.new()
-	av_img.custom_minimum_size = Vector2(84, 84)
+	av_img.custom_minimum_size = Vector2(88, 88)
 	av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -788,7 +788,7 @@ func _render_cosmetics() -> void:
 			continue
 
 		var p_btn := TextureButton.new()
-		p_btn.custom_minimum_size = Vector2(160, 160)
+		p_btn.custom_minimum_size = Vector2(162, 162)
 		p_btn.ignore_texture_size = true
 		p_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		p_btn.texture_normal = load(path)
@@ -839,7 +839,7 @@ func _render_cosmetics() -> void:
 
 
 # ==============================================================================
-# 2.5. AVATAR FRAMES GALLERY ("قاب آواتار" - 20 Exclusive Frames with Live Preview)
+# 2.5. AVATAR FRAMES GALLERY ("قاب آواتار" - Clean Selection Like Change Avatar)
 # ==============================================================================
 
 func _render_frames() -> void:
@@ -847,148 +847,57 @@ func _render_frames() -> void:
 		c.queue_free()
 
 	_selected_frame_id = GameManager.get_frame_id()
-	var cur_av_id: int = GameManager.get_avatar_id()
 
-	# --- 1. Live Hero Preview Card ---
-	var hero_card := PanelContainer.new()
-	hero_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hero_card.custom_minimum_size = Vector2(0, 200)
-	hero_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
-	content_frames.add_child(hero_card)
-
-	var hero_hbox := HBoxContainer.new()
-	hero_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hero_hbox.add_theme_constant_override("separation", 20)
-	hero_card.add_child(hero_hbox)
-
-	# Right (in RTL): Badge Holder
-	var badge_holder := Control.new()
-	badge_holder.custom_minimum_size = Vector2(146, 146)
-	hero_hbox.add_child(badge_holder)
-
-	# Left (in RTL): Text Details
-	var info_vbox := VBoxContainer.new()
-	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	info_vbox.add_theme_constant_override("separation", 6)
-	hero_hbox.add_child(info_vbox)
-
-	var lbl_hero_title := CafeSocialTheme.make_title("پیش‌نمایش زنده نمایه شما", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true)
-	info_vbox.add_child(lbl_hero_title)
-
-	var lbl_frame_name := Label.new()
-	lbl_frame_name.add_theme_font_override("font", _font_vazir)
-	lbl_frame_name.add_theme_font_size_override("font_size", 22)
-	lbl_frame_name.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
-	lbl_frame_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	info_vbox.add_child(lbl_frame_name)
-
-	var lbl_hero_desc := CafeSocialTheme.make_body("این قاب دور آواتار شما در میز بازی، تاریخچه، لابی و جداول رده‌بندی قرار می‌گیرد.", 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true)
-	info_vbox.add_child(lbl_hero_desc)
-
-	var update_hero_badge = func():
-		for b in badge_holder.get_children():
-			b.queue_free()
-		var badge := CafeSocialTheme.make_avatar_badge(cur_av_id, _selected_frame_id, 140.0)
-		badge.position = Vector2(3, 3)
-		badge_holder.add_child(badge)
-		var f_idx := clampi(_selected_frame_id - 1, 0, CafeSocialTheme.PROFILE_FRAMES.size() - 1)
-		var fname: String = CafeSocialTheme.PROFILE_FRAMES[f_idx].get("name", "قاب شماره %s" % GameManager.to_fa_num(_selected_frame_id))
-		lbl_frame_name.text = "قاب انتخابی: %s" % fname
-
-	update_hero_badge.call()
-
-	# Section header
-	content_frames.add_child(CafeSocialTheme.make_ornate_section_header("انتخاب قاب آواتار (۲۰ طرح اختصاصی)", CafeSocialTheme.ICO_RANKING, "روی قاب دلخواه ضربه بزنید"))
-
-	# --- 2. Frames Grid ---
+	# Center wrapper for frames grid (simple selection matching change avatar part)
 	var center_wrap := CenterContainer.new()
 	center_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content_frames.add_child(center_wrap)
 
 	var grid := GridContainer.new()
-	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", 14)
-	grid.add_theme_constant_override("v_separation", 14)
+	grid.columns = 5
+	grid.add_theme_constant_override("h_separation", 20)
+	grid.add_theme_constant_override("v_separation", 24)
 	center_wrap.add_child(grid)
 
-	var frame_cards: Dictionary = {}
-
-	var update_cards_style = func():
-		for fid in frame_cards.keys():
-			var card_panel: PanelContainer = frame_cards[fid]
-			var is_sel: bool = (fid == _selected_frame_id)
-			card_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
-				Color(0.28, 0.18, 0.08, 0.98) if is_sel else CafeSocialTheme.COL_WALNUT_DEEP,
-				Color(1.0, 0.85, 0.32, 1.0) if is_sel else Color(0.40, 0.30, 0.20, 0.75),
-				14,
-				3 if is_sel else 1,
-				6.0, 6.0
-			))
+	var frame_buttons: Array[TextureButton] = []
 
 	for fid in range(1, 21):
-		var f_idx := clampi(fid - 1, 0, CafeSocialTheme.PROFILE_FRAMES.size() - 1)
-		var fname: String = CafeSocialTheme.PROFILE_FRAMES[f_idx].get("name", "قاب %s" % GameManager.to_fa_num(fid))
+		var f_tex: Texture2D = CafeSocialTheme.get_frame_texture(fid)
+		if f_tex == null:
+			continue
 
-		var card := PanelContainer.new()
-		card.custom_minimum_size = Vector2(136, 172)
-		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		card.focus_mode = Control.FOCUS_NONE
+		var f_btn := TextureButton.new()
+		f_btn.custom_minimum_size = Vector2(162, 162)
+		f_btn.ignore_texture_size = true
+		f_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		f_btn.texture_normal = f_tex
+		f_btn.focus_mode = Control.FOCUS_NONE
+		f_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		ActionVFXManager.apply_button_juice(f_btn, "tap_button")
 
-		var card_m := MarginContainer.new()
-		card_m.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_m.add_theme_constant_override("margin_left", 6)
-		card_m.add_theme_constant_override("margin_top", 10)
-		card_m.add_theme_constant_override("margin_right", 6)
-		card_m.add_theme_constant_override("margin_bottom", 10)
-		card.add_child(card_m)
+		if fid == _selected_frame_id:
+			f_btn.modulate = Color(1.25, 1.15, 0.82, 1.0)
+		else:
+			f_btn.modulate = Color(1.0, 1.0, 1.0, 0.85)
 
-		var cv := VBoxContainer.new()
-		cv.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		cv.alignment = BoxContainer.ALIGNMENT_CENTER
-		cv.add_theme_constant_override("separation", 6)
-		card_m.add_child(cv)
-
-		var badge_box := CenterContainer.new()
-		badge_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		badge_box.custom_minimum_size = Vector2(104, 104)
-		cv.add_child(badge_box)
-
-		var badge := CafeSocialTheme.make_avatar_badge(cur_av_id, fid, 100.0)
-		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		badge_box.add_child(badge)
-
-		var title_lbl := Label.new()
-		title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		title_lbl.add_theme_font_override("font", _font_vazir)
-		title_lbl.add_theme_font_size_override("font_size", 16)
-		title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
-		title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		title_lbl.text = fname
-		title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		cv.add_child(title_lbl)
-
-		var cur_fid = fid
-		card.gui_input.connect(func(event: InputEvent):
-			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-				AudioManager.sfx_tap()
-				_selected_frame_id = cur_fid
-				update_cards_style.call()
-				update_hero_badge.call()
-				show_toast("قاب «%s» برگزیده شد." % fname, CafeSocialTheme.COL_GOLD_BRIGHT)
+		var cur_fid: int = fid
+		f_btn.pressed.connect(func():
+			AudioManager.sfx_tap()
+			_selected_frame_id = cur_fid
+			for btn in frame_buttons:
+				btn.modulate = Color(1.0, 1.0, 1.0, 0.85)
+			f_btn.modulate = Color(1.25, 1.15, 0.82, 1.0)
+			show_toast("قاب شماره %s برگزیده شد." % GameManager.to_fa_num(cur_fid), CafeSocialTheme.COL_GOLD_BRIGHT)
 		)
+		frame_buttons.append(f_btn)
+		grid.add_child(f_btn)
 
-		frame_cards[fid] = card
-		grid.add_child(card)
-
-	update_cards_style.call()
-
-	# --- 3. Save Button Below Frames ---
+	# Save Button Below Frames
 	var save_box := HBoxContainer.new()
 	save_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	content_frames.add_child(save_box)
 
-	var btn_save := CafeSocialTheme.make_button("ثبت و فعال‌سازی قاب آواتار", "emerald", Vector2(360, 62), 26, CafeSocialTheme.ICO_CHECK)
+	var btn_save := CafeSocialTheme.make_button("ثبت تغییرات قاب آواتار", "emerald", Vector2(360, 62), 26, CafeSocialTheme.ICO_CHECK)
 	btn_save.pressed.connect(func():
 		AudioManager.sfx_button()
 		if _selected_frame_id >= 1:
@@ -1003,7 +912,6 @@ func _render_frames() -> void:
 					NetworkManager.api.customize_my_profile({"profile_frame": _selected_frame_id})
 					if is_instance_valid(user_header) and user_header.has_method("update_ui"):
 						user_header.update_ui()
-					update_hero_badge.call()
 					show_toast("قاب آواتار شما با موفقیت بروزرسانی و فعال شد.")
 				else:
 					show_toast("خطا در ذخیره قاب آواتار.", CafeSocialTheme.COL_CRIMSON_TEXT)

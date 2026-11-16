@@ -158,11 +158,11 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 		if current_tab == "clans":
 			var cname: String = str(d.get("name", "کلن"))
 			var ctag: String = str(d.get("tag", ""))
-			username = cname if ctag.is_empty() else "%s  [%s]" % [cname, ctag]
+			username = cname
 			var c_score: int = int(d.get("clan_score", 0))
 			var c_lvl: int = int(d.get("clan_level", 1))
 			var c_mem: int = int(d.get("member_count", 1))
-			subtitle = "سطح %s  •  %s عضو" % [GameManager.to_fa_num(c_lvl), GameManager.to_fa_num(c_mem)]
+			subtitle = "[%s]  •  سطح %s  •  %s عضو" % [ctag, GameManager.to_fa_num(c_lvl), GameManager.to_fa_num(c_mem)] if not ctag.is_empty() else "سطح %s  •  %s عضو" % [GameManager.to_fa_num(c_lvl), GameManager.to_fa_num(c_mem)]
 			val_text = GameManager.to_fa_num(c_score)
 			img_id = int(d.get("emblem_id", 1))
 			u_dict = d.duplicate()
@@ -219,59 +219,25 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 
 func _create_rank_row(rank: int, username: String, subtitle: String, val_str: String, img_id: int, entry_dict: Dictionary) -> void:
 	var card := Button.new()
-	card.custom_minimum_size = Vector2(0, 134)
+	card.custom_minimum_size = Vector2(0, 150)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.flat = true
 	card.focus_mode = Control.FOCUS_NONE
 	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-	var style_normal := StyleBoxFlat.new()
-	style_normal.set_corner_radius_all(18)
-	style_normal.shadow_size = 2
-	style_normal.shadow_offset = Vector2(0, 2)
-
-	if rank == 1:
-		style_normal.bg_color = Color(0.28, 0.18, 0.08, 0.96)
-		style_normal.border_color = Color(1.0, 0.85, 0.25, 1.0)
-		style_normal.set_border_width_all(3)
-		style_normal.shadow_color = Color(1.0, 0.82, 0.2, 0.35)
-	elif rank == 2:
-		style_normal.bg_color = Color(0.22, 0.17, 0.14, 0.96)
-		style_normal.border_color = Color(0.88, 0.92, 0.98, 0.95)
-		style_normal.set_border_width_all(3)
-		style_normal.shadow_color = Color(0.8, 0.88, 1.0, 0.25)
-	elif rank == 3:
-		style_normal.bg_color = Color(0.24, 0.16, 0.10, 0.96)
-		style_normal.border_color = Color(0.90, 0.62, 0.38, 0.95)
-		style_normal.set_border_width_all(3)
-		style_normal.shadow_color = Color(0.85, 0.55, 0.30, 0.25)
-	else:
-		style_normal.bg_color = Color(0.16, 0.10, 0.06, 0.92)
-		style_normal.border_color = Color(0.58, 0.45, 0.30, 0.82)
-		style_normal.set_border_width_all(2)
-		style_normal.shadow_color = Color(0, 0, 0, 0.5)
-
-	var style_hover := StyleBoxFlat.new()
-	style_hover.bg_color = Color(0.32, 0.22, 0.14, 0.98)
-	style_hover.set_corner_radius_all(18)
-	style_hover.set_border_width_all(3)
-	style_hover.border_color = Color(1.0, 0.92, 0.5, 1.0)
-	style_hover.shadow_color = Color(1.0, 0.85, 0.25, 0.4)
-	style_hover.shadow_size = 2
-	style_hover.shadow_offset = Vector2(0, 2)
-
-	card.add_theme_stylebox_override("normal", style_normal)
-	card.add_theme_stylebox_override("hover", style_hover)
-	card.add_theme_stylebox_override("pressed", style_normal)
-	card.add_theme_stylebox_override("focus", style_normal)
+	var style_frame := CafeSocialTheme.create_frame_style(false, 40.0, 20.0)
+	card.add_theme_stylebox_override("normal", style_frame)
+	card.add_theme_stylebox_override("hover", style_frame)
+	card.add_theme_stylebox_override("pressed", style_frame)
+	card.add_theme_stylebox_override("focus", style_frame)
 
 	var pad := MarginContainer.new()
 	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pad.add_theme_constant_override("margin_left", 18)
-	pad.add_theme_constant_override("margin_right", 18)
-	pad.add_theme_constant_override("margin_top", 12)
-	pad.add_theme_constant_override("margin_bottom", 12)
+	pad.add_theme_constant_override("margin_left", 42)
+	pad.add_theme_constant_override("margin_right", 42)
+	pad.add_theme_constant_override("margin_top", 20)
+	pad.add_theme_constant_override("margin_bottom", 26)
 	card.add_child(pad)
 
 	var row := HBoxContainer.new()
@@ -280,9 +246,9 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	pad.add_child(row)
 
-	# 1. Score or Wins Value (Left Side in RTL card)
+	# 1. Score or Wins Value (Left Side in card)
 	var val_box := VBoxContainer.new()
-	val_box.custom_minimum_size = Vector2(96, 0)
+	val_box.custom_minimum_size = Vector2(106, 0)
 	val_box.add_theme_constant_override("separation", 2)
 	val_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	val_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -294,7 +260,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		val_lbl.add_theme_font_size_override("font_size", 44)
+		val_lbl.add_theme_font_size_override("font_size", 46)
 		val_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.38, 1.0))
 		val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 		val_lbl.add_theme_constant_override("shadow_outline_size", 4)
@@ -304,7 +270,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		win_sub.text = "برد"
 		win_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		win_sub.add_theme_font_override("font", _HEKAYAT_FONT)
-		win_sub.add_theme_font_size_override("font_size", 21)
+		win_sub.add_theme_font_size_override("font_size", 25)
 		win_sub.add_theme_color_override("font_color", Color(0.55, 0.92, 0.64, 1.0))
 		val_box.add_child(win_sub)
 	else:
@@ -323,7 +289,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		val_lbl.add_theme_font_size_override("font_size", 32)
+		val_lbl.add_theme_font_size_override("font_size", 35)
 		val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
 		val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 		val_lbl.add_theme_constant_override("shadow_outline_size", 3)
@@ -342,7 +308,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 
 	row.add_child(val_box)
 
-	# 2. Name & Subtitle Column (Expanded Center-Right)
+	# 2. Name & Subtitle/Clan-Tag Column (strictly to the left of avatar)
 	var text_col := VBoxContainer.new()
 	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text_col.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -358,7 +324,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	name_lbl.clip_text = true
 	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-	name_lbl.add_theme_font_size_override("font_size", 34)
+	name_lbl.add_theme_font_size_override("font_size", 37)
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))
 	name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	name_lbl.add_theme_constant_override("shadow_outline_size", 3)
@@ -372,20 +338,20 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		sub_lbl.clip_text = true
 		sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		sub_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		sub_lbl.add_theme_font_size_override("font_size", 22)
-		sub_lbl.add_theme_color_override("font_color", Color(0.82, 0.75, 0.64, 1.0))
+		sub_lbl.add_theme_font_size_override("font_size", 25)
+		sub_lbl.add_theme_color_override("font_color", Color(0.92, 0.80, 0.48, 1.0) if current_tab == "clans" else Color(0.84, 0.77, 0.66, 1.0))
 		text_col.add_child(sub_lbl)
 
 	# 3. Avatar or Clan Emblem Plaque
 	var av_frame := PanelContainer.new()
-	av_frame.custom_minimum_size = Vector2(92, 92)
+	av_frame.custom_minimum_size = Vector2(96, 96)
 	av_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	av_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var avatar := TextureRect.new()
 	avatar.set_anchors_preset(Control.PRESET_FULL_RECT)
-	avatar.custom_minimum_size = Vector2(88, 88)
+	avatar.custom_minimum_size = Vector2(92, 92)
 	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE

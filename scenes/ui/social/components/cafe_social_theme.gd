@@ -28,6 +28,8 @@ const TEX_RIGHT = preload("res://assets/images/frames/right.png")
 const TEX_REPLY = preload("res://assets/images/frames/reply.png")
 const TEX_FRAME_SMALL = preload("res://assets/images/frames/frame_small.png")
 const TEX_FRAME_TALL = preload("res://assets/images/frames/frame_tall.png")
+const TEX_CHAT_OTHER = preload("res://assets/images/frames/chat_other.png")
+const TEX_CHAT_MY = preload("res://assets/images/frames/chat_my.png")
 
 # Authentic Cafe Fekr Icons & Badges
 const ICO_REFRESH = preload("res://assets/icons/General/refresh.png")
@@ -208,6 +210,33 @@ static func create_frame_style(is_tall: bool = false, pad_x: float = 36.0, pad_y
 		sb.content_margin_right = maxf(pad_x, 36.0)
 		sb.content_margin_top = maxf(pad_y, 16.0)
 		sb.content_margin_bottom = maxf(pad_y, 22.0)
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	return sb
+
+
+static func create_chat_bubble_style(is_mine: bool = false) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	if is_mine:
+		sb.texture = TEX_CHAT_MY
+		sb.texture_margin_left = 20.0
+		sb.texture_margin_right = 46.0
+		sb.texture_margin_top = 18.0
+		sb.texture_margin_bottom = 30.0
+		sb.content_margin_left = 26.0
+		sb.content_margin_right = 26.0
+		sb.content_margin_top = 18.0
+		sb.content_margin_bottom = 38.0
+	else:
+		sb.texture = TEX_CHAT_OTHER
+		sb.texture_margin_left = 44.0
+		sb.texture_margin_right = 20.0
+		sb.texture_margin_top = 18.0
+		sb.texture_margin_bottom = 36.0
+		sb.content_margin_left = 26.0
+		sb.content_margin_right = 26.0
+		sb.content_margin_top = 20.0
+		sb.content_margin_bottom = 44.0
 	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	return sb
@@ -631,26 +660,26 @@ static func get_frame_texture(frame_id: int) -> Texture2D:
 static var _avatar_aperture_mat: ShaderMaterial = null
 
 const _FRAME_APERTURES: Dictionary = {
-	1: Vector4(0.147, 0.119, 0.839, 0.783),
-	2: Vector4(0.087, 0.031, 0.921, 0.803),
-	3: Vector4(0.155, 0.179, 0.838, 0.828),
-	4: Vector4(0.107, 0.131, 0.845, 0.841),
-	5: Vector4(0.096, 0.092, 0.904, 0.846),
-	6: Vector4(0.141, 0.200, 0.845, 0.869),
-	7: Vector4(0.154, 0.147, 0.816, 0.831),
-	8: Vector4(0.135, 0.121, 0.830, 0.780),
-	9: Vector4(0.107, 0.084, 0.908, 0.847),
-	10: Vector4(0.132, 0.118, 0.860, 0.816),
-	11: Vector4(0.119, 0.133, 0.874, 0.811),
-	12: Vector4(0.208, 0.182, 0.779, 0.805),
-	13: Vector4(0.212, 0.109, 0.769, 0.718),
-	14: Vector4(0.127, 0.138, 0.851, 0.826),
-	15: Vector4(0.164, 0.224, 0.829, 0.816),
-	16: Vector4(0.147, 0.137, 0.853, 0.813),
-	17: Vector4(0.153, 0.156, 0.827, 0.810),
-	18: Vector4(0.157, 0.109, 0.843, 0.818),
-	19: Vector4(0.134, 0.159, 0.810, 0.807),
-	20: Vector4(0.141, 0.152, 0.815, 0.819),
+	1: Vector4(0.119, 0.084, 0.867, 0.853),
+	2: Vector4(0.094, 0.039, 0.913, 0.874),
+	3: Vector4(0.141, 0.152, 0.845, 0.876),
+	4: Vector4(0.107, 0.097, 0.872, 0.855),
+	5: Vector4(0.088, 0.062, 0.912, 0.892),
+	6: Vector4(0.121, 0.131, 0.859, 0.897),
+	7: Vector4(0.118, 0.096, 0.860, 0.890),
+	8: Vector4(0.113, 0.085, 0.858, 0.830),
+	9: Vector4(0.099, 0.046, 0.916, 0.878),
+	10: Vector4(0.088, 0.081, 0.904, 0.860),
+	11: Vector4(0.105, 0.091, 0.881, 0.839),
+	12: Vector4(0.156, 0.136, 0.838, 0.864),
+	13: Vector4(0.167, 0.090, 0.808, 0.814),
+	14: Vector4(0.091, 0.101, 0.895, 0.884),
+	15: Vector4(0.158, 0.224, 0.842, 0.868),
+	16: Vector4(0.119, 0.094, 0.874, 0.878),
+	17: Vector4(0.119, 0.095, 0.867, 0.837),
+	18: Vector4(0.150, 0.073, 0.865, 0.891),
+	19: Vector4(0.114, 0.110, 0.838, 0.890),
+	20: Vector4(0.141, 0.116, 0.822, 0.877),
 }
 
 
@@ -669,18 +698,19 @@ static func _get_frame_aperture(frame_id: int) -> Vector4:
 	var safe_fid: int = clampi(frame_id if frame_id >= 1 else 1, 1, 20)
 	if _FRAME_APERTURES.has(safe_fid):
 		return _FRAME_APERTURES[safe_fid]
-	return Vector4(0.147, 0.119, 0.839, 0.783)
+	return Vector4(0.119, 0.084, 0.867, 0.853)
 
 
 static func make_avatar_badge(
 	avatar_id: int,
 	frame_id: int = 1,
-	size_px: float = 84.0,
+	size_px: float = 86.0,
 	presence_status: String = "",
 	show_dot: bool = false
 ) -> Control:
+	var final_sz: float = maxf(size_px, 66.0) + 2.0
 	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(size_px, size_px)
+	holder.custom_minimum_size = Vector2(final_sz, final_sz)
 	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
@@ -688,17 +718,17 @@ static func make_avatar_badge(
 	safe_fid = clampi(safe_fid, 1, 20)
 	var ap: Vector4 = _get_frame_aperture(safe_fid)
 
-	# 1. Avatar texture clipped cleanly to the frame's inner aperture (no protruding box under avatar)
+	# 1. Avatar texture clipped cleanly to the frame's inner aperture (+2px inner boost)
 	var av := TextureRect.new()
 	av.name = "Avatar"
 	av.anchor_left = ap.x
 	av.anchor_top = ap.y
 	av.anchor_right = ap.z
 	av.anchor_bottom = ap.w
-	av.offset_left = 0.0
-	av.offset_top = 0.0
-	av.offset_right = 0.0
-	av.offset_bottom = 0.0
+	av.offset_left = -1.0
+	av.offset_top = -1.0
+	av.offset_right = 1.0
+	av.offset_bottom = 1.0
 	av.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	av.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	av.material = _get_avatar_aperture_material()
@@ -728,7 +758,7 @@ static func make_avatar_badge(
 	# 3. Presence status dot if requested
 	if show_dot:
 		var dot := PanelContainer.new()
-		var dot_sz := clampf(size_px * 0.26, 16.0, 24.0)
+		var dot_sz := clampf(final_sz * 0.26, 16.0, 24.0)
 		dot.custom_minimum_size = Vector2(dot_sz, dot_sz)
 		dot.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 		dot.offset_left = -2
@@ -765,6 +795,9 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 			if container is Panel or container is PanelContainer:
 				container.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 			container.clip_contents = false
+			if not container.has_meta("_av_box_boosted") and container.custom_minimum_size.x > 0.0 and container.custom_minimum_size.y > 0.0:
+				container.custom_minimum_size += Vector2(2.0, 2.0)
+				container.set_meta("_av_box_boosted", true)
 			for legacy_name in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc"]:
 				var leg: Node = container.get_node_or_null(legacy_name)
 				if is_instance_valid(leg) and leg is CanvasItem:
@@ -775,7 +808,7 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 		if p_node is Control and (p_node as Control).name == "AvatarInnerHost":
 			host_ctrl = p_node as Control
 			if avatar_rect.custom_minimum_size.x > 0.0 or avatar_rect.custom_minimum_size.y > 0.0:
-				host_ctrl.custom_minimum_size = avatar_rect.custom_minimum_size
+				host_ctrl.custom_minimum_size = avatar_rect.custom_minimum_size + Vector2(2.0, 2.0)
 		elif p_node is Container:
 			var cont_parent: Container = p_node as Container
 			var existing_host: Node = cont_parent.get_node_or_null("AvatarInnerHost")
@@ -790,6 +823,8 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 					min_sz = cont_parent.custom_minimum_size
 				if min_sz.x <= 0.0 or min_sz.y <= 0.0:
 					min_sz = Vector2(96.0, 96.0)
+				else:
+					min_sz += Vector2(2.0, 2.0)
 				if not (cont_parent is PanelContainer):
 					wrapper.custom_minimum_size = min_sz
 				wrapper.size_flags_horizontal = avatar_rect.size_flags_horizontal
@@ -801,6 +836,9 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 				host_ctrl = wrapper
 		elif p_node is Control:
 			host_ctrl = p_node as Control
+			if not host_ctrl.has_meta("_av_box_boosted") and host_ctrl.custom_minimum_size.x > 0.0 and host_ctrl.custom_minimum_size.y > 0.0:
+				host_ctrl.custom_minimum_size += Vector2(2.0, 2.0)
+				host_ctrl.set_meta("_av_box_boosted", true)
 
 		for legacy_name2 in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc"]:
 			var leg2: Node = host_ctrl.get_node_or_null(legacy_name2)
@@ -813,10 +851,10 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 		avatar_rect.anchor_top = ap.y
 		avatar_rect.anchor_right = ap.z
 		avatar_rect.anchor_bottom = ap.w
-		avatar_rect.offset_left = 0.0
-		avatar_rect.offset_top = 0.0
-		avatar_rect.offset_right = 0.0
-		avatar_rect.offset_bottom = 0.0
+		avatar_rect.offset_left = -1.0
+		avatar_rect.offset_top = -1.0
+		avatar_rect.offset_right = 1.0
+		avatar_rect.offset_bottom = 1.0
 		avatar_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		avatar_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		avatar_rect.material = _get_avatar_aperture_material()

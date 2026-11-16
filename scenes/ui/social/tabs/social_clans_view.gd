@@ -565,7 +565,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	var well := PanelContainer.new()
 	well.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	well.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	well.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 26.0))
+	well.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	holder.add_child(well)
 
 	host._clan_chat_scroll = ScrollContainer.new()
@@ -576,7 +576,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 
 	host._clan_chat_list_vbox = VBoxContainer.new()
 	host._clan_chat_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	host._clan_chat_list_vbox.add_theme_constant_override("separation", 10)
+	host._clan_chat_list_vbox.add_theme_constant_override("separation", 14)
 	host._clan_chat_scroll.add_child(host._clan_chat_list_vbox)
 	host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت گفتگوهای اتحاد..."))
 
@@ -648,71 +648,162 @@ static func render_clan_chat(host: Control) -> void:
 		var sender_name := str(msg.get("sender_name", "بازیکن"))
 		var sender_role := str(msg.get("sender_role", "member"))
 		var sender_img := int(msg.get("sender_image", 0))
+		var sender_frame := int(msg.get("sender_profile_frame", msg.get("profile_frame", 1)))
 		var text := str(msg.get("text", ""))
 		var msg_id := str(msg.get("message_id", ""))
 		var time_str := CafeSocialTheme.format_time_fa(str(msg.get("created_at", "")))
 		var is_mine := (sender_id == my_uid)
+		var is_challenge_msg: bool = (mtype == "friendly_challenge") or (mtype == "system" and typeof(msg.get("metadata")) == TYPE_DICTIONARY and msg["metadata"].has("challenge_id"))
 
-		var bg := Color(0.12, 0.27, 0.18, 0.96) if is_mine else (Color(0.24, 0.17, 0.07, 0.96) if mtype != "text" else CafeSocialTheme.COL_WALNUT_CARD)
-		var border := CafeSocialTheme.COL_EMERALD_BORDER if is_mine else (CafeSocialTheme.COL_GOLD_BRIGHT if mtype != "text" else CafeSocialTheme.COL_BRONZE_BORDER)
+		if mtype == "text":
+			var msg_row := HBoxContainer.new()
+			msg_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
+			msg_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			msg_row.add_theme_constant_override("separation", 10)
+			host._clan_chat_list_vbox.add_child(msg_row)
 
-		var card := PanelContainer.new()
-		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(bg, border, 16, 2, 14.0, 10.0))
-		host._clan_chat_list_vbox.add_child(card)
+			# Avatar sits OUTSIDE the chat bubble frame, aligned near the bubble tail
+			var av_col := VBoxContainer.new()
+			av_col.alignment = BoxContainer.ALIGNMENT_END
+			av_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			var av_badge := CafeSocialTheme.make_avatar_badge(sender_img, sender_frame, 74.0)
+			av_col.add_child(av_badge)
 
-		var card_vbox := VBoxContainer.new()
-		card_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card_vbox.add_theme_constant_override("separation", 8)
-		card.add_child(card_vbox)
+			# Main column: Name + Role on TOP of the bubble frame, Speech Bubble below
+			var bubble_col := VBoxContainer.new()
+			bubble_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			bubble_col.size_flags_stretch_ratio = 0.80
+			bubble_col.add_theme_constant_override("separation", 4)
 
-		var row := HBoxContainer.new()
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_theme_constant_override("separation", 10)
-		card_vbox.add_child(row)
+			var hdr_row := HBoxContainer.new()
+			hdr_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
+			hdr_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			hdr_row.add_theme_constant_override("separation", 8)
+			bubble_col.add_child(hdr_row)
 
-		if is_mine or my_role in ["leader", "co_leader", "elder"]:
-			if mtype == "text" and not msg_id.is_empty():
-				var b_del := CafeSocialTheme.make_button("حذف", "crimson", Vector2(76, 40), 20)
-				b_del.pressed.connect(func():
+			var r_lbl: String = role_fa_map.get(sender_role, "عضو")
+			var hdr_txt := "%s  •  %s" % [sender_name, r_lbl]
+			var hdr_lbl := CafeSocialTheme.make_title(
+				hdr_txt,
+				23,
+				CafeSocialTheme.COL_EMERALD_TEXT if is_mine else CafeSocialTheme.COL_GOLD_BRIGHT,
+				HORIZONTAL_ALIGNMENT_RIGHT if is_mine else HORIZONTAL_ALIGNMENT_LEFT,
+				false
+			)
+			hdr_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+			var del_btn: Button = null
+			if (is_mine or my_role in ["leader", "co_leader", "elder"]) and not msg_id.is_empty():
+				del_btn = CafeSocialTheme.make_button("حذف", "crimson", Vector2(68, 32), 18)
+				del_btn.pressed.connect(func():
 					NetworkManager.api.delete_clan_chat_message(msg_id, func(ok: bool, _c: int, _d: Variant):
 						if ok:
 							host._clan_chat_messages = host._clan_chat_messages.filter(func(x): return str(x.get("message_id", "")) != msg_id)
 							render_clan_chat(host)
 					)
 				)
-				row.add_child(b_del)
 
-		var is_challenge_msg: bool = (mtype == "friendly_challenge") or (mtype == "system" and typeof(msg.get("metadata")) == TYPE_DICTIONARY and msg["metadata"].has("challenge_id"))
+			if is_mine:
+				if del_btn != null:
+					hdr_row.add_child(del_btn)
+				hdr_row.add_child(hdr_lbl)
+			else:
+				hdr_row.add_child(hdr_lbl)
+				if del_btn != null:
+					hdr_row.add_child(del_btn)
 
-		var col := VBoxContainer.new()
-		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.add_theme_constant_override("separation", 4)
-		row.add_child(col)
+			# Speech Bubble Frame (chat_my.png or chat_other.png)
+			var bubble := PanelContainer.new()
+			bubble.custom_minimum_size = Vector2(220, 104)
+			bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_chat_bubble_style(is_mine))
+			bubble_col.add_child(bubble)
 
-		if mtype == "text":
-			var r_lbl: String = role_fa_map.get(sender_role, "عضو")
-			var hdr_txt := "%s  •  %s" % [sender_name, r_lbl]
+			var b_vbox := VBoxContainer.new()
+			b_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b_vbox.add_theme_constant_override("separation", 6)
+			bubble.add_child(b_vbox)
+
+			var msg_lbl := Label.new()
+			msg_lbl.text = text
+			msg_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			msg_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+			msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			msg_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			msg_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+			msg_lbl.add_theme_font_size_override("font_size", 24)
+			if is_mine:
+				msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+				msg_lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.65))
+				msg_lbl.add_theme_constant_override("shadow_outline_size", 2)
+			else:
+				msg_lbl.add_theme_color_override("font_color", Color(0.16, 0.09, 0.04, 1.0))
+			b_vbox.add_child(msg_lbl)
+
 			if not time_str.is_empty():
-				hdr_txt += "  (%s)" % time_str
-			col.add_child(CafeSocialTheme.make_title(hdr_txt, 25, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
-		col.add_child(CafeSocialTheme.make_body(text, 24, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT if mtype == "text" else HORIZONTAL_ALIGNMENT_CENTER, true))
+				var date_lbl := Label.new()
+				date_lbl.text = time_str
+				date_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+				date_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				date_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+				date_lbl.add_theme_font_size_override("font_size", 18)
+				date_lbl.add_theme_color_override(
+					"font_color",
+					Color(0.76, 0.88, 0.78, 0.92) if is_mine else Color(0.36, 0.23, 0.10, 0.88)
+				)
+				b_vbox.add_child(date_lbl)
 
-		if mtype == "text":
-			row.add_child(CafeSocialTheme.make_avatar_badge(sender_img, 0, 56.0))
-		elif is_challenge_msg:
-			var meta: Dictionary = msg.get("metadata", {}) if typeof(msg.get("metadata")) == TYPE_DICTIONARY else {}
-			var chal_gt: String = str(meta.get("game_type", "Monopoly"))
-			var chal_thumb: Texture2D = CafeSocialTheme.get_game_thumb(chal_gt)
-			if chal_thumb != null:
-				var th := TextureRect.new()
-				th.texture = chal_thumb
-				th.custom_minimum_size = Vector2(58, 58)
-				th.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-				th.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-				row.add_child(th)
-			var chal_act_row := _build_challenge_action_row(host, meta, my_uid, my_role, true)
-			if chal_act_row != null:
-				card_vbox.add_child(chal_act_row)
+			var spacer := Control.new()
+			spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			spacer.size_flags_stretch_ratio = 0.20
+
+			if is_mine:
+				# My chat: spacer left, bubble center-right (tail bottom-right), avatar far right
+				msg_row.add_child(spacer)
+				msg_row.add_child(bubble_col)
+				msg_row.add_child(av_col)
+			else:
+				# Other chat: avatar far left, bubble center-left (tail bottom-left), spacer right
+				msg_row.add_child(av_col)
+				msg_row.add_child(bubble_col)
+				msg_row.add_child(spacer)
+		else:
+			var bg := Color(0.24, 0.17, 0.07, 0.96)
+			var border := CafeSocialTheme.COL_GOLD_BRIGHT
+			var card := PanelContainer.new()
+			card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(bg, border, 16, 2, 18.0, 14.0))
+			host._clan_chat_list_vbox.add_child(card)
+
+			var card_vbox := VBoxContainer.new()
+			card_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			card_vbox.add_theme_constant_override("separation", 8)
+			card.add_child(card_vbox)
+
+			var row := HBoxContainer.new()
+			row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_theme_constant_override("separation", 10)
+			card_vbox.add_child(row)
+
+			var col := VBoxContainer.new()
+			col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			col.add_theme_constant_override("separation", 4)
+			row.add_child(col)
+			col.add_child(CafeSocialTheme.make_body(text, 24, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true))
+
+			if is_challenge_msg:
+				var meta: Dictionary = msg.get("metadata", {}) if typeof(msg.get("metadata")) == TYPE_DICTIONARY else {}
+				var chal_gt: String = str(meta.get("game_type", "Monopoly"))
+				var chal_thumb: Texture2D = CafeSocialTheme.get_game_thumb(chal_gt)
+				if chal_thumb != null:
+					var th := TextureRect.new()
+					th.texture = chal_thumb
+					th.custom_minimum_size = Vector2(58, 58)
+					th.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+					th.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+					row.add_child(th)
+				var chal_act_row := _build_challenge_action_row(host, meta, my_uid, my_role, true)
+				if chal_act_row != null:
+					card_vbox.add_child(chal_act_row)
 
 	if is_instance_valid(host._clan_chat_scroll):
 		host.call_deferred("_scroll_clan_chat_to_bottom")
