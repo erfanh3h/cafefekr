@@ -67,7 +67,7 @@ const CATEGORY_GUIDES_FA: Array[String] = [
 # --- Match & Turn State ---
 var current_dices: Array[int] = [1, 2, 3, 4, 5]
 var held_dice_indices: Array[int] = []
-var remaining_rolls: int = 2
+var remaining_rolls: int = 3
 var equipped_index: int = 0
 var is_round_played: bool = false
 var is_rolling_dice: bool = false
@@ -189,7 +189,7 @@ func _init_board_arrays() -> void:
 		})
 	current_dices = [1, 2, 3, 4, 5]
 	held_dice_indices.clear()
-	remaining_rolls = 2
+	remaining_rolls = 3
 	equipped_index = 0
 	is_round_played = false
 	is_rolling_dice = false
@@ -560,7 +560,7 @@ func _build_3d_arena() -> void:
 		"BtnRollDice",
 		Vector3(0.242, BOARD_H + 0.016, 0.695),
 		Vector3(0.45, 0.032, 0.132),
-		"🎲 تاس بریز (۲)",
+		"🎲 تاس بریز (۳)",
 		mat_btn_roll_active
 	)
 	_btn_submit_node = _build_3d_action_button(
@@ -1567,7 +1567,7 @@ func on_turn_data(payload: Dictionary) -> void:
 		p1_board[i]["last_played"] = false
 		p2_board[i]["last_played"] = false
 	held_dice_indices.clear()
-	remaining_rolls = 2
+	remaining_rolls = 3
 	is_round_played = false
 	set_board_locked(false)
 
@@ -1673,7 +1673,7 @@ func on_reconnect_data(payload: Dictionary) -> void:
 
 	is_round_played = bool(g_data.get("is_round_done", false))
 	var rolled_times = int(g_data.get("rolled_dice_times", 1))
-	remaining_rolls = clampi(3 - rolled_times, 0, 2)
+	remaining_rolls = clampi(4 - rolled_times, 0, 3)
 
 	var d_arr = g_data.get("current_dices", g_data.get("dices", []))
 	if typeof(d_arr) == TYPE_ARRAY and not d_arr.is_empty():

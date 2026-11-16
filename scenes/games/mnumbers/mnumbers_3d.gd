@@ -6,12 +6,14 @@ extends "res://scripts/games/base_game_board.gd"
 # and kafehfekr/lib/Feature/MNumbers/Controllers/mnumbers_controller.dart:
 # - 6x6 grid of 36 recessed obsidian wells (indices 0..35, 18 pairs of numbers 1..18)
 # - 36 double-sided 3D lathe-turned Memory Medallions with smooth 180-degree mid-air 3D flip
-# - Select 1st tile -> elevates with crisp player-colored rim (tap again to deselect)
-# - Select 2nd tile -> dispatches Select_Peace {"index1": idx1, "index2": idx2}
-# - Server broadcasts Peace_Selected {"user", "index1", "value1", "index2", "value2", "is_correct"}:
-#   * If is_correct: permanently flips face-up in Player 1 (Ruby Red) or Player 2 (Sapphire Blue),
-#     increments score (+1 pair), and updates side reserve trays
-#   * If not is_correct: reveals both numbers for the 2s result window, then flips back face-down
+# - Select 1st tile -> dispatches Select_Peace {"index": idx1}, server reveals it immediately and locks it for the turn
+# - Select 2nd tile -> dispatches Select_Peace {"index": idx2}
+# - Server broadcasts Peace_Selected:
+#   * Step 1 (is_first = true): {"user", "step": 1, "is_first": true, "index1", "value1"} -> flips 1st tile face-up immediately
+#   * Step 2: {"user", "index1", "value1", "index2", "value2", "is_correct"}:
+#     - If is_correct: permanently flips both face-up in Player 1 (Ruby Red) or Player 2 (Sapphire Blue),
+#       increments score (+1 pair), and updates side reserve trays
+#     - If not is_correct: reveals both numbers for the 2s result window, then flips back face-down
 # - Left & right mahogany reserve trays holding 18 3D score medallions per player (no floating text)
 
 const TOTAL_TILES: int = 36
@@ -31,6 +33,8 @@ static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
 var board_owner: Array[int] = []  # 0 = unmatched, 1 = Player 1 (Red), 2 = Player 2 (Blue)
 var board_values: Array[int] = [] # 0 = unknown, 1..18 = revealed value
 var equipped_index: int = -1
+var first_revealed_index: int = -1
+var _awaiting_first_reveal: bool = false
 var loading_indices: Array[int] = []
 var revealed_temp_indices: Array[int] = []
 var hovered_tile_id: int = -1
@@ -575,6 +579,8 @@ func reset_board() -> void:
 	board_owner.fill(0)
 	board_values.fill(0)
 	equipped_index = -1
+	first_revealed_index = -1
+	_awaiting_first_reveal = false
 	loading_indices.clear()
 	revealed_temp_indices.clear()
 	hovered_tile_id = -1
@@ -627,6 +633,8 @@ func on_turn_changed(turn: int, is_me: bool) -> void:
 	is_my_turn = is_me
 	is_board_locked = not is_me
 	equipped_index = -1
+	first_revealed_index = -1
+	_awaiting_first_reveal = false
 	loading_indices.clear()
 	_flip_back_unmatched_revealed_tiles()
 	_update_all_tile_rings()
@@ -636,16 +644,42 @@ func on_turn_changed(turn: int, is_me: bool) -> void:
 
 func on_piece_selected(user_id: int, _target_peace: int, extra: Dictionary = {}) -> void:
 	var gamer_id: int = int(extra.get("user", extra.get("gamer_id", user_id)))
-	var index1: int = int(extra.get("index1", -1))
-	var index2: int = int(extra.get("index2", -1))
+	var index1: int = int(extra.get("index1", extra.get("index", -1)))
 	var value1: int = int(extra.get("value1", 0))
+	var is_first: bool = bool(extra.get("is_first", false)) or (int(extra.get("step", 0)) == 1 and not extra.has("index2"))
+
+	if is_first:
+		if index1 < 0 or index1 >= TOTAL_TILES:
+			return
+		_flip_back_generation += 1
+		if revealed_temp_indices.has(index1):
+			revealed_temp_indices.erase(index1)
+		_flip_back_unmatched_revealed_tiles()
+		equipped_index = index1
+		first_revealed_index = index1
+		_awaiting_first_reveal = false
+		loading_indices.clear()
+		board_values[index1] = value1
+		revealed_temp_indices.append(index1)
+		_animate_flip_tile(index1, value1, gamer_id, false)
+		AudioManager.play_sound("move_peace")
+		_update_all_tile_rings()
+		return
+
+	var index2: int = int(extra.get("index2", -1))
 	var value2: int = int(extra.get("value2", 0))
 	var is_correct: bool = bool(extra.get("is_correct", false))
 
 	if index1 < 0 or index1 >= TOTAL_TILES or index2 < 0 or index2 >= TOTAL_TILES:
 		return
 
+	var index1_already_revealed: bool = revealed_temp_indices.has(index1) and board_values[index1] == value1 and value1 > 0
+	if index1_already_revealed:
+		revealed_temp_indices.erase(index1)
+
 	equipped_index = -1
+	first_revealed_index = -1
+	_awaiting_first_reveal = false
 	loading_indices.clear()
 	_flip_back_unmatched_revealed_tiles()
 
@@ -665,7 +699,10 @@ func on_piece_selected(user_id: int, _target_peace: int, extra: Dictionary = {})
 		_sync_hud_scores()
 		_sync_reserve_trays()
 
-		_animate_flip_tile(index1, value1, gamer_id, true)
+		if index1_already_revealed:
+			_snap_tile_visual(index1, value1, gamer_id, true)
+		else:
+			_animate_flip_tile(index1, value1, gamer_id, true)
 		_animate_flip_tile(index2, value2, gamer_id, true)
 		_spawn_match_vfx(index1, index2, gamer_id)
 		AudioManager.play_sound("add_peace")
@@ -677,7 +714,8 @@ func on_piece_selected(user_id: int, _target_peace: int, extra: Dictionary = {})
 			hud.start_wait_timer(2, msg)
 	else:
 		revealed_temp_indices = [index1, index2]
-		_animate_flip_tile(index1, value1, gamer_id, false)
+		if not index1_already_revealed:
+			_animate_flip_tile(index1, value1, gamer_id, false)
 		_animate_flip_tile(index2, value2, gamer_id, false)
 		AudioManager.play_sound("move_peace")
 
@@ -708,6 +746,8 @@ func sync_board_state(board_data: Variant) -> void:
 
 	_flip_back_generation += 1
 	equipped_index = -1
+	first_revealed_index = -1
+	_awaiting_first_reveal = false
 	loading_indices.clear()
 	revealed_temp_indices.clear()
 
@@ -720,7 +760,15 @@ func sync_board_state(board_data: Variant) -> void:
 			val = int(item.get("value", 0))
 		board_owner[idx] = eq_user
 		board_values[idx] = val
-		_snap_tile_visual(idx, val, eq_user, eq_user != 0)
+		if eq_user != 0:
+			_snap_tile_visual(idx, val, eq_user, true)
+		elif val > 0:
+			revealed_temp_indices.append(idx)
+			first_revealed_index = idx
+			equipped_index = idx
+			_snap_tile_visual(idx, val, 0, true)
+		else:
+			_snap_tile_visual(idx, 0, 0, false)
 
 	_recalculate_scores_from_board()
 	_sync_hud_scores()
@@ -733,6 +781,13 @@ func on_reconnect_data(payload: Dictionary) -> void:
 	if typeof(g_data) == TYPE_DICTIONARY:
 		if g_data.has("board"):
 			sync_board_state(g_data["board"])
+		if g_data.has("first_selected_index"):
+			var f_idx: int = int(g_data["first_selected_index"])
+			if f_idx >= 0 and f_idx < TOTAL_TILES and board_owner[f_idx] == 0 and board_values[f_idx] > 0:
+				first_revealed_index = f_idx
+				equipped_index = f_idx
+				if not revealed_temp_indices.has(f_idx):
+					revealed_temp_indices.append(f_idx)
 		if g_data.has("scores") and typeof(g_data["scores"]) == TYPE_ARRAY and (g_data["scores"] as Array).size() >= 2:
 			player1_score = int(g_data["scores"][0])
 			player2_score = int(g_data["scores"][1])
@@ -1079,7 +1134,7 @@ func _attempt_select_tile(tile_id: int) -> void:
 	_last_click_frame = cur_frame
 	last_click_time = now
 
-	if is_board_locked:
+	if is_board_locked or _awaiting_first_reveal:
 		return
 
 	if not is_my_turn:
@@ -1092,15 +1147,14 @@ func _attempt_select_tile(tile_id: int) -> void:
 		AudioManager.play_sound("miss_turn")
 		return
 
-	if equipped_index != -1:
-		# Tapping the same 1st tile again deselects it (matches MNumbersController.onEachButtonTap)
-		if tile_id == equipped_index:
-			equipped_index = -1
-			AudioManager.sfx_tap()
-			_update_all_tile_rings()
+	if first_revealed_index != -1:
+		# 1st piece is revealed and locked for this turn — cannot change or deselect it
+		if tile_id == first_revealed_index:
+			show_hint("کارت اول این نوبت رو شده است و قابل تغییر نیست؛ کارت دوم را انتخاب کنید.")
+			AudioManager.play_sound("miss_turn")
 			return
 
-		var idx1: int = equipped_index
+		var idx1: int = first_revealed_index
 		var idx2: int = tile_id
 		equipped_index = -1
 		loading_indices = [idx1, idx2]
@@ -1109,8 +1163,12 @@ func _attempt_select_tile(tile_id: int) -> void:
 		AudioManager.sfx_tap()
 		_update_all_tile_rings()
 
-		send_move(Commands.Select_Peace, {"index1": idx1, "index2": idx2})
+		send_move(Commands.Select_Peace, {"index": idx2})
 	else:
 		equipped_index = tile_id
+		_awaiting_first_reveal = true
+		loading_indices = [tile_id]
 		AudioManager.sfx_tap()
 		_update_all_tile_rings()
+
+		send_move(Commands.Select_Peace, {"index": tile_id})
