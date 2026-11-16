@@ -15,10 +15,12 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 
 static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer) -> void:
 	var header_card := PanelContainer.new()
-	header_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+	header_card.custom_minimum_size = Vector2(0, 136)
+	header_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 	body_vbox.add_child(header_card)
 
 	var hrow := HBoxContainer.new()
+	hrow.alignment = BoxContainer.ALIGNMENT_CENTER
 	hrow.add_theme_constant_override("separation", 12)
 	header_card.add_child(hrow)
 
@@ -96,27 +98,27 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	var btn := Button.new()
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.custom_minimum_size = Vector2(0, 108)
+	btn.custom_minimum_size = Vector2(0, 148)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	var st_norm := CafeSocialTheme.create_frame_style(false, 20.0, 16.0)
+	var st_norm := CafeSocialTheme.create_frame_style(true, 38.0, 24.0)
 	btn.add_theme_stylebox_override("normal", st_norm)
 	btn.add_theme_stylebox_override("hover", st_norm)
 	btn.add_theme_stylebox_override("pressed", st_norm)
 	btn.add_theme_stylebox_override("focus", st_norm)
 
 	var row := HBoxContainer.new()
-	row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", 14)
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
+	margin.add_theme_constant_override("margin_left", 40)
+	margin.add_theme_constant_override("margin_right", 40)
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_bottom", 28)
 	margin.add_child(row)
 	btn.add_child(margin)
 
@@ -199,10 +201,12 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 
 	# Conversation Top Header
 	var hdr := PanelContainer.new()
-	hdr.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+	hdr.custom_minimum_size = Vector2(0, 140)
+	hdr.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 	body_vbox.add_child(hdr)
 
 	var hrow := HBoxContainer.new()
+	hrow.alignment = BoxContainer.ALIGNMENT_CENTER
 	hrow.add_theme_constant_override("separation", 10)
 	hdr.add_child(hrow)
 
@@ -239,9 +243,10 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 
 	var av_btn := Button.new()
 	av_btn.flat = true
-	av_btn.custom_minimum_size = Vector2(68, 68)
+	av_btn.custom_minimum_size = Vector2(72, 72)
+	av_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	av_btn.focus_mode = Control.FOCUS_NONE
-	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 66.0, str(pres.get("status", "offline")), true)
+	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 70.0, str(pres.get("status", "offline")), true)
 	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	av_btn.add_child(av)
 	av_btn.pressed.connect(func():
@@ -254,7 +259,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	var msg_well := PanelContainer.new()
 	msg_well.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	msg_well.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	msg_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(16, 12.0, 12.0))
+	msg_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 26.0))
 	body_vbox.add_child(msg_well)
 
 	host._dm_messages_scroll = ScrollContainer.new()
@@ -271,7 +276,8 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 
 	# Sticky Bottom Input Bar
 	var compose_card := PanelContainer.new()
-	compose_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+	compose_card.custom_minimum_size = Vector2(0, 108)
+	compose_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
 	body_vbox.add_child(compose_card)
 
 	var dm_input_row := HBoxContainer.new()

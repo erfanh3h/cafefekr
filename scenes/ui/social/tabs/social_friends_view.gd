@@ -8,7 +8,7 @@ extends RefCounted
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Sub-navigation bar (3 antique subtabs)
 	var sub_bar := PanelContainer.new()
-	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
 	body_vbox.add_child(sub_bar)
 
 	var sub_row := HBoxContainer.new()

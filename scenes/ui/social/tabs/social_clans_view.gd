@@ -11,7 +11,7 @@ extends RefCounted
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Clean 4-item sub-navigation bar
 	var sub_bar := PanelContainer.new()
-	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
 	body_vbox.add_child(sub_bar)
 
 	var sub_row := HBoxContainer.new()
@@ -70,7 +70,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 
 static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 	var hero := PanelContainer.new()
-	hero.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
+	hero.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 26.0))
 	vbox.add_child(hero)
 
 	var hv := VBoxContainer.new()
@@ -133,10 +133,12 @@ static func _build_no_clan_hero(host: Control, vbox: VBoxContainer) -> void:
 			var inv_id := str(inv.get("invite_id", ""))
 
 			var icard := PanelContainer.new()
-			icard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+			icard.custom_minimum_size = Vector2(0, 140)
+			icard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 			vbox.add_child(icard)
 
 			var irow := HBoxContainer.new()
+			irow.alignment = BoxContainer.ALIGNMENT_CENTER
 			irow.add_theme_constant_override("separation", 12)
 			icard.add_child(irow)
 
@@ -204,7 +206,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 
 	# 1. Hero Guild Crest Plaque
 	var hero := PanelContainer.new()
-	hero.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
+	hero.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 26.0))
 	vbox.add_child(hero)
 
 	var hv := VBoxContainer.new()
@@ -338,7 +340,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 				continue
 			var ch_card := PanelContainer.new()
 			var done := bool(ch.get("completed", false))
-			ch_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
+			ch_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 			vbox.add_child(ch_card)
 
 			var cv := VBoxContainer.new()
@@ -379,10 +381,12 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 			var ru: Dictionary = req.get("user", {}) if typeof(req.get("user")) == TYPE_DICTIONARY else {}
 			var rid := str(req.get("request_id", ""))
 			var rcard := PanelContainer.new()
-			rcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+			rcard.custom_minimum_size = Vector2(0, 140)
+			rcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 			vbox.add_child(rcard)
 
 			var rrow := HBoxContainer.new()
+			rrow.alignment = BoxContainer.ALIGNMENT_CENTER
 			rrow.add_theme_constant_override("separation", 10)
 			rcard.add_child(rrow)
 
@@ -452,12 +456,14 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 		var raw_st: String = str(m_pres.get("status", "offline"))
 
 		var mcard := PanelContainer.new()
+		mcard.custom_minimum_size = Vector2(0, 144)
 		mcard.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		mcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+		mcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 		vbox.add_child(mcard)
 
 		var mrow := HBoxContainer.new()
 		mrow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mrow.alignment = BoxContainer.ALIGNMENT_CENTER
 		mrow.add_theme_constant_override("separation", 12)
 		mcard.add_child(mrow)
 
@@ -559,7 +565,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	var well := PanelContainer.new()
 	well.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	well.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(16, 12.0, 12.0))
+	well.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 26.0))
 	holder.add_child(well)
 
 	host._clan_chat_scroll = ScrollContainer.new()
@@ -575,7 +581,8 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت گفتگوهای اتحاد..."))
 
 	var compose := PanelContainer.new()
-	compose.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+	compose.custom_minimum_size = Vector2(0, 108)
+	compose.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
 	holder.add_child(compose)
 
 	var input_row := HBoxContainer.new()
@@ -1548,7 +1555,8 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 
 	# Player count selector panel (for 2-4 player games)
 	var pcount_panel := PanelContainer.new()
-	pcount_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(16, 14.0, 12.0))
+	pcount_panel.custom_minimum_size = Vector2(0, 96)
+	pcount_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
 	vbox.add_child(pcount_panel)
 
 	var pcount_row := HBoxContainer.new()

@@ -8,10 +8,12 @@ extends RefCounted
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Top header bar with Mark All Read
 	var header_bar := PanelContainer.new()
-	header_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+	header_bar.custom_minimum_size = Vector2(0, 136)
+	header_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 	body_vbox.add_child(header_bar)
 
 	var hrow := HBoxContainer.new()
+	hrow.alignment = BoxContainer.ALIGNMENT_CENTER
 	hrow.add_theme_constant_override("separation", 12)
 	header_bar.add_child(hrow)
 

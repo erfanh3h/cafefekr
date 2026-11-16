@@ -186,7 +186,7 @@ static func create_header_banner_style() -> StyleBoxTexture:
 	return sb
 
 
-static func create_frame_style(is_tall: bool = false, pad_x: float = 20.0, pad_y: float = 16.0) -> StyleBoxTexture:
+static func create_frame_style(is_tall: bool = false, pad_x: float = 36.0, pad_y: float = 20.0) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	if is_tall:
 		sb.texture = TEX_FRAME_TALL
@@ -194,18 +194,22 @@ static func create_frame_style(is_tall: bool = false, pad_x: float = 20.0, pad_y
 		sb.texture_margin_right = 50.0
 		sb.texture_margin_top = 26.0
 		sb.texture_margin_bottom = 26.0
+		sb.content_margin_left = maxf(pad_x, 36.0)
+		sb.content_margin_right = maxf(pad_x, 36.0)
+		sb.content_margin_top = maxf(pad_y, 20.0)
+		sb.content_margin_bottom = maxf(pad_y, 30.0)
 	else:
 		sb.texture = TEX_FRAME_SMALL
 		sb.texture_margin_left = 50.0
 		sb.texture_margin_right = 50.0
 		sb.texture_margin_top = 18.0
 		sb.texture_margin_bottom = 18.0
+		sb.content_margin_left = maxf(pad_x, 36.0)
+		sb.content_margin_right = maxf(pad_x, 36.0)
+		sb.content_margin_top = maxf(pad_y, 16.0)
+		sb.content_margin_bottom = maxf(pad_y, 22.0)
 	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
-	sb.content_margin_left = pad_x
-	sb.content_margin_right = pad_x
-	sb.content_margin_top = pad_y
-	sb.content_margin_bottom = pad_y
 	return sb
 
 
@@ -624,6 +628,50 @@ static func get_frame_texture(frame_id: int) -> Texture2D:
 	return null
 
 
+static var _avatar_aperture_mat: ShaderMaterial = null
+
+const _FRAME_APERTURES: Dictionary = {
+	1: Vector4(0.147, 0.119, 0.839, 0.783),
+	2: Vector4(0.087, 0.031, 0.921, 0.803),
+	3: Vector4(0.155, 0.179, 0.838, 0.828),
+	4: Vector4(0.107, 0.131, 0.845, 0.841),
+	5: Vector4(0.096, 0.092, 0.904, 0.846),
+	6: Vector4(0.141, 0.200, 0.845, 0.869),
+	7: Vector4(0.154, 0.147, 0.816, 0.831),
+	8: Vector4(0.135, 0.121, 0.830, 0.780),
+	9: Vector4(0.107, 0.084, 0.908, 0.847),
+	10: Vector4(0.132, 0.118, 0.860, 0.816),
+	11: Vector4(0.119, 0.133, 0.874, 0.811),
+	12: Vector4(0.208, 0.182, 0.779, 0.805),
+	13: Vector4(0.212, 0.109, 0.769, 0.718),
+	14: Vector4(0.127, 0.138, 0.851, 0.826),
+	15: Vector4(0.164, 0.224, 0.829, 0.816),
+	16: Vector4(0.147, 0.137, 0.853, 0.813),
+	17: Vector4(0.153, 0.156, 0.827, 0.810),
+	18: Vector4(0.157, 0.109, 0.843, 0.818),
+	19: Vector4(0.134, 0.159, 0.810, 0.807),
+	20: Vector4(0.141, 0.152, 0.815, 0.819),
+}
+
+
+static func _get_avatar_aperture_material() -> ShaderMaterial:
+	if _avatar_aperture_mat != null:
+		return _avatar_aperture_mat
+	var sh := Shader.new()
+	sh.code = "shader_type canvas_item;\nvoid fragment() {\n\tvec2 p = abs(UV * 2.0 - vec2(1.0));\n\tfloat d = pow(p.x, 2.6) + pow(p.y, 2.6);\n\tfloat mask = 1.0 - smoothstep(0.90, 1.0, d);\n\tvec4 tex = texture(TEXTURE, UV);\n\tvec3 bg = vec3(0.11, 0.07, 0.04);\n\tvec3 rgb = mix(bg, tex.rgb, tex.a);\n\tCOLOR = vec4(rgb, mask);\n}\n"
+	var mat := ShaderMaterial.new()
+	mat.shader = sh
+	_avatar_aperture_mat = mat
+	return mat
+
+
+static func _get_frame_aperture(frame_id: int) -> Vector4:
+	var safe_fid: int = clampi(frame_id if frame_id >= 1 else 1, 1, 20)
+	if _FRAME_APERTURES.has(safe_fid):
+		return _FRAME_APERTURES[safe_fid]
+	return Vector4(0.147, 0.119, 0.839, 0.783)
+
+
 static func make_avatar_badge(
 	avatar_id: int,
 	frame_id: int = 1,
@@ -638,34 +686,22 @@ static func make_avatar_badge(
 
 	var safe_fid: int = frame_id if frame_id >= 1 else 1
 	safe_fid = clampi(safe_fid, 1, 20)
+	var ap: Vector4 = _get_frame_aperture(safe_fid)
 
-	# 1. Subtle dark circular backing matting
-	var bg_disc := Panel.new()
-	bg_disc.set_anchors_preset(Control.PRESET_FULL_RECT)
-	var bg_disc_size = size_px * 0.72
-	var bg_offset = (size_px - bg_disc_size) * 0.5
-	bg_disc.offset_left = bg_offset
-	bg_disc.offset_top = bg_offset
-	bg_disc.offset_right = -bg_offset
-	bg_disc.offset_bottom = -bg_offset
-	var bg_sb := StyleBoxFlat.new()
-	bg_sb.bg_color = Color(0.12, 0.08, 0.05, 0.96)
-	bg_sb.set_corner_radius_all(int(bg_disc_size * 0.5))
-	bg_disc.add_theme_stylebox_override("panel", bg_sb)
-	bg_disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.add_child(bg_disc)
-
-	# 2. Avatar texture (centered nicely inside frame aperture)
+	# 1. Avatar texture clipped cleanly to the frame's inner aperture (no protruding box under avatar)
 	var av := TextureRect.new()
-	var av_size = size_px * 0.74
-	var av_offset = (size_px - av_size) * 0.5
-	av.offset_left = av_offset
-	av.offset_top = av_offset
-	av.offset_right = -av_offset
-	av.offset_bottom = -av_offset
-	av.set_anchors_preset(Control.PRESET_FULL_RECT)
+	av.name = "Avatar"
+	av.anchor_left = ap.x
+	av.anchor_top = ap.y
+	av.anchor_right = ap.z
+	av.anchor_bottom = ap.w
+	av.offset_left = 0.0
+	av.offset_top = 0.0
+	av.offset_right = 0.0
+	av.offset_bottom = 0.0
 	av.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	av.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	av.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	av.material = _get_avatar_aperture_material()
 	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var safe_av_id := clampi(avatar_id, 0, 71)
 	var av_path := "res://assets/icons/Avatars/%d.png" % safe_av_id
@@ -675,17 +711,21 @@ static func make_avatar_badge(
 		av.texture = load("res://assets/icons/Avatars/0.png")
 	holder.add_child(av)
 
-	# 3. Frame Overlay Texture (Full size, on top)
+	# 2. Frame Overlay Texture (Full size, on top)
 	var frame_rect := TextureRect.new()
 	frame_rect.name = "FrameOverlay"
 	frame_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	frame_rect.offset_left = 0.0
+	frame_rect.offset_top = 0.0
+	frame_rect.offset_right = 0.0
+	frame_rect.offset_bottom = 0.0
 	frame_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	frame_rect.texture = get_frame_texture(safe_fid)
 	frame_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(frame_rect)
 
-	# 4. Presence status dot if requested
+	# 3. Presence status dot if requested
 	if show_dot:
 		var dot := PanelContainer.new()
 		var dot_sz := clampf(size_px * 0.26, 16.0, 24.0)
@@ -708,47 +748,105 @@ static func make_avatar_badge(
 
 
 static func apply_frame_to_container(container: Control, avatar_rect: TextureRect, frame_id: int = 1) -> TextureRect:
-	if not is_instance_valid(container):
+	if not is_instance_valid(container) and not is_instance_valid(avatar_rect):
 		return null
 	var safe_fid: int = frame_id if frame_id >= 1 else 1
 	safe_fid = clampi(safe_fid, 1, 20)
+	var ap: Vector4 = _get_frame_aperture(safe_fid)
 
-	# Ensure avatar fits nicely inside the frame aperture
+	var host_ctrl: Control = container
 	if is_instance_valid(avatar_rect):
-		avatar_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-		var c_sz = minf(container.custom_minimum_size.x, container.custom_minimum_size.y)
-		if c_sz <= 0:
-			c_sz = minf(container.size.x, container.size.y)
-		if c_sz <= 0:
-			c_sz = 96.0
-		var av_sz = c_sz * 0.74
-		var off = (c_sz - av_sz) * 0.5
-		avatar_rect.offset_left = off
-		avatar_rect.offset_top = off
-		avatar_rect.offset_right = -off
-		avatar_rect.offset_bottom = -off
-		avatar_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		avatar_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var p_node: Node = avatar_rect.get_parent()
+		if p_node is Panel or p_node is PanelContainer:
+			var p_ctrl: Control = p_node as Control
+			p_ctrl.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+			p_ctrl.clip_contents = false
+		if is_instance_valid(container):
+			if container is Panel or container is PanelContainer:
+				container.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+			container.clip_contents = false
+			for legacy_name in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc"]:
+				var leg: Node = container.get_node_or_null(legacy_name)
+				if is_instance_valid(leg) and leg is CanvasItem:
+					(leg as CanvasItem).visible = false
 
-	var frame_node = container.get_node_or_null("FrameOverlay")
+		# If avatar_rect is a direct child of a Godot Container (BoxContainer, PanelContainer, GridContainer, etc.),
+		# wrap it inside a plain Control (AvatarInnerHost) so the Container does not override anchor/offset layout.
+		if p_node is Control and (p_node as Control).name == "AvatarInnerHost":
+			host_ctrl = p_node as Control
+			if avatar_rect.custom_minimum_size.x > 0.0 or avatar_rect.custom_minimum_size.y > 0.0:
+				host_ctrl.custom_minimum_size = avatar_rect.custom_minimum_size
+		elif p_node is Container:
+			var cont_parent: Container = p_node as Container
+			var existing_host: Node = cont_parent.get_node_or_null("AvatarInnerHost")
+			if is_instance_valid(existing_host) and existing_host is Control and cont_parent is PanelContainer:
+				host_ctrl = existing_host as Control
+			else:
+				var wrapper := Control.new()
+				wrapper.name = "AvatarInnerHost"
+				wrapper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				var min_sz: Vector2 = avatar_rect.custom_minimum_size
+				if min_sz.x <= 0.0 or min_sz.y <= 0.0:
+					min_sz = cont_parent.custom_minimum_size
+				if min_sz.x <= 0.0 or min_sz.y <= 0.0:
+					min_sz = Vector2(96.0, 96.0)
+				if not (cont_parent is PanelContainer):
+					wrapper.custom_minimum_size = min_sz
+				wrapper.size_flags_horizontal = avatar_rect.size_flags_horizontal
+				wrapper.size_flags_vertical = avatar_rect.size_flags_vertical
+				var idx: int = avatar_rect.get_index()
+				cont_parent.add_child(wrapper)
+				cont_parent.move_child(wrapper, idx)
+				avatar_rect.reparent(wrapper, false)
+				host_ctrl = wrapper
+		elif p_node is Control:
+			host_ctrl = p_node as Control
+
+		for legacy_name2 in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc"]:
+			var leg2: Node = host_ctrl.get_node_or_null(legacy_name2)
+			if is_instance_valid(leg2) and leg2 is CanvasItem:
+				(leg2 as CanvasItem).visible = false
+
+		# Crucial: clear custom_minimum_size on avatar_rect so Godot Control does not clamp it to full container size
+		avatar_rect.custom_minimum_size = Vector2.ZERO
+		avatar_rect.anchor_left = ap.x
+		avatar_rect.anchor_top = ap.y
+		avatar_rect.anchor_right = ap.z
+		avatar_rect.anchor_bottom = ap.w
+		avatar_rect.offset_left = 0.0
+		avatar_rect.offset_top = 0.0
+		avatar_rect.offset_right = 0.0
+		avatar_rect.offset_bottom = 0.0
+		avatar_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		avatar_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		avatar_rect.material = _get_avatar_aperture_material()
+
+	if not is_instance_valid(host_ctrl):
+		return null
+
+	var frame_node: Node = host_ctrl.get_node_or_null("FrameOverlay")
 	var frame_rect: TextureRect = null
 	if is_instance_valid(frame_node) and frame_node is TextureRect:
-		frame_rect = frame_node
+		frame_rect = frame_node as TextureRect
 	else:
 		frame_rect = TextureRect.new()
 		frame_rect.name = "FrameOverlay"
 		frame_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		frame_rect.offset_left = 0.0
+		frame_rect.offset_top = 0.0
+		frame_rect.offset_right = 0.0
+		frame_rect.offset_bottom = 0.0
 		frame_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		frame_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		frame_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		container.add_child(frame_rect)
+		host_ctrl.add_child(frame_rect)
 
 	frame_rect.texture = get_frame_texture(safe_fid)
-	# Move frame above avatar, but keep profile buttons on top if any
-	container.move_child(frame_rect, container.get_child_count() - 1)
-	for ch in container.get_children():
-		if ch is BaseButton:
-			container.move_child(ch, container.get_child_count() - 1)
+	# Move frame above avatar, but keep side tags (Label) and profile buttons (BaseButton) on top
+	host_ctrl.move_child(frame_rect, host_ctrl.get_child_count() - 1)
+	for ch in host_ctrl.get_children():
+		if ch is Label or ch is BaseButton:
+			host_ctrl.move_child(ch, host_ctrl.get_child_count() - 1)
 	return frame_rect
 
 
@@ -920,7 +1018,8 @@ static func make_empty_state(
 	cta_cb: Callable = Callable()
 ) -> PanelContainer:
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", create_well_style(18, 24.0, 28.0))
+	card.custom_minimum_size = Vector2(0, 180)
+	card.add_theme_stylebox_override("panel", create_frame_style(true, 42.0, 32.0))
 
 	var vbox := VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -955,7 +1054,8 @@ static func make_empty_state(
 
 static func make_loading_state(msg: String = "در حال بارگذاری...") -> Control:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", create_well_style(16, 20.0, 22.0))
+	p.custom_minimum_size = Vector2(0, 148)
+	p.add_theme_stylebox_override("panel", create_frame_style(true, 40.0, 28.0))
 	var lbl := make_body(msg, 26, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
 	p.add_child(lbl)
 	return p
@@ -1464,7 +1564,8 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 
 		# Hero Header
 		var hero := PanelContainer.new()
-		hero.add_theme_stylebox_override("panel", create_card_style(COL_MAHOGANY_CARD, COL_GOLD_ANTIQUE, 18, 2, 20.0, 16.0))
+		hero.custom_minimum_size = Vector2(0, 152)
+		hero.add_theme_stylebox_override("panel", create_frame_style(true, 38.0, 26.0))
 		content_holder.add_child(hero)
 
 		var h_row := HBoxContainer.new()

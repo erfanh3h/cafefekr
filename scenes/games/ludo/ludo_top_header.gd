@@ -55,15 +55,8 @@ func _setup_multiplayer_styles() -> void:
 
 	# Avatar Medallion Rings for P3 & P4
 	_style_avatar_p3_active = _style_avatar_p1_active.duplicate()
-	_style_avatar_p3_active.bg_color = Color(0.05, 0.22, 0.10, 0.95)
-	_style_avatar_p3_active.border_color = Color(0.38, 0.96, 0.55, 1.0)
-	_style_avatar_p3_active.shadow_color = Color(0.18, 0.88, 0.42, 0.50)
 	_style_avatar_p3_idle = _style_avatar_p1_idle.duplicate()
-
 	_style_avatar_p4_active = _style_avatar_p1_active.duplicate()
-	_style_avatar_p4_active.bg_color = Color(0.24, 0.18, 0.04, 0.95)
-	_style_avatar_p4_active.border_color = Color(1.0, 0.88, 0.32, 1.0)
-	_style_avatar_p4_active.shadow_color = Color(1.0, 0.78, 0.18, 0.50)
 	_style_avatar_p4_idle = _style_avatar_p1_idle.duplicate()
 
 	_style_match_box_p3 = _style_match_box_normal.duplicate()

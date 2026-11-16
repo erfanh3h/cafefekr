@@ -1466,12 +1466,18 @@ func _sync_multiplayer_intro_columns() -> void:
 			col_info["name"].text = p_name
 
 			var av_id = int(p_data.get("image", p_data.get("user_image", 0)))
+			var p_fid = GameManager.get_player_frame_id(p_data)
 
 			var tex = BaseTopHeaderClass._get_cached_avatar(av_id)
 
 			if tex:
 
 				col_info["avatar"].texture = tex
+			var av_ctrl: TextureRect = col_info["avatar"]
+			if is_instance_valid(av_ctrl):
+				av_ctrl.custom_minimum_size = Vector2(104, 104)
+				var av_p = av_ctrl.get_parent()
+				CafeSocialTheme.apply_frame_to_container(av_p if av_p is Control else av_ctrl, av_ctrl, p_fid)
 
 			if idx == 3:
 
@@ -1606,23 +1612,25 @@ func setup_match(game_title: String = "تیک تاک تو", mode_title: String =
 
 	
 
+	_sync_multiplayer_intro_columns()
+
 	var av1_id = int(p1_data.get("image", p1_data.get("user_image", 0)))
-
+	var p1_fid = GameManager.get_player_frame_id(p1_data)
 	var tex1 = BaseTopHeaderClass._get_cached_avatar(av1_id)
-
-	if tex1:
-
-		intro_p1_avatar.texture = tex1
+	if is_instance_valid(intro_p1_avatar):
+		if tex1:
+			intro_p1_avatar.texture = tex1
+		var p1_p = intro_p1_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p1_p if p1_p is Control else intro_p1_avatar, intro_p1_avatar, p1_fid)
 
 	var av2_id = int(p2_data.get("image", p2_data.get("user_image", 0)))
-
+	var p2_fid = GameManager.get_player_frame_id(p2_data)
 	var tex2 = BaseTopHeaderClass._get_cached_avatar(av2_id)
-
-	if tex2:
-
-		intro_p2_avatar.texture = tex2
-
-	_sync_multiplayer_intro_columns()
+	if is_instance_valid(intro_p2_avatar):
+		if tex2:
+			intro_p2_avatar.texture = tex2
+		var p2_p = intro_p2_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p2_p if p2_p is Control else intro_p2_avatar, intro_p2_avatar, p2_fid)
 
 
 

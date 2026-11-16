@@ -260,7 +260,7 @@ func _populate_matches_cards(holder: VBoxContainer, list: Array, my_uid: String)
 
 func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(0, 176)
+	btn.custom_minimum_size = Vector2(0, 184)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
@@ -277,18 +277,26 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		else:
 			my_res = "unfinished"
 
-	var style_frame := CafeSocialTheme.create_frame_style(true, 20.0, 16.0)
+	var style_frame := CafeSocialTheme.create_frame_style(true, 38.0, 24.0)
 	btn.add_theme_stylebox_override("normal", style_frame)
 	btn.add_theme_stylebox_override("hover", style_frame)
 	btn.add_theme_stylebox_override("pressed", style_frame)
 	btn.add_theme_stylebox_override("focus", style_frame)
 
+	var pad := MarginContainer.new()
+	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pad.add_theme_constant_override("margin_left", 40)
+	pad.add_theme_constant_override("margin_right", 40)
+	pad.add_theme_constant_override("margin_top", 20)
+	pad.add_theme_constant_override("margin_bottom", 28)
+	btn.add_child(pad)
+
 	var row := HBoxContainer.new()
-	row.set_anchors_preset(Control.PRESET_FULL_RECT)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", 18)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn.add_child(row)
+	pad.add_child(row)
 
 	# Opponent Info
 	var opp_name = str(game.get("opponent_name", ""))
@@ -306,26 +314,20 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	if opp_name.is_empty():
 		opp_name = "حریف"
 		opp_data = {"user_id": "opp", "username": opp_name, "image": opp_avatar_id}
+	var opp_frame_id: int = GameManager.get_player_frame_id(opp_data if not opp_data.is_empty() else game)
 
 	# 1. LEFT SIDE: Opponent Avatar + Name directly underneath
 	var opp_col := VBoxContainer.new()
-	opp_col.custom_minimum_size = Vector2(105, 150)
+	opp_col.custom_minimum_size = Vector2(105, 126)
 	opp_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	opp_col.add_theme_constant_override("separation", 6)
+	opp_col.add_theme_constant_override("separation", 4)
 	opp_col.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var av_panel := PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(90, 90)
+	av_panel.custom_minimum_size = Vector2(88, 88)
 	av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-
-	var av_style := StyleBoxFlat.new()
-	av_style.bg_color = Color(0.08, 0.05, 0.03, 0.95)
-	av_style.set_corner_radius_all(14)
-	av_style.set_border_width_all(2)
-	av_style.border_color = Color(0.90, 0.75, 0.35, 0.90)
-	av_panel.add_theme_stylebox_override("panel", av_style)
 
 	var av_img := TextureRect.new()
 	av_img.custom_minimum_size = Vector2(84, 84)
@@ -335,6 +337,7 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var av_path = "res://assets/icons/Avatars/%d.png" % opp_avatar_id
 	av_img.texture = load(av_path) if ResourceLoader.exists(av_path) else preload("res://assets/icons/Avatars/0.png")
 	av_panel.add_child(av_img)
+	CafeSocialTheme.apply_frame_to_container(av_panel, av_img, opp_frame_id)
 
 	av_panel.gui_input.connect(func(event: InputEvent):
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -350,7 +353,7 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	lbl_opp_name.clip_text = true
 	lbl_opp_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl_opp_name.add_theme_font_override("font", _font_hekayat)
-	lbl_opp_name.add_theme_font_size_override("font_size", 26)
+	lbl_opp_name.add_theme_font_size_override("font_size", 24)
 	lbl_opp_name.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
 	lbl_opp_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	opp_col.add_child(lbl_opp_name)
@@ -421,7 +424,7 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 
 	# 3. RIGHT SIDE: Big Game Mode Badge Icon
 	var mode_badge := TextureRect.new()
-	mode_badge.custom_minimum_size = Vector2(98, 98)
+	mode_badge.custom_minimum_size = Vector2(92, 92)
 	mode_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	mode_badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	mode_badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -712,21 +715,14 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 
 	for sc in stat_cards_data:
 		var card := PanelContainer.new()
-		card.custom_minimum_size = Vector2(0, 190)
+		card.custom_minimum_size = Vector2(0, 196)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 16.0))
-
-		var cm := MarginContainer.new()
-		cm.add_theme_constant_override("margin_left", 16)
-		cm.add_theme_constant_override("margin_top", 16)
-		cm.add_theme_constant_override("margin_right", 16)
-		cm.add_theme_constant_override("margin_bottom", 16)
-		card.add_child(cm)
+		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 
 		var cv := VBoxContainer.new()
 		cv.alignment = BoxContainer.ALIGNMENT_CENTER
-		cv.add_theme_constant_override("separation", 8)
-		cm.add_child(cv)
+		cv.add_theme_constant_override("separation", 6)
+		card.add_child(cv)
 
 		var lbl_title := Label.new()
 		lbl_title.text = sc["label"]
@@ -856,21 +852,14 @@ func _render_frames() -> void:
 	# --- 1. Live Hero Preview Card ---
 	var hero_card := PanelContainer.new()
 	hero_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hero_card.custom_minimum_size = Vector2(0, 190)
-	hero_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(true))
+	hero_card.custom_minimum_size = Vector2(0, 200)
+	hero_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 	content_frames.add_child(hero_card)
-
-	var hero_m := MarginContainer.new()
-	hero_m.add_theme_constant_override("margin_left", 18)
-	hero_m.add_theme_constant_override("margin_top", 16)
-	hero_m.add_theme_constant_override("margin_right", 18)
-	hero_m.add_theme_constant_override("margin_bottom", 16)
-	hero_card.add_child(hero_m)
 
 	var hero_hbox := HBoxContainer.new()
 	hero_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	hero_hbox.add_theme_constant_override("separation", 20)
-	hero_m.add_child(hero_hbox)
+	hero_card.add_child(hero_hbox)
 
 	# Right (in RTL): Badge Holder
 	var badge_holder := Control.new()
@@ -1033,21 +1022,14 @@ func _render_privacy() -> void:
 
 	# --- 1. Sound & Music Settings Card (Moved to Privacy) ---
 	var audio_card := PanelContainer.new()
-	audio_card.custom_minimum_size = Vector2(0, 220)
+	audio_card.custom_minimum_size = Vector2(0, 224)
 	audio_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
+	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 	content_privacy.add_child(audio_card)
 
-	var am := MarginContainer.new()
-	am.add_theme_constant_override("margin_left", 20)
-	am.add_theme_constant_override("margin_top", 16)
-	am.add_theme_constant_override("margin_right", 20)
-	am.add_theme_constant_override("margin_bottom", 16)
-	audio_card.add_child(am)
-
 	var a_vbox := VBoxContainer.new()
-	a_vbox.add_theme_constant_override("separation", 16)
-	am.add_child(a_vbox)
+	a_vbox.add_theme_constant_override("separation", 14)
+	audio_card.add_child(a_vbox)
 
 	var a_title := Label.new()
 	a_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
@@ -1186,20 +1168,13 @@ func _render_privacy() -> void:
 		var current_val: bool = bool(current_priv.get(key, item["default"]))
 
 		var panel := PanelContainer.new()
-		panel.custom_minimum_size = Vector2(0, 110)
+		panel.custom_minimum_size = Vector2(0, 124)
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
-
-		var m := MarginContainer.new()
-		m.add_theme_constant_override("margin_left", 20)
-		m.add_theme_constant_override("margin_top", 16)
-		m.add_theme_constant_override("margin_right", 20)
-		m.add_theme_constant_override("margin_bottom", 16)
-		panel.add_child(m)
+		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 40.0, 20.0))
 
 		var h := HBoxContainer.new()
 		h.add_theme_constant_override("separation", 18)
-		m.add_child(h)
+		panel.add_child(h)
 
 		var toggle := CheckButton.new()
 		toggle.custom_minimum_size = Vector2(90, 60)

@@ -319,7 +319,7 @@ func _render_hero_plaque(src: Dictionary) -> void:
 	var clan_d: Dictionary = src.get("clan", {}) if typeof(src.get("clan")) == TYPE_DICTIONARY else {}
 
 	var plaque := PanelContainer.new()
-	plaque.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(false))
+	plaque.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 	_hero_holder.add_child(plaque)
 
 	var pv := VBoxContainer.new()
@@ -704,7 +704,8 @@ func _render_overview_tab() -> void:
 	if not clan_d.is_empty() or not clan_id_str.is_empty():
 		_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("باشگاه و کلن بازیکن", CafeSocialTheme.ICO_ARMY))
 		var c_card := PanelContainer.new()
-		c_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(false))
+		c_card.custom_minimum_size = Vector2(0, 144)
+		c_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 		_body_vbox.add_child(c_card)
 
 		var crow := HBoxContainer.new()
@@ -759,8 +760,11 @@ func _render_overview_tab() -> void:
 			"خلاصه عملکرد", CafeSocialTheme.ICO_RANKING
 		))
 
-		var sum_row := HBoxContainer.new()
-		sum_row.add_theme_constant_override("separation", 8)
+		var sum_row := GridContainer.new()
+		sum_row.columns = 2
+		sum_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sum_row.add_theme_constant_override("h_separation", 12)
+		sum_row.add_theme_constant_override("v_separation", 12)
 		_body_vbox.add_child(sum_row)
 
 		var sum_items := [
@@ -771,10 +775,12 @@ func _render_overview_tab() -> void:
 		]
 		for si in sum_items:
 			var c := PanelContainer.new()
+			c.custom_minimum_size = Vector2(0, 114)
 			c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			c.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+			c.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
 			var cv := VBoxContainer.new()
 			cv.alignment = BoxContainer.ALIGNMENT_CENTER
+			cv.add_theme_constant_override("separation", 4)
 			cv.add_child(CafeSocialTheme.make_title(si["v"], 31, si["c"], HORIZONTAL_ALIGNMENT_CENTER, false))
 			cv.add_child(CafeSocialTheme.make_body(si["l"], 22, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false))
 			c.add_child(cv)
@@ -784,30 +790,35 @@ func _render_overview_tab() -> void:
 		var favs: Array = st.get("most_played_games", []) if typeof(st.get("most_played_games")) == TYPE_ARRAY else []
 		if not favs.is_empty():
 			_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("بازی‌های محبوب", CafeSocialTheme.ICO_CUP))
-			var fav_row := HBoxContainer.new()
-			fav_row.add_theme_constant_override("separation", 8)
+			var fav_row := VBoxContainer.new()
+			fav_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			fav_row.add_theme_constant_override("separation", 10)
 			_body_vbox.add_child(fav_row)
 			for fg in favs:
 				if typeof(fg) != TYPE_DICTIONARY:
 					continue
 				var gtype := str(fg.get("game_type", ""))
 				var g_card := PanelContainer.new()
+				g_card.custom_minimum_size = Vector2(0, 118)
 				g_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				g_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+				g_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
 				var gr := HBoxContainer.new()
-				gr.add_theme_constant_override("separation", 10)
+				gr.alignment = BoxContainer.ALIGNMENT_CENTER
+				gr.add_theme_constant_override("separation", 14)
 				g_card.add_child(gr)
 				var gv := VBoxContainer.new()
 				gv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				gv.alignment = BoxContainer.ALIGNMENT_CENTER
 				gv.add_child(CafeSocialTheme.make_title(GameRegistry.get_display_name_fa(gtype), 27, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
 				gv.add_child(CafeSocialTheme.make_body("%s بازی • %s٪ برد" % [
 					GameManager.to_fa_num(int(fg.get("total_matches", 0))),
 					GameManager.to_fa_num(fg.get("win_rate", 0))
-				], 19, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_RIGHT, true))
+				], 20, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_RIGHT, true))
 				gr.add_child(gv)
 				var th := TextureRect.new()
 				th.texture = CafeSocialTheme.get_game_thumb(gtype)
-				th.custom_minimum_size = Vector2(48, 48)
+				th.custom_minimum_size = Vector2(56, 56)
+				th.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 				th.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 				th.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				gr.add_child(th)
@@ -840,14 +851,7 @@ func _render_overview_tab() -> void:
 	# 3. Detailed Games History Matrix (Existing Cafe Fekr Helper)
 	var hist_dict: Dictionary = prof.get("history", {}) if typeof(prof.get("history")) == TYPE_DICTIONARY else {}
 	if not hist_dict.is_empty():
-		var hist_wrap := PanelContainer.new()
-		hist_wrap.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
-		_body_vbox.add_child(hist_wrap)
-		var hist_vbox := VBoxContainer.new()
-		hist_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		hist_vbox.add_theme_constant_override("separation", 12)
-		hist_wrap.add_child(hist_vbox)
-		GamesHistoryViewHelper.populate_games_history(hist_vbox, hist_dict)
+		GamesHistoryViewHelper.populate_games_history(_body_vbox, hist_dict)
 	elif not _is_bot:
 		_body_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت آمار بازی‌ها..."))
 
@@ -861,7 +865,8 @@ func _render_self_cosmetics_tab() -> void:
 
 	# Account Card: Change Username
 	var acc_card := PanelContainer.new()
-	acc_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+	acc_card.custom_minimum_size = Vector2(0, 118)
+	acc_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
 	_body_vbox.add_child(acc_card)
 	var acc_row := HBoxContainer.new()
 	acc_row.add_theme_constant_override("separation", 12)
@@ -1267,8 +1272,10 @@ func _render_self_privacy_tab() -> void:
 			var bu_uid := str(bu.get("user_id", bu.get("_id", "")))
 			var bu_name := str(bu.get("username", "بازیکن"))
 			var card := PanelContainer.new()
-			card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+			card.custom_minimum_size = Vector2(0, 114)
+			card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
 			var row := HBoxContainer.new()
+			row.alignment = BoxContainer.ALIGNMENT_CENTER
 			row.add_theme_constant_override("separation", 12)
 			card.add_child(row)
 
@@ -1287,6 +1294,6 @@ func _render_self_privacy_tab() -> void:
 			nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(nm)
 
-			row.add_child(CafeSocialTheme.make_avatar_badge(int(bu.get("image", 0)), 0, 56.0))
+			row.add_child(CafeSocialTheme.make_avatar_badge(int(bu.get("image", 0)), int(bu.get("profile_frame", 1)), 64.0))
 			blk_holder.add_child(card)
 	)

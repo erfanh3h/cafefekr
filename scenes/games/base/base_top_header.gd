@@ -400,30 +400,15 @@ func _setup_styles() -> void:
 	# P2 Inactive
 	_style_p2_inactive = _style_p1_inactive.duplicate()
 
-	# Avatar Medallion Rings
+	# Avatar Medallion Rings (transparent: decorative avatar_frames handle framing)
 	_style_avatar_p1_active = StyleBoxFlat.new()
-	_style_avatar_p1_active.bg_color = Color(0.22, 0.06, 0.08, 0.95)
-	_style_avatar_p1_active.border_color = Color(1.0, 0.48, 0.42, 1.0)
-	_style_avatar_p1_active.set_border_width_all(3)
-	_style_avatar_p1_active.set_corner_radius_all(20)
-	_style_avatar_p1_active.shadow_color = Color(1.0, 0.25, 0.30, 0.50)
-	_style_avatar_p1_active.shadow_size = 8
+	_style_avatar_p1_active.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	_style_avatar_p1_active.border_color = Color(0.0, 0.0, 0.0, 0.0)
+	_style_avatar_p1_active.set_border_width_all(0)
 
-	_style_avatar_p1_idle = StyleBoxFlat.new()
-	_style_avatar_p1_idle.bg_color = Color(0.16, 0.10, 0.06, 0.92)
-	_style_avatar_p1_idle.border_color = Color(0.76, 0.58, 0.28, 0.85)
-	_style_avatar_p1_idle.set_border_width_all(2)
-	_style_avatar_p1_idle.set_corner_radius_all(20)
-
-	_style_avatar_p2_active = StyleBoxFlat.new()
-	_style_avatar_p2_active.bg_color = Color(0.06, 0.14, 0.26, 0.95)
-	_style_avatar_p2_active.border_color = Color(0.38, 0.80, 1.0, 1.0)
-	_style_avatar_p2_active.set_border_width_all(3)
-	_style_avatar_p2_active.set_corner_radius_all(20)
-	_style_avatar_p2_active.shadow_color = Color(0.20, 0.62, 1.0, 0.50)
-	_style_avatar_p2_active.shadow_size = 8
-
-	_style_avatar_p2_idle = _style_avatar_p1_idle.duplicate()
+	_style_avatar_p1_idle = _style_avatar_p1_active.duplicate()
+	_style_avatar_p2_active = _style_avatar_p1_active.duplicate()
+	_style_avatar_p2_idle = _style_avatar_p1_active.duplicate()
 
 	# Match Details Box Styles (Compact Sleek Game Clock Console)
 	_style_match_box_normal = StyleBoxFlat.new()
@@ -579,17 +564,12 @@ func _enhance_player_card(player_idx: int) -> void:
 		if av_container:
 			var av_frame = Panel.new()
 			av_frame.name = "AvatarMedallionFrame"
+			av_frame.visible = false
 			av_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
 			av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			av_frame.add_theme_stylebox_override("panel", _style_avatar_p1_idle if player_idx == 1 else _style_avatar_p2_idle)
 			av_container.add_child(av_frame)
 			av_container.move_child(av_frame, 0)
-
-			avatar_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-			avatar_rect.offset_left = 6.0
-			avatar_rect.offset_top = 6.0
-			avatar_rect.offset_right = -6.0
-			avatar_rect.offset_bottom = -6.0
 
 			var side_lbl = Label.new()
 			side_lbl.name = "PlayerSideTag"

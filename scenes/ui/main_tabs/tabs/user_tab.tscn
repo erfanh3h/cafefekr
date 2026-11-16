@@ -10,16 +10,16 @@
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_subnav_well"]
 texture = ExtResource("5_frame_small_tex")
-texture_margin_left = 50.0
+texture_margin_left = 48.0
 texture_margin_top = 18.0
-texture_margin_right = 50.0
-texture_margin_bottom = 18.0
+texture_margin_right = 48.0
+texture_margin_bottom = 22.0
 axis_stretch_horizontal = 0
 axis_stretch_vertical = 0
-content_margin_left = 20.0
+content_margin_left = 38.0
 content_margin_top = 16.0
-content_margin_right = 20.0
-content_margin_bottom = 16.0
+content_margin_right = 38.0
+content_margin_bottom = 22.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast"]
 bg_color = Color(0.10, 0.06, 0.03, 0.96)

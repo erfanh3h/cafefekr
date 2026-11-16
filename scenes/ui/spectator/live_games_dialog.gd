@@ -456,7 +456,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override(
 		"panel",
-		CafeSocialTheme.create_highlight_card_style(true) if (has_friend or has_clanmate) else CafeSocialTheme.create_card_style()
+		CafeSocialTheme.create_frame_style(true, 38.0, 24.0)
 	)
 
 	var vbox := VBoxContainer.new()
@@ -560,7 +560,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 
 			var av_id: int = int(pd.get("avatar", pd.get("image", 0)))
 			var fr_id: int = int(pd.get("profile_frame", 0))
-			p_chip.add_child(CafeSocialTheme.make_avatar_badge(av_id, fr_id, 44.0, "", false))
+			p_chip.add_child(CafeSocialTheme.make_avatar_badge(av_id, maxi(1, fr_id), 52.0, "", false))
 
 			var pname: String = str(pd.get("username", "بازیکن"))
 			var c_info: Variant = pd.get("clan", null)

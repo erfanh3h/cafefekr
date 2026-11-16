@@ -201,10 +201,11 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 
 static func _create_mode_card(title_text: String, val1: int, val2: int, val3: int, label1: String, label2: String, label3: String) -> PanelContainer:
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0, 190)
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
+	panel.custom_minimum_size = Vector2(0, 196)
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 
 	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_theme_constant_override("separation", 10)
 	panel.add_child(vbox)
 
@@ -255,17 +256,18 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 
 static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) -> PanelContainer:
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0, 190)
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
+	panel.custom_minimum_size = Vector2(0, 196)
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
 
 	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 20)
+	hbox.add_theme_constant_override("separation", 18)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_child(hbox)
 
-	# Left: Game Icon Plaque (Doubled Size 140x140)
+	# Left: Game Icon Plaque (120x120 so it fits comfortably inside frame_tall interior)
 	var icon_plaque = PanelContainer.new()
-	icon_plaque.custom_minimum_size = Vector2(144, 144)
+	icon_plaque.custom_minimum_size = Vector2(120, 120)
+	icon_plaque.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var sb_icon = StyleBoxFlat.new()
 	sb_icon.bg_color = Color(0.08, 0.05, 0.03, 1.0)
 	sb_icon.border_width_left = 2
@@ -273,11 +275,11 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	sb_icon.border_width_right = 2
 	sb_icon.border_width_bottom = 2
 	sb_icon.border_color = Color(0.85, 0.70, 0.35, 0.8)
-	sb_icon.set_corner_radius_all(18)
+	sb_icon.set_corner_radius_all(16)
 	icon_plaque.add_theme_stylebox_override("panel", sb_icon)
 
 	var icon_rect = TextureRect.new()
-	icon_rect.custom_minimum_size = Vector2(136, 136)
+	icon_rect.custom_minimum_size = Vector2(112, 112)
 	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -292,6 +294,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	# Center / Right Column: Info & Stats
 	var col = VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 10)
 	hbox.add_child(col)
 
@@ -393,11 +396,13 @@ static func _create_stat_pill(text_content: String, text_color: Color, bg_color:
 
 static func _create_empty_card(msg: String) -> PanelContainer:
 	var p = PanelContainer.new()
-	p.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 16.0))
+	p.custom_minimum_size = Vector2(0, 112)
+	p.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 20.0))
 
 	var lbl = Label.new()
 	lbl.text = msg
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_override("font", _font_hekayat)
 	lbl.add_theme_font_size_override("font_size", 26)
 	lbl.add_theme_color_override("font_color", Color(0.8, 0.75, 0.68))

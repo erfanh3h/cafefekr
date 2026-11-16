@@ -382,13 +382,6 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	av_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	av_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	av_frame.clip_contents = true
-	var f_style := StyleBoxFlat.new()
-	f_style.bg_color = Color(0.10, 0.07, 0.04, 0.94)
-	f_style.set_corner_radius_all(12)
-	f_style.set_border_width_all(2)
-	f_style.border_color = Color(1.0, 0.82, 0.35, 0.85)
-	av_frame.add_theme_stylebox_override("panel", f_style)
 
 	var avatar := TextureRect.new()
 	avatar.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -396,7 +389,14 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	av_frame.add_child(avatar)
 	if current_tab == "clans":
+		var f_style := StyleBoxFlat.new()
+		f_style.bg_color = Color(0.10, 0.07, 0.04, 0.94)
+		f_style.set_corner_radius_all(12)
+		f_style.set_border_width_all(2)
+		f_style.border_color = Color(1.0, 0.82, 0.35, 0.85)
+		av_frame.add_theme_stylebox_override("panel", f_style)
 		avatar.texture = CafeSocialTheme.get_clan_emblem_texture(img_id)
 	else:
 		var av_path: String = "res://assets/icons/Avatars/%d.png" % img_id
@@ -404,7 +404,6 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 			avatar.texture = load(av_path)
 		var u_fid = GameManager.get_player_frame_id(entry_dict)
 		CafeSocialTheme.apply_frame_to_container(av_frame, avatar, u_fid)
-	av_frame.add_child(avatar)
 	row.add_child(av_frame)
 
 	# 4. Rank Medal / Number Badge (Rightmost in RTL card)
