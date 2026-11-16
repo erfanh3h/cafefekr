@@ -201,24 +201,11 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 
 static func _create_mode_card(title_text: String, val1: int, val2: int, val3: int, label1: String, label2: String, label3: String) -> PanelContainer:
 	var panel = PanelContainer.new()
-	var sb = StyleBoxFlat.new()
-	sb.bg_color = Color(0.14, 0.09, 0.05, 0.94)
-	sb.border_width_left = 2
-	sb.border_width_top = 2
-	sb.border_width_right = 2
-	sb.border_width_bottom = 2
-	sb.border_color = Color(0.70, 0.52, 0.22, 0.85)
-	sb.set_corner_radius_all(16)
-	sb.content_margin_left = 18.0
-	sb.content_margin_top = 14.0
-	sb.content_margin_right = 18.0
-	sb.content_margin_bottom = 14.0
-	sb.shadow_color = Color(0, 0, 0, 0.35)
-	sb.shadow_size = 4
-	panel.add_theme_stylebox_override("panel", sb)
+	panel.custom_minimum_size = Vector2(0, 190)
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 32.0, 16.0))
 
 	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
+	vbox.add_theme_constant_override("separation", 10)
 	panel.add_child(vbox)
 
 	# Header row
@@ -230,7 +217,7 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 		var lbl_total = Label.new()
 		lbl_total.text = "%s بازی" % GameManager.to_fa_num(total_matches)
 		lbl_total.add_theme_font_override("font", _font_hekayat)
-		lbl_total.add_theme_font_size_override("font_size", 26)
+		lbl_total.add_theme_font_size_override("font_size", 30)
 		lbl_total.add_theme_color_override("font_color", Color(0.85, 0.78, 0.65))
 		header_row.add_child(lbl_total)
 
@@ -239,28 +226,28 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_title.add_theme_font_override("font", _font_hekayat)
-	lbl_title.add_theme_font_size_override("font_size", 30)
+	lbl_title.add_theme_font_size_override("font_size", 36)
 	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.94, 0.82))
 	header_row.add_child(lbl_title)
 
 	# Stats pill row
 	var stats_row = HBoxContainer.new()
-	stats_row.add_theme_constant_override("separation", 12)
+	stats_row.add_theme_constant_override("separation", 14)
 	stats_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(stats_row)
 
 	# Win / Rank 1 (Green)
-	var pill1 = _create_stat_pill("%s: %s" % [label1, GameManager.to_fa_num(val1)], Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.95))
+	var pill1 = _create_stat_pill("%s: %s" % [label1, GameManager.to_fa_num(val1)], Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.95), 30)
 	pill1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stats_row.add_child(pill1)
 
 	# Draw / Rank 2 (Yellow)
-	var pill2 = _create_stat_pill("%s: %s" % [label2, GameManager.to_fa_num(val2)], Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.95))
+	var pill2 = _create_stat_pill("%s: %s" % [label2, GameManager.to_fa_num(val2)], Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.95), 30)
 	pill2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stats_row.add_child(pill2)
 
 	# Lose / Rank 3+ (Red)
-	var pill3 = _create_stat_pill("%s: %s" % [label3, GameManager.to_fa_num(val3)], Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.95))
+	var pill3 = _create_stat_pill("%s: %s" % [label3, GameManager.to_fa_num(val3)], Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.95), 30)
 	pill3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stats_row.add_child(pill3)
 
@@ -268,32 +255,17 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 
 static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) -> PanelContainer:
 	var panel = PanelContainer.new()
-	var sb = StyleBoxFlat.new()
-	if is_dimmed:
-		sb.bg_color = Color(0.10, 0.07, 0.04, 0.85)
-		sb.border_color = Color(0.35, 0.26, 0.16, 0.5)
-	else:
-		sb.bg_color = Color(0.16, 0.10, 0.06, 0.95)
-		sb.border_color = Color(0.55, 0.40, 0.20, 0.8)
-	sb.border_width_left = 2
-	sb.border_width_top = 2
-	sb.border_width_right = 2
-	sb.border_width_bottom = 2
-	sb.set_corner_radius_all(16)
-	sb.content_margin_left = 14.0
-	sb.content_margin_top = 10.0
-	sb.content_margin_right = 14.0
-	sb.content_margin_bottom = 10.0
-	panel.add_theme_stylebox_override("panel", sb)
+	panel.custom_minimum_size = Vector2(0, 190)
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 32.0, 16.0))
 
 	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 16)
+	hbox.add_theme_constant_override("separation", 20)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_child(hbox)
 
-	# Left: Game Icon Plaque
+	# Left: Game Icon Plaque (Doubled Size 140x140)
 	var icon_plaque = PanelContainer.new()
-	icon_plaque.custom_minimum_size = Vector2(76, 76)
+	icon_plaque.custom_minimum_size = Vector2(144, 144)
 	var sb_icon = StyleBoxFlat.new()
 	sb_icon.bg_color = Color(0.08, 0.05, 0.03, 1.0)
 	sb_icon.border_width_left = 2
@@ -301,11 +273,11 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	sb_icon.border_width_right = 2
 	sb_icon.border_width_bottom = 2
 	sb_icon.border_color = Color(0.85, 0.70, 0.35, 0.8)
-	sb_icon.set_corner_radius_all(14)
+	sb_icon.set_corner_radius_all(18)
 	icon_plaque.add_theme_stylebox_override("panel", sb_icon)
 
 	var icon_rect = TextureRect.new()
-	icon_rect.custom_minimum_size = Vector2(68, 68)
+	icon_rect.custom_minimum_size = Vector2(136, 136)
 	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -320,7 +292,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	# Center / Right Column: Info & Stats
 	var col = VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.add_theme_constant_override("separation", 6)
+	col.add_theme_constant_override("separation", 10)
 	hbox.add_child(col)
 
 	# Row 1: Game Persian Name + Total matches badge
@@ -336,7 +308,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 		lbl_matches.text = "بدون مسابقه"
 		lbl_matches.add_theme_color_override("font_color", Color(0.60, 0.55, 0.50))
 	lbl_matches.add_theme_font_override("font", _font_hekayat)
-	lbl_matches.add_theme_font_size_override("font_size", 24)
+	lbl_matches.add_theme_font_size_override("font_size", 30)
 	row1.add_child(lbl_matches)
 
 	var lbl_name = Label.new()
@@ -344,13 +316,13 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_name.add_theme_font_override("font", _font_hekayat)
-	lbl_name.add_theme_font_size_override("font_size", 32)
+	lbl_name.add_theme_font_size_override("font_size", 44)
 	lbl_name.add_theme_color_override("font_color", Color.WHITE if not is_dimmed else Color(0.75, 0.70, 0.65))
 	row1.add_child(lbl_name)
 
-	# Row 2: Stat Pills
+	# Row 2: Stat Pills (Doubled Font Size & Height)
 	var row2 = HBoxContainer.new()
-	row2.add_theme_constant_override("separation", 8)
+	row2.add_theme_constant_override("separation", 10)
 	col.add_child(row2)
 
 	var is_multi = bool(info.get("multi", false))
@@ -358,20 +330,19 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 		var r1_cnt = int(info["rank1"])
 		var r2_cnt = int(info["rank2"])
 		var rn_cnt = int(info["rankn"])
-		# If user played classic rank or 2-player on multi game, check win/draw/lose
 		var w_cnt = int(info["win"])
 		var d_cnt = int(info["draw"])
 		var l_cnt = int(info["lose"])
 
-		var p1 = _create_stat_pill("اول: %s" % GameManager.to_fa_num(max(r1_cnt, w_cnt)), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 22)
+		var p1 = _create_stat_pill("اول: %s" % GameManager.to_fa_num(max(r1_cnt, w_cnt)), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 28)
 		p1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p1)
 
-		var p2 = _create_stat_pill("دوم: %s" % GameManager.to_fa_num(max(r2_cnt, d_cnt)), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 22)
+		var p2 = _create_stat_pill("دوم: %s" % GameManager.to_fa_num(max(r2_cnt, d_cnt)), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 28)
 		p2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p2)
 
-		var p3 = _create_stat_pill("سایر: %s" % GameManager.to_fa_num(max(rn_cnt, l_cnt)), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 22)
+		var p3 = _create_stat_pill("سایر: %s" % GameManager.to_fa_num(max(rn_cnt, l_cnt)), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 28)
 		p3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p3)
 	else:
@@ -379,15 +350,15 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 		var d_cnt = int(info["draw"])
 		var l_cnt = int(info["lose"])
 
-		var p1 = _create_stat_pill("برد: %s" % GameManager.to_fa_num(w_cnt), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 22)
+		var p1 = _create_stat_pill("برد: %s" % GameManager.to_fa_num(w_cnt), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 28)
 		p1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p1)
 
-		var p2 = _create_stat_pill("مساوی: %s" % GameManager.to_fa_num(d_cnt), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 22)
+		var p2 = _create_stat_pill("مساوی: %s" % GameManager.to_fa_num(d_cnt), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 28)
 		p2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p2)
 
-		var p3 = _create_stat_pill("باخت: %s" % GameManager.to_fa_num(l_cnt), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 22)
+		var p3 = _create_stat_pill("باخت: %s" % GameManager.to_fa_num(l_cnt), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 28)
 		p3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p3)
 

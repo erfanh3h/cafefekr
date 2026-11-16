@@ -176,7 +176,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(460, 180)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 16))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 24.0, 16.0))
 
 	var click_btn := Button.new()
 	click_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -270,10 +270,15 @@ func open_game_details(game_id: String) -> void:
 	var name_fa = str(reg.get("name_fa", game_id))
 	var icon_path = str(reg.get("icon", ""))
 
+	detail_title.text_direction = Control.TEXT_DIRECTION_RTL
+	detail_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	detail_title.text = name_fa
+
 	var p_str = "%s نفره" % GameManager.to_fa_num(reg.get("min_players", 2))
 	if reg.get("min_players", 2) != reg.get("max_players", 2):
 		p_str = "%s الی %s نفره" % [GameManager.to_fa_num(reg.get("min_players")), GameManager.to_fa_num(reg.get("max_players"))]
+	detail_meta.text_direction = Control.TEXT_DIRECTION_RTL
+	detail_meta.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	detail_meta.text = "%s • زمان هر نوبت: %s ثانیه" % [p_str, GameManager.to_fa_num(int(reg.get("turn_time", 30)))]
 
 	if ResourceLoader.exists(icon_path):
@@ -302,7 +307,15 @@ func _switch_doc_tab(t_name: String) -> void:
 			content = str(doc_entry.get("gameplay", doc_entry.get("guide", "راهنما و ترفندهای پیروزی: حرکت‌های هوشمندانه و دقت در انتخاب مهره‌ها باعث پیروزی شما خواهد شد.")))
 
 	detail_body.text_direction = Control.TEXT_DIRECTION_RTL
-	detail_body.text = "[right]%s[/right]" % content
+	var lines = content.split("\n")
+	var formatted_lines: Array = []
+	for l in lines:
+		var trimmed = l.strip_edges()
+		if trimmed.is_empty():
+			formatted_lines.append("")
+		else:
+			formatted_lines.append("[right]%s[/right]" % trimmed)
+	detail_body.text = "\n".join(formatted_lines)
 
 
 func _style_doc_subtab(btn: Button, is_act: bool) -> void:

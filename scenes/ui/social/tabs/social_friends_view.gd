@@ -8,7 +8,7 @@ extends RefCounted
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Sub-navigation bar (3 antique subtabs)
 	var sub_bar := PanelContainer.new()
-	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 8.0, 8.0))
+	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 28.0, 6.0))
 	body_vbox.add_child(sub_bar)
 
 	var sub_row := HBoxContainer.new()
@@ -153,7 +153,7 @@ static func _populate_requests(host: Control, list_vbox: VBoxContainer) -> void:
 static func _populate_search_and_discover(host: Control, list_vbox: VBoxContainer) -> void:
 	# Search box inside framed plaque
 	var search_card := PanelContainer.new()
-	search_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	search_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 24.0, 14.0))
 	list_vbox.add_child(search_card)
 
 	var sc_vbox := VBoxContainer.new()

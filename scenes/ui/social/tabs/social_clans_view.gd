@@ -11,7 +11,7 @@ extends RefCounted
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Clean 4-item sub-navigation bar
 	var sub_bar := PanelContainer.new()
-	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 8.0, 8.0))
+	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 28.0, 6.0))
 	body_vbox.add_child(sub_bar)
 
 	var sub_row := HBoxContainer.new()

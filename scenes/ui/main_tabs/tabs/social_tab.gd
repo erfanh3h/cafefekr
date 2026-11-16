@@ -111,11 +111,15 @@ func _build_ui_shell() -> void:
 	lbl_status_toast = CafeSocialTheme.make_body("", 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
 	_toast_panel.add_child(lbl_status_toast)
 
-	# 3. 4-Hub Navigation Bar
+	# 3. 3-Hub Navigation Bar inside frame_small
+	var nav_frame := PanelContainer.new()
+	nav_frame.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 28.0, 6.0))
+	root_vbox.add_child(nav_frame)
+
 	_nav_hbox = HBoxContainer.new()
 	_nav_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	_nav_hbox.add_theme_constant_override("separation", 8)
-	root_vbox.add_child(_nav_hbox)
+	nav_frame.add_child(_nav_hbox)
 
 	# 4. Content Area
 	content_area = MarginContainer.new()

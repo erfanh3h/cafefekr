@@ -15,7 +15,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 
 static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer) -> void:
 	var header_card := PanelContainer.new()
-	header_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	header_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 24.0, 10.0))
 	body_vbox.add_child(header_card)
 
 	var hrow := HBoxContainer.new()

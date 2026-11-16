@@ -8,7 +8,7 @@ extends RefCounted
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Top header bar with Mark All Read
 	var header_bar := PanelContainer.new()
-	header_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style())
+	header_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 24.0, 10.0))
 	body_vbox.add_child(header_bar)
 
 	var hrow := HBoxContainer.new()
@@ -24,8 +24,12 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 				NetworkManager.unread_notifications_count = 0
 				if host.has_method("_update_main_tab_buttons"):
 					host._update_main_tab_buttons()
-				host._show_toast("تمام اعلان‌ها به عنوان خوانده‌شده علامت‌گذاری شدند.")
-				host._refresh_current_tab()
+				if host.has_method("_show_toast"):
+					host._show_toast("تمام اعلان‌ها به عنوان خوانده‌شده علامت‌گذاری شدند.")
+				elif host.has_method("show_toast"):
+					host.show_toast("تمام اعلان‌ها به عنوان خوانده‌شده علامت‌گذاری شدند.")
+				if host.has_method("_refresh_current_tab"):
+					host._refresh_current_tab()
 			else:
 				if is_instance_valid(btn_read_all):
 					btn_read_all.disabled = false
@@ -182,7 +186,8 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 				if ok:
 					NetworkManager.api.mark_notification_read(nid, func(_o, _c2, _d2): pass)
 					host._show_toast("درخواست دوستی پذیرفته شد!")
-					host._refresh_current_tab()
+					if host.has_method("_refresh_current_tab"):
+						host._refresh_current_tab()
 			)
 		)
 		act_row.add_child(b_acc)
@@ -192,7 +197,8 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 			AudioManager.sfx_tap()
 			NetworkManager.api.respond_friend_request(rid, "reject", func(_ok: bool, _c: int, _d: Variant):
 				NetworkManager.api.mark_notification_read(nid, func(_o, _c2, _d2): pass)
-				host._refresh_current_tab()
+				if host.has_method("_refresh_current_tab"):
+					host._refresh_current_tab()
 			)
 		)
 		act_row.add_child(b_rej)
@@ -245,7 +251,8 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 			AudioManager.sfx_tap()
 			b_mark.disabled = true
 			NetworkManager.api.mark_notification_read(nid, func(_ok: bool, _c2: int, _d2: Variant):
-				host._refresh_current_tab()
+				if host.has_method("_refresh_current_tab"):
+					host._refresh_current_tab()
 			)
 		)
 		act_row.add_child(b_mark)

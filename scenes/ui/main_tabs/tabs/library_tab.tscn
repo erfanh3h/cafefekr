@@ -1,36 +1,38 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/library_tab.gd" id="1_lib_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font_vazir"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/frame_small.png" id="4_frame_small_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/frame_tall.png" id="5_frame_tall_tex"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_board_shell"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_search_box"]
-bg_color = Color(0.06, 0.04, 0.02, 0.92)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.75, 0.58, 0.26, 0.82)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
-content_margin_left = 16.0
-content_margin_right = 16.0
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_search_box"]
+texture = ExtResource("4_frame_small_tex")
+texture_margin_left = 50.0
+texture_margin_top = 18.0
+texture_margin_right = 50.0
+texture_margin_bottom = 18.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+content_margin_left = 32.0
+content_margin_top = 6.0
+content_margin_right = 32.0
+content_margin_bottom = 6.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_header"]
-bg_color = Color(0.08, 0.05, 0.03, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.85, 0.68, 0.28, 0.88)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_card_header"]
+texture = ExtResource("5_frame_tall_tex")
+texture_margin_left = 50.0
+texture_margin_top = 26.0
+texture_margin_right = 50.0
+texture_margin_bottom = 26.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+content_margin_left = 32.0
+content_margin_top = 12.0
+content_margin_right = 32.0
+content_margin_bottom = 12.0
 
 [node name="LibraryTab" type="Control"]
 layout_mode = 3
@@ -96,7 +98,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("3_font_vazir")
 theme_override_font_sizes/font_size = 26
-theme_override_styles/normal = SubResource("StyleBoxFlat_search_box")
+theme_override_styles/normal = SubResource("StyleBoxTexture_search_box")
 placeholder_text = "جستجوی نام بازی..."
 alignment = 2
 
@@ -131,7 +133,7 @@ theme_override_constants/separation = 12
 [node name="HeaderCard" type="PanelContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView"]
 custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card_header")
+theme_override_styles/panel = SubResource("StyleBoxTexture_card_header")
 
 [node name="Margin" type="MarginContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard"]
 layout_mode = 2

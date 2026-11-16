@@ -1,25 +1,23 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/history_tab.gd" id="1_history_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/frame_small.png" id="3_frame_small_tex"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_board_shell"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_subnav_well"]
-bg_color = Color(0.08, 0.05, 0.03, 0.88)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.72, 0.55, 0.25, 0.5)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_subnav_well"]
+texture = ExtResource("3_frame_small_tex")
+texture_margin_left = 50.0
+texture_margin_top = 18.0
+texture_margin_right = 50.0
+texture_margin_bottom = 18.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+content_margin_left = 32.0
+content_margin_top = 6.0
+content_margin_right = 32.0
+content_margin_bottom = 6.0
 
 [node name="HistoryTab" type="Control"]
 layout_mode = 3
@@ -73,7 +71,7 @@ horizontal_alignment = 2
 
 [node name="SubnavBar" type="PanelContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_subnav_well")
+theme_override_styles/panel = SubResource("StyleBoxTexture_subnav_well")
 
 [node name="HBox" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar"]
 layout_mode = 2

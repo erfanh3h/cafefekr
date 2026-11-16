@@ -26,6 +26,8 @@ const TEX_ADD = preload("res://assets/images/frames/add.png")
 const TEX_CHECK = preload("res://assets/images/frames/check.png")
 const TEX_RIGHT = preload("res://assets/images/frames/right.png")
 const TEX_REPLY = preload("res://assets/images/frames/reply.png")
+const TEX_FRAME_SMALL = preload("res://assets/images/frames/frame_small.png")
+const TEX_FRAME_TALL = preload("res://assets/images/frames/frame_tall.png")
 
 # Authentic Cafe Fekr Icons & Badges
 const ICO_REFRESH = preload("res://assets/icons/General/refresh.png")
@@ -167,6 +169,29 @@ static func create_header_banner_style() -> StyleBoxTexture:
 	sb.content_margin_top = 14.0
 	sb.content_margin_bottom = 14.0
 	_frame_banner_cache = sb
+	return sb
+
+
+static func create_frame_style(is_tall: bool = false, pad_x: float = 32.0, pad_y: float = 14.0) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	if is_tall:
+		sb.texture = TEX_FRAME_TALL
+		sb.texture_margin_left = 50.0
+		sb.texture_margin_right = 50.0
+		sb.texture_margin_top = 26.0
+		sb.texture_margin_bottom = 26.0
+	else:
+		sb.texture = TEX_FRAME_SMALL
+		sb.texture_margin_left = 50.0
+		sb.texture_margin_right = 50.0
+		sb.texture_margin_top = 18.0
+		sb.texture_margin_bottom = 18.0
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.content_margin_left = pad_x
+	sb.content_margin_right = pad_x
+	sb.content_margin_top = pad_y
+	sb.content_margin_bottom = pad_y
 	return sb
 
 

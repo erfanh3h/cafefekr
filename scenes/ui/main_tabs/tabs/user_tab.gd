@@ -126,6 +126,14 @@ func _update_main_tab_buttons() -> void:
 	pass
 
 
+func _show_toast(msg: String, col: Color = CafeSocialTheme.COL_EMERALD_TEXT) -> void:
+	show_toast(msg, col)
+
+
+func _refresh_current_tab() -> void:
+	refresh_all()
+
+
 func refresh_all() -> void:
 	if is_instance_valid(user_header) and user_header.has_method("update_ui"):
 		user_header.update_ui()
@@ -204,7 +212,7 @@ func _render_recent_matches(holder: VBoxContainer) -> void:
 
 	var my_uid = str(GameManager.user_data.get("_id", GameManager.user_data.get("id", "")))
 
-	NetworkManager.api.get_my_history(func(ok: bool, _c: int, data: Variant):
+	NetworkManager.api.get_my_game_history(func(ok: bool, _c: int, data: Variant):
 		if not is_instance_valid(holder):
 			return
 		for c in holder.get_children():
@@ -212,23 +220,11 @@ func _render_recent_matches(holder: VBoxContainer) -> void:
 
 		var matches_list: Array = []
 		if ok and typeof(data) == TYPE_DICTIONARY:
-			var res = data.get("result", {})
-			if typeof(res) == TYPE_DICTIONARY and res.has("games_history") and typeof(res["games_history"]) == TYPE_ARRAY:
-				matches_list = res["games_history"]
-			elif typeof(res) == TYPE_ARRAY:
+			var res = data.get("result", [])
+			if typeof(res) == TYPE_ARRAY:
 				matches_list = res
-
-		if matches_list.is_empty():
-			# Fallback to direct user histories endpoint if empty
-			NetworkManager.api._http_get("/user-game-histories", PackedStringArray(), func(s2: bool, _c2: int, d2: Variant):
-				if not is_instance_valid(holder): return
-				for c in holder.get_children(): c.queue_free()
-				var m_list: Array = []
-				if s2 and typeof(d2) == TYPE_DICTIONARY and typeof(d2.get("result")) == TYPE_ARRAY:
-					m_list = d2["result"]
-				_populate_matches_cards(holder, m_list, my_uid)
-			)
-			return
+			elif typeof(res) == TYPE_DICTIONARY and res.has("games_history") and typeof(res["games_history"]) == TYPE_ARRAY:
+				matches_list = res["games_history"]
 
 		_populate_matches_cards(holder, matches_list, my_uid)
 	)
@@ -269,53 +265,11 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		else:
 			my_res = "unfinished"
 
-	var style_normal := StyleBoxFlat.new()
-	style_normal.bg_color = Color(0.12, 0.08, 0.05, 0.94)
-	style_normal.set_border_width_all(2)
-	style_normal.set_corner_radius_all(14)
-	style_normal.content_margin_left = 24
-	style_normal.content_margin_right = 24
-	style_normal.content_margin_top = 14
-	style_normal.content_margin_bottom = 14
-	style_normal.shadow_size = 14
-	style_normal.shadow_offset = Vector2(0, 3)
-
-	var style_hover := StyleBoxFlat.new()
-	style_hover.bg_color = Color(0.16, 0.11, 0.07, 0.98)
-	style_hover.set_border_width_all(2)
-	style_hover.set_corner_radius_all(14)
-	style_hover.content_margin_left = 24
-	style_hover.content_margin_right = 24
-	style_hover.content_margin_top = 14
-	style_hover.content_margin_bottom = 14
-	style_hover.shadow_size = 18
-	style_hover.shadow_offset = Vector2(0, 4)
-
-	if my_res == "win":
-		style_normal.shadow_color = Color(0.18, 0.85, 0.28, 0.80)
-		style_normal.border_color = Color(0.30, 0.85, 0.45, 0.85)
-		style_hover.shadow_color = Color(0.25, 0.95, 0.35, 0.95)
-		style_hover.border_color = Color(0.40, 0.95, 0.55, 1.0)
-	elif my_res == "lose":
-		style_normal.shadow_color = Color(0.90, 0.18, 0.18, 0.80)
-		style_normal.border_color = Color(0.90, 0.30, 0.30, 0.85)
-		style_hover.shadow_color = Color(1.0, 0.25, 0.25, 0.95)
-		style_hover.border_color = Color(1.0, 0.40, 0.40, 1.0)
-	elif my_res == "draw":
-		style_normal.shadow_color = Color(0.95, 0.85, 0.18, 0.80)
-		style_normal.border_color = Color(0.95, 0.85, 0.30, 0.85)
-		style_hover.shadow_color = Color(1.0, 0.92, 0.25, 0.95)
-		style_hover.border_color = Color(1.0, 0.92, 0.40, 1.0)
-	else:
-		style_normal.shadow_color = Color(0.45, 0.40, 0.35, 0.40)
-		style_normal.border_color = Color(0.60, 0.50, 0.38, 0.60)
-		style_hover.shadow_color = Color(0.55, 0.50, 0.45, 0.60)
-		style_hover.border_color = Color(0.80, 0.70, 0.55, 0.85)
-
-	btn.add_theme_stylebox_override("normal", style_normal)
-	btn.add_theme_stylebox_override("hover", style_hover)
-	btn.add_theme_stylebox_override("pressed", style_normal)
-	btn.add_theme_stylebox_override("focus", style_normal)
+	var style_frame := CafeSocialTheme.create_frame_style(true, 24.0, 14.0)
+	btn.add_theme_stylebox_override("normal", style_frame)
+	btn.add_theme_stylebox_override("hover", style_frame)
+	btn.add_theme_stylebox_override("pressed", style_frame)
+	btn.add_theme_stylebox_override("focus", style_frame)
 
 	var row := HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -748,7 +702,7 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 		var card := PanelContainer.new()
 		card.custom_minimum_size = Vector2(0, 190)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 16))
+		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 16.0))
 
 		var cm := MarginContainer.new()
 		cm.add_theme_constant_override("margin_left", 16)
@@ -811,11 +765,11 @@ func _render_cosmetics() -> void:
 	center_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content_cosmetics.add_child(center_wrap)
 
-	# 4 avatars per row, larger avatar icons and generous spacing
+	# 5 avatars per row, larger avatar icons and generous spacing
 	var grid := GridContainer.new()
-	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", 28)
-	grid.add_theme_constant_override("v_separation", 28)
+	grid.columns = 5
+	grid.add_theme_constant_override("h_separation", 20)
+	grid.add_theme_constant_override("v_separation", 24)
 	center_wrap.add_child(grid)
 
 	var avatar_buttons: Array[TextureButton] = []
@@ -826,7 +780,7 @@ func _render_cosmetics() -> void:
 			continue
 
 		var p_btn := TextureButton.new()
-		p_btn.custom_minimum_size = Vector2(170, 170)
+		p_btn.custom_minimum_size = Vector2(160, 160)
 		p_btn.ignore_texture_size = true
 		p_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		p_btn.texture_normal = load(path)
@@ -888,7 +842,7 @@ func _render_privacy() -> void:
 	var audio_card := PanelContainer.new()
 	audio_card.custom_minimum_size = Vector2(0, 220)
 	audio_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 16))
+	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 24.0, 16.0))
 	content_privacy.add_child(audio_card)
 
 	var am := MarginContainer.new()
@@ -1041,7 +995,7 @@ func _render_privacy() -> void:
 		var panel := PanelContainer.new()
 		panel.custom_minimum_size = Vector2(0, 110)
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 14))
+		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 22.0, 14.0))
 
 		var m := MarginContainer.new()
 		m.add_theme_constant_override("margin_left", 20)
@@ -1055,7 +1009,7 @@ func _render_privacy() -> void:
 		m.add_child(h)
 
 		var toggle := CheckButton.new()
-		toggle.custom_minimum_size = Vector2(80, 56)
+		toggle.custom_minimum_size = Vector2(90, 60)
 		toggle.focus_mode = Control.FOCUS_NONE
 		toggle.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		toggle.button_pressed = current_val
@@ -1070,7 +1024,7 @@ func _render_privacy() -> void:
 
 		var lbl_title := Label.new()
 		lbl_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-		lbl_title.add_theme_font_size_override("font_size", 28)
+		lbl_title.add_theme_font_size_override("font_size", 30)
 		lbl_title.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 		lbl_title.text = item["label"]
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1078,7 +1032,7 @@ func _render_privacy() -> void:
 
 		var lbl_desc := Label.new()
 		lbl_desc.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		lbl_desc.add_theme_font_size_override("font_size", 20)
+		lbl_desc.add_theme_font_size_override("font_size", 22)
 		lbl_desc.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 		lbl_desc.text = item["desc"]
 		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1108,95 +1062,6 @@ func _render_privacy() -> void:
 		)
 	)
 	content_privacy.add_child(btn_save_priv)
-
-	# --- 3. Account Actions (Username, Phone, Logout) ---
-	var acc_sep := Control.new()
-	acc_sep.custom_minimum_size = Vector2(0, 10)
-	content_privacy.add_child(acc_sep)
-
-	# Change Username
-	var un_card := PanelContainer.new()
-	un_card.custom_minimum_size = Vector2(0, 100)
-	un_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	un_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 14))
-	content_privacy.add_child(un_card)
-
-	var um := MarginContainer.new()
-	um.add_theme_constant_override("margin_left", 20)
-	um.add_theme_constant_override("margin_right", 20)
-	un_card.add_child(um)
-
-	var uh := HBoxContainer.new()
-	uh.add_theme_constant_override("separation", 16)
-	um.add_child(uh)
-
-	var btn_edit_un := CafeSocialTheme.make_button("تغییر نام", "wood", Vector2(140, 52), 20)
-	btn_edit_un.pressed.connect(func():
-		AudioManager.sfx_tap()
-		change_username_requested.emit()
-	)
-	uh.add_child(btn_edit_un)
-
-	var uc := VBoxContainer.new()
-	uc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	uc.alignment = BoxContainer.ALIGNMENT_CENTER
-	uh.add_child(uc)
-
-	var ul1 := Label.new()
-	ul1.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	ul1.add_theme_font_size_override("font_size", 26)
-	ul1.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
-	ul1.text = "نام کاربری فعلی: " + GameManager.get_username()
-	ul1.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	uc.add_child(ul1)
-
-	# Phone Registration
-	var ph_card := PanelContainer.new()
-	ph_card.custom_minimum_size = Vector2(0, 100)
-	ph_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ph_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 14))
-	content_privacy.add_child(ph_card)
-
-	var pm := MarginContainer.new()
-	pm.add_theme_constant_override("margin_left", 20)
-	pm.add_theme_constant_override("margin_right", 20)
-	ph_card.add_child(pm)
-
-	var ph := HBoxContainer.new()
-	ph.add_theme_constant_override("separation", 16)
-	pm.add_child(ph)
-
-	var btn_ph := CafeSocialTheme.make_button("ثبت شماره", "emerald", Vector2(140, 52), 20)
-	btn_ph.pressed.connect(func():
-		AudioManager.sfx_tap()
-		phone_upgrade_requested.emit()
-	)
-	ph.add_child(btn_ph)
-
-	var pc := VBoxContainer.new()
-	pc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pc.alignment = BoxContainer.ALIGNMENT_CENTER
-	ph.add_child(pc)
-
-	var pl1 := Label.new()
-	pl1.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	pl1.add_theme_font_size_override("font_size", 26)
-	pl1.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
-	pl1.text = "ارتقا به حساب کاربری با شماره موبایل"
-	pl1.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	pc.add_child(pl1)
-
-	# Logout Button
-	var btn_logout := CafeSocialTheme.make_button("خروج ایمن از حساب کاربری", "crimson", Vector2(320, 58), 24)
-	btn_logout.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	btn_logout.pressed.connect(func():
-		AudioManager.sfx_button()
-		GameManager.logout()
-		NetworkManager.disconnect_from_server()
-		logout_confirmed.emit()
-		show_toast("با موفقیت از حساب کاربری خارج شدید.", CafeSocialTheme.COL_GOLD_BRIGHT)
-	)
-	content_privacy.add_child(btn_logout)
 
 
 # ==============================================================================

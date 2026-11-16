@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/components/bottom_navigation.gd" id="1_bot_script"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/social.png" id="2_social_tex"]
@@ -7,18 +7,16 @@
 [ext_resource type="Texture2D" path="res://assets/images/badges/info.png" id="5_library_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/level.png" id="6_user_tex"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="7_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/frame_tall.png" id="8_frame_tall_tex"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_bg"]
-bg_color = Color(0.09, 0.05, 0.03, 0.97)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 0
-border_color = Color(0.85, 0.68, 0.32, 0.96)
-corner_radius_top_left = 28
-corner_radius_top_right = 28
-shadow_color = Color(0, 0, 0, 0.65)
-shadow_size = 14
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_bar_bg"]
+texture = ExtResource("8_frame_tall_tex")
+texture_margin_left = 50.0
+texture_margin_top = 26.0
+texture_margin_right = 50.0
+texture_margin_bottom = 26.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tab_btn"]
 
@@ -75,7 +73,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_bar_bg")
+theme_override_styles/panel = SubResource("StyleBoxTexture_bar_bg")
 
 [node name="Margin" type="MarginContainer" parent="PanelFrame"]
 layout_mode = 2
