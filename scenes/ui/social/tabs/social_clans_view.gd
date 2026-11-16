@@ -411,7 +411,7 @@ static func _build_my_clan_overview(host: Control, holder: VBoxContainer) -> voi
 			rrow.add_child(rcol)
 			rcol.add_child(CafeSocialTheme.make_title(str(ru.get("username", "بازیکن")), 27, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT))
 			rcol.add_child(CafeSocialTheme.make_body("امتیاز: %s  %s" % [GameManager.to_fa_num(int(ru.get("score", 0))), str(req.get("message", ""))], 19, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
-			rrow.add_child(CafeSocialTheme.make_avatar_badge(int(ru.get("image", 0)), int(ru.get("profile_frame", 0)), 64.0))
+			rrow.add_child(CafeSocialTheme.make_avatar_badge(int(ru.get("image", 0)), int(ru.get("profile_frame", 0)), 66.0))
 
 
 static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> void:
@@ -549,9 +549,9 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 		var av_btn := Button.new()
 		av_btn.flat = true
 		av_btn.focus_mode = Control.FOCUS_NONE
-		av_btn.custom_minimum_size = Vector2(76, 76)
+		av_btn.custom_minimum_size = Vector2(78, 78)
 		av_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		var av_vis := CafeSocialTheme.make_avatar_badge(int(m_dict.get("image", 0)), int(m_dict.get("profile_frame", 0)), 74.0, raw_st, false)
+		var av_vis := CafeSocialTheme.make_avatar_badge(int(m_dict.get("image", 0)), int(m_dict.get("profile_frame", 0)), 76.0, raw_st, false)
 		av_vis.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		av_btn.add_child(av_vis)
 		av_btn.pressed.connect(func():
@@ -666,7 +666,7 @@ static func render_clan_chat(host: Control) -> void:
 			var av_col := VBoxContainer.new()
 			av_col.alignment = BoxContainer.ALIGNMENT_END
 			av_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
-			var av_badge := CafeSocialTheme.make_avatar_badge(sender_img, sender_frame, 74.0)
+			var av_badge := CafeSocialTheme.make_avatar_badge(sender_img, sender_frame, 76.0)
 			av_col.add_child(av_badge)
 
 			# Main column: Name + Role on TOP of the bubble frame, Speech Bubble below

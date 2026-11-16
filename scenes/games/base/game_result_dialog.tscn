@@ -306,7 +306,7 @@ text = "👑 برنده مسابقه"
 horizontal_alignment = 1
 
 [node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(98, 98)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
@@ -355,7 +355,7 @@ text = "حریف"
 horizontal_alignment = 1
 
 [node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(98, 98)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1

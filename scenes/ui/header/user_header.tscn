@@ -365,7 +365,7 @@ text = "📋 شناسه: -----"
 alignment = 1
 
 [node name="AvatarFrame" type="Control" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(146, 146)
+custom_minimum_size = Vector2(148, 148)
 layout_mode = 2
 size_flags_vertical = 4
 

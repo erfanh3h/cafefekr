@@ -266,7 +266,7 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="P1Avatar" type="TextureRect" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1"]
-custom_minimum_size = Vector2(68, 68)
+custom_minimum_size = Vector2(70, 70)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1
@@ -408,7 +408,7 @@ text = "بازیکن ۲ (حریف)"
 horizontal_alignment = 2
 
 [node name="P2Avatar" type="TextureRect" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2"]
-custom_minimum_size = Vector2(68, 68)
+custom_minimum_size = Vector2(70, 70)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1

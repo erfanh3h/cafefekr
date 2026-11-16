@@ -240,7 +240,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 14
 
 [node name="P1Avatar" type="TextureRect" parent="Margin/VBox/HeaderCard/Margin/HBox/P1Box"]
-custom_minimum_size = Vector2(100, 100)
+custom_minimum_size = Vector2(102, 102)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("3_default_avatar")
@@ -404,7 +404,7 @@ text = "مهمان (P2)"
 horizontal_alignment = 2
 
 [node name="P2Avatar" type="TextureRect" parent="Margin/VBox/HeaderCard/Margin/HBox/P2Box"]
-custom_minimum_size = Vector2(100, 100)
+custom_minimum_size = Vector2(102, 102)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("3_default_avatar")

@@ -422,7 +422,7 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	opp_col.mouse_filter = Control.MOUSE_FILTER_PASS
 	
 	var av_panel = PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(96, 96)
+	av_panel.custom_minimum_size = Vector2(98, 98)
 	av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -435,7 +435,7 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	av_panel.add_theme_stylebox_override("panel", av_style)
 	
 	var av_img = TextureRect.new()
-	av_img.custom_minimum_size = Vector2(90, 90)
+	av_img.custom_minimum_size = Vector2(92, 92)
 	av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -777,7 +777,7 @@ func _create_player_column(name_text: String, avatar_id: int, score_val: int, is
 	vbox.add_theme_constant_override("separation", 8)
 	
 	var av_frame = PanelContainer.new()
-	av_frame.custom_minimum_size = Vector2(116, 116)
+	av_frame.custom_minimum_size = Vector2(118, 118)
 	av_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var af_sb = StyleBoxFlat.new()
 	af_sb.bg_color = Color(0.08, 0.05, 0.03, 0.95)
@@ -787,7 +787,7 @@ func _create_player_column(name_text: String, avatar_id: int, score_val: int, is
 	av_frame.add_theme_stylebox_override("panel", af_sb)
 	
 	var img = TextureRect.new()
-	img.custom_minimum_size = Vector2(110, 110)
+	img.custom_minimum_size = Vector2(112, 112)
 	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	var av_path = "res://assets/icons/Avatars/%d.png" % avatar_id

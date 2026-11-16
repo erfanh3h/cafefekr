@@ -113,7 +113,7 @@ theme_override_constants/separation = 16
 alignment = 0
 
 [node name="AvatarBtn" type="TextureButton" parent="Frame/Margin/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(98, 98)
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0

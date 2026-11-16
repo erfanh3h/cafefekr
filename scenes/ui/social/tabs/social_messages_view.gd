@@ -175,7 +175,7 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	text_col.add_child(p_lbl)
 
 	# Rightmost: Avatar
-	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 78.0, str(pres.get("status", "offline")), true)
+	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 80.0, str(pres.get("status", "offline")), true)
 	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(av)
 
@@ -243,10 +243,10 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 
 	var av_btn := Button.new()
 	av_btn.flat = true
-	av_btn.custom_minimum_size = Vector2(72, 72)
+	av_btn.custom_minimum_size = Vector2(74, 74)
 	av_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	av_btn.focus_mode = Control.FOCUS_NONE
-	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 70.0, str(pres.get("status", "offline")), true)
+	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 72.0, str(pres.get("status", "offline")), true)
 	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	av_btn.add_child(av)
 	av_btn.pressed.connect(func():

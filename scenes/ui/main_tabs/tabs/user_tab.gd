@@ -324,13 +324,13 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	opp_col.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var av_panel := PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(92, 92)
+	av_panel.custom_minimum_size = Vector2(94, 94)
 	av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 	var av_img := TextureRect.new()
-	av_img.custom_minimum_size = Vector2(88, 88)
+	av_img.custom_minimum_size = Vector2(90, 90)
 	av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -867,7 +867,7 @@ func _render_frames() -> void:
 			continue
 
 		var f_btn := TextureButton.new()
-		f_btn.custom_minimum_size = Vector2(162, 162)
+		f_btn.custom_minimum_size = Vector2(164, 164)
 		f_btn.ignore_texture_size = true
 		f_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		f_btn.texture_normal = f_tex

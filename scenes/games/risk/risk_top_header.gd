@@ -70,6 +70,8 @@ func _build_extra_player_cards() -> void:
 		var av_rect = card_dup.get_node_or_null("HBox/AvatarContainer/Avatar") as TextureRect
 		var av_frame = card_dup.get_node_or_null("HBox/AvatarContainer/AvatarMedallionFrame") as Panel
 		var side_lbl = card_dup.get_node_or_null("HBox/AvatarContainer/PlayerSideTag") as Label
+		if is_instance_valid(side_lbl):
+			side_lbl.visible = false
 		var btn_prof = card_dup.get_node_or_null("HBox/AvatarContainer/BtnP2Profile") as Button
 		var name_lbl = card_dup.get_node_or_null("HBox/InfoBox/Name") as Label
 		var role_lbl = card_dup.get_node_or_null("HBox/InfoBox/RoleBadge") as Label
@@ -231,16 +233,7 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 			var p_parent = info["avatar"].get_parent()
 			CafeSocialTheme.apply_frame_to_container(p_parent if p_parent is Control else info["avatar"], info["avatar"], p_fid)
 		if is_instance_valid(info["side_tag"]):
-			var is_me = (my_idx == idx)
-			info["side_tag"].text = "شما" if is_me else "حریف"
-			var sb_side = StyleBoxFlat.new()
-			sb_side.bg_color = Color(0.18, 0.65, 0.30, 0.94) if is_me else Color(0.28, 0.18, 0.10, 0.90)
-			sb_side.border_color = Color(0.45, 0.95, 0.55, 0.9) if is_me else Color(0.75, 0.58, 0.32, 0.8)
-			sb_side.set_border_width_all(1)
-			sb_side.set_corner_radius_all(8)
-			sb_side.content_margin_left = 6
-			sb_side.content_margin_right = 6
-			info["side_tag"].add_theme_stylebox_override("normal", sb_side)
+			info["side_tag"].visible = false
 
 	update_risk_player_stats(_token_counts, _continent_counts, _strategy_counts)
 

@@ -1024,7 +1024,7 @@ func _update_players_list(queuers: Array) -> void:
 		
 		# Right side: Avatar
 		var av_frame = PanelContainer.new()
-		av_frame.custom_minimum_size = Vector2(80, 80)
+		av_frame.custom_minimum_size = Vector2(82, 82)
 		var av_style = StyleBoxFlat.new()
 		av_style.bg_color = Color(0.16, 0.1, 0.06, 0.95)
 		av_style.set_corner_radius_all(16)
@@ -1033,7 +1033,7 @@ func _update_players_list(queuers: Array) -> void:
 		av_frame.add_theme_stylebox_override("panel", av_style)
 		
 		var avatar = TextureRect.new()
-		avatar.custom_minimum_size = Vector2(72, 72)
+		avatar.custom_minimum_size = Vector2(74, 74)
 		avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		avatar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER

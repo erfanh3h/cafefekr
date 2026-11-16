@@ -73,7 +73,7 @@ func _build_ui() -> void:
 
 	# 1. Avatar Medallion
 	var av_panel = PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(56, 56)
+	av_panel.custom_minimum_size = Vector2(58, 58)
 	av_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_avatar_frame_style = StyleBoxFlat.new()
 	_avatar_frame_style.bg_color = Color(0.0, 0.0, 0.0, 0.0)

@@ -1475,7 +1475,7 @@ func _sync_multiplayer_intro_columns() -> void:
 				col_info["avatar"].texture = tex
 			var av_ctrl: TextureRect = col_info["avatar"]
 			if is_instance_valid(av_ctrl):
-				av_ctrl.custom_minimum_size = Vector2(104, 104)
+				av_ctrl.custom_minimum_size = Vector2(106, 106)
 				var av_p = av_ctrl.get_parent()
 				CafeSocialTheme.apply_frame_to_container(av_p if av_p is Control else av_ctrl, av_ctrl, p_fid)
 

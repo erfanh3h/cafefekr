@@ -571,29 +571,10 @@ func _enhance_player_card(player_idx: int) -> void:
 			av_container.add_child(av_frame)
 			av_container.move_child(av_frame, 0)
 
-			var side_lbl = Label.new()
-			side_lbl.name = "PlayerSideTag"
-			side_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-			side_lbl.offset_top = -24.0
-			side_lbl.offset_bottom = 2.0
-			side_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			side_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			side_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			if _font_hekayat:
-				side_lbl.add_theme_font_override("font", _font_hekayat)
-			side_lbl.add_theme_font_size_override("font_size", 20)
-			side_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.85))
-			side_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.04, 0.02, 0.95))
-			side_lbl.add_theme_constant_override("outline_size", 2)
+			var existing_side_tag = av_container.get_node_or_null("PlayerSideTag")
+			if is_instance_valid(existing_side_tag):
+				existing_side_tag.queue_free()
 
-			var sb_side = StyleBoxFlat.new()
-			sb_side.bg_color = Color(0.78, 0.18, 0.22, 0.94) if player_idx == 1 else Color(0.16, 0.45, 0.82, 0.94)
-			sb_side.border_color = Color(0.96, 0.80, 0.35, 0.90)
-			sb_side.set_border_width_all(1)
-			sb_side.set_corner_radius_all(8)
-			side_lbl.add_theme_stylebox_override("normal", sb_side)
-			side_lbl.text = "شما" if player_idx == 1 else "حریف"
-			av_container.add_child(side_lbl)
 			var btn_prof = btn_p1_profile if player_idx == 1 else btn_p2_profile
 			if is_instance_valid(btn_prof):
 				btn_prof.focus_mode = Control.FOCUS_NONE
@@ -601,10 +582,10 @@ func _enhance_player_card(player_idx: int) -> void:
 
 			if player_idx == 1:
 				_p1_avatar_frame = av_frame
-				_p1_side_tag = side_lbl
+				_p1_side_tag = null
 			else:
 				_p2_avatar_frame = av_frame
-				_p2_side_tag = side_lbl
+				_p2_side_tag = null
 
 	# B. Crisp Game Typography & Role Pill Styling
 	if is_instance_valid(name_lbl):
@@ -761,9 +742,9 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 		p2_role_badge.text = _get_role_badge_text(2)
 
 	if is_instance_valid(_p1_side_tag):
-		_p1_side_tag.text = "شما" if my_idx == 1 else "حریف"
+		_p1_side_tag.visible = false
 	if is_instance_valid(_p2_side_tag):
-		_p2_side_tag.text = "شما" if my_idx == 2 else "حریف"
+		_p2_side_tag.visible = false
 
 func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 	_current_turn = turn

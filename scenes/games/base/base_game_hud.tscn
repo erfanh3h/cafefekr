@@ -781,7 +781,7 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="Avatar" type="TextureRect" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1"]
-custom_minimum_size = Vector2(120, 120)
+custom_minimum_size = Vector2(122, 122)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
@@ -817,7 +817,7 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="Avatar" type="TextureRect" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2"]
-custom_minimum_size = Vector2(120, 120)
+custom_minimum_size = Vector2(122, 122)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1

@@ -560,7 +560,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 
 			var av_id: int = int(pd.get("avatar", pd.get("image", 0)))
 			var fr_id: int = int(pd.get("profile_frame", 0))
-			p_chip.add_child(CafeSocialTheme.make_avatar_badge(av_id, maxi(1, fr_id), 52.0, "", false))
+			p_chip.add_child(CafeSocialTheme.make_avatar_badge(av_id, maxi(1, fr_id), 54.0, "", false))
 
 			var pname: String = str(pd.get("username", "بازیکن"))
 			var c_info: Variant = pd.get("clan", null)

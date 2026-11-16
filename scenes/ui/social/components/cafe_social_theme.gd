@@ -704,11 +704,11 @@ static func _get_frame_aperture(frame_id: int) -> Vector4:
 static func make_avatar_badge(
 	avatar_id: int,
 	frame_id: int = 1,
-	size_px: float = 86.0,
+	size_px: float = 88.0,
 	presence_status: String = "",
 	show_dot: bool = false
 ) -> Control:
-	var final_sz: float = maxf(size_px, 66.0) + 2.0
+	var final_sz: float = maxf(size_px, 66.0) + 4.0
 	var holder := Control.new()
 	holder.custom_minimum_size = Vector2(final_sz, final_sz)
 	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -741,14 +741,14 @@ static func make_avatar_badge(
 		av.texture = load("res://assets/icons/Avatars/0.png")
 	holder.add_child(av)
 
-	# 2. Frame Overlay Texture (Full size, on top)
+	# 2. Frame Overlay Texture (Full size + 2px boost, on top)
 	var frame_rect := TextureRect.new()
 	frame_rect.name = "FrameOverlay"
 	frame_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	frame_rect.offset_left = 0.0
-	frame_rect.offset_top = 0.0
-	frame_rect.offset_right = 0.0
-	frame_rect.offset_bottom = 0.0
+	frame_rect.offset_left = -1.0
+	frame_rect.offset_top = -1.0
+	frame_rect.offset_right = 1.0
+	frame_rect.offset_bottom = 1.0
 	frame_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	frame_rect.texture = get_frame_texture(safe_fid)
@@ -796,9 +796,9 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 				container.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 			container.clip_contents = false
 			if not container.has_meta("_av_box_boosted") and container.custom_minimum_size.x > 0.0 and container.custom_minimum_size.y > 0.0:
-				container.custom_minimum_size += Vector2(2.0, 2.0)
+				container.custom_minimum_size += Vector2(4.0, 4.0)
 				container.set_meta("_av_box_boosted", true)
-			for legacy_name in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc"]:
+			for legacy_name in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc", "PlayerSideTag"]:
 				var leg: Node = container.get_node_or_null(legacy_name)
 				if is_instance_valid(leg) and leg is CanvasItem:
 					(leg as CanvasItem).visible = false
@@ -808,7 +808,7 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 		if p_node is Control and (p_node as Control).name == "AvatarInnerHost":
 			host_ctrl = p_node as Control
 			if avatar_rect.custom_minimum_size.x > 0.0 or avatar_rect.custom_minimum_size.y > 0.0:
-				host_ctrl.custom_minimum_size = avatar_rect.custom_minimum_size + Vector2(2.0, 2.0)
+				host_ctrl.custom_minimum_size = avatar_rect.custom_minimum_size + Vector2(4.0, 4.0)
 		elif p_node is Container:
 			var cont_parent: Container = p_node as Container
 			var existing_host: Node = cont_parent.get_node_or_null("AvatarInnerHost")
@@ -822,9 +822,9 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 				if min_sz.x <= 0.0 or min_sz.y <= 0.0:
 					min_sz = cont_parent.custom_minimum_size
 				if min_sz.x <= 0.0 or min_sz.y <= 0.0:
-					min_sz = Vector2(96.0, 96.0)
+					min_sz = Vector2(98.0, 98.0)
 				else:
-					min_sz += Vector2(2.0, 2.0)
+					min_sz += Vector2(4.0, 4.0)
 				if not (cont_parent is PanelContainer):
 					wrapper.custom_minimum_size = min_sz
 				wrapper.size_flags_horizontal = avatar_rect.size_flags_horizontal
@@ -837,10 +837,10 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 		elif p_node is Control:
 			host_ctrl = p_node as Control
 			if not host_ctrl.has_meta("_av_box_boosted") and host_ctrl.custom_minimum_size.x > 0.0 and host_ctrl.custom_minimum_size.y > 0.0:
-				host_ctrl.custom_minimum_size += Vector2(2.0, 2.0)
+				host_ctrl.custom_minimum_size += Vector2(4.0, 4.0)
 				host_ctrl.set_meta("_av_box_boosted", true)
 
-		for legacy_name2 in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc"]:
+		for legacy_name2 in ["AvatarRing", "AvatarMedallionFrame", "WoodDisc", "BgDisc", "PlayerSideTag"]:
 			var leg2: Node = host_ctrl.get_node_or_null(legacy_name2)
 			if is_instance_valid(leg2) and leg2 is CanvasItem:
 				(leg2 as CanvasItem).visible = false
@@ -866,14 +866,18 @@ static func apply_frame_to_container(container: Control, avatar_rect: TextureRec
 	var frame_rect: TextureRect = null
 	if is_instance_valid(frame_node) and frame_node is TextureRect:
 		frame_rect = frame_node as TextureRect
+		frame_rect.offset_left = -1.0
+		frame_rect.offset_top = -1.0
+		frame_rect.offset_right = 1.0
+		frame_rect.offset_bottom = 1.0
 	else:
 		frame_rect = TextureRect.new()
 		frame_rect.name = "FrameOverlay"
 		frame_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-		frame_rect.offset_left = 0.0
-		frame_rect.offset_top = 0.0
-		frame_rect.offset_right = 0.0
-		frame_rect.offset_bottom = 0.0
+		frame_rect.offset_left = -1.0
+		frame_rect.offset_top = -1.0
+		frame_rect.offset_right = 1.0
+		frame_rect.offset_bottom = 1.0
 		frame_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		frame_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		frame_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE

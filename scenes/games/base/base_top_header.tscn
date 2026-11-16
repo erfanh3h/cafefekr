@@ -135,11 +135,11 @@ theme_override_constants/separation = 12
 alignment = 1
 
 [node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(98, 98)
 layout_mode = 2
 
 [node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(98, 98)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -236,11 +236,11 @@ theme_override_constants/separation = 12
 alignment = 1
 
 [node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(98, 98)
 layout_mode = 2
 
 [node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(98, 98)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

@@ -434,7 +434,7 @@ func _render_hero_plaque(src: Dictionary) -> void:
 		info_col.add_child(CafeSocialTheme.make_body("«%s»" % p_status, 22, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	# Right Avatar Plaque
-	top_row.add_child(CafeSocialTheme.make_avatar_badge(av_id, frame_id, 114.0, pres_status, not _is_bot))
+	top_row.add_child(CafeSocialTheme.make_avatar_badge(av_id, frame_id, 116.0, pres_status, not _is_bot))
 
 	# Bottom Stat Medallions Strip (Score, Level, Coins if self / Friends if public)
 	var stat_row := HBoxContainer.new()
@@ -1004,10 +1004,10 @@ func _render_self_cosmetics_tab() -> void:
 
 	for fid in range(1, 21):
 		var p_btn := PanelContainer.new()
-		p_btn.custom_minimum_size = Vector2(88, 88)
+		p_btn.custom_minimum_size = Vector2(90, 90)
 		p_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		p_btn.focus_mode = Control.FOCUS_NONE
-		var badge := CafeSocialTheme.make_avatar_badge(my_av_id, fid, 76.0)
+		var badge := CafeSocialTheme.make_avatar_badge(my_av_id, fid, 78.0)
 		p_btn.add_child(badge)
 
 		var current_fid = fid
@@ -1294,6 +1294,6 @@ func _render_self_privacy_tab() -> void:
 			nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(nm)
 
-			row.add_child(CafeSocialTheme.make_avatar_badge(int(bu.get("image", 0)), int(bu.get("profile_frame", 1)), 64.0))
+			row.add_child(CafeSocialTheme.make_avatar_badge(int(bu.get("image", 0)), int(bu.get("profile_frame", 1)), 66.0))
 			blk_holder.add_child(card)
 	)

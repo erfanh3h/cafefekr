@@ -329,10 +329,10 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	# Rightmost: Avatar Frame clickable to view profile
 	var av_btn := Button.new()
 	av_btn.flat = true
-	av_btn.custom_minimum_size = Vector2(86, 86)
+	av_btn.custom_minimum_size = Vector2(88, 88)
 	av_btn.focus_mode = Control.FOCUS_NONE
 	av_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var av_badge := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 84.0, str(pres.get("status", "offline")), true)
+	var av_badge := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 86.0, str(pres.get("status", "offline")), true)
 	av_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	av_btn.add_child(av_badge)
 	av_btn.pressed.connect(func():
