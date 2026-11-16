@@ -46,16 +46,16 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(540, 290)
+custom_minimum_size = Vector2(620, 340)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_exit_panel")
 
 [node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 28
-theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 26
+theme_override_constants/margin_left = 54
+theme_override_constants/margin_top = 46
+theme_override_constants/margin_right = 54
+theme_override_constants/margin_bottom = 44
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
 layout_mode = 2

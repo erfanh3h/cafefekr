@@ -504,7 +504,7 @@ static func make_nav_tab(
 	custom_icon: Texture2D = null
 ) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 128)
+	b.custom_minimum_size = Vector2(0, 142)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.focus_mode = Control.FOCUS_NONE
 	b.flat = true
@@ -522,12 +522,15 @@ static func make_nav_tab(
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(holder)
 
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 2)
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(vbox)
+
 	var tr := TextureRect.new()
-	tr.set_anchors_preset(Control.PRESET_FULL_RECT)
-	tr.offset_left = 2
-	tr.offset_right = -2
-	tr.offset_top = 0
-	tr.offset_bottom = -8
+	tr.custom_minimum_size = Vector2(0, 84)
 	tr.texture = custom_icon if custom_icon != null else get_nav_tab_texture(tab_id)
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -536,7 +539,33 @@ static func make_nav_tab(
 		tr.modulate = Color(0.76, 0.72, 0.68, 0.90)
 	else:
 		tr.modulate = Color(1.0, 1.0, 1.0, 1.0)
-	holder.add_child(tr)
+	vbox.add_child(tr)
+
+	var tab_title: String = ""
+	match tab_id:
+		"friends":
+			tab_title = "دوستان"
+		"clans":
+			tab_title = "اتحاد"
+		"messages":
+			tab_title = "پیام‌ها"
+		"notifs":
+			tab_title = "اعلان‌ها"
+		_:
+			tab_title = ""
+
+	if not tab_title.is_empty():
+		var lbl := Label.new()
+		lbl.text = tab_title
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_override("font", FONT_TITLE)
+		lbl.add_theme_font_size_override("font_size", 22)
+		lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0) if is_active else Color(0.85, 0.82, 0.78, 0.85))
+		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.90))
+		lbl.add_theme_constant_override("shadow_outline_size", 3)
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_child(lbl)
 
 	if is_active:
 		var highlight_bar := ColorRect.new()
@@ -1241,6 +1270,75 @@ static func format_time_fa(iso_str: String) -> String:
 		var time_part := s.substr(t_idx + 1, 5)
 		return GameManager.to_fa_num(time_part)
 	return ""
+
+
+static func gregorian_to_jalali(gy: int, gm: int, gd: int) -> Dictionary:
+	var g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+	var jy: int
+	if gy > 1600:
+		jy = 979
+		gy -= 1600
+	else:
+		jy = 0
+		gy -= 621
+	var gy2 = gy + 1 if gm > 2 else gy
+	var days = 365 * gy + int((gy2 + 3) / 4) - int((gy2 + 99) / 100) + int((gy2 + 399) / 400) - 80 + gd + g_d_m[gm - 1]
+	jy += 33 * int(days / 12053)
+	days %= 12053
+	jy += 4 * int(days / 1461)
+	days %= 1461
+	if days > 365:
+		jy += int((days - 1) / 365)
+		days = (days - 1) % 365
+	var jm: int
+	var jd: int
+	if days < 186:
+		jm = 1 + int(days / 31)
+		jd = 1 + (days % 31)
+	else:
+		jm = 7 + int((days - 186) / 30)
+		jd = 1 + ((days - 186) % 30)
+	return {"year": jy, "month": jm, "day": jd}
+
+
+static func format_chat_datetime_fa(iso_str: String) -> String:
+	var s := iso_str.strip_edges()
+	if s.is_empty():
+		return ""
+	var clean := s.replace("T", " ")
+	var sp := clean.split(" ")
+	var date_part := sp[0]
+	var time_part := ""
+	if sp.size() > 1:
+		var tp := sp[1].split(":")
+		if tp.size() >= 2:
+			time_part = "%02d:%02d" % [int(tp[0]), int(tp[1])]
+	elif s.find("T") > 0:
+		var tidx := s.find("T")
+		if s.length() >= tidx + 6:
+			time_part = s.substr(tidx + 1, 5)
+
+	var dp := date_part.split("-")
+	if dp.size() >= 3:
+		var gy := int(dp[0])
+		var gm := int(dp[1])
+		var gd := int(dp[2])
+		if gy > 1900:
+			var j = gregorian_to_jalali(gy, gm, gd)
+			var month_names = [
+				"فروردین", "اردیبهشت", "خرداد",
+				"تیر", "مرداد", "شهریور",
+				"مهر", "آبان", "آذر",
+				"دی", "بهمن", "اسفند"
+			]
+			var m_name = month_names[j["month"] - 1] if j["month"] >= 1 and j["month"] <= 12 else ""
+			var dt_formatted := "%s %s" % [GameManager.to_fa_num(j["day"]), m_name]
+			if not time_part.is_empty():
+				return "%s - %s" % [dt_formatted, GameManager.to_fa_num(time_part)]
+			return dt_formatted
+	if not time_part.is_empty():
+		return GameManager.to_fa_num(time_part)
+	return GameManager.to_fa_num(s)
 
 
 static func get_game_thumb(game_type: String) -> Texture2D:

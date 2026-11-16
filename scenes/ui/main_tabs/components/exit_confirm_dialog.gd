@@ -14,6 +14,7 @@ signal confirmed()
 
 func _ready() -> void:
 	visible = false
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	KenneyUI.style_button(btn_confirm, KenneyUI.COLOR_RED)
 	KenneyUI.style_button(btn_cancel, KenneyUI.COLOR_YELLOW)
 	ActionVFXManager.apply_button_juice(btn_confirm, "tap_button")

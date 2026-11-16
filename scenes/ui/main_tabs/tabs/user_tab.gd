@@ -840,10 +840,10 @@ func _render_cosmetics() -> void:
 	content_cosmetics.add_child(save_box)
 
 	var btn_save := TextureButton.new()
-	btn_save.custom_minimum_size = Vector2(80, 80)
+	btn_save.custom_minimum_size = Vector2(83, 83)
 	btn_save.ignore_texture_size = true
 	btn_save.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	btn_save.texture_normal = preload("res://assets/images/frames/save.png")
+	btn_save.texture_normal = preload("res://assets/images/frames/check.png")
 	btn_save.focus_mode = Control.FOCUS_NONE
 	btn_save.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	ActionVFXManager.apply_button_juice(btn_save, "tap_button")
@@ -929,10 +929,10 @@ func _render_frames() -> void:
 	content_frames.add_child(save_box)
 
 	var btn_save := TextureButton.new()
-	btn_save.custom_minimum_size = Vector2(80, 80)
+	btn_save.custom_minimum_size = Vector2(83, 83)
 	btn_save.ignore_texture_size = true
 	btn_save.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	btn_save.texture_normal = preload("res://assets/images/frames/save.png")
+	btn_save.texture_normal = preload("res://assets/images/frames/check.png")
 	btn_save.focus_mode = Control.FOCUS_NONE
 	btn_save.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	ActionVFXManager.apply_button_juice(btn_save, "tap_button")
@@ -999,7 +999,7 @@ func _render_privacy() -> void:
 
 	var chk_music := CheckButton.new()
 	chk_music.text = "موسیقی"
-	chk_music.custom_minimum_size = Vector2(96, 64)
+	chk_music.custom_minimum_size = Vector2(100, 68)
 	chk_music.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
 	chk_music.add_theme_font_size_override("font_size", 26)
 	chk_music.button_pressed = AudioManager.is_music_enabled
@@ -1040,7 +1040,7 @@ func _render_privacy() -> void:
 
 	var chk_sfx := CheckButton.new()
 	chk_sfx.text = "جلوه‌ها (SFX)"
-	chk_sfx.custom_minimum_size = Vector2(96, 64)
+	chk_sfx.custom_minimum_size = Vector2(100, 68)
 	chk_sfx.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
 	chk_sfx.add_theme_font_size_override("font_size", 26)
 	chk_sfx.button_pressed = AudioManager.is_sound_enabled
@@ -1140,7 +1140,7 @@ func _render_privacy() -> void:
 		panel.add_child(h)
 
 		var toggle := CheckButton.new()
-		toggle.custom_minimum_size = Vector2(94, 64)
+		toggle.custom_minimum_size = Vector2(98, 68)
 		toggle.focus_mode = Control.FOCUS_NONE
 		toggle.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		toggle.button_pressed = current_val
@@ -1171,16 +1171,16 @@ func _render_privacy() -> void:
 
 		content_privacy.add_child(item_margin)
 
-	# Save Privacy Button (Icon button with save.png)
+	# Save Privacy Button (Icon button with check.png)
 	var save_priv_box := HBoxContainer.new()
 	save_priv_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	content_privacy.add_child(save_priv_box)
 
 	var btn_save_priv := TextureButton.new()
-	btn_save_priv.custom_minimum_size = Vector2(80, 80)
+	btn_save_priv.custom_minimum_size = Vector2(83, 83)
 	btn_save_priv.ignore_texture_size = true
 	btn_save_priv.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	btn_save_priv.texture_normal = preload("res://assets/images/frames/save.png")
+	btn_save_priv.texture_normal = preload("res://assets/images/frames/check.png")
 	btn_save_priv.focus_mode = Control.FOCUS_NONE
 	btn_save_priv.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	ActionVFXManager.apply_button_juice(btn_save_priv, "tap_button")

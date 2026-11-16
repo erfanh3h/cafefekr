@@ -435,8 +435,7 @@ static func render_messages(host: Control) -> void:
 		bubble_col.add_child(hdr_row)
 
 		var name_display: String = "شما" if from_me else str(host._active_dm_partner_name)
-		var hdr_text: String = name_display + (" • " + t_str if not t_str.is_empty() else "")
-		var hdr_lbl := CafeSocialTheme.make_body(hdr_text, 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT if from_me else HORIZONTAL_ALIGNMENT_LEFT)
+		var hdr_lbl := CafeSocialTheme.make_body(name_display, 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT if from_me else HORIZONTAL_ALIGNMENT_LEFT)
 		hdr_row.add_child(hdr_lbl)
 
 		# Speech Bubble Frame (chat_my.png or chat_other.png)
@@ -465,16 +464,37 @@ static func render_messages(host: Control) -> void:
 			msg_lbl.add_theme_color_override("font_color", Color(0.24, 0.15, 0.06, 1.0))
 		b_vbox.add_child(msg_lbl)
 
-		if not read_tick.is_empty():
-			var tick_row := HBoxContainer.new()
-			tick_row.alignment = BoxContainer.ALIGNMENT_BEGIN
-			var tick_lbl := Label.new()
-			tick_lbl.text = read_tick
-			tick_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-			tick_lbl.add_theme_font_size_override("font_size", 18)
-			tick_lbl.add_theme_color_override("font_color", Color(0.76, 0.88, 0.78, 0.92))
-			tick_row.add_child(tick_lbl)
-			b_vbox.add_child(tick_row)
+		# Footer Row at bottom of chat box (Date + Time + Read Tick)
+		var dt_str := CafeSocialTheme.format_chat_datetime_fa(str(m.get("created_at", "")))
+		var footer_row := HBoxContainer.new()
+		footer_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		footer_row.add_theme_constant_override("separation", 6)
+		if from_me:
+			footer_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+			if not read_tick.is_empty():
+				var tick_lbl := Label.new()
+				tick_lbl.text = read_tick
+				tick_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+				tick_lbl.add_theme_font_size_override("font_size", 16)
+				tick_lbl.add_theme_color_override("font_color", Color(0.72, 0.95, 0.78, 0.92))
+				footer_row.add_child(tick_lbl)
+			if not dt_str.is_empty():
+				var time_lbl := Label.new()
+				time_lbl.text = dt_str
+				time_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+				time_lbl.add_theme_font_size_override("font_size", 17)
+				time_lbl.add_theme_color_override("font_color", Color(0.85, 0.82, 0.72, 0.85))
+				footer_row.add_child(time_lbl)
+		else:
+			footer_row.alignment = BoxContainer.ALIGNMENT_END
+			if not dt_str.is_empty():
+				var time_lbl := Label.new()
+				time_lbl.text = dt_str
+				time_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+				time_lbl.add_theme_font_size_override("font_size", 17)
+				time_lbl.add_theme_color_override("font_color", Color(0.42, 0.32, 0.20, 0.90))
+				footer_row.add_child(time_lbl)
+		b_vbox.add_child(footer_row)
 
 		var spacer := Control.new()
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL

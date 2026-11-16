@@ -219,8 +219,8 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		var pad := MarginContainer.new()
 		pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pad.add_theme_constant_override("margin_left", 54)
-		pad.add_theme_constant_override("margin_right", 54)
+		pad.add_theme_constant_override("margin_left", 72)
+		pad.add_theme_constant_override("margin_right", 72)
 		pad.add_theme_constant_override("margin_top", 16)
 		pad.add_theme_constant_override("margin_bottom", 22)
 		card.add_child(pad)
@@ -228,7 +228,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		var row := HBoxContainer.new()
 		row.layout_direction = Control.LAYOUT_DIRECTION_RTL
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_theme_constant_override("separation", 10)
+		row.add_theme_constant_override("separation", 14)
 		row.alignment = BoxContainer.ALIGNMENT_CENTER
 		pad.add_child(row)
 
@@ -290,7 +290,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 
 		# 3. Name & Subtitle/Clan-Tag Column (strictly to the LEFT of the avatar in RTL)
 		var name_col := VBoxContainer.new()
-		name_col.layout_direction = Control.LAYOUT_DIRECTION_RTL
+		name_col.custom_minimum_size = Vector2(250, 0)
 		name_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		name_col.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -300,11 +300,10 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 
 		var name_lbl := Label.new()
 		name_lbl.text = username
-		name_lbl.layout_direction = Control.LAYOUT_DIRECTION_RTL
-		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.clip_text = true
+		name_lbl.clip_text = false
 		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
 		name_lbl.add_theme_font_size_override("font_size", 40)
@@ -322,11 +321,10 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 					tag_lbl.text = "[%s]" % clan_tag
 			else:
 				tag_lbl.text = "%s عضو" % GameManager.to_fa_num(int(mem_cnt))
-			tag_lbl.layout_direction = Control.LAYOUT_DIRECTION_RTL
-			tag_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			tag_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 			tag_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			tag_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			tag_lbl.clip_text = true
+			tag_lbl.clip_text = false
 			tag_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			tag_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
 			tag_lbl.add_theme_font_size_override("font_size", 28)
@@ -337,11 +335,10 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		else:
 			var sub_lbl := Label.new()
 			sub_lbl.text = "سطح %s" % GameManager.to_fa_num(int(lvl_val))
-			sub_lbl.layout_direction = Control.LAYOUT_DIRECTION_RTL
-			sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 			sub_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			sub_lbl.clip_text = true
+			sub_lbl.clip_text = false
 			sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			sub_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
 			sub_lbl.add_theme_font_size_override("font_size", 28)

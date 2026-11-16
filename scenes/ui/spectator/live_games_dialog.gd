@@ -135,6 +135,10 @@ func _ingest_games_array(arr: Array) -> void:
 			var gid: String = str(d.get("game_id", ""))
 			if gid.is_empty():
 				continue
+			if not current_game_type.is_empty():
+				var gt: String = str(d.get("game_type", "")).strip_edges().to_lower()
+				if gt != current_game_type.strip_edges().to_lower():
+					continue
 			if not _merged_games.has(gid):
 				_merged_games[gid] = d
 			else:
@@ -240,32 +244,39 @@ func _build_ui() -> void:
 		false
 	))
 
-	var btn_ref := CafeSocialTheme.make_button("", "bronze", Vector2(56, 56), 22, CafeSocialTheme.ICO_REFRESH, false, 14)
+	var btn_ref := TextureButton.new()
+	btn_ref.texture_normal = preload("res://assets/images/frames/refresh.png")
+	btn_ref.custom_minimum_size = Vector2(56, 56)
 	btn_ref.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	btn_ref.ignore_texture_size = true
+	btn_ref.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_ref.focus_mode = Control.FOCUS_NONE
+	btn_ref.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_ref.tooltip_text = "بروزرسانی فهرست"
+	ActionVFXManager.apply_button_juice(btn_ref, "tap_button")
 	btn_ref.pressed.connect(func():
 		AudioManager.sfx_tap()
 		refresh()
 	)
 	header.add_child(btn_ref)
 
-	# 2. Scope Subtab Bar (All | Friends | Clan)
+	# 2. Scope Subtab Bar (All | Friends | Clan) - Clean KenneyUI tabs without shadow/well background
 	var scope_well := PanelContainer.new()
-	scope_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 8.0, 8.0))
+	scope_well.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	root.add_child(scope_well)
 
 	_scope_row = HBoxContainer.new()
-	_scope_row.add_theme_constant_override("separation", 8)
+	_scope_row.add_theme_constant_override("separation", 10)
 	scope_well.add_child(_scope_row)
 
-	# 3. Clean 1-Row Scrollable Game Filter Row inside Antique Well (doubled height)
+	# 3. Clean 1-Row Scrollable Game Filter Row inside Antique Well (taller height & tight padding)
 	var filter_well := PanelContainer.new()
-	filter_well.custom_minimum_size = Vector2(0, 110)
-	filter_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 8.0, 8.0))
+	filter_well.custom_minimum_size = Vector2(0, 132)
+	filter_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 4.0, 4.0))
 	root.add_child(filter_well)
 
 	var filter_scroll := ScrollContainer.new()
-	filter_scroll.custom_minimum_size = Vector2(0, 94)
+	filter_scroll.custom_minimum_size = Vector2(0, 120)
 	filter_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	filter_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	filter_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -273,7 +284,7 @@ func _build_ui() -> void:
 	filter_well.add_child(filter_scroll)
 
 	_game_filter_hbox = HBoxContainer.new()
-	_game_filter_hbox.add_theme_constant_override("separation", 10)
+	_game_filter_hbox.add_theme_constant_override("separation", 6)
 	_game_filter_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	filter_scroll.add_child(_game_filter_hbox)
 
@@ -320,7 +331,21 @@ func _render_filters() -> void:
 		for sc in scopes:
 			var sc_d: Dictionary = sc
 			var sid: String = str(sc_d["id"])
-			var b := CafeSocialTheme.make_subtab(str(sc_d["label"]), current_scope == sid)
+			var b := Button.new()
+			b.text = str(sc_d["label"])
+			b.custom_minimum_size = Vector2(0, 56)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b.focus_mode = Control.FOCUS_NONE
+			b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			b.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
+			b.add_theme_font_size_override("font_size", 24)
+			if current_scope == sid:
+				KenneyUI.style_button(b, KenneyUI.COLOR_YELLOW)
+				b.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
+			else:
+				KenneyUI.style_button(b, KenneyUI.COLOR_GREY)
+				b.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+			ActionVFXManager.apply_button_juice(b, "tap_button")
 			b.pressed.connect(func():
 				AudioManager.sfx_tap()
 				current_scope = sid
@@ -344,7 +369,7 @@ func _render_filters() -> void:
 			var is_sel: bool = (current_game_type == gid_f)
 
 			var btn := TextureButton.new()
-			btn.custom_minimum_size = Vector2(80, 80)
+			btn.custom_minimum_size = Vector2(104, 104)
 			btn.ignore_texture_size = true
 			btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 			btn.focus_mode = Control.FOCUS_NONE
@@ -359,14 +384,14 @@ func _render_filters() -> void:
 				frame_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
 					Color(0.24, 0.16, 0.08, 0.98),
 					Color(1.0, 0.85, 0.35, 1.0),
-					14,
+					12,
 					3
 				))
 			else:
 				frame_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
 					Color(0.10, 0.06, 0.03, 0.90),
 					Color(0.55, 0.40, 0.20, 0.70),
-					14,
+					12,
 					1
 				))
 			btn.add_child(frame_panel)
@@ -376,13 +401,13 @@ func _render_filters() -> void:
 			icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			icon_rect.offset_left = 6
-			icon_rect.offset_top = 6
-			icon_rect.offset_right = -6
-			icon_rect.offset_bottom = -6
+			icon_rect.offset_left = 2
+			icon_rect.offset_top = 2
+			icon_rect.offset_right = -2
+			icon_rect.offset_bottom = -2
 
 			if gid_f.is_empty():
-				icon_rect.texture = CafeSocialTheme.ICO_CUP
+				icon_rect.texture = preload("res://assets/images/frames/question.png")
 			else:
 				icon_rect.texture = CafeSocialTheme.get_game_thumb(gid_f)
 
