@@ -42,6 +42,10 @@ var _font_hekayat = preload("res://assets/fonts/hekayat.ttf")
 var _font_vazir = preload("res://assets/fonts/Vazir.ttf")
 
 func _ready() -> void:
+	var subnav_bar = get_node_or_null("OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar") as PanelContainer
+	if is_instance_valid(subnav_bar):
+		subnav_bar.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+
 	ActionVFXManager.apply_button_juice(subtab_profile, "tap_button")
 	ActionVFXManager.apply_button_juice(subtab_cosmetics, "tap_button")
 	ActionVFXManager.apply_button_juice(subtab_frames, "tap_button")
@@ -160,19 +164,21 @@ func _render_profile() -> void:
 	for c in content_profile.get_children():
 		c.queue_free()
 
-	# Section toggle switcher: [مسابقات اخیر] | [آمار بازی‌ها]
+	# Section toggle switcher: [مسابقات اخیر] | [آمار بازی‌ها] (Double height and +2px font size)
 	var seg_box := HBoxContainer.new()
 	seg_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	seg_box.custom_minimum_size = Vector2(0, 56)
-	seg_box.add_theme_constant_override("separation", 10)
+	seg_box.custom_minimum_size = Vector2(0, 108)
+	seg_box.add_theme_constant_override("separation", 12)
 	content_profile.add_child(seg_box)
 
 	var btn_seg_matches := Button.new()
 	btn_seg_matches.text = "مسابقات اخیر"
 	btn_seg_matches.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_seg_matches.custom_minimum_size = Vector2(0, 52)
+	btn_seg_matches.custom_minimum_size = Vector2(0, 104)
 	btn_seg_matches.focus_mode = Control.FOCUS_NONE
 	btn_seg_matches.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_seg_matches.add_theme_font_override("font", _font_hekayat)
+	btn_seg_matches.add_theme_font_size_override("font_size", 28)
 	ActionVFXManager.apply_button_juice(btn_seg_matches, "tap_button")
 	_style_subnav_btn(btn_seg_matches, active_history_view == "matches")
 	seg_box.add_child(btn_seg_matches)
@@ -180,9 +186,11 @@ func _render_profile() -> void:
 	var btn_seg_stats := Button.new()
 	btn_seg_stats.text = "آمار کلی و بردگیم‌ها"
 	btn_seg_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_seg_stats.custom_minimum_size = Vector2(0, 52)
+	btn_seg_stats.custom_minimum_size = Vector2(0, 104)
 	btn_seg_stats.focus_mode = Control.FOCUS_NONE
 	btn_seg_stats.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_seg_stats.add_theme_font_override("font", _font_hekayat)
+	btn_seg_stats.add_theme_font_size_override("font_size", 28)
 	ActionVFXManager.apply_button_juice(btn_seg_stats, "tap_button")
 	_style_subnav_btn(btn_seg_stats, active_history_view == "stats")
 	seg_box.add_child(btn_seg_stats)
@@ -277,7 +285,7 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		else:
 			my_res = "unfinished"
 
-	var style_frame := CafeSocialTheme.create_frame_style(true, 38.0, 24.0)
+	var style_frame := CafeSocialTheme.create_frame_style(true, 54.0, 24.0)
 	btn.add_theme_stylebox_override("normal", style_frame)
 	btn.add_theme_stylebox_override("hover", style_frame)
 	btn.add_theme_stylebox_override("pressed", style_frame)
@@ -286,8 +294,8 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var pad := MarginContainer.new()
 	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pad.add_theme_constant_override("margin_left", 40)
-	pad.add_theme_constant_override("margin_right", 40)
+	pad.add_theme_constant_override("margin_left", 52)
+	pad.add_theme_constant_override("margin_right", 52)
 	pad.add_theme_constant_override("margin_top", 20)
 	pad.add_theme_constant_override("margin_bottom", 28)
 	btn.add_child(pad)
@@ -316,21 +324,21 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		opp_data = {"user_id": "opp", "username": opp_name, "image": opp_avatar_id}
 	var opp_frame_id: int = GameManager.get_player_frame_id(opp_data if not opp_data.is_empty() else game)
 
-	# 1. LEFT SIDE: Opponent Avatar + Name directly underneath
+	# 1. LEFT SIDE: Opponent Avatar + Name directly underneath (Frame +2px, Avatar -1px)
 	var opp_col := VBoxContainer.new()
-	opp_col.custom_minimum_size = Vector2(108, 130)
+	opp_col.custom_minimum_size = Vector2(110, 132)
 	opp_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	opp_col.add_theme_constant_override("separation", 4)
 	opp_col.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var av_panel := PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(94, 94)
+	av_panel.custom_minimum_size = Vector2(96, 96)
 	av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 	var av_img := TextureRect.new()
-	av_img.custom_minimum_size = Vector2(90, 90)
+	av_img.custom_minimum_size = Vector2(89, 89)
 	av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -409,16 +417,16 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		top_mid.add_child(lbl_score)
 	center_col.add_child(top_mid)
 
-	# Shamsi Date LTR
+	# Shamsi Full Date and Time
 	var s_date_raw = str(game.get("start_date", ""))
 	var shamsi_date = _format_shamsi_date_ltr(s_date_raw)
 	var lbl_date := Label.new()
-	lbl_date.text_direction = Control.TEXT_DIRECTION_LTR
+	lbl_date.text_direction = Control.TEXT_DIRECTION_RTL
 	lbl_date.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_date.text = shamsi_date
 	lbl_date.add_theme_font_override("font", _font_hekayat)
-	lbl_date.add_theme_font_size_override("font_size", 26)
-	lbl_date.add_theme_color_override("font_color", Color(0.85, 0.80, 0.70))
+	lbl_date.add_theme_font_size_override("font_size", 25)
+	lbl_date.add_theme_color_override("font_color", Color(0.88, 0.82, 0.72))
 	center_col.add_child(lbl_date)
 	row.add_child(center_col)
 
@@ -442,24 +450,34 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 
 func _format_shamsi_date_ltr(iso_str: String) -> String:
 	if iso_str.is_empty():
-		return "امروز"
-	var parts = iso_str.split("T")
-	var date_part = parts[0]
-	var ymd = date_part.split("-")
-	if ymd.size() == 3:
-		var gy = int(ymd[0])
-		var gm = int(ymd[1])
-		var gd = int(ymd[2])
-		var j = _gregorian_to_jalali(gy, gm, gd)
-		var month_names = [
-			"فروردین", "اردیبهشت", "خرداد",
-			"تیر", "مرداد", "شهریور",
-			"مهر", "آبان", "آذر",
-			"دی", "بهمن", "اسفند"
-		]
-		var m_name = month_names[j["month"] - 1] if j["month"] >= 1 and j["month"] <= 12 else ""
-		return "%s %s %s" % [GameManager.to_fa_num(j["day"]), m_name, GameManager.to_fa_num(j["year"])]
-	return iso_str
+		return "اخیراً"
+	var clean = iso_str.strip_edges().replace("T", " ")
+	var space_parts = clean.split(" ")
+	var date_parts = space_parts[0].split("-")
+	if date_parts.size() < 3:
+		return iso_str
+	var gy = int(date_parts[0])
+	var gm = int(date_parts[1])
+	var gd = int(date_parts[2])
+	if gy <= 0:
+		return iso_str
+	var j = _gregorian_to_jalali(gy, gm, gd)
+	var month_names = [
+		"فروردین", "اردیبهشت", "خرداد",
+		"تیر", "مرداد", "شهریور",
+		"مهر", "آبان", "آذر",
+		"دی", "بهمن", "اسفند"
+	]
+	var m_name = month_names[j["month"] - 1] if j["month"] >= 1 and j["month"] <= 12 else ""
+	var hh = 0
+	var mm = 0
+	if space_parts.size() > 1:
+		var time_parts = space_parts[1].split(":")
+		if time_parts.size() >= 2:
+			hh = int(time_parts[0])
+			mm = int(time_parts[1])
+	var time_formatted = "%02d:%02d" % [hh, mm]
+	return "%s %s %s - ساعت %s" % [GameManager.to_fa_num(j["day"]), m_name, GameManager.to_fa_num(j["year"]), GameManager.to_fa_num(time_formatted)]
 
 
 func _gregorian_to_jalali(gy: int, gm: int, gd: int) -> Dictionary:
@@ -717,12 +735,17 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 		var card := PanelContainer.new()
 		card.custom_minimum_size = Vector2(0, 196)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
+		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+
+		var pad := MarginContainer.new()
+		pad.add_theme_constant_override("margin_left", 48)
+		pad.add_theme_constant_override("margin_right", 48)
+		card.add_child(pad)
 
 		var cv := VBoxContainer.new()
 		cv.alignment = BoxContainer.ALIGNMENT_CENTER
 		cv.add_theme_constant_override("separation", 6)
-		card.add_child(cv)
+		pad.add_child(cv)
 
 		var lbl_title := Label.new()
 		lbl_title.text = sc["label"]
@@ -816,7 +839,15 @@ func _render_cosmetics() -> void:
 	save_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	content_cosmetics.add_child(save_box)
 
-	var btn_save := CafeSocialTheme.make_button("ثبت تغییرات آواتار", "emerald", Vector2(340, 62), 26, CafeSocialTheme.ICO_CHECK)
+	var btn_save := TextureButton.new()
+	btn_save.custom_minimum_size = Vector2(80, 80)
+	btn_save.ignore_texture_size = true
+	btn_save.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_save.texture_normal = preload("res://assets/images/frames/save.png")
+	btn_save.focus_mode = Control.FOCUS_NONE
+	btn_save.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn_save, "tap_button")
+
 	btn_save.pressed.connect(func():
 		AudioManager.sfx_button()
 		if _selected_avatar_id >= 0:
@@ -897,7 +928,15 @@ func _render_frames() -> void:
 	save_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	content_frames.add_child(save_box)
 
-	var btn_save := CafeSocialTheme.make_button("ثبت تغییرات قاب آواتار", "emerald", Vector2(360, 62), 26, CafeSocialTheme.ICO_CHECK)
+	var btn_save := TextureButton.new()
+	btn_save.custom_minimum_size = Vector2(80, 80)
+	btn_save.ignore_texture_size = true
+	btn_save.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_save.texture_normal = preload("res://assets/images/frames/save.png")
+	btn_save.focus_mode = Control.FOCUS_NONE
+	btn_save.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn_save, "tap_button")
+
 	btn_save.pressed.connect(func():
 		AudioManager.sfx_button()
 		if _selected_frame_id >= 1:
@@ -929,11 +968,17 @@ func _render_privacy() -> void:
 		c.queue_free()
 
 	# --- 1. Sound & Music Settings Card (Moved to Privacy) ---
+	var audio_margin := MarginContainer.new()
+	audio_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	audio_margin.add_theme_constant_override("margin_left", 48)
+	audio_margin.add_theme_constant_override("margin_right", 48)
+	content_privacy.add_child(audio_margin)
+
 	var audio_card := PanelContainer.new()
-	audio_card.custom_minimum_size = Vector2(0, 224)
+	audio_card.custom_minimum_size = Vector2(0, 230)
 	audio_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
-	content_privacy.add_child(audio_card)
+	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+	audio_margin.add_child(audio_card)
 
 	var a_vbox := VBoxContainer.new()
 	a_vbox.add_theme_constant_override("separation", 14)
@@ -941,7 +986,7 @@ func _render_privacy() -> void:
 
 	var a_title := Label.new()
 	a_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	a_title.add_theme_font_size_override("font_size", 28)
+	a_title.add_theme_font_size_override("font_size", 32)
 	a_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	a_title.text = "تنظیمات صدا و موسیقی کافه فکر"
 	a_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -954,7 +999,9 @@ func _render_privacy() -> void:
 
 	var chk_music := CheckButton.new()
 	chk_music.text = "موسیقی"
-	chk_music.custom_minimum_size = Vector2(80, 56)
+	chk_music.custom_minimum_size = Vector2(96, 64)
+	chk_music.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
+	chk_music.add_theme_font_size_override("font_size", 26)
 	chk_music.button_pressed = AudioManager.is_music_enabled
 	chk_music.focus_mode = Control.FOCUS_NONE
 	music_row.add_child(chk_music)
@@ -970,7 +1017,7 @@ func _render_privacy() -> void:
 	var lbl_music_val := Label.new()
 	lbl_music_val.custom_minimum_size = Vector2(60, 0)
 	lbl_music_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	lbl_music_val.add_theme_font_size_override("font_size", 22)
+	lbl_music_val.add_theme_font_size_override("font_size", 26)
 	lbl_music_val.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 	lbl_music_val.text = "%s٪" % GameManager.to_fa_num(int(music_slider.value))
 	music_row.add_child(lbl_music_val)
@@ -993,7 +1040,9 @@ func _render_privacy() -> void:
 
 	var chk_sfx := CheckButton.new()
 	chk_sfx.text = "جلوه‌ها (SFX)"
-	chk_sfx.custom_minimum_size = Vector2(80, 56)
+	chk_sfx.custom_minimum_size = Vector2(96, 64)
+	chk_sfx.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
+	chk_sfx.add_theme_font_size_override("font_size", 26)
 	chk_sfx.button_pressed = AudioManager.is_sound_enabled
 	chk_sfx.focus_mode = Control.FOCUS_NONE
 	sfx_row.add_child(chk_sfx)
@@ -1009,7 +1058,7 @@ func _render_privacy() -> void:
 	var lbl_sfx_val := Label.new()
 	lbl_sfx_val.custom_minimum_size = Vector2(60, 0)
 	lbl_sfx_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	lbl_sfx_val.add_theme_font_size_override("font_size", 22)
+	lbl_sfx_val.add_theme_font_size_override("font_size", 26)
 	lbl_sfx_val.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 	lbl_sfx_val.text = "%s٪" % GameManager.to_fa_num(int(sfx_slider.value))
 	sfx_row.add_child(lbl_sfx_val)
@@ -1075,17 +1124,23 @@ func _render_privacy() -> void:
 		var key: String = item["key"]
 		var current_val: bool = bool(current_priv.get(key, item["default"]))
 
+		var item_margin := MarginContainer.new()
+		item_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		item_margin.add_theme_constant_override("margin_left", 48)
+		item_margin.add_theme_constant_override("margin_right", 48)
+
 		var panel := PanelContainer.new()
 		panel.custom_minimum_size = Vector2(0, 124)
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 40.0, 20.0))
+		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 54.0, 20.0))
+		item_margin.add_child(panel)
 
 		var h := HBoxContainer.new()
 		h.add_theme_constant_override("separation", 18)
 		panel.add_child(h)
 
 		var toggle := CheckButton.new()
-		toggle.custom_minimum_size = Vector2(90, 60)
+		toggle.custom_minimum_size = Vector2(94, 64)
 		toggle.focus_mode = Control.FOCUS_NONE
 		toggle.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		toggle.button_pressed = current_val
@@ -1108,17 +1163,28 @@ func _render_privacy() -> void:
 
 		var lbl_desc := Label.new()
 		lbl_desc.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		lbl_desc.add_theme_font_size_override("font_size", 22)
+		lbl_desc.add_theme_font_size_override("font_size", 21)
 		lbl_desc.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 		lbl_desc.text = item["desc"]
 		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		v_col.add_child(lbl_desc)
 
-		content_privacy.add_child(panel)
+		content_privacy.add_child(item_margin)
 
-	# Save Privacy Button
-	var btn_save_priv := CafeSocialTheme.make_button("ذخیره تنظیمات حریم خصوصی", "gold", Vector2(360, 60), 26, CafeSocialTheme.ICO_CHECK)
-	btn_save_priv.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	# Save Privacy Button (Icon button with save.png)
+	var save_priv_box := HBoxContainer.new()
+	save_priv_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	content_privacy.add_child(save_priv_box)
+
+	var btn_save_priv := TextureButton.new()
+	btn_save_priv.custom_minimum_size = Vector2(80, 80)
+	btn_save_priv.ignore_texture_size = true
+	btn_save_priv.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_save_priv.texture_normal = preload("res://assets/images/frames/save.png")
+	btn_save_priv.focus_mode = Control.FOCUS_NONE
+	btn_save_priv.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn_save_priv, "tap_button")
+
 	btn_save_priv.pressed.connect(func():
 		AudioManager.sfx_button()
 		btn_save_priv.disabled = true
@@ -1137,7 +1203,7 @@ func _render_privacy() -> void:
 				show_toast("خطا در برقراری ارتباط با سرور.", CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
 	)
-	content_privacy.add_child(btn_save_priv)
+	save_priv_box.add_child(btn_save_priv)
 
 
 # ==============================================================================

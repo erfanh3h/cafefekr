@@ -14,17 +14,31 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 
 
 static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer) -> void:
+	var header_margin := MarginContainer.new()
+	header_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_margin.add_theme_constant_override("margin_left", 48)
+	header_margin.add_theme_constant_override("margin_right", 48)
+	body_vbox.add_child(header_margin)
+
 	var header_card := PanelContainer.new()
 	header_card.custom_minimum_size = Vector2(0, 136)
-	header_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
-	body_vbox.add_child(header_card)
+	header_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+	header_margin.add_child(header_card)
 
 	var hrow := HBoxContainer.new()
 	hrow.alignment = BoxContainer.ALIGNMENT_CENTER
-	hrow.add_theme_constant_override("separation", 12)
+	hrow.add_theme_constant_override("separation", 14)
 	header_card.add_child(hrow)
 
-	var btn_new_dm := CafeSocialTheme.make_button("گفتگوی جدید", "gold", Vector2(185, 54), 24)
+	var btn_new_dm := TextureButton.new()
+	btn_new_dm.custom_minimum_size = Vector2(68, 68)
+	btn_new_dm.ignore_texture_size = true
+	btn_new_dm.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_new_dm.texture_normal = preload("res://assets/images/frames/plus.png")
+	btn_new_dm.focus_mode = Control.FOCUS_NONE
+	btn_new_dm.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn_new_dm, "tap_button")
 	btn_new_dm.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_open_friend_picker_modal(host)
@@ -101,7 +115,7 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	btn.custom_minimum_size = Vector2(0, 148)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	var st_norm := CafeSocialTheme.create_frame_style(true, 38.0, 24.0)
+	var st_norm := CafeSocialTheme.create_frame_style(true, 54.0, 24.0)
 	btn.add_theme_stylebox_override("normal", st_norm)
 	btn.add_theme_stylebox_override("hover", st_norm)
 	btn.add_theme_stylebox_override("pressed", st_norm)
@@ -115,8 +129,8 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 40)
-	margin.add_theme_constant_override("margin_right", 40)
+	margin.add_theme_constant_override("margin_left", 54)
+	margin.add_theme_constant_override("margin_right", 54)
 	margin.add_theme_constant_override("margin_top", 20)
 	margin.add_theme_constant_override("margin_bottom", 28)
 	margin.add_child(row)
@@ -187,7 +201,12 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 		host._active_dm_partner_info = partner
 		host._refresh_current_tab()
 	)
-	return btn
+	var wrap := MarginContainer.new()
+	wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	wrap.add_theme_constant_override("margin_left", 48)
+	wrap.add_theme_constant_override("margin_right", 48)
+	wrap.add_child(btn)
+	return wrap
 
 
 static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> void:
@@ -200,17 +219,32 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	var p_info := CafeSocialTheme.format_presence(pres)
 
 	# Conversation Top Header
+	var hdr_margin := MarginContainer.new()
+	hdr_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hdr_margin.add_theme_constant_override("margin_left", 48)
+	hdr_margin.add_theme_constant_override("margin_right", 48)
+	body_vbox.add_child(hdr_margin)
+
 	var hdr := PanelContainer.new()
 	hdr.custom_minimum_size = Vector2(0, 140)
-	hdr.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
-	body_vbox.add_child(hdr)
+	hdr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hdr.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+	hdr_margin.add_child(hdr)
 
 	var hrow := HBoxContainer.new()
 	hrow.alignment = BoxContainer.ALIGNMENT_CENTER
-	hrow.add_theme_constant_override("separation", 10)
+	hrow.add_theme_constant_override("separation", 14)
 	hdr.add_child(hrow)
 
-	var btn_back := CafeSocialTheme.make_button("بازگشت", "bronze", Vector2(124, 54), 23)
+	# Icon button: close.png (Back / Close chat)
+	var btn_back := TextureButton.new()
+	btn_back.custom_minimum_size = Vector2(68, 68)
+	btn_back.ignore_texture_size = true
+	btn_back.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_back.texture_normal = preload("res://assets/images/frames/close.png")
+	btn_back.focus_mode = Control.FOCUS_NONE
+	btn_back.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn_back, "tap_button")
 	btn_back.pressed.connect(func():
 		AudioManager.sfx_tap()
 		host._active_dm_partner_id = ""
@@ -221,7 +255,15 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	)
 	hrow.add_child(btn_back)
 
-	var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(142, 54), 23)
+	# Icon button: game.png (Invite to game)
+	var btn_inv := TextureButton.new()
+	btn_inv.custom_minimum_size = Vector2(68, 68)
+	btn_inv.ignore_texture_size = true
+	btn_inv.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_inv.texture_normal = preload("res://assets/images/frames/game.png")
+	btn_inv.focus_mode = Control.FOCUS_NONE
+	btn_inv.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn_inv, "tap_button")
 	btn_inv.pressed.connect(func():
 		AudioManager.sfx_tap()
 		CafeSocialTheme.show_game_invite_modal(host, pid, pname, func(gtitle: String):
@@ -255,11 +297,11 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	)
 	hrow.add_child(av_btn)
 
-	# Messages Scroll Area
+	# Messages Scroll Area (remove frame under chats list)
 	var msg_well := PanelContainer.new()
 	msg_well.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	msg_well.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	msg_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 26.0))
+	msg_well.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	body_vbox.add_child(msg_well)
 
 	host._dm_messages_scroll = ScrollContainer.new()
@@ -275,16 +317,30 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	host._dm_messages_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت پیام‌ها..."))
 
 	# Sticky Bottom Input Bar
+	var compose_margin := MarginContainer.new()
+	compose_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	compose_margin.add_theme_constant_override("margin_left", 48)
+	compose_margin.add_theme_constant_override("margin_right", 48)
+	body_vbox.add_child(compose_margin)
+
 	var compose_card := PanelContainer.new()
 	compose_card.custom_minimum_size = Vector2(0, 108)
-	compose_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
-	body_vbox.add_child(compose_card)
+	compose_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	compose_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 54.0, 18.0))
+	compose_margin.add_child(compose_card)
 
 	var dm_input_row := HBoxContainer.new()
-	dm_input_row.add_theme_constant_override("separation", 10)
+	dm_input_row.add_theme_constant_override("separation", 12)
 	compose_card.add_child(dm_input_row)
 
-	var btn_send := CafeSocialTheme.make_button("ارسال", "emerald", Vector2(142, 64), 26)
+	var btn_send := TextureButton.new()
+	btn_send.custom_minimum_size = Vector2(68, 68)
+	btn_send.ignore_texture_size = true
+	btn_send.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_send.texture_normal = preload("res://assets/images/frames/send.png")
+	btn_send.focus_mode = Control.FOCUS_NONE
+	btn_send.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn_send, "tap_button")
 	dm_input_row.add_child(btn_send)
 
 	host._dm_input = CafeSocialTheme.make_line_edit("پیام خصوصی خود را بنویسید...", 64.0, 25)
@@ -338,6 +394,13 @@ static func render_messages(host: Control) -> void:
 		return
 
 	var my_uid := str(GameManager.get_user_id())
+	var my_img := GameManager.get_avatar_id()
+	var my_fid := GameManager.get_player_frame_id(GameManager.user_data)
+
+	var p_dict: Dictionary = host._active_dm_partner_info
+	var p_img := int(p_dict.get("image", p_dict.get("avatar", 0)))
+	var p_fid := int(p_dict.get("profile_frame", p_dict.get("avatar_frame", 1)))
+
 	for m in host._active_dm_messages:
 		if typeof(m) != TYPE_DICTIONARY:
 			continue
@@ -346,48 +409,87 @@ static func render_messages(host: Control) -> void:
 		var t_str := CafeSocialTheme.format_time_fa(str(m.get("created_at", "")))
 		var read_tick := ("✓✓" if bool(m.get("is_read", false)) else "✓") if from_me else ""
 
-		var align_row := HBoxContainer.new()
-		align_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var sender_img: int = my_img if from_me else p_img
+		var sender_fid: int = my_fid if from_me else p_fid
+
+		var msg_row := HBoxContainer.new()
+		msg_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
+		msg_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		msg_row.add_theme_constant_override("separation", 10)
+
+		# Avatar outside the chat bubble frame (matching clan chats frame style)
+		var av_col := VBoxContainer.new()
+		av_col.alignment = BoxContainer.ALIGNMENT_END
+		av_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		var av_badge := CafeSocialTheme.make_avatar_badge(sender_img, sender_fid, 76.0)
+		av_col.add_child(av_badge)
+
+		var bubble_col := VBoxContainer.new()
+		bubble_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bubble_col.add_theme_constant_override("separation", 4)
+
+		# Header above bubble (Name + Time)
+		var hdr_row := HBoxContainer.new()
+		hdr_row.alignment = BoxContainer.ALIGNMENT_END if from_me else BoxContainer.ALIGNMENT_BEGIN
+		hdr_row.add_theme_constant_override("separation", 8)
+		bubble_col.add_child(hdr_row)
+
+		var name_display: String = "شما" if from_me else str(host._active_dm_partner_name)
+		var hdr_text: String = name_display + (" • " + t_str if not t_str.is_empty() else "")
+		var hdr_lbl := CafeSocialTheme.make_body(hdr_text, 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT if from_me else HORIZONTAL_ALIGNMENT_LEFT)
+		hdr_row.add_child(hdr_lbl)
+
+		# Speech Bubble Frame (chat_my.png or chat_other.png)
+		var bubble := PanelContainer.new()
+		bubble.custom_minimum_size = Vector2(220, 96)
+		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_chat_bubble_style(from_me))
+		bubble_col.add_child(bubble)
+
+		var b_vbox := VBoxContainer.new()
+		b_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b_vbox.add_theme_constant_override("separation", 6)
+		bubble.add_child(b_vbox)
+
+		var msg_lbl := Label.new()
+		msg_lbl.text = txt
+		msg_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		msg_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		msg_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		msg_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+		msg_lbl.add_theme_font_size_override("font_size", 24)
+		if from_me:
+			msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+		else:
+			msg_lbl.add_theme_color_override("font_color", Color(0.24, 0.15, 0.06, 1.0))
+		b_vbox.add_child(msg_lbl)
+
+		if not read_tick.is_empty():
+			var tick_row := HBoxContainer.new()
+			tick_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+			var tick_lbl := Label.new()
+			tick_lbl.text = read_tick
+			tick_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+			tick_lbl.add_theme_font_size_override("font_size", 18)
+			tick_lbl.add_theme_color_override("font_color", Color(0.76, 0.88, 0.78, 0.92))
+			tick_row.add_child(tick_lbl)
+			b_vbox.add_child(tick_row)
 
 		var spacer := Control.new()
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		spacer.size_flags_stretch_ratio = 0.22
-
-		var bubble := PanelContainer.new()
-		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bubble.size_flags_stretch_ratio = 0.78
-		bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
-			Color(0.13, 0.30, 0.20, 0.97) if from_me else Color(0.22, 0.14, 0.08, 0.97),
-			Color(0.46, 0.86, 0.58, 0.88) if from_me else Color(0.76, 0.58, 0.28, 0.85),
-			16, 2, 16.0, 12.0
-		))
-
-		var bv := VBoxContainer.new()
-		bv.add_theme_constant_override("separation", 6)
-		bubble.add_child(bv)
-
-		bv.add_child(CafeSocialTheme.make_body(txt, 25, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
-
-		var meta := HBoxContainer.new()
-		meta.add_theme_constant_override("separation", 8)
-		bv.add_child(meta)
-		if not read_tick.is_empty():
-			meta.add_child(CafeSocialTheme.make_body(read_tick, 18, Color(0.56, 0.96, 0.72), HORIZONTAL_ALIGNMENT_LEFT, false))
-		var who_lbl := CafeSocialTheme.make_body(
-			("شما" if from_me else host._active_dm_partner_name) + (" • " + t_str if not t_str.is_empty() else ""),
-			16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false
-		)
-		who_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		meta.add_child(who_lbl)
+		spacer.size_flags_stretch_ratio = 0.20
 
 		if from_me:
-			align_row.add_child(spacer)
-			align_row.add_child(bubble)
+			msg_row.add_child(spacer)
+			msg_row.add_child(bubble_col)
+			msg_row.add_child(av_col)
 		else:
-			align_row.add_child(bubble)
-			align_row.add_child(spacer)
+			msg_row.add_child(av_col)
+			msg_row.add_child(bubble_col)
+			msg_row.add_child(spacer)
 
-		host._dm_messages_vbox.add_child(align_row)
+		host._dm_messages_vbox.add_child(msg_row)
 
 	# Scroll smoothly to bottom
 	if is_instance_valid(host._dm_messages_scroll):

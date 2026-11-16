@@ -85,9 +85,9 @@ const TEX_STATUS_IN_LOBBY = preload("res://assets/images/status/status_in_lobby.
 const TEX_STATUS_IN_QUEUE = preload("res://assets/images/status/status_in_queue.png")
 const TEX_STATUS_OFFLINE = preload("res://assets/images/status/status_offline.png")
 
-const TEX_TAB_FRIENDS = preload("res://assets/images/social/tab_friends.png")
-const TEX_TAB_CLANS = preload("res://assets/images/social/tab_clans.png")
-const TEX_TAB_MESSAGES = preload("res://assets/images/social/tab_messages.png")
+const TEX_TAB_FRIENDS = preload("res://assets/images/frames/friends.png")
+const TEX_TAB_CLANS = preload("res://assets/images/frames/clan.png")
+const TEX_TAB_MESSAGES = preload("res://assets/images/frames/chat.png")
 const TEX_TAB_NOTIFS = preload("res://assets/images/social/tab_notifs.png")
 
 const TEX_FRIEND_ADD = preload("res://assets/images/social/friend_add.png")
@@ -500,7 +500,8 @@ static func get_nav_tab_texture(tab_id: String) -> Texture2D:
 static func make_nav_tab(
 	tab_id: String,
 	badge_count: int = 0,
-	is_active: bool = false
+	is_active: bool = false,
+	custom_icon: Texture2D = null
 ) -> Button:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(0, 128)
@@ -527,7 +528,7 @@ static func make_nav_tab(
 	tr.offset_right = -2
 	tr.offset_top = 0
 	tr.offset_bottom = -8
-	tr.texture = get_nav_tab_texture(tab_id)
+	tr.texture = custom_icon if custom_icon != null else get_nav_tab_texture(tab_id)
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE

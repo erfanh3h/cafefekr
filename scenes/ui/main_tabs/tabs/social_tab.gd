@@ -111,9 +111,9 @@ func _build_ui_shell() -> void:
 	lbl_status_toast = CafeSocialTheme.make_body("", 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
 	_toast_panel.add_child(lbl_status_toast)
 
-	# 3. 3-Hub Navigation Bar inside frame_small
+	# 3. 3-Hub Navigation Bar inside frame_small (remove frame under these 3 tabs)
 	var nav_frame := PanelContainer.new()
-	nav_frame.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 28.0, 6.0))
+	nav_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	root_vbox.add_child(nav_frame)
 
 	_nav_hbox = HBoxContainer.new()
@@ -133,6 +133,11 @@ func _build_ui_shell() -> void:
 func _preload_badge_counts() -> void:
 	if not GameManager.is_logged_in:
 		return
+	NetworkManager.api.get_my_clan(func(ok: bool, _c: int, data: Variant):
+		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+			_my_clan_data = data["result"]
+			_update_main_tab_buttons()
+	)
 	NetworkManager.api.get_friend_requests(func(ok: bool, _c: int, data: Variant):
 		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
 			var r: Dictionary = data["result"]
@@ -160,6 +165,17 @@ func _update_main_tab_buttons() -> void:
 	for ch in _nav_hbox.get_children():
 		ch.queue_free()
 
+	var has_clan := false
+	var clan_emb := 1
+	if _my_clan_data.has("clan") and typeof(_my_clan_data["clan"]) == TYPE_DICTIONARY and not _my_clan_data["clan"].is_empty():
+		has_clan = true
+		clan_emb = int(_my_clan_data["clan"].get("emblem_id", 1))
+	elif GameManager.user_data.has("clan") and typeof(GameManager.user_data["clan"]) == TYPE_DICTIONARY and not GameManager.user_data["clan"].is_empty():
+		has_clan = true
+		clan_emb = int(GameManager.user_data["clan"].get("emblem_id", 1))
+	elif GameManager.user_data.has("clan_id") and not str(GameManager.user_data["clan_id"]).is_empty():
+		has_clan = true
+
 	var tab_defs := [
 		{"id": "friends", "badge": _incoming_requests.size()},
 		{"id": "clans", "badge": 0},
@@ -167,10 +183,22 @@ func _update_main_tab_buttons() -> void:
 	]
 	for td in tab_defs:
 		var tid: String = td["id"]
+		var custom_icon: Texture2D = null
+		if tid == "clans":
+			if has_clan:
+				custom_icon = CafeSocialTheme.get_clan_emblem_texture(clan_emb)
+			else:
+				custom_icon = preload("res://assets/images/frames/clan.png")
+		elif tid == "friends":
+			custom_icon = preload("res://assets/images/frames/friends.png")
+		elif tid == "messages":
+			custom_icon = preload("res://assets/images/frames/chat.png")
+
 		var btn := CafeSocialTheme.make_nav_tab(
 			tid,
 			int(td["badge"]),
-			current_main_tab == tid
+			current_main_tab == tid,
+			custom_icon
 		)
 		btn.pressed.connect(func():
 			_switch_main_tab(tid)

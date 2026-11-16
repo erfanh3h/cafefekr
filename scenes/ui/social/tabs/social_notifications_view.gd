@@ -7,17 +7,31 @@ extends RefCounted
 
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
 	# Top header bar with Mark All Read
+	var header_margin := MarginContainer.new()
+	header_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_margin.add_theme_constant_override("margin_left", 48)
+	header_margin.add_theme_constant_override("margin_right", 48)
+	body_vbox.add_child(header_margin)
+
 	var header_bar := PanelContainer.new()
 	header_bar.custom_minimum_size = Vector2(0, 136)
-	header_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
-	body_vbox.add_child(header_bar)
+	header_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+	header_margin.add_child(header_bar)
 
 	var hrow := HBoxContainer.new()
 	hrow.alignment = BoxContainer.ALIGNMENT_CENTER
-	hrow.add_theme_constant_override("separation", 12)
+	hrow.add_theme_constant_override("separation", 16)
 	header_bar.add_child(hrow)
 
-	var btn_read_all := CafeSocialTheme.make_button("خواندن همه", "emerald", Vector2(175, 52), 24)
+	var btn_read_all := TextureButton.new()
+	btn_read_all.custom_minimum_size = Vector2(68, 68)
+	btn_read_all.ignore_texture_size = true
+	btn_read_all.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_read_all.texture_normal = preload("res://assets/images/frames/check.png")
+	btn_read_all.focus_mode = Control.FOCUS_NONE
+	btn_read_all.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn_read_all, "tap_button")
 	btn_read_all.pressed.connect(func():
 		AudioManager.sfx_button()
 		btn_read_all.disabled = true

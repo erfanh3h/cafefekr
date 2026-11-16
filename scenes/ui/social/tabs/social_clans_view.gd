@@ -9,31 +9,67 @@ extends RefCounted
 ## - Clan Discovery & Leaderboards + Dedicated Ornate Clan Creation Modal (Free, max 1 per player)
 
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
-	# Clean 4-item sub-navigation bar
+	# Check clan membership
+	var has_clan := false
+	if typeof(host._my_clan_data.get("clan")) == TYPE_DICTIONARY and not host._my_clan_data["clan"].is_empty():
+		has_clan = true
+	elif GameManager.user_data.has("clan") and typeof(GameManager.user_data["clan"]) == TYPE_DICTIONARY and not GameManager.user_data["clan"].is_empty():
+		has_clan = true
+	elif GameManager.user_data.has("clan_id") and not str(GameManager.user_data["clan_id"]).is_empty():
+		has_clan = true
+
+	# Clean sub-navigation bar styled with KenneyUI buttons
 	var sub_bar := PanelContainer.new()
-	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
+	sub_bar.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	body_vbox.add_child(sub_bar)
 
 	var sub_row := HBoxContainer.new()
 	sub_row.add_theme_constant_override("separation", 8)
 	sub_bar.add_child(sub_row)
 
-	var subtabs := [
-		{"id": "my_clan", "label": "اتحاد من"},
-		{"id": "members", "label": "اعضا"},
-		{"id": "chat", "label": "چت اتحاد"},
-		{"id": "discover", "label": "اتحادها و رتبه‌بندی"},
-	]
+	var subtabs: Array[Dictionary] = []
+	if has_clan:
+		subtabs = [
+			{"id": "my_clan", "label": "اتحاد من"},
+			{"id": "members", "label": "اعضا"},
+			{"id": "chat", "label": "چت اتحاد"},
+		]
+	else:
+		subtabs = [
+			{"id": "my_clan", "label": "اتحاد من"},
+			{"id": "discover", "label": "اتحادها و رتبه‌بندی"},
+		]
+
+	var valid_ids: Array[String] = []
+	for st in subtabs:
+		valid_ids.append(st["id"])
+	if not (host.current_clans_subtab in valid_ids or (host.current_clans_subtab in ["search", "leaderboard"] and "discover" in valid_ids)):
+		host.current_clans_subtab = "my_clan"
+
 	for sd in subtabs:
 		var sid: String = sd["id"]
-		var is_act: bool = (host.current_clans_subtab == sid or (host.current_clans_subtab == "search" and sid == "discover") or (host.current_clans_subtab == "leaderboard" and sid == "discover"))
-		var b := CafeSocialTheme.make_subtab(sd["label"], is_act, 0)
-		b.pressed.connect(func():
+		var is_act: bool = (host.current_clans_subtab == sid or (host.current_clans_subtab in ["search", "leaderboard"] and sid == "discover"))
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(0, 56)
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.text = sd["label"]
+		btn.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
+		btn.add_theme_font_size_override("font_size", 26)
+		if is_act:
+			KenneyUI.style_button(btn, KenneyUI.COLOR_YELLOW)
+			btn.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
+		else:
+			KenneyUI.style_button(btn, KenneyUI.COLOR_GREY)
+			btn.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+		ActionVFXManager.apply_button_juice(btn, "tap_button")
+		btn.pressed.connect(func():
 			AudioManager.sfx_tap()
 			host.current_clans_subtab = sid
 			host._refresh_current_tab()
 		)
-		sub_row.add_child(b)
+		sub_row.add_child(btn)
 
 	var content_holder := VBoxContainer.new()
 	content_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -654,6 +690,11 @@ static func render_clan_chat(host: Control) -> void:
 		var time_str := CafeSocialTheme.format_time_fa(str(msg.get("created_at", "")))
 		var is_mine := (sender_id == my_uid)
 		var is_challenge_msg: bool = (mtype == "friendly_challenge") or (mtype == "system" and typeof(msg.get("metadata")) == TYPE_DICTIONARY and msg["metadata"].has("challenge_id"))
+		if is_challenge_msg:
+			var meta_check: Dictionary = msg.get("metadata", {}) if typeof(msg.get("metadata")) == TYPE_DICTIONARY else {}
+			var chal_st: String = str(meta_check.get("status", "open"))
+			if chal_st in ["closed", "finished", "canceled", "cancelled"]:
+				continue
 
 		if mtype == "text":
 			var msg_row := HBoxContainer.new()

@@ -71,7 +71,7 @@ horizontal_alignment = 2
 
 [node name="SubnavBar" type="PanelContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_subnav_well")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_board_shell")
 
 [node name="HBox" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar"]
 layout_mode = 2

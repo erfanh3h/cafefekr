@@ -73,7 +73,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 		win_rank, draw_rank, lose_rank,
 		"برد", "مساوی", "باخت"
 	)
-	modes_vbox.add_child(card_rank)
+	modes_vbox.add_child(_wrap_pad(card_rank, 48))
 
 	# Card B: Classic Rank (تک‌نفره)
 	var win_cr = int(history_data.get("win_classic_rank", 0))
@@ -84,7 +84,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 		win_cr, draw_cr, lose_cr,
 		"برد", "مساوی", "باخت"
 	)
-	modes_vbox.add_child(card_cr)
+	modes_vbox.add_child(_wrap_pad(card_cr, 48))
 
 	# Card C: Multi-Rank (چند نفره)
 	var r1 = int(history_data.get("rank1_multi_rank", 0))
@@ -95,7 +95,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 		r1, r2, rn,
 		"اول 🥇", "دوم 🥈", "سایر 🥉"
 	)
-	modes_vbox.add_child(card_mr)
+	modes_vbox.add_child(_wrap_pad(card_mr, 48))
 
 	# === 2. GAMES BREAKDOWN SECTION ===
 	var spacer = Control.new()
@@ -165,11 +165,11 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 
 	if played_games.is_empty():
 		var no_games_card = _create_empty_card("هنوز هیچ بازی‌ای با این کاربر انجام نشده است.")
-		games_cards_vbox.add_child(no_games_card)
+		games_cards_vbox.add_child(_wrap_pad(no_games_card, 48))
 	else:
 		for g_info in played_games:
 			var card = _create_game_stat_card(g_info)
-			games_cards_vbox.add_child(card)
+			games_cards_vbox.add_child(_wrap_pad(card, 48))
 
 	# If there are unplayed games, offer an expandable toggle section
 	if not unplayed_games.is_empty() and not played_games.is_empty():
@@ -180,7 +180,7 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 
 		for g_info in unplayed_games:
 			var card = _create_game_stat_card(g_info, true)
-			unplayed_container.add_child(card)
+			unplayed_container.add_child(_wrap_pad(card, 48))
 
 		var btn_toggle = Button.new()
 		btn_toggle.text = "▼ مشاهده سایر بازی‌ها (%s)" % GameManager.to_fa_num(unplayed_games.size())
@@ -199,10 +199,18 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 		)
 		target_container.add_child(btn_toggle)
 
+static func _wrap_pad(control: Control, horiz_margin: int = 48) -> MarginContainer:
+	var m = MarginContainer.new()
+	m.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	m.add_theme_constant_override("margin_left", horiz_margin)
+	m.add_theme_constant_override("margin_right", horiz_margin)
+	m.add_child(control)
+	return m
+
 static func _create_mode_card(title_text: String, val1: int, val2: int, val3: int, label1: String, label2: String, label3: String) -> PanelContainer:
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(0, 196)
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
 
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -257,7 +265,7 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) -> PanelContainer:
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(0, 196)
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
 
 	var hbox = HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 18)
@@ -397,7 +405,7 @@ static func _create_stat_pill(text_content: String, text_color: Color, bg_color:
 static func _create_empty_card(msg: String) -> PanelContainer:
 	var p = PanelContainer.new()
 	p.custom_minimum_size = Vector2(0, 112)
-	p.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 20.0))
+	p.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 54.0, 20.0))
 
 	var lbl = Label.new()
 	lbl.text = msg
