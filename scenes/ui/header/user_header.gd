@@ -29,8 +29,8 @@ signal change_username_requested()
 var _is_copy_feedback_active: bool = false
 
 func _ready() -> void:
-	coin_badge.visible = true
-	sep1.visible = true
+	coin_badge.visible = false
+	sep1.visible = false
 
 	ActionVFXManager.apply_button_juice(avatar_btn, "tap_button")
 	ActionVFXManager.apply_button_juice(btn_user_id, "tap_button")

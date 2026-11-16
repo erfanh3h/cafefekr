@@ -1,53 +1,31 @@
 extends Control
 
-## Cafe Fekr — History Tab (Royal Player Record Book)
-## Sections:
-## 1. Match History (سوابق مسابقات اخیر با جزییات، راندهای تفکیک شده و کارت‌های بزرگ و کلیک‌پذیر)
-## 2. Leaderboards (رتبه‌بندی امتیازی، بیشترین پیروزی، دوستان و اتحادها با نماد اختصاصی اتحاد)
+## Cafe Fekr — History Tab (دیوان برترین‌ها)
+## Leaderboard across 4 categories:
+## 1. امتیاز کل (Global Score)
+## 2. بیشترین پیروزی (Total Wins)
+## 3. دوستان (Friends Leaderboard - Self excluded)
+## 4. اتحادها (Clans Leaderboard - Emblems and Clan details)
 
 signal user_profile_requested(user_data: Dictionary)
 
-@onready var subtab_matches: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnMatches
-@onready var subtab_leaderboard: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnLeaderboard
+@onready var btn_lb_score: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnLbScore
+@onready var btn_lb_win: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnLbWin
+@onready var btn_lb_friends: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnLbFriends
+@onready var btn_lb_clans: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnLbClans
+@onready var lb_list_vbox: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/LbListVBox
 
-@onready var content_matches: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/MatchesContent
-@onready var content_lb: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent
-@onready var details_modal: Control = $OuterMargin/MainPanel/InnerMargin/VBox/DetailsModal
-@onready var details_container: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/DetailsModal/Scroll/DetailsVBox
-@onready var btn_back_from_details: Button = $OuterMargin/MainPanel/InnerMargin/VBox/DetailsModal/BtnBack
+var active_lb_tab: String = "score" # "score" | "win" | "friends" | "clans"
+var active_section: String = "leaderboard" # compatibility
 
-@onready var lb_subtabs: HBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbSubTabs
-@onready var btn_lb_score: Button = $OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbSubTabs/BtnLbScore
-@onready var btn_lb_win: Button = $OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbSubTabs/BtnLbWin
-@onready var btn_lb_friends: Button = $OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbSubTabs/BtnLbFriends
-@onready var btn_lb_clans: Button = $OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbSubTabs/BtnLbClans
-@onready var lb_list_vbox: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbListVBox
-
-var active_section: String = "matches" # "matches" | "leaderboard"
-var active_lb_tab: String = "score"    # "score" | "win" | "friends" | "clans"
-
-var _history_matches: Array = []
-var _leaderboard_cache: Dictionary = {}
+var _SCORE_ICON = preload("res://assets/images/badges/score.png")
+var _HEKAYAT_FONT = preload("res://assets/fonts/hekayat.ttf")
 
 func _ready() -> void:
-	KenneyUI.style_button(btn_back_from_details, KenneyUI.COLOR_YELLOW)
-	ActionVFXManager.apply_button_juice(subtab_matches, "tap_button")
-	ActionVFXManager.apply_button_juice(subtab_leaderboard, "tap_button")
-	ActionVFXManager.apply_button_juice(btn_back_from_details, "tap_button")
-
-	subtab_matches.pressed.connect(func():
-		AudioManager.sfx_tap()
-		switch_section("matches")
-	)
-	subtab_leaderboard.pressed.connect(func():
-		AudioManager.sfx_tap()
-		switch_section("leaderboard")
-	)
-
-	btn_back_from_details.pressed.connect(func():
-		AudioManager.sfx_tap()
-		details_modal.visible = false
-	)
+	ActionVFXManager.apply_button_juice(btn_lb_score, "tap_button")
+	ActionVFXManager.apply_button_juice(btn_lb_win, "tap_button")
+	ActionVFXManager.apply_button_juice(btn_lb_friends, "tap_button")
+	ActionVFXManager.apply_button_juice(btn_lb_clans, "tap_button")
 
 	btn_lb_score.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -66,286 +44,13 @@ func _ready() -> void:
 		switch_lb_tab("clans")
 	)
 
-	switch_section("matches")
+	switch_lb_tab("score")
 
 
-func switch_section(sec_name: String) -> void:
-	active_section = sec_name
-	details_modal.visible = false
+func switch_section(_sec_name: String) -> void:
+	# Backward compatibility stub
+	switch_lb_tab(active_lb_tab)
 
-	_style_subnav_btn(subtab_matches, sec_name == "matches")
-	_style_subnav_btn(subtab_leaderboard, sec_name == "leaderboard")
-
-	content_matches.visible = (sec_name == "matches")
-	content_lb.visible = (sec_name == "leaderboard")
-
-	match sec_name:
-		"matches":
-			_load_matches_if_needed()
-		"leaderboard":
-			switch_lb_tab(active_lb_tab)
-
-
-func _style_subnav_btn(btn: Button, is_active: bool) -> void:
-	if is_active:
-		KenneyUI.style_button(btn, KenneyUI.COLOR_YELLOW)
-		btn.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
-	else:
-		KenneyUI.style_button(btn, KenneyUI.COLOR_GREY)
-		btn.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
-
-
-# ==============================================================================
-# 1. MATCH HISTORY SECTION
-# ==============================================================================
-
-func _load_matches_if_needed() -> void:
-	if not _history_matches.is_empty():
-		return
-	for c in content_matches.get_children():
-		c.queue_free()
-	content_matches.add_child(CafeSocialTheme.make_loading_state("در حال دریافت تاریخچه بازی‌ها..."))
-
-	NetworkManager.api.get_my_game_history(func(ok: bool, _c: int, data: Variant):
-		if not is_instance_valid(content_matches):
-			return
-		for c in content_matches.get_children():
-			c.queue_free()
-		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_ARRAY:
-			_history_matches = data["result"]
-			_render_matches_list()
-		else:
-			content_matches.add_child(CafeSocialTheme.make_empty_state(
-				CafeSocialTheme.ICO_INFO,
-				"هنوز مسابقه‌ای ثبت نشده است",
-				"با شروع رقابت در بخش «بازی»، سوابق مسابقات شما در اینجا نمایش داده می‌شود."
-			))
-	)
-
-
-func _render_matches_list() -> void:
-	for c in content_matches.get_children():
-		c.queue_free()
-
-	if _history_matches.is_empty():
-		content_matches.add_child(CafeSocialTheme.make_empty_state(
-			CafeSocialTheme.ICO_INFO,
-			"هیچ مسابقه‌ای یافت نشد",
-			"اولین بازی خود را از بخش بازی شروع کنید!"
-		))
-		return
-
-	var my_uid = str(GameManager.user_data.get("_id", GameManager.user_data.get("id", "")))
-
-	for match_dict in _history_matches:
-		var card = _create_match_card(match_dict, my_uid)
-		content_matches.add_child(card)
-
-
-func _create_match_card(m: Dictionary, my_uid: String) -> PanelContainer:
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0, 140)
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 16))
-
-	# Full card click button for match details
-	var click_btn := Button.new()
-	click_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-	click_btn.flat = true
-	click_btn.focus_mode = Control.FOCUS_NONE
-	click_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	ActionVFXManager.apply_button_juice(click_btn, "tap_button")
-	click_btn.pressed.connect(func():
-		AudioManager.sfx_tap()
-		_open_match_details(m)
-	)
-	panel.add_child(click_btn)
-
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_top", 14)
-	margin.add_theme_constant_override("margin_right", 20)
-	margin.add_theme_constant_override("margin_bottom", 14)
-	panel.add_child(margin)
-
-	var hbox := HBoxContainer.new()
-	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_theme_constant_override("separation", 18)
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	margin.add_child(hbox)
-
-	# Outcome determination
-	var my_res = str(m.get("my_result", ""))
-	var winner_id = str(m.get("winner", m.get("winner_id", "")))
-	var is_draw = (my_res == "draw") or bool(m.get("is_draw", false)) or winner_id == "0" or winner_id == "draw"
-	var is_win = (my_res == "win") or (winner_id == my_uid and not is_draw)
-
-	var status_text = "پیروزی" if is_win else ("مساوی" if is_draw else "شکست")
-	var status_col = CafeSocialTheme.COL_EMERALD_TEXT if is_win else (CafeSocialTheme.COL_GOLD_BRIGHT if is_draw else CafeSocialTheme.COL_CRIMSON_TEXT)
-
-	# Left Action / Outcome Badge
-	var outcome_box := VBoxContainer.new()
-	outcome_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	outcome_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	outcome_box.custom_minimum_size = Vector2(110, 0)
-	hbox.add_child(outcome_box)
-
-	var outcome_lbl := Label.new()
-	outcome_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	outcome_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	outcome_lbl.add_theme_font_size_override("font_size", 28)
-	outcome_lbl.add_theme_color_override("font_color", status_col)
-	outcome_lbl.text = status_text
-	outcome_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	outcome_box.add_child(outcome_lbl)
-
-	var btn_view := CafeSocialTheme.make_button("جزییات", "wood", Vector2(96, 42), 18)
-	btn_view.pressed.connect(func():
-		AudioManager.sfx_tap()
-		_open_match_details(m)
-	)
-	outcome_box.add_child(btn_view)
-
-	# Center info: Game Title and Match Type
-	var center_col := VBoxContainer.new()
-	center_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	center_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	center_col.add_theme_constant_override("separation", 4)
-	center_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_child(center_col)
-
-	var game_key = str(m.get("game_type", m.get("game", "بازی")))
-	var game_name_fa = _get_game_fa_name(game_key)
-
-	var title_lbl := Label.new()
-	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	title_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	title_lbl.add_theme_font_size_override("font_size", 28)
-	title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
-	title_lbl.text = game_name_fa
-	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	center_col.add_child(title_lbl)
-
-	var mode_name = str(m.get("game_score_type", "رتبه‌بندی"))
-	var sub_lbl := Label.new()
-	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	sub_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	sub_lbl.add_theme_font_size_override("font_size", 18)
-	sub_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
-	sub_lbl.text = "حالت مسابقه: %s" % mode_name
-	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	center_col.add_child(sub_lbl)
-
-	# Opponent avatar & name (Interactive profile popup)
-	var opp_name = str(m.get("opponent_name", ""))
-	var opp_img_id = int(m.get("opponent_image", 0))
-	var opp_id = str(m.get("opponent_id", ""))
-
-	if opp_name.is_empty():
-		var users_info = m.get("users_info", [])
-		if typeof(users_info) == TYPE_ARRAY:
-			for u in users_info:
-				if typeof(u) == TYPE_DICTIONARY and str(u.get("user_id", "")) != my_uid:
-					opp_name = str(u.get("username", u.get("name", "حریف")))
-					opp_img_id = int(u.get("image", 0))
-					opp_id = str(u.get("user_id", ""))
-					break
-	if opp_name.is_empty():
-		opp_name = "حریف"
-
-	var opp_btn := Button.new()
-	opp_btn.custom_minimum_size = Vector2(100, 100)
-	opp_btn.flat = true
-	opp_btn.focus_mode = Control.FOCUS_NONE
-	opp_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	ActionVFXManager.apply_button_juice(opp_btn, "tap_button")
-	opp_btn.pressed.connect(func():
-		AudioManager.sfx_tap()
-		if not opp_id.is_empty() and not opp_id.begins_with("bot_"):
-			UserProfileDialog.show_user({"_id": opp_id, "username": opp_name, "image": opp_img_id}, "", self)
-		else:
-			_open_match_details(m)
-	)
-	hbox.add_child(opp_btn)
-
-	var opp_col := VBoxContainer.new()
-	opp_col.set_anchors_preset(Control.PRESET_FULL_RECT)
-	opp_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	opp_col.add_theme_constant_override("separation", 4)
-	opp_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	opp_btn.add_child(opp_col)
-
-	var opp_avatar := TextureRect.new()
-	opp_avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	opp_avatar.custom_minimum_size = Vector2(62, 62)
-	opp_avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	opp_avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	var a_path = "res://assets/icons/Avatars/%d.png" % opp_img_id
-	if ResourceLoader.exists(a_path):
-		opp_avatar.texture = load(a_path)
-	else:
-		opp_avatar.texture = preload("res://assets/icons/Avatars/0.png")
-	opp_col.add_child(opp_avatar)
-
-	var opp_lbl := Label.new()
-	opp_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	opp_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	opp_lbl.add_theme_font_size_override("font_size", 16)
-	opp_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
-	opp_lbl.text = opp_name.substr(0, 12)
-	opp_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	opp_col.add_child(opp_lbl)
-
-	return panel
-
-
-func _open_match_details(m: Dictionary) -> void:
-	for c in details_container.get_children():
-		c.queue_free()
-
-	details_modal.visible = true
-	var title := Label.new()
-	title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	title.add_theme_font_size_override("font_size", 32)
-	title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
-	title.text = "جزییات مسابقه: " + _get_game_fa_name(str(m.get("game_type", m.get("game", ""))))
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	details_container.add_child(title)
-
-	var rounds = m.get("rounds", [])
-	if typeof(rounds) == TYPE_ARRAY and not rounds.is_empty():
-		for i in range(rounds.size()):
-			var r = rounds[i]
-			var r_panel := PanelContainer.new()
-			r_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 12))
-			var r_m := MarginContainer.new()
-			r_m.add_theme_constant_override("margin_left", 16)
-			r_m.add_theme_constant_override("margin_top", 10)
-			r_m.add_theme_constant_override("margin_right", 16)
-			r_m.add_theme_constant_override("margin_bottom", 10)
-			r_panel.add_child(r_m)
-
-			var r_lbl := Label.new()
-			r_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-			r_lbl.add_theme_font_size_override("font_size", 22)
-			r_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
-			r_lbl.text = "راند %s  •  شناسه برنده: %s" % [GameManager.to_fa_num(i + 1), str(r.get("winner_user_id", r.get("winner_id", "نامشخص")))]
-			r_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			r_m.add_child(r_lbl)
-			details_container.add_child(r_panel)
-	else:
-		var no_rounds := Label.new()
-		no_rounds.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		no_rounds.add_theme_font_size_override("font_size", 22)
-		no_rounds.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
-		no_rounds.text = "اطلاعات راندهای مجزا برای این مسابقه ثبت نشده است."
-		no_rounds.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		details_container.add_child(no_rounds)
-
-
-# ==============================================================================
-# 2. LEADERBOARDS SECTION (Score | Win | Friends | Clans)
-# ==============================================================================
 
 func switch_lb_tab(t_name: String) -> void:
 	active_lb_tab = t_name
@@ -399,13 +104,15 @@ func _load_leaderboard(lb_type: String) -> void:
 func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 	var my_uid = str(GameManager.user_data.get("_id", GameManager.user_data.get("id", "")))
 
-	# Filter out current user from friends tab if returned
+	# Filter out current user from friends tab (and filter test bots)
 	var filtered_list: Array = []
 	for item in list:
 		if typeof(item) != TYPE_DICTIONARY:
 			continue
 		var item_uid = str(item.get("_id", item.get("user_id", item.get("id", ""))))
-		if lb_type == "friends" and item_uid == my_uid:
+		if lb_type == "friends" and item_uid == my_uid and not my_uid.is_empty():
+			continue
+		if item_uid.begins_with("bot_") or item_uid.begins_with("test_bot"):
 			continue
 		filtered_list.append(item)
 
@@ -417,168 +124,319 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		))
 		return
 
+	var rank_idx = 0
 	for i in range(filtered_list.size()):
 		var raw_item: Dictionary = filtered_list[i]
-		var rank = i + 1
+		rank_idx += 1
+		var rank = rank_idx
 
-		# Unpack if nested user_data
-		var item: Dictionary = raw_item
-		if raw_item.has("user_data") and typeof(raw_item["user_data"]) == TYPE_DICTIONARY:
-			item = raw_item["user_data"].duplicate()
-			if raw_item.has("win"): item["win"] = raw_item["win"]
-			if raw_item.has("score"): item["score"] = raw_item["score"]
+		var username: String = ""
+		var subtitle_extra: String = ""
+		var img_id: int = 0
+		var score_val: int = 0
+		var win_val: int = 0
+		var lvl_val: int = 1
+		var mem_cnt: int = 1
+		var item_uid: String = str(raw_item.get("_id", raw_item.get("user_id", raw_item.get("id", ""))))
+		var entry_dict: Dictionary = {}
 
-		var item_uid = str(item.get("_id", item.get("user_id", item.get("id", ""))))
+		if lb_type == "clans":
+			var cname = str(raw_item.get("name", "اتحاد"))
+			var ctag = str(raw_item.get("tag", ""))
+			username = cname if ctag.is_empty() else "%s  [%s]" % [cname, ctag]
+			score_val = int(round(float(raw_item.get("clan_score", raw_item.get("score", 0)))))
+			lvl_val = int(raw_item.get("clan_level", raw_item.get("level", 1)))
+			mem_cnt = int(raw_item.get("member_count", raw_item.get("members_count", 1)))
+			img_id = int(raw_item.get("emblem_id", raw_item.get("emblem", raw_item.get("badge", 1))))
+			entry_dict = raw_item.duplicate(true)
+		else:
+			username = str(raw_item.get("username", raw_item.get("name", "")))
+			img_id = int(raw_item.get("image", raw_item.get("avatar", 0)))
+			score_val = int(round(float(raw_item.get("score", 0))))
+			win_val = int(round(float(raw_item.get("win", 0))))
+			var xp_val = int(raw_item.get("xp", 0))
+
+			if raw_item.has("user_data") and typeof(raw_item["user_data"]) == TYPE_DICTIONARY:
+				var ud: Dictionary = raw_item["user_data"]
+				if username.is_empty():
+					username = str(ud.get("username", ud.get("name", "بازیکن")))
+				if img_id == 0:
+					img_id = int(ud.get("image", ud.get("avatar", 0)))
+				if score_val == 0:
+					score_val = int(round(float(ud.get("score", 0))))
+				if xp_val == 0:
+					xp_val = int(ud.get("xp", 0))
+				if ud.has("level"):
+					lvl_val = int(ud.get("level", 1))
+
+			if username.is_empty():
+				username = "بازیکن"
+
+			if xp_val > 0:
+				lvl_val = GameManager.calculate_level(xp_val)
+			elif raw_item.has("level"):
+				lvl_val = int(raw_item.get("level", 1))
+
+			entry_dict = {
+				"_id": item_uid,
+				"user_id": item_uid,
+				"username": username,
+				"name": username,
+				"image": img_id,
+				"avatar": img_id,
+				"score": score_val,
+				"win": win_val,
+				"level": lvl_val,
+				"xp": xp_val,
+			}
+
 		var is_me = (item_uid == my_uid and lb_type != "clans")
 
-		# Outer Card
-		var card := PanelContainer.new()
-		card.custom_minimum_size = Vector2(0, 120)
-		var style = CafeSocialTheme.create_highlight_card_style(true) if is_me else CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 16)
-		card.add_theme_stylebox_override("panel", style)
+		# --- Outer Card ---
+		var card := Button.new()
+		card.custom_minimum_size = Vector2(0, 134)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.flat = true
+		card.focus_mode = Control.FOCUS_NONE
+		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		ActionVFXManager.apply_button_juice(card, "tap_button")
 
-		# Make full row clickable with juice
-		var click_btn := Button.new()
-		click_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-		click_btn.flat = true
-		click_btn.focus_mode = Control.FOCUS_NONE
-		click_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		ActionVFXManager.apply_button_juice(click_btn, "tap_button")
+		var style_normal := StyleBoxFlat.new()
+		style_normal.set_corner_radius_all(18)
+		style_normal.shadow_size = 3
+		style_normal.shadow_offset = Vector2(0, 2)
 
-		if lb_type == "clans":
-			var c_id = str(item.get("_id", item.get("clan_id", item.get("id", ""))))
-			click_btn.pressed.connect(func():
-				AudioManager.sfx_tap()
-				CafeSocialTheme.show_clan_details_modal(self, c_id, item)
-			)
-		else:
-			click_btn.pressed.connect(func():
-				AudioManager.sfx_tap()
-				UserProfileDialog.show_user(item, "", self)
-			)
-		card.add_child(click_btn)
-
-		var margin := MarginContainer.new()
-		margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		margin.add_theme_constant_override("margin_left", 20)
-		margin.add_theme_constant_override("margin_top", 12)
-		margin.add_theme_constant_override("margin_right", 20)
-		margin.add_theme_constant_override("margin_bottom", 12)
-		card.add_child(margin)
-
-		var hbox := HBoxContainer.new()
-		hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		hbox.add_theme_constant_override("separation", 18)
-		hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		margin.add_child(hbox)
-
-		# Rank Medal / Number
-		var rank_lbl := Label.new()
-		rank_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		rank_lbl.custom_minimum_size = Vector2(56, 0)
-		rank_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-		rank_lbl.add_theme_font_size_override("font_size", 32)
-		if rank == 1:
-			rank_lbl.text = "🥇 ۱"
-			rank_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+		if is_me:
+			style_normal.bg_color = Color(0.24, 0.16, 0.08, 0.98)
+			style_normal.border_color = Color(1.0, 0.85, 0.30, 1.0)
+			style_normal.set_border_width_all(3)
+			style_normal.shadow_color = Color(1.0, 0.82, 0.25, 0.35)
+		elif rank == 1:
+			style_normal.bg_color = Color(0.28, 0.18, 0.08, 0.96)
+			style_normal.border_color = Color(1.0, 0.85, 0.25, 1.0)
+			style_normal.set_border_width_all(3)
+			style_normal.shadow_color = Color(1.0, 0.82, 0.2, 0.35)
 		elif rank == 2:
-			rank_lbl.text = "🥈 ۲"
-			rank_lbl.add_theme_color_override("font_color", Color(0.85, 0.88, 0.92))
+			style_normal.bg_color = Color(0.20, 0.17, 0.15, 0.96)
+			style_normal.border_color = Color(0.88, 0.92, 0.98, 0.95)
+			style_normal.set_border_width_all(3)
+			style_normal.shadow_color = Color(0.8, 0.88, 1.0, 0.25)
 		elif rank == 3:
-			rank_lbl.text = "🥉 ۳"
-			rank_lbl.add_theme_color_override("font_color", Color(0.88, 0.65, 0.42))
+			style_normal.bg_color = Color(0.22, 0.16, 0.10, 0.96)
+			style_normal.border_color = Color(0.90, 0.62, 0.38, 0.95)
+			style_normal.set_border_width_all(3)
+			style_normal.shadow_color = Color(0.85, 0.55, 0.30, 0.25)
 		else:
-			rank_lbl.text = GameManager.to_fa_num(rank)
-			rank_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
-		rank_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		hbox.add_child(rank_lbl)
+			style_normal.bg_color = Color(0.14, 0.09, 0.06, 0.92)
+			style_normal.border_color = Color(0.58, 0.45, 0.30, 0.82)
+			style_normal.set_border_width_all(2)
+			style_normal.shadow_color = Color(0, 0, 0, 0.5)
 
-		# Avatar or Clan Emblem
+		var style_hover := StyleBoxFlat.new()
+		style_hover.bg_color = Color(0.30, 0.20, 0.12, 0.98)
+		style_hover.set_corner_radius_all(18)
+		style_hover.set_border_width_all(3)
+		style_hover.border_color = Color(1.0, 0.92, 0.5, 1.0)
+		style_hover.shadow_color = Color(1.0, 0.85, 0.25, 0.4)
+		style_hover.shadow_size = 4
+
+		card.add_theme_stylebox_override("normal", style_normal)
+		card.add_theme_stylebox_override("hover", style_hover)
+		card.add_theme_stylebox_override("pressed", style_normal)
+		card.add_theme_stylebox_override("focus", style_normal)
+
+		var pad := MarginContainer.new()
+		pad.set_anchors_preset(Control.PRESET_FULL_RECT)
+		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pad.add_theme_constant_override("margin_left", 18)
+		pad.add_theme_constant_override("margin_right", 18)
+		pad.add_theme_constant_override("margin_top", 12)
+		pad.add_theme_constant_override("margin_bottom", 12)
+		card.add_child(pad)
+
+		var row := HBoxContainer.new()
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_theme_constant_override("separation", 16)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		pad.add_child(row)
+
+		# 1. Stat Value (Child 0: Far Left)
+		var val_box := VBoxContainer.new()
+		val_box.custom_minimum_size = Vector2(100, 0)
+		val_box.add_theme_constant_override("separation", 2)
+		val_box.alignment = BoxContainer.ALIGNMENT_CENTER
+		val_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(val_box)
+
+		if lb_type == "win":
+			var val_lbl := Label.new()
+			val_lbl.text = GameManager.to_fa_num(int(win_val))
+			val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
+			val_lbl.add_theme_font_size_override("font_size", 42)
+			val_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.38, 1.0))
+			val_box.add_child(val_lbl)
+
+			var win_sub := Label.new()
+			win_sub.text = "برد"
+			win_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			win_sub.add_theme_font_override("font", _HEKAYAT_FONT)
+			win_sub.add_theme_font_size_override("font_size", 22)
+			win_sub.add_theme_color_override("font_color", Color(0.55, 0.92, 0.64, 1.0))
+			val_box.add_child(win_sub)
+		else:
+			var sc_icon := TextureRect.new()
+			sc_icon.texture = _SCORE_ICON
+			sc_icon.custom_minimum_size = Vector2(44, 46)
+			sc_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			sc_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			sc_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			sc_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			val_box.add_child(sc_icon)
+
+			var val_lbl := Label.new()
+			val_lbl.text = GameManager.to_fa_num(int(score_val))
+			val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
+			val_lbl.add_theme_font_size_override("font_size", 30)
+			val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
+
+			var sc_pill := StyleBoxFlat.new()
+			sc_pill.bg_color = Color(0.10, 0.06, 0.03, 0.94)
+			sc_pill.border_color = Color(0.85, 0.68, 0.28, 0.88)
+			sc_pill.set_border_width_all(1)
+			sc_pill.set_corner_radius_all(10)
+			sc_pill.content_margin_left = 12
+			sc_pill.content_margin_right = 12
+			sc_pill.content_margin_top = 2
+			sc_pill.content_margin_bottom = 2
+			val_lbl.add_theme_stylebox_override("normal", sc_pill)
+			val_box.add_child(val_lbl)
+
+		# 2. Avatar / Clan Emblem Plaque (Child 1: To the left of text_col)
+		var av_frame := PanelContainer.new()
+		av_frame.custom_minimum_size = Vector2(88, 88)
+		av_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		av_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		av_frame.clip_contents = true
+
+		var f_style := StyleBoxFlat.new()
+		f_style.bg_color = Color(0.10, 0.07, 0.04, 0.94)
+		f_style.set_corner_radius_all(12)
+		f_style.set_border_width_all(2)
+		f_style.border_color = Color(1.0, 0.82, 0.35, 0.85)
+		av_frame.add_theme_stylebox_override("panel", f_style)
+
 		var avatar := TextureRect.new()
-		avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		avatar.custom_minimum_size = Vector2(64, 64)
+		avatar.custom_minimum_size = Vector2(82, 82)
 		avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 		if lb_type == "clans":
-			var emb_idx = int(item.get("emblem", item.get("badge", item.get("image", 0))))
-			avatar.texture = CafeSocialTheme.get_clan_emblem_texture(emb_idx)
+			avatar.texture = CafeSocialTheme.get_clan_emblem_texture(img_id)
 		else:
-			var img_id = int(item.get("image", 0))
-			var a_path = "res://assets/icons/Avatars/%d.png" % img_id
-			avatar.texture = load(a_path) if ResourceLoader.exists(a_path) else preload("res://assets/icons/Avatars/0.png")
-		hbox.add_child(avatar)
+			var av_path: String = "res://assets/icons/Avatars/%d.png" % img_id
+			avatar.texture = load(av_path) if ResourceLoader.exists(av_path) else preload("res://assets/icons/Avatars/0.png")
+		av_frame.add_child(avatar)
+		row.add_child(av_frame)
 
-		# Title & Subtitle (Same structure for ALL rows)
-		var col := VBoxContainer.new()
-		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.add_theme_constant_override("separation", 4)
-		col.alignment = BoxContainer.ALIGNMENT_CENTER
-		hbox.add_child(col)
+		# 3. Name & Subtitle Column (Child 2: situated to the RIGHT of Avatar)
+		var text_col := VBoxContainer.new()
+		text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text_col.alignment = BoxContainer.ALIGNMENT_CENTER
+		text_col.add_theme_constant_override("separation", 4)
+		text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(text_col)
 
 		var name_lbl := Label.new()
-		name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		name_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-		name_lbl.add_theme_font_size_override("font_size", 28)
-		name_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY if not is_me else CafeSocialTheme.COL_GOLD_BRIGHT)
-		name_lbl.text = str(item.get("name", item.get("username", "بازیکن")))
+		name_lbl.text = username
 		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		col.add_child(name_lbl)
+		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_lbl.clip_text = true
+		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
+		name_lbl.add_theme_font_size_override("font_size", 32)
+		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0) if not is_me else Color(1.0, 0.90, 0.35, 1.0))
+		text_col.add_child(name_lbl)
 
-		var sub_text := ""
+		# Level row with BADGE_LEVEL icon instead of "سطح" word
+		var sub_hbox := HBoxContainer.new()
+		sub_hbox.alignment = BoxContainer.ALIGNMENT_END
+		sub_hbox.add_theme_constant_override("separation", 6)
+		sub_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		text_col.add_child(sub_hbox)
+
 		if lb_type == "clans":
-			var lvl = int(item.get("level", 1))
-			var mem_cnt = int(item.get("member_count", item.get("members_count", 1)))
-			sub_text = "سطح %s  •  %s عضو" % [GameManager.to_fa_num(lvl), GameManager.to_fa_num(mem_cnt)]
+			var lbl_mem := Label.new()
+			lbl_mem.text = "•  %s عضو" % GameManager.to_fa_num(int(mem_cnt))
+			lbl_mem.add_theme_font_override("font", _HEKAYAT_FONT)
+			lbl_mem.add_theme_font_size_override("font_size", 22)
+			lbl_mem.add_theme_color_override("font_color", Color(0.82, 0.75, 0.64, 1.0))
+			sub_hbox.add_child(lbl_mem)
+
+		var lbl_lvl_num := Label.new()
+		lbl_lvl_num.text = GameManager.to_fa_num(int(lvl_val))
+		lbl_lvl_num.add_theme_font_override("font", _HEKAYAT_FONT)
+		lbl_lvl_num.add_theme_font_size_override("font_size", 24)
+		lbl_lvl_num.add_theme_color_override("font_color", Color(1.0, 0.88, 0.50, 1.0))
+		sub_hbox.add_child(lbl_lvl_num)
+
+		var lvl_ico := TextureRect.new()
+		lvl_ico.texture = CafeSocialTheme.BADGE_LEVEL
+		lvl_ico.custom_minimum_size = Vector2(28, 28)
+		lvl_ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		lvl_ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		lvl_ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		sub_hbox.add_child(lvl_ico)
+
+		# 4. Rank Badge (Child 3: Far Right - Only icons for 1, 2, 3)
+		var rank_frame := PanelContainer.new()
+		rank_frame.custom_minimum_size = Vector2(68, 68)
+		rank_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		rank_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+		var rf_style := StyleBoxFlat.new()
+		rf_style.bg_color = Color(0.10, 0.06, 0.03, 0.82)
+		rf_style.set_corner_radius_all(14)
+		rank_frame.add_theme_stylebox_override("panel", rf_style)
+
+		var rank_lbl := Label.new()
+		rank_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		rank_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		rank_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
+		rank_lbl.add_theme_font_size_override("font_size", 36)
+
+		if rank == 1:
+			rank_lbl.text = "🥇"
+		elif rank == 2:
+			rank_lbl.text = "🥈"
+		elif rank == 3:
+			rank_lbl.text = "🥉"
 		else:
-			var lvl = int(item.get("level", 1))
-			sub_text = "سطح %s" % GameManager.to_fa_num(lvl)
+			rank_lbl.text = GameManager.to_fa_num(int(rank))
+			rank_lbl.add_theme_color_override("font_color", Color(0.92, 0.86, 0.74))
 
-		var sub_lbl := Label.new()
-		sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		sub_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		sub_lbl.add_theme_font_size_override("font_size", 18)
-		sub_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
-		sub_lbl.text = sub_text
-		sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		col.add_child(sub_lbl)
+		rank_frame.add_child(rank_lbl)
+		row.add_child(rank_frame)
 
-		# Right Stat Badge (Trophies or Wins)
-		var val_col := VBoxContainer.new()
-		val_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		val_col.alignment = BoxContainer.ALIGNMENT_CENTER
-		val_col.custom_minimum_size = Vector2(130, 0)
-		hbox.add_child(val_col)
-
-		var val = item.get("score", item.get("win", 0))
-		if lb_type == "win":
-			val = item.get("win", item.get("score", 0))
-
-		var unit = "امتیاز" if lb_type in ["score", "friends", "clans"] else "پیروزی"
-		var val_lbl := Label.new()
-		val_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		val_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-		val_lbl.add_theme_font_size_override("font_size", 26)
-		val_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
-		val_lbl.text = GameManager.to_fa_num(val)
-		val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		val_col.add_child(val_lbl)
-
-		var unit_lbl := Label.new()
-		unit_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		unit_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		unit_lbl.add_theme_font_size_override("font_size", 16)
-		unit_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
-		unit_lbl.text = unit
-		unit_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		val_col.add_child(unit_lbl)
+		# Row Click Handler
+		if lb_type == "clans":
+			var c_id = str(entry_dict.get("_id", entry_dict.get("clan_id", item_uid)))
+			card.pressed.connect(func():
+				AudioManager.sfx_tap()
+				CafeSocialTheme.show_clan_details_modal(self, c_id, entry_dict)
+			)
+		else:
+			card.pressed.connect(func():
+				AudioManager.sfx_tap()
+				UserProfileDialog.show_user(entry_dict, "", self)
+			)
 
 		lb_list_vbox.add_child(card)
-
-
-func _get_game_fa_name(key: String) -> String:
-	for g in GamesHistoryViewHelper.GAMES_LIST:
-		if str(g.get("key", "")).to_lower() == key.to_lower() or str(g.get("id", "")).to_lower() == key.to_lower():
-			return str(g.get("name_fa", key))
-	return key

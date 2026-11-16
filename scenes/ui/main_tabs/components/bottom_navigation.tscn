@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/components/bottom_navigation.gd" id="1_bot_script"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/social.png" id="2_social_tex"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/history.png" id="3_history_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/bests.png" id="3_history_tex"]
 [ext_resource type="Texture2D" path="res://assets/icons/tabs/tab_play.png" id="4_play_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/info.png" id="5_library_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/level.png" id="6_user_tex"]
@@ -245,7 +245,7 @@ mouse_filter = 2
 theme_override_colors/font_color = Color(0.80, 0.74, 0.65, 0.92)
 theme_override_fonts/font = ExtResource("7_font_hekayat")
 theme_override_font_sizes/font_size = 24
-text = "سوابق"
+text = "برترین‌ها"
 horizontal_alignment = 1
 
 [node name="BtnPlay" type="Button" parent="PanelFrame/Margin/HBox"]

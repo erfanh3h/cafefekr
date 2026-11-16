@@ -106,7 +106,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
-text = "شناسنامه"
+text = "تاریخچه"
 
 [node name="BtnCosmetics" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
 custom_minimum_size = Vector2(0, 52)
@@ -131,14 +131,6 @@ size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "اعلان‌ها"
-
-[node name="BtnAccount" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 52)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-mouse_default_cursor_shape = 2
-text = "تنظیمات"
 
 [node name="Scroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
 layout_mode = 2
@@ -169,12 +161,6 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 14
 
 [node name="NotificationsContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 14
-
-[node name="AccountContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3

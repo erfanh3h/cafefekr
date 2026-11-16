@@ -51,14 +51,18 @@ func _ready() -> void:
 	assert(lib.search_input.custom_minimum_size.y >= 60, "Search input should be enlarged")
 	print("[PASS] Library tab holds all 25 registered board games with enlarged search.")
 
-	# Verify History Tab sub-sections (matches and leaderboard; stats moved to user tab)
+	# Verify History Tab 4 sub-sections (score, win, friends, clans)
 	shell.switch_to_tab("history")
 	var hist = shell.get_active_tab_instance()
-	hist.switch_section("matches")
-	assert(hist.active_section == "matches", "History should switch to matches")
-	hist.switch_section("leaderboard")
-	assert(hist.active_section == "leaderboard", "History should switch to leaderboard")
-	print("[PASS] History tab sub-navigation (matches, leaderboard) verified.")
+	hist.switch_lb_tab("score")
+	assert(hist.active_lb_tab == "score", "History should switch to score")
+	hist.switch_lb_tab("win")
+	assert(hist.active_lb_tab == "win", "History should switch to win")
+	hist.switch_lb_tab("friends")
+	assert(hist.active_lb_tab == "friends", "History should switch to friends")
+	hist.switch_lb_tab("clans")
+	assert(hist.active_lb_tab == "clans", "History should switch to clans")
+	print("[PASS] History tab sub-navigation (score, win, friends, clans) verified.")
 
 	# Verify User Tab: Top UserHeader, sub-sections, audio settings, privacy, centered cosmetics, notifications
 	shell.switch_to_tab("user")
@@ -72,8 +76,6 @@ func _ready() -> void:
 	assert(usr.active_subtab == "privacy", "User should switch to privacy")
 	usr.switch_subtab("notifs")
 	assert(usr.active_subtab == "notifs", "User should switch to notifs")
-	usr.switch_subtab("account")
-	assert(usr.active_subtab == "account", "User should switch to account (settings)")
 	print("[PASS] User tab (UserHeader, profile stats, centered cosmetics, privacy, notifications, audio settings) verified.")
 
 	# Return to Play tab (default)

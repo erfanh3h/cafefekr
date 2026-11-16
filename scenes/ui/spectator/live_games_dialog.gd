@@ -10,9 +10,10 @@ signal closed()
 var _dim_overlay: ColorRect = null
 var main_panel: PanelContainer = null
 var _scope_row: HBoxContainer = null
-var _game_flow: HFlowContainer = null
+var _game_filter_hbox: HBoxContainer = null
 var _list_vbox: VBoxContainer = null
 var _lbl_count: Label = null
+var _status_plaque: PanelContainer = null
 var _scroll_games: ScrollContainer = null
 
 var current_scope: String = "all"         # "all" | "friends" | "clan"
@@ -257,22 +258,29 @@ func _build_ui() -> void:
 	_scope_row.add_theme_constant_override("separation", 8)
 	scope_well.add_child(_scope_row)
 
-	# 3. Clean Wrapped Game Filter Chips inside Antique Well
+	# 3. Clean 1-Row Scrollable Game Filter Row inside Antique Well (doubled height)
 	var filter_well := PanelContainer.new()
-	filter_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 10.0, 8.0))
+	filter_well.custom_minimum_size = Vector2(0, 110)
+	filter_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 8.0, 8.0))
 	root.add_child(filter_well)
 
-	_game_flow = HFlowContainer.new()
-	_game_flow.alignment = FlowContainer.ALIGNMENT_CENTER
-	_game_flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_game_flow.add_theme_constant_override("h_separation", 8)
-	_game_flow.add_theme_constant_override("v_separation", 8)
-	filter_well.add_child(_game_flow)
+	var filter_scroll := ScrollContainer.new()
+	filter_scroll.custom_minimum_size = Vector2(0, 94)
+	filter_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	filter_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	filter_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	filter_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	filter_well.add_child(filter_scroll)
+
+	_game_filter_hbox = HBoxContainer.new()
+	_game_filter_hbox.add_theme_constant_override("separation", 10)
+	_game_filter_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	filter_scroll.add_child(_game_filter_hbox)
 
 	# 4. Active Count Strip
-	var status_plaque := PanelContainer.new()
-	status_plaque.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 14.0, 8.0))
-	root.add_child(status_plaque)
+	_status_plaque = PanelContainer.new()
+	_status_plaque.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 14.0, 8.0))
+	root.add_child(_status_plaque)
 
 	_lbl_count = CafeSocialTheme.make_body(
 		"در حال دریافت فهرست بازی‌های فعال...",
@@ -281,7 +289,7 @@ func _build_ui() -> void:
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
 	)
-	status_plaque.add_child(_lbl_count)
+	_status_plaque.add_child(_lbl_count)
 
 	# 5. Scrollable Matches Container
 	_scroll_games = ScrollContainer.new()
@@ -321,44 +329,76 @@ func _render_filters() -> void:
 			)
 			_scope_row.add_child(b)
 
-	if is_instance_valid(_game_flow):
-		for c in _game_flow.get_children():
+	if is_instance_valid(_game_filter_hbox):
+		for c in _game_filter_hbox.get_children():
 			c.queue_free()
-		var gfilters: Array = [
-			{"id": "", "label": "همه"},
-			{"id": "Ludo", "label": "منچ"},
-			{"id": "Monopoly", "label": "مونوپولی"},
-			{"id": "Chess", "label": "شطرنج"},
-			{"id": "Backgammon", "label": "تخته‌نرد"},
-			{"id": "Risk", "label": "ریسک"},
-			{"id": "Othello", "label": "اتللو"},
-			{"id": "FourInRow", "label": "چهار در ردیف"},
-			{"id": "Quoridor", "label": "کوریدور"},
-			{"id": "Yatzy", "label": "یاتزی"},
-			{"id": "Pentago", "label": "پنتاگو"},
-			{"id": "Yinsh", "label": "ینش"},
-			{"id": "DotBox", "label": "نقطه و خط"},
-		]
+
+		# All 25 games + "all"
+		var gfilters: Array = [{"id": "", "label": "همه"}]
+		for g in GamesHistoryViewHelper.GAMES_LIST:
+			gfilters.append({"id": g["id"], "label": g["name_fa"]})
+
 		for gf in gfilters:
 			var gf_d: Dictionary = gf
 			var gid_f: String = str(gf_d["id"])
 			var is_sel: bool = (current_game_type == gid_f)
-			var b := CafeSocialTheme.make_button(
-				str(gf_d["label"]),
-				"gold" if is_sel else "bronze",
-				Vector2(0, 40),
-				19,
-				null,
-				false,
-				11
-			)
-			b.pressed.connect(func():
+
+			var btn := TextureButton.new()
+			btn.custom_minimum_size = Vector2(80, 80)
+			btn.ignore_texture_size = true
+			btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+			btn.focus_mode = Control.FOCUS_NONE
+			btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			btn.tooltip_text = str(gf_d["label"])
+			ActionVFXManager.apply_button_juice(btn, "tap_button")
+
+			var frame_panel := PanelContainer.new()
+			frame_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+			frame_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			if is_sel:
+				frame_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
+					Color(0.24, 0.16, 0.08, 0.98),
+					Color(1.0, 0.85, 0.35, 1.0),
+					14,
+					3
+				))
+			else:
+				frame_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
+					Color(0.10, 0.06, 0.03, 0.90),
+					Color(0.55, 0.40, 0.20, 0.70),
+					14,
+					1
+				))
+			btn.add_child(frame_panel)
+
+			var icon_rect := TextureRect.new()
+			icon_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+			icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_rect.offset_left = 6
+			icon_rect.offset_top = 6
+			icon_rect.offset_right = -6
+			icon_rect.offset_bottom = -6
+
+			if gid_f.is_empty():
+				icon_rect.texture = CafeSocialTheme.ICO_CUP
+			else:
+				icon_rect.texture = CafeSocialTheme.get_game_thumb(gid_f)
+
+			if not is_sel:
+				icon_rect.modulate = Color(0.80, 0.75, 0.70, 0.85)
+			else:
+				icon_rect.modulate = Color(1.0, 1.0, 1.0, 1.0)
+			frame_panel.add_child(icon_rect)
+
+			btn.pressed.connect(func():
 				AudioManager.sfx_tap()
 				current_game_type = gid_f
 				_render_filters()
 				refresh()
 			)
-			_game_flow.add_child(b)
+			_game_filter_hbox.add_child(btn)
 
 
 func _show_loading_state() -> void:
@@ -368,8 +408,7 @@ func _show_loading_state() -> void:
 		c.queue_free()
 	_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	if is_instance_valid(_lbl_count):
-		_lbl_count.text = "در حال جستجوی مسابقات زنده..."
-	_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت فهرست بازی‌های در حال اجرا..."))
+		_lbl_count.text = "در حال دریافت مسابقات زنده..."
 
 
 func _render_games_list() -> void:
@@ -387,22 +426,16 @@ func _render_games_list() -> void:
 		return sa > sb
 	)
 
-	if is_instance_valid(_lbl_count):
+	if is_instance_valid(_lbl_count) and is_instance_valid(_status_plaque):
 		if items.is_empty():
-			_lbl_count.text = "در حال حاضر مسابقه‌ای با این فیلتر فعال نیست"
+			_status_plaque.visible = false
+			_lbl_count.text = ""
 		else:
+			_status_plaque.visible = true
 			_lbl_count.text = "●  %s مسابقه زنده آماده تماشا" % GameManager.to_fa_num(items.size())
 
 	if items.is_empty():
-		_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		_list_vbox.add_child(CafeSocialTheme.make_empty_state(
-			CafeSocialTheme.ICO_CUP,
-			"مسابقه زنده‌ای در جریان نیست",
-			"با شروع هر رقابت آنلاین بین بازیکنان، کارت آن در اینجا نمایش داده می‌شود و می‌توانید زنده تماشا کنید.",
-			"بروزرسانی فهرست",
-			"gold",
-			func(): refresh()
-		))
+		# Empty list without any extra text information
 		return
 
 	_list_vbox.alignment = BoxContainer.ALIGNMENT_BEGIN

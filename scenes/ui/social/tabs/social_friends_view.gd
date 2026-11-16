@@ -17,7 +17,6 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 
 	var subtab_defs := [
 		{"id": "list", "label": "دوستان من (%s)" % GameManager.to_fa_num(host._friends_list.size()), "badge": 0},
-		{"id": "live", "label": "بازی‌های زنده", "badge": 0},
 		{"id": "requests", "label": "درخواست‌ها", "badge": host._incoming_requests.size()},
 		{"id": "search", "label": "یافتن بازیکن", "badge": 0},
 	]
@@ -92,7 +91,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 static func _populate_friends_list(host: Control, list_vbox: VBoxContainer) -> void:
 	if host._friends_list.is_empty():
 		list_vbox.add_child(CafeSocialTheme.make_empty_state(
-			CafeSocialTheme.ICO_LOBBY,
+			null,
 			"هنوز دوستی در باشگاه ندارید",
 			"از بخش «یافتن بازیکن» هم‌بازی‌های اخیر یا دوستان جدید خود را پیدا کنید و به رقابت دعوت نمایید.",
 			"یافتن بازیکن", "gold", func():

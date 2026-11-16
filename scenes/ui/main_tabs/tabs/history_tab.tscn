@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/history_tab.gd" id="1_history_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
@@ -21,18 +21,6 @@ content_margin_top = 8.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_details_overlay"]
-bg_color = Color(0.08, 0.05, 0.03, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.88, 0.72, 0.32, 0.95)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-
 [node name="HistoryTab" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -49,9 +37,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 32
+theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 32
+theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
 [node name="MainPanel" type="PanelContainer" parent="OuterMargin"]
@@ -80,7 +68,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
 theme_override_font_sizes/font_size = 32
-text = "دیوان سوابق و رتبه‌بندی"
+text = "دیوان برترین‌ها"
 horizontal_alignment = 2
 
 [node name="SubnavBar" type="PanelContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
@@ -89,140 +77,47 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_subnav_well")
 
 [node name="HBox" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar"]
 layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 1
-
-[node name="BtnMatches" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-mouse_default_cursor_shape = 2
-text = "مسابقات اخیر"
-
-[node name="BtnLeaderboard" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-mouse_default_cursor_shape = 2
-text = "رتبه‌بندی برترین‌ها"
-
-[node name="ContentScroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="VBox" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/separation = 14
-
-[node name="MatchesContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 12
-
-[node name="LeaderboardContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox"]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 14
-
-[node name="LbSubTabs" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent"]
-layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="BtnLbScore" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbSubTabs"]
-custom_minimum_size = Vector2(0, 50)
+[node name="BtnLbScore" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "امتیاز کل"
 
-[node name="BtnLbWin" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbSubTabs"]
-custom_minimum_size = Vector2(0, 50)
+[node name="BtnLbWin" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "بیشترین پیروزی"
 
-[node name="BtnLbFriends" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbSubTabs"]
-custom_minimum_size = Vector2(0, 50)
+[node name="BtnLbFriends" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "دوستان"
 
-[node name="BtnLbClans" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent/LbSubTabs"]
-custom_minimum_size = Vector2(0, 50)
+[node name="BtnLbClans" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "اتحادها"
 
-[node name="LbListVBox" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll/VBox/LeaderboardContent"]
+[node name="ContentScroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="LbListVBox" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/ContentScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
-
-[node name="DetailsModal" type="Control" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
-visible = false
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="Panel" type="PanelContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailsModal"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_details_overlay")
-
-[node name="Margin" type="MarginContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailsModal/Panel"]
-layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="Scroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailsModal"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -80.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="DetailsVBox" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailsModal/Scroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 14
-
-[node name="BtnBack" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailsModal"]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -110.0
-offset_top = -68.0
-offset_right = 110.0
-offset_bottom = -14.0
-grow_horizontal = 2
-grow_vertical = 0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-text = "بازگشت"

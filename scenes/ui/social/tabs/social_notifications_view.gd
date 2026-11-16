@@ -22,7 +22,8 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 		NetworkManager.api.mark_all_notifications_read(func(ok: bool, _c: int, _d: Variant):
 			if ok:
 				NetworkManager.unread_notifications_count = 0
-				host._update_main_tab_buttons()
+				if host.has_method("_update_main_tab_buttons"):
+					host._update_main_tab_buttons()
 				host._show_toast("تمام اعلان‌ها به عنوان خوانده‌شده علامت‌گذاری شدند.")
 				host._refresh_current_tab()
 			else:
@@ -72,7 +73,8 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 		NetworkManager.unread_notifications_count = int(res.get("unread_count", 0))
 		if res.has("unread_dm_count"):
 			NetworkManager.unread_dms_count = int(res.get("unread_dm_count", NetworkManager.unread_dms_count))
-		host._update_main_tab_buttons()
+		if host.has_method("_update_main_tab_buttons"):
+			host._update_main_tab_buttons()
 
 		var items: Array = res.get("items", []) if typeof(res.get("items")) == TYPE_ARRAY else []
 		if items.is_empty():

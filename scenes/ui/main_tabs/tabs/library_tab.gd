@@ -17,7 +17,6 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 @onready var detail_meta: Label = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox/TextCol/Meta
 @onready var detail_body: RichTextLabel = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentScroll/Margin/BodyText
 @onready var btn_tab_overview: Button = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/SubTabs/BtnOverview
-@onready var btn_tab_rules: Button = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/SubTabs/BtnRules
 @onready var btn_tab_guide: Button = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/SubTabs/BtnGuide
 @onready var btn_back_library: Button = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/BtnBack
 
@@ -52,7 +51,6 @@ func _ready() -> void:
 	KenneyUI.style_button(btn_back_library, KenneyUI.COLOR_YELLOW)
 	ActionVFXManager.apply_button_juice(btn_back_library, "tap_button")
 	ActionVFXManager.apply_button_juice(btn_tab_overview, "tap_button")
-	ActionVFXManager.apply_button_juice(btn_tab_rules, "tap_button")
 	ActionVFXManager.apply_button_juice(btn_tab_guide, "tap_button")
 
 	btn_back_library.pressed.connect(func():
@@ -63,10 +61,6 @@ func _ready() -> void:
 	btn_tab_overview.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_switch_doc_tab("overview")
-	)
-	btn_tab_rules.pressed.connect(func():
-		AudioManager.sfx_tap()
-		_switch_doc_tab("rules")
 	)
 	btn_tab_guide.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -293,7 +287,6 @@ func open_game_details(game_id: String) -> void:
 func _switch_doc_tab(t_name: String) -> void:
 	_selected_doc_tab = t_name
 	_style_doc_subtab(btn_tab_overview, t_name == "overview")
-	_style_doc_subtab(btn_tab_rules, t_name == "rules")
 	_style_doc_subtab(btn_tab_guide, t_name == "guide")
 
 	var doc_entry = _game_docs.get(_selected_game_id, {})
@@ -305,8 +298,6 @@ func _switch_doc_tab(t_name: String) -> void:
 			if content.is_empty():
 				var reg = GameRegistry.get_game_info(_selected_game_id)
 				content = str(reg.get("narrative", "معرفی این بازی به زودی تکمیل خواهد شد."))
-		"rules":
-			content = str(doc_entry.get("rules", "قوانین کامل این بازی در جریان مسابقات فعال است."))
 		"guide":
 			content = str(doc_entry.get("gameplay", doc_entry.get("guide", "راهنما و ترفندهای پیروزی: حرکت‌های هوشمندانه و دقت در انتخاب مهره‌ها باعث پیروزی شما خواهد شد.")))
 
