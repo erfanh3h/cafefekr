@@ -152,6 +152,11 @@ func update_opponent(pid: int, p_name: String, avatar_id: int, cards_left: int, 
 		var tex = _get_avatar_texture(avatar_id)
 		if tex:
 			_avatar_rect.texture = tex
+		var p_data = GameManager.get_player_data_by_gamer_id(pid)
+		var p_fid = GameManager.get_player_frame_id(p_data)
+		var p_parent = _avatar_rect.get_parent()
+		if p_parent is Control:
+			CafeSocialTheme.apply_frame_to_container(p_parent, _avatar_rect, p_fid)
 
 	if is_instance_valid(_mini_fan_ctrl):
 		_mini_fan_ctrl.count = cards_left

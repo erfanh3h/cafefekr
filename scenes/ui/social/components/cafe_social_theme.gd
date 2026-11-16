@@ -114,14 +114,28 @@ static var _shell_style_cache: StyleBoxTexture = null
 static var _frame_banner_cache: StyleBoxTexture = null
 static var _btn_cache: Dictionary = {}
 
-# Profile Frame visual tiers (0..5)
+# Profile Frame visual tiers (1..20)
 const PROFILE_FRAMES := [
-	{"id": 0, "name": "چوب کلاسیک", "border": Color(0.68, 0.52, 0.28, 0.95), "glow": Color(0, 0, 0, 0.45)},
-	{"id": 1, "name": "برنز کافه", "border": Color(0.84, 0.55, 0.30, 1.0), "glow": Color(0.75, 0.45, 0.20, 0.35)},
-	{"id": 2, "name": "طلای شاهانه", "border": Color(1.0, 0.85, 0.32, 1.0), "glow": Color(1.0, 0.82, 0.22, 0.45)},
-	{"id": 3, "name": "زمرد سلطنتی", "border": Color(0.35, 0.90, 0.58, 1.0), "glow": Color(0.25, 0.85, 0.50, 0.45)},
-	{"id": 4, "name": "یاقوت کبود", "border": Color(0.45, 0.80, 1.0, 1.0), "glow": Color(0.30, 0.70, 1.0, 0.45)},
-	{"id": 5, "name": "لعل قهرمانان", "border": Color(0.98, 0.45, 0.55, 1.0), "glow": Color(0.95, 0.35, 0.45, 0.45)},
+	{"id": 1, "name": "قاب سلطنتی زرین", "border": Color(0.98, 0.82, 0.35, 1.0), "glow": Color(1.0, 0.85, 0.3, 0.5)},
+	{"id": 2, "name": "قاب برنز باستانی", "border": Color(0.85, 0.55, 0.28, 1.0), "glow": Color(0.75, 0.45, 0.2, 0.4)},
+	{"id": 3, "name": "قاب زمرد شاهانه", "border": Color(0.35, 0.90, 0.58, 1.0), "glow": Color(0.25, 0.85, 0.5, 0.45)},
+	{"id": 4, "name": "قاب یاقوت سرخ", "border": Color(0.95, 0.32, 0.40, 1.0), "glow": Color(0.90, 0.25, 0.35, 0.45)},
+	{"id": 5, "name": "قاب لعل درخشان", "border": Color(0.98, 0.45, 0.55, 1.0), "glow": Color(0.95, 0.35, 0.45, 0.45)},
+	{"id": 6, "name": "قاب فیروزه نیشابور", "border": Color(0.30, 0.85, 0.90, 1.0), "glow": Color(0.20, 0.80, 0.85, 0.45)},
+	{"id": 7, "name": "قاب الماس کوه نور", "border": Color(0.88, 0.92, 1.0, 1.0), "glow": Color(0.80, 0.88, 1.0, 0.5)},
+	{"id": 8, "name": "قاب کهربای گرم", "border": Color(0.96, 0.70, 0.25, 1.0), "glow": Color(0.90, 0.65, 0.2, 0.4)},
+	{"id": 9, "name": "قاب لاجورد کهن", "border": Color(0.40, 0.65, 0.95, 1.0), "glow": Color(0.30, 0.55, 0.9, 0.45)},
+	{"id": 10, "name": "قاب طلای عتیق", "border": Color(0.90, 0.75, 0.30, 1.0), "glow": Color(0.85, 0.70, 0.25, 0.45)},
+	{"id": 11, "name": "قاب شاخ و برگ زرین", "border": Color(0.85, 0.80, 0.40, 1.0), "glow": Color(0.80, 0.75, 0.35, 0.45)},
+	{"id": 12, "name": "قاب اژدهای پارسی", "border": Color(0.92, 0.50, 0.25, 1.0), "glow": Color(0.88, 0.45, 0.2, 0.45)},
+	{"id": 13, "name": "قاب بال سیمرغ", "border": Color(0.95, 0.60, 0.35, 1.0), "glow": Color(0.90, 0.55, 0.3, 0.45)},
+	{"id": 14, "name": "قاب ستاره شاهنشاهی", "border": Color(0.98, 0.88, 0.40, 1.0), "glow": Color(1.0, 0.90, 0.35, 0.5)},
+	{"id": 15, "name": "قاب تاج کیانی", "border": Color(0.95, 0.75, 0.30, 1.0), "glow": Color(0.90, 0.70, 0.25, 0.45)},
+	{"id": 16, "name": "قاب شمشیر دلاوران", "border": Color(0.80, 0.70, 0.50, 1.0), "glow": Color(0.75, 0.65, 0.45, 0.4)},
+	{"id": 17, "name": "قاب گل و مرغ", "border": Color(0.92, 0.65, 0.70, 1.0), "glow": Color(0.88, 0.60, 0.65, 0.45)},
+	{"id": 18, "name": "قاب شوالیه کافه", "border": Color(0.75, 0.75, 0.85, 1.0), "glow": Color(0.70, 0.70, 0.80, 0.4)},
+	{"id": 19, "name": "قاب خورشید تابان", "border": Color(1.0, 0.78, 0.25, 1.0), "glow": Color(1.0, 0.75, 0.2, 0.5)},
+	{"id": 20, "name": "قاب اسطوره قهرمانان", "border": Color(0.95, 0.85, 0.45, 1.0), "glow": Color(0.90, 0.80, 0.4, 0.5)},
 ]
 
 # Clan Emblem configurations (1..9)
@@ -590,9 +604,29 @@ static func make_ornate_section_header(title_txt: String, icon_tex: Texture2D = 
 	return p
 
 
+static var _frame_texture_cache: Dictionary = {}
+
+static func get_frame_texture(frame_id: int) -> Texture2D:
+	var fid: int = frame_id if frame_id >= 1 else 1
+	fid = clampi(fid, 1, 20)
+	if _frame_texture_cache.has(fid):
+		return _frame_texture_cache[fid]
+	var path: String = "res://assets/images/avatar_frames/%d.png" % fid
+	if ResourceLoader.exists(path):
+		var tex = load(path)
+		_frame_texture_cache[fid] = tex
+		return tex
+	var fallback_path: String = "res://assets/images/avatar_frames/1.png"
+	if ResourceLoader.exists(fallback_path):
+		var fb_tex = load(fallback_path)
+		_frame_texture_cache[fid] = fb_tex
+		return fb_tex
+	return null
+
+
 static func make_avatar_badge(
 	avatar_id: int,
-	frame_id: int = 0,
+	frame_id: int = 1,
 	size_px: float = 84.0,
 	presence_status: String = "",
 	show_dot: bool = false
@@ -602,43 +636,65 @@ static func make_avatar_badge(
 	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
-	var f_idx := clampi(frame_id, 0, PROFILE_FRAMES.size() - 1)
-	var f_cfg: Dictionary = PROFILE_FRAMES[f_idx]
+	var safe_fid: int = frame_id if frame_id >= 1 else 1
+	safe_fid = clampi(safe_fid, 1, 20)
 
-	var frame_panel := PanelContainer.new()
-	frame_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	frame_panel.clip_contents = true
-	var fst := StyleBoxFlat.new()
-	fst.bg_color = Color(0.10, 0.06, 0.03, 0.96)
-	fst.border_color = f_cfg["border"]
-	fst.set_border_width_all(3)
-	fst.set_corner_radius_all(int(size_px * 0.22))
-	fst.shadow_color = f_cfg["glow"]
-	fst.shadow_size = 6
-	fst.content_margin_left = 4.0
-	fst.content_margin_right = 4.0
-	fst.content_margin_top = 4.0
-	fst.content_margin_bottom = 4.0
-	frame_panel.add_theme_stylebox_override("panel", fst)
-	holder.add_child(frame_panel)
+	# 1. Subtle dark circular backing matting
+	var bg_disc := Panel.new()
+	bg_disc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var bg_disc_size = size_px * 0.72
+	var bg_offset = (size_px - bg_disc_size) * 0.5
+	bg_disc.offset_left = bg_offset
+	bg_disc.offset_top = bg_offset
+	bg_disc.offset_right = -bg_offset
+	bg_disc.offset_bottom = -bg_offset
+	var bg_sb := StyleBoxFlat.new()
+	bg_sb.bg_color = Color(0.12, 0.08, 0.05, 0.96)
+	bg_sb.set_corner_radius_all(int(bg_disc_size * 0.5))
+	bg_disc.add_theme_stylebox_override("panel", bg_sb)
+	bg_disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(bg_disc)
 
+	# 2. Avatar texture (centered nicely inside frame aperture)
 	var av := TextureRect.new()
+	var av_size = size_px * 0.74
+	var av_offset = (size_px - av_size) * 0.5
+	av.offset_left = av_offset
+	av.offset_top = av_offset
+	av.offset_right = -av_offset
+	av.offset_bottom = -av_offset
+	av.set_anchors_preset(Control.PRESET_FULL_RECT)
 	av.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	av.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	var av_path := "res://assets/icons/Avatars/%d.png" % clampi(avatar_id, 0, 26)
+	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var safe_av_id := clampi(avatar_id, 0, 71)
+	var av_path := "res://assets/icons/Avatars/%d.png" % safe_av_id
 	if ResourceLoader.exists(av_path):
 		av.texture = load(av_path)
-	frame_panel.add_child(av)
+	elif ResourceLoader.exists("res://assets/icons/Avatars/0.png"):
+		av.texture = load("res://assets/icons/Avatars/0.png")
+	holder.add_child(av)
 
+	# 3. Frame Overlay Texture (Full size, on top)
+	var frame_rect := TextureRect.new()
+	frame_rect.name = "FrameOverlay"
+	frame_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	frame_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	frame_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	frame_rect.texture = get_frame_texture(safe_fid)
+	frame_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(frame_rect)
+
+	# 4. Presence status dot if requested
 	if show_dot:
 		var dot := PanelContainer.new()
 		var dot_sz := clampf(size_px * 0.26, 16.0, 24.0)
 		dot.custom_minimum_size = Vector2(dot_sz, dot_sz)
 		dot.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-		dot.offset_left = -3
-		dot.offset_top = -dot_sz + 3
-		dot.offset_right = dot_sz - 3
-		dot.offset_bottom = 3
+		dot.offset_left = -2
+		dot.offset_top = -dot_sz + 2
+		dot.offset_right = dot_sz - 2
+		dot.offset_bottom = 2
 		var dst := StyleBoxFlat.new()
 		var p_info := format_presence({"status": presence_status})
 		dst.bg_color = p_info["dot_color"]
@@ -649,6 +705,51 @@ static func make_avatar_badge(
 		holder.add_child(dot)
 
 	return holder
+
+
+static func apply_frame_to_container(container: Control, avatar_rect: TextureRect, frame_id: int = 1) -> TextureRect:
+	if not is_instance_valid(container):
+		return null
+	var safe_fid: int = frame_id if frame_id >= 1 else 1
+	safe_fid = clampi(safe_fid, 1, 20)
+
+	# Ensure avatar fits nicely inside the frame aperture
+	if is_instance_valid(avatar_rect):
+		avatar_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		var c_sz = minf(container.custom_minimum_size.x, container.custom_minimum_size.y)
+		if c_sz <= 0:
+			c_sz = minf(container.size.x, container.size.y)
+		if c_sz <= 0:
+			c_sz = 96.0
+		var av_sz = c_sz * 0.74
+		var off = (c_sz - av_sz) * 0.5
+		avatar_rect.offset_left = off
+		avatar_rect.offset_top = off
+		avatar_rect.offset_right = -off
+		avatar_rect.offset_bottom = -off
+		avatar_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		avatar_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
+	var frame_node = container.get_node_or_null("FrameOverlay")
+	var frame_rect: TextureRect = null
+	if is_instance_valid(frame_node) and frame_node is TextureRect:
+		frame_rect = frame_node
+	else:
+		frame_rect = TextureRect.new()
+		frame_rect.name = "FrameOverlay"
+		frame_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		frame_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		frame_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		frame_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		container.add_child(frame_rect)
+
+	frame_rect.texture = get_frame_texture(safe_fid)
+	# Move frame above avatar, but keep profile buttons on top if any
+	container.move_child(frame_rect, container.get_child_count() - 1)
+	for ch in container.get_children():
+		if ch is BaseButton:
+			container.move_child(ch, container.get_child_count() - 1)
+	return frame_rect
 
 
 static func get_clan_emblem_texture(emblem_id: int = 1) -> Texture2D:

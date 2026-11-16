@@ -370,6 +370,12 @@ func set_session(new_token: String, new_user_data: Dictionary, save_to_disk: boo
 	user_data = new_user_data
 	is_logged_in = true
 	is_guest = false
+
+	if not user_data.has("profile_frame") or int(user_data.get("profile_frame", 0)) < 1:
+		user_data["profile_frame"] = int(user_data.get("avatar_frame", 1))
+		if int(user_data["profile_frame"]) < 1:
+			user_data["profile_frame"] = 1
+	user_data["avatar_frame"] = user_data["profile_frame"]
 	
 	# If an ongoing game exists, pick & ban draft is definitely finished!
 	var open_gid = str(user_data.get("open_game_id", user_data.get("game_id", "")))
@@ -435,6 +441,14 @@ func get_score() -> int:
 
 func get_avatar_id() -> int:
 	return int(user_data.get("image", user_data.get("avatar", user_data.get("avatar_id", 0))))
+
+func get_frame_id() -> int:
+	var f = int(user_data.get("profile_frame", user_data.get("avatar_frame", user_data.get("frame_id", 1))))
+	return clampi(f, 1, 20) if f >= 1 else 1
+
+static func get_player_frame_id(dict: Dictionary) -> int:
+	var f = int(dict.get("profile_frame", dict.get("avatar_frame", dict.get("frame_id", 1))))
+	return clampi(f, 1, 20) if f >= 1 else 1
 
 func get_xp() -> int:
 	var val = user_data.get("xp", user_data.get("user_xp", 0))

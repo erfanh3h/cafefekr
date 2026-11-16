@@ -1039,12 +1039,14 @@ func _update_players_list(queuers: Array) -> void:
 		avatar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		avatar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var img_id = q.get("image", 0)
+		var q_fid = GameManager.get_player_frame_id(q)
 		var av_path = "res://assets/icons/Avatars/%d.png" % img_id
 		if ResourceLoader.exists(av_path):
 			avatar.texture = load(av_path)
 		else:
 			avatar.texture = load("res://assets/icons/Avatars/0.png")
 		av_frame.add_child(avatar)
+		CafeSocialTheme.apply_frame_to_container(av_frame, avatar, q_fid)
 		hbox.add_child(av_frame)
 		
 		card.add_child(hbox)

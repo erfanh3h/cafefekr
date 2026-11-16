@@ -18,11 +18,13 @@ signal user_profile_requested(user_data: Dictionary)
 
 @onready var subtab_profile: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnProfile
 @onready var subtab_cosmetics: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnCosmetics
+@onready var subtab_frames: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnFrames
 @onready var subtab_privacy: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnPrivacy
 @onready var subtab_notifs: Button = $OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox/BtnNotifications
 
 @onready var content_profile: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox/ProfileContent
 @onready var content_cosmetics: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox/CosmeticsContent
+@onready var content_frames: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox/FramesContent
 @onready var content_privacy: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox/PrivacyContent
 @onready var content_notifs: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox/NotificationsContent
 
@@ -32,6 +34,7 @@ signal user_profile_requested(user_data: Dictionary)
 var active_subtab: String = "profile"
 var active_history_view: String = "matches" # "matches" | "stats"
 var _selected_avatar_id: int = -1
+var _selected_frame_id: int = 1
 var _my_games_history_data: Dictionary = {}
 var _my_recent_matches: Array = []
 
@@ -41,6 +44,7 @@ var _font_vazir = preload("res://assets/fonts/Vazir.ttf")
 func _ready() -> void:
 	ActionVFXManager.apply_button_juice(subtab_profile, "tap_button")
 	ActionVFXManager.apply_button_juice(subtab_cosmetics, "tap_button")
+	ActionVFXManager.apply_button_juice(subtab_frames, "tap_button")
 	ActionVFXManager.apply_button_juice(subtab_privacy, "tap_button")
 	ActionVFXManager.apply_button_juice(subtab_notifs, "tap_button")
 
@@ -51,6 +55,10 @@ func _ready() -> void:
 	subtab_cosmetics.pressed.connect(func():
 		AudioManager.sfx_tap()
 		switch_subtab("cosmetics")
+	)
+	subtab_frames.pressed.connect(func():
+		AudioManager.sfx_tap()
+		switch_subtab("frames")
 	)
 	subtab_privacy.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -82,11 +90,13 @@ func switch_subtab(tab_name: String) -> void:
 
 	_style_subnav_btn(subtab_profile, tab_name == "profile")
 	_style_subnav_btn(subtab_cosmetics, tab_name == "cosmetics")
+	_style_subnav_btn(subtab_frames, tab_name == "frames")
 	_style_subnav_btn(subtab_privacy, tab_name == "privacy")
 	_style_subnav_btn(subtab_notifs, tab_name == "notifs")
 
 	content_profile.visible = (tab_name == "profile")
 	content_cosmetics.visible = (tab_name == "cosmetics")
+	content_frames.visible = (tab_name == "frames")
 	content_privacy.visible = (tab_name == "privacy")
 	content_notifs.visible = (tab_name == "notifs")
 
@@ -95,6 +105,8 @@ func switch_subtab(tab_name: String) -> void:
 			_render_profile()
 		"cosmetics":
 			_render_cosmetics()
+		"frames":
+			_render_frames()
 		"privacy":
 			_render_privacy()
 		"notifs":
@@ -825,6 +837,187 @@ func _render_cosmetics() -> void:
 					show_toast("تصویر نمایه شما با موفقیت بروزرسانی شد.")
 				else:
 					show_toast("خطا در ذخیره تصویر نمایه.", CafeSocialTheme.COL_CRIMSON_TEXT)
+			)
+	)
+	save_box.add_child(btn_save)
+
+
+# ==============================================================================
+# 2.5. AVATAR FRAMES GALLERY ("قاب آواتار" - 20 Exclusive Frames with Live Preview)
+# ==============================================================================
+
+func _render_frames() -> void:
+	for c in content_frames.get_children():
+		c.queue_free()
+
+	_selected_frame_id = GameManager.get_frame_id()
+	var cur_av_id: int = GameManager.get_avatar_id()
+
+	# --- 1. Live Hero Preview Card ---
+	var hero_card := PanelContainer.new()
+	hero_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hero_card.custom_minimum_size = Vector2(0, 190)
+	hero_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(true))
+	content_frames.add_child(hero_card)
+
+	var hero_m := MarginContainer.new()
+	hero_m.add_theme_constant_override("margin_left", 18)
+	hero_m.add_theme_constant_override("margin_top", 16)
+	hero_m.add_theme_constant_override("margin_right", 18)
+	hero_m.add_theme_constant_override("margin_bottom", 16)
+	hero_card.add_child(hero_m)
+
+	var hero_hbox := HBoxContainer.new()
+	hero_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hero_hbox.add_theme_constant_override("separation", 20)
+	hero_m.add_child(hero_hbox)
+
+	# Right (in RTL): Badge Holder
+	var badge_holder := Control.new()
+	badge_holder.custom_minimum_size = Vector2(146, 146)
+	hero_hbox.add_child(badge_holder)
+
+	# Left (in RTL): Text Details
+	var info_vbox := VBoxContainer.new()
+	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	info_vbox.add_theme_constant_override("separation", 6)
+	hero_hbox.add_child(info_vbox)
+
+	var lbl_hero_title := CafeSocialTheme.make_title("پیش‌نمایش زنده نمایه شما", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true)
+	info_vbox.add_child(lbl_hero_title)
+
+	var lbl_frame_name := Label.new()
+	lbl_frame_name.add_theme_font_override("font", _font_vazir)
+	lbl_frame_name.add_theme_font_size_override("font_size", 22)
+	lbl_frame_name.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
+	lbl_frame_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	info_vbox.add_child(lbl_frame_name)
+
+	var lbl_hero_desc := CafeSocialTheme.make_body("این قاب دور آواتار شما در میز بازی، تاریخچه، لابی و جداول رده‌بندی قرار می‌گیرد.", 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true)
+	info_vbox.add_child(lbl_hero_desc)
+
+	var update_hero_badge = func():
+		for b in badge_holder.get_children():
+			b.queue_free()
+		var badge := CafeSocialTheme.make_avatar_badge(cur_av_id, _selected_frame_id, 140.0)
+		badge.position = Vector2(3, 3)
+		badge_holder.add_child(badge)
+		var f_idx := clampi(_selected_frame_id - 1, 0, CafeSocialTheme.PROFILE_FRAMES.size() - 1)
+		var fname: String = CafeSocialTheme.PROFILE_FRAMES[f_idx].get("name", "قاب شماره %s" % GameManager.to_fa_num(_selected_frame_id))
+		lbl_frame_name.text = "قاب انتخابی: %s" % fname
+
+	update_hero_badge.call()
+
+	# Section header
+	content_frames.add_child(CafeSocialTheme.make_ornate_section_header("انتخاب قاب آواتار (۲۰ طرح اختصاصی)", CafeSocialTheme.ICO_RANKING, "روی قاب دلخواه ضربه بزنید"))
+
+	# --- 2. Frames Grid ---
+	var center_wrap := CenterContainer.new()
+	center_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content_frames.add_child(center_wrap)
+
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 14)
+	grid.add_theme_constant_override("v_separation", 14)
+	center_wrap.add_child(grid)
+
+	var frame_cards: Dictionary = {}
+
+	var update_cards_style = func():
+		for fid in frame_cards.keys():
+			var card_panel: PanelContainer = frame_cards[fid]
+			var is_sel: bool = (fid == _selected_frame_id)
+			card_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
+				Color(0.28, 0.18, 0.08, 0.98) if is_sel else CafeSocialTheme.COL_WALNUT_DEEP,
+				Color(1.0, 0.85, 0.32, 1.0) if is_sel else Color(0.40, 0.30, 0.20, 0.75),
+				14,
+				3 if is_sel else 1,
+				6.0, 6.0
+			))
+
+	for fid in range(1, 21):
+		var f_idx := clampi(fid - 1, 0, CafeSocialTheme.PROFILE_FRAMES.size() - 1)
+		var fname: String = CafeSocialTheme.PROFILE_FRAMES[f_idx].get("name", "قاب %s" % GameManager.to_fa_num(fid))
+
+		var card := PanelContainer.new()
+		card.custom_minimum_size = Vector2(136, 172)
+		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		card.focus_mode = Control.FOCUS_NONE
+
+		var card_m := MarginContainer.new()
+		card_m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card_m.add_theme_constant_override("margin_left", 6)
+		card_m.add_theme_constant_override("margin_top", 10)
+		card_m.add_theme_constant_override("margin_right", 6)
+		card_m.add_theme_constant_override("margin_bottom", 10)
+		card.add_child(card_m)
+
+		var cv := VBoxContainer.new()
+		cv.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cv.alignment = BoxContainer.ALIGNMENT_CENTER
+		cv.add_theme_constant_override("separation", 6)
+		card_m.add_child(cv)
+
+		var badge_box := CenterContainer.new()
+		badge_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge_box.custom_minimum_size = Vector2(104, 104)
+		cv.add_child(badge_box)
+
+		var badge := CafeSocialTheme.make_avatar_badge(cur_av_id, fid, 100.0)
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge_box.add_child(badge)
+
+		var title_lbl := Label.new()
+		title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		title_lbl.add_theme_font_override("font", _font_vazir)
+		title_lbl.add_theme_font_size_override("font_size", 16)
+		title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
+		title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		title_lbl.text = fname
+		title_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		cv.add_child(title_lbl)
+
+		var cur_fid = fid
+		card.gui_input.connect(func(event: InputEvent):
+			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+				AudioManager.sfx_tap()
+				_selected_frame_id = cur_fid
+				update_cards_style.call()
+				update_hero_badge.call()
+				show_toast("قاب «%s» برگزیده شد." % fname, CafeSocialTheme.COL_GOLD_BRIGHT)
+		)
+
+		frame_cards[fid] = card
+		grid.add_child(card)
+
+	update_cards_style.call()
+
+	# --- 3. Save Button Below Frames ---
+	var save_box := HBoxContainer.new()
+	save_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	content_frames.add_child(save_box)
+
+	var btn_save := CafeSocialTheme.make_button("ثبت و فعال‌سازی قاب آواتار", "emerald", Vector2(360, 62), 26, CafeSocialTheme.ICO_CHECK)
+	btn_save.pressed.connect(func():
+		AudioManager.sfx_button()
+		if _selected_frame_id >= 1:
+			btn_save.disabled = true
+			NetworkManager.api.update_frame(_selected_frame_id, func(ok: bool, _c: int, _d: Variant):
+				if is_instance_valid(btn_save):
+					btn_save.disabled = false
+				if ok:
+					GameManager.user_data["profile_frame"] = _selected_frame_id
+					GameManager.user_data["avatar_frame"] = _selected_frame_id
+					GameManager.set_session(GameManager.token, GameManager.user_data, true)
+					NetworkManager.api.customize_my_profile({"profile_frame": _selected_frame_id})
+					if is_instance_valid(user_header) and user_header.has_method("update_ui"):
+						user_header.update_ui()
+					update_hero_badge.call()
+					show_toast("قاب آواتار شما با موفقیت بروزرسانی و فعال شد.")
+				else:
+					show_toast("خطا در ذخیره قاب آواتار.", CafeSocialTheme.COL_CRIMSON_TEXT)
 			)
 	)
 	save_box.add_child(btn_save)

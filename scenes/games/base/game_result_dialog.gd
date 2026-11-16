@@ -363,14 +363,22 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		
 	var av1_id = p1_data.get("image", p1_data.get("user_image", 0))
 	var av2_id = p2_data.get("image", p2_data.get("user_image", 0))
+	var f1_id = GameManager.get_player_frame_id(p1_data)
+	var f2_id = GameManager.get_player_frame_id(p2_data)
 	
 	var av1_path = "res://assets/icons/Avatars/%d.png" % av1_id
 	if ResourceLoader.exists(av1_path):
 		img_p1_avatar.texture = load(av1_path)
+	if is_instance_valid(img_p1_avatar):
+		var p1_p = img_p1_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p1_p if p1_p is Control else img_p1_avatar, img_p1_avatar, f1_id)
 		
 	var av2_path = "res://assets/icons/Avatars/%d.png" % av2_id
 	if ResourceLoader.exists(av2_path):
 		img_p2_avatar.texture = load(av2_path)
+	if is_instance_valid(img_p2_avatar):
+		var p2_p = img_p2_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p2_p if p2_p is Control else img_p2_avatar, img_p2_avatar, f2_id)
 		
 	# Panel Entrance animation with spring overshoot and VFX sparkle burst
 	panel.scale = Vector2(0.65, 0.65)

@@ -975,38 +975,45 @@ func _render_self_cosmetics_tab() -> void:
 	cos_card.add_child(cos_v)
 
 	# Frame Picker
-	cos_v.add_child(CafeSocialTheme.make_body("قاب نمایشی پروفایل:", 23, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
-	var sel_frame := [int(prof.get("profile_frame", 0))]
+	cos_v.add_child(CafeSocialTheme.make_body("قاب نمایشی پروفایل (۲۰ مدل لوکس):", 23, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+	var cur_f_init = int(prof.get("profile_frame", prof.get("avatar_frame", 1)))
+	var sel_frame := [cur_f_init if cur_f_init >= 1 else 1]
+	var my_av_id: int = GameManager.get_avatar_id()
 	var frame_grid := GridContainer.new()
-	frame_grid.columns = 3
-	frame_grid.add_theme_constant_override("h_separation", 8)
-	frame_grid.add_theme_constant_override("v_separation", 8)
+	frame_grid.columns = 5
+	frame_grid.add_theme_constant_override("h_separation", 10)
+	frame_grid.add_theme_constant_override("v_separation", 10)
 	cos_v.add_child(frame_grid)
 
 	var frame_btns: Dictionary = {}
 	var refresh_frames := func():
 		for fid in frame_btns.keys():
-			var fb: Button = frame_btns[fid]
+			var fb: PanelContainer = frame_btns[fid]
 			var is_sel: bool = (fid == sel_frame[0])
-			var fcfg: Dictionary = CafeSocialTheme.PROFILE_FRAMES[clampi(fid, 0, CafeSocialTheme.PROFILE_FRAMES.size() - 1)]
-			fb.add_theme_stylebox_override("normal", CafeSocialTheme.create_card_style(
-				Color(0.22, 0.14, 0.08) if is_sel else CafeSocialTheme.COL_WALNUT_DEEP,
-				fcfg["border"] if is_sel else CafeSocialTheme.COL_BRONZE_BORDER,
-				12, 3 if is_sel else 1, 10.0, 10.0
+			var fcfg: Dictionary = CafeSocialTheme.PROFILE_FRAMES[clampi(fid - 1, 0, CafeSocialTheme.PROFILE_FRAMES.size() - 1)]
+			fb.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
+				Color(0.28, 0.18, 0.08, 0.98) if is_sel else CafeSocialTheme.COL_WALNUT_DEEP,
+				Color(1.0, 0.85, 0.32, 1.0) if is_sel else Color(0.40, 0.30, 0.20, 0.8),
+				14, 3 if is_sel else 1, 6.0, 6.0
 			))
-			fb.add_theme_stylebox_override("hover", fb.get_theme_stylebox("normal"))
 
-	for fcfg in CafeSocialTheme.PROFILE_FRAMES:
-		var fid: int = int(fcfg["id"])
-		var fb := CafeSocialTheme.make_button(str(fcfg["name"]), "muted", Vector2(0, 52), 22)
-		fb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		fb.pressed.connect(func():
-			AudioManager.sfx_tap()
-			sel_frame[0] = fid
-			refresh_frames.call()
+	for fid in range(1, 21):
+		var p_btn := PanelContainer.new()
+		p_btn.custom_minimum_size = Vector2(88, 88)
+		p_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		p_btn.focus_mode = Control.FOCUS_NONE
+		var badge := CafeSocialTheme.make_avatar_badge(my_av_id, fid, 76.0)
+		p_btn.add_child(badge)
+
+		var current_fid = fid
+		p_btn.gui_input.connect(func(ev: InputEvent):
+			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+				AudioManager.sfx_tap()
+				sel_frame[0] = current_fid
+				refresh_frames.call()
 		)
-		frame_btns[fid] = fb
-		frame_grid.add_child(fb)
+		frame_btns[fid] = p_btn
+		frame_grid.add_child(p_btn)
 	refresh_frames.call()
 
 	cos_v.add_child(CafeSocialTheme.make_body("لقب افتخاری (نمایش در کنار نام شما):", 23, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
@@ -1047,6 +1054,9 @@ func _render_self_cosmetics_tab() -> void:
 			if ok:
 				if typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
 					_public_profile = data["result"]
+				GameManager.user_data["profile_frame"] = sel_frame[0]
+				GameManager.user_data["avatar_frame"] = sel_frame[0]
+				GameManager.set_session(GameManager.token, GameManager.user_data, true)
 				_render_hero_plaque(_effective_data())
 				_show_profile_toast("ظاهر پروفایل با موفقیت ذخیره شد!")
 			else:

@@ -169,6 +169,12 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 				if ud.has("level"):
 					lvl_val = int(ud.get("level", 1))
 
+			var frame_val = raw_item.get("profile_frame", raw_item.get("avatar_frame", 1))
+			if raw_item.has("user_data") and typeof(raw_item["user_data"]) == TYPE_DICTIONARY:
+				var ud: Dictionary = raw_item["user_data"]
+				if ud.has("profile_frame") or ud.has("avatar_frame"):
+					frame_val = ud.get("profile_frame", ud.get("avatar_frame", frame_val))
+
 			if username.is_empty():
 				username = "بازیکن"
 
@@ -188,6 +194,8 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 				"win": win_val,
 				"level": lvl_val,
 				"xp": xp_val,
+				"profile_frame": frame_val,
+				"avatar_frame": frame_val,
 			}
 
 		var is_me = (item_uid == my_uid and lb_type != "clans")
@@ -279,6 +287,8 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		else:
 			var av_path: String = "res://assets/icons/Avatars/%d.png" % img_id
 			avatar.texture = load(av_path) if ResourceLoader.exists(av_path) else preload("res://assets/icons/Avatars/0.png")
+			var u_fid = GameManager.get_player_frame_id(entry_dict if not entry_dict.is_empty() else raw_item)
+			CafeSocialTheme.apply_frame_to_container(av_frame, avatar, u_fid)
 		av_frame.add_child(avatar)
 		row.add_child(av_frame)
 

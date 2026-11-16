@@ -133,9 +133,11 @@ func update_ui() -> void:
 			lbl_xp_value.text = "\u200E%s/%s\u200E" % [_fa_num(xp), _fa_num(next_base)]
 
 		var img_id = int(GameManager.user_data.get("image", 0))
+		var frame_id = GameManager.get_frame_id()
 		var avatar_path = "res://assets/icons/Avatars/%d.png" % img_id
 		if ResourceLoader.exists(avatar_path):
 			avatar_rect.texture = load(avatar_path)
+		CafeSocialTheme.apply_frame_to_container($PanelFrame/ContentMargin/HBoxMain/AvatarFrame, avatar_rect, frame_id)
 	else:
 		lbl_username.text = "کاربر کافه فکر"
 		if not _is_copy_feedback_active:
@@ -150,6 +152,7 @@ func update_ui() -> void:
 			xp_bar.value = 0.0
 		if is_instance_valid(lbl_xp_value):
 			lbl_xp_value.text = "\u200E۰/۶۰\u200E"
+		CafeSocialTheme.apply_frame_to_container($PanelFrame/ContentMargin/HBoxMain/AvatarFrame, avatar_rect, 1)
 
 static func _total_exp_to_level(level: int, _base: int = 20) -> int:
 	return GameManager.total_exp_to_level(level)

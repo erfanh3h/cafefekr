@@ -445,6 +445,8 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	else:
 		av_img.texture = load("res://assets/icons/Avatars/0.png")
 	av_panel.add_child(av_img)
+	var opp_fid = GameManager.get_player_frame_id(opp_data)
+	CafeSocialTheme.apply_frame_to_container(av_panel, av_img, opp_fid)
 	
 	# Clicking avatar opens opponent details box
 	av_panel.gui_input.connect(func(event: InputEvent):
@@ -699,7 +701,7 @@ func show_game_details(game: Dictionary) -> void:
 			p_opp = {"username": "ربات هوشمند", "image": 1}
 	
 	# Left: You (larger fonts & avatar)
-	var you_col = _create_player_column("شما (" + str(p_you.get("username", "")) + ")", int(p_you.get("image", 0)), score_you, my_res == "win")
+	var you_col = _create_player_column("شما (" + str(p_you.get("username", "")) + ")", int(p_you.get("image", 0)), score_you, my_res == "win", GameManager.get_player_frame_id(p_you))
 	h2h_row.add_child(you_col)
 	
 	# Middle: VS & Integer Score (larger fonts)
@@ -726,7 +728,7 @@ func show_game_details(game: Dictionary) -> void:
 	h2h_row.add_child(vs_box)
 	
 	# Right: Opponent (larger fonts & avatar)
-	var opp_col = _create_player_column(str(p_opp.get("username", "حریف")), int(p_opp.get("image", 0)), score_opp, my_res == "lose")
+	var opp_col = _create_player_column(str(p_opp.get("username", "حریف")), int(p_opp.get("image", 0)), score_opp, my_res == "lose", GameManager.get_player_frame_id(p_opp))
 	h2h_row.add_child(opp_col)
 	
 	details_container.add_child(h2h_card)
@@ -768,7 +770,7 @@ func show_game_details(game: Dictionary) -> void:
 			empty_lbl.add_theme_color_override("font_color", Color(0.7, 0.65, 0.6))
 			details_container.add_child(empty_lbl)
 
-func _create_player_column(name_text: String, avatar_id: int, score_val: int, is_winner: bool) -> VBoxContainer:
+func _create_player_column(name_text: String, avatar_id: int, score_val: int, is_winner: bool, frame_id: int = 1) -> VBoxContainer:
 	var vbox = VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -794,6 +796,7 @@ func _create_player_column(name_text: String, avatar_id: int, score_val: int, is
 	else:
 		img.texture = load("res://assets/icons/Avatars/0.png")
 	av_frame.add_child(img)
+	CafeSocialTheme.apply_frame_to_container(av_frame, img, frame_id)
 	vbox.add_child(av_frame)
 	
 	var lbl_name = Label.new()

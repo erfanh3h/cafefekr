@@ -205,6 +205,14 @@ func _setup_players(payload: Dictionary) -> void:
 
 	p1_avatar.texture = _load_avatar(p1_img)
 	p2_avatar.texture = _load_avatar(p2_img)
+	var p1_fid = GameManager.get_player_frame_id(p1_data)
+	var p2_fid = GameManager.get_player_frame_id(p2_data)
+	if is_instance_valid(p1_avatar):
+		var p1_p = p1_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p1_p if p1_p is Control else p1_avatar, p1_avatar, p1_fid)
+	if is_instance_valid(p2_avatar):
+		var p2_p = p2_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p2_p if p2_p is Control else p2_avatar, p2_avatar, p2_fid)
 
 	var is_p1_me = (str(p1_data.get("user_id", "")) == my_id)
 	if is_instance_valid(p1_role_label) and is_instance_valid(p2_role_label):

@@ -402,6 +402,8 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		var av_path: String = "res://assets/icons/Avatars/%d.png" % img_id
 		if ResourceLoader.exists(av_path):
 			avatar.texture = load(av_path)
+		var u_fid = GameManager.get_player_frame_id(entry_dict)
+		CafeSocialTheme.apply_frame_to_container(av_frame, avatar, u_fid)
 	av_frame.add_child(avatar)
 	row.add_child(av_frame)
 

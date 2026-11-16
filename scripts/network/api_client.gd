@@ -48,6 +48,10 @@ func update_avatar(image_id: int, callback: Callable) -> void:
 	var body = "image=" + str(image_id)
 	_post_form("/update-image", body, _get_auth_headers(), callback)
 
+func update_frame(frame_id: int, callback: Callable) -> void:
+	var body = "frame=" + str(clampi(frame_id, 1, 20))
+	_post_form("/update-frame", body, _get_auth_headers(), callback)
+
 func get_ranking_by_score(callback: Callable) -> void:
 	_http_get("/ranking-by-score", PackedStringArray(), callback)
 

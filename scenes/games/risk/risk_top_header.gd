@@ -230,9 +230,13 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 		if is_instance_valid(info["role"]):
 			info["role"].text = _format_role_text(idx)
 		var av_id = _to_int(p_data.get("image", p_data.get("user_image", 0)))
+		var p_fid = GameManager.get_player_frame_id(p_data)
 		var tex = _get_cached_avatar(av_id)
-		if tex and is_instance_valid(info["avatar"]):
-			info["avatar"].texture = tex
+		if is_instance_valid(info["avatar"]):
+			if tex:
+				info["avatar"].texture = tex
+			var p_parent = info["avatar"].get_parent()
+			CafeSocialTheme.apply_frame_to_container(p_parent if p_parent is Control else info["avatar"], info["avatar"], p_fid)
 		if is_instance_valid(info["side_tag"]):
 			var is_me = (my_idx == idx)
 			info["side_tag"].text = "شما" if is_me else "حریف"

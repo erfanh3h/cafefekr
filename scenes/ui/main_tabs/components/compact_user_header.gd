@@ -85,11 +85,13 @@ func update_ui() -> void:
 			lbl_xp.text = "\u200E%s/%s\u200E" % [GameManager.to_fa_num(xp), GameManager.to_fa_num(next_base)]
 
 		var img_id = int(GameManager.user_data.get("image", 0))
+		var frame_id = GameManager.get_frame_id()
 		var avatar_path = "res://assets/icons/Avatars/%d.png" % img_id
 		if ResourceLoader.exists(avatar_path):
 			avatar_rect.texture = load(avatar_path)
 		else:
 			avatar_rect.texture = DEFAULT_AVATAR
+		CafeSocialTheme.apply_frame_to_container(avatar_btn, avatar_rect, frame_id)
 	else:
 		lbl_username.text = "کاربر کافه فکر"
 		lbl_coins.text = "۰"
@@ -100,3 +102,4 @@ func update_ui() -> void:
 		if is_instance_valid(lbl_xp):
 			lbl_xp.text = "۰/۶۰"
 		avatar_rect.texture = DEFAULT_AVATAR
+		CafeSocialTheme.apply_frame_to_container(avatar_btn, avatar_rect, 1)

@@ -112,7 +112,15 @@ layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
-text = "ظاهر نمایه"
+text = "تصویر نمایه"
+
+[node name="BtnFrames" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+mouse_default_cursor_shape = 2
+text = "قاب آواتار"
 
 [node name="BtnPrivacy" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
 custom_minimum_size = Vector2(0, 52)
@@ -120,7 +128,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
-text = "حریم خصوصی"
+text = "تنظیمات"
 
 [node name="BtnNotifications" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
 custom_minimum_size = Vector2(0, 52)
@@ -147,6 +155,12 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 14
 
 [node name="CosmeticsContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="FramesContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3

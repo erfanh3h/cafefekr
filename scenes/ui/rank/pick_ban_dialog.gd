@@ -342,6 +342,10 @@ func _setup_player_strip() -> void:
 	p1_name.text = p1_uname
 	p1_score.text = _fa_num(p1_s)
 	p1_avatar.texture = _load_avatar_texture(p1_img)
+	var p1_fid = GameManager.get_player_frame_id(p1_data)
+	if is_instance_valid(p1_avatar):
+		var p1_p = p1_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p1_p if p1_p is Control else p1_avatar, p1_avatar, p1_fid)
 	if my_player_index == 1:
 		p1_role.text = "شما"
 		p1_role.add_theme_color_override("font_color", Color(0.35, 0.92, 1.0))
@@ -356,6 +360,10 @@ func _setup_player_strip() -> void:
 	p2_name.text = p2_uname
 	p2_score.text = _fa_num(p2_s)
 	p2_avatar.texture = _load_avatar_texture(p2_img)
+	var p2_fid = GameManager.get_player_frame_id(p2_data)
+	if is_instance_valid(p2_avatar):
+		var p2_p = p2_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p2_p if p2_p is Control else p2_avatar, p2_avatar, p2_fid)
 	if my_player_index == 2:
 		p2_role.text = "شما"
 		p2_role.add_theme_color_override("font_color", Color(0.35, 0.92, 1.0))

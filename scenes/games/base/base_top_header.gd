@@ -759,15 +759,21 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 
 	if is_instance_valid(p1_avatar):
 		var p1_img_id = int(p1_data.get("image", p1_data.get("user_image", 0)))
+		var p1_fid = GameManager.get_player_frame_id(p1_data)
 		var tex1 = _get_cached_avatar(p1_img_id)
 		if tex1:
 			p1_avatar.texture = tex1
+		var p1_parent = p1_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p1_parent if p1_parent is Control else p1_avatar, p1_avatar, p1_fid)
 
 	if is_instance_valid(p2_avatar):
 		var p2_img_id = int(p2_data.get("image", p2_data.get("user_image", 0)))
+		var p2_fid = GameManager.get_player_frame_id(p2_data)
 		var tex2 = _get_cached_avatar(p2_img_id)
 		if tex2:
 			p2_avatar.texture = tex2
+		var p2_parent = p2_avatar.get_parent()
+		CafeSocialTheme.apply_frame_to_container(p2_parent if p2_parent is Control else p2_avatar, p2_avatar, p2_fid)
 
 	if is_instance_valid(p1_role_badge):
 		p1_role_badge.text = _get_role_badge_text(1)
