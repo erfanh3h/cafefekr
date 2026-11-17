@@ -154,26 +154,46 @@ func _on_start_game_pressed() -> void:
 		start_game_requested.emit(selected_game_type)
 	)
 
+func _calculate_game_card_height() -> float:
+	var total_w := 600.0
+	if is_instance_valid(scroll_games) and scroll_games.size.x > 100.0:
+		total_w = scroll_games.size.x - 14.0
+	elif is_instance_valid(game_grid) and game_grid.size.x > 100.0:
+		total_w = game_grid.size.x
+	var h := maxf(180.0, floor(total_w * (2.0 / 3.0)))
+	return h
+
 func _populate_games_grid() -> void:
 	for child in game_grid.get_children():
 		child.queue_free()
 	_game_cards.clear()
 	
+	var initial_h := _calculate_game_card_height()
 	for g_type in AVAILABLE_GAMES:
-		var card = _create_game_card(g_type)
+		var card = _create_game_card(g_type, initial_h)
 		game_grid.add_child(card)
 		_game_cards[g_type] = card
 
-func _create_game_card(g_type: String) -> Control:
+func _create_game_card(g_type: String, initial_h: float = 400.0) -> Control:
 	var is_selected = (g_type == selected_game_type)
 	
 	# Native Button control ensures robust child clipping and anchor support
+	# 1 game per row with 2/3 aspect ratio (height = 2/3 * width)
 	var card = Button.new()
-	card.custom_minimum_size = Vector2(0, 140)
+	card.custom_minimum_size = Vector2(0, initial_h)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(300, 70)
+	card.pivot_offset = Vector2(300, initial_h / 2.0)
+	
+	card.item_rect_changed.connect(func():
+		var w = card.size.x
+		if w > 100.0:
+			var target_h = floor(w * (2.0 / 3.0))
+			if absf(card.custom_minimum_size.y - target_h) > 2.0:
+				card.set_deferred("custom_minimum_size", Vector2(0, target_h))
+				card.pivot_offset = Vector2(w / 2.0, target_h / 2.0)
+	)
 	
 	var st = _style_card_selected if is_selected else _style_card_normal
 	card.add_theme_stylebox_override("normal", st)
@@ -207,7 +227,7 @@ func _create_game_card(g_type: String) -> Control:
 	
 	# 4. Bottom title banner with gold separator line
 	var banner = PanelContainer.new()
-	banner.anchor_top = 0.68
+	banner.anchor_top = 0.72
 	banner.anchor_right = 1.0
 	banner.anchor_bottom = 1.0
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -222,7 +242,7 @@ func _create_game_card(g_type: String) -> Control:
 	var lbl = Label.new()
 	lbl.text = GameTypes.get_display_name_fa(g_type)
 	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl.add_theme_font_size_override("font_size", 32)
+	lbl.add_theme_font_size_override("font_size", 30)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 	lbl.add_theme_constant_override("shadow_outline_size", 3)

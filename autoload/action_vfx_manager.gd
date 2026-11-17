@@ -28,6 +28,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_process(false)
 	_setup_ui_canvas()
+	_init_touch_scrolling()
 
 func _setup_ui_canvas() -> void:
 	_ui_canvas_layer = CanvasLayer.new()
@@ -493,3 +494,189 @@ func spawn_dialog_sparkle_burst(center_pos: Vector2) -> void:
 		tw.tween_property(star, "modulate:a", 0.0, 0.45)
 		
 	get_tree().create_timer(0.55).timeout.connect(burst_root.queue_free)
+
+
+# ==============================================================================
+# Universal 60fps Mobile Touch Drag Scrolling Framework for Android / Mobile
+# Automatically detects all ScrollContainers in the application and enables
+# fluid kinetic touch-drag scrolling even when child buttons/panels exist.
+# ==============================================================================
+
+var _registered_scrolls: Array[ScrollContainer] = []
+var _touch_scroll_active: bool = false
+var _touch_scroll_dragging: bool = false
+var _touch_scroll_target: ScrollContainer = null
+var _touch_start_pos: Vector2 = Vector2.ZERO
+var _touch_start_scroll_v: int = 0
+var _touch_start_scroll_h: int = 0
+var _touch_finger_id: int = -1
+var _touch_is_screen_touch: bool = false
+var _touch_velocity_samples: Array = []
+
+func _init_touch_scrolling() -> void:
+	get_tree().node_added.connect(_on_node_added_for_touch_scroll)
+	call_deferred("_scan_existing_scroll_containers", get_tree().root)
+
+func _scan_existing_scroll_containers(node: Node) -> void:
+	if not is_instance_valid(node):
+		return
+	if node is ScrollContainer:
+		_register_scroll_container(node)
+	for child in node.get_children():
+		_scan_existing_scroll_containers(child)
+
+func _on_node_added_for_touch_scroll(node: Node) -> void:
+	if node is ScrollContainer:
+		_register_scroll_container(node)
+
+func _register_scroll_container(sc: ScrollContainer) -> void:
+	if not is_instance_valid(sc) or _registered_scrolls.has(sc):
+		return
+	_registered_scrolls.append(sc)
+	sc.tree_exited.connect(func():
+		_registered_scrolls.erase(sc)
+		if _touch_scroll_target == sc:
+			_touch_scroll_active = false
+			_touch_scroll_dragging = false
+			_touch_scroll_target = null
+	)
+
+func _find_scroll_container_at(pos: Vector2) -> ScrollContainer:
+	var candidates: Array[ScrollContainer] = []
+	for sc in _registered_scrolls:
+		if is_instance_valid(sc) and sc.is_inside_tree() and sc.is_visible_in_tree():
+			var r = sc.get_global_rect()
+			if r.has_point(pos):
+				var vbar = sc.get_v_scroll_bar()
+				var hbar = sc.get_h_scroll_bar()
+				var can_scroll_v = (sc.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED) and (vbar and vbar.max_value > sc.size.y + 2.0)
+				var can_scroll_h = (sc.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED) and (hbar and hbar.max_value > sc.size.x + 2.0)
+				if can_scroll_v or can_scroll_h:
+					candidates.append(sc)
+	
+	if candidates.is_empty():
+		return null
+	
+	var best: ScrollContainer = candidates[0]
+	for i in range(1, candidates.size()):
+		var c = candidates[i]
+		if best.is_ancestor_of(c):
+			best = c
+		elif c.is_ancestor_of(best):
+			pass
+		elif (c.size.x * c.size.y) < (best.size.x * best.size.y):
+			best = c
+	return best
+
+func _apply_touch_scroll_inertia() -> void:
+	if not is_instance_valid(_touch_scroll_target) or _touch_velocity_samples.size() < 2:
+		return
+	var first_sample = _touch_velocity_samples[0]
+	var last_sample = _touch_velocity_samples[-1]
+	var dt = float(last_sample["time"] - first_sample["time"]) / 1000.0
+	if dt <= 0.001 or dt > 0.35:
+		return
+	var vel_y = (last_sample["pos"].y - first_sample["pos"].y) / dt
+	if absf(vel_y) < 100.0:
+		return
+	var vbar = _touch_scroll_target.get_v_scroll_bar()
+	var max_v = vbar.max_value if vbar else 99999.0
+	var current_scroll = _touch_scroll_target.scroll_vertical
+	var target_scroll = clampi(int(current_scroll - vel_y * 0.28), 0, int(max_v))
+	var tween = _touch_scroll_target.create_tween()
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_touch_scroll_target, "scroll_vertical", target_scroll, 0.42)
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		_touch_is_screen_touch = true
+		if event.pressed:
+			if not _touch_scroll_active:
+				var target = _find_scroll_container_at(event.position)
+				if is_instance_valid(target):
+					_touch_scroll_active = true
+					_touch_scroll_dragging = false
+					_touch_scroll_target = target
+					_touch_finger_id = event.index
+					_touch_start_pos = event.position
+					_touch_start_scroll_v = target.scroll_vertical
+					_touch_start_scroll_h = target.scroll_horizontal
+					_touch_velocity_samples.clear()
+					_touch_velocity_samples.append({"pos": event.position, "time": Time.get_ticks_msec()})
+		else:
+			if _touch_scroll_active and event.index == _touch_finger_id:
+				if _touch_scroll_dragging:
+					get_viewport().set_input_as_handled()
+					_apply_touch_scroll_inertia()
+				_touch_scroll_active = false
+				_touch_scroll_dragging = false
+				_touch_scroll_target = null
+				_touch_finger_id = -1
+				_touch_is_screen_touch = false
+
+	elif event is InputEventScreenDrag:
+		if _touch_scroll_active and event.index == _touch_finger_id:
+			if is_instance_valid(_touch_scroll_target) and _touch_scroll_target.is_inside_tree() and _touch_scroll_target.is_visible_in_tree():
+				var delta = event.position - _touch_start_pos
+				if not _touch_scroll_dragging:
+					if absf(delta.y) > 10.0 or absf(delta.x) > 10.0:
+						_touch_scroll_dragging = true
+				if _touch_scroll_dragging:
+					if _touch_scroll_target.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+						var vbar = _touch_scroll_target.get_v_scroll_bar()
+						var max_v = vbar.max_value if vbar else 99999.0
+						_touch_scroll_target.scroll_vertical = clampi(int(_touch_start_scroll_v - delta.y), 0, int(max_v))
+					if _touch_scroll_target.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+						var hbar = _touch_scroll_target.get_h_scroll_bar()
+						var max_h = hbar.max_value if hbar else 99999.0
+						_touch_scroll_target.scroll_horizontal = clampi(int(_touch_start_scroll_h - delta.x), 0, int(max_h))
+					_touch_velocity_samples.append({"pos": event.position, "time": Time.get_ticks_msec()})
+					if _touch_velocity_samples.size() > 5:
+						_touch_velocity_samples.pop_front()
+					get_viewport().set_input_as_handled()
+
+	elif event is InputEventMouseButton and not _touch_is_screen_touch:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				if not _touch_scroll_active:
+					var target = _find_scroll_container_at(event.position)
+					if is_instance_valid(target):
+						_touch_scroll_active = true
+						_touch_scroll_dragging = false
+						_touch_scroll_target = target
+						_touch_finger_id = 0
+						_touch_start_pos = event.position
+						_touch_start_scroll_v = target.scroll_vertical
+						_touch_start_scroll_h = target.scroll_horizontal
+						_touch_velocity_samples.clear()
+						_touch_velocity_samples.append({"pos": event.position, "time": Time.get_ticks_msec()})
+			else:
+				if _touch_scroll_active and _touch_finger_id == 0:
+					if _touch_scroll_dragging:
+						get_viewport().set_input_as_handled()
+						_apply_touch_scroll_inertia()
+					_touch_scroll_active = false
+					_touch_scroll_dragging = false
+					_touch_scroll_target = null
+					_touch_finger_id = -1
+
+	elif event is InputEventMouseMotion and not _touch_is_screen_touch:
+		if _touch_scroll_active and _touch_finger_id == 0:
+			if is_instance_valid(_touch_scroll_target) and _touch_scroll_target.is_inside_tree() and _touch_scroll_target.is_visible_in_tree():
+				var delta = event.position - _touch_start_pos
+				if not _touch_scroll_dragging:
+					if absf(delta.y) > 10.0 or absf(delta.x) > 10.0:
+						_touch_scroll_dragging = true
+				if _touch_scroll_dragging:
+					if _touch_scroll_target.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+						var vbar = _touch_scroll_target.get_v_scroll_bar()
+						var max_v = vbar.max_value if vbar else 99999.0
+						_touch_scroll_target.scroll_vertical = clampi(int(_touch_start_scroll_v - delta.y), 0, int(max_v))
+					if _touch_scroll_target.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+						var hbar = _touch_scroll_target.get_h_scroll_bar()
+						var max_h = hbar.max_value if hbar else 99999.0
+						_touch_scroll_target.scroll_horizontal = clampi(int(_touch_start_scroll_h - delta.x), 0, int(max_h))
+					_touch_velocity_samples.append({"pos": event.position, "time": Time.get_ticks_msec()})
+					if _touch_velocity_samples.size() > 5:
+						_touch_velocity_samples.pop_front()
+					get_viewport().set_input_as_handled()

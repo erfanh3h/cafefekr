@@ -119,12 +119,35 @@ func switch_subtab(tab_name: String) -> void:
 
 func _style_subnav_btn(btn: Button, is_act: bool) -> void:
 	btn.add_theme_font_override("font", _font_hekayat)
-	btn.add_theme_font_size_override("font_size", 20)
+	btn.add_theme_font_size_override("font_size", 18)
+	btn.clip_text = true
+	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	
+	var col_name = KenneyUI.COLOR_YELLOW if is_act else KenneyUI.COLOR_GREY
+	var st_norm: StyleBoxTexture = KenneyUI.get_button_style(col_name, "normal").duplicate()
+	st_norm.content_margin_left = 6.0
+	st_norm.content_margin_right = 6.0
+	st_norm.content_margin_top = 8.0
+	st_norm.content_margin_bottom = 8.0
+	btn.add_theme_stylebox_override("normal", st_norm)
+
+	var st_press: StyleBoxTexture = KenneyUI.get_button_style(col_name, "pressed").duplicate()
+	st_press.content_margin_left = 6.0
+	st_press.content_margin_right = 6.0
+	st_press.content_margin_top = 10.0
+	st_press.content_margin_bottom = 6.0
+	btn.add_theme_stylebox_override("pressed", st_press)
+
+	var st_hover: StyleBoxTexture = KenneyUI.get_button_style(col_name, "hover").duplicate()
+	st_hover.content_margin_left = 6.0
+	st_hover.content_margin_right = 6.0
+	st_hover.content_margin_top = 8.0
+	st_hover.content_margin_bottom = 8.0
+	btn.add_theme_stylebox_override("hover", st_hover)
+
 	if is_act:
-		KenneyUI.style_button(btn, KenneyUI.COLOR_YELLOW)
 		btn.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
 	else:
-		KenneyUI.style_button(btn, KenneyUI.COLOR_GREY)
 		btn.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
 
 

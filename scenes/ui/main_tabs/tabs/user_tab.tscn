@@ -53,9 +53,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 16
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 22
 theme_override_constants/margin_bottom = 16
 
 [node name="MainPanel" type="PanelContainer" parent="OuterMargin"]
@@ -64,10 +64,10 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_board_shell")
 
 [node name="InnerMargin" type="MarginContainer" parent="OuterMargin/MainPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 4
-theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 4
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
 
 [node name="VBox" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin"]
 layout_mode = 2
@@ -95,7 +95,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_board_shell")
 
 [node name="HBox" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="BtnProfile" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]

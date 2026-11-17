@@ -744,7 +744,7 @@ func _setup_connections() -> void:
 		b.add_theme_stylebox_override("focus", empty_sb)
 		b.add_theme_stylebox_override("disabled", empty_sb)
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.custom_minimum_size = Vector2(104, 126)
+		b.custom_minimum_size = Vector2(56, 70)
 		b.text = ""
 		b.pivot_offset = b.custom_minimum_size / 2.0
 		ActionVFXManager.apply_button_juice(b, "tap_button")

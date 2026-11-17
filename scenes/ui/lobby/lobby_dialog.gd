@@ -431,23 +431,23 @@ func _update_game_grid_selection() -> void:
 			sb.shadow_offset = Vector2(0, 2)
 			card.add_theme_stylebox_override("normal", sb)
 
-func _calculate_game_card_side() -> float:
-	var total_w := 612.0
+func _calculate_game_card_height() -> float:
+	var total_w := 600.0
 	if is_instance_valid(scroll_games) and scroll_games.size.x > 100.0:
-		total_w = scroll_games.size.x - 12.0 # exclude scrollbar width
+		total_w = scroll_games.size.x - 14.0 # exclude scrollbar width
 	elif is_instance_valid(game_grid) and game_grid.size.x > 100.0:
 		total_w = game_grid.size.x
-	var col_w := maxf(120.0, floor((total_w - 10.0) / 2.0))
-	return col_w
+	var h := maxf(180.0, floor(total_w * (2.0 / 3.0)))
+	return h
 
 func _populate_game_grid() -> void:
 	for child in game_grid.get_children():
 		child.queue_free()
 	_game_cards.clear()
 	
-	var side_len := _calculate_game_card_side()
+	var initial_h := _calculate_game_card_height()
 	for g in available_games:
-		var card = _create_game_card(g, side_len)
+		var card = _create_game_card(g, initial_h)
 		game_grid.add_child(card)
 		_game_cards[g] = card
 	
@@ -455,29 +455,31 @@ func _populate_game_grid() -> void:
 		scroll_games.resized.connect(_on_game_grid_scroll_resized)
 
 func _on_game_grid_scroll_resized() -> void:
-	var side_len := _calculate_game_card_side()
+	var h := _calculate_game_card_height()
 	for card in _game_cards.values():
 		if is_instance_valid(card):
-			card.custom_minimum_size = Vector2(0, side_len)
-			card.pivot_offset = Vector2(side_len / 2.0, side_len / 2.0)
+			card.custom_minimum_size = Vector2(0, h)
+			card.pivot_offset = Vector2(card.size.x / 2.0, h / 2.0)
 
-func _create_game_card(g_type: String, initial_side: float = 290.0) -> Control:
+func _create_game_card(g_type: String, initial_h: float = 400.0) -> Control:
 	var is_selected = (g_type == selected_create_game_type)
 	
 	var card = Button.new()
-	# 1:1 Aspect ratio (square cards) for 2-column mobile grid
-	card.custom_minimum_size = Vector2(0, initial_side)
+	# 1 game per row with 2/3 aspect ratio (height = 2/3 * width)
+	card.custom_minimum_size = Vector2(0, initial_h)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(initial_side / 2.0, initial_side / 2.0)
+	card.pivot_offset = Vector2(300, initial_h / 2.0)
 	
-	# Keep square 1:1 aspect ratio when resized
+	# Dynamically lock aspect ratio to 2/3 (height = width * 2 / 3)
 	card.item_rect_changed.connect(func():
 		var w = card.size.x
-		if w > 80.0 and absf(card.custom_minimum_size.y - w) > 2.0:
-			card.set_deferred("custom_minimum_size", Vector2(0, w))
-			card.pivot_offset = Vector2(w / 2.0, w / 2.0)
+		if w > 100.0:
+			var target_h = floor(w * (2.0 / 3.0))
+			if absf(card.custom_minimum_size.y - target_h) > 2.0:
+				card.set_deferred("custom_minimum_size", Vector2(0, target_h))
+				card.pivot_offset = Vector2(w / 2.0, target_h / 2.0)
 	)
 	
 	# Warm wooden mahogany card styling
@@ -521,7 +523,7 @@ func _create_game_card(g_type: String, initial_side: float = 290.0) -> Control:
 	
 	# Bottom title banner with gold separator line
 	var banner = PanelContainer.new()
-	banner.anchor_top = 0.74
+	banner.anchor_top = 0.72
 	banner.anchor_right = 1.0
 	banner.anchor_bottom = 1.0
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -536,7 +538,7 @@ func _create_game_card(g_type: String, initial_side: float = 290.0) -> Control:
 	var lbl = Label.new()
 	lbl.text = GameTypes.get_display_name_fa(g_type)
 	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl.add_theme_font_size_override("font_size", 24)
+	lbl.add_theme_font_size_override("font_size", 30)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 	lbl.add_theme_constant_override("shadow_outline_size", 3)
@@ -548,7 +550,7 @@ func _create_game_card(g_type: String, initial_side: float = 290.0) -> Control:
 	
 	# 2-player mode pill badge (top-left)
 	var mode_pill = PanelContainer.new()
-	mode_pill.position = Vector2(8, 8)
+	mode_pill.position = Vector2(12, 12)
 	mode_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var p_style = StyleBoxFlat.new()
 	p_style.bg_color = Color(0.14, 0.09, 0.05, 0.88)
@@ -557,16 +559,16 @@ func _create_game_card(g_type: String, initial_side: float = 290.0) -> Control:
 	p_style.border_width_right = 1
 	p_style.border_width_bottom = 1
 	p_style.border_color = Color(0.78, 0.62, 0.35, 0.8)
-	p_style.set_corner_radius_all(8)
-	p_style.content_margin_left = 8
-	p_style.content_margin_right = 8
-	p_style.content_margin_top = 3
-	p_style.content_margin_bottom = 3
+	p_style.set_corner_radius_all(10)
+	p_style.content_margin_left = 10
+	p_style.content_margin_right = 10
+	p_style.content_margin_top = 4
+	p_style.content_margin_bottom = 4
 	mode_pill.add_theme_stylebox_override("panel", p_style)
 	var mode_lbl = Label.new()
 	mode_lbl.text = "۲ تا ۴ نفره" if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP, GameTypes.MONOPOLY] else "۲ نفره"
 	mode_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	mode_lbl.add_theme_font_size_override("font_size", 16)
+	mode_lbl.add_theme_font_size_override("font_size", 18)
 	mode_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
 	mode_pill.add_child(mode_lbl)
 	card.add_child(mode_pill)
