@@ -14,46 +14,6 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 
 
 static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer) -> void:
-	var header_margin := MarginContainer.new()
-	header_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header_margin.add_theme_constant_override("margin_left", 48)
-	header_margin.add_theme_constant_override("margin_right", 48)
-	body_vbox.add_child(header_margin)
-
-	var header_card := PanelContainer.new()
-	header_card.custom_minimum_size = Vector2(0, 136)
-	header_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
-	header_margin.add_child(header_card)
-
-	var hrow := HBoxContainer.new()
-	hrow.alignment = BoxContainer.ALIGNMENT_CENTER
-	hrow.add_theme_constant_override("separation", 14)
-	header_card.add_child(hrow)
-
-	var btn_new_dm := TextureButton.new()
-	btn_new_dm.custom_minimum_size = Vector2(68, 68)
-	btn_new_dm.ignore_texture_size = true
-	btn_new_dm.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	btn_new_dm.texture_normal = preload("res://assets/images/frames/plus.png")
-	btn_new_dm.focus_mode = Control.FOCUS_NONE
-	btn_new_dm.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	ActionVFXManager.apply_button_juice(btn_new_dm, "tap_button")
-	btn_new_dm.pressed.connect(func():
-		AudioManager.sfx_tap()
-		_open_friend_picker_modal(host)
-	)
-	hrow.add_child(btn_new_dm)
-
-	var title_col := VBoxContainer.new()
-	title_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_col.add_theme_constant_override("separation", 2)
-	hrow.add_child(title_col)
-
-	title_col.add_child(CafeSocialTheme.make_title("گفتگوهای خصوصی", 31, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
-	var sub_msg := "بدون پیام خوانده‌نشده" if NetworkManager.unread_dms_count <= 0 else "%s پیام جدید در انتظار خواندن" % GameManager.to_fa_num(NetworkManager.unread_dms_count)
-	title_col.add_child(CafeSocialTheme.make_body(sub_msg, 22, CafeSocialTheme.COL_EMERALD_TEXT if NetworkManager.unread_dms_count > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT))
-
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -65,6 +25,27 @@ static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer)
 	list_box.add_theme_constant_override("separation", 10)
 	scroll.add_child(list_box)
 	list_box.add_child(CafeSocialTheme.make_loading_state("در حال دریافت گفتگوها..."))
+
+	# Plus icon button at bottom-left of conversations stage
+	var bottom_row := HBoxContainer.new()
+	bottom_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	bottom_row.add_theme_constant_override("separation", 10)
+	body_vbox.add_child(bottom_row)
+
+	var btn_new_dm := TextureButton.new()
+	btn_new_dm.custom_minimum_size = Vector2(72, 72)
+	btn_new_dm.ignore_texture_size = true
+	btn_new_dm.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_new_dm.texture_normal = preload("res://assets/images/frames/plus.png")
+	btn_new_dm.focus_mode = Control.FOCUS_NONE
+	btn_new_dm.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_new_dm.tooltip_text = "شروع گفتگوی جدید با دوست"
+	ActionVFXManager.apply_button_juice(btn_new_dm, "tap_button")
+	btn_new_dm.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_open_friend_picker_modal(host)
+	)
+	bottom_row.add_child(btn_new_dm)
 
 	NetworkManager.api.get_conversations_list(func(ok: bool, _c: int, data: Variant):
 		if not is_instance_valid(list_box):
@@ -428,16 +409,6 @@ static func render_messages(host: Control) -> void:
 		bubble_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bubble_col.add_theme_constant_override("separation", 4)
 
-		# Header above bubble (Name + Time)
-		var hdr_row := HBoxContainer.new()
-		hdr_row.alignment = BoxContainer.ALIGNMENT_END if from_me else BoxContainer.ALIGNMENT_BEGIN
-		hdr_row.add_theme_constant_override("separation", 8)
-		bubble_col.add_child(hdr_row)
-
-		var name_display: String = "شما" if from_me else str(host._active_dm_partner_name)
-		var hdr_lbl := CafeSocialTheme.make_body(name_display, 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT if from_me else HORIZONTAL_ALIGNMENT_LEFT)
-		hdr_row.add_child(hdr_lbl)
-
 		# Speech Bubble Frame (chat_my.png or chat_other.png)
 		var bubble := PanelContainer.new()
 		bubble.custom_minimum_size = Vector2(220, 96)
@@ -589,7 +560,7 @@ static func _open_friend_picker_modal(host: Control) -> void:
 			ch.queue_free()
 		if arr.is_empty():
 			flist.add_child(CafeSocialTheme.make_empty_state(
-				CafeSocialTheme.ICO_LOBBY,
+				null,
 				"فهرست دوستان خالی است",
 				"ابتدا از بخش «دوستان» بازیکنان را به فهرست دوستان خود اضافه کنید."
 			))

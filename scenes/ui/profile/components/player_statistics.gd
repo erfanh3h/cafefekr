@@ -2,7 +2,7 @@ class_name PlayerStatistics
 extends HBoxContainer
 
 ## Cafe Fekr — Player Statistics Component
-## Displays 3 distinguishable statistic cards:
+## Displays 3 distinguishable statistic cards without icons:
 ## 1. Cafe Fekr Points (امتیاز کافه فکر)
 ## 2. Player Level (سطح بازیکن)
 ## 3. Friends Count (تعداد دوستان) or Coins (سکه شما if self)
@@ -25,31 +25,31 @@ func _init() -> void:
 
 func _build_ui() -> void:
 	# Card 1: Score / Cafe Fekr Points (Gold Accent)
-	var sc_res := _create_stat_card("امتیاز کافه", CafeSocialTheme.ICO_CUP, CafeSocialTheme.COL_GOLD_BRIGHT)
+	var sc_res := _create_stat_card("امتیاز کافه", CafeSocialTheme.COL_GOLD_BRIGHT)
 	_card_score = sc_res["panel"]
 	_lbl_score_val = sc_res["val_label"]
 	add_child(_card_score)
 
 	# Card 2: Level (Emerald Accent)
-	var lvl_res := _create_stat_card("سطح بازیکن", CafeSocialTheme.BADGE_LEVEL, CafeSocialTheme.COL_EMERALD_TEXT)
+	var lvl_res := _create_stat_card("سطح بازیکن", CafeSocialTheme.COL_EMERALD_TEXT)
 	_card_level = lvl_res["panel"]
 	_lbl_level_val = lvl_res["val_label"]
 	add_child(_card_level)
 
 	# Card 3: Friends / Coins (Warm Cream Accent)
-	var fr_res := _create_stat_card("دوستان", CafeSocialTheme.ICO_LOBBY, CafeSocialTheme.COL_WARM_CREAM)
+	var fr_res := _create_stat_card("دوستان", CafeSocialTheme.COL_WARM_CREAM)
 	_card_friends = fr_res["panel"]
 	_lbl_friends_val = fr_res["val_label"]
 	_lbl_friends_title = fr_res["title_label"]
 	add_child(_card_friends)
 
 
-func _create_stat_card(title: String, icon_tex: Texture2D, accent_col: Color) -> Dictionary:
+func _create_stat_card(title: String, accent_col: Color) -> Dictionary:
 	var p := PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	p.custom_minimum_size = Vector2(0, 92)
+	p.custom_minimum_size = Vector2(0, 88)
 
-	# Clean, refined dark walnut well card
+	# Clean, refined dark walnut well card without inner ornamental icons
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.12, 0.08, 0.05, 0.94)
 	sb.border_color = Color(0.48, 0.36, 0.20, 0.70)
@@ -69,22 +69,9 @@ func _create_stat_card(title: String, icon_tex: Texture2D, accent_col: Color) ->
 	vb.add_theme_constant_override("separation", 2)
 	p.add_child(vb)
 
-	# Icon + Value Row
-	var val_row := HBoxContainer.new()
-	val_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	val_row.add_theme_constant_override("separation", 6)
-	vb.add_child(val_row)
-
-	var val_lbl := CafeSocialTheme.make_title("۰", 26, accent_col, HORIZONTAL_ALIGNMENT_CENTER, false)
-	val_row.add_child(val_lbl)
-
-	if icon_tex != null:
-		var ic := TextureRect.new()
-		ic.texture = icon_tex
-		ic.custom_minimum_size = Vector2(26, 26)
-		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		val_row.add_child(ic)
+	# Large Crisp Number (Zero icons as requested)
+	var val_lbl := CafeSocialTheme.make_title("۰", 28, accent_col, HORIZONTAL_ALIGNMENT_CENTER, false)
+	vb.add_child(val_lbl)
 
 	# Label Underneath
 	var tit_lbl := CafeSocialTheme.make_body(title, 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)

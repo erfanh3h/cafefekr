@@ -82,8 +82,16 @@ func _build_ui_shell() -> void:
 	top_row.add_theme_constant_override("separation", 10)
 	root_vbox.add_child(top_row)
 
-	var btn_refresh := CafeSocialTheme.make_button("", "bronze", Vector2(50, 50), 22, CafeSocialTheme.ICO_REFRESH, false, 12)
+	var btn_refresh := TextureButton.new()
+	btn_refresh.name = "BtnRefreshTop"
+	btn_refresh.texture_normal = CafeSocialTheme.ICO_REFRESH
+	btn_refresh.custom_minimum_size = Vector2(62, 62)
+	btn_refresh.ignore_texture_size = true
+	btn_refresh.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_refresh.focus_mode = Control.FOCUS_NONE
+	btn_refresh.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_refresh.tooltip_text = "بروزرسانی"
+	ActionVFXManager.apply_button_juice(btn_refresh, "tap_button")
 	btn_refresh.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_preload_badge_counts()
@@ -94,11 +102,11 @@ func _build_ui_shell() -> void:
 	var title_lbl := Label.new()
 	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	title_lbl.add_theme_font_size_override("font_size", 30)
+	title_lbl.add_theme_font_size_override("font_size", 34)
 	title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	title_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 	title_lbl.add_theme_constant_override("shadow_outline_size", 2)
-	title_lbl.text = "باشگاه دوستان و اتحادها"
+	title_lbl.text = "کافه"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	top_row.add_child(title_lbl)
 
@@ -315,6 +323,7 @@ func _on_realtime_clan_chat_received(msg: Dictionary) -> void:
 	_clan_chat_messages.append(msg)
 	if current_main_tab == "clans" and current_clans_subtab == "chat":
 		SocialClansView.render_clan_chat(self)
+		_scroll_clan_chat_to_bottom()
 
 
 func _on_realtime_clan_chat_deleted(message_id: String) -> void:
@@ -323,11 +332,38 @@ func _on_realtime_clan_chat_deleted(message_id: String) -> void:
 			_clan_chat_messages.remove_at(i)
 	if current_main_tab == "clans" and current_clans_subtab == "chat":
 		SocialClansView.render_clan_chat(self)
+		_scroll_clan_chat_to_bottom()
 
 
 func _on_realtime_clan_event(event: Dictionary) -> void:
 	_show_toast(str(event.get("message", "رویداد جدید در اتحاد")), CafeSocialTheme.COL_GOLD_BRIGHT)
+	if current_main_tab == "clans":
+		_refresh_current_tab()
+		if current_clans_subtab == "chat":
+			_scroll_clan_chat_to_bottom()
 
 
 func _on_realtime_notification_received(_notif: Dictionary) -> void:
 	_update_main_tab_buttons()
+
+
+func _scroll_clan_chat_to_bottom() -> void:
+	if not is_instance_valid(_clan_chat_scroll):
+		return
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_instance_valid(_clan_chat_scroll):
+		var bar: VScrollBar = _clan_chat_scroll.get_v_scroll_bar()
+		if bar:
+			_clan_chat_scroll.scroll_vertical = int(bar.max_value)
+
+
+func _scroll_dm_to_bottom() -> void:
+	if not is_instance_valid(_dm_messages_scroll):
+		return
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_instance_valid(_dm_messages_scroll):
+		var bar: VScrollBar = _dm_messages_scroll.get_v_scroll_bar()
+		if bar:
+			_dm_messages_scroll.scroll_vertical = int(bar.max_value)

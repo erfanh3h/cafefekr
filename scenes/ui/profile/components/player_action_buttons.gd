@@ -2,9 +2,14 @@ class_name PlayerActionButtons
 extends VBoxContainer
 
 ## Cafe Fekr — Player Social Interactions Component
-## Organizes primary and secondary player actions:
-## Primary: Add Friend, Private Message, Invite to Game, More Actions
-## Secondary: Invite to Clan, Spectate Live, Block Player, Report Player
+## Features circular icon buttons for primary actions:
+## 1. Add Friend (add_friend.png)
+## 2. Private Chat (chat.png)
+## 3. Invite Game (game.png)
+## 4. More Actions Toggle (بیشتر ▾)
+##
+## And expandable drawer for secondary actions:
+## Invite to Clan, Spectate Live, Block Player, Report Player
 
 signal add_friend_pressed()
 signal accept_friend_pressed()
@@ -15,10 +20,14 @@ signal spectate_live_pressed()
 signal block_player_pressed()
 signal report_player_pressed()
 
+const TEX_ADD_FRIEND = preload("res://assets/images/add_friend.png")
+const TEX_CHAT = preload("res://assets/images/chat.png")
+const TEX_GAME = preload("res://assets/images/game.png")
+
 var _primary_row: HBoxContainer
-var _btn_friend: Control
-var _btn_message: Button
-var _btn_game_invite: Button
+var _btn_friend: TextureButton
+var _btn_message: TextureButton
+var _btn_game_invite: TextureButton
 var _btn_more: Button
 
 var _more_panel: PanelContainer
@@ -28,6 +37,8 @@ var _btn_spectate: Button
 var _btn_block: Button
 var _btn_report: Button
 
+var _current_relationship: String = "none"
+
 
 func _init() -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -36,37 +47,43 @@ func _init() -> void:
 
 
 func _build_ui() -> void:
-	# Primary Actions Row
+	# Primary Actions Centered Row
 	_primary_row = HBoxContainer.new()
 	_primary_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_primary_row.add_theme_constant_override("separation", 8)
+	_primary_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_primary_row.add_theme_constant_override("separation", 14)
 	add_child(_primary_row)
 
-	# 1. Friend action placeholder (swapped in setup)
-	_btn_friend = Control.new()
-	_btn_friend.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# 1. Add Friend Icon Button
+	_btn_friend = _create_icon_button(TEX_ADD_FRIEND)
+	_btn_friend.pressed.connect(func():
+		AudioManager.sfx_button()
+		if _current_relationship == "request_received":
+			accept_friend_pressed.emit()
+		else:
+			add_friend_pressed.emit()
+	)
 	_primary_row.add_child(_btn_friend)
 
-	# 2. Private Message (Sapphire Blue Accent)
-	_btn_message = CafeSocialTheme.make_button("پیام خصوصی", "sapphire", Vector2(0, 48), 20)
-	_btn_message.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# 2. Private Chat Icon Button
+	_btn_message = _create_icon_button(TEX_CHAT)
 	_btn_message.pressed.connect(func():
 		AudioManager.sfx_tap()
 		private_message_pressed.emit()
 	)
 	_primary_row.add_child(_btn_message)
 
-	# 3. Invite to Game (Gold Accent)
-	_btn_game_invite = CafeSocialTheme.make_button("دعوت بازی", "gold", Vector2(0, 48), 20)
-	_btn_game_invite.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# 3. Invite Game Icon Button
+	_btn_game_invite = _create_icon_button(TEX_GAME)
 	_btn_game_invite.pressed.connect(func():
 		AudioManager.sfx_tap()
 		invite_to_game_pressed.emit()
 	)
 	_primary_row.add_child(_btn_game_invite)
 
-	# 4. More Actions Toggle (Bronze/Muted)
-	_btn_more = CafeSocialTheme.make_button("بیشتر ▾", "muted", Vector2(80, 48), 19)
+	# 4. More Actions Toggle Button
+	_btn_more = CafeSocialTheme.make_button("بیشتر ▾", "muted", Vector2(88, 52), 18)
+	_btn_more.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_btn_more.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_more_panel.visible = not _more_panel.visible
@@ -95,7 +112,7 @@ func _build_ui() -> void:
 	_more_panel.add_child(_more_row)
 
 	# Invite to Clan (Bronze)
-	_btn_clan_invite = CafeSocialTheme.make_button("دعوت کلن", "bronze", Vector2(0, 42), 18)
+	_btn_clan_invite = CafeSocialTheme.make_button("دعوت کلن", "bronze", Vector2(0, 42), 17)
 	_btn_clan_invite.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_btn_clan_invite.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -104,7 +121,7 @@ func _build_ui() -> void:
 	_more_row.add_child(_btn_clan_invite)
 
 	# Spectate Live (Emerald)
-	_btn_spectate = CafeSocialTheme.make_button("تماشای زنده", "emerald", Vector2(0, 42), 18)
+	_btn_spectate = CafeSocialTheme.make_button("تماشای زنده", "emerald", Vector2(0, 42), 17)
 	_btn_spectate.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_btn_spectate.visible = false
 	_btn_spectate.pressed.connect(func():
@@ -114,7 +131,7 @@ func _build_ui() -> void:
 	_more_row.add_child(_btn_spectate)
 
 	# Block Player (Muted Neutral/Danger)
-	_btn_block = CafeSocialTheme.make_button("مسدود کردن", "muted", Vector2(0, 42), 18)
+	_btn_block = CafeSocialTheme.make_button("مسدود کردن", "muted", Vector2(0, 42), 17)
 	_btn_block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_btn_block.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -123,7 +140,7 @@ func _build_ui() -> void:
 	_more_row.add_child(_btn_block)
 
 	# Report Player (Crimson Destructive)
-	_btn_report = CafeSocialTheme.make_button("گزارش تخلف", "crimson", Vector2(0, 42), 18)
+	_btn_report = CafeSocialTheme.make_button("گزارش تخلف", "crimson", Vector2(0, 42), 17)
 	_btn_report.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_btn_report.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -132,47 +149,69 @@ func _build_ui() -> void:
 	_more_row.add_child(_btn_report)
 
 
+func _create_icon_button(tex: Texture2D) -> TextureButton:
+	var b := TextureButton.new()
+	b.custom_minimum_size = Vector2(58, 58)
+	b.ignore_texture_size = true
+	b.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	b.texture_normal = tex
+	b.focus_mode = Control.FOCUS_NONE
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(b, "tap_button")
+	return b
+
+
+func _set_icon_btn_disabled(btn: TextureButton, is_disabled: bool) -> void:
+	btn.disabled = is_disabled
+	btn.modulate = Color(0.48, 0.48, 0.48, 0.50) if is_disabled else Color(1.0, 1.0, 1.0, 1.0)
+	btn.mouse_default_cursor_shape = Control.CURSOR_ARROW if is_disabled else Control.CURSOR_POINTING_HAND
+
+
 func setup(
 	relationship: String = "none",
+	is_self: bool = false,
+	is_clanmate: bool = false,
 	is_in_game: bool = false,
 	can_dm: bool = true,
-	can_invite_game: bool = true,
-	can_invite_clan: bool = true
+	can_invite_game: bool = true
 ) -> void:
-	# 1. Setup Relationship Button
-	for c in _btn_friend.get_children():
-		c.queue_free()
+	_current_relationship = relationship
 
-	match relationship:
-		"friend":
-			var p_fr := CafeSocialTheme.make_badge_pill("✓ دوست شما", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 19)
-			p_fr.set_anchors_preset(Control.PRESET_FULL_RECT)
-			p_fr.custom_minimum_size = Vector2(0, 48)
-			_btn_friend.add_child(p_fr)
-		"request_sent":
-			var p_sent := CafeSocialTheme.make_badge_pill("درخواست ارسال شد", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 18)
-			p_sent.set_anchors_preset(Control.PRESET_FULL_RECT)
-			p_sent.custom_minimum_size = Vector2(0, 48)
-			_btn_friend.add_child(p_sent)
-		"request_received":
-			var b_acc := CafeSocialTheme.make_friend_button("accept", "پذیرش دوستی", Vector2(0, 48))
-			b_acc.set_anchors_preset(Control.PRESET_FULL_RECT)
-			b_acc.pressed.connect(func():
-				AudioManager.sfx_button()
-				accept_friend_pressed.emit()
-			)
-			_btn_friend.add_child(b_acc)
-		_:
-			var b_add := CafeSocialTheme.make_friend_button("add", "افزودن دوست", Vector2(0, 48))
-			b_add.set_anchors_preset(Control.PRESET_FULL_RECT)
-			b_add.pressed.connect(func():
-				AudioManager.sfx_button()
-				add_friend_pressed.emit()
-			)
-			_btn_friend.add_child(b_add)
+	if is_self:
+		# When inspecting self, all action buttons must be present but disabled
+		_set_icon_btn_disabled(_btn_friend, true)
+		_set_icon_btn_disabled(_btn_message, true)
+		_set_icon_btn_disabled(_btn_game_invite, true)
+		_btn_clan_invite.disabled = true
+		_btn_clan_invite.text = "دعوت کلن"
+		_btn_spectate.visible = false
+		_btn_block.disabled = true
+		_btn_report.disabled = true
+		return
 
-	# 2. Control visibility based on state
-	_btn_message.visible = can_dm
-	_btn_game_invite.visible = can_invite_game
-	_btn_clan_invite.visible = can_invite_clan
+	# 1. Friend Button State
+	if relationship == "friend":
+		_set_icon_btn_disabled(_btn_friend, true)
+	elif relationship == "request_sent":
+		_set_icon_btn_disabled(_btn_friend, true)
+	else:
+		_set_icon_btn_disabled(_btn_friend, false)
+
+	# 2. Chat & Game Invite
+	_set_icon_btn_disabled(_btn_message, not can_dm)
+	_set_icon_btn_disabled(_btn_game_invite, not can_invite_game)
+
+	# 3. Clan Invite (Disabled if already clanmate)
+	if is_clanmate:
+		_btn_clan_invite.disabled = true
+		_btn_clan_invite.text = "هم‌کلنی شما"
+	else:
+		_btn_clan_invite.disabled = false
+		_btn_clan_invite.text = "دعوت کلن"
+
+	# 4. Spectate Live
 	_btn_spectate.visible = is_in_game
+
+	# 5. Block & Report
+	_btn_block.disabled = false
+	_btn_report.disabled = false

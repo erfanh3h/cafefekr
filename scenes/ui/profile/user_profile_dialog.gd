@@ -9,12 +9,12 @@ extends Control
 ## Reusable components integrated:
 ## - ProfileHeader
 ## - PlayerStatistics
-## - ExperienceProgress
 ## - PlayerActionButtons
 ## - RankingCard
 ## - FavoriteGameItem
 
 static var active_instance: UserProfileDialog = null
+static var _cached_my_clan_id: String = ""
 
 static func show_user(user_dict_or_id: Variant, role_text: String = "", context_node: Node = null) -> UserProfileDialog:
 	var u_dict: Dictionary = {}
@@ -56,8 +56,6 @@ var _lbl_title: Label
 var _toast_panel: PanelContainer
 var _lbl_toast: Label
 
-var _subtab_bar: PanelContainer
-var _subtab_row: HBoxContainer
 var _scroll_body: ScrollContainer
 var _body_vbox: VBoxContainer
 
@@ -65,18 +63,9 @@ var _current_user_id: String = ""
 var _current_role_text: String = ""
 var _is_self: bool = false
 var _is_bot: bool = false
-var _active_self_tab: String = "overview" # "overview" | "cosmetics" | "privacy"
 
 var _base_user_dict: Dictionary = {}
 var _public_profile: Dictionary = {}
-var _notif_prefs: Dictionary = {
-	"friend_requests": true,
-	"direct_messages": true,
-	"game_invitations": true,
-	"clan_events": true,
-	"clan_chat_mentions": true
-}
-var _notif_prefs_loaded: bool = false
 
 
 func _ready() -> void:
@@ -175,17 +164,7 @@ func _build_shell() -> void:
 	_lbl_toast = CafeSocialTheme.make_body("", 21, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
 	_toast_panel.add_child(_lbl_toast)
 
-	# 6. Self Sub-Tabs Bar (Overview | Cosmetics | Privacy & Blocks)
-	_subtab_bar = PanelContainer.new()
-	_subtab_bar.visible = false
-	_subtab_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 6.0, 6.0))
-	root_vbox.add_child(_subtab_bar)
-
-	_subtab_row = HBoxContainer.new()
-	_subtab_row.add_theme_constant_override("separation", 6)
-	_subtab_bar.add_child(_subtab_row)
-
-	# 7. Scrollable Main Content Container
+	# 6. Scrollable Main Content Container
 	_scroll_body = ScrollContainer.new()
 	_scroll_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -199,6 +178,9 @@ func _build_shell() -> void:
 
 
 func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
+	if not is_instance_valid(panel):
+		_build_shell()
+
 	z_index = maxi(z_index, 60)
 	move_to_front()
 	visible = true
@@ -216,13 +198,22 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 	if _is_self and _current_user_id.is_empty():
 		_current_user_id = my_uid
 
-	_active_self_tab = "overview"
-	_lbl_title.text = "پروفایل من" if _is_self else "مشخصات بازیکن"
+	_lbl_title.text = "مشخصات بازیکن"
 	if is_instance_valid(_toast_panel):
 		_toast_panel.visible = false
 
-	_rebuild_subtabs_bar()
-	_render_body_tab()
+	# Ensure clan id is loaded to detect clanmates
+	if _cached_my_clan_id.is_empty() and GameManager.is_logged_in and not GameManager.is_guest:
+		NetworkManager.api.get_my_clan(func(ok: bool, _c: int, d: Variant):
+			if ok and typeof(d) == TYPE_DICTIONARY and typeof(d.get("result")) == TYPE_DICTIONARY:
+				var c_info = d["result"].get("clan")
+				if typeof(c_info) == TYPE_DICTIONARY:
+					_cached_my_clan_id = str(c_info.get("clan_id", c_info.get("_id", "")))
+					if visible:
+						_render_overview_tab()
+		)
+
+	_render_overview_tab()
 
 	# Fetch full public profile
 	if not _current_user_id.is_empty() and not _is_bot and not GameManager.token.is_empty():
@@ -232,15 +223,15 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 				return
 			if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
 				_public_profile = data["result"]
-				_rebuild_subtabs_bar()
-				_render_body_tab()
+				_render_overview_tab()
 			elif not _base_user_dict.has("history"):
 				_fallback_load_user_history(req_uid)
 		)
 	elif _is_self and not _current_user_id.is_empty():
 		_fallback_load_user_history(_current_user_id)
 
-	ActionVFXManager.animate_dialog_open(panel, self, true)
+	if is_inside_tree():
+		ActionVFXManager.animate_dialog_open(panel, self, true)
 
 
 func _fallback_load_user_history(req_uid: String) -> void:
@@ -251,8 +242,7 @@ func _fallback_load_user_history(req_uid: String) -> void:
 			var res: Dictionary = data["result"]
 			if res.has("history") and typeof(res["history"]) == TYPE_DICTIONARY:
 				_base_user_dict["history"] = res["history"]
-				if _active_self_tab == "overview":
-					_render_body_tab()
+				_render_overview_tab()
 	)
 
 
@@ -284,53 +274,37 @@ func _effective_data() -> Dictionary:
 	return _base_user_dict
 
 
-func _rebuild_subtabs_bar() -> void:
-	for c in _subtab_row.get_children():
-		c.queue_free()
-
-	if not _is_self or _is_bot:
-		_subtab_bar.visible = false
-		return
-
-	_subtab_bar.visible = true
-	var tabs := [
-		{"id": "overview", "label": "نمای کلی و آمار"},
-		{"id": "cosmetics", "label": "ظاهر و پروفایل"},
-		{"id": "privacy", "label": "حریم خصوصی و مسدودها"},
-	]
-	for td in tabs:
-		var tid: String = td["id"]
-		var btn := CafeSocialTheme.make_subtab(td["label"], _active_self_tab == tid, 0)
-		btn.pressed.connect(func():
-			AudioManager.sfx_tap()
-			_active_self_tab = tid
-			_rebuild_subtabs_bar()
-			_render_body_tab()
-		)
-		_subtab_row.add_child(btn)
-
-
-func _render_body_tab() -> void:
-	for c in _body_vbox.get_children():
-		c.queue_free()
-
+func _check_is_clanmate(prof: Dictionary) -> bool:
 	if _is_self:
-		match _active_self_tab:
-			"cosmetics":
-				_render_self_cosmetics_tab()
-			"privacy":
-				_render_self_privacy_tab()
-			_:
-				_render_overview_tab()
-	else:
-		_render_overview_tab()
+		return true
+	var t_clan_d: Dictionary = prof.get("clan", {}) if typeof(prof.get("clan")) == TYPE_DICTIONARY else {}
+	var t_clan_id: String = str(t_clan_d.get("clan_id", t_clan_d.get("_id", prof.get("clan_id", "")))).strip_edges()
+	if t_clan_id.is_empty():
+		return false
+
+	var my_cid := ""
+	if typeof(GameManager.user_data) == TYPE_DICTIONARY:
+		my_cid = str(GameManager.user_data.get("clan_id", ""))
+		if my_cid.is_empty() and typeof(GameManager.user_data.get("clan")) == TYPE_DICTIONARY:
+			my_cid = str(GameManager.user_data["clan"].get("clan_id", GameManager.user_data["clan"].get("_id", "")))
+
+	if not my_cid.is_empty():
+		return my_cid == t_clan_id
+
+	if not _cached_my_clan_id.is_empty():
+		return _cached_my_clan_id == t_clan_id
+
+	return false
 
 
 # ==============================================================================
-# SECTION OVERVIEW: PROFILE HEADER, STATS, PROGRESSION, ACTIONS, RANKINGS, FAVORITES
+# UNIFIED GLOBAL USER DETAILS OVERVIEW
 # ==============================================================================
 
 func _render_overview_tab() -> void:
+	for c in _body_vbox.get_children():
+		c.queue_free()
+
 	var prof := _effective_data()
 
 	var score_val := int(prof.get("score", prof.get("user_score", 0)))
@@ -342,7 +316,7 @@ func _render_overview_tab() -> void:
 	var rel := str(prof.get("relationship", "none"))
 
 	# --------------------------------------------------------------------------
-	# A. Profile Header Component
+	# A. Profile Header Component (Circle dot removed, no icon under name)
 	# --------------------------------------------------------------------------
 	var header := ProfileHeader.new()
 	header.setup(prof, _current_role_text, _is_self, _is_bot)
@@ -355,127 +329,149 @@ func _render_overview_tab() -> void:
 	_body_vbox.add_child(header)
 
 	# --------------------------------------------------------------------------
-	# D. Player Interactions (Action Area) - Displayed prominently for other players
+	# D. Player Interactions (Action Area)
+	# Circular icon buttons: add_friend.png, chat.png, game.png
+	# Always visible; disabled if _is_self or if clanmate
 	# --------------------------------------------------------------------------
-	if not _is_self and not _is_bot and GameManager.is_logged_in and not GameManager.is_guest:
-		var pres_dict: Dictionary = prof.get("presence", {}) if typeof(prof.get("presence")) == TYPE_DICTIONARY else {"status": str(prof.get("status", "offline"))}
-		var p_info: Dictionary = CafeSocialTheme.format_presence(pres_dict)
-		var is_in_game: bool = bool(p_info.get("is_in_game", false))
+	var pres_dict: Dictionary = prof.get("presence", {}) if typeof(prof.get("presence")) == TYPE_DICTIONARY else {"status": str(prof.get("status", "offline"))}
+	var p_info: Dictionary = CafeSocialTheme.format_presence(pres_dict)
+	var is_in_game: bool = bool(p_info.get("is_in_game", false))
+	var is_clanmate: bool = _check_is_clanmate(prof)
 
-		var actions := PlayerActionButtons.new()
-		actions.setup(rel, is_in_game, not GameManager.is_game_active, not GameManager.is_game_active, true)
+	var actions := PlayerActionButtons.new()
+	actions.setup(
+		rel,
+		_is_self,
+		is_clanmate,
+		is_in_game,
+		not GameManager.is_game_active,
+		not GameManager.is_game_active
+	)
 
-		# 1. Add friend action
-		actions.add_friend_pressed.connect(func():
-			NetworkManager.api.send_friend_request(_current_user_id, "", func(ok: bool, _c: int, d: Variant):
-				if ok:
-					_public_profile["relationship"] = "request_sent"
-					_show_profile_toast("درخواست دوستی ارسال شد.")
-					_render_body_tab()
-				else:
-					var msg := str(d.get("detail", "خطا در ارسال درخواست")) if typeof(d) == TYPE_DICTIONARY else "خطا در ارسال درخواست"
-					_show_profile_toast(msg, CafeSocialTheme.COL_CRIMSON_TEXT)
-			)
+	# 1. Add friend action
+	actions.add_friend_pressed.connect(func():
+		if _is_self:
+			return
+		NetworkManager.api.send_friend_request(_current_user_id, "", func(ok: bool, _c: int, d: Variant):
+			if ok:
+				_public_profile["relationship"] = "request_sent"
+				_show_profile_toast("درخواست دوستی ارسال شد.")
+				_render_overview_tab()
+			else:
+				var msg := str(d.get("detail", "خطا در ارسال درخواست")) if typeof(d) == TYPE_DICTIONARY else "خطا در ارسال درخواست"
+				_show_profile_toast(msg, CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
+	)
 
-		# 2. Accept friend request
-		actions.accept_friend_pressed.connect(func():
-			NetworkManager.api.get_friend_requests(func(ok: bool, _c: int, data: Variant):
-				var req_id := ""
-				if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
-					var inc: Array = data["result"].get("incoming", [])
-					for r in inc:
-						if typeof(r) == TYPE_DICTIONARY and typeof(r.get("user")) == TYPE_DICTIONARY:
-							if str(r["user"].get("user_id", "")) == _current_user_id:
-								req_id = str(r.get("request_id", ""))
-								break
-				if not req_id.is_empty():
-					NetworkManager.api.respond_friend_request(req_id, "accept", func(ok2: bool, _c2: int, _d2: Variant):
-						if ok2:
-							_public_profile["relationship"] = "friend"
-							_show_profile_toast("«%s» به دوستان شما اضافه شد!" % uname)
-							_render_body_tab()
-					)
-			)
+	# 2. Accept friend request
+	actions.accept_friend_pressed.connect(func():
+		if _is_self:
+			return
+		NetworkManager.api.get_friend_requests(func(ok: bool, _c: int, data: Variant):
+			var req_id := ""
+			if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+				var inc: Array = data["result"].get("incoming", [])
+				for r in inc:
+					if typeof(r) == TYPE_DICTIONARY and typeof(r.get("user")) == TYPE_DICTIONARY:
+						if str(r["user"].get("user_id", "")) == _current_user_id:
+							req_id = str(r.get("request_id", ""))
+							break
+			if not req_id.is_empty():
+				NetworkManager.api.respond_friend_request(req_id, "accept", func(ok2: bool, _c2: int, _d2: Variant):
+					if ok2:
+						_public_profile["relationship"] = "friend"
+						_show_profile_toast("«%s» به دوستان شما اضافه شد!" % uname)
+						_render_overview_tab()
+				)
 		)
+	)
 
-		# 3. Direct Message
-		actions.private_message_pressed.connect(func():
-			var target_uid := _current_user_id
-			close()
-			var s_dlg := get_tree().root.find_child("SocialDialog", true, false)
-			if s_dlg and s_dlg.has_method("open_direct_message_with"):
-				s_dlg.open_direct_message_with(target_uid, uname)
+	# 3. Direct Message
+	actions.private_message_pressed.connect(func():
+		if _is_self:
+			return
+		var target_uid := _current_user_id
+		close()
+		var s_dlg := get_tree().root.find_child("SocialDialog", true, false)
+		if s_dlg and s_dlg.has_method("open_direct_message_with"):
+			s_dlg.open_direct_message_with(target_uid, uname)
+	)
+
+	# 4. Game Invite
+	actions.invite_to_game_pressed.connect(func():
+		if _is_self:
+			return
+		CafeSocialTheme.show_game_invite_modal(self, _current_user_id, uname, func(gtitle: String):
+			_show_profile_toast("دعوت‌نامه «%s» برای %s ارسال شد." % [gtitle, uname])
 		)
+	)
 
-		# 4. Game Invite
-		actions.invite_to_game_pressed.connect(func():
-			CafeSocialTheme.show_game_invite_modal(self, _current_user_id, uname, func(gtitle: String):
-				_show_profile_toast("دعوت‌نامه «%s» برای %s ارسال شد." % [gtitle, uname])
-			)
+	# 5. Clan Invite
+	actions.invite_to_clan_pressed.connect(func():
+		if _is_self or is_clanmate:
+			return
+		NetworkManager.api.invite_to_clan(_current_user_id, func(ok: bool, _c: int, d: Variant):
+			if ok:
+				_show_profile_toast("دعوت‌نامه عضویت در کلن ارسال شد.")
+			else:
+				var msg := str(d.get("detail", "امکان دعوت به کلن وجود ندارد")) if typeof(d) == TYPE_DICTIONARY else "خطا"
+				_show_profile_toast(msg, CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
+	)
 
-		# 5. Clan Invite
-		actions.invite_to_clan_pressed.connect(func():
-			NetworkManager.api.invite_to_clan(_current_user_id, func(ok: bool, _c: int, d: Variant):
-				if ok:
-					_show_profile_toast("دعوت‌نامه عضویت در کلن ارسال شد.")
-				else:
-					var msg := str(d.get("detail", "امکان دعوت به کلن وجود ندارد")) if typeof(d) == TYPE_DICTIONARY else "خطا"
-					_show_profile_toast(msg, CafeSocialTheme.COL_CRIMSON_TEXT)
-			)
+	# 6. Spectate Live
+	actions.spectate_live_pressed.connect(func():
+		if _is_self:
+			return
+		var target_uid: String = _current_user_id
+		var active_gid: String = str(p_info.get("game_id", prof.get("current_game_id", prof.get("game_id", ""))))
+		close()
+		NetworkManager.request_spectate_game(active_gid, target_uid)
+	)
+
+	# 7. Block Player
+	actions.block_player_pressed.connect(func():
+		if _is_self:
+			return
+		CafeSocialTheme.show_confirm_modal(
+			self, "مسدود کردن بازیکن",
+			"آیا می‌خواهید «%s» را مسدود کنید؟ امکان پیام و دعوت بازی بین شما بسته خواهد شد." % uname,
+			"مسدود شود", true,
+			func():
+				NetworkManager.api.block_player(_current_user_id, "Blocked from profile", func(ok: bool, _c: int, _d: Variant):
+					if ok:
+						_show_profile_toast("«%s» مسدود شد." % uname)
+						get_tree().create_timer(1.0).timeout.connect(func():
+							if is_instance_valid(self) and visible:
+								close()
+						)
+				)
 		)
+	)
 
-		# 6. Spectate Live
-		actions.spectate_live_pressed.connect(func():
-			var target_uid: String = _current_user_id
-			var active_gid: String = str(p_info.get("game_id", prof.get("current_game_id", prof.get("game_id", ""))))
-			close()
-			NetworkManager.request_spectate_game(active_gid, target_uid)
+	# 8. Report Player
+	actions.report_player_pressed.connect(func():
+		if _is_self:
+			return
+		CafeSocialTheme.show_report_modal(self, "player", _current_user_id, uname, func(ok: bool):
+			if ok:
+				_show_profile_toast("گزارش شما با موفقیت ثبت شد.")
 		)
+	)
 
-		# 7. Block Player
-		actions.block_player_pressed.connect(func():
-			CafeSocialTheme.show_confirm_modal(
-				self, "مسدود کردن بازیکن",
-				"آیا می‌خواهید «%s» را مسدود کنید؟ امکان پیام و دعوت بازی بین شما بسته خواهد شد." % uname,
-				"مسدود شود", true,
-				func():
-					NetworkManager.api.block_player(_current_user_id, "Blocked from profile", func(ok: bool, _c: int, _d: Variant):
-						if ok:
-							_show_profile_toast("«%s» مسدود شد." % uname)
-							get_tree().create_timer(1.0).timeout.connect(func():
-								if is_instance_valid(self) and visible:
-									close()
-							)
-					)
-			)
-		)
-
-		# 8. Report Player
-		actions.report_player_pressed.connect(func():
-			CafeSocialTheme.show_report_modal(self, "player", _current_user_id, uname, func(ok: bool):
-				if ok:
-					_show_profile_toast("گزارش شما با موفقیت ثبت شد.")
-			)
-		)
-
-		_body_vbox.add_child(actions)
+	_body_vbox.add_child(actions)
 
 	# --------------------------------------------------------------------------
-	# B. Player Statistics Component (Points, Level, Friends/Coins)
+	# B. Player Statistics Component (Zero icons in boxes)
 	# --------------------------------------------------------------------------
 	var stats_component := PlayerStatistics.new()
 	stats_component.setup(score_val, lvl_val, friends_cnt, _is_self, coin_val)
 	_body_vbox.add_child(stats_component)
 
 	# --------------------------------------------------------------------------
-	# C. Player Progression Component (Emerald & Gold XP Bar)
+	# Progression Bar removed as per requirement:
+	# "we must not show current exp bar of an user to another users ! remove it ."
 	# --------------------------------------------------------------------------
-	if xp_val > 0 or _is_self:
-		var prog := ExperienceProgress.new()
-		prog.setup(xp_val, lvl_val)
-		_body_vbox.add_child(prog)
 
 	# --------------------------------------------------------------------------
 	# Clan Banner (If Clan Exists)
@@ -551,7 +547,9 @@ func _render_clan_card(clan_id: String, clan_d: Dictionary) -> void:
 
 
 func _render_rankings_and_achievements(prof: Dictionary) -> void:
-	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("آمار و رتبه‌بندی رقابتی", CafeSocialTheme.ICO_RANKING))
+	# Header with statistics.png icon as requested
+	var stat_ico = load("res://assets/images/statistics.png")
+	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("آمار و رتبه‌بندی رقابتی", stat_ico))
 
 	var st: Dictionary = prof.get("stats", {}) if typeof(prof.get("stats")) == TYPE_DICTIONARY else {}
 	var hist: Dictionary = prof.get("history", {}) if typeof(prof.get("history")) == TYPE_DICTIONARY else {}
@@ -562,34 +560,34 @@ func _render_rankings_and_achievements(prof: Dictionary) -> void:
 	var tot_matches := int(st.get("total_matches", tot_wins + tot_losses + tot_draws))
 	var win_rate := float(st.get("win_rate", 0.0))
 
-	# 1. Overall Ranking Card
+	# 1. Overall Ranking Card (Icon removed as requested)
 	var tier: Dictionary = prof.get("tier", {}) if typeof(prof.get("tier")) == TYPE_DICTIONARY else {}
 	var tier_title := str(tier.get("title_fa", prof.get("rank_title", "تازه‌کار")))
 	var score_val := int(prof.get("score", prof.get("user_score", 0)))
 	var card_overall := RankingCard.new()
 	card_overall.setup_mode(
-		"⭐ رده‌بندی کلی و امتیاز کافه",
+		"رده‌بندی کلی و امتیاز کافه",
 		"%s (%s)" % [tier_title, GameManager.to_fa_num(score_val)],
 		tot_wins,
 		tot_draws,
 		tot_losses,
-		CafeSocialTheme.ICO_STAR
+		null
 	)
 	_body_vbox.add_child(card_overall)
 
-	# 2. 2-Player Rank Mode Card (رده‌بندی دو نفره)
+	# 2. 2-Player Rank Mode Card (Icon removed as requested)
 	var win_rank := int(hist.get("win_rank", 0))
 	var draw_rank := int(hist.get("draw_rank", 0))
 	var lose_rank := int(hist.get("lose_rank", 0))
 	if (win_rank + draw_rank + lose_rank) > 0:
 		var card_rank := RankingCard.new()
 		card_rank.setup_mode(
-			"🏆 رده‌بندی دو نفره (Rank)",
+			"رده‌بندی دو نفره (Rank)",
 			"حالت رقابتی",
 			win_rank,
 			draw_rank,
 			lose_rank,
-			CafeSocialTheme.ICO_CUP
+			null
 		)
 		_body_vbox.add_child(card_rank)
 
@@ -600,12 +598,12 @@ func _render_rankings_and_achievements(prof: Dictionary) -> void:
 	if (win_cr + draw_cr + lose_cr) > 0:
 		var card_cr := RankingCard.new()
 		card_cr.setup_mode(
-			"🤖 کلاسیک تک‌نفره (هوش مصنوعی)",
+			"کلاسیک تک‌نفره (هوش مصنوعی)",
 			"تمرین و مهارت",
 			win_cr,
 			draw_cr,
 			lose_cr,
-			CafeSocialTheme.ICO_SETTING
+			null
 		)
 		_body_vbox.add_child(card_cr)
 
@@ -616,12 +614,12 @@ func _render_rankings_and_achievements(prof: Dictionary) -> void:
 	if (r1 + r2 + rn) > 0:
 		var card_mr := RankingCard.new()
 		card_mr.setup_multiplayer(
-			"👥 رده‌بندی چندنفره (منچ، ریسک، اونو، مونوپولی)",
+			"رده‌بندی چندنفره (منچ، ریسک، اونو، مونوپولی)",
 			"مسابقات تیمی و گروهی",
 			r1,
 			r2,
 			rn,
-			CafeSocialTheme.ICO_MULTI_RANK
+			null
 		)
 		_body_vbox.add_child(card_mr)
 
@@ -632,7 +630,8 @@ func _render_rankings_and_achievements(prof: Dictionary) -> void:
 
 
 func _render_achievements_grid(achs: Array) -> void:
-	var ach_header := CafeSocialTheme.make_ornate_section_header("دستاوردهای کسب‌شده", CafeSocialTheme.ICO_FIRST, "%s نشان افتخار" % GameManager.to_fa_num(achs.size()))
+	# Icon removed from header as requested
+	var ach_header := CafeSocialTheme.make_ornate_section_header("دستاوردهای کسب‌شده", null, "%s نشان افتخار" % GameManager.to_fa_num(achs.size()))
 	_body_vbox.add_child(ach_header)
 
 	var ach_grid := GridContainer.new()
@@ -679,7 +678,8 @@ func _render_favorite_games_section(prof: Dictionary) -> void:
 	if favs.is_empty():
 		return
 
-	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("بازی‌های محبوب و پربازدید", CafeSocialTheme.ICO_CUP))
+	# Icon removed from header as requested
+	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("بازی‌های محبوب و پربازدید", null))
 
 	# Horizontally Scrollable Carousel for Favorite Games
 	var h_scroll := ScrollContainer.new()
@@ -755,439 +755,3 @@ func _compute_favorites_from_history(hist: Dictionary) -> Array:
 		return a["total_matches"] > b["total_matches"]
 	)
 	return out.slice(0, 5)
-
-
-# ==============================================================================
-# TAB 2 (SELF): COSMETICS, AVATAR, TITLE, STATUS & USERNAME
-# ==============================================================================
-
-func _render_self_cosmetics_tab() -> void:
-	var prof := _effective_data()
-
-	# Account Card: Change Username
-	var acc_card := PanelContainer.new()
-	acc_card.custom_minimum_size = Vector2(0, 92)
-	acc_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 14.0, 10.0))
-	_body_vbox.add_child(acc_card)
-
-	var acc_row := HBoxContainer.new()
-	acc_row.add_theme_constant_override("separation", 10)
-	acc_card.add_child(acc_row)
-
-	var btn_rename := CafeSocialTheme.make_button("تغییر نام", "gold", Vector2(130, 44), 18)
-	btn_rename.pressed.connect(func():
-		AudioManager.sfx_tap()
-		close()
-		change_username_requested.emit()
-	)
-	acc_row.add_child(btn_rename)
-
-	var acc_col := VBoxContainer.new()
-	acc_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	acc_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	acc_row.add_child(acc_col)
-
-	acc_col.add_child(CafeSocialTheme.make_title("حساب کاربری: %s" % GameManager.get_username(), 22, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true))
-	var ph := GameManager.get_phone()
-	acc_col.add_child(CafeSocialTheme.make_body("شماره همراه: %s" % (GameManager.to_fa_num(ph) if not ph.is_empty() else "ثبت‌شده"), 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT))
-
-	# Avatar Picker (27 avatars in responsive grid)
-	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("انتخاب تصویر پروفایل (آواتار)", CafeSocialTheme.ICO_SPARKLE, "تصویر دلخواه خود را برای نمایش در بازی‌ها انتخاب کنید"))
-
-	var av_card := PanelContainer.new()
-	av_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 14.0, 12.0))
-	_body_vbox.add_child(av_card)
-
-	var av_vbox := VBoxContainer.new()
-	av_vbox.add_theme_constant_override("separation", 10)
-	av_card.add_child(av_vbox)
-
-	var sel_avatar := [GameManager.get_avatar_id()]
-	var av_grid := GridContainer.new()
-	av_grid.columns = 5
-	av_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	av_grid.add_theme_constant_override("h_separation", 10)
-	av_grid.add_theme_constant_override("v_separation", 10)
-	av_vbox.add_child(av_grid)
-
-	var av_btns: Dictionary = {}
-	var refresh_av := func():
-		for aid in av_btns.keys():
-			var ab: Button = av_btns[aid]
-			var is_sel: bool = (aid == sel_avatar[0])
-			ab.add_theme_stylebox_override("normal", CafeSocialTheme.create_card_style(
-				Color(0.24, 0.16, 0.08) if is_sel else Color(0.10, 0.06, 0.03),
-				CafeSocialTheme.COL_GOLD_BRIGHT if is_sel else CafeSocialTheme.COL_BRONZE_BORDER,
-				14, 3 if is_sel else 1, 6.0, 6.0
-			))
-			ab.add_theme_stylebox_override("hover", ab.get_theme_stylebox("normal"))
-
-	for idx in range(27):
-		var av_p := "res://assets/icons/Avatars/%d.png" % idx
-		if not ResourceLoader.exists(av_p):
-			continue
-		var ab := Button.new()
-		ab.custom_minimum_size = Vector2(96, 96)
-		ab.focus_mode = Control.FOCUS_NONE
-		ab.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		var tr := TextureRect.new()
-		tr.set_anchors_preset(Control.PRESET_FULL_RECT)
-		tr.texture = load(av_p)
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ab.add_child(tr)
-		ab.pressed.connect(func():
-			AudioManager.sfx_tap()
-			sel_avatar[0] = idx
-			refresh_av.call()
-		)
-		av_btns[idx] = ab
-		av_grid.add_child(ab)
-	refresh_av.call()
-
-	var b_save_av := CafeSocialTheme.make_button("ذخیره تصویر انتخاب‌شده", "emerald", Vector2(0, 50), 20, CafeSocialTheme.ICO_CHECK)
-	b_save_av.pressed.connect(func():
-		AudioManager.sfx_button()
-		b_save_av.disabled = true
-		var chosen: int = sel_avatar[0]
-		NetworkManager.api.update_avatar(chosen, func(ok: bool, _c: int, _d: Variant):
-			if is_instance_valid(b_save_av):
-				b_save_av.disabled = false
-			if ok:
-				GameManager.user_data["image"] = chosen
-				GameManager.user_data["avatar"] = chosen
-				GameManager.set_session(GameManager.token, GameManager.user_data, true)
-				_base_user_dict["image"] = chosen
-				if not _public_profile.is_empty():
-					_public_profile["image"] = chosen
-				_show_profile_toast("تصویر پروفایل با موفقیت تغییر یافت!")
-			else:
-				_show_profile_toast("خطا در تغییر تصویر پروفایل", CafeSocialTheme.COL_CRIMSON_TEXT)
-		)
-	)
-	av_vbox.add_child(b_save_av)
-
-	# Frame, Title, Status Customization
-	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("قاب آواتار، لقب افتخاری و وضعیت", CafeSocialTheme.ICO_KING))
-
-	var cos_card := PanelContainer.new()
-	cos_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 14.0, 12.0))
-	_body_vbox.add_child(cos_card)
-
-	var cos_v := VBoxContainer.new()
-	cos_v.add_theme_constant_override("separation", 10)
-	cos_card.add_child(cos_v)
-
-	cos_v.add_child(CafeSocialTheme.make_body("قاب نمایشی آواتار (۲۰ مدل لوکس و شاهانه):", 20, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
-	var cur_f_init = int(prof.get("profile_frame", prof.get("avatar_frame", 1)))
-	var sel_frame := [cur_f_init if cur_f_init >= 1 else 1]
-	var my_av_id: int = GameManager.get_avatar_id()
-	var frame_grid := GridContainer.new()
-	frame_grid.columns = 5
-	frame_grid.add_theme_constant_override("h_separation", 10)
-	frame_grid.add_theme_constant_override("v_separation", 10)
-	cos_v.add_child(frame_grid)
-
-	var frame_btns: Dictionary = {}
-	var refresh_frames := func():
-		for fid in frame_btns.keys():
-			var fb: PanelContainer = frame_btns[fid]
-			var is_sel: bool = (fid == sel_frame[0])
-			fb.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
-				Color(0.28, 0.18, 0.08, 0.98) if is_sel else CafeSocialTheme.COL_WALNUT_DEEP,
-				Color(1.0, 0.85, 0.32, 1.0) if is_sel else Color(0.40, 0.30, 0.20, 0.8),
-				14, 3 if is_sel else 1, 6.0, 6.0
-			))
-
-	for fid in range(1, 21):
-		var p_btn := PanelContainer.new()
-		p_btn.custom_minimum_size = Vector2(92, 92)
-		p_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		p_btn.focus_mode = Control.FOCUS_NONE
-		var badge := CafeSocialTheme.make_avatar_badge(my_av_id, fid, 72.0)
-		p_btn.add_child(badge)
-
-		var current_fid = fid
-		p_btn.gui_input.connect(func(ev: InputEvent):
-			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
-				AudioManager.sfx_tap()
-				sel_frame[0] = current_fid
-				refresh_frames.call()
-		)
-		frame_btns[fid] = p_btn
-		frame_grid.add_child(p_btn)
-	refresh_frames.call()
-
-	cos_v.add_child(CafeSocialTheme.make_body("لقب افتخاری شما:", 20, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
-	var inp_title := CafeSocialTheme.make_line_edit("مثلاً: استاد منچ و مونوپولی", 48.0, 19)
-	inp_title.text = str(prof.get("profile_title", ""))
-	cos_v.add_child(inp_title)
-
-	# Quick Honor Title presets
-	var title_chips := HBoxContainer.new()
-	title_chips.add_theme_constant_override("separation", 6)
-	cos_v.add_child(title_chips)
-	for preset in ["استاد استراتژی", "قهرمان کافه", "گرگ مونوپولی", "سلطان شطرنج"]:
-		var pt: String = preset
-		var pb := CafeSocialTheme.make_button(pt, "bronze", Vector2(0, 38), 17)
-		pb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		pb.pressed.connect(func():
-			AudioManager.sfx_tap()
-			inp_title.text = pt
-		)
-		title_chips.add_child(pb)
-
-	cos_v.add_child(CafeSocialTheme.make_body("پیام وضعیت شخصی شما:", 20, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
-	var inp_status := CafeSocialTheme.make_line_edit("مثلاً: آماده یک رقابت دو نفره جذاب!", 48.0, 19)
-	inp_status.text = str(prof.get("status_message", ""))
-	cos_v.add_child(inp_status)
-
-	var b_save_cos := CafeSocialTheme.make_button("ذخیره ظاهر و مشخصات", "gold", Vector2(0, 50), 20, CafeSocialTheme.ICO_CHECK, true)
-	b_save_cos.pressed.connect(func():
-		AudioManager.sfx_button()
-		b_save_cos.disabled = true
-		NetworkManager.api.customize_my_profile({
-			"profile_frame": sel_frame[0],
-			"profile_title": inp_title.text.strip_edges(),
-			"status_message": inp_status.text.strip_edges()
-		}, func(ok: bool, _c: int, data: Variant):
-			if is_instance_valid(b_save_cos):
-				b_save_cos.disabled = false
-			if ok:
-				if typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
-					_public_profile = data["result"]
-				GameManager.user_data["profile_frame"] = sel_frame[0]
-				GameManager.user_data["avatar_frame"] = sel_frame[0]
-				GameManager.set_session(GameManager.token, GameManager.user_data, true)
-				_show_profile_toast("ظاهر پروفایل با موفقیت ذخیره شد!")
-			else:
-				_show_profile_toast("خطا در ذخیره ظاهر پروفایل", CafeSocialTheme.COL_CRIMSON_TEXT)
-		)
-	)
-	cos_v.add_child(b_save_cos)
-
-
-# ==============================================================================
-# TAB 3 (SELF): PRIVACY SETTINGS, NOTIFICATIONS & BLOCKED PLAYERS
-# ==============================================================================
-
-func _render_self_privacy_tab() -> void:
-	var prof := _effective_data()
-	var priv: Dictionary = prof.get("privacy", {}) if typeof(prof.get("privacy")) == TYPE_DICTIONARY else {}
-
-	# Privacy Settings Card
-	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("تنظیمات حریم خصوصی", CafeSocialTheme.ICO_SETTING, "کنترل پیام‌ها، درخواست‌ها و نمایش فعالیت به دیگران"))
-
-	var priv_card := PanelContainer.new()
-	priv_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 14.0))
-	_body_vbox.add_child(priv_card)
-
-	var pv := VBoxContainer.new()
-	pv.add_theme_constant_override("separation", 10)
-	priv_card.add_child(pv)
-
-	var make_check := func(txt: String, checked: bool) -> CheckBox:
-		var chk := CheckBox.new()
-		chk.text = txt
-		chk.button_pressed = checked
-		chk.focus_mode = Control.FOCUS_NONE
-		chk.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		chk.add_theme_font_size_override("font_size", 21)
-		chk.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
-		return chk
-
-	var chk_freq: CheckBox = make_check.call("دریافت درخواست دوستی از بازیکنان", bool(priv.get("allow_friend_requests", true)))
-	var chk_last: CheckBox = make_check.call("نمایش وضعیت آنلاین و آخرین بازدید به دیگران", bool(priv.get("show_last_seen", true)))
-	var chk_game: CheckBox = make_check.call("نمایش بازی فعال و اجازه تماشا توسط دوستان", bool(priv.get("show_current_game", true)))
-	var chk_hist: CheckBox = make_check.call("نمایش سوابق و تاریخچه مسابقات در پروفایل عمومی", bool(priv.get("show_match_history", true)))
-	pv.add_child(chk_freq)
-	pv.add_child(chk_last)
-	pv.add_child(chk_game)
-	pv.add_child(chk_hist)
-
-	pv.add_child(CafeSocialTheme.make_body("چه کسانی بتوانند برای شما پیام خصوصی بفرستند؟", 20, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
-	var dm_policy := [str(priv.get("allow_dms", "everyone"))]
-	if dm_policy[0] not in ["everyone", "friends", "none"]:
-		dm_policy[0] = "everyone"
-
-	var dm_row := HBoxContainer.new()
-	dm_row.add_theme_constant_override("separation", 6)
-	pv.add_child(dm_row)
-	var dm_btns: Dictionary = {}
-	var refresh_dm_btns := func():
-		for dk in dm_btns.keys():
-			var b: Button = dm_btns[dk]
-			var act: bool = (dk == dm_policy[0])
-			b.add_theme_stylebox_override("normal", CafeSocialTheme._get_flat_btn_style("emerald" if act else "muted", "normal", 12))
-			b.add_theme_stylebox_override("hover", CafeSocialTheme._get_flat_btn_style("emerald" if act else "muted", "hover", 12))
-
-	for dd in [{"id": "none", "l": "هیچ‌کس"}, {"id": "friends", "l": "فقط دوستان"}, {"id": "everyone", "l": "همه بازیکنان"}]:
-		var did: String = dd["id"]
-		var db := CafeSocialTheme.make_button(dd["l"], "muted", Vector2(0, 44), 19)
-		db.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		db.pressed.connect(func():
-			AudioManager.sfx_tap()
-			dm_policy[0] = did
-			refresh_dm_btns.call()
-		)
-		dm_btns[did] = db
-		dm_row.add_child(db)
-	refresh_dm_btns.call()
-
-	pv.add_child(CafeSocialTheme.make_body("چه کسانی بتوانند بازی‌های زنده شما را تماشا کنند؟", 20, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
-	var spec_policy := [str(priv.get("allow_spectators", "everyone"))]
-	if spec_policy[0] not in ["everyone", "friends", "clan", "none"]:
-		spec_policy[0] = "everyone"
-
-	var spec_row := HBoxContainer.new()
-	spec_row.add_theme_constant_override("separation", 6)
-	pv.add_child(spec_row)
-	var spec_btns: Dictionary = {}
-	var refresh_spec_btns := func():
-		for sk in spec_btns.keys():
-			var sb: Button = spec_btns[sk]
-			var s_act: bool = (sk == spec_policy[0])
-			sb.add_theme_stylebox_override("normal", CafeSocialTheme._get_flat_btn_style("emerald" if s_act else "muted", "normal", 12))
-			sb.add_theme_stylebox_override("hover", CafeSocialTheme._get_flat_btn_style("emerald" if s_act else "muted", "hover", 12))
-
-	for sd in [{"id": "none", "l": "هیچ‌کس"}, {"id": "clan", "l": "هم‌کلنی‌ها"}, {"id": "friends", "l": "دوستان"}, {"id": "everyone", "l": "همه"}]:
-		var sid: String = sd["id"]
-		var sbtn := CafeSocialTheme.make_button(sd["l"], "muted", Vector2(0, 44), 18)
-		sbtn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		sbtn.pressed.connect(func():
-			AudioManager.sfx_tap()
-			spec_policy[0] = sid
-			refresh_spec_btns.call()
-		)
-		spec_btns[sid] = sbtn
-		spec_row.add_child(sbtn)
-	refresh_spec_btns.call()
-
-	var b_save_priv := CafeSocialTheme.make_button("ذخیره تنظیمات حریم خصوصی", "gold", Vector2(0, 50), 20, CafeSocialTheme.ICO_CHECK)
-	b_save_priv.pressed.connect(func():
-		AudioManager.sfx_button()
-		b_save_priv.disabled = true
-		NetworkManager.api.customize_my_profile({
-			"privacy": {
-				"allow_friend_requests": chk_freq.button_pressed,
-				"allow_dms": dm_policy[0],
-				"allow_spectators": spec_policy[0],
-				"show_last_seen": chk_last.button_pressed,
-				"show_current_game": chk_game.button_pressed,
-				"show_match_history": chk_hist.button_pressed,
-			}
-		}, func(ok: bool, _c: int, data: Variant):
-			if is_instance_valid(b_save_priv):
-				b_save_priv.disabled = false
-			if ok:
-				if typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
-					_public_profile = data["result"]
-				_show_profile_toast("تنظیمات حریم خصوصی ذخیره شد.")
-		)
-	)
-	pv.add_child(b_save_priv)
-
-	# Notification Preferences Card
-	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("تنظیمات اعلان‌ها", CafeSocialTheme.ICO_STAR))
-
-	var np_card := PanelContainer.new()
-	np_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 14.0))
-	_body_vbox.add_child(np_card)
-
-	var npv := VBoxContainer.new()
-	npv.add_theme_constant_override("separation", 8)
-	np_card.add_child(npv)
-
-	var chk_n_fr: CheckBox = make_check.call("اعلان درخواست‌های دوستی", bool(_notif_prefs.get("friend_requests", true)))
-	var chk_n_dm: CheckBox = make_check.call("اعلان پیام‌های خصوصی", bool(_notif_prefs.get("direct_messages", true)))
-	var chk_n_gm: CheckBox = make_check.call("اعلان دعوت‌نامه‌های بازی", bool(_notif_prefs.get("game_invitations", true)))
-	var chk_n_cl: CheckBox = make_check.call("اعلان رویدادها و دعوت کلن", bool(_notif_prefs.get("clan_events", true)))
-	var chk_n_mn: CheckBox = make_check.call("اعلان اشاره (@) در چت کلن", bool(_notif_prefs.get("clan_chat_mentions", true)))
-	npv.add_child(chk_n_fr)
-	npv.add_child(chk_n_dm)
-	npv.add_child(chk_n_gm)
-	npv.add_child(chk_n_cl)
-	npv.add_child(chk_n_mn)
-
-	if not _notif_prefs_loaded:
-		NetworkManager.api.get_notifications_list(false, func(ok: bool, _c: int, data: Variant):
-			if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
-				var prefs: Variant = data["result"].get("preferences")
-				if typeof(prefs) == TYPE_DICTIONARY:
-					_notif_prefs = prefs
-					_notif_prefs_loaded = true
-					if is_instance_valid(chk_n_fr):
-						chk_n_fr.button_pressed = bool(_notif_prefs.get("friend_requests", true))
-						chk_n_dm.button_pressed = bool(_notif_prefs.get("direct_messages", true))
-						chk_n_gm.button_pressed = bool(_notif_prefs.get("game_invitations", true))
-						chk_n_cl.button_pressed = bool(_notif_prefs.get("clan_events", true))
-						chk_n_mn.button_pressed = bool(_notif_prefs.get("clan_chat_mentions", true))
-		)
-
-	var b_save_np := CafeSocialTheme.make_button("ذخیره ترجیحات اعلان‌ها", "emerald", Vector2(0, 48), 20, CafeSocialTheme.ICO_CHECK)
-	b_save_np.pressed.connect(func():
-		AudioManager.sfx_button()
-		var payload := {
-			"friend_requests": chk_n_fr.button_pressed,
-			"direct_messages": chk_n_dm.button_pressed,
-			"game_invitations": chk_n_gm.button_pressed,
-			"clan_events": chk_n_cl.button_pressed,
-			"clan_chat_mentions": chk_n_mn.button_pressed,
-		}
-		NetworkManager.api.update_notification_preferences(payload, func(ok: bool, _c: int, _d: Variant):
-			if ok:
-				_notif_prefs = payload
-				_show_profile_toast("ترجیحات اعلان‌ها ذخیره شد.")
-		)
-	)
-	npv.add_child(b_save_np)
-
-	# Blocked Players List Card
-	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("بازیکنان مسدودشده", CafeSocialTheme.ICO_CANCEL, "مدیریت کاربرانی که مسدود کرده‌اید"))
-
-	var blk_holder := VBoxContainer.new()
-	blk_holder.add_theme_constant_override("separation", 8)
-	blk_holder.add_child(CafeSocialTheme.make_loading_state("در حال دریافت فهرست مسدودها..."))
-	_body_vbox.add_child(blk_holder)
-
-	NetworkManager.api.get_blocked_players(func(ok: bool, _c: int, data: Variant):
-		if not is_instance_valid(blk_holder):
-			return
-		for c in blk_holder.get_children():
-			c.queue_free()
-		var arr: Array = data.get("result", []) if (ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_ARRAY) else []
-		if arr.is_empty():
-			blk_holder.add_child(CafeSocialTheme.make_body("هیچ بازیکنی در فهرست مسدودهای شما نیست.", 20, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
-			return
-		for bu in arr:
-			if typeof(bu) != TYPE_DICTIONARY:
-				continue
-			var bu_uid := str(bu.get("user_id", bu.get("_id", "")))
-			var bu_name := str(bu.get("username", "بازیکن"))
-			var card := PanelContainer.new()
-			card.custom_minimum_size = Vector2(0, 84)
-			card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 20.0, 10.0))
-			var row := HBoxContainer.new()
-			row.alignment = BoxContainer.ALIGNMENT_CENTER
-			row.add_theme_constant_override("separation", 10)
-			card.add_child(row)
-
-			var b_un := CafeSocialTheme.make_button("رفع مسدودیت", "emerald", Vector2(130, 42), 18)
-			b_un.pressed.connect(func():
-				AudioManager.sfx_tap()
-				NetworkManager.api.unblock_player(bu_uid, func(ok_u: bool, _cu: int, _du: Variant):
-					if ok_u:
-						_show_profile_toast("مسدودیت «%s» برداشته شد." % bu_name)
-						_render_body_tab()
-				)
-			)
-			row.add_child(b_un)
-
-			var nm := CafeSocialTheme.make_title(bu_name, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true)
-			nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			row.add_child(nm)
-
-			row.add_child(CafeSocialTheme.make_avatar_badge(int(bu.get("image", 0)), int(bu.get("profile_frame", 1)), 58.0))
-			blk_holder.add_child(card)
-	)

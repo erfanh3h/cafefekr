@@ -186,8 +186,16 @@ func _build_ui_shell() -> void:
 	top_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	header_row.add_child(top_spacer)
 
-	var btn_refresh := CafeSocialTheme.make_button("", "bronze", Vector2(56, 56), 23, CafeSocialTheme.ICO_REFRESH, false, 14)
+	var btn_refresh := TextureButton.new()
+	btn_refresh.name = "BtnRefreshTop"
+	btn_refresh.texture_normal = CafeSocialTheme.ICO_REFRESH
+	btn_refresh.custom_minimum_size = Vector2(62, 62)
+	btn_refresh.ignore_texture_size = true
+	btn_refresh.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_refresh.focus_mode = Control.FOCUS_NONE
+	btn_refresh.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_refresh.tooltip_text = "بروزرسانی"
+	ActionVFXManager.apply_button_juice(btn_refresh, "tap_button")
 	btn_refresh.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_refresh_current_tab()
@@ -346,8 +354,9 @@ func _scroll_dm_to_bottom() -> void:
 	if not is_instance_valid(_dm_messages_scroll):
 		return
 	await get_tree().process_frame
+	await get_tree().process_frame
 	if is_instance_valid(_dm_messages_scroll):
-		var bar := _dm_messages_scroll.get_v_scroll_bar()
+		var bar: VScrollBar = _dm_messages_scroll.get_v_scroll_bar()
 		if bar:
 			_dm_messages_scroll.scroll_vertical = int(bar.max_value)
 
@@ -356,8 +365,9 @@ func _scroll_clan_chat_to_bottom() -> void:
 	if not is_instance_valid(_clan_chat_scroll):
 		return
 	await get_tree().process_frame
+	await get_tree().process_frame
 	if is_instance_valid(_clan_chat_scroll):
-		var bar := _clan_chat_scroll.get_v_scroll_bar()
+		var bar: VScrollBar = _clan_chat_scroll.get_v_scroll_bar()
 		if bar:
 			_clan_chat_scroll.scroll_vertical = int(bar.max_value)
 

@@ -261,15 +261,15 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 	var tabs: Array[Dictionary] = []
 	if has_clan:
 		tabs = [
-			{"id": "chat", "label": "پیام‌ها", "icon": CafeSocialTheme.BADGE_CHAT},
-			{"id": "my_clan", "label": "اتحاد", "icon": CafeSocialTheme.TEX_TAB_CLANS},
-			{"id": "members", "label": "اعضا", "icon": CafeSocialTheme.ICO_ARMY},
+			{"id": "chat", "label": "پیام‌ها", "icon": null},
+			{"id": "my_clan", "label": "اتحاد", "icon": null},
+			{"id": "members", "label": "اعضا", "icon": preload("res://assets/images/friends.png")},
 		]
 	else:
 		tabs = [
-			{"id": "my_clan", "label": "معرفی و دعوت‌ها", "icon": CafeSocialTheme.ICO_STAR},
-			{"id": "discover", "label": "جستجو و فهرست", "icon": CafeSocialTheme.ICO_RANKING},
-			{"id": "leaderboard", "label": "برترین اتحادها", "icon": CafeSocialTheme.ICO_CUP},
+			{"id": "my_clan", "label": "معرفی و دعوت‌ها", "icon": null},
+			{"id": "discover", "label": "جستجو و فهرست", "icon": null},
+			{"id": "leaderboard", "label": "برترین اتحادها", "icon": null},
 		]
 
 	for td in tabs:
@@ -349,53 +349,7 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 # ==============================================================================
 
 static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
-	var cdict: Dictionary = host._my_clan_data.get("clan", {}) if typeof(host._my_clan_data.get("clan")) == TYPE_DICTIONARY else {}
-	var cname := str(cdict.get("name", "اتحاد"))
-	var emb_id := int(cdict.get("emblem_id", 1))
-	var mem_cnt := int(cdict.get("member_count", 1))
-	var open_chals: Array = cdict.get("open_challenges", host._my_clan_data.get("open_challenges", [])) if typeof(cdict.get("open_challenges", host._my_clan_data.get("open_challenges", []))) == TYPE_ARRAY else []
-
-	# A. Chat Subheader
-	var subhdr := PanelContainer.new()
-	var sh_st := StyleBoxFlat.new()
-	sh_st.bg_color = Color(0.14, 0.09, 0.05, 0.92)
-	sh_st.border_color = Color(0.55, 0.40, 0.20, 0.65)
-	sh_st.set_border_width_all(1)
-	sh_st.set_corner_radius_all(10)
-	sh_st.content_margin_left = 12.0
-	sh_st.content_margin_right = 12.0
-	sh_st.content_margin_top = 6.0
-	sh_st.content_margin_bottom = 6.0
-	subhdr.add_theme_stylebox_override("panel", sh_st)
-	holder.add_child(subhdr)
-
-	var sh_row := HBoxContainer.new()
-	sh_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	sh_row.add_theme_constant_override("separation", 10)
-	subhdr.add_child(sh_row)
-
-	if not open_chals.is_empty():
-		var b_act_ch := CafeSocialTheme.make_badge_pill(
-			"%s چالش باز" % GameManager.to_fa_num(open_chals.size()),
-			CafeSocialTheme.COL_GOLD_BRIGHT,
-			Color(0.22, 0.14, 0.05, 0.94),
-			CafeSocialTheme.COL_GOLD_ANTIQUE,
-			16
-		)
-		sh_row.add_child(b_act_ch)
-
-	var sh_info := VBoxContainer.new()
-	sh_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sh_info.alignment = BoxContainer.ALIGNMENT_CENTER
-	sh_info.add_theme_constant_override("separation", 1)
-	sh_row.add_child(sh_info)
-
-	sh_info.add_child(CafeSocialTheme.make_title("گفتگوی رسمی اعضای اتحاد «%s»" % cname, 21, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false))
-	sh_info.add_child(CafeSocialTheme.make_body("برای دعوت هم‌تیمی‌ها از دکمه «+ چالش» و برای ارسال استیکر از دکمه استیکر استفاده کنید", 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
-
-	sh_row.add_child(CafeSocialTheme.make_clan_emblem(emb_id, 38.0))
-
-	# B. Scroll Container for Chat Stream
+	# A. Scroll Container for Chat Stream (top header box removed as requested)
 	var chat_well := PanelContainer.new()
 	chat_well.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	chat_well.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -423,7 +377,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	host._clan_chat_scroll.add_child(host._clan_chat_list_vbox)
 	host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت گفتگوهای اتحاد..."))
 
-	# C. Chat Input Composer (docked at bottom)
+	# B. Chat Input Composer (docked at bottom)
 	var composer := PanelContainer.new()
 	composer.custom_minimum_size = Vector2(0, 84)
 	var comp_st := StyleBoxFlat.new()
@@ -446,8 +400,20 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	inp_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	composer.add_child(inp_row)
 
-	# Send Button
-	var btn_send := CafeSocialTheme.make_button("ارسال", "emerald", Vector2(104, 52), 22)
+	# Send Button (icon send.png)
+	var btn_send := TextureButton.new()
+	btn_send.texture_normal = preload("res://assets/images/send.png")
+	btn_send.custom_minimum_size = Vector2(54, 54)
+	btn_send.ignore_texture_size = true
+	btn_send.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_send.focus_mode = Control.FOCUS_NONE
+	btn_send.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_send.tooltip_text = "ارسال پیام"
+	ActionVFXManager.apply_button_juice(btn_send, "tap_button")
+	btn_send.pressed.connect(func():
+		AudioManager.sfx_tap()
+		host._send_clan_chat_message()
+	)
 	inp_row.add_child(btn_send)
 
 	# Text Input
@@ -455,18 +421,32 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	host._clan_chat_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inp_row.add_child(host._clan_chat_input)
 
-	# Sticker Drawer Toggle Button
-	var btn_sticker := CafeSocialTheme.make_button("", "bronze", Vector2(52, 52), 20, CafeSocialTheme.BADGE_SOCIAL, false, 12)
+	# Sticker Drawer Toggle Button (clean icon without background shadow)
+	var btn_sticker := TextureButton.new()
+	btn_sticker.texture_normal = CafeSocialTheme.BADGE_SOCIAL
+	btn_sticker.custom_minimum_size = Vector2(50, 50)
+	btn_sticker.ignore_texture_size = true
+	btn_sticker.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_sticker.focus_mode = Control.FOCUS_NONE
+	btn_sticker.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_sticker.tooltip_text = "ارسال استیکر"
+	ActionVFXManager.apply_button_juice(btn_sticker, "tap_button")
 	btn_sticker.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_open_sticker_picker(host)
 	)
 	inp_row.add_child(btn_sticker)
 
-	# Friendly Challenge Shortcut Button
-	var btn_chal := CafeSocialTheme.make_button("+ چالش", "gold", Vector2(94, 52), 20, null, true, 12)
+	# Friendly Challenge Shortcut Button (icon game.png)
+	var btn_chal := TextureButton.new()
+	btn_chal.texture_normal = preload("res://assets/images/game.png")
+	btn_chal.custom_minimum_size = Vector2(54, 54)
+	btn_chal.ignore_texture_size = true
+	btn_chal.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_chal.focus_mode = Control.FOCUS_NONE
+	btn_chal.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_chal.tooltip_text = "ایجاد چالش دوستانه در اتحاد"
+	ActionVFXManager.apply_button_juice(btn_chal, "tap_button")
 	btn_chal.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_open_friendly_challenge_modal(host)
@@ -573,7 +553,7 @@ static func render_clan_chat(host: Control) -> void:
 		bubble_col.size_flags_stretch_ratio = 0.82
 		bubble_col.add_theme_constant_override("separation", 3)
 
-		# Header above bubble: Username + Role Pill + Delete button + Time
+		# Header above bubble: Username + Role Pill (delete button moved to icon button beside bubble)
 		var hdr_row := HBoxContainer.new()
 		hdr_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		hdr_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -597,10 +577,28 @@ static func render_clan_chat(host: Control) -> void:
 			false
 		)
 
-		var del_btn: Button = null
+		if is_mine:
+			hdr_row.add_child(role_badge)
+			hdr_row.add_child(uname_lbl)
+		else:
+			hdr_row.add_child(uname_lbl)
+			hdr_row.add_child(role_badge)
+
+		# Delete button as little icon button with delete.png
+		var del_icon_btn: TextureButton = null
 		if (is_mine or my_role in ["leader", "co_leader", "elder"]) and not msg_id.is_empty():
-			del_btn = CafeSocialTheme.make_button("حذف", "crimson", Vector2(58, 28), 16)
-			del_btn.pressed.connect(func():
+			del_icon_btn = TextureButton.new()
+			del_icon_btn.texture_normal = preload("res://assets/images/delete.png")
+			del_icon_btn.custom_minimum_size = Vector2(30, 30)
+			del_icon_btn.ignore_texture_size = true
+			del_icon_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+			del_icon_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			del_icon_btn.focus_mode = Control.FOCUS_NONE
+			del_icon_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			del_icon_btn.tooltip_text = "حذف پیام"
+			ActionVFXManager.apply_button_juice(del_icon_btn, "tap_button")
+			del_icon_btn.pressed.connect(func():
+				AudioManager.sfx_tap()
 				NetworkManager.api.delete_clan_chat_message(msg_id, func(ok: bool, _c: int, _d: Variant):
 					if ok:
 						host._clan_chat_messages = host._clan_chat_messages.filter(func(x): return str(x.get("message_id", x.get("_id", ""))) != msg_id)
@@ -608,21 +606,11 @@ static func render_clan_chat(host: Control) -> void:
 				)
 			)
 
-		if is_mine:
-			if del_btn != null:
-				hdr_row.add_child(del_btn)
-			hdr_row.add_child(role_badge)
-			hdr_row.add_child(uname_lbl)
-		else:
-			hdr_row.add_child(uname_lbl)
-			hdr_row.add_child(role_badge)
-			if del_btn != null:
-				hdr_row.add_child(del_btn)
-
-		# Bubble Frame
+		# Bubble Frame (my chat frame vs others frame)
 		var bubble := PanelContainer.new()
+		bubble.custom_minimum_size = Vector2(220, 96)
 		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_flat_chat_bubble_style(is_mine))
+		bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_chat_bubble_style(is_mine))
 		bubble_col.add_child(bubble)
 
 		var b_vbox := VBoxContainer.new()
@@ -640,7 +628,7 @@ static func render_clan_chat(host: Control) -> void:
 			sticker_id = int(text.substr(9, text.length() - 10))
 			is_sticker = true
 
-		if is_sticker and sticker_id >= 1 and sticker_id <= 44:
+		if is_sticker and sticker_id >= 1 and sticker_id <= 16:
 			var s_tex: Texture2D = load("res://assets/icons/Reactions/%d.png" % sticker_id)
 			if s_tex != null:
 				var s_rect := TextureRect.new()
@@ -659,9 +647,10 @@ static func render_clan_chat(host: Control) -> void:
 			msg_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			msg_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
 			msg_lbl.add_theme_font_size_override("font_size", 22)
-			msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY if is_mine else CafeSocialTheme.COL_WARM_CREAM)
-			msg_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.70))
-			msg_lbl.add_theme_constant_override("shadow_outline_size", 2)
+			if is_mine:
+				msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+			else:
+				msg_lbl.add_theme_color_override("font_color", Color(0.24, 0.15, 0.06, 1.0))
 			b_vbox.add_child(msg_lbl)
 
 		if not time_str.is_empty():
@@ -670,7 +659,10 @@ static func render_clan_chat(host: Control) -> void:
 			date_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if is_mine else HORIZONTAL_ALIGNMENT_RIGHT
 			date_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
 			date_lbl.add_theme_font_size_override("font_size", 16)
-			date_lbl.add_theme_color_override("font_color", Color(0.70, 0.88, 0.75, 0.85) if is_mine else Color(0.68, 0.60, 0.48, 0.85))
+			if is_mine:
+				date_lbl.add_theme_color_override("font_color", Color(0.80, 0.95, 0.85, 0.90))
+			else:
+				date_lbl.add_theme_color_override("font_color", Color(0.42, 0.32, 0.20, 0.90))
 			b_vbox.add_child(date_lbl)
 
 		var spacer := Control.new()
@@ -679,15 +671,27 @@ static func render_clan_chat(host: Control) -> void:
 
 		if is_mine:
 			msg_row.add_child(spacer)
+			if del_icon_btn != null:
+				msg_row.add_child(del_icon_btn)
 			msg_row.add_child(bubble_col)
 			msg_row.add_child(av_btn)
 		else:
 			msg_row.add_child(av_btn)
 			msg_row.add_child(bubble_col)
+			if del_icon_btn != null:
+				msg_row.add_child(del_icon_btn)
 			msg_row.add_child(spacer)
 
 	if is_instance_valid(host._clan_chat_scroll):
-		host.call_deferred("_scroll_clan_chat_to_bottom")
+		if host.has_method("_scroll_clan_chat_to_bottom"):
+			host.call_deferred("_scroll_clan_chat_to_bottom")
+		else:
+			await host.get_tree().process_frame
+			await host.get_tree().process_frame
+			if is_instance_valid(host._clan_chat_scroll):
+				var bar: VScrollBar = host._clan_chat_scroll.get_v_scroll_bar()
+				if bar:
+					host._clan_chat_scroll.scroll_vertical = int(bar.max_value)
 
 
 static func _build_system_chat_bubble(text: String, time_str: String = "") -> PanelContainer:
@@ -843,7 +847,7 @@ static func _open_sticker_picker(host: Control) -> void:
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(grid)
 
-	for sid in range(1, 45):
+	for sid in range(1, 17):
 		var s_btn := Button.new()
 		s_btn.custom_minimum_size = Vector2(120, 110)
 		s_btn.focus_mode = Control.FOCUS_NONE
@@ -939,14 +943,15 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 	left_id.add_child(CafeSocialTheme.make_badge_pill("سطح %s" % GameManager.to_fa_num(clvl), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.20, 0.13, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 20))
 	left_id.add_child(CafeSocialTheme.make_badge_pill("سمت: %s" % my_role_fa, CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 19))
 
-	var leader_name := str(cdict.get("leader_name", "ارسلان"))
+	var leader_name := str(cdict.get("leader_name", ""))
 	if leader_name.is_empty():
 		var mems_check: Array = cdict.get("members", []) if typeof(cdict.get("members")) == TYPE_ARRAY else []
 		for m in mems_check:
 			if typeof(m) == TYPE_DICTIONARY and str(m.get("role", "")) == "leader":
-				leader_name = str(m.get("username", "رهبر"))
+				leader_name = str(m.get("username", ""))
 				break
-	left_id.add_child(CafeSocialTheme.make_badge_pill("👑 %s" % leader_name, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.12, 0.07, 0.04), CafeSocialTheme.COL_BRONZE_BORDER, 17))
+	if not leader_name.is_empty():
+		left_id.add_child(CafeSocialTheme.make_badge_pill("👑 %s" % leader_name, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.12, 0.07, 0.04), CafeSocialTheme.COL_BRONZE_BORDER, 17))
 
 	# Center Column: Clan Name & Description
 	var center_id := VBoxContainer.new()
@@ -974,20 +979,20 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 		Color(0.88, 0.70, 0.24)
 	))
 
-	# 3-Stat Strip
+	# 3-Stat Strip (icons removed as requested)
 	var stat_strip := HBoxContainer.new()
 	stat_strip.add_theme_constant_override("separation", 8)
 	hv.add_child(stat_strip)
 
-	var st1 := CafeSocialTheme.make_metric_card("امتیاز کل اتحاد", GameManager.to_fa_num(int(cdict.get("clan_score", 0))), CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.BADGE_SCORE)
+	var st1 := CafeSocialTheme.make_metric_card("امتیاز کل اتحاد", GameManager.to_fa_num(int(cdict.get("clan_score", 0))), CafeSocialTheme.COL_GOLD_BRIGHT, null)
 	st1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stat_strip.add_child(st1)
 
-	var st2 := CafeSocialTheme.make_metric_card("فعالیت هفتگی", GameManager.to_fa_num(int(cdict.get("weekly_score", 0))), CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.ICO_STAR)
+	var st2 := CafeSocialTheme.make_metric_card("فعالیت هفتگی", GameManager.to_fa_num(int(cdict.get("weekly_score", 0))), CafeSocialTheme.COL_EMERALD_TEXT, null)
 	st2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stat_strip.add_child(st2)
 
-	var st3 := CafeSocialTheme.make_metric_card("ظرفیت اعضا", "%s / %s" % [GameManager.to_fa_num(int(cdict.get("member_count", 1))), GameManager.to_fa_num(int(cdict.get("max_members", 40)))], CafeSocialTheme.COL_IVORY, CafeSocialTheme.ICO_ARMY)
+	var st3 := CafeSocialTheme.make_metric_card("ظرفیت اعضا", "%s / %s" % [GameManager.to_fa_num(int(cdict.get("member_count", 1))), GameManager.to_fa_num(int(cdict.get("max_members", 40)))], CafeSocialTheme.COL_IVORY, null)
 	st3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stat_strip.add_child(st3)
 
@@ -1065,12 +1070,12 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 				vbox.add_child(_build_overview_challenge_card(host, ch_item, my_uid, my_role))
 
 	# --------------------------------------------------------------------------
-	# D. WEEKLY CLAN CHALLENGES
+	# D. WEEKLY CLAN CHALLENGES (icon removed as requested)
 	# --------------------------------------------------------------------------
 	var challenges: Array = cdict.get("weekly_challenges", []) if typeof(cdict.get("weekly_challenges")) == TYPE_ARRAY else []
 	if not challenges.is_empty():
 		vbox.add_child(CafeSocialTheme.make_ornate_section_header(
-			"چالش‌های هفتگی اتحاد", CafeSocialTheme.ICO_CUP, "همکاری اعضای اتحاد برای دریافت XP و ارتقای سطح"
+			"چالش‌های هفتگی اتحاد", null, "همکاری اعضای اتحاد برای دریافت XP و ارتقای سطح"
 		))
 		for ch in challenges:
 			if typeof(ch) == TYPE_DICTIONARY:
@@ -1292,20 +1297,21 @@ static func _build_clan_members_tab(host: Control, holder: VBoxContainer, cdict:
 	ov_strip.add_theme_constant_override("separation", 8)
 	holder.add_child(ov_strip)
 
-	var m1 := CafeSocialTheme.make_metric_card("کل اعضا", GameManager.to_fa_num(members.size()), CafeSocialTheme.COL_IVORY, CafeSocialTheme.ICO_ARMY)
+	# 4-Metric Overview Strip (icons removed as requested)
+	var m1 := CafeSocialTheme.make_metric_card("کل اعضا", GameManager.to_fa_num(members.size()), CafeSocialTheme.COL_IVORY, null)
 	m1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ov_strip.add_child(m1)
 
-	var m2 := CafeSocialTheme.make_metric_card("آنلاین", GameManager.to_fa_num(online_cnt), CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.ICO_STAR)
+	var m2 := CafeSocialTheme.make_metric_card("آنلاین", GameManager.to_fa_num(online_cnt), CafeSocialTheme.COL_EMERALD_TEXT, null)
 	m2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ov_strip.add_child(m2)
 
 	var max_cap := int(cdict.get("max_members", 40))
-	var m3 := CafeSocialTheme.make_metric_card("ظرفیت", GameManager.to_fa_num(max_cap), CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.BADGE_SCORE)
+	var m3 := CafeSocialTheme.make_metric_card("ظرفیت", GameManager.to_fa_num(max_cap), CafeSocialTheme.COL_GOLD_BRIGHT, null)
 	m3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ov_strip.add_child(m3)
 
-	var m4 := CafeSocialTheme.make_metric_card("مشارکت کل", GameManager.to_fa_num(total_contrib), CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.ICO_CUP)
+	var m4 := CafeSocialTheme.make_metric_card("مشارکت کل", GameManager.to_fa_num(total_contrib), CafeSocialTheme.COL_GOLD_BRIGHT, null)
 	m4.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ov_strip.add_child(m4)
 
@@ -1446,7 +1452,7 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 	var raw_st := str(m_pres.get("status", "offline"))
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(0, 108)
+	card.custom_minimum_size = Vector2(0, 116)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.14, 0.09, 0.05, 0.96)
@@ -1488,19 +1494,18 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 		)
 		act_col.add_child(b_spec)
 
-	# Center member details
+	# Center member details (Role on top, username directly under role)
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 3)
+	col.add_theme_constant_override("separation", 2)
 	row.add_child(col)
 
-	var title_row := HBoxContainer.new()
-	title_row.alignment = BoxContainer.ALIGNMENT_END
-	title_row.add_theme_constant_override("separation", 8)
-	col.add_child(title_row)
+	# Row 1: Distinctive role badge
+	var role_row := HBoxContainer.new()
+	role_row.alignment = BoxContainer.ALIGNMENT_END
+	col.add_child(role_row)
 
-	# Distinctive role badge
 	var role_badge := CafeSocialTheme.make_badge_pill(
 		"👑 %s" % m_role_fa if m_role == "leader" else ("⭐ %s" % m_role_fa if m_role == "co_leader" else ("🛡️ %s" % m_role_fa if m_role == "elder" else m_role_fa)),
 		CafeSocialTheme.COL_GOLD_BRIGHT if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_TEXT if m_role == "co_leader" else (Color(0.48, 0.78, 0.98) if m_role == "elder" else CafeSocialTheme.COL_MUTED_SAND)),
@@ -1508,13 +1513,15 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 		CafeSocialTheme.COL_GOLD_ANTIQUE if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_BORDER if m_role == "co_leader" else Color(0.35, 0.65, 0.85)),
 		16
 	)
-	title_row.add_child(role_badge)
+	role_row.add_child(role_badge)
 
-	var nm_lbl := CafeSocialTheme.make_title(m_name if m_uid != my_uid else "%s (شما)" % m_name, 23, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	# Row 2: Username under role
+	var nm_lbl := CafeSocialTheme.make_title(m_name if m_uid != my_uid else "%s (شما)" % m_name, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	nm_lbl.clip_text = true
 	nm_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	title_row.add_child(nm_lbl)
+	col.add_child(nm_lbl)
 
+	# Row 3: Contribution & score (presence text button removed, avatar status dot is enough)
 	var meta_row := HBoxContainer.new()
 	meta_row.alignment = BoxContainer.ALIGNMENT_END
 	meta_row.add_theme_constant_override("separation", 8)
@@ -1524,9 +1531,6 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 	contrib_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	contrib_lbl.clip_text = true
 	meta_row.add_child(contrib_lbl)
-
-	var st_badge := CafeSocialTheme.make_status_badge(raw_st, 24.0)
-	meta_row.add_child(st_badge)
 
 	# Right: Avatar with frame
 	var av_vis := CafeSocialTheme.make_avatar_badge(int(m_dict.get("image", 0)), int(m_dict.get("profile_frame", 1)), 66.0, raw_st, true)
@@ -2194,8 +2198,30 @@ static func _build_challenge_action_row(host: Control, meta: Dictionary, my_uid:
 		)
 		act_row.add_child(b_close)
 
-	if not ch_id.is_empty() and chal_creator == my_uid and cur_players >= 2:
-		var b_start := CafeSocialTheme.make_button("شروع بازی", "emerald", Vector2(120, 40), 19)
+	# When required players fill completely, game automatically starts without needing creator to tap start
+	if not ch_id.is_empty() and cur_players >= p_count and chal_status == "open":
+		act_row.add_child(CafeSocialTheme.make_badge_pill(
+			"ظرفیت تکمیل شد • در حال آغاز بازی...",
+			CafeSocialTheme.COL_EMERALD_TEXT,
+			CafeSocialTheme.COL_EMERALD_BG,
+			CafeSocialTheme.COL_EMERALD_BORDER,
+			17
+		))
+		# Auto-trigger start
+		NetworkManager.start_clan_challenge_realtime(ch_id)
+		# Verification: check if the game really started
+		if is_instance_valid(host):
+			host.get_tree().create_timer(3.0).timeout.connect(func():
+				if not GameManager.is_game_active and is_instance_valid(host):
+					NetworkManager.api.get_my_clan(func(ok: bool, _c: int, data: Variant):
+						if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+							host._my_clan_data = data["result"]
+							if is_instance_valid(host) and host.has_method("_refresh_current_tab"):
+								host._refresh_current_tab()
+					)
+			)
+	elif not ch_id.is_empty() and chal_creator == my_uid and cur_players >= 2 and cur_players < p_count:
+		var b_start := CafeSocialTheme.make_button("شروع زودهنگام", "emerald", Vector2(120, 40), 19)
 		b_start.pressed.connect(func():
 			AudioManager.sfx_button()
 			b_start.disabled = true
@@ -2214,12 +2240,17 @@ static func _build_challenge_action_row(host: Control, meta: Dictionary, my_uid:
 					var res_obj: Dictionary = {}
 					if typeof(res_d) == TYPE_DICTIONARY:
 						res_obj = res_d.get("result", res_d) if typeof(res_d.get("result", res_d)) == TYPE_DICTIONARY else {}
-					var is_full: bool = bool(res_obj.get("is_full", false))
+					var is_full: bool = bool(res_obj.get("is_full", false)) or (cur_players + 1 >= p_count)
 					if is_full:
 						NetworkManager.start_clan_challenge_realtime(ch_id)
 						host._show_toast("ظرفیت تکمیل شد! بازی در حال آغاز است...")
+						if is_instance_valid(host):
+							host.get_tree().create_timer(3.0).timeout.connect(func():
+								if not GameManager.is_game_active and is_instance_valid(host):
+									host._refresh_current_tab()
+							)
 					else:
-						host._show_toast("به چالش پیوستید! منتظر شروع...")
+						host._show_toast("به چالش پیوستید! منتظر پیوستن سایر بازیکنان...")
 						host._refresh_current_tab()
 				else:
 					if is_instance_valid(b_acc):
@@ -2231,8 +2262,8 @@ static func _build_challenge_action_row(host: Control, meta: Dictionary, my_uid:
 			)
 		)
 		act_row.add_child(b_acc)
-	elif already_joined and chal_creator != my_uid:
-		act_row.add_child(CafeSocialTheme.make_badge_pill("در انتظار شروع", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 17))
+	elif already_joined and cur_players < p_count and chal_creator != my_uid:
+		act_row.add_child(CafeSocialTheme.make_badge_pill("در انتظار هم‌تیمی‌ها", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 17))
 
 	return act_row
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bbwp6hhyhgefs"
-path="res://.godot/imported/25.png-28c89ecf27a0b6e06751a27ace681ec0.ctex"
+uid="uid://bepxwouu052qp"
+path="res://.godot/imported/add_friend.png-a8f06cab72bf3934a54b04f5b31d2b62.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/Reactions/25.png"
-dest_files=["res://.godot/imported/25.png-28c89ecf27a0b6e06751a27ace681ec0.ctex"]
+source_file="res://assets/images/add_friend.png"
+dest_files=["res://.godot/imported/add_friend.png-a8f06cab72bf3934a54b04f5b31d2b62.ctex"]
 
 [params]
 

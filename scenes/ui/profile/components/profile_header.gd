@@ -125,16 +125,14 @@ func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false,
 	var pres_status := str(pres.get("status", user_data.get("status", "online" if is_self else "offline")))
 	var p_info := CafeSocialTheme.format_presence(pres if not pres.is_empty() else {"status": pres_status})
 
-	# Tier info
+	# Tier info (Text only, no icon on right of label)
 	var tier: Dictionary = user_data.get("tier", {}) if typeof(user_data.get("tier")) == TYPE_DICTIONARY else {}
-	var tier_txt := "%s %s" % [str(tier.get("icon", "")), str(tier.get("title_fa", ""))] if not tier.is_empty() else ""
-	if tier_txt.strip_edges().is_empty() and user_data.has("rank_title"):
-		tier_txt = str(user_data.get("rank_title", ""))
+	var tier_txt := str(tier.get("title_fa", user_data.get("rank_title", ""))).strip_edges()
 
 	# 1. Username
 	_lbl_username.text = uname
 
-	# 2. Status Badge / Dot
+	# 2. Status Badge
 	for c in _status_badge.get_children():
 		c.queue_free()
 	if not is_bot:
@@ -157,16 +155,16 @@ func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false,
 	else:
 		_lbl_role.visible = false
 
-	# 4. Tags / Badges
+	# 4. Tags / Badges (Pure text labels, no icons)
 	for c in _tags_row.get_children():
 		c.queue_free()
 	var has_tags := false
 	if not p_title.is_empty():
 		has_tags = true
 		_tags_row.add_child(CafeSocialTheme.make_badge_pill(p_title, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.10, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 17))
-	if not tier_txt.strip_edges().is_empty():
+	if not tier_txt.is_empty():
 		has_tags = true
-		_tags_row.add_child(CafeSocialTheme.make_badge_pill(tier_txt.strip_edges(), CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 17))
+		_tags_row.add_child(CafeSocialTheme.make_badge_pill(tier_txt, CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 17))
 	_tags_row.visible = has_tags
 
 	# 5. ID & Copy
@@ -188,10 +186,10 @@ func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false,
 	else:
 		_clan_box.visible = false
 
-	# 7. Avatar Medallion with Golden Frame
+	# 7. Avatar Medallion with Golden Frame (Circle dot removed: show_dot = false)
 	for c in _avatar_holder.get_children():
 		c.queue_free()
-	var av_badge := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 96.0, pres_status, not is_bot)
+	var av_badge := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 96.0, pres_status, false)
 	av_badge.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_avatar_holder.add_child(av_badge)
 
@@ -206,7 +204,6 @@ func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false,
 func _build_clan_chip(clan_id: String, clan_d: Dictionary) -> void:
 	var cname := str(clan_d.get("name", "کلن"))
 	var ctag := str(clan_d.get("tag", ""))
-	var cemb := int(clan_d.get("emblem_id", 1))
 	var crole := str(clan_d.get("role", ""))
 	var crole_fa: String = str({"leader": "رهبر", "co_leader": "قائم‌مقام", "elder": "ارشد", "member": "عضو"}.get(crole, ""))
 
@@ -244,9 +241,7 @@ func _build_clan_chip(clan_id: String, clan_d: Dictionary) -> void:
 	c_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cb_row.add_child(c_lbl)
 
-	var c_emblem := CafeSocialTheme.make_clan_emblem(cemb, 26.0)
-	c_emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cb_row.add_child(c_emblem)
+	# Icon removed from right of clan label: label text is enough
 
 	ActionVFXManager.apply_button_juice(clan_btn, "tap_button")
 	clan_btn.pressed.connect(func():
