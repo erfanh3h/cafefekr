@@ -242,6 +242,72 @@ static func create_chat_bubble_style(is_mine: bool = false) -> StyleBoxTexture:
 	return sb
 
 
+static func create_flat_chat_bubble_style(is_mine: bool = false) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	if is_mine:
+		sb.bg_color = Color(0.12, 0.28, 0.18, 0.96)
+		sb.border_color = Color(0.38, 0.80, 0.52, 0.82)
+		sb.corner_radius_top_left = 16
+		sb.corner_radius_top_right = 16
+		sb.corner_radius_bottom_left = 16
+		sb.corner_radius_bottom_right = 4
+	else:
+		sb.bg_color = Color(0.20, 0.13, 0.08, 0.96)
+		sb.border_color = Color(0.58, 0.44, 0.22, 0.75)
+		sb.corner_radius_top_left = 16
+		sb.corner_radius_top_right = 16
+		sb.corner_radius_bottom_left = 4
+		sb.corner_radius_bottom_right = 16
+	sb.set_border_width_all(1)
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.35)
+	sb.shadow_size = 5
+	sb.shadow_offset = Vector2(0, 2)
+	sb.content_margin_left = 16.0
+	sb.content_margin_right = 16.0
+	sb.content_margin_top = 10.0
+	sb.content_margin_bottom = 10.0
+	return sb
+
+
+static func make_metric_card(
+	label_txt: String,
+	val_txt: String,
+	val_color: Color = COL_GOLD_BRIGHT,
+	icon_tex: Texture2D = null
+) -> PanelContainer:
+	var card := PanelContainer.new()
+	var sb := create_card_style(Color(0.13, 0.09, 0.05, 0.92), Color(0.50, 0.38, 0.20, 0.65), 14, 1, 10.0, 8.0)
+	card.add_theme_stylebox_override("panel", sb)
+
+	var hbox := HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 8)
+	card.add_child(hbox)
+
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 2)
+	hbox.add_child(vbox)
+
+	var l_lbl := make_body(label_txt, 18, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+	vbox.add_child(l_lbl)
+
+	var v_lbl := make_title(val_txt, 24, val_color, HORIZONTAL_ALIGNMENT_CENTER, false)
+	vbox.add_child(v_lbl)
+
+	if icon_tex != null:
+		var ico := TextureRect.new()
+		ico.texture = icon_tex
+		ico.custom_minimum_size = Vector2(32, 32)
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ico.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		hbox.add_child(ico)
+
+	return card
+
+
 static func create_card_style(
 	bg: Color = COL_WALNUT_CARD,
 	border: Color = COL_BRONZE_BORDER,
