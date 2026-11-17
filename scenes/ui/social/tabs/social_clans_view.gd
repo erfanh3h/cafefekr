@@ -1129,26 +1129,26 @@ static func open_clan_create_modal(host: Control) -> void:
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(880, 0)
+	card.custom_minimum_size = Vector2(640, 0)
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 44)
-	m.add_theme_constant_override("margin_right", 44)
-	m.add_theme_constant_override("margin_top", 36)
-	m.add_theme_constant_override("margin_bottom", 36)
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 24)
+	m.add_theme_constant_override("margin_bottom", 24)
 	card.add_child(m)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.add_theme_constant_override("separation", 12)
 	m.add_child(vbox)
 
 	var top := HBoxContainer.new()
 	vbox.add_child(top)
 	var bx := TextureButton.new()
 	bx.texture_normal = CafeSocialTheme.TEX_CLOSE
-	bx.custom_minimum_size = Vector2(54, 54)
+	bx.custom_minimum_size = Vector2(48, 48)
 	bx.ignore_texture_size = true
 	bx.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	bx.pressed.connect(func():
@@ -1156,21 +1156,21 @@ static func open_clan_create_modal(host: Control) -> void:
 		overlay.queue_free()
 	)
 	top.add_child(bx)
-	var ttl := CafeSocialTheme.make_title("تاسیس اتحاد جدید", 38, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
+	var ttl := CafeSocialTheme.make_title("تاسیس اتحاد جدید", 30, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(ttl)
 	var sp := Control.new()
-	sp.custom_minimum_size = Vector2(54, 54)
+	sp.custom_minimum_size = Vector2(48, 48)
 	top.add_child(sp)
 
-	vbox.add_child(CafeSocialTheme.make_badge_pill("ساخت اتحاد رایگان است • سهمیه هر بازیکن: ۱ اتحاد", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 22))
+	vbox.add_child(CafeSocialTheme.make_badge_pill("ساخت اتحاد رایگان است • سهمیه هر بازیکن: ۱ اتحاد", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 18))
 
 	# Emblem Picker
-	vbox.add_child(CafeSocialTheme.make_body("نشان (لوگو) اتحاد را انتخاب کنید:", 24, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+	vbox.add_child(CafeSocialTheme.make_body("نشان (لوگو) اتحاد را انتخاب کنید:", 20, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
 	var selected_emblem := [1]
 	var emb_grid := HBoxContainer.new()
 	emb_grid.alignment = BoxContainer.ALIGNMENT_CENTER
-	emb_grid.add_theme_constant_override("separation", 10)
+	emb_grid.add_theme_constant_override("separation", 8)
 	vbox.add_child(emb_grid)
 
 	var emb_wraps: Dictionary = {}
@@ -1188,9 +1188,9 @@ static func open_clan_create_modal(host: Control) -> void:
 	for ecfg in CafeSocialTheme.CLAN_EMBLEMS:
 		var eid: int = int(ecfg["id"])
 		var eb := Button.new()
-		eb.custom_minimum_size = Vector2(82, 82)
+		eb.custom_minimum_size = Vector2(68, 68)
 		eb.focus_mode = Control.FOCUS_NONE
-		var em_vis := CafeSocialTheme.make_clan_emblem(eid, 66.0)
+		var em_vis := CafeSocialTheme.make_clan_emblem(eid, 54.0)
 		em_vis.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var cc := CenterContainer.new()
 		cc.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -1319,24 +1319,24 @@ static func _open_clan_settings_modal(host: Control, cdict: Dictionary) -> void:
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(820, 0)
+	card.custom_minimum_size = Vector2(640, 0)
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 42)
-	m.add_theme_constant_override("margin_right", 42)
-	m.add_theme_constant_override("margin_top", 34)
-	m.add_theme_constant_override("margin_bottom", 34)
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 24)
+	m.add_theme_constant_override("margin_bottom", 24)
 	card.add_child(m)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.add_theme_constant_override("separation", 12)
 	m.add_child(vbox)
 
-	vbox.add_child(CafeSocialTheme.make_title("تنظیمات اتحاد %s" % str(cdict.get("name", "")), 37, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(CafeSocialTheme.make_title("تنظیمات اتحاد %s" % str(cdict.get("name", "")), 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
 
-	var inp_desc := CafeSocialTheme.make_line_edit("توضیحات اتحاد...", 60.0, 24)
+	var inp_desc := CafeSocialTheme.make_line_edit("توضیحات اتحاد...", 52.0, 22)
 	inp_desc.text = str(cdict.get("description", ""))
 	vbox.add_child(inp_desc)
 
@@ -1627,19 +1627,19 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(880, 0)
+	card.custom_minimum_size = Vector2(640, 0)
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 36)
-	m.add_theme_constant_override("margin_right", 36)
-	m.add_theme_constant_override("margin_top", 28)
-	m.add_theme_constant_override("margin_bottom", 28)
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 24)
+	m.add_theme_constant_override("margin_bottom", 24)
 	card.add_child(m)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.add_theme_constant_override("separation", 12)
 	m.add_child(vbox)
 
 	var top := HBoxContainer.new()
@@ -1647,7 +1647,7 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 
 	var bx := TextureButton.new()
 	bx.texture_normal = CafeSocialTheme.TEX_CLOSE
-	bx.custom_minimum_size = Vector2(52, 52)
+	bx.custom_minimum_size = Vector2(48, 48)
 	bx.ignore_texture_size = true
 	bx.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	bx.pressed.connect(func():
@@ -1656,15 +1656,15 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 	)
 	top.add_child(bx)
 
-	var ttl := CafeSocialTheme.make_title("ایجاد چالش دوستانه در اتحاد", 36, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
+	var ttl := CafeSocialTheme.make_title("ایجاد چالش دوستانه در اتحاد", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(ttl)
 
 	var sp := Control.new()
-	sp.custom_minimum_size = Vector2(52, 52)
+	sp.custom_minimum_size = Vector2(48, 48)
 	top.add_child(sp)
 
-	vbox.add_child(CafeSocialTheme.make_body("بازی مورد نظر و تعداد بازیکنان را انتخاب کنید:", 23, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(CafeSocialTheme.make_body("بازی مورد نظر و تعداد بازیکنان را انتخاب کنید:", 19, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	var selected_gid: Array = [GameTypes.MONOPOLY]
 	var selected_pcount: Array = [2]
@@ -1884,26 +1884,26 @@ static func _open_member_manage_modal(host: Control, m_dict: Dictionary, my_role
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(720, 0)
+	card.custom_minimum_size = Vector2(620, 0)
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	center.add_child(card)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 40)
-	margin.add_theme_constant_override("margin_right", 40)
-	margin.add_theme_constant_override("margin_top", 34)
-	margin.add_theme_constant_override("margin_bottom", 34)
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_bottom", 24)
 	card.add_child(margin)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
+	vbox.add_theme_constant_override("separation", 10)
 	margin.add_child(vbox)
 
-	vbox.add_child(CafeSocialTheme.make_title("مدیریت عضو: %s" % m_name, 35, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(CafeSocialTheme.make_title("مدیریت عضو: %s" % m_name, 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	if my_role in ["leader", "co_leader"]:
 		if m_role == "member":
-			var b_p1 := CafeSocialTheme.make_button("ارتقا به ارشد (Elder)", "sapphire", Vector2(0, 56), 25)
+			var b_p1 := CafeSocialTheme.make_button("ارتقا به ارشد (Elder)", "sapphire", Vector2(0, 52), 22)
 			b_p1.pressed.connect(func():
 				NetworkManager.api.change_clan_member_role(m_uid, "elder", func(_ok, _c, _d):
 					overlay.queue_free()

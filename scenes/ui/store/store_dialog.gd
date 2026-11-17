@@ -74,15 +74,15 @@ func _populate_avatars() -> void:
 		var path = "res://assets/icons/Avatars/%d.png" % i
 		if ResourceLoader.exists(path):
 			var card = PanelContainer.new()
-			# Sized to perfectly fit 4 per row within 700px width with no horizontal scroll
-			card.custom_minimum_size = Vector2(155, 155)
-			card.pivot_offset = Vector2(77.5, 77.5)
+			# Sized to perfectly fit 4 per row within 660px modal width with no overflow
+			card.custom_minimum_size = Vector2(130, 130)
+			card.pivot_offset = Vector2(65, 65)
 			
 			var is_selected = (i == selected_avatar_id)
 			_apply_card_style(card, is_selected)
 			
 			var btn = TextureButton.new()
-			btn.custom_minimum_size = Vector2(135, 135)
+			btn.custom_minimum_size = Vector2(116, 116)
 			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			btn.ignore_texture_size = true

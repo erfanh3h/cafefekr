@@ -24,11 +24,11 @@ func _build_overlays() -> void:
 	# 1. Contextual Auto-Dismissing Event Toast (Centered cleanly below Status Bar)
 	_toast_panel = PanelContainer.new()
 	_toast_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_toast_panel.offset_left = -450.0
-	_toast_panel.offset_right = 450.0
+	_toast_panel.offset_left = -310.0
+	_toast_panel.offset_right = 310.0
 	_toast_panel.offset_top = 404.0
 	_toast_panel.offset_bottom = 482.0
-	_toast_panel.pivot_offset = Vector2(450.0, 39.0)
+	_toast_panel.pivot_offset = Vector2(310.0, 39.0)
 	_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toast_panel.visible = false
 
@@ -51,7 +51,7 @@ func _build_overlays() -> void:
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_toast_label.add_theme_font_override("font", FontHekayat)
-	_toast_label.add_theme_font_size_override("font_size", 29)
+	_toast_label.add_theme_font_size_override("font_size", 22)
 	_toast_label.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
 	_toast_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.92))
 	_toast_label.add_theme_constant_override("outline_size", 4)

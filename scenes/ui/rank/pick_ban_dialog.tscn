@@ -121,7 +121,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-custom_minimum_size = Vector2(1080, 1920)
 theme_override_styles/panel = SubResource("StyleBoxFlat_full_bg")
 script = ExtResource("1_pb_script")
 
@@ -134,14 +133,14 @@ modulate = Color(1, 1, 1, 0.78)
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 26
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 26
-theme_override_constants/margin_bottom = 26
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="Header" type="VBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -245,9 +244,9 @@ horizontal_alignment = 2
 vertical_alignment = 1
 
 [node name="PlayersStrip" type="HBoxContainer" parent="Margin/VBox"]
-custom_minimum_size = Vector2(0, 118)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="P1Card" type="PanelContainer" parent="Margin/VBox/PlayersStrip"]
 layout_mode = 2
@@ -256,17 +255,17 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_player_card")
 
 [node name="MarginP1" type="MarginContainer" parent="Margin/VBox/PlayersStrip/P1Card"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
 
 [node name="HBoxP1" type="HBoxContainer" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="P1Avatar" type="TextureRect" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1"]
-custom_minimum_size = Vector2(70, 70)
+custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1
@@ -280,7 +279,7 @@ alignment = 1
 [node name="P1Name" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "بازیکن ۱"
 clip_text = true
@@ -288,18 +287,18 @@ clip_text = true
 [node name="P1Role" type="Label" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/VBoxP1"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(0.35, 0.90, 1.0, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.35, 0.9, 1, 1)
 text = "بازیکن ۱ (شما)"
 
 [node name="P1ScoreBox" type="VBoxContainer" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1"]
-custom_minimum_size = Vector2(74, 0)
+custom_minimum_size = Vector2(58, 0)
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
 [node name="P1ScoreBadge" type="TextureRect" parent="Margin/VBox/PlayersStrip/P1Card/MarginP1/HBoxP1/P1ScoreBox"]
-custom_minimum_size = Vector2(52, 60)
+custom_minimum_size = Vector2(38, 44)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -311,7 +310,7 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 2
@@ -321,14 +320,14 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="CenterVS" type="VBoxContainer" parent="Margin/VBox/PlayersStrip"]
-custom_minimum_size = Vector2(90, 0)
+custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 alignment = 1
 
 [node name="LblVS" type="Label" parent="Margin/VBox/PlayersStrip/CenterVS"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 0.84, 0.25, 1)
 text = "⚔️ VS"
 horizontal_alignment = 1
@@ -336,7 +335,7 @@ horizontal_alignment = 1
 [node name="LblSeries" type="Label" parent="Margin/VBox/PlayersStrip/CenterVS"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "دست ۱/۳"
 horizontal_alignment = 1
@@ -348,23 +347,23 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_player_card")
 
 [node name="MarginP2" type="MarginContainer" parent="Margin/VBox/PlayersStrip/P2Card"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
 
 [node name="HBoxP2" type="HBoxContainer" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="P2ScoreBox" type="VBoxContainer" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2"]
-custom_minimum_size = Vector2(74, 0)
+custom_minimum_size = Vector2(58, 0)
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
 [node name="P2ScoreBadge" type="TextureRect" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/P2ScoreBox"]
-custom_minimum_size = Vector2(52, 60)
+custom_minimum_size = Vector2(38, 44)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -376,7 +375,7 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 2
@@ -393,7 +392,7 @@ alignment = 1
 [node name="P2Name" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "بازیکن ۲"
 horizontal_alignment = 2
@@ -402,13 +401,13 @@ clip_text = true
 [node name="P2Role" type="Label" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2/VBoxP2"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
 text = "بازیکن ۲ (حریف)"
 horizontal_alignment = 2
 
 [node name="P2Avatar" type="TextureRect" parent="Margin/VBox/PlayersStrip/P2Card/MarginP2/HBoxP2"]
-custom_minimum_size = Vector2(70, 70)
+custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1
@@ -420,25 +419,25 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_timeline_panel")
 
 [node name="MarginTimeline" type="MarginContainer" parent="Margin/VBox/TimelinePanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
 
 [node name="VBoxTimeline" type="VBoxContainer" parent="Margin/VBox/TimelinePanel/MarginTimeline"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="LblTimelineTitle" type="Label" parent="Margin/VBox/TimelinePanel/MarginTimeline/VBoxTimeline"]
 visible = false
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 28
-theme_override_colors/font_color = Color(0.95, 0.85, 0.60, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.95, 0.85, 0.6, 1)
 text = "📊 تایم‌لاین مراحل انتخاب و حذف بازی‌ها (Timeline)"
 
 [node name="ScrollTimeline" type="ScrollContainer" parent="Margin/VBox/TimelinePanel/MarginTimeline/VBoxTimeline"]
-custom_minimum_size = Vector2(0, 346)
+custom_minimum_size = Vector2(0, 220)
 horizontal_scroll_mode = 0
 layout_mode = 2
 vertical_scroll_mode = 0
@@ -537,7 +536,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 4
+columns = 3
 
 [node name="BottomBar" type="VBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -547,15 +546,15 @@ theme_override_constants/separation = 8
 visible = false
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 0.88, 0.4, 1)
 text = "بازی انتخاب‌شده: —"
 horizontal_alignment = 1
 
 [node name="BtnConfirm" type="Button" parent="Margin/VBox/BottomBar"]
-custom_minimum_size = Vector2(0, 104)
+custom_minimum_size = Vector2(0, 76)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 26
 disabled = true
 text = "تایید انتخاب"

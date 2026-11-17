@@ -570,10 +570,10 @@ func _build_action_dock() -> void:
 	dock_panel.anchor_right = 0.5
 	dock_panel.anchor_top = 1.0
 	dock_panel.anchor_bottom = 1.0
-	dock_panel.offset_left = -460.0
-	dock_panel.offset_right = 460.0
-	dock_panel.offset_top = -345.0
-	dock_panel.offset_bottom = -255.0
+	dock_panel.offset_left = -340.0
+	dock_panel.offset_right = 340.0
+	dock_panel.offset_top = -250.0
+	dock_panel.offset_bottom = -160.0
 	dock_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	dock_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
@@ -628,7 +628,7 @@ func _make_dock_button(label_text: String) -> Button:
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.custom_minimum_size = Vector2(0, 68)
 	b.add_theme_font_override("font", _font_hekayat)
-	b.add_theme_font_size_override("font_size", 26)
+	b.add_theme_font_size_override("font_size", 21)
 	b.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
 	b.focus_mode = Control.FOCUS_NONE
 	KenneyUI.style_button(b, KenneyUI.COLOR_WOOD)

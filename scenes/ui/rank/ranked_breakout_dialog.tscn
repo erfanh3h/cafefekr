@@ -209,14 +209,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 40
-theme_override_constants/margin_top = 40
-theme_override_constants/margin_right = 40
-theme_override_constants/margin_bottom = 40
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 20
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 14
 
 [node name="HeaderCard" type="PanelContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -224,23 +224,23 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_header_card")
 
 [node name="Margin" type="MarginContainer" parent="Margin/VBox/HeaderCard"]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
 [node name="HBox" type="HBoxContainer" parent="Margin/VBox/HeaderCard/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="P1Box" type="HBoxContainer" parent="Margin/VBox/HeaderCard/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 14
+theme_override_constants/separation = 8
 
 [node name="P1Avatar" type="TextureRect" parent="Margin/VBox/HeaderCard/Margin/HBox/P1Box"]
-custom_minimum_size = Vector2(102, 102)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("3_default_avatar")
@@ -256,7 +256,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 38
+theme_override_font_sizes/font_size = 24
 text = "بازیکن ۱"
 text_overrun_behavior = 3
 
@@ -264,17 +264,17 @@ text_overrun_behavior = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 18
 text = "میزبان (P1)"
 
 [node name="P1RatingBox" type="VBoxContainer" parent="Margin/VBox/HeaderCard/Margin/HBox/P1Box"]
-custom_minimum_size = Vector2(80, 0)
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
 [node name="P1ScoreBadge" type="TextureRect" parent="Margin/VBox/HeaderCard/Margin/HBox/P1Box/P1RatingBox"]
-custom_minimum_size = Vector2(58, 66)
+custom_minimum_size = Vector2(40, 46)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -289,14 +289,14 @@ theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxFlat_rating_pill")
 text = "۱۲۰۰"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="P1ScoreBadge" type="PanelContainer" parent="Margin/VBox/HeaderCard/Margin/HBox"]
-custom_minimum_size = Vector2(80, 80)
+custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_score_badge")
@@ -305,13 +305,13 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_score_badge")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 54
+theme_override_font_sizes/font_size = 34
 text = "۰"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="TimerBox" type="VBoxContainer" parent="Margin/VBox/HeaderCard/Margin/HBox"]
-custom_minimum_size = Vector2(140, 0)
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 alignment = 1
 
@@ -319,7 +319,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 62
+theme_override_font_sizes/font_size = 36
 text = "۱۰"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -328,12 +328,12 @@ vertical_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.8, 0.7, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 16
 text = "ثانیه تا بازی بعد"
 horizontal_alignment = 1
 
 [node name="P2ScoreBadge" type="PanelContainer" parent="Margin/VBox/HeaderCard/Margin/HBox"]
-custom_minimum_size = Vector2(80, 80)
+custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_score_badge")
@@ -342,7 +342,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_score_badge")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 54
+theme_override_font_sizes/font_size = 34
 text = "۰"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -350,17 +350,17 @@ vertical_alignment = 1
 [node name="P2Box" type="HBoxContainer" parent="Margin/VBox/HeaderCard/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 14
+theme_override_constants/separation = 8
 alignment = 2
 
 [node name="P2RatingBox" type="VBoxContainer" parent="Margin/VBox/HeaderCard/Margin/HBox/P2Box"]
-custom_minimum_size = Vector2(80, 0)
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 theme_override_constants/separation = 2
 alignment = 1
 
 [node name="P2ScoreBadge" type="TextureRect" parent="Margin/VBox/HeaderCard/Margin/HBox/P2Box/P2RatingBox"]
-custom_minimum_size = Vector2(58, 66)
+custom_minimum_size = Vector2(40, 46)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -375,7 +375,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxFlat_rating_pill")
 text = "۱۱۵۰"
 horizontal_alignment = 1
@@ -390,7 +390,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 38
+theme_override_font_sizes/font_size = 24
 text = "بازیکن ۲"
 horizontal_alignment = 2
 text_overrun_behavior = 3
@@ -399,12 +399,12 @@ text_overrun_behavior = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 18
 text = "مهمان (P2)"
 horizontal_alignment = 2
 
 [node name="P2Avatar" type="TextureRect" parent="Margin/VBox/HeaderCard/Margin/HBox/P2Box"]
-custom_minimum_size = Vector2(102, 102)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("3_default_avatar")
@@ -417,21 +417,21 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_status_panel")
 
 [node name="Margin" type="MarginContainer" parent="Margin/VBox/StatusPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
 [node name="VBox" type="VBoxContainer" parent="Margin/VBox/StatusPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="ModeTitle" type="Label" parent="Margin/VBox/StatusPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 26
 text = "🏆 مسابقه رنک (بهترین از ۳ بازی)"
 horizontal_alignment = 1
 
@@ -439,7 +439,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 20
 text = "نتیجه سری: ۰ - ۰ (بهترین از ۳)"
 horizontal_alignment = 1
 
@@ -449,33 +449,33 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_games_panel")
 
 [node name="Margin" type="MarginContainer" parent="Margin/VBox/GamesPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 28
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 28
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 14
 
 [node name="GamesVBox" type="VBoxContainer" parent="Margin/VBox/GamesPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 12
 
 [node name="GameRow1" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox"]
-custom_minimum_size = Vector2(0, 156)
+custom_minimum_size = Vector2(0, 116)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_game_row")
 
 [node name="Margin" type="MarginContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow1"]
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="HBox" type="HBoxContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow1/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 10
 
 [node name="NumBox" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow1/Margin/HBox"]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_num_box")
@@ -484,13 +484,13 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_num_box")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 26
 text = "۱"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="GameThumb" type="TextureRect" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow1/Margin/HBox"]
-custom_minimum_size = Vector2(116, 116)
+custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("4_default_thumb")
@@ -506,18 +506,18 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 26
 text = "شطرنج"
 
 [node name="GameIndexSub" type="Label" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow1/Margin/HBox/InfoBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.7, 0.65, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 18
 text = "بازی اول مسابقه"
 
 [node name="StatusChip" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow1/Margin/HBox"]
-custom_minimum_size = Vector2(256, 62)
+custom_minimum_size = Vector2(140, 46)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_chip_default")
@@ -526,29 +526,29 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_chip_default")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 20
 text = "در انتظار"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="GameRow2" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox"]
-custom_minimum_size = Vector2(0, 156)
+custom_minimum_size = Vector2(0, 116)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_game_row")
 
 [node name="Margin" type="MarginContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow2"]
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="HBox" type="HBoxContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow2/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 10
 
 [node name="NumBox" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow2/Margin/HBox"]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_num_box")
@@ -557,13 +557,13 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_num_box")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 26
 text = "۲"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="GameThumb" type="TextureRect" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow2/Margin/HBox"]
-custom_minimum_size = Vector2(116, 116)
+custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("4_default_thumb")
@@ -579,18 +579,18 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 26
 text = "چکرز"
 
 [node name="GameIndexSub" type="Label" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow2/Margin/HBox/InfoBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.7, 0.65, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 18
 text = "بازی دوم مسابقه"
 
 [node name="StatusChip" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow2/Margin/HBox"]
-custom_minimum_size = Vector2(256, 62)
+custom_minimum_size = Vector2(140, 46)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_chip_default")
@@ -599,29 +599,29 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_chip_default")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 20
 text = "در انتظار"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="GameRow3" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox"]
-custom_minimum_size = Vector2(0, 156)
+custom_minimum_size = Vector2(0, 116)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_game_row")
 
 [node name="Margin" type="MarginContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow3"]
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="HBox" type="HBoxContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow3/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 10
 
 [node name="NumBox" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow3/Margin/HBox"]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_num_box")
@@ -630,13 +630,13 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_num_box")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 26
 text = "۳"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="GameThumb" type="TextureRect" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow3/Margin/HBox"]
-custom_minimum_size = Vector2(116, 116)
+custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("4_default_thumb")
@@ -652,18 +652,18 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 26
 text = "دوز"
 
 [node name="GameIndexSub" type="Label" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow3/Margin/HBox/InfoBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.7, 0.65, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 18
 text = "بازی سوم (در صورت تساوی)"
 
 [node name="StatusChip" type="PanelContainer" parent="Margin/VBox/GamesPanel/Margin/GamesVBox/GameRow3/Margin/HBox"]
-custom_minimum_size = Vector2(256, 62)
+custom_minimum_size = Vector2(140, 46)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_chip_default")
@@ -672,7 +672,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_chip_default")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 20
 text = "در انتظار"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -689,12 +689,12 @@ theme_override_constants/separation = 12
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 20
 text = "آماده‌سازی زمین بازی... شروع بازی بعدی تا ۱۰ ثانیه"
 horizontal_alignment = 1
 
 [node name="ProgressBar" type="ProgressBar" parent="Margin/VBox/FooterWaitingBox/VBox"]
-custom_minimum_size = Vector2(0, 18)
+custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_prog_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_prog_fill")
@@ -716,7 +716,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 46
+theme_override_font_sizes/font_size = 30
 text = "🏆 پایان مسابقه رنک"
 horizontal_alignment = 1
 
@@ -724,7 +724,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 24
 text = "برنده مسابقه مشخص شد"
 horizontal_alignment = 1
 
@@ -732,7 +732,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 22
 text = "نتیجه نهایی سری: ۲ - ۱"
 horizontal_alignment = 1
 
@@ -741,17 +741,17 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 22
 text = "⭐ +۴۵ XP کسب شد"
 horizontal_alignment = 1
 
 [node name="BtnExitMatch" type="Button" parent="Margin/VBox/FooterFinishedBox/VBox"]
-custom_minimum_size = Vector2(380, 104)
+custom_minimum_size = Vector2(260, 68)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_exit")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_exit_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_exit")

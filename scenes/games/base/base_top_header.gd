@@ -470,12 +470,14 @@ func _setup_styles() -> void:
 	_timer_style_fill.set_corner_radius_all(7)
 
 	if is_instance_valid(turn_timer_bar):
-		turn_timer_bar.custom_minimum_size = Vector2(460, 16)
+		turn_timer_bar.custom_minimum_size = Vector2(0, 14)
+		turn_timer_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		turn_timer_bar.add_theme_stylebox_override("background", _timer_style_bg)
 		turn_timer_bar.add_theme_stylebox_override("fill", _timer_style_fill)
 
 	if is_instance_valid(match_details_box):
-		match_details_box.custom_minimum_size = Vector2(540, 0)
+		match_details_box.custom_minimum_size = Vector2(0, 0)
+		match_details_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
 
 func _build_game_ui_enhancements() -> void:
@@ -618,7 +620,7 @@ func _enhance_player_card(player_idx: int) -> void:
 				_p1_score_badge = score_badge
 			else:
 				_p2_score_badge = score_badge
-			score_badge.custom_minimum_size = Vector2(58, 58)
+			score_badge.custom_minimum_size = Vector2(46, 46)
 			var sb_score = StyleBoxFlat.new()
 			sb_score.bg_color = Color(0.09, 0.05, 0.03, 0.92)
 			sb_score.border_color = Color(0.94, 0.76, 0.28, 0.90)

@@ -400,7 +400,7 @@ func _open_game_select_modal() -> void:
 	
 	var p_size = game_select_panel.size
 	if p_size == Vector2.ZERO:
-		p_size = Vector2(960, 1150)
+		p_size = Vector2(660, 1160)
 	game_select_panel.pivot_offset = p_size / 2.0
 	game_select_panel.scale = Vector2(0.92, 0.92)
 	game_select_panel.modulate.a = 0.0
@@ -444,12 +444,11 @@ func _create_game_card(g_type: String) -> Control:
 	var is_selected = (g_type == selected_create_game_type)
 	
 	var card = Button.new()
-	# 2 cards per row layout (width ~380px, height ~200px)
-	card.custom_minimum_size = Vector2(380, 200)
+	card.custom_minimum_size = Vector2(0, 140)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(190, 100)
+	card.pivot_offset = Vector2(300, 70)
 	
 	# Warm wooden mahogany card styling (lightweight shadows for 60fps)
 	var style_normal = StyleBoxFlat.new()
@@ -627,17 +626,17 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	var style = StyleBoxTexture.new()
 	style.texture = _btn_style
 	row_panel.add_theme_stylebox_override("panel", style)
-	row_panel.custom_minimum_size = Vector2(0, 132)
+	row_panel.custom_minimum_size = Vector2(0, 110)
 	
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 44)
-	margin.add_theme_constant_override("margin_right", 44)
-	margin.add_theme_constant_override("margin_top", 16)
-	margin.add_theme_constant_override("margin_bottom", 16)
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
 	row_panel.add_child(margin)
 	
 	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 18)
+	hbox.add_theme_constant_override("separation", 14)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	margin.add_child(hbox)
 	
@@ -646,8 +645,8 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	# Join button (Kenney tactile button)
 	var btn_join = Button.new()
 	btn_join.text = "ورود"
-	btn_join.custom_minimum_size = Vector2(148, 88)
-	btn_join.add_theme_font_size_override("font_size", 26)
+	btn_join.custom_minimum_size = Vector2(110, 60)
+	btn_join.add_theme_font_size_override("font_size", 22)
 	KenneyUI.style_button(btn_join, KenneyUI.COLOR_GREEN)
 	btn_join.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -751,7 +750,7 @@ func _build_password_modal() -> void:
 	
 	var panel = PanelContainer.new()
 	panel.name = "Panel"
-	panel.custom_minimum_size = Vector2(720, 440)
+	panel.custom_minimum_size = Vector2(580, 400)
 	var sb = StyleBoxTexture.new()
 	sb.texture = preload("res://assets/images/frames/board.png")
 	sb.texture_margin_left = 60.0
@@ -762,43 +761,44 @@ func _build_password_modal() -> void:
 	center.add_child(panel)
 	
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 44)
-	margin.add_theme_constant_override("margin_top", 40)
-	margin.add_theme_constant_override("margin_right", 44)
-	margin.add_theme_constant_override("margin_bottom", 40)
+	margin.add_theme_constant_override("margin_left", 28)
+	margin.add_theme_constant_override("margin_top", 28)
+	margin.add_theme_constant_override("margin_right", 28)
+	margin.add_theme_constant_override("margin_bottom", 28)
 	panel.add_child(margin)
 	
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 20)
+	vbox.add_theme_constant_override("separation", 16)
 	margin.add_child(vbox)
 	
 	var title = Label.new()
 	title.text = "🔒 ورود به اتاق دارای رمز"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_font_size_override("font_size", 28)
 	title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	title.add_theme_constant_override("shadow_outline_size", 3)
+	title.add_theme_constant_override("shadow_outline_size", 2)
 	vbox.add_child(title)
 	
 	var desc = Label.new()
 	desc.text = "لطفاً رمز عبور اتاق را وارد کنید:"
 	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	desc.add_theme_font_size_override("font_size", 28)
+	desc.add_theme_font_size_override("font_size", 22)
 	desc.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
 	vbox.add_child(desc)
 	
 	var input_pwd = LineEdit.new()
 	input_pwd.name = "InputLobbyPassword"
-	input_pwd.custom_minimum_size = Vector2(460, 76)
+	input_pwd.custom_minimum_size = Vector2(0, 64)
+	input_pwd.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	input_pwd.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	input_pwd.placeholder_text = "رمز عبور..."
 	input_pwd.max_length = 20
 	input_pwd.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	input_pwd.add_theme_font_size_override("font_size", 30)
+	input_pwd.add_theme_font_size_override("font_size", 26)
 	var in_st = StyleBoxFlat.new()
 	in_st.bg_color = Color(0.12, 0.08, 0.05, 0.95)
 	in_st.border_color = Color(0.85, 0.70, 0.35, 0.9)
@@ -811,22 +811,22 @@ func _build_password_modal() -> void:
 	
 	var btn_row = HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 20)
+	btn_row.add_theme_constant_override("separation", 16)
 	vbox.add_child(btn_row)
 	
 	var btn_ok = Button.new()
 	btn_ok.text = "ورود"
-	btn_ok.custom_minimum_size = Vector2(200, 76)
+	btn_ok.custom_minimum_size = Vector2(160, 64)
 	btn_ok.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn_ok.add_theme_font_size_override("font_size", 30)
+	btn_ok.add_theme_font_size_override("font_size", 24)
 	KenneyUI.style_button(btn_ok, KenneyUI.COLOR_GREEN)
 	btn_row.add_child(btn_ok)
 	
 	var btn_cancel = Button.new()
 	btn_cancel.text = "انصراف"
-	btn_cancel.custom_minimum_size = Vector2(180, 76)
+	btn_cancel.custom_minimum_size = Vector2(150, 64)
 	btn_cancel.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn_cancel.add_theme_font_size_override("font_size", 28)
+	btn_cancel.add_theme_font_size_override("font_size", 24)
 	KenneyUI.style_button(btn_cancel, KenneyUI.COLOR_GREY)
 	btn_row.add_child(btn_cancel)
 	

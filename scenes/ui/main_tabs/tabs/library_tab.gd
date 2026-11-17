@@ -121,7 +121,7 @@ func _build_category_buttons() -> void:
 		var cid: String = cat["id"]
 		var btn := Button.new()
 		btn.text = cat["label"]
-		btn.custom_minimum_size = Vector2(130, 48)
+		btn.custom_minimum_size = Vector2(110, 44)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		ActionVFXManager.apply_button_juice(btn, "tap_button")
@@ -174,7 +174,7 @@ func _populate_grid() -> void:
 
 func _create_game_card(g: Dictionary) -> PanelContainer:
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(460, 180)
+	card.custom_minimum_size = Vector2(0, 140)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 
@@ -192,28 +192,28 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 18)
-	margin.add_theme_constant_override("margin_top", 16)
-	margin.add_theme_constant_override("margin_right", 18)
-	margin.add_theme_constant_override("margin_bottom", 16)
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 12)
 	card.add_child(margin)
 
 	var hbox := HBoxContainer.new()
 	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_theme_constant_override("separation", 16)
+	hbox.add_theme_constant_override("separation", 14)
 	margin.add_child(hbox)
 
 	var text_col := VBoxContainer.new()
 	text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	text_col.add_theme_constant_override("separation", 6)
+	text_col.add_theme_constant_override("separation", 4)
 	text_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	hbox.add_child(text_col)
 
 	var title_lbl := Label.new()
 	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	title_lbl.add_theme_font_size_override("font_size", 32)
+	title_lbl.add_theme_font_size_override("font_size", 26)
 	title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	title_lbl.text = g["name_fa"]
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -223,7 +223,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var meta_lbl := Label.new()
 	meta_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	meta_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	meta_lbl.add_theme_font_size_override("font_size", 20)
+	meta_lbl.add_theme_font_size_override("font_size", 17)
 	meta_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_EMERALD_TEXT)
 	meta_lbl.text = p_str
 	meta_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -232,7 +232,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var desc_lbl := Label.new()
 	desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	desc_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	desc_lbl.add_theme_font_size_override("font_size", 18)
+	desc_lbl.add_theme_font_size_override("font_size", 15)
 	desc_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
 	desc_lbl.text = str(g["narrative"]).substr(0, 56) + "..."
 	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -242,7 +242,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	# Icon
 	var icon := TextureRect.new()
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.custom_minimum_size = Vector2(104, 104)
+	icon.custom_minimum_size = Vector2(80, 80)
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED

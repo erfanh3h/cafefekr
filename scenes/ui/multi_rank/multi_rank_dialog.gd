@@ -147,11 +147,11 @@ func _create_game_card(g_type: String) -> Control:
 	var is_selected = (g_type == selected_game_type)
 
 	var card = Button.new()
-	card.custom_minimum_size = Vector2(380, 240)
+	card.custom_minimum_size = Vector2(0, 140)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(190, 120)
+	card.pivot_offset = Vector2(300, 70)
 
 	var st = _style_card_selected if is_selected else _style_card_normal
 	card.add_theme_stylebox_override("normal", st)

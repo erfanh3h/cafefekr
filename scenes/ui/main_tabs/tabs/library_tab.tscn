@@ -93,17 +93,17 @@ horizontal_alignment = 2
 layout_mode = 2
 
 [node name="SearchInput" type="LineEdit" parent="OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/SearchRow"]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxTexture_search_box")
 placeholder_text = "جستجوی نام بازی..."
 alignment = 2
 
 [node name="FilterScroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/BrowseView"]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 vertical_scroll_mode = 0
 
@@ -122,7 +122,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 2
+columns = 1
 
 [node name="DetailView" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
 visible = false
@@ -131,16 +131,16 @@ size_flags_vertical = 3
 theme_override_constants/separation = 12
 
 [node name="HeaderCard" type="PanelContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView"]
-custom_minimum_size = Vector2(0, 110)
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_card_header")
 
 [node name="Margin" type="MarginContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard"]
 layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
 
 [node name="HBox" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin"]
 layout_mode = 2
@@ -157,7 +157,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 26
 text = "نام بازی"
 horizontal_alignment = 2
 
@@ -165,12 +165,12 @@ horizontal_alignment = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
 theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 text = "۲ نفره • زمان نوبت: ۳۰ ثانیه"
 horizontal_alignment = 2
 
 [node name="Icon" type="TextureRect" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox"]
-custom_minimum_size = Vector2(90, 90)
+custom_minimum_size = Vector2(76, 76)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1
@@ -182,19 +182,23 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="BtnOverview" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/SubTabs"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_font_sizes/font_size = 20
 text = "معرفی و داستان"
 
 [node name="BtnGuide" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/SubTabs"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_font_sizes/font_size = 20
 text = "راهنما و ترفندها"
 
 [node name="ContentScroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView"]
@@ -217,15 +221,17 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_colors/default_color = Color(0.96, 0.92, 0.85, 1)
 theme_override_fonts/normal_font = ExtResource("3_font_vazir")
-theme_override_font_sizes/normal_font_size = 25
+theme_override_font_sizes/normal_font_size = 21
 bbcode_enabled = true
 text = "توضیحات و قوانین بازی..."
 text_direction = 2
 
 [node name="BtnBack" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView"]
-custom_minimum_size = Vector2(220, 54)
+custom_minimum_size = Vector2(200, 48)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
 mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_font_sizes/font_size = 20
 text = "بازگشت به فهرست"

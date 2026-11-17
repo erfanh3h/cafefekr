@@ -193,7 +193,7 @@ func _open_game_select_modal() -> void:
 	
 	var p_size = game_select_panel.size
 	if p_size == Vector2.ZERO:
-		p_size = Vector2(940, 1150)
+		p_size = Vector2(660, 1160)
 	game_select_panel.pivot_offset = p_size / 2.0
 	game_select_panel.scale = Vector2(0.88, 0.88)
 	game_select_panel.modulate.a = 0.0
@@ -238,11 +238,11 @@ func _create_game_card(g: Dictionary) -> Control:
 	var is_selected = (k == selected_game_key)
 	
 	var card = Button.new()
-	card.custom_minimum_size = Vector2(380, 190)
+	card.custom_minimum_size = Vector2(0, 140)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(190, 95)
+	card.pivot_offset = Vector2(300, 70)
 	
 	var style_normal = StyleBoxFlat.new()
 	style_normal.bg_color = Color(0.22, 0.15, 0.1, 0.98)

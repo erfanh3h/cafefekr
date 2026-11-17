@@ -301,7 +301,7 @@ static func _get_mode_badge_texture(mode_raw: String) -> Texture2D:
 # === History Row Summary Card ===
 func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var btn = Button.new()
-	btn.custom_minimum_size = Vector2(0, 176)
+	btn.custom_minimum_size = Vector2(0, 140)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	
@@ -326,10 +326,10 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	style_normal.bg_color = Color(0.12, 0.08, 0.05, 0.94)
 	style_normal.set_border_width_all(2)
 	style_normal.set_corner_radius_all(14)
-	style_normal.content_margin_left = 32
-	style_normal.content_margin_right = 32
-	style_normal.content_margin_top = 14
-	style_normal.content_margin_bottom = 14
+	style_normal.content_margin_left = 18
+	style_normal.content_margin_right = 18
+	style_normal.content_margin_top = 10
+	style_normal.content_margin_bottom = 10
 	style_normal.shadow_size = 14
 	style_normal.shadow_offset = Vector2(0, 3)
 	
@@ -337,10 +337,10 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	style_hover.bg_color = Color(0.16, 0.11, 0.07, 0.98)
 	style_hover.set_border_width_all(2)
 	style_hover.set_corner_radius_all(14)
-	style_hover.content_margin_left = 32
-	style_hover.content_margin_right = 32
-	style_hover.content_margin_top = 14
-	style_hover.content_margin_bottom = 14
+	style_hover.content_margin_left = 18
+	style_hover.content_margin_right = 18
+	style_hover.content_margin_top = 10
+	style_hover.content_margin_bottom = 10
 	style_hover.shadow_size = 18
 	style_hover.shadow_offset = Vector2(0, 4)
 	
@@ -373,7 +373,7 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var row = HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 22)
+	row.add_theme_constant_override("separation", 14)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	btn.add_child(row)
 	
@@ -414,15 +414,15 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 				"coin": 0
 			}
 	
-	# 1. LEFT SIDE: Opponent Avatar (larger) + Name directly underneath (larger text)
+	# 1. LEFT SIDE: Opponent Avatar + Name directly underneath
 	var opp_col = VBoxContainer.new()
-	opp_col.custom_minimum_size = Vector2(110, 150)
+	opp_col.custom_minimum_size = Vector2(90, 120)
 	opp_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	opp_col.add_theme_constant_override("separation", 6)
+	opp_col.add_theme_constant_override("separation", 4)
 	opp_col.mouse_filter = Control.MOUSE_FILTER_PASS
 	
 	var av_panel = PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(98, 98)
+	av_panel.custom_minimum_size = Vector2(76, 76)
 	av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -435,7 +435,7 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	av_panel.add_theme_stylebox_override("panel", av_style)
 	
 	var av_img = TextureRect.new()
-	av_img.custom_minimum_size = Vector2(92, 92)
+	av_img.custom_minimum_size = Vector2(70, 70)
 	av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -459,32 +459,32 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var lbl_opp_name = Label.new()
 	lbl_opp_name.text = opp_name
 	lbl_opp_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_opp_name.custom_minimum_size = Vector2(110, 0)
+	lbl_opp_name.custom_minimum_size = Vector2(90, 0)
 	lbl_opp_name.autowrap_mode = TextServer.AUTOWRAP_OFF
 	lbl_opp_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl_opp_name.add_theme_font_override("font", _font_hekayat)
-	lbl_opp_name.add_theme_font_size_override("font_size", 28)
+	lbl_opp_name.add_theme_font_size_override("font_size", 22)
 	lbl_opp_name.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
 	lbl_opp_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	opp_col.add_child(lbl_opp_name)
 	
 	row.add_child(opp_col)
 	
-	# 2. CENTER SECTION: Outcome, Integer Score, and Persian Date (LTR) with larger fonts
+	# 2. CENTER SECTION: Outcome, Integer Score, and Persian Date (LTR)
 	var center_col = VBoxContainer.new()
 	center_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	center_col.add_theme_constant_override("separation", 8)
+	center_col.add_theme_constant_override("separation", 6)
 	center_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	var top_mid = HBoxContainer.new()
 	top_mid.alignment = BoxContainer.ALIGNMENT_CENTER
-	top_mid.add_theme_constant_override("separation", 14)
+	top_mid.add_theme_constant_override("separation", 10)
 	top_mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	var lbl_res = Label.new()
 	lbl_res.add_theme_font_override("font", _font_hekayat)
-	lbl_res.add_theme_font_size_override("font_size", 36)
+	lbl_res.add_theme_font_size_override("font_size", 28)
 	if my_res == "win":
 		lbl_res.text = "برد 🏆"
 		lbl_res.add_theme_color_override("font_color", Color(0.40, 0.95, 0.45))
@@ -515,13 +515,13 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 		var lbl_score = Label.new()
 		lbl_score.text = "( %s )" % score_str
 		lbl_score.add_theme_font_override("font", _font_hekayat)
-		lbl_score.add_theme_font_size_override("font_size", 34)
+		lbl_score.add_theme_font_size_override("font_size", 26)
 		lbl_score.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
 		top_mid.add_child(lbl_score)
 	
 	center_col.add_child(top_mid)
 	
-	# Persian Date (هجری شمسی) strictly LTR with larger font
+	# Persian Date (هجری شمسی) strictly LTR
 	var s_date_raw = str(game.get("start_date", ""))
 	var shamsi_date = _format_shamsi_date_ltr(s_date_raw)
 	
@@ -530,15 +530,15 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	lbl_date.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_date.text = shamsi_date
 	lbl_date.add_theme_font_override("font", _font_hekayat)
-	lbl_date.add_theme_font_size_override("font_size", 28)
+	lbl_date.add_theme_font_size_override("font_size", 20)
 	lbl_date.add_theme_color_override("font_color", Color(0.85, 0.80, 0.70))
 	center_col.add_child(lbl_date)
 	
 	row.add_child(center_col)
 	
-	# 3. RIGHT SIDE: Big Game Mode Badge Icon (only game type icon, mini-game types removed)
+	# 3. RIGHT SIDE: Big Game Mode Badge Icon
 	var mode_badge = TextureRect.new()
-	mode_badge.custom_minimum_size = Vector2(104, 104)
+	mode_badge.custom_minimum_size = Vector2(76, 76)
 	mode_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	mode_badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	mode_badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -586,10 +586,10 @@ func show_game_details(game: Dictionary) -> void:
 	var tc_style = StyleBoxFlat.new()
 	tc_style.set_corner_radius_all(16)
 	tc_style.set_border_width_all(2)
-	tc_style.content_margin_left = 24
-	tc_style.content_margin_right = 24
-	tc_style.content_margin_top = 18
-	tc_style.content_margin_bottom = 18
+	tc_style.content_margin_left = 16
+	tc_style.content_margin_right = 16
+	tc_style.content_margin_top = 12
+	tc_style.content_margin_bottom = 12
 	
 	var res_headline = "پیروزی شما! 🏆"
 	if my_res == "win":
@@ -612,12 +612,12 @@ func show_game_details(game: Dictionary) -> void:
 	
 	var tc_hbox = HBoxContainer.new()
 	tc_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	tc_hbox.add_theme_constant_override("separation", 20)
+	tc_hbox.add_theme_constant_override("separation", 14)
 	top_card.add_child(tc_hbox)
 	
 	# Game type icon on the LEFT of top header
 	var mode_icon = TextureRect.new()
-	mode_icon.custom_minimum_size = Vector2(110, 110)
+	mode_icon.custom_minimum_size = Vector2(80, 80)
 	mode_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	mode_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	mode_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -628,18 +628,18 @@ func show_game_details(game: Dictionary) -> void:
 	var tc_vbox = VBoxContainer.new()
 	tc_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tc_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	tc_vbox.add_theme_constant_override("separation", 8)
+	tc_vbox.add_theme_constant_override("separation", 6)
 	tc_hbox.add_child(tc_vbox)
 	
 	var lbl_head = Label.new()
 	lbl_head.text = res_headline
 	lbl_head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_head.add_theme_font_override("font", _font_hekayat)
-	lbl_head.add_theme_font_size_override("font_size", 44)
+	lbl_head.add_theme_font_size_override("font_size", 30)
 	lbl_head.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	tc_vbox.add_child(lbl_head)
 	
-	# Persian Shamsi Date LTR & Mode Title (larger font)
+	# Persian Shamsi Date LTR & Mode Title
 	var s_date_raw = str(game.get("start_date", ""))
 	var shamsi_date = _format_shamsi_date_ltr(s_date_raw)
 	
@@ -648,28 +648,28 @@ func show_game_details(game: Dictionary) -> void:
 	lbl_date_mode.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_date_mode.text = "%s   |   %s" % [shamsi_date, mode_title]
 	lbl_date_mode.add_theme_font_override("font", _font_hekayat)
-	lbl_date_mode.add_theme_font_size_override("font_size", 30)
+	lbl_date_mode.add_theme_font_size_override("font_size", 22)
 	lbl_date_mode.add_theme_color_override("font_color", Color(0.92, 0.88, 0.78))
 	tc_vbox.add_child(lbl_date_mode)
 	
 	details_container.add_child(top_card)
 	
-	# === 2. PLAYERS HEAD-TO-HEAD SECTION (ENLARGED) ===
+	# === 2. PLAYERS HEAD-TO-HEAD SECTION ===
 	var h2h_card = PanelContainer.new()
 	var h2h_style = StyleBoxFlat.new()
 	h2h_style.bg_color = Color(0.12, 0.08, 0.05, 0.92)
 	h2h_style.border_color = Color(0.80, 0.65, 0.35, 0.9)
 	h2h_style.set_border_width_all(2)
 	h2h_style.set_corner_radius_all(14)
-	h2h_style.content_margin_left = 22
-	h2h_style.content_margin_right = 22
-	h2h_style.content_margin_top = 20
-	h2h_style.content_margin_bottom = 20
+	h2h_style.content_margin_left = 16
+	h2h_style.content_margin_right = 16
+	h2h_style.content_margin_top = 14
+	h2h_style.content_margin_bottom = 14
 	h2h_card.add_theme_stylebox_override("panel", h2h_style)
 	
 	var h2h_row = HBoxContainer.new()
 	h2h_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	h2h_row.add_theme_constant_override("separation", 28)
+	h2h_row.add_theme_constant_override("separation", 16)
 	h2h_card.add_child(h2h_row)
 	
 	var users_info = game.get("users_info", [])
@@ -700,20 +700,20 @@ func show_game_details(game: Dictionary) -> void:
 		if mode_raw == "ClassicRank":
 			p_opp = {"username": "ربات هوشمند", "image": 1}
 	
-	# Left: You (larger fonts & avatar)
+	# Left: You
 	var you_col = _create_player_column("شما (" + str(p_you.get("username", "")) + ")", int(p_you.get("image", 0)), score_you, my_res == "win", GameManager.get_player_frame_id(p_you))
 	h2h_row.add_child(you_col)
 	
-	# Middle: VS & Integer Score (larger fonts)
+	# Middle: VS & Integer Score
 	var vs_box = VBoxContainer.new()
 	vs_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	vs_box.add_theme_constant_override("separation", 6)
+	vs_box.add_theme_constant_override("separation", 4)
 	
 	var lbl_vs = Label.new()
 	lbl_vs.text = "VS"
 	lbl_vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_vs.add_theme_font_override("font", _font_hekayat)
-	lbl_vs.add_theme_font_size_override("font_size", 48)
+	lbl_vs.add_theme_font_size_override("font_size", 34)
 	lbl_vs.add_theme_color_override("font_color", Color(1.0, 0.75, 0.25))
 	vs_box.add_child(lbl_vs)
 	
@@ -721,24 +721,24 @@ func show_game_details(game: Dictionary) -> void:
 	lbl_final_score.text = "%s : %s" % [GameManager.to_fa_num(score_you), GameManager.to_fa_num(score_opp)]
 	lbl_final_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_final_score.add_theme_font_override("font", _font_hekayat)
-	lbl_final_score.add_theme_font_size_override("font_size", 42)
+	lbl_final_score.add_theme_font_size_override("font_size", 32)
 	lbl_final_score.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
 	vs_box.add_child(lbl_final_score)
 	
 	h2h_row.add_child(vs_box)
 	
-	# Right: Opponent (larger fonts & avatar)
+	# Right: Opponent
 	var opp_col = _create_player_column(str(p_opp.get("username", "حریف")), int(p_opp.get("image", 0)), score_opp, my_res == "lose", GameManager.get_player_frame_id(p_opp))
 	h2h_row.add_child(opp_col)
 	
 	details_container.add_child(h2h_card)
 	
-	# === 3. ROUNDS / MINI-GAMES BREAKDOWN (ENLARGED) ===
+	# === 3. ROUNDS / MINI-GAMES BREAKDOWN ===
 	var rounds_title = Label.new()
 	rounds_title.text = "🎮 بازی‌های این مسابقه"
 	rounds_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	rounds_title.add_theme_font_override("font", _font_hekayat)
-	rounds_title.add_theme_font_size_override("font_size", 38)
+	rounds_title.add_theme_font_size_override("font_size", 28)
 	rounds_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.50))
 	details_container.add_child(rounds_title)
 	
@@ -766,7 +766,7 @@ func show_game_details(game: Dictionary) -> void:
 			empty_lbl.text = "اطلاعات جزئیات راندها در دسترس نیست."
 			empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			empty_lbl.add_theme_font_override("font", _font_hekayat)
-			empty_lbl.add_theme_font_size_override("font_size", 30)
+			empty_lbl.add_theme_font_size_override("font_size", 24)
 			empty_lbl.add_theme_color_override("font_color", Color(0.7, 0.65, 0.6))
 			details_container.add_child(empty_lbl)
 
@@ -774,10 +774,10 @@ func _create_player_column(name_text: String, avatar_id: int, score_val: int, is
 	var vbox = VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 8)
+	vbox.add_theme_constant_override("separation", 6)
 	
 	var av_frame = PanelContainer.new()
-	av_frame.custom_minimum_size = Vector2(118, 118)
+	av_frame.custom_minimum_size = Vector2(88, 88)
 	av_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var af_sb = StyleBoxFlat.new()
 	af_sb.bg_color = Color(0.08, 0.05, 0.03, 0.95)
@@ -787,7 +787,7 @@ func _create_player_column(name_text: String, avatar_id: int, score_val: int, is
 	av_frame.add_theme_stylebox_override("panel", af_sb)
 	
 	var img = TextureRect.new()
-	img.custom_minimum_size = Vector2(112, 112)
+	img.custom_minimum_size = Vector2(82, 82)
 	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	var av_path = "res://assets/icons/Avatars/%d.png" % avatar_id
@@ -803,7 +803,7 @@ func _create_player_column(name_text: String, avatar_id: int, score_val: int, is
 	lbl_name.text = name_text
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_name.add_theme_font_override("font", _font_hekayat)
-	lbl_name.add_theme_font_size_override("font_size", 34)
+	lbl_name.add_theme_font_size_override("font_size", 24)
 	lbl_name.add_theme_color_override("font_color", Color.WHITE)
 	vbox.add_child(lbl_name)
 	
@@ -811,7 +811,7 @@ func _create_player_column(name_text: String, avatar_id: int, score_val: int, is
 	lbl_sc.text = "امتیاز: %s" % GameManager.to_fa_num(int(score_val))
 	lbl_sc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_sc.add_theme_font_override("font", _font_hekayat)
-	lbl_sc.add_theme_font_size_override("font_size", 30)
+	lbl_sc.add_theme_font_size_override("font_size", 22)
 	lbl_sc.add_theme_color_override("font_color", Color(1.0, 0.85, 0.45) if is_winner else Color(0.8, 0.75, 0.7))
 	vbox.add_child(lbl_sc)
 	
@@ -824,15 +824,15 @@ func _create_round_row(round_num: int, r_data: Dictionary, my_uid: String) -> Pa
 	c_style.border_color = Color(0.65, 0.50, 0.28, 0.8)
 	c_style.set_border_width_all(1)
 	c_style.set_corner_radius_all(14)
-	c_style.content_margin_left = 22
-	c_style.content_margin_right = 22
-	c_style.content_margin_top = 12
-	c_style.content_margin_bottom = 12
+	c_style.content_margin_left = 16
+	c_style.content_margin_right = 16
+	c_style.content_margin_top = 10
+	c_style.content_margin_bottom = 10
 	card.add_theme_stylebox_override("panel", c_style)
 	
 	var row = HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 18)
+	row.add_theme_constant_override("separation", 14)
 	card.add_child(row)
 	
 	# Round Result Badge
@@ -854,7 +854,7 @@ func _create_round_row(round_num: int, r_data: Dictionary, my_uid: String) -> Pa
 			is_draw = true
 	
 	var r_badge = PanelContainer.new()
-	r_badge.custom_minimum_size = Vector2(96, 56)
+	r_badge.custom_minimum_size = Vector2(76, 44)
 	var rb_style = StyleBoxFlat.new()
 	rb_style.set_corner_radius_all(10)
 	var status_text = "برد"
@@ -874,12 +874,12 @@ func _create_round_row(round_num: int, r_data: Dictionary, my_uid: String) -> Pa
 	lbl_st.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_st.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl_st.add_theme_font_override("font", _font_hekayat)
-	lbl_st.add_theme_font_size_override("font_size", 28)
+	lbl_st.add_theme_font_size_override("font_size", 22)
 	lbl_st.add_theme_color_override("font_color", Color.WHITE)
 	r_badge.add_child(lbl_st)
 	row.add_child(r_badge)
 	
-	# Game Info (larger font)
+	# Game Info
 	var gtype = str(r_data.get("game_type", "دوز"))
 	var gname = GameRegistry.get_display_name_fa(gtype)
 	
@@ -888,13 +888,13 @@ func _create_round_row(round_num: int, r_data: Dictionary, my_uid: String) -> Pa
 	lbl_gname.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_gname.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl_gname.add_theme_font_override("font", _font_hekayat)
-	lbl_gname.add_theme_font_size_override("font_size", 34)
+	lbl_gname.add_theme_font_size_override("font_size", 24)
 	lbl_gname.add_theme_color_override("font_color", Color(0.96, 0.92, 0.85))
 	row.add_child(lbl_gname)
 	
-	# Game Icon in Round Row (larger icon)
+	# Game Icon in Round Row
 	var g_icon_panel = PanelContainer.new()
-	g_icon_panel.custom_minimum_size = Vector2(64, 64)
+	g_icon_panel.custom_minimum_size = Vector2(50, 50)
 	var gip_sb = StyleBoxFlat.new()
 	gip_sb.bg_color = Color(0.08, 0.05, 0.03, 0.90)
 	gip_sb.set_corner_radius_all(12)
@@ -903,7 +903,7 @@ func _create_round_row(round_num: int, r_data: Dictionary, my_uid: String) -> Pa
 	g_icon_panel.add_theme_stylebox_override("panel", gip_sb)
 
 	var g_icon = TextureRect.new()
-	g_icon.custom_minimum_size = Vector2(58, 58)
+	g_icon.custom_minimum_size = Vector2(44, 44)
 	g_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	g_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	g_icon.texture = _get_game_icon_texture(gtype)

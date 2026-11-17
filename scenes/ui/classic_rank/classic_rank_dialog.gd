@@ -169,11 +169,11 @@ func _create_game_card(g_type: String) -> Control:
 	
 	# Native Button control ensures robust child clipping and anchor support
 	var card = Button.new()
-	card.custom_minimum_size = Vector2(380, 200)
+	card.custom_minimum_size = Vector2(0, 140)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(190, 100)
+	card.pivot_offset = Vector2(300, 70)
 	
 	var st = _style_card_selected if is_selected else _style_card_normal
 	card.add_theme_stylebox_override("normal", st)

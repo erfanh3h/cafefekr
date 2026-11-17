@@ -30,10 +30,10 @@ func _build_ui() -> void:
 	top_bar_panel = PanelContainer.new()
 	top_bar_panel.name = "SpectatorControlBar"
 	top_bar_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	top_bar_panel.offset_left = 28.0
-	top_bar_panel.offset_right = -28.0
-	top_bar_panel.offset_top = -126.0
-	top_bar_panel.offset_bottom = -22.0
+	top_bar_panel.offset_left = 12.0
+	top_bar_panel.offset_right = -12.0
+	top_bar_panel.offset_top = -110.0
+	top_bar_panel.offset_bottom = -16.0
 	top_bar_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	var bar_style: StyleBox = CafeSocialTheme.create_highlight_card_style(true)
@@ -41,11 +41,11 @@ func _build_ui() -> void:
 	add_child(top_bar_panel)
 
 	var hbox: HBoxContainer = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 16)
+	hbox.add_theme_constant_override("separation", 10)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	top_bar_panel.add_child(hbox)
 
-	btn_leave = CafeSocialTheme.make_button("ترک تماشا", "crimson", Vector2(168, 56), 22)
+	btn_leave = CafeSocialTheme.make_button("ترک تماشا", "crimson", Vector2(130, 48), 20)
 	btn_leave.pressed.connect(func():
 		AudioManager.sfx_button()
 		hide_match_ended()
@@ -60,16 +60,16 @@ func _build_ui() -> void:
 	count_style.border_color = CafeSocialTheme.COL_GOLD_ANTIQUE
 	count_style.set_border_width_all(2)
 	count_style.set_corner_radius_all(14)
-	count_style.content_margin_left = 16.0
-	count_style.content_margin_right = 16.0
-	count_style.content_margin_top = 8.0
-	count_style.content_margin_bottom = 8.0
+	count_style.content_margin_left = 12.0
+	count_style.content_margin_right = 12.0
+	count_style.content_margin_top = 6.0
+	count_style.content_margin_bottom = 6.0
 	count_panel.add_theme_stylebox_override("panel", count_style)
 	hbox.add_child(count_panel)
 
 	lbl_spectator_count = CafeSocialTheme.make_body(
 		"👁 ۱ تماشاگر",
-		21,
+		19,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
@@ -139,26 +139,26 @@ func _build_ui() -> void:
 	end_modal_backdrop.add_child(center)
 
 	end_modal_card = PanelContainer.new()
-	end_modal_card.custom_minimum_size = Vector2(680, 380)
+	end_modal_card.custom_minimum_size = Vector2(620, 360)
 	end_modal_card.mouse_filter = Control.MOUSE_FILTER_STOP
 	end_modal_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	center.add_child(end_modal_card)
 
 	var modal_margin: MarginContainer = MarginContainer.new()
-	modal_margin.add_theme_constant_override("margin_left", 40)
-	modal_margin.add_theme_constant_override("margin_right", 40)
-	modal_margin.add_theme_constant_override("margin_top", 34)
-	modal_margin.add_theme_constant_override("margin_bottom", 34)
+	modal_margin.add_theme_constant_override("margin_left", 24)
+	modal_margin.add_theme_constant_override("margin_right", 24)
+	modal_margin.add_theme_constant_override("margin_top", 28)
+	modal_margin.add_theme_constant_override("margin_bottom", 28)
 	end_modal_card.add_child(modal_margin)
 
 	var modal_vbox: VBoxContainer = VBoxContainer.new()
 	modal_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	modal_vbox.add_theme_constant_override("separation", 22)
+	modal_vbox.add_theme_constant_override("separation", 18)
 	modal_margin.add_child(modal_vbox)
 
 	lbl_end_title = CafeSocialTheme.make_title(
 		"🏁 پایان مسابقه زنده",
-		36,
+		30,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
@@ -167,19 +167,20 @@ func _build_ui() -> void:
 
 	lbl_end_desc = CafeSocialTheme.make_body(
 		"این مسابقه به پایان رسید.",
-		25,
+		22,
 		CafeSocialTheme.COL_IVORY,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		true
 	)
-	lbl_end_desc.custom_minimum_size = Vector2(540, 80)
+	lbl_end_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl_end_desc.custom_minimum_size = Vector2(0, 60)
 	modal_vbox.add_child(lbl_end_desc)
 
 	var btn_row: HBoxContainer = HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	modal_vbox.add_child(btn_row)
 
-	btn_end_return = CafeSocialTheme.make_button("بازگشت به منو", "gold", Vector2(240, 64), 24)
+	btn_end_return = CafeSocialTheme.make_button("بازگشت به منو", "gold", Vector2(240, 56), 22)
 	btn_end_return.pressed.connect(func():
 		AudioManager.sfx_button()
 		hide_match_ended()

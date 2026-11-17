@@ -62,13 +62,13 @@ mouse_filter = 2
 color = Color(0.04, 0.02, 0.01, 0.20)
 
 [node name="Sparkles" type="CPUParticles2D" parent="BackgroundLayer"]
-position = Vector2(540, 960)
+position = Vector2(360, 640)
 amount = 24
 lifetime = 4.5
 preprocess = 2.0
 texture = ExtResource("3_star_tex")
 emission_shape = 3
-emission_rect_extents = Vector2(520, 920)
+emission_rect_extents = Vector2(350, 620)
 gravity = Vector2(0, -18)
 initial_velocity_min = 6.0
 initial_velocity_max = 18.0

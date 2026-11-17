@@ -536,26 +536,26 @@ static func _open_friend_picker_modal(host: Control) -> void:
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(780, 920)
+	card.custom_minimum_size = Vector2(640, 920)
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 40)
-	m.add_theme_constant_override("margin_right", 40)
-	m.add_theme_constant_override("margin_top", 34)
-	m.add_theme_constant_override("margin_bottom", 34)
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 24)
+	m.add_theme_constant_override("margin_bottom", 24)
 	card.add_child(m)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.add_theme_constant_override("separation", 12)
 	m.add_child(vbox)
 
 	var top := HBoxContainer.new()
 	vbox.add_child(top)
 	var bx := TextureButton.new()
 	bx.texture_normal = CafeSocialTheme.TEX_CLOSE
-	bx.custom_minimum_size = Vector2(52, 52)
+	bx.custom_minimum_size = Vector2(48, 48)
 	bx.ignore_texture_size = true
 	bx.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	bx.pressed.connect(func():
@@ -564,12 +564,12 @@ static func _open_friend_picker_modal(host: Control) -> void:
 	)
 	top.add_child(bx)
 
-	var ttl := CafeSocialTheme.make_title("شروع گفتگو با دوست", 35, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
+	var ttl := CafeSocialTheme.make_title("شروع گفتگو با دوست", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(ttl)
 
 	var sp := Control.new()
-	sp.custom_minimum_size = Vector2(52, 52)
+	sp.custom_minimum_size = Vector2(48, 48)
 	top.add_child(sp)
 
 	var sc := ScrollContainer.new()

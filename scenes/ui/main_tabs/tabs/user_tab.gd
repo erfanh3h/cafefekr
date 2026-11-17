@@ -164,21 +164,21 @@ func _render_profile() -> void:
 	for c in content_profile.get_children():
 		c.queue_free()
 
-	# Section toggle switcher: [مسابقات اخیر] | [آمار بازی‌ها] (Double height and +2px font size)
+	# Section toggle switcher: [مسابقات اخیر] | [آمار بازی‌ها]
 	var seg_box := HBoxContainer.new()
 	seg_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	seg_box.custom_minimum_size = Vector2(0, 108)
-	seg_box.add_theme_constant_override("separation", 12)
+	seg_box.custom_minimum_size = Vector2(0, 56)
+	seg_box.add_theme_constant_override("separation", 10)
 	content_profile.add_child(seg_box)
 
 	var btn_seg_matches := Button.new()
 	btn_seg_matches.text = "مسابقات اخیر"
 	btn_seg_matches.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_seg_matches.custom_minimum_size = Vector2(0, 104)
+	btn_seg_matches.custom_minimum_size = Vector2(0, 52)
 	btn_seg_matches.focus_mode = Control.FOCUS_NONE
 	btn_seg_matches.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_seg_matches.add_theme_font_override("font", _font_hekayat)
-	btn_seg_matches.add_theme_font_size_override("font_size", 28)
+	btn_seg_matches.add_theme_font_size_override("font_size", 22)
 	ActionVFXManager.apply_button_juice(btn_seg_matches, "tap_button")
 	_style_subnav_btn(btn_seg_matches, active_history_view == "matches")
 	seg_box.add_child(btn_seg_matches)
@@ -186,11 +186,11 @@ func _render_profile() -> void:
 	var btn_seg_stats := Button.new()
 	btn_seg_stats.text = "آمار کلی و بردگیم‌ها"
 	btn_seg_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_seg_stats.custom_minimum_size = Vector2(0, 104)
+	btn_seg_stats.custom_minimum_size = Vector2(0, 52)
 	btn_seg_stats.focus_mode = Control.FOCUS_NONE
 	btn_seg_stats.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_seg_stats.add_theme_font_override("font", _font_hekayat)
-	btn_seg_stats.add_theme_font_size_override("font_size", 28)
+	btn_seg_stats.add_theme_font_size_override("font_size", 22)
 	ActionVFXManager.apply_button_juice(btn_seg_stats, "tap_button")
 	_style_subnav_btn(btn_seg_stats, active_history_view == "stats")
 	seg_box.add_child(btn_seg_stats)
@@ -268,7 +268,7 @@ func _populate_matches_cards(holder: VBoxContainer, list: Array, my_uid: String)
 
 func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(0, 184)
+	btn.custom_minimum_size = Vector2(0, 146)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
@@ -294,15 +294,15 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var pad := MarginContainer.new()
 	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pad.add_theme_constant_override("margin_left", 52)
-	pad.add_theme_constant_override("margin_right", 52)
-	pad.add_theme_constant_override("margin_top", 20)
-	pad.add_theme_constant_override("margin_bottom", 28)
+	pad.add_theme_constant_override("margin_left", 24)
+	pad.add_theme_constant_override("margin_right", 24)
+	pad.add_theme_constant_override("margin_top", 12)
+	pad.add_theme_constant_override("margin_bottom", 16)
 	btn.add_child(pad)
 
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 18)
+	row.add_theme_constant_override("separation", 14)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	pad.add_child(row)
 
@@ -324,21 +324,21 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		opp_data = {"user_id": "opp", "username": opp_name, "image": opp_avatar_id}
 	var opp_frame_id: int = GameManager.get_player_frame_id(opp_data if not opp_data.is_empty() else game)
 
-	# 1. LEFT SIDE: Opponent Avatar + Name directly underneath (Frame +2px, Avatar -1px)
+	# 1. LEFT SIDE: Opponent Avatar + Name directly underneath
 	var opp_col := VBoxContainer.new()
-	opp_col.custom_minimum_size = Vector2(110, 132)
+	opp_col.custom_minimum_size = Vector2(86, 108)
 	opp_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	opp_col.add_theme_constant_override("separation", 4)
+	opp_col.add_theme_constant_override("separation", 2)
 	opp_col.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var av_panel := PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(96, 96)
+	av_panel.custom_minimum_size = Vector2(74, 74)
 	av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 	var av_img := TextureRect.new()
-	av_img.custom_minimum_size = Vector2(89, 89)
+	av_img.custom_minimum_size = Vector2(68, 68)
 	av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -357,11 +357,11 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var lbl_opp_name := Label.new()
 	lbl_opp_name.text = opp_name
 	lbl_opp_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_opp_name.custom_minimum_size = Vector2(105, 0)
+	lbl_opp_name.custom_minimum_size = Vector2(85, 0)
 	lbl_opp_name.clip_text = true
 	lbl_opp_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl_opp_name.add_theme_font_override("font", _font_hekayat)
-	lbl_opp_name.add_theme_font_size_override("font_size", 24)
+	lbl_opp_name.add_theme_font_size_override("font_size", 20)
 	lbl_opp_name.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
 	lbl_opp_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	opp_col.add_child(lbl_opp_name)
@@ -371,17 +371,17 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var center_col := VBoxContainer.new()
 	center_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	center_col.add_theme_constant_override("separation", 8)
+	center_col.add_theme_constant_override("separation", 6)
 	center_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var top_mid := HBoxContainer.new()
 	top_mid.alignment = BoxContainer.ALIGNMENT_CENTER
-	top_mid.add_theme_constant_override("separation", 14)
+	top_mid.add_theme_constant_override("separation", 10)
 	top_mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var lbl_res := Label.new()
 	lbl_res.add_theme_font_override("font", _font_hekayat)
-	lbl_res.add_theme_font_size_override("font_size", 34)
+	lbl_res.add_theme_font_size_override("font_size", 26)
 	if my_res == "win":
 		lbl_res.text = "برد 🏆"
 		lbl_res.add_theme_color_override("font_color", Color(0.40, 0.95, 0.45))
@@ -412,7 +412,7 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		var lbl_score := Label.new()
 		lbl_score.text = "( %s )" % score_str
 		lbl_score.add_theme_font_override("font", _font_hekayat)
-		lbl_score.add_theme_font_size_override("font_size", 32)
+		lbl_score.add_theme_font_size_override("font_size", 24)
 		lbl_score.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
 		top_mid.add_child(lbl_score)
 	center_col.add_child(top_mid)
@@ -425,14 +425,14 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	lbl_date.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_date.text = shamsi_date
 	lbl_date.add_theme_font_override("font", _font_hekayat)
-	lbl_date.add_theme_font_size_override("font_size", 25)
+	lbl_date.add_theme_font_size_override("font_size", 20)
 	lbl_date.add_theme_color_override("font_color", Color(0.88, 0.82, 0.72))
 	center_col.add_child(lbl_date)
 	row.add_child(center_col)
 
 	# 3. RIGHT SIDE: Big Game Mode Badge Icon
 	var mode_badge := TextureRect.new()
-	mode_badge.custom_minimum_size = Vector2(92, 92)
+	mode_badge.custom_minimum_size = Vector2(72, 72)
 	mode_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	mode_badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	mode_badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -733,25 +733,25 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 
 	for sc in stat_cards_data:
 		var card := PanelContainer.new()
-		card.custom_minimum_size = Vector2(0, 196)
+		card.custom_minimum_size = Vector2(0, 150)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
 
 		var pad := MarginContainer.new()
-		pad.add_theme_constant_override("margin_left", 48)
-		pad.add_theme_constant_override("margin_right", 48)
+		pad.add_theme_constant_override("margin_left", 20)
+		pad.add_theme_constant_override("margin_right", 20)
 		card.add_child(pad)
 
 		var cv := VBoxContainer.new()
 		cv.alignment = BoxContainer.ALIGNMENT_CENTER
-		cv.add_theme_constant_override("separation", 6)
+		cv.add_theme_constant_override("separation", 4)
 		pad.add_child(cv)
 
 		var lbl_title := Label.new()
 		lbl_title.text = sc["label"]
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_title.add_theme_font_override("font", _font_hekayat)
-		lbl_title.add_theme_font_size_override("font_size", 28)
+		lbl_title.add_theme_font_size_override("font_size", 22)
 		lbl_title.add_theme_color_override("font_color", Color(0.85, 0.78, 0.65))
 		cv.add_child(lbl_title)
 
@@ -759,7 +759,7 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 		lbl_val.text = sc["val"]
 		lbl_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_val.add_theme_font_override("font", _font_hekayat)
-		lbl_val.add_theme_font_size_override("font_size", 52)
+		lbl_val.add_theme_font_size_override("font_size", 36)
 		lbl_val.add_theme_color_override("font_color", sc["col"])
 		cv.add_child(lbl_val)
 
@@ -767,7 +767,7 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 		lbl_sub.text = sc["sub"]
 		lbl_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_sub.add_theme_font_override("font", _font_vazir)
-		lbl_sub.add_theme_font_size_override("font_size", 18)
+		lbl_sub.add_theme_font_size_override("font_size", 16)
 		lbl_sub.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 		cv.add_child(lbl_sub)
 
@@ -796,11 +796,11 @@ func _render_cosmetics() -> void:
 	center_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content_cosmetics.add_child(center_wrap)
 
-	# 5 avatars per row, larger avatar icons and generous spacing
+	# 5 avatars per row, sized to fit comfortably within 720 screen
 	var grid := GridContainer.new()
 	grid.columns = 5
-	grid.add_theme_constant_override("h_separation", 20)
-	grid.add_theme_constant_override("v_separation", 24)
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 14)
 	center_wrap.add_child(grid)
 
 	var avatar_buttons: Array[TextureButton] = []
@@ -811,7 +811,7 @@ func _render_cosmetics() -> void:
 			continue
 
 		var p_btn := TextureButton.new()
-		p_btn.custom_minimum_size = Vector2(162, 162)
+		p_btn.custom_minimum_size = Vector2(104, 104)
 		p_btn.ignore_texture_size = true
 		p_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		p_btn.texture_normal = load(path)
@@ -886,8 +886,8 @@ func _render_frames() -> void:
 
 	var grid := GridContainer.new()
 	grid.columns = 5
-	grid.add_theme_constant_override("h_separation", 20)
-	grid.add_theme_constant_override("v_separation", 24)
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 14)
 	center_wrap.add_child(grid)
 
 	var frame_buttons: Array[TextureButton] = []
@@ -898,7 +898,7 @@ func _render_frames() -> void:
 			continue
 
 		var f_btn := TextureButton.new()
-		f_btn.custom_minimum_size = Vector2(164, 164)
+		f_btn.custom_minimum_size = Vector2(104, 104)
 		f_btn.ignore_texture_size = true
 		f_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		f_btn.texture_normal = f_tex

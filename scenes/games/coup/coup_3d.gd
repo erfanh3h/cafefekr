@@ -521,7 +521,7 @@ func _build_exchange_modal() -> void:
 	exchange_backdrop.add_child(center)
 
 	var modal_panel: PanelContainer = PanelContainer.new()
-	modal_panel.custom_minimum_size = Vector2(920, 560)
+	modal_panel.custom_minimum_size = Vector2(640, 540)
 	modal_panel.add_theme_stylebox_override(
 		"panel",
 		_make_glass_style(Color(0.06, 0.14, 0.10, 0.98), Color(0.48, 0.96, 0.64, 0.92), 28, 3)
@@ -529,22 +529,22 @@ func _build_exchange_modal() -> void:
 	center.add_child(modal_panel)
 
 	var m: MarginContainer = MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 28)
-	m.add_theme_constant_override("margin_right", 28)
-	m.add_theme_constant_override("margin_top", 26)
-	m.add_theme_constant_override("margin_bottom", 26)
+	m.add_theme_constant_override("margin_left", 16)
+	m.add_theme_constant_override("margin_right", 16)
+	m.add_theme_constant_override("margin_top", 20)
+	m.add_theme_constant_override("margin_bottom", 20)
 	modal_panel.add_child(m)
 
 	var vbox: VBoxContainer = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 20)
+	vbox.add_theme_constant_override("separation", 16)
 	m.add_child(vbox)
 
 	var title_lbl: Label = Label.new()
 	title_lbl.text = "📜 مبادله کارت با سفیر"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 38)
+	title_lbl.add_theme_font_size_override("font_size", 30)
 	title_lbl.add_theme_color_override("font_color", Color(0.56, 0.98, 0.70))
 	title_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
 	title_lbl.add_theme_constant_override("outline_size", 4)
@@ -555,7 +555,7 @@ func _build_exchange_modal() -> void:
 	exchange_subtitle_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	exchange_subtitle_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	exchange_subtitle_lbl.add_theme_font_override("font", FontHekayat)
-	exchange_subtitle_lbl.add_theme_font_size_override("font_size", 27)
+	exchange_subtitle_lbl.add_theme_font_size_override("font_size", 21)
 	exchange_subtitle_lbl.add_theme_color_override("font_color", Color(0.96, 0.95, 0.90))
 	exchange_subtitle_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	exchange_subtitle_lbl.add_theme_constant_override("outline_size", 3)
@@ -563,18 +563,18 @@ func _build_exchange_modal() -> void:
 
 	exchange_cards_hbox = HBoxContainer.new()
 	exchange_cards_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	exchange_cards_hbox.add_theme_constant_override("separation", 18)
+	exchange_cards_hbox.add_theme_constant_override("separation", 10)
 	vbox.add_child(exchange_cards_hbox)
 
 	var btn_row: HBoxContainer = HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 16)
+	btn_row.add_theme_constant_override("separation", 14)
 	vbox.add_child(btn_row)
 
 	var peek_btn: Button = Button.new()
 	peek_btn.text = "👀 دیدن میز"
-	peek_btn.custom_minimum_size = Vector2(200, 72)
-	_style_action_button(peek_btn, Color(0.18, 0.24, 0.30), Color(0.56, 0.76, 0.92), Color.WHITE, 25, false)
+	peek_btn.custom_minimum_size = Vector2(160, 58)
+	_style_action_button(peek_btn, Color(0.18, 0.24, 0.30), Color(0.56, 0.76, 0.92), Color.WHITE, 22, false)
 	peek_btn.pressed.connect(func() -> void:
 		AudioManager.sfx_tap()
 		exchange_backdrop.visible = false
@@ -582,9 +582,9 @@ func _build_exchange_modal() -> void:
 	btn_row.add_child(peek_btn)
 
 	exchange_confirm_btn = Button.new()
-	exchange_confirm_btn.text = "✅ تایید و ثبت دست جدید"
-	exchange_confirm_btn.custom_minimum_size = Vector2(390, 72)
-	_style_action_button(exchange_confirm_btn, Color(0.12, 0.56, 0.28), Color(0.48, 0.96, 0.64), Color.WHITE, 28, true)
+	exchange_confirm_btn.text = "✅ تایید دست جدید"
+	exchange_confirm_btn.custom_minimum_size = Vector2(240, 58)
+	_style_action_button(exchange_confirm_btn, Color(0.12, 0.56, 0.28), Color(0.48, 0.96, 0.64), Color.WHITE, 22, true)
 	exchange_confirm_btn.pressed.connect(_on_confirm_exchange_pressed)
 	btn_row.add_child(exchange_confirm_btn)
 
@@ -607,7 +607,7 @@ func _build_roles_modal() -> void:
 	roles_modal_backdrop.add_child(center)
 
 	var modal_panel: PanelContainer = PanelContainer.new()
-	modal_panel.custom_minimum_size = Vector2(940, 860)
+	modal_panel.custom_minimum_size = Vector2(640, 860)
 	modal_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	modal_panel.add_theme_stylebox_override(
 		"panel",
@@ -616,21 +616,21 @@ func _build_roles_modal() -> void:
 	center.add_child(modal_panel)
 
 	var m: MarginContainer = MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 28)
-	m.add_theme_constant_override("margin_right", 28)
-	m.add_theme_constant_override("margin_top", 24)
-	m.add_theme_constant_override("margin_bottom", 24)
+	m.add_theme_constant_override("margin_left", 16)
+	m.add_theme_constant_override("margin_right", 16)
+	m.add_theme_constant_override("margin_top", 20)
+	m.add_theme_constant_override("margin_bottom", 20)
 	modal_panel.add_child(m)
 
 	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.add_theme_constant_override("separation", 12)
 	m.add_child(vbox)
 
 	var title_lbl: Label = Label.new()
 	title_lbl.text = "📜 راهنمای نقش‌ها و قوانین کودتا"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 36)
+	title_lbl.add_theme_font_size_override("font_size", 28)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42))
 	title_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
 	title_lbl.add_theme_constant_override("outline_size", 4)
@@ -1392,7 +1392,7 @@ func _refresh_exchange_modal() -> void:
 			var cd: Dictionary = cv as Dictionary
 			var is_sel: bool = idx in _selected_exchange_indices
 			var cw: CoupCardWidget = CoupCardWidgetScript.new()
-			cw.setup_card(idx, cd, true, is_sel, Vector2(174, 248))
+			cw.setup_card(idx, cd, true, is_sel, Vector2(130, 185))
 			cw.card_clicked.connect(_on_exchange_card_clicked)
 			exchange_cards_hbox.add_child(cw)
 

@@ -17,16 +17,16 @@ texture_margin_bottom = 60.0
 texture = ExtResource("3_button_tex")
 
 [node name="GameHistoryDialog" type="PanelContainer"]
-custom_minimum_size = Vector2(940, 1260)
+custom_minimum_size = Vector2(660, 1160)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -470.0
-offset_top = -630.0
-offset_right = 470.0
-offset_bottom = 630.0
+offset_left = -330.0
+offset_top = -580.0
+offset_right = 330.0
+offset_bottom = 580.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_board")
@@ -34,21 +34,21 @@ script = ExtResource("1_history_script")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 36
-theme_override_constants/margin_top = 36
-theme_override_constants/margin_right = 36
-theme_override_constants/margin_bottom = 36
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 
 [node name="TopRow" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
 alignment = 1
 
 [node name="BtnCloseTop" type="TextureButton" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 texture_normal = ExtResource("5_close_tex")
 ignore_texture_size = true
@@ -61,33 +61,33 @@ theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 30
 text = "📜 تاریخچه بازی‌ها"
 horizontal_alignment = 1
 
 [node name="TopSpacer" type="Control" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 
 [node name="SubTabsRow" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="BtnTabMatches" type="Button" parent="Margin/VBox/SubTabsRow"]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 22
 text = "📜 مسابقات اخیر"
 
 [node name="BtnTabGamesHistory" type="Button" parent="Margin/VBox/SubTabsRow"]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 22
 text = "🎮 آمار بازی‌ها"
 
 [node name="LblLoading" type="Label" parent="Margin/VBox"]
@@ -95,7 +95,7 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 0.7, 1)
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 24
 text = "در حال بارگذاری تاریخچه بازی‌ها..."
 horizontal_alignment = 1
 
@@ -132,22 +132,22 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 14
 
 [node name="BtnClose" type="Button" parent="Margin/VBox"]
-custom_minimum_size = Vector2(320, 88)
+custom_minimum_size = Vector2(260, 68)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "بستن"
 
 [node name="BtnBack" type="Button" parent="Margin/VBox"]
 visible = false
-custom_minimum_size = Vector2(320, 88)
+custom_minimum_size = Vector2(260, 68)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "بازگشت ➔"

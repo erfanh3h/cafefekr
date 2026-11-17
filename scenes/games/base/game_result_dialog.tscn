@@ -107,13 +107,13 @@ grow_vertical = 2
 color = Color(0.04, 0.02, 0.01, 0.75)
 
 [node name="ConfettiShower" type="CPUParticles2D" parent="."]
-position = Vector2(540, 100)
+position = Vector2(360, 80)
 emitting = false
 amount = 40
 lifetime = 2.5
 texture = ExtResource("5_star_tex")
 emission_shape = 3
-emission_rect_extents = Vector2(350, 10)
+emission_rect_extents = Vector2(300, 10)
 direction = Vector2(0, 1)
 spread = 35.0
 gravity = Vector2(0, 240)
@@ -126,13 +126,13 @@ scale_amount_max = 0.36
 color = Color(1, 0.88, 0.35, 1)
 
 [node name="DefeatParticles" type="CPUParticles2D" parent="."]
-position = Vector2(540, 100)
+position = Vector2(360, 80)
 emitting = false
 amount = 24
 lifetime = 3.2
 texture = ExtResource("8_smoke_tex")
 emission_shape = 3
-emission_rect_extents = Vector2(360, 10)
+emission_rect_extents = Vector2(300, 10)
 direction = Vector2(0, 1)
 spread = 25.0
 gravity = Vector2(0, 45)
@@ -153,41 +153,41 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(920, 880)
+custom_minimum_size = Vector2(640, 840)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_modal_board")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 14
 alignment = 1
 
 [node name="EmblemBox" type="Control" parent="CenterContainer/Panel/VBox"]
-custom_minimum_size = Vector2(220, 180)
+custom_minimum_size = Vector2(160, 140)
 layout_mode = 2
 size_flags_horizontal = 4
 
 [node name="AuraRay" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox"]
-custom_minimum_size = Vector2(260, 260)
+custom_minimum_size = Vector2(200, 200)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -130.0
-offset_top = -130.0
-offset_right = 130.0
-offset_bottom = 130.0
+offset_left = -100.0
+offset_top = -100.0
+offset_right = 100.0
+offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
-pivot_offset = Vector2(130, 130)
+pivot_offset = Vector2(100, 100)
 texture = ExtResource("4_flare_tex")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="AuraSparkles" type="CPUParticles2D" parent="CenterContainer/Panel/VBox/EmblemBox"]
-position = Vector2(110, 90)
+position = Vector2(80, 70)
 emitting = false
 amount = 16
 lifetime = 1.2
@@ -201,24 +201,24 @@ scale_amount_max = 0.28
 color = Color(1, 0.95, 0.6, 0.9)
 
 [node name="Plaque" type="PanelContainer" parent="CenterContainer/Panel/VBox/EmblemBox"]
-custom_minimum_size = Vector2(130, 130)
+custom_minimum_size = Vector2(100, 100)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -65.0
-offset_top = -65.0
-offset_right = 65.0
-offset_bottom = 65.0
+offset_left = -50.0
+offset_top = -50.0
+offset_right = 50.0
+offset_bottom = 50.0
 grow_horizontal = 2
 grow_vertical = 2
-pivot_offset = Vector2(65, 65)
+pivot_offset = Vector2(50, 50)
 theme_override_styles/panel = SubResource("StyleBoxFlat_plaque")
 
 [node name="IconCenter" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox/Plaque"]
-custom_minimum_size = Vector2(90, 90)
+custom_minimum_size = Vector2(70, 70)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -231,16 +231,16 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -75.0
-offset_top = -10.0
-offset_right = 75.0
-offset_bottom = 30.0
+offset_left = -60.0
+offset_top = -8.0
+offset_right = 60.0
+offset_bottom = 26.0
 grow_horizontal = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="StarLeft" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox/StarCrown"]
-custom_minimum_size = Vector2(36, 36)
+custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("5_star_tex")
@@ -248,7 +248,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="StarCenter" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox/StarCrown"]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(38, 38)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("5_star_tex")
@@ -256,7 +256,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="StarRight" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox/StarCrown"]
-custom_minimum_size = Vector2(36, 36)
+custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("5_star_tex")
@@ -269,7 +269,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.28, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 50
+theme_override_font_sizes/font_size = 34
 text = "🏆 پیروزی درخشان!"
 horizontal_alignment = 1
 
@@ -277,36 +277,37 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.82, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 22
 text = "تبریک! با بازی هوشمندانه برنده این رقابت شدی."
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="MatchupBox" type="HBoxContainer" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="P1Card" type="PanelContainer" parent="CenterContainer/Panel/VBox/MatchupBox"]
-custom_minimum_size = Vector2(380, 220)
+custom_minimum_size = Vector2(0, 170)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_player_winner")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="WinnerTag" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.28, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 20
 text = "👑 برنده مسابقه"
 horizontal_alignment = 1
 
 [node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
-custom_minimum_size = Vector2(98, 98)
+custom_minimum_size = Vector2(70, 70)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
@@ -316,7 +317,7 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.96, 0.9, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 22
 text = "بازیکن ۱"
 horizontal_alignment = 1
 
@@ -325,7 +326,7 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.28, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 34
 text = "۳"
 horizontal_alignment = 1
 
@@ -333,29 +334,30 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 26
 text = "VS"
 
 [node name="P2Card" type="PanelContainer" parent="CenterContainer/Panel/VBox/MatchupBox"]
-custom_minimum_size = Vector2(380, 220)
+custom_minimum_size = Vector2(0, 170)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_player_normal")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="WinnerTag" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.65, 0.55, 0.45, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 20
 text = "بازیکن ۲"
 horizontal_alignment = 1
 
 [node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
-custom_minimum_size = Vector2(98, 98)
+custom_minimum_size = Vector2(70, 70)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
@@ -365,7 +367,7 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 0.8, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 22
 text = "بازیکن ۲"
 horizontal_alignment = 1
 
@@ -374,7 +376,7 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.8, 0.7, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 34
 text = "۰"
 horizontal_alignment = 1
 
@@ -393,7 +395,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 22
 text = "💰 +۵۰ سکه طلایی"
 
 [node name="XPChip" type="PanelContainer" parent="CenterContainer/Panel/VBox/RewardsHBox"]
@@ -404,21 +406,21 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.95, 0.55, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 22
 text = "⭐ +۱۵ امتیاز کافه"
 
 [node name="ButtonsRow" type="HBoxContainer" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="BtnReturn" type="Button" parent="CenterContainer/Panel/VBox/ButtonsRow"]
-custom_minimum_size = Vector2(560, 112)
+custom_minimum_size = Vector2(300, 72)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.05, 0.15, 0.35, 0.95)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "خروج از بازی"

@@ -410,7 +410,7 @@ func _build_timeline() -> void:
 	# First 3 slots at the start of top header: 3 System-Removed Games
 	for s_idx in range(3):
 		var sys_box = PanelContainer.new()
-		sys_box.custom_minimum_size = Vector2(186, 164)
+		sys_box.custom_minimum_size = Vector2(136, 120)
 		sys_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sys_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
@@ -455,7 +455,7 @@ func _build_timeline() -> void:
 		sys_vbox.add_child(sys_chip)
 		
 		var sys_frame = PanelContainer.new()
-		sys_frame.custom_minimum_size = Vector2(126, 76)
+		sys_frame.custom_minimum_size = Vector2(96, 56)
 		sys_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		var sys_frame_sb = StyleBoxFlat.new()
 		sys_frame_sb.bg_color = Color(0.06, 0.03, 0.03, 0.90)
@@ -465,7 +465,7 @@ func _build_timeline() -> void:
 		sys_frame.add_theme_stylebox_override("panel", sys_frame_sb)
 		
 		var sys_img = TextureRect.new()
-		sys_img.custom_minimum_size = Vector2(122, 72)
+		sys_img.custom_minimum_size = Vector2(92, 52)
 		sys_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		sys_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		sys_img.texture = _load_game_texture("tictactoe")
@@ -475,7 +475,7 @@ func _build_timeline() -> void:
 		var sys_ban_overlay = Label.new()
 		sys_ban_overlay.text = "✕"
 		sys_ban_overlay.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		sys_ban_overlay.add_theme_font_size_override("font_size", 42)
+		sys_ban_overlay.add_theme_font_size_override("font_size", 32)
 		sys_ban_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		sys_ban_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		sys_ban_overlay.modulate = Color(1.0, 0.25, 0.25, 0.35)
@@ -512,7 +512,7 @@ func _build_timeline() -> void:
 		var t_owner = int(cfg["owner"]) # 1, 2, 0 (sys)
 		
 		var node_box = PanelContainer.new()
-		node_box.custom_minimum_size = Vector2(186, 164)
+		node_box.custom_minimum_size = Vector2(136, 120)
 		node_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		node_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
@@ -570,9 +570,9 @@ func _build_timeline() -> void:
 		chip_panel.add_child(lbl_tag)
 		vbox.add_child(chip_panel)
 		
-		# Center Icon Box (126x76)
+		# Center Icon Box (96x56)
 		var frame = PanelContainer.new()
-		frame.custom_minimum_size = Vector2(126, 76)
+		frame.custom_minimum_size = Vector2(96, 56)
 		frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		var frame_sb = StyleBoxFlat.new()
 		frame_sb.bg_color = Color(0.05, 0.03, 0.02, 0.90)
@@ -582,7 +582,7 @@ func _build_timeline() -> void:
 		frame.add_theme_stylebox_override("panel", frame_sb)
 		
 		var img_rect = TextureRect.new()
-		img_rect.custom_minimum_size = Vector2(122, 72)
+		img_rect.custom_minimum_size = Vector2(92, 52)
 		img_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		img_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		img_rect.texture = _load_game_texture("tictactoe")
@@ -592,7 +592,7 @@ func _build_timeline() -> void:
 		var ban_overlay = Label.new()
 		ban_overlay.text = "✕"
 		ban_overlay.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		ban_overlay.add_theme_font_size_override("font_size", 42)
+		ban_overlay.add_theme_font_size_override("font_size", 32)
 		ban_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		ban_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		ban_overlay.modulate = Color(1.0, 0.2, 0.2, 0.0)
@@ -649,7 +649,7 @@ func _build_games_grid() -> void:
 
 func _create_game_card(g_type: String) -> PanelContainer:
 	var card = PanelContainer.new()
-	card.custom_minimum_size = Vector2(230, 192)
+	card.custom_minimum_size = Vector2(0, 155)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	
@@ -677,7 +677,7 @@ func _create_game_card(g_type: String) -> PanelContainer:
 	
 	# Compact Game Cover Image
 	var art_holder = Control.new()
-	art_holder.custom_minimum_size = Vector2(0, 122)
+	art_holder.custom_minimum_size = Vector2(0, 96)
 	art_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	art_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(art_holder)
@@ -1361,7 +1361,7 @@ func _show_draft_complete_transition() -> void:
 	overlay.add_child(center)
 	
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(980, 860)
+	panel.custom_minimum_size = Vector2(660, 780)
 	var sb = StyleBoxTexture.new()
 	sb.texture = preload("res://assets/images/frames/board.png")
 	sb.texture_margin_left = 60.0
@@ -1372,14 +1372,14 @@ func _show_draft_complete_transition() -> void:
 	center.add_child(panel)
 	
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 36)
-	margin.add_theme_constant_override("margin_top", 36)
-	margin.add_theme_constant_override("margin_right", 36)
-	margin.add_theme_constant_override("margin_bottom", 36)
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_bottom", 20)
 	panel.add_child(margin)
 	
 	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 22)
+	vbox.add_theme_constant_override("separation", 16)
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	margin.add_child(vbox)
 	
@@ -1387,7 +1387,7 @@ func _show_draft_complete_transition() -> void:
 	var lbl_h = Label.new()
 	lbl_h.text = "👑 قرعه‌کشی و انتخاب بازی‌ها تکمیل شد! 👑"
 	lbl_h.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_h.add_theme_font_size_override("font_size", 40)
+	lbl_h.add_theme_font_size_override("font_size", 30)
 	lbl_h.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_h.modulate = Color(1.0, 0.88, 0.3)
 	vbox.add_child(lbl_h)
@@ -1395,7 +1395,7 @@ func _show_draft_complete_transition() -> void:
 	var lbl_sub = Label.new()
 	lbl_sub.text = "ترتیب ۳ بازی مسابقه رنک (بهترین از ۳):"
 	lbl_sub.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_sub.add_theme_font_size_override("font_size", 26)
+	lbl_sub.add_theme_font_size_override("font_size", 22)
 	lbl_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_sub.modulate = Color(0.85, 0.78, 0.65)
 	vbox.add_child(lbl_sub)
@@ -1403,7 +1403,7 @@ func _show_draft_complete_transition() -> void:
 	# 3 Game Cards Row
 	var hbox_games = HBoxContainer.new()
 	hbox_games.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox_games.add_theme_constant_override("separation", 20)
+	hbox_games.add_theme_constant_override("separation", 10)
 	vbox.add_child(hbox_games)
 	
 	var g1 = p1_picked if not p1_picked.is_empty() else "TicTacToe"
@@ -1420,7 +1420,7 @@ func _show_draft_complete_transition() -> void:
 	
 	for g_info in games_list:
 		var g_card = PanelContainer.new()
-		g_card.custom_minimum_size = Vector2(285, 385)
+		g_card.custom_minimum_size = Vector2(185, 290)
 		var c_sb = StyleBoxFlat.new()
 		c_sb.bg_color = Color(0.18, 0.12, 0.08, 0.96)
 		c_sb.border_color = g_info["accent"]
@@ -1429,27 +1429,27 @@ func _show_draft_complete_transition() -> void:
 		g_card.add_theme_stylebox_override("panel", c_sb)
 		
 		var c_margin = MarginContainer.new()
-		c_margin.add_theme_constant_override("margin_left", 12)
-		c_margin.add_theme_constant_override("margin_top", 14)
-		c_margin.add_theme_constant_override("margin_right", 12)
-		c_margin.add_theme_constant_override("margin_bottom", 14)
+		c_margin.add_theme_constant_override("margin_left", 8)
+		c_margin.add_theme_constant_override("margin_top", 10)
+		c_margin.add_theme_constant_override("margin_right", 8)
+		c_margin.add_theme_constant_override("margin_bottom", 10)
 		g_card.add_child(c_margin)
 		
 		var c_vbox = VBoxContainer.new()
 		c_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		c_vbox.add_theme_constant_override("separation", 10)
+		c_vbox.add_theme_constant_override("separation", 8)
 		c_margin.add_child(c_vbox)
 		
 		var c_tag = Label.new()
 		c_tag.text = g_info["title"]
 		c_tag.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		c_tag.add_theme_font_size_override("font_size", 21)
+		c_tag.add_theme_font_size_override("font_size", 17)
 		c_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c_tag.modulate = g_info["accent"]
 		c_vbox.add_child(c_tag)
 		
 		var c_img = TextureRect.new()
-		c_img.custom_minimum_size = Vector2(240, 200)
+		c_img.custom_minimum_size = Vector2(160, 140)
 		c_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		c_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		c_img.texture = _load_game_texture(str(g_info["game"]))
@@ -1458,7 +1458,7 @@ func _show_draft_complete_transition() -> void:
 		var c_name = Label.new()
 		c_name.text = GameTypes.get_display_name_fa(str(g_info["game"]))
 		c_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		c_name.add_theme_font_size_override("font_size", 26)
+		c_name.add_theme_font_size_override("font_size", 22)
 		c_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c_name.modulate = Color(1, 1, 1)
 		c_vbox.add_child(c_name)
@@ -1560,7 +1560,7 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	overlay.add_child(center)
 	
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(740, 420)
+	panel.custom_minimum_size = Vector2(580, 360)
 	var sb = StyleBoxTexture.new()
 	sb.texture = preload("res://assets/images/frames/board.png")
 	sb.texture_margin_left = 60.0
@@ -1571,14 +1571,14 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	center.add_child(panel)
 	
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 36)
-	margin.add_theme_constant_override("margin_top", 36)
-	margin.add_theme_constant_override("margin_right", 36)
-	margin.add_theme_constant_override("margin_bottom", 36)
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 24)
 	panel.add_child(margin)
 	
 	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 24)
+	vbox.add_theme_constant_override("separation", 20)
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	margin.add_child(vbox)
 	
@@ -1586,7 +1586,7 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	var lbl_modal_title = Label.new()
 	lbl_modal_title.text = "⚠️ وضعیت مسابقه"
 	lbl_modal_title.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_modal_title.add_theme_font_size_override("font_size", 34)
+	lbl_modal_title.add_theme_font_size_override("font_size", 28)
 	lbl_modal_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_modal_title.modulate = Color(1.0, 0.85, 0.3)
 	vbox.add_child(lbl_modal_title)
@@ -1595,7 +1595,7 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	var lbl_msg = Label.new()
 	lbl_msg.text = message
 	lbl_msg.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_msg.add_theme_font_size_override("font_size", 26)
+	lbl_msg.add_theme_font_size_override("font_size", 22)
 	lbl_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lbl_msg.modulate = Color(1.0, 0.92, 0.85)
@@ -1608,9 +1608,9 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	# Action Button: Return to Menu
 	var btn_return = Button.new()
 	btn_return.text = "بازگشت به منوی اصلی"
-	btn_return.custom_minimum_size = Vector2(360, 102)
+	btn_return.custom_minimum_size = Vector2(260, 68)
 	btn_return.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn_return.add_theme_font_size_override("font_size", 28)
+	btn_return.add_theme_font_size_override("font_size", 24)
 	KenneyUI.style_button(btn_return, KenneyUI.COLOR_GREEN)
 	btn_return.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	btn_return.pressed.connect(_on_modal_close_pressed)

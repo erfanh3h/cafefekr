@@ -1250,37 +1250,37 @@ static func show_confirm_modal(
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(720, 0)
+	card.custom_minimum_size = Vector2(620, 0)
 	card.add_theme_stylebox_override("panel", create_board_shell_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 42)
-	m.add_theme_constant_override("margin_right", 42)
-	m.add_theme_constant_override("margin_top", 36)
-	m.add_theme_constant_override("margin_bottom", 36)
+	m.add_theme_constant_override("margin_left", 24)
+	m.add_theme_constant_override("margin_right", 24)
+	m.add_theme_constant_override("margin_top", 24)
+	m.add_theme_constant_override("margin_bottom", 24)
 	card.add_child(m)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 18)
+	vbox.add_theme_constant_override("separation", 16)
 	m.add_child(vbox)
 
-	vbox.add_child(make_title(title_txt, 37, COL_CRIMSON_TEXT if is_danger else COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
-	vbox.add_child(make_body(body_txt, 26, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_title(title_txt, 30, COL_CRIMSON_TEXT if is_danger else COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_body(body_txt, 22, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	var btn_row := HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 18)
+	btn_row.add_theme_constant_override("separation", 14)
 	vbox.add_child(btn_row)
 
-	var b_cancel := make_button("انصراف", "bronze", Vector2(200, 60), 25)
+	var b_cancel := make_button("انصراف", "bronze", Vector2(180, 54), 22)
 	b_cancel.pressed.connect(func():
 		AudioManager.sfx_tap()
 		overlay.queue_free()
 	)
 	btn_row.add_child(b_cancel)
 
-	var b_ok := make_button(confirm_txt, "crimson" if is_danger else "emerald", Vector2(220, 60), 25)
+	var b_ok := make_button(confirm_txt, "crimson" if is_danger else "emerald", Vector2(180, 54), 22)
 	b_ok.pressed.connect(func():
 		AudioManager.sfx_button()
 		overlay.queue_free()
@@ -1464,19 +1464,19 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(860, 0)
+	card.custom_minimum_size = Vector2(640, 0)
 	card.add_theme_stylebox_override("panel", create_board_shell_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 42)
-	m.add_theme_constant_override("margin_right", 42)
-	m.add_theme_constant_override("margin_top", 34)
-	m.add_theme_constant_override("margin_bottom", 34)
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 24)
+	m.add_theme_constant_override("margin_bottom", 24)
 	card.add_child(m)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 16)
+	vbox.add_theme_constant_override("separation", 14)
 	m.add_child(vbox)
 
 	var top_row := HBoxContainer.new()
@@ -1485,7 +1485,7 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 
 	var btn_x := TextureButton.new()
 	btn_x.texture_normal = TEX_CLOSE
-	btn_x.custom_minimum_size = Vector2(54, 54)
+	btn_x.custom_minimum_size = Vector2(48, 48)
 	btn_x.ignore_texture_size = true
 	btn_x.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn_x.focus_mode = Control.FOCUS_NONE
@@ -1496,27 +1496,27 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 	)
 	top_row.add_child(btn_x)
 
-	var ttl := make_title("دعوت «%s» به مسابقه دوستانه" % target_name, 37, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	var ttl := make_title("دعوت «%s» به مسابقه دوستانه" % target_name, 28, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_child(ttl)
 
 	var sp := Control.new()
-	sp.custom_minimum_size = Vector2(54, 54)
+	sp.custom_minimum_size = Vector2(48, 48)
 	top_row.add_child(sp)
 
-	vbox.add_child(make_body("بازی مورد نظر خود را برای ارسال دعوت‌نامه مستقیم انتخاب کنید:", 25, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_body("بازی مورد نظر خود را برای ارسال دعوت‌نامه مستقیم انتخاب کنید:", 19, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	var g_scroll := ScrollContainer.new()
-	g_scroll.custom_minimum_size = Vector2(0, 560)
+	g_scroll.custom_minimum_size = Vector2(0, 500)
 	g_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	g_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vbox.add_child(g_scroll)
 
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 1
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	grid.add_theme_constant_override("h_separation", 14)
-	grid.add_theme_constant_override("v_separation", 14)
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
 	g_scroll.add_child(grid)
 
 	var all_invite_games: Array[String] = [
@@ -1631,25 +1631,25 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(760, 0)
+	card.custom_minimum_size = Vector2(620, 0)
 	card.add_theme_stylebox_override("panel", create_board_shell_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 42)
-	m.add_theme_constant_override("margin_right", 42)
-	m.add_theme_constant_override("margin_top", 34)
-	m.add_theme_constant_override("margin_bottom", 34)
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 24)
+	m.add_theme_constant_override("margin_bottom", 24)
 	card.add_child(m)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.add_theme_constant_override("separation", 12)
 	m.add_child(vbox)
 
-	vbox.add_child(make_title("گزارش تخلف: %s" % target_name, 37, COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_CENTER, true))
-	vbox.add_child(make_body("لطفاً دلیل گزارش را انتخاب کنید تا توسط تیم نظارت بررسی شود:", 25, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_title("گزارش تخلف: %s" % target_name, 30, COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_body("لطفاً دلیل گزارش را انتخاب کنید تا توسط تیم نظارت بررسی شود:", 20, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
-	var inp_details := make_line_edit("توضیحات تکمیلی (اختیاری)...", 58.0, 24)
+	var inp_details := make_line_edit("توضیحات تکمیلی (اختیاری)...", 52.0, 22)
 	var selected_reason := ["inappropriate_behavior"]
 	var reason_defs := [
 		{"id": "inappropriate_behavior", "label": "رفتار نامناسب یا توهین در گفتگو"},
@@ -1667,7 +1667,7 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 
 	for r in reason_defs:
 		var rid: String = r["id"]
-		var rb := make_button(r["label"], "muted", Vector2(0, 54), 24)
+		var rb := make_button(r["label"], "muted", Vector2(0, 48), 21)
 		rb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rb.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -1681,17 +1681,17 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 
 	var btn_row := HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 16)
+	btn_row.add_theme_constant_override("separation", 14)
 	vbox.add_child(btn_row)
 
-	var b_cancel := make_button("انصراف", "bronze", Vector2(200, 58), 25)
+	var b_cancel := make_button("انصراف", "bronze", Vector2(180, 52), 22)
 	b_cancel.pressed.connect(func():
 		AudioManager.sfx_tap()
 		overlay.queue_free()
 	)
 	btn_row.add_child(b_cancel)
 
-	var b_send := make_button("ثبت گزارش", "crimson", Vector2(240, 58), 25)
+	var b_send := make_button("ثبت گزارش", "crimson", Vector2(200, 52), 22)
 	b_send.pressed.connect(func():
 		AudioManager.sfx_button()
 		b_send.disabled = true
@@ -1731,19 +1731,19 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(860, 0)
+	card.custom_minimum_size = Vector2(640, 0)
 	card.add_theme_stylebox_override("panel", create_board_shell_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 42)
-	m.add_theme_constant_override("margin_right", 42)
-	m.add_theme_constant_override("margin_top", 34)
-	m.add_theme_constant_override("margin_bottom", 34)
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 24)
+	m.add_theme_constant_override("margin_bottom", 24)
 	card.add_child(m)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 16)
+	vbox.add_theme_constant_override("separation", 14)
 	m.add_child(vbox)
 
 	# 1. Top bar with close button and title

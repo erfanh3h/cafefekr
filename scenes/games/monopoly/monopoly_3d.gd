@@ -305,8 +305,7 @@ func _build_hud() -> void:
 
 	hud_root = Control.new()
 	hud_root.name = "MonopolyHUDRoot"
-	hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	hud_root.size = Vector2(1080, 1920)
+	hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(hud_root)
 
@@ -488,36 +487,36 @@ func _build_portfolio_modal() -> void:
 	portfolio_backdrop.add_child(cc)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(960, 1080)
+	panel.custom_minimum_size = Vector2(640, 1000)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.09, 0.07, 0.06, 0.98), Color(0.94, 0.76, 0.34, 0.92), 26, 3))
 	cc.add_child(panel)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 24)
-	m.add_theme_constant_override("margin_right", 24)
-	m.add_theme_constant_override("margin_top", 22)
-	m.add_theme_constant_override("margin_bottom", 22)
+	m.add_theme_constant_override("margin_left", 16)
+	m.add_theme_constant_override("margin_right", 16)
+	m.add_theme_constant_override("margin_top", 20)
+	m.add_theme_constant_override("margin_bottom", 20)
 	panel.add_child(m)
 
 	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 14)
+	vb.add_theme_constant_override("separation", 12)
 	m.add_child(vb)
 
 	var hdr := HBoxContainer.new()
 	vb.add_child(hdr)
 	var btn_x := Button.new()
 	btn_x.text = "✕ بستن"
-	btn_x.custom_minimum_size = Vector2(140, 62)
-	_style_btn(btn_x, Color(0.45, 0.14, 0.16, 0.96), Color(0.95, 0.45, 0.45, 0.9), Color.WHITE, 25)
+	btn_x.custom_minimum_size = Vector2(110, 52)
+	_style_btn(btn_x, Color(0.45, 0.14, 0.16, 0.96), Color(0.95, 0.45, 0.45, 0.9), Color.WHITE, 22)
 	btn_x.pressed.connect(func(): portfolio_backdrop.visible = false)
 	hdr.add_child(btn_x)
 
-	portfolio_title_lbl = _make_lbl("🏘️ مدیریت املاک و ساخت‌وساز", 38, Color(1.0, 0.88, 0.42), HORIZONTAL_ALIGNMENT_RIGHT, 3)
+	portfolio_title_lbl = _make_lbl("🏘️ مدیریت املاک و ساخت‌وساز", 28, Color(1.0, 0.88, 0.42), HORIZONTAL_ALIGNMENT_RIGHT, 3)
 	portfolio_title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hdr.add_child(portfolio_title_lbl)
 
-	var sub := _make_lbl("ساخت خانه فقط پس از مالکیت هر ۲ ملک هم‌رنگ و به‌صورت متعادل مجاز است.", 27, Color(0.88, 0.91, 0.94), HORIZONTAL_ALIGNMENT_RIGHT, 2)
+	var sub := _make_lbl("ساخت خانه فقط پس از مالکیت هر ۲ ملک هم‌رنگ و به‌صورت متعادل مجاز است.", 20, Color(0.88, 0.91, 0.94), HORIZONTAL_ALIGNMENT_RIGHT, 2)
 	vb.add_child(sub)
 
 	var sc := ScrollContainer.new()
@@ -546,16 +545,16 @@ func _build_inspector_modal() -> void:
 	inspector_backdrop.add_child(cc)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(880, 0)
+	panel.custom_minimum_size = Vector2(640, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.09, 0.08, 0.07, 0.98), Color(0.95, 0.80, 0.36, 0.94), 24, 3))
 	cc.add_child(panel)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 24)
-	m.add_theme_constant_override("margin_right", 24)
-	m.add_theme_constant_override("margin_top", 22)
-	m.add_theme_constant_override("margin_bottom", 22)
+	m.add_theme_constant_override("margin_left", 16)
+	m.add_theme_constant_override("margin_right", 16)
+	m.add_theme_constant_override("margin_top", 18)
+	m.add_theme_constant_override("margin_bottom", 18)
 	panel.add_child(m)
 
 	inspector_card_vbox = VBoxContainer.new()
@@ -579,16 +578,16 @@ func _build_trade_builder_modal() -> void:
 	trade_builder_backdrop.add_child(cc)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(960, 1080)
+	panel.custom_minimum_size = Vector2(640, 1000)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.08, 0.07, 0.09, 0.98), Color(0.96, 0.74, 0.28, 0.94), 26, 3))
 	cc.add_child(panel)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 24)
-	m.add_theme_constant_override("margin_right", 24)
-	m.add_theme_constant_override("margin_top", 22)
-	m.add_theme_constant_override("margin_bottom", 22)
+	m.add_theme_constant_override("margin_left", 16)
+	m.add_theme_constant_override("margin_right", 16)
+	m.add_theme_constant_override("margin_top", 18)
+	m.add_theme_constant_override("margin_bottom", 18)
 	panel.add_child(m)
 
 	var sc := ScrollContainer.new()
@@ -613,16 +612,16 @@ func _build_trade_incoming_modal() -> void:
 	trade_incoming_backdrop.add_child(cc)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(860, 0)
+	panel.custom_minimum_size = Vector2(640, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.10, 0.08, 0.06, 0.98), Color(0.98, 0.80, 0.30, 0.96), 26, 3))
 	cc.add_child(panel)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 26)
-	m.add_theme_constant_override("margin_right", 26)
-	m.add_theme_constant_override("margin_top", 24)
-	m.add_theme_constant_override("margin_bottom", 24)
+	m.add_theme_constant_override("margin_left", 16)
+	m.add_theme_constant_override("margin_right", 16)
+	m.add_theme_constant_override("margin_top", 18)
+	m.add_theme_constant_override("margin_bottom", 18)
 	panel.add_child(m)
 
 	trade_incoming_vbox = VBoxContainer.new()
@@ -633,12 +632,12 @@ func _build_trade_incoming_modal() -> void:
 func _build_card_popup() -> void:
 	card_popup_panel = PanelContainer.new()
 	card_popup_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	card_popup_panel.offset_left = -430
-	card_popup_panel.offset_right = 430
+	card_popup_panel.offset_left = -310
+	card_popup_panel.offset_right = 310
 	card_popup_panel.offset_top = 414
 	card_popup_panel.offset_bottom = 414
 	card_popup_panel.grow_vertical = Control.GROW_DIRECTION_END
-	card_popup_panel.custom_minimum_size = Vector2(860, 200)
+	card_popup_panel.custom_minimum_size = Vector2(620, 160)
 	card_popup_panel.visible = false
 	card_popup_panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.14, 0.08, 0.04, 0.98), Color(1.0, 0.82, 0.28, 0.96), 24, 3))
 	card_popup_panel.gui_input.connect(func(ev: InputEvent):
@@ -648,45 +647,47 @@ func _build_card_popup() -> void:
 	hud_root.add_child(card_popup_panel)
 
 	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 26)
-	m.add_theme_constant_override("margin_right", 26)
-	m.add_theme_constant_override("margin_top", 18)
-	m.add_theme_constant_override("margin_bottom", 18)
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 16)
+	m.add_theme_constant_override("margin_bottom", 16)
 	card_popup_panel.add_child(m)
 
 	var vb := VBoxContainer.new()
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
-	vb.add_theme_constant_override("separation", 10)
+	vb.add_theme_constant_override("separation", 8)
 	m.add_child(vb)
 
-	card_popup_title = _make_lbl("🎴 کارت شانس", 38, Color(1.0, 0.88, 0.36), HORIZONTAL_ALIGNMENT_CENTER, 4)
+	card_popup_title = _make_lbl("🎴 کارت شانس", 28, Color(1.0, 0.88, 0.36), HORIZONTAL_ALIGNMENT_CENTER, 3)
 	vb.add_child(card_popup_title)
 
-	card_popup_desc = _make_lbl("", 28, Color(0.98, 0.96, 0.92), HORIZONTAL_ALIGNMENT_CENTER, 3, true)
-	card_popup_desc.custom_minimum_size = Vector2(760, 0)
+	card_popup_desc = _make_lbl("", 22, Color(0.98, 0.96, 0.92), HORIZONTAL_ALIGNMENT_CENTER, 2, true)
+	card_popup_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card_popup_desc.custom_minimum_size = Vector2(0, 0)
 	vb.add_child(card_popup_desc)
 
 
 func _build_hint_banner() -> void:
 	hint_banner_panel = PanelContainer.new()
 	hint_banner_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	hint_banner_panel.offset_left = -450
-	hint_banner_panel.offset_right = 450
+	hint_banner_panel.offset_left = -310
+	hint_banner_panel.offset_right = 310
 	hint_banner_panel.offset_top = 414
 	hint_banner_panel.offset_bottom = 414
 	hint_banner_panel.grow_vertical = Control.GROW_DIRECTION_END
 	hint_banner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hint_banner_panel.visible = false
 	hint_banner_style = _make_glass_style(Color(0.08, 0.06, 0.05, 0.96), Color(1.0, 0.80, 0.28, 0.95), 22, 3)
-	hint_banner_style.content_margin_left = 26
-	hint_banner_style.content_margin_right = 26
-	hint_banner_style.content_margin_top = 14
-	hint_banner_style.content_margin_bottom = 14
+	hint_banner_style.content_margin_left = 20
+	hint_banner_style.content_margin_right = 20
+	hint_banner_style.content_margin_top = 12
+	hint_banner_style.content_margin_bottom = 12
 	hint_banner_panel.add_theme_stylebox_override("panel", hint_banner_style)
 	hud_root.add_child(hint_banner_panel)
 
-	hint_banner_lbl = _make_lbl("", 28, Color(1.0, 0.96, 0.86), HORIZONTAL_ALIGNMENT_CENTER, 4, true)
-	hint_banner_lbl.custom_minimum_size = Vector2(780, 0)
+	hint_banner_lbl = _make_lbl("", 22, Color(1.0, 0.96, 0.86), HORIZONTAL_ALIGNMENT_CENTER, 3, true)
+	hint_banner_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hint_banner_lbl.custom_minimum_size = Vector2(0, 0)
 	hint_banner_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hint_banner_panel.add_child(hint_banner_lbl)
 
@@ -1097,8 +1098,9 @@ func _populate_portfolio_list() -> void:
 			owned_ids.append(tid)
 
 	if owned_ids.is_empty():
-		var empty_lbl := _make_lbl("هنوز هیچ ملکی نخریده‌اید! با فرود روی خانه‌های آزاد یا شرکت در مزایده، املاک تهران را بخرید.", 28, Color(0.86, 0.84, 0.80), HORIZONTAL_ALIGNMENT_CENTER, 2, true)
-		empty_lbl.custom_minimum_size = Vector2(780, 0)
+		var empty_lbl := _make_lbl("هنوز هیچ ملکی نخریده‌اید! با فرود روی خانه‌های آزاد یا شرکت در مزایده، املاک تهران را بخرید.", 22, Color(0.86, 0.84, 0.80), HORIZONTAL_ALIGNMENT_CENTER, 2, true)
+		empty_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		empty_lbl.custom_minimum_size = Vector2(0, 0)
 		portfolio_list_vbox.add_child(empty_lbl)
 		return
 

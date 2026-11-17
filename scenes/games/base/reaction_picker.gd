@@ -118,12 +118,12 @@ func _build_grid() -> void:
 
 	for r_id in POPULAR_REACTIONS:
 		var card = PanelContainer.new()
-		card.custom_minimum_size = Vector2(140, 140)
-		card.pivot_offset = Vector2(70, 70)
+		card.custom_minimum_size = Vector2(110, 110)
+		card.pivot_offset = Vector2(55, 55)
 		card.add_theme_stylebox_override("panel", empty_style)
 		
 		var btn = TextureButton.new()
-		btn.custom_minimum_size = Vector2(140, 140)
+		btn.custom_minimum_size = Vector2(110, 110)
 		btn.ignore_texture_size = true
 		btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		
@@ -160,7 +160,7 @@ func _build_kori_list() -> void:
 	_kori_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_kori_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_kori_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	_kori_scroll.custom_minimum_size = Vector2(760, 620)
+	_kori_scroll.custom_minimum_size = Vector2(0, 520)
 	_kori_scroll.visible = false
 
 	_kori_grid = GridContainer.new()
@@ -189,14 +189,14 @@ func _build_kori_list() -> void:
 	for idx in range(KORIS.size()):
 		var card = PanelContainer.new()
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.custom_minimum_size = Vector2(360, 98)
+		card.custom_minimum_size = Vector2(0, 72)
 		card.mouse_filter = Control.MOUSE_FILTER_PASS
 		card.add_theme_stylebox_override("panel", normal_style)
 
 		var lbl = Label.new()
 		lbl.text = KORIS[idx]
 		lbl.add_theme_font_override("font", FONT_FA)
-		lbl.add_theme_font_size_override("font_size", 34)
+		lbl.add_theme_font_size_override("font_size", 22)
 		lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 		lbl.add_theme_constant_override("shadow_offset_y", 2)

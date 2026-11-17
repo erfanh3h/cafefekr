@@ -2386,7 +2386,7 @@ func _show_offline_dialog() -> void:
 		_offline_dialog.add_child(center)
 
 		var panel = PanelContainer.new()
-		panel.custom_minimum_size = Vector2(780, 480)
+		panel.custom_minimum_size = Vector2(620, 440)
 		panel.mouse_filter = Control.MOUSE_FILTER_STOP
 		var style = StyleBoxTexture.new()
 		style.texture = preload("res://assets/images/frames/board.png")
@@ -2398,15 +2398,15 @@ func _show_offline_dialog() -> void:
 		center.add_child(panel)
 
 		var margin = MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 48)
-		margin.add_theme_constant_override("margin_top", 44)
-		margin.add_theme_constant_override("margin_right", 48)
-		margin.add_theme_constant_override("margin_bottom", 44)
+		margin.add_theme_constant_override("margin_left", 24)
+		margin.add_theme_constant_override("margin_top", 24)
+		margin.add_theme_constant_override("margin_right", 24)
+		margin.add_theme_constant_override("margin_bottom", 24)
 		panel.add_child(margin)
 
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 24)
+		vbox.add_theme_constant_override("separation", 18)
 		margin.add_child(vbox)
 
 		var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
@@ -2415,7 +2415,7 @@ func _show_offline_dialog() -> void:
 		lbl_title.text = "📡 عدم ارتباط با سرور"
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_title.add_theme_font_override("font", font_hekayat)
-		lbl_title.add_theme_font_size_override("font_size", 46)
+		lbl_title.add_theme_font_size_override("font_size", 34)
 		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45))
 		lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 		lbl_title.add_theme_constant_override("shadow_outline_size", 3)
@@ -2427,9 +2427,10 @@ func _show_offline_dialog() -> void:
 لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید."
 		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		lbl_desc.custom_minimum_size = Vector2(640, 120)
+		lbl_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl_desc.custom_minimum_size = Vector2(0, 90)
 		lbl_desc.add_theme_font_override("font", font_hekayat)
-		lbl_desc.add_theme_font_size_override("font_size", 30)
+		lbl_desc.add_theme_font_size_override("font_size", 22)
 		lbl_desc.add_theme_color_override("font_color", Color(0.96, 0.91, 0.82))
 		vbox.add_child(lbl_desc)
 
@@ -2437,16 +2438,16 @@ func _show_offline_dialog() -> void:
 		_offline_status_lbl.text = ""
 		_offline_status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_offline_status_lbl.add_theme_font_override("font", font_hekayat)
-		_offline_status_lbl.add_theme_font_size_override("font_size", 26)
+		_offline_status_lbl.add_theme_font_size_override("font_size", 22)
 		_offline_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.65, 0.45))
 		vbox.add_child(_offline_status_lbl)
 
 		_offline_retry_btn = Button.new()
 		_offline_retry_btn.text = "🔄 تلاش مجدد"
-		_offline_retry_btn.custom_minimum_size = Vector2(380, 108)
+		_offline_retry_btn.custom_minimum_size = Vector2(260, 68)
 		_offline_retry_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		_offline_retry_btn.add_theme_font_override("font", font_hekayat)
-		_offline_retry_btn.add_theme_font_size_override("font_size", 34)
+		_offline_retry_btn.add_theme_font_size_override("font_size", 24)
 		KenneyUI.style_button(_offline_retry_btn, KenneyUI.COLOR_GREEN)
 		_offline_retry_btn.pressed.connect(_on_offline_retry_pressed)
 		vbox.add_child(_offline_retry_btn)
@@ -2589,7 +2590,7 @@ func _show_menu_toast(msg: String) -> void:
 
 		_menu_toast_label.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 
-		_menu_toast_label.add_theme_font_size_override("font_size", 32)
+		_menu_toast_label.add_theme_font_size_override("font_size", 24)
 
 		_menu_toast_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.45))
 
@@ -2601,7 +2602,7 @@ func _show_menu_toast(msg: String) -> void:
 
 		_menu_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-		_menu_toast_label.custom_minimum_size = Vector2(760, 80)
+		_menu_toast_label.custom_minimum_size = Vector2(580, 64)
 
 		_menu_toast_label.anchors_preset = Control.PRESET_CENTER_BOTTOM
 
@@ -2613,13 +2614,13 @@ func _show_menu_toast(msg: String) -> void:
 
 		_menu_toast_label.anchor_bottom = 1.0
 
-		_menu_toast_label.offset_left = -380.0
+		_menu_toast_label.offset_left = -290.0
 
-		_menu_toast_label.offset_right = 380.0
+		_menu_toast_label.offset_right = 290.0
 
-		_menu_toast_label.offset_top = -320.0
+		_menu_toast_label.offset_top = -240.0
 
-		_menu_toast_label.offset_bottom = -240.0
+		_menu_toast_label.offset_bottom = -176.0
 
 		_menu_toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -2777,7 +2778,7 @@ func _show_ranked_locked_dialog() -> void:
 		_ranked_locked_overlay.add_child(center)
 
 		_ranked_locked_panel = PanelContainer.new()
-		_ranked_locked_panel.custom_minimum_size = Vector2(820, 520)
+		_ranked_locked_panel.custom_minimum_size = Vector2(620, 480)
 		_ranked_locked_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 		var style = StyleBoxTexture.new()
 		style.texture = preload("res://assets/images/frames/board.png")
@@ -2789,36 +2790,37 @@ func _show_ranked_locked_dialog() -> void:
 		center.add_child(_ranked_locked_panel)
 
 		var margin = MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 48)
-		margin.add_theme_constant_override("margin_top", 40)
-		margin.add_theme_constant_override("margin_right", 48)
-		margin.add_theme_constant_override("margin_bottom", 40)
+		margin.add_theme_constant_override("margin_left", 20)
+		margin.add_theme_constant_override("margin_top", 24)
+		margin.add_theme_constant_override("margin_right", 20)
+		margin.add_theme_constant_override("margin_bottom", 24)
 		_ranked_locked_panel.add_child(margin)
 
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 20)
+		vbox.add_theme_constant_override("separation", 16)
 		margin.add_child(vbox)
 
 		var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
 
 		var lbl_title = Label.new()
-		lbl_title.text = "🔒 بخش مسابقات رنک آنلاین قفل است"
+		lbl_title.text = "🔒 مسابقات رنک قفل است"
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_title.add_theme_font_override("font", font_hekayat)
-		lbl_title.add_theme_font_size_override("font_size", 44)
+		lbl_title.add_theme_font_size_override("font_size", 30)
 		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 		lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 		lbl_title.add_theme_constant_override("shadow_outline_size", 3)
 		vbox.add_child(lbl_title)
 
 		var lbl_desc = Label.new()
-		lbl_desc.text = "برای تضمین کیفیت مسابقات رده‌بندی و آشنایی با بازی‌ها،\nورود به مسابقات دونفره آنلاین پس از رسیدن به سطح ۳ (۱۶۰ XP) بازگشایی می‌شود."
+		lbl_desc.text = "برای تضمین کیفیت مسابقات رده‌بندی،\nورود پس از رسیدن به سطح ۳ بازگشایی می‌شود."
 		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		lbl_desc.custom_minimum_size = Vector2(680, 70)
+		lbl_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl_desc.custom_minimum_size = Vector2(0, 50)
 		lbl_desc.add_theme_font_override("font", font_hekayat)
-		lbl_desc.add_theme_font_size_override("font_size", 27)
+		lbl_desc.add_theme_font_size_override("font_size", 21)
 		lbl_desc.add_theme_color_override("font_color", Color(0.96, 0.91, 0.82))
 		vbox.add_child(lbl_desc)
 
@@ -3023,7 +3025,7 @@ func _show_force_update_dialog() -> void:
 	_force_update_overlay.add_child(center)
 
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(800, 480)
+	panel.custom_minimum_size = Vector2(620, 420)
 	var panel_sb = StyleBoxTexture.new()
 	panel_sb.texture = preload("res://assets/images/frames/board.png")
 	panel_sb.texture_margin_left = 60.0
@@ -3034,22 +3036,22 @@ func _show_force_update_dialog() -> void:
 	center.add_child(panel)
 
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 48)
-	margin.add_theme_constant_override("margin_top", 44)
-	margin.add_theme_constant_override("margin_right", 48)
-	margin.add_theme_constant_override("margin_bottom", 44)
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 24)
 	panel.add_child(margin)
 
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 24)
+	vbox.add_theme_constant_override("separation", 18)
 	margin.add_child(vbox)
 
 	var lbl_title = Label.new()
 	lbl_title.text = "🔄 به‌روزرسانی اجباری"
 	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_title.add_theme_font_override("font", font_hekayat)
-	lbl_title.add_theme_font_size_override("font_size", 42)
+	lbl_title.add_theme_font_size_override("font_size", 32)
 	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	lbl_title.add_theme_constant_override("shadow_outline_size", 3)
@@ -3059,17 +3061,18 @@ func _show_force_update_dialog() -> void:
 	lbl_msg.text = "نسخه جدیدی از بازی در دسترس است.\nلطفاً بازی را به روز رسانی کنید."
 	lbl_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_msg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_msg.add_theme_font_override("font", font_hekayat)
-	lbl_msg.add_theme_font_size_override("font_size", 30)
+	lbl_msg.add_theme_font_size_override("font_size", 22)
 	lbl_msg.add_theme_color_override("font_color", Color(0.95, 0.90, 0.82))
 	vbox.add_child(lbl_msg)
 
 	var btn_update = Button.new()
 	btn_update.text = "به‌روزرسانی"
-	btn_update.custom_minimum_size = Vector2(300, 90)
+	btn_update.custom_minimum_size = Vector2(240, 64)
 	btn_update.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	btn_update.add_theme_font_override("font", font_hekayat)
-	btn_update.add_theme_font_size_override("font_size", 34)
+	btn_update.add_theme_font_size_override("font_size", 24)
 	KenneyUI.style_button(btn_update, KenneyUI.COLOR_GREEN)
 	btn_update.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -3110,7 +3113,7 @@ func _show_queue_closed_dialog() -> void:
 	_queue_closed_overlay.add_child(center)
 
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(760, 420)
+	panel.custom_minimum_size = Vector2(620, 380)
 	var panel_sb = StyleBoxTexture.new()
 	panel_sb.texture = preload("res://assets/images/frames/board.png")
 	panel_sb.texture_margin_left = 60.0
@@ -3121,22 +3124,22 @@ func _show_queue_closed_dialog() -> void:
 	center.add_child(panel)
 
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 48)
-	margin.add_theme_constant_override("margin_top", 44)
-	margin.add_theme_constant_override("margin_right", 48)
-	margin.add_theme_constant_override("margin_bottom", 44)
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 24)
 	panel.add_child(margin)
 
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 24)
+	vbox.add_theme_constant_override("separation", 18)
 	margin.add_child(vbox)
 
 	var lbl_title = Label.new()
 	lbl_title.text = "⛔ صف رده‌بندی موقتاً بسته است"
 	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_title.add_theme_font_override("font", font_hekayat)
-	lbl_title.add_theme_font_size_override("font_size", 38)
+	lbl_title.add_theme_font_size_override("font_size", 30)
 	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	vbox.add_child(lbl_title)
 
@@ -3144,17 +3147,18 @@ func _show_queue_closed_dialog() -> void:
 	lbl_msg.text = "صف مسابقات رده‌بندی در حال حاضر بسته است.\nلطفاً بعداً مراجعه نمایید."
 	lbl_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_msg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_msg.add_theme_font_override("font", font_hekayat)
-	lbl_msg.add_theme_font_size_override("font_size", 28)
+	lbl_msg.add_theme_font_size_override("font_size", 22)
 	lbl_msg.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
 	vbox.add_child(lbl_msg)
 
 	var btn_ok = Button.new()
 	btn_ok.text = "متوجه شدم"
-	btn_ok.custom_minimum_size = Vector2(240, 80)
+	btn_ok.custom_minimum_size = Vector2(220, 58)
 	btn_ok.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	btn_ok.add_theme_font_override("font", font_hekayat)
-	btn_ok.add_theme_font_size_override("font_size", 30)
+	btn_ok.add_theme_font_size_override("font_size", 22)
 	KenneyUI.style_button(btn_ok, KenneyUI.COLOR_YELLOW)
 	btn_ok.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -3202,7 +3206,7 @@ func _show_change_username_dialog() -> void:
 	_change_username_dialog.add_child(center)
 
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(760, 520)
+	panel.custom_minimum_size = Vector2(620, 440)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var style = StyleBoxTexture.new()
 	style.texture = preload("res://assets/images/frames/board.png")
@@ -3214,22 +3218,22 @@ func _show_change_username_dialog() -> void:
 	center.add_child(panel)
 
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 48)
-	margin.add_theme_constant_override("margin_top", 44)
-	margin.add_theme_constant_override("margin_right", 48)
-	margin.add_theme_constant_override("margin_bottom", 44)
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 24)
 	panel.add_child(margin)
 
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 20)
+	vbox.add_theme_constant_override("separation", 16)
 	margin.add_child(vbox)
 
 	var lbl_title = Label.new()
 	lbl_title.text = "✏️ تغییر نام کاربری"
 	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_title.add_theme_font_override("font", font_hekayat)
-	lbl_title.add_theme_font_size_override("font_size", 42)
+	lbl_title.add_theme_font_size_override("font_size", 32)
 	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	lbl_title.add_theme_constant_override("shadow_outline_size", 3)
@@ -3239,19 +3243,19 @@ func _show_change_username_dialog() -> void:
 	lbl_desc.text = "نام کاربری جدید خود را وارد کنید:"
 	lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_desc.add_theme_font_override("font", font_hekayat)
-	lbl_desc.add_theme_font_size_override("font_size", 28)
+	lbl_desc.add_theme_font_size_override("font_size", 22)
 	lbl_desc.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
 	vbox.add_child(lbl_desc)
 
 	var input_name = LineEdit.new()
-	input_name.custom_minimum_size = Vector2(500, 80)
+	input_name.custom_minimum_size = Vector2(460, 58)
 	input_name.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	input_name.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	input_name.text = GameManager.get_username()
 	input_name.placeholder_text = "نام کاربری جدید..."
 	input_name.max_length = 30
 	input_name.add_theme_font_override("font", font_hekayat)
-	input_name.add_theme_font_size_override("font_size", 32)
+	input_name.add_theme_font_size_override("font_size", 24)
 	input_name.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	var in_style = StyleBoxFlat.new()
 	in_style.bg_color = Color(0.12, 0.08, 0.05, 0.95)
@@ -3265,20 +3269,22 @@ func _show_change_username_dialog() -> void:
 
 	var btn_hbox = HBoxContainer.new()
 	btn_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_hbox.add_theme_constant_override("separation", 24)
+	btn_hbox.add_theme_constant_override("separation", 18)
 	vbox.add_child(btn_hbox)
 
 	var btn_confirm = Button.new()
 	btn_confirm.text = "تأیید"
-	btn_confirm.custom_minimum_size = Vector2(240, 84)
+	btn_confirm.custom_minimum_size = Vector2(180, 60)
 	btn_confirm.add_theme_font_override("font", font_hekayat)
-	btn_confirm.add_theme_font_size_override("font_size", 32)
+	btn_confirm.add_theme_font_size_override("font_size", 22)
 	KenneyUI.style_button(btn_confirm, KenneyUI.COLOR_GREEN)
 	btn_hbox.add_child(btn_confirm)
 
 	var btn_cancel = Button.new()
 	btn_cancel.text = "انصراف"
-	btn_cancel.custom_minimum_size = Vector2(200, 84)
+	btn_cancel.custom_minimum_size = Vector2(160, 60)
+	btn_cancel.add_theme_font_override("font", font_hekayat)
+	btn_cancel.add_theme_font_size_override("font_size", 22)
 	btn_cancel.add_theme_font_override("font", font_hekayat)
 	btn_cancel.add_theme_font_size_override("font_size", 30)
 	KenneyUI.style_button(btn_cancel, KenneyUI.COLOR_GREY)
@@ -3646,8 +3652,8 @@ func _setup_watch_live_dock_button() -> void:
 		return
 
 	if is_instance_valid(bottom_dock):
-		bottom_dock.offset_left = -515.0
-		bottom_dock.offset_right = 515.0
+		bottom_dock.offset_left = -345.0
+		bottom_dock.offset_right = 345.0
 	dock_hbox.add_theme_constant_override("separation", 10)
 
 	btn_watch_live = Button.new()

@@ -94,7 +94,7 @@ corner_radius_bottom_left = 7
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 440.0
+offset_bottom = 360.0
 grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("1_header_script")
@@ -107,40 +107,40 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 46
-theme_override_constants/margin_right = 16
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 12
 
 [node name="VBoxMain" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 alignment = 0
 
 [node name="PlayersRow" type="HBoxContainer" parent="Margin/VBoxMain"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="P1Card" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow"]
-custom_minimum_size = Vector2(0, 140)
+custom_minimum_size = Vector2(0, 108)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
 [node name="HBox" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P1Card"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox"]
-custom_minimum_size = Vector2(98, 98)
+custom_minimum_size = Vector2(68, 68)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer"]
-custom_minimum_size = Vector2(98, 98)
+custom_minimum_size = Vector2(68, 68)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -171,17 +171,17 @@ theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 22
 text = "بازیکن ۱"
 
 [node name="RoleBadge" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 18
 text = "🔴"
 
 [node name="ScoreBadge" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxEmpty_score")
@@ -192,7 +192,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 30
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -204,45 +204,45 @@ layout_mode = 2
 mouse_filter = 2
 
 [node name="BubbleFrame" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/ReactionBubble"]
-custom_minimum_size = Vector2(120, 120)
+custom_minimum_size = Vector2(88, 88)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -60.0
-offset_top = -60.0
-offset_right = 60.0
-offset_bottom = 60.0
+offset_left = -44.0
+offset_top = -44.0
+offset_right = 44.0
+offset_bottom = 44.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_emote_bubble")
 
 [node name="Icon" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P1Card/ReactionBubble/BubbleFrame"]
-custom_minimum_size = Vector2(92, 92)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
 [node name="P2Card" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow"]
-custom_minimum_size = Vector2(0, 140)
+custom_minimum_size = Vector2(0, 108)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
 [node name="HBox" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P2Card"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox"]
-custom_minimum_size = Vector2(98, 98)
+custom_minimum_size = Vector2(68, 68)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer"]
-custom_minimum_size = Vector2(98, 98)
+custom_minimum_size = Vector2(68, 68)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -273,17 +273,17 @@ theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 22
 text = "بازیکن ۲"
 
 [node name="RoleBadge" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 18
 text = "🔵"
 
 [node name="ScoreBadge" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxEmpty_score")
@@ -294,7 +294,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 30
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -306,38 +306,38 @@ layout_mode = 2
 mouse_filter = 2
 
 [node name="BubbleFrame" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/ReactionBubble"]
-custom_minimum_size = Vector2(120, 120)
+custom_minimum_size = Vector2(88, 88)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -60.0
-offset_top = -60.0
-offset_right = 60.0
-offset_bottom = 60.0
+offset_left = -44.0
+offset_top = -44.0
+offset_right = 44.0
+offset_bottom = 44.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_emote_bubble")
 
 [node name="Icon" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P2Card/ReactionBubble/BubbleFrame"]
-custom_minimum_size = Vector2(92, 92)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
 [node name="MatchDetailsBox" type="PanelContainer" parent="Margin/VBoxMain"]
-custom_minimum_size = Vector2(740, 0)
+custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_match_box")
 
 [node name="VBox" type="VBoxContainer" parent="Margin/VBoxMain/MatchDetailsBox"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="RoundPanel" type="PanelContainer" parent="Margin/VBoxMain/MatchDetailsBox/VBox"]
@@ -354,7 +354,7 @@ theme_override_constants/shadow_outline_size = 2
 theme_override_colors/font_outline_color = Color(0.15, 0.06, 0.02, 0.95)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 22
 text = "راند ۱ از ۵"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -365,7 +365,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 20
 text = "بازی درحال آغاز است..."
 horizontal_alignment = 1
 
@@ -380,14 +380,14 @@ theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 20
 text = "۱۰ ثانیه"
 horizontal_alignment = 1
 
 [node name="TurnTimerBar" type="ProgressBar" parent="Margin/VBoxMain/MatchDetailsBox/VBox"]
-custom_minimum_size = Vector2(440, 20)
+custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
 theme_override_styles/background = SubResource("StyleBoxFlat_turn_timer_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_timer_fill")
 value = 100.0

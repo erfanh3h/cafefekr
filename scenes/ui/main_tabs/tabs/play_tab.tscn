@@ -51,6 +51,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 20.0
+offset_right = -20.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
@@ -59,22 +61,22 @@ horizontal_scroll_mode = 0
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 22
+theme_override_constants/separation = 16
 alignment = 0
 
 [node name="TopBarRow" type="MarginContainer" parent="Scroll/Content"]
 layout_mode = 2
-theme_override_constants/margin_left = 40
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 40
-theme_override_constants/margin_bottom = 6
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 2
 
 [node name="HBox" type="HBoxContainer" parent="Scroll/Content/TopBarRow"]
 layout_mode = 2
 alignment = 0
 
 [node name="BtnWatchLive" type="Button" parent="Scroll/Content/TopBarRow/HBox"]
-custom_minimum_size = Vector2(88, 88)
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
@@ -127,7 +129,7 @@ size_flags_horizontal = 3
 mouse_filter = 2
 
 [node name="BtnExit" type="Button" parent="Scroll/Content/TopBarRow/HBox"]
-custom_minimum_size = Vector2(88, 88)
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
@@ -154,13 +156,13 @@ stretch_mode = 5
 [node name="CardsContainer" type="VBoxContainer" parent="Scroll/Content"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="BtnRanked" type="Button" parent="Scroll/Content/CardsContainer"]
-custom_minimum_size = Vector2(940, 184)
+custom_minimum_size = Vector2(0, 144)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
@@ -177,15 +179,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 64
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 64
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 10
 
 [node name="HBox" type="HBoxContainer" parent="Scroll/Content/CardsContainer/BtnRanked/Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="TextCol" type="VBoxContainer" parent="Scroll/Content/CardsContainer/BtnRanked/Margin/HBox"]
@@ -201,7 +203,7 @@ theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 28
 text = "رقابت دو نفره آنلاین"
 horizontal_alignment = 2
 
@@ -212,12 +214,12 @@ theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
 text = "دوئل نفس‌گیر تن‌به‌تن، کسب کاپ و صعود به صدر جدول قهرمانان"
 horizontal_alignment = 2
 
 [node name="IconControl" type="Control" parent="Scroll/Content/CardsContainer/BtnRanked/Margin/HBox"]
-custom_minimum_size = Vector2(106, 114)
+custom_minimum_size = Vector2(76, 76)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -235,9 +237,9 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnMultiRank" type="Button" parent="Scroll/Content/CardsContainer"]
-custom_minimum_size = Vector2(940, 184)
+custom_minimum_size = Vector2(0, 144)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
@@ -254,15 +256,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 64
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 64
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 10
 
 [node name="HBox" type="HBoxContainer" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="TextCol" type="VBoxContainer" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin/HBox"]
@@ -278,7 +280,7 @@ theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 28
 text = "رقابت چند نفره آنلاین"
 horizontal_alignment = 2
 
@@ -289,12 +291,12 @@ theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
 text = "نبرد همزمان ۳ و ۴ نفره، رقابت هوشمندانه برای تصاحب صدر"
 horizontal_alignment = 2
 
 [node name="IconControl" type="Control" parent="Scroll/Content/CardsContainer/BtnMultiRank/Margin/HBox"]
-custom_minimum_size = Vector2(106, 114)
+custom_minimum_size = Vector2(76, 76)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -312,9 +314,9 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnClassicRank" type="Button" parent="Scroll/Content/CardsContainer"]
-custom_minimum_size = Vector2(940, 184)
+custom_minimum_size = Vector2(0, 144)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
@@ -331,15 +333,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 64
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 64
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 10
 
 [node name="HBox" type="HBoxContainer" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="TextCol" type="VBoxContainer" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin/HBox"]
@@ -355,7 +357,7 @@ theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 28
 text = "رنک کلاسیک / هوش مصنوعی"
 horizontal_alignment = 2
 
@@ -366,12 +368,12 @@ theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
 text = "رقابت در ۲۵ بازی با قوانین رسمی، بازی با حریف یا تمرین با هوش مصنوعی"
 horizontal_alignment = 2
 
 [node name="IconControl" type="Control" parent="Scroll/Content/CardsContainer/BtnClassicRank/Margin/HBox"]
-custom_minimum_size = Vector2(106, 114)
+custom_minimum_size = Vector2(76, 76)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -389,9 +391,9 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnLobby" type="Button" parent="Scroll/Content/CardsContainer"]
-custom_minimum_size = Vector2(940, 184)
+custom_minimum_size = Vector2(0, 144)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 theme_override_styles/normal = SubResource("StyleBoxTexture_wood_btn")
@@ -408,15 +410,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 64
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 64
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 10
 
 [node name="HBox" type="HBoxContainer" parent="Scroll/Content/CardsContainer/BtnLobby/Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="TextCol" type="VBoxContainer" parent="Scroll/Content/CardsContainer/BtnLobby/Margin/HBox"]
@@ -432,7 +434,7 @@ theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 42
+theme_override_font_sizes/font_size = 28
 text = "اتاق دوستانه (لابی)"
 horizontal_alignment = 2
 
@@ -443,12 +445,12 @@ theme_override_colors/font_color = Color(1, 0.88, 0.55, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
 text = "ساخت یا ورود به اتاق با شناسه دعوت ۶ رقمی"
 horizontal_alignment = 2
 
 [node name="IconControl" type="Control" parent="Scroll/Content/CardsContainer/BtnLobby/Margin/HBox"]
-custom_minimum_size = Vector2(106, 114)
+custom_minimum_size = Vector2(76, 76)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2

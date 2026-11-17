@@ -606,28 +606,28 @@ func _build_inspector_and_log_modals() -> void:
 	_inspector_panel = PanelContainer.new()
 	_inspector_panel.name = "OpponentInspectorOverlay"
 	_inspector_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_inspector_panel.custom_minimum_size = Vector2(980, 840)
-	_inspector_panel.offset_left = -490
-	_inspector_panel.offset_right = 490
-	_inspector_panel.offset_top = -450
-	_inspector_panel.offset_bottom = 390
+	_inspector_panel.custom_minimum_size = Vector2(640, 840)
+	_inspector_panel.offset_left = -320
+	_inspector_panel.offset_right = 320
+	_inspector_panel.offset_top = -420
+	_inspector_panel.offset_bottom = 420
 	_inspector_panel.visible = false
 	_inspector_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_inspector_panel.add_theme_stylebox_override(
 		"panel",
-		_make_panel_style(Color(0.08, 0.055, 0.038, 0.98), Color(0.92, 0.74, 0.30, 0.96), 22, 3, 22, 18)
+		_make_panel_style(Color(0.08, 0.055, 0.038, 0.98), Color(0.92, 0.74, 0.30, 0.96), 22, 3, 16, 14)
 	)
 	_hud_root.add_child(_inspector_panel)
 
 	var ins_vbox: VBoxContainer = VBoxContainer.new()
-	ins_vbox.add_theme_constant_override("separation", 12)
+	ins_vbox.add_theme_constant_override("separation", 10)
 	_inspector_panel.add_child(ins_vbox)
 
 	var ins_top: HBoxContainer = HBoxContainer.new()
 	ins_vbox.add_child(ins_top)
 
-	var btn_close_ins: Button = _make_styled_button("✖ بستن", Color(0.38, 0.12, 0.12), Color(0.90, 0.44, 0.38), 31, 12)
-	btn_close_ins.custom_minimum_size = Vector2(136, 54)
+	var btn_close_ins: Button = _make_styled_button("✖ بستن", Color(0.38, 0.12, 0.12), Color(0.90, 0.44, 0.38), 22, 12)
+	btn_close_ins.custom_minimum_size = Vector2(110, 48)
 	btn_close_ins.pressed.connect(func() -> void: _inspector_panel.visible = false)
 	ins_top.add_child(btn_close_ins)
 
@@ -636,7 +636,7 @@ func _build_inspector_and_log_modals() -> void:
 	_inspector_title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_inspector_title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_inspector_title_lbl.add_theme_font_override("font", FontHekayat)
-	_inspector_title_lbl.add_theme_font_size_override("font_size", 40)
+	_inspector_title_lbl.add_theme_font_size_override("font_size", 28)
 	_inspector_title_lbl.add_theme_color_override("font_color", Color(0.98, 0.88, 0.56))
 	ins_top.add_child(_inspector_title_lbl)
 
@@ -666,28 +666,28 @@ func _build_inspector_and_log_modals() -> void:
 	_log_panel = PanelContainer.new()
 	_log_panel.name = "BattleLogOverlay"
 	_log_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_log_panel.custom_minimum_size = Vector2(940, 720)
-	_log_panel.offset_left = -470
-	_log_panel.offset_right = 470
-	_log_panel.offset_top = -380
-	_log_panel.offset_bottom = 340
+	_log_panel.custom_minimum_size = Vector2(640, 720)
+	_log_panel.offset_left = -320
+	_log_panel.offset_right = 320
+	_log_panel.offset_top = -360
+	_log_panel.offset_bottom = 360
 	_log_panel.visible = false
 	_log_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_log_panel.add_theme_stylebox_override(
 		"panel",
-		_make_panel_style(Color(0.08, 0.055, 0.038, 0.98), Color(0.90, 0.72, 0.28, 0.96), 22, 3, 22, 18)
+		_make_panel_style(Color(0.08, 0.055, 0.038, 0.98), Color(0.90, 0.72, 0.28, 0.96), 22, 3, 16, 14)
 	)
 	_hud_root.add_child(_log_panel)
 
 	var log_outer: VBoxContainer = VBoxContainer.new()
-	log_outer.add_theme_constant_override("separation", 12)
+	log_outer.add_theme_constant_override("separation", 10)
 	_log_panel.add_child(log_outer)
 
 	var log_top: HBoxContainer = HBoxContainer.new()
 	log_outer.add_child(log_top)
 
-	var btn_close_log: Button = _make_styled_button("✖ بستن", Color(0.38, 0.12, 0.12), Color(0.90, 0.44, 0.38), 31, 12)
-	btn_close_log.custom_minimum_size = Vector2(136, 54)
+	var btn_close_log: Button = _make_styled_button("✖ بستن", Color(0.38, 0.12, 0.12), Color(0.90, 0.44, 0.38), 22, 12)
+	btn_close_log.custom_minimum_size = Vector2(110, 48)
 	btn_close_log.pressed.connect(func() -> void: _log_panel.visible = false)
 	log_top.add_child(btn_close_log)
 
@@ -696,7 +696,7 @@ func _build_inspector_and_log_modals() -> void:
 	log_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	log_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	log_title.add_theme_font_override("font", FontHekayat)
-	log_title.add_theme_font_size_override("font_size", 40)
+	log_title.add_theme_font_size_override("font_size", 28)
 	log_title.add_theme_color_override("font_color", Color(0.98, 0.88, 0.56))
 	log_top.add_child(log_title)
 
