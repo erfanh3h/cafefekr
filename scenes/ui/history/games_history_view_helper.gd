@@ -209,8 +209,8 @@ static func _wrap_pad(control: Control, horiz_margin: int = 12) -> MarginContain
 
 static func _create_mode_card(title_text: String, val1: int, val2: int, val3: int, label1: String, label2: String, label3: String) -> PanelContainer:
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0, 150)
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+	panel.custom_minimum_size = Vector2(0, 140)
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
 
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -264,8 +264,8 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 
 static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) -> PanelContainer:
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0, 140)
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+	panel.custom_minimum_size = Vector2(0, 136)
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
 
 	var hbox = HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 14)
@@ -405,7 +405,7 @@ static func _create_stat_pill(text_content: String, text_color: Color, bg_color:
 static func _create_empty_card(msg: String) -> PanelContainer:
 	var p = PanelContainer.new()
 	p.custom_minimum_size = Vector2(0, 112)
-	p.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 54.0, 20.0))
+	p.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 14.0, 10.0))
 
 	var lbl = Label.new()
 	lbl.text = msg

@@ -293,19 +293,13 @@ func _clear_content() -> VBoxContainer:
 	return vbox
 
 
-func _open_player_profile(u_dict: Dictionary) -> void:
-	var prof_dlg: Node = null
-	if is_instance_valid(get_parent()):
-		prof_dlg = get_parent().get_node_or_null("UserProfileDialog")
-	if prof_dlg == null:
-		prof_dlg = get_tree().root.find_child("UserProfileDialog", true, false)
-	if prof_dlg and prof_dlg.has_method("open_for_user"):
-		var uid := str(u_dict.get("_id", u_dict.get("user_id", u_dict.get("id", ""))))
-		var clean_dict := u_dict.duplicate(true)
-		clean_dict["_id"] = uid
-		clean_dict["user_id"] = uid
-		prof_dlg.open_for_user(clean_dict)
-	else:
+func _open_player_profile(u_dict: Dictionary, role_text: String = "") -> void:
+	var uid := str(u_dict.get("_id", u_dict.get("user_id", u_dict.get("id", ""))))
+	var clean_dict := u_dict.duplicate(true)
+	clean_dict["_id"] = uid
+	clean_dict["user_id"] = uid
+	var dlg = UserProfileDialog.show_user(clean_dict, role_text, self)
+	if dlg == null:
 		_show_toast("خطا در باز کردن پروفایل بازیکن.", CafeSocialTheme.COL_CRIMSON_TEXT)
 
 

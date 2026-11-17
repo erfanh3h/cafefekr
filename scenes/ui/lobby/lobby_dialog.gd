@@ -423,48 +423,78 @@ func _update_game_grid_selection() -> void:
 		if is_instance_valid(card):
 			var is_selected = (g == selected_create_game_type)
 			var sb = StyleBoxFlat.new()
-			sb.bg_color = Color(0.22, 0.15, 0.1, 0.98)
-			sb.set_corner_radius_all(18)
-			sb.set_border_width_all(3)
-			sb.border_color = Color(1.0, 0.88, 0.28, 1.0) if is_selected else Color(0.82, 0.68, 0.38, 0.85)
-			sb.shadow_size = 2
+			sb.bg_color = Color(0.24, 0.16, 0.10, 0.98) if is_selected else Color(0.18, 0.12, 0.08, 0.98)
+			sb.set_corner_radius_all(16)
+			sb.set_border_width_all(4 if is_selected else 2)
+			sb.border_color = Color(1.0, 0.90, 0.35, 1.0) if is_selected else Color(0.72, 0.58, 0.32, 0.85)
+			sb.shadow_size = 3 if is_selected else 1
+			sb.shadow_offset = Vector2(0, 2)
 			card.add_theme_stylebox_override("normal", sb)
+
+func _calculate_game_card_side() -> float:
+	var total_w := 612.0
+	if is_instance_valid(scroll_games) and scroll_games.size.x > 100.0:
+		total_w = scroll_games.size.x - 12.0 # exclude scrollbar width
+	elif is_instance_valid(game_grid) and game_grid.size.x > 100.0:
+		total_w = game_grid.size.x
+	var col_w := maxf(120.0, floor((total_w - 10.0) / 2.0))
+	return col_w
 
 func _populate_game_grid() -> void:
 	for child in game_grid.get_children():
 		child.queue_free()
 	_game_cards.clear()
 	
+	var side_len := _calculate_game_card_side()
 	for g in available_games:
-		var card = _create_game_card(g)
+		var card = _create_game_card(g, side_len)
 		game_grid.add_child(card)
 		_game_cards[g] = card
+	
+	if not scroll_games.resized.is_connected(_on_game_grid_scroll_resized):
+		scroll_games.resized.connect(_on_game_grid_scroll_resized)
 
-func _create_game_card(g_type: String) -> Control:
+func _on_game_grid_scroll_resized() -> void:
+	var side_len := _calculate_game_card_side()
+	for card in _game_cards.values():
+		if is_instance_valid(card):
+			card.custom_minimum_size = Vector2(0, side_len)
+			card.pivot_offset = Vector2(side_len / 2.0, side_len / 2.0)
+
+func _create_game_card(g_type: String, initial_side: float = 290.0) -> Control:
 	var is_selected = (g_type == selected_create_game_type)
 	
 	var card = Button.new()
-	card.custom_minimum_size = Vector2(0, 140)
+	# 1:1 Aspect ratio (square cards) for 2-column mobile grid
+	card.custom_minimum_size = Vector2(0, initial_side)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(300, 70)
+	card.pivot_offset = Vector2(initial_side / 2.0, initial_side / 2.0)
 	
-	# Warm wooden mahogany card styling (lightweight shadows for 60fps)
+	# Keep square 1:1 aspect ratio when resized
+	card.item_rect_changed.connect(func():
+		var w = card.size.x
+		if w > 80.0 and absf(card.custom_minimum_size.y - w) > 2.0:
+			card.set_deferred("custom_minimum_size", Vector2(0, w))
+			card.pivot_offset = Vector2(w / 2.0, w / 2.0)
+	)
+	
+	# Warm wooden mahogany card styling
 	var style_normal = StyleBoxFlat.new()
-	style_normal.bg_color = Color(0.22, 0.15, 0.1, 0.98)
-	style_normal.set_corner_radius_all(18)
-	style_normal.set_border_width_all(3)
-	style_normal.border_color = Color(1.0, 0.88, 0.28, 1.0) if is_selected else Color(0.82, 0.68, 0.38, 0.85)
-	style_normal.shadow_size = 2
+	style_normal.bg_color = Color(0.24, 0.16, 0.10, 0.98) if is_selected else Color(0.18, 0.12, 0.08, 0.98)
+	style_normal.set_corner_radius_all(16)
+	style_normal.set_border_width_all(4 if is_selected else 2)
+	style_normal.border_color = Color(1.0, 0.90, 0.35, 1.0) if is_selected else Color(0.72, 0.58, 0.32, 0.85)
+	style_normal.shadow_size = 3 if is_selected else 1
 	style_normal.shadow_offset = Vector2(0, 2)
 	
 	var style_hover = StyleBoxFlat.new()
-	style_hover.bg_color = Color(0.3, 0.2, 0.13, 0.98)
-	style_hover.set_corner_radius_all(18)
-	style_hover.set_border_width_all(3)
+	style_hover.bg_color = Color(0.30, 0.20, 0.13, 0.98)
+	style_hover.set_corner_radius_all(16)
+	style_hover.set_border_width_all(4)
 	style_hover.border_color = Color(1.0, 0.94, 0.55, 1.0)
-	style_hover.shadow_size = 2
+	style_hover.shadow_size = 3
 	style_hover.shadow_offset = Vector2(0, 2)
 	
 	card.add_theme_stylebox_override("normal", style_normal)
@@ -479,26 +509,26 @@ func _create_game_card(g_type: String) -> Control:
 	bg_warmth.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(bg_warmth)
 	
-	# Cover artwork (brightened and modulated for crisp contrast)
+	# Cover artwork (square covered aspect)
 	var img = TextureRect.new()
 	img.set_anchors_preset(Control.PRESET_FULL_RECT)
 	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	img.modulate = Color(1.18, 1.12, 1.05)
+	img.modulate = Color(1.15, 1.10, 1.04)
 	img.texture = _get_game_texture(g_type)
 	card.add_child(img)
 	
 	# Bottom title banner with gold separator line
 	var banner = PanelContainer.new()
-	banner.anchor_top = 0.68
+	banner.anchor_top = 0.74
 	banner.anchor_right = 1.0
 	banner.anchor_bottom = 1.0
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var b_style = StyleBoxFlat.new()
-	b_style.bg_color = Color(0.12, 0.08, 0.05, 0.92)
+	b_style.bg_color = Color(0.12, 0.08, 0.05, 0.94)
 	b_style.border_width_top = 2
-	b_style.border_color = Color(0.85, 0.7, 0.35, 0.75)
+	b_style.border_color = Color(0.85, 0.7, 0.35, 0.85)
 	b_style.corner_radius_bottom_left = 16
 	b_style.corner_radius_bottom_right = 16
 	banner.add_theme_stylebox_override("panel", b_style)
@@ -506,7 +536,7 @@ func _create_game_card(g_type: String) -> Control:
 	var lbl = Label.new()
 	lbl.text = GameTypes.get_display_name_fa(g_type)
 	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl.add_theme_font_size_override("font_size", 28)
+	lbl.add_theme_font_size_override("font_size", 24)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 	lbl.add_theme_constant_override("shadow_outline_size", 3)
@@ -518,34 +548,32 @@ func _create_game_card(g_type: String) -> Control:
 	
 	# 2-player mode pill badge (top-left)
 	var mode_pill = PanelContainer.new()
-	mode_pill.position = Vector2(12, 12)
+	mode_pill.position = Vector2(8, 8)
 	mode_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var p_style = StyleBoxFlat.new()
-	p_style.bg_color = Color(0.16, 0.1, 0.06, 0.85)
+	p_style.bg_color = Color(0.14, 0.09, 0.05, 0.88)
 	p_style.border_width_left = 1
 	p_style.border_width_top = 1
 	p_style.border_width_right = 1
 	p_style.border_width_bottom = 1
 	p_style.border_color = Color(0.78, 0.62, 0.35, 0.8)
-	p_style.set_corner_radius_all(10)
-	p_style.content_margin_left = 10
-	p_style.content_margin_right = 10
-	p_style.content_margin_top = 4
-	p_style.content_margin_bottom = 4
+	p_style.set_corner_radius_all(8)
+	p_style.content_margin_left = 8
+	p_style.content_margin_right = 8
+	p_style.content_margin_top = 3
+	p_style.content_margin_bottom = 3
 	mode_pill.add_theme_stylebox_override("panel", p_style)
 	var mode_lbl = Label.new()
 	mode_lbl.text = "۲ تا ۴ نفره" if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP, GameTypes.MONOPOLY] else "۲ نفره"
 	mode_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	mode_lbl.add_theme_font_size_override("font_size", 18)
+	mode_lbl.add_theme_font_size_override("font_size", 16)
 	mode_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
 	mode_pill.add_child(mode_lbl)
 	card.add_child(mode_pill)
 	
 	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	
-	# Smooth 60fps Viewport-Coordinate Drag Scrolling + Clean Tap Selection:
-	# Uses exclusively viewport global mouse/touch position via InputEventMouseButton/Motion
-	# (emulate_mouse_from_touch handles mobile touch seamlessly without local-coordinate oscillation or hover audio ticking).
+	# Smooth 60fps Viewport-Coordinate Drag Scrolling + Clean Tap Selection
 	var drag_state = {"active": false, "dragging": false, "start_y": 0.0, "start_scroll": 0}
 	card.gui_input.connect(func(event: InputEvent):
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:

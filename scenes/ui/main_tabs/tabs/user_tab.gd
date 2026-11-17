@@ -118,6 +118,8 @@ func switch_subtab(tab_name: String) -> void:
 
 
 func _style_subnav_btn(btn: Button, is_act: bool) -> void:
+	btn.add_theme_font_override("font", _font_hekayat)
+	btn.add_theme_font_size_override("font_size", 20)
 	if is_act:
 		KenneyUI.style_button(btn, KenneyUI.COLOR_YELLOW)
 		btn.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
@@ -285,7 +287,7 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		else:
 			my_res = "unfinished"
 
-	var style_frame := CafeSocialTheme.create_frame_style(true, 54.0, 24.0)
+	var style_frame := CafeSocialTheme.create_frame_style(true, 16.0, 12.0)
 	btn.add_theme_stylebox_override("normal", style_frame)
 	btn.add_theme_stylebox_override("hover", style_frame)
 	btn.add_theme_stylebox_override("pressed", style_frame)
@@ -294,10 +296,10 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var pad := MarginContainer.new()
 	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pad.add_theme_constant_override("margin_left", 24)
-	pad.add_theme_constant_override("margin_right", 24)
-	pad.add_theme_constant_override("margin_top", 12)
-	pad.add_theme_constant_override("margin_bottom", 16)
+	pad.add_theme_constant_override("margin_left", 12)
+	pad.add_theme_constant_override("margin_right", 12)
+	pad.add_theme_constant_override("margin_top", 10)
+	pad.add_theme_constant_override("margin_bottom", 12)
 	btn.add_child(pad)
 
 	var row := HBoxContainer.new()
@@ -733,13 +735,13 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 
 	for sc in stat_cards_data:
 		var card := PanelContainer.new()
-		card.custom_minimum_size = Vector2(0, 150)
+		card.custom_minimum_size = Vector2(0, 130)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
 
 		var pad := MarginContainer.new()
-		pad.add_theme_constant_override("margin_left", 20)
-		pad.add_theme_constant_override("margin_right", 20)
+		pad.add_theme_constant_override("margin_left", 8)
+		pad.add_theme_constant_override("margin_right", 8)
 		card.add_child(pad)
 
 		var cv := VBoxContainer.new()
@@ -970,23 +972,23 @@ func _render_privacy() -> void:
 	# --- 1. Sound & Music Settings Card (Moved to Privacy) ---
 	var audio_margin := MarginContainer.new()
 	audio_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	audio_margin.add_theme_constant_override("margin_left", 48)
-	audio_margin.add_theme_constant_override("margin_right", 48)
+	audio_margin.add_theme_constant_override("margin_left", 10)
+	audio_margin.add_theme_constant_override("margin_right", 10)
 	content_privacy.add_child(audio_margin)
 
 	var audio_card := PanelContainer.new()
-	audio_card.custom_minimum_size = Vector2(0, 230)
+	audio_card.custom_minimum_size = Vector2(0, 190)
 	audio_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 14.0))
 	audio_margin.add_child(audio_card)
 
 	var a_vbox := VBoxContainer.new()
-	a_vbox.add_theme_constant_override("separation", 14)
+	a_vbox.add_theme_constant_override("separation", 10)
 	audio_card.add_child(a_vbox)
 
 	var a_title := Label.new()
 	a_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	a_title.add_theme_font_size_override("font_size", 32)
+	a_title.add_theme_font_size_override("font_size", 26)
 	a_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	a_title.text = "تنظیمات صدا و موسیقی کافه فکر"
 	a_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -994,30 +996,30 @@ func _render_privacy() -> void:
 
 	# Music row
 	var music_row := HBoxContainer.new()
-	music_row.add_theme_constant_override("separation", 16)
+	music_row.add_theme_constant_override("separation", 12)
 	a_vbox.add_child(music_row)
 
 	var chk_music := CheckButton.new()
 	chk_music.text = "موسیقی"
-	chk_music.custom_minimum_size = Vector2(100, 68)
+	chk_music.custom_minimum_size = Vector2(80, 50)
 	chk_music.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	chk_music.add_theme_font_size_override("font_size", 26)
+	chk_music.add_theme_font_size_override("font_size", 22)
 	chk_music.button_pressed = AudioManager.is_music_enabled
 	chk_music.focus_mode = Control.FOCUS_NONE
 	music_row.add_child(chk_music)
 
 	var music_slider := HSlider.new()
 	music_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	music_slider.custom_minimum_size = Vector2(0, 48)
+	music_slider.custom_minimum_size = Vector2(0, 44)
 	music_slider.min_value = 0.0
 	music_slider.max_value = 100.0
 	music_slider.value = AudioManager.music_volume * 100.0
 	music_row.add_child(music_slider)
 
 	var lbl_music_val := Label.new()
-	lbl_music_val.custom_minimum_size = Vector2(60, 0)
+	lbl_music_val.custom_minimum_size = Vector2(50, 0)
 	lbl_music_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	lbl_music_val.add_theme_font_size_override("font_size", 26)
+	lbl_music_val.add_theme_font_size_override("font_size", 20)
 	lbl_music_val.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 	lbl_music_val.text = "%s٪" % GameManager.to_fa_num(int(music_slider.value))
 	music_row.add_child(lbl_music_val)
@@ -1035,30 +1037,30 @@ func _render_privacy() -> void:
 
 	# SFX row
 	var sfx_row := HBoxContainer.new()
-	sfx_row.add_theme_constant_override("separation", 16)
+	sfx_row.add_theme_constant_override("separation", 12)
 	a_vbox.add_child(sfx_row)
 
 	var chk_sfx := CheckButton.new()
 	chk_sfx.text = "جلوه‌ها (SFX)"
-	chk_sfx.custom_minimum_size = Vector2(100, 68)
+	chk_sfx.custom_minimum_size = Vector2(80, 50)
 	chk_sfx.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	chk_sfx.add_theme_font_size_override("font_size", 26)
+	chk_sfx.add_theme_font_size_override("font_size", 22)
 	chk_sfx.button_pressed = AudioManager.is_sound_enabled
 	chk_sfx.focus_mode = Control.FOCUS_NONE
 	sfx_row.add_child(chk_sfx)
 
 	var sfx_slider := HSlider.new()
 	sfx_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sfx_slider.custom_minimum_size = Vector2(0, 48)
+	sfx_slider.custom_minimum_size = Vector2(0, 44)
 	sfx_slider.min_value = 0.0
 	sfx_slider.max_value = 100.0
 	sfx_slider.value = AudioManager.sfx_volume * 100.0
 	sfx_row.add_child(sfx_slider)
 
 	var lbl_sfx_val := Label.new()
-	lbl_sfx_val.custom_minimum_size = Vector2(60, 0)
+	lbl_sfx_val.custom_minimum_size = Vector2(50, 0)
 	lbl_sfx_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	lbl_sfx_val.add_theme_font_size_override("font_size", 26)
+	lbl_sfx_val.add_theme_font_size_override("font_size", 20)
 	lbl_sfx_val.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 	lbl_sfx_val.text = "%s٪" % GameManager.to_fa_num(int(sfx_slider.value))
 	sfx_row.add_child(lbl_sfx_val)
@@ -1074,10 +1076,10 @@ func _render_privacy() -> void:
 			AudioManager.sfx_tap()
 	)
 
-	# --- 2. Privacy Toggles with Bigger Switches & Text ---
+	# --- 2. Privacy Toggles with Balanced Mobile Sizing ---
 	var p_title := Label.new()
 	p_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	p_title.add_theme_font_size_override("font_size", 30)
+	p_title.add_theme_font_size_override("font_size", 26)
 	p_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	p_title.text = "حریم خصوصی و دسترسی‌ها"
 	p_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1126,21 +1128,21 @@ func _render_privacy() -> void:
 
 		var item_margin := MarginContainer.new()
 		item_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		item_margin.add_theme_constant_override("margin_left", 48)
-		item_margin.add_theme_constant_override("margin_right", 48)
+		item_margin.add_theme_constant_override("margin_left", 10)
+		item_margin.add_theme_constant_override("margin_right", 10)
 
 		var panel := PanelContainer.new()
-		panel.custom_minimum_size = Vector2(0, 124)
+		panel.custom_minimum_size = Vector2(0, 108)
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 54.0, 20.0))
+		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 16.0, 12.0))
 		item_margin.add_child(panel)
 
 		var h := HBoxContainer.new()
-		h.add_theme_constant_override("separation", 18)
+		h.add_theme_constant_override("separation", 12)
 		panel.add_child(h)
 
 		var toggle := CheckButton.new()
-		toggle.custom_minimum_size = Vector2(98, 68)
+		toggle.custom_minimum_size = Vector2(74, 52)
 		toggle.focus_mode = Control.FOCUS_NONE
 		toggle.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		toggle.button_pressed = current_val
@@ -1149,13 +1151,13 @@ func _render_privacy() -> void:
 
 		var v_col := VBoxContainer.new()
 		v_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		v_col.add_theme_constant_override("separation", 4)
+		v_col.add_theme_constant_override("separation", 2)
 		v_col.alignment = BoxContainer.ALIGNMENT_CENTER
 		h.add_child(v_col)
 
 		var lbl_title := Label.new()
 		lbl_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-		lbl_title.add_theme_font_size_override("font_size", 30)
+		lbl_title.add_theme_font_size_override("font_size", 23)
 		lbl_title.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 		lbl_title.text = item["label"]
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1163,7 +1165,7 @@ func _render_privacy() -> void:
 
 		var lbl_desc := Label.new()
 		lbl_desc.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		lbl_desc.add_theme_font_size_override("font_size", 21)
+		lbl_desc.add_theme_font_size_override("font_size", 18)
 		lbl_desc.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 		lbl_desc.text = item["desc"]
 		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

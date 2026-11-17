@@ -53,10 +53,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
 [node name="MainPanel" type="PanelContainer" parent="OuterMargin"]
 layout_mode = 2
@@ -71,7 +71,7 @@ theme_override_constants/margin_bottom = 4
 
 [node name="VBox" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="UserHeader" parent="OuterMargin/MainPanel/InnerMargin/VBox" instance=ExtResource("2_user_header")]
 layout_mode = 2
@@ -99,7 +99,7 @@ theme_override_constants/separation = 6
 alignment = 1
 
 [node name="BtnProfile" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -107,7 +107,7 @@ mouse_default_cursor_shape = 2
 text = "تاریخچه"
 
 [node name="BtnCosmetics" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -115,7 +115,7 @@ mouse_default_cursor_shape = 2
 text = "تصویر نمایه"
 
 [node name="BtnFrames" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -123,7 +123,7 @@ mouse_default_cursor_shape = 2
 text = "قاب آواتار"
 
 [node name="BtnPrivacy" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -131,7 +131,7 @@ mouse_default_cursor_shape = 2
 text = "تنظیمات"
 
 [node name="BtnNotifications" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0

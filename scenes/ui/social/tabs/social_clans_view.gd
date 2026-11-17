@@ -492,15 +492,15 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 		var raw_st: String = str(m_pres.get("status", "offline"))
 
 		var mcard := PanelContainer.new()
-		mcard.custom_minimum_size = Vector2(0, 144)
+		mcard.custom_minimum_size = Vector2(0, 130)
 		mcard.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		mcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 38.0, 24.0))
+		mcard.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
 		vbox.add_child(mcard)
 
 		var mrow := HBoxContainer.new()
 		mrow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mrow.alignment = BoxContainer.ALIGNMENT_CENTER
-		mrow.add_theme_constant_override("separation", 12)
+		mrow.add_theme_constant_override("separation", 10)
 		mcard.add_child(mrow)
 
 		var act_col := VBoxContainer.new()
@@ -508,16 +508,16 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 		act_col.add_theme_constant_override("separation", 6)
 		mrow.add_child(act_col)
 
-		var b_prof := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(118, 42), 21)
+		var b_prof := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(100, 40), 20)
 		b_prof.pressed.connect(func():
 			AudioManager.sfx_tap()
-			host._open_player_profile(m_dict)
+			UserProfileDialog.show_user(m_dict, m_role_fa, host)
 		)
 		act_col.add_child(b_prof)
 
 		var m_p_info: Dictionary = CafeSocialTheme.format_presence(m_pres if not m_pres.is_empty() else {"status": raw_st})
 		if m_uid != my_uid and bool(m_p_info.get("is_in_game", false)):
-			var b_spec_m: Button = CafeSocialTheme.make_button("تماشا", "emerald", Vector2(118, 42), 21)
+			var b_spec_m: Button = CafeSocialTheme.make_button("تماشا", "emerald", Vector2(100, 40), 20)
 			b_spec_m.pressed.connect(func():
 				AudioManager.sfx_button()
 				NetworkManager.request_spectate_game(str(m_p_info.get("game_id", "")), m_uid)
@@ -531,7 +531,7 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 			or (my_role == "elder" and m_role == "member")
 		)
 		if can_manage:
-			var b_mgr := CafeSocialTheme.make_button("مدیریت", "gold", Vector2(118, 42), 21)
+			var b_mgr := CafeSocialTheme.make_button("مدیریت", "gold", Vector2(100, 40), 20)
 			b_mgr.pressed.connect(func():
 				AudioManager.sfx_tap()
 				_open_member_manage_modal(host, m_dict, my_role)
@@ -555,7 +555,7 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 		var role_border_col: Color = CafeSocialTheme.COL_GOLD_ANTIQUE if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_BORDER if m_role == "co_leader" else CafeSocialTheme.COL_BRONZE_BORDER)
 		title_row.add_child(CafeSocialTheme.make_badge_pill(m_role_fa, role_text_col, role_bg_col, role_border_col, 18))
 
-		var nm_lbl := CafeSocialTheme.make_title(m_name, 28, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+		var nm_lbl := CafeSocialTheme.make_title(m_name, 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 		nm_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		nm_lbl.clip_text = true
 		nm_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -572,27 +572,27 @@ static func _build_clan_members_view(host: Control, holder: VBoxContainer) -> vo
 				GameManager.to_fa_num(m_contrib),
 				GameManager.to_fa_num(m_score)
 			],
-			19, role_text_col, HORIZONTAL_ALIGNMENT_RIGHT, false
+			18, role_text_col, HORIZONTAL_ALIGNMENT_RIGHT, false
 		)
 		contrib_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		contrib_lbl.clip_text = true
 		contrib_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		meta_row.add_child(contrib_lbl)
 
-		var st_badge := CafeSocialTheme.make_status_badge(raw_st, 27.0)
+		var st_badge := CafeSocialTheme.make_status_badge(raw_st, 26.0)
 		meta_row.add_child(st_badge)
 
 		var av_btn := Button.new()
 		av_btn.flat = true
 		av_btn.focus_mode = Control.FOCUS_NONE
-		av_btn.custom_minimum_size = Vector2(78, 78)
+		av_btn.custom_minimum_size = Vector2(74, 74)
 		av_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		var av_vis := CafeSocialTheme.make_avatar_badge(int(m_dict.get("image", 0)), int(m_dict.get("profile_frame", 0)), 76.0, raw_st, false)
+		var av_vis := CafeSocialTheme.make_avatar_badge(int(m_dict.get("image", 0)), int(m_dict.get("profile_frame", 0)), 72.0, raw_st, false)
 		av_vis.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		av_btn.add_child(av_vis)
 		av_btn.pressed.connect(func():
 			AudioManager.sfx_tap()
-			host._open_player_profile(m_dict)
+			UserProfileDialog.show_user(m_dict, m_role_fa, host)
 		)
 		mrow.add_child(av_btn)
 
