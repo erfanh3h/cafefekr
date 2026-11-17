@@ -43,6 +43,8 @@ var _dm_input: LineEdit = null
 func _ready() -> void:
 	_build_ui_shell()
 	_connect_realtime_signals()
+	if NetworkManager.is_online and not NetworkManager.is_social_connected and GameManager.is_logged_in and not GameManager.token.is_empty():
+		NetworkManager.connect_social_namespace()
 	_preload_badge_counts()
 	_refresh_current_tab()
 
@@ -51,6 +53,7 @@ func _connect_realtime_signals() -> void:
 	NetworkManager.social_init_received.connect(func(_p: Dictionary):
 		_update_main_tab_buttons()
 	)
+	NetworkManager.social_badges_changed.connect(_update_main_tab_buttons)
 	NetworkManager.social_presence_changed.connect(_on_realtime_presence_changed)
 	NetworkManager.social_dm_received.connect(_on_realtime_dm_received)
 	NetworkManager.social_dm_read_received.connect(_on_realtime_dm_read_received)
@@ -96,8 +99,13 @@ func _build_ui_shell() -> void:
 	ActionVFXManager.apply_button_juice(btn_refresh, "tap_button")
 	btn_refresh.pressed.connect(func():
 		AudioManager.sfx_tap()
+		if NetworkManager.is_online and not NetworkManager.is_social_connected and not GameManager.token.is_empty():
+			NetworkManager.connect_social_namespace()
 		_preload_badge_counts()
-		_refresh_current_tab()
+		if current_main_tab == "clans" and current_clans_subtab in ["my_clan", "members"]:
+			refresh_my_clan_data(true)
+		else:
+			_refresh_current_tab()
 	)
 	top_row.add_child(btn_refresh)
 
@@ -272,13 +280,23 @@ func _send_clan_chat_message() -> void:
 	if txt.is_empty():
 		return
 	_clan_chat_input.text = ""
-	if NetworkManager.is_online:
+	if NetworkManager.is_social_connected:
 		NetworkManager.send_clan_chat_realtime(txt)
 	else:
+		if NetworkManager.is_online and not GameManager.token.is_empty():
+			NetworkManager.connect_social_namespace()
 		NetworkManager.api.send_clan_chat_rest(txt, func(ok: bool, _c: int, data: Variant):
 			if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
-				_clan_chat_messages.append(data["result"])
-				SocialClansView.append_clan_chat_message(self, data["result"])
+				var msg_res: Dictionary = data["result"]
+				var mid := str(msg_res.get("message_id", msg_res.get("_id", "")))
+				var exists := false
+				for m in _clan_chat_messages:
+					if typeof(m) == TYPE_DICTIONARY and str(m.get("message_id", m.get("_id", ""))) == mid and not mid.is_empty():
+						exists = true
+						break
+				if not exists:
+					_clan_chat_messages.append(msg_res)
+					SocialClansView.append_clan_chat_message(self, msg_res)
 			elif typeof(data) == TYPE_DICTIONARY:
 				_show_toast(str(data.get("detail", "خطا در ارسال پیام اتحاد")), CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
@@ -291,35 +309,161 @@ func _send_active_dm() -> void:
 	if txt.is_empty():
 		return
 	_dm_input.text = ""
-	if NetworkManager.is_online:
+	if NetworkManager.is_social_connected:
 		NetworkManager.send_dm_realtime(_active_dm_partner_id, txt)
 	else:
+		if NetworkManager.is_online and not GameManager.token.is_empty():
+			NetworkManager.connect_social_namespace()
 		NetworkManager.api.send_direct_message_rest(_active_dm_partner_id, txt, func(ok: bool, _c: int, data: Variant):
 			if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
-				_active_dm_messages.append(data["result"])
-				SocialMessagesView.render_messages(self)
+				var dm_res: Dictionary = data["result"]
+				var mid := str(dm_res.get("message_id", dm_res.get("_id", "")))
+				var exists := false
+				for m in _active_dm_messages:
+					if typeof(m) == TYPE_DICTIONARY and str(m.get("message_id", m.get("_id", ""))) == mid and not mid.is_empty():
+						exists = true
+						break
+				if not exists:
+					_active_dm_messages.append(dm_res)
+					SocialMessagesView.render_messages(self)
 			elif typeof(data) == TYPE_DICTIONARY:
 				_show_toast(str(data.get("detail", "خطا در ارسال پیام")), CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
 
 
-func _on_realtime_presence_changed(_pid: String, _st: String, _act: String) -> void:
+func refresh_my_clan_data(force_render: bool = true) -> void:
+	if not GameManager.is_logged_in:
+		return
+	var prev_has_clan: bool = typeof(_my_clan_data.get("clan")) == TYPE_DICTIONARY and not _my_clan_data["clan"].is_empty()
+	NetworkManager.api.get_my_clan(func(ok: bool, _c: int, data: Variant):
+		if not is_instance_valid(self):
+			return
+		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+			_my_clan_data = data["result"]
+			var c_obj: Variant = _my_clan_data.get("clan", null)
+			var now_has_clan: bool = typeof(c_obj) == TYPE_DICTIONARY and not c_obj.is_empty()
+			if now_has_clan:
+				GameManager.user_data["clan"] = c_obj
+				GameManager.user_data["clan_id"] = str(c_obj.get("clan_id", c_obj.get("_id", "")))
+			else:
+				GameManager.user_data.erase("clan")
+				GameManager.user_data.erase("clan_id")
+				_clan_chat_messages.clear()
+			_update_main_tab_buttons()
+			if force_render and current_main_tab == "clans":
+				if not now_has_clan and current_clans_subtab in ["chat", "members"]:
+					current_clans_subtab = "my_clan"
+					_refresh_current_tab()
+				elif (now_has_clan != prev_has_clan) or current_clans_subtab != "chat":
+					_refresh_current_tab()
+	)
+
+
+func refresh_friends_and_requests(force_render: bool = true) -> void:
+	if not GameManager.is_logged_in:
+		return
+	NetworkManager.api.get_friend_requests(func(ok: bool, _c: int, data: Variant):
+		if not is_instance_valid(self):
+			return
+		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+			var r: Dictionary = data["result"]
+			_incoming_requests = r.get("incoming", []) if typeof(r.get("incoming")) == TYPE_ARRAY else []
+			_outgoing_requests = r.get("outgoing", []) if typeof(r.get("outgoing")) == TYPE_ARRAY else []
+			_update_main_tab_buttons()
+		NetworkManager.api.get_friends_list(func(ok2: bool, _c2: int, data2: Variant):
+			if not is_instance_valid(self):
+				return
+			if ok2 and typeof(data2) == TYPE_DICTIONARY and typeof(data2.get("result")) == TYPE_ARRAY:
+				_friends_list = data2["result"]
+			_update_main_tab_buttons()
+			if force_render and current_main_tab == "friends":
+				_refresh_current_tab()
+		)
+	)
+
+
+func _on_realtime_presence_changed(payload: Dictionary) -> void:
+	var pid := str(payload.get("user_id", ""))
+	if pid.is_empty():
+		return
+	var new_st := str(payload.get("status", "offline"))
+	var pres_dict := {
+		"status": new_st,
+		"current_game_type": str(payload.get("current_game_type", "")),
+		"current_game_id": str(payload.get("current_game_id", "")),
+		"current_lobby_id": str(payload.get("current_lobby_id", "")),
+		"last_seen": str(payload.get("last_seen", "")),
+	}
+
+	# Update cached friends list
+	for f in _friends_list:
+		if typeof(f) == TYPE_DICTIONARY and str(f.get("user_id", f.get("_id", ""))) == pid:
+			f["status"] = new_st
+			f["presence"] = pres_dict
+
+	# Update cached clan members
+	var c_dict: Variant = _my_clan_data.get("clan", null)
+	if typeof(c_dict) == TYPE_DICTIONARY and typeof(c_dict.get("members")) == TYPE_ARRAY:
+		for m in c_dict["members"]:
+			if typeof(m) == TYPE_DICTIONARY and str(m.get("user_id", m.get("_id", ""))) == pid:
+				m["status"] = new_st
+				m["presence"] = pres_dict
+
+	# Update cached conversations & active DM partner
+	for conv in _conversations:
+		if typeof(conv) == TYPE_DICTIONARY and typeof(conv.get("partner")) == TYPE_DICTIONARY:
+			var p: Dictionary = conv["partner"]
+			if str(p.get("user_id", p.get("_id", ""))) == pid:
+				p["status"] = new_st
+				p["presence"] = pres_dict
+	if pid == _active_dm_partner_id and typeof(_active_dm_partner_info) == TYPE_DICTIONARY:
+		_active_dm_partner_info["status"] = new_st
+		_active_dm_partner_info["presence"] = pres_dict
+
 	if current_main_tab == "friends" and current_friends_subtab == "list":
+		_refresh_current_tab()
+	elif current_main_tab == "clans" and current_clans_subtab in ["my_clan", "members"]:
+		_refresh_current_tab()
+	elif current_main_tab == "messages" and _active_dm_partner_id.is_empty():
 		_refresh_current_tab()
 
 
 func _on_realtime_dm_received(payload: Dictionary) -> void:
-	var snd: String = str(payload.get("sender_id", ""))
-	if snd == _active_dm_partner_id and current_main_tab == "messages":
-		_active_dm_messages.append(payload)
-		SocialMessagesView.render_messages(self)
-	else:
-		_update_main_tab_buttons()
-
-
-func _on_realtime_dm_read_received(_reader_id: String) -> void:
-	if current_main_tab == "messages":
+	var my_uid := str(GameManager.get_user_id())
+	var from_uid := str(payload.get("from_user_id", payload.get("sender_id", "")))
+	var to_uid := str(payload.get("to_user_id", ""))
+	var matches_active := (not _active_dm_partner_id.is_empty()) and (
+		from_uid == _active_dm_partner_id
+		or (from_uid == my_uid and to_uid == _active_dm_partner_id)
+	)
+	if current_main_tab == "messages" and matches_active:
+		var mid := str(payload.get("message_id", payload.get("_id", "")))
+		var exists := false
+		if not mid.is_empty():
+			for m in _active_dm_messages:
+				if typeof(m) == TYPE_DICTIONARY and str(m.get("message_id", m.get("_id", ""))) == mid:
+					exists = true
+					break
+		if not exists:
+			_active_dm_messages.append(payload)
+			SocialMessagesView.render_messages(self)
+		if from_uid == _active_dm_partner_id:
+			NetworkManager.mark_dm_read_realtime(_active_dm_partner_id)
+			NetworkManager.unread_dms_count = max(0, NetworkManager.unread_dms_count - 1)
+			NetworkManager.notify_social_badges_changed()
+	elif current_main_tab == "messages" and _active_dm_partner_id.is_empty():
 		_refresh_current_tab()
+	_update_main_tab_buttons()
+
+
+func _on_realtime_dm_read_received(payload: Dictionary) -> void:
+	var reader_id := str(payload.get("reader_id", ""))
+	if current_main_tab == "messages" and not _active_dm_partner_id.is_empty() and reader_id == _active_dm_partner_id:
+		for m in _active_dm_messages:
+			if typeof(m) == TYPE_DICTIONARY:
+				m["is_read"] = true
+		SocialMessagesView.render_messages(self)
+	_update_main_tab_buttons()
 
 
 func _on_realtime_clan_chat_received(msg: Dictionary) -> void:
@@ -336,22 +480,43 @@ func _on_realtime_clan_chat_received(msg: Dictionary) -> void:
 		SocialClansView.append_clan_chat_message(self, msg)
 
 
-func _on_realtime_clan_chat_deleted(message_id: String) -> void:
+func _on_realtime_clan_chat_deleted(payload: Dictionary) -> void:
+	var message_id := str(payload.get("message_id", payload.get("_id", "")))
+	if message_id.is_empty():
+		return
 	for i in range(_clan_chat_messages.size() - 1, -1, -1):
-		if str(_clan_chat_messages[i].get("_id", _clan_chat_messages[i].get("id", ""))) == message_id:
+		var m = _clan_chat_messages[i]
+		if typeof(m) == TYPE_DICTIONARY and str(m.get("message_id", m.get("_id", m.get("id", "")))) == message_id:
 			_clan_chat_messages.remove_at(i)
 	if current_main_tab == "clans" and current_clans_subtab == "chat":
 		SocialClansView.render_clan_chat(self)
 
 
 func _on_realtime_clan_event(event: Dictionary) -> void:
-	_show_toast(str(event.get("message", "رویداد جدید در اتحاد")), CafeSocialTheme.COL_GOLD_BRIGHT)
-	if current_main_tab == "clans" and current_clans_subtab in ["my_clan", "members"]:
-		_refresh_current_tab()
+	var msg_txt := str(event.get("message", ""))
+	if not msg_txt.is_empty():
+		_show_toast(msg_txt, CafeSocialTheme.COL_GOLD_BRIGHT)
+	var ev_type := str(event.get("event_type", ""))
+	var ev_uid := str(event.get("user_id", ""))
+	var my_uid := str(GameManager.get_user_id())
+	if ev_type == "clan_disbanded" or (ev_type in ["member_left", "member_kicked"] and ev_uid == my_uid):
+		_my_clan_data = {}
+		_clan_chat_messages.clear()
+		GameManager.user_data.erase("clan")
+		GameManager.user_data.erase("clan_id")
+		_update_main_tab_buttons()
+		if current_main_tab == "clans":
+			current_clans_subtab = "my_clan"
+			_refresh_current_tab()
+		return
+	refresh_my_clan_data(true)
 
 
-func _on_realtime_notification_received(_notif: Dictionary) -> void:
+func _on_realtime_notification_received(notif: Dictionary) -> void:
 	_update_main_tab_buttons()
+	var ntype := str(notif.get("type", ""))
+	if ntype in ["friend_request_received", "friend_request_accepted", "friend_request_updated", "friend_removed"]:
+		refresh_friends_and_requests(current_main_tab == "friends")
 
 
 func _scroll_clan_chat_to_bottom() -> void:

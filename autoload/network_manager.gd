@@ -74,9 +74,13 @@ signal spectator_game_ended(payload: Dictionary)
 signal spectator_count_updated(game_id: String, spectator_count: int)
 signal live_games_list_received(payload: Dictionary)
 signal social_error_received(message: String)
+signal social_badges_changed()
 
 var unread_notifications_count: int = 0
 var unread_dms_count: int = 0
+
+func notify_social_badges_changed() -> void:
+	social_badges_changed.emit()
 
 var is_in_multi_rank_queue: bool = false
 var current_multi_rank_game_type: String = ""
@@ -93,6 +97,7 @@ var game_port: int = 5000
 var api_port: int = 5001
 
 var _reconnect_timer: Timer
+var _presence_heartbeat_timer: Timer
 
 # Automatically resolve the server host based on platform and user configuration
 var server_host: String:
@@ -108,6 +113,10 @@ var server_host: String:
 var is_online: bool:
 	get:
 		return socket != null and socket.is_connected_to_server
+
+var is_social_connected: bool:
+	get:
+		return is_online and socket.connected_namespaces.has("/social")
 
 func _ready() -> void:
 	# Initialize REST API Client
@@ -137,6 +146,14 @@ func _ready() -> void:
 	_reconnect_timer.autostart = false
 	add_child(_reconnect_timer)
 	_reconnect_timer.timeout.connect(_on_reconnect_timeout)
+
+	# Presence heartbeat timer (keeps /social connected and last_seen fresh so online status never expires)
+	_presence_heartbeat_timer = Timer.new()
+	_presence_heartbeat_timer.wait_time = 45.0
+	_presence_heartbeat_timer.one_shot = false
+	_presence_heartbeat_timer.autostart = true
+	add_child(_presence_heartbeat_timer)
+	_presence_heartbeat_timer.timeout.connect(_on_presence_heartbeat)
 
 func restore_session(callback: Callable) -> void:
 	var saved_token = GameManager.load_saved_token()
@@ -170,6 +187,8 @@ func restore_session(callback: Callable) -> void:
 				GameManager.token = saved_token
 				GameManager.user_data = cached_data
 				GameManager.is_logged_in = true
+				if is_online:
+					connect_social_namespace()
 				callback.call(true, "Restored from local cache")
 			else:
 				callback.call(false, "OFFLINE")
@@ -208,6 +227,18 @@ func _on_reconnect_timeout() -> void:
 	if not is_online:
 		print("[NetworkManager] Attempting to reconnect to game backend (%s:%d)..." % [server_host, game_port])
 		connect_to_game_server()
+
+func _on_presence_heartbeat() -> void:
+	if not is_online or not GameManager.is_logged_in or GameManager.token.is_empty():
+		return
+	if not is_social_connected:
+		if not socket.connecting_namespaces.has("/social"):
+			connect_social_namespace()
+		return
+	var st := "in_game" if GameManager.is_game_active else "online"
+	var gt := GameManager.current_game_type if GameManager.is_game_active else ""
+	var gid := GameManager.active_game_id if GameManager.is_game_active else ""
+	update_social_presence(st, gt, gid, "")
 
 # --- QUEUE & MATCHMAKING ---
 
@@ -364,12 +395,17 @@ func disconnect_social_namespace() -> void:
 	socket.disconnect_namespace("/social")
 
 func send_social_command(command_id: String, data: Variant = {}) -> void:
+	if is_online and not is_social_connected and not GameManager.token.is_empty():
+		connect_social_namespace()
 	var payload = {"id": command_id, "data": data}
 	socket.emit_event("/social", "user_command", payload)
 
 func update_social_presence(status: String, game_type: String = "", game_id: String = "", lobby_id: String = "") -> void:
 	send_social_command(Commands.Social_Presence_Update, {
 		"status": status,
+		"current_game_type": game_type,
+		"current_game_id": game_id,
+		"current_lobby_id": lobby_id,
 		"game_type": game_type,
 		"game_id": game_id,
 		"lobby_id": lobby_id
@@ -838,6 +874,7 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				unread_notifications_count = int(payload.get("unread_notifications", 0))
 				unread_dms_count = int(payload.get("unread_dms", 0))
 				social_init_received.emit(payload)
+				social_badges_changed.emit()
 				if GameManager.is_spectating and not GameManager.spectated_game_id.is_empty():
 					request_spectator_state(GameManager.spectated_game_id)
 		Commands.Social_Presence_Changed:
@@ -847,14 +884,18 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			if typeof(payload) == TYPE_DICTIONARY:
 				if str(payload.get("from_user_id", "")) != str(GameManager.get_user_id()):
 					unread_dms_count += 1
+					social_badges_changed.emit()
 				social_dm_received.emit(payload)
 		Commands.Social_DM_Read:
 			if typeof(payload) == TYPE_DICTIONARY:
+				if payload.has("total_unread_dms") and str(payload.get("reader_id", "")) == str(GameManager.get_user_id()):
+					unread_dms_count = max(0, int(payload.get("total_unread_dms", 0)))
+					social_badges_changed.emit()
 				social_dm_read_received.emit(payload)
 		Commands.Social_Clan_Chat_Received:
 			if typeof(payload) == TYPE_DICTIONARY:
 				social_clan_chat_received.emit(payload)
-		Commands.Social_Clan_Chat_Deleted:
+		Commands.Social_Clan_Chat_Deleted, "SocialClanChatDelete":
 			if typeof(payload) == TYPE_DICTIONARY:
 				social_clan_chat_deleted.emit(payload)
 		Commands.Social_Clan_Event:
@@ -862,7 +903,10 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				social_clan_event_received.emit(payload)
 		Commands.Social_Notification_Received:
 			if typeof(payload) == TYPE_DICTIONARY:
-				unread_notifications_count += 1
+				var ntype: String = str(payload.get("type", ""))
+				if not ntype in ["friend_request_updated", "friend_removed"]:
+					unread_notifications_count += 1
+					social_badges_changed.emit()
 				social_notification_received.emit(payload)
 		Commands.Social_Game_Invite_Received:
 			if typeof(payload) == TYPE_DICTIONARY:

@@ -3443,6 +3443,7 @@ func _setup_social_hub_integration() -> void:
 	NetworkManager.social_init_received.connect(update_social_badge)
 	NetworkManager.social_notification_received.connect(update_social_badge)
 	NetworkManager.social_dm_received.connect(update_social_badge)
+	NetworkManager.social_badges_changed.connect(update_social_badge)
 	NetworkManager.social_game_invite_received.connect(_on_social_game_invite_received)
 	NetworkManager.social_game_invite_result.connect(_on_social_game_invite_result)
 	NetworkManager.social_spectate_data_received.connect(_on_social_spectate_data_received)

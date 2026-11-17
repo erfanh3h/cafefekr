@@ -442,12 +442,78 @@ func _on_realtime_clan_chat_deleted(payload: Dictionary) -> void:
 		SocialClansView.render_clan_chat(self)
 
 
-func _on_realtime_clan_event(_payload: Dictionary) -> void:
-	if visible and current_main_tab == "clans" and current_clans_subtab in ["my_clan", "members"]:
-		_refresh_current_tab()
+func refresh_my_clan_data(force_render: bool = true) -> void:
+	if not GameManager.is_logged_in:
+		return
+	var prev_has_clan: bool = typeof(_my_clan_data.get("clan")) == TYPE_DICTIONARY and not _my_clan_data["clan"].is_empty()
+	NetworkManager.api.get_my_clan(func(ok: bool, _c: int, data: Variant):
+		if not is_instance_valid(self):
+			return
+		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+			_my_clan_data = data["result"]
+			var c_obj: Variant = _my_clan_data.get("clan", null)
+			var now_has_clan: bool = typeof(c_obj) == TYPE_DICTIONARY and not c_obj.is_empty()
+			if now_has_clan:
+				GameManager.user_data["clan"] = c_obj
+				GameManager.user_data["clan_id"] = str(c_obj.get("clan_id", c_obj.get("_id", "")))
+			else:
+				GameManager.user_data.erase("clan")
+				GameManager.user_data.erase("clan_id")
+				_clan_chat_messages.clear()
+			_update_main_tab_buttons()
+			if force_render and visible and current_main_tab == "clans":
+				if not now_has_clan and current_clans_subtab in ["chat", "members"]:
+					current_clans_subtab = "my_clan"
+					_refresh_current_tab()
+				elif (now_has_clan != prev_has_clan) or current_clans_subtab != "chat":
+					_refresh_current_tab()
+	)
 
 
-func _on_realtime_notification_received(_payload: Dictionary) -> void:
+func refresh_friends_and_requests(force_render: bool = true) -> void:
+	if not GameManager.is_logged_in:
+		return
+	NetworkManager.api.get_friend_requests(func(ok: bool, _c: int, data: Variant):
+		if not is_instance_valid(self):
+			return
+		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+			var r: Dictionary = data["result"]
+			_incoming_requests = r.get("incoming", []) if typeof(r.get("incoming")) == TYPE_ARRAY else []
+			_outgoing_requests = r.get("outgoing", []) if typeof(r.get("outgoing")) == TYPE_ARRAY else []
+			_update_main_tab_buttons()
+		NetworkManager.api.get_friends_list(func(ok2: bool, _c2: int, data2: Variant):
+			if not is_instance_valid(self):
+				return
+			if ok2 and typeof(data2) == TYPE_DICTIONARY and typeof(data2.get("result")) == TYPE_ARRAY:
+				_friends_list = data2["result"]
+			_update_main_tab_buttons()
+			if force_render and visible and current_main_tab == "friends":
+				_refresh_current_tab()
+		)
+	)
+
+
+func _on_realtime_clan_event(payload: Dictionary) -> void:
+	var ev_type := str(payload.get("event_type", ""))
+	var ev_uid := str(payload.get("user_id", ""))
+	var my_uid := str(GameManager.get_user_id())
+	if ev_type == "clan_disbanded" or (ev_type in ["member_left", "member_kicked"] and ev_uid == my_uid):
+		_my_clan_data = {}
+		_clan_chat_messages.clear()
+		GameManager.user_data.erase("clan")
+		GameManager.user_data.erase("clan_id")
+		_update_main_tab_buttons()
+		if visible and current_main_tab == "clans":
+			current_clans_subtab = "my_clan"
+			_refresh_current_tab()
+		return
+	refresh_my_clan_data(true)
+
+
+func _on_realtime_notification_received(payload: Dictionary) -> void:
 	_update_main_tab_buttons()
-	if visible and current_main_tab == "notifs":
+	var ntype := str(payload.get("type", ""))
+	if ntype in ["friend_request_received", "friend_request_accepted", "friend_request_updated", "friend_removed"]:
+		refresh_friends_and_requests(visible and current_main_tab == "friends")
+	elif visible and current_main_tab == "notifs":
 		_refresh_current_tab()

@@ -38,6 +38,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 		NetworkManager.api.mark_all_notifications_read(func(ok: bool, _c: int, _d: Variant):
 			if ok:
 				NetworkManager.unread_notifications_count = 0
+				NetworkManager.notify_social_badges_changed()
 				if host.has_method("_update_main_tab_buttons"):
 					host._update_main_tab_buttons()
 				if host.has_method("_show_toast"):
@@ -93,6 +94,7 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 		NetworkManager.unread_notifications_count = int(res.get("unread_count", 0))
 		if res.has("unread_dm_count"):
 			NetworkManager.unread_dms_count = int(res.get("unread_dm_count", NetworkManager.unread_dms_count))
+		NetworkManager.notify_social_badges_changed()
 		if host.has_method("_update_main_tab_buttons"):
 			host._update_main_tab_buttons()
 

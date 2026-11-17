@@ -593,7 +593,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	inp_row.add_child(btn_send)
 
 	# Text Input
-	host._clan_chat_input = CafeSocialTheme.make_line_edit("پیام خود را بنویسید (از @ برای منشن استفاده کنید)...", 52.0, 22)
+	host._clan_chat_input = CafeSocialTheme.make_line_edit("پیام ...", 52.0, 22)
 	host._clan_chat_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inp_row.add_child(host._clan_chat_input)
 
@@ -766,12 +766,13 @@ static func _build_single_chat_bubble(host: Control, msg: Dictionary, my_uid: St
 	msg_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	msg_row.add_theme_constant_override("separation", 10)
 
-	# Avatar component (with click -> profile)
+	# Avatar component aligned to bottom (next to speech-bubble frame tail)
 	var av_btn := Button.new()
 	av_btn.flat = true
 	av_btn.focus_mode = Control.FOCUS_NONE
 	av_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	av_btn.custom_minimum_size = Vector2(58, 58)
+	av_btn.size_flags_vertical = Control.SIZE_SHRINK_END
 	var av_badge := CafeSocialTheme.make_avatar_badge(sender_img, sender_frame, 56.0)
 	av_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	av_btn.add_child(av_badge)
@@ -841,18 +842,6 @@ static func _build_single_chat_bubble(host: Control, msg: Dictionary, my_uid: St
 			)
 		)
 
-	# Bubble Frame (my chat frame vs others frame)
-	var bubble := PanelContainer.new()
-	bubble.custom_minimum_size = Vector2(220, 96)
-	bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_chat_bubble_style(is_mine))
-	bubble_col.add_child(bubble)
-
-	var b_vbox := VBoxContainer.new()
-	b_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b_vbox.add_theme_constant_override("separation", 4)
-	bubble.add_child(b_vbox)
-
 	# Check if text is a sticker e.g. [استیکر X] or [sticker:X]
 	var is_sticker := false
 	var sticker_id := 0
@@ -863,16 +852,34 @@ static func _build_single_chat_bubble(host: Control, msg: Dictionary, my_uid: St
 		sticker_id = int(text.substr(9, text.length() - 10))
 		is_sticker = true
 
-	if is_sticker and sticker_id >= 1 and sticker_id <= 16:
-		var s_tex: Texture2D = load("res://assets/icons/Reactions/%d.png" % sticker_id)
-		if s_tex != null:
-			var s_rect := TextureRect.new()
-			s_rect.texture = s_tex
-			s_rect.custom_minimum_size = Vector2(88, 88)
-			s_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			s_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			s_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			b_vbox.add_child(s_rect)
+	var s_tex: Texture2D = load("res://assets/icons/Reactions/%d.png" % sticker_id) if (is_sticker and sticker_id >= 1 and sticker_id <= 16) else null
+	var render_as_sticker: bool = (s_tex != null)
+
+	# Bubble Frame (stickers do NOT have a chat bubble frame under them)
+	var bubble := PanelContainer.new()
+	if render_as_sticker:
+		bubble.custom_minimum_size = Vector2(0, 0)
+		bubble.size_flags_horizontal = Control.SIZE_SHRINK_END if is_mine else Control.SIZE_SHRINK_BEGIN
+		bubble.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	else:
+		bubble.custom_minimum_size = Vector2(220, 96)
+		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_chat_bubble_style(is_mine))
+	bubble_col.add_child(bubble)
+
+	var b_vbox := VBoxContainer.new()
+	b_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b_vbox.add_theme_constant_override("separation", 4)
+	bubble.add_child(b_vbox)
+
+	if render_as_sticker:
+		var s_rect := TextureRect.new()
+		s_rect.texture = s_tex
+		s_rect.custom_minimum_size = Vector2(108, 108)
+		s_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		s_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		s_rect.size_flags_horizontal = Control.SIZE_SHRINK_END if is_mine else Control.SIZE_SHRINK_BEGIN
+		b_vbox.add_child(s_rect)
 	else:
 		var msg_lbl := Label.new()
 		msg_lbl.text = text
@@ -894,7 +901,9 @@ static func _build_single_chat_bubble(host: Control, msg: Dictionary, my_uid: St
 		date_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if is_mine else HORIZONTAL_ALIGNMENT_RIGHT
 		date_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
 		date_lbl.add_theme_font_size_override("font_size", 16)
-		if is_mine:
+		if render_as_sticker:
+			date_lbl.add_theme_color_override("font_color", Color(0.84, 0.78, 0.66, 0.85))
+		elif is_mine:
 			date_lbl.add_theme_color_override("font_color", Color(0.80, 0.95, 0.85, 0.90))
 		else:
 			date_lbl.add_theme_color_override("font_color", Color(0.42, 0.32, 0.20, 0.90))
@@ -1241,6 +1250,11 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 					NetworkManager.api.disband_clan(func(ok: bool, _c: int, d: Variant):
 						if ok:
 							host._show_toast("اتحاد منحل شد.")
+							host._my_clan_data = {}
+							host._clan_chat_messages.clear()
+							GameManager.user_data.erase("clan")
+							GameManager.user_data.erase("clan_id")
+							host._update_main_tab_buttons()
 							host.current_clans_subtab = "my_clan"
 							host._refresh_current_tab()
 						elif typeof(d) == TYPE_DICTIONARY:
@@ -1256,6 +1270,11 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 					NetworkManager.api.leave_clan(func(ok: bool, _c: int, d: Variant):
 						if ok:
 							host._show_toast("از اتحاد خارج شدید.")
+							host._my_clan_data = {}
+							host._clan_chat_messages.clear()
+							GameManager.user_data.erase("clan")
+							GameManager.user_data.erase("clan_id")
+							host._update_main_tab_buttons()
 							host.current_clans_subtab = "my_clan"
 							host._refresh_current_tab()
 						elif typeof(d) == TYPE_DICTIONARY:
@@ -1420,16 +1439,28 @@ static func _build_join_request_card(host: Control, req: Dictionary) -> PanelCon
 
 	var b_no := CafeSocialTheme.make_button("رد", "crimson", Vector2(88, 44), 20)
 	b_no.pressed.connect(func():
-		NetworkManager.api.respond_clan_join_request(rid, "reject", func(_ok, _c, _d): host._refresh_current_tab())
+		b_no.disabled = true
+		NetworkManager.api.respond_clan_join_request(rid, "reject", func(ok: bool, _c: int, _d: Variant):
+			if ok:
+				host._show_toast("درخواست عضویت رد شد.")
+			if host.has_method("refresh_my_clan_data"):
+				host.refresh_my_clan_data(true)
+			else:
+				host._refresh_current_tab()
+		)
 	)
 	rrow.add_child(b_no)
 
 	var b_ok := CafeSocialTheme.make_button("پذیرش", "emerald", Vector2(110, 44), 20)
 	b_ok.pressed.connect(func():
+		b_ok.disabled = true
 		NetworkManager.api.respond_clan_join_request(rid, "accept", func(ok: bool, _c: int, _d: Variant):
 			if ok:
 				host._show_toast("عضو جدید به اتحاد پیوست!")
-			host._refresh_current_tab()
+			if host.has_method("refresh_my_clan_data"):
+				host.refresh_my_clan_data(true)
+			else:
+				host._refresh_current_tab()
 		)
 	)
 	rrow.add_child(b_ok)
@@ -1438,8 +1469,7 @@ static func _build_join_request_card(host: Control, req: Dictionary) -> PanelCon
 	rcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rrow.add_child(rcol)
 	rcol.add_child(CafeSocialTheme.make_title(str(ru.get("username", "بازیکن")), 24, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT))
-	var msg_txt := str(req.get("message", ""))
-	rcol.add_child(CafeSocialTheme.make_body("امتیاز: %s  %s" % [GameManager.to_fa_num(int(ru.get("score", 0))), msg_txt], 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	rcol.add_child(CafeSocialTheme.make_body("امتیاز: %s" % GameManager.to_fa_num(int(ru.get("score", 0))), 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	rrow.add_child(CafeSocialTheme.make_avatar_badge(int(ru.get("image", 0)), int(ru.get("profile_frame", 1)), 60.0))
 	return rcard
@@ -1905,20 +1935,28 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 		if my_role in ["leader", "co_leader"] and m_role == "member":
 			var b_p1 := CafeSocialTheme.make_button("ارتقا به ارشد (Elder)", "sapphire", Vector2(0, 48), 21)
 			b_p1.pressed.connect(func():
-				NetworkManager.api.change_clan_member_role(m_uid, "elder", func(_ok, _c, _d):
+				NetworkManager.api.change_clan_member_role(m_uid, "elder", func(ok: bool, _c: int, _d: Variant):
 					overlay.queue_free()
-					host._show_toast("«%s» به ارشد ارتقا یافت." % m_name)
-					host._refresh_current_tab()
+					if ok:
+						host._show_toast("«%s» به ارشد ارتقا یافت." % m_name)
+					if host.has_method("refresh_my_clan_data"):
+						host.refresh_my_clan_data(true)
+					else:
+						host._refresh_current_tab()
 				)
 			)
 			vbox.add_child(b_p1)
 		elif my_role == "leader" and m_role == "elder":
 			var b_p2 := CafeSocialTheme.make_button("ارتقا به قائم‌مقام رهبر (Co-Leader)", "sapphire", Vector2(0, 48), 21)
 			b_p2.pressed.connect(func():
-				NetworkManager.api.change_clan_member_role(m_uid, "co_leader", func(_ok, _c, _d):
+				NetworkManager.api.change_clan_member_role(m_uid, "co_leader", func(ok: bool, _c: int, _d: Variant):
 					overlay.queue_free()
-					host._show_toast("«%s» به قائم‌مقام ارتقا یافت." % m_name)
-					host._refresh_current_tab()
+					if ok:
+						host._show_toast("«%s» به قائم‌مقام ارتقا یافت." % m_name)
+					if host.has_method("refresh_my_clan_data"):
+						host.refresh_my_clan_data(true)
+					else:
+						host._refresh_current_tab()
 				)
 			)
 			vbox.add_child(b_p2)
@@ -1928,10 +1966,14 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 			var target_r := "member" if m_role == "elder" else "elder"
 			var b_dem := CafeSocialTheme.make_button("تنزل درجه", "bronze", Vector2(0, 48), 21)
 			b_dem.pressed.connect(func():
-				NetworkManager.api.change_clan_member_role(m_uid, target_r, func(_ok, _c, _d):
+				NetworkManager.api.change_clan_member_role(m_uid, target_r, func(ok: bool, _c: int, _d: Variant):
 					overlay.queue_free()
-					host._show_toast("درجه «%s» تنزل یافت." % m_name)
-					host._refresh_current_tab()
+					if ok:
+						host._show_toast("درجه «%s» تنزل یافت." % m_name)
+					if host.has_method("refresh_my_clan_data"):
+						host.refresh_my_clan_data(true)
+					else:
+						host._refresh_current_tab()
 				)
 			)
 			vbox.add_child(b_dem)
@@ -1946,9 +1988,13 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 					"آیا مطمئن هستید می‌خواهید رهبری اتحاد را به «%s» واگذار کنید؟ پس از این کار شما قائم‌مقام خواهید شد." % m_name,
 					"انتقال رهبری", true,
 					func():
-						NetworkManager.api.transfer_clan_leadership(m_uid, func(_ok, _c, _d):
-							host._show_toast("رهبری اتحاد به %s منتقل شد." % m_name)
-							host._refresh_current_tab()
+						NetworkManager.api.transfer_clan_leadership(m_uid, func(ok: bool, _c: int, _d: Variant):
+							if ok:
+								host._show_toast("رهبری اتحاد به %s منتقل شد." % m_name)
+							if host.has_method("refresh_my_clan_data"):
+								host.refresh_my_clan_data(true)
+							else:
+								host._refresh_current_tab()
 						)
 				)
 			)
@@ -1963,9 +2009,13 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 				"آیا مطمئن هستید می‌خواهید «%s» را از اتحاد اخراج کنید؟" % m_name,
 				"اخراج شود", true,
 				func():
-					NetworkManager.api.kick_clan_member(m_uid, func(_ok, _c, _d):
-						host._show_toast("«%s» از اتحاد اخراج شد." % m_name)
-						host._refresh_current_tab()
+					NetworkManager.api.kick_clan_member(m_uid, func(ok: bool, _c: int, _d: Variant):
+						if ok:
+							host._show_toast("«%s» از اتحاد اخراج شد." % m_name)
+						if host.has_method("refresh_my_clan_data"):
+							host.refresh_my_clan_data(true)
+						else:
+							host._refresh_current_tab()
 					)
 			)
 		)
@@ -2080,7 +2130,10 @@ static func _build_incoming_invitation_card(host: Control, inv: Dictionary) -> P
 	b_rej.pressed.connect(func():
 		AudioManager.sfx_tap()
 		NetworkManager.api.respond_clan_invitation(inv_id, "reject", func(_ok: bool, _c: int, _d: Variant):
-			host._refresh_current_tab()
+			if host.has_method("refresh_my_clan_data"):
+				host.refresh_my_clan_data(true)
+			else:
+				host._refresh_current_tab()
 		)
 	)
 	irow.add_child(b_rej)
@@ -2091,7 +2144,11 @@ static func _build_incoming_invitation_card(host: Control, inv: Dictionary) -> P
 		NetworkManager.api.respond_clan_invitation(inv_id, "accept", func(ok: bool, _c: int, d: Variant):
 			if ok:
 				host._show_toast("به اتحاد «%s» خوش آمدید!" % cname)
-				host._refresh_current_tab()
+				host.current_clans_subtab = "my_clan"
+				if host.has_method("refresh_my_clan_data"):
+					host.refresh_my_clan_data(true)
+				else:
+					host._refresh_current_tab()
 			elif typeof(d) == TYPE_DICTIONARY:
 				host._show_toast(str(d.get("detail", "خطا")), CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
@@ -2320,13 +2377,27 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 		var b_join := CafeSocialTheme.make_button("عضویت در اتحاد" if jtype == "open" else "ارسال درخواست عضویت", "emerald" if jtype == "open" else "bronze", Vector2(0, 44), 20)
 		b_join.pressed.connect(func():
 			AudioManager.sfx_button()
-			NetworkManager.api.join_or_request_clan(cid, "درخواست عضویت از کافه فکر", func(ok_j: bool, _cj: int, dj: Variant):
+			b_join.disabled = true
+			NetworkManager.api.join_or_request_clan(cid, "", func(ok_j: bool, _cj: int, dj: Variant):
 				if ok_j:
-					host._show_toast("درخواست یا عضویت شما با موفقیت ثبت شد!")
-					host.current_clans_subtab = "my_clan"
-					host._refresh_current_tab()
-				elif typeof(dj) == TYPE_DICTIONARY:
-					host._show_toast(str(dj.get("detail", "خطا")), CafeSocialTheme.COL_CRIMSON_TEXT)
+					var res_j: Dictionary = dj.get("result", {}) if typeof(dj) == TYPE_DICTIONARY and typeof(dj.get("result")) == TYPE_DICTIONARY else {}
+					var st_j := str(res_j.get("status", ""))
+					if st_j == "requested":
+						host._show_toast("درخواست عضویت شما برای اتحاد ارسال شد!")
+						if is_instance_valid(b_join):
+							b_join.text = "✓ درخواست ارسال شد"
+					else:
+						host._show_toast("با موفقیت به اتحاد پیوستید!")
+						host.current_clans_subtab = "my_clan"
+						if host.has_method("refresh_my_clan_data"):
+							host.refresh_my_clan_data(true)
+						else:
+							host._refresh_current_tab()
+				else:
+					if is_instance_valid(b_join):
+						b_join.disabled = false
+					if typeof(dj) == TYPE_DICTIONARY:
+						host._show_toast(str(dj.get("detail", "خطا")), CafeSocialTheme.COL_CRIMSON_TEXT)
 			)
 		)
 		root.add_child(b_join)
@@ -2750,7 +2821,10 @@ static func open_clan_create_modal(host: Control) -> void:
 					overlay.queue_free()
 				host._show_toast("اتحاد شما با موفقیت تاسیس شد!")
 				host.current_clans_subtab = "my_clan"
-				host._refresh_current_tab()
+				if host.has_method("refresh_my_clan_data"):
+					host.refresh_my_clan_data(true)
+				else:
+					host._refresh_current_tab()
 			else:
 				if is_instance_valid(b_submit):
 					b_submit.disabled = false
@@ -2857,7 +2931,10 @@ static func _open_clan_settings_modal(host: Control, cdict: Dictionary) -> void:
 			overlay.queue_free()
 			if ok:
 				host._show_toast("تنظیمات اتحاد بروزرسانی شد.")
-				host._refresh_current_tab()
+				if host.has_method("refresh_my_clan_data"):
+					host.refresh_my_clan_data(true)
+				else:
+					host._refresh_current_tab()
 		)
 	)
 	btn_row.add_child(b_save)

@@ -446,10 +446,18 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		btn_rej.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_rej.pressed.connect(func():
 			AudioManager.sfx_tap()
+			btn_rej.disabled = true
 			NetworkManager.api.respond_friend_request(req_id, "reject", func(ok: bool, _c: int, _d: Variant):
 				if ok:
 					host._show_toast("درخواست دوستی رد شد.")
-					host._refresh_current_tab()
+					host._incoming_requests = host._incoming_requests.filter(func(x): return str(x.get("request_id", "")) != req_id)
+					host._update_main_tab_buttons()
+					if host.has_method("refresh_friends_and_requests"):
+						host.refresh_friends_and_requests(true)
+					else:
+						host._refresh_current_tab()
+				elif is_instance_valid(btn_rej):
+					btn_rej.disabled = false
 			)
 		)
 		act_row.add_child(btn_rej)
@@ -458,10 +466,18 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		btn_acc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_acc.pressed.connect(func():
 			AudioManager.sfx_button()
+			btn_acc.disabled = true
 			NetworkManager.api.respond_friend_request(req_id, "accept", func(ok: bool, _c: int, _d: Variant):
 				if ok:
 					host._show_toast("«%s» به فهرست دوستان شما اضافه شد!" % uname)
-					host._refresh_current_tab()
+					host._incoming_requests = host._incoming_requests.filter(func(x): return str(x.get("request_id", "")) != req_id)
+					host._update_main_tab_buttons()
+					if host.has_method("refresh_friends_and_requests"):
+						host.refresh_friends_and_requests(true)
+					else:
+						host._refresh_current_tab()
+				elif is_instance_valid(btn_acc):
+					btn_acc.disabled = false
 			)
 		)
 		act_row.add_child(btn_acc)
@@ -472,10 +488,18 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		btn_cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_cancel.pressed.connect(func():
 			AudioManager.sfx_tap()
+			btn_cancel.disabled = true
 			NetworkManager.api.respond_friend_request(req_id, "cancel", func(ok: bool, _c: int, _d: Variant):
 				if ok:
 					host._show_toast("درخواست دوستی لغو شد.")
-					host._refresh_current_tab()
+					host._outgoing_requests = host._outgoing_requests.filter(func(x): return str(x.get("request_id", "")) != req_id)
+					host._update_main_tab_buttons()
+					if host.has_method("refresh_friends_and_requests"):
+						host.refresh_friends_and_requests(true)
+					else:
+						host._refresh_current_tab()
+				elif is_instance_valid(btn_cancel):
+					btn_cancel.disabled = false
 			)
 		)
 		act_row.add_child(btn_cancel)

@@ -63,6 +63,14 @@ static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer)
 			return
 
 		host._conversations = data["result"]
+		var total_u_dms := 0
+		for cv in host._conversations:
+			if typeof(cv) == TYPE_DICTIONARY:
+				total_u_dms += int(cv.get("unread_count", 0))
+		NetworkManager.unread_dms_count = total_u_dms
+		NetworkManager.notify_social_badges_changed()
+		if host.has_method("_update_main_tab_buttons"):
+			host._update_main_tab_buttons()
 		if host._conversations.is_empty():
 			list_box.add_child(CafeSocialTheme.make_empty_state(
 				CafeSocialTheme.BADGE_CHAT,
@@ -324,7 +332,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	ActionVFXManager.apply_button_juice(btn_send, "tap_button")
 	dm_input_row.add_child(btn_send)
 
-	host._dm_input = CafeSocialTheme.make_line_edit("پیام خصوصی خود را بنویسید...", 64.0, 25)
+	host._dm_input = CafeSocialTheme.make_line_edit("پیام ...", 64.0, 25)
 	host._dm_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dm_input_row.add_child(host._dm_input)
 
@@ -346,7 +354,15 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 				if is_instance_valid(st_badge_partner) and st_badge_partner is TextureRect:
 					st_badge_partner.texture = CafeSocialTheme.get_status_texture(str(pr_fresh.get("status", "offline")))
 			host._active_dm_messages = res.get("messages", []) if typeof(res.get("messages")) == TYPE_ARRAY else []
-			NetworkManager.unread_dms_count = max(0, NetworkManager.unread_dms_count - 1)
+			if res.has("unread_dms"):
+				NetworkManager.unread_dms_count = max(0, int(res["unread_dms"]))
+			else:
+				NetworkManager.unread_dms_count = max(0, NetworkManager.unread_dms_count - 1)
+			if res.has("unread_notifications"):
+				NetworkManager.unread_notifications_count = max(0, int(res["unread_notifications"]))
+			if NetworkManager.is_social_connected:
+				NetworkManager.mark_dm_read_realtime(pid)
+			NetworkManager.notify_social_badges_changed()
 			host._update_main_tab_buttons()
 			render_messages(host)
 		else:

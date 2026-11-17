@@ -44,6 +44,7 @@ func _ready() -> void:
 	NetworkManager.social_notification_received.connect(func(_p): update_social_badge())
 	NetworkManager.social_dm_received.connect(func(_p): update_social_badge())
 	NetworkManager.social_init_received.connect(func(_p): update_social_badge())
+	NetworkManager.social_badges_changed.connect(update_social_badge)
 
 	select_tab("play", false)
 	update_social_badge()

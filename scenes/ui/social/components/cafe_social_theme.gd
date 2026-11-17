@@ -1940,14 +1940,20 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 				b_join.pressed.connect(func():
 					AudioManager.sfx_button()
 					b_join.disabled = true
-					NetworkManager.api.join_or_request_clan(cid_str, "درخواست عضویت از مشخصات کلن", func(ok_j: bool, _cj: int, dj: Variant):
+					NetworkManager.api.join_or_request_clan(cid_str, "", func(ok_j: bool, _cj: int, dj: Variant):
 						if ok_j:
-							overlay.queue_free()
-							var s_dlg = host.get_tree().root.find_child("SocialDialog", true, false)
-							if s_dlg and s_dlg.has_method("open"):
-								s_dlg.open("clans")
+							if is_instance_valid(overlay):
+								overlay.queue_free()
+							if is_instance_valid(host) and host.has_method("refresh_my_clan_data"):
+								host.current_clans_subtab = "my_clan"
+								host.refresh_my_clan_data(true)
+							else:
+								var s_dlg = host.get_tree().root.find_child("SocialDialog", true, false)
+								if s_dlg and s_dlg.has_method("open"):
+									s_dlg.open("clans")
 						elif typeof(dj) == TYPE_DICTIONARY:
-							b_join.disabled = false
+							if is_instance_valid(b_join):
+								b_join.disabled = false
 					)
 				)
 				btn_row.add_child(b_join)
