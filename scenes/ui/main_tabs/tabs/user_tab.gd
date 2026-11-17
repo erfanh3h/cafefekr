@@ -756,7 +756,7 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 	tag_row.add_theme_constant_override("separation", 8)
 	hv.add_child(tag_row)
 
-	tag_row.add_child(CafeSocialTheme.make_badge_pill(mode_fa, CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.COL_BRONZE_DARK, CafeSocialTheme.COL_GOLD_ANTIQUE, 20))
+	tag_row.add_child(CafeSocialTheme.make_badge_pill(mode_fa, CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_GOLD_ANTIQUE, 20))
 	tag_row.add_child(CafeSocialTheme.make_badge_pill(s_date, CafeSocialTheme.COL_WARM_CREAM, Color(0.12, 0.09, 0.06, 0.9), CafeSocialTheme.COL_BRONZE_BORDER, 20))
 
 	# 4. Match Outcome & Head-to-Head Banner
