@@ -148,18 +148,18 @@ stretch_mode = 0
 
 [node name="ContentMargin" type="MarginContainer" parent="PanelFrame"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
+theme_override_constants/margin_left = 28
 theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 16
+theme_override_constants/margin_right = 30
 theme_override_constants/margin_bottom = 14
 
 [node name="HBoxMain" type="HBoxContainer" parent="PanelFrame/ContentMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="StatsCol" type="VBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(204, 0)
+custom_minimum_size = Vector2(190, 0)
 layout_mode = 2
 theme_override_constants/separation = 6
 alignment = 1
@@ -206,7 +206,7 @@ visible = false
 layout_mode = 2
 
 [node name="ScoreCard" type="PanelContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
-custom_minimum_size = Vector2(88, 86)
+custom_minimum_size = Vector2(82, 82)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_stat_card")
@@ -217,7 +217,7 @@ theme_override_constants/separation = 2
 alignment = 1
 
 [node name="CupIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreCard/ScoreBadge"]
-custom_minimum_size = Vector2(42, 46)
+custom_minimum_size = Vector2(40, 44)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -232,14 +232,14 @@ theme_override_colors/font_color = Color(1, 0.9, 0.42, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("StyleBoxFlat_value_pill")
 text = "۱۰۰۰"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="LevelCard" type="PanelContainer" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow"]
-custom_minimum_size = Vector2(88, 86)
+custom_minimum_size = Vector2(82, 82)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_stat_card")
@@ -250,7 +250,7 @@ theme_override_constants/separation = 2
 alignment = 1
 
 [node name="LevelIcon" type="TextureRect" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelCard/LevelBadge"]
-custom_minimum_size = Vector2(42, 46)
+custom_minimum_size = Vector2(40, 44)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -265,14 +265,14 @@ theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("StyleBoxFlat_value_pill")
 text = "۱"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="XpContainer" type="Control" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol"]
-custom_minimum_size = Vector2(186, 22)
+custom_minimum_size = Vector2(174, 20)
 layout_mode = 2
 size_flags_horizontal = 4
 
@@ -349,14 +349,14 @@ layout_mode = 2
 alignment = 2
 
 [node name="UserIdBtn" type="Button" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/BottomIdRow"]
-custom_minimum_size = Vector2(160, 42)
+custom_minimum_size = Vector2(148, 40)
 layout_mode = 2
 focus_mode = 0
 theme_override_colors/font_color = Color(0.96, 0.88, 0.72, 1)
 theme_override_colors/font_hover_color = Color(1, 0.96, 0.85, 1)
 theme_override_colors/font_pressed_color = Color(1, 0.9, 0.55, 1)
 theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 theme_override_styles/normal = SubResource("StyleBoxFlat_id_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_id_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_id_btn_pressed")
@@ -364,7 +364,7 @@ text = "📋 شناسه: -----"
 alignment = 1
 
 [node name="AvatarFrame" type="Control" parent="PanelFrame/ContentMargin/HBoxMain"]
-custom_minimum_size = Vector2(88, 88)
+custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
 size_flags_vertical = 4
 

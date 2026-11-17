@@ -219,20 +219,19 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		var pad := MarginContainer.new()
 		pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pad.add_theme_constant_override("margin_left", 72)
-		pad.add_theme_constant_override("margin_right", 72)
-		pad.add_theme_constant_override("margin_top", 16)
-		pad.add_theme_constant_override("margin_bottom", 22)
+		pad.add_theme_constant_override("margin_left", 36)
+		pad.add_theme_constant_override("margin_right", 36)
+		pad.add_theme_constant_override("margin_top", 14)
+		pad.add_theme_constant_override("margin_bottom", 18)
 		card.add_child(pad)
 
 		var row := HBoxContainer.new()
-		row.layout_direction = Control.LAYOUT_DIRECTION_RTL
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_theme_constant_override("separation", 14)
 		row.alignment = BoxContainer.ALIGNMENT_CENTER
 		pad.add_child(row)
 
-		# 1. Number / Rank (Far Right in RTL)
+		# 1. Number / Rank (Far Right)
 		var rank_frame := PanelContainer.new()
 		rank_frame.custom_minimum_size = Vector2(68, 68)
 		rank_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -262,7 +261,6 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			rank_lbl.add_theme_color_override("font_color", Color(0.95, 0.88, 0.72))
 
 		rank_frame.add_child(rank_lbl)
-		row.add_child(rank_frame)
 
 		# 2. Avatar / Clan Emblem Plaque (Immediately to the left of Rank)
 		var av_frame := PanelContainer.new()
@@ -286,24 +284,22 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			avatar.texture = load(av_path) if ResourceLoader.exists(av_path) else preload("res://assets/icons/Avatars/0.png")
 			var u_fid = GameManager.get_player_frame_id(entry_dict if not entry_dict.is_empty() else raw_item)
 			CafeSocialTheme.apply_frame_to_container(av_frame, avatar, u_fid)
-		row.add_child(av_frame)
 
-		# 3. Name & Subtitle/Clan-Tag Column (strictly to the LEFT of the avatar in RTL)
+		# 3. Name & Subtitle/Clan-Tag Column (To the left of avatar, aligned to right of column)
 		var name_col := VBoxContainer.new()
-		name_col.custom_minimum_size = Vector2(250, 0)
+		name_col.custom_minimum_size = Vector2(180, 0)
 		name_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		name_col.alignment = BoxContainer.ALIGNMENT_CENTER
 		name_col.add_theme_constant_override("separation", 2)
 		name_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(name_col)
 
 		var name_lbl := Label.new()
 		name_lbl.text = username
 		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.clip_text = false
+		name_lbl.clip_text = true
 		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
 		name_lbl.add_theme_font_size_override("font_size", 40)
@@ -324,7 +320,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			tag_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			tag_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			tag_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			tag_lbl.clip_text = false
+			tag_lbl.clip_text = true
 			tag_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			tag_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
 			tag_lbl.add_theme_font_size_override("font_size", 28)
@@ -338,7 +334,7 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			sub_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			sub_lbl.clip_text = false
+			sub_lbl.clip_text = true
 			sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			sub_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
 			sub_lbl.add_theme_font_size_override("font_size", 28)
@@ -347,12 +343,11 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			sub_lbl.add_theme_constant_override("shadow_outline_size", 3)
 			name_col.add_child(sub_lbl)
 
-		# 4. Score or Wins count (Far Left in RTL)
+		# 4. Score or Wins count (Far Left)
 		var val_box := HBoxContainer.new()
 		val_box.alignment = BoxContainer.ALIGNMENT_CENTER
 		val_box.add_theme_constant_override("separation", 6)
 		val_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(val_box)
 
 		if lb_type == "win":
 			var val_lbl := Label.new()
@@ -376,6 +371,12 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
 			val_lbl.add_theme_constant_override("shadow_outline_size", 0)
 			val_box.add_child(val_lbl)
+
+		# Assembly in LTR order: [val_box (Left)] -> [name_col (Aligns Right)] -> [av_frame] -> [rank_frame (Right)]
+		row.add_child(val_box)
+		row.add_child(name_col)
+		row.add_child(av_frame)
+		row.add_child(rank_frame)
 
 		# Row Click Handler
 		if lb_type == "clans":

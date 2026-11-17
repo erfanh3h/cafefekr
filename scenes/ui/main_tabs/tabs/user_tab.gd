@@ -209,7 +209,7 @@ func _render_profile() -> void:
 	seg_box.add_child(btn_seg_matches)
 
 	var btn_seg_stats := Button.new()
-	btn_seg_stats.text = "آمار کلی و بردگیم‌ها"
+	btn_seg_stats.text = "آمار کلی"
 	btn_seg_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_seg_stats.custom_minimum_size = Vector2(0, 52)
 	btn_seg_stats.focus_mode = Control.FOCUS_NONE
@@ -319,8 +319,8 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var pad := MarginContainer.new()
 	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pad.add_theme_constant_override("margin_left", 12)
-	pad.add_theme_constant_override("margin_right", 12)
+	pad.add_theme_constant_override("margin_left", 26)
+	pad.add_theme_constant_override("margin_right", 26)
 	pad.add_theme_constant_override("margin_top", 10)
 	pad.add_theme_constant_override("margin_bottom", 12)
 	btn.add_child(pad)
@@ -544,45 +544,154 @@ func _get_mode_badge_texture(mode_raw: String) -> Texture2D:
 	return preload("res://assets/images/badges/rank.png")
 
 
+func _get_game_icon_texture(g_type: String) -> Texture2D:
+	var norm = g_type.strip_edges().to_lower().replace("-", "").replace("_", "")
+	var p_jpg = "res://assets/images/games/%s.jpg" % norm
+	if ResourceLoader.exists(p_jpg):
+		return load(p_jpg)
+	var p_png = "res://assets/images/games/%s.png" % norm
+	if ResourceLoader.exists(p_png):
+		return load(p_png)
+	var info = GameRegistry.get_game_info(g_type)
+	var reg_icon = str(info.get("icon", ""))
+	if not reg_icon.is_empty() and ResourceLoader.exists(reg_icon):
+		return load(reg_icon)
+	return preload("res://assets/images/games/rpc.jpg")
+
+
+func _get_game_fa_name(g_type: String) -> String:
+	var name_fa = GameRegistry.get_display_name_fa(g_type)
+	if not name_fa.is_empty() and name_fa != "بازی" and name_fa != g_type:
+		return name_fa
+	var norm = g_type.strip_edges().to_lower().replace("-", "").replace("_", "")
+	match norm:
+		"rpc": return "سنگ کاغذ قیچی"
+		"fekrbekr": return "فکر بکر"
+		"yatzy": return "یاتزی"
+		"tictactoe": return "دوز"
+		"chess": return "شطرنج"
+		"checkers": return "چکرز"
+		"fourinrow", "connect4": return "دوز چهارتایی"
+		"backgammon": return "تخته نرد"
+		"othello": return "اتللو"
+		"mill": return "آسیاب"
+		"dotbox": return "نقطه خط"
+		"pentago": return "پنتاگو"
+		"yinsh": return "یینش"
+		"quoridor": return "راهرو"
+		"battleship": return "نبرد ناوها"
+		"boxfour": return "جعبه چهار"
+		"sudoku": return "سودوکو"
+		"mnumbers": return "راز اعداد"
+		"msweeper": return "مین روب"
+		"ludo": return "منچ"
+		"risk": return "ریسک"
+		"uno": return "اونو"
+		"quiz": return "کوییز"
+		"coup": return "کودتا"
+		"monopoly": return "مونوپولی"
+		_: return "بازی فکری"
+
+
+func _get_mode_fa_name(mode_raw: String) -> String:
+	match mode_raw:
+		"ClassicRank": return "رنک کلاسیک"
+		"Lobby": return "لابی دوستانه"
+		"MultiRank": return "رنک چندنفره"
+		"Rank": return "مسابقه رنکینگ"
+		_: return "مسابقه"
+
+
 func _show_game_details_dialog(game: Dictionary) -> void:
 	var modal := Control.new()
 	modal.set_anchors_preset(Control.PRESET_FULL_RECT)
-	modal.z_index = 50
+	modal.z_index = 60
 
+	# Dim background
 	var bg_dim := ColorRect.new()
 	bg_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg_dim.color = Color(0, 0, 0, 0.75)
+	bg_dim.color = Color(0.04, 0.02, 0.01, 0.85)
 	modal.add_child(bg_dim)
+	bg_dim.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.pressed:
+			AudioManager.sfx_tap()
+			modal.queue_free()
+	)
+
+	# Global Dialog Shell Frame (board.png)
+	var outer := MarginContainer.new()
+	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	outer.add_theme_constant_override("margin_left", 20)
+	outer.add_theme_constant_override("margin_right", 20)
+	outer.add_theme_constant_override("margin_top", 42)
+	outer.add_theme_constant_override("margin_bottom", 42)
+	modal.add_child(outer)
 
 	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	panel.offset_left = 20
-	panel.offset_top = 40
-	panel.offset_right = -20
-	panel.offset_bottom = -40
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_GOLD_BRIGHT, 18))
-	modal.add_child(panel)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
+	outer.add_child(panel)
 
-	var m := MarginContainer.new()
-	m.add_theme_constant_override("margin_left", 20)
-	m.add_theme_constant_override("margin_top", 20)
-	m.add_theme_constant_override("margin_right", 20)
-	m.add_theme_constant_override("margin_bottom", 20)
-	panel.add_child(m)
+	var inner := MarginContainer.new()
+	inner.add_theme_constant_override("margin_left", 24)
+	inner.add_theme_constant_override("margin_right", 24)
+	inner.add_theme_constant_override("margin_top", 24)
+	inner.add_theme_constant_override("margin_bottom", 24)
+	panel.add_child(inner)
 
+	var root_vbox := VBoxContainer.new()
+	root_vbox.add_theme_constant_override("separation", 12)
+	inner.add_child(root_vbox)
+
+	# 1. Top Bar with Close Button at Top-Left and Centered Title
+	var top_bar := PanelContainer.new()
+	top_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(16, 10.0, 8.0))
+	root_vbox.add_child(top_bar)
+
+	var top_row := HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 10)
+	top_bar.add_child(top_row)
+
+	var btn_close := TextureButton.new()
+	btn_close.name = "BtnCloseMatchDetails"
+	btn_close.texture_normal = CafeSocialTheme.TEX_CLOSE
+	btn_close.custom_minimum_size = Vector2(46, 46)
+	btn_close.ignore_texture_size = true
+	btn_close.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_close.focus_mode = Control.FOCUS_NONE
+	btn_close.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn_close, "tap_button")
+	btn_close.pressed.connect(func():
+		AudioManager.sfx_tap()
+		modal.queue_free()
+	)
+	top_row.add_child(btn_close)
+
+	var lbl_title := CafeSocialTheme.make_title("جزئیات مسابقه", 30, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
+	lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_row.add_child(lbl_title)
+
+	var dummy_spacer := Control.new()
+	dummy_spacer.custom_minimum_size = Vector2(46, 46)
+	top_row.add_child(dummy_spacer)
+
+	# 2. Scrollable Body
 	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = 0
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	m.add_child(scroll)
+	root_vbox.add_child(scroll)
 
 	var dvbox := VBoxContainer.new()
 	dvbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dvbox.add_theme_constant_override("separation", 14)
 	scroll.add_child(dvbox)
 
-	var my_uid = str(GameManager.user_data.get("_id", GameManager.user_data.get("id", "")))
-	var winner_id = str(game.get("winner_id", game.get("winner", "")))
-	var my_res = str(game.get("my_result", ""))
+	# Match extraction
+	var my_uid: String = str(GameManager.user_data.get("_id", GameManager.user_data.get("id", "")))
+	var winner_id: String = str(game.get("winner_id", game.get("winner", "")))
+	var my_res: String = str(game.get("my_result", ""))
 	if my_res.is_empty():
 		if winner_id == my_uid and not my_uid.is_empty():
 			my_res = "win"
@@ -593,100 +702,347 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 		else:
 			my_res = "unfinished"
 
-	var top_card := PanelContainer.new()
-	var tc_style := StyleBoxFlat.new()
-	tc_style.set_corner_radius_all(16)
-	tc_style.set_border_width_all(2)
-	tc_style.content_margin_left = 20
-	tc_style.content_margin_right = 20
-	tc_style.content_margin_top = 16
-	tc_style.content_margin_bottom = 16
+	var rounds: Array = game.get("rounds", []) if typeof(game.get("rounds")) == TYPE_ARRAY else []
 
-	var res_headline = "پیروزی شما! 🏆"
-	if my_res == "win":
-		tc_style.bg_color = Color(0.12, 0.40, 0.16, 0.95)
-		tc_style.border_color = Color(0.40, 0.85, 0.45, 1.0)
-		res_headline = "تبریک! برنده این مسابقه شدید 🏆"
-	elif my_res == "lose":
-		tc_style.bg_color = Color(0.45, 0.12, 0.12, 0.95)
-		tc_style.border_color = Color(0.85, 0.35, 0.35, 1.0)
-		res_headline = "در این مسابقه شکست خوردید"
-	elif my_res == "draw":
-		tc_style.bg_color = Color(0.25, 0.22, 0.18, 0.95)
-		tc_style.border_color = Color(0.75, 0.65, 0.45, 1.0)
-		res_headline = "این مسابقه مساوی شد"
-	else:
-		tc_style.bg_color = Color(0.20, 0.16, 0.12, 0.95)
-		tc_style.border_color = Color(0.60, 0.50, 0.35, 1.0)
-		res_headline = "مسابقه ناتمام ماند"
-	top_card.add_theme_stylebox_override("panel", tc_style)
+	var main_game_type: String = str(game.get("game_type", ""))
+	if main_game_type.is_empty() and game.has("game_types") and typeof(game["game_types"]) == TYPE_ARRAY and not game["game_types"].is_empty():
+		main_game_type = str(game["game_types"][0])
+	if main_game_type.is_empty() and not rounds.is_empty():
+		main_game_type = str(rounds[0].get("game_type", ""))
+	if main_game_type.is_empty():
+		main_game_type = "rpc"
 
-	var tc_vbox := VBoxContainer.new()
-	tc_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	tc_vbox.add_theme_constant_override("separation", 6)
-	top_card.add_child(tc_vbox)
-
-	var lbl_hd := Label.new()
-	lbl_hd.text = res_headline
-	lbl_hd.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_hd.add_theme_font_override("font", _font_hekayat)
-	lbl_hd.add_theme_font_size_override("font_size", 38)
-	lbl_hd.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
-	tc_vbox.add_child(lbl_hd)
-
+	var game_fa_title = _get_game_fa_name(main_game_type)
+	var mode_raw = str(game.get("game_score_type", "Rank"))
+	var mode_fa = _get_mode_fa_name(mode_raw)
 	var s_date = _format_shamsi_date_ltr(str(game.get("start_date", "")))
-	var lbl_dm := Label.new()
-	lbl_dm.text = "%s  •  %s" % [s_date, str(game.get("game_score_type", "Rank"))]
-	lbl_dm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_dm.add_theme_font_override("font", _font_hekayat)
-	lbl_dm.add_theme_font_size_override("font_size", 26)
-	lbl_dm.add_theme_color_override("font_color", Color(0.92, 0.88, 0.78))
-	tc_vbox.add_child(lbl_dm)
-	dvbox.add_child(top_card)
 
-	# Rounds details if present
-	var rounds = game.get("rounds", [])
-	if typeof(rounds) == TYPE_ARRAY and not rounds.is_empty():
-		var r_title := Label.new()
-		r_title.text = "راندهای مسابقه"
-		r_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		r_title.add_theme_font_override("font", _font_hekayat)
-		r_title.add_theme_font_size_override("font_size", 30)
-		r_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
-		dvbox.add_child(r_title)
+	# 3. Game Type Hero Plaque (Icon + Persian Game Name Underneath)
+	var hero_plaque := PanelContainer.new()
+	hero_plaque.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 14.0))
+	dvbox.add_child(hero_plaque)
 
+	var hv := VBoxContainer.new()
+	hv.alignment = BoxContainer.ALIGNMENT_CENTER
+	hv.add_theme_constant_override("separation", 8)
+	hero_plaque.add_child(hv)
+
+	var icon_box := PanelContainer.new()
+	icon_box.custom_minimum_size = Vector2(96, 96)
+	icon_box.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var ib_style := StyleBoxFlat.new()
+	ib_style.bg_color = Color(0.08, 0.05, 0.02, 0.95)
+	ib_style.border_color = CafeSocialTheme.COL_GOLD_ANTIQUE
+	ib_style.set_border_width_all(3)
+	ib_style.set_corner_radius_all(18)
+	icon_box.add_theme_stylebox_override("panel", ib_style)
+	hv.add_child(icon_box)
+
+	var icon_img := TextureRect.new()
+	icon_img.custom_minimum_size = Vector2(88, 88)
+	icon_img.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	icon_img.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	icon_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_img.texture = _get_game_icon_texture(main_game_type)
+	icon_box.add_child(icon_img)
+
+	# Label of game type in Persian UNDER the icon
+	var lbl_game_name := CafeSocialTheme.make_title(game_fa_title, 32, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	hv.add_child(lbl_game_name)
+
+	var tag_row := HBoxContainer.new()
+	tag_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	tag_row.add_theme_constant_override("separation", 8)
+	hv.add_child(tag_row)
+
+	tag_row.add_child(CafeSocialTheme.make_badge_pill(mode_fa, CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.COL_BRONZE_DARK, CafeSocialTheme.COL_GOLD_ANTIQUE, 20))
+	tag_row.add_child(CafeSocialTheme.make_badge_pill(s_date, CafeSocialTheme.COL_WARM_CREAM, Color(0.12, 0.09, 0.06, 0.9), CafeSocialTheme.COL_BRONZE_BORDER, 20))
+
+	# 4. Match Outcome & Head-to-Head Banner
+	var outcome_card := PanelContainer.new()
+	outcome_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
+	dvbox.add_child(outcome_card)
+
+	var ov := VBoxContainer.new()
+	ov.alignment = BoxContainer.ALIGNMENT_CENTER
+	ov.add_theme_constant_override("separation", 10)
+	outcome_card.add_child(ov)
+
+	var res_text = ""
+	var res_color: Color = CafeSocialTheme.COL_WARM_CREAM
+	var res_bg: Color = Color(0.15, 0.12, 0.08, 0.95)
+	var res_border: Color = CafeSocialTheme.COL_BRONZE_BORDER
+
+	if my_res == "win":
+		res_text = "پیروزی شما! 🏆"
+		res_color = CafeSocialTheme.COL_EMERALD_TEXT
+		res_bg = CafeSocialTheme.COL_EMERALD_BG
+		res_border = CafeSocialTheme.COL_EMERALD_BORDER
+	elif my_res == "lose":
+		res_text = "شکست در این مسابقه"
+		res_color = CafeSocialTheme.COL_CRIMSON_TEXT
+		res_bg = Color(0.35, 0.08, 0.08, 0.95)
+		res_border = Color(0.85, 0.35, 0.35, 1.0)
+	elif my_res == "draw":
+		res_text = "نتیجه مساوی"
+		res_color = Color(1.0, 0.90, 0.40)
+		res_bg = Color(0.24, 0.18, 0.08, 0.95)
+		res_border = Color(0.80, 0.65, 0.35)
+	else:
+		res_text = "مسابقه ناتمام"
+		res_color = Color(0.75, 0.75, 0.75)
+		res_bg = Color(0.18, 0.15, 0.12, 0.95)
+		res_border = Color(0.50, 0.45, 0.40)
+
+	var res_badge := CafeSocialTheme.make_badge_pill(res_text, res_color, res_bg, res_border, 24)
+	res_badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	ov.add_child(res_badge)
+
+	# Opponent & User matchup
+	var opp_name = str(game.get("opponent_name", ""))
+	var opp_avatar_id = int(game.get("opponent_image", 0))
+	var opp_data: Dictionary = {}
+	var users_info = game.get("users_info", []) if typeof(game.get("users_info")) == TYPE_ARRAY else []
+	for u in users_info:
+		if typeof(u) == TYPE_DICTIONARY and str(u.get("user_id", "")) != my_uid:
+			if opp_name.is_empty():
+				opp_name = str(u.get("username", u.get("name", "حریف")))
+				opp_avatar_id = int(u.get("image", 0))
+			opp_data = u.duplicate(true)
+			break
+	if opp_name.is_empty():
+		opp_name = "حریف"
+		opp_data = {"user_id": "opp", "username": opp_name, "image": opp_avatar_id}
+	var opp_frame_id: int = GameManager.get_player_frame_id(opp_data if not opp_data.is_empty() else game)
+
+	var my_name = str(GameManager.user_data.get("name", GameManager.user_data.get("username", "شما")))
+	var my_avatar_id = int(GameManager.user_data.get("image", 0))
+	var my_frame_id = GameManager.get_player_frame_id(GameManager.user_data)
+
+	var vs_row := HBoxContainer.new()
+	vs_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	vs_row.add_theme_constant_override("separation", 16)
+	ov.add_child(vs_row)
+
+	# Opponent (Left)
+	var opp_item := VBoxContainer.new()
+	opp_item.alignment = BoxContainer.ALIGNMENT_CENTER
+	opp_item.add_theme_constant_override("separation", 4)
+	opp_item.mouse_filter = Control.MOUSE_FILTER_PASS
+
+	var opp_badge = CafeSocialTheme.make_avatar_badge(opp_avatar_id, opp_frame_id, 74.0)
+	opp_badge.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	opp_badge.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.pressed:
+			AudioManager.sfx_tap()
+			UserProfileDialog.show_user(opp_data, "", self)
+	)
+	opp_item.add_child(opp_badge)
+
+	var lbl_opp := Label.new()
+	lbl_opp.text = opp_name
+	lbl_opp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_opp.custom_minimum_size = Vector2(100, 0)
+	lbl_opp.clip_text = true
+	lbl_opp.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	lbl_opp.add_theme_font_override("font", _font_hekayat)
+	lbl_opp.add_theme_font_size_override("font_size", 22)
+	lbl_opp.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	opp_item.add_child(lbl_opp)
+	vs_row.add_child(opp_item)
+
+	# Center: Score / VS
+	var scores = game.get("user_scores", []) if typeof(game.get("user_scores")) == TYPE_ARRAY else []
+	var score_str = ""
+	if scores.size() >= 2:
+		var p1_uid = str(game.get("user1_id", ""))
+		if p1_uid == my_uid:
+			score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[1])), GameManager.to_fa_num(int(scores[0]))]
+		else:
+			score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[0])), GameManager.to_fa_num(int(scores[1]))]
+	elif not scores.is_empty():
+		score_str = GameManager.to_fa_num(int(scores[0]))
+
+	var center_badge_col := VBoxContainer.new()
+	center_badge_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	center_badge_col.add_theme_constant_override("separation", 2)
+
+	if not score_str.is_empty():
+		var lbl_match_score := Label.new()
+		lbl_match_score.text = score_str
+		lbl_match_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_match_score.add_theme_font_override("font", _font_hekayat)
+		lbl_match_score.add_theme_font_size_override("font_size", 42)
+		lbl_match_score.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+		center_badge_col.add_child(lbl_match_score)
+	else:
+		var lbl_vs := Label.new()
+		lbl_vs.text = "VS"
+		lbl_vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_vs.add_theme_font_override("font", _font_hekayat)
+		lbl_vs.add_theme_font_size_override("font_size", 32)
+		lbl_vs.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_ANTIQUE)
+		center_badge_col.add_child(lbl_vs)
+
+	vs_row.add_child(center_badge_col)
+
+	# Player (Right)
+	var my_item := VBoxContainer.new()
+	my_item.alignment = BoxContainer.ALIGNMENT_CENTER
+	my_item.add_theme_constant_override("separation", 4)
+
+	var my_badge = CafeSocialTheme.make_avatar_badge(my_avatar_id, my_frame_id, 74.0)
+	my_item.add_child(my_badge)
+
+	var lbl_my := Label.new()
+	lbl_my.text = my_name
+	lbl_my.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_my.custom_minimum_size = Vector2(100, 0)
+	lbl_my.clip_text = true
+	lbl_my.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	lbl_my.add_theme_font_override("font", _font_hekayat)
+	lbl_my.add_theme_font_size_override("font_size", 22)
+	lbl_my.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	my_item.add_child(lbl_my)
+	vs_row.add_child(my_item)
+
+	# 5. Organized Rounds Breakdown
+	var r_title := Label.new()
+	r_title.text = "جزئیات راندهای مسابقه"
+	r_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	r_title.add_theme_font_override("font", _font_hekayat)
+	r_title.add_theme_font_size_override("font_size", 28)
+	r_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	dvbox.add_child(r_title)
+
+	if rounds.is_empty():
+		var single_round_card := PanelContainer.new()
+		single_round_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 12))
+		var srm := MarginContainer.new()
+		srm.add_theme_constant_override("margin_left", 16)
+		srm.add_theme_constant_override("margin_right", 16)
+		srm.add_theme_constant_override("margin_top", 12)
+		srm.add_theme_constant_override("margin_bottom", 12)
+		single_round_card.add_child(srm)
+
+		var srh := HBoxContainer.new()
+		srh.alignment = BoxContainer.ALIGNMENT_CENTER
+		srh.add_theme_constant_override("separation", 12)
+		srm.add_child(srh)
+
+		srh.add_child(CafeSocialTheme.make_badge_pill(res_text, res_color, res_bg, res_border, 18))
+
+		var mid_v := VBoxContainer.new()
+		mid_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mid_v.alignment = BoxContainer.ALIGNMENT_CENTER
+		var l_gname := Label.new()
+		l_gname.text = "راند تک‌دست • %s" % game_fa_title
+		l_gname.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		l_gname.add_theme_font_override("font", _font_hekayat)
+		l_gname.add_theme_font_size_override("font_size", 22)
+		l_gname.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+		mid_v.add_child(l_gname)
+		srh.add_child(mid_v)
+
+		var r_icon := TextureRect.new()
+		r_icon.custom_minimum_size = Vector2(48, 48)
+		r_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		r_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		r_icon.texture = _get_game_icon_texture(main_game_type)
+		srh.add_child(r_icon)
+
+		dvbox.add_child(single_round_card)
+	else:
 		for i in range(rounds.size()):
 			var r = rounds[i]
+			var r_gtype = str(r.get("game_type", main_game_type))
+			var r_gname = _get_game_fa_name(r_gtype)
+
 			var r_card := PanelContainer.new()
 			r_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 12))
 			var rm := MarginContainer.new()
 			rm.add_theme_constant_override("margin_left", 16)
-			rm.add_theme_constant_override("margin_top", 10)
 			rm.add_theme_constant_override("margin_right", 16)
+			rm.add_theme_constant_override("margin_top", 10)
 			rm.add_theme_constant_override("margin_bottom", 10)
 			r_card.add_child(rm)
 
 			var rh := HBoxContainer.new()
+			rh.alignment = BoxContainer.ALIGNMENT_CENTER
+			rh.add_theme_constant_override("separation", 12)
 			rm.add_child(rh)
 
+			var r_win_uid = str(r.get("winner_user_id", ""))
+			var r_win_id = str(r.get("winner_id", ""))
+			var r_status_txt = "مساوی"
+			var r_st_color = Color(1.0, 0.90, 0.40)
+			var r_st_bg = Color(0.24, 0.18, 0.08, 0.95)
+			var r_st_border = Color(0.80, 0.65, 0.35)
+
+			var p1_uid = str(game.get("user1_id", ""))
+			var is_p1 = (p1_uid == my_uid)
+
+			if r_win_uid == my_uid or (r_win_uid.is_empty() and ((r_win_id == "1" and is_p1) or (r_win_id == "2" and not is_p1))):
+				r_status_txt = "برد 🏆"
+				r_st_color = CafeSocialTheme.COL_EMERALD_TEXT
+				r_st_bg = CafeSocialTheme.COL_EMERALD_BG
+				r_st_border = CafeSocialTheme.COL_EMERALD_BORDER
+			elif not r_win_uid.is_empty() or (r_win_id in ["1", "2"]):
+				r_status_txt = "باخت"
+				r_st_color = CafeSocialTheme.COL_CRIMSON_TEXT
+				r_st_bg = Color(0.35, 0.08, 0.08, 0.95)
+				r_st_border = Color(0.85, 0.35, 0.35, 1.0)
+			elif r_win_id == "0":
+				r_status_txt = "مساوی"
+				r_st_color = Color(1.0, 0.90, 0.40)
+				r_st_bg = Color(0.24, 0.18, 0.08, 0.95)
+				r_st_border = Color(0.80, 0.65, 0.35)
+
+			rh.add_child(CafeSocialTheme.make_badge_pill(r_status_txt, r_st_color, r_st_bg, r_st_border, 18))
+
+			var r_col := VBoxContainer.new()
+			r_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			r_col.alignment = BoxContainer.ALIGNMENT_CENTER
+			r_col.add_theme_constant_override("separation", 2)
+			rh.add_child(r_col)
+
 			var r_lbl := Label.new()
-			r_lbl.text = "راند %s  •  نوع: %s" % [GameManager.to_fa_num(i + 1), str(r.get("game_type", "بازی"))]
-			r_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			r_lbl.text = "راند %s  •  %s" % [GameManager.to_fa_num(i + 1), r_gname]
 			r_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			r_lbl.add_theme_font_override("font", _font_hekayat)
 			r_lbl.add_theme_font_size_override("font_size", 24)
 			r_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
-			rh.add_child(r_lbl)
-			dvbox.add_child(r_card)
+			r_col.add_child(r_lbl)
 
-	# Back button
-	var btn_close := CafeSocialTheme.make_button("بازگشت", "gold", Vector2(240, 56), 24)
-	btn_close.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	btn_close.pressed.connect(func():
-		AudioManager.sfx_tap()
-		modal.queue_free()
-	)
-	dvbox.add_child(btn_close)
+			var r_date_str = str(r.get("date", ""))
+			if not r_date_str.is_empty():
+				var r_sub := Label.new()
+				r_sub.text = _format_shamsi_date_ltr(r_date_str)
+				r_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+				r_sub.add_theme_font_override("font", _font_hekayat)
+				r_sub.add_theme_font_size_override("font_size", 18)
+				r_sub.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
+				r_col.add_child(r_sub)
+
+			var r_icon_frame := PanelContainer.new()
+			r_icon_frame.custom_minimum_size = Vector2(52, 52)
+			var r_if_style := StyleBoxFlat.new()
+			r_if_style.bg_color = Color(0.10, 0.07, 0.03, 0.95)
+			r_if_style.border_color = CafeSocialTheme.COL_GOLD_ANTIQUE
+			r_if_style.set_border_width_all(2)
+			r_if_style.set_corner_radius_all(10)
+			r_icon_frame.add_theme_stylebox_override("panel", r_if_style)
+
+			var r_icon := TextureRect.new()
+			r_icon.custom_minimum_size = Vector2(46, 46)
+			r_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			r_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			r_icon.texture = _get_game_icon_texture(r_gtype)
+			r_icon_frame.add_child(r_icon)
+			rh.add_child(r_icon_frame)
+
+			dvbox.add_child(r_card)
 
 	add_child(modal)
 
