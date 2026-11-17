@@ -291,6 +291,17 @@ func _populate_matches_cards(holder: VBoxContainer, list: Array, my_uid: String)
 		holder.add_child(card)
 
 
+func _is_single_round_match(game: Dictionary) -> bool:
+	var users_info = game.get("users_info", [])
+	if typeof(users_info) == TYPE_ARRAY and users_info.size() > 2:
+		return true
+	var rounds = game.get("rounds", [])
+	var gtypes = game.get("game_types", [])
+	var r_cnt: int = rounds.size() if typeof(rounds) == TYPE_ARRAY else 0
+	var gt_cnt: int = gtypes.size() if typeof(gtypes) == TYPE_ARRAY else 0
+	return r_cnt <= 1 and gt_cnt <= 1
+
+
 func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 146)
@@ -380,7 +391,8 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	opp_col.add_child(av_panel)
 
 	var lbl_opp_name := Label.new()
-	lbl_opp_name.text = opp_name
+	var is_multi_card: bool = typeof(users_info) == TYPE_ARRAY and users_info.size() > 2
+	lbl_opp_name.text = ("%s (+%s)" % [opp_name, GameManager.to_fa_num(users_info.size() - 2)]) if is_multi_card else opp_name
 	lbl_opp_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_opp_name.custom_minimum_size = Vector2(85, 0)
 	lbl_opp_name.clip_text = true
@@ -421,25 +433,27 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		lbl_res.add_theme_color_override("font_color", Color(0.70, 0.70, 0.70))
 	top_mid.add_child(lbl_res)
 
-	# Integer score
-	var scores = game.get("user_scores", [])
-	var score_str = ""
-	if typeof(scores) == TYPE_ARRAY and scores.size() >= 2:
-		var p1_uid = str(game.get("user1_id", ""))
-		if p1_uid == my_uid:
-			score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[0])), GameManager.to_fa_num(int(scores[1]))]
-		else:
-			score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[1])), GameManager.to_fa_num(int(scores[0]))]
-	elif typeof(scores) == TYPE_ARRAY and not scores.is_empty():
-		score_str = GameManager.to_fa_num(int(scores[0]))
+	# Integer score — omit for single-round & >2-player matches (only show برد/باخت)
+	var is_single_round := _is_single_round_match(game)
+	if not is_single_round:
+		var scores = game.get("user_scores", [])
+		var score_str = ""
+		if typeof(scores) == TYPE_ARRAY and scores.size() >= 2:
+			var p1_uid = str(game.get("user1_id", ""))
+			if p1_uid == my_uid:
+				score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[0])), GameManager.to_fa_num(int(scores[1]))]
+			else:
+				score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[1])), GameManager.to_fa_num(int(scores[0]))]
+		elif typeof(scores) == TYPE_ARRAY and not scores.is_empty():
+			score_str = GameManager.to_fa_num(int(scores[0]))
 
-	if not score_str.is_empty():
-		var lbl_score := Label.new()
-		lbl_score.text = "( %s )" % score_str
-		lbl_score.add_theme_font_override("font", _font_hekayat)
-		lbl_score.add_theme_font_size_override("font_size", 24)
-		lbl_score.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
-		top_mid.add_child(lbl_score)
+		if not score_str.is_empty():
+			var lbl_score := Label.new()
+			lbl_score.text = "( %s )" % score_str
+			lbl_score.add_theme_font_override("font", _font_hekayat)
+			lbl_score.add_theme_font_size_override("font_size", 24)
+			lbl_score.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
+			top_mid.add_child(lbl_score)
 	center_col.add_child(top_mid)
 
 	# Shamsi Full Date and Time
@@ -799,113 +813,203 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 	res_badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	ov.add_child(res_badge)
 
-	# Opponent & User matchup
-	var opp_name = str(game.get("opponent_name", ""))
-	var opp_avatar_id = int(game.get("opponent_image", 0))
-	var opp_data: Dictionary = {}
+	# Players Matchup / Multiplayer Roster
 	var users_info = game.get("users_info", []) if typeof(game.get("users_info")) == TYPE_ARRAY else []
-	for u in users_info:
-		if typeof(u) == TYPE_DICTIONARY and str(u.get("user_id", "")) != my_uid:
-			if opp_name.is_empty():
-				opp_name = str(u.get("username", u.get("name", "حریف")))
-				opp_avatar_id = int(u.get("image", 0))
-			opp_data = u.duplicate(true)
-			break
-	if opp_name.is_empty():
-		opp_name = "حریف"
-		opp_data = {"user_id": "opp", "username": opp_name, "image": opp_avatar_id}
-	var opp_frame_id: int = GameManager.get_player_frame_id(opp_data if not opp_data.is_empty() else game)
+	var is_multiplayer: bool = users_info.size() > 2
+	var is_single_round: bool = _is_single_round_match(game)
+	var winner_uid := str(game.get("winner_id", game.get("winner", "")))
+	var winner_list: Array = game.get("winner_list", []) if typeof(game.get("winner_list")) == TYPE_ARRAY else []
+	if winner_uid.is_empty() and not winner_list.is_empty():
+		winner_uid = str(winner_list[0])
+	var runner_up_uid := str(winner_list[1]) if winner_list.size() >= 2 else ""
 
-	var my_name = str(GameManager.user_data.get("name", GameManager.user_data.get("username", "شما")))
-	var my_avatar_id = int(GameManager.user_data.get("image", 0))
-	var my_frame_id = GameManager.get_player_frame_id(GameManager.user_data)
+	if is_multiplayer:
+		var players_hdr := CafeSocialTheme.make_title(
+			"بازیکنان مسابقه (%s نفره)" % GameManager.to_fa_num(users_info.size()),
+			24, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false
+		)
+		ov.add_child(players_hdr)
 
-	var vs_row := HBoxContainer.new()
-	vs_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	vs_row.add_theme_constant_override("separation", 16)
-	ov.add_child(vs_row)
+		var p_grid := GridContainer.new()
+		p_grid.columns = 2
+		p_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		p_grid.add_theme_constant_override("h_separation", 10)
+		p_grid.add_theme_constant_override("v_separation", 10)
+		ov.add_child(p_grid)
 
-	# Opponent (Left)
-	var opp_item := VBoxContainer.new()
-	opp_item.alignment = BoxContainer.ALIGNMENT_CENTER
-	opp_item.add_theme_constant_override("separation", 4)
-	opp_item.mouse_filter = Control.MOUSE_FILTER_PASS
+		for u in users_info:
+			if typeof(u) != TYPE_DICTIONARY:
+				continue
+			var u_uid := str(u.get("user_id", u.get("_id", "")))
+			var u_name := str(u.get("username", u.get("name", "بازیکن")))
+			var u_img := int(u.get("image", 0))
+			var u_fid := GameManager.get_player_frame_id(u)
+			var is_self_u := (not my_uid.is_empty() and u_uid == my_uid)
+			var is_winner_u := (not winner_uid.is_empty() and winner_uid != "0" and u_uid == winner_uid)
+			var is_runner_up := (not is_winner_u and not runner_up_uid.is_empty() and u_uid == runner_up_uid)
 
-	var opp_badge = CafeSocialTheme.make_avatar_badge(opp_avatar_id, opp_frame_id, 74.0)
-	opp_badge.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	opp_badge.gui_input.connect(func(ev: InputEvent):
-		if ev is InputEventMouseButton and ev.pressed:
-			AudioManager.sfx_tap()
-			UserProfileDialog.show_user(opp_data, "", self)
-	)
-	opp_item.add_child(opp_badge)
+			var p_card := PanelContainer.new()
+			p_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var p_bg := Color(0.11, 0.25, 0.14, 0.96) if is_winner_u else CafeSocialTheme.COL_WALNUT_CARD
+			var p_border := CafeSocialTheme.COL_GOLD_BRIGHT if is_winner_u else (CafeSocialTheme.COL_GOLD_ANTIQUE if is_self_u else CafeSocialTheme.COL_BRONZE_BORDER)
+			var p_bw := 3 if is_winner_u else 1
+			p_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(p_bg, p_border, 14, p_bw, 10.0, 10.0))
 
-	var lbl_opp := Label.new()
-	lbl_opp.text = opp_name
-	lbl_opp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_opp.custom_minimum_size = Vector2(100, 0)
-	lbl_opp.clip_text = true
-	lbl_opp.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl_opp.add_theme_font_override("font", _font_hekayat)
-	lbl_opp.add_theme_font_size_override("font_size", 22)
-	lbl_opp.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
-	opp_item.add_child(lbl_opp)
-	vs_row.add_child(opp_item)
+			var pv := VBoxContainer.new()
+			pv.alignment = BoxContainer.ALIGNMENT_CENTER
+			pv.add_theme_constant_override("separation", 6)
+			p_card.add_child(pv)
 
-	# Center: Score / VS
-	var scores = game.get("user_scores", []) if typeof(game.get("user_scores")) == TYPE_ARRAY else []
-	var score_str = ""
-	if scores.size() >= 2:
-		var p1_uid = str(game.get("user1_id", ""))
-		if p1_uid == my_uid:
-			score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[1])), GameManager.to_fa_num(int(scores[0]))]
-		else:
-			score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[0])), GameManager.to_fa_num(int(scores[1]))]
-	elif not scores.is_empty():
-		score_str = GameManager.to_fa_num(int(scores[0]))
+			var u_badge := CafeSocialTheme.make_avatar_badge(u_img, u_fid, 66.0)
+			u_badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			if not is_self_u:
+				u_badge.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+				var u_copy: Dictionary = u.duplicate(true)
+				u_badge.gui_input.connect(func(ev: InputEvent):
+					if ev is InputEventMouseButton and ev.pressed:
+						AudioManager.sfx_tap()
+						UserProfileDialog.show_user(u_copy, "", self)
+				)
+			pv.add_child(u_badge)
 
-	var center_badge_col := VBoxContainer.new()
-	center_badge_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	center_badge_col.add_theme_constant_override("separation", 2)
+			var lbl_u := Label.new()
+			lbl_u.text = ("%s (شما)" % u_name) if is_self_u else u_name
+			lbl_u.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			lbl_u.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			lbl_u.clip_text = true
+			lbl_u.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			lbl_u.add_theme_font_override("font", _font_hekayat)
+			lbl_u.add_theme_font_size_override("font_size", 21)
+			lbl_u.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT if (is_winner_u or is_self_u) else CafeSocialTheme.COL_IVORY)
+			pv.add_child(lbl_u)
 
-	if not score_str.is_empty():
-		var lbl_match_score := Label.new()
-		lbl_match_score.text = score_str
-		lbl_match_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_match_score.add_theme_font_override("font", _font_hekayat)
-		lbl_match_score.add_theme_font_size_override("font_size", 42)
-		lbl_match_score.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
-		center_badge_col.add_child(lbl_match_score)
+			if is_winner_u:
+				var win_pill := CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 18)
+				win_pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				pv.add_child(win_pill)
+			elif is_runner_up:
+				var sec_pill := CafeSocialTheme.make_badge_pill("🥈 نفر دوم", Color(0.88, 0.90, 0.95), Color(0.18, 0.16, 0.14, 0.95), Color(0.70, 0.72, 0.78), 16)
+				sec_pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				pv.add_child(sec_pill)
+
+			p_grid.add_child(p_card)
 	else:
-		var lbl_vs := Label.new()
-		lbl_vs.text = "VS"
-		lbl_vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_vs.add_theme_font_override("font", _font_hekayat)
-		lbl_vs.add_theme_font_size_override("font_size", 32)
-		lbl_vs.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_ANTIQUE)
-		center_badge_col.add_child(lbl_vs)
+		# 2-Player Opponent & User matchup
+		var opp_name = str(game.get("opponent_name", ""))
+		var opp_avatar_id = int(game.get("opponent_image", 0))
+		var opp_data: Dictionary = {}
+		for u in users_info:
+			if typeof(u) == TYPE_DICTIONARY and str(u.get("user_id", "")) != my_uid:
+				if opp_name.is_empty():
+					opp_name = str(u.get("username", u.get("name", "حریف")))
+					opp_avatar_id = int(u.get("image", 0))
+				opp_data = u.duplicate(true)
+				break
+		if opp_name.is_empty():
+			opp_name = "حریف"
+			opp_data = {"user_id": "opp", "username": opp_name, "image": opp_avatar_id}
+		var opp_frame_id: int = GameManager.get_player_frame_id(opp_data if not opp_data.is_empty() else game)
+		var opp_uid := str(opp_data.get("user_id", game.get("opponent_id", "")))
 
-	vs_row.add_child(center_badge_col)
+		var my_name = str(GameManager.user_data.get("name", GameManager.user_data.get("username", "شما")))
+		var my_avatar_id = int(GameManager.user_data.get("image", 0))
+		var my_frame_id = GameManager.get_player_frame_id(GameManager.user_data)
 
-	# Player (Right)
-	var my_item := VBoxContainer.new()
-	my_item.alignment = BoxContainer.ALIGNMENT_CENTER
-	my_item.add_theme_constant_override("separation", 4)
+		var vs_row := HBoxContainer.new()
+		vs_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		vs_row.add_theme_constant_override("separation", 16)
+		ov.add_child(vs_row)
 
-	var my_badge = CafeSocialTheme.make_avatar_badge(my_avatar_id, my_frame_id, 74.0)
-	my_item.add_child(my_badge)
+		# Opponent (Left)
+		var opp_item := VBoxContainer.new()
+		opp_item.alignment = BoxContainer.ALIGNMENT_CENTER
+		opp_item.add_theme_constant_override("separation", 4)
+		opp_item.mouse_filter = Control.MOUSE_FILTER_PASS
 
-	var lbl_my := Label.new()
-	lbl_my.text = my_name
-	lbl_my.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_my.custom_minimum_size = Vector2(100, 0)
-	lbl_my.clip_text = true
-	lbl_my.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl_my.add_theme_font_override("font", _font_hekayat)
-	lbl_my.add_theme_font_size_override("font_size", 22)
-	lbl_my.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
-	my_item.add_child(lbl_my)
-	vs_row.add_child(my_item)
+		var opp_badge = CafeSocialTheme.make_avatar_badge(opp_avatar_id, opp_frame_id, 74.0)
+		opp_badge.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		opp_badge.gui_input.connect(func(ev: InputEvent):
+			if ev is InputEventMouseButton and ev.pressed:
+				AudioManager.sfx_tap()
+				UserProfileDialog.show_user(opp_data, "", self)
+		)
+		opp_item.add_child(opp_badge)
+
+		var lbl_opp := Label.new()
+		lbl_opp.text = opp_name
+		lbl_opp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_opp.custom_minimum_size = Vector2(100, 0)
+		lbl_opp.clip_text = true
+		lbl_opp.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		lbl_opp.add_theme_font_override("font", _font_hekayat)
+		lbl_opp.add_theme_font_size_override("font_size", 22)
+		lbl_opp.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+		opp_item.add_child(lbl_opp)
+		if my_res == "lose" or (not opp_uid.is_empty() and opp_uid == winner_uid):
+			var ow_pill := CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 16)
+			ow_pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			opp_item.add_child(ow_pill)
+		vs_row.add_child(opp_item)
+
+		# Center: Score (multi-round only) / VS (single-round)
+		var scores = game.get("user_scores", []) if typeof(game.get("user_scores")) == TYPE_ARRAY else []
+		var score_str = ""
+		if not is_single_round:
+			if scores.size() >= 2:
+				var p1_uid = str(game.get("user1_id", ""))
+				if p1_uid == my_uid:
+					score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[1])), GameManager.to_fa_num(int(scores[0]))]
+				else:
+					score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[0])), GameManager.to_fa_num(int(scores[1]))]
+			elif not scores.is_empty():
+				score_str = GameManager.to_fa_num(int(scores[0]))
+
+		var center_badge_col := VBoxContainer.new()
+		center_badge_col.alignment = BoxContainer.ALIGNMENT_CENTER
+		center_badge_col.add_theme_constant_override("separation", 2)
+
+		if not score_str.is_empty():
+			var lbl_match_score := Label.new()
+			lbl_match_score.text = score_str
+			lbl_match_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			lbl_match_score.add_theme_font_override("font", _font_hekayat)
+			lbl_match_score.add_theme_font_size_override("font_size", 42)
+			lbl_match_score.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+			center_badge_col.add_child(lbl_match_score)
+		else:
+			var lbl_vs := Label.new()
+			lbl_vs.text = "VS"
+			lbl_vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			lbl_vs.add_theme_font_override("font", _font_hekayat)
+			lbl_vs.add_theme_font_size_override("font_size", 32)
+			lbl_vs.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_ANTIQUE)
+			center_badge_col.add_child(lbl_vs)
+
+		vs_row.add_child(center_badge_col)
+
+		# Player (Right)
+		var my_item := VBoxContainer.new()
+		my_item.alignment = BoxContainer.ALIGNMENT_CENTER
+		my_item.add_theme_constant_override("separation", 4)
+
+		var my_badge = CafeSocialTheme.make_avatar_badge(my_avatar_id, my_frame_id, 74.0)
+		my_item.add_child(my_badge)
+
+		var lbl_my := Label.new()
+		lbl_my.text = my_name
+		lbl_my.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_my.custom_minimum_size = Vector2(100, 0)
+		lbl_my.clip_text = true
+		lbl_my.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		lbl_my.add_theme_font_override("font", _font_hekayat)
+		lbl_my.add_theme_font_size_override("font_size", 22)
+		lbl_my.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+		my_item.add_child(lbl_my)
+		if my_res == "win":
+			var mw_pill := CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 16)
+			mw_pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			my_item.add_child(mw_pill)
+		vs_row.add_child(my_item)
 
 	# 5. Organized Rounds Breakdown
 	var r_title := Label.new()

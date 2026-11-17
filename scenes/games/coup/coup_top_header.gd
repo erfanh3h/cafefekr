@@ -50,14 +50,14 @@ func _setup_multiplayer_styles() -> void:
 	_style_match_box_p4.border_color = Color(1.0, 0.86, 0.28, 0.95)
 
 func _build_extra_player_cards() -> void:
-	var players_row = get_node_or_null("Margin/VBoxMain/PlayersRow") as HBoxContainer
-	if not players_row or not is_instance_valid(p2_card):
+	var players_row2 = _get_or_create_players_row2()
+	if not players_row2 or not is_instance_valid(p2_card):
 		return
 	for idx in [3, 4]:
 		var card_dup = p2_card.duplicate(0) as PanelContainer
 		card_dup.name = "P%dCard" % idx
 		card_dup.visible = false
-		players_row.add_child(card_dup)
+		players_row2.add_child(card_dup)
 
 		var av_container = card_dup.get_node_or_null("HBox/AvatarContainer") as Control
 		var av_rect = card_dup.get_node_or_null("HBox/AvatarContainer/Avatar") as TextureRect
@@ -137,7 +137,8 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 	var players_row = get_node_or_null("Margin/VBoxMain/PlayersRow") as HBoxContainer
 	var is_compact = (total_players > 2)
 	if is_instance_valid(players_row):
-		players_row.add_theme_constant_override("separation", 8 if is_compact else 16)
+		players_row.add_theme_constant_override("separation", 10 if is_compact else 16)
+	_update_two_row_visibility(total_players)
 
 	var all_cards = [
 		{"idx": 1, "card": p1_card, "av_c": p1_avatar.get_parent() if is_instance_valid(p1_avatar) else null, "name": p1_name, "role": p1_role_badge, "score_b": _p1_score_badge, "score": p1_score_lbl},
@@ -162,37 +163,39 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 		if not is_instance_valid(c):
 			continue
 		c.visible = (idx <= total_players)
-		c.custom_minimum_size = Vector2(0, 128 if is_compact else 148)
+		c.custom_minimum_size = Vector2(0, 98 if is_compact else 148)
 		var hbox = c.get_node_or_null("HBox") as HBoxContainer
 		if hbox:
-			hbox.add_theme_constant_override("separation", 6 if is_compact else 12)
+			hbox.add_theme_constant_override("separation", 10 if is_compact else 12)
 		var av_c: Control = item["av_c"]
 		if is_instance_valid(av_c):
-			var av_sz: float = 64.0 if total_players == 4 else (74.0 if total_players == 3 else 96.0)
+			var av_sz: float = 68.0 if is_compact else 96.0
 			av_c.custom_minimum_size = Vector2(av_sz + 6.0, av_sz + 6.0)
 			av_c.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			av_c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			av_c.set_meta("_av_box_boosted", true)
 		var nm: Label = item["name"]
 		if is_instance_valid(nm):
-			nm.add_theme_font_size_override("font_size", 32 if total_players == 4 else (34 if total_players == 3 else 40))
+			nm.add_theme_font_size_override("font_size", 32 if is_compact else 40)
 			nm.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 			nm.add_theme_constant_override("outline_size", 3)
 		var rl: Label = item["role"]
 		if is_instance_valid(rl):
-			rl.add_theme_font_size_override("font_size", 24 if total_players == 4 else (26 if total_players == 3 else 28))
+			rl.add_theme_font_size_override("font_size", 24 if is_compact else 28)
 			rl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.82))
 			rl.add_theme_constant_override("outline_size", 2)
 		var sb: PanelContainer = item["score_b"]
 		if is_instance_valid(sb):
 			sb.visible = true
-			var b_sz = 52.0 if total_players == 4 else (56.0 if total_players == 3 else 64.0)
+			var b_sz = 52.0 if is_compact else 64.0
 			sb.custom_minimum_size = Vector2(b_sz, b_sz)
 		var sc: Label = item["score"]
 		if is_instance_valid(sc):
-			sc.add_theme_font_size_override("font_size", 31 if total_players == 4 else (33 if total_players == 3 else 36))
+			sc.add_theme_font_size_override("font_size", 32 if is_compact else 36)
 			sc.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 			sc.add_theme_constant_override("outline_size", 3)
+		if is_player_disabled(idx):
+			_apply_disabled_visual(idx)
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_my_player_index = my_idx
@@ -283,29 +286,34 @@ func _render_player_badges(rank1: int = 0, rank2: int = 0) -> void:
 		var alive_cnt: int = int(_player_alive_cards.get(idx, 2))
 		var is_alive: bool = bool(_player_alive_flags.get(idx, true)) and alive_cnt > 0
 
+		var is_dead: bool = (not is_alive) or is_player_disabled(idx)
+		if not is_alive and not is_player_disabled(idx):
+			set_player_disabled(idx, true, "💀 حذف شد")
+
 		var sl: Label = score_labels.get(idx, null)
 		if is_instance_valid(sl):
 			if rank1 == idx:
 				sl.text = "👑"
 			elif rank2 == idx:
 				sl.text = "🥈"
-			elif not is_alive:
+			elif is_dead:
 				sl.text = "💀"
 			else:
 				sl.text = "🪙%s" % _fa_digits(coins)
 
 		var rl: Label = role_labels.get(idx, null)
-		if is_instance_valid(rl):
-			if not is_alive:
-				rl.text = "💀 حذف شد"
-			elif alive_cnt == 1:
+		if is_instance_valid(rl) and not is_dead:
+			if alive_cnt == 1:
 				rl.text = "♥ ۱ نفوذ"
 			else:
 				rl.text = "♥♥ %s نفوذ" % _fa_digits(alive_cnt)
 
-		var c_panel: PanelContainer = cards_map.get(idx, null)
-		if is_instance_valid(c_panel):
-			c_panel.modulate = Color(1.0, 1.0, 1.0, 1.0) if is_alive else Color(0.55, 0.48, 0.48, 0.72)
+		if is_dead:
+			_apply_disabled_visual(idx)
+		else:
+			var c_panel: PanelContainer = cards_map.get(idx, null)
+			if is_instance_valid(c_panel):
+				c_panel.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
 func update_scores(_p1_score: int, _p2_score: int) -> void:
 	_render_player_badges(0, 0)
@@ -357,6 +365,9 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 			}
 
 	for idx in cards.keys():
+		if is_player_disabled(idx):
+			_apply_disabled_visual(idx)
+			continue
 		var item = cards[idx]
 		var c: PanelContainer = item["card"]
 		var av: Panel = item["av"]

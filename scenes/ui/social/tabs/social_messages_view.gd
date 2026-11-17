@@ -171,6 +171,8 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	name_row.add_child(nm_lbl)
 
 	var preview_txt := last_msg if not last_msg.is_empty() else "گفتگو را شروع کنید..."
+	if (preview_txt.begins_with("[sticker:") or preview_txt.begins_with("[استیکر ")) and preview_txt.ends_with("]"):
+		preview_txt = "🎭 استیکر"
 	if preview_txt.length() > 54:
 		preview_txt = preview_txt.substr(0, 52) + "..."
 	var p_lbl := CafeSocialTheme.make_body(preview_txt, 23, CafeSocialTheme.COL_WARM_CREAM if unread > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
@@ -198,14 +200,42 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	return wrap
 
 
+static func _apply_invite_btn_state(btn_inv: TextureButton, is_online: bool) -> void:
+	if not is_instance_valid(btn_inv):
+		return
+	btn_inv.disabled = not is_online
+	btn_inv.modulate = Color(1.0, 1.0, 1.0, 1.0) if is_online else Color(0.45, 0.45, 0.45, 0.45)
+	btn_inv.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if is_online else Control.CURSOR_ARROW
+	btn_inv.tooltip_text = "دعوت به بازی" if is_online else "بازیکن آفلاین است"
+
+
+static func update_active_partner_presence(host: Control, new_status: String) -> void:
+	var st := new_status if not new_status.is_empty() else "offline"
+	var is_online := (st != "offline")
+	if is_instance_valid(host._dm_partner_status_badge):
+		host._dm_partner_status_badge.texture = CafeSocialTheme.get_status_texture(st)
+	if is_instance_valid(host._dm_invite_btn):
+		_apply_invite_btn_state(host._dm_invite_btn, is_online)
+	if is_instance_valid(host._dm_partner_avatar_btn):
+		var partner: Dictionary = host._active_dm_partner_info if typeof(host._active_dm_partner_info) == TYPE_DICTIONARY else {}
+		var av_id := int(partner.get("image", partner.get("avatar", 0)))
+		var frame_id := int(partner.get("profile_frame", partner.get("avatar_frame", 0)))
+		for ch in host._dm_partner_avatar_btn.get_children():
+			ch.queue_free()
+		var fresh_av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 72.0, st, true)
+		fresh_av.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		host._dm_partner_avatar_btn.add_child(fresh_av)
+
+
 static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> void:
 	var partner: Dictionary = host._active_dm_partner_info
 	var pid: String = str(host._active_dm_partner_id)
 	var pname: String = str(host._active_dm_partner_name)
 	var av_id := int(partner.get("image", 0))
 	var frame_id := int(partner.get("profile_frame", 0))
-	var pres: Dictionary = partner.get("presence", {}) if typeof(partner.get("presence")) == TYPE_DICTIONARY else {"status": str(partner.get("status", "online"))}
-	var p_info := CafeSocialTheme.format_presence(pres)
+	var pres: Dictionary = partner.get("presence", {}) if typeof(partner.get("presence")) == TYPE_DICTIONARY else {"status": str(partner.get("status", "offline"))}
+	var initial_st := str(pres.get("status", "offline"))
+	var is_partner_online := (initial_st != "offline")
 
 	# Conversation Top Header
 	var hdr_margin := MarginContainer.new()
@@ -244,21 +274,24 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	)
 	hrow.add_child(btn_back)
 
-	# Icon button: game.png (Invite to game)
+	# Icon button: game.png (Invite to game — disabled when partner is offline)
 	var btn_inv := TextureButton.new()
 	btn_inv.custom_minimum_size = Vector2(68, 68)
 	btn_inv.ignore_texture_size = true
 	btn_inv.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn_inv.texture_normal = preload("res://assets/images/frames/game.png")
 	btn_inv.focus_mode = Control.FOCUS_NONE
-	btn_inv.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	ActionVFXManager.apply_button_juice(btn_inv, "tap_button")
+	_apply_invite_btn_state(btn_inv, is_partner_online)
 	btn_inv.pressed.connect(func():
+		if btn_inv.disabled:
+			return
 		AudioManager.sfx_tap()
 		CafeSocialTheme.show_game_invite_modal(host, pid, pname, func(gtitle: String):
 			host._show_toast("دعوت‌نامه بازی «%s» برای %s ارسال شد!" % [gtitle, pname])
 		)
 	)
+	host._dm_invite_btn = btn_inv
 	hrow.add_child(btn_inv)
 
 	var p_col := VBoxContainer.new()
@@ -268,8 +301,9 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	hrow.add_child(p_col)
 
 	p_col.add_child(CafeSocialTheme.make_title(pname, 30, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
-	var st_badge_partner := CafeSocialTheme.make_status_badge(str(pres.get("status", "offline")), 29.0)
+	var st_badge_partner := CafeSocialTheme.make_status_badge(initial_st, 29.0)
 	st_badge_partner.size_flags_horizontal = Control.SIZE_SHRINK_END
+	host._dm_partner_status_badge = st_badge_partner
 	p_col.add_child(st_badge_partner)
 
 	var av_btn := Button.new()
@@ -277,13 +311,14 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	av_btn.custom_minimum_size = Vector2(74, 74)
 	av_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	av_btn.focus_mode = Control.FOCUS_NONE
-	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 72.0, str(pres.get("status", "offline")), true)
+	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 72.0, initial_st, true)
 	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	av_btn.add_child(av)
 	av_btn.pressed.connect(func():
 		AudioManager.sfx_tap()
-		host._open_player_profile(partner if not partner.is_empty() else {"_id": pid, "username": pname})
+		host._open_player_profile(host._active_dm_partner_info if not host._active_dm_partner_info.is_empty() else {"_id": pid, "username": pname})
 	)
+	host._dm_partner_avatar_btn = av_btn
 	hrow.add_child(av_btn)
 
 	# Messages Scroll Area (remove frame under chats list)
@@ -336,6 +371,22 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	host._dm_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dm_input_row.add_child(host._dm_input)
 
+	var btn_sticker := TextureButton.new()
+	btn_sticker.texture_normal = CafeSocialTheme.BADGE_SOCIAL
+	btn_sticker.custom_minimum_size = Vector2(56, 56)
+	btn_sticker.ignore_texture_size = true
+	btn_sticker.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_sticker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	btn_sticker.focus_mode = Control.FOCUS_NONE
+	btn_sticker.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_sticker.tooltip_text = "ارسال استیکر"
+	ActionVFXManager.apply_button_juice(btn_sticker, "tap_button")
+	btn_sticker.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_open_dm_sticker_picker(host)
+	)
+	dm_input_row.add_child(btn_sticker)
+
 	btn_send.pressed.connect(func():
 		AudioManager.sfx_tap()
 		host._send_active_dm()
@@ -351,8 +402,8 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 				host._active_dm_partner_info = res["partner"]
 				var p_fresh: Dictionary = res["partner"]
 				var pr_fresh: Dictionary = p_fresh.get("presence", {}) if typeof(p_fresh.get("presence")) == TYPE_DICTIONARY else {}
-				if is_instance_valid(st_badge_partner) and st_badge_partner is TextureRect:
-					st_badge_partner.texture = CafeSocialTheme.get_status_texture(str(pr_fresh.get("status", "offline")))
+				var fresh_st := str(pr_fresh.get("status", p_fresh.get("status", "offline")))
+				update_active_partner_presence(host, fresh_st)
 			host._active_dm_messages = res.get("messages", []) if typeof(res.get("messages")) == TYPE_ARRAY else []
 			if res.has("unread_dms"):
 				NetworkManager.unread_dms_count = max(0, int(res["unread_dms"]))
@@ -425,11 +476,29 @@ static func render_messages(host: Control) -> void:
 		bubble_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bubble_col.add_theme_constant_override("separation", 4)
 
-		# Speech Bubble Frame (chat_my.png or chat_other.png)
+		# Check if message is a sticker: [sticker:X] or [استیکر X] (1..16)
+		var is_sticker := false
+		var sticker_id := 0
+		if txt.begins_with("[sticker:") and txt.ends_with("]"):
+			sticker_id = int(txt.substr(9, txt.length() - 10))
+			is_sticker = true
+		elif txt.begins_with("[استیکر ") and txt.ends_with("]"):
+			sticker_id = int(txt.substr(9, txt.length() - 10))
+			is_sticker = true
+
+		var s_tex: Texture2D = load("res://assets/icons/Reactions/%d.png" % sticker_id) if (is_sticker and sticker_id >= 1 and sticker_id <= 16) else null
+		var render_as_sticker: bool = (s_tex != null)
+
+		# Speech Bubble Frame (stickers have NO chat frame under them)
 		var bubble := PanelContainer.new()
-		bubble.custom_minimum_size = Vector2(220, 96)
-		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_chat_bubble_style(from_me))
+		if render_as_sticker:
+			bubble.custom_minimum_size = Vector2(0, 0)
+			bubble.size_flags_horizontal = Control.SIZE_SHRINK_END if from_me else Control.SIZE_SHRINK_BEGIN
+			bubble.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		else:
+			bubble.custom_minimum_size = Vector2(220, 96)
+			bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_chat_bubble_style(from_me))
 		bubble_col.add_child(bubble)
 
 		var b_vbox := VBoxContainer.new()
@@ -437,19 +506,28 @@ static func render_messages(host: Control) -> void:
 		b_vbox.add_theme_constant_override("separation", 6)
 		bubble.add_child(b_vbox)
 
-		var msg_lbl := Label.new()
-		msg_lbl.text = txt
-		msg_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		msg_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-		msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		msg_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		msg_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		msg_lbl.add_theme_font_size_override("font_size", 24)
-		if from_me:
-			msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+		if render_as_sticker:
+			var s_rect := TextureRect.new()
+			s_rect.texture = s_tex
+			s_rect.custom_minimum_size = Vector2(108, 108)
+			s_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			s_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			s_rect.size_flags_horizontal = Control.SIZE_SHRINK_END if from_me else Control.SIZE_SHRINK_BEGIN
+			b_vbox.add_child(s_rect)
 		else:
-			msg_lbl.add_theme_color_override("font_color", Color(0.24, 0.15, 0.06, 1.0))
-		b_vbox.add_child(msg_lbl)
+			var msg_lbl := Label.new()
+			msg_lbl.text = txt
+			msg_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			msg_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+			msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			msg_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			msg_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+			msg_lbl.add_theme_font_size_override("font_size", 24)
+			if from_me:
+				msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+			else:
+				msg_lbl.add_theme_color_override("font_color", Color(0.24, 0.15, 0.06, 1.0))
+			b_vbox.add_child(msg_lbl)
 
 		# Footer Row at bottom of chat box (Date + Time + Read Tick)
 		var dt_str := CafeSocialTheme.format_chat_datetime_fa(str(m.get("created_at", "")))
@@ -457,7 +535,7 @@ static func render_messages(host: Control) -> void:
 		footer_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		footer_row.add_theme_constant_override("separation", 6)
 		if from_me:
-			footer_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+			footer_row.alignment = BoxContainer.ALIGNMENT_BEGIN if not render_as_sticker else BoxContainer.ALIGNMENT_END
 			if not read_tick.is_empty():
 				var tick_lbl := Label.new()
 				tick_lbl.text = read_tick
@@ -473,13 +551,13 @@ static func render_messages(host: Control) -> void:
 				time_lbl.add_theme_color_override("font_color", Color(0.85, 0.82, 0.72, 0.85))
 				footer_row.add_child(time_lbl)
 		else:
-			footer_row.alignment = BoxContainer.ALIGNMENT_END
+			footer_row.alignment = BoxContainer.ALIGNMENT_END if not render_as_sticker else BoxContainer.ALIGNMENT_BEGIN
 			if not dt_str.is_empty():
 				var time_lbl := Label.new()
 				time_lbl.text = dt_str
 				time_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
 				time_lbl.add_theme_font_size_override("font_size", 17)
-				time_lbl.add_theme_color_override("font_color", Color(0.42, 0.32, 0.20, 0.90))
+				time_lbl.add_theme_color_override("font_color", Color(0.85, 0.82, 0.72, 0.88) if render_as_sticker else Color(0.42, 0.32, 0.20, 0.90))
 				footer_row.add_child(time_lbl)
 		b_vbox.add_child(footer_row)
 
@@ -501,6 +579,104 @@ static func render_messages(host: Control) -> void:
 	# Scroll smoothly to bottom
 	if is_instance_valid(host._dm_messages_scroll):
 		host.call_deferred("_scroll_dm_to_bottom")
+
+
+static func _open_dm_sticker_picker(host: Control) -> void:
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 60
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.02, 0.01, 0.01, 0.70)
+	dim.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.pressed:
+			overlay.queue_free()
+	)
+	overlay.add_child(dim)
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(620, 0)
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
+	center.add_child(card)
+
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 20)
+	m.add_theme_constant_override("margin_bottom", 20)
+	card.add_child(m)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	m.add_child(vbox)
+
+	var top_r := HBoxContainer.new()
+	vbox.add_child(top_r)
+
+	var bx := TextureButton.new()
+	bx.texture_normal = CafeSocialTheme.TEX_CLOSE
+	bx.custom_minimum_size = Vector2(44, 44)
+	bx.ignore_texture_size = true
+	bx.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	bx.pressed.connect(func(): overlay.queue_free())
+	top_r.add_child(bx)
+
+	var ttl := CafeSocialTheme.make_title("ارسال استیکر", 26, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
+	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_r.add_child(ttl)
+
+	var sp := Control.new()
+	sp.custom_minimum_size = Vector2(44, 44)
+	top_r.add_child(sp)
+
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(0, 380)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 12)
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(grid)
+
+	for sid in range(1, 17):
+		var s_btn := Button.new()
+		s_btn.custom_minimum_size = Vector2(120, 110)
+		s_btn.focus_mode = Control.FOCUS_NONE
+		s_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		s_btn.add_theme_stylebox_override("normal", CafeSocialTheme.create_card_style(Color(0.12, 0.08, 0.04), CafeSocialTheme.COL_BRONZE_BORDER, 12, 1, 6.0, 6.0))
+		s_btn.add_theme_stylebox_override("hover", CafeSocialTheme.create_card_style(Color(0.22, 0.15, 0.08), CafeSocialTheme.COL_GOLD_BRIGHT, 12, 2, 6.0, 6.0))
+
+		var s_tex: Texture2D = load("res://assets/icons/Reactions/%d.png" % sid)
+		if s_tex != null:
+			var tr := TextureRect.new()
+			tr.texture = s_tex
+			tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			s_btn.add_child(tr)
+
+		var chosen_id := sid
+		s_btn.pressed.connect(func():
+			AudioManager.sfx_tap()
+			overlay.queue_free()
+			var sticker_text := "[sticker:%d]" % chosen_id
+			if is_instance_valid(host._dm_input):
+				host._dm_input.text = sticker_text
+				host._send_active_dm()
+		)
+		grid.add_child(s_btn)
+
+	host.add_child(overlay)
 
 
 static func _open_friend_picker_modal(host: Control) -> void:

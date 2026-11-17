@@ -47,6 +47,9 @@ var _clan_chat_is_loading_older: bool = false
 var _dm_messages_vbox: VBoxContainer = null
 var _dm_messages_scroll: ScrollContainer = null
 var _dm_input: LineEdit = null
+var _dm_partner_status_badge: TextureRect = null
+var _dm_partner_avatar_btn: Button = null
+var _dm_invite_btn: TextureButton = null
 
 
 func _ready() -> void:
@@ -118,6 +121,8 @@ func _preload_badge_counts() -> void:
 			var r: Dictionary = data["result"]
 			_incoming_requests = r.get("incoming", []) if typeof(r.get("incoming")) == TYPE_ARRAY else []
 			_outgoing_requests = r.get("outgoing", []) if typeof(r.get("outgoing")) == TYPE_ARRAY else []
+			NetworkManager.incoming_friend_requests_count = _incoming_requests.size()
+			NetworkManager.notify_social_badges_changed()
 			_update_main_tab_buttons()
 	)
 
@@ -294,6 +299,9 @@ func _clear_content() -> VBoxContainer:
 	_dm_messages_vbox = null
 	_dm_messages_scroll = null
 	_dm_input = null
+	_dm_partner_status_badge = null
+	_dm_partner_avatar_btn = null
+	_dm_invite_btn = null
 	for c in content_area.get_children():
 		c.queue_free()
 	var vbox := VBoxContainer.new()
@@ -380,14 +388,26 @@ func _scroll_clan_chat_to_bottom() -> void:
 # ==============================================================================
 
 func _on_realtime_presence_changed(payload: Dictionary) -> void:
-	if not visible:
-		return
 	var uid := str(payload.get("user_id", ""))
+	if uid.is_empty():
+		return
+	var new_st := str(payload.get("status", "offline"))
 	for f in _friends_list:
 		if typeof(f) == TYPE_DICTIONARY and str(f.get("user_id", f.get("_id", ""))) == uid:
+			f["status"] = new_st
 			f["presence"] = payload
+	if uid == _active_dm_partner_id and typeof(_active_dm_partner_info) == TYPE_DICTIONARY:
+		_active_dm_partner_info["status"] = new_st
+		_active_dm_partner_info["presence"] = payload
+	if not visible:
+		return
 	if current_main_tab == "friends" and current_friends_subtab == "list":
 		_refresh_current_tab()
+	elif current_main_tab == "messages":
+		if _active_dm_partner_id.is_empty():
+			_refresh_current_tab()
+		elif uid == _active_dm_partner_id:
+			SocialMessagesView.update_active_partner_presence(self, new_st)
 
 
 func _on_realtime_dm_received(payload: Dictionary) -> void:
@@ -480,6 +500,8 @@ func refresh_friends_and_requests(force_render: bool = true) -> void:
 			var r: Dictionary = data["result"]
 			_incoming_requests = r.get("incoming", []) if typeof(r.get("incoming")) == TYPE_ARRAY else []
 			_outgoing_requests = r.get("outgoing", []) if typeof(r.get("outgoing")) == TYPE_ARRAY else []
+			NetworkManager.incoming_friend_requests_count = _incoming_requests.size()
+			NetworkManager.notify_social_badges_changed()
 			_update_main_tab_buttons()
 		NetworkManager.api.get_friends_list(func(ok2: bool, _c2: int, data2: Variant):
 			if not is_instance_valid(self):

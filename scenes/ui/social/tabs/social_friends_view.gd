@@ -72,6 +72,8 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 				var r: Dictionary = data["result"] if typeof(data["result"]) == TYPE_DICTIONARY else {}
 				host._incoming_requests = r.get("incoming", [])
 				host._outgoing_requests = r.get("outgoing", [])
+				NetworkManager.incoming_friend_requests_count = host._incoming_requests.size()
+				NetworkManager.notify_social_badges_changed()
 				host._update_main_tab_buttons()
 				_populate_requests(host, list_vbox)
 			else:
@@ -377,7 +379,14 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 
 		var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(0, 50), 23)
 		btn_inv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if not is_online_active:
+			btn_inv.disabled = true
+			btn_inv.modulate = Color(0.55, 0.52, 0.48, 0.50)
+			btn_inv.mouse_default_cursor_shape = Control.CURSOR_ARROW
+			btn_inv.tooltip_text = "بازیکن آفلاین است"
 		btn_inv.pressed.connect(func():
+			if btn_inv.disabled:
+				return
 			AudioManager.sfx_tap()
 			CafeSocialTheme.show_game_invite_modal(host, uid, uname, func(gtitle: String):
 				host._show_toast("دعوت‌نامه بازی «%s» برای %s ارسال شد!" % [gtitle, uname])

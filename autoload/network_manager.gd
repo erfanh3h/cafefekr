@@ -78,6 +78,7 @@ signal social_badges_changed()
 
 var unread_notifications_count: int = 0
 var unread_dms_count: int = 0
+var incoming_friend_requests_count: int = 0
 
 func notify_social_badges_changed() -> void:
 	social_badges_changed.emit()
@@ -873,6 +874,7 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			if typeof(payload) == TYPE_DICTIONARY:
 				unread_notifications_count = int(payload.get("unread_notifications", 0))
 				unread_dms_count = int(payload.get("unread_dms", 0))
+				incoming_friend_requests_count = int(payload.get("incoming_friend_requests", 0))
 				social_init_received.emit(payload)
 				social_badges_changed.emit()
 				if GameManager.is_spectating and not GameManager.spectated_game_id.is_empty():
@@ -904,6 +906,9 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.Social_Notification_Received:
 			if typeof(payload) == TYPE_DICTIONARY:
 				var ntype: String = str(payload.get("type", ""))
+				if ntype == "friend_request_received":
+					incoming_friend_requests_count += 1
+					social_badges_changed.emit()
 				if not ntype in ["friend_request_updated", "friend_removed"]:
 					unread_notifications_count += 1
 					social_badges_changed.emit()

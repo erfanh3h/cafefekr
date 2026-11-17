@@ -2816,17 +2816,14 @@ func update_turn(turn: int) -> void:
 
 		current_top_header.update_turn(turn, GameManager.my_player_index, p1_n, p2_n)
 
-
-
-		
-
-
-
 	if is_me and is_game_started:
 
-
-
 		AudioManager.play_sound("start_turn")
+
+
+func set_player_disabled(player_idx: int, disabled: bool, reason_text: String = "خارج شد") -> void:
+	if is_instance_valid(current_top_header) and current_top_header.has_method("set_player_disabled"):
+		current_top_header.set_player_disabled(player_idx, disabled, reason_text)
 
 
 
@@ -2839,16 +2836,14 @@ func stop_timer() -> void:
 		_turn_glow_tween = null
 
 	if p1_card and is_instance_valid(p1_card):
-
-		p1_card.modulate = Color.WHITE
-
-		p1_card.scale = Vector2.ONE
+		if not (is_instance_valid(current_top_header) and current_top_header.has_method("is_player_disabled") and current_top_header.is_player_disabled(1)):
+			p1_card.modulate = Color.WHITE
+			p1_card.scale = Vector2.ONE
 
 	if p2_card and is_instance_valid(p2_card):
-
-		p2_card.modulate = Color.WHITE
-
-		p2_card.scale = Vector2.ONE
+		if not (is_instance_valid(current_top_header) and current_top_header.has_method("is_player_disabled") and current_top_header.is_player_disabled(2)):
+			p2_card.modulate = Color.WHITE
+			p2_card.scale = Vector2.ONE
 
 	is_timer_active = false
 

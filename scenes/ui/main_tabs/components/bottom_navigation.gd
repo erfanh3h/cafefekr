@@ -107,7 +107,7 @@ func _style_tab_item(btn: Button, tab_name: String, is_selected: bool) -> void:
 func update_social_badge() -> void:
 	if not is_instance_valid(badge_social):
 		return
-	var total = NetworkManager.unread_notifications_count + NetworkManager.unread_dms_count
+	var total = NetworkManager.unread_dms_count + NetworkManager.incoming_friend_requests_count
 	if total > 0:
 		badge_social.visible = true
 		lbl_badge_social.text = GameManager.to_fa_num(total)

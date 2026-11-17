@@ -1909,9 +1909,18 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 		)
 		vbox.add_child(b_dm)
 
-		# Action 3: Invite to Game
+		# Action 3: Invite to Game (disabled when offline)
+		var m_pres: Dictionary = m_dict.get("presence", {}) if typeof(m_dict.get("presence")) == TYPE_DICTIONARY else {}
+		var m_is_online := str(m_pres.get("status", m_dict.get("status", "offline"))) != "offline"
 		var b_inv := CafeSocialTheme.make_button("دعوت به بازی دوستانه", "bronze", Vector2(0, 50), 22)
+		if not m_is_online:
+			b_inv.disabled = true
+			b_inv.modulate = Color(0.55, 0.52, 0.48, 0.50)
+			b_inv.mouse_default_cursor_shape = Control.CURSOR_ARROW
+			b_inv.tooltip_text = "بازیکن آفلاین است"
 		b_inv.pressed.connect(func():
+			if b_inv.disabled:
+				return
 			overlay.queue_free()
 			CafeSocialTheme.show_game_invite_modal(host, m_uid, m_name, func(g_title: String):
 				host._show_toast("دعوت‌نامه بازی «%s» برای «%s» ارسال شد!" % [g_title, m_name])

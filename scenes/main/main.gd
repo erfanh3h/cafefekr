@@ -1916,6 +1916,7 @@ func _on_player_surrendered(gamer_id: int) -> void:
 		var p_name = str(p_data.get("name", p_data.get("username", "بازیکن %d" % gamer_id)))
 
 		base_game_hud.show_toast_hint("🏳️ %s از ادامه مسابقه انصراف داد!" % p_name)
+		base_game_hud.set_player_disabled(gamer_id, true, "🏳️ خروج")
 
 		var b_node = cafe_table.current_board_node
 
@@ -1956,6 +1957,8 @@ func _on_not_played_turns_received(gamer_id: int, count: int) -> void:
 	if is_instance_valid(base_game_hud):
 
 		base_game_hud.update_not_played_turns(gamer_id, count)
+		if GameManager.match_players.size() > 2 and count >= 3:
+			base_game_hud.set_player_disabled(gamer_id, true, "⏱️ حذف شد")
 
 
 
@@ -2333,6 +2336,12 @@ func _on_finish_reconnect_time(user_id: String) -> void:
 	base_game_hud.hide_pause_dialog()
 	if GameManager.match_players.size() > 2 or current_match_mode == "multi_rank":
 		base_game_hud.show_toast_hint("⏱️ مهلت اتصال بازیکن قطع‌شده به پایان رسید!")
+		for mp in GameManager.match_players:
+			if typeof(mp) == TYPE_DICTIONARY and str(mp.get("user_id", mp.get("_id", ""))) == user_id:
+				var gid_out: int = int(mp.get("gamer_id", 0))
+				if gid_out > 0:
+					base_game_hud.set_player_disabled(gid_out, true, "📡 قطع اتصال")
+				break
 		var board = cafe_table.current_board_node
 		if board and is_instance_valid(board) and board.has_method("sync_turn_state"):
 			board.sync_turn_state()
@@ -3421,7 +3430,7 @@ func _setup_social_hub_integration() -> void:
 	var update_social_badge = func(_p = null):
 		if not is_instance_valid(social_badge_panel) or not is_instance_valid(social_badge_lbl):
 			return
-		var total_u = NetworkManager.unread_notifications_count + NetworkManager.unread_dms_count
+		var total_u = NetworkManager.unread_dms_count + NetworkManager.incoming_friend_requests_count
 		if total_u > 0:
 			social_badge_panel.visible = true
 			social_badge_lbl.text = GameManager.to_fa_num(total_u) if total_u <= 99 else "۹۹+"

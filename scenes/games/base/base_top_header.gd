@@ -49,7 +49,10 @@ func _can_emit_profile_click() -> bool:
 # --- Dynamic Player 3 & Player 4 Cards (for 3-4 player games) ---
 var p3_card: PanelContainer = null
 var p4_card: PanelContainer = null
+var _players_row2: HBoxContainer = null
+var _p4_empty_spacer: Control = null
 var _extra_cards: Dictionary = {} # idx (3,4) -> Dictionary of child node refs
+var _disabled_players: Dictionary = {} # idx (1..4) -> reason string
 var _player_names: Dictionary = {
 	1: "بازیکن ۱",
 	2: "بازیکن ۲",
@@ -67,6 +70,7 @@ var _style_p3_active: StyleBoxFlat
 var _style_p3_inactive: StyleBoxFlat
 var _style_p4_active: StyleBoxFlat
 var _style_p4_inactive: StyleBoxFlat
+var _style_card_disabled: StyleBoxFlat
 var _timer_style_fill: StyleBoxFlat
 var _timer_style_bg: StyleBoxFlat
 var _style_match_box_normal: StyleBoxFlat
@@ -399,6 +403,13 @@ func _setup_styles() -> void:
 
 	# P2 Inactive
 	_style_p2_inactive = _style_p1_inactive.duplicate()
+
+	# Disabled / Eliminated / Left Player Card (muted charcoal grey)
+	_style_card_disabled = _style_p1_inactive.duplicate()
+	_style_card_disabled.bg_color = Color(0.10, 0.10, 0.11, 0.62)
+	_style_card_disabled.border_color = Color(0.36, 0.36, 0.38, 0.55)
+	_style_card_disabled.shadow_color = Color(0.0, 0.0, 0.0, 0.18)
+	_style_card_disabled.shadow_size = 4
 
 	# Avatar Medallion Rings (transparent: decorative avatar_frames handle framing)
 	_style_avatar_p1_active = StyleBoxFlat.new()
@@ -1271,6 +1282,110 @@ func reset_header() -> void:
 	if is_instance_valid(p2_reaction_bubble):
 		p2_reaction_bubble.top_level = true
 		p2_reaction_bubble.visible = false
+	_disabled_players.clear()
+	for idx in [1, 2, 3, 4]:
+		var b := _get_player_card_bundle(idx)
+		var c: Control = b.get("card", null)
+		if is_instance_valid(c):
+			c.modulate = Color.WHITE
+		var nm: Label = b.get("name", null)
+		if is_instance_valid(nm):
+			nm.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
+		var rl: Label = b.get("role", null)
+		if is_instance_valid(rl):
+			rl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78))
+
+
+func _get_or_create_players_row2() -> HBoxContainer:
+	if is_instance_valid(_players_row2):
+		return _players_row2
+	var vbox_main := get_node_or_null("Margin/VBoxMain") as VBoxContainer
+	var players_row := get_node_or_null("Margin/VBoxMain/PlayersRow") as HBoxContainer
+	if not vbox_main or not players_row:
+		return null
+	var existing := vbox_main.get_node_or_null("PlayersRow2") as HBoxContainer
+	if is_instance_valid(existing):
+		_players_row2 = existing
+		return _players_row2
+	_players_row2 = HBoxContainer.new()
+	_players_row2.name = "PlayersRow2"
+	_players_row2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_players_row2.alignment = BoxContainer.ALIGNMENT_CENTER
+	_players_row2.add_theme_constant_override("separation", 10)
+	_players_row2.visible = false
+	vbox_main.add_child(_players_row2)
+	vbox_main.move_child(_players_row2, players_row.get_index() + 1)
+
+	_p4_empty_spacer = Control.new()
+	_p4_empty_spacer.name = "P4EmptySpacer"
+	_p4_empty_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_p4_empty_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_p4_empty_spacer.visible = false
+	_players_row2.add_child(_p4_empty_spacer)
+	return _players_row2
+
+
+func _update_two_row_visibility(total_players: int) -> void:
+	var row2 := _get_or_create_players_row2()
+	if is_instance_valid(row2):
+		row2.visible = (total_players > 2)
+		row2.add_theme_constant_override("separation", 10)
+		if is_instance_valid(_p4_empty_spacer):
+			row2.move_child(_p4_empty_spacer, row2.get_child_count() - 1)
+			_p4_empty_spacer.visible = (total_players == 3)
+	offset_bottom = 408.0 if total_players > 2 else 360.0
+
+
+func _get_player_card_bundle(player_idx: int) -> Dictionary:
+	if player_idx == 1:
+		return {"card": p1_card, "av_frame": _p1_avatar_frame, "name": p1_name, "role": p1_role_badge, "score": p1_score_lbl}
+	elif player_idx == 2:
+		return {"card": p2_card, "av_frame": _p2_avatar_frame, "name": p2_name, "role": p2_role_badge, "score": p2_score_lbl}
+	elif _extra_cards.has(player_idx):
+		return _extra_cards[player_idx]
+	return {}
+
+
+func is_player_disabled(player_idx: int) -> bool:
+	return _disabled_players.has(player_idx)
+
+
+func set_player_disabled(player_idx: int, disabled: bool, reason_text: String = "خارج شد") -> void:
+	if player_idx < 1 or player_idx > 4:
+		return
+	if disabled:
+		_disabled_players[player_idx] = reason_text if not reason_text.is_empty() else "خارج شد"
+	else:
+		_disabled_players.erase(player_idx)
+	_apply_disabled_visual(player_idx)
+
+
+func _apply_disabled_visual(player_idx: int) -> void:
+	var b := _get_player_card_bundle(player_idx)
+	var card: PanelContainer = b.get("card", null)
+	var nm: Label = b.get("name", null)
+	var rl: Label = b.get("role", null)
+	if is_player_disabled(player_idx):
+		var reason: String = str(_disabled_players.get(player_idx, "خارج شد"))
+		if is_instance_valid(card):
+			if is_instance_valid(_style_card_disabled):
+				card.add_theme_stylebox_override("panel", _style_card_disabled)
+			card.modulate = Color(0.52, 0.52, 0.56, 0.56)
+			card.scale = Vector2(0.96, 0.96)
+		if is_instance_valid(nm):
+			nm.add_theme_color_override("font_color", Color(0.70, 0.70, 0.74, 0.85))
+		if is_instance_valid(rl):
+			var has_prefix := reason.begins_with("💀") or reason.begins_with("🏳") or reason.begins_with("🚫") or reason.begins_with("📡") or reason.begins_with("⏱")
+			rl.text = reason if has_prefix else ("🚫 %s" % reason)
+			rl.add_theme_color_override("font_color", Color(0.92, 0.58, 0.58, 0.92))
+	else:
+		if is_instance_valid(card):
+			card.modulate = Color.WHITE
+			card.scale = Vector2.ONE
+		if is_instance_valid(nm):
+			nm.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
+		if is_instance_valid(rl):
+			rl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78))
 
 # Virtual hook for child headers
 func _on_turn_changed(_turn: int) -> void:

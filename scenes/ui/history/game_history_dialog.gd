@@ -499,25 +499,30 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 		lbl_res.add_theme_color_override("font_color", Color(0.70, 0.70, 0.70))
 	top_mid.add_child(lbl_res)
 	
-	# Integer score
-	var scores = game.get("user_scores", [])
-	var score_str = ""
-	if scores.size() >= 2:
-		var p1_uid = str(game.get("user1_id", ""))
-		if p1_uid == my_uid:
-			score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[0])), GameManager.to_fa_num(int(scores[1]))]
-		else:
-			score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[1])), GameManager.to_fa_num(int(scores[0]))]
-	elif not scores.is_empty():
-		score_str = GameManager.to_fa_num(int(scores[0]))
-	
-	if not score_str.is_empty():
-		var lbl_score = Label.new()
-		lbl_score.text = "( %s )" % score_str
-		lbl_score.add_theme_font_override("font", _font_hekayat)
-		lbl_score.add_theme_font_size_override("font_size", 26)
-		lbl_score.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
-		top_mid.add_child(lbl_score)
+	# Integer score — omit for single-round & >2-player matches
+	var _u_info = game.get("users_info", [])
+	var _r_arr = game.get("rounds", [])
+	var _gt_arr = game.get("game_types", [])
+	var _is_single_or_multi: bool = (typeof(_u_info) == TYPE_ARRAY and _u_info.size() > 2) or ((_r_arr.size() if typeof(_r_arr) == TYPE_ARRAY else 0) <= 1 and (_gt_arr.size() if typeof(_gt_arr) == TYPE_ARRAY else 0) <= 1)
+	if not _is_single_or_multi:
+		var scores = game.get("user_scores", [])
+		var score_str = ""
+		if scores.size() >= 2:
+			var p1_uid = str(game.get("user1_id", ""))
+			if p1_uid == my_uid:
+				score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[0])), GameManager.to_fa_num(int(scores[1]))]
+			else:
+				score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[1])), GameManager.to_fa_num(int(scores[0]))]
+		elif not scores.is_empty():
+			score_str = GameManager.to_fa_num(int(scores[0]))
+		
+		if not score_str.is_empty():
+			var lbl_score = Label.new()
+			lbl_score.text = "( %s )" % score_str
+			lbl_score.add_theme_font_override("font", _font_hekayat)
+			lbl_score.add_theme_font_size_override("font_size", 26)
+			lbl_score.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
+			top_mid.add_child(lbl_score)
 	
 	center_col.add_child(top_mid)
 	
@@ -667,69 +672,143 @@ func show_game_details(game: Dictionary) -> void:
 	h2h_style.content_margin_bottom = 14
 	h2h_card.add_theme_stylebox_override("panel", h2h_style)
 	
-	var h2h_row = HBoxContainer.new()
-	h2h_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	h2h_row.add_theme_constant_override("separation", 16)
-	h2h_card.add_child(h2h_row)
-	
-	var users_info = game.get("users_info", [])
-	var scores = game.get("user_scores", [])
-	
-	var p_you: Dictionary = {}
-	var p_opp: Dictionary = {}
-	var score_you: int = 0
-	var score_opp: int = 0
-	
-	for idx in range(users_info.size()):
-		var u = users_info[idx]
-		var sc = int(scores[idx]) if idx < scores.size() else 0
-		if str(u.get("user_id", "")) == my_uid:
-			p_you = u
-			score_you = sc
-		else:
-			p_opp = u
-			score_opp = sc
-	
-	if p_you.is_empty():
-		p_you = {"username": GameManager.get_username(), "image": GameManager.get_avatar_id()}
-		score_you = int(scores[0]) if scores.size() > 0 else 0
-		score_opp = int(scores[1]) if scores.size() > 1 else 0
-	
-	if p_opp.is_empty():
-		p_opp = {"username": "حریف", "image": 0}
-		if mode_raw == "ClassicRank":
-			p_opp = {"username": "ربات هوشمند", "image": 1}
-	
-	# Left: You
-	var you_col = _create_player_column("شما (" + str(p_you.get("username", "")) + ")", int(p_you.get("image", 0)), score_you, my_res == "win", GameManager.get_player_frame_id(p_you))
-	h2h_row.add_child(you_col)
-	
-	# Middle: VS & Integer Score
-	var vs_box = VBoxContainer.new()
-	vs_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	vs_box.add_theme_constant_override("separation", 4)
-	
-	var lbl_vs = Label.new()
-	lbl_vs.text = "VS"
-	lbl_vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_vs.add_theme_font_override("font", _font_hekayat)
-	lbl_vs.add_theme_font_size_override("font_size", 34)
-	lbl_vs.add_theme_color_override("font_color", Color(1.0, 0.75, 0.25))
-	vs_box.add_child(lbl_vs)
-	
-	var lbl_final_score = Label.new()
-	lbl_final_score.text = "%s : %s" % [GameManager.to_fa_num(score_you), GameManager.to_fa_num(score_opp)]
-	lbl_final_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_final_score.add_theme_font_override("font", _font_hekayat)
-	lbl_final_score.add_theme_font_size_override("font_size", 32)
-	lbl_final_score.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
-	vs_box.add_child(lbl_final_score)
-	
-	h2h_row.add_child(vs_box)
-	
-	# Right: Opponent
-	var opp_col = _create_player_column(str(p_opp.get("username", "حریف")), int(p_opp.get("image", 0)), score_opp, my_res == "lose", GameManager.get_player_frame_id(p_opp))
-	h2h_row.add_child(opp_col)
+	var users_info = game.get("users_info", []) if typeof(game.get("users_info")) == TYPE_ARRAY else []
+	var scores = game.get("user_scores", []) if typeof(game.get("user_scores")) == TYPE_ARRAY else []
+	var r_arr = game.get("rounds", []) if typeof(game.get("rounds")) == TYPE_ARRAY else []
+	var gt_arr = game.get("game_types", []) if typeof(game.get("game_types")) == TYPE_ARRAY else []
+	var is_multiplayer: bool = users_info.size() > 2
+	var is_single_round: bool = is_multiplayer or (r_arr.size() <= 1 and gt_arr.size() <= 1)
+	var _w_list = game.get("winner_list", []) if typeof(game.get("winner_list")) == TYPE_ARRAY else []
+	var resolved_winner_id = winner_id if not winner_id.is_empty() else (str(_w_list[0]) if not _w_list.is_empty() else "")
+	var runner_up_id = str(_w_list[1]) if _w_list.size() >= 2 else ""
+
+	if is_multiplayer:
+		var m_vbox = VBoxContainer.new()
+		m_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		m_vbox.add_theme_constant_override("separation", 10)
+		h2h_card.add_child(m_vbox)
+
+		var lbl_players_t = Label.new()
+		lbl_players_t.text = "بازیکنان مسابقه (%s نفره)" % GameManager.to_fa_num(users_info.size())
+		lbl_players_t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_players_t.add_theme_font_override("font", _font_hekayat)
+		lbl_players_t.add_theme_font_size_override("font_size", 26)
+		lbl_players_t.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+		m_vbox.add_child(lbl_players_t)
+
+		var p_grid = GridContainer.new()
+		p_grid.columns = 2
+		p_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		p_grid.add_theme_constant_override("h_separation", 10)
+		p_grid.add_theme_constant_override("v_separation", 10)
+		m_vbox.add_child(p_grid)
+
+		for u in users_info:
+			if typeof(u) != TYPE_DICTIONARY:
+				continue
+			var u_uid = str(u.get("user_id", u.get("_id", "")))
+			var u_name = str(u.get("username", u.get("name", "بازیکن")))
+			var is_self_u = (not my_uid.is_empty() and u_uid == my_uid)
+			var is_win_u = (not resolved_winner_id.is_empty() and resolved_winner_id != "0" and u_uid == resolved_winner_id)
+			var is_sec_u = (not is_win_u and not runner_up_id.is_empty() and u_uid == runner_up_id)
+
+			var p_card = PanelContainer.new()
+			p_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var p_bg = Color(0.11, 0.25, 0.14, 0.96) if is_win_u else Color(0.15, 0.11, 0.07, 0.94)
+			var p_br = Color(1.0, 0.84, 0.30) if is_win_u else (Color(0.75, 0.58, 0.28) if is_self_u else Color(0.45, 0.34, 0.20))
+			p_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(p_bg, p_br, 14, 3 if is_win_u else 1, 10.0, 10.0))
+
+			var pv = VBoxContainer.new()
+			pv.alignment = BoxContainer.ALIGNMENT_CENTER
+			pv.add_theme_constant_override("separation", 6)
+			p_card.add_child(pv)
+
+			var av_b = CafeSocialTheme.make_avatar_badge(int(u.get("image", 0)), GameManager.get_player_frame_id(u), 68.0)
+			av_b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			pv.add_child(av_b)
+
+			var l_nm = Label.new()
+			l_nm.text = ("%s (شما)" % u_name) if is_self_u else u_name
+			l_nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			l_nm.clip_text = true
+			l_nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			l_nm.add_theme_font_override("font", _font_hekayat)
+			l_nm.add_theme_font_size_override("font_size", 22)
+			l_nm.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45) if (is_win_u or is_self_u) else Color.WHITE)
+			pv.add_child(l_nm)
+
+			if is_win_u:
+				var wp = CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 18)
+				wp.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				pv.add_child(wp)
+			elif is_sec_u:
+				var sp = CafeSocialTheme.make_badge_pill("🥈 نفر دوم", Color(0.88, 0.90, 0.95), Color(0.18, 0.16, 0.14, 0.95), Color(0.70, 0.72, 0.78), 16)
+				sp.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				pv.add_child(sp)
+
+			p_grid.add_child(p_card)
+	else:
+		var h2h_row = HBoxContainer.new()
+		h2h_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		h2h_row.add_theme_constant_override("separation", 16)
+		h2h_card.add_child(h2h_row)
+		
+		var p_you: Dictionary = {}
+		var p_opp: Dictionary = {}
+		var score_you: int = 0
+		var score_opp: int = 0
+		
+		for idx in range(users_info.size()):
+			var u = users_info[idx]
+			var sc = int(scores[idx]) if idx < scores.size() else 0
+			if str(u.get("user_id", "")) == my_uid:
+				p_you = u
+				score_you = sc
+			else:
+				p_opp = u
+				score_opp = sc
+		
+		if p_you.is_empty():
+			p_you = {"username": GameManager.get_username(), "image": GameManager.get_avatar_id()}
+			score_you = int(scores[0]) if scores.size() > 0 else 0
+			score_opp = int(scores[1]) if scores.size() > 1 else 0
+		
+		if p_opp.is_empty():
+			p_opp = {"username": "حریف", "image": 0}
+			if mode_raw == "ClassicRank":
+				p_opp = {"username": "ربات هوشمند", "image": 1}
+		
+		# Left: You
+		var you_col = _create_player_column("شما (" + str(p_you.get("username", "")) + ")", int(p_you.get("image", 0)), -1 if is_single_round else score_you, my_res == "win", GameManager.get_player_frame_id(p_you))
+		h2h_row.add_child(you_col)
+		
+		# Middle: VS & Integer Score (only for multi-round series)
+		var vs_box = VBoxContainer.new()
+		vs_box.alignment = BoxContainer.ALIGNMENT_CENTER
+		vs_box.add_theme_constant_override("separation", 4)
+		
+		var lbl_vs = Label.new()
+		lbl_vs.text = "VS"
+		lbl_vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_vs.add_theme_font_override("font", _font_hekayat)
+		lbl_vs.add_theme_font_size_override("font_size", 34)
+		lbl_vs.add_theme_color_override("font_color", Color(1.0, 0.75, 0.25))
+		vs_box.add_child(lbl_vs)
+		
+		if not is_single_round:
+			var lbl_final_score = Label.new()
+			lbl_final_score.text = "%s : %s" % [GameManager.to_fa_num(score_you), GameManager.to_fa_num(score_opp)]
+			lbl_final_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			lbl_final_score.add_theme_font_override("font", _font_hekayat)
+			lbl_final_score.add_theme_font_size_override("font_size", 32)
+			lbl_final_score.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+			vs_box.add_child(lbl_final_score)
+		
+		h2h_row.add_child(vs_box)
+		
+		# Right: Opponent
+		var opp_col = _create_player_column(str(p_opp.get("username", "حریف")), int(p_opp.get("image", 0)), -1 if is_single_round else score_opp, my_res == "lose", GameManager.get_player_frame_id(p_opp))
+		h2h_row.add_child(opp_col)
 	
 	details_container.add_child(h2h_card)
 	
@@ -807,13 +886,18 @@ func _create_player_column(name_text: String, avatar_id: int, score_val: int, is
 	lbl_name.add_theme_color_override("font_color", Color.WHITE)
 	vbox.add_child(lbl_name)
 	
-	var lbl_sc = Label.new()
-	lbl_sc.text = "امتیاز: %s" % GameManager.to_fa_num(int(score_val))
-	lbl_sc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_sc.add_theme_font_override("font", _font_hekayat)
-	lbl_sc.add_theme_font_size_override("font_size", 22)
-	lbl_sc.add_theme_color_override("font_color", Color(1.0, 0.85, 0.45) if is_winner else Color(0.8, 0.75, 0.7))
-	vbox.add_child(lbl_sc)
+	if int(score_val) >= 0:
+		var lbl_sc = Label.new()
+		lbl_sc.text = "امتیاز: %s" % GameManager.to_fa_num(int(score_val))
+		lbl_sc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_sc.add_theme_font_override("font", _font_hekayat)
+		lbl_sc.add_theme_font_size_override("font_size", 22)
+		lbl_sc.add_theme_color_override("font_color", Color(1.0, 0.85, 0.45) if is_winner else Color(0.8, 0.75, 0.7))
+		vbox.add_child(lbl_sc)
+	elif is_winner:
+		var wp = CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 16)
+		wp.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		vbox.add_child(wp)
 	
 	return vbox
 

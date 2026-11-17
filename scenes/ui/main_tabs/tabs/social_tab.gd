@@ -39,6 +39,9 @@ var _clan_chat_input: LineEdit = null
 var _dm_messages_vbox: VBoxContainer = null
 var _dm_messages_scroll: ScrollContainer = null
 var _dm_input: LineEdit = null
+var _dm_partner_status_badge: TextureRect = null
+var _dm_partner_avatar_btn: Button = null
+var _dm_invite_btn: TextureButton = null
 
 func _ready() -> void:
 	_build_ui_shell()
@@ -161,6 +164,8 @@ func _preload_badge_counts() -> void:
 			var r: Dictionary = data["result"]
 			_incoming_requests = r.get("incoming", []) if typeof(r.get("incoming")) == TYPE_ARRAY else []
 			_outgoing_requests = r.get("outgoing", []) if typeof(r.get("outgoing")) == TYPE_ARRAY else []
+			NetworkManager.incoming_friend_requests_count = _incoming_requests.size()
+			NetworkManager.notify_social_badges_changed()
 			_update_main_tab_buttons()
 	)
 
@@ -252,6 +257,9 @@ func _clear_content() -> VBoxContainer:
 	_dm_messages_vbox = null
 	_dm_messages_scroll = null
 	_dm_input = null
+	_dm_partner_status_badge = null
+	_dm_partner_avatar_btn = null
+	_dm_invite_btn = null
 	for c in content_area.get_children():
 		c.queue_free()
 	var vbox := VBoxContainer.new()
@@ -369,6 +377,8 @@ func refresh_friends_and_requests(force_render: bool = true) -> void:
 			var r: Dictionary = data["result"]
 			_incoming_requests = r.get("incoming", []) if typeof(r.get("incoming")) == TYPE_ARRAY else []
 			_outgoing_requests = r.get("outgoing", []) if typeof(r.get("outgoing")) == TYPE_ARRAY else []
+			NetworkManager.incoming_friend_requests_count = _incoming_requests.size()
+			NetworkManager.notify_social_badges_changed()
 			_update_main_tab_buttons()
 		NetworkManager.api.get_friends_list(func(ok2: bool, _c2: int, data2: Variant):
 			if not is_instance_valid(self):
@@ -424,8 +434,11 @@ func _on_realtime_presence_changed(payload: Dictionary) -> void:
 		_refresh_current_tab()
 	elif current_main_tab == "clans" and current_clans_subtab in ["my_clan", "members"]:
 		_refresh_current_tab()
-	elif current_main_tab == "messages" and _active_dm_partner_id.is_empty():
-		_refresh_current_tab()
+	elif current_main_tab == "messages":
+		if _active_dm_partner_id.is_empty():
+			_refresh_current_tab()
+		elif pid == _active_dm_partner_id:
+			SocialMessagesView.update_active_partner_presence(self, new_st)
 
 
 func _on_realtime_dm_received(payload: Dictionary) -> void:
