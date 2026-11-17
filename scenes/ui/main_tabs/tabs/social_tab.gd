@@ -24,6 +24,8 @@ var _incoming_requests: Array = []
 var _outgoing_requests: Array = []
 var _my_clan_data: Dictionary = {}
 var _clan_chat_messages: Array = []
+var _clan_chat_has_more: bool = true
+var _clan_chat_is_loading_older: bool = false
 var _conversations: Array = []
 var _active_dm_partner_id: String = ""
 var _active_dm_partner_name: String = ""
@@ -238,6 +240,7 @@ func _clear_content() -> VBoxContainer:
 	_clan_chat_list_vbox = null
 	_clan_chat_scroll = null
 	_clan_chat_input = null
+	_clan_chat_is_loading_older = false
 	_dm_messages_vbox = null
 	_dm_messages_scroll = null
 	_dm_input = null

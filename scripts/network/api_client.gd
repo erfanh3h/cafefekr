@@ -268,17 +268,40 @@ func close_clan_friendly_challenge(challenge_id: String, callback: Callable = Ca
 func get_conversations_list(callback: Callable) -> void:
 	_http_get("/messages/conversations", _get_auth_headers(), callback)
 
-func get_direct_messages(partner_id: String, callback: Callable) -> void:
-	_http_get("/messages/direct/" + partner_id.uri_encode(), _get_auth_headers(), callback)
+func get_direct_messages(partner_id: String, skip_or_cb: Variant = 0, limit: int = 30, before: String = "", callback: Callable = Callable()) -> void:
+	var actual_skip := 0
+	var actual_cb := callback
+	if skip_or_cb is Callable:
+		actual_cb = skip_or_cb
+	elif typeof(skip_or_cb) in [TYPE_INT, TYPE_FLOAT]:
+		actual_skip = int(skip_or_cb)
+
+	var q = "/messages/direct/" + partner_id.uri_encode() + "?limit=" + str(limit)
+	if actual_skip > 0:
+		q += "&skip=" + str(actual_skip)
+	if not before.is_empty():
+		q += "&before=" + before.uri_encode()
+	_http_get(q, _get_auth_headers(), actual_cb)
 
 func send_direct_message_rest(to_user_id: String, text: String, callback: Callable = Callable()) -> void:
 	_post_json("/messages/direct/send", {"to_user_id": to_user_id, "text": text}, _get_auth_headers(), callback)
 
-func get_clan_chat_history(clan_id: String = "", callback: Callable = Callable()) -> void:
-	var q = "/messages/clan"
+func get_clan_chat_history(clan_id: String = "", skip_or_cb: Variant = 0, limit: int = 30, before: String = "", callback: Callable = Callable()) -> void:
+	var actual_skip := 0
+	var actual_cb := callback
+	if skip_or_cb is Callable:
+		actual_cb = skip_or_cb
+	elif typeof(skip_or_cb) in [TYPE_INT, TYPE_FLOAT]:
+		actual_skip = int(skip_or_cb)
+
+	var q = "/messages/clan?limit=" + str(limit)
+	if actual_skip > 0:
+		q += "&skip=" + str(actual_skip)
 	if not clan_id.is_empty():
-		q += "?clan_id=" + clan_id.uri_encode()
-	_http_get(q, _get_auth_headers(), callback)
+		q += "&clan_id=" + clan_id.uri_encode()
+	if not before.is_empty():
+		q += "&before=" + before.uri_encode()
+	_http_get(q, _get_auth_headers(), actual_cb)
 
 func send_clan_chat_rest(text: String, callback: Callable = Callable()) -> void:
 	_post_json("/messages/clan/send", {"text": text}, _get_auth_headers(), callback)

@@ -42,6 +42,8 @@ var _active_dm_messages: Array = []
 var _clan_chat_list_vbox: VBoxContainer = null
 var _clan_chat_scroll: ScrollContainer = null
 var _clan_chat_input: LineEdit = null
+var _clan_chat_has_more: bool = true
+var _clan_chat_is_loading_older: bool = false
 var _dm_messages_vbox: VBoxContainer = null
 var _dm_messages_scroll: ScrollContainer = null
 var _dm_input: LineEdit = null
@@ -288,6 +290,7 @@ func _clear_content() -> VBoxContainer:
 	_clan_chat_list_vbox = null
 	_clan_chat_scroll = null
 	_clan_chat_input = null
+	_clan_chat_is_loading_older = false
 	_dm_messages_vbox = null
 	_dm_messages_scroll = null
 	_dm_input = null

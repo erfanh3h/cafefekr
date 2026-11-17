@@ -348,6 +348,9 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 # 2. CLAN CHAT – MESSAGES TAB
 # ==============================================================================
 
+const CHAT_PAGE_SIZE: int = 30
+
+
 static func _is_scroll_near_bottom(scroll: ScrollContainer) -> bool:
 	if not is_instance_valid(scroll):
 		return false
@@ -369,6 +372,142 @@ static func _scroll_clan_chat_to_bottom_smooth(host: Control) -> void:
 		var bar: VScrollBar = host._clan_chat_scroll.get_v_scroll_bar()
 		if bar:
 			host._clan_chat_scroll.scroll_vertical = int(bar.max_value)
+
+
+static func _build_top_pagination_widget(host: Control) -> Control:
+	var holder := PanelContainer.new()
+	holder.name = "TopPaginationLoader"
+	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var st := StyleBoxEmpty.new()
+	st.content_margin_top = 4.0
+	st.content_margin_bottom = 6.0
+	holder.add_theme_stylebox_override("panel", st)
+
+	var has_more: bool = (host.get("_clan_chat_has_more") != false)
+	if has_more:
+		var btn := Button.new()
+		btn.name = "BtnLoadOlder"
+		btn.text = "📜 بارگذاری پیام‌های قدیمی‌تر"
+		btn.custom_minimum_size = Vector2(0, 38)
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+		btn.add_theme_font_size_override("font_size", 17)
+		btn.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
+		btn.add_theme_stylebox_override("normal", CafeSocialTheme._get_flat_btn_style("muted", "normal", 10))
+		btn.add_theme_stylebox_override("hover", CafeSocialTheme._get_flat_btn_style("bronze", "normal", 10))
+		btn.add_theme_stylebox_override("pressed", CafeSocialTheme._get_flat_btn_style("bronze", "pressed", 10))
+		ActionVFXManager.apply_button_juice(btn, "tap_button")
+		btn.pressed.connect(func():
+			AudioManager.sfx_tap()
+			load_older_clan_chat_messages(host)
+		)
+		holder.add_child(btn)
+	else:
+		var lbl := Label.new()
+		lbl.text = "🏁 ابتدای تاریخچه گفتگوهای اتحاد"
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+		lbl.add_theme_font_size_override("font_size", 16)
+		lbl.add_theme_color_override("font_color", Color(0.55, 0.45, 0.30, 0.75))
+		holder.add_child(lbl)
+
+	return holder
+
+
+static func _update_top_loader_state(host: Control, is_loading: bool) -> void:
+	if not is_instance_valid(host._clan_chat_list_vbox):
+		return
+	var top_loader: Node = host._clan_chat_list_vbox.get_node_or_null("TopPaginationLoader")
+	if not top_loader:
+		return
+	var btn: Button = top_loader.get_node_or_null("BtnLoadOlder")
+	if btn:
+		if is_loading:
+			btn.text = "⏳ در حال دریافت پیام‌های قبلی..."
+			btn.disabled = true
+		else:
+			btn.text = "📜 بارگذاری پیام‌های قدیمی‌تر"
+			btn.disabled = false
+
+
+static func load_older_clan_chat_messages(host: Control) -> void:
+	if not is_instance_valid(host) or not is_instance_valid(host._clan_chat_list_vbox):
+		return
+	if host.get("_clan_chat_has_more") == false:
+		return
+	if bool(host.get("_clan_chat_is_loading_older")):
+		return
+	if host._clan_chat_messages.is_empty():
+		return
+
+	# Oldest message is at index 0 of host._clan_chat_messages
+	var oldest_msg: Dictionary = host._clan_chat_messages[0] if typeof(host._clan_chat_messages[0]) == TYPE_DICTIONARY else {}
+	var before_id: String = str(oldest_msg.get("message_id", oldest_msg.get("_id", "")))
+	if before_id.is_empty():
+		return
+
+	host.set("_clan_chat_is_loading_older", true)
+	_update_top_loader_state(host, true)
+
+	NetworkManager.api.get_clan_chat_history("", 0, CHAT_PAGE_SIZE, before_id, func(ok: bool, _c: int, data: Variant):
+		if not is_instance_valid(host) or not is_instance_valid(host._clan_chat_list_vbox):
+			return
+		host.set("_clan_chat_is_loading_older", false)
+
+		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_ARRAY:
+			var older_msgs: Array = data["result"]
+			if older_msgs.size() < CHAT_PAGE_SIZE:
+				host.set("_clan_chat_has_more", false)
+
+			if older_msgs.is_empty():
+				_update_top_loader_state(host, false)
+				return
+
+			var old_scroll: int = host._clan_chat_scroll.scroll_vertical
+			var old_content_height: float = host._clan_chat_list_vbox.size.y
+
+			# Remove current top loader
+			var cur_top: Node = host._clan_chat_list_vbox.get_node_or_null("TopPaginationLoader")
+			if cur_top:
+				cur_top.queue_free()
+
+			var my_uid := str(GameManager.get_user_id())
+			var clan_d: Dictionary = host._my_clan_data.get("clan", {}) if typeof(host._my_clan_data.get("clan")) == TYPE_DICTIONARY else {}
+			var my_role := str(clan_d.get("my_role", "member"))
+
+			var new_bubbles: Array[Control] = []
+			for m in older_msgs:
+				if typeof(m) == TYPE_DICTIONARY:
+					var b := _build_single_chat_bubble(host, m, my_uid, my_role)
+					if b != null:
+						new_bubbles.append(b)
+
+			# Prepend into host._clan_chat_messages
+			for i in range(older_msgs.size() - 1, -1, -1):
+				host._clan_chat_messages.insert(0, older_msgs[i])
+
+			# Insert bubbles into VBox at index 0..new_bubbles.size()-1
+			for i in range(new_bubbles.size()):
+				host._clan_chat_list_vbox.add_child(new_bubbles[i])
+				host._clan_chat_list_vbox.move_child(new_bubbles[i], i)
+
+			# Re-add top pagination widget at index 0
+			var new_top := _build_top_pagination_widget(host)
+			host._clan_chat_list_vbox.add_child(new_top)
+			host._clan_chat_list_vbox.move_child(new_top, 0)
+
+			# Preserve exact scroll position so view doesn't jump
+			await host.get_tree().process_frame
+			await host.get_tree().process_frame
+			if is_instance_valid(host._clan_chat_scroll) and is_instance_valid(host._clan_chat_list_vbox):
+				var new_content_height: float = host._clan_chat_list_vbox.size.y
+				var height_diff := new_content_height - old_content_height
+				host._clan_chat_scroll.scroll_vertical = old_scroll + int(height_diff)
+		else:
+			_update_top_loader_state(host, false)
+	)
 
 
 static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
@@ -393,6 +532,14 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	host._clan_chat_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	host._clan_chat_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	chat_well.add_child(host._clan_chat_scroll)
+
+	# Auto-load older messages when user scrolls near top (<= 30px)
+	var v_bar: VScrollBar = host._clan_chat_scroll.get_v_scroll_bar()
+	if v_bar:
+		v_bar.value_changed.connect(func(val: float):
+			if val <= 30.0 and host.get("_clan_chat_has_more") != false and not bool(host.get("_clan_chat_is_loading_older")):
+				load_older_clan_chat_messages(host)
+		)
 
 	host._clan_chat_list_vbox = VBoxContainer.new()
 	host._clan_chat_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -466,30 +613,21 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	)
 	inp_row.add_child(btn_sticker)
 
-	# Friendly Challenge Shortcut Button (icon game.png)
-	var btn_chal := TextureButton.new()
-	btn_chal.texture_normal = preload("res://assets/images/game.png")
-	btn_chal.custom_minimum_size = Vector2(54, 54)
-	btn_chal.ignore_texture_size = true
-	btn_chal.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	btn_chal.focus_mode = Control.FOCUS_NONE
-	btn_chal.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn_chal.tooltip_text = "ایجاد چالش دوستانه در اتحاد"
-	ActionVFXManager.apply_button_juice(btn_chal, "tap_button")
-	btn_chal.pressed.connect(func():
-		AudioManager.sfx_tap()
-		_open_friendly_challenge_modal(host)
-	)
-	inp_row.add_child(btn_chal)
+	# Note: Friendly challenge button temporarily removed per user request (will be re-added in future)
 
 	host._clan_chat_input.text_submitted.connect(func(_t: String): host._send_clan_chat_message())
 
-	# Load chat history
-	NetworkManager.api.get_clan_chat_history("", func(ok: bool, _c: int, data: Variant):
+	# Initial load: fetch first page of CHAT_PAGE_SIZE messages
+	NetworkManager.api.get_clan_chat_history("", 0, CHAT_PAGE_SIZE, "", func(ok: bool, _c: int, data: Variant):
 		if not is_instance_valid(host._clan_chat_list_vbox):
 			return
 		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_ARRAY:
 			var fresh_arr: Array = data["result"]
+			if fresh_arr.size() < CHAT_PAGE_SIZE:
+				host.set("_clan_chat_has_more", false)
+			else:
+				host.set("_clan_chat_has_more", true)
+
 			if host._clan_chat_messages.is_empty():
 				for ch in host._clan_chat_list_vbox.get_children():
 					ch.queue_free()
@@ -524,7 +662,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 				host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_empty_state(
 					CafeSocialTheme.BADGE_CHAT,
 					"هنوز پیامی ثبت نشده است",
-					"اولین پیام یا چالش دوستانه را برای هم‌تیمی‌های خود ارسال کنید!"
+					"اولین پیام یا گفتگو را برای اعضای اتحاد ارسال کنید!"
 				))
 	)
 
@@ -547,9 +685,13 @@ static func _populate_all_clan_chat_messages(host: Control) -> void:
 		host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_empty_state(
 			CafeSocialTheme.BADGE_CHAT,
 			"هنوز پیامی ارسال نشده است",
-			"اولین پیام، استیکر یا چالش دوستانه را در چت اتحاد ثبت کنید!"
+			"اولین پیام یا استیکر را در چت اتحاد ثبت کنید!"
 		))
 		return
+
+	# Add top pagination widget at index 0
+	var top_widget := _build_top_pagination_widget(host)
+	host._clan_chat_list_vbox.add_child(top_widget)
 
 	var my_uid := str(GameManager.get_user_id())
 	var clan_d: Dictionary = host._my_clan_data.get("clan", {}) if typeof(host._my_clan_data.get("clan")) == TYPE_DICTIONARY else {}
@@ -571,6 +713,12 @@ static func append_clan_chat_message(host: Control, msg: Dictionary) -> void:
 	for ch in host._clan_chat_list_vbox.get_children():
 		if ch.name in ["EmptyState", "LoadingState"] or (ch is PanelContainer and (ch.has_node("EmptyStateVBox") or ch.has_node("LoadingVBox"))):
 			ch.queue_free()
+
+	# If top pagination widget is not present yet and messages exist, add it
+	if not host._clan_chat_list_vbox.has_node("TopPaginationLoader"):
+		var top_w := _build_top_pagination_widget(host)
+		host._clan_chat_list_vbox.add_child(top_w)
+		host._clan_chat_list_vbox.move_child(top_w, 0)
 
 	var my_uid := str(GameManager.get_user_id())
 	var clan_d: Dictionary = host._my_clan_data.get("clan", {}) if typeof(host._my_clan_data.get("clan")) == TYPE_DICTIONARY else {}
