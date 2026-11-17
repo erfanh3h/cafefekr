@@ -429,7 +429,7 @@ func _on_realtime_clan_chat_received(payload: Dictionary) -> void:
 		if typeof(m) == TYPE_DICTIONARY and str(m.get("message_id", "")) == mid and not mid.is_empty():
 			return
 	_clan_chat_messages.append(payload)
-	SocialClansView.render_clan_chat(self)
+	SocialClansView.append_clan_chat_message(self, payload)
 
 
 func _on_realtime_clan_chat_deleted(payload: Dictionary) -> void:

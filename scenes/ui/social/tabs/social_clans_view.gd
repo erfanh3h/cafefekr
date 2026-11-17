@@ -263,7 +263,7 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 		tabs = [
 			{"id": "chat", "label": "پیام‌ها", "icon": null},
 			{"id": "my_clan", "label": "اتحاد", "icon": null},
-			{"id": "members", "label": "اعضا", "icon": preload("res://assets/images/friends.png")},
+			{"id": "members", "label": "اعضا", "icon": null},
 		]
 	else:
 		tabs = [
@@ -348,6 +348,29 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 # 2. CLAN CHAT – MESSAGES TAB
 # ==============================================================================
 
+static func _is_scroll_near_bottom(scroll: ScrollContainer) -> bool:
+	if not is_instance_valid(scroll):
+		return false
+	var bar: VScrollBar = scroll.get_v_scroll_bar()
+	if not bar:
+		return true
+	var max_scroll := bar.max_value - bar.page
+	if max_scroll <= 0:
+		return true
+	return (scroll.scroll_vertical >= max_scroll - 160.0)
+
+
+static func _scroll_clan_chat_to_bottom_smooth(host: Control) -> void:
+	if not is_instance_valid(host) or not is_instance_valid(host._clan_chat_scroll):
+		return
+	await host.get_tree().process_frame
+	await host.get_tree().process_frame
+	if is_instance_valid(host._clan_chat_scroll):
+		var bar: VScrollBar = host._clan_chat_scroll.get_v_scroll_bar()
+		if bar:
+			host._clan_chat_scroll.scroll_vertical = int(bar.max_value)
+
+
 static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	# A. Scroll Container for Chat Stream (top header box removed as requested)
 	var chat_well := PanelContainer.new()
@@ -375,7 +398,13 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	host._clan_chat_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	host._clan_chat_list_vbox.add_theme_constant_override("separation", 10)
 	host._clan_chat_scroll.add_child(host._clan_chat_list_vbox)
-	host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت گفتگوهای اتحاد..."))
+
+	# If cached messages exist, render immediately to avoid 1-second disappearance flicker!
+	if not host._clan_chat_messages.is_empty():
+		_populate_all_clan_chat_messages(host)
+		_scroll_clan_chat_to_bottom_smooth(host)
+	else:
+		host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت گفتگوهای اتحاد..."))
 
 	# B. Chat Input Composer (docked at bottom)
 	var composer := PanelContainer.new()
@@ -453,10 +482,6 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	)
 	inp_row.add_child(btn_chal)
 
-	btn_send.pressed.connect(func():
-		AudioManager.sfx_tap()
-		host._send_clan_chat_message()
-	)
 	host._clan_chat_input.text_submitted.connect(func(_t: String): host._send_clan_chat_message())
 
 	# Load chat history
@@ -464,25 +489,60 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 		if not is_instance_valid(host._clan_chat_list_vbox):
 			return
 		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_ARRAY:
-			host._clan_chat_messages = data["result"]
-			render_clan_chat(host)
+			var fresh_arr: Array = data["result"]
+			if host._clan_chat_messages.is_empty():
+				for ch in host._clan_chat_list_vbox.get_children():
+					ch.queue_free()
+				host._clan_chat_messages = fresh_arr
+				_populate_all_clan_chat_messages(host)
+				_scroll_clan_chat_to_bottom_smooth(host)
+			else:
+				# Incremental sync: Only insert new messages at the end, DO NOT wipe existing ones!
+				var existing_ids: Dictionary = {}
+				for m in host._clan_chat_messages:
+					if typeof(m) == TYPE_DICTIONARY:
+						var mid := str(m.get("message_id", m.get("_id", "")))
+						if not mid.is_empty():
+							existing_ids[mid] = true
+
+				var new_msgs: Array = []
+				for fm in fresh_arr:
+					if typeof(fm) == TYPE_DICTIONARY:
+						var fmid := str(fm.get("message_id", fm.get("_id", "")))
+						if fmid.is_empty() or not existing_ids.has(fmid):
+							new_msgs.append(fm)
+							if not fmid.is_empty():
+								existing_ids[fmid] = true
+
+				for nm in new_msgs:
+					host._clan_chat_messages.append(nm)
+					append_clan_chat_message(host, nm)
 		else:
-			for ch in host._clan_chat_list_vbox.get_children():
-				ch.queue_free()
-			host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_empty_state(
-				CafeSocialTheme.BADGE_CHAT,
-				"هنوز پیامی ثبت نشده است",
-				"اولین پیام یا چالش دوستانه را برای هم‌تیمی‌های خود ارسال کنید!"
-			))
+			if host._clan_chat_messages.is_empty():
+				for ch in host._clan_chat_list_vbox.get_children():
+					ch.queue_free()
+				host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_empty_state(
+					CafeSocialTheme.BADGE_CHAT,
+					"هنوز پیامی ثبت نشده است",
+					"اولین پیام یا چالش دوستانه را برای هم‌تیمی‌های خود ارسال کنید!"
+				))
 	)
 
 
 static func render_clan_chat(host: Control) -> void:
 	if not is_instance_valid(host._clan_chat_list_vbox):
 		return
+	var was_near_bottom: bool = _is_scroll_near_bottom(host._clan_chat_scroll)
 	for c in host._clan_chat_list_vbox.get_children():
 		c.queue_free()
+	_populate_all_clan_chat_messages(host)
+	if was_near_bottom:
+		_scroll_clan_chat_to_bottom_smooth(host)
 
+
+static func _populate_all_clan_chat_messages(host: Control) -> void:
+	if not is_instance_valid(host._clan_chat_list_vbox):
+		return
 	if host._clan_chat_messages.is_empty():
 		host._clan_chat_list_vbox.add_child(CafeSocialTheme.make_empty_state(
 			CafeSocialTheme.BADGE_CHAT,
@@ -498,200 +558,218 @@ static func render_clan_chat(host: Control) -> void:
 	for msg in host._clan_chat_messages:
 		if typeof(msg) != TYPE_DICTIONARY:
 			continue
-		var mtype := str(msg.get("msg_type", "text"))
-		var sender_id := str(msg.get("sender_id", ""))
-		var sender_name := str(msg.get("sender_name", "بازیکن"))
-		var sender_role := str(msg.get("sender_role", "member"))
-		var sender_img := int(msg.get("sender_image", 0))
-		var sender_frame := int(msg.get("sender_profile_frame", msg.get("profile_frame", 1)))
-		var text := str(msg.get("text", ""))
-		var msg_id := str(msg.get("message_id", msg.get("_id", "")))
-		var time_str := CafeSocialTheme.format_time_fa(str(msg.get("created_at", "")))
-		var is_mine := (sender_id == my_uid)
+		var bubble := _build_single_chat_bubble(host, msg, my_uid, my_role)
+		if bubble != null:
+			host._clan_chat_list_vbox.add_child(bubble)
 
-		var is_challenge_msg: bool = (mtype == "friendly_challenge") or (mtype == "system" and typeof(msg.get("metadata")) == TYPE_DICTIONARY and msg["metadata"].has("challenge_id"))
-		if is_challenge_msg:
-			var meta_check: Dictionary = msg.get("metadata", {}) if typeof(msg.get("metadata")) == TYPE_DICTIONARY else {}
-			var chal_st: String = str(meta_check.get("status", "open"))
-			if chal_st in ["closed", "finished", "canceled", "cancelled"]:
-				continue
 
-		# --- A. SYSTEM MESSAGES ---
-		if mtype == "system" and not is_challenge_msg:
-			host._clan_chat_list_vbox.add_child(_build_system_chat_bubble(text, time_str))
-			continue
+static func append_clan_chat_message(host: Control, msg: Dictionary) -> void:
+	if not is_instance_valid(host._clan_chat_list_vbox):
+		return
 
-		# --- B. FRIENDLY CHALLENGE MESSAGE CARD ---
-		if is_challenge_msg:
-			var chal_meta: Dictionary = msg.get("metadata", {}) if typeof(msg.get("metadata")) == TYPE_DICTIONARY else {}
-			host._clan_chat_list_vbox.add_child(_build_challenge_chat_bubble(host, chal_meta, text, my_uid, my_role))
-			continue
+	# Remove empty state or loading state placeholder if present
+	for ch in host._clan_chat_list_vbox.get_children():
+		if ch.name in ["EmptyState", "LoadingState"] or (ch is PanelContainer and (ch.has_node("EmptyStateVBox") or ch.has_node("LoadingVBox"))):
+			ch.queue_free()
 
-		# --- C. STANDARD CHAT BUBBLE (Text / Sticker) ---
-		var msg_row := HBoxContainer.new()
-		msg_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
-		msg_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		msg_row.add_theme_constant_override("separation", 10)
-		host._clan_chat_list_vbox.add_child(msg_row)
+	var my_uid := str(GameManager.get_user_id())
+	var clan_d: Dictionary = host._my_clan_data.get("clan", {}) if typeof(host._my_clan_data.get("clan")) == TYPE_DICTIONARY else {}
+	var my_role := str(clan_d.get("my_role", "member"))
 
-		# Avatar component (with click -> profile)
-		var av_btn := Button.new()
-		av_btn.flat = true
-		av_btn.focus_mode = Control.FOCUS_NONE
-		av_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		av_btn.custom_minimum_size = Vector2(58, 58)
-		var av_badge := CafeSocialTheme.make_avatar_badge(sender_img, sender_frame, 56.0)
-		av_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		av_btn.add_child(av_badge)
-		av_btn.pressed.connect(func():
+	var is_mine := (str(msg.get("sender_id", "")) == my_uid)
+	var was_near_bottom: bool = _is_scroll_near_bottom(host._clan_chat_scroll)
+
+	var bubble := _build_single_chat_bubble(host, msg, my_uid, my_role)
+	if bubble != null:
+		host._clan_chat_list_vbox.add_child(bubble)
+
+	# Auto-scroll only if message is mine OR user was already near bottom
+	if is_mine or was_near_bottom:
+		_scroll_clan_chat_to_bottom_smooth(host)
+
+
+static func _build_single_chat_bubble(host: Control, msg: Dictionary, my_uid: String, my_role: String) -> Control:
+	var mtype := str(msg.get("msg_type", "text"))
+	var sender_id := str(msg.get("sender_id", ""))
+	var sender_name := str(msg.get("sender_name", "بازیکن"))
+	var sender_role := str(msg.get("sender_role", "member"))
+	var sender_img := int(msg.get("sender_image", 0))
+	var sender_frame := int(msg.get("sender_profile_frame", msg.get("profile_frame", 1)))
+	var text := str(msg.get("text", ""))
+	var msg_id := str(msg.get("message_id", msg.get("_id", "")))
+	var time_str := CafeSocialTheme.format_time_fa(str(msg.get("created_at", "")))
+	var is_mine := (sender_id == my_uid)
+
+	var is_challenge_msg: bool = (mtype == "friendly_challenge") or (mtype == "system" and typeof(msg.get("metadata")) == TYPE_DICTIONARY and msg["metadata"].has("challenge_id"))
+	if is_challenge_msg:
+		var meta_check: Dictionary = msg.get("metadata", {}) if typeof(msg.get("metadata")) == TYPE_DICTIONARY else {}
+		var chal_st: String = str(meta_check.get("status", "open"))
+		if chal_st in ["closed", "finished", "canceled", "cancelled"]:
+			return null
+		return _build_challenge_chat_bubble(host, meta_check, text, my_uid, my_role)
+
+	# --- A. SYSTEM MESSAGES ---
+	if mtype == "system":
+		return _build_system_chat_bubble(text, time_str)
+
+	# --- B. STANDARD CHAT BUBBLE (Text / Sticker) ---
+	var msg_row := HBoxContainer.new()
+	msg_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	msg_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	msg_row.add_theme_constant_override("separation", 10)
+
+	# Avatar component (with click -> profile)
+	var av_btn := Button.new()
+	av_btn.flat = true
+	av_btn.focus_mode = Control.FOCUS_NONE
+	av_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	av_btn.custom_minimum_size = Vector2(58, 58)
+	var av_badge := CafeSocialTheme.make_avatar_badge(sender_img, sender_frame, 56.0)
+	av_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	av_btn.add_child(av_badge)
+	av_btn.pressed.connect(func():
+		AudioManager.sfx_tap()
+		UserProfileDialog.show_user({"user_id": sender_id, "username": sender_name, "image": sender_img, "profile_frame": sender_frame}, ROLE_FA_MAP.get(sender_role, "عضو"), host)
+	)
+
+	var bubble_col := VBoxContainer.new()
+	bubble_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bubble_col.size_flags_stretch_ratio = 0.82
+	bubble_col.add_theme_constant_override("separation", 3)
+
+	# Header above bubble: Username + Role Pill (For user's own message: aligned to top-right)
+	var hdr_row := HBoxContainer.new()
+	hdr_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	hdr_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hdr_row.add_theme_constant_override("separation", 6)
+	bubble_col.add_child(hdr_row)
+
+	var role_title: String = ROLE_FA_MAP.get(sender_role, "عضو")
+	var role_badge := CafeSocialTheme.make_badge_pill(
+		role_title,
+		CafeSocialTheme.COL_GOLD_BRIGHT if sender_role == "leader" else (CafeSocialTheme.COL_EMERALD_TEXT if sender_role in ["co_leader", "elder"] else CafeSocialTheme.COL_MUTED_SAND),
+		Color(0.18, 0.12, 0.05) if sender_role == "leader" else (CafeSocialTheme.COL_EMERALD_BG if sender_role in ["co_leader", "elder"] else Color(0.11, 0.07, 0.04)),
+		CafeSocialTheme.COL_GOLD_ANTIQUE if sender_role == "leader" else (CafeSocialTheme.COL_EMERALD_BORDER if sender_role in ["co_leader", "elder"] else CafeSocialTheme.COL_BRONZE_BORDER),
+		15
+	)
+
+	var uname_lbl := CafeSocialTheme.make_title(
+		sender_name if not is_mine else "شما",
+		20,
+		CafeSocialTheme.COL_EMERALD_TEXT if is_mine else CafeSocialTheme.COL_GOLD_BRIGHT,
+		HORIZONTAL_ALIGNMENT_RIGHT if is_mine else HORIZONTAL_ALIGNMENT_LEFT,
+		false
+	)
+
+	if is_mine:
+		hdr_row.alignment = BoxContainer.ALIGNMENT_END
+		hdr_row.add_child(role_badge)
+		hdr_row.add_child(uname_lbl)
+	else:
+		hdr_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+		hdr_row.add_child(uname_lbl)
+		hdr_row.add_child(role_badge)
+
+	# Delete button as little icon button with delete.png
+	var del_icon_btn: TextureButton = null
+	if (is_mine or my_role in ["leader", "co_leader", "elder"]) and not msg_id.is_empty():
+		del_icon_btn = TextureButton.new()
+		del_icon_btn.texture_normal = preload("res://assets/images/delete.png")
+		del_icon_btn.custom_minimum_size = Vector2(30, 30)
+		del_icon_btn.ignore_texture_size = true
+		del_icon_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		del_icon_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		del_icon_btn.focus_mode = Control.FOCUS_NONE
+		del_icon_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		del_icon_btn.tooltip_text = "حذف پیام"
+		ActionVFXManager.apply_button_juice(del_icon_btn, "tap_button")
+		del_icon_btn.pressed.connect(func():
 			AudioManager.sfx_tap()
-			UserProfileDialog.show_user({"user_id": sender_id, "username": sender_name, "image": sender_img, "profile_frame": sender_frame}, ROLE_FA_MAP.get(sender_role, "عضو"), host)
-		)
-
-		var bubble_col := VBoxContainer.new()
-		bubble_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bubble_col.size_flags_stretch_ratio = 0.82
-		bubble_col.add_theme_constant_override("separation", 3)
-
-		# Header above bubble: Username + Role Pill (delete button moved to icon button beside bubble)
-		var hdr_row := HBoxContainer.new()
-		hdr_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
-		hdr_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		hdr_row.add_theme_constant_override("separation", 6)
-		bubble_col.add_child(hdr_row)
-
-		var role_title: String = ROLE_FA_MAP.get(sender_role, "عضو")
-		var role_badge := CafeSocialTheme.make_badge_pill(
-			role_title,
-			CafeSocialTheme.COL_GOLD_BRIGHT if sender_role == "leader" else (CafeSocialTheme.COL_EMERALD_TEXT if sender_role in ["co_leader", "elder"] else CafeSocialTheme.COL_MUTED_SAND),
-			Color(0.18, 0.12, 0.05) if sender_role == "leader" else (CafeSocialTheme.COL_EMERALD_BG if sender_role in ["co_leader", "elder"] else Color(0.11, 0.07, 0.04)),
-			CafeSocialTheme.COL_GOLD_ANTIQUE if sender_role == "leader" else (CafeSocialTheme.COL_EMERALD_BORDER if sender_role in ["co_leader", "elder"] else CafeSocialTheme.COL_BRONZE_BORDER),
-			15
-		)
-
-		var uname_lbl := CafeSocialTheme.make_title(
-			sender_name if not is_mine else "شما",
-			20,
-			CafeSocialTheme.COL_EMERALD_TEXT if is_mine else CafeSocialTheme.COL_GOLD_BRIGHT,
-			HORIZONTAL_ALIGNMENT_RIGHT if is_mine else HORIZONTAL_ALIGNMENT_LEFT,
-			false
-		)
-
-		if is_mine:
-			hdr_row.add_child(role_badge)
-			hdr_row.add_child(uname_lbl)
-		else:
-			hdr_row.add_child(uname_lbl)
-			hdr_row.add_child(role_badge)
-
-		# Delete button as little icon button with delete.png
-		var del_icon_btn: TextureButton = null
-		if (is_mine or my_role in ["leader", "co_leader", "elder"]) and not msg_id.is_empty():
-			del_icon_btn = TextureButton.new()
-			del_icon_btn.texture_normal = preload("res://assets/images/delete.png")
-			del_icon_btn.custom_minimum_size = Vector2(30, 30)
-			del_icon_btn.ignore_texture_size = true
-			del_icon_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-			del_icon_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			del_icon_btn.focus_mode = Control.FOCUS_NONE
-			del_icon_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			del_icon_btn.tooltip_text = "حذف پیام"
-			ActionVFXManager.apply_button_juice(del_icon_btn, "tap_button")
-			del_icon_btn.pressed.connect(func():
-				AudioManager.sfx_tap()
-				NetworkManager.api.delete_clan_chat_message(msg_id, func(ok: bool, _c: int, _d: Variant):
-					if ok:
-						host._clan_chat_messages = host._clan_chat_messages.filter(func(x): return str(x.get("message_id", x.get("_id", ""))) != msg_id)
-						render_clan_chat(host)
-				)
+			NetworkManager.api.delete_clan_chat_message(msg_id, func(ok: bool, _c: int, _d: Variant):
+				if ok:
+					host._clan_chat_messages = host._clan_chat_messages.filter(func(x): return str(x.get("message_id", x.get("_id", ""))) != msg_id)
+					if is_instance_valid(msg_row):
+						msg_row.queue_free()
 			)
+		)
 
-		# Bubble Frame (my chat frame vs others frame)
-		var bubble := PanelContainer.new()
-		bubble.custom_minimum_size = Vector2(220, 96)
-		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_chat_bubble_style(is_mine))
-		bubble_col.add_child(bubble)
+	# Bubble Frame (my chat frame vs others frame)
+	var bubble := PanelContainer.new()
+	bubble.custom_minimum_size = Vector2(220, 96)
+	bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bubble.add_theme_stylebox_override("panel", CafeSocialTheme.create_chat_bubble_style(is_mine))
+	bubble_col.add_child(bubble)
 
-		var b_vbox := VBoxContainer.new()
-		b_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b_vbox.add_theme_constant_override("separation", 4)
-		bubble.add_child(b_vbox)
+	var b_vbox := VBoxContainer.new()
+	b_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b_vbox.add_theme_constant_override("separation", 4)
+	bubble.add_child(b_vbox)
 
-		# Check if text is a sticker e.g. [استیکر X] or [sticker:X]
-		var is_sticker := false
-		var sticker_id := 0
-		if text.begins_with("[sticker:") and text.ends_with("]"):
-			sticker_id = int(text.substr(9, text.length() - 10))
-			is_sticker = true
-		elif text.begins_with("[استیکر ") and text.ends_with("]"):
-			sticker_id = int(text.substr(9, text.length() - 10))
-			is_sticker = true
+	# Check if text is a sticker e.g. [استیکر X] or [sticker:X]
+	var is_sticker := false
+	var sticker_id := 0
+	if text.begins_with("[sticker:") and text.ends_with("]"):
+		sticker_id = int(text.substr(9, text.length() - 10))
+		is_sticker = true
+	elif text.begins_with("[استیکر ") and text.ends_with("]"):
+		sticker_id = int(text.substr(9, text.length() - 10))
+		is_sticker = true
 
-		if is_sticker and sticker_id >= 1 and sticker_id <= 16:
-			var s_tex: Texture2D = load("res://assets/icons/Reactions/%d.png" % sticker_id)
-			if s_tex != null:
-				var s_rect := TextureRect.new()
-				s_rect.texture = s_tex
-				s_rect.custom_minimum_size = Vector2(88, 88)
-				s_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-				s_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-				s_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-				b_vbox.add_child(s_rect)
-		else:
-			var msg_lbl := Label.new()
-			msg_lbl.text = text
-			msg_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			msg_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-			msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			msg_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			msg_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-			msg_lbl.add_theme_font_size_override("font_size", 22)
-			if is_mine:
-				msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
-			else:
-				msg_lbl.add_theme_color_override("font_color", Color(0.24, 0.15, 0.06, 1.0))
-			b_vbox.add_child(msg_lbl)
-
-		if not time_str.is_empty():
-			var date_lbl := Label.new()
-			date_lbl.text = time_str
-			date_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if is_mine else HORIZONTAL_ALIGNMENT_RIGHT
-			date_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-			date_lbl.add_theme_font_size_override("font_size", 16)
-			if is_mine:
-				date_lbl.add_theme_color_override("font_color", Color(0.80, 0.95, 0.85, 0.90))
-			else:
-				date_lbl.add_theme_color_override("font_color", Color(0.42, 0.32, 0.20, 0.90))
-			b_vbox.add_child(date_lbl)
-
-		var spacer := Control.new()
-		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		spacer.size_flags_stretch_ratio = 0.18
-
+	if is_sticker and sticker_id >= 1 and sticker_id <= 16:
+		var s_tex: Texture2D = load("res://assets/icons/Reactions/%d.png" % sticker_id)
+		if s_tex != null:
+			var s_rect := TextureRect.new()
+			s_rect.texture = s_tex
+			s_rect.custom_minimum_size = Vector2(88, 88)
+			s_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			s_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			s_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			b_vbox.add_child(s_rect)
+	else:
+		var msg_lbl := Label.new()
+		msg_lbl.text = text
+		msg_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		msg_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		msg_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		msg_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+		msg_lbl.add_theme_font_size_override("font_size", 22)
 		if is_mine:
-			msg_row.add_child(spacer)
-			if del_icon_btn != null:
-				msg_row.add_child(del_icon_btn)
-			msg_row.add_child(bubble_col)
-			msg_row.add_child(av_btn)
+			msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 		else:
-			msg_row.add_child(av_btn)
-			msg_row.add_child(bubble_col)
-			if del_icon_btn != null:
-				msg_row.add_child(del_icon_btn)
-			msg_row.add_child(spacer)
+			msg_lbl.add_theme_color_override("font_color", Color(0.24, 0.15, 0.06, 1.0))
+		b_vbox.add_child(msg_lbl)
 
-	if is_instance_valid(host._clan_chat_scroll):
-		if host.has_method("_scroll_clan_chat_to_bottom"):
-			host.call_deferred("_scroll_clan_chat_to_bottom")
+	if not time_str.is_empty():
+		var date_lbl := Label.new()
+		date_lbl.text = time_str
+		date_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if is_mine else HORIZONTAL_ALIGNMENT_RIGHT
+		date_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+		date_lbl.add_theme_font_size_override("font_size", 16)
+		if is_mine:
+			date_lbl.add_theme_color_override("font_color", Color(0.80, 0.95, 0.85, 0.90))
 		else:
-			await host.get_tree().process_frame
-			await host.get_tree().process_frame
-			if is_instance_valid(host._clan_chat_scroll):
-				var bar: VScrollBar = host._clan_chat_scroll.get_v_scroll_bar()
-				if bar:
-					host._clan_chat_scroll.scroll_vertical = int(bar.max_value)
+			date_lbl.add_theme_color_override("font_color", Color(0.42, 0.32, 0.20, 0.90))
+		b_vbox.add_child(date_lbl)
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.size_flags_stretch_ratio = 0.18
+
+	if is_mine:
+		msg_row.add_child(spacer)
+		if del_icon_btn != null:
+			msg_row.add_child(del_icon_btn)
+		msg_row.add_child(bubble_col)
+		msg_row.add_child(av_btn)
+	else:
+		msg_row.add_child(av_btn)
+		msg_row.add_child(bubble_col)
+		if del_icon_btn != null:
+			msg_row.add_child(del_icon_btn)
+		msg_row.add_child(spacer)
+
+	return msg_row
 
 
 static func _build_system_chat_bubble(text: String, time_str: String = "") -> PanelContainer:
@@ -1452,7 +1530,7 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 	var raw_st := str(m_pres.get("status", "offline"))
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(0, 116)
+	card.custom_minimum_size = Vector2(0, 126)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.14, 0.09, 0.05, 0.96)
@@ -1478,7 +1556,15 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 	act_col.add_theme_constant_override("separation", 4)
 	row.add_child(act_col)
 
-	var b_act := CafeSocialTheme.make_button("عملیات", "gold" if m_uid != my_uid else "bronze", Vector2(88, 38), 18)
+	var b_act := TextureButton.new()
+	b_act.custom_minimum_size = Vector2(48, 48)
+	b_act.ignore_texture_size = true
+	b_act.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	b_act.texture_normal = preload("res://assets/images/config.png")
+	b_act.focus_mode = Control.FOCUS_NONE
+	b_act.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b_act.tooltip_text = "عملیات"
+	ActionVFXManager.apply_button_juice(b_act, "tap_button")
 	b_act.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_open_member_interaction_sheet(host, m_dict, my_role)
@@ -1494,43 +1580,62 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 		)
 		act_col.add_child(b_spec)
 
-	# Center member details (Role on top, username directly under role)
+	# Center member details
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 2)
 	row.add_child(col)
 
-	# Row 1: Distinctive role badge
+	# Row 1: Username on top with 2x bigger font size (~34px)
+	var nm_lbl := CafeSocialTheme.make_title(
+		m_name if m_uid != my_uid else "%s (شما)" % m_name,
+		34,
+		CafeSocialTheme.COL_GOLD_BRIGHT if m_role == "leader" else CafeSocialTheme.COL_IVORY,
+		HORIZONTAL_ALIGNMENT_RIGHT,
+		false
+	)
+	nm_lbl.clip_text = true
+	nm_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	col.add_child(nm_lbl)
+
+	# Row 2: Distinctive role badge under username
 	var role_row := HBoxContainer.new()
 	role_row.alignment = BoxContainer.ALIGNMENT_END
 	col.add_child(role_row)
 
 	var role_badge := CafeSocialTheme.make_badge_pill(
 		"👑 %s" % m_role_fa if m_role == "leader" else ("⭐ %s" % m_role_fa if m_role == "co_leader" else ("🛡️ %s" % m_role_fa if m_role == "elder" else m_role_fa)),
-		CafeSocialTheme.COL_GOLD_BRIGHT if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_TEXT if m_role == "co_leader" else (Color(0.48, 0.78, 0.98) if m_role == "elder" else CafeSocialTheme.COL_MUTED_SAND)),
-		Color(0.20, 0.13, 0.05) if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_BG if m_role == "co_leader" else Color(0.10, 0.16, 0.24)),
-		CafeSocialTheme.COL_GOLD_ANTIQUE if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_BORDER if m_role == "co_leader" else Color(0.35, 0.65, 0.85)),
+		CafeSocialTheme.COL_GOLD_BRIGHT if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_TEXT if m_role in ["co_leader", "elder"] else CafeSocialTheme.COL_MUTED_SAND),
+		Color(0.20, 0.13, 0.05) if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_BG if m_role in ["co_leader", "elder"] else Color(0.10, 0.16, 0.24)),
+		CafeSocialTheme.COL_GOLD_ANTIQUE if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_BORDER if m_role in ["co_leader", "elder"] else Color(0.35, 0.65, 0.85)),
 		16
 	)
 	role_row.add_child(role_badge)
 
-	# Row 2: Username under role
-	var nm_lbl := CafeSocialTheme.make_title(m_name if m_uid != my_uid else "%s (شما)" % m_name, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
-	nm_lbl.clip_text = true
-	nm_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	col.add_child(nm_lbl)
-
-	# Row 3: Contribution & score (presence text button removed, avatar status dot is enough)
+	# Row 3: Contribution & score (مشارکت value strictly LTR so + is on the left)
 	var meta_row := HBoxContainer.new()
 	meta_row.alignment = BoxContainer.ALIGNMENT_END
-	meta_row.add_theme_constant_override("separation", 8)
+	meta_row.add_theme_constant_override("separation", 6)
 	col.add_child(meta_row)
 
-	var contrib_lbl := CafeSocialTheme.make_body("مشارکت: +%s  •  امتیاز: %s" % [GameManager.to_fa_num(m_contrib), GameManager.to_fa_num(m_score)], 17, CafeSocialTheme.COL_GOLD_BRIGHT if m_contrib > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
-	contrib_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	contrib_lbl.clip_text = true
-	meta_row.add_child(contrib_lbl)
+	var score_lbl := CafeSocialTheme.make_body("امتیاز: %s" % GameManager.to_fa_num(m_score), 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
+
+	var dot_lbl := CafeSocialTheme.make_body("•", 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+
+	var contrib_val_lbl := Label.new()
+	contrib_val_lbl.text = "+%s" % GameManager.to_fa_num(m_contrib)
+	contrib_val_lbl.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	contrib_val_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT if m_contrib > 0 else CafeSocialTheme.COL_MUTED_SAND)
+	contrib_val_lbl.add_theme_font_size_override("font_size", 18)
+	contrib_val_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+
+	var contrib_title_lbl := CafeSocialTheme.make_body("مشارکت:", 17, CafeSocialTheme.COL_GOLD_BRIGHT if m_contrib > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
+
+	meta_row.add_child(score_lbl)
+	meta_row.add_child(dot_lbl)
+	meta_row.add_child(contrib_val_lbl)
+	meta_row.add_child(contrib_title_lbl)
 
 	# Right: Avatar with frame
 	var av_vis := CafeSocialTheme.make_avatar_badge(int(m_dict.get("image", 0)), int(m_dict.get("profile_frame", 1)), 66.0, raw_st, true)

@@ -275,7 +275,7 @@ func _send_clan_chat_message() -> void:
 		NetworkManager.api.send_clan_chat_rest(txt, func(ok: bool, _c: int, data: Variant):
 			if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
 				_clan_chat_messages.append(data["result"])
-				SocialClansView.render_clan_chat(self)
+				SocialClansView.append_clan_chat_message(self, data["result"])
 			elif typeof(data) == TYPE_DICTIONARY:
 				_show_toast(str(data.get("detail", "خطا در ارسال پیام اتحاد")), CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
@@ -320,10 +320,17 @@ func _on_realtime_dm_read_received(_reader_id: String) -> void:
 
 
 func _on_realtime_clan_chat_received(msg: Dictionary) -> void:
-	_clan_chat_messages.append(msg)
+	var mid := str(msg.get("message_id", msg.get("_id", "")))
+	var exists := false
+	if not mid.is_empty():
+		for m in _clan_chat_messages:
+			if typeof(m) == TYPE_DICTIONARY and str(m.get("message_id", m.get("_id", ""))) == mid:
+				exists = true
+				break
+	if not exists:
+		_clan_chat_messages.append(msg)
 	if current_main_tab == "clans" and current_clans_subtab == "chat":
-		SocialClansView.render_clan_chat(self)
-		_scroll_clan_chat_to_bottom()
+		SocialClansView.append_clan_chat_message(self, msg)
 
 
 func _on_realtime_clan_chat_deleted(message_id: String) -> void:
@@ -332,15 +339,12 @@ func _on_realtime_clan_chat_deleted(message_id: String) -> void:
 			_clan_chat_messages.remove_at(i)
 	if current_main_tab == "clans" and current_clans_subtab == "chat":
 		SocialClansView.render_clan_chat(self)
-		_scroll_clan_chat_to_bottom()
 
 
 func _on_realtime_clan_event(event: Dictionary) -> void:
 	_show_toast(str(event.get("message", "رویداد جدید در اتحاد")), CafeSocialTheme.COL_GOLD_BRIGHT)
-	if current_main_tab == "clans":
+	if current_main_tab == "clans" and current_clans_subtab in ["my_clan", "members"]:
 		_refresh_current_tab()
-		if current_clans_subtab == "chat":
-			_scroll_clan_chat_to_bottom()
 
 
 func _on_realtime_notification_received(_notif: Dictionary) -> void:

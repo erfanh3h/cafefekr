@@ -386,9 +386,9 @@ func _render_overview_tab() -> void:
 		)
 	)
 
-	# 3. Direct Message
+	# 3. Direct Message (Only allowed if friends)
 	actions.private_message_pressed.connect(func():
-		if _is_self:
+		if _is_self or rel != "friend":
 			return
 		var target_uid := _current_user_id
 		close()
@@ -397,39 +397,7 @@ func _render_overview_tab() -> void:
 			s_dlg.open_direct_message_with(target_uid, uname)
 	)
 
-	# 4. Game Invite
-	actions.invite_to_game_pressed.connect(func():
-		if _is_self:
-			return
-		CafeSocialTheme.show_game_invite_modal(self, _current_user_id, uname, func(gtitle: String):
-			_show_profile_toast("دعوت‌نامه «%s» برای %s ارسال شد." % [gtitle, uname])
-		)
-	)
-
-	# 5. Clan Invite
-	actions.invite_to_clan_pressed.connect(func():
-		if _is_self or is_clanmate:
-			return
-		NetworkManager.api.invite_to_clan(_current_user_id, func(ok: bool, _c: int, d: Variant):
-			if ok:
-				_show_profile_toast("دعوت‌نامه عضویت در کلن ارسال شد.")
-			else:
-				var msg := str(d.get("detail", "امکان دعوت به کلن وجود ندارد")) if typeof(d) == TYPE_DICTIONARY else "خطا"
-				_show_profile_toast(msg, CafeSocialTheme.COL_CRIMSON_TEXT)
-		)
-	)
-
-	# 6. Spectate Live
-	actions.spectate_live_pressed.connect(func():
-		if _is_self:
-			return
-		var target_uid: String = _current_user_id
-		var active_gid: String = str(p_info.get("game_id", prof.get("current_game_id", prof.get("game_id", ""))))
-		close()
-		NetworkManager.request_spectate_game(active_gid, target_uid)
-	)
-
-	# 7. Block Player
+	# 4. Block Player (Moved to top row as icon button)
 	actions.block_player_pressed.connect(func():
 		if _is_self:
 			return
@@ -449,7 +417,7 @@ func _render_overview_tab() -> void:
 		)
 	)
 
-	# 8. Report Player
+	# 5. Report Player (Moved to top row as icon button with uploaded medallion)
 	actions.report_player_pressed.connect(func():
 		if _is_self:
 			return
