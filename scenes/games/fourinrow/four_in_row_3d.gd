@@ -390,6 +390,8 @@ func _build_luxury_architecture() -> void:
 			cap.position = Vector3(0, 0.068, z_end)
 			pillar.add_child(cap)
 
+	BaseGameBoard.bake_and_replace_static_meshes(arch, "BakedStandArchitecture", true)
+
 func _build_gravity_rack() -> void:
 	rack_pivot = Node3D.new()
 	rack_pivot.name = "RackPivot"
@@ -410,6 +412,8 @@ func _build_gravity_rack() -> void:
 
 	var span: float = float(GRID_SIZE) * CELL_STEP # 0.816m
 
+	var static_cage_temp = Node3D.new()
+
 	# 1. Recessed Dark Velvet-Obsidian Backplate behind the 8x8 Cage
 	var backplate = MeshInstance3D.new()
 	var bp_box = BoxMesh.new()
@@ -417,7 +421,7 @@ func _build_gravity_rack() -> void:
 	backplate.mesh = bp_box
 	backplate.material_override = mat_rack_channel_well
 	backplate.position = Vector3(0, -0.004, GRID_OFFSET_Z)
-	cage_group.add_child(backplate)
+	static_cage_temp.add_child(backplate)
 
 	# 2. 9 Vertical Column Divider Ribs (forming 8 physical gravity channels)
 	for i in range(GRID_SIZE + 1):
@@ -429,7 +433,7 @@ func _build_gravity_rack() -> void:
 		rib.mesh = rib_box
 		rib.material_override = mat_walnut_frame if is_outer else mat_rack_royal_blue
 		rib.position = Vector3(rx, 0.014, GRID_OFFSET_Z)
-		cage_group.add_child(rib)
+		static_cage_temp.add_child(rib)
 
 		# Fine 24K Gold Inlay Strip on Top of Each Vertical Channel Divider
 		var gold_inlay = MeshInstance3D.new()
@@ -438,7 +442,7 @@ func _build_gravity_rack() -> void:
 		gold_inlay.mesh = gi_box
 		gold_inlay.material_override = mat_gold_trim
 		gold_inlay.position = Vector3(rx, 0.029, GRID_OFFSET_Z)
-		cage_group.add_child(gold_inlay)
+		static_cage_temp.add_child(gold_inlay)
 
 	# 3. 9 Horizontal Structural Cross-Beams
 	for j in range(GRID_SIZE + 1):
@@ -450,7 +454,7 @@ func _build_gravity_rack() -> void:
 		beam.mesh = beam_box
 		beam.material_override = mat_walnut_frame if is_outer_h else mat_rack_royal_blue
 		beam.position = Vector3(0, 0.013, rz)
-		cage_group.add_child(beam)
+		static_cage_temp.add_child(beam)
 
 		if is_outer_h:
 			var h_gold = MeshInstance3D.new()
@@ -459,7 +463,7 @@ func _build_gravity_rack() -> void:
 			h_gold.mesh = hg_box
 			h_gold.material_override = mat_gold_trim
 			h_gold.position = Vector3(0, 0.028, rz)
-			cage_group.add_child(h_gold)
+			static_cage_temp.add_child(h_gold)
 
 	# 4. 8 Top Column Selection Funnel Buttons (FourInRowSelectionButton 0..7)
 	col_buttons.clear()
@@ -472,7 +476,7 @@ func _build_gravity_rack() -> void:
 	header_bar.mesh = hb_box
 	header_bar.material_override = mat_walnut_frame
 	header_bar.position = Vector3(0, 0.010, CHUTE_Z)
-	cage_group.add_child(header_bar)
+	static_cage_temp.add_child(header_bar)
 
 	var header_gold = MeshInstance3D.new()
 	var hbg_box = BoxMesh.new()
@@ -480,7 +484,15 @@ func _build_gravity_rack() -> void:
 	header_gold.mesh = hbg_box
 	header_gold.material_override = mat_gold_trim
 	header_gold.position = Vector3(0, 0.022, CHUTE_Z)
-	cage_group.add_child(header_gold)
+	static_cage_temp.add_child(header_gold)
+
+	var baked_cage_frame = BaseGameBoard.bake_node_tree_to_mesh(static_cage_temp, true)
+	static_cage_temp.free()
+	if baked_cage_frame != null:
+		var cage_frame_mi = MeshInstance3D.new()
+		cage_frame_mi.name = "BakedCageFrame"
+		cage_frame_mi.mesh = baked_cage_frame
+		cage_group.add_child(cage_frame_mi)
 
 	for r_idx in range(GRID_SIZE):
 		var cx: float = _col_to_x(r_idx)
@@ -545,39 +557,47 @@ func _build_gravity_rack() -> void:
 		btn_root.add_child(btn_area)
 		col_buttons.append(btn_area)
 
-	# 5. 64 Circular Beveled Portholes & Hitboxes (c_index = 0..7, r_index = 0..7)
+	# 5. 64 Circular Beveled Portholes & Hitboxes (wells batched into 1 MultiMesh, shared bezel/ring meshes)
 	cell_areas.clear()
 	cell_portholes.clear()
 	cell_target_rings.clear()
 
+	var well_cyl = CylinderMesh.new()
+	well_cyl.top_radius = 0.042; well_cyl.bottom_radius = 0.042; well_cyl.height = 0.006; well_cyl.radial_segments = 16; well_cyl.rings = 1
+	var wells_mm = MultiMesh.new()
+	wells_mm.transform_format = MultiMesh.TRANSFORM_3D
+	wells_mm.mesh = well_cyl
+	wells_mm.instance_count = GRID_SIZE * GRID_SIZE
+	var wells_mmi = MultiMeshInstance3D.new()
+	wells_mmi.name = "BakedPortholeWells"
+	wells_mmi.multimesh = wells_mm
+	wells_mmi.material_override = mat_rack_channel_well
+	cage_group.add_child(wells_mmi)
+
+	var shared_bezel_torus = TorusMesh.new()
+	shared_bezel_torus.inner_radius = 0.038; shared_bezel_torus.outer_radius = 0.046; shared_bezel_torus.rings = 16; shared_bezel_torus.ring_segments = 8
+
+	var shared_tr_torus = TorusMesh.new()
+	shared_tr_torus.inner_radius = 0.030; shared_tr_torus.outer_radius = 0.036; shared_tr_torus.rings = 16; shared_tr_torus.ring_segments = 8
+
+	var shared_cell_shape = BoxShape3D.new()
+	shared_cell_shape.size = Vector3(CELL_STEP, 0.045, CELL_STEP)
+
+	var w_idx: int = 0
 	for c_idx in range(GRID_SIZE):
 		for r_idx in range(GRID_SIZE):
 			var cell_pos: Vector3 = _cell_to_local_pos(c_idx, r_idx)
+			wells_mm.set_instance_transform(w_idx, Transform3D(Basis.IDENTITY, cell_pos + Vector3(0, 0.002, 0)))
+			w_idx += 1
+
 			var cell_node = Node3D.new()
 			cell_node.name = "Slot_%d_%d" % [c_idx, r_idx]
 			cell_node.position = cell_pos
 			cage_group.add_child(cell_node)
 
-			# Circular Recessed Well Backing
-			var well = MeshInstance3D.new()
-			var well_cyl = CylinderMesh.new()
-			well_cyl.top_radius = 0.042
-			well_cyl.bottom_radius = 0.042
-			well_cyl.height = 0.006
-			well_cyl.radial_segments = 24
-			well.mesh = well_cyl
-			well.material_override = mat_rack_channel_well
-			well.position = Vector3(0, 0.002, 0)
-			cell_node.add_child(well)
-
 			# Circular Brushed Brass Porthole Bezel on Cage Front
 			var bezel = MeshInstance3D.new()
-			var bezel_torus = TorusMesh.new()
-			bezel_torus.inner_radius = 0.038
-			bezel_torus.outer_radius = 0.046
-			bezel_torus.rings = 24
-			bezel_torus.ring_segments = 12
-			bezel.mesh = bezel_torus
+			bezel.mesh = shared_bezel_torus
 			bezel.material_override = mat_porthole_brass
 			bezel.position = Vector3(0, 0.025, 0)
 			cell_node.add_child(bezel)
@@ -585,12 +605,7 @@ func _build_gravity_rack() -> void:
 
 			# Inner Target Ring (Hidden until column is hovered and this cell is the landing row)
 			var target_ring = MeshInstance3D.new()
-			var tr_torus = TorusMesh.new()
-			tr_torus.inner_radius = 0.030
-			tr_torus.outer_radius = 0.036
-			tr_torus.rings = 24
-			tr_torus.ring_segments = 12
-			target_ring.mesh = tr_torus
+			target_ring.mesh = shared_tr_torus
 			target_ring.material_override = mat_target_ring
 			target_ring.position = Vector3(0, 0.008, 0)
 			target_ring.visible = false
@@ -603,9 +618,7 @@ func _build_gravity_rack() -> void:
 			area.set_meta("c_index", c_idx)
 			area.set_meta("r_index", r_idx)
 			var col_shape = CollisionShape3D.new()
-			var box_shape = BoxShape3D.new()
-			box_shape.size = Vector3(CELL_STEP, 0.045, CELL_STEP)
-			col_shape.shape = box_shape
+			col_shape.shape = shared_cell_shape
 			area.add_child(col_shape)
 			cell_node.add_child(area)
 			cell_areas.append(area)
@@ -721,7 +734,22 @@ func _update_dispenser_visuals() -> void:
 
 # --- 3D Lathe-Turned & Ribbed Four-in-a-Row Disc Model ---
 
+var _cached_four_disc_meshes: Dictionary = {}
+
 func _create_disc_node(gamer_id: int, is_ghost: bool = false) -> Node3D:
+	var disc = Node3D.new()
+	var d_key: String = "%d_%s" % [gamer_id, "g" if is_ghost else "s"]
+	if not _cached_four_disc_meshes.has(d_key):
+		var temp = _create_disc_node_raw(gamer_id, is_ghost)
+		_cached_four_disc_meshes[d_key] = BaseGameBoard.bake_node_tree_to_mesh(temp, not is_ghost)
+		temp.free()
+	var mi = MeshInstance3D.new()
+	mi.name = "DiscBody"
+	mi.mesh = _cached_four_disc_meshes[d_key]
+	disc.add_child(mi)
+	return disc
+
+func _create_disc_node_raw(gamer_id: int, is_ghost: bool = false) -> Node3D:
 	var disc = Node3D.new()
 	var mat_body: Material = (mat_piece_p1_ghost if gamer_id == 1 else mat_piece_p2_ghost) if is_ghost else (mat_piece_p1 if gamer_id == 1 else mat_piece_p2)
 	var mat_well: Material = mat_body if is_ghost else (mat_piece_p1_well if gamer_id == 1 else mat_piece_p2_well)

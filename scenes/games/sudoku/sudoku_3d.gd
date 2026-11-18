@@ -441,6 +441,9 @@ func _build_sudoku_grid() -> void:
 	b_right.position = Vector3(half_tot, BOARD_SURFACE_Y + 0.006, GRID_CENTER_Z)
 	board_decor_root.add_child(b_right)
 
+	# Bake all static decorative dividers, rosettes, and outer border into 1 MeshInstance3D
+	BaseGameBoard.bake_and_replace_static_meshes(board_decor_root, "BakedBoardDecor", true)
+
 	# 4. 81 Rich 3D Physical Cell Wells & Plaque Tiles
 	cell_centers.resize(TOTAL_CELLS)
 	cell_nodes.resize(TOTAL_CELLS)
@@ -454,34 +457,52 @@ func _build_sudoku_grid() -> void:
 	var well_mesh = BoxMesh.new()
 	well_mesh.size = Vector3(CELL_W, 0.006, CELL_W)
 
+	# Single MultiMesh for all 81 static dark well sockets (81 draw calls -> 1!)
+	var wells_mm = MultiMesh.new()
+	wells_mm.transform_format = MultiMesh.TRANSFORM_3D
+	wells_mm.mesh = well_mesh
+	wells_mm.instance_count = TOTAL_CELLS
+	var wells_mmi = MultiMeshInstance3D.new()
+	wells_mmi.name = "BakedCellWells"
+	wells_mmi.multimesh = wells_mm
+	wells_mmi.material_override = mat_well_socket
+	cells_root.add_child(wells_mmi)
+
 	var tile_mesh = BoxMesh.new()
 	tile_mesh.size = Vector3(CELL_W * 0.92, 0.010, CELL_W * 0.92)
 
 	var highlight_mesh = BoxMesh.new()
 	highlight_mesh.size = Vector3(CELL_W * 0.95, 0.004, CELL_W * 0.95)
 
+	# Pre-bake 4 corner rivets into 1 shared ArrayMesh (4 meshes per clue cell -> 1!)
+	var r_d = CELL_W * 0.38
 	var rivet_mesh = SphereMesh.new()
 	rivet_mesh.radius = 0.0045
 	rivet_mesh.height = 0.007
+	rivet_mesh.radial_segments = 8
+	rivet_mesh.rings = 4
+	var riv_temp = Node3D.new()
+	for r_corner in [Vector3(-r_d, 0.006, -r_d), Vector3(r_d, 0.006, -r_d), Vector3(-r_d, 0.006, r_d), Vector3(r_d, 0.006, r_d)]:
+		var r_dot = MeshInstance3D.new()
+		r_dot.mesh = rivet_mesh
+		r_dot.material_override = mat_gold_rivet
+		r_dot.position = r_corner
+		riv_temp.add_child(r_dot)
+	var baked_4_rivets: ArrayMesh = BaseGameBoard.bake_node_tree_to_mesh(riv_temp, false)
+	riv_temp.free()
 
 	for r in range(GRID_SIZE):
 		for c in range(GRID_SIZE):
 			var idx = r * GRID_SIZE + c
 			var pos = _get_cell_pos(r, c)
 			cell_centers[idx] = pos
+			wells_mm.set_instance_transform(idx, Transform3D(Basis.IDENTITY, pos + Vector3(0, -0.001, 0)))
 
 			var cell_root = Node3D.new()
 			cell_root.name = "Cell_%d" % idx
 			cell_root.position = pos
 			cells_root.add_child(cell_root)
 			cell_nodes[idx] = cell_root
-
-			# Recessed Outer Well Socket (Stationary dark bed well)
-			var w_mesh = MeshInstance3D.new()
-			w_mesh.mesh = well_mesh
-			w_mesh.material_override = mat_well_socket
-			w_mesh.position = Vector3(0, -0.001, 0)
-			cell_root.add_child(w_mesh)
 
 			# Tactile 3D Pivot (Handles plunge & elastic bounce animation)
 			var pivot = Node3D.new()
@@ -497,20 +518,13 @@ func _build_sudoku_grid() -> void:
 			pivot.add_child(t_mesh)
 			cell_tile_meshes[idx] = t_mesh
 
-			# 4 Corner Antique Rivets for Base Clues
-			var rivets_group = Node3D.new()
+			# 4 Corner Antique Rivets for Base Clues (1 baked MeshInstance3D instead of 4!)
+			var rivets_group = MeshInstance3D.new()
 			rivets_group.name = "Rivets"
+			rivets_group.mesh = baked_4_rivets
 			rivets_group.visible = false
 			pivot.add_child(rivets_group)
 			cell_rivet_nodes[idx] = rivets_group
-
-			var r_d = CELL_W * 0.38
-			for r_corner in [Vector3(-r_d, 0.006, -r_d), Vector3(r_d, 0.006, -r_d), Vector3(-r_d, 0.006, r_d), Vector3(r_d, 0.006, r_d)]:
-				var r_dot = MeshInstance3D.new()
-				r_dot.mesh = rivet_mesh
-				r_dot.material_override = mat_gold_rivet
-				r_dot.position = r_corner
-				rivets_group.add_child(r_dot)
 
 			# 3D Illuminated Highlight Frame
 			var h_mesh = MeshInstance3D.new()

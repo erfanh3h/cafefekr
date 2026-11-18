@@ -380,7 +380,9 @@ func _build_board_3d() -> void:
 
 	# Illuminated Goal Threshold Strips & Ornamental Labyrinth Watchtower Pillars at the 4 corners
 	goal_strip_top = _add_box_mesh(decor_root, Vector3(0.81, 0.006, 0.016), Vector3(0.0, BOARD_SURFACE_Y + 0.024, -0.422), _mat_goal_emerald)
+	goal_strip_top.set_meta("skip_bake", true)
 	goal_strip_bottom = _add_box_mesh(decor_root, Vector3(0.81, 0.006, 0.016), Vector3(0.0, BOARD_SURFACE_Y + 0.024, 0.422), _mat_goal_crimson)
+	goal_strip_bottom.set_meta("skip_bake", true)
 
 	# Carved Brass Goal Gate Posts flanking top (finish) and bottom (origin) edges
 	for z_gate: float in [-0.462, 0.462]:
@@ -458,6 +460,10 @@ func _build_board_3d() -> void:
 
 	last_move_pad = _add_box_mesh(highlights_root, Vector3(TILE_SIZE * 0.92, 0.003, TILE_SIZE * 0.92), Vector3(0.0, BOARD_SURFACE_Y + TILE_HEIGHT + 0.002, 0.0), _mat_last_pad)
 	last_move_pad.visible = false
+
+	# Bake static 9x9 board tiles (81 -> 1) and static board frame/pillars/towers (~34 -> 1)
+	BaseGameBoard.bake_and_replace_static_meshes(tiles_root, "BakedQuoridorTiles", true)
+	BaseGameBoard.bake_and_replace_static_meshes(decor_root, "BakedQuoridorDecor", true)
 
 	# 3. Left & Right Mahogany Wall Racks (10 sculpted 3D fences per player)
 	_build_wall_racks()

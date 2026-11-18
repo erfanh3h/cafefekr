@@ -501,6 +501,10 @@ func _build_board_3d() -> void:
 		_create_start_portal(g_id, _start_portal_positions[g_id])
 		_create_corner_home_yard(g_id, _yard_center_positions[g_id])
 
+	# Bake all 164 static tile bezels/discs/portals/yards into 1 single MeshInstance3D
+	# (hidden highlight rings are untouched since bake_and_replace_static_meshes skips invisible nodes)
+	BaseGameBoard.bake_and_replace_static_meshes(_tiles_root, "BakedLudoTiles", true)
+
 func _create_tile_medallion(spot_idx: int, pos: Vector3, mat: StandardMaterial3D, is_colored: bool) -> void:
 	var holder = Node3D.new()
 	holder.name = "Spot_%d" % spot_idx

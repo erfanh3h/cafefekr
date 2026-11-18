@@ -162,6 +162,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if not visible:
+		return
 	if _mouse_pressed and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_mouse_pressed = false
 		_is_dragging = false

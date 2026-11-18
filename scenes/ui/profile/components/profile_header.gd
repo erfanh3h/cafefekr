@@ -10,8 +10,8 @@ extends PanelContainer
 signal copy_id_requested(user_id: String)
 signal view_clan_requested(clan_id: String, clan_data: Dictionary)
 
-const TEX_SCORE_BADGE := preload("res://assets/images/badges/score.png")
-const TEX_LEVEL_BADGE := preload("res://assets/images/badges/level.png")
+const TEX_SCORE_BADGE := preload("res://assets/images/badges/score_frame.png")
+const TEX_LEVEL_BADGE := preload("res://assets/images/badges/level_frame.png")
 
 var _avatar_holder: Control
 var _lbl_username: Label
@@ -30,7 +30,7 @@ func _init() -> void:
 	_build_ui()
 
 
-func _make_stat_crest(tex: Texture2D, font_sz: int, text_col: Color, outline_col: Color, y_top_off: float, y_bot_off: float, shadow_diam: float, shadow_y_off: float) -> Dictionary:
+func _make_stat_crest(tex: Texture2D, font_sz: int, text_col: Color, y_top_off: float, y_bot_off: float) -> Dictionary:
 	var holder := Control.new()
 	holder.custom_minimum_size = Vector2(76, 84)
 	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -44,26 +44,6 @@ func _make_stat_crest(tex: Texture2D, font_sz: int, text_col: Color, outline_col
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	holder.add_child(icon)
 
-	# Circular dark backdrop shadow behind text for high readability
-	var circle_shadow := Panel.new()
-	var half := shadow_diam * 0.5
-	circle_shadow.anchor_left = 0.5
-	circle_shadow.anchor_top = 0.5
-	circle_shadow.anchor_right = 0.5
-	circle_shadow.anchor_bottom = 0.5
-	circle_shadow.offset_left = -half
-	circle_shadow.offset_top = -half + shadow_y_off
-	circle_shadow.offset_right = half
-	circle_shadow.offset_bottom = half + shadow_y_off
-	circle_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var sh_sb := StyleBoxFlat.new()
-	sh_sb.bg_color = Color(0.02, 0.01, 0.0, 0.72)
-	sh_sb.set_corner_radius_all(int(ceil(half)))
-	sh_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.65)
-	sh_sb.shadow_size = 6
-	circle_shadow.add_theme_stylebox_override("panel", sh_sb)
-	holder.add_child(circle_shadow)
-
 	var lbl := Label.new()
 	lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
 	lbl.offset_top = y_top_off
@@ -74,11 +54,6 @@ func _make_stat_crest(tex: Texture2D, font_sz: int, text_col: Color, outline_col
 	lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
 	lbl.add_theme_font_size_override("font_size", font_sz)
 	lbl.add_theme_color_override("font_color", text_col)
-	lbl.add_theme_color_override("font_outline_color", outline_col)
-	lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.95))
-	lbl.add_theme_constant_override("outline_size", 6)
-	lbl.add_theme_constant_override("shadow_offset_y", 2)
-	lbl.add_theme_constant_override("shadow_outline_size", 4)
 	lbl.text = "۰"
 	holder.add_child(lbl)
 
@@ -101,7 +76,7 @@ func _build_ui() -> void:
 	hero_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	main_vbox.add_child(hero_row)
 
-	# 1. Top-Left: Score & Level large icons with circular dark shadow + values centered inside
+	# 1. Top-Left: Score & Level frames with clean values centered inside
 	var badges_row := HBoxContainer.new()
 	badges_row.add_theme_constant_override("separation", 6)
 	badges_row.alignment = BoxContainer.ALIGNMENT_BEGIN
@@ -109,11 +84,11 @@ func _build_ui() -> void:
 	badges_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	hero_row.add_child(badges_row)
 
-	var score_crest := _make_stat_crest(TEX_SCORE_BADGE, 23, Color(1.0, 0.96, 0.78, 1.0), Color(0.08, 0.04, 0.01, 0.98), 4.0, 0.0, 46.0, 2.0)
+	var score_crest := _make_stat_crest(TEX_SCORE_BADGE, 23, Color(1.0, 0.96, 0.78, 1.0), 6.0, 0.0)
 	_lbl_score = score_crest["label"]
 	badges_row.add_child(score_crest["root"])
 
-	var level_crest := _make_stat_crest(TEX_LEVEL_BADGE, 28, Color(1.0, 0.98, 0.88, 1.0), Color(0.04, 0.14, 0.04, 0.98), 0.0, -6.0, 44.0, -3.0)
+	var level_crest := _make_stat_crest(TEX_LEVEL_BADGE, 28, Color(1.0, 0.98, 0.88, 1.0), 6.0, 0.0)
 	_lbl_level = level_crest["label"]
 	badges_row.add_child(level_crest["root"])
 

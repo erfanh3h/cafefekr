@@ -348,19 +348,41 @@ func _build_36_memory_wells_and_medallions() -> void:
 	select_ring_mesh.rings = 32
 	select_ring_mesh.ring_segments = 12
 
+	# Batch 36 static wells + 36 static bezels into 2 MultiMeshInstance3Ds (72 draw calls -> 2!)
+	var wells_mm := MultiMesh.new()
+	wells_mm.transform_format = MultiMesh.TRANSFORM_3D
+	wells_mm.mesh = well_mesh
+	wells_mm.instance_count = TOTAL_TILES
+	var wells_mmi := MultiMeshInstance3D.new()
+	wells_mmi.name = "BakedTileWells"
+	wells_mmi.multimesh = wells_mm
+	cells_root.add_child(wells_mmi)
+
+	var bezels_mm := MultiMesh.new()
+	bezels_mm.transform_format = MultiMesh.TRANSFORM_3D
+	bezels_mm.mesh = well_bezel_mesh
+	bezels_mm.instance_count = TOTAL_TILES
+	var bezels_mmi := MultiMeshInstance3D.new()
+	bezels_mmi.name = "BakedTileBezels"
+	bezels_mmi.multimesh = bezels_mm
+	cells_root.add_child(bezels_mmi)
+
+	# Pre-bake static back-face + gold equator assembly once (5 meshes x 36 = 180 -> 36!)
+	var back_temp := Node3D.new()
+	var t_eq := MeshInstance3D.new(); t_eq.mesh = equator_mesh; back_temp.add_child(t_eq)
+	var t_bb := MeshInstance3D.new(); t_bb.mesh = half_body_mesh; t_bb.material_override = _mat_card_back_body; t_bb.position = Vector3(0.0, 0.005, 0.0); back_temp.add_child(t_bb)
+	var t_br := MeshInstance3D.new(); t_br.mesh = rim_torus_mesh; t_br.material_override = _mat_card_back_ring; t_br.position = Vector3(0.0, 0.010, 0.0); t_br.scale = Vector3(1.0, 0.42, 1.0); back_temp.add_child(t_br)
+	var t_bi := MeshInstance3D.new(); t_bi.mesh = back_inner_ring_mesh; t_bi.position = Vector3(0.0, 0.0105, 0.0); t_bi.scale = Vector3(1.0, 0.40, 1.0); back_temp.add_child(t_bi)
+	var t_bs := MeshInstance3D.new(); t_bs.mesh = back_boss_mesh; t_bs.position = Vector3(0.0, 0.0108, 0.0); back_temp.add_child(t_bs)
+	var baked_back_mesh: ArrayMesh = BaseGameBoard.bake_node_tree_to_mesh(back_temp, true)
+	back_temp.free()
+
 	for idx in range(TOTAL_TILES):
 		var center: Vector3 = cell_centers[idx]
 
-		# 1. Recessed Well & Area3D Hitbox
-		var well_inst := MeshInstance3D.new()
-		well_inst.mesh = well_mesh
-		well_inst.position = Vector3(center.x, BOARD_SURFACE_Y - 0.001, center.z)
-		cells_root.add_child(well_inst)
-
-		var bezel_inst := MeshInstance3D.new()
-		bezel_inst.mesh = well_bezel_mesh
-		bezel_inst.position = Vector3(center.x, BOARD_SURFACE_Y + 0.001, center.z)
-		cells_root.add_child(bezel_inst)
+		# 1. Recessed Well & Bezel (instanced via MultiMesh) + Area3D Hitbox
+		wells_mm.set_instance_transform(idx, Transform3D(Basis.IDENTITY, Vector3(center.x, BOARD_SURFACE_Y - 0.001, center.z)))
+		bezels_mm.set_instance_transform(idx, Transform3D(Basis.IDENTITY, Vector3(center.x, BOARD_SURFACE_Y + 0.001, center.z)))
 
 		var area := Area3D.new()
 		area.name = "TileArea_%d" % idx
@@ -388,40 +410,13 @@ func _build_36_memory_wells_and_medallions() -> void:
 		t_root.add_child(pivot)
 		tile_pivots[idx] = pivot
 
-		var eq := MeshInstance3D.new()
-		eq.mesh = equator_mesh
-		pivot.add_child(eq)
-
-		# Back Face (+Y when FlipPivot.rotation.x == 0.0 -> Face-Down Hidden State)
-		var back_face := Node3D.new()
-		back_face.name = "BackFace"
-		pivot.add_child(back_face)
-
-		var b_body := MeshInstance3D.new()
-		b_body.mesh = half_body_mesh
-		b_body.material_override = _mat_card_back_body
-		b_body.position = Vector3(0.0, 0.005, 0.0)
-		back_face.add_child(b_body)
-		tile_back_bodies[idx] = b_body
-
-		var b_rim := MeshInstance3D.new()
-		b_rim.mesh = rim_torus_mesh
-		b_rim.material_override = _mat_card_back_ring
-		b_rim.position = Vector3(0.0, 0.010, 0.0)
-		b_rim.scale = Vector3(1.0, 0.42, 1.0)
-		back_face.add_child(b_rim)
-		tile_back_rims[idx] = b_rim
-
-		var b_inner := MeshInstance3D.new()
-		b_inner.mesh = back_inner_ring_mesh
-		b_inner.position = Vector3(0.0, 0.0105, 0.0)
-		b_inner.scale = Vector3(1.0, 0.40, 1.0)
-		back_face.add_child(b_inner)
-
-		var b_boss := MeshInstance3D.new()
-		b_boss.mesh = back_boss_mesh
-		b_boss.position = Vector3(0.0, 0.0108, 0.0)
-		back_face.add_child(b_boss)
+		# Baked Back Face + Equator (1 MeshInstance3D instead of 5)
+		var back_mi := MeshInstance3D.new()
+		back_mi.name = "BackFace"
+		back_mi.mesh = baked_back_mesh
+		pivot.add_child(back_mi)
+		tile_back_bodies[idx] = back_mi
+		tile_back_rims[idx] = back_mi
 
 		# Front Face (-Y when FlipPivot.rotation.x == 0.0 -> Becomes +Y when FlipPivot.rotation.x == PI)
 		var front_face := Node3D.new()

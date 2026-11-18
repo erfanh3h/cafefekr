@@ -501,58 +501,73 @@ func _create_marble_3d_model_raw(gamer_id: int, is_ghost: bool = false) -> Node3
 
 	return root
 
+var _cached_paddle_housing_meshes: Dictionary = {}
+var _cached_paddle_dial_meshes: Dictionary = {}
+
 # Model 3: Luxury Pill-Medallion & 3D Sculpted Curved-Arrow Rotation Button (1..8)
 func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_fa: String) -> Node3D:
 	var root = Node3D.new()
 	root.name = "RotationPaddle_%d" % rot_id
 	root.position = pos
 
-	# 1. Stepped Pill-Shaped 24K Gold Bezel (Center Box + Rounded Cylinder End-Caps)
-	var bezel_center = MeshInstance3D.new()
-	var bz_box = BoxMesh.new()
-	bz_box.size = Vector3(0.096, 0.016, 0.072)
-	bezel_center.mesh = bz_box
-	bezel_center.material_override = mat_gold_rail
-	root.add_child(bezel_center)
+	var dial_x: float = -0.044 if is_ccw else 0.044
+	var ccw_key: int = 1 if is_ccw else 0
 
+	# 1. Stepped Pill-Shaped 24K Gold Bezel + Dial Housing (5 static meshes baked into 1 cached ArrayMesh)
+	if not _cached_paddle_housing_meshes.has(ccw_key):
+		var h_temp = Node3D.new()
+		var bezel_center = MeshInstance3D.new()
+		var bz_box = BoxMesh.new()
+		bz_box.size = Vector3(0.096, 0.016, 0.072)
+		bezel_center.mesh = bz_box
+		bezel_center.material_override = mat_gold_rail
+		h_temp.add_child(bezel_center)
+		for end_sign in [-1.0, 1.0]:
+			var bz_cap = MeshInstance3D.new()
+			var bzc_cyl = CylinderMesh.new()
+			bzc_cyl.top_radius = 0.036; bzc_cyl.bottom_radius = 0.037; bzc_cyl.height = 0.016; bzc_cyl.radial_segments = 16; bzc_cyl.rings = 1
+			bz_cap.mesh = bzc_cyl
+			bz_cap.position = Vector3(end_sign * 0.048, 0.0, 0.0)
+			bz_cap.material_override = mat_gold_rail
+			h_temp.add_child(bz_cap)
+		var dial_well = MeshInstance3D.new()
+		var dw_cyl = CylinderMesh.new()
+		dw_cyl.top_radius = 0.024; dw_cyl.bottom_radius = 0.025; dw_cyl.height = 0.006; dw_cyl.radial_segments = 16; dw_cyl.rings = 1
+		dial_well.mesh = dw_cyl
+		dial_well.position = Vector3(dial_x, 0.013, 0.0)
+		dial_well.material_override = mat_obsidian_bed
+		h_temp.add_child(dial_well)
+		var dial_collar = MeshInstance3D.new()
+		var dc_torus = TorusMesh.new()
+		dc_torus.inner_radius = 0.022; dc_torus.outer_radius = 0.0255; dc_torus.rings = 16; dc_torus.ring_segments = 8
+		dial_collar.mesh = dc_torus
+		dial_collar.position = Vector3(dial_x, 0.015, 0.0)
+		dial_collar.scale = Vector3(1.0, 0.45, 1.0)
+		dial_collar.material_override = mat_gold_rail
+		h_temp.add_child(dial_collar)
+		_cached_paddle_housing_meshes[ccw_key] = BaseGameBoard.bake_node_tree_to_mesh(h_temp, true)
+		h_temp.free()
+	var housing_mi = MeshInstance3D.new()
+	housing_mi.mesh = _cached_paddle_housing_meshes[ccw_key]
+	root.add_child(housing_mi)
+
+	# 2. Inner Interactive Core Pill Plate (3 parts baked into 1 single MeshInstance3D!)
+	var plate_temp = Node3D.new()
+	var pl_c = MeshInstance3D.new(); var pl_box = BoxMesh.new(); pl_box.size = Vector3(0.090, 0.020, 0.062); pl_c.mesh = pl_box; plate_temp.add_child(pl_c)
 	for end_sign in [-1.0, 1.0]:
-		var bz_cap = MeshInstance3D.new()
-		var bzc_cyl = CylinderMesh.new()
-		bzc_cyl.top_radius = 0.036
-		bzc_cyl.bottom_radius = 0.037
-		bzc_cyl.height = 0.016
-		bzc_cyl.radial_segments = 24
-		bz_cap.mesh = bzc_cyl
-		bz_cap.position = Vector3(end_sign * 0.048, 0.0, 0.0)
-		bz_cap.material_override = mat_gold_rail
-		root.add_child(bz_cap)
+		var pl_cap = MeshInstance3D.new(); var plc_cyl = CylinderMesh.new(); plc_cyl.top_radius = 0.031; plc_cyl.bottom_radius = 0.031; plc_cyl.height = 0.020; plc_cyl.radial_segments = 16; plc_cyl.rings = 1
+		pl_cap.mesh = plc_cyl; pl_cap.position = Vector3(end_sign * 0.045, 0.0, 0.0); plate_temp.add_child(pl_cap)
+	var plate_baked = BaseGameBoard.bake_node_tree_to_mesh(plate_temp, false)
+	plate_temp.free()
 
-	# 2. Inner Interactive Core Pill Plate (Center Box + Rounded End-Caps)
-	var plate_meshes: Array[MeshInstance3D] = []
 	var plate_center = MeshInstance3D.new()
 	plate_center.name = "CorePlate"
-	var pl_box = BoxMesh.new()
-	pl_box.size = Vector3(0.090, 0.020, 0.062)
-	plate_center.mesh = pl_box
+	plate_center.mesh = plate_baked
 	plate_center.position = Vector3(0.0, 0.0025, 0.0)
 	plate_center.material_override = mat_rot_btn_idle
 	root.add_child(plate_center)
-	plate_meshes.append(plate_center)
+	var plate_meshes: Array[MeshInstance3D] = [plate_center]
 	rotation_btn_halos.append(plate_center)
-
-	for end_sign in [-1.0, 1.0]:
-		var pl_cap = MeshInstance3D.new()
-		var plc_cyl = CylinderMesh.new()
-		plc_cyl.top_radius = 0.031
-		plc_cyl.bottom_radius = 0.031
-		plc_cyl.height = 0.020
-		plc_cyl.radial_segments = 24
-		pl_cap.mesh = plc_cyl
-		pl_cap.position = Vector3(end_sign * 0.045, 0.0025, 0.0)
-		pl_cap.material_override = mat_rot_btn_idle
-		root.add_child(pl_cap)
-		plate_meshes.append(pl_cap)
-
 	rotation_btn_plate_groups.append(plate_meshes)
 
 	# 3. Glowing Active Halo Ring around the Pill Button (visible during Step 2)
@@ -560,8 +575,8 @@ func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_f
 	var gr_torus = TorusMesh.new()
 	gr_torus.inner_radius = 0.040
 	gr_torus.outer_radius = 0.046
-	gr_torus.rings = 28
-	gr_torus.ring_segments = 12
+	gr_torus.rings = 18
+	gr_torus.ring_segments = 8
 	glow_ring.mesh = gr_torus
 	glow_ring.position = Vector3(0.0, 0.005, 0.0)
 	glow_ring.scale = Vector3(2.05, 0.40, 0.92)
@@ -570,83 +585,57 @@ func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_f
 	root.add_child(glow_ring)
 	rotation_btn_glow_rings.append(glow_ring)
 
-	# 4. Raised Circular Turntable Dial Boss with True 3D Sculpted Curved Arrow
-	var dial_x: float = -0.044 if is_ccw else 0.044
-	var dial_well = MeshInstance3D.new()
-	var dw_cyl = CylinderMesh.new()
-	dw_cyl.top_radius = 0.024
-	dw_cyl.bottom_radius = 0.025
-	dw_cyl.height = 0.006
-	dw_cyl.radial_segments = 24
-	dial_well.mesh = dw_cyl
-	dial_well.position = Vector3(dial_x, 0.013, 0.0)
-	dial_well.material_override = mat_obsidian_bed
-	root.add_child(dial_well)
-
-	var dial_collar = MeshInstance3D.new()
-	var dc_torus = TorusMesh.new()
-	dc_torus.inner_radius = 0.022
-	dc_torus.outer_radius = 0.0255
-	dc_torus.rings = 24
-	dc_torus.ring_segments = 10
-	dial_collar.mesh = dc_torus
-	dial_collar.position = Vector3(dial_x, 0.015, 0.0)
-	dial_collar.scale = Vector3(1.0, 0.45, 1.0)
-	dial_collar.material_override = mat_gold_rail
-	root.add_child(dial_collar)
-
+	# 4. Raised Circular Turntable Dial Boss with True 3D Sculpted Curved Arrow (13 meshes baked into 1!)
 	var dial_pivot = Node3D.new()
 	dial_pivot.name = "ArrowDialPivot"
 	dial_pivot.position = Vector3(dial_x, 0.017, 0.0)
 	root.add_child(dial_pivot)
 	rotation_btn_dials.append(dial_pivot)
 
-	# Build 230-degree open circular arc + 3D conical arrowhead inside dial_pivot
-	var arc_radius: float = 0.0145
-	var num_beads: int = 11
-	var start_deg: float = 20.0 if is_ccw else 160.0
-	var sweep_deg: float = -225.0 if is_ccw else 225.0
-	for b_i in range(num_beads):
-		var frac: float = float(b_i) / float(num_beads - 1)
-		var ang: float = deg_to_rad(start_deg + sweep_deg * frac)
-		var bead = MeshInstance3D.new()
-		var b_sph = SphereMesh.new()
-		var r_bead: float = lerpf(0.0024, 0.0038, frac)
-		b_sph.radius = r_bead
-		b_sph.height = r_bead * 1.6
-		bead.mesh = b_sph
-		bead.position = Vector3(cos(ang) * arc_radius, 0.001, sin(ang) * arc_radius)
-		bead.material_override = mat_rot_arrow_gold
-		dial_pivot.add_child(bead)
+	if not _cached_paddle_dial_meshes.has(ccw_key):
+		var d_temp = Node3D.new()
+		var arc_radius: float = 0.0145
+		var num_beads: int = 11
+		var start_deg: float = 20.0 if is_ccw else 160.0
+		var sweep_deg: float = -225.0 if is_ccw else 225.0
+		for b_i in range(num_beads):
+			var frac: float = float(b_i) / float(num_beads - 1)
+			var ang: float = deg_to_rad(start_deg + sweep_deg * frac)
+			var bead = MeshInstance3D.new()
+			var b_sph = SphereMesh.new()
+			var r_bead: float = lerpf(0.0024, 0.0038, frac)
+			b_sph.radius = r_bead; b_sph.height = r_bead * 1.6; b_sph.radial_segments = 8; b_sph.rings = 4
+			bead.mesh = b_sph
+			bead.position = Vector3(cos(ang) * arc_radius, 0.001, sin(ang) * arc_radius)
+			bead.material_override = mat_rot_arrow_gold
+			d_temp.add_child(bead)
+		var end_ang: float = deg_to_rad(start_deg + sweep_deg)
+		var tip_pos = Vector3(cos(end_ang) * arc_radius, 0.002, sin(end_ang) * arc_radius)
+		var tangent_ang: float = end_ang + (-PI * 0.5 if is_ccw else PI * 0.5)
+		var arrow_head = MeshInstance3D.new()
+		var ah_cone = CylinderMesh.new()
+		ah_cone.top_radius = 0.0; ah_cone.bottom_radius = 0.0076; ah_cone.height = 0.0145; ah_cone.radial_segments = 10; ah_cone.rings = 1
+		arrow_head.mesh = ah_cone
+		arrow_head.position = tip_pos
+		var dir_vec = Vector3(cos(tangent_ang), 0.0, sin(tangent_ang)).normalized()
+		var up_axis = Vector3.UP.cross(dir_vec).normalized()
+		arrow_head.basis = Basis(up_axis, PI * 0.5)
+		arrow_head.scale = Vector3(1.0, 1.0, 0.55)
+		arrow_head.material_override = mat_rot_arrow_emerald
+		d_temp.add_child(arrow_head)
+		var center_pin = MeshInstance3D.new()
+		var cp_sph = SphereMesh.new()
+		cp_sph.radius = 0.0042; cp_sph.height = 0.0065; cp_sph.radial_segments = 8; cp_sph.rings = 4
+		center_pin.mesh = cp_sph
+		center_pin.position = Vector3(0.0, 0.0015, 0.0)
+		center_pin.material_override = mat_gold_highlight
+		d_temp.add_child(center_pin)
+		_cached_paddle_dial_meshes[ccw_key] = BaseGameBoard.bake_node_tree_to_mesh(d_temp, true)
+		d_temp.free()
 
-	# Conical 3D Arrowhead at the leading tip of the arc
-	var end_ang: float = deg_to_rad(start_deg + sweep_deg)
-	var tip_pos = Vector3(cos(end_ang) * arc_radius, 0.002, sin(end_ang) * arc_radius)
-	var tangent_ang: float = end_ang + (-PI * 0.5 if is_ccw else PI * 0.5)
-	var arrow_head = MeshInstance3D.new()
-	var ah_cone = CylinderMesh.new()
-	ah_cone.top_radius = 0.0
-	ah_cone.bottom_radius = 0.0076
-	ah_cone.height = 0.0145
-	ah_cone.radial_segments = 12
-	arrow_head.mesh = ah_cone
-	arrow_head.position = tip_pos
-	var dir_vec = Vector3(cos(tangent_ang), 0.0, sin(tangent_ang)).normalized()
-	var up_axis = Vector3.UP.cross(dir_vec).normalized()
-	arrow_head.basis = Basis(up_axis, PI * 0.5)
-	arrow_head.scale = Vector3(1.0, 1.0, 0.55)
-	arrow_head.material_override = mat_rot_arrow_emerald
-	dial_pivot.add_child(arrow_head)
-
-	# Center Jewel Pin inside Dial
-	var center_pin = MeshInstance3D.new()
-	var cp_sph = SphereMesh.new()
-	cp_sph.radius = 0.0042
-	cp_sph.height = 0.0065
-	center_pin.mesh = cp_sph
-	center_pin.position = Vector3(0.0, 0.0015, 0.0)
-	center_pin.material_override = mat_gold_highlight
-	dial_pivot.add_child(center_pin)
+	var dial_mi = MeshInstance3D.new()
+	dial_mi.mesh = _cached_paddle_dial_meshes[ccw_key]
+	dial_pivot.add_child(dial_mi)
 
 	# 5. Crisp Persian Direction Label (No unsupported Unicode boxes)
 	var lbl = Label3D.new()

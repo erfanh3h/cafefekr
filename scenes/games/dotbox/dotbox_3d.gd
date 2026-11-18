@@ -310,17 +310,23 @@ func _build_25_territory_wells() -> void:
 	opp_ring_mesh.ring_segments = 16
 	opp_ring_mesh.material = _mat_box_opportunity
 
+	var well_frame_mm = MultiMesh.new()
+	well_frame_mm.transform_format = MultiMesh.TRANSFORM_3D
+	well_frame_mm.mesh = well_frame_mesh
+	well_frame_mm.instance_count = TOTAL_BOXES
+	var well_frame_mmi = MultiMeshInstance3D.new()
+	well_frame_mmi.name = "BakedWellFrames"
+	well_frame_mmi.multimesh = well_frame_mm
+	boxes_root.add_child(well_frame_mmi)
+
 	for box_id in range(TOTAL_BOXES):
 		var center: Vector3 = box_centers[box_id]
+		well_frame_mm.set_instance_transform(box_id, Transform3D(Basis.IDENTITY, center + Vector3(0, -0.0005, 0)))
+
 		var well_node = Node3D.new()
 		well_node.name = "BoxWell_%d" % box_id
 		well_node.position = center
 		boxes_root.add_child(well_node)
-
-		var frame_inst = MeshInstance3D.new()
-		frame_inst.mesh = well_frame_mesh
-		frame_inst.position = Vector3(0, -0.0005, 0)
-		well_node.add_child(frame_inst)
 
 		var floor_inst = MeshInstance3D.new()
 		floor_inst.mesh = well_floor_mesh
@@ -343,23 +349,27 @@ func _build_36_gold_dot_pillars() -> void:
 	base_ring_mesh.top_radius = 0.024
 	base_ring_mesh.bottom_radius = 0.028
 	base_ring_mesh.height = 0.010
-	base_ring_mesh.radial_segments = 24
+	base_ring_mesh.radial_segments = 16
+	base_ring_mesh.rings = 1
 	base_ring_mesh.material = _mat_brass_dark
 
 	var pillar_col_mesh = CylinderMesh.new()
 	pillar_col_mesh.top_radius = 0.018
 	pillar_col_mesh.bottom_radius = 0.021
 	pillar_col_mesh.height = 0.024
-	pillar_col_mesh.radial_segments = 24
+	pillar_col_mesh.radial_segments = 16
+	pillar_col_mesh.rings = 1
 	pillar_col_mesh.material = _mat_gold_24k
 
 	var dome_cap_mesh = SphereMesh.new()
 	dome_cap_mesh.radius = 0.019
 	dome_cap_mesh.height = 0.024
-	dome_cap_mesh.radial_segments = 24
-	dome_cap_mesh.rings = 12
+	dome_cap_mesh.radial_segments = 14
+	dome_cap_mesh.rings = 7
 	dome_cap_mesh.material = _mat_gold_24k
 
+	# Build all 36 static 3-part dot pillars into 1 baked MeshInstance3D (108 draw calls -> 1!)
+	var temp_pillars = Node3D.new()
 	for r in range(GRID_DOTS):
 		for c in range(GRID_DOTS):
 			var pos = Vector3(
@@ -368,9 +378,8 @@ func _build_36_gold_dot_pillars() -> void:
 				GRID_MIN_XZ + float(r) * DOT_SPACING
 			)
 			var pillar = Node3D.new()
-			pillar.name = "DotPillar_%d_%d" % [r, c]
 			pillar.position = pos
-			board_decor_root.add_child(pillar)
+			temp_pillars.add_child(pillar)
 
 			var base_inst = MeshInstance3D.new()
 			base_inst.mesh = base_ring_mesh
@@ -386,6 +395,14 @@ func _build_36_gold_dot_pillars() -> void:
 			cap_inst.mesh = dome_cap_mesh
 			cap_inst.position = Vector3(0, 0.025, 0)
 			pillar.add_child(cap_inst)
+
+	var baked_pillars = BaseGameBoard.bake_node_tree_to_mesh(temp_pillars, true)
+	temp_pillars.free()
+	if baked_pillars != null:
+		var pillars_mi = MeshInstance3D.new()
+		pillars_mi.name = "BakedGoldDotPillars"
+		pillars_mi.mesh = baked_pillars
+		board_decor_root.add_child(pillars_mi)
 
 
 func _build_60_interactive_line_channels() -> void:
@@ -642,6 +659,8 @@ func _create_single_side_tray(x_pos: float, player_id: int) -> Node3D:
 			cap.position = Vector3(sx * (TRAY_W * 0.5 - 0.008), TRAY_H * 0.5 + WALL_H * 0.5, sz * (TRAY_L * 0.5 - 0.008))
 			tray.add_child(cap)
 
+	BaseGameBoard.bake_and_replace_static_meshes(tray, "BakedTrayMesh", true)
+
 	return tray
 
 
@@ -740,7 +759,21 @@ func _build_3d_bridge_bar(owner_id: int, is_horiz: bool, is_last_played: bool) -
 	return root
 
 
+var _cached_dotbox_crest_meshes: Dictionary = {}
+
 func _build_3d_territory_crest(owner_id: int) -> Node3D:
+	# Lathe-turned 3D Checkers-style Royal Territory Crest Medallion (cached baked mesh)
+	var root = Node3D.new()
+	if not _cached_dotbox_crest_meshes.has(owner_id):
+		var temp = _build_3d_territory_crest_raw(owner_id)
+		_cached_dotbox_crest_meshes[owner_id] = BaseGameBoard.bake_node_tree_to_mesh(temp, true)
+		temp.free()
+	var mi = MeshInstance3D.new()
+	mi.mesh = _cached_dotbox_crest_meshes[owner_id]
+	root.add_child(mi)
+	return root
+
+func _build_3d_territory_crest_raw(owner_id: int) -> Node3D:
 	# Lathe-turned 3D Checkers-style Royal Territory Crest Medallion
 	var root = Node3D.new()
 	var body_mat = _mat_red_body if owner_id == 1 else _mat_blue_body

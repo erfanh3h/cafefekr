@@ -843,7 +843,30 @@ func _spawn_piece_at_cell(cell_idx: int, gamer_id: int, piece_name: String) -> N
 
 # --- Genuine 3D Staunton Piece Instance Builder ---
 
+var _cached_chess_piece_meshes: Dictionary = {}
+
 func _build_3d_piece_mesh(gamer_id: int, piece_name: String, cell_idx: int = -1) -> Node3D:
+	var root = Node3D.new()
+	root.set_meta("gamer_id", gamer_id)
+	root.set_meta("piece_name", piece_name)
+	var key = piece_name.to_lower()
+	var inward_sign: int = 0
+	if key == "knight":
+		var col = cell_idx % GRID_SIZE if cell_idx != -1 else 1
+		inward_sign = 1 if col < 4 else -1
+	var cache_key: String = "%d_%s_%d" % [gamer_id, key, inward_sign]
+	if not _cached_chess_piece_meshes.has(cache_key):
+		var temp = _build_3d_piece_mesh_raw(gamer_id, piece_name, cell_idx)
+		_cached_chess_piece_meshes[cache_key] = BaseGameBoard.bake_node_tree_to_mesh(temp, true)
+		temp.free()
+	var mi = MeshInstance3D.new()
+	mi.name = "PieceBody"
+	mi.mesh = _cached_chess_piece_meshes[cache_key]
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(mi)
+	return root
+
+func _build_3d_piece_mesh_raw(gamer_id: int, piece_name: String, cell_idx: int = -1) -> Node3D:
 	var root = Node3D.new()
 	root.set_meta("gamer_id", gamer_id)
 	root.set_meta("piece_name", piece_name)

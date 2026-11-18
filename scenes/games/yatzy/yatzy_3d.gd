@@ -861,6 +861,8 @@ func _build_score_cell_plaque(parent: Node3D, pos: Vector3, player_num: int, _ca
 # PRECISION-MOLDED LUXURY 3D DICE & FRAMED NUMBER BADGES
 # ==============================================================================
 
+var _cached_yatzy_pips_mesh: ArrayMesh = null
+
 func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	var slot_root = Node3D.new()
 	slot_root.name = "DieSlot_%d" % die_idx
@@ -929,8 +931,15 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 		die_pivot.add_child(slab_inst)
 		face_meshes.append(slab_inst)
 
-	# Precision-Spaced Flush Enamel Pips on all 6 faces
-	_add_3d_die_pips(die_pivot, DIE_SIZE * 0.5)
+	# Precision-Spaced Flush Enamel Pips on all 6 faces (21 pips baked into 1 shared mesh per die!)
+	if _cached_yatzy_pips_mesh == null:
+		var temp_pips = Node3D.new()
+		_add_3d_die_pips(temp_pips, DIE_SIZE * 0.5)
+		_cached_yatzy_pips_mesh = BaseGameBoard.bake_node_tree_to_mesh(temp_pips, true)
+		temp_pips.free()
+	var pips_mi = MeshInstance3D.new()
+	pips_mi.mesh = _cached_yatzy_pips_mesh
+	die_pivot.add_child(pips_mi)
 
 	# 4. Framed 3D Brass & Obsidian Numeral Plaque in front of each die well
 	var badge_rim = MeshInstance3D.new()

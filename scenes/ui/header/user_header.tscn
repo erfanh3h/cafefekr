@@ -1,10 +1,10 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/header/user_header.gd" id="1_header_script"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button5.png" id="3_button5_tex"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/coin.png" id="4_coin_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/score.png" id="5_cup_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/level.png" id="6_level_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/score_frame.png" id="5_cup_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/level_frame.png" id="6_level_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/add.png" id="7_add_tex"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="8_font_hekayat"]
 [ext_resource type="Texture2D" path="res://assets/icons/Avatars/0.png" id="9_default_avatar"]
@@ -13,15 +13,6 @@
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_player_card"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_stat_card"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge_shadow"]
-bg_color = Color(0.02, 0.01, 0, 0.72)
-corner_radius_top_left = 28
-corner_radius_top_right = 28
-corner_radius_bottom_right = 28
-corner_radius_bottom_left = 28
-shadow_color = Color(0, 0, 0, 0.65)
-shadow_size = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xp_bg"]
 bg_color = Color(0.09, 0.05, 0.03, 0.94)
@@ -219,36 +210,15 @@ texture = ExtResource("5_cup_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ScoreTextShadow" type="Panel" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreCard/ScoreBadge"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -26.0
-offset_top = -24.0
-offset_right = 26.0
-offset_bottom = 28.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_badge_shadow")
-
 [node name="ScoreLabel" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreCard/ScoreBadge"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 4.0
+offset_top = 6.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0.96, 0.78, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
-theme_override_colors/font_outline_color = Color(0.08, 0.04, 0.01, 0.98)
-theme_override_constants/shadow_offset_y = 2
-theme_override_constants/outline_size = 6
-theme_override_constants/shadow_outline_size = 4
 theme_override_fonts/font = ExtResource("8_font_hekayat")
 theme_override_font_sizes/font_size = 24
 text = "۱۰۰۰"
@@ -278,36 +248,15 @@ texture = ExtResource("6_level_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="LevelTextShadow" type="Panel" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelCard/LevelBadge"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -24.0
-offset_top = -27.0
-offset_right = 24.0
-offset_bottom = 21.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_badge_shadow")
-
 [node name="LevelLabel" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelCard/LevelBadge"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_bottom = -6.0
+offset_top = 6.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.88, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
-theme_override_colors/font_outline_color = Color(0.04, 0.14, 0.04, 0.98)
-theme_override_constants/shadow_offset_y = 2
-theme_override_constants/outline_size = 6
-theme_override_constants/shadow_outline_size = 4
 theme_override_fonts/font = ExtResource("8_font_hekayat")
 theme_override_font_sizes/font_size = 30
 text = "۱"

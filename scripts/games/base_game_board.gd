@@ -565,3 +565,22 @@ static func bake_node_tree_to_mesh(branch_root: Node3D, merge_vertex_colors: boo
 			merged.surface_set_material(s_idx, bucket_mat)
 
 	return merged
+
+static func bake_and_replace_static_meshes(branch_root: Node3D, baked_name: String = "BakedStaticMesh", merge_vertex_colors: bool = true) -> MeshInstance3D:
+	var to_free: Array[MeshInstance3D] = []
+	_collect_bake_meshes(branch_root, to_free)
+	if to_free.is_empty():
+		return null
+	var merged: ArrayMesh = bake_node_tree_to_mesh(branch_root, merge_vertex_colors)
+	if merged == null:
+		return null
+	for mi: MeshInstance3D in to_free:
+		if is_instance_valid(mi):
+			if mi.get_parent() != null:
+				mi.get_parent().remove_child(mi)
+			mi.queue_free()
+	var baked_mi := MeshInstance3D.new()
+	baked_mi.name = baked_name
+	baked_mi.mesh = merged
+	branch_root.add_child(baked_mi)
+	return baked_mi
