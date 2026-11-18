@@ -1855,7 +1855,7 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 		var mem_cnt := int(data.get("member_count", 1))
 		var max_mem := int(data.get("max_members", 50))
 		var jtype := str(data.get("join_type", "open"))
-		var jtype_fa := "آزاد" if jtype == "open" else ("نیازمند تأیید درخواست" if jtype == "request" else "فقط دعوت‌نامه‌ای")
+		var jtype_fa := "آزاد" if jtype == "open" else "نیازمند تأیید درخواست"
 		var desc := str(data.get("description", data.get("desc", "")))
 		var leader_name := str(data.get("leader_name", data.get("leader_username", "")))
 
@@ -1935,28 +1935,27 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 		# Join or Navigate button
 		var cid_str := str(data.get("clan_id", data.get("_id", clan_id)))
 		if not cid_str.is_empty():
-			if jtype != "invite_only":
-				var b_join := make_button("عضویت در کلن" if jtype == "open" else "ارسال درخواست عضویت", "emerald", Vector2(240, 56), 23)
-				b_join.pressed.connect(func():
-					AudioManager.sfx_button()
-					b_join.disabled = true
-					NetworkManager.api.join_or_request_clan(cid_str, "", func(ok_j: bool, _cj: int, dj: Variant):
-						if ok_j:
-							if is_instance_valid(overlay):
-								overlay.queue_free()
-							if is_instance_valid(host) and host.has_method("refresh_my_clan_data"):
-								host.current_clans_subtab = "my_clan"
-								host.refresh_my_clan_data(true)
-							else:
-								var s_dlg = host.get_tree().root.find_child("SocialDialog", true, false)
-								if s_dlg and s_dlg.has_method("open"):
-									s_dlg.open("clans")
-						elif typeof(dj) == TYPE_DICTIONARY:
-							if is_instance_valid(b_join):
-								b_join.disabled = false
-					)
+			var b_join := make_button("عضویت در کلن" if jtype == "open" else "ارسال درخواست عضویت", "emerald", Vector2(240, 56), 23)
+			b_join.pressed.connect(func():
+				AudioManager.sfx_button()
+				b_join.disabled = true
+				NetworkManager.api.join_or_request_clan(cid_str, "", func(ok_j: bool, _cj: int, dj: Variant):
+					if ok_j:
+						if is_instance_valid(overlay):
+							overlay.queue_free()
+						if is_instance_valid(host) and host.has_method("refresh_my_clan_data"):
+							host.current_clans_subtab = "my_clan"
+							host.refresh_my_clan_data(true)
+						else:
+							var s_dlg = host.get_tree().root.find_child("SocialDialog", true, false)
+							if s_dlg and s_dlg.has_method("open"):
+								s_dlg.open("clans")
+					elif typeof(dj) == TYPE_DICTIONARY:
+						if is_instance_valid(b_join):
+							b_join.disabled = false
 				)
-				btn_row.add_child(b_join)
+			)
+			btn_row.add_child(b_join)
 
 	populate_clan_ui.call(initial_data)
 

@@ -134,15 +134,16 @@ func _on_start_game_pressed() -> void:
 	)
 
 func _calculate_game_card_height() -> float:
-	var total_w := 600.0
+	var total_w := 560.0
 	if is_instance_valid(scroll_games) and scroll_games.size.x > 100.0:
 		total_w = scroll_games.size.x - 14.0
 	elif is_instance_valid(game_grid) and game_grid.size.x > 100.0:
 		total_w = game_grid.size.x
-	var h := maxf(180.0, floor(total_w * (2.0 / 3.0)))
-	return h
+	var cell_w := floor((total_w - 12.0) / 2.0)
+	return maxf(160.0, cell_w)
 
 func _populate_games_grid() -> void:
+	game_grid.columns = 2
 	for child in game_grid.get_children():
 		child.queue_free()
 	_game_cards.clear()
@@ -153,21 +154,21 @@ func _populate_games_grid() -> void:
 		game_grid.add_child(card)
 		_game_cards[g_type] = card
 
-func _create_game_card(g_type: String, initial_h: float = 400.0) -> Control:
+func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 	var is_selected = (g_type == selected_game_type)
 
-	# 1 game per row with 2/3 aspect ratio (height = 2/3 * width)
+	# 2 games per row with 1:1 square aspect ratio (height = width)
 	var card = Button.new()
 	card.custom_minimum_size = Vector2(0, initial_h)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(300, initial_h / 2.0)
+	card.pivot_offset = Vector2(initial_h / 2.0, initial_h / 2.0)
 
 	card.item_rect_changed.connect(func():
 		var w = card.size.x
-		if w > 100.0:
-			var target_h = floor(w * (2.0 / 3.0))
+		if w > 80.0:
+			var target_h = floor(w)
 			if absf(card.custom_minimum_size.y - target_h) > 2.0:
 				card.set_deferred("custom_minimum_size", Vector2(0, target_h))
 				card.pivot_offset = Vector2(w / 2.0, target_h / 2.0)

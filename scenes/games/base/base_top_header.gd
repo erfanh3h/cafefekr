@@ -99,6 +99,8 @@ var _p1_score_badge: PanelContainer = null
 var _p2_score_badge: PanelContainer = null
 var _timer_icon: TextureRect = null
 var _timer_vfx_overlay: TimerBarVFXOverlay = null
+var _spectator_badge_panel: PanelContainer = null
+var _lbl_spectator_count: Label = null
 
 # --- State ---
 var _current_turn: int = 1
@@ -334,12 +336,33 @@ func _ready() -> void:
 	_build_game_ui_enhancements()
 	_update_score_badges_visibility()
 	_connect_buttons()
+	if not NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
+		NetworkManager.spectator_count_updated.connect(_on_spectator_count_updated)
+	update_spectator_count(GameManager.spectator_count)
 	if is_instance_valid(p1_reaction_bubble):
 		p1_reaction_bubble.top_level = true
 		p1_reaction_bubble.visible = false
 	if is_instance_valid(p2_reaction_bubble):
 		p2_reaction_bubble.top_level = true
 		p2_reaction_bubble.visible = false
+
+func _exit_tree() -> void:
+	if is_instance_valid(NetworkManager) and NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
+		NetworkManager.spectator_count_updated.disconnect(_on_spectator_count_updated)
+
+func _on_spectator_count_updated(game_id: String, count: int) -> void:
+	var active_gid: String = GameManager.active_game_id
+	var spec_gid: String = GameManager.spectated_game_id
+	var open_gid: String = GameManager.get_open_game_id()
+	if game_id.is_empty() or game_id == active_gid or game_id == spec_gid or game_id == open_gid:
+		update_spectator_count(count)
+
+func update_spectator_count(count: int) -> void:
+	var safe_count: int = maxi(0, count)
+	if is_instance_valid(_spectator_badge_panel):
+		_spectator_badge_panel.visible = (safe_count > 0)
+	if is_instance_valid(_lbl_spectator_count) and safe_count > 0:
+		_lbl_spectator_count.text = "👁 %s" % _fa_digits(safe_count)
 
 func _connect_buttons() -> void:
 	if is_instance_valid(btn_p1_profile):
@@ -538,19 +561,49 @@ func _build_game_ui_enhancements() -> void:
 
 		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
 
-	# Combine [TimerRow] + [TurnBanner] + [RoundPanel] into a single compact top row inside MatchDetailsBox/VBox!
+	# Combine [TimerRow] + [TurnBanner] + [SpectatorBadge] + [RoundPanel] into a single compact top row inside MatchDetailsBox/VBox!
 	if match_vbox and round_panel and timer_row and is_instance_valid(lbl_turn_banner):
 		match_vbox.add_theme_constant_override("separation", 5)
 		var top_compact_row = HBoxContainer.new()
 		top_compact_row.name = "TopCompactRow"
 		top_compact_row.alignment = BoxContainer.ALIGNMENT_CENTER
-		top_compact_row.add_theme_constant_override("separation", 12)
+		top_compact_row.add_theme_constant_override("separation", 10)
 		top_compact_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		match_vbox.add_child(top_compact_row)
 		match_vbox.move_child(top_compact_row, 0)
 
 		timer_row.reparent(top_compact_row)
 		lbl_turn_banner.reparent(top_compact_row)
+
+		# Live viewer count pill (directly to the left of the game name pill, hidden when 0)
+		_spectator_badge_panel = PanelContainer.new()
+		_spectator_badge_panel.name = "SpectatorCountBadge"
+		_spectator_badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_spectator_badge_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var sb_spec := StyleBoxFlat.new()
+		sb_spec.bg_color = Color(0.08, 0.22, 0.14, 0.94)
+		sb_spec.border_color = Color(0.32, 0.85, 0.56, 0.88)
+		sb_spec.set_border_width_all(1)
+		sb_spec.set_corner_radius_all(10)
+		sb_spec.content_margin_left = 10
+		sb_spec.content_margin_right = 10
+		sb_spec.content_margin_top = 1
+		sb_spec.content_margin_bottom = 1
+		_spectator_badge_panel.add_theme_stylebox_override("panel", sb_spec)
+
+		_lbl_spectator_count = Label.new()
+		_lbl_spectator_count.name = "LblSpectatorCount"
+		_lbl_spectator_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_lbl_spectator_count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		if _font_hekayat:
+			_lbl_spectator_count.add_theme_font_override("font", _font_hekayat)
+		_lbl_spectator_count.add_theme_font_size_override("font_size", 20)
+		_lbl_spectator_count.add_theme_color_override("font_color", Color(0.74, 1.0, 0.84, 1.0))
+		_lbl_spectator_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_spectator_badge_panel.add_child(_lbl_spectator_count)
+		_spectator_badge_panel.visible = false
+		top_compact_row.add_child(_spectator_badge_panel)
+
 		round_panel.reparent(top_compact_row)
 
 	# 3. Attach Real-Time Procedural VFX Overlay to TurnTimerBar
@@ -690,6 +743,7 @@ func _get_role_badge_text(player_idx: int) -> String:
 func setup_match(game_name_fa: String, _mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
 	_last_displayed_sec = -1
 	_update_score_badges_visibility()
+	update_spectator_count(GameManager.spectator_count)
 	if is_instance_valid(lbl_round):
 		if max_rounds <= 1:
 			lbl_round.text = "%s" % game_name_fa

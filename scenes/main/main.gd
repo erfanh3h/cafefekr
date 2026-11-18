@@ -2785,13 +2785,25 @@ func _show_ranked_locked_dialog() -> void:
 		)
 		_ranked_locked_overlay.add_child(dark_bg)
 
-		var center = CenterContainer.new()
-		center.set_anchors_preset(Control.PRESET_FULL_RECT)
-		center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_ranked_locked_overlay.add_child(center)
+		var outer_margin = MarginContainer.new()
+		outer_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+		outer_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		outer_margin.add_theme_constant_override("margin_left", 24)
+		outer_margin.add_theme_constant_override("margin_right", 24)
+		outer_margin.add_theme_constant_override("margin_top", 32)
+		outer_margin.add_theme_constant_override("margin_bottom", 32)
+		_ranked_locked_overlay.add_child(outer_margin)
+
+		var vcenter = VBoxContainer.new()
+		vcenter.alignment = BoxContainer.ALIGNMENT_CENTER
+		vcenter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		vcenter.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		vcenter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		outer_margin.add_child(vcenter)
 
 		_ranked_locked_panel = PanelContainer.new()
-		_ranked_locked_panel.custom_minimum_size = Vector2(620, 480)
+		_ranked_locked_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_ranked_locked_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_ranked_locked_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 		var style = StyleBoxTexture.new()
 		style.texture = preload("res://assets/images/frames/board.png")
@@ -2800,18 +2812,19 @@ func _show_ranked_locked_dialog() -> void:
 		style.texture_margin_right = 60.0
 		style.texture_margin_bottom = 60.0
 		_ranked_locked_panel.add_theme_stylebox_override("panel", style)
-		center.add_child(_ranked_locked_panel)
+		vcenter.add_child(_ranked_locked_panel)
 
 		var margin = MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 20)
-		margin.add_theme_constant_override("margin_top", 24)
-		margin.add_theme_constant_override("margin_right", 20)
-		margin.add_theme_constant_override("margin_bottom", 24)
+		margin.add_theme_constant_override("margin_left", 10)
+		margin.add_theme_constant_override("margin_top", 12)
+		margin.add_theme_constant_override("margin_right", 10)
+		margin.add_theme_constant_override("margin_bottom", 12)
 		_ranked_locked_panel.add_child(margin)
 
 		var vbox = VBoxContainer.new()
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 16)
+		vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		vbox.add_theme_constant_override("separation", 14)
 		margin.add_child(vbox)
 
 		var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
@@ -2819,8 +2832,10 @@ func _show_ranked_locked_dialog() -> void:
 		var lbl_title = Label.new()
 		lbl_title.text = "🔒 مسابقات رنک قفل است"
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl_title.add_theme_font_override("font", font_hekayat)
-		lbl_title.add_theme_font_size_override("font_size", 30)
+		lbl_title.add_theme_font_size_override("font_size", 28)
 		lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 		lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 		lbl_title.add_theme_constant_override("shadow_outline_size", 3)
@@ -2831,14 +2846,14 @@ func _show_ranked_locked_dialog() -> void:
 		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		lbl_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lbl_desc.custom_minimum_size = Vector2(0, 50)
 		lbl_desc.add_theme_font_override("font", font_hekayat)
-		lbl_desc.add_theme_font_size_override("font_size", 21)
+		lbl_desc.add_theme_font_size_override("font_size", 20)
 		lbl_desc.add_theme_color_override("font_color", Color(0.96, 0.91, 0.82))
 		vbox.add_child(lbl_desc)
 
 		# Progress Panel Box
 		var prog_panel = PanelContainer.new()
+		prog_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var prog_box_style = StyleBoxFlat.new()
 		prog_box_style.bg_color = Color(0.10, 0.06, 0.04, 0.9)
 		prog_box_style.border_width_left = 2
@@ -2850,39 +2865,42 @@ func _show_ranked_locked_dialog() -> void:
 		prog_box_style.corner_radius_top_right = 14
 		prog_box_style.corner_radius_bottom_right = 14
 		prog_box_style.corner_radius_bottom_left = 14
-		prog_box_style.content_margin_left = 24.0
-		prog_box_style.content_margin_top = 16.0
-		prog_box_style.content_margin_right = 24.0
-		prog_box_style.content_margin_bottom = 16.0
+		prog_box_style.content_margin_left = 16.0
+		prog_box_style.content_margin_top = 14.0
+		prog_box_style.content_margin_right = 16.0
+		prog_box_style.content_margin_bottom = 14.0
 		prog_panel.add_theme_stylebox_override("panel", prog_box_style)
 		vbox.add_child(prog_panel)
 
 		var prog_vbox = VBoxContainer.new()
+		prog_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		prog_vbox.add_theme_constant_override("separation", 10)
 		prog_panel.add_child(prog_vbox)
 
 		var prog_row = HBoxContainer.new()
 		prog_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		prog_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		prog_row.add_theme_constant_override("separation", 10)
 		prog_vbox.add_child(prog_row)
 
 		_ranked_locked_remain_lbl = Label.new()
 		_ranked_locked_remain_lbl.text = ""
+		_ranked_locked_remain_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_ranked_locked_remain_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		_ranked_locked_remain_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_ranked_locked_remain_lbl.add_theme_font_override("font", font_hekayat)
-		_ranked_locked_remain_lbl.add_theme_font_size_override("font_size", 24)
+		_ranked_locked_remain_lbl.add_theme_font_size_override("font_size", 20)
 		_ranked_locked_remain_lbl.add_theme_color_override("font_color", Color(1.0, 0.65, 0.35))
 		prog_row.add_child(_ranked_locked_remain_lbl)
 
-		var spacer = Control.new()
-		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		prog_row.add_child(spacer)
-
 		var lvl_box = VBoxContainer.new()
 		lvl_box.alignment = BoxContainer.ALIGNMENT_CENTER
-		lvl_box.add_theme_constant_override("separation", 2)
+		lvl_box.size_flags_horizontal = Control.SIZE_SHRINK_END
+		lvl_box.add_theme_constant_override("separation", 4)
 
 		var level_icon = TextureRect.new()
 		level_icon.texture = preload("res://assets/images/badges/level.png")
-		level_icon.custom_minimum_size = Vector2(58, 66)
+		level_icon.custom_minimum_size = Vector2(46, 52)
 		level_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		level_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		level_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -2894,7 +2912,7 @@ func _show_ranked_locked_dialog() -> void:
 		_ranked_locked_progress_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_ranked_locked_progress_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		_ranked_locked_progress_lbl.add_theme_font_override("font", font_hekayat)
-		_ranked_locked_progress_lbl.add_theme_font_size_override("font_size", 24)
+		_ranked_locked_progress_lbl.add_theme_font_size_override("font_size", 20)
 		_ranked_locked_progress_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72))
 
 		var lvl_pill = StyleBoxFlat.new()
@@ -2902,8 +2920,8 @@ func _show_ranked_locked_dialog() -> void:
 		lvl_pill.border_color = Color(0.85, 0.68, 0.28, 0.88)
 		lvl_pill.set_border_width_all(1)
 		lvl_pill.set_corner_radius_all(10)
-		lvl_pill.content_margin_left = 14
-		lvl_pill.content_margin_right = 14
+		lvl_pill.content_margin_left = 10
+		lvl_pill.content_margin_right = 10
 		lvl_pill.content_margin_top = 2
 		lvl_pill.content_margin_bottom = 2
 		_ranked_locked_progress_lbl.add_theme_stylebox_override("normal", lvl_pill)
@@ -2913,7 +2931,7 @@ func _show_ranked_locked_dialog() -> void:
 		prog_row.add_child(lvl_box)
 
 		_ranked_locked_bar = ProgressBar.new()
-		_ranked_locked_bar.custom_minimum_size = Vector2(0, 22)
+		_ranked_locked_bar.custom_minimum_size = Vector2(0, 20)
 		_ranked_locked_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_ranked_locked_bar.show_percentage = false
 		_ranked_locked_bar.min_value = 0.0
@@ -2947,41 +2965,43 @@ func _show_ranked_locked_dialog() -> void:
 		lbl_hint.text = "💡 راهنما: با انجام ۳ تا ۵ بازی در «رنک تک‌نفره (ربات)» به راحتی تجربه کسب کرده و رنک را باز کنید!"
 		lbl_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		lbl_hint.custom_minimum_size = Vector2(680, 40)
+		lbl_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl_hint.add_theme_font_override("font", font_hekayat)
-		lbl_hint.add_theme_font_size_override("font_size", 24)
+		lbl_hint.add_theme_font_size_override("font_size", 20)
 		lbl_hint.add_theme_color_override("font_color", Color(0.80, 0.90, 1.0, 0.95))
 		vbox.add_child(lbl_hint)
 
-		# Action Buttons Row
-		var btn_hbox = HBoxContainer.new()
-		btn_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		btn_hbox.add_theme_constant_override("separation", 20)
-		vbox.add_child(btn_hbox)
+		# Action Buttons Stack (responsive full-width for portrait mobile)
+		var btn_vbox = VBoxContainer.new()
+		btn_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn_vbox.add_theme_constant_override("separation", 10)
+		vbox.add_child(btn_vbox)
 
 		var btn_play_bot = Button.new()
 		btn_play_bot.text = "🎮 کسب XP در رنک تک‌نفره (ربات)"
-		btn_play_bot.custom_minimum_size = Vector2(420, 102)
+		btn_play_bot.custom_minimum_size = Vector2(0, 64)
+		btn_play_bot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_play_bot.add_theme_font_override("font", font_hekayat)
-		btn_play_bot.add_theme_font_size_override("font_size", 30)
+		btn_play_bot.add_theme_font_size_override("font_size", 22)
 		KenneyUI.style_button(btn_play_bot, KenneyUI.COLOR_GREEN)
 		btn_play_bot.pressed.connect(func():
 			_close_ranked_locked_dialog(func():
 				_on_classic_rank_pressed()
 			)
 		)
-		btn_hbox.add_child(btn_play_bot)
+		btn_vbox.add_child(btn_play_bot)
 
 		var btn_close = Button.new()
 		btn_close.text = "متوجه شدم"
-		btn_close.custom_minimum_size = Vector2(220, 102)
+		btn_close.custom_minimum_size = Vector2(0, 56)
+		btn_close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_close.add_theme_font_override("font", font_hekayat)
-		btn_close.add_theme_font_size_override("font_size", 28)
+		btn_close.add_theme_font_size_override("font_size", 21)
 		KenneyUI.style_button(btn_close, KenneyUI.COLOR_GREY)
 		btn_close.pressed.connect(func():
 			_close_ranked_locked_dialog()
 		)
-		btn_hbox.add_child(btn_close)
+		btn_vbox.add_child(btn_close)
 
 		ui_canvas.add_child(_ranked_locked_overlay)
 

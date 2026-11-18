@@ -55,10 +55,11 @@ var _player_count_buttons: Dictionary = {}
 # View 4: Inside Lobby
 @onready var lbl_title: Label = $Margin/VBox/TopRow/LblTitle
 @onready var view_inside: VBoxContainer = $Margin/VBox/ViewInside
-@onready var lbl_room_id: Label = $Margin/VBox/ViewInside/InsideHeaderCard/Margin/HBox/CodePill/HBoxCode/LblRoomId
-@onready var btn_copy_code: Button = $Margin/VBox/ViewInside/InsideHeaderCard/Margin/HBox/CodePill/HBoxCode/BtnCopyCode
-@onready var lbl_game_name: Label = $Margin/VBox/ViewInside/InsideHeaderCard/Margin/HBox/VBoxGameInfo/LblGameName
-@onready var inside_game_icon: TextureRect = $Margin/VBox/ViewInside/InsideHeaderCard/Margin/HBox/IconFrame/InsideGameIcon
+@onready var lbl_room_id: Label = $Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/CodePill/HBoxCode/LblRoomId
+@onready var btn_copy_code: Button = $Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/CodePill/HBoxCode/BtnCopyCode
+@onready var lbl_game_name: Label = $Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/GameRow/VBoxGameInfo/LblGameName
+@onready var inside_game_icon: TextureRect = $Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/GameRow/IconFrame/InsideGameIcon
+@onready var players_scroll: ScrollContainer = $Margin/VBox/ViewInside/PlayersScroll
 @onready var players_list: VBoxContainer = $Margin/VBox/ViewInside/PlayersScroll/PlayersList
 @onready var btn_ready: Button = $Margin/VBox/ViewInside/InsideButtonsRow/BtnReady
 @onready var btn_start: Button = $Margin/VBox/ViewInside/InsideButtonsRow/BtnStart
@@ -198,6 +199,7 @@ func _ready() -> void:
 	_update_selected_game_display()
 	_setup_scroll_container_touch_drag(scroll_games)
 	_setup_scroll_container_touch_drag(scroll_list)
+	_setup_scroll_container_touch_drag(players_scroll)
 
 func open() -> void:
 	ActionVFXManager.animate_dialog_open(self, null, true)
@@ -285,36 +287,44 @@ func _build_player_count_selector() -> void:
 		return
 	player_count_container = PanelContainer.new()
 	player_count_container.name = "PlayerCountSelector"
-	player_count_container.custom_minimum_size = Vector2(0, 96)
+	player_count_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var sb = StyleBoxFlat.new()
 	sb.bg_color = Color(0.16, 0.10, 0.06, 0.94)
 	sb.border_color = Color(0.85, 0.70, 0.35, 0.85)
 	sb.set_border_width_all(2)
 	sb.set_corner_radius_all(18)
-	sb.content_margin_left = 18
-	sb.content_margin_right = 18
-	sb.content_margin_top = 12
+	sb.content_margin_left = 14
+	sb.content_margin_right = 14
+	sb.content_margin_top = 10
 	sb.content_margin_bottom = 12
 	player_count_container.add_theme_stylebox_override("panel", sb)
 	
-	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 12)
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	player_count_container.add_child(hbox)
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	player_count_container.add_child(vbox)
+	
+	var title_lbl = Label.new()
+	title_lbl.text = "تعداد بازیکنان:"
+	title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	title_lbl.add_theme_font_size_override("font_size", 22)
+	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.55))
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	vbox.add_child(title_lbl)
 	
 	var btns_row = HBoxContainer.new()
-	btns_row.add_theme_constant_override("separation", 12)
+	btns_row.add_theme_constant_override("separation", 10)
 	btns_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox.add_child(btns_row)
+	vbox.add_child(btns_row)
 	
 	var labels = {2: "۲ نفره", 3: "۳ نفره", 4: "۴ نفره"}
 	for cnt in [2, 3, 4]:
 		var btn = Button.new()
-		btn.custom_minimum_size = Vector2(140, 64)
+		btn.custom_minimum_size = Vector2(0, 52)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.text = labels[cnt]
 		btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		btn.add_theme_font_size_override("font_size", 28)
+		btn.add_theme_font_size_override("font_size", 22)
 		var chosen_cnt = cnt
 		btn.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -323,14 +333,6 @@ func _build_player_count_selector() -> void:
 		)
 		btns_row.add_child(btn)
 		_player_count_buttons[cnt] = btn
-	
-	var title_lbl = Label.new()
-	title_lbl.text = "تعداد بازیکنان:"
-	title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	title_lbl.add_theme_font_size_override("font_size", 28)
-	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.55))
-	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	hbox.add_child(title_lbl)
 	
 	view_create.add_child(player_count_container)
 	var btn_idx = btn_select_game.get_index()
@@ -392,6 +394,9 @@ func _get_game_texture(g_type: String) -> Texture2D:
 	return tex
 
 func _open_game_select_modal() -> void:
+	game_select_modal.top_level = true
+	game_select_modal.z_index = 40
+	game_select_modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	game_select_modal.visible = true
 	if _game_cards.is_empty():
 		_populate_game_grid()
@@ -400,7 +405,7 @@ func _open_game_select_modal() -> void:
 	
 	var p_size = game_select_panel.size
 	if p_size == Vector2.ZERO:
-		p_size = Vector2(660, 1160)
+		p_size = Vector2(680, 1240)
 	game_select_panel.pivot_offset = p_size / 2.0
 	game_select_panel.scale = Vector2(0.92, 0.92)
 	game_select_panel.modulate.a = 0.0
@@ -408,6 +413,7 @@ func _open_game_select_modal() -> void:
 	var tw = game_select_panel.create_tween().set_parallel(true)
 	tw.tween_property(game_select_panel, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(game_select_panel, "modulate:a", 1.0, 0.15)
+	call_deferred("_on_game_grid_scroll_resized")
 
 func _close_game_select_modal() -> void:
 	var tw = game_select_panel.create_tween().set_parallel(true)
@@ -432,15 +438,16 @@ func _update_game_grid_selection() -> void:
 			card.add_theme_stylebox_override("normal", sb)
 
 func _calculate_game_card_height() -> float:
-	var total_w := 600.0
+	var total_w := 560.0
 	if is_instance_valid(scroll_games) and scroll_games.size.x > 100.0:
 		total_w = scroll_games.size.x - 14.0 # exclude scrollbar width
 	elif is_instance_valid(game_grid) and game_grid.size.x > 100.0:
 		total_w = game_grid.size.x
-	var h := maxf(180.0, floor(total_w * (2.0 / 3.0)))
-	return h
+	var cell_w := floor((total_w - 12.0) / 2.0)
+	return maxf(160.0, cell_w)
 
 func _populate_game_grid() -> void:
+	game_grid.columns = 2
 	for child in game_grid.get_children():
 		child.queue_free()
 	_game_cards.clear()
@@ -461,22 +468,22 @@ func _on_game_grid_scroll_resized() -> void:
 			card.custom_minimum_size = Vector2(0, h)
 			card.pivot_offset = Vector2(card.size.x / 2.0, h / 2.0)
 
-func _create_game_card(g_type: String, initial_h: float = 400.0) -> Control:
+func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 	var is_selected = (g_type == selected_create_game_type)
 	
 	var card = Button.new()
-	# 1 game per row with 2/3 aspect ratio (height = 2/3 * width)
+	# 2 games per row with 1:1 square aspect ratio (height = width)
 	card.custom_minimum_size = Vector2(0, initial_h)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
 	card.flat = true
-	card.pivot_offset = Vector2(300, initial_h / 2.0)
+	card.pivot_offset = Vector2(initial_h / 2.0, initial_h / 2.0)
 	
-	# Dynamically lock aspect ratio to 2/3 (height = width * 2 / 3)
+	# Dynamically lock aspect ratio to 1:1 (height = width)
 	card.item_rect_changed.connect(func():
 		var w = card.size.x
-		if w > 100.0:
-			var target_h = floor(w * (2.0 / 3.0))
+		if w > 80.0:
+			var target_h = floor(w)
 			if absf(card.custom_minimum_size.y - target_h) > 2.0:
 				card.set_deferred("custom_minimum_size", Vector2(0, target_h))
 				card.pivot_offset = Vector2(w / 2.0, target_h / 2.0)
@@ -659,14 +666,14 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	row_panel.custom_minimum_size = Vector2(0, 110)
 	
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_right", 20)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
 	row_panel.add_child(margin)
 	
 	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 14)
+	hbox.add_theme_constant_override("separation", 10)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	margin.add_child(hbox)
 	
@@ -675,8 +682,8 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	# Join button (Kenney tactile button)
 	var btn_join = Button.new()
 	btn_join.text = "ورود"
-	btn_join.custom_minimum_size = Vector2(110, 60)
-	btn_join.add_theme_font_size_override("font_size", 22)
+	btn_join.custom_minimum_size = Vector2(92, 54)
+	btn_join.add_theme_font_size_override("font_size", 20)
 	KenneyUI.style_button(btn_join, KenneyUI.COLOR_GREEN)
 	btn_join.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -691,7 +698,7 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	var count_lbl = Label.new()
 	count_lbl.text = "%d / %d" % [q_len, max_count]
 	count_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
-	count_lbl.add_theme_font_size_override("font_size", 26)
+	count_lbl.add_theme_font_size_override("font_size", 22)
 	hbox.add_child(count_lbl)
 	
 	# Room & Game Info
@@ -701,15 +708,21 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	
 	var name_lbl = Label.new()
 	name_lbl.text = ("🔒 " + lobby_name) if has_pwd else lobby_name
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_lbl.clip_text = true
+	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
-	name_lbl.add_theme_font_size_override("font_size", 28)
+	name_lbl.add_theme_font_size_override("font_size", 24)
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	text_col.add_child(name_lbl)
 	
 	var game_lbl = Label.new()
 	game_lbl.text = GameTypes.get_display_name_fa(game_type)
+	game_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	game_lbl.clip_text = true
+	game_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	game_lbl.add_theme_color_override("font_color", Color(0.9, 0.8, 0.65))
-	game_lbl.add_theme_font_size_override("font_size", 22)
+	game_lbl.add_theme_font_size_override("font_size", 19)
 	game_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	text_col.add_child(game_lbl)
 	
@@ -717,7 +730,7 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	
 	# Game Icon Thumbnail
 	var icon_plate = TextureRect.new()
-	icon_plate.custom_minimum_size = Vector2(68, 68)
+	icon_plate.custom_minimum_size = Vector2(58, 58)
 	icon_plate.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_plate.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	var icon_path = "res://assets/images/games/%s.png" % game_type.to_lower()
@@ -773,14 +786,24 @@ func _build_password_modal() -> void:
 	bd.mouse_filter = Control.MOUSE_FILTER_STOP
 	_password_modal.add_child(bd)
 	
-	var center = CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_STOP
-	_password_modal.add_child(center)
+	var outer_m = MarginContainer.new()
+	outer_m.set_anchors_preset(Control.PRESET_FULL_RECT)
+	outer_m.add_theme_constant_override("margin_left", 24)
+	outer_m.add_theme_constant_override("margin_right", 24)
+	outer_m.add_theme_constant_override("margin_top", 24)
+	outer_m.add_theme_constant_override("margin_bottom", 24)
+	_password_modal.add_child(outer_m)
+	
+	var vcenter = VBoxContainer.new()
+	vcenter.alignment = BoxContainer.ALIGNMENT_CENTER
+	vcenter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vcenter.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer_m.add_child(vcenter)
 	
 	var panel = PanelContainer.new()
 	panel.name = "Panel"
-	panel.custom_minimum_size = Vector2(580, 400)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var sb = StyleBoxTexture.new()
 	sb.texture = preload("res://assets/images/frames/board.png")
 	sb.texture_margin_left = 60.0
@@ -788,25 +811,28 @@ func _build_password_modal() -> void:
 	sb.texture_margin_right = 60.0
 	sb.texture_margin_bottom = 60.0
 	panel.add_theme_stylebox_override("panel", sb)
-	center.add_child(panel)
+	vcenter.add_child(panel)
 	
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 28)
-	margin.add_theme_constant_override("margin_top", 28)
-	margin.add_theme_constant_override("margin_right", 28)
-	margin.add_theme_constant_override("margin_bottom", 28)
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 16)
 	panel.add_child(margin)
 	
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 16)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 14)
 	margin.add_child(vbox)
 	
 	var title = Label.new()
 	title.text = "🔒 ورود به اتاق دارای رمز"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	title.add_theme_constant_override("shadow_outline_size", 2)
@@ -815,48 +841,53 @@ func _build_password_modal() -> void:
 	var desc = Label.new()
 	desc.text = "لطفاً رمز عبور اتاق را وارد کنید:"
 	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	desc.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	desc.add_theme_font_size_override("font_size", 22)
+	desc.add_theme_font_size_override("font_size", 20)
 	desc.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
 	vbox.add_child(desc)
 	
 	var input_pwd = LineEdit.new()
 	input_pwd.name = "InputLobbyPassword"
-	input_pwd.custom_minimum_size = Vector2(0, 64)
+	input_pwd.custom_minimum_size = Vector2(0, 58)
 	input_pwd.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	input_pwd.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	input_pwd.placeholder_text = "رمز عبور..."
 	input_pwd.max_length = 20
 	input_pwd.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	input_pwd.add_theme_font_size_override("font_size", 26)
+	input_pwd.add_theme_font_size_override("font_size", 24)
 	var in_st = StyleBoxFlat.new()
 	in_st.bg_color = Color(0.12, 0.08, 0.05, 0.95)
 	in_st.border_color = Color(0.85, 0.70, 0.35, 0.9)
 	in_st.set_border_width_all(2)
 	in_st.set_corner_radius_all(14)
-	in_st.content_margin_left = 18
-	in_st.content_margin_right = 18
+	in_st.content_margin_left = 14
+	in_st.content_margin_right = 14
 	input_pwd.add_theme_stylebox_override("normal", in_st)
 	vbox.add_child(input_pwd)
 	
 	var btn_row = HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 16)
+	btn_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_row.add_theme_constant_override("separation", 12)
 	vbox.add_child(btn_row)
 	
 	var btn_ok = Button.new()
 	btn_ok.text = "ورود"
-	btn_ok.custom_minimum_size = Vector2(160, 64)
+	btn_ok.custom_minimum_size = Vector2(0, 58)
+	btn_ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_ok.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn_ok.add_theme_font_size_override("font_size", 24)
+	btn_ok.add_theme_font_size_override("font_size", 22)
 	KenneyUI.style_button(btn_ok, KenneyUI.COLOR_GREEN)
 	btn_row.add_child(btn_ok)
 	
 	var btn_cancel = Button.new()
 	btn_cancel.text = "انصراف"
-	btn_cancel.custom_minimum_size = Vector2(150, 64)
+	btn_cancel.custom_minimum_size = Vector2(0, 58)
+	btn_cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_cancel.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn_cancel.add_theme_font_size_override("font_size", 24)
+	btn_cancel.add_theme_font_size_override("font_size", 22)
 	KenneyUI.style_button(btn_cancel, KenneyUI.COLOR_GREY)
 	btn_row.add_child(btn_cancel)
 	
@@ -966,10 +997,11 @@ func _update_players_list(queuers: Array) -> void:
 				all_guests_ready = false
 		
 		var card = PanelContainer.new()
-		card.custom_minimum_size = Vector2(0, 110)
+		card.custom_minimum_size = Vector2(0, 96)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var c_style = StyleBoxFlat.new()
 		c_style.bg_color = Color(0.24, 0.16, 0.10, 0.96)
-		c_style.set_corner_radius_all(18)
+		c_style.set_corner_radius_all(16)
 		c_style.set_border_width_all(2)
 		if is_this_creator:
 			c_style.border_color = Color(1.0, 0.84, 0.32, 0.95)
@@ -980,31 +1012,66 @@ func _update_players_list(queuers: Array) -> void:
 		else:
 			c_style.border_color = Color(0.72, 0.6, 0.42, 0.7)
 			c_style.shadow_color = Color(0, 0, 0, 0.35)
-		c_style.shadow_size = 8
+		c_style.shadow_size = 6
 		c_style.shadow_offset = Vector2(0, 3)
-		c_style.content_margin_left = 20
-		c_style.content_margin_right = 20
-		c_style.content_margin_top = 12
-		c_style.content_margin_bottom = 12
+		c_style.content_margin_left = 14
+		c_style.content_margin_right = 14
+		c_style.content_margin_top = 10
+		c_style.content_margin_bottom = 10
 		card.add_theme_stylebox_override("panel", c_style)
 		
 		var hbox = HBoxContainer.new()
-		hbox.add_theme_constant_override("separation", 18)
+		hbox.add_theme_constant_override("separation", 10)
 		hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		
-		# Left side: Status badge / pill
+		# Host Kick button (Far Left if I am host and this is a guest)
+		if is_host and not is_this_creator:
+			var btn_kick = Button.new()
+			btn_kick.text = "❌ اخراج"
+			btn_kick.custom_minimum_size = Vector2(84, 48)
+			btn_kick.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			btn_kick.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+			btn_kick.add_theme_font_size_override("font_size", 18)
+			KenneyUI.style_button(btn_kick, KenneyUI.COLOR_RED)
+			btn_kick.pressed.connect(func():
+				_kick_player(q_uid)
+			)
+			hbox.add_child(btn_kick)
+		
+		# Middle: Player name + Status pill stacked cleanly and right-aligned next to avatar
+		var info_col = VBoxContainer.new()
+		info_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		info_col.alignment = BoxContainer.ALIGNMENT_CENTER
+		info_col.add_theme_constant_override("separation", 4)
+		
+		var name_lbl = Label.new()
+		name_lbl.text = q.get("name", q.get("username", "بازیکن"))
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_lbl.clip_text = true
+		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		name_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		name_lbl.add_theme_font_size_override("font_size", 26)
+		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
+		name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		name_lbl.add_theme_constant_override("shadow_outline_size", 2)
+		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		info_col.add_child(name_lbl)
+		
 		var badge_panel = PanelContainer.new()
+		badge_panel.size_flags_horizontal = Control.SIZE_SHRINK_END
 		var badge_style = StyleBoxFlat.new()
-		badge_style.set_corner_radius_all(12)
-		badge_style.content_margin_left = 14
-		badge_style.content_margin_right = 14
-		badge_style.content_margin_top = 8
-		badge_style.content_margin_bottom = 8
+		badge_style.set_corner_radius_all(10)
+		badge_style.content_margin_left = 10
+		badge_style.content_margin_right = 10
+		badge_style.content_margin_top = 4
+		badge_style.content_margin_bottom = 4
 		badge_style.set_border_width_all(1)
 		
 		var rdy_lbl = Label.new()
 		rdy_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		rdy_lbl.add_theme_font_size_override("font_size", 24)
+		rdy_lbl.add_theme_font_size_override("font_size", 18)
 		
 		if is_this_creator:
 			badge_style.bg_color = Color(0.35, 0.26, 0.08, 0.95)
@@ -1024,46 +1091,22 @@ func _update_players_list(queuers: Array) -> void:
 			
 		badge_panel.add_theme_stylebox_override("panel", badge_style)
 		badge_panel.add_child(rdy_lbl)
-		hbox.add_child(badge_panel)
-		
-		# Host Kick button: If I am the host and this player is another player
-		if is_host and not is_this_creator:
-			var btn_kick = Button.new()
-			btn_kick.text = "❌ اخراج"
-			btn_kick.custom_minimum_size = Vector2(104, 56)
-			btn_kick.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-			btn_kick.add_theme_font_size_override("font_size", 22)
-			KenneyUI.style_button(btn_kick, KenneyUI.COLOR_RED)
-			btn_kick.pressed.connect(func():
-				_kick_player(q_uid)
-			)
-			hbox.add_child(btn_kick)
-		
-		# Middle: Player name (prominent, no subtitle)
-		var name_lbl = Label.new()
-		name_lbl.text = q.get("name", q.get("username", "بازیکن"))
-		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		name_lbl.add_theme_font_size_override("font_size", 38)
-		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
-		name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-		name_lbl.add_theme_constant_override("shadow_outline_size", 3)
-		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		hbox.add_child(name_lbl)
+		info_col.add_child(badge_panel)
+		hbox.add_child(info_col)
 		
 		# Right side: Avatar
 		var av_frame = PanelContainer.new()
-		av_frame.custom_minimum_size = Vector2(82, 82)
+		av_frame.custom_minimum_size = Vector2(68, 68)
+		av_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var av_style = StyleBoxFlat.new()
 		av_style.bg_color = Color(0.16, 0.1, 0.06, 0.95)
-		av_style.set_corner_radius_all(16)
+		av_style.set_corner_radius_all(14)
 		av_style.set_border_width_all(2)
 		av_style.border_color = Color(1.0, 0.85, 0.35, 0.9) if is_this_creator else Color(0.8, 0.68, 0.45, 0.75)
 		av_frame.add_theme_stylebox_override("panel", av_style)
 		
 		var avatar = TextureRect.new()
-		avatar.custom_minimum_size = Vector2(74, 74)
+		avatar.custom_minimum_size = Vector2(60, 60)
 		avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		avatar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -1098,14 +1141,15 @@ func _update_players_list(queuers: Array) -> void:
 	var seat_names = ["اول", "دوم", "سوم", "چهارم"]
 	for slot_idx in range(queuers.size(), active_lobby_max_players):
 		var empty_card = PanelContainer.new()
-		empty_card.custom_minimum_size = Vector2(0, 94 if active_lobby_max_players > 2 else 110)
+		empty_card.custom_minimum_size = Vector2(0, 88)
+		empty_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var emp_style = StyleBoxFlat.new()
 		emp_style.bg_color = Color(0.18, 0.12, 0.08, 0.55)
-		emp_style.set_corner_radius_all(18)
+		emp_style.set_corner_radius_all(16)
 		emp_style.set_border_width_all(2)
 		emp_style.border_color = Color(0.82, 0.68, 0.42, 0.65)
-		emp_style.content_margin_left = 22
-		emp_style.content_margin_right = 22
+		emp_style.content_margin_left = 14
+		emp_style.content_margin_right = 14
 		emp_style.content_margin_top = 10
 		emp_style.content_margin_bottom = 10
 		empty_card.add_theme_stylebox_override("panel", emp_style)
@@ -1115,24 +1159,25 @@ func _update_players_list(queuers: Array) -> void:
 		pulse_tw.tween_property(empty_card, "modulate:a", 0.95, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		
 		var ehbox = HBoxContainer.new()
-		ehbox.add_theme_constant_override("separation", 18)
+		ehbox.add_theme_constant_override("separation", 10)
 		ehbox.alignment = BoxContainer.ALIGNMENT_CENTER
 		
 		var emp_badge = PanelContainer.new()
+		emp_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var eb_style = StyleBoxFlat.new()
 		eb_style.bg_color = Color(0.24, 0.16, 0.08, 0.8)
-		eb_style.set_corner_radius_all(12)
-		eb_style.content_margin_left = 14
-		eb_style.content_margin_right = 14
-		eb_style.content_margin_top = 8
-		eb_style.content_margin_bottom = 8
+		eb_style.set_corner_radius_all(10)
+		eb_style.content_margin_left = 10
+		eb_style.content_margin_right = 10
+		eb_style.content_margin_top = 6
+		eb_style.content_margin_bottom = 6
 		eb_style.set_border_width_all(1)
 		eb_style.border_color = Color(0.8, 0.65, 0.35, 0.65)
 		emp_badge.add_theme_stylebox_override("panel", eb_style)
 		var emp_wait_lbl = Label.new()
-		emp_wait_lbl.text = "⏳ در انتظار..."
+		emp_wait_lbl.text = "⏳ در انتظار"
 		emp_wait_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		emp_wait_lbl.add_theme_font_size_override("font_size", 22)
+		emp_wait_lbl.add_theme_font_size_override("font_size", 18)
 		emp_wait_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55, 0.9))
 		emp_badge.add_child(emp_wait_lbl)
 		ehbox.add_child(emp_badge)
@@ -1145,16 +1190,20 @@ func _update_players_list(queuers: Array) -> void:
 		var seat_word = seat_names[clampi(slot_idx, 0, seat_names.size() - 1)]
 		var elbl1 = Label.new()
 		elbl1.text = "در انتظار پیوستن بازیکن %s..." % seat_word
+		elbl1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		elbl1.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		elbl1.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		elbl1.add_theme_font_size_override("font_size", 26 if active_lobby_max_players > 2 else 28)
+		elbl1.add_theme_font_size_override("font_size", 22)
 		elbl1.add_theme_color_override("font_color", Color(1.0, 0.92, 0.6, 0.95))
 		elbl1.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		evbox.add_child(elbl1)
 		
 		var elbl2 = Label.new()
 		elbl2.text = "کد ۶ رقمی اتاق را برای دوستان خود ارسال کنید"
+		elbl2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		elbl2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		elbl2.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		elbl2.add_theme_font_size_override("font_size", 19 if active_lobby_max_players > 2 else 20)
+		elbl2.add_theme_font_size_override("font_size", 17)
 		elbl2.add_theme_color_override("font_color", Color(0.88, 0.82, 0.7, 0.8))
 		elbl2.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		evbox.add_child(elbl2)

@@ -111,15 +111,58 @@ static func _populate_friends_list(host: Control, list_vbox: VBoxContainer) -> v
 			if st != "offline":
 				online_cnt += 1
 
-	list_vbox.add_child(CafeSocialTheme.make_ornate_section_header(
+	var hdr_card := CafeSocialTheme.make_ornate_section_header(
 		"فهرست دوستان شما",
-		CafeSocialTheme.ICO_LOBBY,
+		null,
 		"%s دوست   •   %s نفر آنلاین" % [GameManager.to_fa_num(host._friends_list.size()), GameManager.to_fa_num(online_cnt)]
-	))
+	)
+	if hdr_card.get_child_count() > 0 and hdr_card.get_child(0).get_child_count() > 0:
+		var t_col := hdr_card.get_child(0).get_child(0)
+		if t_col.get_child_count() >= 2 and t_col.get_child(1) is Label:
+			host._friends_online_sub_lbl = t_col.get_child(1) as Label
+	list_vbox.add_child(hdr_card)
 
 	for f in host._friends_list:
 		if typeof(f) == TYPE_DICTIONARY:
 			list_vbox.add_child(_build_player_card(host, f, "friend"))
+
+
+static func update_friend_presence(host: Control, target_uid: String, new_status: String) -> void:
+	var st := new_status if not new_status.is_empty() else "offline"
+	var is_online := (st != "offline")
+	# Update online summary label
+	if is_instance_valid(host._friends_online_sub_lbl):
+		var online_cnt := 0
+		for f in host._friends_list:
+			if typeof(f) == TYPE_DICTIONARY:
+				var pr: Dictionary = f.get("presence", {}) if typeof(f.get("presence")) == TYPE_DICTIONARY else {}
+				var fst := str(pr.get("status", f.get("status", "offline")))
+				if fst != "offline":
+					online_cnt += 1
+		host._friends_online_sub_lbl.text = "%s دوست   •   %s نفر آنلاین" % [
+			GameManager.to_fa_num(host._friends_list.size()),
+			GameManager.to_fa_num(online_cnt)
+		]
+
+	if not host._friend_card_widgets.has(target_uid):
+		return
+	var w: Dictionary = host._friend_card_widgets[target_uid]
+	var sb: TextureRect = w.get("status_badge", null)
+	if is_instance_valid(sb):
+		sb.texture = CafeSocialTheme.get_status_texture(st)
+	var av_btn: Button = w.get("avatar_btn", null)
+	if is_instance_valid(av_btn):
+		for ch in av_btn.get_children():
+			ch.queue_free()
+		var fresh_av := CafeSocialTheme.make_avatar_badge(int(w.get("image", 0)), int(w.get("frame", 0)), 86.0, st, true)
+		fresh_av.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		av_btn.add_child(fresh_av)
+	var btn_inv: BaseButton = w.get("invite_btn", null)
+	if is_instance_valid(btn_inv):
+		btn_inv.disabled = not is_online
+		btn_inv.modulate = Color(1.0, 1.0, 1.0, 1.0) if is_online else Color(0.48, 0.45, 0.42, 0.45)
+		btn_inv.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if is_online else Control.CURSOR_ARROW
+		btn_inv.tooltip_text = "دعوت به بازی" if is_online else "بازیکن آفلاین است"
 
 
 static func _populate_requests(host: Control, list_vbox: VBoxContainer) -> void:
@@ -281,7 +324,8 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	top_row.add_child(stats_col)
 
 	var raw_st := str(pres.get("status", "offline"))
-	stats_col.add_child(CafeSocialTheme.make_status_badge(raw_st, 35.0))
+	var st_badge_img := CafeSocialTheme.make_status_badge(raw_st, 35.0)
+	stats_col.add_child(st_badge_img)
 
 	var stat_pills := HBoxContainer.new()
 	stat_pills.add_theme_constant_override("separation", 6)
@@ -348,40 +392,70 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	act_row.add_theme_constant_override("separation", 8)
 	root.add_child(act_row)
 
-	var btn_prof := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(0, 50), 23)
-	btn_prof.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_prof.pressed.connect(func():
-		AudioManager.sfx_tap()
-		host._open_player_profile(u)
-	)
-
 	if mode == "friend":
-		var extra_drawer := HBoxContainer.new()
-		extra_drawer.visible = false
-		extra_drawer.add_theme_constant_override("separation", 8)
+		act_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		act_row.add_theme_constant_override("separation", 22)
 
-		var btn_more := CafeSocialTheme.make_button("بیشتر", "muted", Vector2(98, 50), 23)
-		btn_more.pressed.connect(func():
+		var make_icon_btn := func(tex: Texture2D, tip: String) -> TextureButton:
+			var ib := TextureButton.new()
+			ib.texture_normal = tex
+			ib.custom_minimum_size = Vector2(56, 56)
+			ib.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			ib.ignore_texture_size = true
+			ib.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+			ib.focus_mode = Control.FOCUS_NONE
+			ib.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			ib.tooltip_text = tip
+			ActionVFXManager.apply_button_juice(ib, "tap_button")
+			return ib
+
+		# 1. Remove Friend (moved to top action row, replaces More/Block/Report)
+		var btn_rem: TextureButton = make_icon_btn.call(preload("res://assets/images/delete.png"), "حذف دوست")
+		btn_rem.pressed.connect(func():
 			AudioManager.sfx_tap()
-			extra_drawer.visible = not extra_drawer.visible
+			CafeSocialTheme.show_confirm_modal(
+				host, "حذف دوست",
+				"آیا مطمئن هستید می‌خواهید «%s» را از فهرست دوستان خود حذف کنید؟" % uname,
+				"بله، حذف شود", true,
+				func():
+					NetworkManager.api.remove_friend(uid, func(ok: bool, _c: int, _d: Variant):
+						if ok:
+							host._show_toast("«%s» از دوستان شما حذف شد." % uname)
+							host._friends_list = host._friends_list.filter(func(x):
+								return typeof(x) == TYPE_DICTIONARY and str(x.get("user_id", x.get("_id", ""))) != uid
+							)
+							host._friend_card_widgets.erase(uid)
+							host._update_main_tab_buttons()
+							if host.has_method("refresh_friends_and_requests"):
+								host.refresh_friends_and_requests(true)
+							else:
+								host._refresh_current_tab()
+					)
+			)
 		)
-		act_row.add_child(btn_more)
+		act_row.add_child(btn_rem)
 
-		act_row.add_child(btn_prof)
+		# 2. View Profile
+		var btn_prof_ico: TextureButton = make_icon_btn.call(preload("res://assets/images/info.png"), "پروفایل")
+		btn_prof_ico.pressed.connect(func():
+			AudioManager.sfx_tap()
+			host._open_player_profile(u)
+		)
+		act_row.add_child(btn_prof_ico)
 
-		var btn_dm := CafeSocialTheme.make_button("پیام", "sapphire", Vector2(0, 50), 23)
-		btn_dm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# 3. Direct Message
+		var btn_dm: TextureButton = make_icon_btn.call(preload("res://assets/images/chat.png"), "ارسال پیام")
 		btn_dm.pressed.connect(func():
 			AudioManager.sfx_tap()
 			host.open_direct_message_with(uid, uname)
 		)
 		act_row.add_child(btn_dm)
 
-		var btn_inv := CafeSocialTheme.make_button("دعوت بازی", "emerald", Vector2(0, 50), 23)
-		btn_inv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# 4. Invite to Game (disabled & dimmed when offline)
+		var btn_inv: TextureButton = make_icon_btn.call(preload("res://assets/images/game.png"), "دعوت به بازی")
 		if not is_online_active:
 			btn_inv.disabled = true
-			btn_inv.modulate = Color(0.55, 0.52, 0.48, 0.50)
+			btn_inv.modulate = Color(0.48, 0.45, 0.42, 0.45)
 			btn_inv.mouse_default_cursor_shape = Control.CURSOR_ARROW
 			btn_inv.tooltip_text = "بازیکن آفلاین است"
 		btn_inv.pressed.connect(func():
@@ -393,9 +467,18 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 			)
 		)
 		act_row.add_child(btn_inv)
+		if not uid.is_empty():
+			host._friend_card_widgets[uid] = {
+				"status_badge": st_badge_img,
+				"avatar_btn": av_btn,
+				"invite_btn": btn_inv,
+				"image": av_id,
+				"frame": frame_id,
+			}
 
+		# 5. Watch Live (when friend is currently in a match)
 		if p_info["is_in_game"]:
-			var btn_spec := CafeSocialTheme.make_button("تماشا", "gold", Vector2(118, 50), 23)
+			var btn_spec: TextureButton = make_icon_btn.call(preload("res://assets/images/frames/play.png"), "تماشای زنده")
 			btn_spec.pressed.connect(func():
 				AudioManager.sfx_button()
 				NetworkManager.request_spectate_game(str(p_info["game_id"]))
@@ -403,53 +486,13 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 			)
 			act_row.add_child(btn_spec)
 
-		# Secondary More Drawer (Remove / Block / Report)
-		root.add_child(extra_drawer)
-		var b_rem := CafeSocialTheme.make_friend_button("remove", "حذف دوست", Vector2(0, 48))
-		b_rem.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b_rem.pressed.connect(func():
-			CafeSocialTheme.show_confirm_modal(
-				host, "حذف دوست",
-				"آیا مطمئن هستید می‌خواهید «%s» را از فهرست دوستان خود حذف کنید؟" % uname,
-				"بله، حذف شود", true,
-				func():
-					NetworkManager.api.remove_friend(uid, func(ok: bool, _c: int, _d: Variant):
-						if ok:
-							host._show_toast("«%s» از دوستان شما حذف شد." % uname)
-							host._refresh_current_tab()
-					)
-			)
-		)
-		extra_drawer.add_child(b_rem)
-
-		var b_blk := CafeSocialTheme.make_button("مسدود کردن", "muted", Vector2(0, 48), 22)
-		b_blk.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b_blk.pressed.connect(func():
-			CafeSocialTheme.show_confirm_modal(
-				host, "مسدود کردن بازیکن",
-				"پس از مسدود کردن «%s»، امکان ارسال پیام یا درخواست بازی بین شما وجود نخواهد داشت." % uname,
-				"مسدود شود", true,
-				func():
-					NetworkManager.api.block_player(uid, "Blocked from friends", func(ok: bool, _c: int, _d: Variant):
-						if ok:
-							host._show_toast("«%s» مسدود شد. مدیریت مسدودها در پروفایل شماست." % uname)
-							host._refresh_current_tab()
-					)
-			)
-		)
-		extra_drawer.add_child(b_blk)
-
-		var b_rep := CafeSocialTheme.make_button("گزارش تخلف", "muted", Vector2(0, 48), 22)
-		b_rep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b_rep.pressed.connect(func():
-			CafeSocialTheme.show_report_modal(host, "player", uid, uname, func(ok: bool):
-				if ok:
-					host._show_toast("گزارش شما با موفقیت ثبت شد.")
-			)
-		)
-		extra_drawer.add_child(b_rep)
-
 	elif mode == "incoming_req":
+		var btn_prof := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(0, 50), 23)
+		btn_prof.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn_prof.pressed.connect(func():
+			AudioManager.sfx_tap()
+			host._open_player_profile(u)
+		)
 		act_row.add_child(btn_prof)
 		var btn_rej := CafeSocialTheme.make_friend_button("reject", "رد درخواست", Vector2(0, 50))
 		btn_rej.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -492,7 +535,13 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		act_row.add_child(btn_acc)
 
 	elif mode == "outgoing_req":
-		act_row.add_child(btn_prof)
+		var btn_prof_out := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(0, 50), 23)
+		btn_prof_out.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn_prof_out.pressed.connect(func():
+			AudioManager.sfx_tap()
+			host._open_player_profile(u)
+		)
+		act_row.add_child(btn_prof_out)
 		var btn_cancel := CafeSocialTheme.make_friend_button("cancel", "لغو درخواست", Vector2(0, 50))
 		btn_cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_cancel.pressed.connect(func():
@@ -514,7 +563,13 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 		act_row.add_child(btn_cancel)
 
 	elif mode == "search":
-		act_row.add_child(btn_prof)
+		var btn_prof_s := CafeSocialTheme.make_button("پروفایل", "bronze", Vector2(0, 50), 23)
+		btn_prof_s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn_prof_s.pressed.connect(func():
+			AudioManager.sfx_tap()
+			host._open_player_profile(u)
+		)
+		act_row.add_child(btn_prof_s)
 		var is_fr := bool(u.get("is_friend", false))
 		var p_req: Variant = u.get("pending_request", null)
 		var req_sent := bool(u.get("request_sent", false))

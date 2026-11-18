@@ -179,10 +179,23 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	p_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text_col.add_child(p_lbl)
 
-	# Rightmost: Avatar
-	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 80.0, str(pres.get("status", "offline")), true)
+	# Rightmost: Avatar (inside holder for zero-reload live presence updates)
+	var av_holder := Control.new()
+	av_holder.custom_minimum_size = Vector2(82, 82)
+	av_holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	av_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 80.0, raw_st, true)
 	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(av)
+	av_holder.add_child(av)
+	row.add_child(av_holder)
+
+	if not pid.is_empty():
+		host._dm_conv_widgets[pid] = {
+			"status_badge": st_badge,
+			"avatar_holder": av_holder,
+			"image": av_id,
+			"frame": frame_id,
+		}
 
 	ActionVFXManager.apply_button_juice(btn, "tap_button")
 	btn.pressed.connect(func():
@@ -209,6 +222,23 @@ static func _apply_invite_btn_state(btn_inv: TextureButton, is_online: bool) -> 
 	btn_inv.tooltip_text = "دعوت به بازی" if is_online else "بازیکن آفلاین است"
 
 
+static func update_conversation_presence(host: Control, partner_id: String, new_status: String) -> void:
+	if not host._dm_conv_widgets.has(partner_id):
+		return
+	var st := new_status if not new_status.is_empty() else "offline"
+	var w: Dictionary = host._dm_conv_widgets[partner_id]
+	var sb: TextureRect = w.get("status_badge", null)
+	if is_instance_valid(sb):
+		sb.texture = CafeSocialTheme.get_status_texture(st)
+	var av_h: Control = w.get("avatar_holder", null)
+	if is_instance_valid(av_h):
+		for ch in av_h.get_children():
+			ch.queue_free()
+		var fresh_av := CafeSocialTheme.make_avatar_badge(int(w.get("image", 0)), int(w.get("frame", 0)), 80.0, st, true)
+		fresh_av.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		av_h.add_child(fresh_av)
+
+
 static func update_active_partner_presence(host: Control, new_status: String) -> void:
 	var st := new_status if not new_status.is_empty() else "offline"
 	var is_online := (st != "offline")
@@ -222,7 +252,7 @@ static func update_active_partner_presence(host: Control, new_status: String) ->
 		var frame_id := int(partner.get("profile_frame", partner.get("avatar_frame", 0)))
 		for ch in host._dm_partner_avatar_btn.get_children():
 			ch.queue_free()
-		var fresh_av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 72.0, st, true)
+		var fresh_av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 72.0, st, false)
 		fresh_av.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		host._dm_partner_avatar_btn.add_child(fresh_av)
 
@@ -311,7 +341,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	av_btn.custom_minimum_size = Vector2(74, 74)
 	av_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	av_btn.focus_mode = Control.FOCUS_NONE
-	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 72.0, initial_st, true)
+	var av := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 72.0, initial_st, false)
 	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	av_btn.add_child(av)
 	av_btn.pressed.connect(func():
@@ -340,40 +370,47 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	host._dm_messages_scroll.add_child(host._dm_messages_vbox)
 	host._dm_messages_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت پیام‌ها..."))
 
-	# Sticky Bottom Input Bar
-	var compose_margin := MarginContainer.new()
-	compose_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	compose_margin.add_theme_constant_override("margin_left", 48)
-	compose_margin.add_theme_constant_override("margin_right", 48)
-	body_vbox.add_child(compose_margin)
-
+	# Sticky Bottom Input Bar (full width, clean dark walnut background matching clan chat)
 	var compose_card := PanelContainer.new()
-	compose_card.custom_minimum_size = Vector2(0, 108)
+	compose_card.custom_minimum_size = Vector2(0, 84)
 	compose_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	compose_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 54.0, 18.0))
-	compose_margin.add_child(compose_card)
+	var comp_st := StyleBoxFlat.new()
+	comp_st.bg_color = Color(0.12, 0.08, 0.04, 0.98)
+	comp_st.border_color = Color(0.60, 0.45, 0.22, 0.75)
+	comp_st.set_border_width_all(1)
+	comp_st.set_corner_radius_all(14)
+	comp_st.shadow_color = Color(0, 0, 0, 0.40)
+	comp_st.shadow_size = 6
+	comp_st.shadow_offset = Vector2(0, -2)
+	comp_st.content_margin_left = 10.0
+	comp_st.content_margin_right = 10.0
+	comp_st.content_margin_top = 8.0
+	comp_st.content_margin_bottom = 8.0
+	compose_card.add_theme_stylebox_override("panel", comp_st)
+	body_vbox.add_child(compose_card)
 
 	var dm_input_row := HBoxContainer.new()
-	dm_input_row.add_theme_constant_override("separation", 12)
+	dm_input_row.add_theme_constant_override("separation", 8)
+	dm_input_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	compose_card.add_child(dm_input_row)
 
 	var btn_send := TextureButton.new()
-	btn_send.custom_minimum_size = Vector2(68, 68)
+	btn_send.custom_minimum_size = Vector2(54, 54)
 	btn_send.ignore_texture_size = true
 	btn_send.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	btn_send.texture_normal = preload("res://assets/images/frames/send.png")
+	btn_send.texture_normal = preload("res://assets/images/send.png")
 	btn_send.focus_mode = Control.FOCUS_NONE
 	btn_send.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	ActionVFXManager.apply_button_juice(btn_send, "tap_button")
 	dm_input_row.add_child(btn_send)
 
-	host._dm_input = CafeSocialTheme.make_line_edit("پیام ...", 64.0, 25)
+	host._dm_input = CafeSocialTheme.make_line_edit("پیام ...", 52.0, 22)
 	host._dm_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dm_input_row.add_child(host._dm_input)
 
 	var btn_sticker := TextureButton.new()
 	btn_sticker.texture_normal = CafeSocialTheme.BADGE_SOCIAL
-	btn_sticker.custom_minimum_size = Vector2(56, 56)
+	btn_sticker.custom_minimum_size = Vector2(50, 50)
 	btn_sticker.ignore_texture_size = true
 	btn_sticker.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn_sticker.size_flags_vertical = Control.SIZE_SHRINK_CENTER

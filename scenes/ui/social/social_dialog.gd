@@ -50,6 +50,12 @@ var _dm_input: LineEdit = null
 var _dm_partner_status_badge: TextureRect = null
 var _dm_partner_avatar_btn: Button = null
 var _dm_invite_btn: TextureButton = null
+var _dm_conv_widgets: Dictionary = {}
+var _friend_card_widgets: Dictionary = {}
+var _friends_online_sub_lbl: Label = null
+var _clan_online_pill_lbl: Label = null
+var _clan_members_online_val_lbl: Label = null
+var _clan_member_widgets: Dictionary = {}
 
 
 func _ready() -> void:
@@ -302,6 +308,12 @@ func _clear_content() -> VBoxContainer:
 	_dm_partner_status_badge = null
 	_dm_partner_avatar_btn = null
 	_dm_invite_btn = null
+	_dm_conv_widgets.clear()
+	_friend_card_widgets.clear()
+	_friends_online_sub_lbl = null
+	_clan_online_pill_lbl = null
+	_clan_members_online_val_lbl = null
+	_clan_member_widgets.clear()
 	for c in content_area.get_children():
 		c.queue_free()
 	var vbox := VBoxContainer.new()
@@ -392,20 +404,35 @@ func _on_realtime_presence_changed(payload: Dictionary) -> void:
 	if uid.is_empty():
 		return
 	var new_st := str(payload.get("status", "offline"))
+	var pres_dict := {
+		"status": new_st,
+		"current_game_type": str(payload.get("current_game_type", "")),
+		"current_game_id": str(payload.get("current_game_id", "")),
+		"current_lobby_id": str(payload.get("current_lobby_id", "")),
+		"last_seen": str(payload.get("last_seen", "")),
+	}
 	for f in _friends_list:
 		if typeof(f) == TYPE_DICTIONARY and str(f.get("user_id", f.get("_id", ""))) == uid:
 			f["status"] = new_st
-			f["presence"] = payload
+			f["presence"] = pres_dict
+	var c_dict: Variant = _my_clan_data.get("clan", null)
+	if typeof(c_dict) == TYPE_DICTIONARY and typeof(c_dict.get("members")) == TYPE_ARRAY:
+		for m in c_dict["members"]:
+			if typeof(m) == TYPE_DICTIONARY and str(m.get("user_id", m.get("_id", ""))) == uid:
+				m["status"] = new_st
+				m["presence"] = pres_dict
 	if uid == _active_dm_partner_id and typeof(_active_dm_partner_info) == TYPE_DICTIONARY:
 		_active_dm_partner_info["status"] = new_st
-		_active_dm_partner_info["presence"] = payload
+		_active_dm_partner_info["presence"] = pres_dict
 	if not visible:
 		return
 	if current_main_tab == "friends" and current_friends_subtab == "list":
-		_refresh_current_tab()
+		SocialFriendsView.update_friend_presence(self, uid, new_st)
+	elif current_main_tab == "clans":
+		SocialClansView.update_member_presence(self, uid, new_st)
 	elif current_main_tab == "messages":
 		if _active_dm_partner_id.is_empty():
-			_refresh_current_tab()
+			SocialMessagesView.update_conversation_presence(self, uid, new_st)
 		elif uid == _active_dm_partner_id:
 			SocialMessagesView.update_active_partner_presence(self, new_st)
 

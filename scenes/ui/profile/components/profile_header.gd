@@ -49,14 +49,16 @@ func _build_ui() -> void:
 	info_col.add_theme_constant_override("separation", 4)
 	hero_row.add_child(info_col)
 
-	# Row 1: Username & Online Status Pill
+	# Row 1: Tappable Clan Pill (Top-Left, replaces status image) + Username (Top-Right)
 	var name_row := HBoxContainer.new()
 	name_row.alignment = BoxContainer.ALIGNMENT_END
 	name_row.add_theme_constant_override("separation", 8)
 	info_col.add_child(name_row)
 
-	_status_badge = Control.new()
-	name_row.add_child(_status_badge)
+	_clan_box = HBoxContainer.new()
+	_clan_box.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_clan_box.visible = false
+	name_row.add_child(_clan_box)
 
 	_lbl_username = CafeSocialTheme.make_title("بازیکن کافه فکر", 30, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	_lbl_username.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -93,10 +95,6 @@ func _build_ui() -> void:
 	_lbl_id = CafeSocialTheme.make_body("شناسه: -", 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	_id_row.add_child(_lbl_id)
 
-	# Row 5: Clan Membership Pill
-	_clan_box = Control.new()
-	info_col.add_child(_clan_box)
-
 	# --- Right Avatar Column (Prominent Golden Framed Avatar) ---
 	_avatar_holder = Control.new()
 	_avatar_holder.custom_minimum_size = Vector2(104, 104)
@@ -132,15 +130,18 @@ func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false,
 	# 1. Username
 	_lbl_username.text = uname
 
-	# 2. Status Badge
-	for c in _status_badge.get_children():
+	# 2. Top-Left Clan Name Pill (replaces status image; hidden if player is not in a clan)
+	for c in _clan_box.get_children():
 		c.queue_free()
-	if not is_bot:
-		var st_node := CafeSocialTheme.make_status_badge(pres_status, 28.0)
-		_status_badge.add_child(st_node)
-		_status_badge.visible = true
+	var clan_d: Dictionary = user_data.get("clan", {}) if typeof(user_data.get("clan")) == TYPE_DICTIONARY else {}
+	var clan_id_str := str(clan_d.get("clan_id", clan_d.get("_id", user_data.get("clan_id", "")))).strip_edges()
+	var has_clan := (not clan_id_str.is_empty()) or (not clan_d.is_empty() and not str(clan_d.get("name", "")).strip_edges().is_empty())
+	if has_clan and not is_bot:
+		_current_clan_data = clan_d
+		_build_clan_chip(clan_id_str, clan_d)
+		_clan_box.visible = true
 	else:
-		_status_badge.visible = false
+		_clan_box.visible = false
 
 	# 3. Role
 	if not role_text.is_empty():
@@ -174,18 +175,6 @@ func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false,
 	else:
 		_id_row.visible = false
 
-	# 6. Clan Membership
-	for c in _clan_box.get_children():
-		c.queue_free()
-	var clan_d: Dictionary = user_data.get("clan", {}) if typeof(user_data.get("clan")) == TYPE_DICTIONARY else {}
-	var clan_id_str := str(clan_d.get("clan_id", clan_d.get("_id", user_data.get("clan_id", ""))))
-	if not clan_d.is_empty() or not clan_id_str.is_empty():
-		_current_clan_data = clan_d
-		_build_clan_chip(clan_id_str, clan_d)
-		_clan_box.visible = true
-	else:
-		_clan_box.visible = false
-
 	# 7. Avatar Medallion with Golden Frame (Circle dot removed: show_dot = false)
 	for c in _avatar_holder.get_children():
 		c.queue_free()
@@ -202,46 +191,25 @@ func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false,
 
 
 func _build_clan_chip(clan_id: String, clan_d: Dictionary) -> void:
-	var cname := str(clan_d.get("name", "کلن"))
-	var ctag := str(clan_d.get("tag", ""))
-	var crole := str(clan_d.get("role", ""))
-	var crole_fa: String = str({"leader": "رهبر", "co_leader": "قائم‌مقام", "elder": "ارشد", "member": "عضو"}.get(crole, ""))
-
+	var cname := str(clan_d.get("name", "اتحاد"))
 	var clan_btn := Button.new()
-	clan_btn.custom_minimum_size = Vector2(0, 38)
-	clan_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	clan_btn.text = cname
+	clan_btn.custom_minimum_size = Vector2(0, 34)
+	clan_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	clan_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	clan_btn.focus_mode = Control.FOCUS_NONE
 	clan_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	clan_btn.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
+	clan_btn.add_theme_font_size_override("font_size", 18)
+	clan_btn.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	clan_btn.add_theme_color_override("font_hover_color", CafeSocialTheme.COL_IVORY)
 
-	var c_sb := CafeSocialTheme.create_card_style(Color(0.18, 0.11, 0.05, 0.95), CafeSocialTheme.COL_GOLD_ANTIQUE, 10, 1, 8.0, 3.0)
-	var c_sb_h := CafeSocialTheme.create_card_style(Color(0.26, 0.15, 0.07, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 10, 1, 8.0, 3.0)
+	var c_sb := CafeSocialTheme.create_card_style(Color(0.18, 0.11, 0.05, 0.95), CafeSocialTheme.COL_GOLD_ANTIQUE, 10, 1, 10.0, 3.0)
+	var c_sb_h := CafeSocialTheme.create_card_style(Color(0.28, 0.17, 0.08, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 10, 1, 10.0, 3.0)
 	clan_btn.add_theme_stylebox_override("normal", c_sb)
 	clan_btn.add_theme_stylebox_override("hover", c_sb_h)
 	clan_btn.add_theme_stylebox_override("pressed", c_sb)
 	clan_btn.add_theme_stylebox_override("focus", c_sb_h)
-
-	var cb_row := HBoxContainer.new()
-	cb_row.set_anchors_preset(Control.PRESET_FULL_RECT)
-	cb_row.alignment = BoxContainer.ALIGNMENT_END
-	cb_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cb_row.add_theme_constant_override("separation", 6)
-	clan_btn.add_child(cb_row)
-
-	var c_cue := CafeSocialTheme.make_body("مشاهده ›", 15, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_LEFT, false)
-	c_cue.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cb_row.add_child(c_cue)
-
-	var txt := cname if ctag.is_empty() else "%s [%s]" % [cname, ctag]
-	if not crole_fa.is_empty():
-		txt += " • %s" % crole_fa
-	var c_lbl := CafeSocialTheme.make_title(txt, 18, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false)
-	c_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	c_lbl.clip_text = true
-	c_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	c_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cb_row.add_child(c_lbl)
-
-	# Icon removed from right of clan label: label text is enough
 
 	ActionVFXManager.apply_button_juice(clan_btn, "tap_button")
 	clan_btn.pressed.connect(func():

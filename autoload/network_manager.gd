@@ -148,9 +148,9 @@ func _ready() -> void:
 	add_child(_reconnect_timer)
 	_reconnect_timer.timeout.connect(_on_reconnect_timeout)
 
-	# Presence heartbeat timer (keeps /social connected and last_seen fresh so online status never expires)
+	# Lightweight presence heartbeat timer (120s interval; backend TTL is 15 min and no-op heartbeats skip peer broadcasts)
 	_presence_heartbeat_timer = Timer.new()
-	_presence_heartbeat_timer.wait_time = 45.0
+	_presence_heartbeat_timer.wait_time = 120.0
 	_presence_heartbeat_timer.one_shot = false
 	_presence_heartbeat_timer.autostart = true
 	add_child(_presence_heartbeat_timer)
@@ -402,15 +402,15 @@ func send_social_command(command_id: String, data: Variant = {}) -> void:
 	socket.emit_event("/social", "user_command", payload)
 
 func update_social_presence(status: String, game_type: String = "", game_id: String = "", lobby_id: String = "") -> void:
-	send_social_command(Commands.Social_Presence_Update, {
-		"status": status,
-		"current_game_type": game_type,
-		"current_game_id": game_id,
-		"current_lobby_id": lobby_id,
-		"game_type": game_type,
-		"game_id": game_id,
-		"lobby_id": lobby_id
-	})
+	var p: Dictionary = {"status": status}
+	if status == "in_game":
+		if not game_type.is_empty():
+			p["current_game_type"] = game_type
+		if not game_id.is_empty():
+			p["current_game_id"] = game_id
+	elif status == "in_lobby" and not lobby_id.is_empty():
+		p["current_lobby_id"] = lobby_id
+	send_social_command(Commands.Social_Presence_Update, p)
 
 func send_dm_realtime(to_user_id: String, msg_text: String) -> void:
 	send_social_command(Commands.Social_DM_Send, {"to_user_id": to_user_id, "text": msg_text})
@@ -460,8 +460,8 @@ func request_spectator_state(game_id: String = "") -> void:
 	if not gid.is_empty():
 		send_social_command(Commands.RequestSpectatorState, {"game_id": gid})
 
-func request_live_games_realtime(scope: String = "all", game_type: String = "") -> void:
-	send_social_command(Commands.RequestLiveGames, {"scope": scope, "game_type": game_type})
+func request_live_games_realtime(scope: String = "all", game_type: String = "", game_mode: String = "") -> void:
+	send_social_command(Commands.RequestLiveGames, {"scope": scope, "game_type": game_type, "game_mode": game_mode})
 
 func _on_socket_connected() -> void:
 	print("[NetworkManager] Connected to game backend!")
@@ -609,6 +609,10 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			if typeof(payload) == TYPE_DICTIONARY:
 				if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 					GameManager.set_match_gamers(payload["gamers"])
+				if payload.has("spectator_count"):
+					var gp_spec: int = maxi(0, int(payload.get("spectator_count", 0)))
+					GameManager.spectator_count = gp_spec
+					spectator_count_updated.emit(GameManager.active_game_id, gp_spec)
 				game_play_data_received.emit(payload)
 
 		Commands.Game_Play_Time:
@@ -934,8 +938,8 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.SpectatorCountUpdated:
 			if typeof(payload) == TYPE_DICTIONARY:
 				var c_gid: String = str(payload.get("game_id", ""))
-				var c_val: int = int(payload.get("spectator_count", 0))
-				if c_gid == GameManager.spectated_game_id or c_gid == GameManager.active_game_id:
+				var c_val: int = maxi(0, int(payload.get("spectator_count", 0)))
+				if c_gid.is_empty() or c_gid == GameManager.spectated_game_id or c_gid == GameManager.active_game_id or c_gid == GameManager.get_open_game_id():
 					GameManager.spectator_count = c_val
 				spectator_count_updated.emit(c_gid, c_val)
 		Commands.SpectatorGameState:

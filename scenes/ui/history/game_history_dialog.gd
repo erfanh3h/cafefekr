@@ -421,43 +421,55 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	opp_col.add_theme_constant_override("separation", 4)
 	opp_col.mouse_filter = Control.MOUSE_FILTER_PASS
 	
-	var av_panel = PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(76, 76)
-	av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	
-	var av_style = StyleBoxFlat.new()
-	av_style.bg_color = Color(0.08, 0.05, 0.03, 0.95)
-	av_style.set_corner_radius_all(14)
-	av_style.set_border_width_all(2)
-	av_style.border_color = Color(0.90, 0.75, 0.35, 0.90)
-	av_panel.add_theme_stylebox_override("panel", av_style)
-	
-	var av_img = TextureRect.new()
-	av_img.custom_minimum_size = Vector2(70, 70)
-	av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var av_path = "res://assets/icons/Avatars/%d.png" % int(opp_avatar_id)
-	if ResourceLoader.exists(av_path):
-		av_img.texture = load(av_path)
+	var _card_users_info = game.get("users_info", [])
+	var _is_multi_card: bool = typeof(_card_users_info) == TYPE_ARRAY and _card_users_info.size() > 2
+	if _is_multi_card:
+		var fr_img = TextureRect.new()
+		fr_img.custom_minimum_size = Vector2(70, 70)
+		fr_img.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		fr_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		fr_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		fr_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fr_img.texture = preload("res://assets/images/frames/friends.png")
+		opp_col.add_child(fr_img)
 	else:
-		av_img.texture = load("res://assets/icons/Avatars/0.png")
-	av_panel.add_child(av_img)
-	var opp_fid = GameManager.get_player_frame_id(opp_data)
-	CafeSocialTheme.apply_frame_to_container(av_panel, av_img, opp_fid)
-	
-	# Clicking avatar opens opponent details box
-	av_panel.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			AudioManager.sfx_tap()
-			user_profile_requested.emit(opp_data)
-	)
-	opp_col.add_child(av_panel)
+		var av_panel = PanelContainer.new()
+		av_panel.custom_minimum_size = Vector2(76, 76)
+		av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+		av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		
+		var av_style = StyleBoxFlat.new()
+		av_style.bg_color = Color(0.08, 0.05, 0.03, 0.95)
+		av_style.set_corner_radius_all(14)
+		av_style.set_border_width_all(2)
+		av_style.border_color = Color(0.90, 0.75, 0.35, 0.90)
+		av_panel.add_theme_stylebox_override("panel", av_style)
+		
+		var av_img = TextureRect.new()
+		av_img.custom_minimum_size = Vector2(70, 70)
+		av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var av_path = "res://assets/icons/Avatars/%d.png" % int(opp_avatar_id)
+		if ResourceLoader.exists(av_path):
+			av_img.texture = load(av_path)
+		else:
+			av_img.texture = load("res://assets/icons/Avatars/0.png")
+		av_panel.add_child(av_img)
+		var opp_fid = GameManager.get_player_frame_id(opp_data)
+		CafeSocialTheme.apply_frame_to_container(av_panel, av_img, opp_fid)
+		
+		# Clicking avatar opens opponent details box
+		av_panel.gui_input.connect(func(event: InputEvent):
+			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+				AudioManager.sfx_tap()
+				user_profile_requested.emit(opp_data)
+		)
+		opp_col.add_child(av_panel)
 	
 	var lbl_opp_name = Label.new()
-	lbl_opp_name.text = opp_name
+	lbl_opp_name.text = ("%s نفره" % GameManager.to_fa_num(_card_users_info.size())) if _is_multi_card else opp_name
 	lbl_opp_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_opp_name.custom_minimum_size = Vector2(90, 0)
 	lbl_opp_name.autowrap_mode = TextServer.AUTOWRAP_OFF

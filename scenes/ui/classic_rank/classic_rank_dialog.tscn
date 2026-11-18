@@ -205,7 +205,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 1
+columns = 2
 
 [node name="BottomRow" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2

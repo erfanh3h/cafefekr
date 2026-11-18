@@ -360,39 +360,49 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		opp_data = {"user_id": "opp", "username": opp_name, "image": opp_avatar_id}
 	var opp_frame_id: int = GameManager.get_player_frame_id(opp_data if not opp_data.is_empty() else game)
 
-	# 1. LEFT SIDE: Opponent Avatar + Name directly underneath
+	# 1. LEFT SIDE: Friends icon for >2-player matches, or Opponent Avatar + Name for 2-player matches
+	var is_multi_card: bool = typeof(users_info) == TYPE_ARRAY and users_info.size() > 2
 	var opp_col := VBoxContainer.new()
 	opp_col.custom_minimum_size = Vector2(86, 108)
 	opp_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	opp_col.add_theme_constant_override("separation", 2)
-	opp_col.mouse_filter = Control.MOUSE_FILTER_PASS
+	opp_col.add_theme_constant_override("separation", 4 if is_multi_card else 2)
+	opp_col.mouse_filter = Control.MOUSE_FILTER_IGNORE if is_multi_card else Control.MOUSE_FILTER_PASS
 
-	var av_panel := PanelContainer.new()
-	av_panel.custom_minimum_size = Vector2(74, 74)
-	av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	if is_multi_card:
+		var fr_img := TextureRect.new()
+		fr_img.custom_minimum_size = Vector2(68, 68)
+		fr_img.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		fr_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		fr_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		fr_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fr_img.texture = preload("res://assets/images/frames/friends.png")
+		opp_col.add_child(fr_img)
+	else:
+		var av_panel := PanelContainer.new()
+		av_panel.custom_minimum_size = Vector2(74, 74)
+		av_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		av_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+		av_panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-	var av_img := TextureRect.new()
-	av_img.custom_minimum_size = Vector2(68, 68)
-	av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var av_path = "res://assets/icons/Avatars/%d.png" % opp_avatar_id
-	av_img.texture = load(av_path) if ResourceLoader.exists(av_path) else preload("res://assets/icons/Avatars/0.png")
-	av_panel.add_child(av_img)
-	CafeSocialTheme.apply_frame_to_container(av_panel, av_img, opp_frame_id)
+		var av_img := TextureRect.new()
+		av_img.custom_minimum_size = Vector2(68, 68)
+		av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var av_path = "res://assets/icons/Avatars/%d.png" % opp_avatar_id
+		av_img.texture = load(av_path) if ResourceLoader.exists(av_path) else preload("res://assets/icons/Avatars/0.png")
+		av_panel.add_child(av_img)
+		CafeSocialTheme.apply_frame_to_container(av_panel, av_img, opp_frame_id)
 
-	av_panel.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			AudioManager.sfx_tap()
-			UserProfileDialog.show_user(opp_data, "", self)
-	)
-	opp_col.add_child(av_panel)
+		av_panel.gui_input.connect(func(event: InputEvent):
+			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+				AudioManager.sfx_tap()
+				UserProfileDialog.show_user(opp_data, "", self)
+		)
+		opp_col.add_child(av_panel)
 
 	var lbl_opp_name := Label.new()
-	var is_multi_card: bool = typeof(users_info) == TYPE_ARRAY and users_info.size() > 2
-	lbl_opp_name.text = ("%s (+%s)" % [opp_name, GameManager.to_fa_num(users_info.size() - 2)]) if is_multi_card else opp_name
+	lbl_opp_name.text = ("%s نفره" % GameManager.to_fa_num(users_info.size())) if is_multi_card else opp_name
 	lbl_opp_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_opp_name.custom_minimum_size = Vector2(85, 0)
 	lbl_opp_name.clip_text = true
@@ -731,9 +741,9 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 	var mode_fa = _get_mode_fa_name(mode_raw)
 	var s_date = _format_shamsi_date_ltr(str(game.get("start_date", "")))
 
-	# 3. Game Type Hero Plaque (Icon + Persian Game Name Underneath)
+	# 3. Game Type Hero Plaque (shadow box matching rounds card instead of wood frame)
 	var hero_plaque := PanelContainer.new()
-	hero_plaque.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 14.0))
+	hero_plaque.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 14, 1, 16.0, 14.0))
 	dvbox.add_child(hero_plaque)
 
 	var hv := VBoxContainer.new()
@@ -773,9 +783,9 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 	tag_row.add_child(CafeSocialTheme.make_badge_pill(mode_fa, CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_GOLD_ANTIQUE, 20))
 	tag_row.add_child(CafeSocialTheme.make_badge_pill(s_date, CafeSocialTheme.COL_WARM_CREAM, Color(0.12, 0.09, 0.06, 0.9), CafeSocialTheme.COL_BRONZE_BORDER, 20))
 
-	# 4. Match Outcome & Head-to-Head Banner
+	# 4. Match Outcome & Players Card (shadow box matching rounds card instead of wood frame)
 	var outcome_card := PanelContainer.new()
-	outcome_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
+	outcome_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_BRONZE_BORDER, 14, 1, 14.0, 12.0))
 	dvbox.add_child(outcome_card)
 
 	var ov := VBoxContainer.new()

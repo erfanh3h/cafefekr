@@ -42,6 +42,12 @@ var _dm_input: LineEdit = null
 var _dm_partner_status_badge: TextureRect = null
 var _dm_partner_avatar_btn: Button = null
 var _dm_invite_btn: TextureButton = null
+var _dm_conv_widgets: Dictionary = {}
+var _friend_card_widgets: Dictionary = {}
+var _friends_online_sub_lbl: Label = null
+var _clan_online_pill_lbl: Label = null
+var _clan_members_online_val_lbl: Label = null
+var _clan_member_widgets: Dictionary = {}
 
 func _ready() -> void:
 	_build_ui_shell()
@@ -260,6 +266,12 @@ func _clear_content() -> VBoxContainer:
 	_dm_partner_status_badge = null
 	_dm_partner_avatar_btn = null
 	_dm_invite_btn = null
+	_dm_conv_widgets.clear()
+	_friend_card_widgets.clear()
+	_friends_online_sub_lbl = null
+	_clan_online_pill_lbl = null
+	_clan_members_online_val_lbl = null
+	_clan_member_widgets.clear()
 	for c in content_area.get_children():
 		c.queue_free()
 	var vbox := VBoxContainer.new()
@@ -430,13 +442,14 @@ func _on_realtime_presence_changed(payload: Dictionary) -> void:
 		_active_dm_partner_info["status"] = new_st
 		_active_dm_partner_info["presence"] = pres_dict
 
+	# Lightweight in-place UI updates (zero redundant HTTP calls!)
 	if current_main_tab == "friends" and current_friends_subtab == "list":
-		_refresh_current_tab()
-	elif current_main_tab == "clans" and current_clans_subtab in ["my_clan", "members"]:
-		_refresh_current_tab()
+		SocialFriendsView.update_friend_presence(self, pid, new_st)
+	elif current_main_tab == "clans":
+		SocialClansView.update_member_presence(self, pid, new_st)
 	elif current_main_tab == "messages":
 		if _active_dm_partner_id.is_empty():
-			_refresh_current_tab()
+			SocialMessagesView.update_conversation_presence(self, pid, new_st)
 		elif pid == _active_dm_partner_id:
 			SocialMessagesView.update_active_partner_presence(self, new_st)
 

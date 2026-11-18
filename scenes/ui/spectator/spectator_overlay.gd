@@ -18,7 +18,9 @@ var btn_end_return: Button = null
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	grow_horizontal = Control.GROW_DIRECTION_BOTH
+	grow_vertical = Control.GROW_DIRECTION_BOTH
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	z_index = 85
 	visible = false
@@ -26,14 +28,17 @@ func _ready() -> void:
 
 
 func _build_ui() -> void:
-	# Bottom-Left / Bottom-Center Antique Spectator Control Bar (doesn't overlap BaseTopHeader at top)
+	# Compact Bottom Antique Spectator Control Bar (never overlaps BaseTopHeader at top)
 	top_bar_panel = PanelContainer.new()
 	top_bar_panel.name = "SpectatorControlBar"
-	top_bar_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	top_bar_panel.offset_left = 12.0
-	top_bar_panel.offset_right = -12.0
-	top_bar_panel.offset_top = -110.0
-	top_bar_panel.offset_bottom = -16.0
+	top_bar_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	top_bar_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	top_bar_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	top_bar_panel.offset_left = 14.0
+	top_bar_panel.offset_right = -14.0
+	top_bar_panel.offset_top = -92.0
+	top_bar_panel.offset_bottom = -14.0
+	top_bar_panel.custom_minimum_size = Vector2(0, 76)
 	top_bar_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	var bar_style: StyleBox = CafeSocialTheme.create_highlight_card_style(true)
@@ -41,11 +46,14 @@ func _build_ui() -> void:
 	add_child(top_bar_panel)
 
 	var hbox: HBoxContainer = HBoxContainer.new()
+	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hbox.add_theme_constant_override("separation", 10)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	top_bar_panel.add_child(hbox)
 
-	btn_leave = CafeSocialTheme.make_button("ترک تماشا", "crimson", Vector2(130, 48), 20)
+	btn_leave = CafeSocialTheme.make_button("ترک تماشا", "crimson", Vector2(124, 48), 20)
+	btn_leave.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	btn_leave.pressed.connect(func():
 		AudioManager.sfx_button()
 		hide_match_ended()
@@ -55,6 +63,7 @@ func _build_ui() -> void:
 
 	# Spectator count pill
 	var count_panel: PanelContainer = PanelContainer.new()
+	count_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var count_style: StyleBoxFlat = StyleBoxFlat.new()
 	count_style.bg_color = Color(0.11, 0.07, 0.04, 0.94)
 	count_style.border_color = CafeSocialTheme.COL_GOLD_ANTIQUE
@@ -79,45 +88,53 @@ func _build_ui() -> void:
 	# Center status / turn label
 	var status_col: VBoxContainer = VBoxContainer.new()
 	status_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	status_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	status_col.add_theme_constant_override("separation", 2)
 	hbox.add_child(status_col)
 
 	lbl_game_title = CafeSocialTheme.make_title(
 		"تماشای زنده مسابقه",
-		24,
+		22,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_RIGHT,
-		true
+		false
 	)
+	lbl_game_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl_game_title.clip_text = true
+	lbl_game_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	status_col.add_child(lbl_game_title)
 
 	lbl_turn_status = CafeSocialTheme.make_body(
 		"فقط قابل مشاهده • بدون امکان دخالت در بازی",
-		19,
+		17,
 		CafeSocialTheme.COL_IVORY,
 		HORIZONTAL_ALIGNMENT_RIGHT,
-		true
+		false
 	)
+	lbl_turn_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl_turn_status.clip_text = true
+	lbl_turn_status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	status_col.add_child(lbl_turn_status)
 
 	# Live Ruby Badge on the right
 	var live_badge_panel: PanelContainer = PanelContainer.new()
+	live_badge_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var live_style: StyleBoxFlat = StyleBoxFlat.new()
 	live_style.bg_color = Color(0.68, 0.12, 0.12, 0.96)
 	live_style.border_color = Color(1.0, 0.82, 0.38, 1.0)
 	live_style.set_border_width_all(2)
 	live_style.set_corner_radius_all(14)
-	live_style.content_margin_left = 16.0
-	live_style.content_margin_right = 16.0
-	live_style.content_margin_top = 10.0
-	live_style.content_margin_bottom = 10.0
+	live_style.content_margin_left = 12.0
+	live_style.content_margin_right = 12.0
+	live_style.content_margin_top = 8.0
+	live_style.content_margin_bottom = 8.0
 	live_badge_panel.add_theme_stylebox_override("panel", live_style)
 	hbox.add_child(live_badge_panel)
 
 	lbl_live_badge = CafeSocialTheme.make_title(
-		"● پخش زنده",
-		21,
+		"● زنده",
+		20,
 		Color(1.0, 0.96, 0.90, 1.0),
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
@@ -127,14 +144,18 @@ func _build_ui() -> void:
 	# Match End Modal Overlay
 	end_modal_backdrop = ColorRect.new()
 	end_modal_backdrop.name = "EndModalBackdrop"
-	end_modal_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	end_modal_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	end_modal_backdrop.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	end_modal_backdrop.grow_vertical = Control.GROW_DIRECTION_BOTH
 	end_modal_backdrop.color = Color(0.03, 0.02, 0.01, 0.80)
 	end_modal_backdrop.visible = false
 	end_modal_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(end_modal_backdrop)
 
 	var center: CenterContainer = CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	center.grow_vertical = Control.GROW_DIRECTION_BOTH
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	end_modal_backdrop.add_child(center)
 
@@ -190,6 +211,9 @@ func _build_ui() -> void:
 
 
 func open_for_match(payload: Dictionary) -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	grow_horizontal = Control.GROW_DIRECTION_BOTH
+	grow_vertical = Control.GROW_DIRECTION_BOTH
 	visible = true
 	hide_match_ended()
 	update_from_payload(payload)

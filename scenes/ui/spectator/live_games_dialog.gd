@@ -10,6 +10,7 @@ signal closed()
 var _dim_overlay: ColorRect = null
 var main_panel: PanelContainer = null
 var _scope_row: HBoxContainer = null
+var _mode_row: HBoxContainer = null
 var _game_filter_hbox: HBoxContainer = null
 var _list_vbox: VBoxContainer = null
 var _lbl_count: Label = null
@@ -17,11 +18,36 @@ var _status_plaque: PanelContainer = null
 var _scroll_games: ScrollContainer = null
 
 var current_scope: String = "all"         # "all" | "friends" | "clan"
+var current_game_mode: String = ""        # "" | "Rank" | "MultiRank" | "ClassicRank" | "Lobby"
 var current_game_type: String = ""        # "" or canonical GameTypes string
+
+const NON_SPECTATABLE_GAMES: Array[String] = [
+	"battleship", "uno", "coup", "fekrbekr", "sudoku", "msweeper", "quiz", "rpc"
+]
 
 var _merged_games: Dictionary = {}        # game_id -> Dictionary
 var _is_loading: bool = false
 var _request_token: int = 0
+
+
+static func _normalize_mode(m: String) -> String:
+	return m.strip_edges().to_lower().replace("_", "").replace("-", "").replace(" ", "")
+
+
+static func _get_mode_label_fa(m: String) -> String:
+	match _normalize_mode(m):
+		"rank":
+			return "رقابتی"
+		"multirank":
+			return "چندنفره"
+		"classicrank":
+			return "کلاسیک"
+		"lobby":
+			return "لابی"
+		"normal":
+			return "عادی"
+		_:
+			return ""
 
 
 func _ready() -> void:
@@ -83,7 +109,14 @@ func refresh() -> void:
 
 	# Source 1: Direct Socket.IO /social query (live RAM games in kafehfekrbackend)
 	if NetworkManager.is_online:
-		NetworkManager.request_live_games_realtime(current_scope, current_game_type)
+		if NetworkManager.is_social_connected:
+			NetworkManager.request_live_games_realtime(current_scope, current_game_type, current_game_mode)
+		else:
+			NetworkManager.connect_social_namespace()
+			get_tree().create_timer(0.55).timeout.connect(func():
+				if req_token == _request_token and visible and NetworkManager.is_online:
+					NetworkManager.request_live_games_realtime(current_scope, current_game_type, current_game_mode)
+			)
 
 	# Source 2: REST API query (/spectator/live-games in kafehfekrserver)
 	NetworkManager.api.get_live_spectator_games(
@@ -105,7 +138,8 @@ func refresh() -> void:
 				elif typeof(res.get("games")) == TYPE_ARRAY:
 					arr = res["games"]
 				_ingest_games_array(arr)
-			_render_games_list()
+			_render_games_list(),
+		current_game_mode
 	)
 
 	get_tree().create_timer(2.0).timeout.connect(func():
@@ -118,9 +152,12 @@ func refresh() -> void:
 func _on_realtime_live_games_received(payload: Dictionary) -> void:
 	if not visible:
 		return
-	var req_scope: String = str(payload.get("scope", "all"))
-	var req_gtype: String = str(payload.get("game_type", ""))
-	if req_scope != current_scope or req_gtype != current_game_type:
+	var req_scope: String = str(payload.get("scope", "all")).strip_edges().to_lower()
+	var req_gtype: String = str(payload.get("game_type", "")).strip_edges().to_lower()
+	var req_mode: String = _normalize_mode(str(payload.get("game_mode", "")))
+	if req_scope != current_scope.strip_edges().to_lower() \
+		or req_gtype != current_game_type.strip_edges().to_lower() \
+		or req_mode != _normalize_mode(current_game_mode):
 		return
 	_is_loading = false
 	var arr: Array = payload.get("items", []) if typeof(payload.get("items")) == TYPE_ARRAY else []
@@ -129,6 +166,7 @@ func _on_realtime_live_games_received(payload: Dictionary) -> void:
 
 
 func _ingest_games_array(arr: Array) -> void:
+	var target_mode_norm: String = _normalize_mode(current_game_mode)
 	for item in arr:
 		if typeof(item) == TYPE_DICTIONARY:
 			var d: Dictionary = item
@@ -139,12 +177,18 @@ func _ingest_games_array(arr: Array) -> void:
 				var gt: String = str(d.get("game_type", "")).strip_edges().to_lower()
 				if gt != current_game_type.strip_edges().to_lower():
 					continue
+			if not target_mode_norm.is_empty():
+				var gm: String = _normalize_mode(str(d.get("game_score_type", "")))
+				if gm != target_mode_norm:
+					continue
 			if not _merged_games.has(gid):
 				_merged_games[gid] = d
 			else:
 				var existing: Dictionary = _merged_games[gid]
 				if int(d.get("spectator_count", 0)) > int(existing.get("spectator_count", 0)):
 					existing["spectator_count"] = int(d.get("spectator_count", 0))
+				if str(existing.get("game_score_type", "")).is_empty() and not str(d.get("game_score_type", "")).is_empty():
+					existing["game_score_type"] = d.get("game_score_type", "")
 				var ex_players: Array = existing.get("players", []) if typeof(existing.get("players")) == TYPE_ARRAY else []
 				var new_players: Array = d.get("players", []) if typeof(d.get("players")) == TYPE_ARRAY else []
 				if ex_players.is_empty() and not new_players.is_empty():
@@ -269,6 +313,16 @@ func _build_ui() -> void:
 	_scope_row.add_theme_constant_override("separation", 10)
 	scope_well.add_child(_scope_row)
 
+	# 2b. Game Mode Filter Row (All | Rank | MultiRank | ClassicRank | Lobby)
+	var mode_well := PanelContainer.new()
+	mode_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 8.0, 6.0))
+	root.add_child(mode_well)
+
+	_mode_row = HBoxContainer.new()
+	_mode_row.add_theme_constant_override("separation", 6)
+	_mode_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	mode_well.add_child(_mode_row)
+
 	# 3. Clean 1-Row Scrollable Game Filter Row inside Antique Well (taller height & tight padding)
 	var filter_well := PanelContainer.new()
 	filter_well.custom_minimum_size = Vector2(0, 100)
@@ -354,13 +408,45 @@ func _render_filters() -> void:
 			)
 			_scope_row.add_child(b)
 
+	if is_instance_valid(_mode_row):
+		for c in _mode_row.get_children():
+			c.queue_free()
+		var modes: Array = [
+			{"id": "", "label": "همه حالت‌ها"},
+			{"id": "Rank", "label": "رقابتی"},
+			{"id": "MultiRank", "label": "چندنفره"},
+			{"id": "ClassicRank", "label": "کلاسیک"},
+			{"id": "Lobby", "label": "لابی"},
+		]
+		for md in modes:
+			var md_d: Dictionary = md
+			var mid: String = str(md_d["id"])
+			var is_m_sel: bool = (_normalize_mode(current_game_mode) == _normalize_mode(mid))
+			var bm := CafeSocialTheme.make_button(
+				str(md_d["label"]),
+				"emerald" if is_m_sel else "muted",
+				Vector2(0, 44),
+				20
+			)
+			bm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			bm.pressed.connect(func():
+				AudioManager.sfx_tap()
+				current_game_mode = mid
+				_render_filters()
+				refresh()
+			)
+			_mode_row.add_child(bm)
+
 	if is_instance_valid(_game_filter_hbox):
 		for c in _game_filter_hbox.get_children():
 			c.queue_free()
 
-		# All 25 games + "all"
+		# Spectatable games + "all"
 		var gfilters: Array = [{"id": "", "label": "همه"}]
 		for g in GamesHistoryViewHelper.GAMES_LIST:
+			var gid_check: String = str(g.get("id", "")).strip_edges().to_lower()
+			if gid_check in NON_SPECTATABLE_GAMES:
+				continue
 			gfilters.append({"id": g["id"], "label": g["name_fa"]})
 
 		for gf in gfilters:
@@ -460,7 +546,15 @@ func _render_games_list() -> void:
 			_lbl_count.text = "●  %s مسابقه زنده آماده تماشا" % GameManager.to_fa_num(items.size())
 
 	if items.is_empty():
-		# Empty list without any extra text information
+		_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		var empty_lbl := CafeSocialTheme.make_body(
+			"در حال حاضر مسابقه زنده‌ای با این فیلتر در جریان نیست.",
+			23,
+			CafeSocialTheme.COL_MUTED_SAND,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			true
+		)
+		_list_vbox.add_child(empty_lbl)
 		return
 
 	_list_vbox.alignment = BoxContainer.ALIGNMENT_BEGIN
@@ -473,6 +567,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	var gid: String = str(m.get("game_id", ""))
 	var gtype: String = str(m.get("game_type", "Ludo"))
 	var gtitle: String = GameRegistry.get_display_name_fa(gtype)
+	var mode_fa: String = _get_mode_label_fa(str(m.get("game_score_type", "")))
 	var spec_cnt: int = int(m.get("spectator_count", 0))
 	var has_friend: bool = bool(m.get("has_friend", false))
 	var has_clanmate: bool = bool(m.get("has_clanmate", false))
@@ -507,6 +602,14 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 		CafeSocialTheme.COL_EMERALD_BORDER,
 		18
 	))
+	if not mode_fa.is_empty():
+		badges_col.add_child(CafeSocialTheme.make_badge_pill(
+			mode_fa,
+			CafeSocialTheme.COL_WARM_CREAM,
+			Color(0.14, 0.10, 0.06, 0.94),
+			CafeSocialTheme.COL_BRONZE_BORDER,
+			17
+		))
 	if has_friend:
 		badges_col.add_child(CafeSocialTheme.make_badge_pill(
 			"دوست شما",

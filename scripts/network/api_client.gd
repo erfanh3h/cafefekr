@@ -331,12 +331,15 @@ func get_live_spectator_games(
 	clan_id: String = "",
 	page: int = 1,
 	limit: int = 20,
-	callback: Callable = Callable()
+	callback: Callable = Callable(),
+	game_mode: String = ""
 ) -> void:
 	var params: Array[String] = []
 	params.append("visibility=" + visibility_filter.uri_encode())
 	if not game_type.is_empty():
 		params.append("game_type=" + game_type.uri_encode())
+	if not game_mode.is_empty():
+		params.append("game_mode=" + game_mode.uri_encode())
 	if not player_id.is_empty():
 		params.append("player_id=" + player_id.uri_encode())
 	if not clan_id.is_empty():

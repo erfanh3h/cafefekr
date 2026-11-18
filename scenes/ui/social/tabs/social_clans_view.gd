@@ -213,6 +213,8 @@ static func _build_shared_header(host: Control, has_clan: bool) -> PanelContaine
 		CafeSocialTheme.COL_EMERALD_BORDER,
 		16
 	)
+	if online_pill.get_child_count() > 0 and online_pill.get_child(0) is Label:
+		host._clan_online_pill_lbl = online_pill.get_child(0) as Label
 	left_box.add_child(online_pill)
 
 	# Center clan info
@@ -1560,6 +1562,10 @@ static func _build_clan_members_tab(host: Control, holder: VBoxContainer, cdict:
 
 	var m2 := CafeSocialTheme.make_metric_card("آنلاین", GameManager.to_fa_num(online_cnt), CafeSocialTheme.COL_EMERALD_TEXT, null)
 	m2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if m2.get_child_count() > 0 and m2.get_child(0).get_child_count() > 0:
+		var m2_v := m2.get_child(0).get_child(0)
+		if m2_v.get_child_count() >= 2 and m2_v.get_child(1) is Label:
+			host._clan_members_online_val_lbl = m2_v.get_child(1) as Label
 	ov_strip.add_child(m2)
 
 	var max_cap := int(cdict.get("max_members", 40))
@@ -1815,9 +1821,20 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 	meta_row.add_child(contrib_val_lbl)
 	meta_row.add_child(contrib_title_lbl)
 
-	# Right: Avatar with frame
+	# Right: Avatar with frame (holder allows zero-reload live presence updates)
+	var av_holder := Control.new()
+	av_holder.custom_minimum_size = Vector2(68, 68)
+	av_holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var av_vis := CafeSocialTheme.make_avatar_badge(int(m_dict.get("image", 0)), int(m_dict.get("profile_frame", 1)), 66.0, raw_st, true)
-	row.add_child(av_vis)
+	av_vis.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	av_holder.add_child(av_vis)
+	row.add_child(av_holder)
+	if not m_uid.is_empty():
+		host._clan_member_widgets[m_uid] = {
+			"avatar_holder": av_holder,
+			"image": int(m_dict.get("image", 0)),
+			"frame": int(m_dict.get("profile_frame", 1)),
+		}
 
 	# Tapping whole card opens member interactions
 	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -2331,7 +2348,7 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 	var mem_cnt := int(cl.get("member_count", 1))
 	var max_mem := int(cl.get("max_members", 40))
 	var jtype := str(cl.get("join_type", "open"))
-	var jtype_fa := "آزاد" if jtype == "open" else ("با تایید" if jtype == "request" else "دعوت‌نامه‌ای")
+	var jtype_fa := "آزاد" if jtype == "open" else "با تایید"
 
 	var card := PanelContainer.new()
 	var sb := StyleBoxFlat.new()
@@ -2382,36 +2399,70 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 
 	row.add_child(CafeSocialTheme.make_clan_emblem(emb_id, 64.0))
 
-	if jtype != "invite_only":
-		var b_join := CafeSocialTheme.make_button("عضویت در اتحاد" if jtype == "open" else "ارسال درخواست عضویت", "emerald" if jtype == "open" else "bronze", Vector2(0, 44), 20)
-		b_join.pressed.connect(func():
-			AudioManager.sfx_button()
-			b_join.disabled = true
-			NetworkManager.api.join_or_request_clan(cid, "", func(ok_j: bool, _cj: int, dj: Variant):
-				if ok_j:
-					var res_j: Dictionary = dj.get("result", {}) if typeof(dj) == TYPE_DICTIONARY and typeof(dj.get("result")) == TYPE_DICTIONARY else {}
-					var st_j := str(res_j.get("status", ""))
-					if st_j == "requested":
-						host._show_toast("درخواست عضویت شما برای اتحاد ارسال شد!")
-						if is_instance_valid(b_join):
-							b_join.text = "✓ درخواست ارسال شد"
-					else:
-						host._show_toast("با موفقیت به اتحاد پیوستید!")
-						host.current_clans_subtab = "my_clan"
-						if host.has_method("refresh_my_clan_data"):
-							host.refresh_my_clan_data(true)
-						else:
-							host._refresh_current_tab()
-				else:
+	var b_join := CafeSocialTheme.make_button("عضویت در اتحاد" if jtype == "open" else "ارسال درخواست عضویت", "emerald" if jtype == "open" else "bronze", Vector2(0, 44), 20)
+	b_join.pressed.connect(func():
+		AudioManager.sfx_button()
+		b_join.disabled = true
+		NetworkManager.api.join_or_request_clan(cid, "", func(ok_j: bool, _cj: int, dj: Variant):
+			if ok_j:
+				var res_j: Dictionary = dj.get("result", {}) if typeof(dj) == TYPE_DICTIONARY and typeof(dj.get("result")) == TYPE_DICTIONARY else {}
+				var st_j := str(res_j.get("status", ""))
+				if st_j == "requested":
+					host._show_toast("درخواست عضویت شما برای اتحاد ارسال شد!")
 					if is_instance_valid(b_join):
-						b_join.disabled = false
-					if typeof(dj) == TYPE_DICTIONARY:
-						host._show_toast(str(dj.get("detail", "خطا")), CafeSocialTheme.COL_CRIMSON_TEXT)
-			)
+						b_join.text = "✓ درخواست ارسال شد"
+				else:
+					host._show_toast("با موفقیت به اتحاد پیوستید!")
+					host.current_clans_subtab = "my_clan"
+					if host.has_method("refresh_my_clan_data"):
+						host.refresh_my_clan_data(true)
+					else:
+						host._refresh_current_tab()
+			else:
+				if is_instance_valid(b_join):
+					b_join.disabled = false
+				if typeof(dj) == TYPE_DICTIONARY:
+					host._show_toast(str(dj.get("detail", "خطا")), CafeSocialTheme.COL_CRIMSON_TEXT)
 		)
-		root.add_child(b_join)
+	)
+	root.add_child(b_join)
 
 	return card
+
+
+static func update_member_presence(host: Control, target_uid: String, new_st: String) -> void:
+	var c_dict: Variant = host._my_clan_data.get("clan", null)
+	if typeof(c_dict) != TYPE_DICTIONARY:
+		return
+	var members_arr: Array = c_dict.get("members", []) if typeof(c_dict.get("members")) == TYPE_ARRAY else []
+	var online_cnt := 0
+	var my_uid := str(GameManager.get_user_id())
+	for m in members_arr:
+		if typeof(m) == TYPE_DICTIONARY:
+			var m_id := str(m.get("user_id", m.get("_id", "")))
+			var pres: Dictionary = m.get("presence", {}) if typeof(m.get("presence")) == TYPE_DICTIONARY else {}
+			var st_s := str(pres.get("status", m.get("status", "offline")))
+			if m_id == my_uid and st_s == "offline" and NetworkManager.is_social_connected:
+				st_s = "online"
+			if st_s in ["online", "in_game", "in_lobby", "in_queue"]:
+				online_cnt += 1
+	if online_cnt == 0 and not members_arr.is_empty():
+		online_cnt = 1
+
+	if is_instance_valid(host._clan_online_pill_lbl):
+		host._clan_online_pill_lbl.text = "%s آنلاین" % GameManager.to_fa_num(online_cnt)
+	if is_instance_valid(host._clan_members_online_val_lbl):
+		host._clan_members_online_val_lbl.text = GameManager.to_fa_num(online_cnt)
+
+	if host._clan_member_widgets.has(target_uid):
+		var w: Dictionary = host._clan_member_widgets[target_uid]
+		var av_h: Control = w.get("avatar_holder", null)
+		if is_instance_valid(av_h):
+			for ch in av_h.get_children():
+				ch.queue_free()
+			var fresh_av := CafeSocialTheme.make_avatar_badge(int(w.get("image", 0)), int(w.get("frame", 1)), 66.0, new_st, true)
+			fresh_av.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			av_h.add_child(fresh_av)
 
 
 static func _build_clan_leaderboard_inner(host: Control, holder: VBoxContainer) -> void:
@@ -2891,13 +2942,13 @@ static func _open_clan_settings_modal(host: Control, cdict: Dictionary) -> void:
 	inp_desc.text = str(cdict.get("description", ""))
 	vbox.add_child(inp_desc)
 
-	var jt_val := [str(cdict.get("join_type", "open"))]
+	var raw_jt := str(cdict.get("join_type", "open"))
+	var jt_val := [raw_jt if raw_jt in ["open", "request"] else "open"]
 	var jt_row := HBoxContainer.new()
 	jt_row.add_theme_constant_override("separation", 8)
 	vbox.add_child(jt_row)
 
 	var jt_defs := [
-		{"id": "invite_only", "label": "فقط با دعوت"},
 		{"id": "request", "label": "با تایید"},
 		{"id": "open", "label": "آزاد"},
 	]

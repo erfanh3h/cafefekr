@@ -181,9 +181,10 @@ func _on_multi_rank_queue_status(queuers_count: int, required_count: int, game_t
 	lbl_status.text = "در انتظار تکمیل ظرفیت (%s): %s از %s بازیکن..." % [g_name, _fa_digits(max(1, queuers_count)), _fa_digits(max(4, required_count))]
 	lbl_status.modulate = Color(0.45, 0.95, 0.65) if queuers_count >= 2 else Color(1.0, 0.94, 0.55)
 
-func _on_multi_rank_match_ready(_game_id: String, _game_type: String) -> void:
+func _on_multi_rank_match_ready(game_id: String, game_type: String) -> void:
 	if not is_multi_rank_mode:
 		return
+	is_multi_rank_mode = false
 	timer_active = false
 	is_accept_phase = false
 	search_timer.stop()
@@ -195,6 +196,8 @@ func _on_multi_rank_match_ready(_game_id: String, _game_type: String) -> void:
 	AudioManager.stop_music()
 	await get_tree().create_timer(0.45).timeout
 	visible = false
+	var target_type = game_type if not game_type.is_empty() else _multi_rank_game_type
+	match_ready.emit(game_id, target_type)
 
 func stop_queue() -> void:
 	var was_multi = is_multi_rank_mode

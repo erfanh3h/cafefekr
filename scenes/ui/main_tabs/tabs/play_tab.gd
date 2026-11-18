@@ -68,13 +68,20 @@ func _check_live_games() -> void:
 	NetworkManager.api.get_live_spectator_games("all", "", "", "", 1, 20, func(ok: bool, _c: int, data: Variant):
 		if not is_instance_valid(live_badge) or not is_instance_valid(lbl_live_badge):
 			return
-		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_ARRAY:
-			var count: int = data["result"].size()
-			if count > 0:
-				live_badge.visible = true
-				lbl_live_badge.text = GameManager.to_fa_num(count)
-				return
-		live_badge.visible = false
+		var count: int = 0
+		if ok and typeof(data) == TYPE_DICTIONARY:
+			var res: Variant = data.get("result", null)
+			if typeof(res) == TYPE_DICTIONARY:
+				var res_dict: Dictionary = res
+				var arr: Array = res_dict.get("items", res_dict.get("games", [])) if typeof(res_dict.get("items", res_dict.get("games", []))) == TYPE_ARRAY else []
+				count = int(res_dict.get("total", arr.size()))
+			elif typeof(res) == TYPE_ARRAY:
+				count = (res as Array).size()
+		if count > 0:
+			live_badge.visible = true
+			lbl_live_badge.text = GameManager.to_fa_num(count)
+		else:
+			live_badge.visible = false
 	)
 
 
