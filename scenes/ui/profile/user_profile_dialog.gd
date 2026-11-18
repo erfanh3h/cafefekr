@@ -307,11 +307,6 @@ func _render_overview_tab() -> void:
 
 	var prof := _effective_data()
 
-	var score_val := int(prof.get("score", prof.get("user_score", 0)))
-	var xp_val := int(float(prof.get("xp", prof.get("user_xp", 0))))
-	var lvl_val := GameManager.calculate_level(xp_val) if xp_val > 0 else int(prof.get("level", 1))
-	var friends_cnt := int(prof.get("friends_count", 0))
-	var coin_val := int(prof.get("coin", prof.get("user_coin", prof.get("coins", GameManager.get_coins() if _is_self else 0))))
 	var uname := str(prof.get("name", prof.get("username", "بازیکن")))
 	var rel := str(prof.get("relationship", "none"))
 
@@ -430,15 +425,8 @@ func _render_overview_tab() -> void:
 	_body_vbox.add_child(actions)
 
 	# --------------------------------------------------------------------------
-	# B. Player Statistics Component (Zero icons in boxes)
-	# --------------------------------------------------------------------------
-	var stats_component := PlayerStatistics.new()
-	stats_component.setup(score_val, lvl_val, friends_cnt, _is_self, coin_val)
-	_body_vbox.add_child(stats_component)
-
-	# --------------------------------------------------------------------------
-	# Progression Bar removed as per requirement:
-	# "we must not show current exp bar of an user to another users ! remove it ."
+	# Score & Level crests are now inside ProfileHeader (Top-Left);
+	# Friends/Coins box removed as requested.
 	# --------------------------------------------------------------------------
 
 	# --------------------------------------------------------------------------

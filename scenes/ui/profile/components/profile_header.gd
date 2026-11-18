@@ -2,21 +2,23 @@ class_name ProfileHeader
 extends PanelContainer
 
 ## Cafe Fekr — Reusable Profile Header Component
-## Displays large avatar with gold frame, username, online/offline status,
-## copyable user ID, title/tier badges, personal status quote, and clan info.
+## Displays avatar with gold frame (Right), username & tags (Middle),
+## large score & level crest badges with values inside (Top-Left),
+## tappable clan pill (Bottom-Left), copyable user ID (Bottom-Right),
+## and optional personal status quote.
 
 signal copy_id_requested(user_id: String)
 signal view_clan_requested(clan_id: String, clan_data: Dictionary)
 
+const TEX_SCORE_BADGE := preload("res://assets/images/badges/score.png")
+const TEX_LEVEL_BADGE := preload("res://assets/images/badges/level.png")
+
 var _avatar_holder: Control
 var _lbl_username: Label
-var _lbl_role: Label
-var _status_badge: Control
-var _tags_row: HBoxContainer
-var _id_row: HBoxContainer
+var _lbl_score: Label
+var _lbl_level: Label
 var _lbl_id: Label
-var _btn_copy: Button
-var _clan_box: Control
+var _clan_box: HBoxContainer
 var _lbl_status_msg: Label
 
 var _current_user_id: String = ""
@@ -28,109 +30,164 @@ func _init() -> void:
 	_build_ui()
 
 
+func _make_stat_crest(tex: Texture2D, font_sz: int, text_col: Color, outline_col: Color, y_top_off: float, y_bot_off: float, shadow_diam: float, shadow_y_off: float) -> Dictionary:
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(76, 84)
+	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	var icon := TextureRect.new()
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.texture = tex
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	holder.add_child(icon)
+
+	# Circular dark backdrop shadow behind text for high readability
+	var circle_shadow := Panel.new()
+	var half := shadow_diam * 0.5
+	circle_shadow.anchor_left = 0.5
+	circle_shadow.anchor_top = 0.5
+	circle_shadow.anchor_right = 0.5
+	circle_shadow.anchor_bottom = 0.5
+	circle_shadow.offset_left = -half
+	circle_shadow.offset_top = -half + shadow_y_off
+	circle_shadow.offset_right = half
+	circle_shadow.offset_bottom = half + shadow_y_off
+	circle_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sh_sb := StyleBoxFlat.new()
+	sh_sb.bg_color = Color(0.02, 0.01, 0.0, 0.72)
+	sh_sb.set_corner_radius_all(int(ceil(half)))
+	sh_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.65)
+	sh_sb.shadow_size = 6
+	circle_shadow.add_theme_stylebox_override("panel", sh_sb)
+	holder.add_child(circle_shadow)
+
+	var lbl := Label.new()
+	lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	lbl.offset_top = y_top_off
+	lbl.offset_bottom = y_bot_off
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
+	lbl.add_theme_font_size_override("font_size", font_sz)
+	lbl.add_theme_color_override("font_color", text_col)
+	lbl.add_theme_color_override("font_outline_color", outline_col)
+	lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.95))
+	lbl.add_theme_constant_override("outline_size", 6)
+	lbl.add_theme_constant_override("shadow_offset_y", 2)
+	lbl.add_theme_constant_override("shadow_outline_size", 4)
+	lbl.text = "۰"
+	holder.add_child(lbl)
+
+	return {"root": holder, "label": lbl}
+
+
 func _build_ui() -> void:
-	# Outer plaque styling: dark walnut with warm bronze/gold filigree border
-	add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 16.0))
+	# Generous inset padding so badges, clan pill, and avatar never touch the ornate frame edges
+	add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 44.0, 24.0))
 
 	var main_vbox := VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 10)
+	main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_vbox.add_theme_constant_override("separation", 8)
 	add_child(main_vbox)
 
-	# Top Hero Row: Info Column (Left) + Avatar Medallion (Right) - Persian RTL Layout
+	# --- HERO ROW: [Score & Level Crests (Top-Left)] + [Username / Clan / ID (Middle)] + [Avatar (Right)] ---
 	var hero_row := HBoxContainer.new()
-	hero_row.add_theme_constant_override("separation", 14)
+	hero_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hero_row.add_theme_constant_override("separation", 10)
 	hero_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	main_vbox.add_child(hero_row)
 
-	# --- Left Info Column ---
+	# 1. Top-Left: Score & Level large icons with circular dark shadow + values centered inside
+	var badges_row := HBoxContainer.new()
+	badges_row.add_theme_constant_override("separation", 6)
+	badges_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	badges_row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	badges_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	hero_row.add_child(badges_row)
+
+	var score_crest := _make_stat_crest(TEX_SCORE_BADGE, 23, Color(1.0, 0.96, 0.78, 1.0), Color(0.08, 0.04, 0.01, 0.98), 4.0, 0.0, 46.0, 2.0)
+	_lbl_score = score_crest["label"]
+	badges_row.add_child(score_crest["root"])
+
+	var level_crest := _make_stat_crest(TEX_LEVEL_BADGE, 28, Color(1.0, 0.98, 0.88, 1.0), Color(0.04, 0.14, 0.04, 0.98), 0.0, -6.0, 44.0, -3.0)
+	_lbl_level = level_crest["label"]
+	badges_row.add_child(level_crest["root"])
+
+	# 2. Middle: Username (+2px) -> Clan Box (if exists) -> Player ID (no copy button)
 	var info_col := VBoxContainer.new()
 	info_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	info_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	info_col.add_theme_constant_override("separation", 4)
 	hero_row.add_child(info_col)
 
-	# Row 1: Tappable Clan Pill (Top-Left, replaces status image) + Username (Top-Right)
-	var name_row := HBoxContainer.new()
-	name_row.alignment = BoxContainer.ALIGNMENT_END
-	name_row.add_theme_constant_override("separation", 8)
-	info_col.add_child(name_row)
-
-	_clan_box = HBoxContainer.new()
-	_clan_box.alignment = BoxContainer.ALIGNMENT_BEGIN
-	_clan_box.visible = false
-	name_row.add_child(_clan_box)
-
-	_lbl_username = CafeSocialTheme.make_title("بازیکن کافه فکر", 30, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_username = CafeSocialTheme.make_title("بازیکن کافه فکر", 28, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	_lbl_username.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_username.clip_text = true
 	_lbl_username.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	name_row.add_child(_lbl_username)
+	info_col.add_child(_lbl_username)
 
-	# Row 2: In-Game Role (Optional)
-	_lbl_role = CafeSocialTheme.make_body("", 19, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false)
-	_lbl_role.visible = false
-	info_col.add_child(_lbl_role)
+	_clan_box = HBoxContainer.new()
+	_clan_box.alignment = BoxContainer.ALIGNMENT_END
+	_clan_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_clan_box.visible = false
+	info_col.add_child(_clan_box)
 
-	# Row 3: Honor Title & Competitive Tier Badges
-	_tags_row = HBoxContainer.new()
-	_tags_row.alignment = BoxContainer.ALIGNMENT_END
-	_tags_row.add_theme_constant_override("separation", 6)
-	info_col.add_child(_tags_row)
-
-	# Row 4: Player ID with Copy Button
-	_id_row = HBoxContainer.new()
-	_id_row.alignment = BoxContainer.ALIGNMENT_END
-	_id_row.add_theme_constant_override("separation", 6)
-	info_col.add_child(_id_row)
-
-	_btn_copy = CafeSocialTheme.make_button("کپی", "bronze", Vector2(62, 34), 16)
-	_btn_copy.pressed.connect(func():
-		AudioManager.sfx_tap()
-		if not _current_user_id.is_empty():
+	_lbl_id = CafeSocialTheme.make_body("شناسه: -", 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_id.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lbl_id.clip_text = true
+	_lbl_id.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_lbl_id.mouse_filter = Control.MOUSE_FILTER_STOP
+	_lbl_id.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_lbl_id.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and not _current_user_id.is_empty():
+			AudioManager.sfx_tap()
 			DisplayServer.clipboard_set(_current_user_id)
 			copy_id_requested.emit(_current_user_id)
 	)
-	_id_row.add_child(_btn_copy)
+	info_col.add_child(_lbl_id)
 
-	_lbl_id = CafeSocialTheme.make_body("شناسه: -", 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
-	_id_row.add_child(_lbl_id)
-
-	# --- Right Avatar Column (Prominent Golden Framed Avatar) ---
+	# 3. Far-Right: Golden Framed Avatar Medallion
 	_avatar_holder = Control.new()
-	_avatar_holder.custom_minimum_size = Vector2(104, 104)
+	_avatar_holder.custom_minimum_size = Vector2(90, 90)
 	_avatar_holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_avatar_holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hero_row.add_child(_avatar_holder)
 
-	# Bottom: Personal Status Quote (Optional)
+	# Optional Personal Status Quote
 	_lbl_status_msg = CafeSocialTheme.make_body("", 19, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true)
 	_lbl_status_msg.visible = false
 	main_vbox.add_child(_lbl_status_msg)
 
 
-func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false, is_bot: bool = false) -> void:
+func setup(user_data: Dictionary, _role_text: String = "", is_self: bool = false, is_bot: bool = false) -> void:
 	_current_user_id = str(user_data.get("_id", user_data.get("id", user_data.get("user_id", ""))))
 	var uname := str(user_data.get("name", user_data.get("username", "بازیکن کافه فکر")))
 	var av_id := int(user_data.get("image", user_data.get("user_image", user_data.get("avatar", 0))))
 	var frame_id := int(user_data.get("profile_frame", user_data.get("avatar_frame", 1)))
 	if frame_id <= 0:
 		frame_id = 1
-	var p_title := str(user_data.get("profile_title", ""))
 	var p_status := str(user_data.get("status_message", ""))
+
+	# Score & Level inside the Top-Left Crests
+	var score_val := int(user_data.get("score", user_data.get("user_score", 0)))
+	var xp_val := int(float(user_data.get("xp", user_data.get("user_xp", 0))))
+	var lvl_val := GameManager.calculate_level(xp_val) if xp_val > 0 else int(user_data.get("level", 1))
+	_lbl_score.text = GameManager.to_fa_num(score_val)
+	_lbl_level.text = GameManager.to_fa_num(lvl_val)
 
 	# Presence status
 	var pres: Dictionary = user_data.get("presence", {}) if typeof(user_data.get("presence")) == TYPE_DICTIONARY else {}
 	var pres_status := str(pres.get("status", user_data.get("status", "online" if is_self else "offline")))
-	var p_info := CafeSocialTheme.format_presence(pres if not pres.is_empty() else {"status": pres_status})
-
-	# Tier info (Text only, no icon on right of label)
-	var tier: Dictionary = user_data.get("tier", {}) if typeof(user_data.get("tier")) == TYPE_DICTIONARY else {}
-	var tier_txt := str(tier.get("title_fa", user_data.get("rank_title", ""))).strip_edges()
 
 	# 1. Username
 	_lbl_username.text = uname
 
-	# 2. Top-Left Clan Name Pill (replaces status image; hidden if player is not in a clan)
+	# 2. Clan Pill directly under Username (hidden if player is not in a clan)
 	for c in _clan_box.get_children():
 		c.queue_free()
 	var clan_d: Dictionary = user_data.get("clan", {}) if typeof(user_data.get("clan")) == TYPE_DICTIONARY else {}
@@ -143,46 +200,22 @@ func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false,
 	else:
 		_clan_box.visible = false
 
-	# 3. Role
-	if not role_text.is_empty():
-		_lbl_role.text = role_text
-		var r_col := CafeSocialTheme.COL_GOLD_BRIGHT
-		if role_text.contains("قرمز") or role_text.contains("۱"):
-			r_col = Color(1.0, 0.48, 0.48)
-		elif role_text.contains("آبی") or role_text.contains("۲"):
-			r_col = Color(0.48, 0.80, 1.0)
-		_lbl_role.add_theme_color_override("font_color", r_col)
-		_lbl_role.visible = true
-	else:
-		_lbl_role.visible = false
-
-	# 4. Tags / Badges (Pure text labels, no icons)
-	for c in _tags_row.get_children():
-		c.queue_free()
-	var has_tags := false
-	if not p_title.is_empty():
-		has_tags = true
-		_tags_row.add_child(CafeSocialTheme.make_badge_pill(p_title, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.10, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 17))
-	if not tier_txt.is_empty():
-		has_tags = true
-		_tags_row.add_child(CafeSocialTheme.make_badge_pill(tier_txt, CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 17))
-	_tags_row.visible = has_tags
-
-	# 5. ID & Copy
+	# 3. Player ID directly under Clan Box (no copy button)
 	if not _current_user_id.is_empty() and not is_bot:
-		_lbl_id.text = "شناسه: %s" % GameManager.to_fa_num(_current_user_id)
-		_id_row.visible = true
+		var short_id := _current_user_id.substr(0, 8) if _current_user_id.length() > 8 else _current_user_id
+		_lbl_id.text = "شناسه: %s" % GameManager.to_fa_num(short_id)
+		_lbl_id.visible = true
 	else:
-		_id_row.visible = false
+		_lbl_id.visible = false
 
-	# 7. Avatar Medallion with Golden Frame (Circle dot removed: show_dot = false)
+	# 4. Avatar Medallion with Golden Frame
 	for c in _avatar_holder.get_children():
 		c.queue_free()
-	var av_badge := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 96.0, pres_status, false)
+	var av_badge := CafeSocialTheme.make_avatar_badge(av_id, frame_id, 86.0, pres_status, false)
 	av_badge.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_avatar_holder.add_child(av_badge)
 
-	# 8. Status Quote
+	# 5. Status Quote
 	if not p_status.is_empty():
 		_lbl_status_msg.text = "«%s»" % p_status
 		_lbl_status_msg.visible = true
@@ -191,16 +224,17 @@ func setup(user_data: Dictionary, role_text: String = "", is_self: bool = false,
 
 
 func _build_clan_chip(clan_id: String, clan_d: Dictionary) -> void:
-	var cname := str(clan_d.get("name", "اتحاد"))
+	var cname := str(clan_d.get("name", "اتحاد")).strip_edges()
+	var display_name := (cname.substr(0, 14) + "…") if cname.length() > 15 else cname
 	var clan_btn := Button.new()
-	clan_btn.text = cname
-	clan_btn.custom_minimum_size = Vector2(0, 34)
-	clan_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	clan_btn.text = display_name
+	clan_btn.custom_minimum_size = Vector2(0, 32)
+	clan_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
 	clan_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	clan_btn.focus_mode = Control.FOCUS_NONE
 	clan_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	clan_btn.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	clan_btn.add_theme_font_size_override("font_size", 18)
+	clan_btn.add_theme_font_size_override("font_size", 17)
 	clan_btn.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	clan_btn.add_theme_color_override("font_hover_color", CafeSocialTheme.COL_IVORY)
 
