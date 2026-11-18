@@ -715,11 +715,42 @@ func _spawn_piece_at_cell(cell_idx: int, gamer_id: int) -> Node3D:
 	pieces_nodes[cell_idx] = p_node
 	return p_node
 
+var _cached_othello_puck_mesh: ArrayMesh = null
+
+func _get_baked_othello_puck_mesh() -> ArrayMesh:
+	if _cached_othello_puck_mesh != null:
+		return _cached_othello_puck_mesh
+	var temp_pivot = Node3D.new()
+
+	# 1. Center 24K Gold Equator Bevel Ring uniting Red & Blue halves
+	var equator = MeshInstance3D.new()
+	var torus_eq = TorusMesh.new()
+	torus_eq.inner_radius = 0.0415
+	torus_eq.outer_radius = 0.0468
+	torus_eq.rings = 24
+	torus_eq.ring_segments = 12
+	equator.mesh = torus_eq
+	equator.material_override = mat_gold_trim
+	temp_pivot.add_child(equator)
+
+	# 2. Top Half: Player 1 (Red) Ribbed Checker Puck Face
+	var red_half = _build_half_checker_face(mat_piece_p1, mat_piece_p1_well, mat_gold_trim)
+	red_half.name = "RedFace"
+	temp_pivot.add_child(red_half)
+
+	# 3. Bottom Half: Player 2 (Blue) Ribbed Checker Puck Face
+	var blue_half = _build_half_checker_face(mat_piece_p2, mat_piece_p2_well, mat_platinum_trim)
+	blue_half.name = "BlueFace"
+	blue_half.rotation.x = PI
+	temp_pivot.add_child(blue_half)
+
+	_cached_othello_puck_mesh = BaseGameBoard.bake_node_tree_to_mesh(temp_pivot, true)
+	temp_pivot.free()
+	return _cached_othello_puck_mesh
+
 func _build_3d_othello_piece(gamer_id: int) -> Node3D:
-	# Dual-sided 3D Lathe-Turned Checkers Puck:
+	# Dual-sided 3D Lathe-Turned Checkers Puck (cached pre-baked ArrayMesh for mobile performance):
 	# FlipPivot sits at y = 0.0155 above the board surface.
-	# Upper half (y >= 0) is Imperial Ruby Crimson + 24K Gold Trim (Player 1).
-	# Lower half (y <= 0, rotated 180 deg on X) is Royal Sapphire Blue + Platinum Trim (Player 2).
 	# When gamer_id == 1, FlipPivot.rotation.x = 0.0 (Red faces up).
 	# When gamer_id == 2, FlipPivot.rotation.x = PI  (Blue faces up).
 	var root = Node3D.new()
@@ -731,27 +762,9 @@ func _build_3d_othello_piece(gamer_id: int) -> Node3D:
 	flip_pivot.rotation.x = 0.0 if gamer_id == 1 else PI
 	root.add_child(flip_pivot)
 
-	# 1. Center 24K Gold Equator Bevel Ring uniting Red & Blue halves
-	var equator = MeshInstance3D.new()
-	var torus_eq = TorusMesh.new()
-	torus_eq.inner_radius = 0.0415
-	torus_eq.outer_radius = 0.0468
-	torus_eq.rings = 32
-	torus_eq.ring_segments = 24
-	equator.mesh = torus_eq
-	equator.material_override = mat_gold_trim
-	flip_pivot.add_child(equator)
-
-	# 2. Top Half: Player 1 (Red) Ribbed Checker Puck Face
-	var red_half = _build_half_checker_face(mat_piece_p1, mat_piece_p1_well, mat_gold_trim)
-	red_half.name = "RedFace"
-	flip_pivot.add_child(red_half)
-
-	# 3. Bottom Half: Player 2 (Blue) Ribbed Checker Puck Face (Facing Downward so 180 flip brings it Up!)
-	var blue_half = _build_half_checker_face(mat_piece_p2, mat_piece_p2_well, mat_platinum_trim)
-	blue_half.name = "BlueFace"
-	blue_half.rotation.x = PI
-	flip_pivot.add_child(blue_half)
+	var puck_mi = MeshInstance3D.new()
+	puck_mi.mesh = _get_baked_othello_puck_mesh()
+	flip_pivot.add_child(puck_mi)
 
 	return root
 

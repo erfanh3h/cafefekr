@@ -109,6 +109,9 @@ var _last_critical_sec: int = -1
 var _last_displayed_sec: int = -1
 var _last_p1_score: int = 0
 var _last_p2_score: int = 0
+var _cached_timer_danger: int = -1
+var _cached_timer_box_style: StyleBox = null
+var _cached_timer_fill_color: Color = Color(-1.0, -1.0, -1.0, -1.0)
 
 static var _avatar_cache: Dictionary = {}
 static var _reaction_cache: Dictionary = {}
@@ -130,10 +133,14 @@ class TimerBarVFXOverlay extends Control:
 	var _sparks: Array = []
 	var _shockwaves: Array = []
 	var _spawn_accum: float = 0.0
+	var _redraw_accum: float = 0.0
+	var _is_mobile: bool = false
+	var _icon_settled: bool = true
 	var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 	func _ready() -> void:
 		_rng.randomize()
+		_is_mobile = OS.has_feature("mobile") or (OS.get_name() in ["Android", "iOS"])
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		clip_contents = false
 
@@ -148,7 +155,7 @@ class TimerBarVFXOverlay extends Control:
 			"max_radius": 34.0,
 			"alpha": 1.0
 		})
-		for _i in range(12):
+		for _i in range(8 if _is_mobile else 12):
 			_spawn_spark(tip_x, true, 1.45)
 
 	func _process(delta: float) -> void:
@@ -159,21 +166,26 @@ class TimerBarVFXOverlay extends Control:
 
 		# Ringing stopwatch icon animation when time is finishing
 		if is_instance_valid(icon_ref):
-			icon_ref.pivot_offset = icon_ref.size * 0.5
 			if is_danger and pct > 0.005:
+				_icon_settled = false
+				icon_ref.pivot_offset = icon_ref.size * 0.5
 				icon_ref.rotation_degrees = sin(time_accum * 38.0) * 16.0
 				var s_pulse = 1.0 + 0.14 * abs(sin(time_accum * 10.0))
 				icon_ref.scale = Vector2(s_pulse, s_pulse)
 				icon_ref.modulate = Color(1.0, 0.55 + 0.45 * abs(sin(time_accum * 12.0)), 0.45, 1.0)
-			else:
+			elif not _icon_settled:
 				icon_ref.rotation_degrees = lerpf(icon_ref.rotation_degrees, 0.0, 12.0 * delta)
 				icon_ref.scale = icon_ref.scale.lerp(Vector2.ONE, 10.0 * delta)
 				icon_ref.modulate = Color.WHITE
+				if absf(icon_ref.rotation_degrees) < 0.05 and icon_ref.scale.distance_to(Vector2.ONE) < 0.005:
+					icon_ref.rotation_degrees = 0.0
+					icon_ref.scale = Vector2.ONE
+					_icon_settled = true
 
 		var tip_x = clampf(size.x * pct, 6.0, maxf(6.0, size.x - 4.0))
-		var max_sparks = 8 if (OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]) else 16
+		var max_sparks = 6 if _is_mobile else 16
 		if pct > 0.01 and size.x > 20.0 and _sparks.size() < max_sparks:
-			var spawn_rate = 12.0 if is_danger else 5.0
+			var spawn_rate = (9.0 if is_danger else 3.5) if _is_mobile else (12.0 if is_danger else 5.0)
 			_spawn_accum += delta * spawn_rate
 			while _spawn_accum >= 1.0:
 				_spawn_accum -= 1.0
@@ -198,7 +210,13 @@ class TimerBarVFXOverlay extends Control:
 				_shockwaves.remove_at(i)
 
 		if pct > 0.01 or not _sparks.is_empty() or not _shockwaves.is_empty():
-			queue_redraw()
+			if _is_mobile:
+				_redraw_accum += delta
+				if _redraw_accum >= 0.033:
+					_redraw_accum = 0.0
+					queue_redraw()
+			else:
+				queue_redraw()
 
 	func _spawn_spark(tip_x: float, danger_mode: bool, speed_mult: float = 1.0) -> void:
 		if _sparks.size() > 60:
@@ -897,6 +915,7 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 			lbl_turn_banner.text = "⏳ نوبت %s" % opp_name
 			lbl_turn_banner.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 
+	_invalidate_timer_visual_cache()
 	_on_turn_changed(turn)
 
 func _animate_card_pulse(card: Control) -> void:
@@ -906,6 +925,29 @@ func _animate_card_pulse(card: Control) -> void:
 	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(card, "scale", Vector2(1.04, 1.04), 0.18)
 	tw.tween_property(card, "scale", Vector2(1.0, 1.0), 0.14)
+
+func _invalidate_timer_visual_cache() -> void:
+	_cached_timer_danger = -1
+	_cached_timer_box_style = null
+	_cached_timer_fill_color = Color(-1.0, -1.0, -1.0, -1.0)
+
+func _apply_timer_visual_state(is_danger: bool, box_style: StyleBox, fill_col: Color) -> void:
+	var danger_i: int = 1 if is_danger else 0
+	if danger_i != _cached_timer_danger:
+		_cached_timer_danger = danger_i
+		if is_instance_valid(lbl_timer):
+			if is_danger:
+				lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
+				lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_danger)
+			else:
+				lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
+				lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
+	if is_instance_valid(match_details_box) and box_style != null and box_style != _cached_timer_box_style:
+		_cached_timer_box_style = box_style
+		match_details_box.add_theme_stylebox_override("panel", box_style)
+	if is_instance_valid(_timer_style_fill) and fill_col != _cached_timer_fill_color:
+		_cached_timer_fill_color = fill_col
+		_timer_style_fill.bg_color = fill_col
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 	var is_danger = (remaining_sec <= 4.0 and remaining_sec > 0.0)
@@ -919,35 +961,26 @@ func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 		if sec_ceil != _last_displayed_sec:
 			_last_displayed_sec = sec_ceil
 			lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % sec_ceil)
-		if is_danger:
-			lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
-			lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_danger)
-			if sec_ceil != _last_critical_sec:
-				_last_critical_sec = sec_ceil
-				_animate_timer_warning()
-				if is_instance_valid(_timer_vfx_overlay):
-					_timer_vfx_overlay.trigger_danger_shockwave()
-		else:
-			lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
-			lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
+		if is_danger and sec_ceil != _last_critical_sec:
+			_last_critical_sec = sec_ceil
+			_animate_timer_warning()
+			if is_instance_valid(_timer_vfx_overlay):
+				_timer_vfx_overlay.trigger_danger_shockwave()
 
-	if is_instance_valid(match_details_box):
-		if is_danger:
-			match_details_box.add_theme_stylebox_override("panel", _style_match_box_danger)
-		elif GameManager.current_game_type == GameTypes.FEKRBEKR:
-			match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
-		else:
-			match_details_box.add_theme_stylebox_override("panel", _style_match_box_p1 if turn == 1 else _style_match_box_p2)
+	var box_style: StyleBox
+	if is_danger:
+		box_style = _style_match_box_danger
+	elif GameManager.current_game_type == GameTypes.FEKRBEKR:
+		box_style = _style_match_box_normal
+	else:
+		box_style = _style_match_box_p1 if turn == 1 else _style_match_box_p2
+
+	var target_fill: Color = Color(1.0, 0.24, 0.26) if is_danger else fill_col
+	_apply_timer_visual_state(is_danger, box_style, target_fill)
 
 	if is_instance_valid(turn_timer_bar):
 		var pct = clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
 		turn_timer_bar.value = pct
-
-	if is_instance_valid(_timer_style_fill):
-		if is_danger:
-			_timer_style_fill.bg_color = Color(1.0, 0.24, 0.26)
-		else:
-			_timer_style_fill.bg_color = fill_col
 
 func _animate_timer_warning() -> void:
 	if not is_instance_valid(lbl_timer):
@@ -1315,6 +1348,8 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 func reset_header() -> void:
 	_profile_clicks_enabled = false
 	_last_displayed_sec = -1
+	_last_critical_sec = -1
+	_invalidate_timer_visual_cache()
 	_last_p1_score = 0
 	_last_p2_score = 0
 	_update_score_badges_visibility()

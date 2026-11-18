@@ -410,26 +410,18 @@ func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 		if sec_ceil != _last_displayed_sec:
 			_last_displayed_sec = sec_ceil
 			lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % sec_ceil)
-		if is_danger:
-			lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
-			lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_danger)
-			if sec_ceil != _last_critical_sec:
-				_last_critical_sec = sec_ceil
-				_animate_timer_warning()
-				if is_instance_valid(_timer_vfx_overlay):
-					_timer_vfx_overlay.trigger_danger_shockwave()
-		else:
-			lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
-			lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
-	if is_instance_valid(match_details_box):
-		if is_danger:
-			match_details_box.add_theme_stylebox_override("panel", _style_match_box_danger)
-		else:
-			match_details_box.add_theme_stylebox_override("panel", _style_match_box_p3 if turn == 3 else _style_match_box_p4)
+		if is_danger and sec_ceil != _last_critical_sec:
+			_last_critical_sec = sec_ceil
+			_animate_timer_warning()
+			if is_instance_valid(_timer_vfx_overlay):
+				_timer_vfx_overlay.trigger_danger_shockwave()
+	_apply_timer_visual_state(
+		is_danger,
+		_style_match_box_danger if is_danger else (_style_match_box_p3 if turn == 3 else _style_match_box_p4),
+		Color(1.0, 0.24, 0.26) if is_danger else base_col
+	)
 	if is_instance_valid(turn_timer_bar):
 		turn_timer_bar.value = clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
-	if is_instance_valid(_timer_style_fill):
-		_timer_style_fill.bg_color = Color(1.0, 0.24, 0.26) if is_danger else base_col
 
 func show_reaction(user_index: int, reaction_id: int) -> void:
 	if user_index <= 2 or not _extra_cards.has(user_index):

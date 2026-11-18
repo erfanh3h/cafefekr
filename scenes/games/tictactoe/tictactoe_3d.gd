@@ -245,57 +245,67 @@ func _build_royal_architecture() -> void:
 		arch_root.add_child(sub_v)
 
 	# 4. Jewel Cabochons & Concentric Rings on the 4 Grid Intersection Medallions + 8 Outer Grid End-Caps
+	var shared_medallion_ring = TorusMesh.new()
+	shared_medallion_ring.inner_radius = 0.024
+	shared_medallion_ring.outer_radius = 0.038
+	shared_medallion_ring.rings = 16
+	shared_medallion_ring.ring_segments = 8
+	shared_medallion_ring.material = mat_gold_trim
+
+	var shared_gem = SphereMesh.new()
+	shared_gem.radius = 0.016
+	shared_gem.height = 0.016
+	shared_gem.radial_segments = 12
+	shared_gem.rings = 6
+	shared_gem.material = mat_ruby_gem
+
 	for mx in [-g_off, g_off]:
 		for mz in [-g_off, g_off]:
 			var ring_mi = MeshInstance3D.new()
-			var tr = TorusMesh.new()
-			tr.inner_radius = 0.024
-			tr.outer_radius = 0.038
-			tr.rings = 24
-			tr.ring_segments = 24
-			tr.material = mat_gold_trim
-			ring_mi.mesh = tr
+			ring_mi.mesh = shared_medallion_ring
 			ring_mi.position = Vector3(mx, 0.062, mz)
 			arch_root.add_child(ring_mi)
 
 			var gem_mi = MeshInstance3D.new()
-			var sp = SphereMesh.new()
-			sp.radius = 0.016
-			sp.height = 0.016
-			sp.material = mat_ruby_gem
-			gem_mi.mesh = sp
+			gem_mi.mesh = shared_gem
 			gem_mi.position = Vector3(mx, 0.064, mz)
 			arch_root.add_child(gem_mi)
 
-	# 8 Golden Grid End-Cap Studs where grid bars meet the perimeter molding
+	# 8 Golden Grid End-Cap Studs where grid bars meet the perimeter molding (1 MultiMesh draw call)
 	var cap_positions = [
 		Vector3(-g_off, 0.058, -0.535), Vector3(g_off, 0.058, -0.535),
 		Vector3(-g_off, 0.058, 0.535), Vector3(g_off, 0.058, 0.535),
 		Vector3(-0.535, 0.058, -g_off), Vector3(-0.535, 0.058, g_off),
 		Vector3(0.535, 0.058, -g_off), Vector3(0.535, 0.058, g_off)
 	]
-	for c_pos in cap_positions:
-		var cap_mi = MeshInstance3D.new()
-		var cyl = CylinderMesh.new()
-		cyl.top_radius = 0.016
-		cyl.bottom_radius = 0.019
-		cyl.height = 0.012
-		cyl.material = mat_gold_trim
-		cap_mi.mesh = cyl
-		cap_mi.position = c_pos
-		arch_root.add_child(cap_mi)
+	var cap_cyl = CylinderMesh.new()
+	cap_cyl.top_radius = 0.016
+	cap_cyl.bottom_radius = 0.019
+	cap_cyl.height = 0.012
+	cap_cyl.radial_segments = 12
+	cap_cyl.rings = 1
+	cap_cyl.material = mat_gold_trim
+	var cap_mm = MultiMesh.new()
+	cap_mm.transform_format = MultiMesh.TRANSFORM_3D
+	cap_mm.mesh = cap_cyl
+	cap_mm.instance_count = cap_positions.size()
+	for ci in range(cap_positions.size()):
+		cap_mm.set_instance_transform(ci, Transform3D(Basis.IDENTITY, cap_positions[ci]))
+	var cap_mmi = MultiMeshInstance3D.new()
+	cap_mmi.multimesh = cap_mm
+	arch_root.add_child(cap_mmi)
 
 	# 5. Crowned Corner Finial Collars on all 4 Corners
+	var shared_collar = TorusMesh.new()
+	shared_collar.inner_radius = 0.026
+	shared_collar.outer_radius = 0.042
+	shared_collar.rings = 16
+	shared_collar.ring_segments = 8
+	shared_collar.material = mat_gold_trim
 	for cx in [-0.585, 0.585]:
 		for cz in [-0.585, 0.585]:
 			var collar = MeshInstance3D.new()
-			var c_torus = TorusMesh.new()
-			c_torus.inner_radius = 0.026
-			c_torus.outer_radius = 0.042
-			c_torus.rings = 24
-			c_torus.ring_segments = 24
-			c_torus.material = mat_gold_trim
-			collar.mesh = c_torus
+			collar.mesh = shared_collar
 			collar.position = Vector3(cx, 0.054, cz)
 			arch_root.add_child(collar)
 
@@ -310,6 +320,45 @@ func _generate_3d_board() -> void:
 	cell_rings.clear()
 	cell_base_mats.clear()
 
+	# Shared low-poly meshes reused across all 9 cells
+	var shared_well_frame = BoxMesh.new()
+	shared_well_frame.size = Vector3(step * 0.88, 0.005, step * 0.88)
+	shared_well_frame.material = mat_cell_frame
+
+	var shared_pad_light = BoxMesh.new()
+	shared_pad_light.size = Vector3(step * 0.81, 0.007, step * 0.81)
+	shared_pad_light.material = mat_cell_light
+
+	var shared_pad_dark = BoxMesh.new()
+	shared_pad_dark.size = Vector3(step * 0.81, 0.007, step * 0.81)
+	shared_pad_dark.material = mat_cell_dark
+
+	var shared_cell_ring = TorusMesh.new()
+	shared_cell_ring.inner_radius = 0.088
+	shared_cell_ring.outer_radius = 0.096
+	shared_cell_ring.rings = 20
+	shared_cell_ring.ring_segments = 8
+	shared_cell_ring.material = mat_cell_ring
+
+	var shared_stud_cyl = CylinderMesh.new()
+	shared_stud_cyl.top_radius = 0.008
+	shared_stud_cyl.bottom_radius = 0.010
+	shared_stud_cyl.height = 0.004
+	shared_stud_cyl.radial_segments = 8
+	shared_stud_cyl.rings = 1
+	shared_stud_cyl.material = mat_gold_trim
+
+	var shared_col_box = BoxShape3D.new()
+	shared_col_box.size = Vector3(step * 0.94, 0.08, step * 0.94)
+
+	var stud_off = step * 0.34
+	var stud_offsets = [
+		Vector3(-stud_off, 0.0045, -stud_off),
+		Vector3(-stud_off, 0.0045, stud_off),
+		Vector3(stud_off, 0.0045, -stud_off),
+		Vector3(stud_off, 0.0045, stud_off)
+	]
+
 	for i in range(9):
 		var row = i / 3
 		var col = i % 3
@@ -322,17 +371,12 @@ func _generate_3d_board() -> void:
 
 		# Collision box for hover detection
 		var col_shape = CollisionShape3D.new()
-		var box = BoxShape3D.new()
-		box.size = Vector3(step * 0.94, 0.08, step * 0.94)
-		col_shape.shape = box
+		col_shape.shape = shared_col_box
 		area.add_child(col_shape)
 
 		# Outer Recessed Bronze Frame Pad
 		var well_frame = MeshInstance3D.new()
-		var wf_mesh = BoxMesh.new()
-		wf_mesh.size = Vector3(step * 0.88, 0.005, step * 0.88)
-		wf_mesh.material = mat_cell_frame
-		well_frame.mesh = wf_mesh
+		well_frame.mesh = shared_well_frame
 		well_frame.position.y = -0.001
 		area.add_child(well_frame)
 
@@ -342,22 +386,13 @@ func _generate_3d_board() -> void:
 		cell_base_mats.append(base_mat)
 
 		var mesh_inst = MeshInstance3D.new()
-		var plane_mesh = BoxMesh.new()
-		plane_mesh.size = Vector3(step * 0.81, 0.007, step * 0.81)
-		plane_mesh.material = base_mat
-		mesh_inst.mesh = plane_mesh
+		mesh_inst.mesh = shared_pad_light if is_light_cell else shared_pad_dark
 		area.add_child(mesh_inst)
 		cell_pads.append(mesh_inst)
 
 		# Subtle Engraved Gold Target Ring on the Cell Pad
 		var ring_inst = MeshInstance3D.new()
-		var torus = TorusMesh.new()
-		torus.inner_radius = 0.088
-		torus.outer_radius = 0.096
-		torus.rings = 28
-		torus.ring_segments = 28
-		torus.material = mat_cell_ring
-		ring_inst.mesh = torus
+		ring_inst.mesh = shared_cell_ring
 		ring_inst.position.y = 0.004
 		mesh_inst.add_child(ring_inst)
 		cell_rings.append(ring_inst)
@@ -368,26 +403,23 @@ func _generate_3d_board() -> void:
 			var r_torus = TorusMesh.new()
 			r_torus.inner_radius = 0.036
 			r_torus.outer_radius = 0.044
-			r_torus.rings = 24
-			r_torus.ring_segments = 24
+			r_torus.rings = 18
+			r_torus.ring_segments = 8
 			r_torus.material = mat_gold_trim
 			inner_rosette.mesh = r_torus
 			inner_rosette.position.y = 0.0042
 			mesh_inst.add_child(inner_rosette)
 
-		# 4 Delicate Corner Filigree Studs inside each Cell Pad
-		var stud_off = step * 0.34
-		for sx in [-stud_off, stud_off]:
-			for sz in [-stud_off, stud_off]:
-				var c_stud = MeshInstance3D.new()
-				var s_cyl = CylinderMesh.new()
-				s_cyl.top_radius = 0.008
-				s_cyl.bottom_radius = 0.010
-				s_cyl.height = 0.004
-				s_cyl.material = mat_gold_trim
-				c_stud.mesh = s_cyl
-				c_stud.position = Vector3(sx, 0.0045, sz)
-				mesh_inst.add_child(c_stud)
+		# 4 Delicate Corner Filigree Studs inside each Cell Pad (1 MultiMesh draw call per cell instead of 4)
+		var stud_mm = MultiMesh.new()
+		stud_mm.transform_format = MultiMesh.TRANSFORM_3D
+		stud_mm.mesh = shared_stud_cyl
+		stud_mm.instance_count = 4
+		for si in range(4):
+			stud_mm.set_instance_transform(si, Transform3D(Basis.IDENTITY, stud_offsets[si]))
+		var stud_mmi = MultiMeshInstance3D.new()
+		stud_mmi.multimesh = stud_mm
+		mesh_inst.add_child(stud_mmi)
 
 		var cell_idx = i
 		area.mouse_entered.connect(func():

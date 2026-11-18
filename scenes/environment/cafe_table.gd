@@ -99,6 +99,8 @@ var _steam_phases: Array[float] = []
 var _lounge_anim_time: float = 0.0
 var _steam_step_accum: float = 0.0
 var _side_lamp_light: OmniLight3D = null
+var _board_node_added_connected: bool = false
+var _baked_bucket_mats: Dictionary = {}
 
 
 func _ready() -> void:
@@ -123,7 +125,8 @@ func _ready() -> void:
 			sun.shadow_blur = 0.2
 
 	if _is_mobile_gpu:
-		# Mobile GPU Optimization: disable secondary OmniLights and rely on DirectionalLight + ambient sky
+		# Mobile GPU Optimization: disable secondary OmniLights & real-time shadow pass;
+		# rely on single DirectionalLight + warm sky ambient for full visual richness at high FPS.
 		if has_node("WallFillLight"):
 			var wf: OmniLight3D = get_node("WallFillLight") as OmniLight3D
 			if wf:
@@ -131,16 +134,18 @@ func _ready() -> void:
 		if has_node("TableLampLight"):
 			var tl: OmniLight3D = get_node("TableLampLight") as OmniLight3D
 			if tl:
-				tl.light_energy = 0.55
-				tl.light_specular = 0.0
+				tl.visible = false
 		if _side_lamp_light and is_instance_valid(_side_lamp_light):
 			_side_lamp_light.visible = false
 		if has_node("SunLight"):
 			var sun_mob: DirectionalLight3D = get_node("SunLight") as DirectionalLight3D
 			if sun_mob:
-				sun_mob.light_energy = 0.78
-				sun_mob.light_specular = 0.18
-				sun_mob.light_color = Color(1.0, 0.93, 0.82)
+				sun_mob.shadow_enabled = false
+				sun_mob.light_energy = 0.92
+				sun_mob.light_specular = 0.20
+				sun_mob.light_color = Color(1.0, 0.92, 0.80)
+		if env_node and env_node.environment:
+			env_node.environment.ambient_light_energy = 1.32
 
 	var static_paths: Array[String] = [
 		"FloorMesh", "WallMesh", "WallWainscot",
@@ -246,11 +251,11 @@ func _sync_2d_3d_visibility_and_lighting(top_down: bool) -> void:
 	if has_node("TableLampLight"):
 		var tl: OmniLight3D = get_node("TableLampLight") as OmniLight3D
 		if tl:
-			tl.light_specular = 0.0
-			if top_down:
-				tl.light_energy = 0.35 if _is_mobile_gpu else 0.45
+			if _is_mobile_gpu:
+				tl.visible = false
 			else:
-				tl.light_energy = 0.55 if _is_mobile_gpu else 0.82
+				tl.light_specular = 0.0
+				tl.light_energy = 0.45 if top_down else 0.82
 
 	if has_node("SunLight"):
 		var sun: DirectionalLight3D = get_node("SunLight") as DirectionalLight3D
@@ -378,8 +383,11 @@ func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 	camera_mode_changed.emit(false)
 	if board_packed_scene:
 		current_board_node = board_packed_scene.instantiate() as Node3D
-		_optimize_board_for_mobile(current_board_node)
 		board_container.add_child(current_board_node)
+		if _is_mobile_gpu:
+			_optimize_board_for_mobile(current_board_node)
+			call_deferred("_optimize_board_for_mobile", current_board_node)
+			_set_mobile_board_watcher_active(true)
 		var g_type: String = ""
 		if "game_type" in current_board_node:
 			g_type = str(current_board_node.get("game_type"))
@@ -395,6 +403,7 @@ func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 
 func clear_board() -> void:
 	_kill_camera_tween()
+	_set_mobile_board_watcher_active(false)
 	if current_board_node and is_instance_valid(current_board_node):
 		if current_board_node.has_method("_disconnect_network_signals"):
 			current_board_node.call("_disconnect_network_signals")
@@ -404,6 +413,10 @@ func clear_board() -> void:
 			current_board_node.get_parent().remove_child(current_board_node)
 		current_board_node.queue_free()
 		current_board_node = null
+
+
+func _exit_tree() -> void:
+	_set_mobile_board_watcher_active(false)
 
 
 func reset_table_state() -> void:
@@ -655,25 +668,89 @@ func _handle_screen_drag(event: InputEventScreenDrag) -> void:
 # MOBILE-OPTIMIZED 3D "CAFE FEKR GAME LOUNGE" ENVIRONMENT BUILDER
 # ============================================================================
 
-func _optimize_board_for_mobile(node: Node) -> void:
+func _set_mobile_board_watcher_active(active: bool) -> void:
+	if not is_inside_tree():
+		_board_node_added_connected = false
+		return
+	var tree: SceneTree = get_tree()
+	if not tree:
+		return
+	if active and _is_mobile_gpu:
+		if not _board_node_added_connected:
+			if not tree.node_added.is_connected(_on_tree_node_added):
+				tree.node_added.connect(_on_tree_node_added)
+			_board_node_added_connected = true
+	else:
+		if _board_node_added_connected or tree.node_added.is_connected(_on_tree_node_added):
+			if tree.node_added.is_connected(_on_tree_node_added):
+				tree.node_added.disconnect(_on_tree_node_added)
+			_board_node_added_connected = false
+
+
+func _on_tree_node_added(node: Node) -> void:
+	if not _is_mobile_gpu or not is_instance_valid(board_container) or not is_instance_valid(current_board_node):
+		return
+	if not (node is GeometryInstance3D or node is Area3D):
+		return
+	if not board_container.is_ancestor_of(node):
+		return
+	_optimize_single_node_for_mobile(node)
+
+
+func _optimize_single_node_for_mobile(node: Node) -> void:
+	if not is_instance_valid(node):
+		return
+	if node is GeometryInstance3D:
+		(node as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if node is MeshInstance3D:
 		var mi: MeshInstance3D = node as MeshInstance3D
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		if mi.mesh is SphereMesh:
-			var sm: SphereMesh = mi.mesh as SphereMesh
-			if sm.radial_segments > 18:
-				sm.radial_segments = 14
-				sm.rings = 7
-		elif mi.mesh is CylinderMesh:
-			var cm: CylinderMesh = mi.mesh as CylinderMesh
-			if cm.radial_segments > 20:
-				cm.radial_segments = 16
-				cm.rings = 1
-		elif mi.mesh is TorusMesh:
-			var tm: TorusMesh = mi.mesh as TorusMesh
-			if tm.rings > 20:
-				tm.rings = 16
-				tm.ring_segments = 8
+		if mi.mesh == null:
+			call_deferred("_optimize_mesh_instance_deferred", mi)
+		else:
+			_optimize_primitive_mesh_for_mobile(mi.mesh)
+	elif node is Area3D:
+		call_deferred("_optimize_area3d_deferred", node as Area3D)
+
+
+func _optimize_mesh_instance_deferred(mi: MeshInstance3D) -> void:
+	if not is_instance_valid(mi):
+		return
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if mi.mesh != null:
+		_optimize_primitive_mesh_for_mobile(mi.mesh)
+
+
+func _optimize_area3d_deferred(area: Area3D) -> void:
+	if not is_instance_valid(area):
+		return
+	# On touch mobile, disable automatic mouse-hover ray-picking on Area3Ds that don't handle input_event clicks.
+	# Physics space intersect_ray() used by board _unhandled_input() is completely unaffected.
+	if area.get_signal_connection_list("input_event").is_empty():
+		area.input_ray_pickable = false
+
+
+func _optimize_primitive_mesh_for_mobile(mesh_res: Mesh) -> void:
+	if mesh_res is SphereMesh:
+		var sm: SphereMesh = mesh_res as SphereMesh
+		if sm.radial_segments > 14 or sm.rings > 7:
+			sm.radial_segments = mini(sm.radial_segments, 12)
+			sm.rings = mini(sm.rings, 6)
+	elif mesh_res is CylinderMesh:
+		var cm: CylinderMesh = mesh_res as CylinderMesh
+		if cm.radial_segments > 16 or cm.rings > 1:
+			cm.radial_segments = mini(cm.radial_segments, 14)
+			cm.rings = 1
+	elif mesh_res is TorusMesh:
+		var tm: TorusMesh = mesh_res as TorusMesh
+		if tm.rings > 18 or tm.ring_segments > 10:
+			tm.rings = mini(tm.rings, 16)
+			tm.ring_segments = mini(tm.ring_segments, 8)
+
+
+func _optimize_board_for_mobile(node: Node) -> void:
+	if not _is_mobile_gpu or not is_instance_valid(node):
+		return
+	_optimize_single_node_for_mobile(node)
 	for ch: Node in node.get_children():
 		_optimize_board_for_mobile(ch)
 
@@ -697,14 +774,81 @@ func _compute_relative_transform(leaf: Node3D, ancestor: Node3D) -> Transform3D:
 	return xf
 
 
+func _get_baked_bucket_info(mat: Material) -> Dictionary:
+	if mat == null:
+		return {"key": "null", "mat": null, "color": Color.WHITE, "uv_scale": Vector2.ONE}
+	if not (mat is StandardMaterial3D):
+		return {"key": "raw_%d" % mat.get_instance_id(), "mat": mat, "color": Color.WHITE, "uv_scale": Vector2.ONE}
+	var sm: StandardMaterial3D = mat as StandardMaterial3D
+	if sm.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+		return {"key": "raw_%d" % sm.get_instance_id(), "mat": sm, "color": Color.WHITE, "uv_scale": Vector2.ONE}
+
+	if sm.emission_enabled:
+		var k_em: String = "vc_emissive"
+		if not _baked_bucket_mats.has(k_em):
+			var bm_em: StandardMaterial3D = StandardMaterial3D.new()
+			bm_em.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			bm_em.vertex_color_use_as_albedo = true
+			bm_em.vertex_color_is_srgb = false
+			_baked_bucket_mats[k_em] = bm_em
+		var ca: Color = sm.albedo_color.srgb_to_linear()
+		var ce: Color = sm.emission.srgb_to_linear()
+		var em_e: float = sm.emission_energy_multiplier
+		var hdr_col: Color = Color(
+			ca.r * 0.42 + ce.r * em_e,
+			ca.g * 0.42 + ce.g * em_e,
+			ca.b * 0.42 + ce.b * em_e,
+			1.0
+		)
+		return {"key": k_em, "mat": _baked_bucket_mats[k_em], "color": hdr_col, "uv_scale": Vector2.ONE}
+
+	if sm.albedo_texture != null:
+		var k_tex: String = "vc_tex_%d" % sm.albedo_texture.get_instance_id()
+		if not _baked_bucket_mats.has(k_tex):
+			var bm_tex: StandardMaterial3D = StandardMaterial3D.new()
+			bm_tex.albedo_texture = sm.albedo_texture
+			bm_tex.roughness = 0.34
+			bm_tex.metallic = 0.03
+			bm_tex.vertex_color_use_as_albedo = true
+			bm_tex.vertex_color_is_srgb = true
+			_baked_bucket_mats[k_tex] = bm_tex
+		return {
+			"key": k_tex,
+			"mat": _baked_bucket_mats[k_tex],
+			"color": sm.albedo_color,
+			"uv_scale": Vector2(sm.uv1_scale.x, sm.uv1_scale.y)
+		}
+
+	if sm.metallic >= 0.5:
+		var k_met: String = "vc_metal"
+		if not _baked_bucket_mats.has(k_met):
+			var bm_met: StandardMaterial3D = StandardMaterial3D.new()
+			bm_met.roughness = 0.27
+			bm_met.metallic = 0.84
+			bm_met.vertex_color_use_as_albedo = true
+			bm_met.vertex_color_is_srgb = true
+			_baked_bucket_mats[k_met] = bm_met
+		return {"key": k_met, "mat": _baked_bucket_mats[k_met], "color": sm.albedo_color, "uv_scale": Vector2.ONE}
+
+	var k_sol: String = "vc_solid"
+	if not _baked_bucket_mats.has(k_sol):
+		var bm_sol: StandardMaterial3D = StandardMaterial3D.new()
+		bm_sol.roughness = 0.52
+		bm_sol.metallic = 0.02
+		bm_sol.vertex_color_use_as_albedo = true
+		bm_sol.vertex_color_is_srgb = true
+		_baked_bucket_mats[k_sol] = bm_sol
+	return {"key": k_sol, "mat": _baked_bucket_mats[k_sol], "color": sm.albedo_color, "uv_scale": Vector2.ONE}
+
+
 func _bake_node_tree_to_array_mesh(branch_root: Node3D) -> ArrayMesh:
 	var mesh_nodes: Array[MeshInstance3D] = []
 	_collect_static_meshes_recursive(branch_root, branch_root, mesh_nodes)
 	if mesh_nodes.is_empty():
 		return null
 
-	var buckets: Dictionary = {} # Material -> Array[Dictionary]
-	var mat_keys: Array[Material] = []
+	var buckets: Dictionary = {} # bucket_key -> {"mat": Material, "items": Array}
+	var bucket_keys: Array[String] = []
 
 	for mi: MeshInstance3D in mesh_nodes:
 		var m_res: Mesh = mi.mesh
@@ -713,26 +857,104 @@ func _bake_node_tree_to_array_mesh(branch_root: Node3D) -> ArrayMesh:
 		var mat: Material = mi.material_override
 		if mat == null:
 			mat = m_res.surface_get_material(0)
-		if not buckets.has(mat):
-			buckets[mat] = []
-			mat_keys.append(mat)
+		var b_info: Dictionary = _get_baked_bucket_info(mat)
+		var b_key: String = b_info["key"] as String
+		if not buckets.has(b_key):
+			buckets[b_key] = {"mat": b_info["mat"], "items": []}
+			bucket_keys.append(b_key)
 		var rel_xf: Transform3D = _compute_relative_transform(mi, branch_root)
-		var arr: Array = buckets[mat] as Array
-		arr.append({"mesh": m_res, "xform": rel_xf})
+		var arr: Array = buckets[b_key]["items"] as Array
+		arr.append({
+			"mesh": m_res,
+			"xform": rel_xf,
+			"color": b_info["color"],
+			"uv_scale": b_info["uv_scale"]
+		})
 
 	var merged: ArrayMesh = ArrayMesh.new()
-	for mat_k: Material in mat_keys:
-		var st: SurfaceTool = SurfaceTool.new()
-		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		if mat_k != null:
-			st.set_material(mat_k)
-		var entries: Array = buckets[mat_k] as Array
+	for b_key: String in bucket_keys:
+		var b_data: Dictionary = buckets[b_key] as Dictionary
+		var bucket_mat: Material = b_data["mat"] as Material
+		var entries: Array = b_data["items"] as Array
+
+		var out_verts: PackedVector3Array = PackedVector3Array()
+		var out_norms: PackedVector3Array = PackedVector3Array()
+		var out_uvs: PackedVector2Array = PackedVector2Array()
+		var out_colors: PackedColorArray = PackedColorArray()
+		var out_indices: PackedInt32Array = PackedInt32Array()
+
 		for item_v: Variant in entries:
 			var item: Dictionary = item_v as Dictionary
 			var sub_mesh: Mesh = item["mesh"] as Mesh
 			var sub_xf: Transform3D = item["xform"] as Transform3D
-			st.append_from(sub_mesh, 0, sub_xf)
-		st.commit(merged)
+			var v_col: Color = item["color"] as Color
+			var uv_sc: Vector2 = item["uv_scale"] as Vector2
+
+			var src_arrays: Array = sub_mesh.surface_get_arrays(0)
+			if src_arrays.is_empty():
+				continue
+			var src_verts: PackedVector3Array = src_arrays[Mesh.ARRAY_VERTEX]
+			var v_count: int = src_verts.size()
+			if v_count == 0:
+				continue
+			var has_norms: bool = src_arrays[Mesh.ARRAY_NORMAL] != null and (src_arrays[Mesh.ARRAY_NORMAL] as PackedVector3Array).size() == v_count
+			var src_norms: PackedVector3Array = src_arrays[Mesh.ARRAY_NORMAL] if has_norms else PackedVector3Array()
+			var has_uvs: bool = src_arrays[Mesh.ARRAY_TEX_UV] != null and (src_arrays[Mesh.ARRAY_TEX_UV] as PackedVector2Array).size() == v_count
+			var src_uvs: PackedVector2Array = src_arrays[Mesh.ARRAY_TEX_UV] if has_uvs else PackedVector2Array()
+			var src_idx: PackedInt32Array = src_arrays[Mesh.ARRAY_INDEX] if src_arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+
+			var det: float = sub_xf.basis.determinant()
+			var norm_basis: Basis = sub_xf.basis.inverse().transposed() if absf(det) > 1e-8 else Basis.IDENTITY
+			var flip_winding: bool = det < 0.0
+			var base_offset: int = out_verts.size()
+
+			for vi: int in range(v_count):
+				out_verts.append(sub_xf * src_verts[vi])
+				if has_norms:
+					out_norms.append((norm_basis * src_norms[vi]).normalized())
+				else:
+					out_norms.append(Vector3.UP)
+				if has_uvs:
+					var uv0: Vector2 = src_uvs[vi]
+					out_uvs.append(Vector2(uv0.x * uv_sc.x, uv0.y * uv_sc.y))
+				else:
+					out_uvs.append(Vector2.ZERO)
+				out_colors.append(v_col)
+
+			if src_idx.is_empty():
+				for ti: int in range(0, v_count - 2, 3):
+					if flip_winding:
+						out_indices.append(base_offset + ti)
+						out_indices.append(base_offset + ti + 2)
+						out_indices.append(base_offset + ti + 1)
+					else:
+						out_indices.append(base_offset + ti)
+						out_indices.append(base_offset + ti + 1)
+						out_indices.append(base_offset + ti + 2)
+			else:
+				var idx_count: int = src_idx.size()
+				if flip_winding:
+					for ti: int in range(0, idx_count - 2, 3):
+						out_indices.append(base_offset + src_idx[ti])
+						out_indices.append(base_offset + src_idx[ti + 2])
+						out_indices.append(base_offset + src_idx[ti + 1])
+				else:
+					for ii: int in range(idx_count):
+						out_indices.append(base_offset + src_idx[ii])
+
+		if out_verts.is_empty():
+			continue
+		var surf_arrays: Array = []
+		surf_arrays.resize(Mesh.ARRAY_MAX)
+		surf_arrays[Mesh.ARRAY_VERTEX] = out_verts
+		surf_arrays[Mesh.ARRAY_NORMAL] = out_norms
+		surf_arrays[Mesh.ARRAY_TEX_UV] = out_uvs
+		surf_arrays[Mesh.ARRAY_COLOR] = out_colors
+		surf_arrays[Mesh.ARRAY_INDEX] = out_indices
+		var surf_idx: int = merged.get_surface_count()
+		merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surf_arrays)
+		if bucket_mat != null:
+			merged.surface_set_material(surf_idx, bucket_mat)
 
 	for mi_free: MeshInstance3D in mesh_nodes:
 		if is_instance_valid(mi_free):

@@ -743,7 +743,21 @@ func _build_3d_roll_dice_button() -> void:
 		"label": lbl,
 	}
 
+var _cached_ludo_die_meshes: Dictionary = {}
+
 func _create_yatzy_die_model(sz: float) -> Node3D:
+	var root = Node3D.new()
+	var k: int = int(round(sz * 10000.0))
+	if not _cached_ludo_die_meshes.has(k):
+		var temp = _create_yatzy_die_model_raw(sz)
+		_cached_ludo_die_meshes[k] = BaseGameBoard.bake_node_tree_to_mesh(temp, true)
+		temp.free()
+	var mi = MeshInstance3D.new()
+	mi.mesh = _cached_ludo_die_meshes[k]
+	root.add_child(mi)
+	return root
+
+func _create_yatzy_die_model_raw(sz: float) -> Node3D:
 	var root = Node3D.new()
 
 	# 1. Smooth Chamfered Inner Core

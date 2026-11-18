@@ -1126,7 +1126,14 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 		die_pivot.add_child(slab_inst)
 		face_meshes.append(slab_inst)
 
-	_add_3d_die_pips(die_pivot, DIE_SIZE * 0.5)
+	if _cached_bg_pips_mesh == null:
+		var temp_pips = Node3D.new()
+		_add_3d_die_pips(temp_pips, DIE_SIZE * 0.5)
+		_cached_bg_pips_mesh = BaseGameBoard.bake_node_tree_to_mesh(temp_pips, true)
+		temp_pips.free()
+	var pips_mi = MeshInstance3D.new()
+	pips_mi.mesh = _cached_bg_pips_mesh
+	die_pivot.add_child(pips_mi)
 
 	# 4. Larger Framed 3D Brass & Obsidian Numeral Plaque below each die well
 	var badge_rim = MeshInstance3D.new()
@@ -1232,7 +1239,21 @@ func _get_die_target_rotation(val: int) -> Vector3:
 # LATHE-TURNED 3D CHECKER PIECE BUILDER (Larger 0.083m Diameter Pucks)
 # ==============================================================================
 
+var _cached_bg_pips_mesh: ArrayMesh = null
+var _cached_bg_checker_meshes: Dictionary = {}
+
 func _build_3d_checker_piece(gamer_id: int) -> Node3D:
+	var root = Node3D.new()
+	if not _cached_bg_checker_meshes.has(gamer_id):
+		var temp = _build_3d_checker_piece_raw(gamer_id)
+		_cached_bg_checker_meshes[gamer_id] = BaseGameBoard.bake_node_tree_to_mesh(temp, true)
+		temp.free()
+	var mi = MeshInstance3D.new()
+	mi.mesh = _cached_bg_checker_meshes[gamer_id]
+	root.add_child(mi)
+	return root
+
+func _build_3d_checker_piece_raw(gamer_id: int) -> Node3D:
 	var root = Node3D.new()
 	var is_p1: bool = (gamer_id == 1)
 	var body_mat = mat_piece_p1 if is_p1 else mat_piece_p2

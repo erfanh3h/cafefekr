@@ -384,3 +384,184 @@ func reset_board() -> void:
 
 func cleanup_board() -> void:
 	pass
+
+# --- Shared Static 3D Mesh Baking Utility (Zero-regression draw-call reduction) ---
+
+static func _collect_bake_meshes(node: Node, out_list: Array[MeshInstance3D]) -> void:
+	if node is MeshInstance3D:
+		var mi: MeshInstance3D = node as MeshInstance3D
+		if mi.visible and mi.mesh != null and not mi.has_meta("skip_bake"):
+			out_list.append(mi)
+	for ch: Node in node.get_children():
+		_collect_bake_meshes(ch, out_list)
+
+static func _rel_xform(leaf: Node3D, ancestor: Node3D) -> Transform3D:
+	var xf: Transform3D = leaf.transform
+	var p: Node = leaf.get_parent()
+	while p != null and p != ancestor:
+		if p is Node3D:
+			xf = (p as Node3D).transform * xf
+		p = p.get_parent()
+	return xf
+
+static func bake_node_tree_to_mesh(branch_root: Node3D, merge_vertex_colors: bool = true) -> ArrayMesh:
+	var mesh_nodes: Array[MeshInstance3D] = []
+	_collect_bake_meshes(branch_root, mesh_nodes)
+	if mesh_nodes.is_empty():
+		return null
+
+	var is_mobile: bool = OS.has_feature("mobile") or (OS.get_name() in ["Android", "iOS"])
+	var buckets: Dictionary = {} # key -> {"mat": Material, "items": Array}
+	var bucket_keys: Array[String] = []
+	var vc_mats: Dictionary = {}
+
+	for mi: MeshInstance3D in mesh_nodes:
+		var m_res: Mesh = mi.mesh
+		if m_res == null or m_res.get_surface_count() == 0:
+			continue
+		if is_mobile:
+			if m_res is SphereMesh:
+				var sp: SphereMesh = m_res as SphereMesh
+				if sp.radial_segments > 14 or sp.rings > 7:
+					sp.radial_segments = mini(sp.radial_segments, 12)
+					sp.rings = mini(sp.rings, 6)
+			elif m_res is CylinderMesh:
+				var cy: CylinderMesh = m_res as CylinderMesh
+				if cy.radial_segments > 16 or cy.rings > 1:
+					cy.radial_segments = mini(cy.radial_segments, 14)
+					cy.rings = 1
+			elif m_res is TorusMesh:
+				var to: TorusMesh = m_res as TorusMesh
+				if to.rings > 18 or to.ring_segments > 10:
+					to.rings = mini(to.rings, 16)
+					to.ring_segments = mini(to.ring_segments, 8)
+
+		var mat: Material = mi.material_override
+		if mat == null:
+			mat = m_res.surface_get_material(0)
+
+		var b_key: String = "null"
+		var b_mat: Material = mat
+		var v_col: Color = Color.WHITE
+		var use_vc: bool = false
+
+		if merge_vertex_colors and mat is StandardMaterial3D:
+			var sm: StandardMaterial3D = mat as StandardMaterial3D
+			if sm.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED and sm.albedo_texture == null and not sm.emission_enabled and not sm.rim_enabled:
+				use_vc = true
+				v_col = sm.albedo_color
+				if sm.metallic >= 0.5:
+					b_key = "vc_metal"
+					if not vc_mats.has(b_key):
+						var mm := StandardMaterial3D.new()
+						mm.metallic = sm.metallic
+						mm.roughness = sm.roughness
+						mm.vertex_color_use_as_albedo = true
+						mm.vertex_color_is_srgb = true
+						vc_mats[b_key] = mm
+					b_mat = vc_mats[b_key]
+				else:
+					b_key = "vc_solid"
+					if not vc_mats.has(b_key):
+						var ms := StandardMaterial3D.new()
+						ms.metallic = sm.metallic
+						ms.roughness = sm.roughness
+						ms.vertex_color_use_as_albedo = true
+						ms.vertex_color_is_srgb = true
+						vc_mats[b_key] = ms
+					b_mat = vc_mats[b_key]
+			else:
+				b_key = "raw_%d" % sm.get_instance_id()
+		elif mat != null:
+			b_key = "raw_%d" % mat.get_instance_id()
+
+		if not buckets.has(b_key):
+			buckets[b_key] = {"mat": b_mat, "use_vc": use_vc, "items": []}
+			bucket_keys.append(b_key)
+		(buckets[b_key]["items"] as Array).append({
+			"mesh": m_res,
+			"xform": _rel_xform(mi, branch_root),
+			"color": v_col
+		})
+
+	var merged := ArrayMesh.new()
+	for b_key: String in bucket_keys:
+		var b_data: Dictionary = buckets[b_key]
+		var bucket_mat: Material = b_data["mat"]
+		var use_vc: bool = bool(b_data["use_vc"])
+		var entries: Array = b_data["items"]
+
+		var out_v := PackedVector3Array()
+		var out_n := PackedVector3Array()
+		var out_uv := PackedVector2Array()
+		var out_c := PackedColorArray()
+		var out_i := PackedInt32Array()
+
+		for item_v in entries:
+			var item: Dictionary = item_v
+			var sub_mesh: Mesh = item["mesh"]
+			var sub_xf: Transform3D = item["xform"]
+			var v_col: Color = item["color"]
+
+			for surf_i in range(sub_mesh.get_surface_count()):
+				var src: Array = sub_mesh.surface_get_arrays(surf_i)
+				if src.is_empty():
+					continue
+				var sv: PackedVector3Array = src[Mesh.ARRAY_VERTEX]
+				var vc: int = sv.size()
+				if vc == 0:
+					continue
+				var has_n: bool = src[Mesh.ARRAY_NORMAL] != null and (src[Mesh.ARRAY_NORMAL] as PackedVector3Array).size() == vc
+				var sn: PackedVector3Array = src[Mesh.ARRAY_NORMAL] if has_n else PackedVector3Array()
+				var has_uv: bool = src[Mesh.ARRAY_TEX_UV] != null and (src[Mesh.ARRAY_TEX_UV] as PackedVector2Array).size() == vc
+				var suv: PackedVector2Array = src[Mesh.ARRAY_TEX_UV] if has_uv else PackedVector2Array()
+				var si: PackedInt32Array = src[Mesh.ARRAY_INDEX] if src[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+
+				var det: float = sub_xf.basis.determinant()
+				var nb: Basis = sub_xf.basis.inverse().transposed() if absf(det) > 1e-8 else Basis.IDENTITY
+				var flip: bool = det < 0.0
+				var base_off: int = out_v.size()
+
+				for k in range(vc):
+					out_v.append(sub_xf * sv[k])
+					out_n.append((nb * sn[k]).normalized() if has_n else Vector3.UP)
+					out_uv.append(suv[k] if has_uv else Vector2.ZERO)
+					if use_vc:
+						out_c.append(v_col)
+
+				if si.is_empty():
+					for ti in range(0, vc - 2, 3):
+						if flip:
+							out_i.append(base_off + ti)
+							out_i.append(base_off + ti + 2)
+							out_i.append(base_off + ti + 1)
+						else:
+							out_i.append(base_off + ti)
+							out_i.append(base_off + ti + 1)
+							out_i.append(base_off + ti + 2)
+				else:
+					if flip:
+						for ti in range(0, si.size() - 2, 3):
+							out_i.append(base_off + si[ti])
+							out_i.append(base_off + si[ti + 2])
+							out_i.append(base_off + si[ti + 1])
+					else:
+						for ii in si:
+							out_i.append(base_off + ii)
+
+		if out_v.is_empty():
+			continue
+		var arr: Array = []
+		arr.resize(Mesh.ARRAY_MAX)
+		arr[Mesh.ARRAY_VERTEX] = out_v
+		arr[Mesh.ARRAY_NORMAL] = out_n
+		arr[Mesh.ARRAY_TEX_UV] = out_uv
+		if use_vc:
+			arr[Mesh.ARRAY_COLOR] = out_c
+		arr[Mesh.ARRAY_INDEX] = out_i
+		var s_idx: int = merged.get_surface_count()
+		merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+		if bucket_mat != null:
+			merged.surface_set_material(s_idx, bucket_mat)
+
+	return merged

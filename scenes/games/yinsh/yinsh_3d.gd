@@ -464,80 +464,182 @@ func _init_materials() -> void:
 # 3. THREE CUSTOM SCULPTED 3D MODELS (RED RING, BLUE RING, REVERSIBLE DISK)
 # ============================================================================
 
-# Model 1 (gamer_id == 1) & Model 2 (gamer_id == 2):
-# Sculpted 3D Commander Ring with inner metallic collar, top/bottom beveled inlay rings,
-# and 6 compass studs aligned with the 6 hex movement axes.
-func _create_ring_3d_model(gamer_id: int, is_ghost: bool = false) -> Node3D:
-	var root = Node3D.new()
-	root.name = "YinshRingP%d" % gamer_id
+var _cached_ring_meshes: Dictionary = {}
+var _cached_disk_mesh: ArrayMesh = null
 
-	var body_mat: StandardMaterial3D
-	var trim_mat: StandardMaterial3D
-	if is_ghost:
-		body_mat = mat_ghost_p1 if gamer_id == 1 else mat_ghost_p2
-		trim_mat = body_mat
-	else:
-		body_mat = mat_ring_p1_body if gamer_id == 1 else mat_ring_p2_body
-		trim_mat = mat_ring_p1_gold if gamer_id == 1 else mat_ring_p2_plat
+func _append_yinsh_prim(
+	prim: Mesh, xf: Transform3D, v_col: Color,
+	out_v: PackedVector3Array, out_n: PackedVector3Array, out_c: PackedColorArray, out_i: PackedInt32Array
+) -> void:
+	var arr: Array = prim.surface_get_arrays(0)
+	if arr.is_empty():
+		return
+	var sv: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	var sn: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+	var si: PackedInt32Array = arr[Mesh.ARRAY_INDEX]
+	var base_off: int = out_v.size()
+	var n_basis: Basis = xf.basis.inverse().transposed()
+	for k in range(sv.size()):
+		out_v.append(xf * sv[k])
+		out_n.append((n_basis * sn[k]).normalized())
+		out_c.append(v_col)
+	for idx_v in si:
+		out_i.append(base_off + idx_v)
 
-	# 1. Main Sculpted Torus Body
-	var torus_inst = MeshInstance3D.new()
+func _get_baked_ring_mesh(gamer_id: int, is_ghost: bool) -> ArrayMesh:
+	var cache_key: String = "%d_%s" % [gamer_id, "g" if is_ghost else "s"]
+	if _cached_ring_meshes.has(cache_key):
+		return _cached_ring_meshes[cache_key]
+
+	var body_mat: StandardMaterial3D = (mat_ghost_p1 if gamer_id == 1 else mat_ghost_p2) if is_ghost else (mat_ring_p1_body if gamer_id == 1 else mat_ring_p2_body)
+	var trim_mat: StandardMaterial3D = body_mat if is_ghost else (mat_ring_p1_gold if gamer_id == 1 else mat_ring_p2_plat)
+
 	var torus = TorusMesh.new()
 	torus.inner_radius = 0.025
 	torus.outer_radius = 0.043
-	torus.rings = 32
-	torus.ring_segments = 20
-	torus_inst.mesh = torus
-	torus_inst.scale = Vector3(1.0, 1.15, 1.0)
-	torus_inst.material_override = body_mat
-	root.add_child(torus_inst)
+	torus.rings = 20
+	torus.ring_segments = 10
 
-	# 2. Top Beveled Crown Inlay Ring
-	var top_rim = MeshInstance3D.new()
 	var top_torus = TorusMesh.new()
 	top_torus.inner_radius = 0.030
 	top_torus.outer_radius = 0.038
-	top_torus.rings = 28
-	top_torus.ring_segments = 14
-	top_rim.mesh = top_torus
-	top_rim.position = Vector3(0.0, 0.0085, 0.0)
-	top_rim.scale = Vector3(1.0, 0.55, 1.0)
-	top_rim.material_override = trim_mat
-	root.add_child(top_rim)
+	top_torus.rings = 18
+	top_torus.ring_segments = 8
 
-	# 3. Inner Metallic Collar Ring (frames the disk inside the ring!)
-	var inner_collar = MeshInstance3D.new()
 	var collar_torus = TorusMesh.new()
 	collar_torus.inner_radius = 0.0235
 	collar_torus.outer_radius = 0.0275
-	collar_torus.rings = 28
-	collar_torus.ring_segments = 12
-	inner_collar.mesh = collar_torus
-	inner_collar.scale = Vector3(1.0, 1.35, 1.0)
-	inner_collar.material_override = trim_mat
-	root.add_child(inner_collar)
+	collar_torus.rings = 18
+	collar_torus.ring_segments = 8
 
-	# 4. 6 Sculpted Hex Compass Studs (Spheres for P1 Imperial Ruby, Hex Jewels for P2 Sapphire)
-	var stud_radius_pos: float = 0.034
-	for k in range(6):
-		var angle: float = float(k) * (PI / 3.0)
-		var stud = MeshInstance3D.new()
-		if gamer_id == 1:
-			var sph = SphereMesh.new()
-			sph.radius = 0.0038
-			sph.height = 0.0076
-			stud.mesh = sph
-		else:
-			var cyl = CylinderMesh.new()
-			cyl.top_radius = 0.0032
-			cyl.bottom_radius = 0.0042
-			cyl.height = 0.0055
-			cyl.radial_segments = 6
-			stud.mesh = cyl
-		stud.position = Vector3(cos(angle) * stud_radius_pos, 0.010, sin(angle) * stud_radius_pos)
-		stud.material_override = trim_mat
-		root.add_child(stud)
+	var stud_mesh: Mesh
+	if gamer_id == 1:
+		var sph = SphereMesh.new()
+		sph.radius = 0.0038
+		sph.height = 0.0076
+		sph.radial_segments = 8
+		sph.rings = 4
+		stud_mesh = sph
+	else:
+		var cyl = CylinderMesh.new()
+		cyl.top_radius = 0.0032
+		cyl.bottom_radius = 0.0042
+		cyl.height = 0.0055
+		cyl.radial_segments = 6
+		cyl.rings = 1
+		stud_mesh = cyl
 
+	var baked := ArrayMesh.new()
+	var body_xf := Transform3D(Basis.from_scale(Vector3(1.0, 1.15, 1.0)), Vector3.ZERO)
+	var top_xf := Transform3D(Basis.from_scale(Vector3(1.0, 0.55, 1.0)), Vector3(0.0, 0.0085, 0.0))
+	var collar_xf := Transform3D(Basis.from_scale(Vector3(1.0, 1.35, 1.0)), Vector3.ZERO)
+
+	if is_ghost:
+		var ov := PackedVector3Array()
+		var on := PackedVector3Array()
+		var oc := PackedColorArray()
+		var oi := PackedInt32Array()
+		_append_yinsh_prim(torus, body_xf, Color.WHITE, ov, on, oc, oi)
+		_append_yinsh_prim(top_torus, top_xf, Color.WHITE, ov, on, oc, oi)
+		_append_yinsh_prim(collar_torus, collar_xf, Color.WHITE, ov, on, oc, oi)
+		for k in range(6):
+			var angle: float = float(k) * (PI / 3.0)
+			_append_yinsh_prim(stud_mesh, Transform3D(Basis.IDENTITY, Vector3(cos(angle) * 0.034, 0.010, sin(angle) * 0.034)), Color.WHITE, ov, on, oc, oi)
+		var surf: Array = []
+		surf.resize(Mesh.ARRAY_MAX)
+		surf[Mesh.ARRAY_VERTEX] = ov
+		surf[Mesh.ARRAY_NORMAL] = on
+		surf[Mesh.ARRAY_INDEX] = oi
+		baked.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surf)
+		baked.surface_set_material(0, body_mat)
+	else:
+		# Surface 0: Main body torus
+		var bv := PackedVector3Array(); var bn := PackedVector3Array(); var bc := PackedColorArray(); var bi := PackedInt32Array()
+		_append_yinsh_prim(torus, body_xf, Color.WHITE, bv, bn, bc, bi)
+		var s0: Array = []; s0.resize(Mesh.ARRAY_MAX)
+		s0[Mesh.ARRAY_VERTEX] = bv; s0[Mesh.ARRAY_NORMAL] = bn; s0[Mesh.ARRAY_INDEX] = bi
+		baked.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, s0)
+		baked.surface_set_material(0, body_mat)
+
+		# Surface 1: Top rim + inner collar + 6 hex compass studs merged into 1 metallic surface
+		var tv := PackedVector3Array(); var tn := PackedVector3Array(); var tc := PackedColorArray(); var ti := PackedInt32Array()
+		_append_yinsh_prim(top_torus, top_xf, Color.WHITE, tv, tn, tc, ti)
+		_append_yinsh_prim(collar_torus, collar_xf, Color.WHITE, tv, tn, tc, ti)
+		for k in range(6):
+			var angle: float = float(k) * (PI / 3.0)
+			_append_yinsh_prim(stud_mesh, Transform3D(Basis.IDENTITY, Vector3(cos(angle) * 0.034, 0.010, sin(angle) * 0.034)), Color.WHITE, tv, tn, tc, ti)
+		var s1: Array = []; s1.resize(Mesh.ARRAY_MAX)
+		s1[Mesh.ARRAY_VERTEX] = tv; s1[Mesh.ARRAY_NORMAL] = tn; s1[Mesh.ARRAY_INDEX] = ti
+		baked.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, s1)
+		baked.surface_set_material(1, trim_mat)
+
+	_cached_ring_meshes[cache_key] = baked
+	return baked
+
+func _get_baked_disk_mesh() -> ArrayMesh:
+	if _cached_disk_mesh != null:
+		return _cached_disk_mesh
+
+	var edge_cyl = CylinderMesh.new()
+	edge_cyl.top_radius = 0.0225; edge_cyl.bottom_radius = 0.0225; edge_cyl.height = 0.0065
+	edge_cyl.radial_segments = 16; edge_cyl.rings = 1
+
+	var red_cyl = CylinderMesh.new()
+	red_cyl.top_radius = 0.0205; red_cyl.bottom_radius = 0.0222; red_cyl.height = 0.0045
+	red_cyl.radial_segments = 16; red_cyl.rings = 1
+
+	var blue_cyl = CylinderMesh.new()
+	blue_cyl.top_radius = 0.0222; blue_cyl.bottom_radius = 0.0205; blue_cyl.height = 0.0045
+	blue_cyl.radial_segments = 16; blue_cyl.rings = 1
+
+	var ring_torus = TorusMesh.new()
+	ring_torus.inner_radius = 0.012; ring_torus.outer_radius = 0.015
+	ring_torus.rings = 16; ring_torus.ring_segments = 8
+
+	var gem_sph = SphereMesh.new()
+	gem_sph.radius = 0.0075; gem_sph.height = 0.006
+	gem_sph.radial_segments = 10; gem_sph.rings = 5
+
+	var ov := PackedVector3Array()
+	var on := PackedVector3Array()
+	var oc := PackedColorArray()
+	var oi := PackedInt32Array()
+
+	_append_yinsh_prim(edge_cyl, Transform3D.IDENTITY, mat_disk_edge_gold.albedo_color, ov, on, oc, oi)
+	_append_yinsh_prim(red_cyl, Transform3D(Basis.IDENTITY, Vector3(0.0, 0.0042, 0.0)), mat_disk_p1_face.albedo_color, ov, on, oc, oi)
+	_append_yinsh_prim(ring_torus, Transform3D(Basis.from_scale(Vector3(1.0, 0.45, 1.0)), Vector3(0.0, 0.0066, 0.0)), mat_ring_p1_gold.albedo_color, ov, on, oc, oi)
+	_append_yinsh_prim(gem_sph, Transform3D(Basis.IDENTITY, Vector3(0.0, 0.0065, 0.0)), mat_ring_p1_body.albedo_color, ov, on, oc, oi)
+	_append_yinsh_prim(blue_cyl, Transform3D(Basis.IDENTITY, Vector3(0.0, -0.0042, 0.0)), mat_disk_p2_face.albedo_color, ov, on, oc, oi)
+	_append_yinsh_prim(ring_torus, Transform3D(Basis.from_scale(Vector3(1.0, 0.45, 1.0)), Vector3(0.0, -0.0066, 0.0)), mat_ring_p2_plat.albedo_color, ov, on, oc, oi)
+	_append_yinsh_prim(gem_sph, Transform3D(Basis.IDENTITY, Vector3(0.0, -0.0065, 0.0)), mat_ring_p2_body.albedo_color, ov, on, oc, oi)
+
+	var surf: Array = []
+	surf.resize(Mesh.ARRAY_MAX)
+	surf[Mesh.ARRAY_VERTEX] = ov
+	surf[Mesh.ARRAY_NORMAL] = on
+	surf[Mesh.ARRAY_COLOR] = oc
+	surf[Mesh.ARRAY_INDEX] = oi
+
+	var baked := ArrayMesh.new()
+	baked.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surf)
+	var disk_mat := StandardMaterial3D.new()
+	disk_mat.metallic = 0.28
+	disk_mat.roughness = 0.24
+	disk_mat.vertex_color_use_as_albedo = true
+	disk_mat.vertex_color_is_srgb = true
+	baked.surface_set_material(0, disk_mat)
+	_cached_disk_mesh = baked
+	return baked
+
+# Model 1 (gamer_id == 1) & Model 2 (gamer_id == 2):
+# Sculpted 3D Commander Ring with inner metallic collar, top/bottom beveled inlay rings,
+# and 6 compass studs aligned with the 6 hex movement axes (cached pre-baked ArrayMesh).
+func _create_ring_3d_model(gamer_id: int, is_ghost: bool = false) -> Node3D:
+	var root = Node3D.new()
+	root.name = "YinshRingP%d" % gamer_id
+	var mi = MeshInstance3D.new()
+	mi.mesh = _get_baked_ring_mesh(gamer_id, is_ghost)
+	root.add_child(mi)
 	return root
 
 # Model 3: 3D Dual-Sided Reversible Yinsh Disk / Marker
@@ -553,82 +655,9 @@ func _create_disk_3d_model(initial_owner: int) -> Node3D:
 	flip_pivot.rotation.x = 0.0 if initial_owner == 1 else PI
 	root.add_child(flip_pivot)
 
-	# 1. Central 24K Gold Equatorial Band
-	var edge_inst = MeshInstance3D.new()
-	var edge_cyl = CylinderMesh.new()
-	edge_cyl.top_radius = 0.0225
-	edge_cyl.bottom_radius = 0.0225
-	edge_cyl.height = 0.0065
-	edge_cyl.radial_segments = 28
-	edge_inst.mesh = edge_cyl
-	edge_inst.material_override = mat_disk_edge_gold
-	flip_pivot.add_child(edge_inst)
-
-	# 2. Top Hemisphere: Ruby Red Face (+Y)
-	var red_face = MeshInstance3D.new()
-	var red_cyl = CylinderMesh.new()
-	red_cyl.top_radius = 0.0205
-	red_cyl.bottom_radius = 0.0222
-	red_cyl.height = 0.0045
-	red_cyl.radial_segments = 28
-	red_face.mesh = red_cyl
-	red_face.position = Vector3(0.0, 0.0042, 0.0)
-	red_face.material_override = mat_disk_p1_face
-	flip_pivot.add_child(red_face)
-
-	var red_ring = MeshInstance3D.new()
-	var r_torus = TorusMesh.new()
-	r_torus.inner_radius = 0.012
-	r_torus.outer_radius = 0.015
-	r_torus.rings = 24
-	r_torus.ring_segments = 12
-	red_ring.mesh = r_torus
-	red_ring.position = Vector3(0.0, 0.0066, 0.0)
-	red_ring.scale = Vector3(1.0, 0.45, 1.0)
-	red_ring.material_override = mat_ring_p1_gold
-	flip_pivot.add_child(red_ring)
-
-	var red_gem = MeshInstance3D.new()
-	var r_sph = SphereMesh.new()
-	r_sph.radius = 0.0075
-	r_sph.height = 0.006
-	red_gem.mesh = r_sph
-	red_gem.position = Vector3(0.0, 0.0065, 0.0)
-	red_gem.material_override = mat_ring_p1_body
-	flip_pivot.add_child(red_gem)
-
-	# 3. Bottom Hemisphere: Sapphire Blue Face (-Y)
-	var blue_face = MeshInstance3D.new()
-	var blue_cyl = CylinderMesh.new()
-	blue_cyl.top_radius = 0.0222
-	blue_cyl.bottom_radius = 0.0205
-	blue_cyl.height = 0.0045
-	blue_cyl.radial_segments = 28
-	blue_face.mesh = blue_cyl
-	blue_face.position = Vector3(0.0, -0.0042, 0.0)
-	blue_face.material_override = mat_disk_p2_face
-	flip_pivot.add_child(blue_face)
-
-	var blue_ring = MeshInstance3D.new()
-	var b_torus = TorusMesh.new()
-	b_torus.inner_radius = 0.012
-	b_torus.outer_radius = 0.015
-	b_torus.rings = 24
-	b_torus.ring_segments = 12
-	blue_ring.mesh = b_torus
-	blue_ring.position = Vector3(0.0, -0.0066, 0.0)
-	blue_ring.scale = Vector3(1.0, 0.45, 1.0)
-	blue_ring.material_override = mat_ring_p2_plat
-	flip_pivot.add_child(blue_ring)
-
-	var blue_gem = MeshInstance3D.new()
-	var b_sph = SphereMesh.new()
-	b_sph.radius = 0.0075
-	b_sph.height = 0.006
-	blue_gem.mesh = b_sph
-	blue_gem.position = Vector3(0.0, -0.0065, 0.0)
-	blue_gem.material_override = mat_ring_p2_body
-	flip_pivot.add_child(blue_gem)
+	var disk_mi = MeshInstance3D.new()
+	disk_mi.mesh = _get_baked_disk_mesh()
+	flip_pivot.add_child(disk_mi)
 
 	return root
 
@@ -696,7 +725,8 @@ func _build_board_3d() -> void:
 	outer_gold_ring.material_override = mat_gold_rail
 	board_root.add_child(outer_gold_ring)
 
-	# 2. Build Inlaid 24K Gold Lattice Rails along Directions 1, 2, 3
+	# 2. Build Inlaid 24K Gold Lattice Rails along Directions 1, 2, 3 (baked into 1 single draw call)
+	var rails_temp = Node3D.new()
 	for pid in range(NUM_SPOTS):
 		var p_from: Vector3 = spot_positions[pid]
 		var nbrs: Dictionary = spot_neighbors[pid]
@@ -704,7 +734,14 @@ func _build_board_3d() -> void:
 			if nbrs.has(d):
 				var nbr_id: int = int(nbrs[d])
 				var p_to: Vector3 = spot_positions[nbr_id]
-				_add_lattice_rail(p_from, p_to)
+				_add_lattice_rail_to(rails_temp, p_from, p_to)
+	var baked_rails = BaseGameBoard.bake_node_tree_to_mesh(rails_temp, false)
+	rails_temp.free()
+	if baked_rails != null:
+		var rails_mi = MeshInstance3D.new()
+		rails_mi.name = "BakedLatticeRails"
+		rails_mi.mesh = baked_rails
+		nodes_root.add_child(rails_mi)
 
 	# 3. Build 85 Sculpted Node Sockets & Raycast Areas
 	node_areas.clear()
@@ -713,8 +750,51 @@ func _build_board_3d() -> void:
 	node_select_halos.clear()
 	node_last_halos.clear()
 
+	# Shared low-poly meshes + MultiMesh for the 85 static dark socket wells (1 draw call instead of 85)
+	var shared_sock_cyl = CylinderMesh.new()
+	shared_sock_cyl.top_radius = 0.0155
+	shared_sock_cyl.bottom_radius = 0.0170
+	shared_sock_cyl.height = 0.004
+	shared_sock_cyl.radial_segments = 14
+	shared_sock_cyl.rings = 1
+
+	var shared_well_cyl = CylinderMesh.new()
+	shared_well_cyl.top_radius = 0.0115
+	shared_well_cyl.bottom_radius = 0.0115
+	shared_well_cyl.height = 0.0046
+	shared_well_cyl.radial_segments = 12
+	shared_well_cyl.rings = 1
+
+	var wells_mm = MultiMesh.new()
+	wells_mm.transform_format = MultiMesh.TRANSFORM_3D
+	wells_mm.mesh = shared_well_cyl
+	wells_mm.instance_count = NUM_SPOTS
+	var wells_mmi = MultiMeshInstance3D.new()
+	wells_mmi.name = "BakedSocketWells"
+	wells_mmi.multimesh = wells_mm
+	wells_mmi.material_override = mat_socket_well
+	nodes_root.add_child(wells_mmi)
+
+	var shared_lh_torus = TorusMesh.new()
+	shared_lh_torus.inner_radius = 0.018; shared_lh_torus.outer_radius = 0.026
+	shared_lh_torus.rings = 16; shared_lh_torus.ring_segments = 8
+
+	var shared_sh_torus = TorusMesh.new()
+	shared_sh_torus.inner_radius = 0.041; shared_sh_torus.outer_radius = 0.049
+	shared_sh_torus.rings = 18; shared_sh_torus.ring_segments = 8
+
+	var shared_lst_torus = TorusMesh.new()
+	shared_lst_torus.inner_radius = 0.032; shared_lst_torus.outer_radius = 0.038
+	shared_lst_torus.rings = 16; shared_lst_torus.ring_segments = 8
+
+	var shared_spot_shape = CylinderShape3D.new()
+	shared_spot_shape.radius = 0.038
+	shared_spot_shape.height = 0.010
+
 	for pid in range(NUM_SPOTS):
 		var pos: Vector3 = spot_positions[pid]
+		wells_mm.set_instance_transform(pid, Transform3D(Basis.IDENTITY, pos + Vector3(0.0, 0.0012, 0.0)))
+
 		var n_holder = Node3D.new()
 		n_holder.name = "Spot_%d" % pid
 		n_holder.position = pos
@@ -722,37 +802,15 @@ func _build_board_3d() -> void:
 
 		# Brass outer rim
 		var sock_rim = MeshInstance3D.new()
-		var s_cyl = CylinderMesh.new()
-		s_cyl.top_radius = 0.0155
-		s_cyl.bottom_radius = 0.0170
-		s_cyl.height = 0.004
-		s_cyl.radial_segments = 20
-		sock_rim.mesh = s_cyl
+		sock_rim.mesh = shared_sock_cyl
 		sock_rim.position = Vector3(0.0, 0.001, 0.0)
 		sock_rim.material_override = mat_brass_socket
 		n_holder.add_child(sock_rim)
 		node_socket_meshes.append(sock_rim)
 
-		# Recessed dark well
-		var well = MeshInstance3D.new()
-		var w_cyl = CylinderMesh.new()
-		w_cyl.top_radius = 0.0115
-		w_cyl.bottom_radius = 0.0115
-		w_cyl.height = 0.0046
-		w_cyl.radial_segments = 18
-		well.mesh = w_cyl
-		well.position = Vector3(0.0, 0.0012, 0.0)
-		well.material_override = mat_socket_well
-		n_holder.add_child(well)
-
 		# Legal landing halo (emerald green)
 		var legal_halo = MeshInstance3D.new()
-		var lh_torus = TorusMesh.new()
-		lh_torus.inner_radius = 0.018
-		lh_torus.outer_radius = 0.026
-		lh_torus.rings = 24
-		lh_torus.ring_segments = 12
-		legal_halo.mesh = lh_torus
+		legal_halo.mesh = shared_lh_torus
 		legal_halo.position = Vector3(0.0, 0.004, 0.0)
 		legal_halo.scale = Vector3(1.0, 0.35, 1.0)
 		legal_halo.material_override = mat_halo_legal
@@ -762,12 +820,7 @@ func _build_board_3d() -> void:
 
 		# Selectable ring halo (royal gold)
 		var sel_halo = MeshInstance3D.new()
-		var sh_torus = TorusMesh.new()
-		sh_torus.inner_radius = 0.041
-		sh_torus.outer_radius = 0.049
-		sh_torus.rings = 28
-		sh_torus.ring_segments = 12
-		sel_halo.mesh = sh_torus
+		sel_halo.mesh = shared_sh_torus
 		sel_halo.position = Vector3(0.0, 0.0045, 0.0)
 		sel_halo.scale = Vector3(1.0, 0.35, 1.0)
 		sel_halo.material_override = mat_halo_select
@@ -777,12 +830,7 @@ func _build_board_3d() -> void:
 
 		# Last move indicator halo
 		var last_halo = MeshInstance3D.new()
-		var lst_torus = TorusMesh.new()
-		lst_torus.inner_radius = 0.032
-		lst_torus.outer_radius = 0.038
-		lst_torus.rings = 24
-		lst_torus.ring_segments = 12
-		last_halo.mesh = lst_torus
+		last_halo.mesh = shared_lst_torus
 		last_halo.position = Vector3(0.0, 0.0035, 0.0)
 		last_halo.scale = Vector3(1.0, 0.32, 1.0)
 		last_halo.material_override = mat_halo_last
@@ -795,10 +843,7 @@ func _build_board_3d() -> void:
 		area.name = "SpotArea_%d" % pid
 		area.set_meta("piece_id", pid)
 		var col = CollisionShape3D.new()
-		var cyl_shape = CylinderShape3D.new()
-		cyl_shape.radius = 0.038
-		cyl_shape.height = 0.010
-		col.shape = cyl_shape
+		col.shape = shared_spot_shape
 		col.position = Vector3(0.0, 0.005, 0.0)
 		area.add_child(col)
 		n_holder.add_child(area)
@@ -807,7 +852,7 @@ func _build_board_3d() -> void:
 	# 4. Build Left (P1 Red) & Right (P2 Blue) Side Trays + Remaining Disks Plaque
 	_build_side_trays_and_plaques()
 
-func _add_lattice_rail(p1: Vector3, p2: Vector3) -> void:
+func _add_lattice_rail_to(target_parent: Node3D, p1: Vector3, p2: Vector3) -> void:
 	var diff: Vector3 = p2 - p1
 	var dist: float = diff.length()
 	if dist <= 0.001:
@@ -821,7 +866,7 @@ func _add_lattice_rail(p1: Vector3, p2: Vector3) -> void:
 	rail.position = Vector3(mid.x, BOARD_SURFACE_Y + 0.0005, mid.z)
 	rail.rotation.y = angle_y
 	rail.material_override = mat_gold_rail
-	nodes_root.add_child(rail)
+	target_parent.add_child(rail)
 
 func _build_side_trays_and_plaques() -> void:
 	p1_reserve_positions.clear()
@@ -1036,26 +1081,31 @@ func _build_disk_box() -> void:
 	lbl_disks_3d.text = "مخزن دیسک‌ها: %s دیسک" % _fa_digits(max(0, remaining_disks))
 	disk_box_root.add_child(lbl_disks_3d)
 
-	# 7. Calculate 51 slot coordinates (3 rows x 17 cols) & create velvet socket indentations
-	# Each disc has diameter 0.045 (radius = 0.0225) - identical to board discs
+	# 7. Calculate 51 slot coordinates (3 rows x 17 cols) & batch 51 velvet sockets into 1 MultiMesh
+	var box_sock_torus = TorusMesh.new()
+	box_sock_torus.inner_radius = 0.016
+	box_sock_torus.outer_radius = 0.022
+	box_sock_torus.rings = 14
+	box_sock_torus.ring_segments = 8
+	var box_sock_mm = MultiMesh.new()
+	box_sock_mm.transform_format = MultiMesh.TRANSFORM_3D
+	box_sock_mm.mesh = box_sock_torus
+	box_sock_mm.instance_count = 51
+	var box_sock_mmi = MultiMeshInstance3D.new()
+	box_sock_mmi.name = "BakedDiskBoxSockets"
+	box_sock_mmi.multimesh = box_sock_mm
+	box_sock_mmi.material_override = mat_socket_well
+	disk_box_root.add_child(box_sock_mmi)
+
+	var slot_i: int = 0
 	for r in range(3):
 		var z_s: float = (box_z_center - 0.036) + float(r) * 0.050
 		for c in range(17):
 			var x_s: float = -0.416 + float(c) * 0.052
 			var slot_pos = Vector3(x_s, BOARD_SURFACE_Y + 0.029, z_s)
 			box_disk_slots.append(slot_pos)
-
-			# Subtle dark recessed velvet ring socket matching full disc size
-			var sock = MeshInstance3D.new()
-			var s_torus = TorusMesh.new()
-			s_torus.inner_radius = 0.016
-			s_torus.outer_radius = 0.022
-			s_torus.rings = 20
-			s_torus.ring_segments = 10
-			sock.mesh = s_torus
-			sock.position = Vector3(x_s, BOARD_SURFACE_Y + 0.025, z_s)
-			sock.material_override = mat_socket_well
-			disk_box_root.add_child(sock)
+			box_sock_mm.set_instance_transform(slot_i, Transform3D(Basis.IDENTITY, Vector3(x_s, BOARD_SURFACE_Y + 0.025, z_s)))
+			slot_i += 1
 
 	# 8. Fill initial remaining_disks into slots
 	var init_count: int = clampi(remaining_disks, 0, box_disk_slots.size())
@@ -1064,9 +1114,22 @@ func _build_disk_box() -> void:
 		disk_box_root.add_child(mini)
 		box_disk_nodes.append(mini)
 
+var _cached_mini_box_disk_mesh: ArrayMesh = null
+
 func _create_mini_box_disk(slot_pos: Vector3) -> Node3D:
 	var root = Node3D.new()
 	root.position = slot_pos
+	if _cached_mini_box_disk_mesh == null:
+		var temp = _create_mini_box_disk_raw()
+		_cached_mini_box_disk_mesh = BaseGameBoard.bake_node_tree_to_mesh(temp, true)
+		temp.free()
+	var mi = MeshInstance3D.new()
+	mi.mesh = _cached_mini_box_disk_mesh
+	root.add_child(mi)
+	return root
+
+func _create_mini_box_disk_raw() -> Node3D:
+	var root = Node3D.new()
 
 	# 1. Central 24K Gold Equatorial Band (Identical size to board disk: radius = 0.0225, height = 0.0065)
 	var edge_inst = MeshInstance3D.new()

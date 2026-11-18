@@ -367,12 +367,30 @@ func _on_turn_changed(_turn: int) -> void:
 			lbl_turn_banner.text = "🤔 گزینه درست را روی میز انتخاب کنید"
 			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
 
-func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	super.update_timer(remaining_sec, total_sec, turn)
+func update_timer(remaining_sec: float, total_sec: float, _turn: int) -> void:
 	# Keep royal gold match box border when not in final 4-second danger countdown
 	var is_danger = (remaining_sec <= 4.0 and remaining_sec > 0.0)
-	if not is_danger and is_instance_valid(match_details_box):
-		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
+	var fill_col = Color(1.0, 0.85, 0.30)
+	if is_instance_valid(_timer_vfx_overlay):
+		_timer_vfx_overlay.is_danger = is_danger
+		_timer_vfx_overlay.theme_color = fill_col
+	if is_instance_valid(lbl_timer):
+		var sec_ceil = int(ceil(remaining_sec))
+		if sec_ceil != _last_displayed_sec:
+			_last_displayed_sec = sec_ceil
+			lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % sec_ceil)
+		if is_danger and sec_ceil != _last_critical_sec:
+			_last_critical_sec = sec_ceil
+			_animate_timer_warning()
+			if is_instance_valid(_timer_vfx_overlay):
+				_timer_vfx_overlay.trigger_danger_shockwave()
+	_apply_timer_visual_state(
+		is_danger,
+		_style_match_box_danger if is_danger else _style_match_box_normal,
+		Color(1.0, 0.24, 0.26) if is_danger else fill_col
+	)
+	if is_instance_valid(turn_timer_bar):
+		turn_timer_bar.value = clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
 
 func _sync_all_cards_visual() -> void:
 	var active_styles = {1: _style_p1_active, 2: _style_p2_active, 3: _style_p3_active, 4: _style_p4_active}

@@ -23,9 +23,14 @@ var _is_shaking: bool = false
 
 # 2D UI Particle Layer
 var _ui_canvas_layer: CanvasLayer = null
+var _is_mobile: bool = false
+var _shared_shockwave_quad: QuadMesh = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_is_mobile = OS.has_feature("mobile") or (OS.get_name() in ["Android", "iOS"])
+	_shared_shockwave_quad = QuadMesh.new()
+	_shared_shockwave_quad.size = Vector2(0.12, 0.12)
 	set_process(false)
 	_setup_ui_canvas()
 	_init_touch_scrolling()
@@ -98,9 +103,8 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 	
 	# A. Expanding Shockwave Ring on Board Surface
 	var shockwave = MeshInstance3D.new()
-	var quad = QuadMesh.new()
-	quad.size = Vector2(0.12, 0.12)
-	shockwave.mesh = quad
+	shockwave.mesh = _shared_shockwave_quad
+	shockwave.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	shockwave.rotation_degrees.x = -90.0 # Lay flat on board
 	shockwave.position.y = 0.005 # Just above surface
 	
@@ -119,9 +123,10 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 	shock_tw.tween_property(shock_mat, "albedo_color:a", 0.0, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	# B. Starburst Sparkle Particles
-	var spark_count = 8
+	var spark_count = 4 if _is_mobile else 8
 	for i in range(spark_count):
 		var p = Sprite3D.new()
+		p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		p.texture = tex_sparkle if (i % 2 == 0) else tex_spark
 		p.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		p.modulate = primary_color if (i % 3 != 0) else Color(1.0, 0.95, 0.75)
@@ -178,9 +183,8 @@ func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant
 	
 	# Expanding Shockwave Ring
 	var shockwave = MeshInstance3D.new()
-	var quad = QuadMesh.new()
-	quad.size = Vector2(0.12, 0.12)
-	shockwave.mesh = quad
+	shockwave.mesh = _shared_shockwave_quad
+	shockwave.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	shockwave.rotation_degrees.x = -90.0
 	shockwave.position.y = 0.005
 	
@@ -199,9 +203,10 @@ func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant
 	shock_tw.tween_property(shock_mat, "albedo_color:a", 0.0, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	# Starburst Sparkles
-	var spark_count = 6
+	var spark_count = 4 if _is_mobile else 6
 	for i in range(spark_count):
 		var p = Sprite3D.new()
+		p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		p.texture = tex_sparkle if (i % 2 == 0 and tex_sparkle) else tex_spark
 		p.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		p.modulate = primary_color if (i % 2 == 0) else Color(1.0, 0.95, 0.75)

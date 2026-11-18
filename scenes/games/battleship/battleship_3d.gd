@@ -108,6 +108,21 @@ var _mat_ship_sunk_dark: StandardMaterial3D
 var _mat_ship_sunk_rust: StandardMaterial3D
 var _mat_ship_sunk_fire: StandardMaterial3D
 var _mat_smoke_puff: StandardMaterial3D
+var _mat_cell_ship_sel: StandardMaterial3D
+var _mat_cell_ship_placed: StandardMaterial3D
+var _mat_cell_radar_hover: StandardMaterial3D
+var _mat_cell_shot_hit: StandardMaterial3D
+var _mat_cell_shot_miss: StandardMaterial3D
+var _mat_cell_sunk_sea: StandardMaterial3D
+var _mat_miss_ripple: StandardMaterial3D
+var _mat_miss_drop: StandardMaterial3D
+var _shared_cell_box_mesh: BoxMesh
+var _shared_bollard_mesh: CylinderMesh
+var _shared_crater_torus: TorusMesh
+var _shared_shard_box: BoxMesh
+var _shared_ember_sphere: SphereMesh
+var _shared_ripple_torus: TorusMesh
+var _shared_drop_sphere: SphereMesh
 
 func _init() -> void:
 	game_type = GameTypes.BATTLESHIP
@@ -223,6 +238,90 @@ func _init_materials() -> void:
 	_mat_radar_alt.albedo_color = Color(0.08, 0.26, 0.37)
 	_mat_radar_alt.roughness = 0.22
 	_mat_radar_alt.metallic = 0.25
+
+	_mat_cell_ship_sel = StandardMaterial3D.new()
+	_mat_cell_ship_sel.albedo_color = Color(0.16, 0.58, 0.44)
+	_mat_cell_ship_sel.roughness = 0.22
+	_mat_cell_ship_sel.metallic = 0.20
+	_mat_cell_ship_sel.emission_enabled = true
+	_mat_cell_ship_sel.emission = Color(0.18, 0.78, 0.52)
+	_mat_cell_ship_sel.emission_energy_multiplier = 0.40
+
+	_mat_cell_ship_placed = StandardMaterial3D.new()
+	_mat_cell_ship_placed.albedo_color = Color(0.10, 0.40, 0.55)
+	_mat_cell_ship_placed.roughness = 0.22
+	_mat_cell_ship_placed.metallic = 0.20
+
+	_mat_cell_radar_hover = StandardMaterial3D.new()
+	_mat_cell_radar_hover.albedo_color = Color(0.18, 0.55, 0.44)
+	_mat_cell_radar_hover.roughness = 0.22
+	_mat_cell_radar_hover.metallic = 0.25
+	_mat_cell_radar_hover.emission_enabled = true
+	_mat_cell_radar_hover.emission = Color(0.25, 0.85, 0.55)
+	_mat_cell_radar_hover.emission_energy_multiplier = 0.45
+
+	_mat_cell_shot_hit = StandardMaterial3D.new()
+	_mat_cell_shot_hit.albedo_color = Color(0.42, 0.11, 0.12)
+	_mat_cell_shot_hit.roughness = 0.22
+	_mat_cell_shot_hit.metallic = 0.25
+	_mat_cell_shot_hit.emission_enabled = true
+	_mat_cell_shot_hit.emission = Color(0.65, 0.12, 0.08)
+	_mat_cell_shot_hit.emission_energy_multiplier = 0.28
+
+	_mat_cell_shot_miss = StandardMaterial3D.new()
+	_mat_cell_shot_miss.albedo_color = Color(0.11, 0.36, 0.50)
+	_mat_cell_shot_miss.roughness = 0.22
+	_mat_cell_shot_miss.metallic = 0.25
+
+	_mat_cell_sunk_sea = StandardMaterial3D.new()
+	_mat_cell_sunk_sea.albedo_color = Color(0.24, 0.08, 0.10)
+	_mat_cell_sunk_sea.roughness = 0.22
+	_mat_cell_sunk_sea.metallic = 0.25
+
+	_mat_miss_ripple = StandardMaterial3D.new()
+	_mat_miss_ripple.albedo_color = Color(0.58, 0.88, 0.98)
+	_mat_miss_ripple.roughness = 0.25
+
+	_mat_miss_drop = StandardMaterial3D.new()
+	_mat_miss_drop.albedo_color = Color(0.78, 0.95, 1.0)
+	_mat_miss_drop.roughness = 0.18
+
+	_shared_cell_box_mesh = BoxMesh.new()
+	_shared_cell_box_mesh.size = Vector3(CELL_PITCH - 0.007, 0.006, CELL_PITCH - 0.007)
+
+	_shared_bollard_mesh = CylinderMesh.new()
+	_shared_bollard_mesh.top_radius = 0.016
+	_shared_bollard_mesh.bottom_radius = 0.020
+	_shared_bollard_mesh.height = 0.036
+	_shared_bollard_mesh.radial_segments = 12
+	_shared_bollard_mesh.rings = 1
+
+	_shared_crater_torus = TorusMesh.new()
+	_shared_crater_torus.inner_radius = 0.012
+	_shared_crater_torus.outer_radius = 0.024
+	_shared_crater_torus.rings = 14
+	_shared_crater_torus.ring_segments = 8
+
+	_shared_shard_box = BoxMesh.new()
+	_shared_shard_box.size = Vector3(0.010, 0.015, 0.005)
+
+	_shared_ember_sphere = SphereMesh.new()
+	_shared_ember_sphere.radius = 0.010
+	_shared_ember_sphere.height = 0.008
+	_shared_ember_sphere.radial_segments = 10
+	_shared_ember_sphere.rings = 5
+
+	_shared_ripple_torus = TorusMesh.new()
+	_shared_ripple_torus.inner_radius = 0.019
+	_shared_ripple_torus.outer_radius = 0.025
+	_shared_ripple_torus.rings = 16
+	_shared_ripple_torus.ring_segments = 8
+
+	_shared_drop_sphere = SphereMesh.new()
+	_shared_drop_sphere.radius = 0.010
+	_shared_drop_sphere.height = 0.014
+	_shared_drop_sphere.radial_segments = 10
+	_shared_drop_sphere.rings = 5
 
 	_mat_ghost_valid = StandardMaterial3D.new()
 	_mat_ghost_valid.albedo_color = Color(0.18, 0.92, 0.48)
@@ -379,7 +478,7 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 		lbl_r.position = Vector3(-board_span * 0.5 - 0.042, 0.026, (float(i) - 3.5) * CELL_PITCH)
 		container.add_child(lbl_r)
 
-	# Layer 4: 64 Opaque Grid Cells (y = 0.028, height = 0.006 -> top = 0.031)
+	# Layer 4: 64 Opaque Grid Cells (shared mesh + shared checkerboard materials, zero per-cell duplication)
 	out_cell_meshes.clear()
 	for idx in range(TOTAL_CELLS):
 		var r: int = idx / GRID_SIZE
@@ -387,15 +486,13 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 		var c_pos = _cell_index_to_local_pos(idx)
 
 		var cell_mesh = MeshInstance3D.new()
-		var cm = BoxMesh.new()
-		cm.size = Vector3(CELL_PITCH - 0.007, 0.006, CELL_PITCH - 0.007)
-		cell_mesh.mesh = cm
+		cell_mesh.mesh = _shared_cell_box_mesh
 		cell_mesh.position = c_pos
 		var is_checker: bool = ((r + c) % 2 == 0)
 		if is_radar:
-			cell_mesh.material_override = (_mat_radar_cell if is_checker else _mat_radar_alt).duplicate()
+			cell_mesh.material_override = _mat_radar_cell if is_checker else _mat_radar_alt
 		else:
-			cell_mesh.material_override = (_mat_ocean_cell if is_checker else _mat_ocean_alt).duplicate()
+			cell_mesh.material_override = _mat_ocean_cell if is_checker else _mat_ocean_alt
 		container.add_child(cell_mesh)
 		out_cell_meshes.append(cell_mesh)
 
@@ -406,11 +503,7 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 	for sx in [-1.0, 1.0]:
 		for zp in [top_z, bot_z]:
 			var post = MeshInstance3D.new()
-			var pm = CylinderMesh.new()
-			pm.top_radius = 0.016
-			pm.bottom_radius = 0.020
-			pm.height = 0.036
-			post.mesh = pm
+			post.mesh = _shared_bollard_mesh
 			post.position = Vector3(sx * corner_x, 0.018, zp)
 			post.material_override = _mat_brass
 			container.add_child(post)
@@ -1222,10 +1315,8 @@ func _rebuild_phase1_ships_visuals() -> void:
 		var r: int = idx / GRID_SIZE
 		var c: int = idx % GRID_SIZE
 		var cm: MeshInstance3D = phase1_cell_meshes[idx]
-		if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
-			var mat: StandardMaterial3D = cm.material_override
-			mat.albedo_color = Color(0.06, 0.25, 0.40) if ((r + c) % 2 == 0) else Color(0.09, 0.31, 0.47)
-			mat.emission_enabled = false
+		if is_instance_valid(cm):
+			cm.material_override = _mat_ocean_cell if ((r + c) % 2 == 0) else _mat_ocean_alt
 
 	if is_instance_valid(selected_ship_rotate_badge):
 		selected_ship_rotate_badge.visible = false
@@ -1255,15 +1346,8 @@ func _rebuild_phase1_ships_visuals() -> void:
 		for c_idx in cells:
 			if c_idx >= 0 and c_idx < phase1_cell_meshes.size():
 				var cm: MeshInstance3D = phase1_cell_meshes[c_idx]
-				if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
-					var mat: StandardMaterial3D = cm.material_override
-					if is_sel:
-						mat.albedo_color = Color(0.16, 0.58, 0.44)
-						mat.emission_enabled = true
-						mat.emission = Color(0.18, 0.78, 0.52)
-						mat.emission_energy_multiplier = 0.40
-					else:
-						mat.albedo_color = Color(0.10, 0.40, 0.55)
+				if is_instance_valid(cm):
+					cm.material_override = _mat_cell_ship_sel if is_sel else _mat_cell_ship_placed
 
 func _highlight_selected_drydock_berth() -> void:
 	for s_len in drydock_slot_highlights.keys():
@@ -1671,22 +1755,16 @@ func _set_attack_hover_cell(c_idx: int) -> void:
 	if hover_attack_index >= 0 and hover_attack_index < attack_cell_meshes.size():
 		if not attack_cells_state[hover_attack_index]["is_selected"]:
 			var old_cm: MeshInstance3D = attack_cell_meshes[hover_attack_index]
-			if is_instance_valid(old_cm) and old_cm.material_override is StandardMaterial3D:
+			if is_instance_valid(old_cm):
 				var r: int = hover_attack_index / GRID_SIZE
 				var c: int = hover_attack_index % GRID_SIZE
-				var old_mat: StandardMaterial3D = old_cm.material_override
-				old_mat.albedo_color = Color(0.05, 0.20, 0.30) if ((r + c) % 2 == 0) else Color(0.08, 0.26, 0.37)
-				old_mat.emission_enabled = false
+				old_cm.material_override = _mat_radar_cell if ((r + c) % 2 == 0) else _mat_radar_alt
 
 	hover_attack_index = c_idx
 	if c_idx >= 0 and c_idx < attack_cell_meshes.size() and not attack_cells_state[c_idx]["is_selected"]:
 		var cm: MeshInstance3D = attack_cell_meshes[c_idx]
-		if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
-			var mat: StandardMaterial3D = cm.material_override
-			mat.albedo_color = Color(0.18, 0.55, 0.44)
-			mat.emission_enabled = true
-			mat.emission = Color(0.25, 0.85, 0.55)
-			mat.emission_energy_multiplier = 0.45
+		if is_instance_valid(cm):
+			cm.material_override = _mat_cell_radar_hover
 		if is_instance_valid(attack_hover_reticle):
 			attack_hover_reticle.visible = true
 			attack_hover_reticle.position = _cell_index_to_local_pos(c_idx) + Vector3(0, 0.008, 0)
@@ -2296,16 +2374,8 @@ func _place_persistent_shot_marker(markers_root: Node3D, cell_meshes: Array[Mesh
 
 	if cell_idx >= 0 and cell_idx < cell_meshes.size():
 		var cm: MeshInstance3D = cell_meshes[cell_idx]
-		if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
-			var mat: StandardMaterial3D = cm.material_override
-			if is_hit:
-				mat.albedo_color = Color(0.42, 0.11, 0.12)
-				mat.emission_enabled = true
-				mat.emission = Color(0.65, 0.12, 0.08)
-				mat.emission_energy_multiplier = 0.28
-			else:
-				mat.albedo_color = Color(0.11, 0.36, 0.50)
-				mat.emission_enabled = false
+		if is_instance_valid(cm):
+			cm.material_override = _mat_cell_shot_hit if is_hit else _mat_cell_shot_miss
 
 	var marker_root = Node3D.new()
 	marker_root.name = marker_name
@@ -2313,20 +2383,15 @@ func _place_persistent_shot_marker(markers_root: Node3D, cell_meshes: Array[Mesh
 	markers_root.add_child(marker_root)
 
 	if is_hit:
-		# 3D Scorched Armor Breach Crater + Twisted Shrapnel + Rising Dark Smoke Plume (NO Cylinder!)
+		# 3D Scorched Armor Breach Crater + Twisted Shrapnel + Rising Dark Smoke Plume (shared meshes)
 		var crater = MeshInstance3D.new()
-		var ctm = TorusMesh.new()
-		ctm.inner_radius = 0.012
-		ctm.outer_radius = 0.024
-		crater.mesh = ctm
+		crater.mesh = _shared_crater_torus
 		crater.material_override = _mat_ship_sunk_dark
 		marker_root.add_child(crater)
 
 		for i in range(3):
 			var shard = MeshInstance3D.new()
-			var sbm = BoxMesh.new()
-			sbm.size = Vector3(0.010, 0.015, 0.005)
-			shard.mesh = sbm
+			shard.mesh = _shared_shard_box
 			var ang: float = float(i) * (TAU / 3.0) + 0.4
 			shard.position = Vector3(cos(ang) * 0.015, 0.006, sin(ang) * 0.015)
 			shard.rotation = Vector3(0.42, ang, -0.35)
@@ -2334,10 +2399,7 @@ func _place_persistent_shot_marker(markers_root: Node3D, cell_meshes: Array[Mesh
 			marker_root.add_child(shard)
 
 		var ember = MeshInstance3D.new()
-		var esm = SphereMesh.new()
-		esm.radius = 0.010
-		esm.height = 0.008
-		ember.mesh = esm
+		ember.mesh = _shared_ember_sphere
 		ember.position = Vector3(0, 0.002, 0)
 		ember.material_override = _mat_ship_sunk_fire
 		marker_root.add_child(ember)
@@ -2346,29 +2408,16 @@ func _place_persistent_shot_marker(markers_root: Node3D, cell_meshes: Array[Mesh
 		hit_smoke.position = Vector3(0, 0.006, 0)
 		marker_root.add_child(hit_smoke)
 	else:
-		# 3D Concentric Ocean Ripple Rings & Naval Sonar Splash Marker (NO Cylinder!)
-		var ripple_mat = StandardMaterial3D.new()
-		ripple_mat.albedo_color = Color(0.58, 0.88, 0.98)
-		ripple_mat.roughness = 0.25
-
+		# 3D Concentric Ocean Ripple Rings & Naval Sonar Splash Marker (shared meshes & materials)
 		var outer_ring = MeshInstance3D.new()
-		var otm = TorusMesh.new()
-		otm.inner_radius = 0.019
-		otm.outer_radius = 0.025
-		outer_ring.mesh = otm
-		outer_ring.material_override = ripple_mat
+		outer_ring.mesh = _shared_ripple_torus
+		outer_ring.material_override = _mat_miss_ripple
 		marker_root.add_child(outer_ring)
 
 		var inner_drop = MeshInstance3D.new()
-		var ism = SphereMesh.new()
-		ism.radius = 0.010
-		ism.height = 0.014
-		inner_drop.mesh = ism
+		inner_drop.mesh = _shared_drop_sphere
 		inner_drop.position = Vector3(0, 0.003, 0)
-		var drop_mat = StandardMaterial3D.new()
-		drop_mat.albedo_color = Color(0.78, 0.95, 1.0)
-		drop_mat.roughness = 0.18
-		inner_drop.material_override = drop_mat
+		inner_drop.material_override = _mat_miss_drop
 		marker_root.add_child(inner_drop)
 
 func _apply_sunk_ship_board_cleanup(markers_root: Node3D, cell_meshes: Array[MeshInstance3D], ship_cells: Array) -> void:
@@ -2382,10 +2431,8 @@ func _apply_sunk_ship_board_cleanup(markers_root: Node3D, cell_meshes: Array[Mes
 		# Set cell tile under sunk ship to dark scorched-crimson sea (never bright neon orange/yellow)
 		if c_idx >= 0 and c_idx < cell_meshes.size():
 			var cm: MeshInstance3D = cell_meshes[c_idx]
-			if is_instance_valid(cm) and cm.material_override is StandardMaterial3D:
-				var mat: StandardMaterial3D = cm.material_override
-				mat.albedo_color = Color(0.24, 0.08, 0.10)
-				mat.emission_enabled = false
+			if is_instance_valid(cm):
+				cm.material_override = _mat_cell_sunk_sea
 
 func _spawn_water_splash_vfx(target_board: Node3D, pos: Vector3) -> void:
 	var r_mat = StandardMaterial3D.new()

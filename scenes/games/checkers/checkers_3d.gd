@@ -711,42 +711,70 @@ func _spawn_piece_at_cell(cell_idx: int, gamer_id: int, is_super_pawn: bool) -> 
 	pieces_nodes[cell_idx] = p_node
 	return p_node
 
+var _cached_checker_base_meshes: Dictionary = {}
+var _cached_king_stack_meshes: Dictionary = {}
+
+func _get_baked_checker_base_mesh(gamer_id: int) -> ArrayMesh:
+	if _cached_checker_base_meshes.has(gamer_id):
+		return _cached_checker_base_meshes[gamer_id]
+	var temp_root = Node3D.new()
+	var mat_main = mat_piece_p1 if gamer_id == 1 else mat_piece_p2
+	var mat_well = mat_piece_p1_well if gamer_id == 1 else mat_piece_p2_well
+	var mat_trim = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
+
+	var felt_pad = MeshInstance3D.new()
+	var cyl_felt = CylinderMesh.new()
+	cyl_felt.top_radius = 0.045
+	cyl_felt.bottom_radius = 0.045
+	cyl_felt.height = 0.002
+	cyl_felt.radial_segments = 20
+	cyl_felt.rings = 1
+	felt_pad.mesh = cyl_felt
+	felt_pad.material_override = mat_felt_base
+	felt_pad.position.y = 0.001
+	temp_root.add_child(felt_pad)
+
+	var disc1 = _build_single_checker_puck(mat_main, mat_well, mat_trim)
+	disc1.position.y = 0.002
+	temp_root.add_child(disc1)
+
+	var baked = BaseGameBoard.bake_node_tree_to_mesh(temp_root, true)
+	temp_root.free()
+	_cached_checker_base_meshes[gamer_id] = baked
+	return baked
+
+func _get_baked_king_stack_mesh(gamer_id: int) -> ArrayMesh:
+	if _cached_king_stack_meshes.has(gamer_id):
+		return _cached_king_stack_meshes[gamer_id]
+	var mat_main = mat_piece_p1 if gamer_id == 1 else mat_piece_p2
+	var mat_well = mat_piece_p1_well if gamer_id == 1 else mat_piece_p2_well
+	var mat_trim = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
+	var temp_king = _build_king_stack_assembly(mat_main, mat_well, mat_trim)
+	var baked = BaseGameBoard.bake_node_tree_to_mesh(temp_king, true)
+	temp_king.free()
+	_cached_king_stack_meshes[gamer_id] = baked
+	return baked
+
 func _build_3d_checker_piece(gamer_id: int, is_super_pawn: bool) -> Node3D:
 	var root = Node3D.new()
 	root.set_meta("gamer_id", gamer_id)
 	root.set_meta("is_super_pawn", is_super_pawn)
 
-	var mat_main = mat_piece_p1 if gamer_id == 1 else mat_piece_p2
-	var mat_well = mat_piece_p1_well if gamer_id == 1 else mat_piece_p2_well
-	var mat_trim = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
+	var base_mi = MeshInstance3D.new()
+	base_mi.name = "CheckerDisc1"
+	base_mi.mesh = _get_baked_checker_base_mesh(gamer_id)
+	base_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(base_mi)
 
-	# 1. Weighted Velvet Green Felt Base Pad
-	var felt_pad = MeshInstance3D.new()
-	felt_pad.name = "FeltBase"
-	var cyl_felt = CylinderMesh.new()
-	cyl_felt.top_radius = 0.045
-	cyl_felt.bottom_radius = 0.045
-	cyl_felt.height = 0.002
-	cyl_felt.radial_segments = 36
-	felt_pad.mesh = cyl_felt
-	felt_pad.material_override = mat_felt_base
-	felt_pad.position.y = 0.001
-	root.add_child(felt_pad)
-
-	# 2. Primary Lathe-Turned Ribbed Checker Puck (Bottom Puck)
-	var disc1 = _build_single_checker_puck(mat_main, mat_well, mat_trim)
-	disc1.name = "CheckerDisc1"
-	disc1.position.y = 0.002
-	root.add_child(disc1)
-
-	# 3. If Promoted Super Pawn (King / شاه چکرز): Second Stacked Puck + 3D Royal Crown!
+	# If Promoted Super Pawn (King / شاه چکرز): Second Stacked Puck + 3D Royal Crown!
 	if is_super_pawn:
-		var king_stack = _build_king_stack_assembly(mat_main, mat_well, mat_trim)
+		var king_stack = MeshInstance3D.new()
 		king_stack.name = "KingStackNode"
+		king_stack.mesh = _get_baked_king_stack_mesh(gamer_id)
+		king_stack.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		king_stack.position.y = 0.021
 		root.add_child(king_stack)
 
-	_disable_shadows_recursive(root)
 	return root
 
 func _disable_shadows_recursive(node: Node) -> void:

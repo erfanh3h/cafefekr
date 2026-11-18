@@ -402,9 +402,24 @@ func _init_materials() -> void:
 # 2. THREE CUSTOM SCULPTED 3D MODELS (RUBY ORB, SAPPHIRE ORB, ROTATION PADDLE)
 # ============================================================================
 
+var _cached_marble_meshes: Dictionary = {}
+
 # Model 1 (gamer_id == 1) & Model 2 (gamer_id == 2):
 # Sculpted 3D Tournament Orb with equatorial metallic belt, 4 directional studs, and crown finial
 func _create_marble_3d_model(gamer_id: int, is_ghost: bool = false) -> Node3D:
+	var root = Node3D.new()
+	root.name = "PentagoOrbP%d" % gamer_id
+	var c_key: String = "%d_%s" % [gamer_id, "g" if is_ghost else "s"]
+	if not _cached_marble_meshes.has(c_key):
+		var temp = _create_marble_3d_model_raw(gamer_id, is_ghost)
+		_cached_marble_meshes[c_key] = BaseGameBoard.bake_node_tree_to_mesh(temp, not is_ghost)
+		temp.free()
+	var mi = MeshInstance3D.new()
+	mi.mesh = _cached_marble_meshes[c_key]
+	root.add_child(mi)
+	return root
+
+func _create_marble_3d_model_raw(gamer_id: int, is_ghost: bool = false) -> Node3D:
 	var root = Node3D.new()
 	root.name = "PentagoOrbP%d" % gamer_id
 

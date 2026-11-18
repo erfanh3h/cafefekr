@@ -435,6 +435,75 @@ func _get_cell_pos(row: int, col: int) -> Vector3:
 		start_z + float(row) * CELL_STEP
 	)
 
+func _append_prim_to_arrays(
+	prim: Mesh, xf: Transform3D, v_col: Color,
+	out_v: PackedVector3Array, out_n: PackedVector3Array, out_c: PackedColorArray, out_i: PackedInt32Array
+) -> void:
+	var arr: Array = prim.surface_get_arrays(0)
+	if arr.is_empty():
+		return
+	var sv: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	var sn: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+	var si: PackedInt32Array = arr[Mesh.ARRAY_INDEX]
+	var base_off: int = out_v.size()
+	var n_basis: Basis = xf.basis.inverse().transposed()
+	for k in range(sv.size()):
+		out_v.append(xf * sv[k])
+		out_n.append((n_basis * sn[k]).normalized())
+		out_c.append(v_col)
+	for idx_v in si:
+		out_i.append(base_off + idx_v)
+
+func _build_baked_cover_cap_mesh(r_offset: float) -> ArrayMesh:
+	var cap_mesh = BoxMesh.new()
+	cap_mesh.size = Vector3(CELL_W - 0.008, 0.018, CELL_W - 0.008)
+
+	var cap_boss_mesh = CylinderMesh.new()
+	cap_boss_mesh.top_radius = 0.024
+	cap_boss_mesh.bottom_radius = 0.028
+	cap_boss_mesh.height = 0.005
+	cap_boss_mesh.radial_segments = 12
+	cap_boss_mesh.rings = 1
+
+	var rivet_mesh = CylinderMesh.new()
+	rivet_mesh.top_radius = 0.0045
+	rivet_mesh.bottom_radius = 0.0045
+	rivet_mesh.height = 0.004
+	rivet_mesh.radial_segments = 6
+	rivet_mesh.rings = 1
+
+	var ov := PackedVector3Array()
+	var on := PackedVector3Array()
+	var oc := PackedColorArray()
+	var oi := PackedInt32Array()
+
+	_append_prim_to_arrays(cap_mesh, Transform3D.IDENTITY, mat_cap_normal.albedo_color, ov, on, oc, oi)
+	_append_prim_to_arrays(cap_boss_mesh, Transform3D(Basis.IDENTITY, Vector3(0, 0.010, 0)), mat_cap_boss.albedo_color, ov, on, oc, oi)
+	for corner in [
+		Vector3(-r_offset, 0.010, -r_offset),
+		Vector3(r_offset, 0.010, -r_offset),
+		Vector3(-r_offset, 0.010, r_offset),
+		Vector3(r_offset, 0.010, r_offset)
+	]:
+		_append_prim_to_arrays(rivet_mesh, Transform3D(Basis.IDENTITY, corner), mat_gold_rivet.albedo_color, ov, on, oc, oi)
+
+	var surf: Array = []
+	surf.resize(Mesh.ARRAY_MAX)
+	surf[Mesh.ARRAY_VERTEX] = ov
+	surf[Mesh.ARRAY_NORMAL] = on
+	surf[Mesh.ARRAY_COLOR] = oc
+	surf[Mesh.ARRAY_INDEX] = oi
+
+	var baked := ArrayMesh.new()
+	baked.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surf)
+	var cap_mat := StandardMaterial3D.new()
+	cap_mat.metallic = 0.50
+	cap_mat.roughness = 0.26
+	cap_mat.vertex_color_use_as_albedo = true
+	cap_mat.vertex_color_is_srgb = true
+	baked.surface_set_material(0, cap_mat)
+	return baked
+
 func _build_minefield_grid() -> void:
 	cell_centers.resize(TOTAL_CELLS)
 	cell_roots.resize(TOTAL_CELLS)
@@ -449,21 +518,20 @@ func _build_minefield_grid() -> void:
 	var socket_mesh = BoxMesh.new()
 	socket_mesh.size = Vector3(CELL_W, 0.006, CELL_W)
 
-	# Unrevealed 3D Mechanical Cover Cap
-	var cap_mesh = BoxMesh.new()
-	cap_mesh.size = Vector3(CELL_W - 0.008, 0.018, CELL_W - 0.008)
+	# Single MultiMesh for all 64 static recessed socket wells (1 draw call instead of 64)
+	var sockets_mm = MultiMesh.new()
+	sockets_mm.transform_format = MultiMesh.TRANSFORM_3D
+	sockets_mm.mesh = socket_mesh
+	sockets_mm.instance_count = TOTAL_CELLS
+	var sockets_mmi = MultiMeshInstance3D.new()
+	sockets_mmi.name = "BakedSocketWells"
+	sockets_mmi.multimesh = sockets_mm
+	sockets_mmi.material_override = mat_well_socket
+	cells_root.add_child(sockets_mmi)
 
-	var cap_boss_mesh = CylinderMesh.new()
-	cap_boss_mesh.top_radius = 0.024
-	cap_boss_mesh.bottom_radius = 0.028
-	cap_boss_mesh.height = 0.005
-	cap_boss_mesh.radial_segments = 16
-
-	var rivet_mesh = CylinderMesh.new()
-	rivet_mesh.top_radius = 0.0045
-	rivet_mesh.bottom_radius = 0.0045
-	rivet_mesh.height = 0.004
-	rivet_mesh.radial_segments = 8
+	var r_offset = (CELL_W - 0.026) * 0.5
+	# Single shared baked ArrayMesh for Cover Cap + Center Boss + 4 Brass Rivets (64 draw calls instead of 384)
+	var baked_cap_mesh: ArrayMesh = _build_baked_cover_cap_mesh(r_offset)
 
 	var reticle_mesh = BoxMesh.new()
 	reticle_mesh.size = Vector3(CELL_W - 0.004, 0.003, CELL_W - 0.004)
@@ -472,26 +540,20 @@ func _build_minefield_grid() -> void:
 	var reveal_tile_mesh = BoxMesh.new()
 	reveal_tile_mesh.size = Vector3(CELL_W - 0.010, 0.010, CELL_W - 0.010)
 
-	var r_offset = (CELL_W - 0.026) * 0.5
-
 	for r in range(GRID_SIZE):
 		for c in range(GRID_SIZE):
 			var idx = r * GRID_SIZE + c
 			var pos = _get_cell_pos(r, c)
 			cell_centers[idx] = pos
 
+			# 1. Recessed Socket Well (instanced in MultiMesh)
+			sockets_mm.set_instance_transform(idx, Transform3D(Basis.IDENTITY, pos + Vector3(0, -0.002, 0)))
+
 			var c_root = Node3D.new()
 			c_root.name = "Cell_%d" % idx
 			c_root.position = pos
 			cells_root.add_child(c_root)
 			cell_roots[idx] = c_root
-
-			# 1. Recessed Socket Well
-			var sock = MeshInstance3D.new()
-			sock.mesh = socket_mesh
-			sock.material_override = mat_well_socket
-			sock.position = Vector3(0, -0.002, 0)
-			c_root.add_child(sock)
 
 			# 2. Revealed State Pivot (Sits inside well, revealed when cap flips away)
 			var rev_pivot = Node3D.new()
@@ -528,7 +590,7 @@ func _build_minefield_grid() -> void:
 			rev_pivot.add_child(orn_root)
 			cell_ornament_roots[idx] = orn_root
 
-			# 3. Unrevealed 3D Armored Cover Cap Pivot
+			# 3. Unrevealed 3D Armored Cover Cap Pivot (1 shared baked mesh: cap + boss + 4 rivets)
 			var cap_pivot = Node3D.new()
 			cap_pivot.name = "CapPivot"
 			cap_pivot.position = Vector3(0, 0.009, 0)
@@ -536,30 +598,9 @@ func _build_minefield_grid() -> void:
 			cell_cap_pivots[idx] = cap_pivot
 
 			var cap_inst = MeshInstance3D.new()
-			cap_inst.mesh = cap_mesh
-			cap_inst.material_override = mat_cap_normal
+			cap_inst.mesh = baked_cap_mesh
 			cap_pivot.add_child(cap_inst)
 			cell_cap_meshes[idx] = cap_inst
-
-			# Center Raised Emblem Boss on Cover Cap
-			var boss_inst = MeshInstance3D.new()
-			boss_inst.mesh = cap_boss_mesh
-			boss_inst.material_override = mat_cap_boss
-			boss_inst.position = Vector3(0, 0.010, 0)
-			cap_pivot.add_child(boss_inst)
-
-			# 4 Brass Rivets on Cover Cap Corners
-			for corner in [
-				Vector3(-r_offset, 0.010, -r_offset),
-				Vector3(r_offset, 0.010, -r_offset),
-				Vector3(-r_offset, 0.010, r_offset),
-				Vector3(r_offset, 0.010, r_offset)
-			]:
-				var riv = MeshInstance3D.new()
-				riv.mesh = rivet_mesh
-				riv.material_override = mat_gold_rivet
-				riv.position = corner
-				cap_pivot.add_child(riv)
 
 			# Flag Mode Tactical Reticle Overlay
 			var ret = MeshInstance3D.new()

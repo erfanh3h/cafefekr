@@ -601,7 +601,23 @@ func _sync_hud_scores() -> void:
 
 # --- 3D Lathe-Turned Ribbed Checkers Piece Builder (1:1 with Checkers3D) ---
 
+var _cached_mill_piece_meshes: Dictionary = {}
+
 func _build_3d_checker_piece(gamer_id: int) -> Node3D:
+	var root = Node3D.new()
+	root.set_meta("gamer_id", gamer_id)
+
+	if not _cached_mill_piece_meshes.has(gamer_id):
+		var temp = _build_3d_checker_piece_raw(gamer_id)
+		_cached_mill_piece_meshes[gamer_id] = BaseGameBoard.bake_node_tree_to_mesh(temp, true)
+		temp.free()
+
+	var mi = MeshInstance3D.new()
+	mi.mesh = _cached_mill_piece_meshes[gamer_id]
+	root.add_child(mi)
+	return root
+
+func _build_3d_checker_piece_raw(gamer_id: int) -> Node3D:
 	var root = Node3D.new()
 	root.set_meta("gamer_id", gamer_id)
 
