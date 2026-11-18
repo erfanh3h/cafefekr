@@ -194,7 +194,6 @@ func _on_multi_rank_match_ready(game_id: String, game_type: String) -> void:
 	lbl_status.modulate = Color(0.25, 0.95, 0.48)
 	AudioManager.sfx_queue_found()
 	AudioManager.stop_music()
-	await get_tree().create_timer(0.45).timeout
 	visible = false
 	var target_type = game_type if not game_type.is_empty() else _multi_rank_game_type
 	match_ready.emit(game_id, target_type)
@@ -308,7 +307,5 @@ func _on_match_found(game_id: String) -> void:
 	
 	AudioManager.sfx_queue_found()
 	AudioManager.stop_music()
-	
-	await get_tree().create_timer(1.0).timeout
 	visible = false
 	match_ready.emit(game_id, GameTypes.TIC_TAC_TOE)

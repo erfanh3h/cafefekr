@@ -1185,7 +1185,7 @@ func set_spectator_mode(enabled: bool) -> void:
 		if is_instance_valid(surrender_dialog):
 			surrender_dialog.visible = false
 
-func reset_for_new_match() -> void:
+func reset_for_new_match(keep_start_overlay: bool = false) -> void:
 
 	set_fekrbekr_hud_buttons(false)
 	set_spectator_mode(GameManager.is_spectating)
@@ -1223,23 +1223,27 @@ func reset_for_new_match() -> void:
 
 	last_second_ticked = -1
 
-	start_overlay.visible = false
+	if keep_start_overlay:
+		_show_start_overlay_immediately()
+	else:
+		_kill_overlay_tweens()
+		start_overlay.visible = false
 
-	start_overlay.modulate.a = 1.0
+		start_overlay.modulate.a = 1.0
 
-	intro_card.modulate.a = 1.0
+		intro_card.modulate.a = 1.0
 
-	intro_card.scale = Vector2.ONE
+		intro_card.scale = Vector2.ONE
 
-	start_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		start_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	if start_overlay.has_node("Dimmer"):
+		if start_overlay.has_node("Dimmer"):
 
-		start_overlay.get_node("Dimmer").mouse_filter = Control.MOUSE_FILTER_IGNORE
+			start_overlay.get_node("Dimmer").mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	if intro_card:
+		if intro_card:
 
-		intro_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			intro_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	set_camera_mode_indicator(true)
 
@@ -1757,9 +1761,33 @@ func _stop_loading_pulse() -> void:
 
 
 
+func _kill_overlay_tweens() -> void:
+	for ctrl in [start_overlay, intro_card]:
+		if is_instance_valid(ctrl) and ctrl.has_meta("_vfx_tween"):
+			var old_tw: Variant = ctrl.get_meta("_vfx_tween")
+			if old_tw is Tween and old_tw.is_valid():
+				old_tw.kill()
+			ctrl.remove_meta("_vfx_tween")
+
+
+func _show_start_overlay_immediately() -> void:
+	_kill_overlay_tweens()
+	if is_instance_valid(start_overlay):
+		start_overlay.visible = true
+		start_overlay.modulate.a = 1.0
+		start_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+		if start_overlay.has_node("Dimmer"):
+			start_overlay.get_node("Dimmer").mouse_filter = Control.MOUSE_FILTER_STOP
+	if is_instance_valid(intro_card):
+		intro_card.visible = true
+		intro_card.modulate.a = 1.0
+		intro_card.scale = Vector2.ONE
+		intro_card.mouse_filter = Control.MOUSE_FILTER_STOP
+
+
 # Shows the initial match connection loading overlay
 
-func show_match_loading(status_text: String = "در حال آماده‌سازی میز مسابقه و همگام‌سازی بازیکنان...") -> void:
+func show_match_loading(status_text: String = "در حال آماده‌سازی میز مسابقه و همگام‌سازی بازیکنان...", immediate: bool = false) -> void:
 
 	if is_start_overlay_dismissed or is_game_started:
 
@@ -1805,7 +1833,9 @@ func show_match_loading(status_text: String = "در حال آماده‌سازی
 
 	
 
-	if not start_overlay.visible:
+	if immediate:
+		_show_start_overlay_immediately()
+	elif not start_overlay.visible:
 
 		ActionVFXManager.animate_dialog_open(intro_card, start_overlay, true)
 
@@ -1827,7 +1857,7 @@ func update_start_countdown_time(_sec: int) -> void:
 
 # Plays synchronized pre-game loading countdown
 
-func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int = 5) -> void:
+func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int = 5, immediate: bool = true) -> void:
 	if is_start_overlay_dismissed or is_game_started or GameManager.is_game_active:
 		if on_finished.is_valid():
 			on_finished.call()
@@ -1847,8 +1877,10 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	_stop_loading_pulse()
 	intro_countdown_lbl.add_theme_font_size_override("font_size", 98)
-	start_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	if not start_overlay.visible:
+	if immediate or start_overlay.visible:
+		_show_start_overlay_immediately()
+	else:
+		start_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 		ActionVFXManager.animate_dialog_open(intro_card, start_overlay, true)
 	intro_status_lbl.text = "میز مسابقه آماده است! نبرد آغاز می‌شود در:"
 
@@ -1870,11 +1902,15 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
 	intro_p1_role.visible = true
 	intro_p2_role.visible = true
-	intro_p1_role.modulate.a = 0.0
-	intro_p2_role.modulate.a = 0.0
-	var tw_roles = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw_roles.tween_property(intro_p1_role, "modulate:a", 1.0, 0.4)
-	tw_roles.tween_property(intro_p2_role, "modulate:a", 1.0, 0.4)
+	if immediate:
+		intro_p1_role.modulate.a = 1.0
+		intro_p2_role.modulate.a = 1.0
+	else:
+		intro_p1_role.modulate.a = 0.0
+		intro_p2_role.modulate.a = 0.0
+		var tw_roles = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw_roles.tween_property(intro_p1_role, "modulate:a", 1.0, 0.4)
+		tw_roles.tween_property(intro_p2_role, "modulate:a", 1.0, 0.4)
 
 	for i in range(total_seconds, 0, -1):
 		if my_run_id != _countdown_run_id or not start_overlay.visible or is_start_overlay_dismissed:

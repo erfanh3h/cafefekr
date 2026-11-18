@@ -1314,16 +1314,13 @@ func _on_queue_start_game_received(game_id: String) -> void:
 		
 	var first_game = p1_picked if not p1_picked.is_empty() else (available_games[0] if not available_games.is_empty() else "TicTacToe")
 	
-	# Smooth fade out transition directly into 3D gameplay
-	var tw = create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, 0.30)
-	tw.tween_callback(func():
-		if is_instance_valid(draft_showcase_overlay):
-			draft_showcase_overlay.queue_free()
-			draft_showcase_overlay = null
-		visible = false
-		pick_ban_finished.emit(game_id, first_game)
-	)
+	# Transition immediately into the Start Game dialog with zero blank fade gap
+	if is_instance_valid(draft_showcase_overlay):
+		draft_showcase_overlay.queue_free()
+		draft_showcase_overlay = null
+	modulate.a = 1.0
+	visible = false
+	pick_ban_finished.emit(game_id, first_game)
 
 func _show_draft_complete_transition() -> void:
 	if is_instance_valid(draft_showcase_overlay):

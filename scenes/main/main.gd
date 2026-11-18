@@ -895,11 +895,44 @@ func _on_classic_rank_start_requested(game_type: String) -> void:
 		_show_offline_dialog()
 		return
 	print("[Main] Classic rank match requested for game: %s" % game_type)
+	_match_start_serial += 1
+	var req_serial: int = _match_start_serial
+	GameManager.reset_match_state()
 	current_match_mode = "classic_rank"
 	GameManager.current_match_mode = "classic_rank"
-	_show_backdrop()
-	_show_menu_toast("🎮 در حال آغاز رقابت رنک کلاسیک...")
+	GameManager.set_game_type(game_type)
+	var game_info = GameRegistry.get_game_info(GameManager.current_game_type)
+	var game_name_fa = game_info.get("name_fa", "بازی")
+
+	_dismiss_all_menu_dialogs_for_match()
+	menu_container.visible = false
+	user_header.visible = false
+	if is_instance_valid(cafe_table):
+		cafe_table.visible = true
+	base_game_hud.visible = true
+	base_game_hud.reset_for_new_match()
+	base_game_hud.setup_match(game_name_fa, _get_mode_title())
+	base_game_hud.show_match_loading("در حال آماده‌سازی میز مسابقه...", true)
+
 	NetworkManager.start_classic_rank(game_type)
+
+	# Safety guard: if server does not respond to /classic-rank within 15s, return cleanly to menu
+	get_tree().create_timer(15.0).timeout.connect(func():
+		if req_serial != _match_start_serial:
+			return
+		if GameManager.is_game_active or not GameManager.active_game_id.is_empty():
+			return
+		if is_instance_valid(NetworkManager.socket):
+			NetworkManager.socket.disconnect_namespace("/classic-rank")
+		base_game_hud.reset_for_new_match()
+		base_game_hud.visible = false
+		if is_instance_valid(cafe_table):
+			cafe_table.visible = false
+		menu_container.visible = true
+		user_header.visible = true
+		_hide_backdrop()
+		_show_menu_toast("خطا در شروع رقابت، لطفاً دوباره تلاش کنید.")
+	)
 
 func _on_lobby_pressed() -> void:
 	AudioManager.sfx_button()
@@ -1070,120 +1103,80 @@ func _get_mode_title() -> String:
 
 
 
-func _start_game_match(game_id: String, requested_game_type: String = "", match_mode: String = "", is_reconnect: bool = false) -> void:
+var _match_start_serial: int = 0
 
-	if not match_mode.is_empty():
 
-		current_match_mode = match_mode
-
-	else:
-
-		if current_match_mode.is_empty():
-
-			current_match_mode = "lobby"
-
-	if not requested_game_type.is_empty():
-
-		GameManager.set_game_type(requested_game_type)
-
-	elif GameManager.current_game_type.is_empty():
-
-		GameManager.set_game_type(GameRegistry.DEFAULT_GAME_TYPE)
-
-		
-
-	var game_info = GameRegistry.get_game_info(GameManager.current_game_type)
-
-	var game_name_fa = game_info.get("name_fa", "بازی")
-
-	
-
-	print("[Main] Match confirmed: %s (Game: %s / %s, Mode: %s). Spawning 3D table..." % [game_id, GameManager.current_game_type, game_name_fa, current_match_mode])
-
-	GameManager.current_match_mode = current_match_mode
-
-	GameManager.is_game_active = is_reconnect
-
-	GameManager.current_turn = 0
-
-	GameManager.local_player_surrendered = false
-
-	GameManager.opponent_player_surrendered = false
-
-	_camera_hint_shown = false
-
-	_pending_start_game = false
-
-	_pending_turn = -1
-
-	_current_round_scored = false
-	_active_series_game_index = 0
-	_ranked_rewards_applied = false
-
-	
-
-	# Dismiss and clear all menu overlays and backdrops so nothing intercepts gameplay touch input
-
+func _dismiss_all_menu_dialogs_for_match() -> void:
 	_hide_backdrop()
-
 	if is_instance_valid(queue_dialog):
-
 		queue_dialog.visible = false
-
 	if is_instance_valid(lobby_dialog):
-
 		lobby_dialog.visible = false
-
 	if is_instance_valid(classic_rank_dialog):
-
 		classic_rank_dialog.visible = false
-
 	if is_instance_valid(multi_rank_dialog):
-
 		multi_rank_dialog.visible = false
-
 	if is_instance_valid(pick_ban_dialog):
-
 		pick_ban_dialog.visible = false
-
 	if is_instance_valid(ranked_breakout_dialog):
-
 		ranked_breakout_dialog.visible = false
-
 	if is_instance_valid(ranking_dialog):
-
 		ranking_dialog.visible = false
-
 	if is_instance_valid(game_history_dialog):
-
 		game_history_dialog.visible = false
-
 	if is_instance_valid(store_dialog):
-
 		store_dialog.visible = false
-
 	if is_instance_valid(rules_dialog):
-
 		rules_dialog.visible = false
-
 	if is_instance_valid(login_dialog):
-
 		login_dialog.visible = false
-
+	if is_instance_valid(live_games_dialog):
+		live_games_dialog.visible = false
 	if is_instance_valid(user_profile_dialog):
-
 		user_profile_dialog.visible = false
 		user_profile_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
 	if is_instance_valid(social_dialog):
 		social_dialog.visible = false
 		social_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
 	if is_instance_valid(base_game_hud) and is_instance_valid(base_game_hud.user_profile_dialog):
 		base_game_hud.user_profile_dialog.visible = false
 		base_game_hud.user_profile_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
+func _start_game_match(game_id: String, requested_game_type: String = "", match_mode: String = "", is_reconnect: bool = false) -> void:
+	_match_start_serial += 1
+	var my_serial: int = _match_start_serial
+
+	if not match_mode.is_empty():
+		current_match_mode = match_mode
+	else:
+		if current_match_mode.is_empty():
+			current_match_mode = "lobby"
+
+	if not requested_game_type.is_empty():
+		GameManager.set_game_type(requested_game_type)
+	elif GameManager.current_game_type.is_empty():
+		GameManager.set_game_type(GameRegistry.DEFAULT_GAME_TYPE)
+
+	var game_info = GameRegistry.get_game_info(GameManager.current_game_type)
+	var game_name_fa = game_info.get("name_fa", "بازی")
+
+	print("[Main] Match confirmed: %s (Game: %s / %s, Mode: %s). Spawning 3D table..." % [game_id, GameManager.current_game_type, game_name_fa, current_match_mode])
+
+	GameManager.current_match_mode = current_match_mode
+	GameManager.is_game_active = is_reconnect
+	GameManager.current_turn = 0
+	GameManager.local_player_surrendered = false
+	GameManager.opponent_player_surrendered = false
+	_camera_hint_shown = false
+	_pending_start_game = false
+	_pending_turn = -1
+	_current_round_scored = false
+	_active_series_game_index = 0
+	_ranked_rewards_applied = false
+
+	# Dismiss and clear all menu overlays and backdrops so nothing intercepts gameplay touch input
+	_dismiss_all_menu_dialogs_for_match()
 
 	menu_container.visible = false
 	user_header.visible = false
@@ -1191,39 +1184,41 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 		cafe_table.visible = true
 	base_game_hud.visible = true
 
-	base_game_hud.reset_for_new_match()
-
-	base_game_hud.setup_match(game_name_fa, _get_mode_title())
-
-	
-
-	# Spawn 3D board onto the table through unified GameRegistry BEFORE joining namespace
-
-	_spawn_board_for_game(GameManager.current_game_type)
-
-	
-
-	# Play in-game background music
-
-	AudioManager.play_game_music()
-
-	
-
-	# Connect to real-time game server namespace
-
-	NetworkManager.join_active_game(game_id)
-
-	
-
 	if is_reconnect:
+		base_game_hud.reset_for_new_match()
+		base_game_hud.setup_match(game_name_fa, _get_mode_title())
+		_spawn_board_for_game(GameManager.current_game_type)
+		AudioManager.play_game_music()
+		NetworkManager.join_active_game(game_id)
 		print("[Main] Reconnecting to active game: skipping 5-second start countdown.")
 		base_game_hud.is_game_started = true
 		base_game_hud.is_start_overlay_dismissed = true
 		base_game_hud.force_dismiss_start_overlay(false)
 		base_game_hud.hide_turn_banner()
-	else:
-		# Start pre-game countdown dialog! (Real game stays locked until server sends Start_Game / Current_Turn)
-		base_game_hud.play_start_countdown(Callable(), 5)
+		return
+
+	# Show the Start Game dialog IMMEDIATELY on frame 0 before heavy 3D board loading blocks the main thread
+	var keep_overlay: bool = is_instance_valid(base_game_hud.start_overlay) and base_game_hud.start_overlay.visible
+	base_game_hud.reset_for_new_match(keep_overlay)
+	base_game_hud.setup_match(game_name_fa, _get_mode_title())
+	base_game_hud.show_match_loading("در حال آماده‌سازی میز مسابقه...", true)
+
+	# Yield one frame so Godot paints the Start Game dialog on screen immediately before spawning the 3D board
+	await get_tree().process_frame
+	if my_serial != _match_start_serial:
+		return
+
+	# Spawn 3D board onto the table through unified GameRegistry BEFORE joining namespace
+	_spawn_board_for_game(GameManager.current_game_type)
+
+	# Play in-game background music
+	AudioManager.play_game_music()
+
+	# Connect to real-time game server namespace
+	NetworkManager.join_active_game(game_id)
+
+	# Seamlessly start pre-game countdown inside the already-visible Start Game dialog
+	base_game_hud.play_start_countdown(Callable(), 5, true)
 
 
 
@@ -1880,15 +1875,18 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 		GameManager.p2_score = 0
 
 		if not target_norm.is_empty():
+			GameManager.set_game_type(target_norm)
+		base_game_hud.reset_for_new_match()
+		base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
+		base_game_hud.play_start_countdown(Callable(), 5, true)
+
+		if not target_norm.is_empty():
 			_switch_active_game(target_norm)
 		AudioManager.play_game_music()
 
 		var board = cafe_table.current_board_node
 		if board and is_instance_valid(board) and board.has_method("set_board_locked"):
 			board.set_board_locked(true)
-		base_game_hud.reset_for_new_match()
-		base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
-		base_game_hud.play_start_countdown(Callable(), 5)
 	else:
 		if not target_norm.is_empty() and target_norm.to_lower() != GameManager.current_game_type.to_lower():
 			_switch_active_game(target_norm)
@@ -2565,6 +2563,7 @@ func _on_leave_game_pressed() -> void:
 	if GameManager.is_spectating:
 		_on_leave_spectate_pressed()
 		return
+	_match_start_serial += 1
 	AudioManager.sfx_button()
 	GameManager.clear_open_game_id()
 	GameManager.clear_open_pre_game_id()
@@ -2722,6 +2721,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_ranked_breakout_exit_requested() -> void:
 	print("[Main] User exited ranked match series.")
+	_match_start_serial += 1
 	_hide_backdrop()
 	if is_instance_valid(ranked_breakout_dialog):
 		ranked_breakout_dialog.dismiss()

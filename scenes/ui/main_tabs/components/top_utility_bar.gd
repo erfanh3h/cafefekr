@@ -11,8 +11,6 @@ signal sound_settings_requested()
 @onready var btn_exit: Button = $HBox/BtnExit
 @onready var btn_watch_live: Button = $HBox/BtnWatchLive
 @onready var btn_sound: Button = $HBox/BtnSound
-@onready var live_badge: PanelContainer = $HBox/BtnWatchLive/LiveBadge
-@onready var lbl_live_badge: Label = $HBox/BtnWatchLive/LiveBadge/LblBadge
 @onready var icon_sound: TextureRect = $HBox/BtnSound/IconSound
 
 const TEX_SOUND_ON = preload("res://assets/images/badges/sound-on.png")
@@ -39,7 +37,6 @@ func _ready() -> void:
 	)
 
 	update_sound_icon()
-	update_live_badge(0)
 
 
 func update_sound_icon() -> void:
@@ -49,13 +46,3 @@ func update_sound_icon() -> void:
 		icon_sound.texture = TEX_SOUND_ON
 	else:
 		icon_sound.texture = TEX_SOUND_OFF
-
-
-func update_live_badge(count: int) -> void:
-	if not is_instance_valid(live_badge):
-		return
-	if count > 0:
-		live_badge.visible = true
-		lbl_live_badge.text = GameManager.to_fa_num(count)
-	else:
-		live_badge.visible = false

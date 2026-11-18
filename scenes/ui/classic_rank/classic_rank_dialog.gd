@@ -148,11 +148,9 @@ func _on_close_pressed() -> void:
 
 func _on_start_game_pressed() -> void:
 	AudioManager.sfx_button()
-	ActionVFXManager.animate_dialog_close(self, null, func():
-		visible = false
-		closed.emit()
-		start_game_requested.emit(selected_game_type)
-	)
+	visible = false
+	closed.emit()
+	start_game_requested.emit(selected_game_type)
 
 func _calculate_game_card_height() -> float:
 	var total_w := 560.0
