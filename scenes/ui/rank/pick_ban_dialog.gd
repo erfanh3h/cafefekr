@@ -20,6 +20,7 @@ const KenneyUI = preload("res://scenes/ui/kenney_ui_helper.gd")
 # Nodes
 @onready var lbl_title: Label = $Margin/VBox/Header/TopRow/LblTitle
 @onready var lbl_subtitle: Label = $Margin/VBox/Header/LblSubtitle
+@onready var status_panel: PanelContainer = $Margin/VBox/Header/StatusPanel
 @onready var lbl_status: Label = $Margin/VBox/Header/StatusPanel/MarginStatus/HBoxStatus/LblStatus
 @onready var lbl_turn_timer: Label = $Margin/VBox/Header/StatusPanel/MarginStatus/HBoxStatus/LblTurnTimer
 @onready var turn_timer_bar: ProgressBar = $Margin/VBox/Header/TurnTimerBar
@@ -123,6 +124,9 @@ func _ready() -> void:
 			v_sb.custom_minimum_size = Vector2(12, 0)
 	_connect_network_signals()
 
+var _last_timer_sec: int = -1
+var _last_dc_sec: int = -1
+
 func _process(delta: float) -> void:
 	if not visible:
 		set_process(false)
@@ -130,22 +134,29 @@ func _process(delta: float) -> void:
 		
 	if is_timer_active:
 		turn_time_left = max(0.0, turn_time_left - delta)
-		turn_timer_bar.value = (turn_time_left / turn_total_time) * 100.0
-		lbl_turn_timer.text = "⏳ %d ثانیه" % int(ceil(turn_time_left))
-		
-		if turn_time_left <= 5.0:
-			turn_timer_bar.modulate = Color(1.0, 0.35, 0.35)
-			lbl_turn_timer.modulate = Color(1.0, 0.35, 0.35)
-		elif turn_time_left <= 10.0:
-			turn_timer_bar.modulate = Color(1.0, 0.85, 0.35)
-			lbl_turn_timer.modulate = Color(1.0, 0.85, 0.35)
-		else:
-			turn_timer_bar.modulate = Color(0.35, 0.95, 0.45)
-			lbl_turn_timer.modulate = Color(0.35, 0.95, 0.45)
+		turn_timer_bar.value = (turn_time_left / maxf(0.1, turn_total_time)) * 100.0
+		var sec_int := int(ceil(turn_time_left))
+		if sec_int != _last_timer_sec:
+			_last_timer_sec = sec_int
+			lbl_turn_timer.text = "⏳ %s ثانیه" % _fa_num(sec_int)
+			if sec_int <= 5:
+				turn_timer_bar.modulate = Color(1.0, 0.35, 0.35)
+				lbl_turn_timer.modulate = Color(1.0, 0.35, 0.35)
+				if sec_int > 0 and is_my_turn:
+					AudioManager.play_sound("time")
+			elif sec_int <= 10:
+				turn_timer_bar.modulate = Color(1.0, 0.85, 0.35)
+				lbl_turn_timer.modulate = Color(1.0, 0.85, 0.35)
+			else:
+				turn_timer_bar.modulate = Color(0.35, 0.95, 0.45)
+				lbl_turn_timer.modulate = Color(0.35, 0.95, 0.45)
 
 	if is_dc_active:
 		dc_time_left = max(0.0, dc_time_left - delta)
-		lbl_dc_timer.text = "%ds" % int(ceil(dc_time_left))
+		var dc_int := int(ceil(dc_time_left))
+		if dc_int != _last_dc_sec:
+			_last_dc_sec = dc_int
+			lbl_dc_timer.text = "%s ثانیه" % _fa_num(dc_int)
 		if dc_time_left <= 0:
 			is_dc_active = false
 			disconnect_banner.visible = false
@@ -167,6 +178,9 @@ func _connect_network_signals() -> void:
 # ==============================================================================
 # OPEN / INITIALIZATION
 # ==============================================================================
+
+func _is_mobile() -> bool:
+	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
 func open(p_pre_game_id: String, queuers: Array) -> void:
 	set_process(true)
@@ -343,6 +357,30 @@ func _resolve_player_score(p_dict: Dictionary, player_idx: int) -> int:
 		return int(GameManager.get_score())
 	return 1000
 
+func _apply_avatar_frame_safe(avatar_rect: TextureRect, frame_id: int, slot_sz: float = 52.0) -> void:
+	if not is_instance_valid(avatar_rect):
+		return
+	var p := avatar_rect.get_parent()
+	var slot: Control = null
+	if p is Control and p.name.ends_with("_AvatarSlot"):
+		slot = p as Control
+	elif p is Container:
+		var idx := avatar_rect.get_index()
+		slot = Control.new()
+		slot.name = avatar_rect.name + "_AvatarSlot"
+		slot.custom_minimum_size = Vector2(slot_sz, slot_sz)
+		slot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		p.add_child(slot)
+		p.move_child(slot, idx)
+		p.remove_child(avatar_rect)
+		slot.add_child(avatar_rect)
+		avatar_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	else:
+		slot = p as Control if p is Control else avatar_rect
+	CafeSocialTheme.apply_frame_to_container(slot, avatar_rect, frame_id)
+
+
 func _setup_player_strip() -> void:
 	# P1
 	var p1_uname = str(p1_data.get("name", p1_data.get("username", "بازیکن ۱")))
@@ -352,9 +390,7 @@ func _setup_player_strip() -> void:
 	p1_score.text = _fa_num(p1_s)
 	p1_avatar.texture = _load_avatar_texture(p1_img)
 	var p1_fid = GameManager.get_player_frame_id(p1_data)
-	if is_instance_valid(p1_avatar):
-		var p1_p = p1_avatar.get_parent()
-		CafeSocialTheme.apply_frame_to_container(p1_p if p1_p is Control else p1_avatar, p1_avatar, p1_fid)
+	_apply_avatar_frame_safe(p1_avatar, p1_fid, 52.0)
 	if my_player_index == 1:
 		p1_role.text = "شما"
 		p1_role.add_theme_color_override("font_color", Color(0.35, 0.92, 1.0))
@@ -370,9 +406,7 @@ func _setup_player_strip() -> void:
 	p2_score.text = _fa_num(p2_s)
 	p2_avatar.texture = _load_avatar_texture(p2_img)
 	var p2_fid = GameManager.get_player_frame_id(p2_data)
-	if is_instance_valid(p2_avatar):
-		var p2_p = p2_avatar.get_parent()
-		CafeSocialTheme.apply_frame_to_container(p2_p if p2_p is Control else p2_avatar, p2_avatar, p2_fid)
+	_apply_avatar_frame_safe(p2_avatar, p2_fid, 52.0)
 	if my_player_index == 2:
 		p2_role.text = "شما"
 		p2_role.add_theme_color_override("font_color", Color(0.35, 0.92, 1.0))
@@ -396,7 +430,9 @@ func _build_timeline() -> void:
 	timeline_nodes.clear()
 	system_ban_nodes.clear()
 	
-	# Build a symmetric 2-row header (Row 1: 3 System Removed Games + Steps 1..2 = 5 cards; Row 2: Steps 3..7 = 5 cards)
+	# Compact 2-tier Timeline (reclaims ~80px for the 3-column game grid!):
+	# Tier 1: Slim 32px System-Banned games chip bar
+	# Tier 2: Single clean 7-step Draft Row (Ban1, Ban2, Pick1, Pick2, Ban3, Ban4, System Pick)
 	var rows_vbox = VBoxContainer.new()
 	rows_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rows_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -404,123 +440,79 @@ func _build_timeline() -> void:
 	rows_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	hbox_timeline.add_child(rows_vbox)
 	
-	var row_top = HBoxContainer.new()
-	row_top.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row_top.add_theme_constant_override("separation", 6)
-	row_top.alignment = BoxContainer.ALIGNMENT_CENTER
-	rows_vbox.add_child(row_top)
-	
-	var row_bottom = HBoxContainer.new()
-	row_bottom.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row_bottom.add_theme_constant_override("separation", 6)
-	row_bottom.alignment = BoxContainer.ALIGNMENT_CENTER
-	rows_vbox.add_child(row_bottom)
-	
-	# First 3 slots at the start of top header: 3 System-Removed Games
+	# Tier 1: Slim System Bans Strip
+	var sys_strip = HBoxContainer.new()
+	sys_strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sys_strip.add_theme_constant_override("separation", 5)
+	sys_strip.alignment = BoxContainer.ALIGNMENT_CENTER
+	rows_vbox.add_child(sys_strip)
+
+	var sys_title_lbl = Label.new()
+	sys_title_lbl.text = "🚫 حذف سیستم:"
+	sys_title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	sys_title_lbl.add_theme_font_size_override("font_size", 15)
+	sys_title_lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.62))
+	sys_strip.add_child(sys_title_lbl)
+
 	for s_idx in range(3):
 		var sys_box = PanelContainer.new()
-		sys_box.custom_minimum_size = Vector2(0, 96)
+		sys_box.custom_minimum_size = Vector2(0, 30)
 		sys_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		sys_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		
 		var sys_sb = StyleBoxFlat.new()
-		sys_sb.bg_color = Color(0.16, 0.06, 0.06, 0.82)
-		sys_sb.set_border_width_all(2)
-		sys_sb.border_color = Color(0.85, 0.28, 0.28, 0.85)
-		sys_sb.set_corner_radius_all(12)
+		sys_sb.bg_color = Color(0.20, 0.06, 0.06, 0.88)
+		sys_sb.set_border_width_all(1)
+		sys_sb.border_color = Color(0.85, 0.28, 0.28, 0.82)
+		sys_sb.set_corner_radius_all(8)
+		sys_sb.content_margin_left = 6
+		sys_sb.content_margin_right = 6
+		sys_sb.content_margin_top = 2
+		sys_sb.content_margin_bottom = 2
 		sys_box.add_theme_stylebox_override("panel", sys_sb)
-		
-		var sys_margin = MarginContainer.new()
-		sys_margin.add_theme_constant_override("margin_left", 4)
-		sys_margin.add_theme_constant_override("margin_top", 4)
-		sys_margin.add_theme_constant_override("margin_right", 4)
-		sys_margin.add_theme_constant_override("margin_bottom", 4)
-		sys_box.add_child(sys_margin)
-		
-		var sys_vbox = VBoxContainer.new()
-		sys_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		sys_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		sys_vbox.add_theme_constant_override("separation", 3)
-		sys_margin.add_child(sys_vbox)
-		
-		var sys_chip = PanelContainer.new()
-		sys_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var sys_chip_sb = StyleBoxFlat.new()
-		sys_chip_sb.set_corner_radius_all(6)
-		sys_chip_sb.set_border_width_all(1)
-		sys_chip_sb.content_margin_left = 3
-		sys_chip_sb.content_margin_right = 3
-		sys_chip_sb.content_margin_top = 1
-		sys_chip_sb.content_margin_bottom = 1
-		sys_chip_sb.bg_color = Color(0.38, 0.08, 0.08, 0.92)
-		sys_chip_sb.border_color = Color(0.95, 0.32, 0.32, 0.90)
-		sys_chip.add_theme_stylebox_override("panel", sys_chip_sb)
-		
-		var sys_tag = Label.new()
-		sys_tag.text = "حذف %s" % _fa_num(s_idx + 1)
-		sys_tag.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		sys_tag.clip_text = true
-		sys_tag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		sys_tag.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		sys_tag.add_theme_font_size_override("font_size", 14)
-		sys_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		sys_tag.modulate = Color(1.0, 0.62, 0.62)
-		sys_chip.add_child(sys_tag)
-		sys_vbox.add_child(sys_chip)
-		
-		var sys_frame = PanelContainer.new()
-		sys_frame.custom_minimum_size = Vector2(44, 44)
-		sys_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		var sys_frame_sb = StyleBoxFlat.new()
-		sys_frame_sb.bg_color = Color(0.06, 0.03, 0.03, 0.90)
-		sys_frame_sb.set_border_width_all(1)
-		sys_frame_sb.border_color = Color(0.75, 0.25, 0.25, 0.80)
-		sys_frame_sb.set_corner_radius_all(8)
-		sys_frame.add_theme_stylebox_override("panel", sys_frame_sb)
-		
+
+		var sys_row = HBoxContainer.new()
+		sys_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		sys_row.add_theme_constant_override("separation", 4)
+		sys_box.add_child(sys_row)
+
 		var sys_img = TextureRect.new()
-		sys_img.custom_minimum_size = Vector2(40, 40)
+		sys_img.custom_minimum_size = Vector2(22, 22)
 		sys_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		sys_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		sys_img.texture = _load_game_texture("tictactoe")
-		sys_img.modulate = Color(0.35, 0.25, 0.25, 0.20)
-		sys_frame.add_child(sys_img)
-		
-		var sys_ban_overlay = Label.new()
-		sys_ban_overlay.text = "✕"
-		sys_ban_overlay.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		sys_ban_overlay.add_theme_font_size_override("font_size", 24)
-		sys_ban_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		sys_ban_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		sys_ban_overlay.modulate = Color(1.0, 0.25, 0.25, 0.35)
-		sys_frame.add_child(sys_ban_overlay)
-		sys_vbox.add_child(sys_frame)
-		
+		sys_img.modulate = Color(0.45, 0.30, 0.30, 0.28)
+		sys_row.add_child(sys_img)
+
 		var sys_name = Label.new()
-		sys_name.text = "در حال حذف..."
+		sys_name.text = "..."
 		sys_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sys_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		sys_name.add_theme_font_size_override("font_size", 15)
+		sys_name.add_theme_font_size_override("font_size", 14)
 		sys_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		sys_name.clip_text = true
 		sys_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		sys_name.modulate = Color(1.0, 0.76, 0.76)
-		sys_vbox.add_child(sys_name)
-		
-		row_top.add_child(sys_box)
+		sys_name.modulate = Color(1.0, 0.78, 0.78)
+		sys_row.add_child(sys_name)
+
+		sys_strip.add_child(sys_box)
 		system_ban_nodes.append({
 			"box": sys_box,
 			"style": sys_sb,
-			"frame": sys_frame,
-			"frame_style": sys_frame_sb,
+			"frame": null,
+			"frame_style": null,
 			"img": sys_img,
-			"ban_overlay": sys_ban_overlay,
+			"ban_overlay": null,
 			"name_lbl": sys_name,
-			"tag_lbl": sys_tag,
-			"chip_style": sys_chip_sb
+			"tag_lbl": null,
+			"chip_style": null
 		})
+
+	# Tier 2: Single Linear 7-Step Draft Row
+	var row_steps = HBoxContainer.new()
+	row_steps.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row_steps.add_theme_constant_override("separation", 4)
+	row_steps.alignment = BoxContainer.ALIGNMENT_CENTER
+	rows_vbox.add_child(row_steps)
 	
-	# Next 7 slots: Steps 1..2 on row_top, Steps 3..7 on row_bottom
 	for i in range(TIMELINE_CONFIG.size()):
 		var cfg = TIMELINE_CONFIG[i]
 		var t_num = int(cfg["turn"])
@@ -528,38 +520,38 @@ func _build_timeline() -> void:
 		var t_owner = int(cfg["owner"]) # 1, 2, 0 (sys)
 		
 		var node_box = PanelContainer.new()
-		node_box.custom_minimum_size = Vector2(0, 96)
+		node_box.custom_minimum_size = Vector2(0, 84)
 		node_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		node_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
 		var sb = StyleBoxFlat.new()
-		sb.bg_color = Color(0.11, 0.07, 0.05, 0.78)
+		sb.bg_color = Color(0.11, 0.07, 0.05, 0.80)
 		sb.set_border_width_all(2)
-		sb.border_color = Color(0.50, 0.38, 0.22, 0.80)
-		sb.set_corner_radius_all(12)
+		sb.border_color = Color(0.50, 0.38, 0.22, 0.78)
+		sb.set_corner_radius_all(10)
 		node_box.add_theme_stylebox_override("panel", sb)
 		
 		var margin = MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 4)
-		margin.add_theme_constant_override("margin_top", 4)
-		margin.add_theme_constant_override("margin_right", 4)
-		margin.add_theme_constant_override("margin_bottom", 4)
+		margin.add_theme_constant_override("margin_left", 3)
+		margin.add_theme_constant_override("margin_top", 3)
+		margin.add_theme_constant_override("margin_right", 3)
+		margin.add_theme_constant_override("margin_bottom", 3)
 		node_box.add_child(margin)
 		
 		var vbox = VBoxContainer.new()
 		vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 3)
+		vbox.add_theme_constant_override("separation", 2)
 		margin.add_child(vbox)
 		
 		# Top Action Pill
 		var chip_panel = PanelContainer.new()
 		chip_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var chip_sb = StyleBoxFlat.new()
-		chip_sb.set_corner_radius_all(6)
+		chip_sb.set_corner_radius_all(5)
 		chip_sb.set_border_width_all(1)
-		chip_sb.content_margin_left = 3
-		chip_sb.content_margin_right = 3
+		chip_sb.content_margin_left = 2
+		chip_sb.content_margin_right = 2
 		chip_sb.content_margin_top = 1
 		chip_sb.content_margin_bottom = 1
 		
@@ -568,21 +560,21 @@ func _build_timeline() -> void:
 		lbl_tag.clip_text = true
 		lbl_tag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		lbl_tag.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_tag.add_theme_font_size_override("font_size", 14)
+		lbl_tag.add_theme_font_size_override("font_size", 13)
 		lbl_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		
 		if t_type == "ban":
-			lbl_tag.text = "حذف %s" % _fa_num(t_num)
+			lbl_tag.text = "حذف"
 			chip_sb.bg_color = Color(0.32, 0.08, 0.08, 0.90)
 			chip_sb.border_color = Color(0.90, 0.32, 0.32, 0.85)
-			lbl_tag.modulate = Color(1.0, 0.60, 0.60)
+			lbl_tag.modulate = Color(1.0, 0.62, 0.62)
 		elif t_type == "sys_pick":
-			lbl_tag.text = "بازی ۳ 🎲"
+			lbl_tag.text = "بازی ۳"
 			chip_sb.bg_color = Color(0.34, 0.24, 0.06, 0.90)
 			chip_sb.border_color = Color(1.0, 0.84, 0.28, 0.90)
 			lbl_tag.modulate = Color(1.0, 0.88, 0.35)
 		else:
-			lbl_tag.text = ("بازی ۱ ★" if t_num == 3 else "بازی ۲ ★")
+			lbl_tag.text = ("بازی ۱" if t_num == 3 else "بازی ۲")
 			chip_sb.bg_color = Color(0.08, 0.28, 0.14, 0.90)
 			chip_sb.border_color = Color(0.32, 0.92, 0.52, 0.90)
 			lbl_tag.modulate = Color(0.45, 0.98, 0.62)
@@ -591,19 +583,19 @@ func _build_timeline() -> void:
 		chip_panel.add_child(lbl_tag)
 		vbox.add_child(chip_panel)
 		
-		# Center Icon Box (44x44)
+		# Center Icon Box (36x36)
 		var frame = PanelContainer.new()
-		frame.custom_minimum_size = Vector2(44, 44)
+		frame.custom_minimum_size = Vector2(36, 36)
 		frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		var frame_sb = StyleBoxFlat.new()
 		frame_sb.bg_color = Color(0.05, 0.03, 0.02, 0.90)
 		frame_sb.set_border_width_all(1)
 		frame_sb.border_color = Color(0.42, 0.32, 0.20, 0.80)
-		frame_sb.set_corner_radius_all(8)
+		frame_sb.set_corner_radius_all(7)
 		frame.add_theme_stylebox_override("panel", frame_sb)
 		
 		var img_rect = TextureRect.new()
-		img_rect.custom_minimum_size = Vector2(40, 40)
+		img_rect.custom_minimum_size = Vector2(32, 32)
 		img_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		img_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		img_rect.texture = _load_game_texture("tictactoe")
@@ -613,7 +605,7 @@ func _build_timeline() -> void:
 		var ban_overlay = Label.new()
 		ban_overlay.text = "✕"
 		ban_overlay.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		ban_overlay.add_theme_font_size_override("font_size", 24)
+		ban_overlay.add_theme_font_size_override("font_size", 20)
 		ban_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		ban_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		ban_overlay.modulate = Color(1.0, 0.2, 0.2, 0.0)
@@ -623,10 +615,10 @@ func _build_timeline() -> void:
 		
 		# Bottom Actor / Game Name Label
 		var lbl_name = Label.new()
-		lbl_name.text = _get_step_actor_label(t_owner, t_type)
+		lbl_name.text = "شما" if t_owner == my_player_index else ("سیستم" if t_owner == 0 else "حریف")
 		lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_name.add_theme_font_size_override("font_size", 15)
+		lbl_name.add_theme_font_size_override("font_size", 13)
 		lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_name.clip_text = true
 		lbl_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -638,10 +630,7 @@ func _build_timeline() -> void:
 			lbl_name.modulate = Color(0.95, 0.72, 0.65)
 		vbox.add_child(lbl_name)
 		
-		if t_num <= 2:
-			row_top.add_child(node_box)
-		else:
-			row_bottom.add_child(node_box)
+		row_steps.add_child(node_box)
 		
 		timeline_nodes[t_num] = {
 			"box": node_box,
@@ -660,13 +649,14 @@ func _build_timeline() -> void:
 		}
 
 func _calculate_game_card_height() -> float:
-	var total_w := 640.0
+	var total_w := 660.0
 	if is_instance_valid(scroll_games) and scroll_games.size.x > 100.0:
 		total_w = scroll_games.size.x - 24.0
 	elif is_instance_valid(games_grid) and games_grid.size.x > 100.0:
 		total_w = games_grid.size.x
-	var cell_w := floor((total_w - 12.0) / 2.0)
-	return maxf(160.0, cell_w)
+	var cols: int = maxi(2, games_grid.columns if is_instance_valid(games_grid) else 3)
+	var cell_w := floor((total_w - float((cols - 1) * 10)) / float(cols))
+	return clampf(cell_w, 130.0, 230.0)
 
 func _on_games_scroll_resized() -> void:
 	var h := _calculate_game_card_height()
@@ -679,7 +669,7 @@ func _build_games_grid() -> void:
 	for child in games_grid.get_children():
 		child.queue_free()
 	game_card_nodes.clear()
-	games_grid.columns = 2
+	games_grid.columns = 3
 	
 	var initial_h := _calculate_game_card_height()
 	for g_type in TWO_PLAYER_GAMES:
@@ -737,22 +727,22 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> PanelContain
 	ban_mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ban_mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	ban_mark.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	ban_mark.add_theme_font_size_override("font_size", 84)
+	ban_mark.add_theme_font_size_override("font_size", 64)
 	ban_mark.add_theme_color_override("font_color", Color(1.0, 0.22, 0.22, 0.92))
 	ban_mark.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-	ban_mark.add_theme_constant_override("shadow_outline_size", 6)
+	ban_mark.add_theme_constant_override("shadow_outline_size", 5)
 	card_body.add_child(ban_mark)
 	
 	# 3. Bottom Difficulty Ribbon Banner with Persian Game Name (matching classic_rank_dialog)
 	var name_banner = PanelContainer.new()
-	name_banner.anchor_top = 0.74
+	name_banner.anchor_top = 0.72
 	name_banner.anchor_right = 1.0
 	name_banner.anchor_bottom = 1.0
-	name_banner.offset_left = 4.0
-	name_banner.offset_right = -4.0
-	name_banner.offset_bottom = -4.0
+	name_banner.offset_left = 3.0
+	name_banner.offset_right = -3.0
+	name_banner.offset_bottom = -3.0
 	name_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(g_type, 40.0, 4.0))
+	name_banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(g_type, 26.0, 3.0))
 	card_body.add_child(name_banner)
 	
 	var lbl_name = Label.new()
@@ -762,12 +752,12 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> PanelContain
 	lbl_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl_name.text = GameTypes.get_display_name_fa(g_type)
 	lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_name.add_theme_font_size_override("font_size", 24)
+	lbl_name.add_theme_font_size_override("font_size", 19)
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl_name.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 	lbl_name.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-	lbl_name.add_theme_constant_override("shadow_outline_size", 3)
+	lbl_name.add_theme_constant_override("shadow_outline_size", 2)
 	name_banner.add_child(lbl_name)
 	
 	# 4. Top-Right Selection / Picked / Banned Badge (hidden when idle)
@@ -777,24 +767,26 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> PanelContain
 	sel_corner.anchors_preset = Control.PRESET_TOP_RIGHT
 	sel_corner.anchor_left = 1.0
 	sel_corner.anchor_right = 1.0
-	sel_corner.offset_left = -132
-	sel_corner.offset_top = 10
-	sel_corner.offset_right = -10
-	sel_corner.offset_bottom = 44
+	sel_corner.offset_left = -104
+	sel_corner.offset_top = 6
+	sel_corner.offset_right = -6
+	sel_corner.offset_bottom = 36
 	var sel_corner_sb = StyleBoxFlat.new()
 	sel_corner_sb.bg_color = Color(0.12, 0.72, 0.34, 0.96)
 	sel_corner_sb.set_border_width_all(2)
 	sel_corner_sb.border_color = Color(1, 1, 1, 0.92)
-	sel_corner_sb.set_corner_radius_all(10)
-	sel_corner_sb.content_margin_left = 8
-	sel_corner_sb.content_margin_right = 8
+	sel_corner_sb.set_corner_radius_all(8)
+	sel_corner_sb.content_margin_left = 5
+	sel_corner_sb.content_margin_right = 5
 	sel_corner.add_theme_stylebox_override("panel", sel_corner_sb)
 	
 	var lbl_sel_corner = Label.new()
 	lbl_sel_corner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl_sel_corner.text = "✓ انتخاب"
+	lbl_sel_corner.clip_text = true
+	lbl_sel_corner.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl_sel_corner.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_sel_corner.add_theme_font_size_override("font_size", 18)
+	lbl_sel_corner.add_theme_font_size_override("font_size", 15)
 	lbl_sel_corner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_sel_corner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl_sel_corner.add_theme_color_override("font_color", Color(1, 1, 1))
@@ -950,7 +942,7 @@ func _update_timeline_active_step(active_step_num: int) -> void:
 			sb.set_border_width_all(4)
 			sb.bg_color = Color(0.26, 0.10, 0.08, 0.98) if t_type == "ban" else Color(0.24, 0.16, 0.08, 0.98)
 			sb.shadow_color = Color(active_col.r, active_col.g, active_col.b, 0.45)
-			sb.shadow_size = 12
+			sb.shadow_size = 0 if _is_mobile() else 12
 			
 			if frame_sb:
 				frame_sb.border_color = active_col
@@ -959,19 +951,20 @@ func _update_timeline_active_step(active_step_num: int) -> void:
 			var name_lbl: Label = node_data["name_lbl"]
 			var t_owner = int(cfg.get("owner", 0))
 			if t_owner == my_player_index:
-				name_lbl.text = "⚡ نوبت شما..."
+				name_lbl.text = "⚡ نوبت شما"
 				name_lbl.modulate = Color(0.4, 0.98, 1.0)
 			else:
-				name_lbl.text = "⏳ در حال انتخاب..."
+				name_lbl.text = "⏳ حریف..."
 				name_lbl.modulate = Color(1.0, 0.88, 0.3)
 			
 			var img: TextureRect = node_data["img"]
 			img.modulate = Color(0.85, 0.85, 0.85, 0.55)
 			
-			# Smooth pulse animation on active step
-			_timeline_pulse_tween = create_tween().set_loops()
-			_timeline_pulse_tween.tween_property(node_box, "modulate", Color(1.14, 1.14, 1.14), 0.5)
-			_timeline_pulse_tween.tween_property(node_box, "modulate", Color(1.0, 1.0, 1.0), 0.5)
+			# Smooth pulse animation on active step (skipped on mobile to reduce GPU redraws)
+			if not _is_mobile():
+				_timeline_pulse_tween = create_tween().set_loops()
+				_timeline_pulse_tween.tween_property(node_box, "modulate", Color(1.14, 1.14, 1.14), 0.5)
+				_timeline_pulse_tween.tween_property(node_box, "modulate", Color(1.0, 1.0, 1.0), 0.5)
 			
 			# Ensure active node is scrolled into view
 			if is_instance_valid(scroll_timeline):
@@ -981,7 +974,7 @@ func _update_timeline_active_step(active_step_num: int) -> void:
 			sb.set_border_width_all(2)
 			sb.bg_color = Color(0.12, 0.08, 0.06, 0.92)
 			sb.shadow_color = Color(0, 0, 0, 0.4)
-			sb.shadow_size = 4
+			sb.shadow_size = 0 if _is_mobile() else 4
 			if frame_sb:
 				frame_sb.border_color = Color(0.35, 0.25, 0.16, 0.6)
 				frame_sb.set_border_width_all(2)
@@ -1016,12 +1009,13 @@ func _apply_game_selection(step_num: int, game_type: String) -> void:
 		arrow.modulate = Color(1.0, 0.85, 0.35, 1.0)
 	
 	var actor_short = "شما" if t_owner == my_player_index else "حریف"
+	var mobile_mode := _is_mobile()
 	if t_type == "ban":
 		sb.border_color = Color(0.95, 0.25, 0.25, 0.95)
 		sb.set_border_width_all(3)
 		sb.bg_color = Color(0.24, 0.06, 0.06, 0.96)
 		sb.shadow_color = Color(0.85, 0.15, 0.15, 0.4)
-		sb.shadow_size = 8
+		sb.shadow_size = 0 if mobile_mode else 8
 		
 		if frame_sb:
 			frame_sb.border_color = Color(0.90, 0.20, 0.20, 0.95)
@@ -1034,15 +1028,15 @@ func _apply_game_selection(step_num: int, game_type: String) -> void:
 		if chip_sb:
 			chip_sb.bg_color = Color(0.45, 0.08, 0.08, 0.95)
 			chip_sb.border_color = Color(1.0, 0.3, 0.3, 1.0)
-		tag_lbl.text = "🚫 حذف (%s)" % actor_short
-		tag_lbl.modulate = Color(1.0, 0.45, 0.45)
-		_mark_card_banned(game_type, "🚫 حذف توسط %s" % actor_short)
+		tag_lbl.text = "حذف %s" % actor_short
+		tag_lbl.modulate = Color(1.0, 0.55, 0.55)
+		_mark_card_banned(game_type, "حذف %s" % actor_short)
 	elif t_type == "sys_pick":
 		sb.border_color = Color(1.0, 0.85, 0.25, 1.0)
 		sb.set_border_width_all(4)
 		sb.bg_color = Color(0.22, 0.16, 0.06, 0.96)
 		sb.shadow_color = Color(1.0, 0.85, 0.2, 0.45)
-		sb.shadow_size = 10
+		sb.shadow_size = 0 if mobile_mode else 10
 		
 		if frame_sb:
 			frame_sb.border_color = Color(1.0, 0.85, 0.25, 1.0)
@@ -1055,16 +1049,16 @@ func _apply_game_selection(step_num: int, game_type: String) -> void:
 		if chip_sb:
 			chip_sb.bg_color = Color(0.40, 0.30, 0.08, 0.95)
 			chip_sb.border_color = Color(1.0, 0.88, 0.3, 1.0)
-		tag_lbl.text = "🎲 بازی ۳"
+		tag_lbl.text = "بازی ۳"
 		tag_lbl.modulate = Color(1.0, 0.88, 0.3)
-		_mark_card_picked(game_type, "🎲 بازی ۳ (قرعه سیستم)")
+		_mark_card_picked(game_type, "بازی ۳ (سیستم)")
 	else:
-		var p_label = "🎯 بازی ۱ (%s)" % actor_short if step_num == 3 else "🎯 بازی ۲ (%s)" % actor_short
+		var p_label = "بازی ۱ (%s)" % actor_short if step_num == 3 else "بازی ۲ (%s)" % actor_short
 		sb.border_color = Color(0.25, 0.95, 0.55, 1.0)
 		sb.set_border_width_all(4)
 		sb.bg_color = Color(0.06, 0.20, 0.12, 0.96)
 		sb.shadow_color = Color(0.25, 0.95, 0.5, 0.45)
-		sb.shadow_size = 10
+		sb.shadow_size = 0 if mobile_mode else 10
 		
 		if frame_sb:
 			frame_sb.border_color = Color(0.25, 0.95, 0.55, 1.0)
@@ -1077,7 +1071,7 @@ func _apply_game_selection(step_num: int, game_type: String) -> void:
 		if chip_sb:
 			chip_sb.bg_color = Color(0.08, 0.35, 0.18, 0.95)
 			chip_sb.border_color = Color(0.35, 0.95, 0.55, 1.0)
-		tag_lbl.text = "🎯 بازی ۱" if step_num == 3 else "🎯 بازی ۲"
+		tag_lbl.text = "بازی ۱" if step_num == 3 else "بازی ۲"
 		tag_lbl.modulate = Color(0.35, 0.95, 0.6)
 		_mark_card_picked(game_type, p_label)
 		
@@ -1106,15 +1100,11 @@ func _play_selection_vfx(game_type: String, t_type: String, step_num: int) -> vo
 	tw_card.tween_property(card, "scale", Vector2(1.08, 1.08), 0.10)
 	tw_card.tween_property(card, "scale", Vector2(1.0, 1.0), 0.16)
 	
-	# Animated Impact Stamp Badge
-	var stamp = Label.new()
-	stamp.text = "🚫 حذف شد" if t_type == "ban" else ("🎯 انتخاب شد" if t_type == "pick" else "🎲 انتخاب سیستم")
-	stamp.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	stamp.add_theme_font_size_override("font_size", 22)
-	stamp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stamp.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	stamp.custom_minimum_size = Vector2(170, 48)
-	stamp.size = Vector2(170, 48)
+	# Animated Impact Stamp Badge (PanelContainer + Label so border/bg/shadow actually render!)
+	var stamp = PanelContainer.new()
+	stamp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamp.custom_minimum_size = Vector2(156, 44)
+	stamp.size = Vector2(156, 44)
 	stamp.position = (card.size - stamp.size) * 0.5
 	stamp.pivot_offset = stamp.size * 0.5
 	
@@ -1127,9 +1117,24 @@ func _play_selection_vfx(game_type: String, t_type: String, step_num: int) -> vo
 		stamp_sb.border_color = Color(1.0, 0.90, 0.30, 1.0)
 	stamp_sb.set_border_width_all(3)
 	stamp_sb.set_corner_radius_all(12)
-	stamp_sb.shadow_color = Color(0, 0, 0, 0.65)
-	stamp_sb.shadow_size = 10
+	stamp_sb.content_margin_left = 10
+	stamp_sb.content_margin_right = 10
+	stamp_sb.content_margin_top = 4
+	stamp_sb.content_margin_bottom = 4
+	if not _is_mobile():
+		stamp_sb.shadow_color = Color(0, 0, 0, 0.55)
+		stamp_sb.shadow_size = 8
 	stamp.add_theme_stylebox_override("panel", stamp_sb)
+	
+	var stamp_lbl = Label.new()
+	stamp_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamp_lbl.text = "🚫 حذف شد" if t_type == "ban" else ("🎯 انتخاب شد" if t_type == "pick" else "🎲 انتخاب سیستم")
+	stamp_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	stamp_lbl.add_theme_font_size_override("font_size", 20)
+	stamp_lbl.add_theme_color_override("font_color", Color.WHITE)
+	stamp_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stamp_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stamp.add_child(stamp_lbl)
 	
 	card.add_child(stamp)
 	
@@ -1179,6 +1184,9 @@ func _mark_card_banned(game_type: String, reason: String) -> void:
 	card.modulate = Color(0.76, 0.72, 0.72, 0.82)
 	var btn: Button = card.get_meta("btn")
 	btn.disabled = true
+	# Auto-sink banned cards to bottom so available games stay right at the top!
+	if is_instance_valid(games_grid) and card.get_parent() == games_grid:
+		games_grid.move_child(card, games_grid.get_child_count() - 1)
 
 func _mark_card_picked(game_type: String, series_title: String) -> void:
 	if not game_card_nodes.has(game_type):
@@ -1201,6 +1209,8 @@ func _mark_card_picked(game_type: String, series_title: String) -> void:
 	sb.shadow_size = 0
 	var btn: Button = card.get_meta("btn")
 	btn.disabled = true
+	if is_instance_valid(games_grid) and card.get_parent() == games_grid:
+		games_grid.move_child(card, games_grid.get_child_count() - 1)
 
 # ==============================================================================
 # NETWORK EVENT HANDLERS
@@ -1219,38 +1229,39 @@ func _on_system_banned_games_received(banned_games: Array) -> void:
 			lbl_sys_ban2.text = "🚫 %s" % fa_name
 		elif idx == 2:
 			lbl_sys_ban3.text = "🚫 %s" % fa_name
-		_mark_card_banned(g_str, "🚫 حذف خودکار سیستم")
+		_mark_card_banned(g_str, "حذف سیستم")
 		
 		if idx < system_ban_nodes.size():
 			var s_node = system_ban_nodes[idx]
 			var s_box: Control = s_node["box"]
 			var s_sb: StyleBoxFlat = s_node["style"]
-			var s_frame_sb: StyleBoxFlat = s_node["frame_style"]
+			var s_frame_sb = s_node.get("frame_style", null)
 			var s_img: TextureRect = s_node["img"]
-			var s_ban_ov: Label = s_node["ban_overlay"]
+			var s_ban_ov = s_node.get("ban_overlay", null)
 			var s_name_lbl: Label = s_node["name_lbl"]
-			var s_tag_lbl: Label = s_node["tag_lbl"]
+			var s_tag_lbl = s_node.get("tag_lbl", null)
 			
-			s_sb.border_color = Color(0.95, 0.25, 0.25, 0.95)
-			s_sb.set_border_width_all(3)
-			s_sb.bg_color = Color(0.24, 0.06, 0.06, 0.88)
-			s_sb.shadow_color = Color(0.85, 0.15, 0.15, 0.35)
-			s_sb.shadow_size = 6
+			s_sb.border_color = Color(0.95, 0.28, 0.28, 0.95)
+			s_sb.set_border_width_all(2)
+			s_sb.bg_color = Color(0.28, 0.07, 0.07, 0.94)
 			
-			s_frame_sb.border_color = Color(0.92, 0.22, 0.22, 0.95)
-			s_frame_sb.bg_color = Color(0.18, 0.04, 0.04, 0.92)
+			if s_frame_sb is StyleBoxFlat:
+				s_frame_sb.border_color = Color(0.92, 0.22, 0.22, 0.95)
+				s_frame_sb.bg_color = Color(0.18, 0.04, 0.04, 0.92)
 			
 			s_img.texture = _load_game_texture(g_str)
-			s_img.modulate = Color(0.68, 0.38, 0.38, 0.88)
-			s_ban_ov.modulate = Color(1.0, 0.25, 0.25, 0.96)
+			s_img.modulate = Color(0.92, 0.72, 0.72, 0.95)
+			if is_instance_valid(s_ban_ov):
+				s_ban_ov.modulate = Color(1.0, 0.25, 0.25, 0.96)
 			s_name_lbl.text = fa_name
-			s_name_lbl.modulate = Color(1.0, 0.88, 0.88)
-			s_tag_lbl.text = "🚫 حذف سیستم %s" % _fa_num(idx + 1)
-			s_tag_lbl.modulate = Color(1.0, 0.55, 0.55)
+			s_name_lbl.modulate = Color(1.0, 0.90, 0.90)
+			if is_instance_valid(s_tag_lbl):
+				s_tag_lbl.text = "حذف %s" % _fa_num(idx + 1)
+				s_tag_lbl.modulate = Color(1.0, 0.55, 0.55)
 			
 			s_box.pivot_offset = s_box.size * 0.5
 			var tw_s = create_tween()
-			tw_s.tween_property(s_box, "scale", Vector2(1.10, 1.10), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw_s.tween_property(s_box, "scale", Vector2(1.08, 1.08), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			tw_s.tween_property(s_box, "scale", Vector2(1.0, 1.0), 0.16)
 		
 	for g in system_banned:
@@ -1277,27 +1288,42 @@ func _on_select_game_turn(active_user_id: String) -> void:
 
 func _update_turn_ui() -> void:
 	var is_ban_turn = turn_index in [1, 2, 5, 6]
+	var sp_sb := StyleBoxFlat.new()
+	sp_sb.set_border_width_all(2)
+	sp_sb.set_corner_radius_all(14)
 	
 	if is_my_turn:
 		AudioManager.play_sound("start_turn")
+		if is_instance_valid(games_grid):
+			games_grid.modulate = Color(1.0, 1.0, 1.0, 1.0)
 		if is_ban_turn:
-			lbl_status.text = "🚫 نوبت شماست: یک بازی را برای حذف (BAN) انتخاب کنید"
-			lbl_status.modulate = Color(1.0, 0.48, 0.42)
-			btn_confirm.text = "🚫 ابتدا یک بازی را برای حذف انتخاب کنید"
+			sp_sb.bg_color = Color(0.32, 0.08, 0.08, 0.95)
+			sp_sb.border_color = Color(1.0, 0.38, 0.32, 0.98)
+			lbl_status.text = "🚫 نوبت شما: یک بازی را حذف کنید"
+			lbl_status.modulate = Color(1.0, 0.82, 0.78)
+			btn_confirm.text = "🚫 یک بازی برای حذف انتخاب کنید"
 			KenneyUI.style_button(btn_confirm, KenneyUI.COLOR_RED)
 		else:
-			lbl_status.text = "🎯 نوبت شماست: بازی مورد نظر برای مسابقه (PICK) را انتخاب کنید"
-			lbl_status.modulate = Color(0.38, 0.98, 0.58)
-			btn_confirm.text = "🎯 ابتدا یک بازی را برای مسابقه انتخاب کنید"
+			sp_sb.bg_color = Color(0.08, 0.28, 0.14, 0.95)
+			sp_sb.border_color = Color(0.35, 0.96, 0.56, 0.98)
+			lbl_status.text = "🎯 نوبت شما: بازی مسابقه را انتخاب کنید"
+			lbl_status.modulate = Color(0.84, 1.0, 0.88)
+			btn_confirm.text = "🎯 یک بازی برای مسابقه انتخاب کنید"
 			KenneyUI.style_button(btn_confirm, KenneyUI.COLOR_GREEN)
 		btn_confirm.disabled = true
 	else:
+		sp_sb.bg_color = Color(0.15, 0.10, 0.06, 0.92)
+		sp_sb.border_color = Color(0.78, 0.62, 0.28, 0.88)
+		if is_instance_valid(games_grid):
+			games_grid.modulate = Color(0.74, 0.74, 0.78, 0.86)
 		var opp_name = str(p2_data.get("name", p2_data.get("username", "حریف"))) if my_player_index == 1 else str(p1_data.get("name", p1_data.get("username", "حریف")))
 		var action_str = "حذف یک بازی" if is_ban_turn else "انتخاب بازی مسابقه"
 		lbl_status.text = "⏳ نوبت %s: در حال %s..." % [opp_name, action_str]
-		lbl_status.modulate = Color(1.0, 0.84, 0.3)
+		lbl_status.modulate = Color(1.0, 0.86, 0.38)
 		btn_confirm.text = "⏳ منتظر انتخاب %s..." % opp_name
 		btn_confirm.disabled = true
+	if is_instance_valid(status_panel):
+		status_panel.add_theme_stylebox_override("panel", sp_sb)
 		
 	# Highlight active player card
 	var active_p_num = 1 if active_turn_user_id == str(p1_data.get("user_id", "")) else 2
@@ -1707,7 +1733,8 @@ func show_opponent_disconnected(user_id: String, wait_time: int) -> void:
 	set_process(true)
 	disconnect_banner.visible = true
 	lbl_disconnect.text = "⚠️ ارتباط حریف قطع شد. زمان انتظار برای اتصال مجدد:"
-	lbl_dc_timer.text = "%ds" % wait_time
+	lbl_dc_timer.text = "%s ثانیه" % _fa_num(wait_time)
+	_last_dc_sec = wait_time
 	btn_confirm.disabled = true
 
 func show_opponent_reconnected(user_id: String, remaining_time: int) -> void:
@@ -1733,7 +1760,8 @@ func show_opponent_reconnected(user_id: String, remaining_time: int) -> void:
 
 func _start_timer(seconds: float) -> void:
 	turn_time_left = seconds
-	turn_total_time = seconds
+	turn_total_time = maxf(0.1, seconds)
+	_last_timer_sec = -1
 	is_timer_active = true
 	set_process(true)
 	turn_timer_bar.value = 100.0

@@ -3018,9 +3018,9 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 
 	if _result_shown:
 
-		if (xp_earned > 0 or coin_earned > 0) and is_instance_valid(result_dialog) and result_dialog.has_method("update_xp"):
+		if (xp_earned > 0 or coin_earned > 0 or score_earned != 0) and is_instance_valid(result_dialog) and result_dialog.has_method("update_xp"):
 
-			result_dialog.update_xp(xp_earned, coin_earned)
+			result_dialog.update_xp(xp_earned, coin_earned, score_earned)
 
 		return
 
@@ -3061,7 +3061,7 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 	var is_friendly = (xp_earned <= 0 and coin_earned <= 0 and score_earned == 0)
 
 	AudioManager.play_theme_music()
-	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly, xp_earned, coin_earned)
+	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly, xp_earned, coin_earned, score_earned)
 
 
 

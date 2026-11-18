@@ -11,6 +11,10 @@
 [ext_resource type="Texture2D" path="res://assets/particles/smoke_01.png" id="8_smoke_tex"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_modal_board"]
+content_margin_left = 34.0
+content_margin_top = 34.0
+content_margin_right = 34.0
+content_margin_bottom = 34.0
 texture = ExtResource("3_board_tex")
 texture_margin_left = 60.0
 texture_margin_top = 60.0
@@ -153,7 +157,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(640, 840)
+custom_minimum_size = Vector2(640, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_modal_board")
 
@@ -317,9 +321,11 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.96, 0.9, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 21
 text = "بازیکن ۱"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="Score" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
 visible = false
@@ -367,9 +373,11 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 0.8, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 21
 text = "بازیکن ۲"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="Score" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
 visible = false
