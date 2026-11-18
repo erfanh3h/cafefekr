@@ -205,25 +205,16 @@ static func gregorian_to_jalali(gy: int, gm: int, gd: int) -> Array:
 static func _format_shamsi_date_ltr(iso_str: String) -> String:
 	if iso_str.is_empty():
 		return "اخیراً"
-	var clean = iso_str.strip_edges().replace("T", " ")
-	var space_parts = clean.split(" ")
-	var date_parts = space_parts[0].split("-")
-	if date_parts.size() < 3:
+	var local_dt := GameManager.parse_server_iso_to_local(iso_str)
+	if local_dt.is_empty():
 		return iso_str
-	var gy = int(date_parts[0])
-	var gm = int(date_parts[1])
-	var gd = int(date_parts[2])
-	if gy <= 0:
-		return iso_str
+	var gy := int(local_dt["year"])
+	var gm := int(local_dt["month"])
+	var gd := int(local_dt["day"])
 	var j = gregorian_to_jalali(gy, gm, gd)
-	var hh = 0
-	var mm = 0
-	if space_parts.size() > 1:
-		var time_parts = space_parts[1].split(":")
-		if time_parts.size() >= 2:
-			hh = int(time_parts[0])
-			mm = int(time_parts[1])
-	return "%04d/%02d/%02d  %02d:%02d" % [int(j[0]), int(j[1]), int(j[2]), int(hh), int(mm)]
+	var hh := int(local_dt["hour"])
+	var mm := int(local_dt["minute"])
+	return "%04d/%02d/%02d  %02d:%02d" % [int(j[0]), int(j[1]), int(j[2]), hh, mm]
 
 # === Game Asset Helpers ===
 static func _get_game_icon_texture(game_type: String) -> Texture2D:

@@ -466,6 +466,131 @@ static func to_fa_num(val: Variant) -> String:
 			out += s[i]
 	return out
 
+
+## Returns the device's local timezone offset from UTC in seconds (e.g., +12600 for UTC+03:30).
+## Derived from local vs UTC system wall-clock dictionaries so it is immune to platform bias sign quirks.
+static func get_local_utc_offset_seconds() -> int:
+	var local_dt := Time.get_datetime_dict_from_system(false)
+	var utc_dt := Time.get_datetime_dict_from_system(true)
+	var diff_sec := Time.get_unix_time_from_datetime_dict(local_dt) - Time.get_unix_time_from_datetime_dict(utc_dt)
+	return int(round(float(diff_sec) / 60.0)) * 60
+
+
+## Parses an ISO-8601 server timestamp string and converts it to the device's local date & time.
+## Naive timestamps (no Z / ±HH:MM suffix) are treated as UTC (+00:00).
+## Explicit timezone suffixes (Z, +HH:MM, -HH:MM, +HHMM, -HHMM) are honored without double-shifting.
+## Returns {"year", "month", "day", "hour", "minute", "second", "has_time"} or {} on invalid input.
+static func parse_server_iso_to_local(iso_str: String) -> Dictionary:
+	var s := iso_str.strip_edges()
+	if s.is_empty():
+		return {}
+
+	var clean := s.replace("T", " ").replace("t", " ")
+	var space_parts := clean.split(" ", false)
+	if space_parts.is_empty():
+		return {}
+
+	var date_parts := space_parts[0].split("-")
+	if date_parts.size() < 3:
+		return {}
+	if not date_parts[0].is_valid_int() or not date_parts[1].is_valid_int() or not date_parts[2].is_valid_int():
+		return {}
+
+	var year := int(date_parts[0])
+	var month := int(date_parts[1])
+	var day := int(date_parts[2])
+	if year <= 0 or month < 1 or month > 12 or day < 1 or day > 31:
+		return {}
+
+	if space_parts.size() < 2:
+		return {
+			"year": year,
+			"month": month,
+			"day": day,
+			"hour": 0,
+			"minute": 0,
+			"second": 0,
+			"has_time": false,
+		}
+
+	var time_raw := space_parts[1]
+	if space_parts.size() >= 3:
+		var maybe_tz := space_parts[2]
+		if maybe_tz.begins_with("+") or maybe_tz.begins_with("-") or maybe_tz.to_upper() == "Z":
+			time_raw += maybe_tz
+
+	var source_offset_sec := 0
+	if time_raw.ends_with("Z") or time_raw.ends_with("z"):
+		time_raw = time_raw.substr(0, time_raw.length() - 1)
+		source_offset_sec = 0
+	else:
+		var tz_sign := 0
+		var tz_idx := time_raw.find("+")
+		if tz_idx != -1:
+			tz_sign = 1
+		else:
+			tz_idx = time_raw.find("-")
+			if tz_idx != -1:
+				tz_sign = -1
+		if tz_idx != -1:
+			var tz_str := time_raw.substr(tz_idx + 1)
+			time_raw = time_raw.substr(0, tz_idx)
+			var tz_h := 0
+			var tz_m := 0
+			if tz_str.contains(":"):
+				var tz_parts := tz_str.split(":")
+				tz_h = int(tz_parts[0]) if tz_parts.size() >= 1 else 0
+				tz_m = int(tz_parts[1]) if tz_parts.size() >= 2 else 0
+			elif tz_str.length() >= 4:
+				tz_h = int(tz_str.substr(0, 2))
+				tz_m = int(tz_str.substr(2, 2))
+			elif tz_str.length() >= 2:
+				tz_h = int(tz_str.substr(0, 2))
+			source_offset_sec = tz_sign * (tz_h * 3600 + tz_m * 60)
+
+	var dot_idx := time_raw.find(".")
+	if dot_idx != -1:
+		time_raw = time_raw.substr(0, dot_idx)
+	var comma_idx := time_raw.find(",")
+	if comma_idx != -1:
+		time_raw = time_raw.substr(0, comma_idx)
+
+	var time_parts := time_raw.split(":")
+	if time_parts.size() < 2 or not time_parts[0].is_valid_int() or not time_parts[1].is_valid_int():
+		return {
+			"year": year,
+			"month": month,
+			"day": day,
+			"hour": 0,
+			"minute": 0,
+			"second": 0,
+			"has_time": false,
+		}
+
+	var hour := clampi(int(time_parts[0]), 0, 23)
+	var minute := clampi(int(time_parts[1]), 0, 59)
+	var second := clampi(int(time_parts[2]), 0, 59) if (time_parts.size() >= 3 and time_parts[2].is_valid_int()) else 0
+
+	var dt_unix := Time.get_unix_time_from_datetime_dict({
+		"year": year,
+		"month": month,
+		"day": day,
+		"hour": hour,
+		"minute": minute,
+		"second": second,
+	})
+	var local_unix := dt_unix - source_offset_sec + get_local_utc_offset_seconds()
+	var local_dt := Time.get_datetime_dict_from_unix_time(local_unix)
+	return {
+		"year": int(local_dt["year"]),
+		"month": int(local_dt["month"]),
+		"day": int(local_dt["day"]),
+		"hour": int(local_dt["hour"]),
+		"minute": int(local_dt["minute"]),
+		"second": int(local_dt["second"]),
+		"has_time": true,
+	}
+
 func add_xp(amount: int) -> void:
 	if amount <= 0:
 		return

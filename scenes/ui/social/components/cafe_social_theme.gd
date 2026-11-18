@@ -1418,12 +1418,9 @@ static func format_presence(presence: Dictionary) -> Dictionary:
 
 
 static func format_time_fa(iso_str: String) -> String:
-	var s := iso_str.strip_edges()
-	if s.is_empty():
-		return ""
-	var t_idx := s.find("T")
-	if t_idx > 0 and s.length() >= t_idx + 6:
-		var time_part := s.substr(t_idx + 1, 5)
+	var local_dt := GameManager.parse_server_iso_to_local(iso_str)
+	if not local_dt.is_empty() and bool(local_dt.get("has_time", false)):
+		var time_part := "%02d:%02d" % [int(local_dt["hour"]), int(local_dt["minute"])]
 		return GameManager.to_fa_num(time_part)
 	return ""
 
@@ -1461,24 +1458,14 @@ static func format_chat_datetime_fa(iso_str: String) -> String:
 	var s := iso_str.strip_edges()
 	if s.is_empty():
 		return ""
-	var clean := s.replace("T", " ")
-	var sp := clean.split(" ")
-	var date_part := sp[0]
-	var time_part := ""
-	if sp.size() > 1:
-		var tp := sp[1].split(":")
-		if tp.size() >= 2:
-			time_part = "%02d:%02d" % [int(tp[0]), int(tp[1])]
-	elif s.find("T") > 0:
-		var tidx := s.find("T")
-		if s.length() >= tidx + 6:
-			time_part = s.substr(tidx + 1, 5)
-
-	var dp := date_part.split("-")
-	if dp.size() >= 3:
-		var gy := int(dp[0])
-		var gm := int(dp[1])
-		var gd := int(dp[2])
+	var local_dt := GameManager.parse_server_iso_to_local(s)
+	if not local_dt.is_empty():
+		var gy := int(local_dt["year"])
+		var gm := int(local_dt["month"])
+		var gd := int(local_dt["day"])
+		var time_part := ""
+		if bool(local_dt.get("has_time", false)):
+			time_part = "%02d:%02d" % [int(local_dt["hour"]), int(local_dt["minute"])]
 		if gy > 1900:
 			var j = gregorian_to_jalali(gy, gm, gd)
 			var month_names = [
@@ -1492,8 +1479,8 @@ static func format_chat_datetime_fa(iso_str: String) -> String:
 			if not time_part.is_empty():
 				return "%s - %s" % [dt_formatted, GameManager.to_fa_num(time_part)]
 			return dt_formatted
-	if not time_part.is_empty():
-		return GameManager.to_fa_num(time_part)
+		if not time_part.is_empty():
+			return GameManager.to_fa_num(time_part)
 	return GameManager.to_fa_num(s)
 
 
