@@ -45,6 +45,13 @@ func _ready() -> void:
 		_p1_score_badge.visible = false
 	if is_instance_valid(_p2_score_badge):
 		_p2_score_badge.visible = false
+	for card_n in [p1_card, p2_card]:
+		if is_instance_valid(card_n):
+			card_n.clip_contents = true
+	for lbl_n in [p1_name, p2_name, p1_walls_lbl, p2_walls_lbl]:
+		if is_instance_valid(lbl_n):
+			lbl_n.clip_text = true
+			lbl_n.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	update_walls(10, 10)
 
 func _is_score_based_game() -> bool:

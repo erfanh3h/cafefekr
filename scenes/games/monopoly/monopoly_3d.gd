@@ -80,16 +80,20 @@ var dock_info_lbl: Label
 var actions_vbox: VBoxContainer
 
 var portfolio_backdrop: ColorRect
+var _portfolio_panel: PanelContainer
 var portfolio_list_vbox: VBoxContainer
 var portfolio_title_lbl: Label
 
 var inspector_backdrop: ColorRect
+var _inspector_panel: PanelContainer
 var inspector_card_vbox: VBoxContainer
 
 var trade_builder_backdrop: ColorRect
+var _trade_builder_panel: PanelContainer
 var trade_builder_vbox: VBoxContainer
 
 var trade_incoming_backdrop: ColorRect
+var _trade_incoming_panel: PanelContainer
 var trade_incoming_vbox: VBoxContainer
 
 var card_popup_panel: PanelContainer
@@ -101,28 +105,47 @@ var hint_banner_panel: PanelContainer
 var hint_banner_style: StyleBoxFlat
 var hint_banner_lbl: Label
 var _hint_banner_seq: int = 0
+var _is_mobile_gpu: bool = false
+var _hud_vis_accum: float = 0.0
+var _cached_hud: Node = null
+var _cached_start_ov: Control = null
+var _cached_result_dlg: Control = null
 
 
 func _init() -> void:
-	camera_distance = 2.26
+	camera_distance = 2.42
 	camera_pitch = -0.86
 
 
 func _ready() -> void:
 	game_type = GameTypes.MONOPOLY
+	_is_mobile_gpu = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	_setup_board_3d()
 	_build_hud()
 	super._ready()
 	_connect_monopoly_signals()
+	var vp: Viewport = get_viewport()
+	if vp and not vp.size_changed.is_connected(_on_viewport_resized):
+		vp.size_changed.connect(_on_viewport_resized)
 	_refresh_all_visuals()
 	_update_hud_visibility()
 	call_deferred("_enforce_camera_framing")
+	call_deferred("_enforce_hud_geometry")
+
+
+func _on_viewport_resized() -> void:
+	_enforce_hud_geometry()
+	_enforce_camera_framing()
 
 
 func _enforce_camera_framing() -> void:
 	var table: Node = get_tree().get_first_node_in_group("cafe_table")
 	if is_instance_valid(table):
-		table.target_distance = camera_distance
+		# Dynamically fit the full 3D Monopoly board width cleanly on narrow phones (e.g. 9:20 M32)
+		var vp_sz: Vector2 = get_viewport().get_visible_rect().size if get_viewport() else Vector2(720, 1280)
+		var aspect: float = vp_sz.x / maxf(1.0, vp_sz.y)
+		var dyn_dist: float = clampf(camera_distance * (0.5625 / maxf(0.40, aspect)), 2.38, 2.95)
+		table.target_distance = dyn_dist
 		table.target_pitch = camera_pitch
 		table.target_yaw = 0.0
 		var p_cnt: int = _get_total_players()
@@ -132,8 +155,11 @@ func _enforce_camera_framing() -> void:
 			table.set_player_seats_count(p_cnt)
 
 
-func _process(_delta: float) -> void:
-	_update_hud_visibility()
+func _process(delta: float) -> void:
+	_hud_vis_accum += delta
+	if _hud_vis_accum >= 0.15:
+		_hud_vis_accum = 0.0
+		_update_hud_visibility()
 
 
 func _setup_board_3d() -> void:
@@ -180,9 +206,10 @@ func _make_glass_style(bg: Color, border: Color, radius: int = 18, border_w: int
 	s.border_color = border
 	s.set_border_width_all(border_w)
 	s.set_corner_radius_all(radius)
-	s.shadow_color = Color(0.0, 0.0, 0.0, 0.50)
-	s.shadow_size = 8
-	s.shadow_offset = Vector2(0, 3)
+	if not _is_mobile_gpu:
+		s.shadow_color = Color(0.0, 0.0, 0.0, 0.45)
+		s.shadow_size = 6
+		s.shadow_offset = Vector2(0, 2)
 	return s
 
 
@@ -200,6 +227,8 @@ func _style_btn(btn: Button, bg: Color, border: Color, text_col: Color = Color.W
 	btn.add_theme_stylebox_override("pressed", _make_glass_style(bg.darkened(0.10), border, 16, 2))
 	btn.add_theme_stylebox_override("disabled", _make_glass_style(Color(0.14, 0.13, 0.16, 0.74), Color(0.36, 0.34, 0.38, 0.50), 16, 1))
 	btn.disabled = disabled
+	btn.clip_text = true
+	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_ARROW if disabled else Control.CURSOR_POINTING_HAND
 
@@ -230,6 +259,9 @@ func _make_gamer_action_btn(title_txt: String, sub_txt: String, bg: Color, borde
 	btn.add_theme_stylebox_override("pressed", _make_glass_style(bg.darkened(0.10), eff_border, 18, bw))
 	btn.add_theme_stylebox_override("disabled", _make_glass_style(Color(0.14, 0.13, 0.16, 0.78), Color(0.36, 0.34, 0.38, 0.50), 18, 1))
 	btn.disabled = disabled
+	btn.clip_contents = true
+	btn.clip_text = true
+	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_ARROW if disabled else Control.CURSOR_POINTING_HAND
 
@@ -271,30 +303,58 @@ func _make_gamer_action_btn(title_txt: String, sub_txt: String, bg: Color, borde
 # ==============================================================================
 
 func _enforce_hud_geometry() -> void:
+	var vp_sz: Vector2 = get_viewport().get_visible_rect().size if get_viewport() else Vector2(720, 1280)
+	var vp_w: float = maxf(320.0, vp_sz.x)
+	var vp_h: float = maxf(560.0, vp_sz.y)
 	if is_instance_valid(hud_root):
-		hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-		hud_root.offset_left = 0
-		hud_root.offset_top = 0
-		hud_root.offset_right = 0
-		hud_root.offset_bottom = 0
+		hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if is_instance_valid(status_pill):
+		var top_y: float = 264.0 if _get_total_players() <= 2 else 320.0
+		var tree: SceneTree = get_tree()
+		if tree:
+			var hud: Node = tree.get_first_node_in_group("base_game_hud")
+			if not is_instance_valid(hud):
+				hud = tree.root.find_child("BaseGameHUD", true, false)
+			if is_instance_valid(hud):
+				var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
+				if is_instance_valid(header):
+					var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
+					if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
+						top_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 8.0, 220.0, 356.0)
 		status_pill.set_anchors_preset(Control.PRESET_TOP_WIDE)
-		status_pill.offset_left = 18
-		status_pill.offset_right = -18
-		status_pill.offset_top = 312
-		status_pill.offset_bottom = 384
+		status_pill.offset_left = 12.0
+		status_pill.offset_right = -12.0
+		status_pill.offset_top = top_y
+		status_pill.offset_bottom = top_y + 46.0
+		status_pill.clip_contents = true
 	if is_instance_valid(bottom_dock):
 		bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-		bottom_dock.offset_left = 16
-		bottom_dock.offset_right = -16
-		bottom_dock.offset_top = -436
-		bottom_dock.offset_bottom = -168
+		bottom_dock.offset_left = 10.0
+		bottom_dock.offset_right = -10.0
+		bottom_dock.offset_top = -316.0
+		bottom_dock.offset_bottom = -92.0
+		bottom_dock.clip_contents = true
 	if is_instance_valid(dock_panel):
-		dock_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-		dock_panel.offset_left = 0
-		dock_panel.offset_top = 0
-		dock_panel.offset_right = 0
-		dock_panel.offset_bottom = 0
+		dock_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		dock_panel.clip_contents = true
+	var modal_w: float = minf(640.0, vp_w - 28.0)
+	var modal_tall_h: float = minf(900.0, vp_h - 190.0)
+	if is_instance_valid(_portfolio_panel):
+		_portfolio_panel.custom_minimum_size = Vector2(modal_w, modal_tall_h)
+	if is_instance_valid(_inspector_panel):
+		_inspector_panel.custom_minimum_size = Vector2(modal_w, 0.0)
+	if is_instance_valid(_trade_builder_panel):
+		_trade_builder_panel.custom_minimum_size = Vector2(modal_w, modal_tall_h)
+	if is_instance_valid(_trade_incoming_panel):
+		_trade_incoming_panel.custom_minimum_size = Vector2(modal_w, 0.0)
+	if is_instance_valid(card_popup_panel):
+		card_popup_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		card_popup_panel.offset_left = 20.0
+		card_popup_panel.offset_right = -20.0
+	if is_instance_valid(hint_banner_panel):
+		hint_banner_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		hint_banner_panel.offset_left = 20.0
+		hint_banner_panel.offset_right = -20.0
 
 
 func _build_hud() -> void:
@@ -309,66 +369,58 @@ func _build_hud() -> void:
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(hud_root)
 
-	# 1. Sleek 72px Top Utility & Live Event Bar (Fixed Panel — never stretches onto the 3D board!)
+	# 1. Slim 46px Top Phase & Live Event Bar (Dynamically placed below BaseTopHeader!)
 	status_pill = Panel.new()
 	status_pill.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	status_pill.offset_left = 18
-	status_pill.offset_right = -18
-	status_pill.offset_top = 312
-	status_pill.offset_bottom = 384
+	status_pill.offset_left = 14
+	status_pill.offset_right = -14
+	status_pill.offset_top = 264
+	status_pill.offset_bottom = 310
 	status_pill.add_theme_stylebox_override(
 		"panel",
-		_make_glass_style(Color(0.07, 0.05, 0.04, 0.94), Color(0.92, 0.74, 0.32, 0.88), 20, 2)
+		_make_glass_style(Color(0.07, 0.05, 0.04, 0.90), Color(0.92, 0.74, 0.32, 0.80), 18, 2)
 	)
 	hud_root.add_child(status_pill)
 
 	var pm := MarginContainer.new()
 	pm.set_anchors_preset(Control.PRESET_FULL_RECT)
-	pm.add_theme_constant_override("margin_left", 12)
-	pm.add_theme_constant_override("margin_right", 14)
-	pm.add_theme_constant_override("margin_top", 8)
-	pm.add_theme_constant_override("margin_bottom", 8)
+	pm.add_theme_constant_override("margin_left", 10)
+	pm.add_theme_constant_override("margin_right", 12)
+	pm.add_theme_constant_override("margin_top", 4)
+	pm.add_theme_constant_override("margin_bottom", 4)
 	status_pill.add_child(pm)
 
 	var phb := HBoxContainer.new()
 	phb.alignment = BoxContainer.ALIGNMENT_CENTER
-	phb.add_theme_constant_override("separation", 10)
+	phb.add_theme_constant_override("separation", 8)
 	pm.add_child(phb)
-
-	zoom_btn = Button.new()
-	zoom_btn.text = "🔍 نما"
-	zoom_btn.custom_minimum_size = Vector2(114, 52)
-	zoom_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_style_btn(zoom_btn, Color(0.14, 0.22, 0.32, 0.96), Color(0.56, 0.78, 0.95, 0.88), Color(0.95, 0.98, 1.0), 23)
-	zoom_btn.pressed.connect(_on_zoom_cycle_pressed)
-	phb.add_child(zoom_btn)
 
 	phase_badge_panel = PanelContainer.new()
 	phase_badge_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	phase_badge_style = _make_glass_style(Color(0.14, 0.36, 0.22, 0.96), Color(0.50, 0.96, 0.62, 0.92), 14, 2)
-	phase_badge_style.content_margin_left = 14
-	phase_badge_style.content_margin_right = 14
-	phase_badge_style.content_margin_top = 4
-	phase_badge_style.content_margin_bottom = 4
+	phase_badge_style = _make_glass_style(Color(0.14, 0.36, 0.22, 0.96), Color(0.50, 0.96, 0.62, 0.92), 12, 2)
+	phase_badge_style.content_margin_left = 10
+	phase_badge_style.content_margin_right = 10
+	phase_badge_style.content_margin_top = 2
+	phase_badge_style.content_margin_bottom = 2
 	phase_badge_panel.add_theme_stylebox_override("panel", phase_badge_style)
 	phb.add_child(phase_badge_panel)
 
-	phase_badge_lbl = _make_lbl("🎯 آماده شروع", 22, Color(1.0, 0.98, 0.90), HORIZONTAL_ALIGNMENT_CENTER, 3, false)
+	phase_badge_lbl = _make_lbl("🎯 آماده شروع", 17, Color(1.0, 0.98, 0.90), HORIZONTAL_ALIGNMENT_CENTER, 2, false)
 	phase_badge_panel.add_child(phase_badge_lbl)
 
-	status_label = _make_lbl(_last_feed_text, 24, Color(1.0, 0.96, 0.84), HORIZONTAL_ALIGNMENT_RIGHT, 3, false)
+	status_label = _make_lbl(_last_feed_text, 18, Color(1.0, 0.96, 0.84), HORIZONTAL_ALIGNMENT_RIGHT, 2, false)
 	status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	status_label.clip_text = true
 	status_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	phb.add_child(status_label)
 
-	# 2. Bottom Floating Gamer Command Dock (Strictly y=1484..1752, 100% above the 8 BottomBar buttons!)
+	# 2. Bottom Floating Gamer Command Dock (Sits cleanly above BottomBar — zero dead gap!)
 	bottom_dock = Control.new()
 	bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_dock.offset_left = 16
-	bottom_dock.offset_right = -16
-	bottom_dock.offset_top = -436
-	bottom_dock.offset_bottom = -168
+	bottom_dock.offset_left = 12
+	bottom_dock.offset_right = -12
+	bottom_dock.offset_top = -316
+	bottom_dock.offset_bottom = -92
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bottom_dock.visible = not GameManager.is_spectating
 	hud_root.add_child(bottom_dock)
@@ -391,53 +443,70 @@ func _build_hud() -> void:
 	inner_vb.add_theme_constant_override("separation", 8)
 	dm.add_child(inner_vb)
 
-	# Row 1 (Height 52px): Quick Property & Trade Buttons + Sleek Horizontal Stats Strip
+	# Row 1 (Height 52px): Responsive Quick Property & Trade Buttons + Sleek Horizontal Stats Strip (Zero Overflow!)
 	var stats_hb := HBoxContainer.new()
 	stats_hb.custom_minimum_size = Vector2(0, 52)
-	stats_hb.add_theme_constant_override("separation", 10)
+	stats_hb.add_theme_constant_override("separation", 8)
 	inner_vb.add_child(stats_hb)
 
 	portfolio_btn = Button.new()
 	portfolio_btn.text = "🏘️ املاک من"
-	portfolio_btn.custom_minimum_size = Vector2(180, 50)
+	portfolio_btn.custom_minimum_size = Vector2(0, 50)
+	portfolio_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	portfolio_btn.size_flags_stretch_ratio = 1.15
 	portfolio_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_style_btn(portfolio_btn, Color(0.15, 0.34, 0.52, 0.96), Color(0.52, 0.82, 1.0, 0.90), Color(0.96, 0.99, 1.0), 23)
+	_style_btn(portfolio_btn, Color(0.15, 0.34, 0.52, 0.96), Color(0.52, 0.82, 1.0, 0.90), Color(0.96, 0.99, 1.0), 22)
 	portfolio_btn.pressed.connect(_open_portfolio_modal)
 	stats_hb.add_child(portfolio_btn)
 
 	trade_btn = Button.new()
 	trade_btn.text = "🤝 معامله"
-	trade_btn.custom_minimum_size = Vector2(146, 50)
+	trade_btn.custom_minimum_size = Vector2(0, 50)
+	trade_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	trade_btn.size_flags_stretch_ratio = 0.88
 	trade_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_style_btn(trade_btn, Color(0.42, 0.25, 0.08, 0.96), Color(0.98, 0.76, 0.28, 0.90), Color(1.0, 0.96, 0.86), 23)
+	_style_btn(trade_btn, Color(0.42, 0.25, 0.08, 0.96), Color(0.98, 0.76, 0.28, 0.90), Color(1.0, 0.96, 0.86), 22)
 	trade_btn.pressed.connect(_open_trade_builder_modal)
 	stats_hb.add_child(trade_btn)
 
 	var stat_box := Panel.new()
 	stat_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stat_box.size_flags_stretch_ratio = 2.15
 	stat_box.custom_minimum_size = Vector2(0, 50)
+	stat_box.clip_contents = true
 	stat_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	stat_box.add_theme_stylebox_override("panel", _make_glass_style(Color(0.12, 0.10, 0.14, 0.94), Color(0.75, 0.62, 0.28, 0.72), 14, 1))
 	stats_hb.add_child(stat_box)
 
 	var sb_m := MarginContainer.new()
-	sb_m.set_anchors_preset(Control.PRESET_FULL_RECT)
-	sb_m.add_theme_constant_override("margin_left", 14)
-	sb_m.add_theme_constant_override("margin_right", 14)
+	sb_m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	sb_m.add_theme_constant_override("margin_left", 8)
+	sb_m.add_theme_constant_override("margin_right", 8)
 	stat_box.add_child(sb_m)
 
 	var sb_hb := HBoxContainer.new()
-	sb_hb.add_theme_constant_override("separation", 14)
+	sb_hb.add_theme_constant_override("separation", 6)
 	sb_m.add_child(sb_hb)
 
-	my_jail_lbl = _make_lbl("🎫 آزادی: ۰", 22, Color(0.72, 0.90, 1.0), HORIZONTAL_ALIGNMENT_LEFT, 2, false)
+	my_jail_lbl = _make_lbl("🎫 ۰", 20, Color(0.72, 0.90, 1.0), HORIZONTAL_ALIGNMENT_LEFT, 2, false)
+	my_jail_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	my_jail_lbl.size_flags_stretch_ratio = 0.85
+	my_jail_lbl.clip_text = true
+	my_jail_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	sb_hb.add_child(my_jail_lbl)
 
-	my_props_lbl = _make_lbl("🏠 ۰ ملک", 24, Color(1.0, 0.90, 0.45), HORIZONTAL_ALIGNMENT_CENTER, 3, false)
+	my_props_lbl = _make_lbl("🏠 ۰ ملک", 22, Color(1.0, 0.90, 0.45), HORIZONTAL_ALIGNMENT_CENTER, 3, false)
 	my_props_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	my_props_lbl.size_flags_stretch_ratio = 1.0
+	my_props_lbl.clip_text = true
+	my_props_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	sb_hb.add_child(my_props_lbl)
 
-	my_cash_lbl = _make_lbl("💵 ۱۵۰۰$", 28, Color(0.45, 0.98, 0.56), HORIZONTAL_ALIGNMENT_RIGHT, 3, false)
+	my_cash_lbl = _make_lbl("💵 $۱۵۰۰", 25, Color(0.45, 0.98, 0.56), HORIZONTAL_ALIGNMENT_RIGHT, 3, false)
+	my_cash_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	my_cash_lbl.size_flags_stretch_ratio = 1.25
+	my_cash_lbl.clip_text = true
+	my_cash_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	sb_hb.add_child(my_cash_lbl)
 
 	# Row 2 (Height 44px): Highlighted Step-by-Step Guidance Callout Strip
@@ -488,7 +557,8 @@ func _build_portfolio_modal() -> void:
 	portfolio_backdrop.add_child(cc)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(640, 1000)
+	_portfolio_panel = panel
+	panel.custom_minimum_size = Vector2(640, 860)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.09, 0.07, 0.06, 0.98), Color(0.94, 0.76, 0.34, 0.92), 26, 3))
 	cc.add_child(panel)
@@ -546,6 +616,7 @@ func _build_inspector_modal() -> void:
 	inspector_backdrop.add_child(cc)
 
 	var panel := PanelContainer.new()
+	_inspector_panel = panel
 	panel.custom_minimum_size = Vector2(640, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.09, 0.08, 0.07, 0.98), Color(0.95, 0.80, 0.36, 0.94), 24, 3))
@@ -579,7 +650,8 @@ func _build_trade_builder_modal() -> void:
 	trade_builder_backdrop.add_child(cc)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(640, 1000)
+	_trade_builder_panel = panel
+	panel.custom_minimum_size = Vector2(640, 860)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.08, 0.07, 0.09, 0.98), Color(0.96, 0.74, 0.28, 0.94), 26, 3))
 	cc.add_child(panel)
@@ -613,6 +685,7 @@ func _build_trade_incoming_modal() -> void:
 	trade_incoming_backdrop.add_child(cc)
 
 	var panel := PanelContainer.new()
+	_trade_incoming_panel = panel
 	panel.custom_minimum_size = Vector2(640, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.10, 0.08, 0.06, 0.98), Color(0.98, 0.80, 0.30, 0.96), 26, 3))
@@ -632,13 +705,13 @@ func _build_trade_incoming_modal() -> void:
 
 func _build_card_popup() -> void:
 	card_popup_panel = PanelContainer.new()
-	card_popup_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	card_popup_panel.offset_left = -310
-	card_popup_panel.offset_right = 310
+	card_popup_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	card_popup_panel.offset_left = 20
+	card_popup_panel.offset_right = -20
 	card_popup_panel.offset_top = 414
 	card_popup_panel.offset_bottom = 414
 	card_popup_panel.grow_vertical = Control.GROW_DIRECTION_END
-	card_popup_panel.custom_minimum_size = Vector2(620, 160)
+	card_popup_panel.custom_minimum_size = Vector2(0, 140)
 	card_popup_panel.visible = false
 	card_popup_panel.add_theme_stylebox_override("panel", _make_glass_style(Color(0.14, 0.08, 0.04, 0.98), Color(1.0, 0.82, 0.28, 0.96), 24, 3))
 	card_popup_panel.gui_input.connect(func(ev: InputEvent):
@@ -670,9 +743,9 @@ func _build_card_popup() -> void:
 
 func _build_hint_banner() -> void:
 	hint_banner_panel = PanelContainer.new()
-	hint_banner_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	hint_banner_panel.offset_left = -310
-	hint_banner_panel.offset_right = 310
+	hint_banner_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	hint_banner_panel.offset_left = 20
+	hint_banner_panel.offset_right = -20
 	hint_banner_panel.offset_top = 414
 	hint_banner_panel.offset_bottom = 414
 	hint_banner_panel.grow_vertical = Control.GROW_DIRECTION_END
@@ -854,7 +927,7 @@ func _refresh_hud_dock() -> void:
 	if is_instance_valid(my_props_lbl):
 		my_props_lbl.text = "🏠 %s ملک" % MonopolyData.fa_num(my_owned)
 	if is_instance_valid(my_jail_lbl):
-		my_jail_lbl.text = "🎫 آزادی: %s" % MonopolyData.fa_num(my_jcards)
+		my_jail_lbl.text = "🎫 %s" % MonopolyData.fa_num(my_jcards)
 
 	if is_instance_valid(portfolio_btn):
 		var b_cnt: int = buildable_tiles.size() if my_turn_now else 0
@@ -911,13 +984,15 @@ func _refresh_hud_dock() -> void:
 
 				var roll_title: String = "👈 🎲 پرتاب مجدد تاس (جفت!)" if bonus_doubles else "👈 🎲 پرتاب تاس"
 				var btn_roll := _make_gamer_action_btn(roll_title, "برای شروع حرکت مهره اینجا بزنید", Color(0.12, 0.58, 0.28, 0.98), Color(0.46, 0.98, 0.58, 0.96), 100, true)
+				btn_roll.size_flags_stretch_ratio = 1.28
 				btn_roll.pressed.connect(_on_roll_pressed)
 				hb.add_child(btn_roll)
 
 				if not buildable_tiles.is_empty():
 					var btn_bld := _make_gamer_action_btn("🏗️ ساخت‌وساز (%s)" % MonopolyData.fa_num(buildable_tiles.size()), "ارتقای خانه و هتل", Color(0.18, 0.36, 0.60, 0.96), Color(0.55, 0.82, 1.0, 0.90), 100, false)
-					btn_bld.custom_minimum_size = Vector2(280, 100)
-					btn_bld.size_flags_horizontal = Control.SIZE_FILL
+					btn_bld.custom_minimum_size = Vector2(0, 100)
+					btn_bld.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					btn_bld.size_flags_stretch_ratio = 0.72
 					btn_bld.pressed.connect(_open_portfolio_modal)
 					hb.add_child(btn_bld)
 		else:
@@ -1023,8 +1098,9 @@ func _refresh_hud_dock() -> void:
 			hb.add_child(btn_raise)
 
 			var btn_bk := _make_gamer_action_btn("🏳️ ورشکستگی", "تسلیم و خروج", Color(0.56, 0.14, 0.16, 0.96), Color(0.96, 0.44, 0.44, 0.92), 98, false)
-			btn_bk.custom_minimum_size = Vector2(210, 98)
-			btn_bk.size_flags_horizontal = Control.SIZE_FILL
+			btn_bk.custom_minimum_size = Vector2(0, 98)
+			btn_bk.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			btn_bk.size_flags_stretch_ratio = 0.82
 			btn_bk.pressed.connect(func(): _send_monopoly_action("declare_bankruptcy"))
 			hb.add_child(btn_bk)
 		else:
@@ -1053,6 +1129,7 @@ func _refresh_hud_dock() -> void:
 			actions_vbox.add_child(hb)
 
 			var btn_end := _make_gamer_action_btn("👈 ⏭️ پایان نوبت", "اتمام نوبت من و رفتن به بازیکن بعدی", Color(0.12, 0.58, 0.28, 0.98), Color(0.46, 0.98, 0.58, 0.96), 100, true)
+			btn_end.size_flags_stretch_ratio = 1.18
 			btn_end.pressed.connect(func(): _send_monopoly_action("end_turn"))
 			hb.add_child(btn_end)
 
@@ -1060,8 +1137,9 @@ func _refresh_hud_dock() -> void:
 			var mgr_title: String = "🏗️ ساخت‌وساز (%s)" % MonopolyData.fa_num(bld_cnt) if bld_cnt > 0 else "🏘️ مدیریت املاک"
 			var mgr_sub: String = "خرید خانه / هتل یا رهن" if bld_cnt > 0 else "رهن، فک رهن و مشاهده سندها"
 			var btn_mgr := _make_gamer_action_btn(mgr_title, mgr_sub, Color(0.18, 0.36, 0.60, 0.96), Color(0.55, 0.82, 1.0, 0.90), 100, false)
-			btn_mgr.custom_minimum_size = Vector2(310, 100)
-			btn_mgr.size_flags_horizontal = Control.SIZE_FILL
+			btn_mgr.custom_minimum_size = Vector2(0, 100)
+			btn_mgr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			btn_mgr.size_flags_stretch_ratio = 0.82
 			btn_mgr.pressed.connect(_open_portfolio_modal)
 			hb.add_child(btn_mgr)
 		else:
@@ -1876,19 +1954,33 @@ func _on_win_happened(payload: Dictionary) -> void:
 	_refresh_hud_dock()
 
 
+func _resolve_cached_hud() -> Node:
+	if is_instance_valid(_cached_hud):
+		return _cached_hud
+	var tree: SceneTree = get_tree()
+	if not tree:
+		return null
+	_cached_hud = tree.get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(_cached_hud):
+		_cached_hud = tree.root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(_cached_hud):
+		_cached_start_ov = _cached_hud.get_node_or_null("StartGameOverlay") as Control
+		_cached_result_dlg = _cached_hud.get_node_or_null("GameResultDialog") as Control
+	return _cached_hud
+
+
 func _is_hud_overlay_blocking() -> bool:
 	if not visible or not is_inside_tree():
 		return true
 	if not _match_started and not GameManager.is_game_active:
 		return true
-	var tree: SceneTree = get_tree()
-	if not tree:
-		return false
-	var hud: Node = tree.get_first_node_in_group("base_game_hud")
-	if not is_instance_valid(hud):
-		hud = tree.root.find_child("BaseGameHUD", true, false)
+	var hud: Node = _resolve_cached_hud()
 	if is_instance_valid(hud):
-		for ov_name in ["StartGameOverlay", "GameResultDialog", "RoundFinishBanner", "SurrenderDialog", "ExitDialog"]:
+		if is_instance_valid(_cached_start_ov) and _cached_start_ov.visible:
+			return true
+		if is_instance_valid(_cached_result_dlg) and _cached_result_dlg.visible:
+			return true
+		for ov_name in ["RoundFinishBanner", "SurrenderDialog", "ExitDialog"]:
 			var ov: Control = hud.get_node_or_null(ov_name) as Control
 			if is_instance_valid(ov) and ov.visible:
 				return true
@@ -1898,25 +1990,22 @@ func _is_hud_overlay_blocking() -> bool:
 func _update_hud_visibility() -> void:
 	if not is_instance_valid(hud_root):
 		return
-	var tree: SceneTree = get_tree()
-	if tree:
-		var hud: Node = tree.get_first_node_in_group("base_game_hud")
-		if not is_instance_valid(hud):
-			hud = tree.root.find_child("BaseGameHUD", true, false)
-		if is_instance_valid(hud) and hud_root.get_parent() != hud:
-			if hud_root.get_parent():
-				hud_root.get_parent().remove_child(hud_root)
-			hud.add_child(hud_root)
-			var start_ov: Node = hud.get_node_or_null("StartGameOverlay")
-			if is_instance_valid(start_ov):
-				hud.move_child(hud_root, start_ov.get_index())
-			if is_instance_valid(hud_layer):
-				hud_layer.queue_free()
-				hud_layer = null
-	_enforce_hud_geometry()
+	var hud: Node = _resolve_cached_hud()
+	if is_instance_valid(hud) and hud_root.get_parent() != hud:
+		if hud_root.get_parent():
+			hud_root.get_parent().remove_child(hud_root)
+		hud.add_child(hud_root)
+		if is_instance_valid(_cached_start_ov):
+			hud.move_child(hud_root, _cached_start_ov.get_index())
+		if is_instance_valid(hud_layer):
+			hud_layer.queue_free()
+			hud_layer = null
+		_enforce_hud_geometry()
 	var should_show: bool = not _is_hud_overlay_blocking()
 	if hud_root.visible != should_show:
 		hud_root.visible = should_show
+		if should_show:
+			_enforce_hud_geometry()
 
 
 # ==============================================================================

@@ -27,34 +27,91 @@ const UNO_COLOR_NAMES_FA: Dictionary = {
 	"wild": "آزاد"
 }
 
-class WildColorWheelGraphic extends Control:
+class WildColorWheelPicker extends Control:
+	signal color_chosen(color_id: String)
+
+	const QUADRANTS: Array[Dictionary] = [
+		{"id": "red", "label": "قرمز", "col": Color(0.90, 0.16, 0.19), "txt": Color.WHITE},
+		{"id": "blue", "label": "آبی", "col": Color(0.11, 0.46, 0.92), "txt": Color.WHITE},
+		{"id": "green", "label": "سبز", "col": Color(0.13, 0.69, 0.31), "txt": Color.WHITE},
+		{"id": "yellow", "label": "زرد", "col": Color(0.95, 0.76, 0.07), "txt": Color(0.14, 0.12, 0.04)},
+	]
+
+	var _hover_idx: int = -1
+	var _font: Font = preload("res://assets/fonts/hekayat.ttf")
+
 	func _ready() -> void:
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		mouse_exited.connect(func() -> void:
+			if _hover_idx != -1:
+				_hover_idx = -1
+				queue_redraw()
+		)
+
+	func _hit_quadrant(local_pos: Vector2) -> int:
+		var c: Vector2 = size * 0.5
+		var r_outer: float = minf(size.x, size.y) * 0.47
+		var r_inner: float = r_outer * 0.28
+		var v: Vector2 = local_pos - c
+		var dist: float = v.length()
+		if dist < r_inner or dist > r_outer + 8.0:
+			return -1
+		var ang: float = atan2(v.y, v.x)
+		if ang < 0.0:
+			ang += TAU
+		return clampi(int(floor(ang / (PI * 0.5))), 0, 3)
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseMotion:
+			var idx: int = _hit_quadrant(event.position)
+			if idx != _hover_idx:
+				_hover_idx = idx
+				queue_redraw()
+		elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			var idx: int = _hit_quadrant(event.position)
+			if idx >= 0 and idx < QUADRANTS.size():
+				color_chosen.emit(String(QUADRANTS[idx]["id"]))
+		elif event is InputEventScreenTouch and event.pressed:
+			var idx: int = _hit_quadrant(event.position)
+			if idx >= 0 and idx < QUADRANTS.size():
+				color_chosen.emit(String(QUADRANTS[idx]["id"]))
 
 	func _draw() -> void:
 		var c: Vector2 = size * 0.5
 		var r_outer: float = minf(size.x, size.y) * 0.46
-		var r_inner: float = r_outer * 0.36
-		if r_outer <= 4.0:
+		var r_inner: float = r_outer * 0.28
+		if r_outer <= 6.0:
 			return
-		draw_circle(c, r_outer + 5.0, Color(0.96, 0.84, 0.42, 0.92))
-		draw_circle(c, r_outer + 2.0, Color(0.08, 0.10, 0.14, 0.98))
-		var cols: Array[Color] = [
-			Color(0.90, 0.16, 0.19), # Red
-			Color(0.11, 0.46, 0.92), # Blue
-			Color(0.13, 0.69, 0.31), # Green
-			Color(0.95, 0.76, 0.07), # Yellow
-		]
+		draw_circle(c, r_outer + 7.0, Color(0.96, 0.84, 0.42, 0.90))
+		draw_circle(c, r_outer + 3.0, Color(0.07, 0.09, 0.12, 0.98))
 		for q: int in range(4):
-			var a0: float = float(q) * PI * 0.5 + 0.04
-			var a1: float = (float(q) + 1.0) * PI * 0.5 - 0.04
+			var meta: Dictionary = QUADRANTS[q]
+			var is_hov: bool = (q == _hover_idx)
+			var col: Color = (meta["col"] as Color).lightened(0.14) if is_hov else (meta["col"] as Color)
+			var r_q: float = r_outer + (4.0 if is_hov else 0.0)
+			var a0: float = float(q) * PI * 0.5 + 0.045
+			var a1: float = (float(q) + 1.0) * PI * 0.5 - 0.045
 			var pts: PackedVector2Array = PackedVector2Array([c])
-			for s: int in range(13):
-				var a: float = lerpf(a0, a1, float(s) / 12.0)
-				pts.append(c + Vector2(cos(a), sin(a)) * r_outer)
-			draw_colored_polygon(pts, cols[q])
+			for s: int in range(15):
+				var a: float = lerpf(a0, a1, float(s) / 14.0)
+				pts.append(c + Vector2(cos(a), sin(a)) * r_q)
+			draw_colored_polygon(pts, col)
+			var mid_a: float = (a0 + a1) * 0.5
+			var lbl_r: float = lerpf(r_inner, r_outer, 0.56)
+			var lbl_pos: Vector2 = c + Vector2(cos(mid_a), sin(mid_a)) * lbl_r
+			var txt: String = String(meta["label"])
+			var f_sz: int = 23 if is_hov else 21
+			var str_sz: Vector2 = _font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, f_sz)
+			var draw_pt: Vector2 = Vector2(lbl_pos.x - str_sz.x * 0.5, lbl_pos.y + str_sz.y * 0.28)
+			if meta["id"] != "yellow":
+				draw_string(_font, draw_pt + Vector2(0, 2), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, f_sz, Color(0, 0, 0, 0.65))
+			draw_string(_font, draw_pt, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, f_sz, meta["txt"] as Color)
 		draw_circle(c, r_inner + 3.0, Color(0.98, 0.98, 0.98, 0.96))
-		draw_circle(c, r_inner, Color(0.10, 0.12, 0.16, 0.98))
+		draw_circle(c, r_inner, Color(0.09, 0.11, 0.15, 0.98))
+		var center_txt: String = "UNO"
+		var c_sz: Vector2 = _font.get_string_size(center_txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 18)
+		draw_string(_font, Vector2(c.x - c_sz.x * 0.5, c.y + c_sz.y * 0.30), center_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.88, 0.38))
 
 # --- Authoritative UNO Match State ---
 var my_hand: Array = []
@@ -70,6 +127,8 @@ var rank1_player: int = 0
 var rank2_player: int = 0
 
 var selected_card_uid: int = -1
+var _last_drawn_uid: int = -1
+var _draw_request_pending: bool = false
 var pending_wild_card: Dictionary = {}
 var _match_started: bool = false
 
@@ -81,20 +140,17 @@ var hud_layer: CanvasLayer
 var hud_root: Control
 var vfx_layer: Control
 
-# Compact Top Status Pill
+# Slim Floating Table Compass Pill (Color + Direction + Deck Count ONLY)
 var turn_status_pill: PanelContainer
-var turn_dot_panel: PanelContainer
-var turn_dot_style: StyleBoxFlat
-var turn_status_label: Label
 var active_color_chip: PanelContainer
 var active_color_chip_style: StyleBoxFlat
 var active_color_chip_label: Label
 var direction_chip_label: Label
-var sort_hand_btn: Button
-var zoom_btn: Button
+var deck_count_chip_label: Label
 
-# Open Floating Bottom Hand & Contextual Action Pills
+# Open Floating Bottom Hand & Contextual Action Controls
 var bottom_dock: Control
+var sort_hand_btn: Button
 var contextual_action_bar: HBoxContainer
 var draw_action_btn: Button
 var pass_turn_btn: Button
@@ -106,12 +162,20 @@ var hand_count_badge_lbl: Label
 
 # Wild Color Picker Modal
 var wild_modal_backdrop: ColorRect
+var wild_modal_panel: PanelContainer
 var wild_preview_holder: CenterContainer
 
 var _pid_to_seat_slot: Dictionary = {} # gamer_id -> 1 (Top), 2 (Left), 3 (Right)
 var _card_widgets_by_uid: Dictionary = {}
 var _sort_by_value_first: bool = false
-var _zoom_preset_idx: int = 0
+var _uno_pulse_tween: Tween
+var _draw_pulse_tween: Tween
+var _last_top_pill_y: float = -1.0
+var _is_mobile_gpu: bool = false
+var _hud_vis_accum: float = 0.0
+var _cached_hud: Node = null
+var _cached_start_ov: Control = null
+var _cached_result_dlg: Control = null
 
 var camera_distance: float = 2.42
 var camera_pitch: float = -0.82
@@ -127,13 +191,23 @@ func _init() -> void:
 
 func _ready() -> void:
 	game_type = GameTypes.UNO
+	_is_mobile_gpu = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	_setup_table_3d()
 	_build_hud()
 	super._ready()
 	_connect_uno_signals()
+	var vp: Viewport = get_viewport()
+	if vp and not vp.size_changed.is_connected(_on_viewport_resized):
+		vp.size_changed.connect(_on_viewport_resized)
 	_refresh_all_visuals()
 	_update_hud_visibility()
 	call_deferred("_enforce_camera_framing")
+	call_deferred("_enforce_hud_geometry")
+
+func _on_viewport_resized() -> void:
+	_last_top_pill_y = -1.0
+	_enforce_hud_geometry()
+	_rebuild_hand_cards(_get_playable_count())
 
 func _enforce_camera_framing() -> void:
 	var table: Node = get_tree().get_first_node_in_group("cafe_table")
@@ -147,8 +221,11 @@ func _enforce_camera_framing() -> void:
 		elif table.has_method("set_player_seats_count"):
 			table.set_player_seats_count(p_cnt)
 
-func _process(_delta: float) -> void:
-	_update_hud_visibility()
+func _process(delta: float) -> void:
+	_hud_vis_accum += delta
+	if _hud_vis_accum >= 0.15:
+		_hud_vis_accum = 0.0
+		_update_hud_visibility()
 
 func _setup_table_3d() -> void:
 	table_3d = UnoTable3DScript.new()
@@ -191,27 +268,61 @@ func _make_glass_style(bg: Color, border: Color, radius: int = 18, border_w: int
 	s.border_color = border
 	s.set_border_width_all(border_w)
 	s.set_corner_radius_all(radius)
-	s.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
-	s.shadow_size = 8
-	s.shadow_offset = Vector2(0, 3)
+	if not _is_mobile_gpu:
+		s.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+		s.shadow_size = 6
+		s.shadow_offset = Vector2(0, 2)
 	return s
 
-func _style_action_button(btn: Button, bg: Color, border: Color, text_col: Color = Color.WHITE, f_size: int = 23) -> void:
+func _style_action_button(btn: Button, bg: Color, border: Color, text_col: Color = Color.WHITE, f_size: int = 20, radius: int = 16) -> void:
 	btn.add_theme_font_override("font", FontHekayat)
 	btn.add_theme_font_size_override("font_size", f_size)
 	btn.add_theme_color_override("font_color", text_col)
 	btn.add_theme_color_override("font_hover_color", text_col.lightened(0.12))
 	btn.add_theme_color_override("font_pressed_color", text_col)
+	btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.78))
+	btn.add_theme_constant_override("outline_size", 2)
 
-	var st_norm: StyleBoxFlat = _make_glass_style(bg, border, 18, 2)
-	var st_hov: StyleBoxFlat = _make_glass_style(bg.lightened(0.08), border.lightened(0.18), 18, 2)
-	var st_press: StyleBoxFlat = _make_glass_style(bg.darkened(0.08), border, 18, 2)
+	var st_norm: StyleBoxFlat = _make_glass_style(bg, border, radius, 2)
+	var st_hov: StyleBoxFlat = _make_glass_style(bg.lightened(0.08), border.lightened(0.18), radius, 2)
+	var st_press: StyleBoxFlat = _make_glass_style(bg.darkened(0.10), border, radius, 2)
 
 	btn.add_theme_stylebox_override("normal", st_norm)
 	btn.add_theme_stylebox_override("hover", st_hov)
 	btn.add_theme_stylebox_override("pressed", st_press)
+	btn.clip_text = true
+	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+func _enforce_hud_geometry() -> void:
+	var vp_sz: Vector2 = get_viewport().get_visible_rect().size if get_viewport() else Vector2(720, 1280)
+	var vp_w: float = maxf(320.0, vp_sz.x)
+	if is_instance_valid(hud_root):
+		hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if is_instance_valid(turn_status_pill):
+		var half_pill: float = minf(168.0, (vp_w - 24.0) * 0.5)
+		turn_status_pill.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		turn_status_pill.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		turn_status_pill.offset_left = -half_pill
+		turn_status_pill.offset_right = half_pill
+		_sync_top_pill_position()
+	if is_instance_valid(bottom_dock):
+		bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		bottom_dock.offset_left = 8.0
+		bottom_dock.offset_right = -8.0
+		bottom_dock.offset_top = -336.0
+		bottom_dock.offset_bottom = -92.0
+		bottom_dock.clip_contents = true
+	if is_instance_valid(call_uno_btn):
+		call_uno_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+		call_uno_btn.offset_left = 14.0
+		call_uno_btn.offset_right = 88.0
+		call_uno_btn.offset_top = -418.0
+		call_uno_btn.offset_bottom = -344.0
+	if is_instance_valid(wild_modal_panel):
+		var mw: float = minf(390.0, vp_w - 36.0)
+		wild_modal_panel.custom_minimum_size = Vector2(mw, 410.0)
 
 func _build_hud() -> void:
 	hud_layer = CanvasLayer.new()
@@ -221,59 +332,46 @@ func _build_hud() -> void:
 
 	hud_root = Control.new()
 	hud_root.name = "UnoHUDRoot"
-	hud_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(hud_root)
 
-	# --- 1. Compact Floating Top Status Pill (Leaves the entire 3D table & 3D opponent seats open!) ---
+	# --- 1. Slim Floating Table Compass Pill (Centered symmetrically with GROW_DIRECTION_BOTH) ---
 	turn_status_pill = PanelContainer.new()
-	turn_status_pill.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	turn_status_pill.offset_left = 84
-	turn_status_pill.offset_right = -84
-	turn_status_pill.offset_top = 336
-	turn_status_pill.offset_bottom = 386
+	turn_status_pill.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	turn_status_pill.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	turn_status_pill.offset_left = -168
+	turn_status_pill.offset_right = 168
+	turn_status_pill.offset_top = 264
+	turn_status_pill.offset_bottom = 304
 	turn_status_pill.mouse_filter = Control.MOUSE_FILTER_PASS
 	turn_status_pill.add_theme_stylebox_override(
 		"panel",
-		_make_glass_style(Color(0.06, 0.11, 0.09, 0.84), Color(0.84, 0.67, 0.30, 0.68), 22, 1)
+		_make_glass_style(Color(0.05, 0.09, 0.08, 0.86), Color(0.86, 0.68, 0.30, 0.72), 20, 1)
 	)
 	hud_root.add_child(turn_status_pill)
 
 	var pill_margin: MarginContainer = MarginContainer.new()
-	pill_margin.add_theme_constant_override("margin_left", 14)
-	pill_margin.add_theme_constant_override("margin_right", 14)
+	pill_margin.add_theme_constant_override("margin_left", 10)
+	pill_margin.add_theme_constant_override("margin_right", 10)
 	pill_margin.add_theme_constant_override("margin_top", 4)
 	pill_margin.add_theme_constant_override("margin_bottom", 4)
 	turn_status_pill.add_child(pill_margin)
 
 	var pill_hbox: HBoxContainer = HBoxContainer.new()
+	pill_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	pill_hbox.add_theme_constant_override("separation", 10)
 	pill_margin.add_child(pill_hbox)
 
-	# Left Utility Chips (Camera View & Hand Sort)
-	zoom_btn = Button.new()
-	zoom_btn.text = "🔍 نما"
-	zoom_btn.custom_minimum_size = Vector2(78, 34)
-	_style_action_button(zoom_btn, Color(0.14, 0.19, 0.24, 0.90), Color(0.55, 0.72, 0.88, 0.65), Color(0.92, 0.96, 1.0), 19)
-	zoom_btn.pressed.connect(_on_zoom_cycle_pressed)
-	pill_hbox.add_child(zoom_btn)
-
-	sort_hand_btn = Button.new()
-	sort_hand_btn.text = "⇅ رنگ"
-	sort_hand_btn.custom_minimum_size = Vector2(82, 34)
-	_style_action_button(sort_hand_btn, Color(0.12, 0.22, 0.17, 0.90), Color(0.45, 0.78, 0.58, 0.65), Color(0.92, 0.98, 0.94), 19)
-	sort_hand_btn.pressed.connect(_on_sort_hand_pressed)
-	pill_hbox.add_child(sort_hand_btn)
-
-	# Active Color Chip
+	# Active Color Swatch Pill
 	active_color_chip = PanelContainer.new()
-	active_color_chip.custom_minimum_size = Vector2(96, 32)
+	active_color_chip.custom_minimum_size = Vector2(92, 30)
 	active_color_chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	active_color_chip_style = StyleBoxFlat.new()
 	active_color_chip_style.bg_color = UNO_COLORS["red"]
 	active_color_chip_style.border_color = Color.WHITE
 	active_color_chip_style.set_border_width_all(2)
-	active_color_chip_style.set_corner_radius_all(12)
+	active_color_chip_style.set_corner_radius_all(14)
 	active_color_chip.add_theme_stylebox_override("panel", active_color_chip_style)
 	pill_hbox.add_child(active_color_chip)
 
@@ -282,121 +380,144 @@ func _build_hud() -> void:
 	active_color_chip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	active_color_chip_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	active_color_chip_label.add_theme_font_override("font", FontHekayat)
-	active_color_chip_label.add_theme_font_size_override("font_size", 19)
+	active_color_chip_label.add_theme_font_size_override("font_size", 17)
 	active_color_chip_label.add_theme_color_override("font_color", Color.WHITE)
 	active_color_chip.add_child(active_color_chip_label)
 
 	direction_chip_label = Label.new()
 	direction_chip_label.text = "↻ ساعتگرد"
 	direction_chip_label.add_theme_font_override("font", FontHekayat)
-	direction_chip_label.add_theme_font_size_override("font_size", 20)
-	direction_chip_label.add_theme_color_override("font_color", Color(0.96, 0.88, 0.64))
+	direction_chip_label.add_theme_font_size_override("font_size", 17)
+	direction_chip_label.add_theme_color_override("font_color", Color(0.98, 0.90, 0.64))
 	pill_hbox.add_child(direction_chip_label)
 
-	# Turn Text + Status Dot (Right-aligned)
-	turn_status_label = Label.new()
-	turn_status_label.text = "در انتظار شروع بازی..."
-	turn_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	turn_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	turn_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	turn_status_label.add_theme_font_override("font", FontHekayat)
-	turn_status_label.add_theme_font_size_override("font_size", 23)
-	turn_status_label.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
-	pill_hbox.add_child(turn_status_label)
+	deck_count_chip_label = Label.new()
+	deck_count_chip_label.text = "🃏 ۸۰"
+	deck_count_chip_label.add_theme_font_override("font", FontHekayat)
+	deck_count_chip_label.add_theme_font_size_override("font_size", 16)
+	deck_count_chip_label.add_theme_color_override("font_color", Color(0.78, 0.88, 0.96))
+	pill_hbox.add_child(deck_count_chip_label)
 
-	turn_dot_panel = PanelContainer.new()
-	turn_dot_panel.custom_minimum_size = Vector2(14, 14)
-	turn_dot_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	turn_dot_style = StyleBoxFlat.new()
-	turn_dot_style.bg_color = Color(0.32, 0.96, 0.56)
-	turn_dot_style.set_corner_radius_all(7)
-	turn_dot_panel.add_theme_stylebox_override("panel", turn_dot_style)
-	pill_hbox.add_child(turn_dot_panel)
-
-	# --- 2. Open Floating Handheld Card Fan at the Bottom (No bulky box covering the 3D table!) ---
+	# --- 2. Open Floating Handheld Card Fan Sitting Cleanly Above BottomBar (Clipped strictly inside viewport!) ---
 	bottom_dock = Control.new()
 	bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_dock.offset_left = 12
-	bottom_dock.offset_right = -12
-	bottom_dock.offset_top = -428
-	bottom_dock.offset_bottom = -156
+	bottom_dock.offset_left = 8
+	bottom_dock.offset_right = -8
+	bottom_dock.offset_top = -336
+	bottom_dock.offset_bottom = -92
+	bottom_dock.clip_contents = true
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(bottom_dock)
 
 	# Subtle Translucent Bottom Lip Cradle behind the base of the cards
 	var card_lip: Panel = Panel.new()
 	card_lip.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	card_lip.offset_left = 24
-	card_lip.offset_right = -24
-	card_lip.offset_top = -78
+	card_lip.offset_left = 10
+	card_lip.offset_right = -10
+	card_lip.offset_top = -60
 	card_lip.offset_bottom = 0
 	card_lip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card_lip.add_theme_stylebox_override(
 		"panel",
-		_make_glass_style(Color(0.08, 0.05, 0.03, 0.62), Color(0.84, 0.67, 0.30, 0.45), 24, 1)
+		_make_glass_style(Color(0.06, 0.04, 0.03, 0.66), Color(0.84, 0.67, 0.30, 0.42), 20, 1)
 	)
 	bottom_dock.add_child(card_lip)
 
-	hand_count_badge_lbl = Label.new()
-	hand_count_badge_lbl.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	hand_count_badge_lbl.offset_left = -165
-	hand_count_badge_lbl.offset_right = -40
-	hand_count_badge_lbl.offset_top = -34
-	hand_count_badge_lbl.offset_bottom = -4
-	hand_count_badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	hand_count_badge_lbl.add_theme_font_override("font", FontHekayat)
-	hand_count_badge_lbl.add_theme_font_size_override("font_size", 20)
-	hand_count_badge_lbl.add_theme_color_override("font_color", Color(0.96, 0.88, 0.66, 0.90))
-	hand_count_badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bottom_dock.add_child(hand_count_badge_lbl)
-
-	# Contextual Floating Pills Row (Appears ONLY when an action pill is needed!)
+	# Compact Top Bar of Hand Dock: Left = Sort + Count, Right = Thumb-Zone Draw / Pass CTA
 	contextual_action_bar = HBoxContainer.new()
 	contextual_action_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	contextual_action_bar.offset_left = 40
-	contextual_action_bar.offset_right = -40
-	contextual_action_bar.offset_top = 0
-	contextual_action_bar.offset_bottom = 48
-	contextual_action_bar.alignment = BoxContainer.ALIGNMENT_CENTER
-	contextual_action_bar.add_theme_constant_override("separation", 14)
+	contextual_action_bar.offset_left = 8
+	contextual_action_bar.offset_right = -8
+	contextual_action_bar.offset_top = 4
+	contextual_action_bar.offset_bottom = 50
+	contextual_action_bar.add_theme_constant_override("separation", 8)
 	contextual_action_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bottom_dock.add_child(contextual_action_bar)
 
+	# Left Utility Group: Sort & Hand Count
+	sort_hand_btn = Button.new()
+	sort_hand_btn.text = "⇅ رنگ"
+	sort_hand_btn.custom_minimum_size = Vector2(84, 38)
+	sort_hand_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_style_action_button(sort_hand_btn, Color(0.10, 0.18, 0.14, 0.88), Color(0.45, 0.78, 0.58, 0.68), Color(0.92, 0.98, 0.94), 19, 14)
+	sort_hand_btn.pressed.connect(_on_sort_hand_pressed)
+	contextual_action_bar.add_child(sort_hand_btn)
+
+	var count_pill: PanelContainer = PanelContainer.new()
+	count_pill.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	count_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cp_st: StyleBoxFlat = _make_glass_style(Color(0.08, 0.06, 0.04, 0.76), Color(0.84, 0.68, 0.32, 0.48), 14, 1)
+	cp_st.content_margin_left = 10
+	cp_st.content_margin_right = 10
+	cp_st.content_margin_top = 4
+	cp_st.content_margin_bottom = 4
+	count_pill.add_theme_stylebox_override("panel", cp_st)
+	contextual_action_bar.add_child(count_pill)
+
+	hand_count_badge_lbl = Label.new()
+	hand_count_badge_lbl.text = "۷ کارت"
+	hand_count_badge_lbl.add_theme_font_override("font", FontHekayat)
+	hand_count_badge_lbl.add_theme_font_size_override("font_size", 19)
+	hand_count_badge_lbl.add_theme_color_override("font_color", Color(0.98, 0.90, 0.66))
+	hand_count_badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	count_pill.add_child(hand_count_badge_lbl)
+
+	var spacer: Control = Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	contextual_action_bar.add_child(spacer)
+
+	# Right Thumb-Zone Primary Action Pills (Draw / Pass)
 	draw_action_btn = Button.new()
-	draw_action_btn.text = "🃏 کشیدن کارت از دسته"
-	draw_action_btn.custom_minimum_size = Vector2(220, 46)
-	_style_action_button(draw_action_btn, Color(0.11, 0.42, 0.78, 0.95), Color(0.45, 0.78, 1.0))
+	draw_action_btn.text = "🃏 کشیدن"
+	draw_action_btn.custom_minimum_size = Vector2(144, 44)
+	draw_action_btn.pivot_offset = Vector2(72, 22)
+	_style_action_button(draw_action_btn, Color(0.11, 0.42, 0.78, 0.96), Color(0.50, 0.82, 1.0), Color.WHITE, 21, 18)
 	draw_action_btn.visible = false
 	draw_action_btn.pressed.connect(_on_draw_action_pressed)
 	contextual_action_bar.add_child(draw_action_btn)
 
 	pass_turn_btn = Button.new()
 	pass_turn_btn.text = "⏭️ رد نوبت"
-	pass_turn_btn.custom_minimum_size = Vector2(180, 46)
-	_style_action_button(pass_turn_btn, Color(0.76, 0.48, 0.10, 0.95), Color(1.0, 0.84, 0.35))
+	pass_turn_btn.custom_minimum_size = Vector2(142, 44)
+	_style_action_button(pass_turn_btn, Color(0.76, 0.46, 0.08, 0.98), Color(1.0, 0.86, 0.36), Color.WHITE, 21, 18)
 	pass_turn_btn.visible = false
 	pass_turn_btn.pressed.connect(_on_pass_turn_pressed)
 	contextual_action_bar.add_child(pass_turn_btn)
 
+	# Signature Floating Circular UNO! FAB (Sibling on hud_root so bottom_dock clip_contents never clips it!)
 	call_uno_btn = Button.new()
-	call_uno_btn.text = "🔥 اونو! (UNO)"
-	call_uno_btn.custom_minimum_size = Vector2(190, 46)
-	_style_action_button(call_uno_btn, Color(0.84, 0.16, 0.20, 0.96), Color(1.0, 0.86, 0.28))
+	call_uno_btn.text = "🔥\nUNO!"
+	call_uno_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	call_uno_btn.offset_left = 14
+	call_uno_btn.offset_right = 88
+	call_uno_btn.offset_top = -418
+	call_uno_btn.offset_bottom = -344
+	call_uno_btn.pivot_offset = Vector2(37, 37)
+	_style_action_button(call_uno_btn, Color(0.86, 0.14, 0.18, 0.98), Color(1.0, 0.88, 0.32), Color(1.0, 0.98, 0.86), 18, 37)
 	call_uno_btn.visible = false
 	call_uno_btn.pressed.connect(_on_uno_button_pressed)
-	contextual_action_bar.add_child(call_uno_btn)
+	hud_root.add_child(call_uno_btn)
 
-	# Floating Card Fan Scroll Area
+	# Floating Card Fan Scroll Area (Centered MarginContainer wrapper so edge cards never clip)
 	hand_scroll = ScrollContainer.new()
 	hand_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
-	hand_scroll.offset_left = 10
-	hand_scroll.offset_right = -10
-	hand_scroll.offset_top = 48
-	hand_scroll.offset_bottom = -8
+	hand_scroll.offset_left = 4
+	hand_scroll.offset_right = -4
+	hand_scroll.offset_top = 50
+	hand_scroll.offset_bottom = -4
 	hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	hand_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	hand_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
 	bottom_dock.add_child(hand_scroll)
+
+	var scroll_pad: MarginContainer = MarginContainer.new()
+	scroll_pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_pad.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_pad.add_theme_constant_override("margin_left", 10)
+	scroll_pad.add_theme_constant_override("margin_right", 10)
+	scroll_pad.mouse_filter = Control.MOUSE_FILTER_PASS
+	hand_scroll.add_child(scroll_pad)
 
 	hand_cards_box = HBoxContainer.new()
 	hand_cards_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -404,21 +525,21 @@ func _build_hud() -> void:
 	hand_cards_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	hand_cards_box.add_theme_constant_override("separation", -10)
 	hand_cards_box.mouse_filter = Control.MOUSE_FILTER_PASS
-	hand_scroll.add_child(hand_cards_box)
+	scroll_pad.add_child(hand_cards_box)
 
 	hand_empty_label = Label.new()
 	hand_empty_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	hand_empty_label.offset_top = 80
+	hand_empty_label.offset_top = 68
 	hand_empty_label.text = "در انتظار پخش کارت‌ها روی میز..."
 	hand_empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hand_empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hand_empty_label.add_theme_font_override("font", FontHekayat)
-	hand_empty_label.add_theme_font_size_override("font_size", 24)
+	hand_empty_label.add_theme_font_size_override("font_size", 20)
 	hand_empty_label.add_theme_color_override("font_color", Color(0.84, 0.90, 0.86, 0.78))
 	hand_empty_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bottom_dock.add_child(hand_empty_label)
 
-	# --- 3. Wild Color Radial Modal & VFX Layer ---
+	# --- 3. Interactive Radial Wild Color Wheel Modal & VFX Layer ---
 	_build_wild_color_modal()
 
 	vfx_layer = UnoVFXOverlayScript.new()
@@ -428,86 +549,67 @@ func _build_hud() -> void:
 func _build_wild_color_modal() -> void:
 	wild_modal_backdrop = ColorRect.new()
 	wild_modal_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	wild_modal_backdrop.color = Color(0.02, 0.05, 0.04, 0.78)
+	wild_modal_backdrop.color = Color(0.02, 0.04, 0.04, 0.78)
 	wild_modal_backdrop.visible = false
 	wild_modal_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	wild_modal_backdrop.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			pending_wild_card.clear()
+			wild_modal_backdrop.visible = false
+	)
 	hud_root.add_child(wild_modal_backdrop)
 
 	var center: CenterContainer = CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	wild_modal_backdrop.add_child(center)
 
-	var modal_panel: PanelContainer = PanelContainer.new()
-	modal_panel.custom_minimum_size = Vector2(560, 580)
-	modal_panel.add_theme_stylebox_override(
+	wild_modal_panel = PanelContainer.new()
+	wild_modal_panel.custom_minimum_size = Vector2(390, 410)
+	wild_modal_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	wild_modal_panel.add_theme_stylebox_override(
 		"panel",
-		_make_glass_style(Color(0.08, 0.14, 0.12, 0.98), Color(0.95, 0.80, 0.35, 0.92), 28, 3)
+		_make_glass_style(Color(0.07, 0.12, 0.10, 0.97), Color(0.95, 0.80, 0.35, 0.92), 26, 3)
 	)
-	center.add_child(modal_panel)
+	center.add_child(wild_modal_panel)
 
 	var margin: MarginContainer = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_top", 20)
-	margin.add_theme_constant_override("margin_bottom", 20)
-	modal_panel.add_child(margin)
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	wild_modal_panel.add_child(margin)
 
 	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 12)
 	margin.add_child(vbox)
 
 	var title_lbl: Label = Label.new()
-	title_lbl.text = "🎨 رنگ جدید بازی را انتخاب کنید"
+	title_lbl.text = "🎨 رنگ جدید را لمس کنید"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 32)
+	title_lbl.add_theme_font_size_override("font_size", 24)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.56))
 	vbox.add_child(title_lbl)
 
-	var wheel_row: HBoxContainer = HBoxContainer.new()
-	wheel_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	wheel_row.add_theme_constant_override("separation", 24)
-	vbox.add_child(wheel_row)
-
 	wild_preview_holder = CenterContainer.new()
-	wild_preview_holder.custom_minimum_size = Vector2(140, 210)
-	wheel_row.add_child(wild_preview_holder)
+	wild_preview_holder.visible = false
+	vbox.add_child(wild_preview_holder)
 
-	var wheel_ctrl: WildColorWheelGraphic = WildColorWheelGraphic.new()
-	wheel_ctrl.custom_minimum_size = Vector2(160, 160)
-	wheel_row.add_child(wheel_ctrl)
+	var wheel_holder: CenterContainer = CenterContainer.new()
+	vbox.add_child(wheel_holder)
 
-	var grid: GridContainer = GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 14)
-	grid.add_theme_constant_override("v_separation", 14)
-	vbox.add_child(grid)
-
-	var choices: Array[Dictionary] = [
-		{"id": "red", "label": "🔴 قرمز", "col": UNO_COLORS["red"]},
-		{"id": "blue", "label": "🔵 آبی", "col": UNO_COLORS["blue"]},
-		{"id": "yellow", "label": "🟡 زرد", "col": UNO_COLORS["yellow"]},
-		{"id": "green", "label": "🟢 سبز", "col": UNO_COLORS["green"]},
-	]
-
-	for ch: Dictionary in choices:
-		var c_btn: Button = Button.new()
-		c_btn.custom_minimum_size = Vector2(240, 82)
-		c_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		c_btn.text = String(ch["label"])
-		var col: Color = ch["col"]
-		var txt_c: Color = Color.WHITE if ch["id"] != "yellow" else Color(0.14, 0.12, 0.04)
-		_style_action_button(c_btn, col, Color.WHITE, txt_c, 28)
-		var color_id: String = String(ch["id"])
-		c_btn.pressed.connect(func() -> void:
-			_on_wild_color_selected(color_id)
-		)
-		grid.add_child(c_btn)
+	var wheel_picker: WildColorWheelPicker = WildColorWheelPicker.new()
+	wheel_picker.custom_minimum_size = Vector2(276, 276)
+	wheel_picker.color_chosen.connect(_on_wild_color_selected)
+	wheel_holder.add_child(wheel_picker)
 
 	var cancel_btn: Button = Button.new()
 	cancel_btn.text = "انصراف"
-	cancel_btn.custom_minimum_size = Vector2(0, 48)
-	_style_action_button(cancel_btn, Color(0.18, 0.22, 0.28), Color(0.55, 0.62, 0.72), Color(0.90, 0.92, 0.96), 22)
+	cancel_btn.custom_minimum_size = Vector2(150, 42)
+	cancel_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_style_action_button(cancel_btn, Color(0.18, 0.22, 0.28), Color(0.55, 0.62, 0.72), Color(0.90, 0.92, 0.96), 18, 16)
 	cancel_btn.pressed.connect(func() -> void:
 		pending_wild_card.clear()
 		wild_modal_backdrop.visible = false
@@ -612,46 +714,50 @@ func _refresh_top_header_badges() -> void:
 # 4. VISUAL REFRESH (3D TABLETOP, 3D OPPONENTS & FLOATING CURVED CARD HAND)
 # ==============================================================================
 
+func _resolve_cached_hud() -> Node:
+	if is_instance_valid(_cached_hud):
+		return _cached_hud
+	var tree: SceneTree = get_tree()
+	if not tree:
+		return null
+	_cached_hud = tree.get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(_cached_hud):
+		_cached_hud = tree.root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(_cached_hud):
+		_cached_start_ov = _cached_hud.get_node_or_null("StartGameOverlay") as Control
+		_cached_result_dlg = _cached_hud.get_node_or_null("GameResultDialog") as Control
+	return _cached_hud
+
 func _is_hud_overlay_blocking() -> bool:
 	if not _match_started and not GameManager.is_game_active:
 		return true
-	var tree: SceneTree = get_tree()
-	if not tree:
-		return false
-	var hud: Node = tree.get_first_node_in_group("base_game_hud")
-	if not is_instance_valid(hud):
-		hud = tree.root.find_child("BaseGameHUD", true, false)
+	var hud: Node = _resolve_cached_hud()
 	if is_instance_valid(hud):
-		var start_ov: Control = hud.get_node_or_null("StartGameOverlay") as Control
-		if is_instance_valid(start_ov) and start_ov.visible:
+		if is_instance_valid(_cached_start_ov) and _cached_start_ov.visible:
 			return true
-		var res_dlg: Control = hud.get_node_or_null("GameResultDialog") as Control
-		if is_instance_valid(res_dlg) and res_dlg.visible:
+		if is_instance_valid(_cached_result_dlg) and _cached_result_dlg.visible:
 			return true
 	return false
 
 func _update_hud_visibility() -> void:
 	if not is_instance_valid(hud_root):
 		return
-	var tree: SceneTree = get_tree()
-	if tree:
-		var hud: Node = tree.get_first_node_in_group("base_game_hud")
-		if not is_instance_valid(hud):
-			hud = tree.root.find_child("BaseGameHUD", true, false)
-		if is_instance_valid(hud) and hud_root.get_parent() != hud:
-			if hud_root.get_parent():
-				hud_root.get_parent().remove_child(hud_root)
-			hud.add_child(hud_root)
-			var start_ov: Node = hud.get_node_or_null("StartGameOverlay")
-			if is_instance_valid(start_ov):
-				hud.move_child(hud_root, start_ov.get_index())
-			if is_instance_valid(hud_layer):
-				hud_layer.queue_free()
-				hud_layer = null
+	var hud: Node = _resolve_cached_hud()
+	if is_instance_valid(hud) and hud_root.get_parent() != hud:
+		if hud_root.get_parent():
+			hud_root.get_parent().remove_child(hud_root)
+		hud.add_child(hud_root)
+		if is_instance_valid(_cached_start_ov):
+			hud.move_child(hud_root, _cached_start_ov.get_index())
+		if is_instance_valid(hud_layer):
+			hud_layer.queue_free()
+			hud_layer = null
+		_enforce_hud_geometry()
 	var should_show: bool = not _is_hud_overlay_blocking()
 	if hud_root.visible != should_show:
 		hud_root.visible = should_show
 		if should_show:
+			_enforce_hud_geometry()
 			_refresh_top_header_badges()
 
 func _refresh_all_visuals() -> void:
@@ -680,10 +786,28 @@ func _refresh_all_visuals() -> void:
 	# 6. Refresh Player Card Count Badges in Top Header
 	_refresh_top_header_badges()
 
-func _refresh_top_status_pill(playable_cnt: int) -> void:
-	if not is_instance_valid(turn_status_label):
+func _sync_top_pill_position() -> void:
+	if not is_instance_valid(turn_status_pill):
 		return
+	var target_y: float = 264.0 if _get_total_players() <= 2 else 320.0
+	var tree: SceneTree = get_tree()
+	if tree:
+		var hud: Node = tree.get_first_node_in_group("base_game_hud")
+		if not is_instance_valid(hud):
+			hud = tree.root.find_child("BaseGameHUD", true, false)
+		if is_instance_valid(hud):
+			var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
+			if is_instance_valid(header):
+				var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
+				if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
+					target_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 8.0, 220.0, 356.0)
+	if absf(target_y - _last_top_pill_y) > 1.0:
+		_last_top_pill_y = target_y
+		turn_status_pill.offset_top = target_y
+		turn_status_pill.offset_bottom = target_y + 40.0
 
+func _refresh_top_status_pill(_playable_cnt: int) -> void:
+	_sync_top_pill_position()
 	var act_col: Color = UNO_COLORS.get(current_color, UNO_COLORS["red"])
 	if active_color_chip_style:
 		active_color_chip_style.bg_color = act_col
@@ -693,25 +817,8 @@ func _refresh_top_status_pill(playable_cnt: int) -> void:
 
 	if direction_chip_label:
 		direction_chip_label.text = "↻ ساعتگرد" if direction >= 0 else "↺ پادساعتگرد"
-
-	if is_my_turn:
-		turn_dot_style.bg_color = Color(0.32, 0.98, 0.58)
-		if has_drawn_this_turn:
-			turn_status_label.text = "نوبت شماست • کارت جدید را بازی کنید یا «رد نوبت» بزنید"
-			turn_status_label.add_theme_color_override("font_color", Color(1.0, 0.90, 0.48))
-		elif playable_cnt > 0:
-			turn_status_label.text = "نوبت شماست • روی کارت درخشان بزنید (%s قابل بازی)" % UnoCardWidgetScript.to_fa_digits(str(playable_cnt))
-			turn_status_label.add_theme_color_override("font_color", Color(0.48, 0.98, 0.68))
-		else:
-			turn_status_label.text = "نوبت شماست • روی دسته کارت ۳بعدی روی میز بزنید"
-			turn_status_label.add_theme_color_override("font_color", Color(0.98, 0.84, 0.42))
-	else:
-		turn_dot_style.bg_color = Color(0.95, 0.72, 0.25)
-		if current_turn > 0:
-			turn_status_label.text = "نوبت %s در حال بازی..." % _get_player_short_name(current_turn)
-		else:
-			turn_status_label.text = "در انتظار شروع بازی..."
-		turn_status_label.add_theme_color_override("font_color", Color(0.90, 0.94, 0.92))
+	if deck_count_chip_label:
+		deck_count_chip_label.text = "🃏 %s" % UnoCardWidgetScript.to_fa_digits(str(max(0, deck_remaining)))
 
 func _refresh_3d_opponents() -> void:
 	_pid_to_seat_slot.clear()
@@ -764,12 +871,13 @@ func _rebuild_hand_cards(_playable_cnt: int) -> void:
 	if not is_instance_valid(hand_cards_box):
 		return
 	for ch: Node in hand_cards_box.get_children():
+		hand_cards_box.remove_child(ch)
 		ch.queue_free()
 	_card_widgets_by_uid.clear()
 
 	var total_cards: int = my_hand.size()
 	if is_instance_valid(hand_count_badge_lbl):
-		hand_count_badge_lbl.text = "%s کارت در دست" % UnoCardWidgetScript.to_fa_digits(str(total_cards))
+		hand_count_badge_lbl.text = "%s کارت" % UnoCardWidgetScript.to_fa_digits(str(total_cards))
 	if is_instance_valid(hand_empty_label):
 		hand_empty_label.visible = (total_cards == 0)
 
@@ -777,15 +885,16 @@ func _rebuild_hand_cards(_playable_cnt: int) -> void:
 		selected_card_uid = -1
 		return
 
-	# Dynamic overlap separation so the floating fan looks like a real handheld fan of cards
-	if total_cards <= 5:
-		hand_cards_box.add_theme_constant_override("separation", 4)
-	elif total_cards <= 8:
-		hand_cards_box.add_theme_constant_override("separation", -12)
-	elif total_cards <= 12:
-		hand_cards_box.add_theme_constant_override("separation", -24)
-	else:
-		hand_cards_box.add_theme_constant_override("separation", -34)
+	# Dynamic viewport-aware card sizing & exact overlap so up to 10 cards fit 100% centered with ZERO right overflow!
+	var vp_w: float = get_viewport().get_visible_rect().size.x if get_viewport() else 720.0
+	var avail_w: float = maxf(280.0, (hand_scroll.size.x if (is_instance_valid(hand_scroll) and hand_scroll.size.x > 100.0) else (vp_w - 24.0)) - 24.0)
+	var card_w: float = clampf(avail_w / 6.4, 80.0, 104.0)
+	var slot_w: float = card_w + 6.0
+	var sep: int = 4
+	if total_cards > 1:
+		var fit_sep: float = (avail_w - float(total_cards) * slot_w) / float(total_cards - 1)
+		sep = clampi(int(floor(fit_sep)), -int(roundf(card_w * 0.42)), 6)
+	hand_cards_box.add_theme_constant_override("separation", sep)
 
 	var still_exists: bool = false
 	for c: Variant in my_hand:
@@ -795,6 +904,7 @@ func _rebuild_hand_cards(_playable_cnt: int) -> void:
 	if not still_exists:
 		selected_card_uid = -1
 
+	var is_crowded_fan: bool = (total_cards >= 10) or (sep < -28)
 	var mid_idx: float = float(total_cards - 1) * 0.5
 	for idx: int in range(total_cards):
 		var c_var: Variant = my_hand[idx]
@@ -804,41 +914,95 @@ func _rebuild_hand_cards(_playable_cnt: int) -> void:
 		var uid: int = int(c_dict.get("uid", -1))
 		var playable: bool = _is_card_playable(c_dict)
 		var selected: bool = (uid == selected_card_uid)
+		var is_new_card: bool = (_last_drawn_uid >= 0 and uid == _last_drawn_uid)
+		var c_val: String = String(c_dict.get("value", ""))
+		var is_wild_card: bool = (String(c_dict.get("color", "")) == "wild") or (c_val in ["wild", "wild_draw4"])
+		var confirm_tap: bool = is_crowded_fan or is_wild_card
 
 		# Subtle handheld fan curve (angle & vertical arc)
 		var norm_offset: float = (float(idx) - mid_idx) / maxf(1.0, mid_idx) if total_cards > 1 else 0.0
-		var angle_deg: float = clampf(norm_offset * 7.5, -9.0, 9.0)
-		var arc_y: float = absf(norm_offset) * absf(norm_offset) * 12.0
+		var angle_deg: float = clampf(norm_offset * 5.5, -7.0, 7.0)
+		var arc_y: float = absf(norm_offset) * absf(norm_offset) * 9.0
 
 		var card_widget: UnoCardWidget = UnoCardWidgetScript.new()
-		card_widget.setup_card(c_dict, playable, selected, is_my_turn, angle_deg, arc_y)
+		card_widget.setup_card(c_dict, playable, selected, is_my_turn, angle_deg, arc_y, confirm_tap, card_w, is_new_card)
 		card_widget.card_tapped.connect(_on_hand_card_tapped)
 		card_widget.card_play_confirmed.connect(_on_hand_card_play_confirmed)
 		hand_cards_box.add_child(card_widget)
 		_card_widgets_by_uid[uid] = card_widget
 
+	if _last_drawn_uid >= 0 and _card_widgets_by_uid.has(_last_drawn_uid):
+		call_deferred("_scroll_to_card_uid", _last_drawn_uid)
+
+func _scroll_to_card_uid(uid: int) -> void:
+	if not is_instance_valid(hand_scroll) or not _card_widgets_by_uid.has(uid):
+		return
+	var cw: Control = _card_widgets_by_uid[uid] as Control
+	if not is_instance_valid(cw):
+		return
+	var content_w: float = hand_cards_box.get_combined_minimum_size().x + 20.0
+	var max_scroll: int = maxi(0, int(ceilf(content_w - hand_scroll.size.x)))
+	if max_scroll <= 0:
+		hand_scroll.scroll_horizontal = 0
+		return
+	var target_x: int = int(cw.position.x + cw.size.x * 0.5 - hand_scroll.size.x * 0.5)
+	hand_scroll.scroll_horizontal = clampi(target_x, 0, max_scroll)
+
 func _refresh_action_buttons(playable_cnt: int) -> void:
 	if not is_instance_valid(draw_action_btn):
 		return
 
-	# Show "Draw Card" floating pill ONLY when it's my turn, I haven't drawn, and I have 0 playable cards
-	# (The player can also tap the 3D Draw Pile on the table at any time during their turn!)
-	var show_draw_pill: bool = is_my_turn and (not has_drawn_this_turn) and (playable_cnt == 0)
-	draw_action_btn.visible = show_draw_pill
+	# Persistent Draw CTA on your turn before drawing:
+	# - Highlighted & pulsing when 0 playable cards (urgent)
+	# - Subtle calm dark-glass pill when playable cards exist (strategic draw option)
+	var can_draw: bool = is_my_turn and (not has_drawn_this_turn)
+	draw_action_btn.visible = can_draw
+	if _draw_pulse_tween and _draw_pulse_tween.is_valid():
+		_draw_pulse_tween.kill()
+		draw_action_btn.scale = Vector2.ONE
+	if can_draw:
+		if playable_cnt == 0:
+			draw_action_btn.text = "🃏 کشیدن کارت"
+			draw_action_btn.custom_minimum_size = Vector2(166, 46)
+			_style_action_button(draw_action_btn, Color(0.12, 0.46, 0.86, 0.98), Color(1.0, 0.88, 0.36), Color.WHITE, 21, 18)
+			if is_inside_tree() and not _is_mobile_gpu:
+				draw_action_btn.pivot_offset = Vector2(83, 23)
+				_draw_pulse_tween = create_tween().set_loops()
+				_draw_pulse_tween.tween_property(draw_action_btn, "scale", Vector2(1.06, 1.06), 0.55).set_trans(Tween.TRANS_SINE)
+				_draw_pulse_tween.tween_property(draw_action_btn, "scale", Vector2.ONE, 0.55).set_trans(Tween.TRANS_SINE)
+		else:
+			draw_action_btn.text = "🃏 +۱ کارت"
+			draw_action_btn.custom_minimum_size = Vector2(122, 40)
+			_style_action_button(draw_action_btn, Color(0.10, 0.18, 0.28, 0.86), Color(0.45, 0.72, 0.96, 0.70), Color(0.90, 0.96, 1.0), 19, 16)
 
-	# Show "Pass Turn" floating pill ONLY after drawing a card this turn
+	# Show "Pass Turn" pill immediately after drawing a playable card
 	var can_pass: bool = is_my_turn and has_drawn_this_turn
 	pass_turn_btn.visible = can_pass
 
-	# Show "UNO!" floating pill ONLY when holding 1 or 2 cards
+	# Signature pulsing Circular UNO! FAB when holding 1 or 2 cards
 	var can_uno: bool = GameManager.is_game_active and (my_hand.size() <= 2 and my_hand.size() >= 1) and not _has_player_called_uno(my_player_index)
 	call_uno_btn.visible = can_uno
+	if _uno_pulse_tween and _uno_pulse_tween.is_valid():
+		_uno_pulse_tween.kill()
+		call_uno_btn.scale = Vector2.ONE
+	if can_uno and is_inside_tree():
+		_uno_pulse_tween = create_tween().set_loops()
+		_uno_pulse_tween.tween_property(call_uno_btn, "scale", Vector2(1.10, 1.10), 0.45).set_trans(Tween.TRANS_SINE)
+		_uno_pulse_tween.tween_property(call_uno_btn, "scale", Vector2.ONE, 0.45).set_trans(Tween.TRANS_SINE)
 
 	if is_instance_valid(table_3d):
 		table_3d.set_uno_bell_alert(can_uno)
 
+func _get_my_hand_center_screen_pos() -> Vector2:
+	if is_instance_valid(hand_scroll):
+		var r: Rect2 = hand_scroll.get_global_rect()
+		if r.size.x > 10.0 and r.size.y > 10.0:
+			return r.get_center()
+	var vp: Vector2 = get_viewport().get_visible_rect().size if get_viewport() else Vector2(720, 1280)
+	return Vector2(vp.x * 0.5, vp.y * 0.84)
+
 # ==============================================================================
-# 5. USER INTERACTION HANDLERS (1-TAP CARD PLAY, DRAW, PASS, UNO, WILD COLOR)
+# 5. USER INTERACTION HANDLERS (SMART TAP / SWIPE-UP PLAY, DRAW, PASS, UNO, WILD)
 # ==============================================================================
 
 func _on_hand_card_tapped(uid: int, card_data: Dictionary, _widget: Control) -> void:
@@ -855,8 +1019,16 @@ func _on_hand_card_tapped(uid: int, card_data: Dictionary, _widget: Control) -> 
 			vfx_layer.show_contextual_toast("⚠️ این کارت با رنگ «%s» یا نماد «%s» همخوانی ندارد" % [cname, t_val], Color(1.0, 0.52, 0.52), 1.8)
 		return
 
-	# If playable, play immediately!
-	_on_hand_card_play_confirmed(uid, card_data, _widget)
+	# Crowded fan or Wild card: First tap lifts & previews; second tap (or ▲ بازی / swipe-up) plays!
+	if selected_card_uid == uid:
+		_on_hand_card_play_confirmed(uid, card_data, _widget)
+		return
+	var prev_uid: int = selected_card_uid
+	selected_card_uid = uid
+	if _card_widgets_by_uid.has(prev_uid) and is_instance_valid(_card_widgets_by_uid[prev_uid]):
+		(_card_widgets_by_uid[prev_uid] as UnoCardWidget).set_selected_state(false, true)
+	if _card_widgets_by_uid.has(uid) and is_instance_valid(_card_widgets_by_uid[uid]):
+		(_card_widgets_by_uid[uid] as UnoCardWidget).set_selected_state(true, true)
 
 func _on_hand_card_play_confirmed(uid: int, card_data: Dictionary, widget: Control) -> void:
 	if not is_my_turn:
@@ -890,6 +1062,7 @@ func _on_wild_color_selected(chosen_color: String) -> void:
 	if pending_wild_card.is_empty():
 		wild_modal_backdrop.visible = false
 		return
+	AudioManager.sfx_button()
 	var uid: int = int(pending_wild_card.get("uid", -1))
 	var card_copy: Dictionary = pending_wild_card.duplicate(true)
 	var widget: Control = _card_widgets_by_uid.get(uid, null) as Control
@@ -903,13 +1076,15 @@ func _dispatch_play_card(uid: int, chosen_color: String, card_data: Dictionary, 
 	AudioManager.sfx_move_piece()
 
 	if is_instance_valid(vfx_layer) and is_instance_valid(table_3d):
-		var start_pos: Vector2 = Vector2(540, 1520)
+		var start_pos: Vector2 = _get_my_hand_center_screen_pos()
 		if is_instance_valid(widget):
 			start_pos = widget.global_position + widget.size * 0.5
 		var end_pos: Vector2 = table_3d.get_discard_pile_screen_pos()
 		vfx_layer.animate_card_flight(start_pos, end_pos, card_data, true, 0.25)
 
 	selected_card_uid = -1
+	_last_drawn_uid = -1
+	_draw_request_pending = false
 	var payload: Dictionary = {"card_uid": uid}
 	if not chosen_color.is_empty():
 		payload["chosen_color"] = chosen_color
@@ -924,18 +1099,32 @@ func _on_draw_action_pressed() -> void:
 		if is_instance_valid(vfx_layer):
 			vfx_layer.show_contextual_toast("🃏 این نوبت کارت کشیده‌اید؛ کارت جدید را بازی کنید یا «رد نوبت» بزنید", Color(0.98, 0.82, 0.35), 2.0)
 		return
+	if _draw_request_pending:
+		return
 
+	_draw_request_pending = true
+	if is_instance_valid(draw_action_btn):
+		draw_action_btn.disabled = true
 	AudioManager.sfx_add_piece()
 	if is_instance_valid(vfx_layer) and is_instance_valid(table_3d):
 		var from_pos: Vector2 = table_3d.get_draw_pile_screen_pos()
-		var to_pos: Vector2 = Vector2(540, 1540)
+		var to_pos: Vector2 = _get_my_hand_center_screen_pos()
 		vfx_layer.animate_card_flight(from_pos, to_pos, {}, false, 0.28)
 
 	send_move(Commands.Draw_Card, {})
+	if is_inside_tree():
+		get_tree().create_timer(2.2).timeout.connect(func() -> void:
+			if _draw_request_pending:
+				_draw_request_pending = false
+				if is_instance_valid(draw_action_btn):
+					draw_action_btn.disabled = false
+		)
 
 func _on_pass_turn_pressed() -> void:
 	if not is_my_turn or not has_drawn_this_turn:
 		return
+	_last_drawn_uid = -1
+	_draw_request_pending = false
 	AudioManager.sfx_button()
 	send_move(Commands.Pass_Turn, {})
 
@@ -977,45 +1166,26 @@ func _on_sort_hand_pressed() -> void:
 		sort_hand_btn.text = "⇅ عدد" if _sort_by_value_first else "⇅ رنگ"
 	_rebuild_hand_cards(_get_playable_count())
 
-func _on_zoom_cycle_pressed() -> void:
-	var table: Node = get_tree().get_first_node_in_group("cafe_table")
-	if not is_instance_valid(table):
-		return
-	_zoom_preset_idx = (_zoom_preset_idx + 1) % 3
-	if _zoom_preset_idx == 0:
-		camera_distance = 2.42
-		camera_pitch = -0.82
-		if table.is_top_down_view:
-			table.set_top_down_view(false, 0.45)
-		table.target_distance = 2.42
-		table.target_pitch = -0.82
-		table.target_yaw = 0.0
-		if zoom_btn:
-			zoom_btn.text = "🔍 نما"
-	elif _zoom_preset_idx == 1:
-		camera_distance = 2.95
-		camera_pitch = -0.74
-		if table.is_top_down_view:
-			table.set_top_down_view(false, 0.45)
-		table.target_distance = 2.95
-		table.target_pitch = -0.74
-		table.target_yaw = 0.0
-		if zoom_btn:
-			zoom_btn.text = "🔍 سالن"
-	else:
-		table.top_down_target_height = 2.45
-		table.set_top_down_view(true, 0.45)
-		if zoom_btn:
-			zoom_btn.text = "🔍 بالا"
-
 # ==============================================================================
 # 6. AUTHORITATIVE BACKEND SYNC & NETWORK EVENT HANDLERS
 # ==============================================================================
 
-func _apply_uno_state_dict(data: Dictionary) -> void:
+func _has_card_uid_in_hand(uid: int) -> bool:
+	if uid < 0:
+		return false
+	for c: Variant in my_hand:
+		if typeof(c) == TYPE_DICTIONARY and int((c as Dictionary).get("uid", -1)) == uid:
+			return true
+	return false
+
+func _apply_uno_state_dict(data: Dictionary, do_refresh: bool = true) -> void:
 	if data.is_empty():
 		return
 	_match_started = true
+	_draw_request_pending = false
+	if is_instance_valid(draw_action_btn):
+		draw_action_btn.disabled = false
+
 	if data.has("my_hand") and typeof(data["my_hand"]) == TYPE_ARRAY:
 		my_hand = (data["my_hand"] as Array).duplicate(true)
 	elif data.has("hand") and typeof(data["hand"]) == TYPE_ARRAY:
@@ -1055,9 +1225,11 @@ func _apply_uno_state_dict(data: Dictionary) -> void:
 		current_turn = int(data["turn"])
 		GameManager.current_turn = current_turn
 
-	is_my_turn = (current_turn == GameManager.my_player_index) and GameManager.is_game_active
+	my_player_index = max(1, GameManager.my_player_index)
+	is_my_turn = (current_turn == my_player_index) and GameManager.is_game_active
 	is_board_locked = not is_my_turn
-	_refresh_all_visuals()
+	if do_refresh:
+		_refresh_all_visuals()
 
 func setup_board(game_data: Dictionary) -> void:
 	_match_started = true
@@ -1084,12 +1256,19 @@ func on_turn_data(payload: Dictionary) -> void:
 
 func on_turn_changed(turn: int, _is_me: bool) -> void:
 	_match_started = true
+	_draw_request_pending = false
+	if is_instance_valid(draw_action_btn):
+		draw_action_btn.disabled = false
+	var prev_turn: int = current_turn
 	current_turn = turn
-	is_my_turn = (turn == GameManager.my_player_index) and GameManager.is_game_active
+	my_player_index = max(1, GameManager.my_player_index)
+	is_my_turn = (turn == my_player_index) and GameManager.is_game_active
 	is_board_locked = not is_my_turn
 	if not is_my_turn:
 		has_drawn_this_turn = false
 		wild_modal_backdrop.visible = false
+	elif prev_turn != turn:
+		_last_drawn_uid = -1
 	_refresh_all_visuals()
 	_update_hud_visibility()
 
@@ -1106,11 +1285,12 @@ func on_reconnect_data(payload: Dictionary) -> void:
 
 func _get_player_screen_anchor(pid: int) -> Vector2:
 	if pid == my_player_index:
-		return Vector2(540, 1540)
+		return _get_my_hand_center_screen_pos()
 	var s_slot: int = int(_pid_to_seat_slot.get(pid, 1))
 	if is_instance_valid(table_3d) and table_3d.has_method("get_opponent_seat_screen_pos"):
 		return table_3d.get_opponent_seat_screen_pos(s_slot)
-	return Vector2(540, 430)
+	var vp: Vector2 = get_viewport().get_visible_rect().size if get_viewport() else Vector2(720, 1280)
+	return Vector2(vp.x * 0.5, vp.y * 0.30)
 
 func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 	if typeof(payload) != TYPE_DICTIONARY:
@@ -1188,19 +1368,45 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 				table_3d.animate_discard_pop()
 
 		Commands.Draw_Result_Private:
+			_draw_request_pending = false
+			if is_instance_valid(draw_action_btn):
+				draw_action_btn.disabled = false
+			my_player_index = max(1, GameManager.my_player_index)
+
 			if p.has("user_data") and typeof(p["user_data"]) == TYPE_DICTIONARY:
-				_apply_uno_state_dict(p["user_data"] as Dictionary)
+				_apply_uno_state_dict(p["user_data"] as Dictionary, false)
 			if p.has("my_hand") and typeof(p["my_hand"]) == TYPE_ARRAY:
 				my_hand = (p["my_hand"] as Array).duplicate(true)
-				hands_count[str(my_player_index)] = my_hand.size()
 			elif p.has("hand") and typeof(p["hand"]) == TYPE_ARRAY:
 				my_hand = (p["hand"] as Array).duplicate(true)
-				hands_count[str(my_player_index)] = my_hand.size()
+
+			var drawn_dict: Dictionary = (p.get("drawn_card", {}) as Dictionary) if typeof(p.get("drawn_card")) == TYPE_DICTIONARY else {}
+			if not drawn_dict.is_empty():
+				var d_uid: int = int(drawn_dict.get("uid", -1))
+				if d_uid >= 0 and not _has_card_uid_in_hand(d_uid):
+					my_hand.append(drawn_dict.duplicate(true))
+				_last_drawn_uid = d_uid
+			elif not my_hand.is_empty() and typeof(my_hand[-1]) == TYPE_DICTIONARY:
+				_last_drawn_uid = int((my_hand[-1] as Dictionary).get("uid", -1))
+
+			hands_count[str(my_player_index)] = my_hand.size()
 
 			var turn_passed: bool = bool(p.get("turn_passed", false))
 			var playable: bool = bool(p.get("playable", p.get("drawn_is_playable", false))) and not turn_passed
-			has_drawn_this_turn = playable
-			is_board_locked = not (is_my_turn and playable)
+			if turn_passed:
+				has_drawn_this_turn = false
+				if p.has("next_turn") and p["next_turn"] != null:
+					current_turn = int(p["next_turn"])
+					GameManager.current_turn = current_turn
+				is_my_turn = (current_turn == my_player_index) and GameManager.is_game_active and not turn_passed
+				is_board_locked = not is_my_turn
+			else:
+				has_drawn_this_turn = playable
+				is_my_turn = (current_turn == my_player_index) and GameManager.is_game_active
+				is_board_locked = not (is_my_turn and playable)
+				if playable and _last_drawn_uid >= 0:
+					selected_card_uid = _last_drawn_uid
+
 			if is_instance_valid(vfx_layer):
 				if playable:
 					vfx_layer.show_contextual_toast("✨ کارت جدید قابل بازی است!", Color(0.38, 0.96, 0.58), 2.1)
@@ -1209,6 +1415,9 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 			_refresh_all_visuals()
 
 		Commands.Draw_Result:
+			_draw_request_pending = false
+			if is_instance_valid(draw_action_btn):
+				draw_action_btn.disabled = false
 			var d_pid: int = int(p.get("player", p.get("gamer_id", 0)))
 			if p.has("hands_count"):
 				_update_hands_count_from_variant(p["hands_count"])
@@ -1219,7 +1428,12 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 				deck_remaining = int(p["deck_remaining"])
 			elif p.has("draw_pile_count") and p["draw_pile_count"] != null:
 				deck_remaining = int(p["draw_pile_count"])
-			if d_pid != my_player_index and is_instance_valid(vfx_layer):
+			if d_pid == my_player_index:
+				if bool(p.get("turn_passed", false)) and p.has("next_turn") and p["next_turn"] != null:
+					current_turn = int(p["next_turn"])
+					GameManager.current_turn = current_turn
+					has_drawn_this_turn = false
+			elif is_instance_valid(vfx_layer):
 				if is_instance_valid(table_3d):
 					vfx_layer.animate_card_flight(table_3d.get_draw_pile_screen_pos(), _get_player_screen_anchor(d_pid), {}, false, 0.28)
 				vfx_layer.show_contextual_toast("🃏 %s یک کارت کشید" % _get_player_short_name(d_pid), Color(0.82, 0.88, 0.96), 1.7)
@@ -1227,6 +1441,8 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 
 		Commands.Pass_Turn:
 			var pass_pid: int = int(p.get("player", p.get("gamer_id", 0)))
+			if pass_pid == my_player_index:
+				_last_drawn_uid = -1
 			if p.has("hands_count"):
 				_update_hands_count_from_variant(p["hands_count"])
 			if is_instance_valid(vfx_layer):
@@ -1242,7 +1458,8 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 			_refresh_all_visuals()
 
 		Commands.User_Data:
-			_apply_uno_state_dict(p)
+			# Already handled cleanly by _on_user_data_received (avoid duplicate rebuild)
+			pass
 
 func on_not_played_turns_updated(gamer_id: int, count: int) -> void:
 	if count <= 0 or not is_instance_valid(vfx_layer):
@@ -1283,6 +1500,8 @@ func _on_win_happened(payload: Dictionary) -> void:
 func reset_board() -> void:
 	_match_started = false
 	selected_card_uid = -1
+	_last_drawn_uid = -1
+	_draw_request_pending = false
 	my_hand.clear()
 	hands_count.clear()
 	top_card.clear()

@@ -170,36 +170,43 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 		if not is_instance_valid(c):
 			continue
 		c.visible = (idx <= total_players)
-		c.custom_minimum_size = Vector2(0, 98 if is_compact else 148)
+		c.clip_contents = true
+		c.custom_minimum_size = Vector2(0, 88 if is_compact else 118)
 		var hbox = c.get_node_or_null("HBox") as HBoxContainer
 		if hbox:
-			hbox.add_theme_constant_override("separation", 10 if is_compact else 12)
+			hbox.add_theme_constant_override("separation", 6 if is_compact else 10)
 		var av_c: Control = item["av_c"]
 		if is_instance_valid(av_c):
-			var av_sz: float = 68.0 if is_compact else 96.0
-			av_c.custom_minimum_size = Vector2(av_sz + 6.0, av_sz + 6.0)
+			var av_sz: float = 56.0 if is_compact else 76.0
+			av_c.custom_minimum_size = Vector2(av_sz + 4.0, av_sz + 4.0)
 			av_c.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			av_c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			av_c.set_meta("_av_box_boosted", true)
 		var nm: Label = item["name"]
 		if is_instance_valid(nm):
-			nm.add_theme_font_size_override("font_size", 32 if is_compact else 40)
+			nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			nm.clip_text = true
+			nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			nm.add_theme_font_size_override("font_size", 24 if is_compact else 28)
 			nm.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 			nm.add_theme_constant_override("outline_size", 3)
 		var rl: Label = item["role"]
 		if is_instance_valid(rl):
-			rl.add_theme_font_size_override("font_size", 24 if is_compact else 28)
+			rl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			rl.clip_text = true
+			rl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			rl.add_theme_font_size_override("font_size", 18 if is_compact else 21)
 			rl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.82))
 			rl.add_theme_constant_override("outline_size", 2)
 		var sb: PanelContainer = item["score_b"]
 		if is_instance_valid(sb):
 			sb.visible = true
-			var b_w = 104.0 if is_compact else 126.0
-			var b_h = 54.0 if is_compact else 66.0
+			var b_w = 88.0 if is_compact else 106.0
+			var b_h = 46.0 if is_compact else 54.0
 			sb.custom_minimum_size = Vector2(b_w, b_h)
 		var sc: Label = item["score"]
 		if is_instance_valid(sc):
-			sc.add_theme_font_size_override("font_size", 28 if is_compact else 34)
+			sc.add_theme_font_size_override("font_size", 24 if is_compact else 28)
 			sc.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 			sc.add_theme_constant_override("outline_size", 3)
 		if is_player_disabled(idx):

@@ -57,6 +57,12 @@ var fx_root: Node3D = null
 var pawn_nodes: Array[Node3D] = [null, null]
 var pawn_turn_rings: Array[MeshInstance3D] = [null, null]
 var legal_move_pads: Array[MeshInstance3D] = [] # 81 cell highlight pads
+var _visible_legal_pads: Array[MeshInstance3D] = []
+var _is_mobile_gpu: bool = false
+var _hud_vis_accum: float = 0.0
+var _cached_hud: Node = null
+var _cached_start_ov: Control = null
+var _cached_result_dlg: Control = null
 var last_move_pad: MeshInstance3D = null
 var ghost_wall_node: Node3D = null
 var ghost_wall_mesh: MeshInstance3D = null
@@ -69,13 +75,19 @@ var lbl_bottom_start_3d: Label3D = null
 var goal_strip_top: MeshInstance3D = null
 var goal_strip_bottom: MeshInstance3D = null
 
-# --- Floating Gamer-Friendly Control Dock (CanvasLayer) ---
+# --- Floating Gamer-Friendly Control Dock (Reparented cleanly into BaseGameHUD) ---
 var dock_layer: CanvasLayer = null
-var dock_panel: PanelContainer = null
+var dock_root: Control = null
+var dock_panel: Panel = null
+var dock_margin: MarginContainer = null
+var dock_status_lbl: Label = null
+var wall_confirm_row: HBoxContainer = null
 var btn_mode_move: Button = null
 var btn_mode_wall_h: Button = null
 var btn_mode_wall_v: Button = null
 var btn_confirm_wall: Button = null
+var btn_rotate_wall: Button = null
+var btn_cancel_wall: Button = null
 
 # --- Luxury Procedural Materials ---
 var _mat_walnut: StandardMaterial3D
@@ -115,6 +127,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	game_type = GameTypes.QUORIDOR
+	_is_mobile_gpu = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	add_to_group("board")
 	_init_materials()
 	_build_board_3d()
@@ -122,26 +135,36 @@ func _ready() -> void:
 	_reset_internal_state()
 	_sync_all_visuals()
 	super._ready()
+	var vp := get_viewport()
+	if vp and not vp.size_changed.is_connected(_enforce_dock_geometry):
+		vp.size_changed.connect(_enforce_dock_geometry)
+	call_deferred("_enforce_dock_geometry")
 
 func _process(delta: float) -> void:
 	_pulse_time += delta
-	var pulse := 1.0 + 0.085 * sin(_pulse_time * 5.2)
-
-	for i in range(legal_move_pads.size()):
-		var pad: MeshInstance3D = legal_move_pads[i]
-		if is_instance_valid(pad) and pad.visible:
-			pad.scale = Vector3(pulse, 1.0, pulse)
+	if not _visible_legal_pads.is_empty():
+		var pulse := 1.0 + 0.085 * sin(_pulse_time * 5.2)
+		var p_vec := Vector3(pulse, 1.0, pulse)
+		for pad: MeshInstance3D in _visible_legal_pads:
+			if is_instance_valid(pad):
+				pad.scale = p_vec
 
 	var active_idx := clampi(current_turn - 1, 0, 1)
+	var rp := 1.0 + 0.10 * sin(_pulse_time * 6.0)
+	var rp_vec := Vector3(rp, 1.0, rp)
 	for p_idx in range(2):
 		var ring: MeshInstance3D = pawn_turn_rings[p_idx]
 		if is_instance_valid(ring):
-			ring.visible = GameManager.is_game_active and winner_id == 0 and (p_idx == active_idx)
-			if ring.visible:
-				var rp := 1.0 + 0.10 * sin(_pulse_time * 6.0)
-				ring.scale = Vector3(rp, 1.0, rp)
+			var show_r := GameManager.is_game_active and winner_id == 0 and (p_idx == active_idx)
+			if ring.visible != show_r:
+				ring.visible = show_r
+			if show_r:
+				ring.scale = rp_vec
 
-	_update_dock_visibility()
+	_hud_vis_accum += delta
+	if _hud_vis_accum >= 0.15:
+		_hud_vis_accum = 0.0
+		_update_dock_visibility()
 
 func _is_board_flipped() -> bool:
 	return my_player_index == 2
@@ -564,51 +587,142 @@ func _create_royal_pawn_node(g_id: int) -> Node3D:
 # 3. GAMER-FRIENDLY FLOATING ACTION BAR (MOVE vs HORIZONTAL / VERTICAL WALL)
 # ============================================================================
 
+func _make_dock_glass_style(bg: Color, border: Color, radius: int = 16, bw: int = 2) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(bw)
+	sb.set_corner_radius_all(radius)
+	if not _is_mobile_gpu:
+		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+		sb.shadow_size = 6
+		sb.shadow_offset = Vector2(0, 2)
+	return sb
+
+func _style_quoridor_btn(b: Button, bg: Color, border: Color, f_size: int = 22, is_active: bool = false) -> void:
+	b.add_theme_font_override("font", _font_hekayat)
+	b.add_theme_font_size_override("font_size", f_size)
+	b.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
+	b.add_theme_color_override("font_hover_color", Color.WHITE)
+	b.add_theme_color_override("font_pressed_color", Color.WHITE)
+	b.add_theme_color_override("font_disabled_color", Color(0.65, 0.62, 0.60, 0.72))
+	b.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
+	b.add_theme_constant_override("outline_size", 2)
+	var bw: int = 3 if is_active else 2
+	b.add_theme_stylebox_override("normal", _make_dock_glass_style(bg, border, 14, bw))
+	b.add_theme_stylebox_override("hover", _make_dock_glass_style(bg.lightened(0.10), border.lightened(0.16), 14, bw))
+	b.add_theme_stylebox_override("pressed", _make_dock_glass_style(bg.darkened(0.10), border, 14, bw))
+	b.add_theme_stylebox_override("disabled", _make_dock_glass_style(Color(0.14, 0.12, 0.11, 0.72), Color(0.36, 0.32, 0.28, 0.50), 14, 1))
+	b.clip_text = true
+	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	b.focus_mode = Control.FOCUS_NONE
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+func _enforce_dock_geometry() -> void:
+	if is_instance_valid(dock_root):
+		dock_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if is_instance_valid(dock_panel):
+		dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		dock_panel.offset_left = 10.0
+		dock_panel.offset_right = -10.0
+		dock_panel.offset_bottom = -92.0
+		dock_panel.clip_contents = true
+		_fit_dock_height()
+
+func _fit_dock_height() -> void:
+	if not is_instance_valid(dock_panel):
+		return
+	var content_h: float = dock_margin.get_combined_minimum_size().y if is_instance_valid(dock_margin) else 124.0
+	var target_h: float = clampf(content_h + 6.0, 108.0, 220.0)
+	dock_panel.offset_left = 10.0
+	dock_panel.offset_right = -10.0
+	dock_panel.offset_bottom = -92.0
+	dock_panel.offset_top = -92.0 - target_h
+
 func _build_action_dock() -> void:
 	dock_layer = CanvasLayer.new()
 	dock_layer.name = "QuoridorDockLayer"
-	dock_layer.layer = 6
+	dock_layer.layer = 5
 	add_child(dock_layer)
 
-	dock_panel = PanelContainer.new()
+	dock_root = Control.new()
+	dock_root.name = "QuoridorDockRoot"
+	dock_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dock_layer.add_child(dock_root)
+
+	dock_panel = Panel.new()
 	dock_panel.name = "QuoridorActionDock"
-	dock_panel.anchor_left = 0.5
-	dock_panel.anchor_right = 0.5
-	dock_panel.anchor_top = 1.0
-	dock_panel.anchor_bottom = 1.0
-	dock_panel.offset_left = -340.0
-	dock_panel.offset_right = 340.0
-	dock_panel.offset_top = -250.0
-	dock_panel.offset_bottom = -160.0
-	dock_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	dock_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	dock_panel.offset_left = 10.0
+	dock_panel.offset_right = -10.0
+	dock_panel.offset_top = -220.0
+	dock_panel.offset_bottom = -92.0
+	dock_panel.clip_contents = true
+	dock_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	dock_panel.add_theme_stylebox_override(
+		"panel",
+		_make_dock_glass_style(Color(0.09, 0.06, 0.04, 0.94), Color(0.88, 0.68, 0.28, 0.90), 20, 2)
+	)
+	dock_root.add_child(dock_panel)
 
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.13, 0.08, 0.05, 0.90)
-	sb.border_color = Color(0.75, 0.56, 0.24, 0.95)
-	sb.set_border_width_all(3)
-	sb.set_corner_radius_all(20)
-	sb.content_margin_left = 14
-	sb.content_margin_right = 14
-	sb.content_margin_top = 10
-	sb.content_margin_bottom = 10
-	dock_panel.add_theme_stylebox_override("panel", sb)
-	dock_layer.add_child(dock_panel)
+	dock_margin = MarginContainer.new()
+	dock_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dock_margin.add_theme_constant_override("margin_left", 10)
+	dock_margin.add_theme_constant_override("margin_right", 10)
+	dock_margin.add_theme_constant_override("margin_top", 8)
+	dock_margin.add_theme_constant_override("margin_bottom", 8)
+	dock_panel.add_child(dock_margin)
 
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	dock_margin.add_child(vbox)
+
+	# Contextual 1-Line Guidance Banner (Monopoly-grade readability)
+	dock_status_lbl = Label.new()
+	dock_status_lbl.text = "🚶 روی یکی از خانه‌های سبز بزنید یا دیوار بگذارید"
+	dock_status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dock_status_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	dock_status_lbl.clip_text = true
+	dock_status_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	dock_status_lbl.add_theme_font_override("font", _font_hekayat)
+	dock_status_lbl.add_theme_font_size_override("font_size", 21)
+	dock_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.68))
+	dock_status_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
+	dock_status_lbl.add_theme_constant_override("outline_size", 2)
+	vbox.add_child(dock_status_lbl)
+
+	# Row 1: Primary 3-Mode Bar (Move / Horizontal Wall / Vertical Wall)
 	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 12)
+	hbox.add_theme_constant_override("separation", 8)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	dock_panel.add_child(hbox)
+	vbox.add_child(hbox)
 
 	btn_mode_move = _make_dock_button("🚶 حرکت مهره")
-	btn_mode_wall_h = _make_dock_button("➖ دیوار افقی")
-	btn_mode_wall_v = _make_dock_button("｜ دیوار عمودی")
-	btn_confirm_wall = _make_dock_button("✅ ثبت دیوار")
+	btn_mode_wall_h = _make_dock_button("➖ افقی (۱۰)")
+	btn_mode_wall_v = _make_dock_button("｜ عمودی (۱۰)")
 
 	hbox.add_child(btn_mode_move)
 	hbox.add_child(btn_mode_wall_h)
 	hbox.add_child(btn_mode_wall_v)
-	hbox.add_child(btn_confirm_wall)
+
+	# Row 2 (Contextual — Wall Mode ONLY): Confirm + Instant Rotate + Cancel
+	wall_confirm_row = HBoxContainer.new()
+	wall_confirm_row.add_theme_constant_override("separation", 8)
+	wall_confirm_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	wall_confirm_row.visible = false
+	vbox.add_child(wall_confirm_row)
+
+	btn_cancel_wall = _make_dock_button("✕ لغو")
+	btn_cancel_wall.size_flags_stretch_ratio = 0.72
+	btn_rotate_wall = _make_dock_button("⇄ چرخش")
+	btn_rotate_wall.size_flags_stretch_ratio = 0.85
+	btn_confirm_wall = _make_dock_button("✅ ثبت دیوار")
+	btn_confirm_wall.size_flags_stretch_ratio = 1.45
+
+	wall_confirm_row.add_child(btn_cancel_wall)
+	wall_confirm_row.add_child(btn_rotate_wall)
+	wall_confirm_row.add_child(btn_confirm_wall)
 
 	btn_mode_move.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -625,6 +739,15 @@ func _build_action_dock() -> void:
 	btn_confirm_wall.pressed.connect(func():
 		_confirm_previewed_wall()
 	)
+	btn_rotate_wall.pressed.connect(func():
+		AudioManager.sfx_tap()
+		var next_mode: int = ACTION_WALL_V if current_mode == ACTION_WALL_H else ACTION_WALL_H
+		_set_action_mode(next_mode)
+	)
+	btn_cancel_wall.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_set_action_mode(ACTION_MOVE)
+	)
 
 	_refresh_dock_buttons()
 
@@ -632,13 +755,8 @@ func _make_dock_button(label_text: String) -> Button:
 	var b := Button.new()
 	b.text = label_text
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.custom_minimum_size = Vector2(0, 68)
-	b.add_theme_font_override("font", _font_hekayat)
-	b.add_theme_font_size_override("font_size", 21)
-	b.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
-	b.focus_mode = Control.FOCUS_NONE
-	KenneyUI.style_button(b, KenneyUI.COLOR_WOOD)
-	ActionVFXManager.apply_button_juice(b, "tap_button")
+	b.custom_minimum_size = Vector2(0, 56)
+	_style_quoridor_btn(b, Color(0.22, 0.14, 0.08, 0.96), Color(0.76, 0.58, 0.28, 0.85), 22, false)
 	return b
 
 func _set_action_mode(mode: int) -> void:
@@ -661,36 +779,119 @@ func _refresh_dock_buttons() -> void:
 	if not is_instance_valid(btn_mode_move):
 		return
 	var my_walls := _get_my_walls_left()
-	var can_wall := (my_walls > 0) and is_my_turn and not is_board_locked and winner_id == 0
+	var can_act := is_my_turn and not is_board_locked and winner_id == 0
+	var can_wall := (my_walls > 0) and can_act
 
-	btn_mode_move.modulate = Color(1.18, 1.12, 0.88) if current_mode == ACTION_MOVE else Color(0.84, 0.84, 0.84)
-	btn_mode_wall_h.modulate = Color(1.18, 1.12, 0.88) if current_mode == ACTION_WALL_H else Color(0.84, 0.84, 0.84)
-	btn_mode_wall_v.modulate = Color(1.18, 1.12, 0.88) if current_mode == ACTION_WALL_V else Color(0.84, 0.84, 0.84)
+	_style_quoridor_btn(
+		btn_mode_move,
+		Color(0.12, 0.44, 0.24, 0.98) if current_mode == ACTION_MOVE else Color(0.18, 0.13, 0.09, 0.92),
+		Color(0.46, 0.96, 0.62) if current_mode == ACTION_MOVE else Color(0.62, 0.48, 0.26, 0.72),
+		22, current_mode == ACTION_MOVE
+	)
+	_style_quoridor_btn(
+		btn_mode_wall_h,
+		Color(0.46, 0.26, 0.08, 0.98) if current_mode == ACTION_WALL_H else Color(0.18, 0.13, 0.09, 0.92),
+		Color(1.0, 0.84, 0.34) if current_mode == ACTION_WALL_H else Color(0.62, 0.48, 0.26, 0.72),
+		22, current_mode == ACTION_WALL_H
+	)
+	_style_quoridor_btn(
+		btn_mode_wall_v,
+		Color(0.46, 0.26, 0.08, 0.98) if current_mode == ACTION_WALL_V else Color(0.18, 0.13, 0.09, 0.92),
+		Color(1.0, 0.84, 0.34) if current_mode == ACTION_WALL_V else Color(0.62, 0.48, 0.26, 0.72),
+		22, current_mode == ACTION_WALL_V
+	)
 
-	btn_mode_wall_h.disabled = (my_walls <= 0)
-	btn_mode_wall_v.disabled = (my_walls <= 0)
+	btn_mode_move.disabled = not can_act
+	btn_mode_wall_h.disabled = not can_wall
+	btn_mode_wall_v.disabled = not can_wall
 	btn_mode_wall_h.text = "➖ افقی (%s)" % _fa_digits(my_walls)
 	btn_mode_wall_v.text = "｜ عمودی (%s)" % _fa_digits(my_walls)
 
-	var show_confirm := (current_mode != ACTION_MOVE) and can_wall and preview_wall_rc.x >= 0
-	btn_confirm_wall.visible = (current_mode != ACTION_MOVE)
-	btn_confirm_wall.disabled = not (show_confirm and preview_wall_valid)
-	if not show_confirm:
-		btn_confirm_wall.text = "👆 محل دیوار؟"
-		btn_confirm_wall.modulate = Color(0.75, 0.75, 0.75)
+	var in_wall_mode := (current_mode != ACTION_MOVE) and can_wall
+	if is_instance_valid(wall_confirm_row):
+		wall_confirm_row.visible = in_wall_mode
+
+	var has_preview := in_wall_mode and preview_wall_rc.x >= 0
+	btn_confirm_wall.disabled = not (has_preview and preview_wall_valid)
+	if not has_preview:
+		btn_confirm_wall.text = "👆 محل دیوار را بزنید"
+		_style_quoridor_btn(btn_confirm_wall, Color(0.18, 0.16, 0.15, 0.86), Color(0.55, 0.48, 0.38, 0.70), 21, false)
 	elif preview_wall_valid:
 		btn_confirm_wall.text = "✅ ثبت دیوار"
-		btn_confirm_wall.modulate = Color(0.88, 1.22, 0.88)
+		_style_quoridor_btn(btn_confirm_wall, Color(0.12, 0.56, 0.28, 0.98), Color(0.48, 0.98, 0.62), 23, true)
 	else:
-		btn_confirm_wall.text = "🚫 غیرمجاز"
-		btn_confirm_wall.modulate = Color(1.15, 0.65, 0.65)
+		btn_confirm_wall.text = "🚫 محل غیرمجاز"
+		_style_quoridor_btn(btn_confirm_wall, Color(0.52, 0.14, 0.16, 0.96), Color(1.0, 0.48, 0.48), 21, false)
+
+	_style_quoridor_btn(btn_rotate_wall, Color(0.16, 0.32, 0.54, 0.96), Color(0.52, 0.82, 1.0), 21, false)
+	_style_quoridor_btn(btn_cancel_wall, Color(0.36, 0.14, 0.14, 0.94), Color(0.88, 0.44, 0.42), 21, false)
+
+	if is_instance_valid(dock_status_lbl):
+		if not can_act:
+			dock_status_lbl.text = "⏳ نوبت حریف است — منتظر حرکت بمانید"
+			dock_status_lbl.add_theme_color_override("font_color", Color(0.84, 0.82, 0.76))
+		elif current_mode == ACTION_MOVE:
+			dock_status_lbl.text = "🚶 روی خانه‌های سبز بزنید یا حالت دیوار را انتخاب کنید"
+			dock_status_lbl.add_theme_color_override("font_color", Color(0.62, 0.98, 0.74))
+		elif not has_preview:
+			var dir_fa: String = "افقی" if current_mode == ACTION_WALL_H else "عمودی"
+			dock_status_lbl.text = "🧱 محل دیوار %s را روی شیارهای صفحه لمس کنید" % dir_fa
+			dock_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.52))
+		elif preview_wall_valid:
+			dock_status_lbl.text = "✅ محل دیوار مجاز است — دکمه «ثبت دیوار» را بزنید"
+			dock_status_lbl.add_theme_color_override("font_color", Color(0.48, 0.98, 0.62))
+		else:
+			dock_status_lbl.text = "🚫 این محل مجاز نیست — نقطه دیگری را لمس کنید"
+			dock_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.54, 0.50))
+
+	call_deferred("_fit_dock_height")
+
+func _resolve_cached_hud() -> Node:
+	if is_instance_valid(_cached_hud):
+		return _cached_hud
+	var tree := get_tree()
+	if not tree:
+		return null
+	_cached_hud = tree.get_first_node_in_group("base_game_hud")
+	if not is_instance_valid(_cached_hud):
+		_cached_hud = tree.root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(_cached_hud):
+		_cached_start_ov = _cached_hud.get_node_or_null("StartGameOverlay") as Control
+		_cached_result_dlg = _cached_hud.get_node_or_null("GameResultDialog") as Control
+	return _cached_hud
+
+func _is_hud_overlay_blocking() -> bool:
+	var hud: Node = _resolve_cached_hud()
+	if is_instance_valid(hud):
+		if is_instance_valid(_cached_start_ov) and _cached_start_ov.visible:
+			return true
+		if is_instance_valid(_cached_result_dlg) and _cached_result_dlg.visible:
+			return true
+		for dlg_name in ["SurrenderDialog", "DisconnectPauseDialog"]:
+			var dlg: Control = hud.get_node_or_null(dlg_name) as Control
+			if is_instance_valid(dlg) and dlg.visible:
+				return true
+	return false
 
 func _update_dock_visibility() -> void:
-	if not is_instance_valid(dock_panel):
+	if not is_instance_valid(dock_root):
 		return
-	var should_show := GameManager.is_game_active and winner_id == 0 and not GameManager.is_spectating
-	if dock_panel.visible != should_show:
-		dock_panel.visible = should_show
+	var hud: Node = _resolve_cached_hud()
+	if is_instance_valid(hud) and dock_root.get_parent() != hud:
+		if dock_root.get_parent():
+			dock_root.get_parent().remove_child(dock_root)
+		hud.add_child(dock_root)
+		if is_instance_valid(_cached_start_ov):
+			hud.move_child(dock_root, _cached_start_ov.get_index())
+		if is_instance_valid(dock_layer):
+			dock_layer.queue_free()
+			dock_layer = null
+		_enforce_dock_geometry()
+	var should_show := GameManager.is_game_active and winner_id == 0 and not GameManager.is_spectating and not _is_hud_overlay_blocking()
+	if dock_root.visible != should_show:
+		dock_root.visible = should_show
+		if should_show:
+			_enforce_dock_geometry()
 
 # ============================================================================
 # 4. QUORIDOR RULES ENGINE (1:1 MIRROR OF BACKEND)
@@ -838,10 +1039,12 @@ func _raycast_board_plane(screen_pos: Vector2) -> Variant:
 	return to_local(world_hit)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not GameManager.is_game_active or winner_id != 0:
+	if not GameManager.is_game_active or winner_id != 0 or _is_hud_overlay_blocking():
 		return
 
 	if event is InputEventMouseMotion:
+		if is_instance_valid(dock_panel) and dock_panel.visible and dock_panel.get_global_rect().has_point(event.position):
+			return
 		var local_hit: Variant = _raycast_board_plane(event.position)
 		if local_hit == null:
 			hovered_cell_rc = Vector2i(-1, -1)
@@ -857,6 +1060,11 @@ func _unhandled_input(event: InputEvent) -> void:
 					_update_wall_preview_only(w_rc.x, w_rc.y)
 
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		var vp_rect := get_viewport().get_visible_rect()
+		if event.position.y >= vp_rect.size.y - 90.0:
+			return
+		if is_instance_valid(dock_panel) and dock_panel.visible and dock_panel.get_global_rect().has_point(event.position):
+			return
 		var local_hit: Variant = _raycast_board_plane(event.position)
 		if local_hit == null:
 			return
@@ -944,7 +1152,6 @@ func _handle_wall_tap(wr: int, wc: int) -> void:
 		AudioManager.play_sound("miss_turn")
 	else:
 		AudioManager.sfx_tap()
-		show_hint("✅ جای دیوار مناسب است! برای ثبت مجدداً بزنید یا دکمه «ثبت دیوار» را فشار دهید.")
 
 func _confirm_previewed_wall() -> void:
 	if not GameManager.is_game_active or is_board_locked or winner_id != 0:
@@ -1068,6 +1275,9 @@ func reset_board() -> void:
 	_sync_all_visuals()
 
 func cleanup_board() -> void:
+	if is_instance_valid(dock_root):
+		dock_root.queue_free()
+		dock_root = null
 	if is_instance_valid(dock_layer):
 		dock_layer.queue_free()
 		dock_layer = null
@@ -1235,6 +1445,7 @@ func _clear_legal_pads() -> void:
 
 func _refresh_highlights_and_preview() -> void:
 	_clear_legal_pads()
+	_visible_legal_pads.clear()
 	if is_instance_valid(ghost_wall_node):
 		ghost_wall_node.visible = false
 
@@ -1260,6 +1471,7 @@ func _refresh_highlights_and_preview() -> void:
 				else:
 					pad.material_override = _mat_legal_pad
 				pad.visible = true
+				_visible_legal_pads.append(pad)
 
 	elif current_mode != ACTION_MOVE and is_my_turn and not is_board_locked and preview_wall_rc.x >= 0:
 		var ori := "H" if current_mode == ACTION_WALL_H else "V"

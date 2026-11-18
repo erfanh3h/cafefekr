@@ -20,19 +20,19 @@ var _special_badge_label: Label
 var _special_tween: Tween
 
 func _init() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_overlays()
 
 func _build_overlays() -> void:
-	# 1. Contextual Auto-Dismissing Event Toast (Centered above central playing area)
+	# 1. Contextual Auto-Dismissing Event Toast (Responsive full-width safe bounds — never overflows right!)
 	_toast_panel = PanelContainer.new()
-	_toast_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_toast_panel.offset_left = -260.0
-	_toast_panel.offset_right = 260.0
-	_toast_panel.offset_top = 492.0
-	_toast_panel.offset_bottom = 538.0
-	_toast_panel.pivot_offset = Vector2(260.0, 23.0)
+	_toast_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_toast_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_toast_panel.offset_left = 24.0
+	_toast_panel.offset_right = -24.0
+	_toast_panel.offset_top = 368.0
+	_toast_panel.offset_bottom = 414.0
 	_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toast_panel.visible = false
 
@@ -40,11 +40,11 @@ func _build_overlays() -> void:
 	_toast_style.bg_color = Color(0.06, 0.10, 0.08, 0.94)
 	_toast_style.border_color = Color(0.86, 0.72, 0.34, 0.88)
 	_toast_style.set_border_width_all(2)
-	_toast_style.set_corner_radius_all(22)
+	_toast_style.set_corner_radius_all(18)
 	_toast_style.shadow_color = Color(0, 0, 0, 0.45)
-	_toast_style.shadow_size = 10
-	_toast_style.content_margin_left = 18
-	_toast_style.content_margin_right = 18
+	_toast_style.shadow_size = 8
+	_toast_style.content_margin_left = 14
+	_toast_style.content_margin_right = 14
 	_toast_style.content_margin_top = 6
 	_toast_style.content_margin_bottom = 6
 	_toast_panel.add_theme_stylebox_override("panel", _toast_style)
@@ -53,19 +53,22 @@ func _build_overlays() -> void:
 	_toast_label = Label.new()
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_toast_label.add_theme_font_override("font", FontHekayat)
-	_toast_label.add_theme_font_size_override("font_size", 22)
+	_toast_label.add_theme_font_size_override("font_size", 19)
 	_toast_label.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
 	_toast_panel.add_child(_toast_label)
 
-	# 2. Special Card Effect Callout Badge (Appears briefly above the center piles, never covering active card)
+	# 2. Special Card Effect Callout Badge (Centered symmetrically with GROW_DIRECTION_BOTH!)
 	_special_badge_panel = PanelContainer.new()
 	_special_badge_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_special_badge_panel.offset_left = -165.0
-	_special_badge_panel.offset_right = 165.0
-	_special_badge_panel.offset_top = -230.0
-	_special_badge_panel.offset_bottom = -168.0
-	_special_badge_panel.pivot_offset = Vector2(165.0, 31.0)
+	_special_badge_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_special_badge_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_special_badge_panel.offset_left = -150.0
+	_special_badge_panel.offset_right = 150.0
+	_special_badge_panel.offset_top = -180.0
+	_special_badge_panel.offset_bottom = -126.0
+	_special_badge_panel.pivot_offset = Vector2(150.0, 27.0)
 	_special_badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_special_badge_panel.visible = false
 
@@ -73,13 +76,13 @@ func _build_overlays() -> void:
 	_special_badge_style.bg_color = Color(0.10, 0.12, 0.16, 0.96)
 	_special_badge_style.border_color = Color(1.0, 0.86, 0.28)
 	_special_badge_style.set_border_width_all(3)
-	_special_badge_style.set_corner_radius_all(28)
+	_special_badge_style.set_corner_radius_all(24)
 	_special_badge_style.shadow_color = Color(0, 0, 0, 0.55)
-	_special_badge_style.shadow_size = 14
-	_special_badge_style.content_margin_left = 20
-	_special_badge_style.content_margin_right = 20
-	_special_badge_style.content_margin_top = 8
-	_special_badge_style.content_margin_bottom = 8
+	_special_badge_style.shadow_size = 12
+	_special_badge_style.content_margin_left = 18
+	_special_badge_style.content_margin_right = 18
+	_special_badge_style.content_margin_top = 6
+	_special_badge_style.content_margin_bottom = 6
 	_special_badge_panel.add_theme_stylebox_override("panel", _special_badge_style)
 	add_child(_special_badge_panel)
 
@@ -87,7 +90,7 @@ func _build_overlays() -> void:
 	_special_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_special_badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_special_badge_label.add_theme_font_override("font", FontHekayat)
-	_special_badge_label.add_theme_font_size_override("font_size", 31)
+	_special_badge_label.add_theme_font_size_override("font_size", 24)
 	_special_badge_label.add_theme_color_override("font_color", Color.WHITE)
 	_special_badge_panel.add_child(_special_badge_label)
 

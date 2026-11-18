@@ -174,33 +174,37 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 		if not is_instance_valid(c):
 			continue
 		c.visible = (idx <= total_players)
-		c.custom_minimum_size = Vector2(0, 96 if is_compact else 140)
+		c.custom_minimum_size = Vector2(0, 82 if is_compact else 112)
 		var hbox = c.get_node_or_null("HBox") as HBoxContainer
 		if hbox:
-			hbox.add_theme_constant_override("separation", 10 if is_compact else 12)
+			hbox.add_theme_constant_override("separation", 8 if is_compact else 10)
 		var av_c: Control = item["av_c"]
 		if is_instance_valid(av_c):
-			var av_sz: float = 68.0 if is_compact else 96.0
-			av_c.custom_minimum_size = Vector2(av_sz + 6.0, av_sz + 6.0)
+			var av_sz: float = 54.0 if is_compact else 72.0
+			av_c.custom_minimum_size = Vector2(av_sz + 4.0, av_sz + 4.0)
 			av_c.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			av_c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			av_c.set_meta("_av_box_boosted", true)
 		var nm: Label = item["name"]
 		if is_instance_valid(nm):
-			nm.add_theme_font_size_override("font_size", 32 if is_compact else 40)
+			nm.clip_text = true
+			nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			nm.add_theme_font_size_override("font_size", 22 if is_compact else 26)
 		var rl: Label = item["role"]
 		if is_instance_valid(rl):
-			rl.add_theme_font_size_override("font_size", 24 if is_compact else 28)
+			rl.clip_text = true
+			rl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			rl.add_theme_font_size_override("font_size", 16 if is_compact else 19)
 			if not is_player_disabled(idx):
 				rl.text = _format_role_text(idx)
 		var sb: PanelContainer = item["score_b"]
 		if is_instance_valid(sb):
 			sb.visible = true
-			var b_sz = 50.0 if is_compact else 60.0
+			var b_sz = 44.0 if is_compact else 50.0
 			sb.custom_minimum_size = Vector2(b_sz, b_sz)
 		var sc: Label = item["score"]
 		if is_instance_valid(sc):
-			sc.add_theme_font_size_override("font_size", 30 if is_compact else 36)
+			sc.add_theme_font_size_override("font_size", 22 if is_compact else 26)
 		if is_player_disabled(idx):
 			_apply_disabled_visual(idx)
 
