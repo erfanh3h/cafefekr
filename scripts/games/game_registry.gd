@@ -571,12 +571,31 @@ static func get_difficulty(game_type: Variant = "") -> String:
 		_:
 			return "normal"
 
+const TEX_GAME_NAME_EASY: Texture2D = preload("res://assets/images/frames/game_name_easy.png")
+const TEX_GAME_NAME_NORMAL: Texture2D = preload("res://assets/images/frames/game_name_normal.png")
+const TEX_GAME_NAME_HARD: Texture2D = preload("res://assets/images/frames/game_name_hard.png")
+
 static func get_difficulty_name_fa(game_type: Variant = "") -> String:
 	match get_difficulty(game_type):
 		"easy": return "آسان"
 		"normal": return "متوسط"
 		"hard": return "سخت"
 		_: return "متوسط"
+
+static func get_difficulty_name_frame_texture(game_type: Variant = "") -> Texture2D:
+	match get_difficulty(game_type):
+		"easy": return TEX_GAME_NAME_EASY
+		"hard": return TEX_GAME_NAME_HARD
+		_: return TEX_GAME_NAME_NORMAL
+
+static func create_game_name_frame_style(game_type: Variant = "", pad_x: float = 34.0, pad_y: float = 4.0) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = get_difficulty_name_frame_texture(game_type)
+	sb.content_margin_left = pad_x
+	sb.content_margin_right = pad_x
+	sb.content_margin_top = pad_y
+	sb.content_margin_bottom = pad_y
+	return sb
 
 static func get_classic_rank_xp(game_type: Variant = "", is_win: bool = false, is_draw: bool = false) -> int:
 	var diff = get_difficulty(game_type)

@@ -80,31 +80,24 @@ func _ready() -> void:
 
 func _setup_styles() -> void:
 	_style_card_normal = StyleBoxFlat.new()
-	_style_card_normal.bg_color = Color(0.22, 0.15, 0.1, 0.98)
+	_style_card_normal.bg_color = Color(0, 0, 0, 0)
 	_style_card_normal.set_corner_radius_all(18)
-	_style_card_normal.set_border_width_all(3)
-	_style_card_normal.border_color = Color(0.82, 0.68, 0.38, 0.85)
-	_style_card_normal.shadow_color = Color(0, 0, 0, 0.5)
-	_style_card_normal.shadow_size = 2
-	_style_card_normal.shadow_offset = Vector2(0, 2)
+	_style_card_normal.set_border_width_all(0)
+	_style_card_normal.shadow_size = 0
 
 	_style_card_hover = StyleBoxFlat.new()
-	_style_card_hover.bg_color = Color(0.3, 0.2, 0.13, 0.98)
+	_style_card_hover.bg_color = Color(0, 0, 0, 0)
 	_style_card_hover.set_corner_radius_all(18)
 	_style_card_hover.set_border_width_all(3)
-	_style_card_hover.border_color = Color(1.0, 0.94, 0.55, 1.0)
-	_style_card_hover.shadow_color = Color(1.0, 0.85, 0.2, 0.4)
-	_style_card_hover.shadow_size = 2
-	_style_card_hover.shadow_offset = Vector2(0, 2)
+	_style_card_hover.border_color = Color(1.0, 0.94, 0.55, 0.9)
+	_style_card_hover.shadow_size = 0
 
 	_style_card_selected = StyleBoxFlat.new()
-	_style_card_selected.bg_color = Color(0.24, 0.16, 0.1, 0.98)
+	_style_card_selected.bg_color = Color(0, 0, 0, 0)
 	_style_card_selected.set_corner_radius_all(18)
 	_style_card_selected.set_border_width_all(4)
 	_style_card_selected.border_color = Color(1.0, 0.88, 0.28, 1.0)
-	_style_card_selected.shadow_color = Color(1.0, 0.85, 0.25, 0.45)
-	_style_card_selected.shadow_size = 2
-	_style_card_selected.shadow_offset = Vector2(0, 2)
+	_style_card_selected.shadow_size = 0
 
 func open(default_game: String = "") -> void:
 	if not default_game.is_empty():
@@ -180,44 +173,32 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 	card.add_theme_stylebox_override("pressed", st)
 	card.add_theme_stylebox_override("focus", st)
 
-	var bg_warmth = ColorRect.new()
-	bg_warmth.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg_warmth.color = Color(0.28, 0.18, 0.1, 0.95)
-	bg_warmth.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(bg_warmth)
-
 	var img = TextureRect.new()
 	img.set_anchors_preset(Control.PRESET_FULL_RECT)
 	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	img.modulate = Color(1.18, 1.12, 1.05)
+	img.modulate = Color(1.12, 1.08, 1.02)
 	img.texture = _get_game_texture(g_type)
 	card.add_child(img)
 
-	var shadow_overlay = ColorRect.new()
-	shadow_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	shadow_overlay.color = Color(0.02, 0.01, 0.0, 0.22)
-	shadow_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(shadow_overlay)
-
 	var banner = PanelContainer.new()
-	banner.anchor_top = 0.72
+	banner.anchor_top = 0.74
 	banner.anchor_right = 1.0
 	banner.anchor_bottom = 1.0
+	banner.offset_left = 4.0
+	banner.offset_right = -4.0
+	banner.offset_bottom = -4.0
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var b_style = StyleBoxFlat.new()
-	b_style.bg_color = Color(0.12, 0.08, 0.05, 0.92)
-	b_style.border_width_top = 2
-	b_style.border_color = Color(0.85, 0.7, 0.35, 0.75)
-	b_style.corner_radius_bottom_left = 16
-	b_style.corner_radius_bottom_right = 16
-	banner.add_theme_stylebox_override("panel", b_style)
+	banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(g_type, 40.0, 4.0))
 
 	var lbl = Label.new()
 	lbl.text = GameTypes.get_display_name_fa(g_type)
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl.clip_text = true
+	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl.add_theme_font_size_override("font_size", 30)
+	lbl.add_theme_font_size_override("font_size", 24)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 	lbl.add_theme_constant_override("shadow_outline_size", 3)

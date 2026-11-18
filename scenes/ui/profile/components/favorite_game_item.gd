@@ -5,6 +5,7 @@ extends PanelContainer
 ## Displays small game icon, game name, number of matches, and win/achievement indicator.
 
 var _ico_game: TextureRect
+var _name_banner: PanelContainer
 var _lbl_name: Label
 var _lbl_matches: Label
 var _lbl_winrate: Label
@@ -12,7 +13,7 @@ var _win_pill: PanelContainer
 
 
 func _init() -> void:
-	custom_minimum_size = Vector2(150, 155)
+	custom_minimum_size = Vector2(158, 168)
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_build_ui()
 
@@ -55,11 +56,18 @@ func _build_ui() -> void:
 	_ico_game.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon_slot.add_child(_ico_game)
 
-	# 2. Game Title
-	_lbl_name = CafeSocialTheme.make_title("نام بازی", 19, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
+	# 2. Game Title inside difficulty ribbon frame
+	_name_banner = PanelContainer.new()
+	_name_banner.custom_minimum_size = Vector2(0, 38)
+	_name_banner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_name_banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style("", 22.0, 2.0))
+	vb.add_child(_name_banner)
+
+	_lbl_name = CafeSocialTheme.make_title("نام بازی", 17, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_name.clip_text = true
 	_lbl_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	vb.add_child(_lbl_name)
+	_name_banner.add_child(_lbl_name)
 
 	# 3. Matches Count
 	_lbl_matches = CafeSocialTheme.make_body("۰ بازی", 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
@@ -91,6 +99,8 @@ func setup(game_type: String, total_matches: int, win_rate: float, wins: int = 0
 	else:
 		_ico_game.texture = CafeSocialTheme.ICO_CUP
 
+	if is_instance_valid(_name_banner):
+		_name_banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(game_type, 22.0, 2.0))
 	_lbl_name.text = GameRegistry.get_display_name_fa(game_type)
 	_lbl_matches.text = "%s مسابقه" % GameManager.to_fa_num(total_matches)
 	_lbl_winrate.text = "%s٪ برد" % GameManager.to_fa_num(int(round(win_rate)))

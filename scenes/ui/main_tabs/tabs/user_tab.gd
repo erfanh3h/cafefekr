@@ -762,9 +762,15 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 	icon_img.texture = _get_game_icon_texture(main_game_type)
 	icon_box.add_child(icon_img)
 
-	# Label of game type in Persian UNDER the icon
-	var lbl_game_name := CafeSocialTheme.make_title(game_fa_title, 32, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
-	hv.add_child(lbl_game_name)
+	# Label of game type in Persian UNDER the icon inside difficulty ribbon frame
+	var game_name_banner := PanelContainer.new()
+	game_name_banner.custom_minimum_size = Vector2(280, 60)
+	game_name_banner.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	game_name_banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(main_game_type, 48.0, 6.0))
+	hv.add_child(game_name_banner)
+
+	var lbl_game_name := CafeSocialTheme.make_title(game_fa_title, 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
+	game_name_banner.add_child(lbl_game_name)
 
 	var tag_row := HBoxContainer.new()
 	tag_row.alignment = BoxContainer.ALIGNMENT_CENTER
