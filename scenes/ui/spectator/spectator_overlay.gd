@@ -61,7 +61,7 @@ func _build_ui() -> void:
 	)
 	hbox.add_child(btn_leave)
 
-	# Spectator count pill
+	# Spectator count pill (Eye icon on left, count on right — LTR)
 	var count_panel: PanelContainer = PanelContainer.new()
 	count_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var count_style: StyleBoxFlat = StyleBoxFlat.new()
@@ -76,40 +76,43 @@ func _build_ui() -> void:
 	count_panel.add_theme_stylebox_override("panel", count_style)
 	hbox.add_child(count_panel)
 
-	lbl_spectator_count = CafeSocialTheme.make_body(
-		"👁 ۱ تماشاگر",
+	var count_hbox: HBoxContainer = HBoxContainer.new()
+	count_hbox.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	count_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	count_hbox.add_theme_constant_override("separation", 6)
+	count_panel.add_child(count_hbox)
+
+	var eye_lbl: Label = CafeSocialTheme.make_body(
+		"👁",
 		19,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
 	)
-	count_panel.add_child(lbl_spectator_count)
+	count_hbox.add_child(eye_lbl)
 
-	# Center status / turn label
+	lbl_spectator_count = CafeSocialTheme.make_body(
+		"۱",
+		20,
+		CafeSocialTheme.COL_GOLD_BRIGHT,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		false
+	)
+	count_hbox.add_child(lbl_spectator_count)
+
+	# Center title: ONLY current turn ("نوبت فعلی : ...")
 	var status_col: VBoxContainer = VBoxContainer.new()
 	status_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	status_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	status_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	status_col.add_theme_constant_override("separation", 2)
 	hbox.add_child(status_col)
 
-	lbl_game_title = CafeSocialTheme.make_title(
-		"تماشای زنده مسابقه",
-		22,
+	lbl_game_title = null
+	lbl_turn_status = CafeSocialTheme.make_title(
+		"نوبت فعلی : ...",
+		23,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
-		HORIZONTAL_ALIGNMENT_RIGHT,
-		false
-	)
-	lbl_game_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl_game_title.clip_text = true
-	lbl_game_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	status_col.add_child(lbl_game_title)
-
-	lbl_turn_status = CafeSocialTheme.make_body(
-		"فقط قابل مشاهده • بدون امکان دخالت در بازی",
-		17,
-		CafeSocialTheme.COL_IVORY,
-		HORIZONTAL_ALIGNMENT_RIGHT,
+		HORIZONTAL_ALIGNMENT_CENTER,
 		false
 	)
 	lbl_turn_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -275,15 +278,15 @@ func update_turn_indicator(turn_gamer_id: int) -> void:
 	if turn_gamer_id > 0:
 		var p_data: Dictionary = GameManager.get_player_data_by_gamer_id(turn_gamer_id)
 		var p_name: String = str(p_data.get("name", p_data.get("username", "بازیکن %s" % GameManager.to_fa_num(turn_gamer_id))))
-		lbl_turn_status.text = "🎯 نوبت فعلی: %s • حالت تماشاگر (فقط مشاهده)" % p_name
+		lbl_turn_status.text = "نوبت فعلی : %s" % p_name
 	else:
-		lbl_turn_status.text = "فقط قابل مشاهده • بدون امکان دخالت در بازی"
+		lbl_turn_status.text = "نوبت فعلی : ..."
 
 
 func update_spectator_count(count: int) -> void:
 	var safe_count: int = maxi(0, count)
 	if is_instance_valid(lbl_spectator_count):
-		lbl_spectator_count.text = "👁 %s تماشاگر" % GameManager.to_fa_num(safe_count)
+		lbl_spectator_count.text = GameManager.to_fa_num(safe_count)
 
 
 func show_match_ended(payload: Dictionary) -> void:

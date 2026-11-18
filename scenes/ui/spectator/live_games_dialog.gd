@@ -13,8 +13,6 @@ var _scope_row: HBoxContainer = null
 var _mode_row: HBoxContainer = null
 var _game_filter_hbox: HBoxContainer = null
 var _list_vbox: VBoxContainer = null
-var _lbl_count: Label = null
-var _status_plaque: PanelContainer = null
 var _scroll_games: ScrollContainer = null
 
 var current_scope: String = "all"         # "all" | "friends" | "clan"
@@ -217,32 +215,38 @@ func _build_ui() -> void:
 	)
 	add_child(_dim_overlay)
 
-	# Centered Modal Host matching RankingDialog / LobbyDialog / StoreDialog
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	center.grow_vertical = Control.GROW_DIRECTION_BOTH
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(center)
+	# Screen-bounded Margin host so the dialog can NEVER overflow left/right of viewport
+	var screen_margin := MarginContainer.new()
+	screen_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	screen_margin.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	screen_margin.grow_vertical = Control.GROW_DIRECTION_BOTH
+	screen_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	screen_margin.add_theme_constant_override("margin_left", 24)
+	screen_margin.add_theme_constant_override("margin_right", 24)
+	screen_margin.add_theme_constant_override("margin_top", 54)
+	screen_margin.add_theme_constant_override("margin_bottom", 54)
+	add_child(screen_margin)
 
 	main_panel = PanelContainer.new()
-	main_panel.custom_minimum_size = Vector2(660, 1160)
-	main_panel.size = Vector2(660, 1160)
-	main_panel.pivot_offset = Vector2(330, 580)
-	main_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	main_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	main_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_panel.clip_contents = true
 	main_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	main_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
-	center.add_child(main_panel)
+	screen_margin.add_child(main_panel)
 
 	var inner := MarginContainer.new()
-	inner.add_theme_constant_override("margin_left", 20)
-	inner.add_theme_constant_override("margin_right", 20)
-	inner.add_theme_constant_override("margin_top", 24)
-	inner.add_theme_constant_override("margin_bottom", 24)
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	inner.add_theme_constant_override("margin_left", 18)
+	inner.add_theme_constant_override("margin_right", 18)
+	inner.add_theme_constant_override("margin_top", 22)
+	inner.add_theme_constant_override("margin_bottom", 22)
 	main_panel.add_child(inner)
 
 	var root := VBoxContainer.new()
+	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_theme_constant_override("separation", 12)
 	inner.add_child(root)
 
@@ -323,44 +327,26 @@ func _build_ui() -> void:
 	_mode_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	mode_well.add_child(_mode_row)
 
-	# 3. Clean 1-Row Scrollable Game Filter Row inside Antique Well (taller height & tight padding)
-	var filter_well := PanelContainer.new()
-	filter_well.custom_minimum_size = Vector2(0, 100)
-	filter_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(14, 4.0, 4.0))
-	root.add_child(filter_well)
-
+	# 3. Clean 1-Row Scrollable Game Filter Row (no outer box/padding around icons)
 	var filter_scroll := ScrollContainer.new()
-	filter_scroll.custom_minimum_size = Vector2(0, 92)
+	filter_scroll.custom_minimum_size = Vector2(0, 86)
 	filter_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	filter_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	filter_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	filter_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	filter_well.add_child(filter_scroll)
+	filter_scroll.clip_contents = true
+	root.add_child(filter_scroll)
 
 	_game_filter_hbox = HBoxContainer.new()
-	_game_filter_hbox.add_theme_constant_override("separation", 6)
+	_game_filter_hbox.add_theme_constant_override("separation", 8)
 	_game_filter_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	filter_scroll.add_child(_game_filter_hbox)
 
-	# 4. Active Count Strip
-	_status_plaque = PanelContainer.new()
-	_status_plaque.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 14.0, 8.0))
-	root.add_child(_status_plaque)
-
-	_lbl_count = CafeSocialTheme.make_body(
-		"در حال دریافت فهرست بازی‌های فعال...",
-		22,
-		CafeSocialTheme.COL_WARM_CREAM,
-		HORIZONTAL_ALIGNMENT_CENTER,
-		false
-	)
-	_status_plaque.add_child(_lbl_count)
-
-	# 5. Scrollable Matches Container
+	# 4. Scrollable Matches Container
 	_scroll_games = ScrollContainer.new()
 	_scroll_games.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll_games.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll_games.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll_games.clip_contents = true
 	root.add_child(_scroll_games)
 
 	_list_vbox = VBoxContainer.new()
@@ -456,53 +442,24 @@ func _render_filters() -> void:
 
 			var btn := TextureButton.new()
 			btn.custom_minimum_size = Vector2(80, 80)
+			btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			btn.ignore_texture_size = true
 			btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 			btn.focus_mode = Control.FOCUS_NONE
 			btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			btn.tooltip_text = str(gf_d["label"])
-			ActionVFXManager.apply_button_juice(btn, "tap_button")
-
-			var frame_panel := PanelContainer.new()
-			frame_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-			frame_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			if is_sel:
-				frame_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
-					Color(0.24, 0.16, 0.08, 0.98),
-					Color(1.0, 0.85, 0.35, 1.0),
-					12,
-					3
-				))
-			else:
-				frame_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
-					Color(0.10, 0.06, 0.03, 0.90),
-					Color(0.55, 0.40, 0.20, 0.70),
-					12,
-					1
-				))
-			btn.add_child(frame_panel)
-
-			var icon_rect := TextureRect.new()
-			icon_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-			icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			icon_rect.offset_left = 2
-			icon_rect.offset_top = 2
-			icon_rect.offset_right = -2
-			icon_rect.offset_bottom = -2
-
 			if gid_f.is_empty():
-				icon_rect.texture = preload("res://assets/images/frames/question.png")
+				btn.texture_normal = preload("res://assets/images/frames/question.png")
 			else:
-				icon_rect.texture = CafeSocialTheme.get_game_thumb(gid_f)
+				btn.texture_normal = CafeSocialTheme.get_game_thumb(gid_f)
 
-			if not is_sel:
-				icon_rect.modulate = Color(0.80, 0.75, 0.70, 0.85)
+			# No box or padding: fill button directly with game icon; selected icon is brighter/lighter
+			if is_sel:
+				btn.self_modulate = Color(1.22, 1.22, 1.22, 1.0)
 			else:
-				icon_rect.modulate = Color(1.0, 1.0, 1.0, 1.0)
-			frame_panel.add_child(icon_rect)
+				btn.self_modulate = Color(0.55, 0.52, 0.48, 0.72)
 
+			ActionVFXManager.apply_button_juice(btn, "tap_button")
 			btn.pressed.connect(func():
 				AudioManager.sfx_tap()
 				current_game_type = gid_f
@@ -518,8 +475,7 @@ func _show_loading_state() -> void:
 	for c in _list_vbox.get_children():
 		c.queue_free()
 	_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	if is_instance_valid(_lbl_count):
-		_lbl_count.text = "در حال دریافت مسابقات زنده..."
+	_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت مسابقات زنده..."))
 
 
 func _render_games_list() -> void:
@@ -536,14 +492,6 @@ func _render_games_list() -> void:
 		var sb: int = (1000 if bool(db.get("has_friend", false)) else 0) + (500 if bool(db.get("has_clanmate", false)) else 0) + int(db.get("spectator_count", 0))
 		return sa > sb
 	)
-
-	if is_instance_valid(_lbl_count) and is_instance_valid(_status_plaque):
-		if items.is_empty():
-			_status_plaque.visible = false
-			_lbl_count.text = ""
-		else:
-			_status_plaque.visible = true
-			_lbl_count.text = "●  %s مسابقه زنده آماده تماشا" % GameManager.to_fa_num(items.size())
 
 	if items.is_empty():
 		_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -575,18 +523,21 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 
 	var card := PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.clip_contents = true
 	card.add_theme_stylebox_override(
 		"panel",
 		CafeSocialTheme.create_frame_style(true, 18.0, 14.0)
 	)
 
 	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 10)
 	card.add_child(vbox)
 
-	# Row 1: Badges left, Title + Thumbnail right
+	# Row 1: Top-left Eye+Count pill (+ optional mode/relation badge), Title + Thumbnail right
 	var top_row := HBoxContainer.new()
-	top_row.add_theme_constant_override("separation", 12)
+	top_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_row.add_theme_constant_override("separation", 10)
 	vbox.add_child(top_row)
 
 	var badges_col := HBoxContainer.new()
@@ -595,13 +546,27 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	badges_col.add_theme_constant_override("separation", 6)
 	top_row.add_child(badges_col)
 
-	badges_col.add_child(CafeSocialTheme.make_badge_pill(
-		"👁 %s تماشاگر" % GameManager.to_fa_num(spec_cnt),
-		CafeSocialTheme.COL_EMERALD_TEXT,
-		CafeSocialTheme.COL_EMERALD_BG,
-		CafeSocialTheme.COL_EMERALD_BORDER,
-		18
-	))
+	# Watcher count pill: Eye icon on left, count on right (LTR), NO "تماشاگر" text
+	var eye_pill := PanelContainer.new()
+	var eye_st := StyleBoxFlat.new()
+	eye_st.bg_color = CafeSocialTheme.COL_EMERALD_BG
+	eye_st.border_color = CafeSocialTheme.COL_EMERALD_BORDER
+	eye_st.set_border_width_all(1)
+	eye_st.set_corner_radius_all(10)
+	eye_st.content_margin_left = 10.0
+	eye_st.content_margin_right = 10.0
+	eye_st.content_margin_top = 4.0
+	eye_st.content_margin_bottom = 4.0
+	eye_pill.add_theme_stylebox_override("panel", eye_st)
+	var eye_hbox := HBoxContainer.new()
+	eye_hbox.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	eye_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	eye_hbox.add_theme_constant_override("separation", 5)
+	eye_pill.add_child(eye_hbox)
+	eye_hbox.add_child(CafeSocialTheme.make_body("👁", 18, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
+	eye_hbox.add_child(CafeSocialTheme.make_body(GameManager.to_fa_num(spec_cnt), 19, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
+	badges_col.add_child(eye_pill)
+
 	if not mode_fa.is_empty():
 		badges_col.add_child(CafeSocialTheme.make_badge_pill(
 			mode_fa,
@@ -612,7 +577,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 		))
 	if has_friend:
 		badges_col.add_child(CafeSocialTheme.make_badge_pill(
-			"دوست شما",
+			"دوست",
 			CafeSocialTheme.COL_GOLD_BRIGHT,
 			Color(0.18, 0.12, 0.05, 0.95),
 			CafeSocialTheme.COL_GOLD_ANTIQUE,
@@ -620,7 +585,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 		))
 	elif has_clanmate:
 		badges_col.add_child(CafeSocialTheme.make_badge_pill(
-			"هم‌کلنی",
+			"کلن",
 			CafeSocialTheme.COL_GOLD_BRIGHT,
 			Color(0.18, 0.12, 0.05, 0.95),
 			CafeSocialTheme.COL_GOLD_ANTIQUE,
@@ -633,23 +598,32 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	title_col.add_theme_constant_override("separation", 2)
 	top_row.add_child(title_col)
 
-	title_col.add_child(CafeSocialTheme.make_title(
+	var t_lbl := CafeSocialTheme.make_title(
 		"مسابقه %s" % gtitle,
-		26,
+		24,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		false
-	))
-	title_col.add_child(CafeSocialTheme.make_body(
+	)
+	t_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t_lbl.clip_text = true
+	t_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title_col.add_child(t_lbl)
+
+	var sub_lbl := CafeSocialTheme.make_body(
 		"%s بازیکن • در حال رقابت" % GameManager.to_fa_num(maxi(2, players.size())),
-		18,
+		17,
 		CafeSocialTheme.COL_MUTED_SAND,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		false
-	))
+	)
+	sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sub_lbl.clip_text = true
+	sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title_col.add_child(sub_lbl)
 
 	var thumb_wrap := PanelContainer.new()
-	thumb_wrap.custom_minimum_size = Vector2(64, 64)
+	thumb_wrap.custom_minimum_size = Vector2(60, 60)
 	thumb_wrap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	thumb_wrap.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(Color(0.08, 0.05, 0.03), CafeSocialTheme.COL_GOLD_ANTIQUE, 14, 2, 4.0, 4.0))
 	top_row.add_child(thumb_wrap)
@@ -660,44 +634,58 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	thumb_wrap.add_child(thumb)
 
-	# Row 2: Players Matchup Strip
+	# Row 2: Players Matchup Strip (2-col Grid for >2 players so cards NEVER overflow horizontally)
 	if not players.is_empty():
 		var players_well := PanelContainer.new()
-		players_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 12.0, 8.0))
+		players_well.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		players_well.clip_contents = true
+		players_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 10.0, 8.0))
 		vbox.add_child(players_well)
 
-		var players_row := HBoxContainer.new()
-		players_row.alignment = BoxContainer.ALIGNMENT_CENTER
-		players_row.add_theme_constant_override("separation", 10)
-		players_well.add_child(players_row)
-
-		for i in range(players.size()):
-			var p_item: Variant = players[i]
-			if typeof(p_item) != TYPE_DICTIONARY:
-				continue
-			var pd: Dictionary = p_item
-			if i > 0:
-				var vs_lbl := CafeSocialTheme.make_title("⚔", 24, CafeSocialTheme.COL_GOLD_ANTIQUE, HORIZONTAL_ALIGNMENT_CENTER, false)
-				vs_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-				players_row.add_child(vs_lbl)
-
+		var make_player_chip := func(pd: Dictionary) -> HBoxContainer:
 			var p_chip := HBoxContainer.new()
 			p_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			p_chip.alignment = BoxContainer.ALIGNMENT_CENTER
-			p_chip.add_theme_constant_override("separation", 8)
-			players_row.add_child(p_chip)
-
+			p_chip.add_theme_constant_override("separation", 6)
 			var av_id: int = int(pd.get("avatar", pd.get("image", 0)))
 			var fr_id: int = int(pd.get("profile_frame", 0))
-			p_chip.add_child(CafeSocialTheme.make_avatar_badge(av_id, maxi(1, fr_id), 54.0, "", false))
-
+			p_chip.add_child(CafeSocialTheme.make_avatar_badge(av_id, maxi(1, fr_id), 48.0, "", false))
 			var pname: String = str(pd.get("username", "بازیکن"))
 			var c_info: Variant = pd.get("clan", null)
 			if typeof(c_info) == TYPE_DICTIONARY and not str((c_info as Dictionary).get("tag", "")).is_empty():
 				pname += " [%s]" % str((c_info as Dictionary).get("tag", ""))
-			var p_lbl := CafeSocialTheme.make_body(pname, 21, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
+			var p_lbl := CafeSocialTheme.make_body(pname, 20, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+			p_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			p_lbl.clip_text = true
 			p_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			p_chip.add_child(p_lbl)
+			return p_chip
+
+		if players.size() > 2:
+			var players_grid := GridContainer.new()
+			players_grid.columns = 2
+			players_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			players_grid.add_theme_constant_override("h_separation", 10)
+			players_grid.add_theme_constant_override("v_separation", 8)
+			players_well.add_child(players_grid)
+			for p_item in players:
+				if typeof(p_item) == TYPE_DICTIONARY:
+					players_grid.add_child(make_player_chip.call(p_item as Dictionary))
+		else:
+			var players_row := HBoxContainer.new()
+			players_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			players_row.alignment = BoxContainer.ALIGNMENT_CENTER
+			players_row.add_theme_constant_override("separation", 8)
+			players_well.add_child(players_row)
+			for i in range(players.size()):
+				var p_item: Variant = players[i]
+				if typeof(p_item) != TYPE_DICTIONARY:
+					continue
+				if i > 0:
+					var vs_lbl := CafeSocialTheme.make_title("⚔", 22, CafeSocialTheme.COL_GOLD_ANTIQUE, HORIZONTAL_ALIGNMENT_CENTER, false)
+					vs_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+					players_row.add_child(vs_lbl)
+				players_row.add_child(make_player_chip.call(p_item as Dictionary))
 
 	# Row 3: Full-width Watch Action Button
 	var btn_watch := CafeSocialTheme.make_button("تماشای زنده مسابقه", "gold", Vector2(0, 54), 25)

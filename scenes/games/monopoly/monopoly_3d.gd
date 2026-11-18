@@ -370,6 +370,7 @@ func _build_hud() -> void:
 	bottom_dock.offset_top = -436
 	bottom_dock.offset_bottom = -168
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bottom_dock.visible = not GameManager.is_spectating
 	hud_root.add_child(bottom_dock)
 
 	dock_panel = Panel.new()

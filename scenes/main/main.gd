@@ -471,6 +471,7 @@ func _setup_signals() -> void:
 	)
 	GameManager.user_logged_out.connect(func():
 		_update_ranked_button_state()
+		_handle_forced_or_manual_logout()
 	)
 	GameManager.game_finished.connect(func(_winner):
 		_update_ranked_button_state()
@@ -1909,7 +1910,7 @@ func _on_surrender_requested() -> void:
 
 func _on_player_surrendered(gamer_id: int) -> void:
 
-	if GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP, GameTypes.MONOPOLY] and GameManager.match_players.size() > 2 and gamer_id != GameManager.my_player_index:
+	if GameManager.current_game_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP, GameTypes.MONOPOLY] and GameManager.match_players.size() > 2 and (GameManager.is_spectating or gamer_id != GameManager.my_player_index):
 
 		var p_data = GameManager.get_player_data_by_gamer_id(gamer_id)
 
@@ -2164,7 +2165,16 @@ func _on_user_disconnected(user_id: String, wait_time: int) -> void:
 
 		board.set_board_locked(true)
 
-	base_game_hud.show_pause_dialog(wait_time)
+	if GameManager.is_spectating:
+		var dc_name: String = "بازیکن"
+		for mp in GameManager.match_players:
+			if typeof(mp) == TYPE_DICTIONARY and str(mp.get("user_id", mp.get("_id", ""))) == user_id:
+				dc_name = str(mp.get("name", mp.get("username", "بازیکن")))
+				break
+		base_game_hud.pause_turn_timer()
+		base_game_hud.show_pause_dialog(wait_time, "ارتباط اینترنتی «%s» موقتاً قطع شده است.\nلطفاً تا بازگشت بازیکن شکیبا باشید." % dc_name)
+	else:
+		base_game_hud.show_pause_dialog(wait_time)
 
 
 
@@ -2330,6 +2340,7 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 
 	base_game_hud.sync_reconnect_timer(payload)
 	base_game_hud.call_deferred("sync_reconnect_timer", payload)
+	_apply_spectator_snapshot_status(payload)
 
 func _on_finish_reconnect_time(user_id: String) -> void:
 	print("[Main] Opponent reconnect time expired for user: %s." % user_id)
@@ -3604,6 +3615,7 @@ func _on_spectate_accepted(payload: Dictionary) -> void:
 	var rec_payload: Dictionary = payload.get("reconnect_data", payload) if typeof(payload.get("reconnect_data")) == TYPE_DICTIONARY else payload
 	_on_reconnect_data_received(rec_payload)
 	base_game_hud.set_spectator_mode(true)
+	_apply_spectator_snapshot_status(payload)
 
 	var b_node: Node = cafe_table.current_board_node
 	if b_node and is_instance_valid(b_node) and b_node.has_method("set_board_locked"):
@@ -3611,6 +3623,79 @@ func _on_spectate_accepted(payload: Dictionary) -> void:
 
 	if is_instance_valid(spectator_overlay):
 		spectator_overlay.open_for_match(payload)
+
+
+func _apply_spectator_snapshot_status(payload: Dictionary) -> void:
+	if not is_instance_valid(base_game_hud):
+		return
+	var gamers_src: Variant = payload.get("gamers", null)
+	if typeof(gamers_src) != TYPE_ARRAY:
+		var rd: Variant = payload.get("reconnect_data", null)
+		if typeof(rd) == TYPE_DICTIONARY:
+			gamers_src = (rd as Dictionary).get("gamers", [])
+	if typeof(gamers_src) == TYPE_ARRAY:
+		for g in (gamers_src as Array):
+			if typeof(g) != TYPE_DICTIONARY:
+				continue
+			var gd: Dictionary = g
+			var g_idx: int = int(gd.get("gamer_id", gd.get("id", 0)))
+			if g_idx > 0 and (bool(gd.get("is_left", false)) or bool(gd.get("is_eliminated", false))):
+				base_game_hud.set_player_disabled(g_idx, true, "🏳️ خارج شد")
+
+	var dc_info: Variant = payload.get("disconnected_player", null)
+	if typeof(dc_info) != TYPE_DICTIONARY:
+		var rd2: Variant = payload.get("reconnect_data", null)
+		if typeof(rd2) == TYPE_DICTIONARY:
+			dc_info = (rd2 as Dictionary).get("disconnected_player", null)
+	if typeof(dc_info) == TYPE_DICTIONARY:
+		var dc_d: Dictionary = dc_info
+		var rem_sec: int = int(dc_d.get("remaining_time", 0))
+		if rem_sec > 0:
+			var dc_name: String = str(dc_d.get("username", "بازیکن"))
+			base_game_hud.pause_turn_timer()
+			base_game_hud.show_pause_dialog(
+				rem_sec,
+				"ارتباط اینترنتی «%s» موقتاً قطع شده است.\nلطفاً تا بازگشت بازیکن شکیبا باشید." % dc_name
+			)
+
+
+func _handle_forced_or_manual_logout() -> void:
+	if GameManager.is_spectating:
+		_on_leave_spectate_pressed()
+	if is_instance_valid(social_dialog) and social_dialog.visible:
+		social_dialog.close()
+	if is_instance_valid(live_games_dialog) and live_games_dialog.visible:
+		live_games_dialog.close_immediate()
+	if is_instance_valid(user_profile_dialog) and user_profile_dialog.visible:
+		user_profile_dialog.close()
+	if is_instance_valid(lobby_dialog):
+		lobby_dialog.visible = false
+	if is_instance_valid(queue_dialog):
+		queue_dialog.visible = false
+	if is_instance_valid(classic_rank_dialog):
+		classic_rank_dialog.visible = false
+	if is_instance_valid(multi_rank_dialog):
+		multi_rank_dialog.visible = false
+	if is_instance_valid(pick_ban_dialog):
+		pick_ban_dialog.visible = false
+	if is_instance_valid(ranking_dialog) and ranking_dialog.visible:
+		ranking_dialog.close()
+	if is_instance_valid(store_dialog) and store_dialog.visible:
+		store_dialog.close()
+	if is_instance_valid(game_history_dialog) and game_history_dialog.visible:
+		game_history_dialog.close()
+	if is_instance_valid(rules_dialog) and rules_dialog.visible:
+		rules_dialog.close()
+	if is_instance_valid(base_game_hud) and base_game_hud.visible:
+		base_game_hud.visible = false
+		menu_container.visible = true
+		user_header.visible = true
+	if is_instance_valid(user_header):
+		user_header.update_ui()
+	if is_instance_valid(login_dialog) and not login_dialog.visible:
+		_show_backdrop()
+		login_dialog.open()
+		_show_menu_toast("نشست شما پایان یافت. لطفاً دوباره وارد شوید.")
 
 
 func _on_spectate_rejected(payload: Dictionary) -> void:
@@ -3626,6 +3711,7 @@ func _on_spectator_game_state_received(payload: Dictionary) -> void:
 		var rec_payload: Dictionary = payload.get("reconnect_data", payload) if typeof(payload.get("reconnect_data")) == TYPE_DICTIONARY else payload
 		_on_reconnect_data_received(rec_payload)
 		base_game_hud.set_spectator_mode(true)
+		_apply_spectator_snapshot_status(payload)
 		var b_node: Node = cafe_table.current_board_node
 		if b_node and is_instance_valid(b_node) and b_node.has_method("set_board_locked"):
 			b_node.set_board_locked(true)

@@ -85,6 +85,20 @@ func _get_auth_headers() -> PackedStringArray:
 		headers.append("Authorization: " + t)
 	return headers
 
+func _handle_unauthorized_if_needed(response_code: int, custom_headers: PackedStringArray) -> void:
+	if response_code != 401:
+		return
+	if custom_headers.is_empty():
+		return
+	var had_auth := false
+	for h in custom_headers:
+		if h.begins_with("Authorization:"):
+			had_auth = true
+			break
+	if had_auth and is_instance_valid(GameManager) and GameManager.is_logged_in:
+		auth_token = ""
+		GameManager.logout()
+
 func _http_get(endpoint: String, custom_headers: PackedStringArray, callback: Callable) -> void:
 	var http = HTTPRequest.new()
 	add_child(http)
@@ -95,8 +109,9 @@ func _http_get(endpoint: String, custom_headers: PackedStringArray, callback: Ca
 		var parsed_data = null
 		if json.parse(body.get_string_from_utf8()) == OK:
 			parsed_data = json.data
-			
-		callback.call(success, response_code, parsed_data)
+		_handle_unauthorized_if_needed(response_code, custom_headers)
+		if callback.is_valid():
+			callback.call(success, response_code, parsed_data)
 		http.queue_free()
 	)
 	
@@ -116,8 +131,9 @@ func _post_form(endpoint: String, body_str: String, custom_headers: PackedString
 		var parsed_data = null
 		if json.parse(body.get_string_from_utf8()) == OK:
 			parsed_data = json.data
-			
-		callback.call(success, response_code, parsed_data)
+		_handle_unauthorized_if_needed(response_code, custom_headers)
+		if callback.is_valid():
+			callback.call(success, response_code, parsed_data)
 		http.queue_free()
 	)
 	
@@ -137,6 +153,7 @@ func _post_json(endpoint: String, payload: Dictionary, custom_headers: PackedStr
 		var parsed_data = null
 		if json.parse(body.get_string_from_utf8()) == OK:
 			parsed_data = json.data
+		_handle_unauthorized_if_needed(response_code, custom_headers)
 		if callback.is_valid():
 			callback.call(success, response_code, parsed_data)
 		http.queue_free()

@@ -972,4 +972,10 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 			social_error_received.emit(err_msg)
 		Commands.Logout:
 			silent_quiz_sync_pending = false
-			GameManager.logout()
+			if socket != null:
+				for ns_to_dc in ["/social", "/lobby", "/queue", "/multi-queue", "/classic-rank", "/game"]:
+					socket.disconnect_namespace(ns_to_dc)
+			if api != null:
+				api.set_token("")
+			if GameManager.is_logged_in:
+				GameManager.logout()

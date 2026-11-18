@@ -362,7 +362,7 @@ func update_spectator_count(count: int) -> void:
 	if is_instance_valid(_spectator_badge_panel):
 		_spectator_badge_panel.visible = (safe_count > 0)
 	if is_instance_valid(_lbl_spectator_count) and safe_count > 0:
-		_lbl_spectator_count.text = "👁 %s" % _fa_digits(safe_count)
+		_lbl_spectator_count.text = _fa_digits(safe_count)
 
 func _connect_buttons() -> void:
 	if is_instance_valid(btn_p1_profile):
@@ -591,6 +591,22 @@ func _build_game_ui_enhancements() -> void:
 		sb_spec.content_margin_bottom = 1
 		_spectator_badge_panel.add_theme_stylebox_override("panel", sb_spec)
 
+		var spec_hbox := HBoxContainer.new()
+		spec_hbox.layout_direction = Control.LAYOUT_DIRECTION_LTR
+		spec_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		spec_hbox.add_theme_constant_override("separation", 5)
+		spec_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_spectator_badge_panel.add_child(spec_hbox)
+
+		var spec_eye := Label.new()
+		spec_eye.text = "👁"
+		spec_eye.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		spec_eye.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		spec_eye.add_theme_font_size_override("font_size", 18)
+		spec_eye.add_theme_color_override("font_color", Color(0.74, 1.0, 0.84, 1.0))
+		spec_eye.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		spec_hbox.add_child(spec_eye)
+
 		_lbl_spectator_count = Label.new()
 		_lbl_spectator_count.name = "LblSpectatorCount"
 		_lbl_spectator_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -600,7 +616,7 @@ func _build_game_ui_enhancements() -> void:
 		_lbl_spectator_count.add_theme_font_size_override("font_size", 20)
 		_lbl_spectator_count.add_theme_color_override("font_color", Color(0.74, 1.0, 0.84, 1.0))
 		_lbl_spectator_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_spectator_badge_panel.add_child(_lbl_spectator_count)
+		spec_hbox.add_child(_lbl_spectator_count)
 		_spectator_badge_panel.visible = false
 		top_compact_row.add_child(_spectator_badge_panel)
 

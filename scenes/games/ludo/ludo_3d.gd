@@ -1060,39 +1060,44 @@ func _update_interactive_highlights() -> void:
 	var can_roll_now: bool = my_turn and not has_rolled_this_turn and not _roll_request_pending and not _is_animating_move and not is_out_of_move
 
 	if is_instance_valid(_dice_halo_ring):
-		_dice_halo_ring.visible = can_roll_now
+		_dice_halo_ring.visible = can_roll_now and not GameManager.is_spectating
 
-	# Update 3D Roll Dice Button visual state & text
+	# Update 3D Roll Dice Button visual state & text (hidden completely in spectator mode)
 	if not _roll_btn_ui.is_empty() and is_instance_valid(_roll_btn_ui.get("root")):
-		var btn_cap: MeshInstance3D = _roll_btn_ui["cap"]
-		var btn_lbl: Label3D = _roll_btn_ui["label"]
-		if not GameManager.is_game_active:
-			btn_cap.material_override = _mat_btn_roll_idle
-			btn_lbl.text = "آماده شروع مسابقه..."
-			btn_lbl.modulate = Color(0.90, 0.86, 0.78)
-		elif my_turn and (is_out_of_move or (has_rolled_this_turn and available_moves.is_empty())):
-			btn_cap.material_override = _mat_btn_roll_idle
-			if current_dice > 0:
-				btn_lbl.text = "تاس %s — بدون حرکت ممکن (پایان نوبت...)" % _fa_int(current_dice)
-			else:
-				btn_lbl.text = "بدون حرکت ممکن (پایان نوبت...)"
-			btn_lbl.modulate = Color(0.85, 0.75, 0.75)
-		elif can_roll_now:
-			btn_cap.material_override = _mat_btn_roll_active
-			btn_lbl.text = "پرتاب تاس (کلیک کنید)"
-			btn_lbl.modulate = Color(1.0, 0.98, 0.88)
-		elif my_turn and has_rolled_this_turn:
-			btn_cap.material_override = _mat_btn_roll_move
-			btn_lbl.text = "تاس %s — مهره خود را حرکت دهید" % _fa_int(current_dice)
-			btn_lbl.modulate = Color(1.0, 0.96, 0.84)
+		var btn_root_ludo: Node3D = _roll_btn_ui["root"]
+		if GameManager.is_spectating:
+			btn_root_ludo.visible = false
 		else:
-			btn_cap.material_override = _mat_btn_roll_idle
-			var turn_color_fa = FACTION_NAMES_FA.get(current_turn, "")
-			if current_dice > 0:
-				btn_lbl.text = "نوبت %s (تاس %s)" % [turn_color_fa, _fa_int(current_dice)]
+			btn_root_ludo.visible = true
+			var btn_cap: MeshInstance3D = _roll_btn_ui["cap"]
+			var btn_lbl: Label3D = _roll_btn_ui["label"]
+			if not GameManager.is_game_active:
+				btn_cap.material_override = _mat_btn_roll_idle
+				btn_lbl.text = "آماده شروع مسابقه..."
+				btn_lbl.modulate = Color(0.90, 0.86, 0.78)
+			elif my_turn and (is_out_of_move or (has_rolled_this_turn and available_moves.is_empty())):
+				btn_cap.material_override = _mat_btn_roll_idle
+				if current_dice > 0:
+					btn_lbl.text = "تاس %s — بدون حرکت ممکن (پایان نوبت...)" % _fa_int(current_dice)
+				else:
+					btn_lbl.text = "بدون حرکت ممکن (پایان نوبت...)"
+				btn_lbl.modulate = Color(0.85, 0.75, 0.75)
+			elif can_roll_now:
+				btn_cap.material_override = _mat_btn_roll_active
+				btn_lbl.text = "پرتاب تاس (کلیک کنید)"
+				btn_lbl.modulate = Color(1.0, 0.98, 0.88)
+			elif my_turn and has_rolled_this_turn:
+				btn_cap.material_override = _mat_btn_roll_move
+				btn_lbl.text = "تاس %s — مهره خود را حرکت دهید" % _fa_int(current_dice)
+				btn_lbl.modulate = Color(1.0, 0.96, 0.84)
 			else:
-				btn_lbl.text = "نوبت %s برای پرتاب تاس..." % turn_color_fa
-			btn_lbl.modulate = Color(0.82, 0.80, 0.76)
+				btn_cap.material_override = _mat_btn_roll_idle
+				var turn_color_fa = FACTION_NAMES_FA.get(current_turn, "")
+				if current_dice > 0:
+					btn_lbl.text = "نوبت %s (تاس %s)" % [turn_color_fa, _fa_int(current_dice)]
+				else:
+					btn_lbl.text = "نوبت %s برای پرتاب تاس..." % turn_color_fa
+				btn_lbl.modulate = Color(0.82, 0.80, 0.76)
 
 	if my_turn and has_rolled_this_turn and not _is_animating_move:
 		for mv in available_moves:

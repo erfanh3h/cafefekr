@@ -1174,6 +1174,10 @@ func set_spectator_mode(enabled: bool) -> void:
 		btn_kori.visible = not enabled
 	if is_instance_valid(btn_reactions):
 		btn_reactions.visible = not enabled
+	var bbar := get_node_or_null("BottomBar") as Control
+	if is_instance_valid(bbar):
+		bbar.offset_top = -176.0 if enabled else -88.0
+		bbar.offset_bottom = -96.0 if enabled else 0.0
 	if enabled:
 		set_fekrbekr_hud_buttons(false)
 		if is_instance_valid(reaction_picker):

@@ -1710,11 +1710,14 @@ func _refresh_ui_and_highlights() -> void:
 		else:
 			slot.visible = false
 
-	# 6. Always-Visible Bottom 3D Roll Dice Button State
+	# 6. Always-Visible Bottom 3D Roll Dice Button State (hidden completely in spectator mode)
 	if not _roll_btn_ui.is_empty() and is_instance_valid(_roll_btn_ui.get("root")):
 		var btn_cap: MeshInstance3D = _roll_btn_ui["cap"]
 		var btn_lbl: Label3D = _roll_btn_ui["label"]
-		_roll_btn_ui["root"].visible = true
+		if GameManager.is_spectating:
+			_roll_btn_ui["root"].visible = false
+		else:
+			_roll_btn_ui["root"].visible = true
 
 		if not GameManager.is_game_active:
 			btn_cap.material_override = mat_btn_roll_disabled

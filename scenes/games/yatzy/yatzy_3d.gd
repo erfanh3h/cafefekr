@@ -1246,9 +1246,14 @@ func _refresh_visuals() -> void:
 			d_ui["pivot"].position.y = target_y
 			d_ui["pivot"].rotation = _get_die_target_rotation(val)
 
-	# 3. Refresh Action Buttons & Status Guidance
-	var can_act = GameManager.is_game_active and not is_round_played and not is_board_locked
+	# 3. Refresh Action Buttons & Status Guidance (hidden completely in spectator mode)
+	var can_act = GameManager.is_game_active and not is_round_played and not is_board_locked and not GameManager.is_spectating
 	var can_roll = can_act and (remaining_rolls > 0) and not is_rolling_dice
+
+	if _btn_roll_node.has("root") and is_instance_valid(_btn_roll_node["root"]):
+		(_btn_roll_node["root"] as Node3D).visible = not GameManager.is_spectating
+	if _btn_submit_node.has("root") and is_instance_valid(_btn_submit_node["root"]):
+		(_btn_submit_node["root"] as Node3D).visible = not GameManager.is_spectating
 
 	if _btn_roll_node.has("cap"):
 		(_btn_roll_node["cap"] as MeshInstance3D).material_override = mat_btn_roll_active if can_roll else mat_btn_roll_disabled

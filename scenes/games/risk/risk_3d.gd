@@ -486,6 +486,7 @@ func _build_floating_ui() -> void:
 	_command_dock_panel.offset_top = 1388
 	_command_dock_panel.offset_bottom = 1756
 	_command_dock_panel.mouse_filter = Control.MOUSE_FILTER_PASS
+	_command_dock_panel.visible = not GameManager.is_spectating
 	_command_dock_panel.add_theme_stylebox_override(
 		"panel",
 		_make_panel_style(Color(0.07, 0.05, 0.035, 0.90), Color(0.84, 0.67, 0.28, 0.82), 22, 2, 14, 8)

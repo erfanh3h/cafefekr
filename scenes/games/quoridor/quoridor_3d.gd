@@ -682,7 +682,7 @@ func _refresh_dock_buttons() -> void:
 func _update_dock_visibility() -> void:
 	if not is_instance_valid(dock_panel):
 		return
-	var should_show := GameManager.is_game_active and winner_id == 0
+	var should_show := GameManager.is_game_active and winner_id == 0 and not GameManager.is_spectating
 	if dock_panel.visible != should_show:
 		dock_panel.visible = should_show
 
