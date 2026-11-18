@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/library_tab.gd" id="1_lib_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/frame_small.png" id="4_frame_small_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/frame_tall.png" id="5_frame_tall_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="6_close_tex"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_board_shell"]
 
@@ -33,6 +34,22 @@ content_margin_left = 36.0
 content_margin_top = 20.0
 content_margin_right = 36.0
 content_margin_bottom = 30.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_doc_panel"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.09, 0.06, 0.04, 0.84)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.62, 0.48, 0.26, 0.78)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
 [node name="LibraryTab" type="Control"]
 layout_mode = 3
@@ -144,8 +161,20 @@ theme_override_constants/margin_bottom = 12
 
 [node name="HBox" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 alignment = 1
+
+[node name="BtnBack" type="TextureButton" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("6_close_tex")
+texture_pressed = ExtResource("6_close_tex")
+texture_hover = ExtResource("6_close_tex")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="TextCol" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox"]
 layout_mode = 2
@@ -155,83 +184,54 @@ alignment = 1
 
 [node name="Title" type="Label" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox/TextCol"]
 layout_mode = 2
+layout_direction = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_fonts/font = ExtResource("2_font_hekayat")
 theme_override_font_sizes/font_size = 26
 text = "نام بازی"
 horizontal_alignment = 2
+text_direction = 2
+language = "fa"
 
 [node name="Meta" type="Label" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox/TextCol"]
 layout_mode = 2
+layout_direction = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
 theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "۲ نفره • زمان نوبت: ۳۰ ثانیه"
 horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+text_direction = 2
+language = "fa"
 
 [node name="Icon" type="TextureRect" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox"]
-custom_minimum_size = Vector2(76, 76)
+custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SubTabs" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView"]
+[node name="ContentPanel" type="PanelContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView"]
 layout_mode = 2
-theme_override_constants/separation = 8
-alignment = 1
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_doc_panel")
 
-[node name="BtnOverview" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/SubTabs"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 20
-text = "معرفی و داستان"
-
-[node name="BtnGuide" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/SubTabs"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 20
-text = "راهنما و ترفندها"
-
-[node name="ContentScroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView"]
+[node name="ContentScroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentPanel"]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="Margin" type="MarginContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentScroll"]
+[node name="Margin" type="MarginContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentPanel/ContentScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 14
 
-[node name="BodyText" type="RichTextLabel" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentScroll/Margin"]
+[node name="ContentVBox" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentPanel/ContentScroll/Margin"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_colors/default_color = Color(0.96, 0.92, 0.85, 1)
-theme_override_fonts/normal_font = ExtResource("3_font_vazir")
-theme_override_font_sizes/normal_font_size = 21
-bbcode_enabled = true
-text = "توضیحات و قوانین بازی..."
-text_direction = 2
-
-[node name="BtnBack" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView"]
-custom_minimum_size = Vector2(200, 48)
-layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-mouse_default_cursor_shape = 2
-theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 20
-text = "بازگشت به فهرست"
+theme_override_constants/separation = 12

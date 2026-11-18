@@ -15,14 +15,12 @@ const GameRegistry = preload("res://scripts/games/game_registry.gd")
 @onready var detail_icon: TextureRect = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox/Icon
 @onready var detail_title: Label = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox/TextCol/Title
 @onready var detail_meta: Label = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox/TextCol/Meta
-@onready var detail_body: RichTextLabel = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentScroll/Margin/BodyText
-@onready var btn_tab_overview: Button = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/SubTabs/BtnOverview
-@onready var btn_tab_guide: Button = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/SubTabs/BtnGuide
-@onready var btn_back_library: Button = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/BtnBack
+@onready var content_scroll: ScrollContainer = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentPanel/ContentScroll
+@onready var content_vbox: VBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentPanel/ContentScroll/Margin/ContentVBox
+@onready var btn_back_library: TextureButton = $OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox/BtnBack
 
 var _game_docs: Dictionary = {}
 var _selected_game_id: String = ""
-var _selected_doc_tab: String = "overview" # "overview" | "rules" | "guide"
 var _current_filter: String = "all"
 var _all_games_data: Array[Dictionary] = []
 
@@ -48,23 +46,11 @@ func _ready() -> void:
 	_init_games_list()
 	_build_category_buttons()
 
-	KenneyUI.style_button(btn_back_library, KenneyUI.COLOR_YELLOW)
 	ActionVFXManager.apply_button_juice(btn_back_library, "tap_button")
-	ActionVFXManager.apply_button_juice(btn_tab_overview, "tap_button")
-	ActionVFXManager.apply_button_juice(btn_tab_guide, "tap_button")
 
 	btn_back_library.pressed.connect(func():
 		AudioManager.sfx_tap()
 		show_browse_view()
-	)
-
-	btn_tab_overview.pressed.connect(func():
-		AudioManager.sfx_tap()
-		_switch_doc_tab("overview")
-	)
-	btn_tab_guide.pressed.connect(func():
-		AudioManager.sfx_tap()
-		_switch_doc_tab("guide")
 	)
 
 	search_input.text_changed.connect(func(_t):
@@ -101,7 +87,8 @@ func _init_games_list() -> void:
 		var icon_path = str(reg.get("icon", ""))
 		var min_p = int(reg.get("min_players", 2))
 		var max_p = int(reg.get("max_players", 2))
-		var narrative = str(reg.get("narrative", ""))
+		var doc_d: Dictionary = _game_docs.get(k, {}) as Dictionary
+		var narrative = str(doc_d.get("narrative", reg.get("narrative", "")))
 
 		_all_games_data.append({
 			"id": k,
@@ -277,45 +264,118 @@ func open_game_details(game_id: String) -> void:
 	var p_str = "%s نفره" % GameManager.to_fa_num(reg.get("min_players", 2))
 	if reg.get("min_players", 2) != reg.get("max_players", 2):
 		p_str = "%s الی %s نفره" % [GameManager.to_fa_num(reg.get("min_players")), GameManager.to_fa_num(reg.get("max_players"))]
+	var turn_sec: int = int(reg.get("turn_time", 30))
+	var time_str := "%s دقیقه" % GameManager.to_fa_num(turn_sec / 60) if turn_sec >= 120 else "%s ثانیه" % GameManager.to_fa_num(turn_sec)
+	var diff_fa: String = GameRegistry.get_difficulty_name_fa(game_id)
 	detail_meta.text_direction = Control.TEXT_DIRECTION_RTL
 	detail_meta.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	detail_meta.text = "%s • زمان هر نوبت: %s ثانیه" % [p_str, GameManager.to_fa_num(int(reg.get("turn_time", 30)))]
+	detail_meta.text = "%s • سختی: %s • زمان: %s" % [p_str, diff_fa, time_str]
 
 	if ResourceLoader.exists(icon_path):
 		detail_icon.texture = load(icon_path)
 	else:
 		detail_icon.texture = CafeSocialTheme.get_game_thumb(game_id)
 
-	_switch_doc_tab("overview")
+	_render_game_guide()
+	if is_instance_valid(content_scroll):
+		content_scroll.scroll_vertical = 0
 
 
-func _switch_doc_tab(t_name: String) -> void:
-	_selected_doc_tab = t_name
-	_style_doc_subtab(btn_tab_overview, t_name == "overview")
-	_style_doc_subtab(btn_tab_guide, t_name == "guide")
+func _make_rtl_label(txt: String, font_res: Font, font_sz: int, col: Color, line_sp: int = 8) -> Label:
+	var lbl := Label.new()
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# IMPORTANT: keep layout_direction LTR so Godot does NOT mirror HORIZONTAL_ALIGNMENT_RIGHT to the left!
+	# text_direction = TEXT_DIRECTION_RTL + language = "fa" + RLM (\u200F) gives true Persian RTL flushed to right edge.
+	lbl.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	lbl.text_direction = Control.TEXT_DIRECTION_RTL
+	lbl.language = "fa"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.add_theme_font_override("font", font_res)
+	lbl.add_theme_font_size_override("font_size", font_sz)
+	lbl.add_theme_color_override("font_color", col)
+	lbl.add_theme_constant_override("line_spacing", line_sp)
+	lbl.text = "\u200F" + txt
+	return lbl
 
-	var doc_entry = _game_docs.get(_selected_game_id, {})
-	var content = ""
 
-	match t_name:
-		"overview":
-			content = str(doc_entry.get("overview", doc_entry.get("narrative", "")))
-			if content.is_empty():
-				var reg = GameRegistry.get_game_info(_selected_game_id)
-				content = str(reg.get("narrative", "معرفی این بازی به زودی تکمیل خواهد شد."))
-		"guide":
-			content = str(doc_entry.get("gameplay", doc_entry.get("guide", "راهنما و ترفندهای پیروزی: حرکت‌های هوشمندانه و دقت در انتخاب مهره‌ها باعث پیروزی شما خواهد شد.")))
+func _make_section_card(title_txt: String, body_lines: Array[String]) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.14, 0.09, 0.06, 0.88)
+	sb.border_color = Color(0.70, 0.54, 0.28, 0.55)
+	sb.set_border_width_all(1)
+	sb.border_width_right = 4
+	sb.set_corner_radius_all(12)
+	sb.content_margin_left = 14.0
+	sb.content_margin_right = 14.0
+	sb.content_margin_top = 12.0
+	sb.content_margin_bottom = 12.0
+	card.add_theme_stylebox_override("panel", sb)
 
-	detail_body.text_direction = Control.TEXT_DIRECTION_RTL
-	var lines = content.split("\n")
-	var formatted_lines: Array = []
-	for l in lines:
-		var trimmed = l.strip_edges()
+	var vb := VBoxContainer.new()
+	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vb.add_theme_constant_override("separation", 8)
+	card.add_child(vb)
+
+	if not title_txt.is_empty():
+		vb.add_child(_make_rtl_label(title_txt, CafeSocialTheme.FONT_TITLE, 22, Color(1.0, 0.86, 0.38), 4))
+
+	if not body_lines.is_empty():
+		var cleaned: Array[String] = []
+		for l in body_lines:
+			cleaned.append("\u200F" + l.replace("**", ""))
+		var body_lbl := _make_rtl_label("", CafeSocialTheme.FONT_BODY, 18, Color(0.96, 0.93, 0.87), 9)
+		body_lbl.text = "\n".join(cleaned)
+		vb.add_child(body_lbl)
+
+	return card
+
+
+func _render_game_guide() -> void:
+	if not is_instance_valid(content_vbox):
+		return
+	for ch in content_vbox.get_children():
+		ch.queue_free()
+
+	var doc_entry: Dictionary = _game_docs.get(_selected_game_id, {}) as Dictionary
+	var guide_txt: String = str(doc_entry.get("guide", "")).strip_edges()
+	var gameplay_txt: String = str(doc_entry.get("gameplay", "")).strip_edges()
+	var parts: Array[String] = []
+	if not guide_txt.is_empty():
+		parts.append(guide_txt)
+	if not gameplay_txt.is_empty():
+		parts.append(gameplay_txt)
+	var content: String = "\n\n".join(parts)
+	if content.is_empty():
+		content = "راهنمای کامل این بازی به زودی اضافه خواهد شد."
+
+	var section_prefixes := ["🎯", "🧩", "📜", "📱", "💡", "🃏", "👑", "🪙", "⚡", "📊", "⚔️", "🏆"]
+	var cur_title: String = ""
+	var cur_lines: Array[String] = []
+
+	for raw_l in content.split("\n"):
+		var trimmed := raw_l.strip_edges()
 		if trimmed.is_empty():
-			formatted_lines.append("")
+			continue
+
+		var is_header := false
+		for pref in section_prefixes:
+			if trimmed.begins_with(pref):
+				is_header = true
+				break
+
+		if is_header:
+			if not cur_title.is_empty() or not cur_lines.is_empty():
+				content_vbox.add_child(_make_section_card(cur_title, cur_lines))
+			cur_title = trimmed.replace("**", "")
+			cur_lines = []
 		else:
-			formatted_lines.append("[right]%s[/right]" % trimmed)
-	detail_body.text = "\n".join(formatted_lines)
+			cur_lines.append(trimmed)
+
+	if not cur_title.is_empty() or not cur_lines.is_empty():
+		content_vbox.add_child(_make_section_card(cur_title, cur_lines))
 
 
 func _style_doc_subtab(btn: Button, is_act: bool) -> void:

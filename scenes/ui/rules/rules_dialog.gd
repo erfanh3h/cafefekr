@@ -10,10 +10,6 @@ signal closed()
 @onready var btn_select_game: Button = $Margin/VBox/BtnSelectGame
 @onready var lbl_selected_game: Label = $Margin/VBox/BtnSelectGame/Margin/HBox/VBoxGameInfo/LblSelectedGame
 @onready var selected_game_icon: TextureRect = $Margin/VBox/BtnSelectGame/Margin/HBox/IconFrame/SelectedGameIcon
-@onready var btn_tab_overview: Button = $Margin/VBox/SubTabsRow/BtnTabOverview
-@onready var btn_tab_rules: Button = $Margin/VBox/SubTabsRow/BtnTabRules
-@onready var btn_tab_gameplay: Button = $Margin/VBox/SubTabsRow/BtnTabGameplay
-@onready var sub_tabs_row: HBoxContainer = $Margin/VBox/SubTabsRow
 @onready var scroll_content: ScrollContainer = $Margin/VBox/Scroll
 @onready var content_box: VBoxContainer = $Margin/VBox/Scroll/Content
 @onready var btn_understood: Button = $Margin/VBox/BtnUnderstood
@@ -87,28 +83,8 @@ func _ready() -> void:
 			_close_game_select_modal()
 	)
 	
-	btn_tab_overview.pressed.connect(func():
-		AudioManager.sfx_tap()
-		active_sub_tab = 0
-		_update_tab_button_styles()
-		_render_content()
-	)
-	btn_tab_rules.pressed.connect(func():
-		AudioManager.sfx_tap()
-		active_sub_tab = 1
-		_update_tab_button_styles()
-		_render_content()
-	)
-	btn_tab_gameplay.pressed.connect(func():
-		AudioManager.sfx_tap()
-		active_sub_tab = 2
-		_update_tab_button_styles()
-		_render_content()
-	)
-	
 	_load_docs()
 	_update_selected_game_display()
-	_update_tab_button_styles()
 	_render_content()
 
 func _load_docs() -> void:
@@ -124,7 +100,6 @@ func _load_docs() -> void:
 func open() -> void:
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	scroll_content.scroll_vertical = 0
-	_update_tab_button_styles()
 	_render_content()
 
 func close() -> void:
@@ -134,17 +109,6 @@ func close() -> void:
 	ActionVFXManager.animate_dialog_close(self, null, func():
 		closed.emit()
 	)
-
-func _update_tab_button_styles() -> void:
-	var tabs = [btn_tab_overview, btn_tab_rules, btn_tab_gameplay]
-	for i in range(tabs.size()):
-		var b = tabs[i]
-		if i == active_sub_tab:
-			KenneyUI.style_button(b, KenneyUI.COLOR_YELLOW)
-			b.add_theme_color_override("font_color", Color(0.18, 0.1, 0.02, 1.0))
-		else:
-			KenneyUI.style_button(b, KenneyUI.COLOR_GREY)
-			b.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72, 0.85))
 
 func _update_selected_game_display() -> void:
 	if not is_instance_valid(lbl_selected_game) or not is_instance_valid(selected_game_icon):
@@ -363,7 +327,6 @@ func _render_content() -> void:
 	
 
 	
-	sub_tabs_row.visible = true
 	var g_data = _game_docs.get(selected_game_key, {})
 	var meta = _get_game_meta(selected_game_key)
 	
@@ -443,35 +406,33 @@ func _render_content() -> void:
 	header_card.add_child(h_row)
 	content_box.add_child(header_card)
 	
-	# Body Text
-	var text_content = ""
-	var section_title = ""
-	if active_sub_tab == 0:
-		section_title = "داستان و پیش‌زمینه بازی"
-		text_content = str(g_data.get("narrative", "این بازی یکی از بازی‌های جذاب و خاطره‌انگیز کافه فکر است."))
-	elif active_sub_tab == 1:
-		section_title = "قوانین و استراتژی‌های بازی"
-		text_content = str(g_data.get("guide", "هدف اصلی بازی تلاش برای غلبه بر حریف با بهره‌گیری از هوش و تاکتیک است."))
-	else:
-		section_title = "راهنمای بازی آنلاین در کافه فکر"
-		text_content = str(g_data.get("gameplay", "با شروع بازی، هر بازیکن در نوبت خود زمان مشخصی برای انتخاب حرکت دارد. در صورت قطعی اتصال، تا ۶۰ ثانیه فرصت بازگشت وجود دارد."))
-	
-	var sec_lbl = Label.new()
-	sec_lbl.text = "📜 " + section_title
-	sec_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	sec_lbl.add_theme_font_size_override("font_size", 34)
-	sec_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-	sec_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	content_box.add_child(sec_lbl)
-	
+	# Unified Comprehensive Guide (Rules + Cafe Fekr Controls) — strictly RTL & right-aligned
+	var guide_str := str(g_data.get("guide", "")).strip_edges()
+	var gameplay_str := str(g_data.get("gameplay", "")).strip_edges()
+	var text_content := guide_str
+	if not gameplay_str.is_empty():
+		text_content = (text_content + "\n\n" + gameplay_str) if not text_content.is_empty() else gameplay_str
+	if text_content.is_empty():
+		text_content = "هدف اصلی بازی تلاش برای غلبه بر حریف با بهره‌گیری از هوش و تاکتیک است."
+	text_content = text_content.replace("**", "")
+
+	var rtl_lines: Array[String] = []
+	for raw_l in text_content.split("\n"):
+		var tr := raw_l.strip_edges()
+		rtl_lines.append(("\u200F" + tr) if not tr.is_empty() else "")
+
 	var body_lbl = Label.new()
-	body_lbl.text = text_content
-	body_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	body_lbl.add_theme_font_size_override("font_size", 32)
+	body_lbl.text = "\n".join(rtl_lines)
+	body_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body_lbl.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	body_lbl.text_direction = Control.TEXT_DIRECTION_RTL
+	body_lbl.language = "fa"
+	body_lbl.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
+	body_lbl.add_theme_font_size_override("font_size", 22)
 	body_lbl.add_theme_color_override("font_color", Color(0.96, 0.92, 0.86))
 	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	body_lbl.add_theme_constant_override("line_spacing", 14)
+	body_lbl.add_theme_constant_override("line_spacing", 10)
 	content_box.add_child(body_lbl)
 
 func _render_general_guide(mode_key: String) -> void:
