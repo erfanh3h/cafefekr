@@ -26,6 +26,7 @@ var _my_clan_data: Dictionary = {}
 var _clan_chat_messages: Array = []
 var _clan_chat_has_more: bool = true
 var _clan_chat_is_loading_older: bool = false
+var _clan_unread_chat_count: int = 0
 var _conversations: Array = []
 var _active_dm_partner_id: String = ""
 var _active_dm_partner_name: String = ""
@@ -81,10 +82,10 @@ func _build_ui_shell() -> void:
 
 	var outer_margin := MarginContainer.new()
 	outer_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	outer_margin.add_theme_constant_override("margin_left", 24)
-	outer_margin.add_theme_constant_override("margin_right", 24)
-	outer_margin.add_theme_constant_override("margin_top", 10)
-	outer_margin.add_theme_constant_override("margin_bottom", 20)
+	outer_margin.add_theme_constant_override("margin_left", 16)
+	outer_margin.add_theme_constant_override("margin_right", 16)
+	outer_margin.add_theme_constant_override("margin_top", 8)
+	outer_margin.add_theme_constant_override("margin_bottom", 14)
 	add_child(outer_margin)
 
 	var root_vbox := VBoxContainer.new()
@@ -111,6 +112,7 @@ func _build_ui_shell() -> void:
 		if NetworkManager.is_online and not NetworkManager.is_social_connected and not GameManager.token.is_empty():
 			NetworkManager.connect_social_namespace()
 		_preload_badge_counts()
+		SocialClansView.invalidate_caches()
 		if current_main_tab == "clans" and current_clans_subtab in ["my_clan", "members"]:
 			refresh_my_clan_data(true)
 		else:
@@ -207,7 +209,7 @@ func _update_main_tab_buttons() -> void:
 
 	var tab_defs := [
 		{"id": "friends", "badge": _incoming_requests.size()},
-		{"id": "clans", "badge": 0},
+		{"id": "clans", "badge": SocialClansView.get_clans_badge_count(self)},
 		{"id": "messages", "badge": NetworkManager.unread_dms_count},
 	]
 	for td in tab_defs:
@@ -493,6 +495,8 @@ func _on_realtime_dm_read_received(payload: Dictionary) -> void:
 
 
 func _on_realtime_clan_chat_received(msg: Dictionary) -> void:
+	var sender_id := str(msg.get("sender_id", ""))
+	var is_mine := (sender_id == str(GameManager.get_user_id()))
 	var mid := str(msg.get("message_id", msg.get("_id", "")))
 	var exists := false
 	if not mid.is_empty():
@@ -503,7 +507,13 @@ func _on_realtime_clan_chat_received(msg: Dictionary) -> void:
 	if not exists:
 		_clan_chat_messages.append(msg)
 	if current_main_tab == "clans" and current_clans_subtab == "chat":
-		SocialClansView.append_clan_chat_message(self, msg)
+		if not exists:
+			SocialClansView.append_clan_chat_message(self, msg)
+	elif not is_mine and not exists:
+		_clan_unread_chat_count += 1
+		_update_main_tab_buttons()
+		if current_main_tab == "clans":
+			SocialClansView.refresh_nav_badges(self)
 
 
 func _on_realtime_clan_chat_deleted(payload: Dictionary) -> void:

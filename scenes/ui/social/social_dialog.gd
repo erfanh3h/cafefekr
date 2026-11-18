@@ -44,6 +44,7 @@ var _clan_chat_scroll: ScrollContainer = null
 var _clan_chat_input: LineEdit = null
 var _clan_chat_has_more: bool = true
 var _clan_chat_is_loading_older: bool = false
+var _clan_unread_chat_count: int = 0
 var _dm_messages_vbox: VBoxContainer = null
 var _dm_messages_scroll: ScrollContainer = null
 var _dm_input: LineEdit = null
@@ -122,6 +123,13 @@ func close() -> void:
 
 
 func _preload_badge_counts() -> void:
+	if not GameManager.is_logged_in:
+		return
+	NetworkManager.api.get_my_clan(func(ok: bool, _c: int, data: Variant):
+		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
+			_my_clan_data = data["result"]
+			_update_main_tab_buttons()
+	)
 	NetworkManager.api.get_friend_requests(func(ok: bool, _c: int, data: Variant):
 		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
 			var r: Dictionary = data["result"]
@@ -151,10 +159,10 @@ func _build_ui_shell() -> void:
 
 	var margin_outer := MarginContainer.new()
 	margin_outer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin_outer.add_theme_constant_override("margin_left", 20)
-	margin_outer.add_theme_constant_override("margin_right", 20)
-	margin_outer.add_theme_constant_override("margin_top", 28)
-	margin_outer.add_theme_constant_override("margin_bottom", 28)
+	margin_outer.add_theme_constant_override("margin_left", 14)
+	margin_outer.add_theme_constant_override("margin_right", 14)
+	margin_outer.add_theme_constant_override("margin_top", 20)
+	margin_outer.add_theme_constant_override("margin_bottom", 20)
 	add_child(margin_outer)
 
 	main_panel = PanelContainer.new()
@@ -164,10 +172,10 @@ func _build_ui_shell() -> void:
 	margin_outer.add_child(main_panel)
 
 	var inner_margin := MarginContainer.new()
-	inner_margin.add_theme_constant_override("margin_left", 28)
-	inner_margin.add_theme_constant_override("margin_right", 28)
-	inner_margin.add_theme_constant_override("margin_top", 26)
-	inner_margin.add_theme_constant_override("margin_bottom", 26)
+	inner_margin.add_theme_constant_override("margin_left", 18)
+	inner_margin.add_theme_constant_override("margin_right", 18)
+	inner_margin.add_theme_constant_override("margin_top", 18)
+	inner_margin.add_theme_constant_override("margin_bottom", 18)
 	main_panel.add_child(inner_margin)
 
 	var root_vbox := VBoxContainer.new()
@@ -211,7 +219,11 @@ func _build_ui_shell() -> void:
 	ActionVFXManager.apply_button_juice(btn_refresh, "tap_button")
 	btn_refresh.pressed.connect(func():
 		AudioManager.sfx_tap()
-		_refresh_current_tab()
+		SocialClansView.invalidate_caches()
+		if current_main_tab == "clans" and current_clans_subtab in ["my_clan", "members"]:
+			refresh_my_clan_data(true)
+		else:
+			_refresh_current_tab()
 	)
 	header_row.add_child(btn_refresh)
 
@@ -259,7 +271,7 @@ func _update_main_tab_buttons() -> void:
 
 	var tab_defs := [
 		{"id": "friends", "badge": _incoming_requests.size()},
-		{"id": "clans", "badge": 0},
+		{"id": "clans", "badge": SocialClansView.get_clans_badge_count(self)},
 		{"id": "messages", "badge": NetworkManager.unread_dms_count},
 		{"id": "notifs", "badge": NetworkManager.unread_notifications_count},
 	]
@@ -472,14 +484,24 @@ func _on_realtime_dm_read_received(payload: Dictionary) -> void:
 
 
 func _on_realtime_clan_chat_received(payload: Dictionary) -> void:
-	if not visible or current_main_tab != "clans" or current_clans_subtab != "chat":
-		return
-	var mid := str(payload.get("message_id", ""))
+	var sender_id := str(payload.get("sender_id", ""))
+	var is_mine := (sender_id == str(GameManager.get_user_id()))
+	var mid := str(payload.get("message_id", payload.get("_id", "")))
+	var exists := false
 	for m in _clan_chat_messages:
-		if typeof(m) == TYPE_DICTIONARY and str(m.get("message_id", "")) == mid and not mid.is_empty():
-			return
-	_clan_chat_messages.append(payload)
-	SocialClansView.append_clan_chat_message(self, payload)
+		if typeof(m) == TYPE_DICTIONARY and str(m.get("message_id", m.get("_id", ""))) == mid and not mid.is_empty():
+			exists = true
+			break
+	if not exists:
+		_clan_chat_messages.append(payload)
+	if visible and current_main_tab == "clans" and current_clans_subtab == "chat":
+		if not exists:
+			SocialClansView.append_clan_chat_message(self, payload)
+	elif not is_mine and not exists:
+		_clan_unread_chat_count += 1
+		_update_main_tab_buttons()
+		if visible and current_main_tab == "clans":
+			SocialClansView.refresh_nav_badges(self)
 
 
 func _on_realtime_clan_chat_deleted(payload: Dictionary) -> void:
