@@ -2413,4 +2413,3 @@ func _build_mini_brass_candle_lantern(parent: Node3D, pos: Vector3) -> void:
 		_add_box(lan, Vector3(0.007, 0.122, 0.007), Vector3(cos(ang) * 0.046, 0.074, sin(ang) * 0.046), mat_brass)
 	_add_cyl(lan, 0.014, 0.056, 0.048, Vector3(0.0, 0.156, 0.0), mat_brass, Vector3.ZERO, 8)
 	_add_torus(lan, 0.012, 0.018, Vector3(0.0, 0.190, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 8)
-

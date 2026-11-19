@@ -1418,7 +1418,7 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 # ==============================================================================
 
 func _is_cosmetic_locked(kind: String, item_id: int) -> bool:
-	var keys: Array[String] = ["owned_avatars", "unlocked_avatars"] if kind == "avatar" else ["owned_frames", "unlocked_frames"]
+	var keys: Array = ["owned_avatars", "unlocked_avatars"] if kind == "avatar" else ["owned_frames", "unlocked_frames"]
 	for key in keys:
 		if GameManager.user_data.has(key) and typeof(GameManager.user_data[key]) == TYPE_ARRAY:
 			var owned: Array = GameManager.user_data[key]
