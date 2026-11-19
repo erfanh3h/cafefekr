@@ -450,3 +450,147 @@ static func build_theme() -> Theme:
 	theme.set_stylebox("background", "ProgressBar", make_card_timer_track_style())
 	theme.set_stylebox("fill", "ProgressBar", make_card_timer_fill_style(COL_GOLD_ACTIVE))
 	return theme
+
+
+# --- PlayerPod & CommonHUD v4 Helpers ---
+
+static var _cached_ring_textures: Dictionary = {}
+static var _cached_bottom_glow_tex: GradientTexture2D = null
+
+
+static func format_seconds(seconds_left: float, use_fa: bool = true) -> String:
+	var sec_int: int = maxi(0, int(ceil(seconds_left)))
+	if use_fa:
+		return "%sث" % fa_digits(sec_int)
+	return "%ds" % sec_int
+
+
+static func make_pod_style(active: bool, is_danger: bool = false, radius: int = 16, pad_h: int = 8, pad_v: int = 6) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	if active:
+		sb.bg_color = Color(0.24, 0.09, 0.09, 0.96) if is_danger else Color(COL_LEATHER_ACTIVE.r, COL_LEATHER_ACTIVE.g, COL_LEATHER_ACTIVE.b, 0.96)
+		sb.border_color = COL_DANGER if is_danger else COL_GOLD_ACTIVE
+		sb.set_border_width_all(2)
+		sb.border_width_bottom = 3
+		var glow := COL_DANGER if is_danger else COL_AMBER_GLOW
+		sb.shadow_color = Color(glow.r, glow.g, glow.b, 0.44 if is_danger else 0.36)
+		sb.shadow_size = 10
+		sb.shadow_offset = Vector2(0, 3)
+	else:
+		sb.bg_color = Color(COL_LEATHER_IDLE.r, COL_LEATHER_IDLE.g, COL_LEATHER_IDLE.b, 0.88)
+		sb.border_color = Color(COL_BRONZE_MUTED.r, COL_BRONZE_MUTED.g, COL_BRONZE_MUTED.b, 0.78)
+		sb.set_border_width_all(1)
+		sb.border_width_bottom = 2
+		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
+		sb.shadow_size = 5
+		sb.shadow_offset = Vector2(0, 2)
+	sb.set_corner_radius_all(radius)
+	sb.content_margin_left = pad_h
+	sb.content_margin_right = pad_h
+	sb.content_margin_top = pad_v
+	sb.content_margin_bottom = pad_v
+	return sb
+
+
+static func make_spectator_pill_style() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.11, 0.07, 0.04, 0.90)
+	sb.border_color = Color(COL_GOLD_BRUSHED.r, COL_GOLD_BRUSHED.g, COL_GOLD_BRUSHED.b, 0.75)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(11)
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.35)
+	sb.shadow_size = 4
+	sb.shadow_offset = Vector2(0, 2)
+	sb.content_margin_left = 7
+	sb.content_margin_right = 7
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	return sb
+
+
+static func make_local_turn_bar_track_style() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.09, 0.06, 0.04, 0.84)
+	sb.border_color = Color(COL_BRONZE_MUTED.r, COL_BRONZE_MUTED.g, COL_BRONZE_MUTED.b, 0.45)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(2)
+	return sb
+
+
+static func make_local_turn_bar_fill_style(is_danger: bool = false) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	var col := COL_DANGER if is_danger else COL_GOLD_ACTIVE
+	sb.bg_color = col
+	sb.set_corner_radius_all(2)
+	sb.shadow_color = Color(col.r, col.g, col.b, 0.55)
+	sb.shadow_size = 6
+	return sb
+
+
+static func make_local_turn_pill_style(is_danger: bool = false) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.28, 0.08, 0.09, 0.94) if is_danger else Color(COL_WALNUT_DEEP.r, COL_WALNUT_DEEP.g, COL_WALNUT_DEEP.b, 0.92)
+	sb.border_color = COL_DANGER if is_danger else Color(COL_GOLD_ACTIVE.r, COL_GOLD_ACTIVE.g, COL_GOLD_ACTIVE.b, 0.90)
+	sb.set_border_width_all(1)
+	sb.border_width_bottom = 2
+	sb.set_corner_radius_all(13)
+	sb.shadow_color = Color(COL_AMBER_GLOW.r, COL_AMBER_GLOW.g, COL_AMBER_GLOW.b, 0.28)
+	sb.shadow_size = 8
+	sb.shadow_offset = Vector2(0, 2)
+	sb.content_margin_left = 14
+	sb.content_margin_right = 14
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 4
+	return sb
+
+
+static func get_radial_ring_texture(diameter: int = 128, thickness: float = 9.0) -> ImageTexture:
+	var key: String = "%d_%.1f" % [diameter, thickness]
+	if _cached_ring_textures.has(key):
+		return _cached_ring_textures[key] as ImageTexture
+
+	var img := Image.create(diameter, diameter, false, Image.FORMAT_RGBA8)
+	var center: float = (float(diameter) - 1.0) * 0.5
+	var outer_r: float = float(diameter) * 0.5 - 1.5
+	var inner_r: float = maxf(2.0, outer_r - thickness)
+	var aa: float = 1.35
+
+	for y in range(diameter):
+		var dy: float = float(y) - center
+		for x in range(diameter):
+			var dx: float = float(x) - center
+			var dist: float = sqrt(dx * dx + dy * dy)
+			var alpha_outer: float = clampf((outer_r - dist) / aa + 0.5, 0.0, 1.0)
+			var alpha_inner: float = clampf((dist - inner_r) / aa + 0.5, 0.0, 1.0)
+			var alpha: float = minf(alpha_outer, alpha_inner)
+			if alpha > 0.001:
+				img.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha))
+			else:
+				img.set_pixel(x, y, Color(1.0, 1.0, 1.0, 0.0))
+
+	var tex: ImageTexture = ImageTexture.create_from_image(img)
+	_cached_ring_textures[key] = tex
+	return tex
+
+
+static func make_bottom_edge_glow_texture() -> GradientTexture2D:
+	if _cached_bottom_glow_tex != null:
+		return _cached_bottom_glow_tex
+	var grad := Gradient.new()
+	grad.offsets = PackedFloat32Array([0.0, 0.35, 0.72, 1.0])
+	grad.colors = PackedColorArray([
+		Color(0.960784, 0.768627, 0.317647, 0.30),
+		Color(0.909804, 0.635294, 0.188235, 0.14),
+		Color(0.909804, 0.635294, 0.188235, 0.04),
+		Color(0.909804, 0.635294, 0.188235, 0.0),
+	])
+	var gtex := GradientTexture2D.new()
+	gtex.gradient = grad
+	gtex.width = 64
+	gtex.height = 128
+	gtex.fill = GradientTexture2D.FILL_LINEAR
+	gtex.fill_from = Vector2(0.5, 1.0)
+	gtex.fill_to = Vector2(0.5, 0.0)
+	_cached_bottom_glow_tex = gtex
+	return gtex
+

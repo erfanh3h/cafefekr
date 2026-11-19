@@ -1,21 +1,75 @@
-[gd_scene format=3 uid="uid://dq7qduuvtc0qa"]
+[gd_scene format=3 uid="uid://cafefekrcommonhud01"]
 
-[ext_resource type="Script" uid="uid://commonhudscript01" path="res://scenes/games/base/common_hud.gd" id="1_script"]
-[ext_resource type="Theme" uid="uid://commonhudtheme01" path="res://scenes/games/base/common_hud_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scenes/games/base/common_hud.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://dq7qduv1tb0qa" path="res://scenes/games/base/common_hud_theme.tres" id="2_theme"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_display"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_ui"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/setting.png" id="5_icon_settings"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/3d.png" id="6_icon_3d"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/plus.png" id="7_icon_plus"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/minus.png" id="8_icon_minus"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/reload.png" id="9_icon_reset"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/chat.png" id="10_icon_chat"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/sticker.png" id="11_icon_emote"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/sound-on.png" id="12_icon_audio"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/info.png" id="13_icon_info"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/surrender.png" id="14_icon_surrender"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/3d.png" id="5_icon_3d"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/setting.png" id="6_icon_settings"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/watch.png" id="7_icon_watch"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/chat.png" id="8_icon_chat"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/sticker.png" id="9_icon_emote"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/sound-on.png" id="10_icon_sound"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/info.png" id="11_icon_info"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/surrender.png" id="12_icon_surrender"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_clear"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_local_bar_bg"]
+bg_color = Color(0.09, 0.06, 0.04, 0.84)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.352941, 0.258824, 0.168627, 0.45)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_local_bar_fill"]
+bg_color = Color(0.960784, 0.768627, 0.317647, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+shadow_color = Color(0.960784, 0.768627, 0.317647, 0.55)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_local_pill"]
+content_margin_left = 14.0
+content_margin_top = 3.0
+content_margin_right = 14.0
+content_margin_bottom = 4.0
+bg_color = Color(0.101961, 0.0666667, 0.0431373, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.960784, 0.768627, 0.317647, 0.9)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
+shadow_color = Color(0.909804, 0.635294, 0.188235, 0.28)
+shadow_size = 8
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_spectator_pill"]
+content_margin_left = 7.0
+content_margin_top = 3.0
+content_margin_right = 7.0
+content_margin_bottom = 3.0
+bg_color = Color(0.11, 0.07, 0.04, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.788235, 0.615686, 0.305882, 0.75)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_right = 11
+corner_radius_bottom_left = 11
 
 [node name="CommonHUD" type="Control"]
 layout_mode = 3
@@ -28,91 +82,53 @@ mouse_filter = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
-[node name="TopSafeMargin" type="MarginContainer" parent="."]
+[node name="BottomTurnGlow" type="TextureRect" parent="."]
+visible = false
+z_index = 2
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 12
+anchor_top = 1.0
 anchor_right = 1.0
-offset_bottom = 196.0
+anchor_bottom = 1.0
+offset_top = -124.0
 grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+expand_mode = 1
+
+[node name="SafeAreaMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 14
 
-[node name="TopVBox" type="VBoxContainer" parent="TopSafeMargin"]
+[node name="MainTopVBox" type="VBoxContainer" parent="SafeAreaMargin"]
 layout_mode = 2
+size_flags_vertical = 0
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 7
 
-[node name="PlayersBlock" type="VBoxContainer" parent="TopSafeMargin/TopVBox"]
+[node name="TopRow" type="HBoxContainer" parent="SafeAreaMargin/MainTopVBox"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
-
-[node name="PlayersRow1" type="HBoxContainer" parent="TopSafeMargin/TopVBox/PlayersBlock"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 8
 alignment = 1
 
-[node name="MenuColumn" type="VBoxContainer" parent="TopSafeMargin/TopVBox/PlayersBlock/PlayersRow1"]
-custom_minimum_size = Vector2(46, 0)
+[node name="BtnView2D3D" type="Button" parent="SafeAreaMargin/MainTopVBox/TopRow"]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-size_flags_horizontal = 8
-size_flags_vertical = 4
-mouse_filter = 2
-theme_override_constants/separation = 4
-alignment = 1
-
-[node name="BtnSettings" type="Button" parent="TopSafeMargin/TopVBox/PlayersBlock/PlayersRow1/MenuColumn"]
-custom_minimum_size = Vector2(46, 46)
-layout_mode = 2
-size_flags_horizontal = 4
+size_flags_vertical = 0
 mouse_default_cursor_shape = 2
-tooltip_text = "منو و تنظیمات بازی"
+tooltip_text = "تغییر نمای ۲D / ۳D"
 
-[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/PlayersBlock/PlayersRow1/MenuColumn/BtnSettings"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = -10.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("5_icon_settings")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="PlayersRow2" type="HBoxContainer" parent="TopSafeMargin/TopVBox/PlayersBlock"]
-visible = false
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 8
-alignment = 1
-
-[node name="Row2Spacer" type="Control" parent="TopSafeMargin/TopVBox/PlayersBlock/PlayersRow2"]
-custom_minimum_size = Vector2(46, 0)
-layout_mode = 2
-size_flags_horizontal = 8
-mouse_filter = 2
-
-[node name="SubHeaderRail" type="HBoxContainer" parent="TopSafeMargin/TopVBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 8
-
-[node name="BtnCameraToggle" type="Button" parent="TopSafeMargin/TopVBox/SubHeaderRail"]
-custom_minimum_size = Vector2(42, 42)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-tooltip_text = "نمای ۲D / ۳D و دوربین"
-
-[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/SubHeaderRail/BtnCameraToggle"]
+[node name="Icon" type="TextureRect" parent="SafeAreaMargin/MainTopVBox/TopRow/BtnView2D3D"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -124,222 +140,192 @@ offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("6_icon_3d")
+texture = ExtResource("5_icon_3d")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SubHeaderSpacer" type="Control" parent="TopSafeMargin/TopVBox/SubHeaderRail"]
+[node name="PlayersContainer" type="HBoxContainer" parent="SafeAreaMargin/MainTopVBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="RightActionGroup" type="HBoxContainer" parent="TopSafeMargin/TopVBox/SubHeaderRail"]
-layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 theme_override_constants/separation = 8
+alignment = 1
 
-[node name="BtnChat" type="Button" parent="TopSafeMargin/TopVBox/SubHeaderRail/RightActionGroup"]
-custom_minimum_size = Vector2(42, 42)
+[node name="BtnSettings" type="Button" parent="SafeAreaMargin/MainTopVBox/TopRow"]
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-size_flags_vertical = 4
+size_flags_vertical = 0
 mouse_default_cursor_shape = 2
-tooltip_text = "کری‌خوانی و گفتگو"
+tooltip_text = "تنظیمات و منو"
 
-[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/SubHeaderRail/RightActionGroup/BtnChat"]
+[node name="Icon" type="TextureRect" parent="SafeAreaMargin/MainTopVBox/TopRow/BtnSettings"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("10_icon_chat")
+texture = ExtResource("6_icon_settings")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BtnEmote" type="Button" parent="TopSafeMargin/TopVBox/SubHeaderRail/RightActionGroup"]
-custom_minimum_size = Vector2(42, 42)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-tooltip_text = "استیکر و ایموجی"
-
-[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/SubHeaderRail/RightActionGroup/BtnEmote"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("11_icon_emote")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TurnStatusToast" type="PanelContainer" parent="."]
+[node name="LocalTurnBarWrap" type="MarginContainer" parent="SafeAreaMargin/MainTopVBox"]
 visible = false
-z_index = 18
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -125.0
-offset_top = 110.0
-offset_right = 125.0
-offset_bottom = 144.0
-grow_horizontal = 2
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 46
+theme_override_constants/margin_right = 46
+
+[node name="LocalTurnVBox" type="VBoxContainer" parent="SafeAreaMargin/MainTopVBox/LocalTurnBarWrap"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="LocalTurnProgressBar" type="ProgressBar" parent="SafeAreaMargin/MainTopVBox/LocalTurnBarWrap/LocalTurnVBox"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_local_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_local_bar_fill")
+value = 100.0
+show_percentage = false
+
+[node name="LocalTurnPillCenter" type="CenterContainer" parent="SafeAreaMargin/MainTopVBox/LocalTurnBarWrap/LocalTurnVBox"]
+layout_mode = 2
 mouse_filter = 2
 
-[node name="LblTurnToast" type="Label" parent="TurnStatusToast"]
+[node name="LocalTurnPill" type="PanelContainer" parent="SafeAreaMargin/MainTopVBox/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_local_pill")
+
+[node name="LblLocalTurn" type="Label" parent="SafeAreaMargin/MainTopVBox/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("4_font_ui")
-theme_override_font_sizes/font_size = 14
-text = "نوبت شماست"
+theme_override_font_sizes/font_size = 13
+text = "نوبت شما • ۱۵ث"
 horizontal_alignment = 1
 vertical_alignment = 1
+text_direction = 3
 
-[node name="EmoteLayer" type="Control" parent="."]
-z_index = 30
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="EdgeOverlay" type="Control" parent="SafeAreaMargin"]
+layout_mode = 2
 mouse_filter = 2
 
-[node name="CameraPopoverBackdrop" type="Button" parent="."]
+[node name="SpectatorPill" type="PanelContainer" parent="SafeAreaMargin/EdgeOverlay"]
 visible = false
-z_index = 24
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-focus_mode = 0
-theme_override_styles/normal = SubResource("StyleBoxEmpty_clear")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_clear")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_clear")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
-flat = true
+offset_top = 46.0
+offset_right = 76.0
+offset_bottom = 68.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_spectator_pill")
 
-[node name="CameraPopover" type="PanelContainer" parent="."]
-visible = false
-z_index = 25
-layout_mode = 0
-offset_left = 10.0
-offset_top = 158.0
-offset_right = 236.0
-offset_bottom = 224.0
-
-[node name="HBox" type="HBoxContainer" parent="CameraPopover"]
+[node name="HBox" type="HBoxContainer" parent="SafeAreaMargin/EdgeOverlay/SpectatorPill"]
 layout_mode = 2
-theme_override_constants/separation = 8
+mouse_filter = 2
+theme_override_constants/separation = 4
 alignment = 1
 
-[node name="BtnCam2D3D" type="Button" parent="CameraPopover/HBox"]
-custom_minimum_size = Vector2(44, 44)
+[node name="EyeIcon" type="TextureRect" parent="SafeAreaMargin/EdgeOverlay/SpectatorPill/HBox"]
+custom_minimum_size = Vector2(12, 12)
 layout_mode = 2
-mouse_default_cursor_shape = 2
-tooltip_text = "تغییر نمای ۲D / ۳D"
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("7_icon_watch")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnCam2D3D"]
+[node name="LblSpectator" type="Label" parent="SafeAreaMargin/EdgeOverlay/SpectatorPill/HBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("4_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "تماشاچی"
+vertical_alignment = 1
+text_direction = 3
+
+[node name="SocialRail" type="VBoxContainer" parent="SafeAreaMargin/EdgeOverlay"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -39.0
+offset_top = 48.0
+offset_right = -1.0
+offset_bottom = 132.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BtnChat" type="Button" parent="SafeAreaMargin/EdgeOverlay/SocialRail"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "پیام سریع"
+
+[node name="Icon" type="TextureRect" parent="SafeAreaMargin/EdgeOverlay/SocialRail/BtnChat"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = 6.0
-offset_right = -6.0
-offset_bottom = -6.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("6_icon_3d")
+texture = ExtResource("8_icon_chat")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BtnZoomIn" type="Button" parent="CameraPopover/HBox"]
-custom_minimum_size = Vector2(44, 44)
+[node name="BtnEmoji" type="Button" parent="SafeAreaMargin/EdgeOverlay/SocialRail"]
+custom_minimum_size = Vector2(38, 38)
 layout_mode = 2
+size_flags_horizontal = 4
 mouse_default_cursor_shape = 2
-tooltip_text = "بزرگ‌نمایی"
+tooltip_text = "استیکر و ایموجی"
 
-[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnZoomIn"]
+[node name="Icon" type="TextureRect" parent="SafeAreaMargin/EdgeOverlay/SocialRail/BtnEmoji"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = 6.0
-offset_right = -6.0
-offset_bottom = -6.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("7_icon_plus")
+texture = ExtResource("9_icon_emote")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BtnZoomOut" type="Button" parent="CameraPopover/HBox"]
-custom_minimum_size = Vector2(44, 44)
-layout_mode = 2
-mouse_default_cursor_shape = 2
-tooltip_text = "کوچک‌نمایی"
-
-[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnZoomOut"]
+[node name="EmoteLayer" type="Control" parent="."]
+z_index = 28
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = 6.0
-offset_right = -6.0
-offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("8_icon_minus")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BtnCamReset" type="Button" parent="CameraPopover/HBox"]
-custom_minimum_size = Vector2(44, 44)
-layout_mode = 2
-mouse_default_cursor_shape = 2
-tooltip_text = "بازنشانی دوربین"
-
-[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnCamReset"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = 6.0
-offset_right = -6.0
-offset_bottom = -6.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("9_icon_reset")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="PickerPopoverBackdrop" type="Button" parent="."]
 visible = false
-z_index = 26
+z_index = 30
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -355,12 +341,12 @@ flat = true
 
 [node name="PickerPopover" type="PanelContainer" parent="."]
 visible = false
-z_index = 27
+z_index = 31
 layout_mode = 0
-offset_left = 180.0
-offset_top = 158.0
-offset_right = 528.0
-offset_bottom = 448.0
+offset_left = 140.0
+offset_top = 64.0
+offset_right = 468.0
+offset_bottom = 324.0
 
 [node name="VBox" type="VBoxContainer" parent="PickerPopover"]
 layout_mode = 2
@@ -373,9 +359,10 @@ theme_override_fonts/font = ExtResource("4_font_ui")
 theme_override_font_sizes/font_size = 15
 text = "گفتگو و ایموجی"
 horizontal_alignment = 1
+text_direction = 3
 
 [node name="PickerScroll" type="ScrollContainer" parent="PickerPopover/VBox"]
-custom_minimum_size = Vector2(0, 230)
+custom_minimum_size = Vector2(0, 210)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
@@ -387,7 +374,7 @@ theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 columns = 4
 
-[node name="SettingsDrawer" type="Control" parent="."]
+[node name="SettingsModal" type="Control" parent="."]
 visible = false
 z_index = 40
 layout_mode = 1
@@ -397,7 +384,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dimmer" type="ColorRect" parent="SettingsDrawer"]
+[node name="Dimmer" type="ColorRect" parent="SettingsModal"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -406,7 +393,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.04, 0.02, 0.01, 0.72)
 
-[node name="BtnBackdropClose" type="Button" parent="SettingsDrawer"]
+[node name="BtnBackdropClose" type="Button" parent="SettingsModal"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -420,106 +407,108 @@ theme_override_styles/hover = SubResource("StyleBoxEmpty_clear")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
 flat = true
 
-[node name="DrawerCard" type="PanelContainer" parent="SettingsDrawer"]
-custom_minimum_size = Vector2(360, 0)
+[node name="ModalCard" type="PanelContainer" parent="SettingsModal"]
+custom_minimum_size = Vector2(340, 0)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -190.0
+offset_left = -180.0
 offset_top = -175.0
-offset_right = 190.0
+offset_right = 180.0
 offset_bottom = 175.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBox" type="VBoxContainer" parent="SettingsDrawer/DrawerCard"]
+[node name="VBox" type="VBoxContainer" parent="SettingsModal/ModalCard"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="LblGameTitle" type="Label" parent="SettingsDrawer/DrawerCard/VBox"]
+[node name="LblGameTitle" type="Label" parent="SettingsModal/ModalCard/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("3_font_display")
 theme_override_font_sizes/font_size = 28
 text = "کافه فکر"
 horizontal_alignment = 1
+text_direction = 3
 
-[node name="LblRoundMeta" type="Label" parent="SettingsDrawer/DrawerCard/VBox"]
+[node name="LblModeMeta" type="Label" parent="SettingsModal/ModalCard/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.788235, 0.713726, 0.6, 1)
 theme_override_fonts/font = ExtResource("4_font_ui")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "مسابقه آنلاین"
 horizontal_alignment = 1
+text_direction = 3
 
-[node name="BtnAudioToggle" type="Button" parent="SettingsDrawer/DrawerCard/VBox"]
-custom_minimum_size = Vector2(0, 50)
+[node name="BtnMute" type="Button" parent="SettingsModal/ModalCard/VBox"]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-text = "صدا و موسیقی: روشن"
+text = "صدا: روشن"
 
-[node name="Icon" type="TextureRect" parent="SettingsDrawer/DrawerCard/VBox/BtnAudioToggle"]
+[node name="Icon" type="TextureRect" parent="SettingsModal/ModalCard/VBox/BtnMute"]
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
 offset_left = 14.0
-offset_top = -14.0
-offset_right = 42.0
-offset_bottom = 14.0
+offset_top = -13.0
+offset_right = 40.0
+offset_bottom = 13.0
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("12_icon_audio")
+texture = ExtResource("10_icon_sound")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BtnGameInfo" type="Button" parent="SettingsDrawer/DrawerCard/VBox"]
-custom_minimum_size = Vector2(0, 50)
+[node name="BtnRules" type="Button" parent="SettingsModal/ModalCard/VBox"]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-text = "راهنمای قوانین بازی"
+text = "قوانین بازی"
 
-[node name="Icon" type="TextureRect" parent="SettingsDrawer/DrawerCard/VBox/BtnGameInfo"]
+[node name="Icon" type="TextureRect" parent="SettingsModal/ModalCard/VBox/BtnRules"]
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
 offset_left = 14.0
-offset_top = -14.0
-offset_right = 42.0
-offset_bottom = 14.0
+offset_top = -13.0
+offset_right = 40.0
+offset_bottom = 13.0
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("13_icon_info")
+texture = ExtResource("11_icon_info")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BtnSurrender" type="Button" parent="SettingsDrawer/DrawerCard/VBox"]
-custom_minimum_size = Vector2(0, 50)
+[node name="BtnLeaveOrSurrender" type="Button" parent="SettingsModal/ModalCard/VBox"]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-text = "واگذاری مسابقه"
+text = "تسلیم شدن"
 
-[node name="Icon" type="TextureRect" parent="SettingsDrawer/DrawerCard/VBox/BtnSurrender"]
+[node name="Icon" type="TextureRect" parent="SettingsModal/ModalCard/VBox/BtnLeaveOrSurrender"]
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
 offset_left = 14.0
-offset_top = -14.0
-offset_right = 42.0
-offset_bottom = 14.0
+offset_top = -13.0
+offset_right = 40.0
+offset_bottom = 13.0
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("14_icon_surrender")
+texture = ExtResource("12_icon_surrender")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BtnResume" type="Button" parent="SettingsDrawer/DrawerCard/VBox"]
+[node name="BtnResume" type="Button" parent="SettingsModal/ModalCard/VBox"]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-text = "ادامه بازی"
+text = "ادامه"
