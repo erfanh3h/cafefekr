@@ -94,12 +94,7 @@ func _update_tab_styles() -> void:
 		var b: Button = map_btns[k]
 		if not is_instance_valid(b):
 			continue
-		if current_tab == str(k):
-			KenneyUI.style_button(b, KenneyUI.COLOR_YELLOW)
-			b.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
-		else:
-			KenneyUI.style_button(b, KenneyUI.COLOR_GREY)
-			b.add_theme_color_override("font_color", Color(0.88, 0.83, 0.74, 0.90))
+		CafeSocialTheme.style_parlor_tab_button(b, current_tab == str(k), 20)
 
 
 func open() -> void:
