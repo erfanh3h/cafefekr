@@ -17,7 +17,7 @@ const CAM_ROT_MENU: Vector3 = Vector3(-22.0, 0.0, 0.0)
 const TARGET_FOCUS: Vector3 = Vector3(0.0, 0.08, 0.0)
 const LOUNGE_FOCUS: Vector3 = Vector3(0.0, 0.30, 0.0)
 
-const ZOOM_DEFAULT: float = 3.04
+const ZOOM_DEFAULT: float = 2.92
 const ZOOM_MIN: float = 1.95
 const ZOOM_MAX: float = 4.50
 
@@ -25,9 +25,16 @@ const YAW_DEFAULT: float = 0.0
 const YAW_MIN: float = -0.50
 const YAW_MAX: float = 0.50
 
-const PITCH_DEFAULT: float = -0.385 # -22.0 degrees (Signature Cafe Fekr Game Lounge angle)
-const PITCH_MIN: float = -1.160     # -66.5 degrees (Steep board inspection angle)
-const PITCH_MAX: float = -0.280     # -16.0 degrees (Panoramic lounge view)
+const PITCH_LOUNGE_REF: float = -0.34 # Wide establishing cafe lounge horizon angle (-19.5 deg)
+const PITCH_DEFAULT: float = -0.80    # -45.8 degrees (Real playable tabletop game angle)
+const PITCH_MIN: float = -1.160       # -66.5 degrees (Steep board inspection angle)
+const PITCH_MAX: float = -0.280       # -16.0 degrees (Panoramic lounge view)
+
+# Cinematic Match Opening Approach (starts wide in the warm cafe parlor, then glides slowly into the desk)
+const INTRO_START_DISTANCE: float = 3.85
+const INTRO_START_PITCH: float = -0.34
+const INTRO_START_YAW: float = 0.065
+const INTRO_GLIDE_DURATION: float = 1.85
 
 # Sensitivity
 const SENSITIVITY_YAW: float = 0.0035
@@ -41,11 +48,19 @@ var is_transitioning: bool = false
 var is_top_down_view: bool = false
 var _camera_tween: Tween = null
 var _is_mobile_gpu: bool = false
+var _intro_glide_pending: bool = false
+var _intro_glide_active: bool = false
+var _intro_glide_played_for_board: bool = false
+var _intro_glide_elapsed: float = 0.0
+var _intro_start_pitch: float = INTRO_START_PITCH
+var _intro_start_distance: float = INTRO_START_DISTANCE
+var _intro_start_yaw: float = INTRO_START_YAW
 
 func _kill_camera_tween() -> void:
 	if _camera_tween and is_instance_valid(_camera_tween):
 		_camera_tween.kill()
 		_camera_tween = null
+	_intro_glide_active = false
 
 # Top-Down 2D Camera Heights (Meters above board center in portrait)
 const TOP_DOWN_HEIGHT_DEFAULT: float = 3.45
@@ -177,6 +192,19 @@ func _process(delta: float) -> void:
 		if desired_chairs != _current_chair_count:
 			update_player_chairs(desired_chairs)
 
+	if _intro_glide_active:
+		_intro_glide_elapsed += delta
+
+	if _intro_glide_pending:
+		if not _is_start_overlay_covering_screen():
+			play_desk_approach_intro(INTRO_GLIDE_DURATION)
+		else:
+			_menu_sway_time += delta * 0.28
+			current_yaw = _intro_start_yaw + sin(_menu_sway_time) * 0.014
+			current_pitch = _intro_start_pitch + cos(_menu_sway_time * 0.7) * 0.006
+			current_distance = _intro_start_distance
+			_apply_orbit_transform()
+
 	if is_board_view_active and not is_transitioning:
 		if is_top_down_view:
 			if absf(top_down_current_height - top_down_target_height) > 0.001:
@@ -190,7 +218,7 @@ func _process(delta: float) -> void:
 				current_distance = lerpf(current_distance, target_distance, 10.0 * delta)
 				_apply_orbit_transform()
 
-	if not is_board_view_active and not is_transitioning:
+	if not is_board_view_active and not is_transitioning and not _intro_glide_pending:
 		_menu_sway_time += delta * 0.35
 		var sway_x: float = sin(_menu_sway_time) * 0.035
 		var sway_y: float = cos(_menu_sway_time * 0.65) * 0.018
@@ -221,7 +249,7 @@ func _process(delta: float) -> void:
 
 
 func _get_orbit_focus_for_pitch(pitch_rad: float) -> Vector3:
-	var t_lounge: float = clampf((pitch_rad - (-0.88)) / (PITCH_DEFAULT - (-0.88)), 0.0, 1.0)
+	var t_lounge: float = clampf((pitch_rad - (-0.82)) / (PITCH_LOUNGE_REF - (-0.82)), 0.0, 1.0)
 	return TARGET_FOCUS.lerp(LOUNGE_FOCUS, t_lounge)
 
 
@@ -313,8 +341,75 @@ func update_player_chairs(player_count: int = -1) -> void:
 
 # --- Camera Transitions ---
 
+func _is_start_overlay_covering_screen() -> bool:
+	var parent_node: Node = get_parent()
+	if not is_instance_valid(parent_node):
+		return false
+	var hud: Node = parent_node.get_node_or_null("CanvasLayer/BaseGameHUD")
+	if not is_instance_valid(hud):
+		return false
+	var overlay: Control = hud.get_node_or_null("StartGameOverlay") as Control
+	return is_instance_valid(overlay) and overlay.visible
+
+
+func _resolve_board_camera_framing() -> Dictionary:
+	var desired_pitch: float = PITCH_DEFAULT
+	var desired_dist: float = ZOOM_DEFAULT
+	var has_custom_dist: bool = false
+
+	if current_board_node and is_instance_valid(current_board_node):
+		if "camera_pitch" in current_board_node:
+			var bp: float = float(current_board_node.get("camera_pitch"))
+			if bp < -0.45:
+				desired_pitch = bp
+		if "camera_distance" in current_board_node:
+			var bd: float = float(current_board_node.get("camera_distance"))
+			if bd >= ZOOM_MIN and bd <= ZOOM_MAX:
+				desired_dist = bd
+				has_custom_dist = true
+
+	# Add subtle framing cushion on extra-tall portrait screens (e.g. 9:19.5) so wide boards never clip horizontally
+	var vp: Viewport = get_viewport()
+	if vp and not has_custom_dist:
+		var vp_size: Vector2 = vp.get_visible_rect().size
+		if vp_size.y > 0.0:
+			var aspect: float = vp_size.x / vp_size.y
+			if aspect < 0.54:
+				var extra_pull: float = clampf((0.54 - aspect) * 1.45, 0.0, 0.20)
+				desired_dist += extra_pull
+
+	desired_pitch = clampf(desired_pitch, _get_effective_pitch_min(), PITCH_MAX)
+	desired_dist = clampf(desired_dist, ZOOM_MIN, ZOOM_MAX)
+	return {"pitch": desired_pitch, "distance": desired_dist}
+
+
+func _apply_intro_glide_progress(t: float) -> void:
+	# Smooth curved spherical dolly-in & downward tilt from the wide cafe parlor toward the gaming desk
+	var s_pos: float = clampf(t, 0.0, 1.0)
+	# Pitch tilts gently a touch later so you first glide closer across the warm lounge before settling onto the board
+	var s_pitch: float = clampf(pow(s_pos, 0.92), 0.0, 1.0)
+	current_distance = lerpf(_intro_start_distance, target_distance, s_pos)
+	current_pitch = lerpf(_intro_start_pitch, target_pitch, s_pitch)
+	current_yaw = lerpf(_intro_start_yaw, target_yaw, s_pos)
+	_apply_orbit_transform()
+
+
+func _cancel_intro_glide_for_user_input() -> void:
+	if not _intro_glide_active:
+		return
+	_kill_camera_tween()
+	is_transitioning = false
+	is_board_view_active = true
+	_intro_glide_pending = false
+	target_distance = current_distance
+	target_pitch = current_pitch
+	target_yaw = current_yaw
+
+
 func transition_to_menu_view(duration: float = 1.0) -> void:
 	_kill_camera_tween()
+	_intro_glide_pending = false
+	_intro_glide_played_for_board = false
 	is_board_view_active = false
 	set_menu_showcase_visible(true)
 	is_transitioning = true
@@ -330,9 +425,8 @@ func transition_to_menu_view(duration: float = 1.0) -> void:
 	)
 
 
-func transition_to_board_view(duration: float = 1.1) -> void:
+func transition_to_board_view(duration: float = INTRO_GLIDE_DURATION) -> void:
 	_kill_camera_tween()
-	is_transitioning = true
 	set_menu_showcase_visible(false)
 	update_player_chairs(_get_active_player_count())
 
@@ -342,34 +436,61 @@ func transition_to_board_view(duration: float = 1.1) -> void:
 	top_down_current_height = TOP_DOWN_HEIGHT_DEFAULT
 	camera_mode_changed.emit(is_top_down_view)
 
-	var use_pitch: float = PITCH_DEFAULT
-	var use_dist: float = ZOOM_DEFAULT
-	target_distance = use_dist
-	current_distance = use_dist
+	var framing: Dictionary = _resolve_board_camera_framing()
+	target_pitch = float(framing["pitch"])
+	target_distance = float(framing["distance"])
 	target_yaw = YAW_DEFAULT
-	current_yaw = YAW_DEFAULT
-	target_pitch = use_pitch
-	current_pitch = use_pitch
 
-	var focus: Vector3 = _get_orbit_focus_for_pitch(target_pitch)
-	var cos_pitch: float = cos(-target_pitch)
-	var sin_pitch: float = sin(-target_pitch)
-	var end_pos: Vector3 = Vector3(
-		focus.x + target_distance * sin(target_yaw) * cos_pitch,
-		focus.y + target_distance * sin_pitch,
-		focus.z + target_distance * cos(target_yaw) * cos_pitch
-	)
-	var temp_cam: Camera3D = Camera3D.new()
-	add_child(temp_cam)
-	temp_cam.position = end_pos
-	temp_cam.look_at(focus, Vector3.UP)
-	var end_rot_deg: Vector3 = temp_cam.rotation_degrees
-	temp_cam.queue_free()
+	# Establish the wide warm Cafe Parlor pose first so the camera always smoothly closes in toward the desk
+	_intro_start_distance = maxf(INTRO_START_DISTANCE, target_distance + 0.72)
+	_intro_start_pitch = INTRO_START_PITCH
+	_intro_start_yaw = INTRO_START_YAW
+	current_distance = _intro_start_distance
+	current_pitch = _intro_start_pitch
+	current_yaw = _intro_start_yaw
+	_apply_orbit_transform()
 
-	_camera_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_camera_tween.tween_property(camera, "position", end_pos, duration)
-	_camera_tween.tween_property(camera, "rotation_degrees", end_rot_deg, duration)
-	_camera_tween.chain().tween_callback(func() -> void:
+	_intro_glide_played_for_board = false
+	if _is_start_overlay_covering_screen():
+		# Hold the atmospheric wide parlor shot behind the countdown dialog, then glide smoothly in when it reveals!
+		_intro_glide_pending = true
+		is_board_view_active = false
+		is_transitioning = false
+	else:
+		_intro_glide_pending = false
+		play_desk_approach_intro(duration)
+
+
+func play_desk_approach_intro(duration: float = INTRO_GLIDE_DURATION) -> void:
+	if _intro_glide_played_for_board and not _intro_glide_pending:
+		return
+	if is_top_down_view:
+		_intro_glide_pending = false
+		_intro_glide_played_for_board = true
+		return
+
+	_kill_camera_tween()
+	_intro_glide_pending = false
+	_intro_glide_played_for_board = true
+	_intro_glide_active = true
+	_intro_glide_elapsed = 0.0
+	is_transitioning = true
+	is_board_view_active = false
+
+	# Capture current wide parlor pose as start; destination stays live on target_* so board overrides land seamlessly
+	_intro_start_distance = current_distance
+	_intro_start_pitch = current_pitch
+	_intro_start_yaw = current_yaw
+
+	var glide_dur: float = clampf(duration, 0.9, 2.6)
+	_camera_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_camera_tween.tween_method(_apply_intro_glide_progress, 0.0, 1.0, glide_dur)
+	_camera_tween.tween_callback(func() -> void:
+		current_distance = target_distance
+		current_pitch = target_pitch
+		current_yaw = target_yaw
+		_apply_orbit_transform()
+		_intro_glide_active = false
 		is_board_view_active = true
 		is_transitioning = false
 		_camera_tween = null
@@ -400,12 +521,14 @@ func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 				g_type = str(gm.get("current_game_type"))
 		populate_props_for_game(g_type)
 		update_player_chairs(_get_active_player_count())
-		transition_to_board_view(1.0)
+		transition_to_board_view(INTRO_GLIDE_DURATION)
 	return current_board_node
 
 
 func clear_board() -> void:
 	_kill_camera_tween()
+	_intro_glide_pending = false
+	_intro_glide_played_for_board = false
 	_set_mobile_board_watcher_active(false)
 	if current_board_node and is_instance_valid(current_board_node):
 		if current_board_node.has_method("_disconnect_network_signals"):
@@ -424,6 +547,8 @@ func _exit_tree() -> void:
 
 func reset_table_state() -> void:
 	_kill_camera_tween()
+	_intro_glide_pending = false
+	_intro_glide_played_for_board = false
 	is_board_view_active = false
 	is_transitioning = false
 	is_top_down_view = false
@@ -451,6 +576,8 @@ func set_top_down_view(enabled: bool, duration: float = 0.55) -> void:
 	if is_top_down_view == enabled:
 		return
 	_kill_camera_tween()
+	_intro_glide_pending = false
+	_intro_glide_played_for_board = true
 	is_top_down_view = enabled
 	if not is_top_down_view:
 		_sync_2d_3d_visibility_and_lighting(false)
@@ -498,9 +625,10 @@ func set_top_down_view(enabled: bool, duration: float = 0.55) -> void:
 
 func reset_camera_orbit() -> void:
 	top_down_target_height = TOP_DOWN_HEIGHT_DEFAULT
+	var framing: Dictionary = _resolve_board_camera_framing()
 	target_yaw = YAW_DEFAULT
-	target_pitch = PITCH_DEFAULT
-	target_distance = ZOOM_DEFAULT
+	target_pitch = float(framing["pitch"])
+	target_distance = float(framing["distance"])
 
 
 func zoom_in(step: float = 0.28) -> void:
@@ -571,6 +699,24 @@ func _get_effective_pitch_min() -> float:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _intro_glide_active and _intro_glide_elapsed >= 0.25:
+		if event is InputEventScreenDrag:
+			var sd: InputEventScreenDrag = event as InputEventScreenDrag
+			_cancel_intro_glide_for_user_input()
+			_active_touches[sd.index] = sd.position
+			if _active_touches.size() == 1:
+				_drag_start_pos = sd.position
+				_is_dragging = true
+		elif event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			var mm: InputEventMouseMotion = event as InputEventMouseMotion
+			_cancel_intro_glide_for_user_input()
+			_mouse_pressed = true
+			_mouse_start_pos = mm.position
+			_is_dragging = true
+		elif event is InputEventMouseButton:
+			var mb: InputEventMouseButton = event as InputEventMouseButton
+			if mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+				_cancel_intro_glide_for_user_input()
 	if not is_board_view_active or is_transitioning:
 		return
 	if _is_board_consuming_input():

@@ -2188,6 +2188,9 @@ func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
 	if intro_card:
 		intro_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if was_visible:
+		var table_node: Node = get_tree().get_first_node_in_group("cafe_table")
+		if is_instance_valid(table_node) and table_node.has_method("play_desk_approach_intro"):
+			table_node.call("play_desk_approach_intro")
 		ActionVFXManager.animate_dialog_close(intro_card, start_overlay, func():
 			if is_instance_valid(start_overlay):
 				start_overlay.visible = false
@@ -2197,6 +2200,9 @@ func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
 	else:
 		if is_instance_valid(start_overlay):
 			start_overlay.visible = false
+		var table_node2: Node = get_tree().get_first_node_in_group("cafe_table")
+		if is_instance_valid(table_node2) and table_node2.has_method("play_desk_approach_intro"):
+			table_node2.call("play_desk_approach_intro")
 		if emit_finished:
 			start_countdown_finished.emit()
 	if is_instance_valid(current_top_header) and current_top_header.has_method("set_profile_clicks_enabled"):
