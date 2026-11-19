@@ -117,38 +117,8 @@ func switch_subtab(tab_name: String) -> void:
 			_render_notifs()
 
 
-func _style_subnav_btn(btn: Button, is_act: bool) -> void:
-	btn.add_theme_font_override("font", _font_hekayat)
-	btn.add_theme_font_size_override("font_size", 18)
-	btn.clip_text = true
-	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	
-	var col_name = KenneyUI.COLOR_YELLOW if is_act else KenneyUI.COLOR_GREY
-	var st_norm: StyleBoxTexture = KenneyUI.get_button_style(col_name, "normal").duplicate()
-	st_norm.content_margin_left = 6.0
-	st_norm.content_margin_right = 6.0
-	st_norm.content_margin_top = 8.0
-	st_norm.content_margin_bottom = 8.0
-	btn.add_theme_stylebox_override("normal", st_norm)
-
-	var st_press: StyleBoxTexture = KenneyUI.get_button_style(col_name, "pressed").duplicate()
-	st_press.content_margin_left = 6.0
-	st_press.content_margin_right = 6.0
-	st_press.content_margin_top = 10.0
-	st_press.content_margin_bottom = 6.0
-	btn.add_theme_stylebox_override("pressed", st_press)
-
-	var st_hover: StyleBoxTexture = KenneyUI.get_button_style(col_name, "hover").duplicate()
-	st_hover.content_margin_left = 6.0
-	st_hover.content_margin_right = 6.0
-	st_hover.content_margin_top = 8.0
-	st_hover.content_margin_bottom = 8.0
-	btn.add_theme_stylebox_override("hover", st_hover)
-
-	if is_act:
-		btn.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
-	else:
-		btn.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+func _style_subnav_btn(btn: Button, is_act: bool, font_size: int = 18) -> void:
+	CafeSocialTheme.style_parlor_tab_button(btn, is_act, font_size)
 
 
 func show_toast(msg: String, col: Color = CafeSocialTheme.COL_EMERALD_TEXT) -> void:
@@ -202,10 +172,8 @@ func _render_profile() -> void:
 	btn_seg_matches.custom_minimum_size = Vector2(0, 52)
 	btn_seg_matches.focus_mode = Control.FOCUS_NONE
 	btn_seg_matches.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn_seg_matches.add_theme_font_override("font", _font_hekayat)
-	btn_seg_matches.add_theme_font_size_override("font_size", 22)
 	ActionVFXManager.apply_button_juice(btn_seg_matches, "tap_button")
-	_style_subnav_btn(btn_seg_matches, active_history_view == "matches")
+	_style_subnav_btn(btn_seg_matches, active_history_view == "matches", 21)
 	seg_box.add_child(btn_seg_matches)
 
 	var btn_seg_stats := Button.new()
@@ -214,10 +182,8 @@ func _render_profile() -> void:
 	btn_seg_stats.custom_minimum_size = Vector2(0, 52)
 	btn_seg_stats.focus_mode = Control.FOCUS_NONE
 	btn_seg_stats.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn_seg_stats.add_theme_font_override("font", _font_hekayat)
-	btn_seg_stats.add_theme_font_size_override("font_size", 22)
 	ActionVFXManager.apply_button_juice(btn_seg_stats, "tap_button")
-	_style_subnav_btn(btn_seg_stats, active_history_view == "stats")
+	_style_subnav_btn(btn_seg_stats, active_history_view == "stats", 21)
 	seg_box.add_child(btn_seg_stats)
 
 	var dynamic_holder := VBoxContainer.new()
@@ -228,16 +194,16 @@ func _render_profile() -> void:
 	btn_seg_matches.pressed.connect(func():
 		AudioManager.sfx_tap()
 		active_history_view = "matches"
-		_style_subnav_btn(btn_seg_matches, true)
-		_style_subnav_btn(btn_seg_stats, false)
+		_style_subnav_btn(btn_seg_matches, true, 21)
+		_style_subnav_btn(btn_seg_stats, false, 21)
 		_render_recent_matches(dynamic_holder)
 	)
 
 	btn_seg_stats.pressed.connect(func():
 		AudioManager.sfx_tap()
 		active_history_view = "stats"
-		_style_subnav_btn(btn_seg_matches, false)
-		_style_subnav_btn(btn_seg_stats, true)
+		_style_subnav_btn(btn_seg_matches, false, 21)
+		_style_subnav_btn(btn_seg_stats, true, 21)
 		_render_stats_matrix(dynamic_holder)
 	)
 
@@ -287,30 +253,71 @@ func _populate_matches_cards(holder: VBoxContainer, list: Array, my_uid: String)
 	for game_data in list:
 		if typeof(game_data) != TYPE_DICTIONARY:
 			continue
-		var card = _create_authentic_summary_card(game_data, my_uid)
+		var card: Button = _create_authentic_summary_card(game_data, my_uid)
 		holder.add_child(card)
+
+	var matches_spacer := Control.new()
+	matches_spacer.custom_minimum_size = Vector2(0, 40)
+	matches_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(matches_spacer)
 
 
 func _is_single_round_match(game: Dictionary) -> bool:
-	var users_info = game.get("users_info", [])
+	var users_info: Variant = game.get("users_info", [])
 	if typeof(users_info) == TYPE_ARRAY and users_info.size() > 2:
 		return true
-	var rounds = game.get("rounds", [])
-	var gtypes = game.get("game_types", [])
+	var rounds: Variant = game.get("rounds", [])
+	var gtypes: Variant = game.get("game_types", [])
 	var r_cnt: int = rounds.size() if typeof(rounds) == TYPE_ARRAY else 0
 	var gt_cnt: int = gtypes.size() if typeof(gtypes) == TYPE_ARRAY else 0
 	return r_cnt <= 1 and gt_cnt <= 1
+
+
+func _extract_primary_game_type(game: Dictionary) -> String:
+	var direct: String = str(game.get("game_type", game.get("game", game.get("game_name", "")))).strip_edges()
+	if not direct.is_empty():
+		return direct
+	var gtypes: Variant = game.get("game_types", [])
+	if typeof(gtypes) == TYPE_ARRAY and not gtypes.is_empty():
+		var first_gt: String = str(gtypes[0]).strip_edges()
+		if not first_gt.is_empty():
+			return first_gt
+	var rounds: Variant = game.get("rounds", [])
+	if typeof(rounds) == TYPE_ARRAY and not rounds.is_empty() and typeof(rounds[0]) == TYPE_DICTIONARY:
+		var r0: Dictionary = rounds[0]
+		var r_gt: String = str(r0.get("game_type", r0.get("game", ""))).strip_edges()
+		if not r_gt.is_empty():
+			return r_gt
+	return ""
+
+
+func _make_match_card_style(bg: Color, border: Color, stripe_w: int, shadow_col: Color) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(2)
+	sb.border_width_right = stripe_w
+	sb.set_corner_radius_all(16)
+	sb.shadow_color = shadow_col
+	sb.shadow_size = 7
+	sb.shadow_offset = Vector2(0, 3)
+	sb.content_margin_left = 12.0
+	sb.content_margin_right = 14.0
+	sb.content_margin_top = 8.0
+	sb.content_margin_bottom = 8.0
+	return sb
 
 
 func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(0, 146)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-	var mode_raw = str(game.get("game_score_type", "Rank"))
-	var my_res = str(game.get("my_result", ""))
-	var winner_id = str(game.get("winner_id", game.get("winner", "")))
+	var mode_raw: String = str(game.get("game_score_type", "Rank"))
+	var my_res: String = str(game.get("my_result", ""))
+	var winner_id: String = str(game.get("winner_id", game.get("winner", "")))
 	if my_res.is_empty():
 		if winner_id == my_uid and not my_uid.is_empty():
 			my_res = "win"
@@ -321,24 +328,47 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		else:
 			my_res = "unfinished"
 
-	var style_frame := CafeSocialTheme.create_frame_style(true, 16.0, 12.0)
-	btn.add_theme_stylebox_override("normal", style_frame)
-	btn.add_theme_stylebox_override("hover", style_frame)
-	btn.add_theme_stylebox_override("pressed", style_frame)
-	btn.add_theme_stylebox_override("focus", style_frame)
+	# Outcome-tinted parlor wood card with emerald (Win) / crimson (Loss) accent bar
+	var card_bg: Color = Color(0.15, 0.11, 0.08, 0.95)
+	var card_border: Color = Color(0.56, 0.44, 0.30, 0.88)
+	var card_shadow: Color = Color(0.0, 0.0, 0.0, 0.36)
+	var stripe_w: int = 4
+	if my_res == "win":
+		card_bg = Color(0.09, 0.21, 0.13, 0.96)
+		card_border = Color(0.27, 0.78, 0.44, 0.94)
+		card_shadow = Color(0.08, 0.35, 0.16, 0.36)
+		stripe_w = 6
+	elif my_res == "lose":
+		card_bg = Color(0.24, 0.09, 0.10, 0.96)
+		card_border = Color(0.86, 0.34, 0.34, 0.92)
+		card_shadow = Color(0.38, 0.08, 0.08, 0.36)
+		stripe_w = 6
+	elif my_res == "draw":
+		card_bg = Color(0.21, 0.16, 0.07, 0.96)
+		card_border = Color(0.90, 0.72, 0.30, 0.90)
+		card_shadow = Color(0.30, 0.22, 0.06, 0.34)
+		stripe_w = 6
+
+	var st_norm: StyleBoxFlat = _make_match_card_style(card_bg, card_border, stripe_w, card_shadow)
+	var st_hover: StyleBoxFlat = _make_match_card_style(card_bg.lightened(0.07), card_border.lightened(0.12), stripe_w, card_shadow)
+	var st_press: StyleBoxFlat = _make_match_card_style(card_bg.darkened(0.07), card_border, stripe_w, card_shadow)
+	btn.add_theme_stylebox_override("normal", st_norm)
+	btn.add_theme_stylebox_override("hover", st_hover)
+	btn.add_theme_stylebox_override("pressed", st_press)
+	btn.add_theme_stylebox_override("focus", st_norm)
 
 	var pad := MarginContainer.new()
 	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pad.add_theme_constant_override("margin_left", 26)
-	pad.add_theme_constant_override("margin_right", 26)
+	pad.add_theme_constant_override("margin_left", 18)
+	pad.add_theme_constant_override("margin_right", 20)
 	pad.add_theme_constant_override("margin_top", 10)
-	pad.add_theme_constant_override("margin_bottom", 12)
+	pad.add_theme_constant_override("margin_bottom", 10)
 	btn.add_child(pad)
 
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 14)
+	row.add_theme_constant_override("separation", 12)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	pad.add_child(row)
 
@@ -426,30 +456,37 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	top_mid.add_theme_constant_override("separation", 10)
 	top_mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	var lbl_res := Label.new()
-	lbl_res.add_theme_font_override("font", _font_hekayat)
-	lbl_res.add_theme_font_size_override("font_size", 26)
+	var res_label_txt: String = "ناتمام"
+	var res_txt_col: Color = Color(0.80, 0.78, 0.75, 1.0)
+	var res_pill_bg: Color = Color(0.18, 0.14, 0.11, 0.94)
+	var res_pill_bdr: Color = Color(0.55, 0.45, 0.35, 0.85)
 	if my_res == "win":
-		lbl_res.text = "برد 🏆"
-		lbl_res.add_theme_color_override("font_color", Color(0.40, 0.95, 0.45))
+		res_label_txt = "برد 🏆"
+		res_txt_col = Color(0.55, 1.0, 0.66, 1.0)
+		res_pill_bg = Color(0.11, 0.34, 0.18, 0.96)
+		res_pill_bdr = Color(0.32, 0.86, 0.48, 0.96)
 	elif my_res == "lose":
-		lbl_res.text = "باخت"
-		lbl_res.add_theme_color_override("font_color", Color(1.0, 0.40, 0.40))
+		res_label_txt = "باخت"
+		res_txt_col = Color(1.0, 0.60, 0.60, 1.0)
+		res_pill_bg = Color(0.38, 0.10, 0.11, 0.96)
+		res_pill_bdr = Color(0.90, 0.38, 0.38, 0.94)
 	elif my_res == "draw":
-		lbl_res.text = "مساوی"
-		lbl_res.add_theme_color_override("font_color", Color(1.0, 0.90, 0.40))
-	else:
-		lbl_res.text = "ناتمام"
-		lbl_res.add_theme_color_override("font_color", Color(0.70, 0.70, 0.70))
-	top_mid.add_child(lbl_res)
+		res_label_txt = "مساوی"
+		res_txt_col = Color(1.0, 0.92, 0.50, 1.0)
+		res_pill_bg = Color(0.30, 0.22, 0.08, 0.96)
+		res_pill_bdr = Color(0.92, 0.75, 0.32, 0.94)
+
+	var res_pill: PanelContainer = CafeSocialTheme.make_badge_pill(res_label_txt, res_txt_col, res_pill_bg, res_pill_bdr, 23)
+	res_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_mid.add_child(res_pill)
 
 	# Integer score — omit for single-round & >2-player matches (only show برد/باخت)
-	var is_single_round := _is_single_round_match(game)
+	var is_single_round: bool = _is_single_round_match(game)
 	if not is_single_round:
-		var scores = game.get("user_scores", [])
-		var score_str = ""
+		var scores: Variant = game.get("user_scores", [])
+		var score_str: String = ""
 		if typeof(scores) == TYPE_ARRAY and scores.size() >= 2:
-			var p1_uid = str(game.get("user1_id", ""))
+			var p1_uid: String = str(game.get("user1_id", ""))
 			if p1_uid == my_uid:
 				score_str = "%s - %s" % [GameManager.to_fa_num(int(scores[0])), GameManager.to_fa_num(int(scores[1]))]
 			else:
@@ -463,31 +500,72 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 			lbl_score.add_theme_font_override("font", _font_hekayat)
 			lbl_score.add_theme_font_size_override("font_size", 24)
 			lbl_score.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
+			lbl_score.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			top_mid.add_child(lbl_score)
 	center_col.add_child(top_mid)
 
 	# Shamsi Full Date and Time
-	var s_date_raw = str(game.get("start_date", ""))
-	var shamsi_date = _format_shamsi_date_ltr(s_date_raw)
+	var s_date_raw: String = str(game.get("start_date", ""))
+	var shamsi_date: String = _format_shamsi_date_ltr(s_date_raw)
 	var lbl_date := Label.new()
 	lbl_date.text_direction = Control.TEXT_DIRECTION_RTL
 	lbl_date.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_date.text = shamsi_date
 	lbl_date.add_theme_font_override("font", _font_hekayat)
 	lbl_date.add_theme_font_size_override("font_size", 20)
-	lbl_date.add_theme_color_override("font_color", Color(0.88, 0.82, 0.72))
+	lbl_date.add_theme_color_override("font_color", Color(0.90, 0.84, 0.74))
+	lbl_date.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	center_col.add_child(lbl_date)
 	row.add_child(center_col)
 
-	# 3. RIGHT SIDE: Big Game Mode Badge Icon
-	var mode_badge := TextureRect.new()
-	mode_badge.custom_minimum_size = Vector2(72, 72)
-	mode_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	mode_badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	mode_badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	mode_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	mode_badge.texture = _get_mode_badge_texture(mode_raw)
-	row.add_child(mode_badge)
+	# 3. RIGHT SIDE: Game-Specific Framed Icon + Game Name
+	var primary_gtype: String = _extract_primary_game_type(game)
+	var game_col := VBoxContainer.new()
+	game_col.custom_minimum_size = Vector2(88, 108)
+	game_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	game_col.add_theme_constant_override("separation", 4)
+	game_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var g_icon_frame := PanelContainer.new()
+	g_icon_frame.custom_minimum_size = Vector2(72, 72)
+	g_icon_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	g_icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var g_if_style := StyleBoxFlat.new()
+	g_if_style.bg_color = Color(0.09, 0.05, 0.03, 0.96)
+	g_if_style.border_color = card_border if (my_res == "win" or my_res == "lose") else CafeSocialTheme.COL_GOLD_ANTIQUE
+	g_if_style.set_border_width_all(2)
+	g_if_style.set_corner_radius_all(14)
+	g_if_style.content_margin_left = 4.0
+	g_if_style.content_margin_right = 4.0
+	g_if_style.content_margin_top = 4.0
+	g_if_style.content_margin_bottom = 4.0
+	g_icon_frame.add_theme_stylebox_override("panel", g_if_style)
+
+	var game_icon := TextureRect.new()
+	game_icon.custom_minimum_size = Vector2(62, 62)
+	game_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	game_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	game_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not primary_gtype.is_empty():
+		game_icon.texture = _get_game_icon_texture(primary_gtype)
+	else:
+		game_icon.texture = _get_mode_badge_texture(mode_raw)
+	g_icon_frame.add_child(game_icon)
+	game_col.add_child(g_icon_frame)
+
+	var lbl_game_tag := Label.new()
+	lbl_game_tag.text = _get_game_fa_name(primary_gtype) if not primary_gtype.is_empty() else _get_mode_fa_name(mode_raw)
+	lbl_game_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_game_tag.custom_minimum_size = Vector2(88, 0)
+	lbl_game_tag.clip_text = true
+	lbl_game_tag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	lbl_game_tag.add_theme_font_override("font", _font_hekayat)
+	lbl_game_tag.add_theme_font_size_override("font_size", 17)
+	lbl_game_tag.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	lbl_game_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	game_col.add_child(lbl_game_tag)
+
+	row.add_child(game_col)
 
 	btn.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -559,18 +637,75 @@ func _get_mode_badge_texture(mode_raw: String) -> Texture2D:
 	return preload("res://assets/images/badges/rank.png")
 
 
+func _normalize_game_icon_slug(g_type: String) -> String:
+	var norm: String = g_type.strip_edges().to_lower().replace("-", "").replace("_", "").replace(" ", "")
+	match norm:
+		"connect4", "connectfour", "دوزچهارتایی":
+			return "fourinrow"
+		"minesweeper", "مینیاب", "مینروب":
+			return "msweeper"
+		"memorynumbers", "کشفاعداد", "رازاعداد":
+			return "mnumbers"
+		"rps", "rockpaperscissors", "سنگکاغذقیچی":
+			return "rpc"
+		"dotsandboxes", "dotsboxes", "نقطهخط":
+			return "dotbox"
+		"riskstrike", "ریسک", "ریسکاسترایک":
+			return "risk"
+		"اونو":
+			return "uno"
+		"کودتا":
+			return "coup"
+		"پنتاگو":
+			return "pentago"
+		"شطرنج":
+			return "chess"
+		"تختهنرد":
+			return "backgammon"
+		"منچ":
+			return "ludo"
+		"مونوپولی", "منوپولی":
+			return "monopoly"
+		"دوز", "تیکتاکتو":
+			return "tictactoe"
+		"چکرز":
+			return "checkers"
+		"فکربکر":
+			return "fekrbekr"
+		"یاتزی":
+			return "yatzy"
+		"اتللو":
+			return "othello"
+		"آسیاب", "دوزنهتایی":
+			return "mill"
+		"یینش":
+			return "yinsh"
+		"کوریدور", "راهرو":
+			return "quoridor"
+		"نبردناوها", "نبردکشتی":
+			return "battleship"
+		"جعبهچهار", "چهارطرفه":
+			return "boxfour"
+		"سودوکو":
+			return "sudoku"
+		"کوییز":
+			return "quiz"
+		_:
+			return norm
+
+
 func _get_game_icon_texture(g_type: String) -> Texture2D:
-	var norm = g_type.strip_edges().to_lower().replace("-", "").replace("_", "")
-	var p_jpg = "res://assets/images/games/%s.jpg" % norm
+	var norm: String = _normalize_game_icon_slug(g_type)
+	var p_jpg: String = "res://assets/images/games/%s.jpg" % norm
 	if ResourceLoader.exists(p_jpg):
-		return load(p_jpg)
-	var p_png = "res://assets/images/games/%s.png" % norm
+		return load(p_jpg) as Texture2D
+	var p_png: String = "res://assets/images/games/%s.png" % norm
 	if ResourceLoader.exists(p_png):
-		return load(p_png)
-	var info = GameRegistry.get_game_info(g_type)
-	var reg_icon = str(info.get("icon", ""))
+		return load(p_png) as Texture2D
+	var info: Dictionary = GameRegistry.get_game_info(g_type)
+	var reg_icon: String = str(info.get("icon", ""))
 	if not reg_icon.is_empty() and ResourceLoader.exists(reg_icon):
-		return load(reg_icon)
+		return load(reg_icon) as Texture2D
 	return preload("res://assets/images/games/rpc.jpg")
 
 
@@ -1272,10 +1407,179 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 
 	GamesHistoryViewHelper.populate_games_history(holder, hist)
 
+	var stats_spacer := Control.new()
+	stats_spacer.custom_minimum_size = Vector2(0, 40)
+	stats_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(stats_spacer)
+
 
 # ==============================================================================
-# 2. COSMETICS / AVATAR GALLERY (4 Columns, Bigger Icons 170x170, Wide Spacing)
+# 2. COSMETICS / AVATAR & FRAME TILE HELPERS (Selection Glow, Tween, Checkmark & Lock)
 # ==============================================================================
+
+func _is_cosmetic_locked(kind: String, item_id: int) -> bool:
+	var keys: Array[String] = ["owned_avatars", "unlocked_avatars"] if kind == "avatar" else ["owned_frames", "unlocked_frames"]
+	for key in keys:
+		if GameManager.user_data.has(key) and typeof(GameManager.user_data[key]) == TYPE_ARRAY:
+			var owned: Array = GameManager.user_data[key]
+			if owned.is_empty():
+				return false
+			for entry in owned:
+				if int(entry) == item_id:
+					return false
+			return true
+	return false
+
+
+func _make_cosmetic_tile_style(is_selected: bool, is_locked: bool) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.set_corner_radius_all(16)
+	sb.content_margin_left = 5.0
+	sb.content_margin_right = 5.0
+	sb.content_margin_top = 5.0
+	sb.content_margin_bottom = 5.0
+	if is_locked:
+		sb.bg_color = Color(0.10, 0.06, 0.04, 0.85)
+		sb.border_color = Color(0.32, 0.22, 0.14, 0.65)
+		sb.set_border_width_all(1)
+	elif is_selected:
+		sb.bg_color = Color(0.36, 0.23, 0.08, 0.96)
+		sb.border_color = Color("#FFD86B")
+		sb.set_border_width_all(3)
+		sb.shadow_color = Color(1.0, 0.85, 0.42, 0.52)
+		sb.shadow_size = 10
+		sb.shadow_offset = Vector2(0, 2)
+	else:
+		sb.bg_color = Color(0.14, 0.08, 0.05, 0.92)
+		sb.border_color = Color(0.38, 0.25, 0.14, 0.85)
+		sb.set_border_width_all(1)
+	return sb
+
+
+func _create_cosmetic_tile(tex: Texture2D, is_selected: bool, is_locked: bool, on_tap: Callable) -> Dictionary:
+	var tile := PanelContainer.new()
+	tile.custom_minimum_size = Vector2(108, 108)
+	tile.pivot_offset = Vector2(54, 54)
+
+	var inner := Control.new()
+	inner.custom_minimum_size = Vector2(96, 96)
+	inner.mouse_filter = Control.MOUSE_FILTER_PASS
+	tile.add_child(inner)
+
+	var btn := TextureButton.new()
+	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn.ignore_texture_size = true
+	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn.texture_normal = tex
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_ARROW if is_locked else Control.CURSOR_POINTING_HAND
+	if not is_locked:
+		ActionVFXManager.apply_button_juice(btn, "tap_button")
+	btn.pressed.connect(on_tap)
+	inner.add_child(btn)
+
+	# Selected corner checkmark badge (top-right)
+	var check_badge := PanelContainer.new()
+	check_badge.custom_minimum_size = Vector2(26, 26)
+	check_badge.anchor_left = 1.0
+	check_badge.anchor_top = 0.0
+	check_badge.anchor_right = 1.0
+	check_badge.anchor_bottom = 0.0
+	check_badge.offset_left = -24.0
+	check_badge.offset_top = -2.0
+	check_badge.offset_right = 2.0
+	check_badge.offset_bottom = 24.0
+	check_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var chk_sb := StyleBoxFlat.new()
+	chk_sb.bg_color = Color("#1F7A3E")
+	chk_sb.border_color = Color("#FFD86B")
+	chk_sb.set_border_width_all(2)
+	chk_sb.set_corner_radius_all(13)
+	check_badge.add_theme_stylebox_override("panel", chk_sb)
+
+	var lbl_chk := Label.new()
+	lbl_chk.text = "✓"
+	lbl_chk.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_chk.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl_chk.add_theme_font_override("font", _font_vazir)
+	lbl_chk.add_theme_font_size_override("font_size", 14)
+	lbl_chk.add_theme_color_override("font_color", Color(1.0, 0.99, 0.94, 1.0))
+	lbl_chk.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	check_badge.add_child(lbl_chk)
+	inner.add_child(check_badge)
+
+	# Locked corner badge (top-left)
+	var lock_badge := PanelContainer.new()
+	lock_badge.custom_minimum_size = Vector2(28, 28)
+	lock_badge.anchor_left = 0.0
+	lock_badge.anchor_top = 0.0
+	lock_badge.anchor_right = 0.0
+	lock_badge.anchor_bottom = 0.0
+	lock_badge.offset_left = -2.0
+	lock_badge.offset_top = -2.0
+	lock_badge.offset_right = 26.0
+	lock_badge.offset_bottom = 26.0
+	lock_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var lck_sb := StyleBoxFlat.new()
+	lck_sb.bg_color = Color(0.11, 0.06, 0.03, 0.94)
+	lck_sb.border_color = Color("#A87C44")
+	lck_sb.set_border_width_all(1)
+	lck_sb.set_corner_radius_all(14)
+	lock_badge.add_theme_stylebox_override("panel", lck_sb)
+
+	var lbl_lck := Label.new()
+	lbl_lck.text = "🔒"
+	lbl_lck.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_lck.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl_lck.add_theme_font_size_override("font_size", 13)
+	lbl_lck.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lock_badge.add_child(lbl_lck)
+	inner.add_child(lock_badge)
+
+	var entry: Dictionary = {
+		"tile": tile,
+		"btn": btn,
+		"check": check_badge,
+		"lock": lock_badge,
+		"locked": is_locked
+	}
+	_apply_cosmetic_tile_state(entry, is_selected, false)
+	return entry
+
+
+func _apply_cosmetic_tile_state(entry: Dictionary, is_selected: bool, animate: bool = false) -> void:
+	var tile: PanelContainer = entry["tile"] as PanelContainer
+	var btn: TextureButton = entry["btn"] as TextureButton
+	var check_badge: PanelContainer = entry["check"] as PanelContainer
+	var lock_badge: PanelContainer = entry["lock"] as PanelContainer
+	var is_locked: bool = bool(entry["locked"])
+	if not is_instance_valid(tile):
+		return
+
+	var active: bool = is_selected and not is_locked
+	tile.add_theme_stylebox_override("panel", _make_cosmetic_tile_style(active, is_locked))
+	tile.z_index = 2 if active else 0
+	if is_instance_valid(check_badge):
+		check_badge.visible = active
+	if is_instance_valid(lock_badge):
+		lock_badge.visible = is_locked
+	if is_instance_valid(btn):
+		if is_locked:
+			btn.modulate = Color(0.75, 0.72, 0.68, 0.50)
+		elif active:
+			btn.modulate = Color(1.06, 1.04, 0.98, 1.0)
+		else:
+			btn.modulate = Color(0.95, 0.93, 0.90, 0.92)
+
+	var target_scale: Vector2 = Vector2(1.08, 1.08) if active else Vector2.ONE
+	if animate and tile.is_inside_tree():
+		var tw: Tween = tile.create_tween()
+		tw.set_trans(Tween.TRANS_BACK if active else Tween.TRANS_QUAD)
+		tw.set_ease(Tween.EASE_OUT)
+		tw.tween_property(tile, "scale", target_scale, 0.16)
+	else:
+		tile.scale = target_scale
+
 
 func _render_cosmetics() -> void:
 	for c in content_cosmetics.get_children():
@@ -1288,43 +1592,46 @@ func _render_cosmetics() -> void:
 	center_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content_cosmetics.add_child(center_wrap)
 
+	var grid_margin := MarginContainer.new()
+	grid_margin.add_theme_constant_override("margin_top", 8)
+	grid_margin.add_theme_constant_override("margin_bottom", 8)
+	center_wrap.add_child(grid_margin)
+
 	# 5 avatars per row, sized to fit comfortably within 720 screen
 	var grid := GridContainer.new()
 	grid.columns = 5
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 14)
-	center_wrap.add_child(grid)
+	grid_margin.add_child(grid)
 
-	var avatar_buttons: Array[TextureButton] = []
+	var avatar_entries: Array[Dictionary] = []
 
 	for i in range(72):
-		var path = "res://assets/icons/Avatars/%d.png" % i
+		var path: String = "res://assets/icons/Avatars/%d.png" % i
 		if not ResourceLoader.exists(path):
 			continue
+		var tex: Texture2D = load(path) as Texture2D
+		if tex == null:
+			continue
 
-		var p_btn := TextureButton.new()
-		p_btn.custom_minimum_size = Vector2(104, 104)
-		p_btn.ignore_texture_size = true
-		p_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-		p_btn.texture_normal = load(path)
-		p_btn.focus_mode = Control.FOCUS_NONE
-		p_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		ActionVFXManager.apply_button_juice(p_btn, "tap_button")
-
-		if i == _selected_avatar_id:
-			p_btn.modulate = Color(1.2, 1.1, 0.8, 1.0)
-
-		var current_i = i
-		p_btn.pressed.connect(func():
+		var current_i: int = i
+		var is_locked: bool = _is_cosmetic_locked("avatar", current_i)
+		var entry_ref: Array[Dictionary] = []
+		var on_tap := func():
+			if is_locked:
+				AudioManager.sfx_tap()
+				show_toast("این تصویر نمایه هنوز آزاد نشده است.", CafeSocialTheme.COL_GOLD_ANTIQUE)
+				return
 			AudioManager.sfx_tap()
 			_selected_avatar_id = current_i
-			for btn in avatar_buttons:
-				btn.modulate = Color(1.0, 1.0, 1.0, 0.85)
-			p_btn.modulate = Color(1.2, 1.1, 0.8, 1.0)
+			for other in avatar_entries:
+				_apply_cosmetic_tile_state(other, other == entry_ref[0], true)
 			show_toast("آواتار شماره %s برگزیده شد." % GameManager.to_fa_num(current_i + 1), CafeSocialTheme.COL_GOLD_BRIGHT)
-		)
-		avatar_buttons.append(p_btn)
-		grid.add_child(p_btn)
+
+		var entry: Dictionary = _create_cosmetic_tile(tex, current_i == _selected_avatar_id, is_locked, on_tap)
+		entry_ref.append(entry)
+		avatar_entries.append(entry)
+		grid.add_child(entry["tile"] as PanelContainer)
 
 	# Save button DOWN below the icons
 	var save_box := HBoxContainer.new()
@@ -1360,6 +1667,11 @@ func _render_cosmetics() -> void:
 	)
 	save_box.add_child(btn_save)
 
+	var av_spacer := Control.new()
+	av_spacer.custom_minimum_size = Vector2(0, 44)
+	av_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content_cosmetics.add_child(av_spacer)
+
 
 # ==============================================================================
 # 2.5. AVATAR FRAMES GALLERY ("قاب آواتار" - Clean Selection Like Change Avatar)
@@ -1371,49 +1683,47 @@ func _render_frames() -> void:
 
 	_selected_frame_id = GameManager.get_frame_id()
 
-	# Center wrapper for frames grid (simple selection matching change avatar part)
+	# Center wrapper for frames grid
 	var center_wrap := CenterContainer.new()
 	center_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content_frames.add_child(center_wrap)
+
+	var grid_margin := MarginContainer.new()
+	grid_margin.add_theme_constant_override("margin_top", 8)
+	grid_margin.add_theme_constant_override("margin_bottom", 8)
+	center_wrap.add_child(grid_margin)
 
 	var grid := GridContainer.new()
 	grid.columns = 5
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 14)
-	center_wrap.add_child(grid)
+	grid_margin.add_child(grid)
 
-	var frame_buttons: Array[TextureButton] = []
+	var frame_entries: Array[Dictionary] = []
 
 	for fid in range(1, 21):
 		var f_tex: Texture2D = CafeSocialTheme.get_frame_texture(fid)
 		if f_tex == null:
 			continue
 
-		var f_btn := TextureButton.new()
-		f_btn.custom_minimum_size = Vector2(104, 104)
-		f_btn.ignore_texture_size = true
-		f_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-		f_btn.texture_normal = f_tex
-		f_btn.focus_mode = Control.FOCUS_NONE
-		f_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		ActionVFXManager.apply_button_juice(f_btn, "tap_button")
-
-		if fid == _selected_frame_id:
-			f_btn.modulate = Color(1.25, 1.15, 0.82, 1.0)
-		else:
-			f_btn.modulate = Color(1.0, 1.0, 1.0, 0.85)
-
 		var cur_fid: int = fid
-		f_btn.pressed.connect(func():
+		var is_locked: bool = _is_cosmetic_locked("frame", cur_fid)
+		var entry_ref: Array[Dictionary] = []
+		var on_tap := func():
+			if is_locked:
+				AudioManager.sfx_tap()
+				show_toast("این قاب آواتار هنوز آزاد نشده است.", CafeSocialTheme.COL_GOLD_ANTIQUE)
+				return
 			AudioManager.sfx_tap()
 			_selected_frame_id = cur_fid
-			for btn in frame_buttons:
-				btn.modulate = Color(1.0, 1.0, 1.0, 0.85)
-			f_btn.modulate = Color(1.25, 1.15, 0.82, 1.0)
+			for other in frame_entries:
+				_apply_cosmetic_tile_state(other, other == entry_ref[0], true)
 			show_toast("قاب شماره %s برگزیده شد." % GameManager.to_fa_num(cur_fid), CafeSocialTheme.COL_GOLD_BRIGHT)
-		)
-		frame_buttons.append(f_btn)
-		grid.add_child(f_btn)
+
+		var entry: Dictionary = _create_cosmetic_tile(f_tex, cur_fid == _selected_frame_id, is_locked, on_tap)
+		entry_ref.append(entry)
+		frame_entries.append(entry)
+		grid.add_child(entry["tile"] as PanelContainer)
 
 	# Save Button Below Frames
 	var save_box := HBoxContainer.new()
@@ -1450,16 +1760,93 @@ func _render_frames() -> void:
 	)
 	save_box.add_child(btn_save)
 
+	var fr_spacer := Control.new()
+	fr_spacer.custom_minimum_size = Vector2(0, 44)
+	fr_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content_frames.add_child(fr_spacer)
+
 
 # ==============================================================================
-# 3. PRIVACY & SOUND/MUSIC SECTION (Bigger Switches, Functional Audio & Privacy)
+# 3. PRIVACY & SOUND/MUSIC SECTION (Parlor-Styled Sliders, Toggles & Aligned Rows)
 # ==============================================================================
+
+func _build_aligned_audio_row(
+	label_text: String,
+	initial_enabled: bool,
+	initial_volume_pct: float,
+	on_toggle: Callable,
+	on_volume_change: Callable
+) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 10)
+
+	# 1. [Toggle]
+	var chk := CheckButton.new()
+	chk.text = ""
+	chk.custom_minimum_size = Vector2(64, 42)
+	chk.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	chk.button_pressed = initial_enabled
+	CafeSocialTheme.style_parlor_check_button(chk)
+	row.add_child(chk)
+
+	# 2. [Fixed-Width Label] (Identical width across Music & SFX rows for crisp alignment)
+	var lbl_name := Label.new()
+	lbl_name.custom_minimum_size = Vector2(124, 0)
+	lbl_name.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	lbl_name.text = label_text
+	lbl_name.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
+	lbl_name.add_theme_font_size_override("font_size", 21)
+	lbl_name.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+	row.add_child(lbl_name)
+
+	# 3. [Parlor Slider]
+	var slider := HSlider.new()
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slider.custom_minimum_size = Vector2(0, 38)
+	slider.min_value = 0.0
+	slider.max_value = 100.0
+	slider.value = initial_volume_pct
+	slider.editable = initial_enabled
+	slider.modulate.a = 1.0 if initial_enabled else 0.50
+	CafeSocialTheme.style_parlor_slider(slider)
+	row.add_child(slider)
+
+	# 4. [Percentage]
+	var lbl_val := Label.new()
+	lbl_val.custom_minimum_size = Vector2(54, 0)
+	lbl_val.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	lbl_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
+	lbl_val.add_theme_font_size_override("font_size", 18)
+	lbl_val.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	lbl_val.text = "%s٪" % GameManager.to_fa_num(int(round(initial_volume_pct)))
+	lbl_val.modulate.a = 1.0 if initial_enabled else 0.55
+	row.add_child(lbl_val)
+
+	slider.value_changed.connect(func(v: float):
+		lbl_val.text = "%s٪" % GameManager.to_fa_num(int(round(v)))
+		on_volume_change.call(v)
+	)
+
+	chk.toggled.connect(func(p: bool):
+		slider.editable = p
+		slider.modulate.a = 1.0 if p else 0.50
+		lbl_val.modulate.a = 1.0 if p else 0.55
+		on_toggle.call(p)
+	)
+
+	return row
+
 
 func _render_privacy() -> void:
 	for c in content_privacy.get_children():
 		c.queue_free()
 
-	# --- 1. Sound & Music Settings Card (Moved to Privacy) ---
+	# --- 1. Sound & Music Settings Card ---
 	var audio_margin := MarginContainer.new()
 	audio_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	audio_margin.add_theme_constant_override("margin_left", 10)
@@ -1467,117 +1854,61 @@ func _render_privacy() -> void:
 	content_privacy.add_child(audio_margin)
 
 	var audio_card := PanelContainer.new()
-	audio_card.custom_minimum_size = Vector2(0, 190)
+	audio_card.custom_minimum_size = Vector2(0, 184)
 	audio_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 14.0))
+	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 16.0))
 	audio_margin.add_child(audio_card)
 
 	var a_vbox := VBoxContainer.new()
-	a_vbox.add_theme_constant_override("separation", 10)
+	a_vbox.add_theme_constant_override("separation", 14)
 	audio_card.add_child(a_vbox)
 
 	var a_title := Label.new()
 	a_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	a_title.add_theme_font_size_override("font_size", 26)
+	a_title.add_theme_font_size_override("font_size", 25)
 	a_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	a_title.text = "تنظیمات صدا و موسیقی کافه فکر"
 	a_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	a_vbox.add_child(a_title)
 
-	# Music row
-	var music_row := HBoxContainer.new()
-	music_row.add_theme_constant_override("separation", 12)
-	a_vbox.add_child(music_row)
+	# Music row: [Toggle] + [Label] + [Slider] + [Percentage]
+	a_vbox.add_child(_build_aligned_audio_row(
+		"موسیقی",
+		AudioManager.is_music_enabled,
+		AudioManager.music_volume * 100.0,
+		func(p: bool):
+			AudioManager.set_music_enabled(p)
+			if p and not AudioManager.music_player.playing:
+				AudioManager.play_theme_music(),
+		func(v: float):
+			AudioManager.set_music_volume(v / 100.0)
+	))
 
-	var chk_music := CheckButton.new()
-	chk_music.text = "موسیقی"
-	chk_music.custom_minimum_size = Vector2(80, 50)
-	chk_music.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	chk_music.add_theme_font_size_override("font_size", 22)
-	chk_music.button_pressed = AudioManager.is_music_enabled
-	chk_music.focus_mode = Control.FOCUS_NONE
-	music_row.add_child(chk_music)
+	# SFX row: [Toggle] + [Label] + [Slider] + [Percentage]
+	a_vbox.add_child(_build_aligned_audio_row(
+		"جلوه‌ها (SFX)",
+		AudioManager.is_sound_enabled,
+		AudioManager.sfx_volume * 100.0,
+		func(p: bool):
+			AudioManager.set_sound_enabled(p)
+			if p:
+				AudioManager.sfx_tap(),
+		func(v: float):
+			AudioManager.set_sfx_volume(v / 100.0)
+	))
 
-	var music_slider := HSlider.new()
-	music_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	music_slider.custom_minimum_size = Vector2(0, 44)
-	music_slider.min_value = 0.0
-	music_slider.max_value = 100.0
-	music_slider.value = AudioManager.music_volume * 100.0
-	music_row.add_child(music_slider)
-
-	var lbl_music_val := Label.new()
-	lbl_music_val.custom_minimum_size = Vector2(50, 0)
-	lbl_music_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	lbl_music_val.add_theme_font_size_override("font_size", 20)
-	lbl_music_val.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
-	lbl_music_val.text = "%s٪" % GameManager.to_fa_num(int(music_slider.value))
-	music_row.add_child(lbl_music_val)
-
-	music_slider.value_changed.connect(func(v: float):
-		lbl_music_val.text = "%s٪" % GameManager.to_fa_num(int(v))
-		AudioManager.set_music_volume(v / 100.0)
-	)
-
-	chk_music.toggled.connect(func(p: bool):
-		AudioManager.set_music_enabled(p)
-		if p and not AudioManager.music_player.playing:
-			AudioManager.play_theme_music()
-	)
-
-	# SFX row
-	var sfx_row := HBoxContainer.new()
-	sfx_row.add_theme_constant_override("separation", 12)
-	a_vbox.add_child(sfx_row)
-
-	var chk_sfx := CheckButton.new()
-	chk_sfx.text = "جلوه‌ها (SFX)"
-	chk_sfx.custom_minimum_size = Vector2(80, 50)
-	chk_sfx.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	chk_sfx.add_theme_font_size_override("font_size", 22)
-	chk_sfx.button_pressed = AudioManager.is_sound_enabled
-	chk_sfx.focus_mode = Control.FOCUS_NONE
-	sfx_row.add_child(chk_sfx)
-
-	var sfx_slider := HSlider.new()
-	sfx_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sfx_slider.custom_minimum_size = Vector2(0, 44)
-	sfx_slider.min_value = 0.0
-	sfx_slider.max_value = 100.0
-	sfx_slider.value = AudioManager.sfx_volume * 100.0
-	sfx_row.add_child(sfx_slider)
-
-	var lbl_sfx_val := Label.new()
-	lbl_sfx_val.custom_minimum_size = Vector2(50, 0)
-	lbl_sfx_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	lbl_sfx_val.add_theme_font_size_override("font_size", 20)
-	lbl_sfx_val.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
-	lbl_sfx_val.text = "%s٪" % GameManager.to_fa_num(int(sfx_slider.value))
-	sfx_row.add_child(lbl_sfx_val)
-
-	sfx_slider.value_changed.connect(func(v: float):
-		lbl_sfx_val.text = "%s٪" % GameManager.to_fa_num(int(v))
-		AudioManager.set_sfx_volume(v / 100.0)
-	)
-
-	chk_sfx.toggled.connect(func(p: bool):
-		AudioManager.set_sound_enabled(p)
-		if p:
-			AudioManager.sfx_tap()
-	)
-
-	# --- 2. Privacy Toggles with Balanced Mobile Sizing ---
+	# --- 2. Privacy Toggles with Parlor Styling & Mobile Sizing ---
 	var p_title := Label.new()
 	p_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	p_title.add_theme_font_size_override("font_size", 26)
+	p_title.add_theme_font_size_override("font_size", 25)
 	p_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	p_title.text = "حریم خصوصی و دسترسی‌ها"
 	p_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	content_privacy.add_child(p_title)
 
-	var current_priv: Dictionary = GameManager.user_data.get("privacy", {})
+	var current_priv: Dictionary = GameManager.user_data.get("privacy", {}) if typeof(GameManager.user_data.get("privacy")) == TYPE_DICTIONARY else {}
 
-	var items = [
+	var items: Array[Dictionary] = [
 		{
 			"key": "allow_friend_requests",
 			"label": "دریافت درخواست دوستی از سایر بازیکنان",
@@ -1613,7 +1944,7 @@ func _render_privacy() -> void:
 	var toggle_map: Dictionary = {}
 
 	for item in items:
-		var key: String = item["key"]
+		var key: String = str(item["key"])
 		var current_val: bool = bool(current_priv.get(key, item["default"]))
 
 		var item_margin := MarginContainer.new()
@@ -1628,14 +1959,17 @@ func _render_privacy() -> void:
 		item_margin.add_child(panel)
 
 		var h := HBoxContainer.new()
+		h.alignment = BoxContainer.ALIGNMENT_CENTER
 		h.add_theme_constant_override("separation", 12)
 		panel.add_child(h)
 
 		var toggle := CheckButton.new()
-		toggle.custom_minimum_size = Vector2(74, 52)
-		toggle.focus_mode = Control.FOCUS_NONE
-		toggle.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		toggle.text = ""
+		toggle.custom_minimum_size = Vector2(64, 42)
+		toggle.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		toggle.button_pressed = current_val
+		CafeSocialTheme.style_parlor_check_button(toggle)
+		toggle.toggled.connect(func(_p: bool): AudioManager.sfx_tap())
 		h.add_child(toggle)
 		toggle_map[key] = toggle
 
@@ -1647,18 +1981,20 @@ func _render_privacy() -> void:
 
 		var lbl_title := Label.new()
 		lbl_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-		lbl_title.add_theme_font_size_override("font_size", 23)
+		lbl_title.add_theme_font_size_override("font_size", 22)
 		lbl_title.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
-		lbl_title.text = item["label"]
+		lbl_title.text = str(item["label"])
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		lbl_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v_col.add_child(lbl_title)
 
 		var lbl_desc := Label.new()
 		lbl_desc.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		lbl_desc.add_theme_font_size_override("font_size", 18)
+		lbl_desc.add_theme_font_size_override("font_size", 17)
 		lbl_desc.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
-		lbl_desc.text = item["desc"]
+		lbl_desc.text = str(item["desc"])
 		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v_col.add_child(lbl_desc)
 
 		content_privacy.add_child(item_margin)
@@ -1682,7 +2018,9 @@ func _render_privacy() -> void:
 		btn_save_priv.disabled = true
 		var new_priv: Dictionary = {}
 		for k in toggle_map:
-			new_priv[k] = toggle_map[k].button_pressed
+			var cb_node: CheckButton = toggle_map[k] as CheckButton
+			if is_instance_valid(cb_node):
+				new_priv[k] = cb_node.button_pressed
 
 		NetworkManager.api.customize_my_profile({"privacy": new_priv}, func(ok: bool, _c: int, _data: Variant):
 			if is_instance_valid(btn_save_priv):
@@ -1696,6 +2034,12 @@ func _render_privacy() -> void:
 		)
 	)
 	save_priv_box.add_child(btn_save_priv)
+
+	# Bottom padding spacer so the save button / last toggle never clips behind the bottom nav bar
+	var bottom_spacer := Control.new()
+	bottom_spacer.custom_minimum_size = Vector2(0, 44)
+	bottom_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content_privacy.add_child(bottom_spacer)
 
 
 # ==============================================================================

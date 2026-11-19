@@ -13,6 +13,7 @@ signal change_username_requested()
 
 @onready var avatar_rect: TextureRect = $PanelFrame/ContentMargin/HBoxMain/AvatarFrame/AvatarBtn/AvatarTexture
 @onready var avatar_btn: TextureButton = $PanelFrame/ContentMargin/HBoxMain/AvatarFrame/AvatarBtn
+@onready var top_identity_row: HBoxContainer = $PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow
 @onready var lbl_username: Label = $PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow/Username
 @onready var btn_edit_username: Button = $PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow/BtnEditUsername
 @onready var btn_user_id: Button = $PanelFrame/ContentMargin/HBoxMain/UserCol/BottomIdRow/UserIdBtn
@@ -73,6 +74,9 @@ func _ready() -> void:
 	GameManager.user_logged_out.connect(func(): update_ui())
 	if GameManager.has_signal("user_data_updated"):
 		GameManager.user_data_updated.connect(func(_u): update_ui())
+
+	if is_instance_valid(top_identity_row):
+		top_identity_row.resized.connect(_sync_username_layout)
 
 	update_ui()
 
@@ -153,6 +157,31 @@ func update_ui() -> void:
 		if is_instance_valid(lbl_xp_value):
 			lbl_xp_value.text = "\u200E۰/۶۰\u200E"
 		CafeSocialTheme.apply_frame_to_container($PanelFrame/ContentMargin/HBoxMain/AvatarFrame, avatar_rect, 1)
+
+	call_deferred("_sync_username_layout")
+
+
+func _sync_username_layout() -> void:
+	if not is_instance_valid(lbl_username) or not is_instance_valid(top_identity_row):
+		return
+	var row_w: float = top_identity_row.size.x
+	var edit_w: float = 38.0
+	if is_instance_valid(btn_edit_username) and btn_edit_username.visible:
+		edit_w = maxf(btn_edit_username.custom_minimum_size.x, btn_edit_username.size.x) + 8.0
+	var max_lbl_w: float = maxf(48.0, row_w - edit_w)
+	var font: Font = lbl_username.get_theme_font("font")
+	var font_sz: int = lbl_username.get_theme_font_size("font_size")
+	var text_w: float = 0.0
+	if font != null:
+		text_w = font.get_string_size(lbl_username.text, HORIZONTAL_ALIGNMENT_RIGHT, -1, font_sz).x
+	if row_w > 0.0 and text_w > max_lbl_w:
+		lbl_username.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl_username.clip_text = true
+		lbl_username.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	else:
+		lbl_username.size_flags_horizontal = Control.SIZE_SHRINK_END
+		lbl_username.clip_text = false
+		lbl_username.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 
 static func _total_exp_to_level(level: int, _base: int = 20) -> int:
 	return GameManager.total_exp_to_level(level)

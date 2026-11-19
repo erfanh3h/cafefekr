@@ -50,7 +50,7 @@ func _build_ui() -> void:
 
 	# 2. Progress Bar (Emerald Green & Gold)
 	_progress_bar = ProgressBar.new()
-	_progress_bar.custom_minimum_size = Vector2(0, 16)
+	_progress_bar.custom_minimum_size = Vector2(0, 20)
 	_progress_bar.min_value = 0.0
 	_progress_bar.max_value = 100.0
 	_progress_bar.value = 0.0
@@ -60,7 +60,7 @@ func _build_ui() -> void:
 	bg_st.bg_color = Color(0.06, 0.04, 0.02, 0.95)
 	bg_st.border_color = Color(0.50, 0.38, 0.20, 0.80)
 	bg_st.set_border_width_all(1)
-	bg_st.set_corner_radius_all(8)
+	bg_st.set_corner_radius_all(10)
 	_progress_bar.add_theme_stylebox_override("background", bg_st)
 
 	var fill_st := StyleBoxFlat.new()
@@ -68,7 +68,7 @@ func _build_ui() -> void:
 	fill_st.border_color = CafeSocialTheme.COL_GOLD_BRIGHT
 	fill_st.border_width_top = 1
 	fill_st.border_width_bottom = 1
-	fill_st.set_corner_radius_all(7)
+	fill_st.set_corner_radius_all(9)
 	_progress_bar.add_theme_stylebox_override("fill", fill_st)
 	vb.add_child(_progress_bar)
 
@@ -77,10 +77,14 @@ func _build_ui() -> void:
 	bot_row.add_theme_constant_override("separation", 8)
 	vb.add_child(bot_row)
 
-	_lbl_exp_remaining = CafeSocialTheme.make_body("", 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_LEFT, false)
+	_lbl_exp_remaining = CafeSocialTheme.make_body("", 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_LEFT, false)
 	bot_row.add_child(_lbl_exp_remaining)
 
-	_lbl_exp_ratio = CafeSocialTheme.make_body("۰ / ۰ XP", 16, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_exp_ratio = CafeSocialTheme.make_body("۰ / ۰ XP", 17, Color(1.0, 1.0, 1.0, 1.0), HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_exp_ratio.add_theme_color_override("font_outline_color", Color(0.05, 0.02, 0.01, 0.92))
+	_lbl_exp_ratio.add_theme_constant_override("outline_size", 2)
+	_lbl_exp_ratio.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
+	_lbl_exp_ratio.add_theme_constant_override("shadow_offset_y", 1)
 	_lbl_exp_ratio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bot_row.add_child(_lbl_exp_ratio)
 
