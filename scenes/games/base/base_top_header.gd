@@ -1,15 +1,23 @@
 class_name BaseTopHeader
 extends Control
 
-# Base Top Header for Cafe Fekr
-# Standard in-game top header for all board games.
-# Manages Player 1 and Player 2 profile cards, scores, turn highlights,
-# active turn banners, and real-time turn countdown timer with dynamic VFX.
-# Extended via inheritance for games requiring custom header widgets (e.g. ChessTopHeader).
+# Base Top Header for Cafe Fekr — Warm Classic Parlor Shared HUD
+# Compact (<12% viewport height) portrait header supporting 2-4 players with:
+# - Integrated bottom-edge card turn timer bars + compact seconds chips
+# - Lightweight fading TurnStatusToast (replacing heavy permanent turn banner)
+# - Top-corner Menu/Settings trigger + compact live spectator counter
+# - Strictly below-avatar emote & Kori pop-ups (zero overlap over names/counters)
+# - Full Persian RTL & English LTR BiDi support and mobile safe-area insets
 
 signal p1_profile_clicked()
 signal p2_profile_clicked()
 signal player_profile_clicked(player_index: int)
+signal menu_requested()
+signal header_height_changed(new_height: float)
+
+const CARD_HEIGHT_2P := 84.0
+const CARD_HEIGHT_MULTI := 68.0
+const MENU_COL_WIDTH := 46.0
 
 var _profile_clicks_enabled: bool = false
 
@@ -39,7 +47,7 @@ func _can_emit_profile_click() -> bool:
 @onready var p2_reaction_icon: TextureRect = $Margin/VBoxMain/PlayersRow/P2Card/ReactionBubble/BubbleFrame/Icon
 @onready var btn_p2_profile: Button = $Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer/BtnP2Profile
 
-# --- Match Details & Turn Timer Nodes ---
+# --- Legacy Match Details & Turn Timer Nodes (kept alive & hidden for 100% compatibility) ---
 @onready var match_details_box: PanelContainer = $Margin/VBoxMain/MatchDetailsBox
 @onready var lbl_round: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/RoundPanel/LblRound
 @onready var lbl_turn_banner: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/TurnBanner
@@ -51,7 +59,9 @@ var p3_card: PanelContainer = null
 var p4_card: PanelContainer = null
 var _players_row2: HBoxContainer = null
 var _p4_empty_spacer: Control = null
+var _row2_menu_spacer: Control = null
 var _extra_cards: Dictionary = {} # idx (3,4) -> Dictionary of child node refs
+var _card_decorations: Dictionary = {} # idx (1..4) -> {timer_bar, timer_fill, timer_chip, seat_dot, overlay}
 var _disabled_players: Dictionary = {} # idx (1..4) -> reason string
 var _player_names: Dictionary = {
 	1: "بازیکن ۱",
@@ -61,7 +71,7 @@ var _player_names: Dictionary = {
 }
 var _reaction_seqs: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
 
-# --- Theme Styles ---
+# --- Theme Styles (Warm Classic Parlor) ---
 var _style_p1_active: StyleBoxFlat
 var _style_p1_inactive: StyleBoxFlat
 var _style_p2_active: StyleBoxFlat
@@ -70,6 +80,7 @@ var _style_p3_active: StyleBoxFlat
 var _style_p3_inactive: StyleBoxFlat
 var _style_p4_active: StyleBoxFlat
 var _style_p4_inactive: StyleBoxFlat
+var _style_card_active_danger: StyleBoxFlat
 var _style_card_disabled: StyleBoxFlat
 var _timer_style_fill: StyleBoxFlat
 var _timer_style_bg: StyleBoxFlat
@@ -89,6 +100,8 @@ var _style_avatar_p3_active: StyleBoxFlat
 var _style_avatar_p3_idle: StyleBoxFlat
 var _style_avatar_p4_active: StyleBoxFlat
 var _style_avatar_p4_idle: StyleBoxFlat
+var _style_chip_normal: StyleBoxFlat
+var _style_chip_danger: StyleBoxFlat
 
 # --- Dynamic Game-UI Decorations ---
 var _p1_avatar_frame: Panel = null
@@ -98,13 +111,22 @@ var _p2_side_tag: Label = null
 var _p1_score_badge: PanelContainer = null
 var _p2_score_badge: PanelContainer = null
 var _timer_icon: TextureRect = null
-var _timer_vfx_overlay: TimerBarVFXOverlay = null
+var _timer_vfx_overlay: Control = null
 var _spectator_badge_panel: PanelContainer = null
 var _lbl_spectator_count: Label = null
+var _menu_col: VBoxContainer = null
+var _btn_hud_menu: Button = null
+var _turn_toast_panel: PanelContainer = null
+var _lbl_turn_toast: Label = null
+var _turn_toast_seq: int = 0
+var _turn_toast_tween: Tween = null
+var _turn_toast_persistent: bool = false
 
 # --- State ---
 var _current_turn: int = 1
 var _my_player_index: int = 1
+var _total_players: int = 2
+var _active_card_indices: Array[int] = [1]
 var _last_critical_sec: int = -1
 var _last_displayed_sec: int = -1
 var _last_p1_score: int = 0
@@ -112,210 +134,16 @@ var _last_p2_score: int = 0
 var _cached_timer_danger: int = -1
 var _cached_timer_box_style: StyleBox = null
 var _cached_timer_fill_color: Color = Color(-1.0, -1.0, -1.0, -1.0)
+var _safe_top_inset: int = 16
+var _p1_reaction_seq: int = 0
+var _p2_reaction_seq: int = 0
 
 static var _avatar_cache: Dictionary = {}
 static var _reaction_cache: Dictionary = {}
 static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
 static var _font_vazir: FontFile = preload("res://assets/fonts/Vazir.ttf")
 static var _tex_time_icon: Texture2D = preload("res://assets/icons/General/time.png")
-
-
-# ============================================================================
-# REAL-TIME PROCEDURAL VFX OVERLAY FOR TURN TIMER BAR
-# ============================================================================
-class TimerBarVFXOverlay extends Control:
-	var bar_ref: ProgressBar = null
-	var icon_ref: TextureRect = null
-	var is_danger: bool = false
-	var is_active: bool = true
-	var theme_color: Color = Color(0.25, 0.65, 1.0)
-	var time_accum: float = 0.0
-	var _sparks: Array = []
-	var _shockwaves: Array = []
-	var _spawn_accum: float = 0.0
-	var _redraw_accum: float = 0.0
-	var _is_mobile: bool = false
-	var _icon_settled: bool = true
-	var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
-
-	func _ready() -> void:
-		_rng.randomize()
-		_is_mobile = OS.has_feature("mobile") or (OS.get_name() in ["Android", "iOS"])
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		clip_contents = false
-
-	func trigger_danger_shockwave() -> void:
-		if not is_instance_valid(bar_ref):
-			return
-		var pct = clampf(bar_ref.value / 100.0, 0.0, 1.0)
-		var tip_x = clampf(size.x * pct, 8.0, maxf(8.0, size.x - 6.0))
-		_shockwaves.append({
-			"pos": Vector2(tip_x, size.y * 0.5),
-			"radius": 4.0,
-			"max_radius": 34.0,
-			"alpha": 1.0
-		})
-		for _i in range(8 if _is_mobile else 12):
-			_spawn_spark(tip_x, true, 1.45)
-
-	func _process(delta: float) -> void:
-		if not is_instance_valid(bar_ref) or not is_visible_in_tree():
-			return
-		time_accum += delta
-		var pct = clampf(bar_ref.value / 100.0, 0.0, 1.0)
-
-		# Ringing stopwatch icon animation when time is finishing
-		if is_instance_valid(icon_ref):
-			if is_danger and pct > 0.005:
-				_icon_settled = false
-				icon_ref.pivot_offset = icon_ref.size * 0.5
-				icon_ref.rotation_degrees = sin(time_accum * 38.0) * 16.0
-				var s_pulse = 1.0 + 0.14 * abs(sin(time_accum * 10.0))
-				icon_ref.scale = Vector2(s_pulse, s_pulse)
-				icon_ref.modulate = Color(1.0, 0.55 + 0.45 * abs(sin(time_accum * 12.0)), 0.45, 1.0)
-			elif not _icon_settled:
-				icon_ref.rotation_degrees = lerpf(icon_ref.rotation_degrees, 0.0, 12.0 * delta)
-				icon_ref.scale = icon_ref.scale.lerp(Vector2.ONE, 10.0 * delta)
-				icon_ref.modulate = Color.WHITE
-				if absf(icon_ref.rotation_degrees) < 0.05 and icon_ref.scale.distance_to(Vector2.ONE) < 0.005:
-					icon_ref.rotation_degrees = 0.0
-					icon_ref.scale = Vector2.ONE
-					_icon_settled = true
-
-		var tip_x = clampf(size.x * pct, 6.0, maxf(6.0, size.x - 4.0))
-		var max_sparks = 6 if _is_mobile else 16
-		if pct > 0.01 and size.x > 20.0 and _sparks.size() < max_sparks:
-			var spawn_rate = (9.0 if is_danger else 3.5) if _is_mobile else (12.0 if is_danger else 5.0)
-			_spawn_accum += delta * spawn_rate
-			while _spawn_accum >= 1.0:
-				_spawn_accum -= 1.0
-				if _sparks.size() < max_sparks:
-					_spawn_spark(tip_x, is_danger, 1.0)
-
-		for i in range(_sparks.size() - 1, -1, -1):
-			var sp = _sparks[i]
-			sp["age"] += delta
-			if sp["age"] >= sp["life"]:
-				_sparks.remove_at(i)
-				continue
-			sp["pos"] += sp["vel"] * delta
-			sp["vel"].y += sp["grav"] * delta
-			sp["pos"].y += sin(time_accum * 12.0 + sp["phase"]) * 8.0 * delta
-
-		for i in range(_shockwaves.size() - 1, -1, -1):
-			var sw = _shockwaves[i]
-			sw["radius"] += delta * 95.0
-			sw["alpha"] = clampf(1.0 - (sw["radius"] / sw["max_radius"]), 0.0, 1.0)
-			if sw["alpha"] <= 0.02:
-				_shockwaves.remove_at(i)
-
-		if pct > 0.01 or not _sparks.is_empty() or not _shockwaves.is_empty():
-			if _is_mobile:
-				_redraw_accum += delta
-				if _redraw_accum >= 0.033:
-					_redraw_accum = 0.0
-					queue_redraw()
-			else:
-				queue_redraw()
-
-	func _spawn_spark(tip_x: float, danger_mode: bool, speed_mult: float = 1.0) -> void:
-		if _sparks.size() > 60:
-			return
-		var cy = size.y * 0.5 + _rng.randf_range(-size.y * 0.32, size.y * 0.32)
-		var angle = _rng.randf_range(-PI * 0.88, PI * 0.88)
-		var spd = _rng.randf_range(26.0, 76.0) * (1.45 if danger_mode else 0.75) * speed_mult
-		var vx = -abs(cos(angle)) * spd + _rng.randf_range(-12.0, 22.0)
-		var vy = sin(angle) * spd * 0.85
-		var col: Color
-		if danger_mode:
-			var r_pick = _rng.randf()
-			if r_pick < 0.38:
-				col = Color(1.0, 0.96, 0.65, 1.0)
-			elif r_pick < 0.72:
-				col = Color(1.0, 0.55, 0.15, 1.0)
-			else:
-				col = Color(1.0, 0.22, 0.28, 1.0)
-		else:
-			col = theme_color.lightened(_rng.randf_range(0.32, 0.65))
-			col.a = 0.95
-
-		_sparks.append({
-			"pos": Vector2(tip_x, cy),
-			"vel": Vector2(vx, vy),
-			"grav": _rng.randf_range(-16.0, 24.0),
-			"size": _rng.randf_range(2.0, 4.2 if danger_mode else 3.2),
-			"age": 0.0,
-			"life": _rng.randf_range(0.26, 0.54 if danger_mode else 0.44),
-			"col": col,
-			"phase": _rng.randf_range(0.0, TAU)
-		})
-
-	func _draw() -> void:
-		if not is_instance_valid(bar_ref) or size.x <= 10.0:
-			return
-		var pct = clampf(bar_ref.value / 100.0, 0.0, 1.0)
-		if pct <= 0.005:
-			return
-
-		var pad: float = 2.0
-		var inner_w: float = maxf(0.0, (size.x - pad * 2.0) * pct)
-		var inner_h: float = maxf(4.0, size.y - pad * 2.0)
-		var tip_x: float = pad + inner_w
-		var center_y: float = size.y * 0.5
-
-		# 1. CRITICAL FINISHING TIME: Pulsing Outer Neon Danger Aura around the Bar
-		if is_danger:
-			var danger_pulse = 0.5 + 0.5 * sin(time_accum * 15.0)
-			var aura_col = Color(1.0, 0.22, 0.25, 0.32 + 0.45 * danger_pulse)
-			draw_rect(Rect2(Vector2(-2.0, -2.0), size + Vector2(4.0, 4.0)), aura_col, false, 2.2 + danger_pulse * 1.4)
-			var inner_flash = Color(1.0, 0.65, 0.20, 0.16 + 0.24 * danger_pulse)
-			draw_rect(Rect2(Vector2(pad, pad), Vector2(inner_w, inner_h)), inner_flash, true)
-
-		# 2. TRAVELING ENERGY SHIMMER WAVES along the filled bar
-		var wave_speed = 2.4 if is_danger else 0.95
-		var wave_count = 3
-		for w_idx in range(wave_count):
-			var phase = fmod(time_accum * wave_speed + float(w_idx) / float(wave_count), 1.0)
-			var wx = pad + inner_w * phase
-			var band_w = clampf(inner_w * 0.16, 12.0, 36.0)
-			if wx - band_w * 0.5 >= pad and wx + band_w * 0.5 <= tip_x:
-				var edge_fade = sin(phase * PI)
-				var shimmer_col = Color(1.0, 0.95, 0.78, (0.34 if is_danger else 0.20) * edge_fade)
-				draw_rect(Rect2(Vector2(wx - band_w * 0.5, pad + 1.0), Vector2(band_w, inner_h - 2.0)), shimmer_col, true)
-
-		# 3. EXPANDING SHOCKWAVE RINGS (Critical Countdown)
-		for sw in _shockwaves:
-			var sw_col = Color(1.0, 0.55, 0.22, sw["alpha"] * 0.85)
-			draw_arc(sw["pos"], sw["radius"], 0.0, TAU, 28, sw_col, 2.2)
-
-		# 4. FLOATING SPARKLES & FIERY EMBERS
-		for sp in _sparks:
-			var t_norm = clampf(1.0 - (sp["age"] / sp["life"]), 0.0, 1.0)
-			var c: Color = sp["col"]
-			c.a *= t_norm
-			var r: float = sp["size"] * (0.45 + 0.55 * t_norm)
-			var p: Vector2 = sp["pos"]
-			draw_circle(p, r * 1.8, Color(c.r, c.g, c.b, c.a * 0.32))
-			draw_circle(p, r, c)
-
-		# 5. GLOWING LEADING-EDGE COMET / FUSE HEAD AT TIP
-		var tip_pos = Vector2(tip_x, center_y)
-		var pulse = 1.0 + (0.28 if is_danger else 0.12) * sin(time_accum * (22.0 if is_danger else 8.0))
-		var base_glow_col = Color(1.0, 0.35, 0.18, 0.45) if is_danger else Color(theme_color.r, theme_color.g, theme_color.b, 0.38)
-		var mid_glow_col = Color(1.0, 0.75, 0.25, 0.82) if is_danger else theme_color.lightened(0.45)
-		mid_glow_col.a = 0.82
-
-		draw_circle(tip_pos, (12.0 if is_danger else 8.5) * pulse, base_glow_col)
-		draw_circle(tip_pos, (7.5 if is_danger else 5.5) * pulse, mid_glow_col)
-		draw_circle(tip_pos, (4.2 if is_danger else 3.2) * pulse, Color(1.0, 0.98, 0.88, 0.98))
-
-		var ray_len = (14.0 if is_danger else 8.0) * pulse
-		var rot = time_accum * (6.5 if is_danger else 2.2)
-		var flare_col = Color(1.0, 0.92, 0.65, 0.90 if is_danger else 0.60)
-		for k in range(4):
-			var a = rot + float(k) * PI * 0.5
-			var dir = Vector2(cos(a), sin(a))
-			draw_line(tip_pos - dir * ray_len, tip_pos + dir * ray_len, flare_col, 2.0 if is_danger else 1.4)
+static var _tex_menu_icon: Texture2D = preload("res://assets/icons/General/setting.png")
 
 
 static func _get_cached_avatar(av_id: int) -> Texture2D:
@@ -328,6 +156,7 @@ static func _get_cached_avatar(av_id: int) -> Texture2D:
 		return tex
 	return null
 
+
 static func _get_cached_reaction(r_id: int) -> Texture2D:
 	if _reaction_cache.has(r_id):
 		return _reaction_cache[r_id]
@@ -338,20 +167,15 @@ static func _get_cached_reaction(r_id: int) -> Texture2D:
 		return tex
 	return null
 
+
 static func _fa_digits(val: Variant) -> String:
-	var s = str(val)
-	var fa = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
-	var out = ""
-	for ch in s:
-		if ch >= "0" and ch <= "9":
-			out += fa[int(ch)]
-		else:
-			out += ch
-	return out
+	return HudTheme.fa_digits(val)
+
 
 func _ready() -> void:
 	_setup_styles()
 	_build_game_ui_enhancements()
+	_apply_safe_area_insets()
 	_update_score_badges_visibility()
 	_connect_buttons()
 	if not NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
@@ -364,9 +188,36 @@ func _ready() -> void:
 		p2_reaction_bubble.top_level = true
 		p2_reaction_bubble.visible = false
 
+
 func _exit_tree() -> void:
 	if is_instance_valid(NetworkManager) and NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
 		NetworkManager.spectator_count_updated.disconnect(_on_spectator_count_updated)
+
+
+func _apply_safe_area_insets() -> void:
+	var insets := HudTheme.get_safe_insets(get_viewport())
+	_safe_top_inset = int(insets.get("top", 16))
+	var margin := get_node_or_null("Margin") as MarginContainer
+	if is_instance_valid(margin):
+		margin.add_theme_constant_override("margin_top", _safe_top_inset)
+		margin.add_theme_constant_override("margin_left", int(insets.get("left", 10)))
+		margin.add_theme_constant_override("margin_right", int(insets.get("right", 10)))
+	_sync_header_height()
+
+
+func _sync_header_height() -> void:
+	var is_multi := _total_players > 2
+	var cards_h: float = (CARD_HEIGHT_MULTI * 2.0 + 6.0) if is_multi else CARD_HEIGHT_2P
+	# Keep total visible footprint compact (<12% of 1280px = 153px for 2P)
+	var desired_h: float = float(_safe_top_inset) + cards_h + 12.0
+	if not is_multi:
+		desired_h = clampf(desired_h, 112.0, 148.0)
+	else:
+		desired_h = clampf(desired_h, 164.0, 204.0)
+	offset_bottom = desired_h
+	_position_turn_toast()
+	header_height_changed.emit(desired_h)
+
 
 func _on_spectator_count_updated(game_id: String, count: int) -> void:
 	var active_gid: String = GameManager.active_game_id
@@ -375,12 +226,14 @@ func _on_spectator_count_updated(game_id: String, count: int) -> void:
 	if game_id.is_empty() or game_id == active_gid or game_id == spec_gid or game_id == open_gid:
 		update_spectator_count(count)
 
+
 func update_spectator_count(count: int) -> void:
 	var safe_count: int = maxi(0, count)
 	if is_instance_valid(_spectator_badge_panel):
 		_spectator_badge_panel.visible = (safe_count > 0)
 	if is_instance_valid(_lbl_spectator_count) and safe_count > 0:
 		_lbl_spectator_count.text = _fa_digits(safe_count)
+
 
 func _connect_buttons() -> void:
 	if is_instance_valid(btn_p1_profile):
@@ -396,215 +249,122 @@ func _connect_buttons() -> void:
 				p2_profile_clicked.emit()
 		)
 
+
 func _setup_styles() -> void:
-	# P1 Active (Royal Crimson-Gold Illuminated Plaque)
-	_style_p1_active = StyleBoxFlat.new()
-	_style_p1_active.bg_color = Color(0.28, 0.07, 0.09, 0.96)
-	_style_p1_active.border_color = Color(1.0, 0.42, 0.38, 1.0)
-	_style_p1_active.set_border_width_all(3)
-	_style_p1_active.border_width_bottom = 6
-	_style_p1_active.set_corner_radius_all(22)
-	_style_p1_active.shadow_color = Color(1.0, 0.18, 0.24, 0.55)
-	_style_p1_active.shadow_size = 18
-	_style_p1_active.shadow_offset = Vector2(0, 5)
-	_style_p1_active.content_margin_left = 14
-	_style_p1_active.content_margin_top = 10
-	_style_p1_active.content_margin_right = 14
-	_style_p1_active.content_margin_bottom = 12
+	var compact := _total_players > 2
+	_style_p1_active = HudTheme.make_player_card_style(true, false, compact)
+	_style_p1_inactive = HudTheme.make_player_card_style(false, false, compact)
+	_style_p2_active = HudTheme.make_player_card_style(true, false, compact)
+	_style_p2_inactive = HudTheme.make_player_card_style(false, false, compact)
+	_style_p3_active = HudTheme.make_player_card_style(true, false, true)
+	_style_p3_inactive = HudTheme.make_player_card_style(false, false, true)
+	_style_p4_active = HudTheme.make_player_card_style(true, false, true)
+	_style_p4_inactive = HudTheme.make_player_card_style(false, false, true)
+	_style_card_active_danger = HudTheme.make_player_card_style(true, true, compact)
+	_style_card_disabled = HudTheme.make_disabled_card_style(compact)
 
-	# P1 Inactive (Carved Dark Walnut Plaque with Warm Brass Trim)
-	_style_p1_inactive = StyleBoxFlat.new()
-	_style_p1_inactive.bg_color = Color(0.13, 0.08, 0.05, 0.90)
-	_style_p1_inactive.border_color = Color(0.54, 0.36, 0.20, 0.82)
-	_style_p1_inactive.set_border_width_all(2)
-	_style_p1_inactive.border_width_bottom = 5
-	_style_p1_inactive.set_corner_radius_all(22)
-	_style_p1_inactive.shadow_color = Color(0, 0, 0, 0.52)
-	_style_p1_inactive.shadow_size = 10
-	_style_p1_inactive.shadow_offset = Vector2(0, 4)
-	_style_p1_inactive.content_margin_left = 14
-	_style_p1_inactive.content_margin_top = 10
-	_style_p1_inactive.content_margin_right = 14
-	_style_p1_inactive.content_margin_bottom = 12
-
-	# P2 Active (Royal Sapphire-Gold Illuminated Plaque)
-	_style_p2_active = StyleBoxFlat.new()
-	_style_p2_active.bg_color = Color(0.07, 0.15, 0.30, 0.96)
-	_style_p2_active.border_color = Color(0.32, 0.76, 1.0, 1.0)
-	_style_p2_active.set_border_width_all(3)
-	_style_p2_active.border_width_bottom = 6
-	_style_p2_active.set_corner_radius_all(22)
-	_style_p2_active.shadow_color = Color(0.18, 0.56, 1.0, 0.55)
-	_style_p2_active.shadow_size = 18
-	_style_p2_active.shadow_offset = Vector2(0, 5)
-	_style_p2_active.content_margin_left = 14
-	_style_p2_active.content_margin_top = 10
-	_style_p2_active.content_margin_right = 14
-	_style_p2_active.content_margin_bottom = 12
-
-	# P2 Inactive
-	_style_p2_inactive = _style_p1_inactive.duplicate()
-
-	# Disabled / Eliminated / Left Player Card (muted charcoal grey)
-	_style_card_disabled = _style_p1_inactive.duplicate()
-	_style_card_disabled.bg_color = Color(0.10, 0.10, 0.11, 0.62)
-	_style_card_disabled.border_color = Color(0.36, 0.36, 0.38, 0.55)
-	_style_card_disabled.shadow_color = Color(0.0, 0.0, 0.0, 0.18)
-	_style_card_disabled.shadow_size = 4
-
-	# Avatar Medallion Rings (transparent: decorative avatar_frames handle framing)
+	# Transparent avatar medallion rings (decorative avatar frames handle framing)
 	_style_avatar_p1_active = StyleBoxFlat.new()
-	_style_avatar_p1_active.bg_color = Color(0.0, 0.0, 0.0, 0.0)
-	_style_avatar_p1_active.border_color = Color(0.0, 0.0, 0.0, 0.0)
+	_style_avatar_p1_active.bg_color = Color(0, 0, 0, 0)
+	_style_avatar_p1_active.border_color = Color(0, 0, 0, 0)
 	_style_avatar_p1_active.set_border_width_all(0)
-
 	_style_avatar_p1_idle = _style_avatar_p1_active.duplicate()
 	_style_avatar_p2_active = _style_avatar_p1_active.duplicate()
 	_style_avatar_p2_idle = _style_avatar_p1_active.duplicate()
+	_style_avatar_p3_active = _style_avatar_p1_active.duplicate()
+	_style_avatar_p3_idle = _style_avatar_p1_active.duplicate()
+	_style_avatar_p4_active = _style_avatar_p1_active.duplicate()
+	_style_avatar_p4_idle = _style_avatar_p1_active.duplicate()
 
-	# Match Details Box Styles (Compact Sleek Game Clock Console)
-	_style_match_box_normal = StyleBoxFlat.new()
-	_style_match_box_normal.bg_color = Color(0.11, 0.07, 0.04, 0.94)
-	_style_match_box_normal.border_color = Color(0.86, 0.66, 0.28, 0.90)
-	_style_match_box_normal.set_border_width_all(2)
-	_style_match_box_normal.border_width_bottom = 4
-	_style_match_box_normal.set_corner_radius_all(18)
-	_style_match_box_normal.shadow_color = Color(0, 0, 0, 0.55)
-	_style_match_box_normal.shadow_size = 10
-	_style_match_box_normal.shadow_offset = Vector2(0, 4)
-	_style_match_box_normal.content_margin_left = 14
-	_style_match_box_normal.content_margin_right = 14
-	_style_match_box_normal.content_margin_top = 6
-	_style_match_box_normal.content_margin_bottom = 8
-
+	# Hidden legacy MatchDetailsBox styles (Warm Classic Parlor fallback if a child ever shows it)
+	_style_match_box_normal = HudTheme.make_turn_toast_style()
 	_style_match_box_p1 = _style_match_box_normal.duplicate()
-	_style_match_box_p1.border_color = Color(0.95, 0.48, 0.36, 0.95)
-
 	_style_match_box_p2 = _style_match_box_normal.duplicate()
-	_style_match_box_p2.border_color = Color(0.42, 0.76, 0.98, 0.95)
-
+	_style_match_box_p3 = _style_match_box_normal.duplicate()
+	_style_match_box_p4 = _style_match_box_normal.duplicate()
 	_style_match_box_danger = _style_match_box_normal.duplicate()
-	_style_match_box_danger.border_color = Color(1.0, 0.28, 0.30, 1.0)
-	_style_match_box_danger.shadow_color = Color(1.0, 0.15, 0.20, 0.55)
+	_style_match_box_danger.border_color = HudTheme.COL_DANGER
 
-	# Timer Capsule Pill Styles (Compact)
-	_style_timer_pill_normal = StyleBoxFlat.new()
-	_style_timer_pill_normal.bg_color = Color(0.06, 0.04, 0.02, 0.92)
-	_style_timer_pill_normal.border_color = Color(0.82, 0.64, 0.26, 0.85)
-	_style_timer_pill_normal.set_border_width_all(1)
-	_style_timer_pill_normal.set_corner_radius_all(10)
-	_style_timer_pill_normal.content_margin_left = 10
-	_style_timer_pill_normal.content_margin_right = 10
-	_style_timer_pill_normal.content_margin_top = 1
-	_style_timer_pill_normal.content_margin_bottom = 1
+	_style_timer_pill_normal = HudTheme.make_timer_chip_style(false)
+	_style_timer_pill_danger = HudTheme.make_timer_chip_style(true)
+	_style_chip_normal = HudTheme.make_timer_chip_style(false)
+	_style_chip_danger = HudTheme.make_timer_chip_style(true)
 
-	_style_timer_pill_danger = _style_timer_pill_normal.duplicate()
-	_style_timer_pill_danger.bg_color = Color(0.28, 0.05, 0.06, 0.96)
-	_style_timer_pill_danger.border_color = Color(1.0, 0.32, 0.32, 1.0)
-	_style_timer_pill_danger.shadow_color = Color(1.0, 0.18, 0.20, 0.55)
-	_style_timer_pill_danger.shadow_size = 6
-
-	# Timer Bar Background & Glossy Fill (Compact Sleek Bar)
-	_timer_style_bg = StyleBoxFlat.new()
-	_timer_style_bg.bg_color = Color(0.05, 0.03, 0.02, 0.95)
-	_timer_style_bg.border_color = Color(0.66, 0.48, 0.24, 0.88)
-	_timer_style_bg.set_border_width_all(2)
-	_timer_style_bg.set_corner_radius_all(9)
-	_timer_style_bg.content_margin_left = 2
-	_timer_style_bg.content_margin_right = 2
-	_timer_style_bg.content_margin_top = 2
-	_timer_style_bg.content_margin_bottom = 2
-
-	_timer_style_fill = StyleBoxFlat.new()
-	_timer_style_fill.bg_color = Color(0.25, 0.65, 1.0)
-	_timer_style_fill.border_color = Color(1.0, 0.96, 0.82, 0.55)
-	_timer_style_fill.border_width_top = 2
-	_timer_style_fill.set_corner_radius_all(7)
+	_timer_style_bg = HudTheme.make_card_timer_track_style()
+	_timer_style_fill = HudTheme.make_card_timer_fill_style(HudTheme.COL_GOLD_ACTIVE)
 
 	if is_instance_valid(turn_timer_bar):
-		turn_timer_bar.custom_minimum_size = Vector2(0, 14)
+		turn_timer_bar.custom_minimum_size = Vector2(0, 6)
 		turn_timer_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		turn_timer_bar.add_theme_stylebox_override("background", _timer_style_bg)
 		turn_timer_bar.add_theme_stylebox_override("fill", _timer_style_fill)
 
 	if is_instance_valid(match_details_box):
-		match_details_box.custom_minimum_size = Vector2(0, 0)
-		match_details_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		match_details_box.visible = false
 		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
 
+
 func _build_game_ui_enhancements() -> void:
-	# 1. Enhance Player 1 & Player 2 Cards (Avatar Medallion, Side Tag, Role Pill, Score Shield)
+	# 1. Enhance Player 1 & Player 2 Cards + attach integrated bottom timer bars & seat dots
 	_enhance_player_card(1)
 	_enhance_player_card(2)
 
-	# 2. Restructure MatchDetailsBox into a Sleek, Compact 2-Row Console (without shrinking font sizes!)
-	var vbox_main = get_node_or_null("Margin/VBoxMain") as VBoxContainer
-	if vbox_main:
-		vbox_main.add_theme_constant_override("separation", 8)
+	# 2. Keep legacy MatchDetailsBox collapsed to save vertical screen space
+	if is_instance_valid(match_details_box):
+		match_details_box.visible = false
 
-	var match_vbox = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox") as VBoxContainer
-	var round_panel = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox/RoundPanel") as PanelContainer
-	var timer_row = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox/TimerRow") as HBoxContainer
+	# 3. Add Top-Corner Menu/Settings Button + Compact Spectator Counter to PlayersRow
+	var players_row := get_node_or_null("Margin/VBoxMain/PlayersRow") as HBoxContainer
+	if is_instance_valid(players_row) and not is_instance_valid(_menu_col):
+		_menu_col = VBoxContainer.new()
+		_menu_col.name = "MenuColumn"
+		_menu_col.custom_minimum_size = Vector2(MENU_COL_WIDTH, 0)
+		_menu_col.size_flags_horizontal = Control.SIZE_SHRINK_END
+		_menu_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_menu_col.alignment = BoxContainer.ALIGNMENT_CENTER
+		_menu_col.add_theme_constant_override("separation", 4)
+		_menu_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		players_row.add_child(_menu_col)
 
-	if round_panel:
-		var sb_round = StyleBoxFlat.new()
-		sb_round.bg_color = Color(0.22, 0.13, 0.05, 0.92)
-		sb_round.border_color = Color(0.95, 0.78, 0.30, 0.85)
-		sb_round.set_border_width_all(1)
-		sb_round.set_corner_radius_all(10)
-		sb_round.content_margin_left = 12
-		sb_round.content_margin_right = 12
-		sb_round.content_margin_top = 1
-		sb_round.content_margin_bottom = 1
-		round_panel.add_theme_stylebox_override("panel", sb_round)
+		_btn_hud_menu = Button.new()
+		_btn_hud_menu.name = "BtnHudMenu"
+		_btn_hud_menu.custom_minimum_size = Vector2(46, 46)
+		_btn_hud_menu.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		_btn_hud_menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_btn_hud_menu.tooltip_text = "منوی بازی و تنظیمات"
+		HudTheme.apply_floating_button_style(_btn_hud_menu, false)
+		_btn_hud_menu.pressed.connect(func():
+			AudioManager.play_sound("click")
+			menu_requested.emit()
+		)
+		_menu_col.add_child(_btn_hud_menu)
 
-	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lbl_turn_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_turn_banner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		var menu_icon := TextureRect.new()
+		menu_icon.name = "Icon"
+		menu_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+		menu_icon.offset_left = 10
+		menu_icon.offset_top = 10
+		menu_icon.offset_right = -10
+		menu_icon.offset_bottom = -10
+		menu_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		menu_icon.texture = _tex_menu_icon
+		menu_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		menu_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		menu_icon.modulate = HudTheme.COL_TEXT_GOLD
+		_btn_hud_menu.add_child(menu_icon)
 
-	if timer_row and is_instance_valid(lbl_timer):
-		timer_row.add_theme_constant_override("separation", 6)
-		if not is_instance_valid(_timer_icon):
-			_timer_icon = TextureRect.new()
-			_timer_icon.name = "TimerStopwatchIcon"
-			_timer_icon.texture = _tex_time_icon
-			_timer_icon.custom_minimum_size = Vector2(24, 24)
-			_timer_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			_timer_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			_timer_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			_timer_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			timer_row.add_child(_timer_icon)
-			timer_row.move_child(_timer_icon, 0)
-
-		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
-
-	# Combine [TimerRow] + [TurnBanner] + [SpectatorBadge] + [RoundPanel] into a single compact top row inside MatchDetailsBox/VBox!
-	if match_vbox and round_panel and timer_row and is_instance_valid(lbl_turn_banner):
-		match_vbox.add_theme_constant_override("separation", 5)
-		var top_compact_row = HBoxContainer.new()
-		top_compact_row.name = "TopCompactRow"
-		top_compact_row.alignment = BoxContainer.ALIGNMENT_CENTER
-		top_compact_row.add_theme_constant_override("separation", 10)
-		top_compact_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		match_vbox.add_child(top_compact_row)
-		match_vbox.move_child(top_compact_row, 0)
-
-		timer_row.reparent(top_compact_row)
-		lbl_turn_banner.reparent(top_compact_row)
-
-		# Live viewer count pill (directly to the left of the game name pill, hidden when 0)
+		# Compact live spectator badge directly under menu button (hidden when 0)
 		_spectator_badge_panel = PanelContainer.new()
 		_spectator_badge_panel.name = "SpectatorCountBadge"
 		_spectator_badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_spectator_badge_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_spectator_badge_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		var sb_spec := StyleBoxFlat.new()
-		sb_spec.bg_color = Color(0.08, 0.22, 0.14, 0.94)
-		sb_spec.border_color = Color(0.32, 0.85, 0.56, 0.88)
+		sb_spec.bg_color = Color(HudTheme.COL_EMERALD_BG.r, HudTheme.COL_EMERALD_BG.g, HudTheme.COL_EMERALD_BG.b, 0.94)
+		sb_spec.border_color = Color(HudTheme.COL_EMERALD.r, HudTheme.COL_EMERALD.g, HudTheme.COL_EMERALD.b, 0.85)
 		sb_spec.set_border_width_all(1)
-		sb_spec.set_corner_radius_all(10)
-		sb_spec.content_margin_left = 10
-		sb_spec.content_margin_right = 10
+		sb_spec.set_corner_radius_all(8)
+		sb_spec.content_margin_left = 5
+		sb_spec.content_margin_right = 5
 		sb_spec.content_margin_top = 1
 		sb_spec.content_margin_bottom = 1
 		_spectator_badge_panel.add_theme_stylebox_override("panel", sb_spec)
@@ -612,135 +372,429 @@ func _build_game_ui_enhancements() -> void:
 		var spec_hbox := HBoxContainer.new()
 		spec_hbox.layout_direction = Control.LAYOUT_DIRECTION_LTR
 		spec_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		spec_hbox.add_theme_constant_override("separation", 5)
+		spec_hbox.add_theme_constant_override("separation", 3)
 		spec_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_spectator_badge_panel.add_child(spec_hbox)
 
 		var spec_eye := Label.new()
 		spec_eye.text = "👁"
-		spec_eye.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		spec_eye.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		spec_eye.add_theme_font_size_override("font_size", 18)
-		spec_eye.add_theme_color_override("font_color", Color(0.74, 1.0, 0.84, 1.0))
+		spec_eye.add_theme_font_size_override("font_size", 11)
+		spec_eye.add_theme_color_override("font_color", Color(0.76, 0.98, 0.85))
 		spec_eye.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		spec_hbox.add_child(spec_eye)
 
 		_lbl_spectator_count = Label.new()
 		_lbl_spectator_count.name = "LblSpectatorCount"
-		_lbl_spectator_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_lbl_spectator_count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		if _font_hekayat:
-			_lbl_spectator_count.add_theme_font_override("font", _font_hekayat)
-		_lbl_spectator_count.add_theme_font_size_override("font_size", 20)
-		_lbl_spectator_count.add_theme_color_override("font_color", Color(0.74, 1.0, 0.84, 1.0))
+		if _font_vazir:
+			_lbl_spectator_count.add_theme_font_override("font", _font_vazir)
+		_lbl_spectator_count.add_theme_font_size_override("font_size", 12)
+		_lbl_spectator_count.add_theme_color_override("font_color", Color(0.76, 0.98, 0.85))
 		_lbl_spectator_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		spec_hbox.add_child(_lbl_spectator_count)
 		_spectator_badge_panel.visible = false
-		top_compact_row.add_child(_spectator_badge_panel)
+		_menu_col.add_child(_spectator_badge_panel)
 
-		round_panel.reparent(top_compact_row)
+	# 4. Build Lightweight Fading Floating TurnStatusToast
+	if not is_instance_valid(_turn_toast_panel):
+		_turn_toast_panel = PanelContainer.new()
+		_turn_toast_panel.name = "TurnStatusToast"
+		_turn_toast_panel.visible = false
+		_turn_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_turn_toast_panel.z_index = 18
+		_turn_toast_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		_turn_toast_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		_turn_toast_panel.grow_vertical = Control.GROW_DIRECTION_END
+		_turn_toast_panel.add_theme_stylebox_override("panel", HudTheme.make_turn_toast_style())
+		add_child(_turn_toast_panel)
 
-	# 3. Attach Real-Time Procedural VFX Overlay to TurnTimerBar
-	if is_instance_valid(turn_timer_bar) and not is_instance_valid(_timer_vfx_overlay):
-		_timer_vfx_overlay = TimerBarVFXOverlay.new()
-		_timer_vfx_overlay.name = "TimerBarVFXOverlay"
-		_timer_vfx_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-		_timer_vfx_overlay.bar_ref = turn_timer_bar
-		_timer_vfx_overlay.icon_ref = _timer_icon
-		turn_timer_bar.add_child(_timer_vfx_overlay)
+		_lbl_turn_toast = Label.new()
+		_lbl_turn_toast.name = "LblTurnToast"
+		_lbl_turn_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if _font_vazir:
+			_lbl_turn_toast.add_theme_font_override("font", _font_vazir)
+		_lbl_turn_toast.add_theme_font_size_override("font_size", 15)
+		_lbl_turn_toast.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
+		_lbl_turn_toast.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
+		_lbl_turn_toast.add_theme_constant_override("shadow_offset_y", 1)
+		_lbl_turn_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_lbl_turn_toast.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		HudTheme.configure_bidi_label(_lbl_turn_toast, false)
+		_turn_toast_panel.add_child(_lbl_turn_toast)
+		_position_turn_toast()
 
-func _enhance_player_card(player_idx: int) -> void:
-	var card = p1_card if player_idx == 1 else p2_card
-	var avatar_rect = p1_avatar if player_idx == 1 else p2_avatar
-	var name_lbl = p1_name if player_idx == 1 else p2_name
-	var role_lbl = p1_role_badge if player_idx == 1 else p2_role_badge
-	var score_lbl = p1_score_lbl if player_idx == 1 else p2_score_lbl
+
+func _position_turn_toast() -> void:
+	if not is_instance_valid(_turn_toast_panel):
+		return
+	var is_multi := _total_players > 2
+	var cards_h: float = (CARD_HEIGHT_MULTI * 2.0 + 6.0) if is_multi else CARD_HEIGHT_2P
+	var top_y: float = float(_safe_top_inset) + cards_h + 6.0
+	_turn_toast_panel.offset_top = top_y
+	_turn_toast_panel.offset_bottom = top_y + 34.0
+	_turn_toast_panel.offset_left = -160.0
+	_turn_toast_panel.offset_right = 160.0
+
+
+func show_turn_toast(msg: String, text_color: Color = HudTheme.COL_TEXT_GOLD, persistent: bool = false, duration: float = 1.9) -> void:
+	if is_instance_valid(lbl_turn_banner):
+		lbl_turn_banner.text = msg
+		lbl_turn_banner.add_theme_color_override("font_color", text_color)
+	if not is_instance_valid(_turn_toast_panel) or not is_instance_valid(_lbl_turn_toast):
+		return
+	var trimmed := msg.strip_edges()
+	if trimmed.is_empty():
+		hide_turn_toast()
+		return
+	_turn_toast_seq += 1
+	var my_seq := _turn_toast_seq
+	_turn_toast_persistent = persistent
+	_position_turn_toast()
+	_lbl_turn_toast.text = trimmed
+	_lbl_turn_toast.add_theme_color_override("font_color", text_color)
+
+	if is_instance_valid(_turn_toast_tween):
+		_turn_toast_tween.kill()
+		_turn_toast_tween = null
+
+	_turn_toast_panel.visible = true
+	_turn_toast_panel.modulate.a = 0.0
+	_turn_toast_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_turn_toast_tween.tween_property(_turn_toast_panel, "modulate:a", 0.94 if persistent else 1.0, 0.16)
+	if not persistent:
+		_turn_toast_tween.tween_interval(duration)
+		_turn_toast_tween.tween_property(_turn_toast_panel, "modulate:a", 0.0, 0.30)
+		_turn_toast_tween.tween_callback(func():
+			if _turn_toast_seq == my_seq and is_instance_valid(_turn_toast_panel) and not _turn_toast_persistent:
+				_turn_toast_panel.visible = false
+		)
+
+
+func hide_turn_toast() -> void:
+	_turn_toast_persistent = false
+	_turn_toast_seq += 1
+	if is_instance_valid(_turn_toast_tween):
+		_turn_toast_tween.kill()
+		_turn_toast_tween = null
+	if is_instance_valid(_turn_toast_panel):
+		_turn_toast_panel.visible = false
+
+
+func _attach_card_decorations(player_idx: int, card: PanelContainer, avatar_rect: TextureRect, name_lbl: Label, role_lbl: Label, score_lbl: Label) -> void:
 	if not is_instance_valid(card):
 		return
 
-	# A. Framed Avatar Medallion + Side Tag ("شما" / "حریف")
-	if is_instance_valid(avatar_rect):
-		var av_container = avatar_rect.get_parent() as Control
-		if av_container:
-			var av_frame = Panel.new()
-			av_frame.name = "AvatarMedallionFrame"
-			av_frame.visible = false
-			av_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
-			av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			av_frame.add_theme_stylebox_override("panel", _style_avatar_p1_idle if player_idx == 1 else _style_avatar_p2_idle)
-			av_container.add_child(av_frame)
-			av_container.move_child(av_frame, 0)
+	# Clean BiDi typography on name & role
+	if is_instance_valid(name_lbl):
+		if _font_vazir:
+			name_lbl.add_theme_font_override("font", _font_vazir)
+		name_lbl.add_theme_font_size_override("font_size", 16 if _total_players > 2 else 18)
+		name_lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
+		name_lbl.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
+		name_lbl.add_theme_constant_override("shadow_offset_y", 1)
+		name_lbl.remove_theme_constant_override("outline_size")
+		HudTheme.configure_bidi_label(name_lbl, true)
 
-			var existing_side_tag = av_container.get_node_or_null("PlayerSideTag")
+	if is_instance_valid(role_lbl):
+		if _font_vazir:
+			role_lbl.add_theme_font_override("font", _font_vazir)
+		role_lbl.add_theme_font_size_override("font_size", 12 if _total_players > 2 else 13)
+		role_lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_SAND)
+		role_lbl.remove_theme_constant_override("outline_size")
+		role_lbl.add_theme_stylebox_override("normal", HudTheme.make_status_pill_style(HudTheme.get_seat_accent(player_idx), 0.72))
+		HudTheme.configure_bidi_label(role_lbl, true)
+		role_lbl.visible = false
+
+	# Compact Score Badge
+	if is_instance_valid(score_lbl):
+		var score_badge := score_lbl.get_parent() as PanelContainer
+		if is_instance_valid(score_badge):
+			if player_idx == 1:
+				_p1_score_badge = score_badge
+			elif player_idx == 2:
+				_p2_score_badge = score_badge
+			score_badge.custom_minimum_size = Vector2(38, 36) if _total_players > 2 else Vector2(40, 40)
+			score_badge.add_theme_stylebox_override("panel", HudTheme.make_score_badge_style("normal"))
+			if _font_hekayat:
+				score_lbl.add_theme_font_override("font", _font_hekayat)
+			score_lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
+			score_lbl.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
+			score_lbl.add_theme_constant_override("shadow_offset_y", 1)
+			score_lbl.remove_theme_constant_override("outline_size")
+			score_lbl.add_theme_font_size_override("font_size", 24 if _total_players > 2 else 28)
+			if score_lbl.text.is_empty() or score_lbl.text == "0":
+				score_lbl.text = _fa_digits(0)
+
+	# Subtle 10x10 Seat Color Dot on Avatar Bottom Corner
+	var seat_dot: Panel = null
+	if is_instance_valid(avatar_rect):
+		var av_container := avatar_rect.get_parent() as Control
+		if is_instance_valid(av_container):
+			var existing_side_tag := av_container.get_node_or_null("PlayerSideTag")
 			if is_instance_valid(existing_side_tag):
 				existing_side_tag.queue_free()
 
-			var btn_prof = btn_p1_profile if player_idx == 1 else btn_p2_profile
-			if is_instance_valid(btn_prof):
-				btn_prof.focus_mode = Control.FOCUS_NONE
-				av_container.move_child(btn_prof, av_container.get_child_count() - 1)
-
+			var av_frame := av_container.get_node_or_null("AvatarMedallionFrame") as Panel
+			if not is_instance_valid(av_frame):
+				av_frame = Panel.new()
+				av_frame.name = "AvatarMedallionFrame"
+				av_frame.visible = false
+				av_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+				av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				av_container.add_child(av_frame)
+				av_container.move_child(av_frame, 0)
 			if player_idx == 1:
 				_p1_avatar_frame = av_frame
-				_p1_side_tag = null
-			else:
+			elif player_idx == 2:
 				_p2_avatar_frame = av_frame
-				_p2_side_tag = null
 
-	# B. Crisp Game Typography & Role Pill Styling
-	if is_instance_valid(name_lbl):
-		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
-		name_lbl.add_theme_color_override("font_outline_color", Color(0.10, 0.05, 0.02, 0.95))
-		name_lbl.add_theme_constant_override("outline_size", 3)
-		name_lbl.clip_text = true
+			seat_dot = av_container.get_node_or_null("SeatAccentDot") as Panel
+			if not is_instance_valid(seat_dot):
+				seat_dot = Panel.new()
+				seat_dot.name = "SeatAccentDot"
+				seat_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				seat_dot.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+				seat_dot.offset_left = -12
+				seat_dot.offset_top = -12
+				seat_dot.offset_right = -1
+				seat_dot.offset_bottom = -1
+				av_container.add_child(seat_dot)
+			var sb_dot := StyleBoxFlat.new()
+			sb_dot.bg_color = HudTheme.get_seat_accent(player_idx)
+			sb_dot.border_color = HudTheme.COL_WALNUT_DEEP
+			sb_dot.set_border_width_all(2)
+			sb_dot.set_corner_radius_all(6)
+			seat_dot.add_theme_stylebox_override("panel", sb_dot)
 
-	if is_instance_valid(role_lbl):
-		role_lbl.add_theme_font_size_override("font_size", 24)
-		role_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78))
-		role_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.04, 0.02, 0.9))
-		role_lbl.add_theme_constant_override("outline_size", 2)
-		var sb_role = StyleBoxFlat.new()
-		sb_role.bg_color = Color(0.38, 0.10, 0.12, 0.78) if player_idx == 1 else Color(0.10, 0.24, 0.44, 0.78)
-		sb_role.border_color = Color(0.95, 0.45, 0.45, 0.65) if player_idx == 1 else Color(0.40, 0.75, 1.0, 0.65)
-		sb_role.set_border_width_all(1)
-		sb_role.set_corner_radius_all(10)
-		sb_role.content_margin_left = 10
-		sb_role.content_margin_right = 10
-		sb_role.content_margin_top = 2
-		sb_role.content_margin_bottom = 2
-		role_lbl.add_theme_stylebox_override("normal", sb_role)
+			# Keep profile button topmost inside AvatarContainer
+			for ch in av_container.get_children():
+				if ch is Button:
+					(ch as Button).focus_mode = Control.FOCUS_NONE
+					av_container.move_child(ch, av_container.get_child_count() - 1)
+					break
 
-	# C. Clean Score Badge with Standard Normal Font (`Vazir.ttf` + clean digits)
-	if is_instance_valid(score_lbl):
-		var score_badge = score_lbl.get_parent() as PanelContainer
-		if score_badge:
-			if player_idx == 1:
-				_p1_score_badge = score_badge
-			else:
-				_p2_score_badge = score_badge
-			score_badge.custom_minimum_size = Vector2(46, 46)
-			var sb_score = StyleBoxFlat.new()
-			sb_score.bg_color = Color(0.09, 0.05, 0.03, 0.92)
-			sb_score.border_color = Color(0.94, 0.76, 0.28, 0.90)
-			sb_score.set_border_width_all(2)
-			sb_score.border_width_bottom = 3
-			sb_score.set_corner_radius_all(14)
-			sb_score.shadow_color = Color(0, 0, 0, 0.40)
-			sb_score.shadow_size = 4
-			sb_score.content_margin_left = 6
-			sb_score.content_margin_right = 6
-			sb_score.content_margin_top = 4
-			sb_score.content_margin_bottom = 4
-			score_badge.add_theme_stylebox_override("panel", sb_score)
+	# Integrated Bottom-Edge Progress Bar + Compact Seconds Chip (inside CardChromeOverlay)
+	var old_overlay := card.get_node_or_null("CardChromeOverlay")
+	if is_instance_valid(old_overlay):
+		old_overlay.queue_free()
 
-			# Use Persian game font (hekayat.ttf) + Persian numerals like on the FekrBekr board
-			if _font_hekayat:
-				score_lbl.add_theme_font_override("font", _font_hekayat)
-			score_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
-			score_lbl.add_theme_color_override("font_outline_color", Color(0.12, 0.06, 0.02, 0.95))
-			score_lbl.add_theme_constant_override("outline_size", 3)
-			score_lbl.add_theme_font_size_override("font_size", 42)
-			score_lbl.text = _fa_digits(0)
+	var overlay := Control.new()
+	overlay.name = "CardChromeOverlay"
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.clip_contents = false
+	card.add_child(overlay)
+
+	var card_timer_fill := HudTheme.make_card_timer_fill_style(HudTheme.COL_GOLD_ACTIVE)
+	var card_timer_bar := ProgressBar.new()
+	card_timer_bar.name = "CardTimerBar"
+	card_timer_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_timer_bar.show_percentage = false
+	card_timer_bar.min_value = 0.0
+	card_timer_bar.max_value = 100.0
+	card_timer_bar.value = 100.0
+	card_timer_bar.visible = false
+	card_timer_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	card_timer_bar.offset_left = -4.0
+	card_timer_bar.offset_right = 4.0
+	card_timer_bar.offset_top = 2.0
+	card_timer_bar.offset_bottom = 8.0
+	card_timer_bar.add_theme_stylebox_override("background", HudTheme.make_card_timer_track_style())
+	card_timer_bar.add_theme_stylebox_override("fill", card_timer_fill)
+	overlay.add_child(card_timer_bar)
+
+	var card_timer_chip := Label.new()
+	card_timer_chip.name = "CardTimerChip"
+	card_timer_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_timer_chip.visible = false
+	card_timer_chip.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	card_timer_chip.offset_left = -2.0
+	card_timer_chip.offset_top = -13.0
+	card_timer_chip.offset_right = 42.0
+	card_timer_chip.offset_bottom = 6.0
+	if _font_vazir:
+		card_timer_chip.add_theme_font_override("font", _font_vazir)
+	card_timer_chip.add_theme_font_size_override("font_size", 11)
+	card_timer_chip.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
+	card_timer_chip.add_theme_stylebox_override("normal", _style_chip_normal)
+	card_timer_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_timer_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	card_timer_chip.text = ""
+	overlay.add_child(card_timer_chip)
+
+	_card_decorations[player_idx] = {
+		"overlay": overlay,
+		"timer_bar": card_timer_bar,
+		"timer_fill": card_timer_fill,
+		"timer_chip": card_timer_chip,
+		"seat_dot": seat_dot,
+	}
+
+
+func _enhance_player_card(player_idx: int) -> void:
+	var card := p1_card if player_idx == 1 else p2_card
+	var avatar_rect := p1_avatar if player_idx == 1 else p2_avatar
+	var name_lbl := p1_name if player_idx == 1 else p2_name
+	var role_lbl := p1_role_badge if player_idx == 1 else p2_role_badge
+	var score_lbl := p1_score_lbl if player_idx == 1 else p2_score_lbl
+	_attach_card_decorations(player_idx, card, avatar_rect, name_lbl, role_lbl, score_lbl)
+
+
+func _register_extra_player_card(idx: int, card: PanelContainer) -> Dictionary:
+	if not is_instance_valid(card):
+		return {}
+	card.custom_minimum_size = Vector2(0, CARD_HEIGHT_MULTI)
+	var av_cont := card.get_node_or_null("HBox/AvatarContainer") as Control
+	var av := card.get_node_or_null("HBox/AvatarContainer/Avatar") as TextureRect
+	var nm := card.get_node_or_null("HBox/InfoBox/Name") as Label
+	var rl := card.get_node_or_null("HBox/InfoBox/RoleBadge") as Label
+	var sc := card.get_node_or_null("HBox/ScoreBadge/Score") as Label
+	var rb := card.get_node_or_null("ReactionBubble") as Control
+	var ri := card.get_node_or_null("ReactionBubble/BubbleFrame/Icon") as TextureRect
+	var btn: Button = null
+	if is_instance_valid(av_cont):
+		av_cont.custom_minimum_size = Vector2(46, 46)
+		if is_instance_valid(av):
+			av.custom_minimum_size = Vector2(46, 46)
+		for ch in av_cont.get_children():
+			if ch is Button:
+				btn = ch as Button
+				break
+	if is_instance_valid(btn):
+		for c in btn.pressed.get_connections():
+			btn.pressed.disconnect(c["callable"])
+		btn.focus_mode = Control.FOCUS_NONE
+		var captured_idx := idx
+		btn.pressed.connect(func():
+			if _can_emit_profile_click():
+				player_profile_clicked.emit(captured_idx)
+		)
+	if is_instance_valid(rb):
+		rb.top_level = true
+		rb.visible = false
+	_attach_card_decorations(idx, card, av, nm, rl, sc)
+	var av_frame := av_cont.get_node_or_null("AvatarMedallionFrame") as Panel if is_instance_valid(av_cont) else null
+	var bundle := {
+		"card": card,
+		"avatar": av,
+		"avatar_container": av_cont,
+		"av_frame": av_frame,
+		"name": nm,
+		"role": rl,
+		"score": sc,
+		"reaction_bubble": rb,
+		"reaction_icon": ri,
+	}
+	_extra_cards[idx] = bundle
+	if idx == 3:
+		p3_card = card
+	elif idx == 4:
+		p4_card = card
+	return bundle
+
+
+func _set_role_badge(player_idx: int, text: String, accent_col: Color = Color(-1, -1, -1)) -> void:
+	var b := _get_player_card_bundle(player_idx)
+	var rl: Label = b.get("role", null)
+	if not is_instance_valid(rl):
+		return
+	var trimmed := text.strip_edges()
+	rl.text = trimmed
+	rl.visible = not trimmed.is_empty()
+	if accent_col.r >= 0.0:
+		rl.add_theme_stylebox_override("normal", HudTheme.make_status_pill_style(accent_col, 0.78))
+
+
+func _set_active_cards_visual(active_indices: Array[int], is_danger: bool = false, pulse_active: bool = false) -> void:
+	_active_card_indices = active_indices.duplicate()
+	var compact := _total_players > 2
+	for idx in [1, 2, 3, 4]:
+		var b := _get_player_card_bundle(idx)
+		var card: PanelContainer = b.get("card", null)
+		if not is_instance_valid(card) or not card.visible:
+			continue
+		var dec: Dictionary = _card_decorations.get(idx, {})
+		var t_bar: ProgressBar = dec.get("timer_bar", null)
+		var t_chip: Label = dec.get("timer_chip", null)
+
+		if is_player_disabled(idx):
+			_apply_disabled_visual(idx)
+			if is_instance_valid(t_bar):
+				t_bar.visible = false
+			if is_instance_valid(t_chip):
+				t_chip.visible = false
+			continue
+
+		var is_act := active_indices.has(idx)
+		var style_act := _style_card_active_danger if is_danger else (_style_p1_active if not compact else _style_p3_active)
+		var style_idle := _style_p1_inactive if not compact else _style_p3_inactive
+		card.add_theme_stylebox_override("panel", style_act if is_act else style_idle)
+		card.modulate = Color.WHITE if is_act else Color(0.88, 0.85, 0.82, 0.94)
+		if is_act and pulse_active:
+			_animate_card_pulse(card)
+		elif not is_act:
+			card.scale = Vector2.ONE
+		if is_instance_valid(t_bar):
+			t_bar.visible = is_act
+		if is_instance_valid(t_chip):
+			t_chip.visible = is_act and not t_chip.text.is_empty()
+
+
+func _update_card_timer_visuals(remaining_sec: float, total_sec: float, active_indices: Array[int]) -> void:
+	var pct := clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
+	var is_danger := (remaining_sec <= 4.0 and remaining_sec > 0.0)
+	var sec_ceil := maxi(0, int(ceil(remaining_sec)))
+	var chip_str := "%s″" % _fa_digits(sec_ceil)
+	var fill_col := HudTheme.COL_DANGER if is_danger else HudTheme.COL_GOLD_ACTIVE
+
+	for idx in [1, 2, 3, 4]:
+		var dec: Dictionary = _card_decorations.get(idx, {})
+		if dec.is_empty():
+			continue
+		var is_act := active_indices.has(idx) and not is_player_disabled(idx)
+		var t_bar: ProgressBar = dec.get("timer_bar", null)
+		var t_fill: StyleBoxFlat = dec.get("timer_fill", null)
+		var t_chip: Label = dec.get("timer_chip", null)
+		if is_instance_valid(t_bar):
+			t_bar.visible = is_act
+			if is_act:
+				t_bar.value = pct
+		if is_instance_valid(t_fill) and is_act:
+			t_fill.bg_color = fill_col
+		if is_instance_valid(t_chip):
+			t_chip.visible = is_act
+			if is_act:
+				t_chip.text = chip_str
+				t_chip.add_theme_stylebox_override("normal", _style_chip_danger if is_danger else _style_chip_normal)
+				t_chip.add_theme_color_override("font_color", Color(1.0, 0.82, 0.82) if is_danger else HudTheme.COL_TEXT_GOLD)
+
+	var danger_i := 1 if is_danger else 0
+	if danger_i != _cached_timer_danger:
+		_cached_timer_danger = danger_i
+		_set_active_cards_visual(active_indices, is_danger, false)
+
+	if is_danger and sec_ceil != _last_critical_sec:
+		_last_critical_sec = sec_ceil
+		for idx in active_indices:
+			var dec: Dictionary = _card_decorations.get(idx, {})
+			var t_chip: Label = dec.get("timer_chip", null)
+			if is_instance_valid(t_chip):
+				_animate_chip_warning(t_chip)
+
+	# Keep hidden legacy timer nodes synchronized
+	if is_instance_valid(lbl_timer) and sec_ceil != _last_displayed_sec:
+		_last_displayed_sec = sec_ceil
+		lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % sec_ceil)
+	if is_instance_valid(turn_timer_bar):
+		turn_timer_bar.value = pct
+
+
+func _animate_chip_warning(chip: Control) -> void:
+	if not is_instance_valid(chip):
+		return
+	chip.pivot_offset = chip.size * 0.5
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(chip, "scale", Vector2(1.18, 1.18), 0.11)
+	tw.tween_property(chip, "scale", Vector2.ONE, 0.13)
+
 
 func _is_score_based_game() -> bool:
 	var g_type = GameManager.current_game_type
@@ -748,8 +802,9 @@ func _is_score_based_game() -> bool:
 		return false
 	return GameRegistry.has_round_score(g_type)
 
+
 func _update_score_badges_visibility() -> void:
-	var show_scores = _is_score_based_game()
+	var show_scores := _is_score_based_game()
 	if is_instance_valid(_p1_score_badge):
 		_p1_score_badge.visible = show_scores
 	elif is_instance_valid(p1_score_lbl) and p1_score_lbl.get_parent() is Control:
@@ -759,23 +814,16 @@ func _update_score_badges_visibility() -> void:
 	elif is_instance_valid(p2_score_lbl) and p2_score_lbl.get_parent() is Control:
 		(p2_score_lbl.get_parent() as Control).visible = show_scores
 
-func _get_role_badge_text(player_idx: int) -> String:
-	var g_type = GameManager.current_game_type
-	if g_type == GameTypes.FEKRBEKR:
-		return "🔐 کدشکن"
-	elif g_type == GameTypes.YATZY:
-		return "🎲 تاس‌انداز قرمز" if player_idx == 1 else "🎲 تاس‌انداز آبی"
-	elif g_type == GameTypes.CHESS:
-		return "🔴 ارتش قرمز" if player_idx == 1 else "🔵 ارتش آبی"
-	elif g_type == GameTypes.MSWEEPER:
-		return "💣 کاوشگر قرمز" if player_idx == 1 else "💣 کاوشگر آبی"
-	elif g_type == GameTypes.BOXFOUR:
-		return "💥 قلمرو قرمز" if player_idx == 1 else "💥 قلمرو آبی"
-	else:
-		return "🔴 مهره قرمز" if player_idx == 1 else "🔵 مهره آبی"
+
+func _get_role_badge_text(_player_idx: int) -> String:
+	# Clean compact cards: hide redundant static role labels ("مهره قرمز" / "بازیکن ۱").
+	# Games with live gameplay status (Monopoly props, Coup lives, UNO alert, etc.) set badges explicitly.
+	return ""
+
 
 func setup_match(game_name_fa: String, _mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
 	_last_displayed_sec = -1
+	_last_critical_sec = -1
 	_update_score_badges_visibility()
 	update_spectator_count(GameManager.spectator_count)
 	if is_instance_valid(lbl_round):
@@ -785,19 +833,13 @@ func setup_match(game_name_fa: String, _mode_title: String, round_num: int, max_
 			lbl_round.text = "راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
 	if is_instance_valid(lbl_turn_banner):
 		lbl_turn_banner.text = "بازی درحال آغاز است"
-		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	if is_instance_valid(lbl_timer):
 		lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % int(turn_time))
-		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
 	if is_instance_valid(turn_timer_bar):
 		turn_timer_bar.value = 100.0
-	if is_instance_valid(_timer_vfx_overlay):
-		_timer_vfx_overlay.is_danger = false
-		_timer_vfx_overlay.theme_color = Color(0.92, 0.72, 0.22) if GameManager.current_game_type == GameTypes.FEKRBEKR else Color(0.25, 0.65, 1.0)
-	if is_instance_valid(p1_role_badge):
-		p1_role_badge.text = _get_role_badge_text(1)
-	if is_instance_valid(p2_role_badge):
-		p2_role_badge.text = _get_role_badge_text(2)
+	_set_role_badge(1, _get_role_badge_text(1))
+	_set_role_badge(2, _get_role_badge_text(2))
+
 
 func set_round(round_num: int, max_rounds: int) -> void:
 	_update_score_badges_visibility()
@@ -809,15 +851,23 @@ func set_round(round_num: int, max_rounds: int) -> void:
 		else:
 			lbl_round.text = "راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
 
+
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_profile_clicks_enabled = false
 	_my_player_index = my_idx
 	_update_score_badges_visibility()
 
+	var p1_str := str(p1_data.get("name", p1_data.get("username", "میزبان")))
+	var p2_str := str(p2_data.get("name", p2_data.get("username", "مهمان")))
+	_player_names[1] = p1_str
+	_player_names[2] = p2_str
+
 	if is_instance_valid(p1_name):
-		p1_name.text = str(p1_data.get("name", p1_data.get("username", "میزبان")))
+		p1_name.text = p1_str
+		HudTheme.configure_bidi_label(p1_name, true)
 	if is_instance_valid(p2_name):
-		p2_name.text = str(p2_data.get("name", p2_data.get("username", "مهمان")))
+		p2_name.text = p2_str
+		HudTheme.configure_bidi_label(p2_name, true)
 
 	if is_instance_valid(p1_avatar):
 		var p1_img_id = int(p1_data.get("image", p1_data.get("user_image", 0)))
@@ -837,111 +887,59 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 		var p2_parent = p2_avatar.get_parent()
 		CafeSocialTheme.apply_frame_to_container(p2_parent if p2_parent is Control else p2_avatar, p2_avatar, p2_fid)
 
-	if is_instance_valid(p1_role_badge):
-		p1_role_badge.text = _get_role_badge_text(1)
-	if is_instance_valid(p2_role_badge):
-		p2_role_badge.text = _get_role_badge_text(2)
+	_set_role_badge(1, _get_role_badge_text(1))
+	_set_role_badge(2, _get_role_badge_text(2))
 
-	if is_instance_valid(_p1_side_tag):
-		_p1_side_tag.visible = false
-	if is_instance_valid(_p2_side_tag):
-		_p2_side_tag.visible = false
 
 func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 	_current_turn = turn
 	_my_player_index = my_idx
 	_last_critical_sec = -1
+	_cached_timer_danger = -1
 	_update_score_badges_visibility()
 
-	var is_p1 = (turn == 1)
-	var is_me = (turn == my_idx)
+	var is_simul := GameRegistry.is_simultaneous(GameManager.current_game_type)
+	var is_p1 := (turn == 1)
+	var is_me := (turn == my_idx)
 
-	# Update Player Cards & Avatar Medallions Active/Inactive Highlights
-	if is_instance_valid(p1_card):
-		p1_card.add_theme_stylebox_override("panel", _style_p1_active if is_p1 else _style_p1_inactive)
-		if is_instance_valid(_p1_avatar_frame):
-			_p1_avatar_frame.add_theme_stylebox_override("panel", _style_avatar_p1_active if is_p1 else _style_avatar_p1_idle)
-		if is_p1:
-			_animate_card_pulse(p1_card)
-		else:
-			p1_card.scale = Vector2.ONE
+	var active_list: Array[int] = [1, 2] if is_simul else [turn]
+	_set_active_cards_visual(active_list, false, not is_simul)
 
-	if is_instance_valid(p2_card):
-		p2_card.add_theme_stylebox_override("panel", _style_p2_active if not is_p1 else _style_p2_inactive)
-		if is_instance_valid(_p2_avatar_frame):
-			_p2_avatar_frame.add_theme_stylebox_override("panel", _style_avatar_p2_active if not is_p1 else _style_avatar_p2_idle)
-		if not is_p1:
-			_animate_card_pulse(p2_card)
-		else:
-			p2_card.scale = Vector2.ONE
-
-	var is_simul = GameRegistry.is_simultaneous(GameManager.current_game_type)
-	if is_simul:
-		if is_instance_valid(p1_card):
-			p1_card.add_theme_stylebox_override("panel", _style_p1_active)
-			p1_card.scale = Vector2.ONE
-		if is_instance_valid(p2_card):
-			p2_card.add_theme_stylebox_override("panel", _style_p2_active)
-			p2_card.scale = Vector2.ONE
-		if is_instance_valid(match_details_box):
-			match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
-	elif is_instance_valid(match_details_box):
-		match_details_box.add_theme_stylebox_override("panel", _style_match_box_p1 if is_p1 else _style_match_box_p2)
-
-	# Timer Fill Color & VFX Theme Color
-	var fill_col = Color(1.0, 0.85, 0.30) if is_simul else (Color(1.0, 0.32, 0.35) if is_p1 else Color(0.25, 0.65, 1.0))
-	if is_instance_valid(_timer_style_fill):
-		_timer_style_fill.bg_color = fill_col
-	if is_instance_valid(_timer_vfx_overlay):
-		_timer_vfx_overlay.is_danger = false
-		_timer_vfx_overlay.theme_color = fill_col
-
-	# Concise, high-impact Turn Banner Text
-	if is_instance_valid(lbl_turn_banner):
-		if not GameManager.is_game_active:
-			lbl_turn_banner.text = "بازی درحال آغاز است"
-			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-		elif is_simul:
-			var sim_text = "سنگ، کاغذ یا قیچی را انتخاب کنید!" if GameManager.current_game_type == GameTypes.RPC else ("خانه‌های امن را باز کنید و ۱۰ مین را پرچم بزنید!" if GameManager.current_game_type == GameTypes.MSWEEPER else "انتخاب خود را مشخص کنید")
-			lbl_turn_banner.text = sim_text
-			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
-		elif is_me:
-			var color_str = "قرمز" if is_p1 else "آبی"
-			var dot = "🔴" if is_p1 else "🔵"
-			lbl_turn_banner.text = "%s نوبت شماست (%s)" % [dot, color_str]
-			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45))
-		else:
-			var opp_name = p1_n if is_p1 else p2_n
-			lbl_turn_banner.text = "⏳ نوبت %s" % opp_name
-			lbl_turn_banner.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+	# Lightweight fading turn toast
+	if not GameManager.is_game_active:
+		hide_turn_toast()
+	elif is_simul:
+		var sim_text := "سنگ، کاغذ یا قیچی را انتخاب کنید!" if GameManager.current_game_type == GameTypes.RPC else ("خانه‌های امن را باز کنید!" if GameManager.current_game_type == GameTypes.MSWEEPER else "حرکت خود را انتخاب کنید")
+		show_turn_toast(sim_text, HudTheme.COL_TEXT_GOLD, false, 2.0)
+	elif is_me:
+		show_turn_toast("نوبت شماست", HudTheme.COL_TEXT_GOLD, false, 1.7)
+	else:
+		var opp_name := p1_n if is_p1 else p2_n
+		show_turn_toast("نوبت %s" % opp_name, HudTheme.COL_TEXT_SAND, false, 1.5)
 
 	_invalidate_timer_visual_cache()
 	_on_turn_changed(turn)
 
+
 func _animate_card_pulse(card: Control) -> void:
 	if not is_instance_valid(card):
 		return
-	card.pivot_offset = card.size / 2.0
-	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(card, "scale", Vector2(1.04, 1.04), 0.18)
-	tw.tween_property(card, "scale", Vector2(1.0, 1.0), 0.14)
+	card.pivot_offset = card.size * 0.5
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(card, "scale", Vector2(1.03, 1.03), 0.16)
+	tw.tween_property(card, "scale", Vector2.ONE, 0.14)
+
 
 func _invalidate_timer_visual_cache() -> void:
 	_cached_timer_danger = -1
 	_cached_timer_box_style = null
 	_cached_timer_fill_color = Color(-1.0, -1.0, -1.0, -1.0)
 
+
 func _apply_timer_visual_state(is_danger: bool, box_style: StyleBox, fill_col: Color) -> void:
 	var danger_i: int = 1 if is_danger else 0
 	if danger_i != _cached_timer_danger:
 		_cached_timer_danger = danger_i
-		if is_instance_valid(lbl_timer):
-			if is_danger:
-				lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
-				lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_danger)
-			else:
-				lbl_timer.add_theme_color_override("font_color", Color(1.0, 0.90, 0.35))
-				lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
 	if is_instance_valid(match_details_box) and box_style != null and box_style != _cached_timer_box_style:
 		_cached_timer_box_style = box_style
 		match_details_box.add_theme_stylebox_override("panel", box_style)
@@ -949,46 +947,12 @@ func _apply_timer_visual_state(is_danger: bool, box_style: StyleBox, fill_col: C
 		_cached_timer_fill_color = fill_col
 		_timer_style_fill.bg_color = fill_col
 
+
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	var is_danger = (remaining_sec <= 4.0 and remaining_sec > 0.0)
-	var fill_col = Color(1.0, 0.85, 0.30) if GameRegistry.is_simultaneous(GameManager.current_game_type) else (Color(1.0, 0.32, 0.35) if turn == 1 else Color(0.25, 0.65, 1.0))
-	if is_instance_valid(_timer_vfx_overlay):
-		_timer_vfx_overlay.is_danger = is_danger
-		_timer_vfx_overlay.theme_color = fill_col
+	var is_simul := GameRegistry.is_simultaneous(GameManager.current_game_type)
+	var active_list: Array[int] = [1, 2] if is_simul else [turn]
+	_update_card_timer_visuals(remaining_sec, total_sec, active_list)
 
-	if is_instance_valid(lbl_timer):
-		var sec_ceil = int(ceil(remaining_sec))
-		if sec_ceil != _last_displayed_sec:
-			_last_displayed_sec = sec_ceil
-			lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % sec_ceil)
-		if is_danger and sec_ceil != _last_critical_sec:
-			_last_critical_sec = sec_ceil
-			_animate_timer_warning()
-			if is_instance_valid(_timer_vfx_overlay):
-				_timer_vfx_overlay.trigger_danger_shockwave()
-
-	var box_style: StyleBox
-	if is_danger:
-		box_style = _style_match_box_danger
-	elif GameManager.current_game_type == GameTypes.FEKRBEKR:
-		box_style = _style_match_box_normal
-	else:
-		box_style = _style_match_box_p1 if turn == 1 else _style_match_box_p2
-
-	var target_fill: Color = Color(1.0, 0.24, 0.26) if is_danger else fill_col
-	_apply_timer_visual_state(is_danger, box_style, target_fill)
-
-	if is_instance_valid(turn_timer_bar):
-		var pct = clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
-		turn_timer_bar.value = pct
-
-func _animate_timer_warning() -> void:
-	if not is_instance_valid(lbl_timer):
-		return
-	lbl_timer.pivot_offset = lbl_timer.size / 2.0
-	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(lbl_timer, "scale", Vector2(1.18, 1.18), 0.12)
-	tw.tween_property(lbl_timer, "scale", Vector2(1.0, 1.0), 0.14)
 
 func update_scores(p1_score: int, p2_score: int) -> void:
 	_update_score_badges_visibility()
@@ -1003,13 +967,15 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 			_animate_score_bump(p2_score_lbl.get_parent() as Control)
 		_last_p2_score = p2_score
 
+
 func _animate_score_bump(badge: Control) -> void:
 	if not is_instance_valid(badge):
 		return
-	badge.pivot_offset = badge.size / 2.0
-	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(badge, "scale", Vector2(1.24, 1.24), 0.16)
-	tw.tween_property(badge, "scale", Vector2(1.0, 1.0), 0.18)
+	badge.pivot_offset = badge.size * 0.5
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(badge, "scale", Vector2(1.20, 1.20), 0.14)
+	tw.tween_property(badge, "scale", Vector2.ONE, 0.16)
+
 
 const KORIS: Array[String] = [
 	"شکست دیگه عادتت شده!",
@@ -1064,7 +1030,7 @@ const KORIS: Array[String] = [
 	"حرکت نهایی‌ات خیلی قوی بود!",
 	"با همین سرعت می‌بازی!",
 	"یه کلاس درس دیگه برات بود!",
-	"این راندو خیلی حرفه‌ای زدی!",
+	"این راندو خیلی حرفه‌ای بازی کردی!",
 	"هنوز مونده تا به من برسی!",
 	"فقط نگاه کن چطور برنده می‌شم!",
 	"خیلی خوب بود!",
@@ -1092,258 +1058,116 @@ const KORIS: Array[String] = [
 	"هنوز اول راحته!"
 ]
 
-class ReactionBubbleVFXOverlay extends Control:
-	var accent_color: Color = Color(1.0, 0.85, 0.32)
-	var show_border_aura: bool = true
-	var time_accum: float = 0.0
-	var _rings: Array = []
-	var _sparks: Array = []
-	var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
-
-	func _ready() -> void:
-		_rng.randomize()
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		clip_contents = false
-		set_process(false)
-
-	func trigger_burst(primary_col: Color, with_border_aura: bool = true) -> void:
-		accent_color = primary_col
-		show_border_aura = with_border_aura
-		set_process(true)
-		time_accum = 0.0
-		_rings.clear()
-		_sparks.clear()
-		var center = size * 0.5
-		if center == Vector2.ZERO:
-			center = Vector2(180.0, 58.0) if with_border_aura else Vector2(74.0, 74.0)
-		var max_r = maxf(center.x, center.y) * 1.45
-		_rings.append({"radius": max_r * 0.25, "max_radius": max_r, "alpha": 0.95, "width": 4.5, "color": Color(1.0, 0.92, 0.45)})
-		_rings.append({"radius": max_r * 0.12, "max_radius": max_r * 1.22, "alpha": 0.80, "width": 3.0, "color": accent_color})
-		for i in range(16):
-			var ang = (float(i) / 16.0) * TAU + _rng.randf_range(-0.18, 0.18)
-			var spd = _rng.randf_range(95.0, 210.0)
-			var col = Color(1.0, 0.92, 0.42) if (i % 2 == 0) else accent_color.lightened(0.28)
-			_sparks.append({
-				"pos": center + Vector2(cos(ang), sin(ang)) * _rng.randf_range(12.0, 36.0),
-				"vel": Vector2(cos(ang), sin(ang)) * spd,
-				"size": _rng.randf_range(3.5, 7.0),
-				"life": 0.0,
-				"max_life": _rng.randf_range(0.45, 0.85),
-				"color": col
-			})
-		queue_redraw()
-
-	func _process(delta: float) -> void:
-		if not is_visible_in_tree():
-			set_process(false)
-			return
-		time_accum += delta
-		for i in range(_rings.size() - 1, -1, -1):
-			var r = _rings[i]
-			r["radius"] = lerpf(float(r["radius"]), float(r["max_radius"]), clampf(delta * 7.5, 0.0, 1.0))
-			r["alpha"] = maxf(0.0, float(r["alpha"]) - delta * 2.1)
-			if float(r["alpha"]) <= 0.02:
-				_rings.remove_at(i)
-		for i in range(_sparks.size() - 1, -1, -1):
-			var s = _sparks[i]
-			s["life"] = float(s["life"]) + delta
-			if float(s["life"]) >= float(s["max_life"]):
-				_sparks.remove_at(i)
-				continue
-			s["pos"] = (s["pos"] as Vector2) + (s["vel"] as Vector2) * delta
-			s["vel"] = (s["vel"] as Vector2) * maxf(0.0, 1.0 - delta * 3.8)
-		# Spawn gentle ambient orbiting sparkles while visible
-		if _sparks.size() < 8 and _rng.randf() < delta * 9.0 and size.x > 20.0:
-			var edge_x = _rng.randf_range(6.0, size.x - 6.0)
-			var edge_y = 4.0 if _rng.randf() < 0.5 else (size.y - 4.0)
-			_sparks.append({
-				"pos": Vector2(edge_x, edge_y),
-				"vel": Vector2(_rng.randf_range(-18.0, 18.0), _rng.randf_range(-34.0, -12.0)),
-				"size": _rng.randf_range(2.8, 5.2),
-				"life": 0.0,
-				"max_life": _rng.randf_range(0.5, 0.9),
-				"color": Color(1.0, 0.92, 0.48) if _rng.randf() < 0.65 else accent_color.lightened(0.3)
-			})
-		queue_redraw()
-
-	func _draw() -> void:
-		var center = size * 0.5
-		# 1. Pulsing outer golden/accent aura border for Kori speech bubbles
-		if show_border_aura and size.x > 10.0 and size.y > 10.0:
-			var pulse = 0.5 + 0.5 * sin(time_accum * 6.5)
-			var glow_col = accent_color.lerp(Color(1.0, 0.88, 0.38), 0.55)
-			glow_col.a = lerpf(0.24, 0.56, pulse)
-			var rect_outer = Rect2(Vector2(-4.0, -4.0), size + Vector2(8.0, 8.0))
-			draw_rect(rect_outer, glow_col, false, 3.0)
-		# 2. Expanding shockwave rings
-		for r in _rings:
-			var c: Color = r["color"]
-			c.a = clampf(float(r["alpha"]), 0.0, 1.0)
-			draw_arc(center, float(r["radius"]), 0.0, TAU, 48, c, float(r["width"]), true)
-		# 3. Twinkling 4-point star sparks
-		for s in _sparks:
-			var t = clampf(float(s["life"]) / maxf(0.01, float(s["max_life"])), 0.0, 1.0)
-			var alpha = sin(t * PI)
-			var sc: Color = s["color"]
-			sc.a = alpha
-			var p: Vector2 = s["pos"]
-			var rad: float = float(s["size"]) * (1.0 - 0.35 * t)
-			draw_circle(p, rad, sc)
-			draw_circle(p, rad * 0.5, Color(1.0, 1.0, 1.0, alpha * 0.9))
-			draw_line(p - Vector2(rad * 2.1, 0), p + Vector2(rad * 2.1, 0), sc, 1.6)
-			draw_line(p - Vector2(0, rad * 2.1), p + Vector2(0, rad * 2.1), sc, 1.6)
-
-var _p1_reaction_seq: int = 0
-var _p2_reaction_seq: int = 0
 
 func show_reaction(user_index: int, reaction_id: int) -> void:
-	var bubble = p1_reaction_bubble if user_index == 1 else p2_reaction_bubble
-	var icon = p1_reaction_icon if user_index == 1 else p2_reaction_icon
-	var player_card = p1_card if user_index == 1 else p2_card
+	var b := _get_player_card_bundle(user_index)
+	var bubble: Control = b.get("reaction_bubble", null)
+	var icon: TextureRect = b.get("reaction_icon", null)
+	var player_card: Control = b.get("card", null)
+	var av_container: Control = b.get("avatar_container", null)
 	if not is_instance_valid(bubble) or not is_instance_valid(icon):
 		return
 
+	var next_seq: int = int(_reaction_seqs.get(user_index, 0)) + 1
+	_reaction_seqs[user_index] = next_seq
 	if user_index == 1:
-		_p1_reaction_seq += 1
-	else:
-		_p2_reaction_seq += 1
-	var my_seq = _p1_reaction_seq if user_index == 1 else _p2_reaction_seq
+		_p1_reaction_seq = next_seq
+	elif user_index == 2:
+		_p2_reaction_seq = next_seq
 
-	var accent_col = Color(1.0, 0.42, 0.38) if user_index == 1 else Color(0.35, 0.80, 1.0)
-	var bubble_frame = bubble.get_node_or_null("BubbleFrame") as PanelContainer
+	var bubble_frame := bubble.get_node_or_null("BubbleFrame") as PanelContainer
 	var kori_lbl: Label = null
-	var vfx_overlay: ReactionBubbleVFXOverlay = null
 	if is_instance_valid(bubble_frame):
 		kori_lbl = bubble_frame.get_node_or_null("KoriLabel") as Label
 		if not is_instance_valid(kori_lbl):
 			kori_lbl = Label.new()
 			kori_lbl.name = "KoriLabel"
-			kori_lbl.add_theme_font_override("font", _font_hekayat)
+			if _font_vazir:
+				kori_lbl.add_theme_font_override("font", _font_vazir)
 			kori_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			kori_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			kori_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			kori_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			bubble_frame.add_child(kori_lbl)
-		kori_lbl.add_theme_font_size_override("font_size", 34)
-		kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.88, 1.0))
-		kori_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-		kori_lbl.add_theme_constant_override("shadow_offset_y", 2)
-		kori_lbl.add_theme_constant_override("shadow_outline_size", 4)
-		kori_lbl.custom_minimum_size = Vector2(336, 92)
+		kori_lbl.add_theme_font_size_override("font_size", 18)
+		kori_lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
+		kori_lbl.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
+		kori_lbl.add_theme_constant_override("shadow_offset_y", 1)
+		HudTheme.configure_bidi_label(kori_lbl, false)
 
-		vfx_overlay = bubble_frame.get_node_or_null("ReactionVFXOverlay") as ReactionBubbleVFXOverlay
-		if not is_instance_valid(vfx_overlay):
-			vfx_overlay = ReactionBubbleVFXOverlay.new()
-			vfx_overlay.name = "ReactionVFXOverlay"
-			vfx_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-			bubble_frame.add_child(vfx_overlay)
+	var is_kori := reaction_id > 100
+	var bubble_size := Vector2(288.0, 74.0) if is_kori else Vector2(96.0, 96.0)
+	var hold_duration := 3.6 if is_kori else 2.2
 
-	bubble.z_index = 30
+	if is_kori:
+		var k_idx := clampi(reaction_id - 101, 0, KORIS.size() - 1)
+		icon.visible = false
+		if is_instance_valid(kori_lbl):
+			kori_lbl.visible = true
+			kori_lbl.custom_minimum_size = Vector2(256.0, 48.0)
+			kori_lbl.text = "💬 " + KORIS[k_idx]
+		if is_instance_valid(bubble_frame):
+			bubble_frame.add_theme_stylebox_override("panel", HudTheme.make_emote_bubble_style(true))
+	else:
+		if is_instance_valid(kori_lbl):
+			kori_lbl.visible = false
+		icon.visible = true
+		icon.custom_minimum_size = Vector2(76.0, 76.0)
+		var r_tex := _get_cached_reaction(reaction_id)
+		if r_tex:
+			icon.texture = r_tex
+		if is_instance_valid(bubble_frame):
+			bubble_frame.add_theme_stylebox_override("panel", HudTheme.make_emote_bubble_style(false))
+
+	if is_instance_valid(bubble_frame):
+		var half := bubble_size * 0.5
+		bubble_frame.custom_minimum_size = bubble_size
+		bubble_frame.offset_left = -half.x
+		bubble_frame.offset_top = -half.y
+		bubble_frame.offset_right = half.x
+		bubble_frame.offset_bottom = half.y
+		bubble_frame.size = bubble_size
+
+	# Anchor STRICTLY BELOW the player's avatar/card bottom edge (never overlapping name/counter!)
+	bubble.z_index = 32
 	bubble.top_level = true
 	bubble.size = Vector2.ZERO
 	bubble.custom_minimum_size = Vector2.ZERO
 	bubble.pivot_offset = Vector2.ZERO
 	if is_instance_valid(player_card):
-		bubble.global_position = player_card.global_position + player_card.size * 0.5
-	var hold_duration = 2.6
-
-	if reaction_id > 100:
-		# Persian Kori (کری‌خوانی) Speech Bubble
-		var k_idx = clampi(reaction_id - 101, 0, KORIS.size() - 1)
-		icon.visible = false
-		if is_instance_valid(kori_lbl):
-			kori_lbl.visible = true
-			kori_lbl.text = "💬 " + KORIS[k_idx]
-		if is_instance_valid(bubble_frame):
-			var sb_bubble = StyleBoxFlat.new()
-			sb_bubble.bg_color = Color(0.14, 0.08, 0.05, 0.97)
-			sb_bubble.border_color = Color(1.0, 0.84, 0.32, 1.0)
-			sb_bubble.set_border_width_all(3)
-			sb_bubble.border_width_bottom = 5
-			sb_bubble.set_corner_radius_all(22)
-			sb_bubble.shadow_color = accent_col.lerp(Color(1.0, 0.82, 0.25), 0.5)
-			sb_bubble.shadow_color.a = 0.62
-			sb_bubble.shadow_size = 18
-			sb_bubble.shadow_offset = Vector2(0, 5)
-			sb_bubble.content_margin_left = 16
-			sb_bubble.content_margin_right = 16
-			sb_bubble.content_margin_top = 12
-			sb_bubble.content_margin_bottom = 12
-			bubble_frame.add_theme_stylebox_override("panel", sb_bubble)
-			bubble_frame.custom_minimum_size = Vector2(372, 120)
-			bubble_frame.offset_left = -186.0
-			bubble_frame.offset_top = -60.0
-			bubble_frame.offset_right = 186.0
-			bubble_frame.offset_bottom = 60.0
-			bubble_frame.size = Vector2(372, 120)
-		hold_duration = 4.4
-	else:
-		# Sticker / Emoji Reaction (Pure sticker without background, enlarged)
-		if is_instance_valid(kori_lbl):
-			kori_lbl.visible = false
-		icon.visible = true
-		if is_instance_valid(bubble_frame):
-			bubble_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-			bubble_frame.custom_minimum_size = Vector2(148, 148)
-			bubble_frame.offset_left = -74.0
-			bubble_frame.offset_top = -74.0
-			bubble_frame.offset_right = 74.0
-			bubble_frame.offset_bottom = 74.0
-			bubble_frame.size = Vector2(148, 148)
-		if is_instance_valid(icon):
-			icon.custom_minimum_size = Vector2(148, 148)
-		var r_tex = _get_cached_reaction(reaction_id)
-		if r_tex:
-			icon.texture = r_tex
+		var card_rect := player_card.get_global_rect()
+		var av_rect := av_container.get_global_rect() if is_instance_valid(av_container) else card_rect
+		var vp_w := get_viewport_rect().size.x
+		var half_w := bubble_size.x * 0.5
+		var anchor_x := clampf(av_rect.get_center().x, half_w + 12.0, maxf(half_w + 12.0, vp_w - half_w - 12.0))
+		var anchor_y := maxf(card_rect.end.y, av_rect.end.y) + 8.0 + bubble_size.y * 0.5
+		bubble.global_position = Vector2(anchor_x, anchor_y)
 
 	bubble.visible = true
-	bubble.scale = Vector2(0.12, 0.12)
+	bubble.scale = Vector2(0.25, 0.25)
 	bubble.modulate.a = 0.0
-	bubble.pivot_offset = Vector2.ZERO
-	var start_rot = (-6.0 if user_index == 1 else 6.0) if reaction_id > 100 else (-9.0 if user_index == 1 else 9.0)
-	bubble.rotation_degrees = start_rot
+	bubble.rotation_degrees = -4.0 if (user_index % 2 == 1) else 4.0
 	AudioManager.play_sound("chat")
 
-	# Trigger User Card Pop + Particle Burst + Bubble Shockwave VFX
-	if is_instance_valid(player_card):
-		player_card.pivot_offset = player_card.size * 0.5
-		var card_tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		card_tw.tween_property(player_card, "scale", Vector2(1.06, 1.06), 0.14)
-		card_tw.tween_property(player_card, "scale", Vector2.ONE, 0.18)
-		if ActionVFXManager:
-			ActionVFXManager.spawn_ui_click_burst(player_card.global_position + player_card.size * 0.5, accent_col)
-	if is_instance_valid(vfx_overlay):
-		vfx_overlay.trigger_burst(accent_col, reaction_id > 100)
-
-	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(bubble, "scale", Vector2(1.16, 1.16) if reaction_id > 100 else Vector2(1.22, 1.22), 0.22)
-	tw.parallel().tween_property(bubble, "modulate:a", 1.0, 0.15)
-	tw.parallel().tween_property(bubble, "rotation_degrees", 2.0 if user_index == 1 else -2.0, 0.22)
-	tw.tween_property(bubble, "scale", Vector2(0.97, 0.97), 0.09)
-	tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.09)
-	tw.tween_property(bubble, "scale", Vector2.ONE, 0.08)
-
-	var loops_count = 4 if reaction_id > 100 else 3
-	var sway_deg = 2.0 if reaction_id > 100 else 3.8
-	var idle_tw = create_tween().set_loops(loops_count).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	idle_tw.tween_property(bubble, "scale", Vector2(1.045, 1.045), 0.36)
-	idle_tw.parallel().tween_property(bubble, "rotation_degrees", -sway_deg if user_index == 1 else sway_deg, 0.36)
-	idle_tw.tween_property(bubble, "scale", Vector2.ONE, 0.36)
-	idle_tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.36)
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(bubble, "scale", Vector2(1.06, 1.06), 0.18)
+	tw.parallel().tween_property(bubble, "modulate:a", 1.0, 0.14)
+	tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.18)
+	tw.tween_property(bubble, "scale", Vector2.ONE, 0.10)
 
 	await get_tree().create_timer(hold_duration).timeout
-	var current_seq = _p1_reaction_seq if user_index == 1 else _p2_reaction_seq
-	if current_seq != my_seq:
+	if int(_reaction_seqs.get(user_index, 0)) != next_seq:
 		return
 	if is_instance_valid(bubble) and bubble.visible:
-		var fade_tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		fade_tw.tween_property(bubble, "scale", Vector2(1.08, 1.08), 0.1)
-		fade_tw.parallel().tween_property(bubble, "modulate:a", 0.0, 0.28)
+		var fade_tw := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		fade_tw.tween_property(bubble, "scale", Vector2(0.88, 0.88), 0.22)
+		fade_tw.parallel().tween_property(bubble, "modulate:a", 0.0, 0.24)
 		await fade_tw.finished
-		var after_seq = _p1_reaction_seq if user_index == 1 else _p2_reaction_seq
-		if after_seq == my_seq and is_instance_valid(bubble):
+		if int(_reaction_seqs.get(user_index, 0)) == next_seq and is_instance_valid(bubble):
 			bubble.visible = false
 			bubble.scale = Vector2.ONE
 			bubble.rotation_degrees = 0.0
+
 
 func reset_header() -> void:
 	_profile_clicks_enabled = false
@@ -1353,52 +1177,46 @@ func reset_header() -> void:
 	_last_p1_score = 0
 	_last_p2_score = 0
 	_update_score_badges_visibility()
+	hide_turn_toast()
 	if is_instance_valid(lbl_turn_banner):
 		lbl_turn_banner.text = "بازی درحال آغاز است"
-		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	if is_instance_valid(p1_score_lbl):
 		p1_score_lbl.text = _fa_digits(0)
 	if is_instance_valid(p2_score_lbl):
 		p2_score_lbl.text = _fa_digits(0)
 	if is_instance_valid(lbl_timer):
 		lbl_timer.text = "--"
-		lbl_timer.add_theme_stylebox_override("normal", _style_timer_pill_normal)
 	if is_instance_valid(turn_timer_bar):
 		turn_timer_bar.value = 100.0
-	if is_instance_valid(_timer_vfx_overlay):
-		_timer_vfx_overlay.is_danger = false
-		_timer_vfx_overlay._sparks.clear()
-		_timer_vfx_overlay._shockwaves.clear()
-	if is_instance_valid(match_details_box):
-		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
-	if is_instance_valid(p1_card):
-		p1_card.add_theme_stylebox_override("panel", _style_p1_inactive)
-		p1_card.scale = Vector2.ONE
-	if is_instance_valid(p2_card):
-		p2_card.add_theme_stylebox_override("panel", _style_p2_inactive)
-		p2_card.scale = Vector2.ONE
-	if is_instance_valid(_p1_avatar_frame):
-		_p1_avatar_frame.add_theme_stylebox_override("panel", _style_avatar_p1_idle)
-	if is_instance_valid(_p2_avatar_frame):
-		_p2_avatar_frame.add_theme_stylebox_override("panel", _style_avatar_p2_idle)
-	if is_instance_valid(p1_reaction_bubble):
-		p1_reaction_bubble.top_level = true
-		p1_reaction_bubble.visible = false
-	if is_instance_valid(p2_reaction_bubble):
-		p2_reaction_bubble.top_level = true
-		p2_reaction_bubble.visible = false
+
 	_disabled_players.clear()
 	for idx in [1, 2, 3, 4]:
 		var b := _get_player_card_bundle(idx)
-		var c: Control = b.get("card", null)
+		var c: PanelContainer = b.get("card", null)
 		if is_instance_valid(c):
 			c.modulate = Color.WHITE
+			c.scale = Vector2.ONE
+			c.add_theme_stylebox_override("panel", _style_p1_inactive if _total_players <= 2 else _style_p3_inactive)
 		var nm: Label = b.get("name", null)
 		if is_instance_valid(nm):
-			nm.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
+			nm.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
 		var rl: Label = b.get("role", null)
 		if is_instance_valid(rl):
-			rl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78))
+			rl.add_theme_color_override("font_color", HudTheme.COL_TEXT_SAND)
+			rl.visible = false
+		var rb: Control = b.get("reaction_bubble", null)
+		if is_instance_valid(rb):
+			rb.top_level = true
+			rb.visible = false
+		var dec: Dictionary = _card_decorations.get(idx, {})
+		var t_bar: ProgressBar = dec.get("timer_bar", null)
+		var t_chip: Label = dec.get("timer_chip", null)
+		if is_instance_valid(t_bar):
+			t_bar.visible = false
+			t_bar.value = 100.0
+		if is_instance_valid(t_chip):
+			t_chip.visible = false
+			t_chip.text = ""
 
 
 func _get_or_create_players_row2() -> HBoxContainer:
@@ -1416,7 +1234,7 @@ func _get_or_create_players_row2() -> HBoxContainer:
 	_players_row2.name = "PlayersRow2"
 	_players_row2.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_players_row2.alignment = BoxContainer.ALIGNMENT_CENTER
-	_players_row2.add_theme_constant_override("separation", 10)
+	_players_row2.add_theme_constant_override("separation", 8)
 	_players_row2.visible = false
 	vbox_main.add_child(_players_row2)
 	vbox_main.move_child(_players_row2, players_row.get_index() + 1)
@@ -1427,25 +1245,77 @@ func _get_or_create_players_row2() -> HBoxContainer:
 	_p4_empty_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_p4_empty_spacer.visible = false
 	_players_row2.add_child(_p4_empty_spacer)
+
+	# Symmetrical spacer on Row 2 aligning with MenuColumn on Row 1
+	_row2_menu_spacer = Control.new()
+	_row2_menu_spacer.name = "Row2MenuSpacer"
+	_row2_menu_spacer.custom_minimum_size = Vector2(MENU_COL_WIDTH, 0)
+	_row2_menu_spacer.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_row2_menu_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_players_row2.add_child(_row2_menu_spacer)
 	return _players_row2
 
 
 func _update_two_row_visibility(total_players: int) -> void:
+	_total_players = clampi(total_players, 2, 4)
+	var is_multi := _total_players > 2
+	var card_h := CARD_HEIGHT_MULTI if is_multi else CARD_HEIGHT_2P
+	var av_sz := Vector2(46, 46) if is_multi else Vector2(56, 56)
+
+	for idx in [1, 2, 3, 4]:
+		var b := _get_player_card_bundle(idx)
+		var c: PanelContainer = b.get("card", null)
+		var av_cont: Control = b.get("avatar_container", null)
+		var av: TextureRect = b.get("avatar", null)
+		var nm: Label = b.get("name", null)
+		if is_instance_valid(c):
+			c.custom_minimum_size = Vector2(0, card_h)
+		if is_instance_valid(av_cont):
+			av_cont.custom_minimum_size = av_sz
+		if is_instance_valid(av):
+			av.custom_minimum_size = av_sz
+		if is_instance_valid(nm):
+			nm.add_theme_font_size_override("font_size", 16 if is_multi else 18)
+
 	var row2 := _get_or_create_players_row2()
 	if is_instance_valid(row2):
-		row2.visible = (total_players > 2)
-		row2.add_theme_constant_override("separation", 10)
+		row2.visible = is_multi
+		row2.add_theme_constant_override("separation", 8)
 		if is_instance_valid(_p4_empty_spacer):
 			row2.move_child(_p4_empty_spacer, row2.get_child_count() - 1)
-			_p4_empty_spacer.visible = (total_players == 3)
-	offset_bottom = 408.0 if total_players > 2 else 360.0
+			_p4_empty_spacer.visible = (_total_players == 3)
+		if is_instance_valid(_row2_menu_spacer):
+			row2.move_child(_row2_menu_spacer, row2.get_child_count() - 1)
+			_row2_menu_spacer.visible = is_multi
+
+	_sync_header_height()
 
 
 func _get_player_card_bundle(player_idx: int) -> Dictionary:
 	if player_idx == 1:
-		return {"card": p1_card, "av_frame": _p1_avatar_frame, "name": p1_name, "role": p1_role_badge, "score": p1_score_lbl}
+		return {
+			"card": p1_card,
+			"avatar": p1_avatar,
+			"avatar_container": p1_avatar.get_parent() as Control if is_instance_valid(p1_avatar) else null,
+			"av_frame": _p1_avatar_frame,
+			"name": p1_name,
+			"role": p1_role_badge,
+			"score": p1_score_lbl,
+			"reaction_bubble": p1_reaction_bubble,
+			"reaction_icon": p1_reaction_icon,
+		}
 	elif player_idx == 2:
-		return {"card": p2_card, "av_frame": _p2_avatar_frame, "name": p2_name, "role": p2_role_badge, "score": p2_score_lbl}
+		return {
+			"card": p2_card,
+			"avatar": p2_avatar,
+			"avatar_container": p2_avatar.get_parent() as Control if is_instance_valid(p2_avatar) else null,
+			"av_frame": _p2_avatar_frame,
+			"name": p2_name,
+			"role": p2_role_badge,
+			"score": p2_score_lbl,
+			"reaction_bubble": p2_reaction_bubble,
+			"reaction_icon": p2_reaction_icon,
+		}
 	elif _extra_cards.has(player_idx):
 		return _extra_cards[player_idx]
 	return {}
@@ -1470,27 +1340,36 @@ func _apply_disabled_visual(player_idx: int) -> void:
 	var card: PanelContainer = b.get("card", null)
 	var nm: Label = b.get("name", null)
 	var rl: Label = b.get("role", null)
+	var dec: Dictionary = _card_decorations.get(player_idx, {})
 	if is_player_disabled(player_idx):
 		var reason: String = str(_disabled_players.get(player_idx, "خارج شد"))
 		if is_instance_valid(card):
 			if is_instance_valid(_style_card_disabled):
 				card.add_theme_stylebox_override("panel", _style_card_disabled)
-			card.modulate = Color(0.52, 0.52, 0.56, 0.56)
-			card.scale = Vector2(0.96, 0.96)
+			card.modulate = Color(0.58, 0.56, 0.54, 0.60)
+			card.scale = Vector2(0.97, 0.97)
 		if is_instance_valid(nm):
-			nm.add_theme_color_override("font_color", Color(0.70, 0.70, 0.74, 0.85))
+			nm.add_theme_color_override("font_color", Color(0.70, 0.68, 0.66, 0.85))
 		if is_instance_valid(rl):
 			var has_prefix := reason.begins_with("💀") or reason.begins_with("🏳") or reason.begins_with("🚫") or reason.begins_with("📡") or reason.begins_with("⏱")
 			rl.text = reason if has_prefix else ("🚫 %s" % reason)
-			rl.add_theme_color_override("font_color", Color(0.92, 0.58, 0.58, 0.92))
+			rl.visible = true
+			rl.add_theme_color_override("font_color", Color(0.95, 0.62, 0.62, 0.94))
+		var t_bar: ProgressBar = dec.get("timer_bar", null)
+		var t_chip: Label = dec.get("timer_chip", null)
+		if is_instance_valid(t_bar):
+			t_bar.visible = false
+		if is_instance_valid(t_chip):
+			t_chip.visible = false
 	else:
 		if is_instance_valid(card):
 			card.modulate = Color.WHITE
 			card.scale = Vector2.ONE
 		if is_instance_valid(nm):
-			nm.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
+			nm.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
 		if is_instance_valid(rl):
-			rl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78))
+			rl.add_theme_color_override("font_color", HudTheme.COL_TEXT_SAND)
+
 
 # Virtual hook for child headers
 func _on_turn_changed(_turn: int) -> void:

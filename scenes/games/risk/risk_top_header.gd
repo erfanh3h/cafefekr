@@ -2,279 +2,126 @@ class_name RiskTopHeader
 extends "res://scenes/games/base/base_top_header.gd"
 
 # Risk Strike Multi-Player Top Header (Supports 2, 3, or 4 Players)
-# Displays each commander's Domination Tokens (0/2 to win), Continent & Strategy card counts,
-# active turn / defense phase banner, and 30s countdown timer.
+# Warm Classic Parlor compact layout displaying Domination Tokens (👑) and Continent/Strategy card counts.
 
 var _token_counts: Array = [0, 0, 0, 0]
 var _continent_counts: Array = [3, 3, 3, 3]
 var _strategy_counts: Array = [3, 4, 4, 4]
+var _last_layout_players: int = -1
 
-const FACTION_COLORS: Dictionary = {
-	1: Color(0.95, 0.25, 0.30), # Ruby Red
-	2: Color(0.25, 0.65, 1.00), # Sapphire Blue
-	3: Color(0.22, 0.88, 0.44), # Emerald Green
-	4: Color(1.00, 0.80, 0.18), # Sunburst Yellow
-}
-
-const FACTION_DOTS: Dictionary = {
-	1: "🔴",
-	2: "🔵",
-	3: "🟢",
-	4: "🟡",
-}
 
 func _ready() -> void:
 	super._ready()
-	_setup_multiplayer_styles()
 	_build_extra_player_cards()
 	_update_score_badges_visibility()
+
 
 func _is_score_based_game() -> bool:
 	return true
 
-func _setup_multiplayer_styles() -> void:
-	_style_p3_active = _style_p1_active.duplicate()
-	_style_p3_active.bg_color = Color(0.06, 0.24, 0.12, 0.96)
-	_style_p3_active.border_color = Color(0.32, 0.95, 0.52, 1.0)
-	_style_p3_active.shadow_color = Color(0.15, 0.85, 0.38, 0.55)
-	_style_p3_inactive = _style_p1_inactive.duplicate()
-
-	_style_p4_active = _style_p1_active.duplicate()
-	_style_p4_active.bg_color = Color(0.26, 0.19, 0.05, 0.96)
-	_style_p4_active.border_color = Color(1.0, 0.86, 0.25, 1.0)
-	_style_p4_active.shadow_color = Color(1.0, 0.78, 0.15, 0.55)
-	_style_p4_inactive = _style_p1_inactive.duplicate()
-
-	_style_avatar_p3_active = _style_avatar_p1_active.duplicate()
-	_style_avatar_p3_idle = _style_avatar_p1_idle.duplicate()
-	_style_avatar_p4_active = _style_avatar_p1_active.duplicate()
-	_style_avatar_p4_idle = _style_avatar_p1_idle.duplicate()
-
-	_style_match_box_p3 = _style_match_box_normal.duplicate()
-	_style_match_box_p3.border_color = Color(0.35, 0.92, 0.52, 0.95)
-	_style_match_box_p4 = _style_match_box_normal.duplicate()
-	_style_match_box_p4.border_color = Color(1.0, 0.86, 0.28, 0.95)
 
 func _build_extra_player_cards() -> void:
-	var players_row2 = _get_or_create_players_row2()
+	var players_row2 := _get_or_create_players_row2()
 	if not players_row2 or not is_instance_valid(p2_card):
 		return
-
 	for idx in [3, 4]:
-		var card_dup = p2_card.duplicate(0) as PanelContainer
+		var card_dup := p2_card.duplicate(0) as PanelContainer
 		card_dup.name = "P%dCard" % idx
 		card_dup.visible = false
 		players_row2.add_child(card_dup)
+		var bundle := _register_extra_player_card(idx, card_dup)
+		var sc: Label = bundle.get("score", null)
+		if is_instance_valid(sc):
+			sc.text = "👑۰"
+		_set_role_badge(idx, _format_role_text(idx), HudTheme.get_seat_accent(idx))
 
-		var av_container = card_dup.get_node_or_null("HBox/AvatarContainer") as Control
-		var av_rect = card_dup.get_node_or_null("HBox/AvatarContainer/Avatar") as TextureRect
-		var av_frame = card_dup.get_node_or_null("HBox/AvatarContainer/AvatarMedallionFrame") as Panel
-		var side_lbl = card_dup.get_node_or_null("HBox/AvatarContainer/PlayerSideTag") as Label
-		if is_instance_valid(side_lbl):
-			side_lbl.visible = false
-		var btn_prof = card_dup.get_node_or_null("HBox/AvatarContainer/BtnP2Profile") as Button
-		var name_lbl = card_dup.get_node_or_null("HBox/InfoBox/Name") as Label
-		var role_lbl = card_dup.get_node_or_null("HBox/InfoBox/RoleBadge") as Label
-		var score_badge = card_dup.get_node_or_null("HBox/ScoreBadge") as PanelContainer
-		var score_lbl = card_dup.get_node_or_null("HBox/ScoreBadge/Score") as Label
-		var react_bubble = card_dup.get_node_or_null("ReactionBubble") as Control
-		if is_instance_valid(react_bubble):
-			react_bubble.top_level = true
-			react_bubble.visible = false
-		var react_icon = card_dup.get_node_or_null("ReactionBubble/BubbleFrame/Icon") as TextureRect
-
-		if is_instance_valid(btn_prof):
-			btn_prof.name = "BtnP%dProfile" % idx
-			btn_prof.focus_mode = Control.FOCUS_NONE
-			for conn in btn_prof.pressed.get_connections():
-				btn_prof.pressed.disconnect(conn["callable"])
-			var player_i = idx
-			btn_prof.pressed.connect(func():
-				if _can_emit_profile_click():
-					player_profile_clicked.emit(player_i)
-			)
-
-		if is_instance_valid(role_lbl):
-			var sb_role = StyleBoxFlat.new()
-			if idx == 3:
-				sb_role.bg_color = Color(0.08, 0.34, 0.16, 0.82)
-				sb_role.border_color = Color(0.38, 0.95, 0.55, 0.72)
-			else:
-				sb_role.bg_color = Color(0.38, 0.28, 0.06, 0.82)
-				sb_role.border_color = Color(1.0, 0.88, 0.32, 0.72)
-			sb_role.set_border_width_all(1)
-			sb_role.set_corner_radius_all(10)
-			sb_role.content_margin_left = 8
-			sb_role.content_margin_right = 8
-			sb_role.content_margin_top = 2
-			sb_role.content_margin_bottom = 2
-			role_lbl.add_theme_stylebox_override("normal", sb_role)
-			role_lbl.text = "%s 🗺️۳ 🃏۴" % FACTION_DOTS.get(idx, "")
-
-		if is_instance_valid(score_lbl):
-			score_lbl.text = "👑۰"
-
-		card_dup.add_theme_stylebox_override("panel", _style_p3_inactive if idx == 3 else _style_p4_inactive)
-		if is_instance_valid(av_frame):
-			av_frame.add_theme_stylebox_override("panel", _style_avatar_p3_idle if idx == 3 else _style_avatar_p4_idle)
-
-		_extra_cards[idx] = {
-			"card": card_dup,
-			"av_container": av_container,
-			"avatar": av_rect,
-			"av_frame": av_frame,
-			"side_tag": side_lbl,
-			"name": name_lbl,
-			"role": role_lbl,
-			"score_badge": score_badge,
-			"score": score_lbl,
-			"reaction_bubble": react_bubble,
-			"reaction_icon": react_icon,
-		}
-		if idx == 3:
-			p3_card = card_dup
-		else:
-			p4_card = card_dup
 
 func _get_total_players() -> int:
 	return clampi(max(2, GameManager.match_players.size()), 2, 4)
 
+
 func _format_role_text(idx: int) -> String:
 	var c_cnt: int = _to_int(_continent_counts[idx - 1]) if idx - 1 < _continent_counts.size() else 0
 	var s_cnt: int = _to_int(_strategy_counts[idx - 1]) if idx - 1 < _strategy_counts.size() else 0
-	return "%s 🗺️%s 🃏%s" % [FACTION_DOTS.get(idx, ""), _fa_digits(c_cnt), _fa_digits(s_cnt)]
+	return "🗺️%s  🃏%s" % [_fa_digits(c_cnt), _fa_digits(s_cnt)]
+
 
 func _apply_layout_for_player_count(total_players: int) -> void:
-	var players_row = get_node_or_null("Margin/VBoxMain/PlayersRow") as HBoxContainer
-	var is_compact = (total_players > 2)
-	if is_instance_valid(players_row):
-		players_row.add_theme_constant_override("separation", 10 if is_compact else 16)
+	_last_layout_players = total_players
 	_update_two_row_visibility(total_players)
-
-	var all_cards = [
-		{"idx": 1, "card": p1_card, "av_c": p1_avatar.get_parent() if is_instance_valid(p1_avatar) else null, "name": p1_name, "role": p1_role_badge, "score_b": _p1_score_badge, "score": p1_score_lbl},
-		{"idx": 2, "card": p2_card, "av_c": p2_avatar.get_parent() if is_instance_valid(p2_avatar) else null, "name": p2_name, "role": p2_role_badge, "score_b": _p2_score_badge, "score": p2_score_lbl},
-	]
-	for idx in [3, 4]:
-		if _extra_cards.has(idx):
-			var d = _extra_cards[idx]
-			all_cards.append({
-				"idx": idx,
-				"card": d["card"],
-				"av_c": d["av_container"],
-				"name": d["name"],
-				"role": d["role"],
-				"score_b": d["score_badge"],
-				"score": d["score"],
-			})
-
-	for item in all_cards:
-		var idx: int = item["idx"]
-		var c: PanelContainer = item["card"]
+	var is_compact := (total_players > 2)
+	for idx in [1, 2, 3, 4]:
+		var b := _get_player_card_bundle(idx)
+		var c: PanelContainer = b.get("card", null)
 		if not is_instance_valid(c):
 			continue
 		c.visible = (idx <= total_players)
-		c.custom_minimum_size = Vector2(0, 82 if is_compact else 112)
-		var hbox = c.get_node_or_null("HBox") as HBoxContainer
-		if hbox:
-			hbox.add_theme_constant_override("separation", 8 if is_compact else 10)
-		var av_c: Control = item["av_c"]
-		if is_instance_valid(av_c):
-			var av_sz: float = 54.0 if is_compact else 72.0
-			av_c.custom_minimum_size = Vector2(av_sz + 4.0, av_sz + 4.0)
-			av_c.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			av_c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			av_c.set_meta("_av_box_boosted", true)
-		var nm: Label = item["name"]
-		if is_instance_valid(nm):
-			nm.clip_text = true
-			nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-			nm.add_theme_font_size_override("font_size", 22 if is_compact else 26)
-		var rl: Label = item["role"]
-		if is_instance_valid(rl):
-			rl.clip_text = true
-			rl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-			rl.add_theme_font_size_override("font_size", 16 if is_compact else 19)
-			if not is_player_disabled(idx):
-				rl.text = _format_role_text(idx)
-		var sb: PanelContainer = item["score_b"]
-		if is_instance_valid(sb):
-			sb.visible = true
-			var b_sz = 44.0 if is_compact else 50.0
-			sb.custom_minimum_size = Vector2(b_sz, b_sz)
-		var sc: Label = item["score"]
+		var sc: Label = b.get("score", null)
 		if is_instance_valid(sc):
-			sc.add_theme_font_size_override("font_size", 22 if is_compact else 26)
+			sc.add_theme_font_size_override("font_size", 18 if is_compact else 20)
+			var sb := sc.get_parent() as PanelContainer
+			if is_instance_valid(sb):
+				sb.visible = true
+				sb.custom_minimum_size = Vector2(46, 36) if is_compact else Vector2(52, 40)
 		if is_player_disabled(idx):
 			_apply_disabled_visual(idx)
+		else:
+			_set_role_badge(idx, _format_role_text(idx), HudTheme.get_seat_accent(idx))
+
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_my_player_index = my_idx
-	var total_players = _get_total_players()
+	var total_players := _get_total_players()
 	_apply_layout_for_player_count(total_players)
 
-	var d1 = GameManager.get_player_data_by_gamer_id(1) if total_players > 2 else p1_data
-	var d2 = GameManager.get_player_data_by_gamer_id(2) if total_players > 2 else p2_data
+	var d1 := GameManager.get_player_data_by_gamer_id(1) if total_players > 2 else p1_data
+	var d2 := GameManager.get_player_data_by_gamer_id(2) if total_players > 2 else p2_data
 	super.setup_players(d1, d2, my_idx)
-	_player_names[1] = str(d1.get("name", d1.get("username", "بازیکن ۱")))
-	_player_names[2] = str(d2.get("name", d2.get("username", "بازیکن ۲")))
 
 	for idx in [3, 4]:
 		if not _extra_cards.has(idx):
 			continue
-		var info = _extra_cards[idx]
+		var info: Dictionary = _extra_cards[idx]
 		var card: PanelContainer = info["card"]
 		if idx > total_players:
 			card.visible = false
 			continue
 		card.visible = true
-		var p_data = GameManager.get_player_data_by_gamer_id(idx)
-		var p_name = str(p_data.get("name", p_data.get("username", "بازیکن %d" % idx)))
+		var p_data := GameManager.get_player_data_by_gamer_id(idx)
+		var p_name := str(p_data.get("name", p_data.get("username", "بازیکن %d" % idx)))
 		_player_names[idx] = p_name
 		if is_instance_valid(info["name"]):
 			info["name"].text = p_name
-		if is_instance_valid(info["role"]):
-			info["role"].text = _format_role_text(idx)
-		var av_id = _to_int(p_data.get("image", p_data.get("user_image", 0)))
-		var p_fid = GameManager.get_player_frame_id(p_data)
-		var tex = _get_cached_avatar(av_id)
+			HudTheme.configure_bidi_label(info["name"], true)
+		var av_id := _to_int(p_data.get("image", p_data.get("user_image", 0)))
+		var p_fid := GameManager.get_player_frame_id(p_data)
+		var tex := _get_cached_avatar(av_id)
 		if is_instance_valid(info["avatar"]):
 			if tex:
 				info["avatar"].texture = tex
 			var p_parent = info["avatar"].get_parent()
 			CafeSocialTheme.apply_frame_to_container(p_parent if p_parent is Control else info["avatar"], info["avatar"], p_fid)
-		if is_instance_valid(info["side_tag"]):
-			info["side_tag"].visible = false
 
 	update_risk_player_stats(_token_counts, _continent_counts, _strategy_counts)
 
+
 func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
 	super.setup_match(game_name_fa, mode_title, round_num, max_rounds, turn_time)
-	var total_players = _get_total_players()
+	var total_players := _get_total_players()
 	_apply_layout_for_player_count(total_players)
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
+	update_risk_player_stats(_token_counts, _continent_counts, _strategy_counts)
+
 
 func reset_header() -> void:
 	super.reset_header()
 	_token_counts = [0, 0, 0, 0]
 	_continent_counts = [3, 3, 3, 3]
 	_strategy_counts = [3, 4, 4, 4]
-	for idx in [3, 4]:
-		if _extra_cards.has(idx):
-			var info = _extra_cards[idx]
-			var c: PanelContainer = info.get("card", null)
-			if is_instance_valid(c):
-				c.add_theme_stylebox_override("panel", _style_p3_inactive if idx == 3 else _style_p4_inactive)
-				c.scale = Vector2.ONE
-			var av: Panel = info.get("av_frame", null)
-			if is_instance_valid(av):
-				av.add_theme_stylebox_override("panel", _style_avatar_p3_idle if idx == 3 else _style_avatar_p4_idle)
-			var rb: Control = info.get("reaction_bubble", null)
-			if is_instance_valid(rb):
-				rb.visible = false
 	update_risk_player_stats(_token_counts, _continent_counts, _strategy_counts, 0, 0)
 	_apply_layout_for_player_count(_get_total_players())
+
 
 func update_risk_player_stats(token_counts: Array, continent_counts: Array, strategy_counts: Array, rank1: int = 0, rank2: int = 0) -> void:
 	for i in range(min(4, token_counts.size())):
@@ -284,21 +131,18 @@ func update_risk_player_stats(token_counts: Array, continent_counts: Array, stra
 	for i in range(min(4, strategy_counts.size())):
 		_strategy_counts[i] = _to_int(strategy_counts[i])
 
-	var score_labels = {1: p1_score_lbl, 2: p2_score_lbl}
-	var role_labels = {1: p1_role_badge, 2: p2_role_badge}
-	for idx in [3, 4]:
-		if _extra_cards.has(idx):
-			score_labels[idx] = _extra_cards[idx]["score"]
-			role_labels[idx] = _extra_cards[idx]["role"]
+	var total_players := _get_total_players()
+	if total_players != _last_layout_players:
+		_apply_layout_for_player_count(total_players)
 
-	var total_players = _get_total_players()
-	for idx in score_labels.keys():
+	for idx in [1, 2, 3, 4]:
 		var c_cnt: int = _to_int(_continent_counts[idx - 1]) if idx - 1 < _continent_counts.size() else 0
 		var s_cnt: int = _to_int(_strategy_counts[idx - 1]) if idx - 1 < _strategy_counts.size() else 0
 		var t_cnt: int = _to_int(_token_counts[idx - 1]) if idx - 1 < _token_counts.size() else 0
 		if total_players > 2 and idx <= total_players and GameManager.is_game_active and c_cnt == 0 and s_cnt == 0 and t_cnt == 0:
 			set_player_disabled(idx, true, "💀 حذف شد")
-		var lbl: Label = score_labels[idx]
+		var b := _get_player_card_bundle(idx)
+		var lbl: Label = b.get("score", null)
 		if is_instance_valid(lbl):
 			if rank1 == idx:
 				lbl.text = "👑۲"
@@ -308,203 +152,38 @@ func update_risk_player_stats(token_counts: Array, continent_counts: Array, stra
 				lbl.text = "💀"
 			else:
 				lbl.text = "👑%s" % _fa_digits(t_cnt)
-		var r_lbl: Label = role_labels.get(idx, null)
-		if is_instance_valid(r_lbl) and not is_player_disabled(idx):
-			r_lbl.text = _format_role_text(idx)
+		if not is_player_disabled(idx):
+			_set_role_badge(idx, _format_role_text(idx), HudTheme.get_seat_accent(idx))
+
 
 func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 	_current_turn = turn
 	_my_player_index = my_idx
 	_last_critical_sec = -1
+	_cached_timer_danger = -1
 	_player_names[1] = p1_n
 	_player_names[2] = p2_n
 
-	var total_players = _get_total_players()
-	_apply_layout_for_player_count(total_players)
+	_apply_layout_for_player_count(_get_total_players())
+	_set_active_cards_visual([turn], false, true)
 
-	var cards = {
-		1: {"card": p1_card, "av": _p1_avatar_frame, "act": _style_p1_active, "idl": _style_p1_inactive, "av_act": _style_avatar_p1_active, "av_idl": _style_avatar_p1_idle},
-		2: {"card": p2_card, "av": _p2_avatar_frame, "act": _style_p2_active, "idl": _style_p2_inactive, "av_act": _style_avatar_p2_active, "av_idl": _style_avatar_p2_idle},
-	}
-	for idx in [3, 4]:
-		if _extra_cards.has(idx):
-			cards[idx] = {
-				"card": _extra_cards[idx]["card"],
-				"av": _extra_cards[idx]["av_frame"],
-				"act": _style_p3_active if idx == 3 else _style_p4_active,
-				"idl": _style_p3_inactive if idx == 3 else _style_p4_inactive,
-				"av_act": _style_avatar_p3_active if idx == 3 else _style_avatar_p4_active,
-				"av_idl": _style_avatar_p3_idle if idx == 3 else _style_avatar_p4_idle,
-			}
+	if not GameManager.is_game_active or turn <= 0:
+		hide_turn_toast()
+	elif turn == my_idx:
+		show_turn_toast("⚔️ نوبت فرماندهی شماست!", HudTheme.COL_TEXT_GOLD, false, 1.8)
+	else:
+		var t_name := str(_player_names.get(turn, "بازیکن %d" % turn))
+		show_turn_toast("⚔️ نوبت %s" % t_name, HudTheme.COL_TEXT_SAND, false, 1.5)
 
-	for idx in cards.keys():
-		if is_player_disabled(idx):
-			_apply_disabled_visual(idx)
-			continue
-		var item = cards[idx]
-		var c: PanelContainer = item["card"]
-		var av: Panel = item["av"]
-		var is_act = (turn == idx)
-		if is_instance_valid(c):
-			c.add_theme_stylebox_override("panel", item["act"] if is_act else item["idl"])
-			c.pivot_offset = c.size * 0.5
-			var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw.tween_property(c, "scale", Vector2(1.03, 1.03) if is_act else Vector2(0.97, 0.97), 0.22)
-		if is_instance_valid(av):
-			av.add_theme_stylebox_override("panel", item["av_act"] if is_act else item["av_idl"])
-
-	var active_col: Color = FACTION_COLORS.get(turn, Color(1.0, 0.88, 0.45))
-	if is_instance_valid(match_details_box):
-		match turn:
-			1: match_details_box.add_theme_stylebox_override("panel", _style_match_box_p1)
-			2: match_details_box.add_theme_stylebox_override("panel", _style_match_box_p2)
-			3: match_details_box.add_theme_stylebox_override("panel", _style_match_box_p3)
-			4: match_details_box.add_theme_stylebox_override("panel", _style_match_box_p4)
-			_: match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
-
-	if is_instance_valid(_timer_style_fill):
-		_timer_style_fill.bg_color = active_col
-	if is_instance_valid(_timer_vfx_overlay):
-		_timer_vfx_overlay.is_danger = false
-		_timer_vfx_overlay.theme_color = active_col
-
-	if is_instance_valid(lbl_turn_banner):
-		if not GameManager.is_game_active or turn <= 0:
-			lbl_turn_banner.text = "بازی درحال آغاز است"
-			lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-		elif turn == my_idx:
-			lbl_turn_banner.text = "⚔️ نوبت فرماندهی شماست!"
-			lbl_turn_banner.add_theme_color_override("font_color", active_col.lightened(0.25))
-		else:
-			var t_name = _player_names.get(turn, "بازیکن %d" % turn)
-			lbl_turn_banner.text = "⚔️ نوبت فرماندهی %s..." % t_name
-			lbl_turn_banner.add_theme_color_override("font_color", active_col.lightened(0.22))
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	if turn <= 2:
-		super.update_timer(remaining_sec, total_sec, turn)
-		return
+	_update_card_timer_visuals(remaining_sec, total_sec, [turn])
 
-	var is_danger = (remaining_sec <= 5.0 and remaining_sec > 0.0)
-	var base_col: Color = FACTION_COLORS.get(turn, Color(0.25, 0.65, 1.0))
-
-	if is_instance_valid(_timer_vfx_overlay):
-		_timer_vfx_overlay.is_danger = is_danger
-		_timer_vfx_overlay.theme_color = base_col
-
-	if is_instance_valid(lbl_timer):
-		var sec_ceil = _to_int(ceil(remaining_sec))
-		if sec_ceil != _last_displayed_sec:
-			_last_displayed_sec = sec_ceil
-			lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % sec_ceil)
-		if is_danger and sec_ceil != _last_critical_sec:
-			_last_critical_sec = sec_ceil
-			_animate_timer_warning()
-			if is_instance_valid(_timer_vfx_overlay):
-				_timer_vfx_overlay.trigger_danger_shockwave()
-
-	_apply_timer_visual_state(
-		is_danger,
-		_style_match_box_danger if is_danger else (_style_match_box_p3 if turn == 3 else _style_match_box_p4),
-		Color(1.0, 0.24, 0.26) if is_danger else base_col
-	)
-
-	if is_instance_valid(turn_timer_bar):
-		turn_timer_bar.value = clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
-
-func show_reaction(user_index: int, reaction_id: int) -> void:
-	if user_index <= 2 or not _extra_cards.has(user_index):
-		super.show_reaction(user_index, reaction_id)
-		return
-	var info = _extra_cards[user_index]
-	var bubble: Control = info.get("reaction_bubble", null)
-	var icon: TextureRect = info.get("reaction_icon", null)
-	if not is_instance_valid(bubble) or not is_instance_valid(icon):
-		return
-
-	_reaction_seqs[user_index] = _to_int(_reaction_seqs.get(user_index, 0)) + 1
-	var my_seq: int = _reaction_seqs[user_index]
-
-	var bubble_frame = bubble.get_node_or_null("BubbleFrame") as PanelContainer
-	var kori_lbl: Label = null
-	if is_instance_valid(bubble_frame):
-		kori_lbl = bubble_frame.get_node_or_null("KoriLabel") as Label
-		if not is_instance_valid(kori_lbl):
-			kori_lbl = Label.new()
-			kori_lbl.name = "KoriLabel"
-			kori_lbl.add_theme_font_override("font", _font_hekayat)
-			kori_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			kori_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			kori_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			bubble_frame.add_child(kori_lbl)
-		kori_lbl.add_theme_font_size_override("font_size", 32)
-		kori_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.88, 1.0))
-		kori_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-		kori_lbl.add_theme_constant_override("shadow_outline_size", 3)
-		kori_lbl.custom_minimum_size = Vector2(300, 84)
-
-	bubble.z_index = 30
-	bubble.top_level = true
-	bubble.size = Vector2.ZERO
-	bubble.custom_minimum_size = Vector2.ZERO
-	bubble.pivot_offset = Vector2.ZERO
-
-	var card_node = info.get("card", null) as Control
-	if is_instance_valid(card_node):
-		bubble.global_position = card_node.global_position + card_node.size * 0.5
-
-	var hold_duration = 2.4
-	if reaction_id > 100:
-		var k_idx = clampi(reaction_id - 101, 0, KORIS.size() - 1)
-		icon.visible = false
-		if is_instance_valid(kori_lbl):
-			kori_lbl.visible = true
-			kori_lbl.text = "💬 " + KORIS[k_idx]
-		if is_instance_valid(bubble_frame):
-			bubble_frame.remove_theme_stylebox_override("panel")
-			bubble_frame.custom_minimum_size = Vector2(300, 90)
-			bubble_frame.offset_left = -150.0
-			bubble_frame.offset_top = -45.0
-			bubble_frame.offset_right = 150.0
-			bubble_frame.offset_bottom = 45.0
-		hold_duration = 4.0
-	else:
-		if is_instance_valid(kori_lbl):
-			kori_lbl.visible = false
-		icon.visible = true
-		if is_instance_valid(bubble_frame):
-			bubble_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-			bubble_frame.custom_minimum_size = Vector2(148, 148)
-			bubble_frame.offset_left = -74.0
-			bubble_frame.offset_top = -74.0
-			bubble_frame.offset_right = 74.0
-			bubble_frame.offset_bottom = 74.0
-		if is_instance_valid(icon):
-			icon.custom_minimum_size = Vector2(148, 148)
-		var r_tex = _get_cached_reaction(reaction_id)
-		if r_tex:
-			icon.texture = r_tex
-
-	bubble.visible = true
-	bubble.scale = Vector2(0.1, 0.1)
-	bubble.modulate.a = 0.0
-	AudioManager.play_sound("chat")
-
-	var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(bubble, "scale", Vector2(1.12, 1.12), 0.22)
-	tw.parallel().tween_property(bubble, "modulate:a", 1.0, 0.16)
-	tw.tween_property(bubble, "scale", Vector2.ONE, 0.1)
-
-	await get_tree().create_timer(hold_duration).timeout
-	if _to_int(_reaction_seqs.get(user_index, 0)) != my_seq:
-		return
-	if is_instance_valid(bubble):
-		bubble.visible = false
 
 func _to_int(val: Variant, default_val: int = 0) -> int:
 	if val == null:
 		return default_val
-	var t = typeof(val)
+	var t := typeof(val)
 	if t == TYPE_INT:
 		return val
 	if t == TYPE_FLOAT:
@@ -512,7 +191,7 @@ func _to_int(val: Variant, default_val: int = 0) -> int:
 	if t == TYPE_BOOL:
 		return 1 if val else 0
 	if t == TYPE_STRING or t == TYPE_STRING_NAME:
-		var st = str(val).strip_edges()
+		var st := str(val).strip_edges()
 		if st.is_valid_int():
 			return st.to_int()
 		if st.is_valid_float():

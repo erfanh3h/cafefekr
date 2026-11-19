@@ -1184,7 +1184,7 @@ func _is_gui_blocking_at(screen_pos: Vector2) -> bool:
 	var hud = _get_hud()
 	if not hud or not hud.visible:
 		return false
-	for modal_name in ["StartGameOverlay", "DisconnectPauseDialog", "SurrenderDialog", "RoundFinishBanner", "ReactionPicker", "GameResultDialog", "UserProfileDialog"]:
+	for modal_name in ["StartGameOverlay", "DisconnectPauseDialog", "SurrenderDialog", "RoundFinishBanner", "ReactionPicker", "GameResultDialog", "UserProfileDialog", "GameMenuDrawer", "CameraPopoverBackdrop"]:
 		var node = hud.get_node_or_null(modal_name)
 		if node and node is Control and node.visible:
 			return true

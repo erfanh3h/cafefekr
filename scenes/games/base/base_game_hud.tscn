@@ -19,6 +19,9 @@
 [ext_resource type="Texture2D" uid="uid://cdvu22ocld35n" path="res://assets/icons/General/expand.png" id="17_expand"]
 [ext_resource type="Texture2D" uid="uid://dbg7va3lhppjs" path="res://assets/images/badges/sticker.png" id="18_sticker"]
 [ext_resource type="Texture2D" uid="uid://b0aygckefohfi" path="res://assets/images/badges/3d.png" id="19_cam_3d"]
+[ext_resource type="Theme" uid="uid://commonhudtheme01" path="res://scenes/games/base/common_hud_theme.tres" id="20_hud_theme"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="21_font_ui"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/info.png" id="22_info"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dock_btn"]
 
@@ -33,36 +36,75 @@ texture_margin_right = 60.0
 texture_margin_bottom = 60.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer_bg"]
-bg_color = Color(0.1, 0.07, 0.04, 0.85)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+bg_color = Color(0.0705882, 0.0431373, 0.027451, 0.92)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer_fill"]
-bg_color = Color(0.25, 0.65, 1, 1)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
+bg_color = Color(0.960784, 0.768627, 0.317647, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast"]
-content_margin_left = 32.0
-content_margin_top = 14.0
-content_margin_right = 32.0
-content_margin_bottom = 14.0
-bg_color = Color(0.12, 0.08, 0.05, 0.96)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
+content_margin_left = 24.0
+content_margin_top = 10.0
+content_margin_right = 24.0
+content_margin_bottom = 10.0
+bg_color = Color(0.101961, 0.0666667, 0.0431373, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.788235, 0.615686, 0.305882, 0.92)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_popover"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.101961, 0.0666667, 0.0431373, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
 border_width_bottom = 3
-border_color = Color(0.95, 0.75, 0.3, 0.95)
+border_color = Color(0.788235, 0.615686, 0.305882, 0.92)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.62)
+shadow_size = 14
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_drawer"]
+content_margin_left = 18.0
+content_margin_top = 18.0
+content_margin_right = 18.0
+content_margin_bottom = 18.0
+bg_color = Color(0.101961, 0.0666667, 0.0431373, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 4
+border_color = Color(0.788235, 0.615686, 0.305882, 1)
 corner_radius_top_left = 22
 corner_radius_top_right = 22
 corner_radius_bottom_right = 22
 corner_radius_bottom_left = 22
-shadow_size = 8
-shadow_offset = Vector2(0, 5)
+shadow_color = Color(0, 0, 0, 0.72)
+shadow_size = 20
+shadow_offset = Vector2(0, 8)
 
 [node name="BaseGameHUD" type="Control" unique_id=845529260]
 layout_mode = 3
@@ -72,15 +114,139 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("20_hud_theme")
 script = ExtResource("1_script")
 
 [node name="TopHeaderSlot" type="Control" parent="." unique_id=465899501]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 360.0
+offset_bottom = 148.0
 grow_horizontal = 2
 mouse_filter = 2
+
+[node name="CameraPopoverBackdrop" type="Button" parent="."]
+visible = false
+z_index = 24
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
+
+[node name="CameraPopover" type="PanelContainer" parent="."]
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -152.0
+offset_right = 246.0
+offset_bottom = -82.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_popover")
+
+[node name="HBox" type="HBoxContainer" parent="CameraPopover"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="BtnCamTop" type="Button" parent="CameraPopover/HBox" unique_id=294536877]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+tooltip_text = "تغییر نمای ۲ بعدی / ۳ بعدی"
+
+[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnCamTop" unique_id=542342361]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("19_cam_3d")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnZoomIn" type="Button" parent="CameraPopover/HBox" unique_id=1137155228]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+tooltip_text = "بزرگ‌نمایی"
+
+[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnZoomIn" unique_id=1953071610]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_zoom_in")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnZoomOut" type="Button" parent="CameraPopover/HBox" unique_id=481008697]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+tooltip_text = "کوچک‌نمایی"
+
+[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnZoomOut" unique_id=175259891]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_zoom_out")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnCamReset" type="Button" parent="CameraPopover/HBox" unique_id=1498693078]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+tooltip_text = "بازنشانی دوربین"
+
+[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnCamReset" unique_id=1197744784]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_refresh")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BottomBar" type="Control" parent="." unique_id=770441818]
 layout_mode = 1
@@ -88,7 +254,7 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -88.0
+offset_top = -76.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -103,106 +269,33 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_bottom = 12
 
 [node name="HBox" type="HBoxContainer" parent="BottomBar/Margin" unique_id=371860007]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="BtnZoomIn" type="Button" parent="BottomBar/Margin/HBox" unique_id=1137155228]
-custom_minimum_size = Vector2(56, 70)
+[node name="BtnCameraMenu" type="Button" parent="BottomBar/Margin/HBox"]
+custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
+size_flags_vertical = 4
 mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
-flat = true
+tooltip_text = "تنظیمات دوربین"
 
-[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnZoomIn" unique_id=1953071610]
-custom_minimum_size = Vector2(56, 70)
+[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnCameraMenu"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("12_zoom_in")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BtnZoomOut" type="Button" parent="BottomBar/Margin/HBox" unique_id=481008697]
-custom_minimum_size = Vector2(56, 70)
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
-flat = true
-
-[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnZoomOut" unique_id=175259891]
-custom_minimum_size = Vector2(56, 70)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("13_zoom_out")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BtnCamTop" type="Button" parent="BottomBar/Margin/HBox" unique_id=294536877]
-custom_minimum_size = Vector2(56, 70)
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
-flat = true
-
-[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnCamTop" unique_id=542342361]
-custom_minimum_size = Vector2(56, 70)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("19_cam_3d")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BtnCamReset" type="Button" parent="BottomBar/Margin/HBox" unique_id=1498693078]
-custom_minimum_size = Vector2(56, 70)
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
-flat = true
-
-[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnCamReset" unique_id=1197744784]
-custom_minimum_size = Vector2(56, 70)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("11_refresh")
 expand_mode = 1
 stretch_mode = 5
 
@@ -211,47 +304,22 @@ layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="BtnSurrender" type="Button" parent="BottomBar/Margin/HBox" unique_id=1518831738]
-custom_minimum_size = Vector2(56, 70)
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
-flat = true
-
-[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnSurrender" unique_id=1549174346]
-custom_minimum_size = Vector2(56, 70)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("9_flag_surrender")
-expand_mode = 1
-stretch_mode = 5
-
 [node name="BtnKori" type="Button" parent="BottomBar/Margin/HBox" unique_id=2124375763]
-custom_minimum_size = Vector2(56, 70)
+custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
+size_flags_vertical = 4
 mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
-flat = true
+tooltip_text = "کری‌خوانی و پیام آماده"
 
 [node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnKori" unique_id=901260139]
-custom_minimum_size = Vector2(56, 70)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -260,22 +328,21 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnReactions" type="Button" parent="BottomBar/Margin/HBox" unique_id=1801254108]
-custom_minimum_size = Vector2(56, 70)
+custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
+size_flags_vertical = 4
 mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
-flat = true
+tooltip_text = "استیکر و واکنش"
 
 [node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnReactions" unique_id=1328611160]
-custom_minimum_size = Vector2(56, 70)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -283,29 +350,193 @@ texture = ExtResource("18_sticker")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BtnAudio" type="Button" parent="BottomBar/Margin/HBox" unique_id=256591417]
-custom_minimum_size = Vector2(56, 70)
-layout_mode = 2
-mouse_default_cursor_shape = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_dock_btn")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
-flat = true
-
-[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnAudio" unique_id=1378705592]
-custom_minimum_size = Vector2(56, 70)
+[node name="GameMenuDrawer" type="Control" parent="."]
+visible = false
+z_index = 40
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="GameMenuDrawer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.02, 0.01, 0.72)
+
+[node name="BtnDimmerClose" type="Button" parent="GameMenuDrawer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dock_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dock_btn")
+flat = true
+
+[node name="Card" type="PanelContainer" parent="GameMenuDrawer"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -195.0
+offset_top = -185.0
+offset_right = 195.0
+offset_bottom = 185.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_drawer")
+
+[node name="MenuView" type="VBoxContainer" parent="GameMenuDrawer/Card"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="HeaderBox" type="VBoxContainer" parent="GameMenuDrawer/Card/MenuView"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LblMenuGameTitle" type="Label" parent="GameMenuDrawer/Card/MenuView/HeaderBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "کافه فکر"
+horizontal_alignment = 1
+
+[node name="LblMenuRoundInfo" type="Label" parent="GameMenuDrawer/Card/MenuView/HeaderBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.788235, 0.713726, 0.6, 1)
+theme_override_fonts/font = ExtResource("21_font_ui")
+theme_override_font_sizes/font_size = 14
+text = "مسابقه آنلاین"
+horizontal_alignment = 1
+
+[node name="Divider" type="ColorRect" parent="GameMenuDrawer/Card/MenuView"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.788235, 0.615686, 0.305882, 0.35)
+
+[node name="BtnAudio" type="Button" parent="GameMenuDrawer/Card/MenuView" unique_id=256591417]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "صدا و موسیقی: روشن"
+
+[node name="Icon" type="TextureRect" parent="GameMenuDrawer/Card/MenuView/BtnAudio" unique_id=1378705592]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 14.0
+offset_top = -15.0
+offset_right = 44.0
+offset_bottom = 15.0
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("8_sound_on")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="BtnGameInfo" type="Button" parent="GameMenuDrawer/Card/MenuView"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "راهنمای قوانین بازی"
+
+[node name="Icon" type="TextureRect" parent="GameMenuDrawer/Card/MenuView/BtnGameInfo"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 14.0
+offset_top = -15.0
+offset_right = 44.0
+offset_bottom = 15.0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("22_info")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnSurrender" type="Button" parent="GameMenuDrawer/Card/MenuView" unique_id=1518831738]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "واگذاری مسابقه"
+
+[node name="Icon" type="TextureRect" parent="GameMenuDrawer/Card/MenuView/BtnSurrender" unique_id=1549174346]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 14.0
+offset_top = -15.0
+offset_right = 44.0
+offset_bottom = 15.0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_flag_surrender")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnCloseMenu" type="Button" parent="GameMenuDrawer/Card/MenuView"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "ادامه بازی"
+
+[node name="RulesView" type="VBoxContainer" parent="GameMenuDrawer/Card"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RulesHeader" type="HBoxContainer" parent="GameMenuDrawer/Card/RulesView"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnRulesBack" type="Button" parent="GameMenuDrawer/Card/RulesView/RulesHeader"]
+custom_minimum_size = Vector2(88, 38)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "بازگشت"
+
+[node name="LblRulesTitle" type="Label" parent="GameMenuDrawer/Card/RulesView/RulesHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 24
+text = "راهنمای بازی"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="RulesScroll" type="ScrollContainer" parent="GameMenuDrawer/Card/RulesView"]
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="LblRulesBody" type="Label" parent="GameMenuDrawer/Card/RulesView/RulesScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.984314, 0.952941, 0.894118, 1)
+theme_override_fonts/font = ExtResource("21_font_ui")
+theme_override_font_sizes/font_size = 15
+text = ""
+autowrap_mode = 3
 
 [node name="FekrBekrActions" type="Control" parent="." unique_id=993819013]
 visible = false
@@ -478,7 +709,7 @@ horizontal_alignment = 1
 
 [node name="Title" type="Label" parent="DisconnectPauseDialog/Card/VBox" unique_id=593427111]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
@@ -489,14 +720,14 @@ horizontal_alignment = 1
 [node name="Desc" type="Label" parent="DisconnectPauseDialog/Card/VBox" unique_id=1961018670]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.85, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = ExtResource("21_font_ui")
+theme_override_font_sizes/font_size = 18
 text = "ارتباط اینترنتی حریف موقتاً قطع شده است. لطفاً تا بازگشت حریف شکیبا باشید..."
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="TimerBar" type="ProgressBar" parent="DisconnectPauseDialog/Card/VBox" unique_id=1887571068]
-custom_minimum_size = Vector2(0, 14)
+custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_timer_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_timer_fill")
@@ -505,9 +736,9 @@ show_percentage = false
 
 [node name="Countdown" type="Label" parent="DisconnectPauseDialog/Card/VBox" unique_id=1947036337]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.82, 0.3, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("21_font_ui")
+theme_override_font_sizes/font_size = 18
 text = "⏳ مهلت بازگشت به بازی: ۳۰ ثانیه"
 horizontal_alignment = 1
 
@@ -552,7 +783,7 @@ alignment = 1
 
 [node name="Title" type="Label" parent="SurrenderDialog/Card/VBox" unique_id=883627042]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
@@ -563,8 +794,8 @@ horizontal_alignment = 1
 [node name="Desc" type="Label" parent="SurrenderDialog/Card/VBox" unique_id=444659193]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.82, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = ExtResource("21_font_ui")
+theme_override_font_sizes/font_size = 18
 text = "آیا از واگذاری این مسابقه اطمینان دارید؟
 با تأیید انصراف، بازی به پایان رسیده و پیروزی برای حریف ثبت خواهد شد."
 horizontal_alignment = 1
@@ -634,7 +865,7 @@ alignment = 1
 
 [node name="CafeTitle" type="Label" parent="StartGameOverlay/Card/VBox" unique_id=1716186520]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 24
 text = "☕ کافه فکر — مسابقه آنلاین"
@@ -683,7 +914,7 @@ horizontal_alignment = 1
 
 [node name="VSLabel" type="Label" parent="StartGameOverlay/Card/VBox/VSBox" unique_id=414555304]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.82, 0.3, 1)
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 46
 text = "⚔️"
@@ -777,7 +1008,7 @@ alignment = 1
 
 [node name="RoundTitle" type="Label" parent="RoundFinishBanner/Card/VBox" unique_id=284943266]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
@@ -814,9 +1045,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -220.0
-offset_top = -200.0
+offset_top = -170.0
 offset_right = 220.0
-offset_bottom = -140.0
+offset_bottom = -118.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -824,11 +1055,11 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_toast")
 
 [node name="LblToast" type="Label" parent="ToastHint" unique_id=308860705]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.94, 0.55, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
-theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("21_font_ui")
+theme_override_font_sizes/font_size = 18
 text = "نوبتت نیست!"
 horizontal_alignment = 1
 vertical_alignment = 1

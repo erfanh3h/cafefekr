@@ -1,0 +1,482 @@
+[gd_scene load_steps=16 format=3 uid="uid://commonhudscene01"]
+
+[ext_resource type="Script" uid="uid://commonhudscript01" path="res://scenes/games/base/common_hud.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://commonhudtheme01" path="res://scenes/games/base/common_hud_theme.tres" id="2_theme"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_display"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_ui"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/setting.png" id="5_icon_settings"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/3d.png" id="6_icon_3d"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/plus.png" id="7_icon_plus"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/minus.png" id="8_icon_minus"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/reload.png" id="9_icon_reset"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/chat.png" id="10_icon_chat"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/sticker.png" id="11_icon_emote"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/sound-on.png" id="12_icon_audio"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/info.png" id="13_icon_info"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/surrender.png" id="14_icon_surrender"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_clear"]
+
+[node name="CommonHUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="TopSafeMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 144.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 10
+
+[node name="TopVBox" type="VBoxContainer" parent="TopSafeMargin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="PlayersRow1" type="HBoxContainer" parent="TopSafeMargin/TopVBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="MenuColumn" type="VBoxContainer" parent="TopSafeMargin/TopVBox/PlayersRow1"]
+custom_minimum_size = Vector2(46, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="BtnSettings" type="Button" parent="TopSafeMargin/TopVBox/PlayersRow1/MenuColumn"]
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "منو و تنظیمات بازی"
+
+[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/PlayersRow1/MenuColumn/BtnSettings"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_icon_settings")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlayersRow2" type="HBoxContainer" parent="TopSafeMargin/TopVBox"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Row2Spacer" type="Control" parent="TopSafeMargin/TopVBox/PlayersRow2"]
+custom_minimum_size = Vector2(46, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+
+[node name="TurnStatusToast" type="PanelContainer" parent="."]
+visible = false
+z_index = 18
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 106.0
+offset_right = 150.0
+offset_bottom = 140.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="LblTurnToast" type="Label" parent="TurnStatusToast"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("4_font_ui")
+theme_override_font_sizes/font_size = 15
+text = "نوبت شماست"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EmoteLayer" type="Control" parent="."]
+z_index = 30
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CameraPopoverBackdrop" type="Button" parent="."]
+visible = false
+z_index = 24
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
+flat = true
+
+[node name="CameraPopover" type="PanelContainer" parent="."]
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -152.0
+offset_right = 246.0
+offset_bottom = -82.0
+grow_vertical = 0
+
+[node name="HBox" type="HBoxContainer" parent="CameraPopover"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="BtnCam2D3D" type="Button" parent="CameraPopover/HBox"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+tooltip_text = "تغییر نمای ۲D / ۳D"
+
+[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnCam2D3D"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_icon_3d")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnZoomIn" type="Button" parent="CameraPopover/HBox"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+tooltip_text = "بزرگ‌نمایی"
+
+[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnZoomIn"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_icon_plus")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnZoomOut" type="Button" parent="CameraPopover/HBox"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+tooltip_text = "کوچک‌نمایی"
+
+[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnZoomOut"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_icon_minus")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnCamReset" type="Button" parent="CameraPopover/HBox"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+tooltip_text = "بازنشانی دوربین"
+
+[node name="Icon" type="TextureRect" parent="CameraPopover/HBox/BtnCamReset"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_icon_reset")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BottomSafeMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -76.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="BottomHBox" type="HBoxContainer" parent="BottomSafeMargin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="BtnCameraToggle" type="Button" parent="BottomSafeMargin/BottomHBox"]
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "تنظیمات دوربین"
+
+[node name="Icon" type="TextureRect" parent="BottomSafeMargin/BottomHBox/BtnCameraToggle"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_icon_3d")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CenterSpacer" type="Control" parent="BottomSafeMargin/BottomHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="BtnChat" type="Button" parent="BottomSafeMargin/BottomHBox"]
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "کری‌خوانی و گفتگو"
+
+[node name="Icon" type="TextureRect" parent="BottomSafeMargin/BottomHBox/BtnChat"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_icon_chat")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnEmote" type="Button" parent="BottomSafeMargin/BottomHBox"]
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "استیکر و ایموجی"
+
+[node name="Icon" type="TextureRect" parent="BottomSafeMargin/BottomHBox/BtnEmote"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_icon_emote")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SettingsDrawer" type="Control" parent="."]
+visible = false
+z_index = 40
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="SettingsDrawer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.02, 0.01, 0.72)
+
+[node name="BtnBackdropClose" type="Button" parent="SettingsDrawer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
+flat = true
+
+[node name="DrawerCard" type="PanelContainer" parent="SettingsDrawer"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -175.0
+offset_right = 190.0
+offset_bottom = 175.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="SettingsDrawer/DrawerCard"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LblGameTitle" type="Label" parent="SettingsDrawer/DrawerCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("3_font_display")
+theme_override_font_sizes/font_size = 28
+text = "کافه فکر"
+horizontal_alignment = 1
+
+[node name="LblRoundMeta" type="Label" parent="SettingsDrawer/DrawerCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.788235, 0.713726, 0.6, 1)
+theme_override_fonts/font = ExtResource("4_font_ui")
+theme_override_font_sizes/font_size = 14
+text = "مسابقه آنلاین"
+horizontal_alignment = 1
+
+[node name="BtnAudioToggle" type="Button" parent="SettingsDrawer/DrawerCard/VBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "صدا و موسیقی: روشن"
+
+[node name="Icon" type="TextureRect" parent="SettingsDrawer/DrawerCard/VBox/BtnAudioToggle"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 14.0
+offset_top = -14.0
+offset_right = 42.0
+offset_bottom = 14.0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_icon_audio")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnGameInfo" type="Button" parent="SettingsDrawer/DrawerCard/VBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "راهنمای قوانین بازی"
+
+[node name="Icon" type="TextureRect" parent="SettingsDrawer/DrawerCard/VBox/BtnGameInfo"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 14.0
+offset_top = -14.0
+offset_right = 42.0
+offset_bottom = 14.0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_icon_info")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnSurrender" type="Button" parent="SettingsDrawer/DrawerCard/VBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "واگذاری مسابقه"
+
+[node name="Icon" type="TextureRect" parent="SettingsDrawer/DrawerCard/VBox/BtnSurrender"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 14.0
+offset_top = -14.0
+offset_right = 42.0
+offset_bottom = 14.0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("14_icon_surrender")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnResume" type="Button" parent="SettingsDrawer/DrawerCard/VBox"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "ادامه بازی"

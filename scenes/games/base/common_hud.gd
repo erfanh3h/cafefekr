@@ -1,0 +1,524 @@
+class_name CommonHUD
+extends Control
+
+# Reusable Warm Classic Parlor Shared HUD Controller for Cafe Fekr (Godot 4)
+# Plug-and-play portrait HUD supporting 2-4 players, Persian RTL / English LTR BiDi text,
+# mobile safe-area insets (9:16 & 9:19.5), integrated active-card bottom timer bars,
+# lightweight fading turn prompts, strictly below-avatar emotes, collapsible camera tray,
+# and a top-corner settings drawer.
+
+signal player_profile_clicked(player_index: int)
+signal chat_pressed()
+signal emote_pressed()
+signal camera_mode_toggled()
+signal camera_zoom_in()
+signal camera_zoom_out()
+signal camera_reset()
+signal audio_toggled(enabled: bool)
+signal game_info_requested()
+signal surrender_requested()
+
+const CARD_HEIGHT_2P := 84.0
+const CARD_HEIGHT_MULTI := 68.0
+
+@onready var top_safe_margin: MarginContainer = $TopSafeMargin
+@onready var players_row1: HBoxContainer = $TopSafeMargin/TopVBox/PlayersRow1
+@onready var players_row2: HBoxContainer = $TopSafeMargin/TopVBox/PlayersRow2
+@onready var menu_column: VBoxContainer = $TopSafeMargin/TopVBox/PlayersRow1/MenuColumn
+@onready var btn_settings: Button = $TopSafeMargin/TopVBox/PlayersRow1/MenuColumn/BtnSettings
+@onready var row2_spacer: Control = $TopSafeMargin/TopVBox/PlayersRow2/Row2Spacer
+
+@onready var turn_status_toast: PanelContainer = $TurnStatusToast
+@onready var lbl_turn_toast: Label = $TurnStatusToast/LblTurnToast
+@onready var emote_layer: Control = $EmoteLayer
+
+@onready var camera_popover_backdrop: Button = $CameraPopoverBackdrop
+@onready var camera_popover: PanelContainer = $CameraPopover
+@onready var btn_cam_2d3d: Button = $CameraPopover/HBox/BtnCam2D3D
+@onready var img_cam_2d3d: TextureRect = $CameraPopover/HBox/BtnCam2D3D/Icon
+@onready var btn_zoom_in: Button = $CameraPopover/HBox/BtnZoomIn
+@onready var btn_zoom_out: Button = $CameraPopover/HBox/BtnZoomOut
+@onready var btn_cam_reset: Button = $CameraPopover/HBox/BtnCamReset
+
+@onready var bottom_safe_margin: MarginContainer = $BottomSafeMargin
+@onready var btn_camera_toggle: Button = $BottomSafeMargin/BottomHBox/BtnCameraToggle
+@onready var img_camera_toggle: TextureRect = $BottomSafeMargin/BottomHBox/BtnCameraToggle/Icon
+@onready var btn_chat: Button = $BottomSafeMargin/BottomHBox/BtnChat
+@onready var btn_emote: Button = $BottomSafeMargin/BottomHBox/BtnEmote
+
+@onready var settings_drawer: Control = $SettingsDrawer
+@onready var drawer_card: PanelContainer = $SettingsDrawer/DrawerCard
+@onready var btn_backdrop_close: Button = $SettingsDrawer/BtnBackdropClose
+@onready var lbl_game_title: Label = $SettingsDrawer/DrawerCard/VBox/LblGameTitle
+@onready var lbl_round_meta: Label = $SettingsDrawer/DrawerCard/VBox/LblRoundMeta
+@onready var btn_audio_toggle: Button = $SettingsDrawer/DrawerCard/VBox/BtnAudioToggle
+@onready var img_audio_toggle: TextureRect = $SettingsDrawer/DrawerCard/VBox/BtnAudioToggle/Icon
+@onready var btn_game_info: Button = $SettingsDrawer/DrawerCard/VBox/BtnGameInfo
+@onready var btn_surrender: Button = $SettingsDrawer/DrawerCard/VBox/BtnSurrender
+@onready var btn_resume: Button = $SettingsDrawer/DrawerCard/VBox/BtnResume
+
+static var _tex_2d: Texture2D = preload("res://assets/images/badges/2d.png")
+static var _tex_3d: Texture2D = preload("res://assets/images/badges/3d.png")
+static var _tex_sound_on: Texture2D = preload("res://assets/images/badges/sound-on.png")
+static var _tex_sound_off: Texture2D = preload("res://assets/images/badges/sound-off.png")
+
+var _cards: Dictionary = {} # player_index (1..4) -> Dictionary of controls
+var _active_players: Array[int] = [1]
+var _player_count: int = 2
+var _audio_enabled: bool = true
+var _camera_popover_open: bool = false
+var _safe_top: int = 16
+var _safe_bottom: int = 14
+var _toast_seq: int = 0
+var _toast_tween: Tween = null
+var _emote_seqs: Dictionary = {}
+
+
+func _ready() -> void:
+	_apply_theme_styles()
+	_apply_safe_insets()
+	_connect_signals()
+	setup_players([
+		{"index": 1, "name": "بازیکن ۱", "counter": 0},
+		{"index": 2, "name": "بازیکن ۲", "counter": 0},
+	])
+
+
+func _apply_theme_styles() -> void:
+	turn_status_toast.add_theme_stylebox_override("panel", HudTheme.make_turn_toast_style())
+	camera_popover.add_theme_stylebox_override("panel", HudTheme.make_popover_panel_style())
+	drawer_card.add_theme_stylebox_override("panel", HudTheme.make_drawer_panel_style())
+
+	HudTheme.apply_floating_button_style(btn_settings, false)
+	HudTheme.apply_floating_button_style(btn_camera_toggle, false)
+	HudTheme.apply_floating_button_style(btn_chat, false)
+	HudTheme.apply_floating_button_style(btn_emote, false)
+	HudTheme.apply_floating_button_style(btn_cam_2d3d, false)
+	HudTheme.apply_floating_button_style(btn_zoom_in, false)
+	HudTheme.apply_floating_button_style(btn_zoom_out, false)
+	HudTheme.apply_floating_button_style(btn_cam_reset, false)
+
+	HudTheme.apply_drawer_item_style(btn_audio_toggle, "default")
+	HudTheme.apply_drawer_item_style(btn_game_info, "default")
+	HudTheme.apply_drawer_item_style(btn_surrender, "danger")
+	HudTheme.apply_drawer_item_style(btn_resume, "primary")
+	HudTheme.configure_bidi_label(lbl_turn_toast, false)
+
+
+func _apply_safe_insets() -> void:
+	var insets := HudTheme.get_safe_insets(get_viewport())
+	_safe_top = int(insets.get("top", 16))
+	_safe_bottom = int(insets.get("bottom", 14))
+	var left_i := int(insets.get("left", 10))
+	var right_i := int(insets.get("right", 10))
+
+	top_safe_margin.add_theme_constant_override("margin_top", _safe_top)
+	top_safe_margin.add_theme_constant_override("margin_left", left_i)
+	top_safe_margin.add_theme_constant_override("margin_right", right_i)
+
+	bottom_safe_margin.add_theme_constant_override("margin_bottom", _safe_bottom)
+	bottom_safe_margin.add_theme_constant_override("margin_left", left_i)
+	bottom_safe_margin.add_theme_constant_override("margin_right", right_i)
+	var bar_h := 64.0 + float(_safe_bottom)
+	bottom_safe_margin.offset_top = -bar_h
+	camera_popover.offset_left = float(left_i)
+	camera_popover.offset_bottom = -(bar_h + 6.0)
+	camera_popover.offset_top = -(bar_h + 76.0)
+	_sync_top_footprint()
+
+
+func _sync_top_footprint() -> void:
+	var is_multi := _player_count > 2
+	var cards_h := (CARD_HEIGHT_MULTI * 2.0 + 6.0) if is_multi else CARD_HEIGHT_2P
+	var total_h := clampf(float(_safe_top) + cards_h + 12.0, 112.0, 204.0 if is_multi else 148.0)
+	top_safe_margin.offset_bottom = total_h
+	var toast_y := float(_safe_top) + cards_h + 6.0
+	turn_status_toast.offset_top = toast_y
+	turn_status_toast.offset_bottom = toast_y + 34.0
+
+
+func _connect_signals() -> void:
+	btn_settings.pressed.connect(_open_settings_drawer)
+	btn_backdrop_close.pressed.connect(_close_settings_drawer)
+	btn_resume.pressed.connect(_close_settings_drawer)
+
+	btn_camera_toggle.pressed.connect(func():
+		if _camera_popover_open:
+			_close_camera_popover()
+		else:
+			_open_camera_popover()
+	)
+	camera_popover_backdrop.pressed.connect(_close_camera_popover)
+
+	btn_cam_2d3d.pressed.connect(func(): camera_mode_toggled.emit())
+	btn_zoom_in.pressed.connect(func(): camera_zoom_in.emit())
+	btn_zoom_out.pressed.connect(func(): camera_zoom_out.emit())
+	btn_cam_reset.pressed.connect(func(): camera_reset.emit())
+
+	btn_chat.pressed.connect(func():
+		_close_camera_popover()
+		chat_pressed.emit()
+	)
+	btn_emote.pressed.connect(func():
+		_close_camera_popover()
+		emote_pressed.emit()
+	)
+	btn_audio_toggle.pressed.connect(func():
+		set_audio_enabled(not _audio_enabled)
+		audio_toggled.emit(_audio_enabled)
+	)
+	btn_game_info.pressed.connect(func():
+		_close_settings_drawer()
+		game_info_requested.emit()
+	)
+	btn_surrender.pressed.connect(func():
+		_close_settings_drawer()
+		surrender_requested.emit()
+	)
+
+
+func setup_players(players: Array) -> void:
+	for bundle in _cards.values():
+		var c: Control = bundle.get("card", null)
+		if is_instance_valid(c):
+			c.queue_free()
+	_cards.clear()
+
+	_player_count = clampi(players.size(), 2, 4)
+	var is_multi := _player_count > 2
+	players_row2.visible = is_multi
+
+	for i in range(_player_count):
+		var p_data: Dictionary = players[i]
+		var idx: int = int(p_data.get("index", i + 1))
+		var card_bundle := _create_player_card(idx, p_data, is_multi)
+		var target_row := players_row1 if i < 2 else players_row2
+		target_row.add_child(card_bundle["card"])
+		if target_row == players_row1:
+			target_row.move_child(menu_column, target_row.get_child_count() - 1)
+		else:
+			target_row.move_child(row2_spacer, target_row.get_child_count() - 1)
+		_cards[idx] = card_bundle
+
+	_sync_top_footprint()
+	set_active_player(int(players[0].get("index", 1)))
+
+
+func _create_player_card(idx: int, p_data: Dictionary, compact: bool) -> Dictionary:
+	var card := PanelContainer.new()
+	card.name = "PlayerCard%d" % idx
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.custom_minimum_size = Vector2(0, CARD_HEIGHT_MULTI if compact else CARD_HEIGHT_2P)
+	card.add_theme_stylebox_override("panel", HudTheme.make_player_card_style(false, false, compact))
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 8)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	card.add_child(hbox)
+
+	var av_sz := Vector2(46, 46) if compact else Vector2(56, 56)
+	var av_container := Control.new()
+	av_container.custom_minimum_size = av_sz
+	av_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hbox.add_child(av_container)
+
+	var av_tex := TextureRect.new()
+	av_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	av_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	av_tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if p_data.get("avatar_texture") is Texture2D:
+		av_tex.texture = p_data["avatar_texture"]
+	av_container.add_child(av_tex)
+
+	var seat_dot := Panel.new()
+	seat_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	seat_dot.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	seat_dot.offset_left = -12
+	seat_dot.offset_top = -12
+	seat_dot.offset_right = -1
+	seat_dot.offset_bottom = -1
+	var sb_dot := StyleBoxFlat.new()
+	sb_dot.bg_color = HudTheme.get_seat_accent(idx)
+	sb_dot.border_color = HudTheme.COL_WALNUT_DEEP
+	sb_dot.set_border_width_all(2)
+	sb_dot.set_corner_radius_all(6)
+	seat_dot.add_theme_stylebox_override("panel", sb_dot)
+	av_container.add_child(seat_dot)
+
+	var btn_prof := Button.new()
+	btn_prof.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn_prof.flat = true
+	btn_prof.focus_mode = Control.FOCUS_NONE
+	btn_prof.pressed.connect(func(): player_profile_clicked.emit(idx))
+	av_container.add_child(btn_prof)
+
+	var info_box := VBoxContainer.new()
+	info_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	info_box.add_theme_constant_override("separation", 2)
+	hbox.add_child(info_box)
+
+	var lbl_name := Label.new()
+	lbl_name.text = str(p_data.get("name", "بازیکن %d" % idx))
+	lbl_name.add_theme_font_override("font", HudTheme.get_ui_font())
+	lbl_name.add_theme_font_size_override("font_size", 16 if compact else 18)
+	lbl_name.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
+	HudTheme.configure_bidi_label(lbl_name, true)
+	info_box.add_child(lbl_name)
+
+	var lbl_sub := Label.new()
+	lbl_sub.visible = false
+	lbl_sub.add_theme_font_override("font", HudTheme.get_ui_font())
+	lbl_sub.add_theme_font_size_override("font_size", 12)
+	lbl_sub.add_theme_color_override("font_color", HudTheme.COL_TEXT_SAND)
+	lbl_sub.add_theme_stylebox_override("normal", HudTheme.make_status_pill_style(HudTheme.get_seat_accent(idx), 0.78))
+	HudTheme.configure_bidi_label(lbl_sub, true)
+	info_box.add_child(lbl_sub)
+
+	var counter_badge := PanelContainer.new()
+	counter_badge.custom_minimum_size = Vector2(38, 36) if compact else Vector2(40, 40)
+	counter_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	counter_badge.add_theme_stylebox_override("panel", HudTheme.make_score_badge_style("normal"))
+	hbox.add_child(counter_badge)
+
+	var lbl_counter := Label.new()
+	lbl_counter.text = HudTheme.fa_digits(p_data.get("counter", 0))
+	lbl_counter.add_theme_font_override("font", HudTheme.get_display_font())
+	lbl_counter.add_theme_font_size_override("font_size", 24 if compact else 28)
+	lbl_counter.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
+	lbl_counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_counter.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	counter_badge.add_child(lbl_counter)
+
+	# Integrated bottom-edge progress timer + floating seconds chip
+	var overlay := Control.new()
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(overlay)
+
+	var timer_fill := HudTheme.make_card_timer_fill_style(HudTheme.COL_GOLD_ACTIVE)
+	var timer_bar := ProgressBar.new()
+	timer_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	timer_bar.show_percentage = false
+	timer_bar.value = 100.0
+	timer_bar.visible = false
+	timer_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	timer_bar.offset_left = -4.0
+	timer_bar.offset_right = 4.0
+	timer_bar.offset_top = 2.0
+	timer_bar.offset_bottom = 8.0
+	timer_bar.add_theme_stylebox_override("background", HudTheme.make_card_timer_track_style())
+	timer_bar.add_theme_stylebox_override("fill", timer_fill)
+	overlay.add_child(timer_bar)
+
+	var timer_chip := Label.new()
+	timer_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	timer_chip.visible = false
+	timer_chip.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	timer_chip.offset_left = -2.0
+	timer_chip.offset_top = -13.0
+	timer_chip.offset_right = 42.0
+	timer_chip.offset_bottom = 6.0
+	timer_chip.add_theme_font_override("font", HudTheme.get_ui_font())
+	timer_chip.add_theme_font_size_override("font_size", 11)
+	timer_chip.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
+	timer_chip.add_theme_stylebox_override("normal", HudTheme.make_timer_chip_style(false))
+	timer_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	timer_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	overlay.add_child(timer_chip)
+
+	return {
+		"card": card,
+		"avatar_container": av_container,
+		"avatar": av_tex,
+		"name": lbl_name,
+		"sub": lbl_sub,
+		"counter": lbl_counter,
+		"counter_badge": counter_badge,
+		"timer_bar": timer_bar,
+		"timer_fill": timer_fill,
+		"timer_chip": timer_chip,
+	}
+
+
+func set_active_player(player_index: int, prompt_text: String = "") -> void:
+	set_simultaneous_active([player_index], prompt_text)
+
+
+func set_simultaneous_active(indices: Array[int], prompt_text: String = "") -> void:
+	_active_players = indices.duplicate()
+	var compact := _player_count > 2
+	for idx in _cards.keys():
+		var b: Dictionary = _cards[idx]
+		var is_act := _active_players.has(idx)
+		(b["card"] as PanelContainer).add_theme_stylebox_override("panel", HudTheme.make_player_card_style(is_act, false, compact))
+		(b["card"] as Control).modulate = Color.WHITE if is_act else Color(0.88, 0.85, 0.82, 0.94)
+		(b["timer_bar"] as ProgressBar).visible = is_act
+		(b["timer_chip"] as Label).visible = is_act and not (b["timer_chip"] as Label).text.is_empty()
+	if not prompt_text.is_empty():
+		show_turn_prompt(prompt_text)
+
+
+func update_timer(remaining_sec: float, total_sec: float) -> void:
+	var pct := clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
+	var is_danger := (remaining_sec <= 4.0 and remaining_sec > 0.0)
+	var sec_text := "%s″" % HudTheme.fa_digits(maxi(0, int(ceil(remaining_sec))))
+	var compact := _player_count > 2
+	for idx in _cards.keys():
+		var b: Dictionary = _cards[idx]
+		var is_act := _active_players.has(idx)
+		(b["timer_bar"] as ProgressBar).visible = is_act
+		(b["timer_chip"] as Label).visible = is_act
+		if is_act:
+			(b["timer_bar"] as ProgressBar).value = pct
+			(b["timer_fill"] as StyleBoxFlat).bg_color = HudTheme.COL_DANGER if is_danger else HudTheme.COL_GOLD_ACTIVE
+			(b["timer_chip"] as Label).text = sec_text
+			(b["timer_chip"] as Label).add_theme_stylebox_override("normal", HudTheme.make_timer_chip_style(is_danger))
+			(b["card"] as PanelContainer).add_theme_stylebox_override("panel", HudTheme.make_player_card_style(true, is_danger, compact))
+
+
+func update_counter(player_index: int, value: Variant, sub_status: String = "") -> void:
+	if not _cards.has(player_index):
+		return
+	var b: Dictionary = _cards[player_index]
+	(b["counter"] as Label).text = HudTheme.fa_digits(value)
+	var lbl_sub: Label = b["sub"]
+	lbl_sub.text = sub_status
+	lbl_sub.visible = not sub_status.strip_edges().is_empty()
+
+
+func show_turn_prompt(text: String, accent: Color = HudTheme.COL_TEXT_GOLD, persistent: bool = false, hold_sec: float = 1.8) -> void:
+	_toast_seq += 1
+	var my_seq := _toast_seq
+	if is_instance_valid(_toast_tween):
+		_toast_tween.kill()
+		_toast_tween = null
+	lbl_turn_toast.text = text
+	lbl_turn_toast.add_theme_color_override("font_color", accent)
+	turn_status_toast.visible = true
+	turn_status_toast.modulate.a = 0.0
+	_toast_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_toast_tween.tween_property(turn_status_toast, "modulate:a", 1.0, 0.16)
+	if not persistent:
+		_toast_tween.tween_interval(hold_sec)
+		_toast_tween.tween_property(turn_status_toast, "modulate:a", 0.0, 0.28)
+		_toast_tween.tween_callback(func():
+			if _toast_seq == my_seq and is_instance_valid(turn_status_toast):
+				turn_status_toast.visible = false
+		)
+
+
+func show_emote(player_index: int, content: Variant, is_text: bool = false, hold_sec: float = 2.4) -> void:
+	if not _cards.has(player_index):
+		return
+	var b: Dictionary = _cards[player_index]
+	var card: Control = b["card"]
+	var av_cont: Control = b["avatar_container"]
+
+	var existing := emote_layer.get_node_or_null("EmoteP%d" % player_index)
+	if is_instance_valid(existing):
+		existing.queue_free()
+
+	var seq := int(_emote_seqs.get(player_index, 0)) + 1
+	_emote_seqs[player_index] = seq
+
+	var bubble := PanelContainer.new()
+	bubble.name = "EmoteP%d" % player_index
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bubble.add_theme_stylebox_override("panel", HudTheme.make_emote_bubble_style(is_text))
+
+	var b_size := Vector2(280.0, 68.0) if is_text else Vector2(92.0, 92.0)
+	bubble.custom_minimum_size = b_size
+	bubble.size = b_size
+
+	if is_text:
+		var lbl := Label.new()
+		lbl.text = str(content)
+		lbl.add_theme_font_override("font", HudTheme.get_ui_font())
+		lbl.add_theme_font_size_override("font_size", 17)
+		lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		HudTheme.configure_bidi_label(lbl, false)
+		bubble.add_child(lbl)
+	elif content is Texture2D:
+		var tex_rect := TextureRect.new()
+		tex_rect.texture = content
+		tex_rect.custom_minimum_size = Vector2(72, 72)
+		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		bubble.add_child(tex_rect)
+
+	emote_layer.add_child(bubble)
+
+	# Anchor strictly BELOW the player's avatar/card bottom edge (never overlapping player info)
+	var card_rect := card.get_global_rect()
+	var av_rect := av_cont.get_global_rect()
+	var vp_w := get_viewport_rect().size.x
+	var anchor_x := clampf(av_rect.get_center().x - b_size.x * 0.5, 12.0, maxf(12.0, vp_w - b_size.x - 12.0))
+	var anchor_y := maxf(card_rect.end.y, av_rect.end.y) + 8.0
+	bubble.global_position = Vector2(anchor_x, anchor_y)
+	bubble.pivot_offset = b_size * 0.5
+	bubble.scale = Vector2(0.25, 0.25)
+	bubble.modulate.a = 0.0
+
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(bubble, "scale", Vector2(1.06, 1.06), 0.18)
+	tw.parallel().tween_property(bubble, "modulate:a", 1.0, 0.14)
+	tw.tween_property(bubble, "scale", Vector2.ONE, 0.10)
+
+	await get_tree().create_timer(hold_sec).timeout
+	if int(_emote_seqs.get(player_index, 0)) != seq or not is_instance_valid(bubble):
+		return
+	var fade := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	fade.tween_property(bubble, "scale", Vector2(0.88, 0.88), 0.20)
+	fade.parallel().tween_property(bubble, "modulate:a", 0.0, 0.22)
+	await fade.finished
+	if is_instance_valid(bubble):
+		bubble.queue_free()
+
+
+func set_camera_mode(is_top_down: bool) -> void:
+	var tex := _tex_3d if is_top_down else _tex_2d
+	img_cam_2d3d.texture = tex
+	img_camera_toggle.texture = tex
+
+
+func set_audio_enabled(enabled: bool) -> void:
+	_audio_enabled = enabled
+	img_audio_toggle.texture = _tex_sound_on if enabled else _tex_sound_off
+	btn_audio_toggle.text = "صدا و موسیقی: روشن" if enabled else "صدا و موسیقی: خاموش"
+
+
+func set_spectator_mode(enabled: bool) -> void:
+	btn_chat.visible = not enabled
+	btn_emote.visible = not enabled
+	btn_surrender.visible = not enabled
+
+
+func set_game_meta(game_title: String, round_text: String) -> void:
+	lbl_game_title.text = game_title
+	lbl_round_meta.text = round_text
+
+
+func _open_camera_popover() -> void:
+	_camera_popover_open = true
+	camera_popover_backdrop.visible = true
+	camera_popover.visible = true
+	HudTheme.apply_floating_button_style(btn_camera_toggle, true)
+
+
+func _close_camera_popover() -> void:
+	_camera_popover_open = false
+	camera_popover_backdrop.visible = false
+	camera_popover.visible = false
+	HudTheme.apply_floating_button_style(btn_camera_toggle, false)
+
+
+func _open_settings_drawer() -> void:
+	_close_camera_popover()
+	settings_drawer.visible = true
+
+
+func _close_settings_drawer() -> void:
+	settings_drawer.visible = false

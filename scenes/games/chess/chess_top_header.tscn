@@ -2,90 +2,90 @@
 
 [ext_resource type="PackedScene" path="res://scenes/games/base/base_top_header.tscn" id="1_base"]
 [ext_resource type="Script" path="res://scenes/games/chess/chess_top_header.gd" id="2_chess_script"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font"]
 
 [node name="ChessTopHeader" instance=ExtResource("1_base")]
 script = ExtResource("2_chess_script")
 
 [node name="P1MissedTurns" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox" index="2"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 5
 alignment = 0
 
 [node name="P1StrikeTitle" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="0"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.75, 0.6, 0.9)
+theme_override_colors/font_color = Color(0.847, 0.761, 0.651, 0.92)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 22
-text = "خطای نوبت:"
+theme_override_font_sizes/font_size = 12
+text = "خطا:"
 
 [node name="P1Dot1" type="Panel" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="1"]
-custom_minimum_size = Vector2(14, 14)
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="P1Dot2" type="Panel" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="2"]
-custom_minimum_size = Vector2(14, 14)
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="P1Dot3" type="Panel" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="3"]
-custom_minimum_size = Vector2(14, 14)
+visible = false
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="P1StrikeCount" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="4"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_colors/font_color = Color(0.847, 0.761, 0.651, 1)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 22
-text = "۰/۴"
+theme_override_font_sizes/font_size = 12
+text = "۰/۲"
 
 [node name="P2MissedTurns" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox" index="2"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 5
 alignment = 0
 
 [node name="P2StrikeTitle" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="0"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.75, 0.6, 0.9)
+theme_override_colors/font_color = Color(0.847, 0.761, 0.651, 0.92)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 22
-text = "خطای نوبت:"
+theme_override_font_sizes/font_size = 12
+text = "خطا:"
 
 [node name="P2Dot1" type="Panel" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="1"]
-custom_minimum_size = Vector2(14, 14)
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="P2Dot2" type="Panel" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="2"]
-custom_minimum_size = Vector2(14, 14)
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="P2Dot3" type="Panel" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="3"]
-custom_minimum_size = Vector2(14, 14)
+visible = false
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="P2StrikeCount" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="4"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+theme_override_colors/font_color = Color(0.847, 0.761, 0.651, 1)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 22
-text = "۰/۴"
+theme_override_font_sizes/font_size = 12
+text = "۰/۲"
 
 [node name="AfkRuleRow" type="HBoxContainer" parent="Margin/VBoxMain/MatchDetailsBox/VBox" index="4"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="LblAfkRule" type="Label" parent="Margin/VBoxMain/MatchDetailsBox/VBox/AfkRuleRow" index="0"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.55, 0.95)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
-theme_override_constants/shadow_offset_y = 1
+theme_override_colors/font_color = Color(0.961, 0.769, 0.318, 0.95)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 24
-text = "⏱️ زمان نوبت: ۲۰ ثانیه  |  ⚠️ ۴ بار عدم حرکت = باخت مسابقه"
+theme_override_font_sizes/font_size = 13
+text = "هر نوبت: ۲۰ ثانیه | ۲ نوبت بدون حرکت = باخت"
 horizontal_alignment = 1

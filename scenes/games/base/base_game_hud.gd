@@ -42,30 +42,40 @@ signal top_view_requested()
 
 
 
-# --- Bottom Controls & Camera Dock ---
+# --- Bottom Controls, Camera Popover & Top-Corner Menu Drawer ---
 
-@onready var btn_surrender: Button = $BottomBar/Margin/HBox/BtnSurrender
-
+@onready var btn_camera_menu: Button = $BottomBar/Margin/HBox/BtnCameraMenu
+@onready var img_camera_menu: TextureRect = $BottomBar/Margin/HBox/BtnCameraMenu/Icon
 @onready var btn_kori: Button = $BottomBar/Margin/HBox/BtnKori
-
 @onready var btn_reactions: Button = $BottomBar/Margin/HBox/BtnReactions
 
+@onready var camera_popover_backdrop: Button = $CameraPopoverBackdrop
+@onready var camera_popover: PanelContainer = $CameraPopover
+@onready var btn_zoom_in: Button = $CameraPopover/HBox/BtnZoomIn
+@onready var btn_zoom_out: Button = $CameraPopover/HBox/BtnZoomOut
+@onready var btn_cam_top: Button = $CameraPopover/HBox/BtnCamTop
+@onready var img_cam_top: TextureRect = $CameraPopover/HBox/BtnCamTop/Icon
+@onready var btn_cam_reset: Button = $CameraPopover/HBox/BtnCamReset
 
+@onready var game_menu_drawer: Control = $GameMenuDrawer
+@onready var btn_menu_dimmer_close: Button = $GameMenuDrawer/BtnDimmerClose
+@onready var menu_view: VBoxContainer = $GameMenuDrawer/Card/MenuView
+@onready var rules_view: VBoxContainer = $GameMenuDrawer/Card/RulesView
+@onready var lbl_menu_game_title: Label = $GameMenuDrawer/Card/MenuView/HeaderBox/LblMenuGameTitle
+@onready var lbl_menu_round_info: Label = $GameMenuDrawer/Card/MenuView/HeaderBox/LblMenuRoundInfo
+@onready var btn_audio: Button = $GameMenuDrawer/Card/MenuView/BtnAudio
+@onready var img_audio: TextureRect = $GameMenuDrawer/Card/MenuView/BtnAudio/Icon
+@onready var btn_game_info: Button = $GameMenuDrawer/Card/MenuView/BtnGameInfo
+@onready var btn_surrender: Button = $GameMenuDrawer/Card/MenuView/BtnSurrender
+@onready var btn_close_menu: Button = $GameMenuDrawer/Card/MenuView/BtnCloseMenu
+@onready var btn_rules_back: Button = $GameMenuDrawer/Card/RulesView/RulesHeader/BtnRulesBack
+@onready var lbl_rules_title: Label = $GameMenuDrawer/Card/RulesView/RulesHeader/LblRulesTitle
+@onready var lbl_rules_body: Label = $GameMenuDrawer/Card/RulesView/RulesScroll/LblRulesBody
 
 var _last_reaction_sent_msec: int = -10000
-
-@onready var btn_zoom_in: Button = $BottomBar/Margin/HBox/BtnZoomIn
-
-@onready var btn_zoom_out: Button = $BottomBar/Margin/HBox/BtnZoomOut
-
-@onready var btn_cam_top: Button = $BottomBar/Margin/HBox/BtnCamTop
-@onready var img_cam_top: TextureRect = $BottomBar/Margin/HBox/BtnCamTop/Icon
-
-@onready var btn_cam_reset: Button = $BottomBar/Margin/HBox/BtnCamReset
-
-@onready var btn_audio: Button = $BottomBar/Margin/HBox/BtnAudio
-
-@onready var img_audio: TextureRect = $BottomBar/Margin/HBox/BtnAudio/Icon
+var _camera_popover_open: bool = false
+var _safe_bottom_inset: int = 12
+static var _game_docs_cache: Dictionary = {}
 
 
 
@@ -463,6 +473,49 @@ func _ensure_top_header_for_current_game() -> void:
 
 			current_top_header.player_profile_clicked.connect(func(idx: int): _show_player_profile(idx))
 
+		if current_top_header.has_signal("menu_requested"):
+
+			current_top_header.menu_requested.connect(_open_game_menu_drawer)
+
+		if current_top_header.has_signal("header_height_changed"):
+
+			current_top_header.header_height_changed.connect(_on_header_height_changed)
+
+		_on_header_height_changed(current_top_header.offset_bottom)
+
+
+
+func _on_header_height_changed(new_height: float) -> void:
+	if is_instance_valid(top_header_slot):
+		top_header_slot.offset_bottom = maxf(112.0, new_height)
+
+
+func is_overlay_open() -> bool:
+	if is_instance_valid(game_menu_drawer) and game_menu_drawer.visible:
+		return true
+	if is_instance_valid(camera_popover) and camera_popover.visible:
+		return true
+	return false
+
+
+func _apply_bottom_safe_insets() -> void:
+	var insets := HudTheme.get_safe_insets(get_viewport())
+	_safe_bottom_inset = int(insets.get("bottom", 14))
+	var b_margin := get_node_or_null("BottomBar/Margin") as MarginContainer
+	if is_instance_valid(b_margin):
+		b_margin.add_theme_constant_override("margin_bottom", _safe_bottom_inset)
+		b_margin.add_theme_constant_override("margin_left", int(insets.get("left", 12)))
+		b_margin.add_theme_constant_override("margin_right", int(insets.get("right", 12)))
+	var bbar := get_node_or_null("BottomBar") as Control
+	var bar_h := 64.0 + float(_safe_bottom_inset)
+	if is_instance_valid(bbar) and not GameManager.is_spectating:
+		bbar.offset_top = -bar_h
+		bbar.offset_bottom = 0.0
+	if is_instance_valid(camera_popover):
+		camera_popover.offset_left = float(insets.get("left", 12))
+		camera_popover.offset_bottom = -(bar_h + 6.0)
+		camera_popover.offset_top = -(bar_h + 76.0)
+
 
 
 func _ready() -> void:
@@ -473,11 +526,17 @@ func _ready() -> void:
 
 	_setup_connections()
 
+	_apply_bottom_safe_insets()
+
 	surrender_dialog.visible = false
 
 	start_overlay.visible = false
 
 	round_finish_banner.visible = false
+
+	_close_camera_popover()
+
+	_close_game_menu_drawer()
 
 	if _toast_tween and is_instance_valid(_toast_tween):
 
@@ -731,125 +790,120 @@ func _setup_card_styles() -> void:
 
 func _setup_connections() -> void:
 
-	var all_btns = [btn_zoom_in, btn_zoom_out, btn_cam_top, btn_cam_reset, btn_surrender, btn_reactions, btn_audio]
-	if is_instance_valid(btn_kori):
-		all_btns.append(btn_kori)
-
-	var empty_sb = StyleBoxEmpty.new()
-	for b in all_btns:
-		b.flat = true
-		b.add_theme_stylebox_override("normal", empty_sb)
-		b.add_theme_stylebox_override("hover", empty_sb)
-		b.add_theme_stylebox_override("pressed", empty_sb)
-		b.add_theme_stylebox_override("focus", empty_sb)
-		b.add_theme_stylebox_override("disabled", empty_sb)
-		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.custom_minimum_size = Vector2(56, 70)
+	# Style compact Warm Classic Parlor floating bottom buttons (3 buttons total)
+	var bottom_btns := [btn_camera_menu, btn_kori, btn_reactions]
+	for b in bottom_btns:
+		if not is_instance_valid(b):
+			continue
+		HudTheme.apply_floating_button_style(b, false)
+		b.custom_minimum_size = Vector2(54, 54)
 		b.text = ""
-		b.pivot_offset = b.custom_minimum_size / 2.0
+		b.pivot_offset = b.custom_minimum_size * 0.5
 		ActionVFXManager.apply_button_juice(b, "tap_button")
+
+	# Style collapsible camera popover actions
+	var cam_btns := [btn_cam_top, btn_zoom_in, btn_zoom_out, btn_cam_reset]
+	for cb in cam_btns:
+		if not is_instance_valid(cb):
+			continue
+		HudTheme.apply_floating_button_style(cb, false)
+		cb.custom_minimum_size = Vector2(48, 48)
+		cb.text = ""
+		cb.pivot_offset = cb.custom_minimum_size * 0.5
+		ActionVFXManager.apply_button_juice(cb, "tap_button")
+
+	# Style top-corner Menu Drawer items
+	HudTheme.apply_drawer_item_style(btn_audio, "default")
+	HudTheme.apply_drawer_item_style(btn_game_info, "default")
+	HudTheme.apply_drawer_item_style(btn_surrender, "danger")
+	HudTheme.apply_drawer_item_style(btn_close_menu, "primary")
+	HudTheme.apply_drawer_item_style(btn_rules_back, "default")
+	HudTheme.configure_bidi_label(lbl_rules_body, false)
+
+	if is_instance_valid(btn_camera_menu):
+		btn_camera_menu.pressed.connect(func():
+			AudioManager.sfx_tap()
+			_toggle_camera_popover()
+		)
+	if is_instance_valid(camera_popover_backdrop):
+		camera_popover_backdrop.pressed.connect(_close_camera_popover)
+	if is_instance_valid(btn_menu_dimmer_close):
+		btn_menu_dimmer_close.pressed.connect(_close_game_menu_drawer)
+	if is_instance_valid(btn_close_menu):
+		btn_close_menu.pressed.connect(func():
+			AudioManager.sfx_tap()
+			_close_game_menu_drawer()
+		)
+	if is_instance_valid(btn_game_info):
+		btn_game_info.pressed.connect(func():
+			AudioManager.sfx_tap()
+			_show_menu_rules()
+		)
+	if is_instance_valid(btn_rules_back):
+		btn_rules_back.pressed.connect(func():
+			AudioManager.sfx_tap()
+			if is_instance_valid(rules_view):
+				rules_view.visible = false
+			if is_instance_valid(menu_view):
+				menu_view.visible = true
+		)
 
 	KenneyUI.style_button(btn_confirm_surrender, KenneyUI.COLOR_RED)
 	KenneyUI.style_button(btn_cancel_surrender, KenneyUI.COLOR_GREY)
 
-	
-
 	btn_surrender.pressed.connect(func():
-
 		if GameManager.is_spectating:
 			return
-
+		_close_game_menu_drawer()
 		if not GameManager.is_game_active:
-
 			show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
-
 			return
-
 		AudioManager.sfx_button()
-
 		_open_surrender_dialog()
-
 	)
-
-	
 
 	btn_confirm_surrender.pressed.connect(func():
-
 		if GameManager.is_spectating:
 			return
-
 		AudioManager.sfx_button()
-
 		_close_surrender_dialog()
-
 		surrender_requested.emit()
-
 	)
-
-	
 
 	btn_cancel_surrender.pressed.connect(func():
-
 		AudioManager.sfx_button()
-
 		_close_surrender_dialog()
-
 	)
-
-	
 
 	if is_instance_valid(btn_kori):
-
 		btn_kori.pressed.connect(func():
-
 			if GameManager.is_spectating:
 				return
-
+			_close_camera_popover()
 			if not GameManager.is_game_active:
-
 				show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
-
 				return
-
 			AudioManager.sfx_button()
-
 			reaction_picker.open_koris()
-
 		)
 
-	
-
 	btn_reactions.pressed.connect(func():
-
 		if GameManager.is_spectating:
 			return
-
+		_close_camera_popover()
 		if not GameManager.is_game_active:
-
 			show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
-
 			return
-
 		AudioManager.sfx_button()
-
 		reaction_picker.open_stickers()
-
 	)
 
-	
-
 	btn_audio.pressed.connect(func():
-
 		var new_state = not AudioManager.is_music_enabled
-
 		AudioManager.set_music_enabled(new_state)
-
 		AudioManager.set_sound_enabled(new_state)
-
 		AudioManager.sfx_tap()
-
 		_update_audio_visual()
-
 	)
 
 	
@@ -1167,6 +1221,114 @@ func _ensure_clean_white_fekr_icons() -> void:
 
 
 
+func _toggle_camera_popover() -> void:
+	if _camera_popover_open:
+		_close_camera_popover()
+	else:
+		_open_camera_popover()
+
+
+func _open_camera_popover() -> void:
+	_camera_popover_open = true
+	if is_instance_valid(camera_popover_backdrop):
+		camera_popover_backdrop.visible = true
+	if is_instance_valid(camera_popover):
+		camera_popover.visible = true
+		camera_popover.modulate.a = 0.0
+		camera_popover.scale = Vector2(0.88, 0.88)
+		camera_popover.pivot_offset = Vector2(24.0, camera_popover.size.y)
+		var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(camera_popover, "scale", Vector2.ONE, 0.16)
+		tw.parallel().tween_property(camera_popover, "modulate:a", 1.0, 0.12)
+	if is_instance_valid(btn_camera_menu):
+		HudTheme.apply_floating_button_style(btn_camera_menu, true)
+
+
+func _close_camera_popover() -> void:
+	_camera_popover_open = false
+	if is_instance_valid(camera_popover_backdrop):
+		camera_popover_backdrop.visible = false
+	if is_instance_valid(camera_popover):
+		camera_popover.visible = false
+		camera_popover.scale = Vector2.ONE
+		camera_popover.modulate.a = 1.0
+	if is_instance_valid(btn_camera_menu):
+		HudTheme.apply_floating_button_style(btn_camera_menu, false)
+
+
+func _open_game_menu_drawer() -> void:
+	_close_camera_popover()
+	if not is_instance_valid(game_menu_drawer):
+		return
+	var g_info := GameRegistry.get_game_info(GameManager.current_game_type)
+	if is_instance_valid(lbl_menu_game_title):
+		lbl_menu_game_title.text = str(g_info.get("name_fa", "کافه فکر"))
+	if is_instance_valid(lbl_menu_round_info):
+		var r_txt := lbl_round.text if is_instance_valid(lbl_round) else ""
+		lbl_menu_round_info.text = r_txt if not r_txt.is_empty() else "مسابقه آنلاین"
+	if is_instance_valid(btn_surrender):
+		btn_surrender.visible = not GameManager.is_spectating
+	if is_instance_valid(menu_view):
+		menu_view.visible = true
+	if is_instance_valid(rules_view):
+		rules_view.visible = false
+	_update_audio_visual()
+	game_menu_drawer.visible = true
+	var card := game_menu_drawer.get_node_or_null("Card") as Control
+	if is_instance_valid(card):
+		card.pivot_offset = card.size * 0.5
+		card.scale = Vector2(0.92, 0.92)
+		card.modulate.a = 0.0
+		var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(card, "scale", Vector2.ONE, 0.18)
+		tw.parallel().tween_property(card, "modulate:a", 1.0, 0.14)
+
+
+func _close_game_menu_drawer() -> void:
+	if is_instance_valid(game_menu_drawer):
+		game_menu_drawer.visible = false
+	if is_instance_valid(menu_view):
+		menu_view.visible = true
+	if is_instance_valid(rules_view):
+		rules_view.visible = false
+
+
+func _show_menu_rules() -> void:
+	if is_instance_valid(menu_view):
+		menu_view.visible = false
+	if is_instance_valid(rules_view):
+		rules_view.visible = true
+	var g_info := GameRegistry.get_game_info(GameManager.current_game_type)
+	if is_instance_valid(lbl_rules_title):
+		lbl_rules_title.text = "راهنمای %s" % str(g_info.get("name_fa", "بازی"))
+	if is_instance_valid(lbl_rules_body):
+		lbl_rules_body.text = _load_game_rules_text(GameManager.current_game_type)
+
+
+func _load_game_rules_text(game_type: String) -> String:
+	if _game_docs_cache.is_empty() and FileAccess.file_exists("res://scripts/games/game_docs.json"):
+		var f := FileAccess.open("res://scripts/games/game_docs.json", FileAccess.READ)
+		if f:
+			var parsed = JSON.parse_string(f.get_as_text())
+			if parsed is Dictionary:
+				_game_docs_cache = parsed
+	var key := game_type.to_lower()
+	var doc: Dictionary = _game_docs_cache.get(key, {})
+	if doc.is_empty():
+		return "قوانین این بازی به‌زودی تکمیل خواهد شد. از رقابت در کافه فکر لذت ببرید!"
+	var sections: Array[String] = []
+	var guide := str(doc.get("guide", "")).strip_edges()
+	var gameplay := str(doc.get("gameplay", "")).strip_edges()
+	var narrative := str(doc.get("narrative", "")).strip_edges()
+	if not guide.is_empty():
+		sections.append("📜 آشنایی و هدف بازی:\n" + guide)
+	if not gameplay.is_empty():
+		sections.append("♟️ نحوه انجام بازی:\n" + gameplay)
+	if sections.is_empty() and not narrative.is_empty():
+		sections.append(narrative)
+	return "\n\n".join(sections)
+
+
 func set_spectator_mode(enabled: bool) -> void:
 	if is_instance_valid(btn_surrender):
 		btn_surrender.visible = not enabled
@@ -1174,10 +1336,15 @@ func set_spectator_mode(enabled: bool) -> void:
 		btn_kori.visible = not enabled
 	if is_instance_valid(btn_reactions):
 		btn_reactions.visible = not enabled
+	var bar_h := 64.0 + float(_safe_bottom_inset)
 	var bbar := get_node_or_null("BottomBar") as Control
 	if is_instance_valid(bbar):
-		bbar.offset_top = -176.0 if enabled else -88.0
+		bbar.offset_top = -(bar_h + 96.0) if enabled else -bar_h
 		bbar.offset_bottom = -96.0 if enabled else 0.0
+	if is_instance_valid(camera_popover):
+		var pop_base := (bar_h + 96.0) if enabled else bar_h
+		camera_popover.offset_bottom = -(pop_base + 6.0)
+		camera_popover.offset_top = -(pop_base + 76.0)
 	if enabled:
 		set_fekrbekr_hud_buttons(false)
 		if is_instance_valid(reaction_picker):
@@ -1189,6 +1356,8 @@ func reset_for_new_match(keep_start_overlay: bool = false) -> void:
 
 	set_fekrbekr_hud_buttons(false)
 	set_spectator_mode(GameManager.is_spectating)
+	_close_camera_popover()
+	_close_game_menu_drawer()
 
 	_surrender_handled = false
 
@@ -2638,22 +2807,22 @@ func update_scores(p1_s: int, p2_s: int) -> void:
 func hide_turn_banner() -> void:
 	if is_instance_valid(lbl_turn_banner):
 		lbl_turn_banner.text = ""
-	if is_instance_valid(current_top_header) and is_instance_valid(current_top_header.lbl_turn_banner):
-		current_top_header.lbl_turn_banner.text = ""
+	if is_instance_valid(current_top_header):
+		if is_instance_valid(current_top_header.lbl_turn_banner):
+			current_top_header.lbl_turn_banner.text = ""
+		if current_top_header.has_method("hide_turn_toast"):
+			current_top_header.hide_turn_toast()
 
 func set_custom_banner(msg: String, color: Color = Color(1.0, 0.90, 0.45)) -> void:
-
 	if is_instance_valid(lbl_turn_banner):
-
 		lbl_turn_banner.text = msg
-
 		lbl_turn_banner.add_theme_color_override("font_color", color)
-
-	if is_instance_valid(current_top_header) and is_instance_valid(current_top_header.lbl_turn_banner):
-
-		current_top_header.lbl_turn_banner.text = msg
-
-		current_top_header.lbl_turn_banner.add_theme_color_override("font_color", color)
+	if is_instance_valid(current_top_header):
+		if is_instance_valid(current_top_header.lbl_turn_banner):
+			current_top_header.lbl_turn_banner.text = msg
+			current_top_header.lbl_turn_banner.add_theme_color_override("font_color", color)
+		if current_top_header.has_method("show_turn_toast"):
+			current_top_header.show_turn_toast(msg, color, false, 2.2)
 
 
 
@@ -2903,10 +3072,13 @@ func stop_timer() -> void:
 
 
 func set_camera_mode_indicator(is_top_down: bool) -> void:
+	var target_tex := _cam_3d_tex if is_top_down else _cam_2d_tex
 	if btn_cam_top and is_instance_valid(btn_cam_top):
 		btn_cam_top.text = ""
 		if img_cam_top and is_instance_valid(img_cam_top):
-			img_cam_top.texture = _cam_3d_tex if is_top_down else _cam_2d_tex
+			img_cam_top.texture = target_tex
+	if is_instance_valid(img_camera_menu):
+		img_camera_menu.texture = target_tex
 
 
 
@@ -3066,14 +3238,11 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 
 
 func _update_audio_visual() -> void:
-
-	if AudioManager.is_music_enabled:
-
-		img_audio.texture = _sound_on_tex
-
-	else:
-
-		img_audio.texture = _sound_off_tex
+	var audio_on := AudioManager.is_music_enabled
+	if is_instance_valid(img_audio):
+		img_audio.texture = _sound_on_tex if audio_on else _sound_off_tex
+	if is_instance_valid(btn_audio):
+		btn_audio.text = "صدا و موسیقی: روشن" if audio_on else "صدا و موسیقی: خاموش"
 
 
 
