@@ -956,8 +956,9 @@ func _get_baked_bucket_info(mat: Material) -> Dictionary:
 		if not _baked_bucket_mats.has(k_tex):
 			var bm_tex: StandardMaterial3D = StandardMaterial3D.new()
 			bm_tex.albedo_texture = sm.albedo_texture
-			bm_tex.roughness = 0.34
-			bm_tex.metallic = 0.03
+			bm_tex.roughness = sm.roughness
+			bm_tex.metallic = sm.metallic
+			bm_tex.specular_mode = sm.specular_mode
 			bm_tex.vertex_color_use_as_albedo = true
 			bm_tex.vertex_color_is_srgb = true
 			_baked_bucket_mats[k_tex] = bm_tex
@@ -1160,6 +1161,19 @@ func _add_box(parent: Node3D, size: Vector3, pos: Vector3, mat: Material, rot_de
 	return mi
 
 
+func _add_plane(parent: Node3D, size: Vector2, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
+	var mi: MeshInstance3D = MeshInstance3D.new()
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var pm: PlaneMesh = PlaneMesh.new()
+	pm.size = size
+	pm.material = mat
+	mi.mesh = pm
+	mi.position = pos
+	mi.rotation_degrees = rot_deg
+	parent.add_child(mi)
+	return mi
+
+
 func _add_cyl(parent: Node3D, top_r: float, bot_r: float, h: float, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO, segs: int = 12) -> MeshInstance3D:
 	var mi: MeshInstance3D = MeshInstance3D.new()
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -1209,20 +1223,40 @@ func _add_torus(parent: Node3D, inner_r: float, outer_r: float, pos: Vector3, ma
 	return mi
 
 
+func _load_cafe_tex(filename: String) -> Texture2D:
+	var path: String = "res://assets/images/cafe_textures/" + filename
+	if ResourceLoader.exists(path):
+		return load(path) as Texture2D
+	return null
+
+
 func _init_lounge_materials() -> void:
 	var wood_tex: Texture2D = null
 	if ResourceLoader.exists("res://assets/images/background2.png"):
 		wood_tex = load("res://assets/images/background2.png") as Texture2D
 
+	# Lightweight mobile-optimized Persian craft textures (256x256 / 512x512, ~280 KB total on disk, VRAM-compressed)
+	var tex_baize: Texture2D = _load_cafe_tex("parlor_baize_felt.jpg")
+	var tex_carpet: Texture2D = _load_cafe_tex("persian_carpet.jpg")
+	var tex_minakari: Texture2D = _load_cafe_tex("persian_minakari.jpg")
+	var tex_khatam: Texture2D = _load_cafe_tex("persian_khatam.jpg")
+	var tex_termeh: Texture2D = _load_cafe_tex("persian_termeh.jpg")
+
 	# Mobile-friendly velvet-baize material (zero normal-map shader overhead, zero specular glare in 2D mode)
 	var mat_baize: StandardMaterial3D = StandardMaterial3D.new()
-	mat_baize.albedo_color = Color(0.08, 0.27, 0.15)
+	mat_baize.albedo_color = Color(0.11, 0.34, 0.19) if tex_baize != null else Color(0.08, 0.27, 0.15)
+	if tex_baize != null:
+		mat_baize.albedo_texture = tex_baize
+		mat_baize.uv1_scale = Vector3(4.5, 4.5, 4.5)
 	mat_baize.roughness = 0.90
 	mat_baize.metallic = 0.0
 	mat_baize.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 
 	var mat_baize_border: StandardMaterial3D = StandardMaterial3D.new()
-	mat_baize_border.albedo_color = Color(0.05, 0.19, 0.10)
+	mat_baize_border.albedo_color = Color(0.06, 0.21, 0.11) if tex_baize != null else Color(0.05, 0.19, 0.10)
+	if tex_baize != null:
+		mat_baize_border.albedo_texture = tex_baize
+		mat_baize_border.uv1_scale = Vector3(4.0, 4.0, 4.0)
 	mat_baize_border.roughness = 0.92
 	mat_baize_border.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 
@@ -1241,7 +1275,8 @@ func _init_lounge_materials() -> void:
 
 	var mat_leather_green: StandardMaterial3D = _make_mat(Color(0.12, 0.26, 0.15), 0.40, 0.06)
 	var mat_leather_green_dark: StandardMaterial3D = _make_mat(Color(0.07, 0.16, 0.09), 0.46, 0.04)
-	var mat_velvet_curtain: StandardMaterial3D = _make_mat(Color(0.50, 0.09, 0.11), 0.76, 0.02)
+	var mat_velvet_curtain: StandardMaterial3D = _make_mat(Color(0.72, 0.28, 0.28) if tex_termeh != null else Color(0.50, 0.09, 0.11), 0.84, 0.02, tex_termeh, Vector3(1.2, 3.2, 1.0))
+	mat_velvet_curtain.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	var mat_marble: StandardMaterial3D = _make_mat(Color(0.84, 0.79, 0.71), 0.34, 0.02)
 	var mat_porcelain: StandardMaterial3D = _make_mat(Color(0.92, 0.88, 0.80), 0.18, 0.04)
 	var mat_coffee_dark: StandardMaterial3D = _make_mat(Color(0.16, 0.07, 0.03), 0.10, 0.05)
@@ -1266,7 +1301,7 @@ func _init_lounge_materials() -> void:
 	var mat_city_stone: StandardMaterial3D = _make_mat(Color(0.22, 0.16, 0.18), 0.68, 0.05)
 	var mat_window_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.86, 0.48), Color(1.0, 0.78, 0.32), 2.10, 0.20)
 
-	# Warm Persian parlor & craft accent materials (all baked into the same 3-4 vertex-color surfaces!)
+	# Warm Persian parlor & craft accent materials (all baked into minimal shared texture/vertex-color surfaces!)
 	var mat_rug_crimson: StandardMaterial3D = _make_mat(Color(0.48, 0.10, 0.11), 0.88, 0.0)
 	var mat_rug_navy: StandardMaterial3D = _make_mat(Color(0.09, 0.14, 0.26), 0.88, 0.0)
 	var mat_rug_gold: StandardMaterial3D = _make_mat(Color(0.78, 0.60, 0.24), 0.78, 0.04)
@@ -1282,11 +1317,19 @@ func _init_lounge_materials() -> void:
 	var mat_fairy_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.90, 0.66), Color(1.0, 0.78, 0.36), 2.15, 0.12)
 	var mat_cove_glow: StandardMaterial3D = _make_emissive_mat(Color(0.96, 0.80, 0.50), Color(1.0, 0.72, 0.28), 1.15, 0.30)
 
-	# Authentic Persian craft pigments (zero extra draw calls — merged into existing vc_solid & vc_metal buckets!)
+	# Authentic Persian craft pigments & textured materials (safe fallback to solid pigments if texture missing)
 	var mat_persian_turquoise: StandardMaterial3D = _make_mat(Color(0.08, 0.56, 0.62), 0.28, 0.06)
 	var mat_persian_cobalt: StandardMaterial3D = _make_mat(Color(0.11, 0.23, 0.54), 0.32, 0.06)
 	var mat_persian_copper: StandardMaterial3D = _make_mat(Color(0.76, 0.37, 0.19), 0.30, 0.78)
 	var mat_persian_saffron: StandardMaterial3D = _make_mat(Color(0.88, 0.64, 0.16), 0.42, 0.04)
+
+	var mat_persian_carpet: StandardMaterial3D = _make_mat(Color(0.88, 0.85, 0.80) if tex_carpet != null else Color(0.48, 0.10, 0.11), 0.90, 0.0, tex_carpet, Vector3.ONE)
+	mat_persian_carpet.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+
+	var mat_minakari_ceramic: StandardMaterial3D = _make_mat(Color(0.95, 0.97, 0.98) if tex_minakari != null else Color(0.08, 0.56, 0.62), 0.22, 0.05, tex_minakari, Vector3.ONE)
+	var mat_khatam_inlay: StandardMaterial3D = _make_mat(Color(0.92, 0.88, 0.82) if tex_khatam != null else Color(0.68, 0.52, 0.24), 0.30, 0.08, tex_khatam, Vector3(1.2, 1.2, 1.2))
+	var mat_termeh_fabric: StandardMaterial3D = _make_mat(Color(0.88, 0.84, 0.80) if tex_termeh != null else Color(0.48, 0.10, 0.11), 0.86, 0.0, tex_termeh, Vector3(1.4, 1.4, 1.4))
+	mat_termeh_fabric.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 
 	_shared_mats = {
 		"baize_emerald": mat_baize,
@@ -1341,7 +1384,11 @@ func _init_lounge_materials() -> void:
 		"persian_turquoise": mat_persian_turquoise,
 		"persian_cobalt": mat_persian_cobalt,
 		"persian_copper": mat_persian_copper,
-		"persian_saffron": mat_persian_saffron
+		"persian_saffron": mat_persian_saffron,
+		"persian_carpet": mat_persian_carpet,
+		"minakari_ceramic": mat_minakari_ceramic,
+		"khatam_inlay": mat_khatam_inlay,
+		"termeh_fabric": mat_termeh_fabric
 	}
 
 
@@ -1529,16 +1576,19 @@ func _build_foreground_gaming_table(table_root: Node3D) -> void:
 			_add_cyl(arena_frame, 0.068, 0.052, 0.64, Vector3(leg_x, -0.46, leg_z), mat_walnut_dark, Vector3.ZERO, 12)
 			_add_sphere(arena_frame, 0.078, 0.095, Vector3(leg_x, -0.26, leg_z), mat_walnut_mid)
 
+	# Shiraz Khatam-Kari marquetry inset panel on the front carved table apron
+	_add_box(arena_frame, Vector3(1.06, 0.062, 0.025), Vector3(0.0, apron_y, apron_z + 0.025), _shared_mats["khatam_inlay"])
+
 	# Cozy Persian Parlor Corner Props on Outer Walnut Rails (strictly outside felt |X|>0.78 or |Z|>0.76)
 	_build_table_persian_tea_tray(arena_frame, Vector3(0.86, 0.084, -0.86))
 	_build_table_brass_hourglass(arena_frame, Vector3(-0.52, 0.084, -0.87))
 	_build_table_khatam_box(arena_frame, Vector3(0.48, 0.084, -0.88))
 	_build_table_ajil_dish(arena_frame, Vector3(0.88, 0.084, -0.58))
-	# Flat Persian Turquoise & Gold Khatam Star Inlays on the Front-Left & Front-Right Walnut Corners
+	# Textured Persian Mina-Kari & Brass Corner Inlays on the Front-Left & Front-Right Walnut Corners
 	for corner_s: float in [-1.0, 1.0]:
 		var cx_in: float = corner_s * 0.88
-		_add_box(arena_frame, Vector3(0.082, 0.003, 0.082), Vector3(cx_in, 0.085, 0.86), mat_aged_brass, Vector3(0.0, 45.0, 0.0))
-		_add_box(arena_frame, Vector3(0.056, 0.004, 0.056), Vector3(cx_in, 0.0855, 0.86), _shared_mats["persian_turquoise"], Vector3(0.0, 45.0, 0.0))
+		_add_box(arena_frame, Vector3(0.088, 0.003, 0.088), Vector3(cx_in, 0.085, 0.86), mat_aged_brass, Vector3(0.0, 45.0, 0.0))
+		_add_plane(arena_frame, Vector2(0.068, 0.068), Vector3(cx_in, 0.0875, 0.86), _shared_mats["minakari_ceramic"], Vector3(0.0, 45.0, 0.0))
 
 	# Bake all table frame moldings, corner scrolls, rosettes, legs & rail props into 1 single draw-call mesh!
 	_bake_static_branch_to_merged_mesh(arena_frame, "BakedTableFrameMesh")
@@ -2423,22 +2473,9 @@ func _build_floor_rug_and_corners(parent: Node3D) -> void:
 
 	var rug_y: float = -0.774
 
-	# 1. Layered Low-Poly Persian Carpet Under the Gaming Table (3.50m x 3.05m)
+	# 1. Authentic Textured Kashan/Isfahan Persian Wool Carpet (only 2 top triangles via PlaneMesh!)
 	_add_box(floor_grp, Vector3(3.52, 0.010, 3.06), Vector3(0.0, rug_y, -0.18), mat_navy)
-	_add_box(floor_grp, Vector3(3.30, 0.012, 2.84), Vector3(0.0, rug_y + 0.001, -0.18), mat_gold)
-	_add_box(floor_grp, Vector3(3.16, 0.014, 2.70), Vector3(0.0, rug_y + 0.002, -0.18), mat_crimson)
-	_add_box(floor_grp, Vector3(2.86, 0.015, 2.40), Vector3(0.0, rug_y + 0.003, -0.18), mat_cream)
-	_add_box(floor_grp, Vector3(2.74, 0.016, 2.28), Vector3(0.0, rug_y + 0.004, -0.18), mat_crimson)
-	# Subtle Central Geometric Medallion & 4 Corner Spandrels (with Persian Turquoise Isfahan Star Accents)
-	var mat_turq: Material = _shared_mats["persian_turquoise"]
-	_add_box(floor_grp, Vector3(1.18, 0.017, 1.18), Vector3(0.0, rug_y + 0.005, -0.18), mat_gold, Vector3(0.0, 45.0, 0.0))
-	_add_box(floor_grp, Vector3(0.96, 0.018, 0.96), Vector3(0.0, rug_y + 0.006, -0.18), mat_navy, Vector3(0.0, 45.0, 0.0))
-	_add_box(floor_grp, Vector3(0.56, 0.019, 0.56), Vector3(0.0, rug_y + 0.007, -0.18), mat_turq, Vector3(0.0, 45.0, 0.0))
-	for sx: float in [-1.0, 1.0]:
-		for sz: float in [-1.0, 1.0]:
-			_add_box(floor_grp, Vector3(0.30, 0.017, 0.30), Vector3(sx * 1.18, rug_y + 0.005, -0.18 + sz * 0.96), mat_gold, Vector3(0.0, 45.0, 0.0))
-			_add_box(floor_grp, Vector3(0.18, 0.018, 0.18), Vector3(sx * 1.18, rug_y + 0.006, -0.18 + sz * 0.96), mat_navy, Vector3(0.0, 45.0, 0.0))
-			_add_box(floor_grp, Vector3(0.09, 0.019, 0.09), Vector3(sx * 1.18, rug_y + 0.007, -0.18 + sz * 0.96), mat_turq, Vector3(0.0, 45.0, 0.0))
+	_add_plane(floor_grp, Vector2(3.46, 3.00), Vector3(0.0, rug_y + 0.0065, -0.18), _shared_mats["persian_carpet"])
 	# Woven Cream Carpet Fringe Bands Along Left & Right Short Edges
 	_add_box(floor_grp, Vector3(0.09, 0.007, 2.98), Vector3(-1.80, rug_y - 0.001, -0.18), mat_cream)
 	_add_box(floor_grp, Vector3(0.09, 0.007, 2.98), Vector3(1.80, rug_y - 0.001, -0.18), mat_cream)
@@ -2515,12 +2552,11 @@ func _build_bookcase_cove_lights_and_decor(bc: Node3D) -> void:
 	_build_minakari_display_plate(bc, Vector3(-0.22, 0.162, 0.05))
 	_build_persian_copper_ewer(bc, Vector3(0.22, 0.162, 0.05))
 
-	# 2C. Persian Haft-Rang Turquoise & Cobalt Tile Medallions Inset on the Inner Pilasters
+	# 2C. Persian Haft-Rang Glazed Mina-Kari Tile Medallions Inset on the Inner Pilasters
 	for tile_s: float in [-1.0, 1.0]:
 		var tx: float = tile_s * 0.68
-		_add_box(bc, Vector3(0.056, 0.056, 0.016), Vector3(tx, 1.04, 0.126), mat_aged, Vector3(0.0, 0.0, 45.0))
-		_add_box(bc, Vector3(0.044, 0.044, 0.020), Vector3(tx, 1.04, 0.128), _shared_mats["persian_turquoise"], Vector3(0.0, 0.0, 45.0))
-		_add_box(bc, Vector3(0.022, 0.022, 0.022), Vector3(tx, 1.04, 0.130), _shared_mats["persian_cobalt"], Vector3(0.0, 0.0, 45.0))
+		_add_box(bc, Vector3(0.066, 0.066, 0.016), Vector3(tx, 1.04, 0.126), mat_aged, Vector3(0.0, 0.0, 45.0))
+		_add_box(bc, Vector3(0.054, 0.054, 0.008), Vector3(tx, 1.04, 0.134), _shared_mats["minakari_ceramic"], Vector3(0.0, 0.0, 45.0))
 
 	# 3. Two Overhead Hanging Brass & Stained-Glass Cafe Pendant Lanterns (Visible in Upper Lounge!)
 	for pend_s: float in [-1.0, 1.0]:
@@ -2552,19 +2588,17 @@ func _build_bookcase_cove_lights_and_decor(bc: Node3D) -> void:
 		_add_cyl(bc, 0.005, 0.006, 0.016, Vector3(bx, by + 0.014, bz), mat_aged, Vector3.ZERO, 6)
 		_add_sphere(bc, 0.020, 0.030, Vector3(bx, by - 0.004, bz), mat_fairy, Vector3.ZERO, 6)
 
-	# 5. Two Gold-Framed Vintage Cafe Wall Artworks Flanking the Bookcase
+	# 5. Two Gold-Framed Persian Tapestry & Haft-Rang Tile Artworks Flanking the Bookcase
 	for art_s: float in [-1.0, 1.0]:
 		var art: Node3D = Node3D.new()
 		art.position = Vector3(art_s * 1.48, 1.24, 0.02)
 		art.rotation_degrees = Vector3(0.0, art_s * -14.0, 0.0)
 		bc.add_child(art)
-		# Ornate Brass Frame + Cream Gallery Matte + Warm Persian Arch Artwork
+		# Ornate Brass Frame + Cream Gallery Matte + Textured Persian Tapestry / Tile Artwork
 		_add_box(art, Vector3(0.36, 0.48, 0.024), Vector3.ZERO, mat_aged)
 		_add_box(art, Vector3(0.30, 0.42, 0.028), Vector3(0.0, 0.0, 0.004), mat_cream)
-		_add_box(art, Vector3(0.22, 0.30, 0.030), Vector3(0.0, -0.01, 0.006), _shared_mats["book_navy"] if art_s < 0.0 else _shared_mats["book_burgundy"])
-		# Stylized Golden Crescent / Persian Arch Motif inside Canvas
-		_add_sphere(art, 0.052, 0.052, Vector3(0.0, 0.055, 0.022), mat_amber if art_s < 0.0 else mat_ruby, Vector3.ZERO, 8)
-		_add_box(art, Vector3(0.14, 0.10, 0.008), Vector3(0.0, -0.08, 0.022), mat_walnut_dark)
+		var art_mat: Material = _shared_mats["minakari_ceramic"] if art_s < 0.0 else _shared_mats["termeh_fabric"]
+		_add_plane(art, Vector2(0.24, 0.34), Vector3(0.0, 0.0, 0.020), art_mat, Vector3(90.0, 0.0, 0.0))
 		# Tiny Brass Picture Light Bar Above Frame
 		_add_cyl(art, 0.008, 0.008, 0.16, Vector3(0.0, 0.27, 0.045), mat_brass, Vector3(0.0, 0.0, 90.0), 6)
 		_add_box(art, Vector3(0.14, 0.008, 0.010), Vector3(0.0, 0.262, 0.042), mat_cove)
@@ -2614,24 +2648,20 @@ func _build_mini_brass_candle_lantern(parent: Node3D, pos: Vector3) -> void:
 # ============================================================================
 
 func _build_table_khatam_box(parent: Node3D, pos: Vector3) -> void:
-	# Shiraz Khatam-Kari geometric inlaid keepsake box on the back-right walnut rail (6 low-poly boxes)
+	# Shiraz Khatam-Kari textured geometric inlaid keepsake box on the back-right walnut rail (4 primitives!)
 	var bx: Node3D = Node3D.new()
 	bx.name = "PersianKhatamBox"
 	bx.position = pos
 	bx.rotation_degrees = Vector3(0.0, -8.0, 0.0)
 	parent.add_child(bx)
 
-	var mat_walnut: Material = _shared_mats["walnut_dark"]
+	var mat_khatam: Material = _shared_mats["khatam_inlay"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
-	var mat_turq: Material = _shared_mats["persian_turquoise"]
-	var mat_cream: Material = _shared_mats["rug_cream"]
 
-	_add_box(bx, Vector3(0.126, 0.036, 0.088), Vector3(0.0, 0.018, 0.0), mat_walnut)
+	_add_box(bx, Vector3(0.126, 0.036, 0.088), Vector3(0.0, 0.018, 0.0), mat_khatam)
 	_add_box(bx, Vector3(0.132, 0.010, 0.094), Vector3(0.0, 0.039, 0.0), mat_aged)
-	_add_box(bx, Vector3(0.114, 0.005, 0.076), Vector3(0.0, 0.045, 0.0), mat_cream)
-	_add_box(bx, Vector3(0.046, 0.006, 0.046), Vector3(0.0, 0.046, 0.0), mat_turq, Vector3(0.0, 45.0, 0.0))
-	_add_box(bx, Vector3(0.022, 0.007, 0.022), Vector3(0.0, 0.047, 0.0), mat_brass, Vector3(0.0, 45.0, 0.0))
+	_add_plane(bx, Vector2(0.118, 0.080), Vector3(0.0, 0.045, 0.0), mat_khatam)
 	_add_box(bx, Vector3(0.020, 0.014, 0.008), Vector3(0.0, 0.026, 0.046), mat_brass)
 
 
@@ -2658,13 +2688,13 @@ func _build_table_ajil_dish(parent: Node3D, pos: Vector3) -> void:
 
 
 func _build_persian_qalyan(parent: Node3D, pos: Vector3) -> void:
-	# Traditional Persian brass & turquoise glass Qalyan (hookah) on the carpet (ultra-low-poly, 0 extra draw calls)
+	# Traditional Persian brass & Mina-Kari turquoise glass Qalyan (hookah) on the carpet
 	var q: Node3D = Node3D.new()
 	q.name = "PersianQalyan"
 	q.position = pos
 	parent.add_child(q)
 
-	var mat_turq: Material = _shared_mats["persian_turquoise"]
+	var mat_mina: Material = _shared_mats["minakari_ceramic"]
 	var mat_cobalt: Material = _shared_mats["persian_cobalt"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_copper: Material = _shared_mats["persian_copper"]
@@ -2672,10 +2702,10 @@ func _build_persian_qalyan(parent: Node3D, pos: Vector3) -> void:
 	var mat_velvet: Material = _shared_mats["velvet_curtain"]
 	var mat_ember: Material = _shared_mats["stained_ruby"]
 
-	# Turquoise-glazed glass crystal base & gold collar
+	# Mina-Kari hand-painted turquoise crystal base & gold collar
 	_add_cyl(q, 0.082, 0.098, 0.032, Vector3(0.0, 0.016, 0.0), mat_cobalt, Vector3.ZERO, 8)
-	_add_sphere(q, 0.094, 0.170, Vector3(0.0, 0.115, 0.0), mat_turq, Vector3.ZERO, 8)
-	_add_cyl(q, 0.036, 0.056, 0.068, Vector3(0.0, 0.215, 0.0), mat_turq, Vector3.ZERO, 8)
+	_add_sphere(q, 0.094, 0.170, Vector3(0.0, 0.115, 0.0), mat_mina, Vector3.ZERO, 8)
+	_add_cyl(q, 0.036, 0.056, 0.068, Vector3(0.0, 0.215, 0.0), mat_mina, Vector3.ZERO, 8)
 	_add_torus(q, 0.032, 0.044, Vector3(0.0, 0.252, 0.0), mat_brass, Vector3.ZERO, 8)
 	# Turned brass stem, copper ash tray, terracotta Sari bowl & subtle glowing charcoal ember
 	_add_cyl(q, 0.016, 0.022, 0.240, Vector3(0.0, 0.372, 0.0), mat_brass, Vector3.ZERO, 8)
@@ -2689,64 +2719,56 @@ func _build_persian_qalyan(parent: Node3D, pos: Vector3) -> void:
 
 
 func _build_persian_poshti(parent: Node3D, pos: Vector3, yaw_deg: float) -> void:
-	# Traditional Persian embroidered Termeh Poshti floor bolster cushion (6 low-poly primitives)
+	# Traditional Yazd Termeh brocade Poshti floor bolster cushion (4 low-poly primitives!)
 	var po: Node3D = Node3D.new()
 	po.name = "PersianPoshti"
 	po.position = pos
 	po.rotation_degrees = Vector3(0.0, yaw_deg, 0.0)
 	parent.add_child(po)
 
-	var mat_crimson: Material = _shared_mats["rug_crimson"]
-	var mat_navy: Material = _shared_mats["rug_navy"]
+	var mat_termeh: Material = _shared_mats["termeh_fabric"]
 	var mat_gold: Material = _shared_mats["rug_gold"]
-	var mat_turq: Material = _shared_mats["persian_turquoise"]
 
-	_add_box(po, Vector3(0.18, 0.28, 0.44), Vector3(0.0, 0.14, 0.0), mat_crimson, Vector3(0.0, 0.0, 10.0))
-	_add_cyl(po, 0.088, 0.088, 0.44, Vector3(0.024, 0.275, 0.0), mat_crimson, Vector3(90.0, 0.0, 0.0), 8)
-	_add_box(po, Vector3(0.19, 0.16, 0.28), Vector3(0.0, 0.14, 0.0), mat_navy, Vector3(0.0, 0.0, 10.0))
-	_add_box(po, Vector3(0.196, 0.10, 0.10), Vector3(0.0, 0.14, 0.0), mat_gold, Vector3(45.0, 0.0, 10.0))
-	_add_box(po, Vector3(0.200, 0.055, 0.055), Vector3(0.0, 0.14, 0.0), mat_turq, Vector3(45.0, 0.0, 10.0))
+	_add_box(po, Vector3(0.18, 0.28, 0.44), Vector3(0.0, 0.14, 0.0), mat_termeh, Vector3(0.0, 0.0, 10.0))
+	_add_cyl(po, 0.088, 0.088, 0.44, Vector3(0.024, 0.275, 0.0), mat_termeh, Vector3(90.0, 0.0, 0.0), 8)
 	for end_z: float in [-0.22, 0.22]:
 		_add_box(po, Vector3(0.19, 0.29, 0.022), Vector3(0.0, 0.14, end_z), mat_gold, Vector3(0.0, 0.0, 10.0))
 
 
 func _build_minakari_vase(parent: Node3D, pos: Vector3) -> void:
-	# Isfahan turquoise & lapis Mina-Kari ceramic amphora vase (6 low-poly primitives)
+	# Isfahan turquoise & lapis Mina-Kari textured ceramic amphora vase (6 low-poly primitives)
 	var v: Node3D = Node3D.new()
 	v.name = "MinaKariVase"
 	v.position = pos
 	parent.add_child(v)
 
-	var mat_turq: Material = _shared_mats["persian_turquoise"]
+	var mat_mina: Material = _shared_mats["minakari_ceramic"]
 	var mat_cobalt: Material = _shared_mats["persian_cobalt"]
 	var mat_brass: Material = _shared_mats["brass"]
 
 	_add_cyl(v, 0.028, 0.036, 0.020, Vector3(0.0, 0.010, 0.0), mat_brass, Vector3.ZERO, 8)
-	_add_sphere(v, 0.058, 0.108, Vector3(0.0, 0.072, 0.0), mat_turq, Vector3.ZERO, 8)
+	_add_sphere(v, 0.058, 0.108, Vector3(0.0, 0.072, 0.0), mat_mina, Vector3.ZERO, 8)
 	_add_torus(v, 0.048, 0.060, Vector3(0.0, 0.072, 0.0), mat_cobalt, Vector3.ZERO, 10)
-	_add_cyl(v, 0.020, 0.030, 0.062, Vector3(0.0, 0.142, 0.0), mat_turq, Vector3.ZERO, 8)
+	_add_cyl(v, 0.020, 0.030, 0.062, Vector3(0.0, 0.142, 0.0), mat_mina, Vector3.ZERO, 8)
 	_add_cyl(v, 0.034, 0.020, 0.024, Vector3(0.0, 0.180, 0.0), mat_cobalt, Vector3.ZERO, 8)
 	_add_torus(v, 0.030, 0.036, Vector3(0.0, 0.192, 0.0), mat_brass, Vector3.ZERO, 8)
 
 
 func _build_minakari_display_plate(parent: Node3D, pos: Vector3) -> void:
-	# Hand-painted Isfahan Mina-Kari turquoise ceramic plate displayed on a tiny walnut easel
+	# Hand-painted Isfahan Mina-Kari textured ceramic plate displayed on a tiny walnut easel
 	var pl: Node3D = Node3D.new()
 	pl.name = "MinaKariDisplayPlate"
 	pl.position = pos
 	pl.rotation_degrees = Vector3(-16.0, 14.0, 0.0)
 	parent.add_child(pl)
 
-	var mat_turq: Material = _shared_mats["persian_turquoise"]
-	var mat_cobalt: Material = _shared_mats["persian_cobalt"]
+	var mat_mina: Material = _shared_mats["minakari_ceramic"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_walnut: Material = _shared_mats["walnut_dark"]
 
 	_add_box(pl, Vector3(0.075, 0.014, 0.048), Vector3(0.0, 0.007, -0.012), mat_walnut)
-	_add_cyl(pl, 0.078, 0.078, 0.010, Vector3(0.0, 0.088, 0.0), mat_cobalt, Vector3(90.0, 0.0, 0.0), 10)
-	_add_cyl(pl, 0.062, 0.062, 0.012, Vector3(0.0, 0.088, 0.003), mat_turq, Vector3(90.0, 0.0, 0.0), 10)
-	_add_box(pl, Vector3(0.044, 0.044, 0.014), Vector3(0.0, 0.088, 0.006), mat_brass, Vector3(0.0, 0.0, 45.0))
-	_add_torus(pl, 0.074, 0.082, Vector3(0.0, 0.088, 0.004), mat_brass, Vector3(90.0, 0.0, 0.0), 10)
+	_add_cyl(pl, 0.078, 0.078, 0.010, Vector3(0.0, 0.088, 0.0), mat_mina, Vector3(90.0, 0.0, 0.0), 12)
+	_add_torus(pl, 0.074, 0.082, Vector3(0.0, 0.088, 0.004), mat_brass, Vector3(90.0, 0.0, 0.0), 12)
 
 
 func _build_persian_copper_ewer(parent: Node3D, pos: Vector3) -> void:
