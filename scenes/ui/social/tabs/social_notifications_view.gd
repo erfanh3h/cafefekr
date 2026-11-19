@@ -357,6 +357,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 		b_acc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_acc.pressed.connect(func():
 			AudioManager.sfx_button()
+			_show_notification_result(act_row, "✓ درخواست دوستی پذیرفته شد", Color(0.40, 0.90, 0.55))
 			NetworkManager.api.respond_friend_request(rid, "accept", func(ok: bool, _c: int, _d: Variant):
 				if ok:
 					NetworkManager.api.mark_notification_read(nid, func(_o, _c2, _d2): pass)
@@ -369,6 +370,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 		var b_rej := CafeSocialTheme.make_friend_button("reject", "رد", Vector2(110, 46))
 		b_rej.pressed.connect(func():
 			AudioManager.sfx_tap()
+			_show_notification_result(act_row, "✕ درخواست دوستی رد شد", Color(0.95, 0.45, 0.45))
 			NetworkManager.api.respond_friend_request(rid, "reject", func(_ok: bool, _c: int, _d: Variant):
 				NetworkManager.api.mark_notification_read(nid, func(_o, _c2, _d2): pass)
 				_refresh_host(host)
@@ -383,6 +385,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 		b_join.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_join.pressed.connect(func():
 			AudioManager.sfx_button()
+			_show_notification_result(act_row, "✓ عضویت در کلن پذیرفته شد", Color(0.40, 0.90, 0.55))
 			NetworkManager.api.respond_clan_invitation(inv_id, "accept", func(ok: bool, _c: int, _d: Variant):
 				if ok:
 					NetworkManager.api.mark_notification_read(nid, func(_o, _c2, _d2): pass)
@@ -394,6 +397,17 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 			)
 		)
 		act_row.add_child(b_join)
+
+		var b_crej := CafeSocialTheme.make_button("رد دعوت", "crimson", Vector2(110, 46), 22)
+		b_crej.pressed.connect(func():
+			AudioManager.sfx_tap()
+			_show_notification_result(act_row, "✕ دعوت به کلن رد شد", Color(0.95, 0.45, 0.45))
+			NetworkManager.api.respond_clan_invitation(inv_id, "reject", func(_ok: bool, _c: int, _d: Variant):
+				NetworkManager.api.mark_notification_read(nid, func(_o, _c2, _d2): pass)
+				_refresh_host(host)
+			)
+		)
+		act_row.add_child(b_crej)
 
 	elif ntype == "direct_message_received" and not actor_id.is_empty():
 		has_acts = true
@@ -418,6 +432,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 		b_gacc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_gacc.pressed.connect(func():
 			AudioManager.sfx_button()
+			_show_notification_result(act_row, "✓ دعوت مسابقه پذیرفته شد", Color(0.40, 0.90, 0.55))
 			NetworkManager.respond_game_invite_realtime(g_inv_id, "accept")
 			if not is_read:
 				NetworkManager.api.mark_notification_read(nid, func(_o, _c2, _d2): pass)
@@ -428,6 +443,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 		b_grej.pressed.connect(func():
 			AudioManager.sfx_tap()
 			b_grej.disabled = true
+			_show_notification_result(act_row, "✕ دعوت مسابقه رد شد", Color(0.95, 0.45, 0.45))
 			NetworkManager.respond_game_invite_realtime(g_inv_id, "reject")
 			NetworkManager.api.mark_notification_read(nid, func(_ok: bool, _c2: int, _d2: Variant):
 				_refresh_host(host)
@@ -451,3 +467,18 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 		vbox.add_child(act_row)
 
 	return card
+
+static func _show_notification_result(act_row: HBoxContainer, text: String, color: Color) -> void:
+	if not is_instance_valid(act_row):
+		return
+	for ch in act_row.get_children():
+		ch.visible = false
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	lbl.add_theme_font_size_override("font_size", 20)
+	lbl.add_theme_color_override("font_color", color)
+	act_row.add_child(lbl)

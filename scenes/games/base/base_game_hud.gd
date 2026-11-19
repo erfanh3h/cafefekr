@@ -3336,10 +3336,10 @@ func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color
 	normal_sb.set_corner_radius_all(14)
 	normal_sb.shadow_color = Color(0, 0, 0, 0.45)
 	normal_sb.shadow_size = 4
-	normal_sb.content_margin_left = 22
-	normal_sb.content_margin_right = 22
-	normal_sb.content_margin_top = 8
-	normal_sb.content_margin_bottom = 8
+	normal_sb.content_margin_left = 10
+	normal_sb.content_margin_right = 10
+	normal_sb.content_margin_top = 6
+	normal_sb.content_margin_bottom = 6
 
 	var hover_sb = normal_sb.duplicate() as StyleBoxFlat
 	hover_sb.bg_color = bg_col.lightened(0.12)
@@ -3353,10 +3353,10 @@ func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color
 	disabled_sb.border_color = Color(0.36, 0.34, 0.38, 0.50)
 	disabled_sb.set_border_width_all(1)
 	disabled_sb.set_corner_radius_all(14)
-	disabled_sb.content_margin_left = 22
-	disabled_sb.content_margin_right = 22
-	disabled_sb.content_margin_top = 8
-	disabled_sb.content_margin_bottom = 8
+	disabled_sb.content_margin_left = 10
+	disabled_sb.content_margin_right = 10
+	disabled_sb.content_margin_top = 6
+	disabled_sb.content_margin_bottom = 6
 
 	btn.add_theme_stylebox_override("normal", normal_sb)
 	btn.add_theme_stylebox_override("hover", hover_sb)
@@ -3402,10 +3402,12 @@ func _build_battleship_ship_row() -> void:
 		var s_len = int(spec["len"])
 		var btn = Button.new()
 		btn.text = spec["txt"]
-		btn.custom_minimum_size = Vector2(88.0, 48.0)
+		btn.custom_minimum_size = Vector2(96.0, 46.0)
 		btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		_style_monopoly_action_button(btn, Color(0.12, 0.28, 0.44, 0.96), Color(0.48, 0.78, 1.0, 0.90), false)
-		btn.add_theme_font_size_override("font_size", 22)
+		btn.add_theme_font_size_override("font_size", 18)
+		btn.clip_text = false
+		btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 		ActionVFXManager.apply_button_juice(btn, "tap_button")
 		btn.pressed.connect(func():
 			var board = get_tree().get_first_node_in_group("battleship_board")
@@ -3431,10 +3433,10 @@ func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 		if is_instance_valid(_bs_ship_row):
 			_bs_ship_row.visible = true
 		if is_instance_valid(fekrbekr_actions):
-			fekrbekr_actions.offset_top = -_safe_bottom_inset - 124.0
+			fekrbekr_actions.offset_top = -_safe_bottom_inset - 130.0
 		var vbox = fekrbekr_actions.get_node_or_null("VBox") as Control
 		if is_instance_valid(vbox):
-			vbox.offset_top = 62.0
+			vbox.offset_top = 56.0
 			vbox.offset_bottom = 120.0
 	else:
 		if is_instance_valid(_bs_ship_row):
@@ -3467,12 +3469,14 @@ func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 
 	# Sizing & Font sizing:
 	if not is_play_phase:
-		# Phase 1: Center with padding, no stretched width, larger font & icons
+		# Phase 1: Center with padding, no stretched width, comfortable font & icons
 		for btn in [btn_fekr_submit, btn_fekr_clear]:
 			if is_instance_valid(btn):
 				btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-				btn.custom_minimum_size = Vector2(170.0, 56.0)
-				btn.add_theme_font_size_override("font_size", 26)
+				btn.custom_minimum_size = Vector2(195.0, 54.0)
+				btn.add_theme_font_size_override("font_size", 20)
+				btn.clip_text = false
+				btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	else:
 		# Phase 2: Larger text & icons, comfortable sizing
 		for btn in [btn_fekr_submit, btn_fekr_clear, btn_fekr_opp, btn_fekr_dual]:

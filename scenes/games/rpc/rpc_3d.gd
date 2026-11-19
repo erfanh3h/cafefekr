@@ -100,6 +100,8 @@ var mat_slash_beam: StandardMaterial3D
 var _action_dock_layer: CanvasLayer
 var _action_dock_panel: Panel
 var _action_choice_buttons: Dictionary = {}
+var _last_start_dialog_open: bool = true
+var _last_game_active: bool = false
 
 func _ready() -> void:
 	game_type = GameTypes.RPC
@@ -113,6 +115,12 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_anim_time += delta * 3.5
+
+	var current_start_open = _is_start_dialog_open()
+	if _last_start_dialog_open != current_start_open or _last_game_active != GameManager.is_game_active:
+		_last_start_dialog_open = current_start_open
+		_last_game_active = GameManager.is_game_active
+		_refresh_choice_buttons()
 
 	# Gentle idle floating bob and rotation on pedestal objects
 	for k in pedestal_objects.keys():
@@ -408,6 +416,7 @@ func _build_action_dock() -> void:
 	_action_dock_panel.offset_bottom = -bottom_pad
 	_action_dock_panel.offset_top = -bottom_pad - 64.0
 	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_panel.visible = false
 	_action_dock_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	dock_root.add_child(_action_dock_panel)
 
@@ -495,6 +504,8 @@ func _is_start_dialog_open() -> bool:
 
 func _refresh_choice_buttons() -> void:
 	var is_locked: bool = not GameManager.is_game_active or is_board_locked or _is_start_dialog_open() or is_choice_confirmed
+	if is_instance_valid(_action_dock_panel):
+		_action_dock_panel.visible = not is_locked
 	for c_type in _action_choice_buttons.keys():
 		var btn: Button = _action_choice_buttons[c_type]
 		if not is_instance_valid(btn):
@@ -1139,7 +1150,7 @@ func _select_choice(choice: String) -> void:
 	var c_fa = choice_names.get(choice, choice)
 	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
 	if is_instance_valid(hud) and hud.has_method("set_custom_banner"):
-		hud.set_custom_banner("✅ انتخاب شما: %s (می‌توانید تغییر دهید)" % c_fa)
+		hud.set_custom_banner("✅ انتخاب شما: %s" % c_fa)
 
 	# 1:1 with Flutter RPCController.acceptSelection():
 	send_move(Commands.Select_Peace, choice)

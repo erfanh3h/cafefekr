@@ -621,6 +621,11 @@ func update_table_state(top_card: Dictionary, active_color: String, dir: int, de
 			_discard_corner_br.modulate = Color.WHITE if c_color != "yellow" else Color(0.15, 0.12, 0.04)
 
 func update_3d_opponent_fans(seat_counts: Dictionary, active_seat: int, seat_names: Dictionary = {}, seat_uno: Dictionary = {}) -> void:
+	for s_idx: int in _opponent_fans.keys():
+		var holder: Node3D = _opponent_fans[s_idx]
+		if is_instance_valid(holder):
+			holder.visible = false
+	return
 	var rack_wood: StandardMaterial3D = StandardMaterial3D.new()
 	rack_wood.albedo_color = Color(0.20, 0.10, 0.05)
 	rack_wood.roughness = 0.34

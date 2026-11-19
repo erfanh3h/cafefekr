@@ -126,6 +126,7 @@ var _action_dock_root: Control = null
 var _action_dock_panel: Panel = null
 var _action_roll_btn: Button = null
 var _action_submit_btn: Button = null
+var _last_start_dialog_open: bool = true
 var _status_lbl_3d: Label3D = null
 var _col_header_labels: Array[Label3D] = []
 
@@ -168,6 +169,7 @@ func _build_2d_action_dock() -> void:
 	_action_dock_root.name = "YatzyActionDock"
 	_action_dock_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_action_dock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_root.visible = false
 	_action_dock_layer.add_child(_action_dock_root)
 
 	_action_dock_panel = Panel.new()
@@ -244,15 +246,15 @@ func _build_2d_action_dock() -> void:
 	_action_submit_btn.name = "BtnActionSubmitScore"
 	_action_submit_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_action_submit_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_action_submit_btn.custom_minimum_size = Vector2(170.0, 54.0)
+	_action_submit_btn.custom_minimum_size = Vector2(205.0, 54.0)
 	_action_submit_btn.focus_mode = Control.FOCUS_NONE
 	_action_submit_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_submit_btn.text = "✅ ثبت امتیاز"
-	_action_submit_btn.clip_text = true
-	_action_submit_btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_action_submit_btn.clip_text = false
+	_action_submit_btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	if _game_font:
 		_action_submit_btn.add_theme_font_override("font", _game_font)
-	_action_submit_btn.add_theme_font_size_override("font_size", 24)
+	_action_submit_btn.add_theme_font_size_override("font_size", 20)
 	_action_submit_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_submit_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_action_submit_btn.add_theme_constant_override("outline_size", 3)
@@ -264,8 +266,8 @@ func _build_2d_action_dock() -> void:
 	sub_normal.set_corner_radius_all(14)
 	sub_normal.shadow_color = Color(0, 0, 0, 0.45)
 	sub_normal.shadow_size = 4
-	sub_normal.content_margin_left = 20
-	sub_normal.content_margin_right = 20
+	sub_normal.content_margin_left = 12
+	sub_normal.content_margin_right = 12
 	sub_normal.content_margin_top = 8
 	sub_normal.content_margin_bottom = 8
 
@@ -293,6 +295,12 @@ func _is_start_dialog_open() -> bool:
 		if is_instance_valid(so) and so.visible:
 			return true
 	return false
+
+func _process(_delta: float) -> void:
+	var current_start_open = _is_start_dialog_open()
+	if _last_start_dialog_open != current_start_open:
+		_last_start_dialog_open = current_start_open
+		_refresh_visuals()
 
 func _hide_hands_for_yatzy() -> void:
 	pass
@@ -1406,7 +1414,7 @@ func _refresh_visuals() -> void:
 	var can_roll = can_act and (remaining_rolls > 0) and not is_rolling_dice
 
 	if is_instance_valid(_action_roll_btn) and is_instance_valid(_action_submit_btn) and is_instance_valid(_action_dock_root):
-		if GameManager.is_spectating:
+		if GameManager.is_spectating or not GameManager.is_game_active or _is_start_dialog_open():
 			_action_dock_root.visible = false
 		else:
 			_action_dock_root.visible = true

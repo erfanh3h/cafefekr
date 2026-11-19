@@ -63,12 +63,27 @@ func _init_radial_ring() -> void:
 
 
 func _configure_bidi() -> void:
-	HudTheme.configure_bidi_label(name_label, true)
+	HudTheme.configure_bidi_label(name_label, false)
 	name_label.justification_flags = TextServer.JUSTIFICATION_NONE
+	name_label.clip_text = false
+	name_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	name_label.visible = true
 	HudTheme.configure_bidi_label(lbl_counter, false)
 	HudTheme.configure_bidi_label(lbl_ring_timer, false)
 	if is_instance_valid(lbl_status):
 		HudTheme.configure_bidi_label(lbl_status, true)
+
+
+func set_player_name(new_name: String) -> void:
+	if not is_instance_valid(name_label):
+		return
+	var raw_name := new_name.strip_edges()
+	if raw_name.is_empty():
+		raw_name = "بازیکن %d" % seat_index
+	name_label.text = raw_name
+	name_label.visible = true
+	if is_instance_valid(lbl_initial):
+		lbl_initial.text = raw_name.substr(0, 1).to_upper()
 
 
 func setup_pod(player_data: Dictionary, mode: PodMode, use_fa_digits: bool = true) -> void:
@@ -81,6 +96,7 @@ func setup_pod(player_data: Dictionary, mode: PodMode, use_fa_digits: bool = tru
 
 	var raw_name: String = str(player_data.get("name", "بازیکن %d" % seat_index))
 	name_label.text = raw_name
+	name_label.visible = true
 	lbl_initial.text = raw_name.substr(0, 1).to_upper() if not raw_name.is_empty() else "?"
 
 	var av_val: Variant = player_data.get("avatar_texture", player_data.get("avatar", null))
@@ -120,8 +136,8 @@ func _apply_mode_metrics() -> void:
 	match _mode:
 		PodMode.HORIZONTAL_PILL:
 			pod_content.vertical = false
-			pod_content.add_theme_constant_override("separation", 8)
-			custom_minimum_size = Vector2(210.0, 50.0)
+			pod_content.add_theme_constant_override("separation", 6)
+			custom_minimum_size = Vector2(0.0, 48.0)
 			size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			av_size = 40.0
 			ring_size = 46.0
@@ -129,9 +145,13 @@ func _apply_mode_metrics() -> void:
 			name_font_px = 15
 			counter_font_px = 14
 			timer_font_px = 10
-			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			name_label.clip_text = false
+			name_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			name_label.justification_flags = TextServer.JUSTIFICATION_NONE
-			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			name_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			name_label.custom_minimum_size = Vector2(40.0, 0.0)
+			name_label.visible = true
 			if counter_badge.visible and not lbl_counter.text.strip_edges().is_empty():
 				counter_badge.custom_minimum_size = Vector2(34.0, 24.0)
 			else:

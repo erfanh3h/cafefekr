@@ -346,6 +346,7 @@ func _build_hud() -> void:
 	turn_status_pill.offset_top = 264
 	turn_status_pill.offset_bottom = 304
 	turn_status_pill.mouse_filter = Control.MOUSE_FILTER_PASS
+	turn_status_pill.visible = false
 	turn_status_pill.add_theme_stylebox_override(
 		"panel",
 		_make_glass_style(Color(0.05, 0.09, 0.08, 0.86), Color(0.86, 0.68, 0.30, 0.72), 20, 1)
@@ -777,6 +778,7 @@ func _refresh_all_visuals() -> void:
 func _sync_top_pill_position() -> void:
 	if not is_instance_valid(turn_status_pill):
 		return
+	turn_status_pill.visible = false
 	var target_y: float = 166.0 if _get_total_players() <= 2 else 224.0
 	var tree: SceneTree = get_tree()
 	if tree:

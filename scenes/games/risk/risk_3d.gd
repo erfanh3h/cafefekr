@@ -558,12 +558,12 @@ func _build_floating_ui() -> void:
 	var header_strip: PanelContainer = PanelContainer.new()
 	header_strip.add_theme_stylebox_override(
 		"panel",
-		_make_panel_style(Color(0.12, 0.085, 0.055, 0.96), Color(1.0, 0.86, 0.42, 0.88), 14, 2, 12, 8)
+		_make_panel_style(Color(0.12, 0.085, 0.055, 0.96), Color(1.0, 0.86, 0.42, 0.88), 14, 2, 8, 4)
 	)
 	dock_vbox.add_child(header_strip)
 
 	var header_vbox: VBoxContainer = VBoxContainer.new()
-	header_vbox.add_theme_constant_override("separation", 5)
+	header_vbox.add_theme_constant_override("separation", 3)
 	header_strip.add_child(header_vbox)
 
 	var top_status_row: HBoxContainer = HBoxContainer.new()
@@ -581,7 +581,7 @@ func _build_floating_ui() -> void:
 	_selection_info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_selection_info_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_selection_info_lbl.add_theme_font_override("font", FontHekayat)
-	_selection_info_lbl.add_theme_font_size_override("font_size", 24)
+	_selection_info_lbl.add_theme_font_size_override("font_size", 21)
 	_selection_info_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72))
 	_selection_info_lbl.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_selection_info_lbl.add_theme_constant_override("outline_size", 4)
@@ -594,7 +594,7 @@ func _build_floating_ui() -> void:
 	_tactical_details_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_tactical_details_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_tactical_details_lbl.add_theme_font_override("font", FontHekayat)
-	_tactical_details_lbl.add_theme_font_size_override("font_size", 18)
+	_tactical_details_lbl.add_theme_font_size_override("font_size", 16)
 	_tactical_details_lbl.add_theme_color_override("font_color", Color(0.92, 0.89, 0.80))
 	header_vbox.add_child(_tactical_details_lbl)
 
@@ -602,7 +602,7 @@ func _build_floating_ui() -> void:
 	_hand_scroll_wrap = ScrollContainer.new()
 	_hand_scroll_wrap.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_hand_scroll_wrap.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	_hand_scroll_wrap.custom_minimum_size = Vector2(0, 114)
+	_hand_scroll_wrap.custom_minimum_size = Vector2(0, 104)
 	_hand_scroll_wrap.mouse_filter = Control.MOUSE_FILTER_PASS
 	dock_vbox.add_child(_hand_scroll_wrap)
 
@@ -1813,7 +1813,7 @@ func _fit_command_dock_height() -> void:
 		return
 	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	var content_h: float = _command_dock_margin.get_combined_minimum_size().y if is_instance_valid(_command_dock_margin) else 160.0
-	var target_h: float = clampf(content_h + 4.0, 96.0, 260.0)
+	var target_h: float = clampf(content_h + 8.0, 96.0, 360.0)
 	_command_dock_panel.offset_left = 10.0
 	_command_dock_panel.offset_right = -10.0
 	_command_dock_panel.offset_bottom = -bottom_pad

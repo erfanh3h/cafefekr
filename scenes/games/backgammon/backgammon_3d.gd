@@ -112,6 +112,7 @@ var _action_dock_layer: CanvasLayer = null
 var _action_dock_root: Control = null
 var _action_dock_panel: Panel = null
 var _action_roll_btn: Button = null
+var _last_start_dialog_open: bool = true
 
 var _vfx_time: float = 0.0
 var _sparkle_accum: float = 0.0
@@ -199,6 +200,7 @@ func _build_2d_action_dock() -> void:
 	_action_dock_root.name = "BackgammonActionDock"
 	_action_dock_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_action_dock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_root.visible = false
 	_action_dock_layer.add_child(_action_dock_root)
 
 	_action_dock_panel = Panel.new()
@@ -294,6 +296,11 @@ func _mark_interaction() -> void:
 func _process(delta: float) -> void:
 	_vfx_time += delta
 	_sparkle_accum += delta
+
+	var current_start_open = _is_start_dialog_open()
+	if _last_start_dialog_open != current_start_open:
+		_last_start_dialog_open = current_start_open
+		_refresh_ui_and_highlights()
 
 	# 1. Pulse selectable source rings, target rings & float top checkers on selectable points
 	var pulse = 0.5 + 0.5 * sin(_vfx_time * 5.2)
@@ -1785,14 +1792,11 @@ func _refresh_ui_and_highlights() -> void:
 
 	# 6. Always-Visible Bottom Roll Dice Button State on 2D Action Dock
 	if is_instance_valid(_action_roll_btn) and is_instance_valid(_action_dock_root):
-		if GameManager.is_spectating:
+		if GameManager.is_spectating or not GameManager.is_game_active or _is_start_dialog_open():
 			_action_dock_root.visible = false
 		else:
 			_action_dock_root.visible = true
-			if not GameManager.is_game_active or _is_start_dialog_open():
-				_action_roll_btn.disabled = true
-				_action_roll_btn.text = "🎲 آماده شروع بازی..."
-			elif is_my_turn and not dices_rolled:
+			if is_my_turn and not dices_rolled:
 				_action_roll_btn.disabled = false
 				_action_roll_btn.text = "🎲 پرتاب تاس"
 			elif is_my_turn and dices_rolled:

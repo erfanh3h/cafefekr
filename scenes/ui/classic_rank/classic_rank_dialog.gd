@@ -114,13 +114,14 @@ func _setup_styles() -> void:
 	_style_card_hover.border_color = Color(1.0, 0.94, 0.55, 0.9)
 	_style_card_hover.shadow_size = 0
 
-	# Selected style with crisp golden border (no dark shadow)
+	# Selected style with crisp golden border & luminous glow
 	_style_card_selected = StyleBoxFlat.new()
-	_style_card_selected.bg_color = Color(0, 0, 0, 0)
+	_style_card_selected.bg_color = Color(0.98, 0.84, 0.25, 0.12)
 	_style_card_selected.set_corner_radius_all(18)
 	_style_card_selected.set_border_width_all(4)
-	_style_card_selected.border_color = Color(1.0, 0.88, 0.28, 1.0)
-	_style_card_selected.shadow_size = 0
+	_style_card_selected.border_color = Color(1.0, 0.90, 0.35, 1.0)
+	_style_card_selected.shadow_color = Color(1.0, 0.85, 0.20, 0.50)
+	_style_card_selected.shadow_size = 8
 
 func open(default_game: String = "") -> void:
 	if not default_game.is_empty():
@@ -203,6 +204,36 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 	img.texture = _get_game_texture(g_type)
 	card.add_child(img)
 	
+	# Golden Selection Checkmark Badge
+	var sel_badge := PanelContainer.new()
+	sel_badge.name = "SelectionBadge"
+	sel_badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	sel_badge.offset_left = -40.0
+	sel_badge.offset_top = 8.0
+	sel_badge.offset_right = -10.0
+	sel_badge.offset_bottom = 38.0
+	sel_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sel_badge.pivot_offset = Vector2(15.0, 15.0)
+	var badge_sb := StyleBoxFlat.new()
+	badge_sb.bg_color = Color(0.98, 0.82, 0.25, 0.98)
+	badge_sb.border_color = Color(0.18, 0.12, 0.04, 0.95)
+	badge_sb.set_border_width_all(2)
+	badge_sb.set_corner_radius_all(15)
+	badge_sb.shadow_color = Color(0, 0, 0, 0.40)
+	badge_sb.shadow_size = 3
+	sel_badge.add_theme_stylebox_override("panel", badge_sb)
+	sel_badge.visible = is_selected
+
+	var badge_lbl := Label.new()
+	badge_lbl.text = "✓"
+	badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	badge_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	badge_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	badge_lbl.add_theme_font_size_override("font_size", 20)
+	badge_lbl.add_theme_color_override("font_color", Color(0.12, 0.08, 0.02, 1.0))
+	sel_badge.add_child(badge_lbl)
+	card.add_child(sel_badge)
+	
 	# 4. Bottom title ribbon banner based on game difficulty
 	var banner = PanelContainer.new()
 	banner.anchor_top = 0.74
@@ -276,6 +307,20 @@ func _update_grid_selection_visuals() -> void:
 		c.add_theme_stylebox_override("hover", _style_card_hover)
 		c.add_theme_stylebox_override("pressed", st)
 		c.add_theme_stylebox_override("focus", st)
+		var badge = c.get_node_or_null("SelectionBadge") as Control
+		if is_instance_valid(badge):
+			if is_sel and not badge.visible:
+				badge.visible = true
+				badge.scale = Vector2(0.5, 0.5)
+				var tw = badge.create_tween()
+				tw.tween_property(badge, "scale", Vector2(1.2, 1.2), 0.10).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				tw.tween_property(badge, "scale", Vector2.ONE, 0.08)
+			elif not is_sel:
+				badge.visible = false
+		if is_sel:
+			var tw_c = c.create_tween()
+			tw_c.tween_property(c, "scale", Vector2(1.03, 1.03), 0.08)
+			tw_c.tween_property(c, "scale", Vector2.ONE, 0.10)
 
 func _update_selected_preview() -> void:
 	if not is_instance_valid(preview_icon):

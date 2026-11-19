@@ -17,7 +17,7 @@ const GRID_SIZE: int = 9
 const BOX_SIZE: int = 3
 
 const BOARD_SURFACE_Y: float = 0.048
-const GRID_CENTER_Z: float = -0.165
+const GRID_CENTER_Z: float = 0.0
 
 # Cell & Block Metrics (Enlarged 3D cell wells with perfectly calibrated typography)
 const CELL_W: float = 0.106
@@ -94,6 +94,8 @@ var _action_digit_buttons: Array = []
 var _action_solve_btn: Button
 var _digit_selected_style: StyleBoxFlat
 var _digit_completed_style: StyleBoxFlat
+var _last_start_dialog_open: bool = true
+var _last_game_active: bool = false
 
 # Materials
 var mat_plinth: StandardMaterial3D
@@ -585,8 +587,9 @@ func _build_action_dock() -> void:
 	_action_dock_panel.offset_left = 10.0
 	_action_dock_panel.offset_right = -10.0
 	_action_dock_panel.offset_bottom = -bottom_pad
-	_action_dock_panel.offset_top = -bottom_pad - 128.0
+	_action_dock_panel.offset_top = -bottom_pad - 134.0
 	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_panel.visible = false
 	_action_dock_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	dock_root.add_child(_action_dock_panel)
 
@@ -599,7 +602,7 @@ func _build_action_dock() -> void:
 	# Row 1: 1..9 Digits + Erase button (10 buttons)
 	var hbox_digits = HBoxContainer.new()
 	hbox_digits.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox_digits.custom_minimum_size = Vector2(0, 56)
+	hbox_digits.custom_minimum_size = Vector2(0, 62)
 	hbox_digits.add_theme_constant_override("separation", 4)
 	hbox_digits.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(hbox_digits)
@@ -627,13 +630,13 @@ func _build_action_dock() -> void:
 		var btn = Button.new()
 		btn.name = "BtnDigit_%d" % d
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.custom_minimum_size = Vector2(0, 56)
+		btn.custom_minimum_size = Vector2(0, 62)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		btn.text = "%s\n۰/۹" % _fa_num(d)
 		if _game_font:
 			btn.add_theme_font_override("font", _game_font)
-		btn.add_theme_font_size_override("font_size", 19)
+		btn.add_theme_font_size_override("font_size", 22)
 		btn.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
 		btn.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.08, 0.95))
 		btn.add_theme_constant_override("outline_size", 3)
@@ -668,13 +671,13 @@ func _build_action_dock() -> void:
 	var btn_erase = Button.new()
 	btn_erase.name = "BtnDigit_Erase"
 	btn_erase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_erase.custom_minimum_size = Vector2(0, 56)
+	btn_erase.custom_minimum_size = Vector2(0, 62)
 	btn_erase.focus_mode = Control.FOCUS_NONE
 	btn_erase.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_erase.text = "✕\nپاک"
 	if _game_font:
 		btn_erase.add_theme_font_override("font", _game_font)
-	btn_erase.add_theme_font_size_override("font_size", 17)
+	btn_erase.add_theme_font_size_override("font_size", 20)
 	btn_erase.add_theme_color_override("font_color", Color(1.0, 0.70, 0.70))
 	btn_erase.add_theme_color_override("font_outline_color", Color(0.08, 0.02, 0.02, 0.95))
 	btn_erase.add_theme_constant_override("outline_size", 3)
@@ -768,12 +771,19 @@ func _is_start_dialog_open() -> bool:
 			return true
 	return false
 
+func _process(_delta: float) -> void:
+	var current_start_open = _is_start_dialog_open()
+	if _last_start_dialog_open != current_start_open or _last_game_active != GameManager.is_game_active:
+		_last_start_dialog_open = current_start_open
+		_last_game_active = GameManager.is_game_active
+		_update_numbers_count()
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_SIZE_CHANGED:
 		if is_instance_valid(_action_dock_panel):
 			var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 			_action_dock_panel.offset_bottom = -bottom_pad
-			_action_dock_panel.offset_top = -bottom_pad - 114.0
+			_action_dock_panel.offset_top = -bottom_pad - 134.0
 
 func _on_digit_button_pressed(digit: int) -> void:
 	if not GameManager.is_game_active or _is_start_dialog_open():
@@ -868,6 +878,8 @@ func _update_numbers_count() -> void:
 			btn_solve_label.modulate = Color(0.95, 0.95, 0.95)
 
 	var is_locked: bool = not GameManager.is_game_active or _is_start_dialog_open()
+	if is_instance_valid(_action_dock_panel):
+		_action_dock_panel.visible = not is_locked
 	for b in _action_digit_buttons:
 		if is_instance_valid(b):
 			b.disabled = is_locked
@@ -1383,6 +1395,7 @@ func setup_board(game_data: Dictionary) -> void:
 func on_start_game() -> void:
 	is_board_locked = false
 	is_my_turn = true
+	_update_numbers_count()
 
 func on_start_game_data(payload: Dictionary) -> void:
 	if payload.has("board") and typeof(payload["board"]) == TYPE_ARRAY:

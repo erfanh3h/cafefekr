@@ -706,7 +706,10 @@ func set_current_result_scores(p1_s: int, p2_s: int) -> void:
 			match_result_box.visible = false
 		return
 	if is_instance_valid(lbl_result_score):
+		lbl_result_score.add_theme_font_size_override("font_size", 15)
 		lbl_result_score.text = "%s - %s" % [_fa_digits(p1_s), _fa_digits(p2_s)]
+	if is_instance_valid(lbl_result_title):
+		lbl_result_title.add_theme_font_size_override("font_size", 13)
 	if is_instance_valid(match_result_box):
 		match_result_box.visible = true
 	_sync_header_height()
@@ -719,7 +722,10 @@ func set_current_result_text(text: String) -> void:
 	if clean.is_empty():
 		match_result_box.visible = false
 	else:
+		lbl_result_score.add_theme_font_size_override("font_size", 15)
 		lbl_result_score.text = clean
+		if is_instance_valid(lbl_result_title):
+			lbl_result_title.add_theme_font_size_override("font_size", 13)
 		match_result_box.visible = true
 	_sync_header_height()
 
@@ -825,6 +831,8 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 		var pod: PlayerPod = _pods_by_idx[idx]
 		if is_instance_valid(pod):
 			pod.set_active_turn(idx == turn)
+			if _player_names.has(idx) and not str(_player_names[idx]).is_empty():
+				pod.set_player_name(str(_player_names[idx]))
 
 	# Universal Timer Bar is visible during any active game turn
 	if is_instance_valid(local_turn_bar_wrap):

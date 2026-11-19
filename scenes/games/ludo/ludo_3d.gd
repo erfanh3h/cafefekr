@@ -152,6 +152,7 @@ var _action_dock_layer: CanvasLayer = null
 var _action_dock_root: Control = null
 var _action_dock_panel: Panel = null
 var _action_roll_btn: Button = null
+var _last_start_dialog_open: bool = true
 var _pulse_time: float = 0.0
 
 # Pointer tap tracking (Unified Raycast Input — never blocks camera zoom/orbit)
@@ -232,6 +233,7 @@ func _build_2d_action_dock() -> void:
 	_action_dock_root.name = "LudoActionDock"
 	_action_dock_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_action_dock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_root.visible = false
 	_action_dock_layer.add_child(_action_dock_root)
 
 	_action_dock_panel = Panel.new()
@@ -1003,6 +1005,10 @@ func _create_royal_pawn_node(g_id: int, stack_count: int = 1) -> Node3D:
 		lbl.text = "×%s" % _fa_int(stack_count)
 		pawn.add_child(lbl)
 
+	for child in pawn.get_children():
+		if child is GeometryInstance3D:
+			child.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
 	return pawn
 
 func _create_halo_ring_mesh(radius: float, thickness: float, mat: StandardMaterial3D) -> MeshInstance3D:
@@ -1040,6 +1046,11 @@ func _process(delta: float) -> void:
 	_pulse_time += delta * 4.2
 	var s_pulse = 1.0 + 0.08 * sin(_pulse_time)
 	var y_bob = 0.007 * abs(sin(_pulse_time * 0.85))
+
+	var current_start_open = _is_start_dialog_open()
+	if _last_start_dialog_open != current_start_open:
+		_last_start_dialog_open = current_start_open
+		_update_interactive_highlights()
 
 	if is_instance_valid(_dice_halo_ring) and _dice_halo_ring.visible:
 		_dice_halo_ring.scale = Vector3(s_pulse, 1.0, s_pulse)
@@ -1147,14 +1158,11 @@ func _update_interactive_highlights() -> void:
 
 	# Update Roll Dice Button visual state & text on 2D Action Dock
 	if is_instance_valid(_action_roll_btn) and is_instance_valid(_action_dock_root):
-		if GameManager.is_spectating:
+		if GameManager.is_spectating or not GameManager.is_game_active or _is_start_dialog_open():
 			_action_dock_root.visible = false
 		else:
 			_action_dock_root.visible = true
-			if not GameManager.is_game_active or _is_start_dialog_open():
-				_action_roll_btn.disabled = true
-				_action_roll_btn.text = "🎲 آماده شروع مسابقه..."
-			elif my_turn and (is_out_of_move or (has_rolled_this_turn and available_moves.is_empty())):
+			if my_turn and (is_out_of_move or (has_rolled_this_turn and available_moves.is_empty())):
 				_action_roll_btn.disabled = true
 				if current_dice > 0:
 					_action_roll_btn.text = "تاس %s — بدون حرکت ممکن" % _fa_int(current_dice)

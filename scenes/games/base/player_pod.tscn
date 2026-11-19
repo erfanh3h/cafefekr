@@ -224,8 +224,8 @@ theme_override_font_sizes/font_size = 12
 text = "بازیکن"
 horizontal_alignment = 1
 vertical_alignment = 1
-clip_text = true
-text_overrun_behavior = 3
+clip_text = false
+text_overrun_behavior = 0
 text_direction = 3
 
 [node name="RoleDot" type="Panel" parent="PodContent"]
