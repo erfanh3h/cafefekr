@@ -75,16 +75,8 @@ func _ready() -> void:
 	)
 
 func _update_tab_styles() -> void:
-	if _active_tab == 0:
-		KenneyUI.style_button(btn_tab_matches, KenneyUI.COLOR_YELLOW)
-		btn_tab_matches.add_theme_color_override("font_color", Color(0.18, 0.1, 0.02, 1.0))
-		KenneyUI.style_button(btn_tab_games_history, KenneyUI.COLOR_GREY)
-		btn_tab_games_history.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72, 0.85))
-	else:
-		KenneyUI.style_button(btn_tab_games_history, KenneyUI.COLOR_YELLOW)
-		btn_tab_games_history.add_theme_color_override("font_color", Color(0.18, 0.1, 0.02, 1.0))
-		KenneyUI.style_button(btn_tab_matches, KenneyUI.COLOR_GREY)
-		btn_tab_matches.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72, 0.85))
+	CafeSocialTheme.style_parlor_tab_button(btn_tab_matches, _active_tab == 0, 21)
+	CafeSocialTheme.style_parlor_tab_button(btn_tab_games_history, _active_tab == 1, 21)
 
 func open() -> void:
 	_active_tab = 0
@@ -336,15 +328,23 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	style_hover.shadow_offset = Vector2(0, 4)
 	
 	if my_res == "win":
-		style_normal.shadow_color = Color(0.18, 0.85, 0.28, 0.80)
-		style_normal.border_color = Color(0.30, 0.85, 0.45, 0.85)
-		style_hover.shadow_color = Color(0.25, 0.95, 0.35, 0.95)
+		style_normal.bg_color = Color(0.09, 0.20, 0.12, 0.96)
+		style_normal.border_width_right = 6
+		style_normal.shadow_color = Color(0.14, 0.72, 0.28, 0.45)
+		style_normal.border_color = Color(0.28, 0.80, 0.44, 0.94)
+		style_hover.bg_color = Color(0.12, 0.25, 0.16, 0.98)
+		style_hover.border_width_right = 6
+		style_hover.shadow_color = Color(0.20, 0.85, 0.35, 0.60)
 		style_hover.border_color = Color(0.40, 0.95, 0.55, 1.0)
 	elif my_res == "lose":
-		style_normal.shadow_color = Color(0.90, 0.18, 0.18, 0.80)
-		style_normal.border_color = Color(0.90, 0.30, 0.30, 0.85)
-		style_hover.shadow_color = Color(1.0, 0.25, 0.25, 0.95)
-		style_hover.border_color = Color(1.0, 0.40, 0.40, 1.0)
+		style_normal.bg_color = Color(0.24, 0.09, 0.10, 0.96)
+		style_normal.border_width_right = 6
+		style_normal.shadow_color = Color(0.82, 0.18, 0.18, 0.45)
+		style_normal.border_color = Color(0.86, 0.34, 0.34, 0.92)
+		style_hover.bg_color = Color(0.29, 0.12, 0.12, 0.98)
+		style_hover.border_width_right = 6
+		style_hover.shadow_color = Color(0.95, 0.24, 0.24, 0.60)
+		style_hover.border_color = Color(1.0, 0.42, 0.42, 1.0)
 	elif my_res == "draw":
 		style_normal.shadow_color = Color(0.95, 0.85, 0.18, 0.80)
 		style_normal.border_color = Color(0.95, 0.85, 0.30, 0.85)
@@ -544,15 +544,36 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	
 	row.add_child(center_col)
 	
-	# 3. RIGHT SIDE: Big Game Mode Badge Icon
-	var mode_badge = TextureRect.new()
-	mode_badge.custom_minimum_size = Vector2(76, 76)
-	mode_badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# 3. RIGHT SIDE: Game-Specific Framed Icon (fallback to mode badge if game type missing)
+	var primary_gtype: String = str(game.get("game_type", game.get("game", ""))).strip_edges()
+	if primary_gtype.is_empty() and typeof(_gt_arr) == TYPE_ARRAY and not _gt_arr.is_empty():
+		primary_gtype = str(_gt_arr[0]).strip_edges()
+	if primary_gtype.is_empty() and typeof(_r_arr) == TYPE_ARRAY and not _r_arr.is_empty() and typeof(_r_arr[0]) == TYPE_DICTIONARY:
+		primary_gtype = str(_r_arr[0].get("game_type", _r_arr[0].get("game", ""))).strip_edges()
+
+	var g_icon_frame := PanelContainer.new()
+	g_icon_frame.custom_minimum_size = Vector2(76, 76)
+	g_icon_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	g_icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var g_if_style := StyleBoxFlat.new()
+	g_if_style.bg_color = Color(0.09, 0.05, 0.03, 0.96)
+	g_if_style.border_color = style_normal.border_color
+	g_if_style.set_border_width_all(2)
+	g_if_style.set_corner_radius_all(14)
+	g_if_style.content_margin_left = 4.0
+	g_if_style.content_margin_right = 4.0
+	g_if_style.content_margin_top = 4.0
+	g_if_style.content_margin_bottom = 4.0
+	g_icon_frame.add_theme_stylebox_override("panel", g_if_style)
+
+	var mode_badge := TextureRect.new()
+	mode_badge.custom_minimum_size = Vector2(66, 66)
 	mode_badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	mode_badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	mode_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	mode_badge.texture = _get_mode_badge_texture(mode_raw)
-	row.add_child(mode_badge)
+	mode_badge.texture = _get_game_icon_texture(primary_gtype) if not primary_gtype.is_empty() else _get_mode_badge_texture(mode_raw)
+	g_icon_frame.add_child(mode_badge)
+	row.add_child(g_icon_frame)
 	
 	btn.pressed.connect(func():
 		AudioManager.sfx_tap()

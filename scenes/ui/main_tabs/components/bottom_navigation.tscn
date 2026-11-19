@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/components/bottom_navigation.gd" id="1_bot_script"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/social.png" id="2_social_tex"]
@@ -18,9 +18,9 @@ texture_margin_bottom = 26.0
 axis_stretch_horizontal = 0
 axis_stretch_vertical = 0
 content_margin_left = 20.0
-content_margin_top = 16.0
+content_margin_top = 14.0
 content_margin_right = 20.0
-content_margin_bottom = 16.0
+content_margin_bottom = 14.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tab_btn"]
 
@@ -38,12 +38,17 @@ corner_radius_bottom_left = 8
 shadow_color = Color(0.12, 0.88, 0.48, 0.7)
 shadow_size = 6
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glow"]
-bg_color = Color(0.95, 0.78, 0.25, 0.16)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
+[sub_resource type="Gradient" id="Gradient_gold_glow"]
+offsets = PackedFloat32Array(0, 0.48, 1)
+colors = PackedColorArray(1, 0.85, 0.42, 0.42, 0.96, 0.73, 0.22, 0.16, 0.96, 0.73, 0.22, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_gold_glow"]
+gradient = SubResource("Gradient_gold_glow")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.42)
+fill_to = Vector2(0.5, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
 bg_color = Color(0.88, 0.14, 0.14, 1)
@@ -81,10 +86,10 @@ theme_override_styles/panel = SubResource("StyleBoxTexture_bar_bg")
 
 [node name="Margin" type="MarginContainer" parent="PanelFrame"]
 layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
 
 [node name="HBox" type="HBoxContainer" parent="PanelFrame/Margin"]
 layout_mode = 2
@@ -103,7 +108,7 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_tab_btn")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_tab_btn")
 flat = true
 
-[node name="GlowHighlight" type="Panel" parent="PanelFrame/Margin/HBox/BtnSocial"]
+[node name="GlowHighlight" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnSocial"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -112,11 +117,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+texture = SubResource("GradientTexture2D_gold_glow")
+expand_mode = 1
+stretch_mode = 0
 
 [node name="GemIndicator" type="Panel" parent="PanelFrame/Margin/HBox/BtnSocial"]
 visible = false
-custom_minimum_size = Vector2(40, 8)
+custom_minimum_size = Vector2(40, 6)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -124,7 +131,7 @@ anchor_right = 0.5
 offset_left = -20.0
 offset_top = 2.0
 offset_right = 20.0
-offset_bottom = 10.0
+offset_bottom = 8.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_gem")
@@ -140,24 +147,42 @@ mouse_filter = 2
 theme_override_constants/separation = 4
 alignment = 1
 
-[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnSocial/VBox"]
-custom_minimum_size = Vector2(74, 74)
+[node name="IconSlot" type="Control" parent="PanelFrame/Margin/HBox/BtnSocial/VBox"]
+custom_minimum_size = Vector2(80, 76)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnSocial/VBox/IconSlot"]
+custom_minimum_size = Vector2(70, 70)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -35.0
+offset_top = -35.0
+offset_right = 35.0
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("2_social_tex")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnSocial/VBox"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.80, 0.74, 0.65, 0.92)
+theme_override_colors/font_color = Color(0.737, 0.663, 0.557, 1)
 theme_override_fonts/font = ExtResource("7_font_hekayat")
 theme_override_font_sizes/font_size = 24
 text = "کافه"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Badge" type="PanelContainer" parent="PanelFrame/Margin/HBox/BtnSocial"]
 visible = false
@@ -194,7 +219,7 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_tab_btn")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_tab_btn")
 flat = true
 
-[node name="GlowHighlight" type="Panel" parent="PanelFrame/Margin/HBox/BtnHistory"]
+[node name="GlowHighlight" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnHistory"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -203,11 +228,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+texture = SubResource("GradientTexture2D_gold_glow")
+expand_mode = 1
+stretch_mode = 0
 
 [node name="GemIndicator" type="Panel" parent="PanelFrame/Margin/HBox/BtnHistory"]
 visible = false
-custom_minimum_size = Vector2(40, 8)
+custom_minimum_size = Vector2(40, 6)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -215,7 +242,7 @@ anchor_right = 0.5
 offset_left = -20.0
 offset_top = 2.0
 offset_right = 20.0
-offset_bottom = 10.0
+offset_bottom = 8.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_gem")
@@ -231,24 +258,42 @@ mouse_filter = 2
 theme_override_constants/separation = 4
 alignment = 1
 
-[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnHistory/VBox"]
-custom_minimum_size = Vector2(74, 74)
+[node name="IconSlot" type="Control" parent="PanelFrame/Margin/HBox/BtnHistory/VBox"]
+custom_minimum_size = Vector2(80, 76)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnHistory/VBox/IconSlot"]
+custom_minimum_size = Vector2(70, 70)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -35.0
+offset_top = -35.0
+offset_right = 35.0
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("3_history_tex")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnHistory/VBox"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.80, 0.74, 0.65, 0.92)
+theme_override_colors/font_color = Color(0.737, 0.663, 0.557, 1)
 theme_override_fonts/font = ExtResource("7_font_hekayat")
 theme_override_font_sizes/font_size = 24
 text = "برترین‌ها"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="BtnPlay" type="Button" parent="PanelFrame/Margin/HBox"]
 layout_mode = 2
@@ -262,7 +307,7 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_tab_btn")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_tab_btn")
 flat = true
 
-[node name="GlowHighlight" type="Panel" parent="PanelFrame/Margin/HBox/BtnPlay"]
+[node name="GlowHighlight" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnPlay"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -271,19 +316,21 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+texture = SubResource("GradientTexture2D_gold_glow")
+expand_mode = 1
+stretch_mode = 0
 
 [node name="GemIndicator" type="Panel" parent="PanelFrame/Margin/HBox/BtnPlay"]
 visible = false
-custom_minimum_size = Vector2(48, 8)
+custom_minimum_size = Vector2(40, 6)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -24.0
+offset_left = -20.0
 offset_top = 2.0
-offset_right = 24.0
-offset_bottom = 10.0
+offset_right = 20.0
+offset_bottom = 8.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_gem")
@@ -299,24 +346,42 @@ mouse_filter = 2
 theme_override_constants/separation = 4
 alignment = 1
 
-[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnPlay/VBox"]
-custom_minimum_size = Vector2(88, 88)
+[node name="IconSlot" type="Control" parent="PanelFrame/Margin/HBox/BtnPlay/VBox"]
+custom_minimum_size = Vector2(80, 76)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnPlay/VBox/IconSlot"]
+custom_minimum_size = Vector2(74, 74)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -37.0
+offset_top = -37.0
+offset_right = 37.0
+offset_bottom = 37.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("4_play_tex")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnPlay/VBox"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.92, 0.45, 1)
+theme_override_colors/font_color = Color(0.737, 0.663, 0.557, 1)
 theme_override_fonts/font = ExtResource("7_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "بازی"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="BtnLibrary" type="Button" parent="PanelFrame/Margin/HBox"]
 layout_mode = 2
@@ -330,7 +395,7 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_tab_btn")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_tab_btn")
 flat = true
 
-[node name="GlowHighlight" type="Panel" parent="PanelFrame/Margin/HBox/BtnLibrary"]
+[node name="GlowHighlight" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnLibrary"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -339,11 +404,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+texture = SubResource("GradientTexture2D_gold_glow")
+expand_mode = 1
+stretch_mode = 0
 
 [node name="GemIndicator" type="Panel" parent="PanelFrame/Margin/HBox/BtnLibrary"]
 visible = false
-custom_minimum_size = Vector2(40, 8)
+custom_minimum_size = Vector2(40, 6)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -351,7 +418,7 @@ anchor_right = 0.5
 offset_left = -20.0
 offset_top = 2.0
 offset_right = 20.0
-offset_bottom = 10.0
+offset_bottom = 8.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_gem")
@@ -367,24 +434,42 @@ mouse_filter = 2
 theme_override_constants/separation = 4
 alignment = 1
 
-[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnLibrary/VBox"]
-custom_minimum_size = Vector2(74, 74)
+[node name="IconSlot" type="Control" parent="PanelFrame/Margin/HBox/BtnLibrary/VBox"]
+custom_minimum_size = Vector2(80, 76)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnLibrary/VBox/IconSlot"]
+custom_minimum_size = Vector2(70, 70)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -35.0
+offset_top = -35.0
+offset_right = 35.0
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("5_library_tex")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnLibrary/VBox"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.80, 0.74, 0.65, 0.92)
+theme_override_colors/font_color = Color(0.737, 0.663, 0.557, 1)
 theme_override_fonts/font = ExtResource("7_font_hekayat")
 theme_override_font_sizes/font_size = 24
 text = "کتابخانه"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="BtnUser" type="Button" parent="PanelFrame/Margin/HBox"]
 layout_mode = 2
@@ -398,7 +483,7 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_tab_btn")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_tab_btn")
 flat = true
 
-[node name="GlowHighlight" type="Panel" parent="PanelFrame/Margin/HBox/BtnUser"]
+[node name="GlowHighlight" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnUser"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -407,11 +492,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_glow")
+texture = SubResource("GradientTexture2D_gold_glow")
+expand_mode = 1
+stretch_mode = 0
 
 [node name="GemIndicator" type="Panel" parent="PanelFrame/Margin/HBox/BtnUser"]
 visible = false
-custom_minimum_size = Vector2(40, 8)
+custom_minimum_size = Vector2(40, 6)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -419,7 +506,7 @@ anchor_right = 0.5
 offset_left = -20.0
 offset_top = 2.0
 offset_right = 20.0
-offset_bottom = 10.0
+offset_bottom = 8.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_gem")
@@ -435,21 +522,39 @@ mouse_filter = 2
 theme_override_constants/separation = 4
 alignment = 1
 
-[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnUser/VBox"]
-custom_minimum_size = Vector2(74, 74)
+[node name="IconSlot" type="Control" parent="PanelFrame/Margin/HBox/BtnUser/VBox"]
+custom_minimum_size = Vector2(80, 76)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Icon" type="TextureRect" parent="PanelFrame/Margin/HBox/BtnUser/VBox/IconSlot"]
+custom_minimum_size = Vector2(70, 70)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -35.0
+offset_top = -35.0
+offset_right = 35.0
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("6_user_tex")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnUser/VBox"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.80, 0.74, 0.65, 0.92)
+theme_override_colors/font_color = Color(0.737, 0.663, 0.557, 1)
 theme_override_fonts/font = ExtResource("7_font_hekayat")
 theme_override_font_sizes/font_size = 24
 text = "کاربر"
 horizontal_alignment = 1
+vertical_alignment = 1

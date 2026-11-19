@@ -1966,3 +1966,249 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 	ActionVFXManager.animate_dialog_open(card, overlay, true)
 	return overlay
 
+
+# ==============================================================================
+# WARM CLASSIC PARLOR CONTROLS (Tabs, Sliders, Toggles)
+# ==============================================================================
+
+static var _parlor_slider_grabber_cache: Dictionary = {}
+static var _parlor_toggle_icon_cache: Dictionary = {}
+
+
+static func style_parlor_tab_button(btn: Button, is_active: bool, font_size: int = 18) -> void:
+	if not is_instance_valid(btn):
+		return
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.clip_text = true
+	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	btn.add_theme_font_override("font", FONT_TITLE)
+	btn.add_theme_font_size_override("font_size", font_size)
+
+	var make_sb := func(bg: Color, border: Color, border_w: int, border_b: int, glow: Color, glow_sz: int, pad_top: float, pad_bot: float) -> StyleBoxFlat:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = bg
+		sb.border_color = border
+		sb.set_border_width_all(border_w)
+		sb.border_width_bottom = border_b
+		sb.set_corner_radius_all(12)
+		sb.shadow_color = glow
+		sb.shadow_size = glow_sz
+		sb.shadow_offset = Vector2(0, 2)
+		sb.content_margin_left = 8.0
+		sb.content_margin_right = 8.0
+		sb.content_margin_top = pad_top
+		sb.content_margin_bottom = pad_bot
+		return sb
+
+	if is_active:
+		var gold_border := Color("#F5C542")
+		var amber_fill := Color("#7E4E14")
+		var amber_hover := Color("#965E19")
+		var amber_press := Color("#653D0E")
+		var gold_glow := Color(0.96, 0.77, 0.26, 0.34)
+		btn.add_theme_stylebox_override("normal", make_sb.call(amber_fill, gold_border, 2, 3, gold_glow, 7, 7.0, 7.0))
+		btn.add_theme_stylebox_override("hover", make_sb.call(amber_hover, Color("#FFE07A"), 2, 3, gold_glow, 8, 7.0, 7.0))
+		btn.add_theme_stylebox_override("pressed", make_sb.call(amber_press, gold_border, 2, 2, gold_glow, 4, 8.0, 6.0))
+		btn.add_theme_stylebox_override("focus", make_sb.call(amber_fill, gold_border, 2, 3, gold_glow, 7, 7.0, 7.0))
+
+		var cream_txt := Color("#FFF7E0")
+		btn.add_theme_color_override("font_color", cream_txt)
+		btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
+		btn.add_theme_color_override("font_pressed_color", cream_txt)
+		btn.add_theme_color_override("font_focus_color", cream_txt)
+		btn.add_theme_color_override("font_shadow_color", Color(0.06, 0.03, 0.01, 0.96))
+		btn.add_theme_constant_override("shadow_offset_x", 0)
+		btn.add_theme_constant_override("shadow_offset_y", 2)
+		btn.add_theme_constant_override("shadow_outline_size", 2)
+		btn.add_theme_color_override("font_outline_color", Color(0.11, 0.05, 0.01, 0.94))
+		btn.add_theme_constant_override("outline_size", 2)
+	else:
+		var muted_wood := Color("#2E1A10")
+		var muted_hover := Color("#3D2417")
+		var muted_press := Color("#22120A")
+		var bronze_bdr := Color("#634125")
+		var subtle_sh := Color(0.0, 0.0, 0.0, 0.35)
+		btn.add_theme_stylebox_override("normal", make_sb.call(muted_wood, bronze_bdr, 1, 2, subtle_sh, 3, 7.0, 7.0))
+		btn.add_theme_stylebox_override("hover", make_sb.call(muted_hover, Color("#9B6E36"), 1, 2, subtle_sh, 4, 7.0, 7.0))
+		btn.add_theme_stylebox_override("pressed", make_sb.call(muted_press, bronze_bdr, 1, 1, subtle_sh, 2, 8.0, 6.0))
+		btn.add_theme_stylebox_override("focus", make_sb.call(muted_wood, bronze_bdr, 1, 2, subtle_sh, 3, 7.0, 7.0))
+
+		var tan_txt := Color("#CBB89D")
+		btn.add_theme_color_override("font_color", tan_txt)
+		btn.add_theme_color_override("font_hover_color", Color("#EFE2CB"))
+		btn.add_theme_color_override("font_pressed_color", tan_txt)
+		btn.add_theme_color_override("font_focus_color", tan_txt)
+		btn.add_theme_color_override("font_shadow_color", Color(0.04, 0.02, 0.01, 0.80))
+		btn.add_theme_constant_override("shadow_offset_x", 0)
+		btn.add_theme_constant_override("shadow_offset_y", 1)
+		btn.add_theme_constant_override("shadow_outline_size", 1)
+		btn.add_theme_color_override("font_outline_color", Color(0.06, 0.03, 0.01, 0.65))
+		btn.add_theme_constant_override("outline_size", 1)
+
+
+static func _get_gold_grabber_texture(diameter: int, highlight: bool, disabled: bool = false) -> ImageTexture:
+	var key := "%d_%s_%s" % [diameter, str(highlight), str(disabled)]
+	if _parlor_slider_grabber_cache.has(key):
+		return _parlor_slider_grabber_cache[key] as ImageTexture
+
+	var img := Image.create(diameter, diameter, false, Image.FORMAT_RGBA8)
+	var c: float = (float(diameter) - 1.0) * 0.5
+	var r_outer: float = float(diameter) * 0.5 - 1.0
+	var r_rim: float = r_outer - 2.2
+	var r_inner: float = r_outer - 5.2
+
+	var rim_col: Color = Color("#4A2B12") if disabled else Color("#4C2B0E")
+	var gold_outer: Color = Color("#8C7352") if disabled else (Color("#FFE27A") if highlight else Color("#E5A93B"))
+	var gold_center: Color = Color("#A89070") if disabled else (Color("#FFF4C2") if highlight else Color("#F5C542"))
+
+	for y in range(diameter):
+		var dy: float = float(y) - c
+		for x in range(diameter):
+			var dx: float = float(x) - c
+			var dist: float = sqrt(dx * dx + dy * dy)
+			if dist > r_outer + 1.0:
+				img.set_pixel(x, y, Color(0, 0, 0, 0))
+				continue
+			var aa: float = clampf(r_outer - dist + 0.5, 0.0, 1.0)
+			var col: Color
+			if dist > r_rim:
+				col = rim_col
+			else:
+				var t: float = clampf(dist / maxf(1.0, r_rim), 0.0, 1.0)
+				# Slight top-left brushed-gold sheen
+				var sheen: float = clampf((-dx - dy) / (r_rim * 2.2) + 0.35, 0.0, 1.0)
+				col = gold_center.lerp(gold_outer, t * 0.78)
+				col = col.lightened(sheen * 0.16)
+				if dist < r_inner and dist > r_inner - 1.2:
+					col = col.darkened(0.14)
+			col.a = aa * (0.65 if disabled else 1.0)
+			img.set_pixel(x, y, col)
+
+	var tex: ImageTexture = ImageTexture.create_from_image(img)
+	_parlor_slider_grabber_cache[key] = tex
+	return tex
+
+
+static func style_parlor_slider(slider: HSlider) -> void:
+	if not is_instance_valid(slider):
+		return
+	slider.focus_mode = Control.FOCUS_NONE
+	slider.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color("#26140B")
+	track.border_color = Color("#634125")
+	track.set_border_width_all(1)
+	track.set_corner_radius_all(6)
+	track.content_margin_top = 6.0
+	track.content_margin_bottom = 6.0
+
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color("#E5A93B")
+	fill.border_color = Color("#F5C542")
+	fill.border_width_top = 1
+	fill.border_width_bottom = 1
+	fill.set_corner_radius_all(6)
+	fill.content_margin_top = 6.0
+	fill.content_margin_bottom = 6.0
+
+	var fill_hi: StyleBoxFlat = fill.duplicate() as StyleBoxFlat
+	fill_hi.bg_color = Color("#F5C542")
+
+	slider.add_theme_stylebox_override("slider", track)
+	slider.add_theme_stylebox_override("grabber_area", fill)
+	slider.add_theme_stylebox_override("grabber_area_highlight", fill_hi)
+	slider.add_theme_icon_override("grabber", _get_gold_grabber_texture(24, false, false))
+	slider.add_theme_icon_override("grabber_highlight", _get_gold_grabber_texture(26, true, false))
+	slider.add_theme_icon_override("grabber_disabled", _get_gold_grabber_texture(24, false, true))
+
+
+static func _get_parlor_toggle_texture(is_on: bool, mirrored: bool = false, disabled: bool = false) -> ImageTexture:
+	var key := "%s_%s_%s" % [str(is_on), str(mirrored), str(disabled)]
+	if _parlor_toggle_icon_cache.has(key):
+		return _parlor_toggle_icon_cache[key] as ImageTexture
+
+	var w: int = 58
+	var h: int = 30
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var rad: float = float(h) * 0.5 - 1.0
+	var cy: float = (float(h) - 1.0) * 0.5
+	var left_cx: float = rad + 1.0
+	var right_cx: float = float(w) - 1.0 - rad - 1.0
+
+	var track_bg: Color = Color("#1F7A3E") if is_on else Color("#2E1A10")
+	var track_bdr: Color = Color("#F5C542") if is_on else Color("#6B4729")
+	var knob_col: Color = Color("#FFF4D2") if is_on else Color("#CBB89D")
+	var knob_rim: Color = Color("#D49B2A") if is_on else Color("#4F321B")
+
+	var knob_on_right: bool = (not mirrored) if is_on else mirrored
+	var knob_cx: float = right_cx if knob_on_right else left_cx
+	var knob_r: float = rad - 3.2
+
+	for y in range(h):
+		var dy: float = float(y) - cy
+		for x in range(w):
+			var fx: float = float(x)
+			# Signed distance to capsule (pill)
+			var clamped_x: float = clampf(fx, left_cx, right_cx)
+			var dist_pill: float = sqrt((fx - clamped_x) * (fx - clamped_x) + dy * dy)
+			if dist_pill > rad + 1.0:
+				img.set_pixel(x, y, Color(0, 0, 0, 0))
+				continue
+
+			var pill_aa: float = clampf(rad - dist_pill + 0.5, 0.0, 1.0)
+			var base_col: Color = track_bdr if dist_pill > (rad - 2.0) else track_bg
+			# Subtle top highlight on track interior
+			if dist_pill <= (rad - 2.0) and dy < 0.0:
+				base_col = base_col.lightened(clampf(-dy / rad, 0.0, 1.0) * 0.08)
+
+			# Circular knob
+			var dist_knob: float = sqrt((fx - knob_cx) * (fx - knob_cx) + dy * dy)
+			var final_col: Color = base_col
+			if dist_knob <= knob_r + 1.0:
+				var k_aa: float = clampf(knob_r - dist_knob + 0.5, 0.0, 1.0)
+				var k_col: Color = knob_rim if dist_knob > (knob_r - 1.6) else knob_col
+				if dist_knob <= (knob_r - 1.6):
+					var k_sheen: float = clampf((-(fx - knob_cx) - dy) / (knob_r * 2.5) + 0.35, 0.0, 1.0)
+					k_col = k_col.lightened(k_sheen * 0.14)
+				final_col = base_col.lerp(k_col, k_aa)
+
+			final_col.a = pill_aa * (0.55 if disabled else 1.0)
+			img.set_pixel(x, y, final_col)
+
+	var tex: ImageTexture = ImageTexture.create_from_image(img)
+	_parlor_toggle_icon_cache[key] = tex
+	return tex
+
+
+static func style_parlor_check_button(cb: CheckButton) -> void:
+	if not is_instance_valid(cb):
+		return
+	cb.focus_mode = Control.FOCUS_NONE
+	cb.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	cb.flat = true
+
+	var empty_sb := StyleBoxEmpty.new()
+	cb.add_theme_stylebox_override("normal", empty_sb)
+	cb.add_theme_stylebox_override("hover", empty_sb)
+	cb.add_theme_stylebox_override("pressed", empty_sb)
+	cb.add_theme_stylebox_override("focus", empty_sb)
+	cb.add_theme_stylebox_override("disabled", empty_sb)
+	cb.add_theme_stylebox_override("hover_pressed", empty_sb)
+
+	cb.add_theme_icon_override("checked", _get_parlor_toggle_texture(true, false, false))
+	cb.add_theme_icon_override("unchecked", _get_parlor_toggle_texture(false, false, false))
+	cb.add_theme_icon_override("checked_mirrored", _get_parlor_toggle_texture(true, true, false))
+	cb.add_theme_icon_override("unchecked_mirrored", _get_parlor_toggle_texture(false, true, false))
+	cb.add_theme_icon_override("checked_disabled", _get_parlor_toggle_texture(true, false, true))
+	cb.add_theme_icon_override("unchecked_disabled", _get_parlor_toggle_texture(false, false, true))
+	cb.add_theme_icon_override("checked_disabled_mirrored", _get_parlor_toggle_texture(true, true, true))
+	cb.add_theme_icon_override("unchecked_disabled_mirrored", _get_parlor_toggle_texture(false, true, true))
+
+	cb.add_theme_color_override("font_color", COL_IVORY)
+	cb.add_theme_color_override("font_hover_color", COL_GOLD_BRIGHT)
+	cb.add_theme_color_override("font_pressed_color", COL_GOLD_BRIGHT)
+	cb.add_theme_color_override("font_hover_pressed_color", COL_GOLD_BRIGHT)
+
+

@@ -141,11 +141,12 @@ func _ready() -> void:
 			var sun_mob: DirectionalLight3D = get_node("SunLight") as DirectionalLight3D
 			if sun_mob:
 				sun_mob.shadow_enabled = false
-				sun_mob.light_energy = 0.92
-				sun_mob.light_specular = 0.20
-				sun_mob.light_color = Color(1.0, 0.92, 0.80)
+				sun_mob.light_energy = 1.18
+				sun_mob.light_specular = 0.18
+				sun_mob.light_color = Color(1.0, 0.94, 0.82)
 		if env_node and env_node.environment:
-			env_node.environment.ambient_light_energy = 1.32
+			env_node.environment.ambient_light_energy = 1.48
+			env_node.environment.tonemap_exposure = 1.18
 
 	var static_paths: Array[String] = [
 		"FloorMesh", "WallMesh", "WallWainscot",
@@ -257,7 +258,7 @@ func _sync_2d_3d_visibility_and_lighting(top_down: bool) -> void:
 				tl.visible = false
 			else:
 				tl.light_specular = 0.0
-				tl.light_energy = 0.45 if top_down else 0.82
+				tl.light_energy = 0.55 if top_down else 1.05
 
 	if has_node("SunLight"):
 		var sun: DirectionalLight3D = get_node("SunLight") as DirectionalLight3D
@@ -1079,44 +1080,59 @@ func _init_lounge_materials() -> void:
 	mat_baize_border.roughness = 0.92
 	mat_baize_border.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 
-	var mat_walnut_polished: StandardMaterial3D = _make_mat(Color(0.58, 0.33, 0.16), 0.30, 0.04, wood_tex, Vector3(1.5, 1.5, 1.5))
-	var mat_walnut_mid: StandardMaterial3D = _make_mat(Color(0.45, 0.24, 0.11), 0.36, 0.03, wood_tex, Vector3(1.8, 1.8, 1.8))
-	var mat_walnut_dark: StandardMaterial3D = _make_mat(Color(0.28, 0.14, 0.06), 0.40, 0.02, wood_tex, Vector3(2.0, 2.0, 2.0))
-	var mat_mahogany: StandardMaterial3D = _make_mat(Color(0.42, 0.18, 0.08), 0.32, 0.04, wood_tex, Vector3(1.4, 1.4, 1.4))
-	var mat_ebony_wood: StandardMaterial3D = _make_mat(Color(0.14, 0.08, 0.04), 0.34, 0.04)
+	var mat_walnut_polished: StandardMaterial3D = _make_mat(Color(0.68, 0.41, 0.22), 0.30, 0.04, wood_tex, Vector3(1.5, 1.5, 1.5))
+	var mat_walnut_mid: StandardMaterial3D = _make_mat(Color(0.55, 0.32, 0.16), 0.36, 0.03, wood_tex, Vector3(1.8, 1.8, 1.8))
+	var mat_walnut_dark: StandardMaterial3D = _make_mat(Color(0.39, 0.22, 0.11), 0.40, 0.02, wood_tex, Vector3(2.0, 2.0, 2.0))
+	var mat_mahogany: StandardMaterial3D = _make_mat(Color(0.54, 0.25, 0.12), 0.32, 0.04, wood_tex, Vector3(1.4, 1.4, 1.4))
+	var mat_ebony_wood: StandardMaterial3D = _make_mat(Color(0.22, 0.13, 0.07), 0.34, 0.04)
 
-	var mat_brass: StandardMaterial3D = _make_mat(Color(0.94, 0.76, 0.32), 0.24, 0.86)
-	var mat_aged_brass: StandardMaterial3D = _make_mat(Color(0.76, 0.57, 0.22), 0.34, 0.80)
-	var mat_emerald_jade: StandardMaterial3D = _make_mat(Color(0.10, 0.42, 0.24), 0.22, 0.15)
-	var mat_bulb_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.95, 0.82), Color(1.0, 0.86, 0.52), 2.80, 0.15)
-	var mat_lampshade_glow: StandardMaterial3D = _make_emissive_mat(Color(0.98, 0.89, 0.68), Color(1.0, 0.80, 0.42), 1.40, 0.48)
-	var mat_abajour_shade: StandardMaterial3D = _make_emissive_mat(Color(0.99, 0.90, 0.66), Color(1.0, 0.78, 0.38), 1.35, 0.42)
+	var mat_brass: StandardMaterial3D = _make_mat(Color(0.98, 0.81, 0.38), 0.22, 0.86)
+	var mat_aged_brass: StandardMaterial3D = _make_mat(Color(0.84, 0.65, 0.28), 0.32, 0.80)
+	var mat_emerald_jade: StandardMaterial3D = _make_mat(Color(0.14, 0.50, 0.30), 0.22, 0.15)
+	var mat_bulb_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.96, 0.84), Color(1.0, 0.88, 0.56), 2.90, 0.15)
+	var mat_lampshade_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.92, 0.72), Color(1.0, 0.83, 0.46), 1.65, 0.44)
+	var mat_abajour_shade: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.92, 0.70), Color(1.0, 0.81, 0.42), 1.55, 0.40)
 
-	var mat_leather_green: StandardMaterial3D = _make_mat(Color(0.10, 0.21, 0.11), 0.38, 0.06)
-	var mat_leather_green_dark: StandardMaterial3D = _make_mat(Color(0.06, 0.13, 0.07), 0.46, 0.04)
-	var mat_velvet_curtain: StandardMaterial3D = _make_mat(Color(0.48, 0.06, 0.08), 0.78, 0.02)
-	var mat_marble: StandardMaterial3D = _make_mat(Color(0.92, 0.87, 0.79), 0.34, 0.02)
-	var mat_porcelain: StandardMaterial3D = _make_mat(Color(0.96, 0.93, 0.86), 0.16, 0.04)
-	var mat_coffee_dark: StandardMaterial3D = _make_mat(Color(0.14, 0.06, 0.02), 0.10, 0.05)
-	var mat_steam: StandardMaterial3D = _make_emissive_mat(Color(0.96, 0.95, 0.94), Color(0.88, 0.84, 0.78), 0.42, 0.80, 0.22)
+	var mat_leather_green: StandardMaterial3D = _make_mat(Color(0.15, 0.31, 0.18), 0.38, 0.06)
+	var mat_leather_green_dark: StandardMaterial3D = _make_mat(Color(0.09, 0.20, 0.11), 0.44, 0.04)
+	var mat_velvet_curtain: StandardMaterial3D = _make_mat(Color(0.62, 0.11, 0.13), 0.74, 0.02)
+	var mat_marble: StandardMaterial3D = _make_mat(Color(0.95, 0.91, 0.84), 0.32, 0.02)
+	var mat_porcelain: StandardMaterial3D = _make_mat(Color(0.98, 0.95, 0.89), 0.16, 0.04)
+	var mat_coffee_dark: StandardMaterial3D = _make_mat(Color(0.18, 0.08, 0.03), 0.10, 0.05)
+	var mat_steam: StandardMaterial3D = _make_emissive_mat(Color(0.98, 0.96, 0.94), Color(0.92, 0.88, 0.80), 0.46, 0.80, 0.24)
 
-	var mat_leaf_dark: StandardMaterial3D = _make_mat(Color(0.12, 0.31, 0.10), 0.42, 0.02)
-	var mat_leaf_mid: StandardMaterial3D = _make_mat(Color(0.19, 0.44, 0.14), 0.38, 0.02)
-	var mat_leaf_bright: StandardMaterial3D = _make_mat(Color(0.27, 0.54, 0.18), 0.36, 0.02)
+	var mat_leaf_dark: StandardMaterial3D = _make_mat(Color(0.16, 0.39, 0.14), 0.42, 0.02)
+	var mat_leaf_mid: StandardMaterial3D = _make_mat(Color(0.24, 0.52, 0.18), 0.38, 0.02)
+	var mat_leaf_bright: StandardMaterial3D = _make_mat(Color(0.34, 0.62, 0.23), 0.36, 0.02)
 
-	var mat_book_red: StandardMaterial3D = _make_mat(Color(0.56, 0.11, 0.10), 0.48, 0.02)
-	var mat_book_green: StandardMaterial3D = _make_mat(Color(0.11, 0.32, 0.18), 0.48, 0.02)
-	var mat_book_navy: StandardMaterial3D = _make_mat(Color(0.12, 0.20, 0.38), 0.48, 0.02)
-	var mat_book_brown: StandardMaterial3D = _make_mat(Color(0.38, 0.20, 0.09), 0.50, 0.02)
-	var mat_book_ochre: StandardMaterial3D = _make_mat(Color(0.64, 0.42, 0.16), 0.48, 0.02)
-	var mat_book_burgundy: StandardMaterial3D = _make_mat(Color(0.38, 0.08, 0.12), 0.48, 0.02)
-	var mat_book_pages: StandardMaterial3D = _make_mat(Color(0.90, 0.84, 0.70), 0.68, 0.0)
+	var mat_book_red: StandardMaterial3D = _make_mat(Color(0.66, 0.16, 0.14), 0.46, 0.02)
+	var mat_book_green: StandardMaterial3D = _make_mat(Color(0.15, 0.41, 0.23), 0.46, 0.02)
+	var mat_book_navy: StandardMaterial3D = _make_mat(Color(0.17, 0.27, 0.48), 0.46, 0.02)
+	var mat_book_brown: StandardMaterial3D = _make_mat(Color(0.48, 0.27, 0.13), 0.48, 0.02)
+	var mat_book_ochre: StandardMaterial3D = _make_mat(Color(0.76, 0.52, 0.22), 0.46, 0.02)
+	var mat_book_burgundy: StandardMaterial3D = _make_mat(Color(0.50, 0.13, 0.18), 0.46, 0.02)
+	var mat_book_pages: StandardMaterial3D = _make_mat(Color(0.94, 0.88, 0.76), 0.66, 0.0)
 
-	var mat_sky_top: StandardMaterial3D = _make_emissive_mat(Color(0.10, 0.16, 0.38), Color(0.12, 0.20, 0.48), 1.15, 0.90)
-	var mat_sky_mid: StandardMaterial3D = _make_emissive_mat(Color(0.22, 0.30, 0.54), Color(0.26, 0.35, 0.62), 1.20, 0.90)
-	var mat_sky_horizon: StandardMaterial3D = _make_emissive_mat(Color(0.64, 0.48, 0.34), Color(0.76, 0.56, 0.36), 1.25, 0.90)
-	var mat_city_stone: StandardMaterial3D = _make_mat(Color(0.22, 0.18, 0.20), 0.65, 0.05)
-	var mat_window_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.86, 0.48), Color(1.0, 0.78, 0.32), 2.40, 0.20)
+	# Warm golden-hour twilight window palette (luminous & inviting instead of dark night)
+	var mat_sky_top: StandardMaterial3D = _make_emissive_mat(Color(0.24, 0.32, 0.58), Color(0.28, 0.38, 0.68), 1.35, 0.90)
+	var mat_sky_mid: StandardMaterial3D = _make_emissive_mat(Color(0.58, 0.44, 0.50), Color(0.68, 0.48, 0.52), 1.45, 0.90)
+	var mat_sky_horizon: StandardMaterial3D = _make_emissive_mat(Color(0.96, 0.68, 0.36), Color(1.0, 0.72, 0.34), 1.65, 0.90)
+	var mat_city_stone: StandardMaterial3D = _make_mat(Color(0.32, 0.24, 0.26), 0.65, 0.05)
+	var mat_window_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.90, 0.54), Color(1.0, 0.82, 0.38), 2.50, 0.20)
+
+	# New warm Persian parlor accent materials (all baked into the same 3-4 vertex-color surfaces!)
+	var mat_rug_crimson: StandardMaterial3D = _make_mat(Color(0.54, 0.12, 0.13), 0.88, 0.0)
+	var mat_rug_navy: StandardMaterial3D = _make_mat(Color(0.11, 0.17, 0.29), 0.88, 0.0)
+	var mat_rug_gold: StandardMaterial3D = _make_mat(Color(0.84, 0.66, 0.28), 0.78, 0.04)
+	var mat_rug_cream: StandardMaterial3D = _make_mat(Color(0.90, 0.83, 0.69), 0.86, 0.0)
+	var mat_terracotta: StandardMaterial3D = _make_mat(Color(0.68, 0.33, 0.19), 0.52, 0.04)
+	var mat_cream_plaster: StandardMaterial3D = _make_mat(Color(0.92, 0.85, 0.73), 0.74, 0.0)
+	var mat_tea_amber: StandardMaterial3D = _make_emissive_mat(Color(0.76, 0.28, 0.06), Color(0.88, 0.34, 0.06), 0.75, 0.18)
+	var mat_stained_amber: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.82, 0.40), Color(1.0, 0.76, 0.28), 1.85, 0.22)
+	var mat_stained_emerald: StandardMaterial3D = _make_emissive_mat(Color(0.28, 0.78, 0.50), Color(0.22, 0.74, 0.44), 1.45, 0.24)
+	var mat_stained_ruby: StandardMaterial3D = _make_emissive_mat(Color(0.92, 0.30, 0.28), Color(0.94, 0.26, 0.22), 1.45, 0.24)
+	var mat_fairy_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.94, 0.74), Color(1.0, 0.84, 0.42), 2.65, 0.12)
+	var mat_cove_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.88, 0.62), Color(1.0, 0.78, 0.36), 1.55, 0.30)
 
 	_shared_mats = {
 		"baize_emerald": mat_baize,
@@ -1153,7 +1169,19 @@ func _init_lounge_materials() -> void:
 		"sky_mid": mat_sky_mid,
 		"sky_horizon": mat_sky_horizon,
 		"city_stone": mat_city_stone,
-		"window_glow": mat_window_glow
+		"window_glow": mat_window_glow,
+		"rug_crimson": mat_rug_crimson,
+		"rug_navy": mat_rug_navy,
+		"rug_gold": mat_rug_gold,
+		"rug_cream": mat_rug_cream,
+		"terracotta": mat_terracotta,
+		"cream_plaster": mat_cream_plaster,
+		"tea_amber": mat_tea_amber,
+		"stained_amber": mat_stained_amber,
+		"stained_emerald": mat_stained_emerald,
+		"stained_ruby": mat_stained_ruby,
+		"fairy_glow": mat_fairy_glow,
+		"cove_glow": mat_cove_glow
 	}
 
 
@@ -1187,22 +1215,25 @@ func _build_luxury_game_environment() -> void:
 	_steam_base_positions.clear()
 	_steam_phases.clear()
 
-	# 1. Foreground Luxury Carved Walnut Gaming Table, Reusable Green Felt & Corner Desk Abajour
+	# 1. Foreground Luxury Carved Walnut Gaming Table, Reusable Green Felt, Corner Desk Abajour & Tea Corner
 	var table_root: Node3D = get_node_or_null("TableRoot") as Node3D
 	if table_root:
 		_build_foreground_gaming_table(table_root)
 		_build_desk_abajour(table_root)
 
+	# 1B. Warm Persian Parlor Rug & Corner Floor Props (visible in 3D, Steep Board & 2D Top-Down; 1 baked mesh)
+	_build_floor_rug_and_corners(_lounge_root)
+
 	# 2. Multi-Player Tufted Dark-Green Leather Club Chairs (2, 3, or 4 Players, Baked Shared ArrayMesh)
 	_build_player_chairs_around_table(_chairs_root)
 
-	# 3. Back 3-Bay Classical Walnut Library Bookcase, Curios, Sconces & "کافه فکر / Cafe Fekr" Sign
+	# 3. Back 3-Bay Classical Walnut Library Bookcase, Cove Lights, Hanging Pendants, Fairy Garland, Art & Sign
 	_build_back_bookcase_and_sign(_lounge_backdrop_root)
 
-	# 4. Left Arched Twilight Window (City Skyline), Left Side Table, Brass Lamp & Club Chair
+	# 4. Left Arched Golden-Hour Window (Stained Glass + City Skyline), Left Side Table, Brass Lamp & Club Chair
 	_build_left_window_and_lounge(_lounge_backdrop_root)
 
-	# 5. Right Crimson Velvet Curtain Drapery, Right Side Table, Steaming Teacup, Books & Plant
+	# 5. Right Crimson Velvet Curtain Drapery, Right Side Table, Steaming Teacup, Brass Lantern, Books & Plant
 	_build_right_curtain_and_side_table(_lounge_backdrop_root)
 
 
@@ -1338,7 +1369,11 @@ func _build_foreground_gaming_table(table_root: Node3D) -> void:
 			_add_cyl(arena_frame, 0.068, 0.052, 0.64, Vector3(leg_x, -0.46, leg_z), mat_walnut_dark, Vector3.ZERO, 12)
 			_add_sphere(arena_frame, 0.078, 0.095, Vector3(leg_x, -0.26, leg_z), mat_walnut_mid)
 
-	# Bake all table frame moldings, corner scrolls, rosettes, and legs into 1 single draw-call mesh!
+	# Cozy Parlor Corner Props on Outer Walnut Rails (strictly outside felt |X|>0.78 or |Z|>0.76)
+	_build_table_persian_tea_tray(arena_frame, Vector3(0.86, 0.084, -0.86))
+	_build_table_brass_hourglass(arena_frame, Vector3(-0.52, 0.084, -0.87))
+
+	# Bake all table frame moldings, corner scrolls, rosettes, legs & rail props into 1 single draw-call mesh!
 	_bake_static_branch_to_merged_mesh(arena_frame, "BakedTableFrameMesh")
 
 
@@ -1640,7 +1675,10 @@ func _build_back_bookcase_and_sign(parent: Node3D) -> void:
 		_add_torus(sc, 0.048, 0.056, Vector3(0.0, 0.132, 0.04), mat_brass, Vector3.ZERO, 14)
 		_add_torus(sc, 0.088, 0.096, Vector3(0.0, -0.002, 0.04), mat_brass, Vector3.ZERO, 14)
 
-	# Bake the entire 3-Bay Bookcase, Books, Armillary Sphere, Bust, Clock, Ivy & Sconces into 1 MeshInstance3D!
+	# Warm Recessed Shelf Cove-Lights, Persian Brass Samovar, Overhead Stained-Glass Pendants, Fairy Garland & Framed Art
+	_build_bookcase_cove_lights_and_decor(bc)
+
+	# Bake the entire 3-Bay Bookcase, Books, Curios, Cove Lights, Pendants, Fairy Garland, Wall Art & Sconces into 1 MeshInstance3D!
 	_bake_static_branch_to_merged_mesh(bc, "BakedBookcaseMesh")
 
 
@@ -1940,6 +1978,9 @@ func _build_left_window_and_lounge(parent: Node3D) -> void:
 	for my: float in [-0.52, -0.26, 0.0, 0.26, 0.44]:
 		_add_box(win_root, Vector3(0.76, 0.020, 0.035), Vector3(0.0, my, 0.02), mat_walnut_dark)
 
+	# Glowing Stained-Glass Transom Diamonds Inside the Window Arch (0ms unshaded emissive)
+	_build_window_stained_glass_transom(win_root)
+
 	_build_potted_broadleaf_plant(left_area, Vector3(-1.14, 0.18, -1.56), 0.85, false)
 
 	# Left Round Carved Walnut Side Table & Glowing Brass Table Lamp
@@ -2063,6 +2104,7 @@ func _build_right_curtain_and_side_table(parent: Node3D) -> void:
 	_build_horizontal_book(side_tbl_r, Vector3(0.09, 0.122, 0.08), Vector3(0.24, 0.044, 0.17), _shared_mats["book_green"], -16.0)
 	_build_horizontal_book(side_tbl_r, Vector3(0.09, 0.164, 0.08), Vector3(0.22, 0.040, 0.16), _shared_mats["book_brown"], -10.0)
 	_build_potted_broadleaf_plant(side_tbl_r, Vector3(0.14, 0.10, -0.10), 1.0, true)
+	_build_mini_brass_candle_lantern(side_tbl_r, Vector3(-0.14, 0.10, -0.11))
 
 	# Bake all static meshes of RightLoungeArea3D into 1 MeshInstance3D BEFORE adding dynamic steam wisps!
 	_bake_static_branch_to_merged_mesh(right_area, "BakedRightLoungeMesh")
@@ -2123,3 +2165,252 @@ func _build_potted_broadleaf_plant(parent: Node3D, pos: Vector3, scale_f: float,
 		_add_cyl(plant, 0.004, 0.006, l_pos.y - base_y, Vector3(l_pos.x * 0.45, base_y + (l_pos.y - base_y) * 0.5, l_pos.z * 0.45), _shared_mats["leaf_dark"], l_rot * 0.35, 6)
 		var leaf_mi: MeshInstance3D = _add_sphere(plant, l_r, 0.014, l_pos, l_mat, l_rot, 8)
 		leaf_mi.scale = Vector3(0.72, 1.0, 1.35)
+
+
+# ============================================================================
+# 6. MOBILE-OPTIMIZED BAKED PARLOR PROPS (RUG, PENDANTS, FAIRY LIGHTS, TEA)
+# ============================================================================
+
+func _build_table_persian_tea_tray(parent: Node3D, pos: Vector3) -> void:
+	# Authentic Persian estekan tea glass + brass saucer + sugar bowl on back-right walnut corner
+	var tray: Node3D = Node3D.new()
+	tray.name = "PersianTeaTray"
+	tray.position = pos
+	tray.rotation_degrees = Vector3(0.0, -24.0, 0.0)
+	parent.add_child(tray)
+
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+	var mat_porc: Material = _shared_mats["porcelain"]
+	var mat_tea: Material = _shared_mats["tea_amber"]
+
+	# Scalloped Brass Serving Tray
+	_add_cyl(tray, 0.095, 0.088, 0.008, Vector3(0.0, 0.004, 0.0), mat_aged, Vector3.ZERO, 12)
+	_add_torus(tray, 0.088, 0.098, Vector3(0.0, 0.010, 0.0), mat_brass, Vector3.ZERO, 12)
+
+	# Estekan Tea Glass & Porcelain Saucer (left side of tray)
+	var gx: float = -0.026
+	var gz: float = 0.014
+	_add_cyl(tray, 0.036, 0.024, 0.007, Vector3(gx, 0.012, gz), mat_porc, Vector3.ZERO, 10)
+	_add_torus(tray, 0.032, 0.037, Vector3(gx, 0.016, gz), mat_brass, Vector3.ZERO, 10)
+	# Waist-pinched Estekan glass filled with glowing amber Persian tea
+	_add_cyl(tray, 0.019, 0.024, 0.026, Vector3(gx, 0.028, gz), mat_tea, Vector3.ZERO, 10)
+	_add_cyl(tray, 0.025, 0.019, 0.030, Vector3(gx, 0.056, gz), mat_tea, Vector3.ZERO, 10)
+	_add_torus(tray, 0.023, 0.026, Vector3(gx, 0.071, gz), mat_brass, Vector3.ZERO, 10)
+	# Tiny brass teaspoon resting on saucer
+	_add_box(tray, Vector3(0.038, 0.003, 0.007), Vector3(gx + 0.024, 0.017, gz + 0.018), mat_brass, Vector3(0.0, 32.0, 0.0))
+
+	# Petite Brass Sugar Bowl (Ghand-dan) on right side of tray
+	var sx: float = 0.038
+	var sz: float = -0.020
+	_add_cyl(tray, 0.018, 0.022, 0.010, Vector3(sx, 0.013, sz), mat_aged, Vector3.ZERO, 10)
+	_add_sphere(tray, 0.026, 0.032, Vector3(sx, 0.032, sz), mat_brass, Vector3.ZERO, 10)
+	_add_cyl(tray, 0.008, 0.020, 0.016, Vector3(sx, 0.050, sz), mat_aged, Vector3.ZERO, 10)
+	_add_sphere(tray, 0.007, 0.010, Vector3(sx, 0.062, sz), mat_brass, Vector3.ZERO, 8)
+
+
+func _build_table_brass_hourglass(parent: Node3D, pos: Vector3) -> void:
+	# Classic antique brass sand timer resting on the far back-left walnut rail
+	var hg: Node3D = Node3D.new()
+	hg.name = "BrassHourglass"
+	hg.position = pos
+	parent.add_child(hg)
+
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+	var mat_sand: Material = _shared_mats["stained_amber"]
+
+	# Base & Top Cap
+	_add_cyl(hg, 0.034, 0.038, 0.008, Vector3(0.0, 0.004, 0.0), mat_aged, Vector3.ZERO, 10)
+	_add_cyl(hg, 0.038, 0.034, 0.008, Vector3(0.0, 0.112, 0.0), mat_aged, Vector3.ZERO, 10)
+	# Twin Glass Bulbs with Warm Golden Sand
+	_add_cyl(hg, 0.005, 0.025, 0.048, Vector3(0.0, 0.032, 0.0), mat_sand, Vector3.ZERO, 10)
+	_add_cyl(hg, 0.025, 0.005, 0.048, Vector3(0.0, 0.084, 0.0), mat_sand, Vector3.ZERO, 10)
+	# 3 Slender Vertical Brass Pillars
+	for i: int in range(3):
+		var ang: float = float(i) * (TAU / 3.0) + 0.4
+		_add_cyl(hg, 0.003, 0.003, 0.104, Vector3(cos(ang) * 0.028, 0.058, sin(ang) * 0.028), mat_brass, Vector3.ZERO, 6)
+
+
+func _build_floor_rug_and_corners(parent: Node3D) -> void:
+	# Baked single-mesh floor ensemble: ornate Persian parlor carpet + corner floor lantern + terracotta planter.
+	# Stays visible in 3D lounge, steep board angles, AND 2D top-down mode so the surrounding floor is never a dark void!
+	var floor_grp: Node3D = Node3D.new()
+	floor_grp.name = "FloorRugAndCorners3D"
+	parent.add_child(floor_grp)
+
+	var mat_crimson: Material = _shared_mats["rug_crimson"]
+	var mat_navy: Material = _shared_mats["rug_navy"]
+	var mat_gold: Material = _shared_mats["rug_gold"]
+	var mat_cream: Material = _shared_mats["rug_cream"]
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+	var mat_amber: Material = _shared_mats["stained_amber"]
+	var mat_terra: Material = _shared_mats["terracotta"]
+
+	var rug_y: float = -0.774
+
+	# 1. Layered Low-Poly Persian Carpet Under the Gaming Table (3.50m x 3.05m)
+	_add_box(floor_grp, Vector3(3.52, 0.010, 3.06), Vector3(0.0, rug_y, -0.18), mat_navy)
+	_add_box(floor_grp, Vector3(3.30, 0.012, 2.84), Vector3(0.0, rug_y + 0.001, -0.18), mat_gold)
+	_add_box(floor_grp, Vector3(3.16, 0.014, 2.70), Vector3(0.0, rug_y + 0.002, -0.18), mat_crimson)
+	_add_box(floor_grp, Vector3(2.86, 0.015, 2.40), Vector3(0.0, rug_y + 0.003, -0.18), mat_cream)
+	_add_box(floor_grp, Vector3(2.74, 0.016, 2.28), Vector3(0.0, rug_y + 0.004, -0.18), mat_crimson)
+	# Subtle Central Geometric Medallion & 4 Corner Spandrels
+	_add_box(floor_grp, Vector3(1.18, 0.017, 1.18), Vector3(0.0, rug_y + 0.005, -0.18), mat_gold, Vector3(0.0, 45.0, 0.0))
+	_add_box(floor_grp, Vector3(0.96, 0.018, 0.96), Vector3(0.0, rug_y + 0.006, -0.18), mat_navy, Vector3(0.0, 45.0, 0.0))
+	for sx: float in [-1.0, 1.0]:
+		for sz: float in [-1.0, 1.0]:
+			_add_box(floor_grp, Vector3(0.30, 0.017, 0.30), Vector3(sx * 1.18, rug_y + 0.005, -0.18 + sz * 0.96), mat_gold, Vector3(0.0, 45.0, 0.0))
+			_add_box(floor_grp, Vector3(0.18, 0.018, 0.18), Vector3(sx * 1.18, rug_y + 0.006, -0.18 + sz * 0.96), mat_navy, Vector3(0.0, 45.0, 0.0))
+	# Woven Cream Carpet Fringe Bands Along Left & Right Short Edges
+	_add_box(floor_grp, Vector3(0.09, 0.007, 2.98), Vector3(-1.80, rug_y - 0.001, -0.18), mat_cream)
+	_add_box(floor_grp, Vector3(0.09, 0.007, 2.98), Vector3(1.80, rug_y - 0.001, -0.18), mat_cream)
+
+	# 2. Warm Glowing Moroccan Brass Floor Lantern (Back-Left Floor Corner)
+	var fl_lan: Node3D = Node3D.new()
+	fl_lan.position = Vector3(-1.32, rug_y + 0.008, -1.48)
+	floor_grp.add_child(fl_lan)
+	_add_cyl(fl_lan, 0.11, 0.13, 0.04, Vector3(0.0, 0.02, 0.0), mat_aged, Vector3.ZERO, 8)
+	_add_cyl(fl_lan, 0.088, 0.095, 0.28, Vector3(0.0, 0.18, 0.0), mat_amber, Vector3.ZERO, 8)
+	for rib_i: int in range(4):
+		var rang: float = float(rib_i) * (PI * 0.5) + 0.4
+		_add_box(fl_lan, Vector3(0.012, 0.30, 0.012), Vector3(cos(rang) * 0.096, 0.18, sin(rang) * 0.096), mat_brass)
+	_add_cyl(fl_lan, 0.026, 0.115, 0.12, Vector3(0.0, 0.38, 0.0), mat_brass, Vector3.ZERO, 8)
+	_add_torus(fl_lan, 0.016, 0.024, Vector3(0.0, 0.46, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 10)
+
+	# 3. Warm Glazed Terracotta Corner Floor Planter with Lush Foliage (Back-Right Floor Corner)
+	var fl_pot: Node3D = Node3D.new()
+	fl_pot.position = Vector3(1.36, rug_y + 0.008, -1.56)
+	floor_grp.add_child(fl_pot)
+	_add_cyl(fl_pot, 0.17, 0.12, 0.34, Vector3(0.0, 0.17, 0.0), mat_terra, Vector3.ZERO, 10)
+	_add_torus(fl_pot, 0.155, 0.178, Vector3(0.0, 0.34, 0.0), mat_brass, Vector3.ZERO, 10)
+	_add_cyl(fl_pot, 0.155, 0.155, 0.016, Vector3(0.0, 0.33, 0.0), _shared_mats["walnut_dark"], Vector3.ZERO, 8)
+	_build_potted_broadleaf_plant(fl_pot, Vector3(0.0, 0.34, 0.0), 1.38, false)
+
+	_bake_static_branch_to_merged_mesh(floor_grp, "BakedFloorLoungeMesh")
+
+
+func _build_bookcase_cove_lights_and_decor(bc: Node3D) -> void:
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+	var mat_cove: Material = _shared_mats["cove_glow"]
+	var mat_fairy: Material = _shared_mats["fairy_glow"]
+	var mat_amber: Material = _shared_mats["stained_amber"]
+	var mat_emerald: Material = _shared_mats["stained_emerald"]
+	var mat_ruby: Material = _shared_mats["stained_ruby"]
+	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
+	var mat_cream: Material = _shared_mats["cream_plaster"]
+
+	# 1. Recessed Warm Golden Cove-Light Strips (0ms unshaded emissive gallery backlight!)
+	_add_box(bc, Vector3(1.22, 0.018, 0.025), Vector3(0.0, 1.505, -0.04), mat_cove)
+	_add_box(bc, Vector3(1.18, 0.016, 0.020), Vector3(0.0, 0.508, -0.05), mat_cove)
+	_add_box(bc, Vector3(0.44, 0.015, 0.020), Vector3(-0.96, 1.19, -0.04), mat_cove)
+	_add_box(bc, Vector3(0.44, 0.015, 0.020), Vector3(0.96, 1.19, -0.04), mat_cove)
+	# Soft Halo Rim Directly Behind the "کافه فکر / Cafe Fekr" Sign Plaque
+	_add_box(bc, Vector3(1.20, 0.60, 0.012), Vector3(0.0, 1.14, 0.016), mat_cove)
+	# Subtle Warm Wall Glow Discs Behind Both Brass Sconces (simulates soft wall wash at 0ms GPU cost!)
+	for glow_s: float in [-1.0, 1.0]:
+		_add_cyl(bc, 0.14, 0.14, 0.008, Vector3(glow_s * 0.98, 1.38, 0.10), mat_cove, Vector3(90.0, 0.0, 0.0), 12)
+
+	# 2. Classic Persian Brass Samovar Centered Flush on the Open Center-Lower Shelf
+	var sam: Node3D = Node3D.new()
+	sam.position = Vector3(0.0, 0.161, 0.04)
+	bc.add_child(sam)
+	_add_box(sam, Vector3(0.11, 0.018, 0.11), Vector3(0.0, 0.009, 0.0), mat_aged)
+	_add_cyl(sam, 0.032, 0.048, 0.036, Vector3(0.0, 0.036, 0.0), mat_brass, Vector3.ZERO, 10)
+	_add_sphere(sam, 0.068, 0.125, Vector3(0.0, 0.112, 0.0), mat_brass, Vector3.ZERO, 10)
+	_add_cyl(sam, 0.038, 0.054, 0.055, Vector3(0.0, 0.192, 0.0), mat_aged, Vector3.ZERO, 10)
+	_add_torus(sam, 0.034, 0.044, Vector3(0.0, 0.220, 0.0), mat_brass, Vector3.ZERO, 10)
+	# Small porcelain teapot perched on top of the Samovar crown
+	_add_sphere(sam, 0.034, 0.044, Vector3(0.0, 0.252, 0.0), _shared_mats["porcelain"], Vector3.ZERO, 8)
+	_add_sphere(sam, 0.010, 0.012, Vector3(0.0, 0.278, 0.0), mat_brass, Vector3.ZERO, 6)
+	# Side Handles & Front Brass Tap
+	_add_torus(sam, 0.014, 0.022, Vector3(-0.072, 0.124, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 8)
+	_add_torus(sam, 0.014, 0.022, Vector3(0.072, 0.124, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 8)
+	_add_cyl(sam, 0.006, 0.009, 0.038, Vector3(0.0, 0.094, 0.076), mat_brass, Vector3(90.0, 0.0, 0.0), 6)
+
+	# 3. Two Overhead Hanging Brass & Stained-Glass Cafe Pendant Lanterns (Visible in Upper Lounge!)
+	for pend_s: float in [-1.0, 1.0]:
+		var pend: Node3D = Node3D.new()
+		pend.position = Vector3(pend_s * 0.66, 1.60, 0.56)
+		bc.add_child(pend)
+		# Slender Ceiling Drop Rod
+		_add_cyl(pend, 0.008, 0.008, 0.52, Vector3(0.0, 0.34, 0.0), mat_aged, Vector3.ZERO, 6)
+		# Ornate Brass Dome Crown
+		_add_cyl(pend, 0.026, 0.125, 0.078, Vector3(0.0, 0.098, 0.0), mat_brass, Vector3.ZERO, 10)
+		_add_torus(pend, 0.118, 0.132, Vector3(0.0, 0.058, 0.0), mat_aged, Vector3.ZERO, 12)
+		# Glowing Warm Amber Stained-Glass Lantern Body + Emerald Jewel Band
+		_add_cyl(pend, 0.112, 0.088, 0.155, Vector3(0.0, -0.022, 0.0), mat_amber, Vector3.ZERO, 10)
+		_add_cyl(pend, 0.106, 0.102, 0.032, Vector3(0.0, 0.020, 0.0), mat_emerald, Vector3.ZERO, 10)
+		# Brass Filigree Lower Rim & Acorn Finial
+		_add_torus(pend, 0.084, 0.096, Vector3(0.0, -0.100, 0.0), mat_brass, Vector3.ZERO, 10)
+		_add_cyl(pend, 0.045, 0.010, 0.045, Vector3(0.0, -0.124, 0.0), mat_aged, Vector3.ZERO, 8)
+		_add_sphere(pend, 0.014, 0.022, Vector3(0.0, -0.152, 0.0), mat_brass, Vector3.ZERO, 6)
+
+	# 4. Warm Golden Cafe String Fairy Lights Draped Across the Bookcase Crown (Dual Scallop Catenary)
+	var bulb_count: int = 11
+	for b_i: int in range(bulb_count):
+		var t: float = float(b_i) / float(bulb_count - 1)
+		var bx: float = lerpf(-1.22, 1.22, t)
+		# Graceful dual-arch sag across left & right spans
+		var arch_t: float = absf(sin(t * PI * 2.0))
+		var by: float = 1.76 - arch_t * 0.14
+		var bz: float = 0.21 + arch_t * 0.05
+		_add_cyl(bc, 0.005, 0.006, 0.016, Vector3(bx, by + 0.014, bz), mat_aged, Vector3.ZERO, 6)
+		_add_sphere(bc, 0.020, 0.030, Vector3(bx, by - 0.004, bz), mat_fairy, Vector3.ZERO, 6)
+
+	# 5. Two Gold-Framed Vintage Cafe Wall Artworks Flanking the Bookcase
+	for art_s: float in [-1.0, 1.0]:
+		var art: Node3D = Node3D.new()
+		art.position = Vector3(art_s * 1.48, 1.24, 0.02)
+		art.rotation_degrees = Vector3(0.0, art_s * -14.0, 0.0)
+		bc.add_child(art)
+		# Ornate Brass Frame + Cream Gallery Matte + Warm Persian Arch Artwork
+		_add_box(art, Vector3(0.36, 0.48, 0.024), Vector3.ZERO, mat_aged)
+		_add_box(art, Vector3(0.30, 0.42, 0.028), Vector3(0.0, 0.0, 0.004), mat_cream)
+		_add_box(art, Vector3(0.22, 0.30, 0.030), Vector3(0.0, -0.01, 0.006), _shared_mats["book_navy"] if art_s < 0.0 else _shared_mats["book_burgundy"])
+		# Stylized Golden Crescent / Persian Arch Motif inside Canvas
+		_add_sphere(art, 0.052, 0.052, Vector3(0.0, 0.055, 0.022), mat_amber if art_s < 0.0 else mat_ruby, Vector3.ZERO, 8)
+		_add_box(art, Vector3(0.14, 0.10, 0.008), Vector3(0.0, -0.08, 0.022), mat_walnut_dark)
+		# Tiny Brass Picture Light Bar Above Frame
+		_add_cyl(art, 0.008, 0.008, 0.16, Vector3(0.0, 0.27, 0.045), mat_brass, Vector3(0.0, 0.0, 90.0), 6)
+		_add_box(art, Vector3(0.14, 0.008, 0.010), Vector3(0.0, 0.262, 0.042), mat_cove)
+
+
+func _build_window_stained_glass_transom(win_root: Node3D) -> void:
+	# Three glowing Persian-style stained-glass diamond ornaments tucked inside the window arch
+	var jewels: Array[Dictionary] = [
+		{"pos": Vector3(0.0, 0.58, -0.02), "size": Vector3(0.11, 0.11, 0.016), "mat": _shared_mats["stained_amber"]},
+		{"pos": Vector3(-0.18, 0.48, -0.02), "size": Vector3(0.085, 0.085, 0.016), "mat": _shared_mats["stained_emerald"]},
+		{"pos": Vector3(0.18, 0.48, -0.02), "size": Vector3(0.085, 0.085, 0.016), "mat": _shared_mats["stained_ruby"]}
+	]
+	for j: Dictionary in jewels:
+		var j_pos: Vector3 = j["pos"] as Vector3
+		var j_size: Vector3 = j["size"] as Vector3
+		var j_mat: Material = j["mat"] as Material
+		_add_box(win_root, j_size + Vector3(0.016, 0.016, -0.002), j_pos, _shared_mats["aged_brass"], Vector3(0.0, 0.0, 45.0))
+		_add_box(win_root, j_size, j_pos + Vector3(0.0, 0.0, 0.004), j_mat, Vector3(0.0, 0.0, 45.0))
+
+
+func _build_mini_brass_candle_lantern(parent: Node3D, pos: Vector3) -> void:
+	# Warm glowing antique brass tabletop lantern on the right side table to balance the left brass lamp
+	var lan: Node3D = Node3D.new()
+	lan.name = "RightTableLantern"
+	lan.position = pos
+	parent.add_child(lan)
+
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+	var mat_glow: Material = _shared_mats["stained_amber"]
+	var mat_bulb: Material = _shared_mats["bulb_glow"]
+
+	_add_cyl(lan, 0.052, 0.060, 0.016, Vector3(0.0, 0.008, 0.0), mat_aged, Vector3.ZERO, 8)
+	_add_cyl(lan, 0.042, 0.046, 0.115, Vector3(0.0, 0.074, 0.0), mat_glow, Vector3.ZERO, 8)
+	_add_sphere(lan, 0.018, 0.032, Vector3(0.0, 0.068, 0.0), mat_bulb, Vector3.ZERO, 6)
+	for i: int in range(4):
+		var ang: float = float(i) * (PI * 0.5) + 0.4
+		_add_box(lan, Vector3(0.007, 0.122, 0.007), Vector3(cos(ang) * 0.046, 0.074, sin(ang) * 0.046), mat_brass)
+	_add_cyl(lan, 0.014, 0.056, 0.048, Vector3(0.0, 0.156, 0.0), mat_brass, Vector3.ZERO, 8)
+	_add_torus(lan, 0.012, 0.018, Vector3(0.0, 0.190, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 8)
+
