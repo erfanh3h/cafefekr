@@ -203,13 +203,13 @@ static func make_status_pill_style(accent: Color = COL_GOLD_BRUSHED, bg_alpha: f
 static func make_timer_chip_style(is_danger: bool = false) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.32, 0.07, 0.08, 0.96) if is_danger else Color(0.11, 0.07, 0.04, 0.94)
-	sb.border_color = COL_DANGER if is_danger else Color(COL_GOLD_ACTIVE.r, COL_GOLD_ACTIVE.g, COL_GOLD_ACTIVE.b, 0.92)
+	sb.border_color = COL_DANGER if is_danger else Color(COL_GOLD_ACTIVE.r, COL_GOLD_ACTIVE.g, COL_GOLD_ACTIVE.b, 0.90)
 	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(9)
-	sb.content_margin_left = 7
-	sb.content_margin_right = 7
-	sb.content_margin_top = 1
-	sb.content_margin_bottom = 1
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 5
+	sb.content_margin_right = 5
+	sb.content_margin_top = 2
+	sb.content_margin_bottom = 2
 	return sb
 
 
@@ -268,6 +268,47 @@ static func apply_floating_button_style(btn: Button, active_highlight: bool = fa
 	btn.add_theme_stylebox_override("hover", make_floating_btn_style("hover", active_highlight))
 	btn.add_theme_stylebox_override("pressed", make_floating_btn_style("pressed", active_highlight))
 	btn.add_theme_stylebox_override("disabled", make_floating_btn_style("disabled", false))
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+
+static func make_rail_btn_style(state: String = "normal", active_highlight: bool = false) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	match state:
+		"hover":
+			sb.bg_color = Color(0.22, 0.14, 0.09, 0.94)
+			sb.border_color = COL_GOLD_ACTIVE
+		"pressed":
+			sb.bg_color = Color(0.12, 0.08, 0.05, 0.96)
+			sb.border_color = COL_GOLD_ACTIVE
+		"disabled":
+			sb.bg_color = Color(0.12, 0.09, 0.07, 0.45)
+			sb.border_color = Color(0.42, 0.33, 0.22, 0.35)
+		_:
+			sb.bg_color = Color(0.20, 0.13, 0.08, 0.92) if active_highlight else Color(0.12, 0.08, 0.05, 0.84)
+			sb.border_color = COL_GOLD_ACTIVE if active_highlight else Color(COL_GOLD_BRUSHED.r, COL_GOLD_BRUSHED.g, COL_GOLD_BRUSHED.b, 0.72)
+	sb.set_border_width_all(2 if active_highlight else 1)
+	sb.border_width_bottom = 2
+	sb.set_corner_radius_all(13)
+	sb.shadow_color = Color(COL_AMBER_GLOW.r, COL_AMBER_GLOW.g, COL_AMBER_GLOW.b, 0.30) if active_highlight else Color(0.0, 0.0, 0.0, 0.34)
+	sb.shadow_size = 6 if active_highlight else 4
+	sb.shadow_offset = Vector2(0, 2)
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
+	return sb
+
+
+static func apply_rail_button_style(btn: Button, active_highlight: bool = false) -> void:
+	if not is_instance_valid(btn):
+		return
+	btn.flat = false
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.add_theme_stylebox_override("normal", make_rail_btn_style("normal", active_highlight))
+	btn.add_theme_stylebox_override("hover", make_rail_btn_style("hover", active_highlight))
+	btn.add_theme_stylebox_override("pressed", make_rail_btn_style("pressed", active_highlight))
+	btn.add_theme_stylebox_override("disabled", make_rail_btn_style("disabled", false))
 	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 

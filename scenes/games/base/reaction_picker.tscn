@@ -1,23 +1,19 @@
-[gd_scene load_steps=5 format=3 uid="uid://d2k1v5l8q0n4w"]
+[gd_scene format=3 uid="uid://d2k1v5l8q0n4w"]
 
 [ext_resource type="Script" path="res://scenes/games/base/reaction_picker.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_bg"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="2_font_ui"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel"]
-texture = ExtResource("2_bg")
-texture_margin_left = 60.0
-texture_margin_top = 60.0
-texture_margin_right = 60.0
-texture_margin_bottom = 60.0
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_clear"]
 
 [node name="ReactionPicker" type="Control"]
+z_index = 28
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("1_script")
 
 [node name="DimOverlay" type="ColorRect" parent="."]
@@ -27,55 +23,72 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.5)
+mouse_filter = 2
+color = Color(0.03, 0.02, 0.01, 0.28)
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="BtnBackdropClose" type="Button" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
+flat = true
 
-[node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(640, 840)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_panel")
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 158.0
+offset_right = 520.0
+offset_bottom = 538.0
 
-[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
+[node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
 
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 8
 
-[node name="LblTitle" type="Label" parent="CenterContainer/Panel/Margin/VBox"]
+[node name="HeaderRow" type="HBoxContainer" parent="Panel/Margin/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
-theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 30
+theme_override_constants/separation = 8
+
+[node name="LblTitle" type="Label" parent="Panel/Margin/VBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("2_font_ui")
+theme_override_font_sizes/font_size = 16
 text = "کری‌خوانی و ایموجی‌ها"
-horizontal_alignment = 1
+horizontal_alignment = 2
+vertical_alignment = 1
 
-[node name="Grid" type="GridContainer" parent="CenterContainer/Panel/Margin/VBox"]
+[node name="BtnClose" type="Button" parent="Panel/Margin/VBox/HeaderRow"]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+theme_override_fonts/font = ExtResource("2_font_ui")
+theme_override_font_sizes/font_size = 14
+text = "✕"
+
+[node name="StickerScroll" type="ScrollContainer" parent="Panel/Margin/VBox"]
+layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
-columns = 4
+horizontal_scroll_mode = 0
 
-[node name="BtnClose" type="Button" parent="CenterContainer/Panel/Margin/VBox"]
-custom_minimum_size = Vector2(260, 68)
+[node name="Grid" type="GridContainer" parent="Panel/Margin/VBox/StickerScroll"]
 layout_mode = 2
-size_flags_horizontal = 4
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.12, 0.12, 0.12, 0.9)
-theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 24
-text = "بستن"
+size_flags_horizontal = 6
+size_flags_vertical = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 4

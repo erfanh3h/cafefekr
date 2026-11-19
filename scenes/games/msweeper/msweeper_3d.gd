@@ -1491,7 +1491,7 @@ func _is_gui_blocking_at(screen_pos: Vector2) -> bool:
 		var node = hud.get_node_or_null(modal_name)
 		if node and node is Control and node.visible:
 			return true
-	for bar_name in ["BottomBar", "TopHeaderSlot"]:
+	for bar_name in ["SubHeaderRail/BtnCameraMenu", "SubHeaderRail/RightGroup", "CameraPopover", "TopHeaderSlot"]:
 		var bar = hud.get_node_or_null(bar_name)
 		if bar and bar is Control and bar.visible and bar.get_global_rect().has_point(screen_pos):
 			return true

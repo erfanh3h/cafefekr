@@ -32,7 +32,7 @@ script = ExtResource("1_script")
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 144.0
+offset_bottom = 196.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 10
@@ -42,15 +42,20 @@ theme_override_constants/margin_right = 10
 [node name="TopVBox" type="VBoxContainer" parent="TopSafeMargin"]
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="PlayersBlock" type="VBoxContainer" parent="TopSafeMargin/TopVBox"]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="PlayersRow1" type="HBoxContainer" parent="TopSafeMargin/TopVBox"]
+[node name="PlayersRow1" type="HBoxContainer" parent="TopSafeMargin/TopVBox/PlayersBlock"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="MenuColumn" type="VBoxContainer" parent="TopSafeMargin/TopVBox/PlayersRow1"]
+[node name="MenuColumn" type="VBoxContainer" parent="TopSafeMargin/TopVBox/PlayersBlock/PlayersRow1"]
 custom_minimum_size = Vector2(46, 0)
 layout_mode = 2
 size_flags_horizontal = 8
@@ -59,14 +64,14 @@ mouse_filter = 2
 theme_override_constants/separation = 4
 alignment = 1
 
-[node name="BtnSettings" type="Button" parent="TopSafeMargin/TopVBox/PlayersRow1/MenuColumn"]
+[node name="BtnSettings" type="Button" parent="TopSafeMargin/TopVBox/PlayersBlock/PlayersRow1/MenuColumn"]
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_default_cursor_shape = 2
 tooltip_text = "منو و تنظیمات بازی"
 
-[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/PlayersRow1/MenuColumn/BtnSettings"]
+[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/PlayersBlock/PlayersRow1/MenuColumn/BtnSettings"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -82,18 +87,103 @@ texture = ExtResource("5_icon_settings")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PlayersRow2" type="HBoxContainer" parent="TopSafeMargin/TopVBox"]
+[node name="PlayersRow2" type="HBoxContainer" parent="TopSafeMargin/TopVBox/PlayersBlock"]
 visible = false
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Row2Spacer" type="Control" parent="TopSafeMargin/TopVBox/PlayersRow2"]
+[node name="Row2Spacer" type="Control" parent="TopSafeMargin/TopVBox/PlayersBlock/PlayersRow2"]
 custom_minimum_size = Vector2(46, 0)
 layout_mode = 2
 size_flags_horizontal = 8
 mouse_filter = 2
+
+[node name="SubHeaderRail" type="HBoxContainer" parent="TopSafeMargin/TopVBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BtnCameraToggle" type="Button" parent="TopSafeMargin/TopVBox/SubHeaderRail"]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "نمای ۲D / ۳D و دوربین"
+
+[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/SubHeaderRail/BtnCameraToggle"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_icon_3d")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SubHeaderSpacer" type="Control" parent="TopSafeMargin/TopVBox/SubHeaderRail"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="RightActionGroup" type="HBoxContainer" parent="TopSafeMargin/TopVBox/SubHeaderRail"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BtnChat" type="Button" parent="TopSafeMargin/TopVBox/SubHeaderRail/RightActionGroup"]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "کری‌خوانی و گفتگو"
+
+[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/SubHeaderRail/RightActionGroup/BtnChat"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_icon_chat")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnEmote" type="Button" parent="TopSafeMargin/TopVBox/SubHeaderRail/RightActionGroup"]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "استیکر و ایموجی"
+
+[node name="Icon" type="TextureRect" parent="TopSafeMargin/TopVBox/SubHeaderRail/RightActionGroup/BtnEmote"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_icon_emote")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="TurnStatusToast" type="PanelContainer" parent="."]
 visible = false
@@ -102,10 +192,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -150.0
-offset_top = 106.0
-offset_right = 150.0
-offset_bottom = 140.0
+offset_left = -125.0
+offset_top = 110.0
+offset_right = 125.0
+offset_bottom = 144.0
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -114,7 +204,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("4_font_ui")
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 14
 text = "نوبت شماست"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -148,15 +238,11 @@ flat = true
 [node name="CameraPopover" type="PanelContainer" parent="."]
 visible = false
 z_index = 25
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = -152.0
-offset_right = 246.0
-offset_bottom = -82.0
-grow_vertical = 0
+layout_mode = 0
+offset_left = 10.0
+offset_top = 158.0
+offset_right = 236.0
+offset_bottom = 224.0
 
 [node name="HBox" type="HBoxContainer" parent="CameraPopover"]
 layout_mode = 2
@@ -164,7 +250,7 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="BtnCam2D3D" type="Button" parent="CameraPopover/HBox"]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 tooltip_text = "تغییر نمای ۲D / ۳D"
@@ -186,7 +272,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnZoomIn" type="Button" parent="CameraPopover/HBox"]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 tooltip_text = "بزرگ‌نمایی"
@@ -208,7 +294,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnZoomOut" type="Button" parent="CameraPopover/HBox"]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 tooltip_text = "کوچک‌نمایی"
@@ -230,7 +316,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnCamReset" type="Button" parent="CameraPopover/HBox"]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 tooltip_text = "بازنشانی دوربین"
@@ -251,98 +337,55 @@ texture = ExtResource("9_icon_reset")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BottomSafeMargin" type="MarginContainer" parent="."]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -76.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
-
-[node name="BottomHBox" type="HBoxContainer" parent="BottomSafeMargin"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 10
-
-[node name="BtnCameraToggle" type="Button" parent="BottomSafeMargin/BottomHBox"]
-custom_minimum_size = Vector2(54, 54)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-tooltip_text = "تنظیمات دوربین"
-
-[node name="Icon" type="TextureRect" parent="BottomSafeMargin/BottomHBox/BtnCameraToggle"]
+[node name="PickerPopoverBackdrop" type="Button" parent="."]
+visible = false
+z_index = 26
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("6_icon_3d")
-expand_mode = 1
-stretch_mode = 5
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_clear")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_clear")
+flat = true
 
-[node name="CenterSpacer" type="Control" parent="BottomSafeMargin/BottomHBox"]
+[node name="PickerPopover" type="PanelContainer" parent="."]
+visible = false
+z_index = 27
+layout_mode = 0
+offset_left = 180.0
+offset_top = 158.0
+offset_right = 528.0
+offset_bottom = 448.0
+
+[node name="VBox" type="VBoxContainer" parent="PickerPopover"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LblPickerTitle" type="Label" parent="PickerPopover/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("4_font_ui")
+theme_override_font_sizes/font_size = 15
+text = "گفتگو و ایموجی"
+horizontal_alignment = 1
+
+[node name="PickerScroll" type="ScrollContainer" parent="PickerPopover/VBox"]
+custom_minimum_size = Vector2(0, 230)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="PickerGrid" type="GridContainer" parent="PickerPopover/VBox/PickerScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="BtnChat" type="Button" parent="BottomSafeMargin/BottomHBox"]
-custom_minimum_size = Vector2(54, 54)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-tooltip_text = "کری‌خوانی و گفتگو"
-
-[node name="Icon" type="TextureRect" parent="BottomSafeMargin/BottomHBox/BtnChat"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("10_icon_chat")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BtnEmote" type="Button" parent="BottomSafeMargin/BottomHBox"]
-custom_minimum_size = Vector2(54, 54)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-tooltip_text = "استیکر و ایموجی"
-
-[node name="Icon" type="TextureRect" parent="BottomSafeMargin/BottomHBox/BtnEmote"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("11_icon_emote")
-expand_mode = 1
-stretch_mode = 5
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 4
 
 [node name="SettingsDrawer" type="Control" parent="."]
 visible = false

@@ -426,13 +426,13 @@ func _build_game_ui_enhancements() -> void:
 func _position_turn_toast() -> void:
 	if not is_instance_valid(_turn_toast_panel):
 		return
-	var is_multi := _total_players > 2
+	var is_multi: bool = _total_players > 2
 	var cards_h: float = (CARD_HEIGHT_MULTI * 2.0 + 6.0) if is_multi else CARD_HEIGHT_2P
-	var top_y: float = float(_safe_top_inset) + cards_h + 6.0
+	var top_y: float = float(_safe_top_inset) + cards_h + 10.0
 	_turn_toast_panel.offset_top = top_y
 	_turn_toast_panel.offset_bottom = top_y + 34.0
-	_turn_toast_panel.offset_left = -160.0
-	_turn_toast_panel.offset_right = 160.0
+	_turn_toast_panel.offset_left = -125.0
+	_turn_toast_panel.offset_right = 125.0
 
 
 func show_turn_toast(msg: String, text_color: Color = HudTheme.COL_TEXT_GOLD, persistent: bool = false, duration: float = 1.9) -> void:
@@ -553,16 +553,16 @@ func _attach_card_decorations(player_idx: int, card: PanelContainer, avatar_rect
 				seat_dot.name = "SeatAccentDot"
 				seat_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				seat_dot.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-				seat_dot.offset_left = -12
-				seat_dot.offset_top = -12
-				seat_dot.offset_right = -1
-				seat_dot.offset_bottom = -1
 				av_container.add_child(seat_dot)
+			seat_dot.offset_left = -15
+			seat_dot.offset_top = -15
+			seat_dot.offset_right = -1
+			seat_dot.offset_bottom = -1
 			var sb_dot := StyleBoxFlat.new()
 			sb_dot.bg_color = HudTheme.get_seat_accent(player_idx)
 			sb_dot.border_color = HudTheme.COL_WALNUT_DEEP
 			sb_dot.set_border_width_all(2)
-			sb_dot.set_corner_radius_all(6)
+			sb_dot.set_corner_radius_all(7)
 			seat_dot.add_theme_stylebox_override("panel", sb_dot)
 
 			# Keep profile button topmost inside AvatarContainer
@@ -572,9 +572,35 @@ func _attach_card_decorations(player_idx: int, card: PanelContainer, avatar_rect
 					av_container.move_child(ch, av_container.get_child_count() - 1)
 					break
 
-	# Integrated Bottom-Edge Progress Bar + Compact Seconds Chip (inside CardChromeOverlay)
-	var old_overlay := card.get_node_or_null("CardChromeOverlay")
+	# In-Card Right-Aligned Turn Timer Chip (vertically centered inside card HBox)
+	var card_hbox: HBoxContainer = card.get_node_or_null("HBox") as HBoxContainer
+	var card_timer_chip: Label = null
+	if is_instance_valid(card_hbox):
+		card_hbox.add_theme_constant_override("separation", 6 if _total_players > 2 else 8)
+		var existing_chip: Node = card_hbox.get_node_or_null("CardTimerChip")
+		if is_instance_valid(existing_chip):
+			card_hbox.remove_child(existing_chip)
+			existing_chip.queue_free()
+		card_timer_chip = Label.new()
+		card_timer_chip.name = "CardTimerChip"
+		card_timer_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card_timer_chip.visible = false
+		card_timer_chip.custom_minimum_size = Vector2(34, 24)
+		card_timer_chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if _font_vazir:
+			card_timer_chip.add_theme_font_override("font", _font_vazir)
+		card_timer_chip.add_theme_font_size_override("font_size", 11)
+		card_timer_chip.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
+		card_timer_chip.add_theme_stylebox_override("normal", _style_chip_normal)
+		card_timer_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		card_timer_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		card_timer_chip.text = ""
+		card_hbox.add_child(card_timer_chip)
+
+	# Integrated Bottom-Edge Progress Bar (inside CardChromeOverlay)
+	var old_overlay: Node = card.get_node_or_null("CardChromeOverlay")
 	if is_instance_valid(old_overlay):
+		card.remove_child(old_overlay)
 		old_overlay.queue_free()
 
 	var overlay := Control.new()
@@ -583,7 +609,7 @@ func _attach_card_decorations(player_idx: int, card: PanelContainer, avatar_rect
 	overlay.clip_contents = false
 	card.add_child(overlay)
 
-	var card_timer_fill := HudTheme.make_card_timer_fill_style(HudTheme.COL_GOLD_ACTIVE)
+	var card_timer_fill: StyleBoxFlat = HudTheme.make_card_timer_fill_style(HudTheme.COL_GOLD_ACTIVE)
 	var card_timer_bar := ProgressBar.new()
 	card_timer_bar.name = "CardTimerBar"
 	card_timer_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -600,25 +626,6 @@ func _attach_card_decorations(player_idx: int, card: PanelContainer, avatar_rect
 	card_timer_bar.add_theme_stylebox_override("background", HudTheme.make_card_timer_track_style())
 	card_timer_bar.add_theme_stylebox_override("fill", card_timer_fill)
 	overlay.add_child(card_timer_bar)
-
-	var card_timer_chip := Label.new()
-	card_timer_chip.name = "CardTimerChip"
-	card_timer_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card_timer_chip.visible = false
-	card_timer_chip.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	card_timer_chip.offset_left = -2.0
-	card_timer_chip.offset_top = -13.0
-	card_timer_chip.offset_right = 42.0
-	card_timer_chip.offset_bottom = 6.0
-	if _font_vazir:
-		card_timer_chip.add_theme_font_override("font", _font_vazir)
-	card_timer_chip.add_theme_font_size_override("font_size", 11)
-	card_timer_chip.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
-	card_timer_chip.add_theme_stylebox_override("normal", _style_chip_normal)
-	card_timer_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card_timer_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	card_timer_chip.text = ""
-	overlay.add_child(card_timer_chip)
 
 	_card_decorations[player_idx] = {
 		"overlay": overlay,
@@ -1095,16 +1102,18 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 		kori_lbl.add_theme_constant_override("shadow_offset_y", 1)
 		HudTheme.configure_bidi_label(kori_lbl, false)
 
-	var is_kori := reaction_id > 100
-	var bubble_size := Vector2(288.0, 74.0) if is_kori else Vector2(96.0, 96.0)
-	var hold_duration := 3.6 if is_kori else 2.2
+	var is_kori: bool = reaction_id > 100
+	var vp_w: float = get_viewport_rect().size.x
+	var kori_w: float = clampf(vp_w - 196.0, 200.0, 284.0)
+	var bubble_size: Vector2 = Vector2(kori_w, 72.0) if is_kori else Vector2(92.0, 92.0)
+	var hold_duration: float = 3.6 if is_kori else 2.2
 
 	if is_kori:
-		var k_idx := clampi(reaction_id - 101, 0, KORIS.size() - 1)
+		var k_idx: int = clampi(reaction_id - 101, 0, KORIS.size() - 1)
 		icon.visible = false
 		if is_instance_valid(kori_lbl):
 			kori_lbl.visible = true
-			kori_lbl.custom_minimum_size = Vector2(256.0, 48.0)
+			kori_lbl.custom_minimum_size = Vector2(kori_w - 32.0, 48.0)
 			kori_lbl.text = "💬 " + KORIS[k_idx]
 		if is_instance_valid(bubble_frame):
 			bubble_frame.add_theme_stylebox_override("panel", HudTheme.make_emote_bubble_style(true))
@@ -1112,15 +1121,15 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 		if is_instance_valid(kori_lbl):
 			kori_lbl.visible = false
 		icon.visible = true
-		icon.custom_minimum_size = Vector2(76.0, 76.0)
-		var r_tex := _get_cached_reaction(reaction_id)
+		icon.custom_minimum_size = Vector2(72.0, 72.0)
+		var r_tex: Texture2D = _get_cached_reaction(reaction_id)
 		if r_tex:
 			icon.texture = r_tex
 		if is_instance_valid(bubble_frame):
 			bubble_frame.add_theme_stylebox_override("panel", HudTheme.make_emote_bubble_style(false))
 
 	if is_instance_valid(bubble_frame):
-		var half := bubble_size * 0.5
+		var half: Vector2 = bubble_size * 0.5
 		bubble_frame.custom_minimum_size = bubble_size
 		bubble_frame.offset_left = -half.x
 		bubble_frame.offset_top = -half.y
@@ -1128,19 +1137,30 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 		bubble_frame.offset_bottom = half.y
 		bubble_frame.size = bubble_size
 
-	# Anchor STRICTLY BELOW the player's avatar/card bottom edge (never overlapping name/counter!)
+	# Anchor BELOW the player's avatar/card bottom edge AND offset inward toward horizontal center
+	# so bubbles never collide with Left (2D) or Right (Chat / Emoji) SubHeaderRail buttons.
 	bubble.z_index = 32
 	bubble.top_level = true
 	bubble.size = Vector2.ZERO
 	bubble.custom_minimum_size = Vector2.ZERO
 	bubble.pivot_offset = Vector2.ZERO
 	if is_instance_valid(player_card):
-		var card_rect := player_card.get_global_rect()
-		var av_rect := av_container.get_global_rect() if is_instance_valid(av_container) else card_rect
-		var vp_w := get_viewport_rect().size.x
-		var half_w := bubble_size.x * 0.5
-		var anchor_x := clampf(av_rect.get_center().x, half_w + 12.0, maxf(half_w + 12.0, vp_w - half_w - 12.0))
-		var anchor_y := maxf(card_rect.end.y, av_rect.end.y) + 8.0 + bubble_size.y * 0.5
+		var card_rect: Rect2 = player_card.get_global_rect()
+		var av_rect: Rect2 = av_container.get_global_rect() if is_instance_valid(av_container) else card_rect
+		var half_w: float = bubble_size.x * 0.5
+		var av_center_x: float = av_rect.get_center().x
+		var is_left_seat: bool = av_center_x < (vp_w * 0.5)
+		var insets: Dictionary = HudTheme.get_safe_insets(get_viewport())
+		var left_clear: float = float(insets.get("left", 10)) + 42.0 + 12.0
+		var right_clear: float = float(insets.get("right", 10)) + 92.0 + 12.0
+		var shifted_x: float = av_center_x + (40.0 if is_left_seat else -40.0)
+		var min_cx: float = left_clear + half_w
+		var max_cx: float = vp_w - right_clear - half_w
+		var anchor_x: float = clampf(shifted_x, min_cx, maxf(min_cx, max_cx))
+		var anchor_y: float = maxf(card_rect.end.y, av_rect.end.y) + 10.0 + bubble_size.y * 0.5
+		if is_kori and max_cx < min_cx:
+			anchor_x = clampf(vp_w * 0.5, half_w + 12.0, maxf(half_w + 12.0, vp_w - half_w - 12.0))
+			anchor_y = maxf(card_rect.end.y, av_rect.end.y) + 58.0 + bubble_size.y * 0.5
 		bubble.global_position = Vector2(anchor_x, anchor_y)
 
 	bubble.visible = true

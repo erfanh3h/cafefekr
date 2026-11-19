@@ -42,12 +42,13 @@ signal top_view_requested()
 
 
 
-# --- Bottom Controls, Camera Popover & Top-Corner Menu Drawer ---
+# --- Split Sub-Header Rail, Camera Popover & Top-Corner Menu Drawer ---
 
-@onready var btn_camera_menu: Button = $BottomBar/Margin/HBox/BtnCameraMenu
-@onready var img_camera_menu: TextureRect = $BottomBar/Margin/HBox/BtnCameraMenu/Icon
-@onready var btn_kori: Button = $BottomBar/Margin/HBox/BtnKori
-@onready var btn_reactions: Button = $BottomBar/Margin/HBox/BtnReactions
+@onready var sub_header_rail: HBoxContainer = $SubHeaderRail
+@onready var btn_camera_menu: Button = $SubHeaderRail/BtnCameraMenu
+@onready var img_camera_menu: TextureRect = $SubHeaderRail/BtnCameraMenu/Icon
+@onready var btn_kori: Button = $SubHeaderRail/RightGroup/BtnKori
+@onready var btn_reactions: Button = $SubHeaderRail/RightGroup/BtnReactions
 
 @onready var camera_popover_backdrop: Button = $CameraPopoverBackdrop
 @onready var camera_popover: PanelContainer = $CameraPopover
@@ -486,8 +487,13 @@ func _ensure_top_header_for_current_game() -> void:
 
 
 func _on_header_height_changed(new_height: float) -> void:
+	var clamped_h: float = maxf(112.0, new_height)
 	if is_instance_valid(top_header_slot):
-		top_header_slot.offset_bottom = maxf(112.0, new_height)
+		top_header_slot.offset_bottom = clamped_h
+	if is_instance_valid(sub_header_rail):
+		var rail_top: float = clamped_h - 2.0
+		sub_header_rail.offset_top = rail_top
+		sub_header_rail.offset_bottom = rail_top + 42.0
 
 
 func is_overlay_open() -> bool:
@@ -495,27 +501,21 @@ func is_overlay_open() -> bool:
 		return true
 	if is_instance_valid(camera_popover) and camera_popover.visible:
 		return true
+	if is_instance_valid(reaction_picker) and reaction_picker.visible:
+		return true
 	return false
 
 
 func _apply_bottom_safe_insets() -> void:
-	var insets := HudTheme.get_safe_insets(get_viewport())
+	var insets: Dictionary = HudTheme.get_safe_insets(get_viewport())
 	_safe_bottom_inset = int(insets.get("bottom", 14))
-	var b_margin := get_node_or_null("BottomBar/Margin") as MarginContainer
-	if is_instance_valid(b_margin):
-		b_margin.add_theme_constant_override("margin_bottom", _safe_bottom_inset)
-		b_margin.add_theme_constant_override("margin_left", int(insets.get("left", 12)))
-		b_margin.add_theme_constant_override("margin_right", int(insets.get("right", 12)))
-	var bbar := get_node_or_null("BottomBar") as Control
-	var bar_h := 64.0 + float(_safe_bottom_inset)
-	if is_instance_valid(bbar) and not GameManager.is_spectating:
-		bbar.offset_top = -bar_h
-		bbar.offset_bottom = 0.0
-	if is_instance_valid(camera_popover):
-		camera_popover.offset_left = float(insets.get("left", 12))
-		camera_popover.offset_bottom = -(bar_h + 6.0)
-		camera_popover.offset_top = -(bar_h + 76.0)
-
+	if is_instance_valid(sub_header_rail):
+		sub_header_rail.offset_left = float(insets.get("left", 10))
+		sub_header_rail.offset_right = -float(insets.get("right", 10))
+		if is_instance_valid(top_header_slot):
+			var rail_top: float = maxf(110.0, top_header_slot.offset_bottom - 2.0)
+			sub_header_rail.offset_top = rail_top
+			sub_header_rail.offset_bottom = rail_top + 42.0
 
 
 func _ready() -> void:
@@ -790,24 +790,24 @@ func _setup_card_styles() -> void:
 
 func _setup_connections() -> void:
 
-	# Style compact Warm Classic Parlor floating bottom buttons (3 buttons total)
-	var bottom_btns := [btn_camera_menu, btn_kori, btn_reactions]
-	for b in bottom_btns:
+	# Style compact Warm Classic Parlor SubHeaderRail buttons (42x42 thumb-friendly targets)
+	var rail_btns: Array = [btn_camera_menu, btn_kori, btn_reactions]
+	for b in rail_btns:
 		if not is_instance_valid(b):
 			continue
-		HudTheme.apply_floating_button_style(b, false)
-		b.custom_minimum_size = Vector2(54, 54)
+		HudTheme.apply_rail_button_style(b, false)
+		b.custom_minimum_size = Vector2(42, 42)
 		b.text = ""
 		b.pivot_offset = b.custom_minimum_size * 0.5
 		ActionVFXManager.apply_button_juice(b, "tap_button")
 
 	# Style collapsible camera popover actions
-	var cam_btns := [btn_cam_top, btn_zoom_in, btn_zoom_out, btn_cam_reset]
+	var cam_btns: Array = [btn_cam_top, btn_zoom_in, btn_zoom_out, btn_cam_reset]
 	for cb in cam_btns:
 		if not is_instance_valid(cb):
 			continue
 		HudTheme.apply_floating_button_style(cb, false)
-		cb.custom_minimum_size = Vector2(48, 48)
+		cb.custom_minimum_size = Vector2(44, 44)
 		cb.text = ""
 		cb.pivot_offset = cb.custom_minimum_size * 0.5
 		ActionVFXManager.apply_button_juice(cb, "tap_button")
@@ -884,7 +884,7 @@ func _setup_connections() -> void:
 				show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
 				return
 			AudioManager.sfx_button()
-			reaction_picker.open_koris()
+			reaction_picker.open_koris(btn_kori)
 		)
 
 	btn_reactions.pressed.connect(func():
@@ -895,7 +895,7 @@ func _setup_connections() -> void:
 			show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
 			return
 		AudioManager.sfx_button()
-		reaction_picker.open_stickers()
+		reaction_picker.open_stickers(btn_reactions)
 	)
 
 	btn_audio.pressed.connect(func():
@@ -1230,18 +1230,32 @@ func _toggle_camera_popover() -> void:
 
 func _open_camera_popover() -> void:
 	_camera_popover_open = true
+	if is_instance_valid(reaction_picker) and reaction_picker.visible:
+		reaction_picker.close()
 	if is_instance_valid(camera_popover_backdrop):
 		camera_popover_backdrop.visible = true
 	if is_instance_valid(camera_popover):
+		var insets: Dictionary = HudTheme.get_safe_insets(get_viewport())
+		var vp_size: Vector2 = get_viewport_rect().size
+		var pop_w: float = 224.0
+		var pop_h: float = 64.0
+		var pos_x: float = float(insets.get("left", 10))
+		var pos_y: float = 206.0
+		if is_instance_valid(btn_camera_menu):
+			var btn_rect: Rect2 = btn_camera_menu.get_global_rect()
+			pos_x = clampf(btn_rect.position.x, float(insets.get("left", 10)), maxf(10.0, vp_size.x - pop_w - float(insets.get("right", 10))))
+			pos_y = clampf(btn_rect.end.y + 8.0, float(insets.get("top", 16)), maxf(16.0, vp_size.y - pop_h - float(insets.get("bottom", 14))))
+		camera_popover.position = Vector2(pos_x, pos_y)
+		camera_popover.size = Vector2(pop_w, pop_h)
+		camera_popover.pivot_offset = Vector2(21.0, 0.0)
 		camera_popover.visible = true
 		camera_popover.modulate.a = 0.0
-		camera_popover.scale = Vector2(0.88, 0.88)
-		camera_popover.pivot_offset = Vector2(24.0, camera_popover.size.y)
-		var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		camera_popover.scale = Vector2(0.88, 0.72)
+		var tw: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tw.tween_property(camera_popover, "scale", Vector2.ONE, 0.16)
 		tw.parallel().tween_property(camera_popover, "modulate:a", 1.0, 0.12)
 	if is_instance_valid(btn_camera_menu):
-		HudTheme.apply_floating_button_style(btn_camera_menu, true)
+		HudTheme.apply_rail_button_style(btn_camera_menu, true)
 
 
 func _close_camera_popover() -> void:
@@ -1253,7 +1267,7 @@ func _close_camera_popover() -> void:
 		camera_popover.scale = Vector2.ONE
 		camera_popover.modulate.a = 1.0
 	if is_instance_valid(btn_camera_menu):
-		HudTheme.apply_floating_button_style(btn_camera_menu, false)
+		HudTheme.apply_rail_button_style(btn_camera_menu, false)
 
 
 func _open_game_menu_drawer() -> void:
@@ -1336,19 +1350,11 @@ func set_spectator_mode(enabled: bool) -> void:
 		btn_kori.visible = not enabled
 	if is_instance_valid(btn_reactions):
 		btn_reactions.visible = not enabled
-	var bar_h := 64.0 + float(_safe_bottom_inset)
-	var bbar := get_node_or_null("BottomBar") as Control
-	if is_instance_valid(bbar):
-		bbar.offset_top = -(bar_h + 96.0) if enabled else -bar_h
-		bbar.offset_bottom = -96.0 if enabled else 0.0
-	if is_instance_valid(camera_popover):
-		var pop_base := (bar_h + 96.0) if enabled else bar_h
-		camera_popover.offset_bottom = -(pop_base + 6.0)
-		camera_popover.offset_top = -(pop_base + 76.0)
 	if enabled:
 		set_fekrbekr_hud_buttons(false)
 		if is_instance_valid(reaction_picker):
 			reaction_picker.visible = false
+			reaction_picker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if is_instance_valid(surrender_dialog):
 			surrender_dialog.visible = false
 

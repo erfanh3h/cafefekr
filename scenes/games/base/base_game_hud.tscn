@@ -125,6 +125,98 @@ offset_bottom = 148.0
 grow_horizontal = 2
 mouse_filter = 2
 
+[node name="SubHeaderRail" type="HBoxContainer" parent="." unique_id=770441818]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 156.0
+offset_right = -10.0
+offset_bottom = 198.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BtnCameraMenu" type="Button" parent="SubHeaderRail"]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "تنظیمات دوربین و نمای ۲D / ۳D"
+
+[node name="Icon" type="TextureRect" parent="SubHeaderRail/BtnCameraMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("19_cam_3d")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Spacer" type="Control" parent="SubHeaderRail" unique_id=1477330669]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="RightGroup" type="HBoxContainer" parent="SubHeaderRail" unique_id=371860007]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BtnKori" type="Button" parent="SubHeaderRail/RightGroup" unique_id=2124375763]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "کری‌خوانی و پیام آماده"
+
+[node name="Icon" type="TextureRect" parent="SubHeaderRail/RightGroup/BtnKori" unique_id=901260139]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_kori")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnReactions" type="Button" parent="SubHeaderRail/RightGroup" unique_id=1801254108]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+tooltip_text = "استیکر و واکنش"
+
+[node name="Icon" type="TextureRect" parent="SubHeaderRail/RightGroup/BtnReactions" unique_id=1328611160]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("18_sticker")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="CameraPopoverBackdrop" type="Button" parent="."]
 visible = false
 z_index = 24
@@ -144,15 +236,11 @@ flat = true
 [node name="CameraPopover" type="PanelContainer" parent="."]
 visible = false
 z_index = 25
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = -152.0
-offset_right = 246.0
-offset_bottom = -82.0
-grow_vertical = 0
+layout_mode = 0
+offset_left = 10.0
+offset_top = 206.0
+offset_right = 234.0
+offset_bottom = 270.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_popover")
 
 [node name="HBox" type="HBoxContainer" parent="CameraPopover"]
@@ -161,7 +249,7 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="BtnCamTop" type="Button" parent="CameraPopover/HBox" unique_id=294536877]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 tooltip_text = "تغییر نمای ۲ بعدی / ۳ بعدی"
@@ -183,7 +271,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnZoomIn" type="Button" parent="CameraPopover/HBox" unique_id=1137155228]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 tooltip_text = "بزرگ‌نمایی"
@@ -205,7 +293,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnZoomOut" type="Button" parent="CameraPopover/HBox" unique_id=481008697]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 tooltip_text = "کوچک‌نمایی"
@@ -227,7 +315,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnCamReset" type="Button" parent="CameraPopover/HBox" unique_id=1498693078]
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 tooltip_text = "بازنشانی دوربین"
@@ -245,108 +333,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("11_refresh")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BottomBar" type="Control" parent="." unique_id=770441818]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -76.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-
-[node name="Margin" type="MarginContainer" parent="BottomBar" unique_id=1406532123]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
-
-[node name="HBox" type="HBoxContainer" parent="BottomBar/Margin" unique_id=371860007]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 10
-
-[node name="BtnCameraMenu" type="Button" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(54, 54)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-tooltip_text = "تنظیمات دوربین"
-
-[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnCameraMenu"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("19_cam_3d")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Spacer" type="Control" parent="BottomBar/Margin/HBox" unique_id=1477330669]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="BtnKori" type="Button" parent="BottomBar/Margin/HBox" unique_id=2124375763]
-custom_minimum_size = Vector2(54, 54)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-tooltip_text = "کری‌خوانی و پیام آماده"
-
-[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnKori" unique_id=901260139]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("10_kori")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BtnReactions" type="Button" parent="BottomBar/Margin/HBox" unique_id=1801254108]
-custom_minimum_size = Vector2(54, 54)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_default_cursor_shape = 2
-tooltip_text = "استیکر و واکنش"
-
-[node name="Icon" type="TextureRect" parent="BottomBar/Margin/HBox/BtnReactions" unique_id=1328611160]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("18_sticker")
 expand_mode = 1
 stretch_mode = 5
 
