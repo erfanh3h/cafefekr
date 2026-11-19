@@ -457,7 +457,15 @@ func _enforce_hud_geometry() -> void:
 	if is_instance_valid(_inspector_panel):
 		_inspector_panel.custom_minimum_size = Vector2(minf(650.0, vp_w - 28.0), minf(700.0, vp_h - 220.0))
 	if is_instance_valid(_log_panel):
-		_log_panel.custom_minimum_size = Vector2(minf(650.0, vp_w - 28.0), minf(600.0, vp_h - 240.0))
+		var log_w = minf(650.0, vp_w - 28.0)
+		var top_y: float = 140.0
+		if is_instance_valid(_top_strip):
+			top_y = _top_strip.offset_bottom + 6.0
+		var max_h: float = clampf(vp_h - top_y - 180.0, 280.0, 520.0)
+		_log_panel.offset_left = -log_w * 0.5
+		_log_panel.offset_right = log_w * 0.5
+		_log_panel.offset_top = top_y
+		_log_panel.offset_bottom = top_y + max_h
 
 func _build_floating_ui() -> void:
 	if is_instance_valid(_hud_layer):
@@ -546,20 +554,21 @@ func _build_floating_ui() -> void:
 	dock_vbox.add_theme_constant_override("separation", 6)
 	_command_dock_margin.add_child(dock_vbox)
 
-	# Row 1: Compact Phase Stepper + Crisp 1-Line Tactical / VS Banner
+	# Row 1: Tactical Action Helper & Guidance Banner
 	var header_strip: PanelContainer = PanelContainer.new()
 	header_strip.add_theme_stylebox_override(
 		"panel",
-		_make_panel_style(Color(0.12, 0.085, 0.055, 0.96), Color(0.70, 0.54, 0.24, 0.68), 12, 1, 8, 5)
+		_make_panel_style(Color(0.12, 0.085, 0.055, 0.96), Color(1.0, 0.86, 0.42, 0.88), 14, 2, 12, 8)
 	)
 	dock_vbox.add_child(header_strip)
 
 	var header_vbox: VBoxContainer = VBoxContainer.new()
-	header_vbox.add_theme_constant_override("separation", 3)
+	header_vbox.add_theme_constant_override("separation", 5)
 	header_strip.add_child(header_vbox)
 
 	var top_status_row: HBoxContainer = HBoxContainer.new()
-	top_status_row.add_theme_constant_override("separation", 6)
+	top_status_row.add_theme_constant_override("separation", 8)
+	top_status_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	header_vbox.add_child(top_status_row)
 
 	_phase_stepper_hbox = HBoxContainer.new()
@@ -569,13 +578,14 @@ func _build_floating_ui() -> void:
 	_selection_info_lbl = Label.new()
 	_selection_info_lbl.text = "برای شروع نوبت کارت بکشید"
 	_selection_info_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_selection_info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_selection_info_lbl.clip_text = true
-	_selection_info_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_selection_info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_selection_info_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_selection_info_lbl.add_theme_font_override("font", FontHekayat)
-	_selection_info_lbl.add_theme_font_size_override("font_size", 22)
-	_selection_info_lbl.add_theme_color_override("font_color", Color(1.0, 0.93, 0.64))
-	top_status_row.add_child(_selection_info_lbl)
+	_selection_info_lbl.add_theme_font_size_override("font_size", 24)
+	_selection_info_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72))
+	_selection_info_lbl.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
+	_selection_info_lbl.add_theme_constant_override("outline_size", 4)
+	header_vbox.add_child(_selection_info_lbl)
 
 	_tactical_details_lbl = Label.new()
 	_tactical_details_lbl.text = ""
@@ -740,20 +750,16 @@ func _build_inspector_and_log_modals() -> void:
 	)
 	_hud_root.add_child(_log_backdrop)
 
-	var log_center: CenterContainer = CenterContainer.new()
-	log_center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	log_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_log_backdrop.add_child(log_center)
-
 	_log_panel = PanelContainer.new()
 	_log_panel.name = "BattleLogOverlay"
-	_log_panel.custom_minimum_size = Vector2(656, 620)
+	_log_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_log_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_log_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_log_panel.add_theme_stylebox_override(
 		"panel",
-		_make_panel_style(Color(0.08, 0.055, 0.038, 0.98), Color(0.90, 0.72, 0.28, 0.96), 20, 2, 14, 12)
+		_make_panel_style(Color(0.08, 0.055, 0.038, 0.98), Color(0.90, 0.72, 0.28, 0.96), 18, 2, 14, 12)
 	)
-	log_center.add_child(_log_panel)
+	_log_backdrop.add_child(_log_panel)
 
 	var log_outer: VBoxContainer = VBoxContainer.new()
 	log_outer.add_theme_constant_override("separation", 8)
@@ -2087,7 +2093,7 @@ func _refresh_floating_hud() -> void:
 			var first_fa: String = "قاره 🗺️" if _first_3d_deck_picked == "continent" else "استراتژی ⚡"
 			_selection_info_lbl.text = "🃏 انتخاب اول: %s — دسته دوم را بزنید" % first_fa
 		else:
-			_selection_info_lbl.text = "🃏 ترکیب ۲ کارت خود را انتخاب کنید:"
+			_selection_info_lbl.text = "🎴 نوبت شماست — روی دسته کارت یا دکمه‌های زیر بزنید:"
 		_set_tactical_detail("")
 
 		var btn_d1: Button = _make_styled_button("🗺️ ۲ قاره", Color(0.12, 0.36, 0.22, 0.98), Color(0.42, 0.90, 0.58), 22, 14, true)
@@ -2116,7 +2122,7 @@ func _refresh_floating_hud() -> void:
 	elif selected_source_continent != "":
 		_populate_attack_action_controls()
 	else:
-		_selection_info_lbl.text = "🚩 روی قاره سبز نقشه یا کارت دستتان بزنید"
+		_selection_info_lbl.text = "🚩 برای حمله، روی یکی از قاره‌های سبز خود بزنید یا کارت دستتان را انتخاب کنید"
 		if _inspected_continent_id != "" and _to_int(my_continents.get(_inspected_continent_id, 0)) <= 0:
 			_set_tactical_detail(_build_continent_inspect_text(_inspected_continent_id))
 		else:
@@ -3219,6 +3225,16 @@ func _toggle_battle_log_panel() -> void:
 		if _log_backdrop.visible:
 			if is_instance_valid(_inspector_backdrop):
 				_inspector_backdrop.visible = false
+			var vp_size = get_viewport().get_visible_rect().size
+			var log_w = minf(650.0, vp_size.x - 28.0)
+			var top_y: float = 140.0
+			if is_instance_valid(_top_strip):
+				top_y = _top_strip.offset_bottom + 6.0
+			var max_h: float = clampf(vp_size.y - top_y - 180.0, 280.0, 520.0)
+			_log_panel.offset_left = -log_w * 0.5
+			_log_panel.offset_right = log_w * 0.5
+			_log_panel.offset_top = top_y
+			_log_panel.offset_bottom = top_y + max_h
 			_rebuild_battle_log_view()
 
 func _rebuild_battle_log_view() -> void:

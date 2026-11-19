@@ -240,20 +240,28 @@ func _build_2d_action_dock() -> void:
 	_action_dock_panel.offset_left = 12.0
 	_action_dock_panel.offset_right = -12.0
 	_action_dock_panel.offset_bottom = -bottom_pad
-	_action_dock_panel.offset_top = -bottom_pad - 62.0
+	_action_dock_panel.offset_top = -bottom_pad - 64.0
 	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var p_style := StyleBoxEmpty.new()
 	_action_dock_panel.add_theme_stylebox_override("panel", p_style)
 	_action_dock_root.add_child(_action_dock_panel)
 
+	var hbox = HBoxContainer.new()
+	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_panel.add_child(hbox)
+
 	_action_roll_btn = Button.new()
 	_action_roll_btn.name = "BtnActionRollDice"
-	_action_roll_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_action_roll_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_action_roll_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_action_roll_btn.custom_minimum_size = Vector2(250.0, 56.0)
 	_action_roll_btn.focus_mode = Control.FOCUS_NONE
 	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_roll_btn.text = "🎲 پرتاب تاس"
 	_action_roll_btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	_action_roll_btn.add_theme_font_size_override("font_size", 22)
+	_action_roll_btn.add_theme_font_size_override("font_size", 26)
 	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_action_roll_btn.add_theme_constant_override("outline_size", 4)
@@ -265,6 +273,10 @@ func _build_2d_action_dock() -> void:
 	normal_sb.set_corner_radius_all(16)
 	normal_sb.shadow_color = Color(0, 0, 0, 0.50)
 	normal_sb.shadow_size = 5
+	normal_sb.content_margin_left = 28
+	normal_sb.content_margin_right = 28
+	normal_sb.content_margin_top = 8
+	normal_sb.content_margin_bottom = 8
 
 	var hover_sb = normal_sb.duplicate() as StyleBoxFlat
 	hover_sb.bg_color = Color(0.16, 0.52, 0.28, 0.98)
@@ -278,6 +290,10 @@ func _build_2d_action_dock() -> void:
 	disabled_sb.border_color = Color(0.36, 0.34, 0.38, 0.50)
 	disabled_sb.set_border_width_all(1)
 	disabled_sb.set_corner_radius_all(16)
+	disabled_sb.content_margin_left = 28
+	disabled_sb.content_margin_right = 28
+	disabled_sb.content_margin_top = 8
+	disabled_sb.content_margin_bottom = 8
 
 	_action_roll_btn.add_theme_stylebox_override("normal", normal_sb)
 	_action_roll_btn.add_theme_stylebox_override("hover", hover_sb)
@@ -285,7 +301,19 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.add_theme_stylebox_override("disabled", disabled_sb)
 
 	_action_roll_btn.pressed.connect(_request_roll_dice)
-	_action_dock_panel.add_child(_action_roll_btn)
+	hbox.add_child(_action_roll_btn)
+
+func _is_start_dialog_open() -> bool:
+	if not GameManager.is_game_active:
+		return true
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
+			return true
+		var so = hud.get_node_or_null("StartGameOverlay") as Control
+		if is_instance_valid(so) and so.visible:
+			return true
+	return false
 
 func _build_3d_roll_dice_button() -> void:
 	_roll_btn_ui = {}
@@ -784,56 +812,6 @@ func _build_center_dice_sanctuary() -> void:
 	_dice_mesh_root = _create_yatzy_die_model(0.082)
 	_dice_pivot.add_child(_dice_mesh_root)
 
-func _build_3d_roll_dice_button() -> void:
-	var btn_size = Vector3(0.76, 0.034, 0.126)
-	var root = Node3D.new()
-	root.name = "BtnRollDice3D"
-	root.position = Vector3(0.0, 0.022, ROLL_BTN_Z)
-	add_child(root)
-
-	# 24K Gold Bezel Base
-	var bezel = MeshInstance3D.new()
-	var bz_box = BoxMesh.new()
-	bz_box.size = btn_size + Vector3(0.022, -0.004, 0.022)
-	bezel.mesh = bz_box
-	bezel.material_override = _mat_brass_gold
-	root.add_child(bezel)
-
-	# Tactile Button Cap
-	var cap = MeshInstance3D.new()
-	var cap_box = BoxMesh.new()
-	cap_box.size = btn_size
-	cap.mesh = cap_box
-	cap.position = Vector3(0.0, 0.005, 0.0)
-	cap.material_override = _mat_btn_roll_idle
-	root.add_child(cap)
-
-	# Decorative Mini Yatzy Dice on Left & Right Ends of the Button
-	for side_x in [-0.31, 0.31]:
-		var mini_die = _create_yatzy_die_model(0.034)
-		mini_die.position = Vector3(side_x, 0.036, 0.0)
-		mini_die.rotation = Vector3(0.38, 0.60 * sign(side_x), -0.32)
-		root.add_child(mini_die)
-
-	# Crisp 3D Persian Label on the Button Cap (hekayat.ttf, no emojis)
-	var lbl = Label3D.new()
-	lbl.position = Vector3(0.0, 0.025, 0.006)
-	lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	lbl.pixel_size = 0.00082
-	lbl.font = preload("res://assets/fonts/hekayat.ttf")
-	lbl.font_size = 46
-	lbl.outline_size = 10
-	lbl.modulate = Color(1.0, 0.96, 0.86)
-	lbl.outline_modulate = Color(0.06, 0.03, 0.01, 0.95)
-	lbl.text = "آماده شروع مسابقه..."
-	root.add_child(lbl)
-
-	_roll_btn_ui = {
-		"root": root,
-		"cap": cap,
-		"label": lbl,
-	}
-
 var _cached_ludo_die_meshes: Dictionary = {}
 
 func _create_yatzy_die_model(sz: float) -> Node3D:
@@ -1173,7 +1151,7 @@ func _update_interactive_highlights() -> void:
 			_action_dock_root.visible = false
 		else:
 			_action_dock_root.visible = true
-			if not GameManager.is_game_active:
+			if not GameManager.is_game_active or _is_start_dialog_open():
 				_action_roll_btn.disabled = true
 				_action_roll_btn.text = "🎲 آماده شروع مسابقه..."
 			elif my_turn and (is_out_of_move or (has_rolled_this_turn and available_moves.is_empty())):
@@ -1468,7 +1446,7 @@ func _on_move_index_hovered(move_idx: int, entered: bool) -> void:
 		_target_preview_ring.visible = false
 
 func _request_roll_dice() -> void:
-	if is_board_locked or not GameManager.is_game_active or _is_animating_move:
+	if is_board_locked or not GameManager.is_game_active or _is_start_dialog_open() or _is_animating_move:
 		return
 	if not GameManager.is_my_turn:
 		show_hint("⏳ اکنون نوبت شما نیست!")

@@ -29,7 +29,8 @@ const FA_DIGITS = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
 
 # --- Portrait Arena & Board Geometry Constants ---
 const ARENA_W: float = 1.16
-const ARENA_L: float = 1.66
+const ARENA_L: float = 1.38
+const ARENA_CENTER_Z: float = -0.09
 const BOARD_H: float = 0.030
 const SURFACE_Y: float = 0.030
 
@@ -206,20 +207,28 @@ func _build_2d_action_dock() -> void:
 	_action_dock_panel.offset_left = 12.0
 	_action_dock_panel.offset_right = -12.0
 	_action_dock_panel.offset_bottom = -bottom_pad
-	_action_dock_panel.offset_top = -bottom_pad - 62.0
+	_action_dock_panel.offset_top = -bottom_pad - 64.0
 	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var p_style := StyleBoxEmpty.new()
 	_action_dock_panel.add_theme_stylebox_override("panel", p_style)
 	_action_dock_root.add_child(_action_dock_panel)
 
+	var hbox = HBoxContainer.new()
+	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_panel.add_child(hbox)
+
 	_action_roll_btn = Button.new()
 	_action_roll_btn.name = "BtnActionRollDice"
-	_action_roll_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_action_roll_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_action_roll_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_action_roll_btn.custom_minimum_size = Vector2(250.0, 56.0)
 	_action_roll_btn.focus_mode = Control.FOCUS_NONE
 	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_roll_btn.text = "🎲 پرتاب تاس"
 	_action_roll_btn.add_theme_font_override("font", _FONT_FA)
-	_action_roll_btn.add_theme_font_size_override("font_size", 22)
+	_action_roll_btn.add_theme_font_size_override("font_size", 26)
 	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_action_roll_btn.add_theme_constant_override("outline_size", 4)
@@ -231,6 +240,10 @@ func _build_2d_action_dock() -> void:
 	normal_sb.set_corner_radius_all(16)
 	normal_sb.shadow_color = Color(0, 0, 0, 0.50)
 	normal_sb.shadow_size = 5
+	normal_sb.content_margin_left = 28
+	normal_sb.content_margin_right = 28
+	normal_sb.content_margin_top = 8
+	normal_sb.content_margin_bottom = 8
 
 	var hover_sb = normal_sb.duplicate() as StyleBoxFlat
 	hover_sb.bg_color = Color(0.16, 0.52, 0.28, 0.98)
@@ -244,6 +257,10 @@ func _build_2d_action_dock() -> void:
 	disabled_sb.border_color = Color(0.36, 0.34, 0.38, 0.50)
 	disabled_sb.set_border_width_all(1)
 	disabled_sb.set_corner_radius_all(16)
+	disabled_sb.content_margin_left = 28
+	disabled_sb.content_margin_right = 28
+	disabled_sb.content_margin_top = 8
+	disabled_sb.content_margin_bottom = 8
 
 	_action_roll_btn.add_theme_stylebox_override("normal", normal_sb)
 	_action_roll_btn.add_theme_stylebox_override("hover", hover_sb)
@@ -251,7 +268,19 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.add_theme_stylebox_override("disabled", disabled_sb)
 
 	_action_roll_btn.pressed.connect(_on_roll_button_tapped)
-	_action_dock_panel.add_child(_action_roll_btn)
+	hbox.add_child(_action_roll_btn)
+
+func _is_start_dialog_open() -> bool:
+	if not GameManager.is_game_active:
+		return true
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
+			return true
+		var so = hud.get_node_or_null("StartGameOverlay") as Control
+		if is_instance_valid(so) and so.visible:
+			return true
+	return false
 
 
 func is_interacting_with_piece() -> bool:
@@ -602,21 +631,21 @@ func _compute_point_anchors() -> void:
 # ==============================================================================
 
 func _build_3d_backgammon_board() -> void:
-	# 1. Master Portrait Carved Walnut Plinth (1.16m wide x 1.66m long)
+	# 1. Master Portrait Carved Walnut Plinth (1.16m wide x 1.38m long)
 	var base_plinth = MeshInstance3D.new()
 	var bp_box = BoxMesh.new()
 	bp_box.size = Vector3(ARENA_W, BOARD_H, ARENA_L)
 	bp_box.material = mat_wood_case
 	base_plinth.mesh = bp_box
-	base_plinth.position = Vector3(0, BOARD_H * 0.5, 0)
+	base_plinth.position = Vector3(0, BOARD_H * 0.5, ARENA_CENTER_Z)
 	add_child(base_plinth)
 
 	# Outer Mahogany Frame Moulding around entire Arena
 	for rim_cfg in [
-		{"pos": Vector3(0, BOARD_H + 0.006, -ARENA_L * 0.5 + 0.016), "size": Vector3(ARENA_W, 0.012, 0.032)},
-		{"pos": Vector3(0, BOARD_H + 0.006, ARENA_L * 0.5 - 0.016), "size": Vector3(ARENA_W, 0.012, 0.032)},
-		{"pos": Vector3(-ARENA_W * 0.5 + 0.016, BOARD_H + 0.006, 0), "size": Vector3(0.032, 0.012, ARENA_L - 0.064)},
-		{"pos": Vector3(ARENA_W * 0.5 - 0.016, BOARD_H + 0.006, 0), "size": Vector3(0.032, 0.012, ARENA_L - 0.064)},
+		{"pos": Vector3(0, BOARD_H + 0.006, ARENA_CENTER_Z - ARENA_L * 0.5 + 0.016), "size": Vector3(ARENA_W, 0.012, 0.032)},
+		{"pos": Vector3(0, BOARD_H + 0.006, ARENA_CENTER_Z + ARENA_L * 0.5 - 0.016), "size": Vector3(ARENA_W, 0.012, 0.032)},
+		{"pos": Vector3(-ARENA_W * 0.5 + 0.016, BOARD_H + 0.006, ARENA_CENTER_Z), "size": Vector3(0.032, 0.012, ARENA_L - 0.064)},
+		{"pos": Vector3(ARENA_W * 0.5 - 0.016, BOARD_H + 0.006, ARENA_CENTER_Z), "size": Vector3(0.032, 0.012, ARENA_L - 0.064)},
 	]:
 		var r_inst = MeshInstance3D.new()
 		var r_box = BoxMesh.new()
@@ -628,7 +657,7 @@ func _build_3d_backgammon_board() -> void:
 
 	# 4 Ornate 24K Gold Corner Medallions on the Master Arena
 	for cx in [-ARENA_W * 0.5 + 0.024, ARENA_W * 0.5 - 0.024]:
-		for cz in [-ARENA_L * 0.5 + 0.024, ARENA_L * 0.5 - 0.024]:
+		for cz in [ARENA_CENTER_Z - ARENA_L * 0.5 + 0.024, ARENA_CENTER_Z + ARENA_L * 0.5 - 0.024]:
 			var med = MeshInstance3D.new()
 			var cyl = CylinderMesh.new()
 			cyl.top_radius = 0.022
@@ -1760,7 +1789,7 @@ func _refresh_ui_and_highlights() -> void:
 			_action_dock_root.visible = false
 		else:
 			_action_dock_root.visible = true
-			if not GameManager.is_game_active:
+			if not GameManager.is_game_active or _is_start_dialog_open():
 				_action_roll_btn.disabled = true
 				_action_roll_btn.text = "🎲 آماده شروع بازی..."
 			elif is_my_turn and not dices_rolled:
@@ -2468,7 +2497,7 @@ func _find_nearest_visible_die(local_x: float) -> int:
 
 
 func _on_roll_button_tapped() -> void:
-	if not GameManager.is_game_active:
+	if not GameManager.is_game_active or _is_start_dialog_open():
 		return
 
 	# Ensure turn state is synced with GameManager

@@ -25,7 +25,8 @@ extends "res://scripts/games/base_game_board.gd"
 
 # --- Rectangular Board Geometry Constants ---
 const BOARD_W: float = 1.06
-const BOARD_L: float = 1.68
+const BOARD_L: float = 1.36
+const BOARD_CENTER_Z: float = -0.08
 const BOARD_H: float = 0.030
 
 const NUM_CATEGORIES: int = 12
@@ -183,14 +184,15 @@ func _build_2d_action_dock() -> void:
 
 	var hbox := HBoxContainer.new()
 	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	hbox.add_theme_constant_override("separation", 10)
+	hbox.add_theme_constant_override("separation", 16)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	_action_dock_panel.add_child(hbox)
 
 	_action_roll_btn = Button.new()
 	_action_roll_btn.name = "BtnActionRollDice"
-	_action_roll_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_action_roll_btn.custom_minimum_size = Vector2(0, 54)
+	_action_roll_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_action_roll_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_action_roll_btn.custom_minimum_size = Vector2(170.0, 54.0)
 	_action_roll_btn.focus_mode = Control.FOCUS_NONE
 	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_roll_btn.text = "🎲 تاس بریز (۳)"
@@ -198,7 +200,7 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	if _game_font:
 		_action_roll_btn.add_theme_font_override("font", _game_font)
-	_action_roll_btn.add_theme_font_size_override("font_size", 20)
+	_action_roll_btn.add_theme_font_size_override("font_size", 24)
 	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_action_roll_btn.add_theme_constant_override("outline_size", 3)
@@ -210,8 +212,10 @@ func _build_2d_action_dock() -> void:
 	roll_normal.set_corner_radius_all(14)
 	roll_normal.shadow_color = Color(0, 0, 0, 0.45)
 	roll_normal.shadow_size = 4
-	roll_normal.content_margin_left = 8
-	roll_normal.content_margin_right = 8
+	roll_normal.content_margin_left = 20
+	roll_normal.content_margin_right = 20
+	roll_normal.content_margin_top = 8
+	roll_normal.content_margin_bottom = 8
 
 	var roll_hover = roll_normal.duplicate() as StyleBoxFlat
 	roll_hover.bg_color = Color(0.16, 0.46, 0.85, 0.98)
@@ -224,8 +228,10 @@ func _build_2d_action_dock() -> void:
 	dis_sb.border_color = Color(0.36, 0.34, 0.38, 0.50)
 	dis_sb.set_border_width_all(1)
 	dis_sb.set_corner_radius_all(14)
-	dis_sb.content_margin_left = 8
-	dis_sb.content_margin_right = 8
+	dis_sb.content_margin_left = 20
+	dis_sb.content_margin_right = 20
+	dis_sb.content_margin_top = 8
+	dis_sb.content_margin_bottom = 8
 
 	_action_roll_btn.add_theme_stylebox_override("normal", roll_normal)
 	_action_roll_btn.add_theme_stylebox_override("hover", roll_hover)
@@ -236,8 +242,9 @@ func _build_2d_action_dock() -> void:
 
 	_action_submit_btn = Button.new()
 	_action_submit_btn.name = "BtnActionSubmitScore"
-	_action_submit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_action_submit_btn.custom_minimum_size = Vector2(0, 54)
+	_action_submit_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_action_submit_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_action_submit_btn.custom_minimum_size = Vector2(170.0, 54.0)
 	_action_submit_btn.focus_mode = Control.FOCUS_NONE
 	_action_submit_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_submit_btn.text = "✅ ثبت امتیاز"
@@ -245,7 +252,7 @@ func _build_2d_action_dock() -> void:
 	_action_submit_btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	if _game_font:
 		_action_submit_btn.add_theme_font_override("font", _game_font)
-	_action_submit_btn.add_theme_font_size_override("font_size", 20)
+	_action_submit_btn.add_theme_font_size_override("font_size", 24)
 	_action_submit_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_submit_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_action_submit_btn.add_theme_constant_override("outline_size", 3)
@@ -257,8 +264,10 @@ func _build_2d_action_dock() -> void:
 	sub_normal.set_corner_radius_all(14)
 	sub_normal.shadow_color = Color(0, 0, 0, 0.45)
 	sub_normal.shadow_size = 4
-	sub_normal.content_margin_left = 8
-	sub_normal.content_margin_right = 8
+	sub_normal.content_margin_left = 20
+	sub_normal.content_margin_right = 20
+	sub_normal.content_margin_top = 8
+	sub_normal.content_margin_bottom = 8
 
 	var sub_hover = sub_normal.duplicate() as StyleBoxFlat
 	sub_hover.bg_color = Color(0.16, 0.52, 0.28, 0.98)
@@ -272,6 +281,18 @@ func _build_2d_action_dock() -> void:
 	_action_submit_btn.add_theme_stylebox_override("disabled", dis_sb)
 	_action_submit_btn.pressed.connect(_on_submit_button_clicked)
 	hbox.add_child(_action_submit_btn)
+
+func _is_start_dialog_open() -> bool:
+	if not GameManager.is_game_active:
+		return true
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
+			return true
+		var so = hud.get_node_or_null("StartGameOverlay") as Control
+		if is_instance_valid(so) and so.visible:
+			return true
+	return false
 
 func _hide_hands_for_yatzy() -> void:
 	pass
@@ -545,21 +566,21 @@ func _init_materials() -> void:
 # ==============================================================================
 
 func _build_3d_arena() -> void:
-	# 1. Outer Carved Walnut Rectangular Plinth (1.06m wide x 1.68m long)
+	# 1. Outer Carved Walnut Rectangular Plinth (1.06m wide x 1.36m long)
 	var plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
 	plinth_mesh.size = Vector3(BOARD_W, BOARD_H, BOARD_L)
 	plinth_mesh.material = mat_wood_base
 	plinth.mesh = plinth_mesh
-	plinth.position = Vector3(0, BOARD_H * 0.5, 0)
+	plinth.position = Vector3(0, BOARD_H * 0.5, BOARD_CENTER_Z)
 	add_child(plinth)
 
 	# Raised Mahogany Outer Frame Border
 	for rim_cfg in [
-		{"pos": Vector3(0, BOARD_H + 0.006, -BOARD_L * 0.5 + 0.018), "size": Vector3(BOARD_W, 0.012, 0.036)},
-		{"pos": Vector3(0, BOARD_H + 0.006, BOARD_L * 0.5 - 0.018), "size": Vector3(BOARD_W, 0.012, 0.036)},
-		{"pos": Vector3(-BOARD_W * 0.5 + 0.018, BOARD_H + 0.006, 0), "size": Vector3(0.036, 0.012, BOARD_L - 0.072)},
-		{"pos": Vector3(BOARD_W * 0.5 - 0.018, BOARD_H + 0.006, 0), "size": Vector3(0.036, 0.012, BOARD_L - 0.072)},
+		{"pos": Vector3(0, BOARD_H + 0.006, BOARD_CENTER_Z - BOARD_L * 0.5 + 0.018), "size": Vector3(BOARD_W, 0.012, 0.036)},
+		{"pos": Vector3(0, BOARD_H + 0.006, BOARD_CENTER_Z + BOARD_L * 0.5 - 0.018), "size": Vector3(BOARD_W, 0.012, 0.036)},
+		{"pos": Vector3(-BOARD_W * 0.5 + 0.018, BOARD_H + 0.006, BOARD_CENTER_Z), "size": Vector3(0.036, 0.012, BOARD_L - 0.072)},
+		{"pos": Vector3(BOARD_W * 0.5 - 0.018, BOARD_H + 0.006, BOARD_CENTER_Z), "size": Vector3(0.036, 0.012, BOARD_L - 0.072)},
 	]:
 		var r_inst = MeshInstance3D.new()
 		var r_box = BoxMesh.new()
@@ -571,10 +592,10 @@ func _build_3d_arena() -> void:
 
 	# Inner Gold Filigree Inlay Frame
 	for border_cfg in [
-		{"pos": Vector3(0, BOARD_H + 0.013, -BOARD_L * 0.5 + 0.028), "size": Vector3(BOARD_W - 0.04, 0.004, 0.010)},
-		{"pos": Vector3(0, BOARD_H + 0.013, BOARD_L * 0.5 - 0.028), "size": Vector3(BOARD_W - 0.04, 0.004, 0.010)},
-		{"pos": Vector3(-BOARD_W * 0.5 + 0.028, BOARD_H + 0.013, 0), "size": Vector3(0.010, 0.004, BOARD_L - 0.056)},
-		{"pos": Vector3(BOARD_W * 0.5 - 0.028, BOARD_H + 0.013, 0), "size": Vector3(0.010, 0.004, BOARD_L - 0.056)},
+		{"pos": Vector3(0, BOARD_H + 0.013, BOARD_CENTER_Z - BOARD_L * 0.5 + 0.028), "size": Vector3(BOARD_W - 0.04, 0.004, 0.010)},
+		{"pos": Vector3(0, BOARD_H + 0.013, BOARD_CENTER_Z + BOARD_L * 0.5 - 0.028), "size": Vector3(BOARD_W - 0.04, 0.004, 0.010)},
+		{"pos": Vector3(-BOARD_W * 0.5 + 0.028, BOARD_H + 0.013, BOARD_CENTER_Z), "size": Vector3(0.010, 0.004, BOARD_L - 0.056)},
+		{"pos": Vector3(BOARD_W * 0.5 - 0.028, BOARD_H + 0.013, BOARD_CENTER_Z), "size": Vector3(0.010, 0.004, BOARD_L - 0.056)},
 	]:
 		var b_inst = MeshInstance3D.new()
 		var b_box = BoxMesh.new()
@@ -586,7 +607,7 @@ func _build_3d_arena() -> void:
 
 	# 4 Brass Corner Medallions
 	for cx in [-BOARD_W * 0.5 + 0.028, BOARD_W * 0.5 - 0.028]:
-		for cz in [-BOARD_L * 0.5 + 0.028, BOARD_L * 0.5 - 0.028]:
+		for cz in [BOARD_CENTER_Z - BOARD_L * 0.5 + 0.028, BOARD_CENTER_Z + BOARD_L * 0.5 - 0.028]:
 			var med = MeshInstance3D.new()
 			var cyl = CylinderMesh.new()
 			cyl.top_radius = 0.022
@@ -1381,7 +1402,7 @@ func _refresh_visuals() -> void:
 			d_ui["pivot"].rotation = _get_die_target_rotation(val)
 
 	# 3. Refresh Action Buttons & Status Guidance (hidden completely in spectator mode)
-	var can_act = GameManager.is_game_active and not is_round_played and not is_board_locked and not GameManager.is_spectating
+	var can_act = GameManager.is_game_active and not _is_start_dialog_open() and not is_round_played and not is_board_locked and not GameManager.is_spectating
 	var can_roll = can_act and (remaining_rolls > 0) and not is_rolling_dice
 
 	if is_instance_valid(_action_roll_btn) and is_instance_valid(_action_submit_btn) and is_instance_valid(_action_dock_root):
@@ -1625,7 +1646,7 @@ func _on_die_clicked(die_idx: int) -> void:
 		tw.tween_property(pivot, "position:y", target_y, 0.14)
 
 func _on_roll_button_clicked() -> void:
-	if not GameManager.is_game_active:
+	if not GameManager.is_game_active or _is_start_dialog_open():
 		return
 	if is_round_played:
 		AudioManager.play_sound("miss_turn")
@@ -1648,7 +1669,7 @@ func _on_roll_button_clicked() -> void:
 	send_move(Commands.Roll_Dice, {"selected_indexes": kept})
 
 func _on_submit_button_clicked() -> void:
-	if not GameManager.is_game_active:
+	if not GameManager.is_game_active or _is_start_dialog_open():
 		return
 	if is_round_played:
 		AudioManager.play_sound("miss_turn")

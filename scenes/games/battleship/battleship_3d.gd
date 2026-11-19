@@ -157,6 +157,7 @@ func _is_gui_blocking_at(screen_pos: Vector2) -> bool:
 	return false
 
 func _ready() -> void:
+	add_to_group("battleship_board")
 	game_type = GameTypes.BATTLESHIP
 	if ResourceLoader.exists("res://assets/fonts/hekayat.ttf"):
 		_game_font = load("res://assets/fonts/hekayat.ttf")
@@ -520,7 +521,7 @@ func _build_phase1_setup_ui() -> void:
 		phase1_cell_meshes,
 		false
 	)
-	phase1_grid_root.position = Vector3(-0.04, 0.0, -0.10)
+	phase1_grid_root.position = Vector3(-0.04, 0.0, 0.0)
 
 	# Pre-allocated Ghost Preview Tiles
 	ghost_preview_root = Node3D.new()
@@ -541,64 +542,24 @@ func _build_phase1_setup_ui() -> void:
 	selected_ship_rotate_badge = _create_selected_ship_rotate_indicator()
 	phase1_grid_root.add_child(selected_ship_rotate_badge)
 
-	# Bottom Wide Command Console Bar (1.16m wide, right below the 8x8 grid!)
+	# 3D drydock root kept for compatibility (ship selection now handled via 2D action dock)
 	drydock_root = Node3D.new()
 	drydock_root.name = "DrydockRoot"
 	drydock_root.position = Vector3(-0.04, 0.0, 0.62)
 	phase1_root.add_child(drydock_root)
+	drydock_slot_highlights.clear()
 
-	var dock_panel = MeshInstance3D.new()
-	var dm = BoxMesh.new()
-	dm.size = Vector3(1.16, 0.016, 0.21)
-	dock_panel.mesh = dm
-	dock_panel.position = Vector3(0, 0.008, 0.0)
-	dock_panel.material_override = _mat_mahogany
-	drydock_root.add_child(dock_panel)
-
-	var dock_rim = MeshInstance3D.new()
-	var drm = BoxMesh.new()
-	drm.size = Vector3(1.12, 0.018, 0.18)
-	dock_rim.mesh = drm
-	dock_rim.position = Vector3(0, 0.011, 0.0)
-	dock_rim.material_override = _mat_brass
-	drydock_root.add_child(dock_rim)
-
-	var dock_inner = MeshInstance3D.new()
-	var dim = BoxMesh.new()
-	dim.size = Vector3(1.10, 0.020, 0.16)
-	dock_inner.mesh = dim
-	dock_inner.position = Vector3(0, 0.014, 0.0)
-	var mat_dock_in = StandardMaterial3D.new()
-	mat_dock_in.albedo_color = Color(0.07, 0.12, 0.18)
-	mat_dock_in.roughness = 0.35
-	dock_inner.material_override = mat_dock_in
-	drydock_root.add_child(dock_inner)
-
-	# Status Hint Label along top edge of Command Bar
-	lbl_phase1_hint = _create_3d_label("برای جابجایی کشتی را بکشید • برای چرخش روی کشتی کلیک کنید", 22, Color(0.85, 0.95, 1.0), 0.00155)
-	lbl_phase1_hint.position = Vector3(0, 0.027, -0.052)
-	drydock_root.add_child(lbl_phase1_hint)
-
-	# 4 Ship Selector Buttons (Lengths 5, 4, 3, 2)
-	for i in range(4):
-		var s_len: int = CMD_BERTH_LENGTHS[i]
-		var bx: float = CMD_BERTH_X[i]
-
-		var slot_box = MeshInstance3D.new()
-		var sbm = BoxMesh.new()
-		sbm.size = Vector3(0.135, 0.010, 0.082)
-		slot_box.mesh = sbm
-		slot_box.position = Vector3(bx, 0.028, 0.022)
-		var slot_mat = StandardMaterial3D.new()
-		slot_mat.albedo_color = Color(0.14, 0.24, 0.34)
-		slot_mat.roughness = 0.3
-		slot_box.material_override = slot_mat
-		drydock_root.add_child(slot_box)
-		drydock_slot_highlights[s_len] = slot_box
-
-		var lbl_s = _create_3d_label("ناو %s" % _fa_num(s_len), 24, Color(1.0, 0.92, 0.48), 0.00160)
-		lbl_s.position = Vector3(bx, 0.036, 0.022)
-		drydock_root.add_child(lbl_s)
+func select_or_rotate_ship(s_len: int) -> void:
+	if is_play_phase or is_board_saved:
+		return
+	_mark_piece_interaction()
+	if selected_ship_len == s_len:
+		_rotate_selected_ship()
+	else:
+		selected_ship_len = s_len
+		_highlight_selected_drydock_berth()
+		_rebuild_phase1_ships_visuals()
+		_show_phase1_feedback("ناو %s انتخاب شد — برای چرخش دوباره کلیک کنید" % _fa_num(s_len), Color(1.0, 0.90, 0.45))
 
 func _create_selected_ship_rotate_indicator() -> Node3D:
 	var root = Node3D.new()

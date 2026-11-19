@@ -1626,7 +1626,6 @@ func _render_cosmetics() -> void:
 			_selected_avatar_id = current_i
 			for other in avatar_entries:
 				_apply_cosmetic_tile_state(other, other == entry_ref[0], true)
-			show_toast("آواتار شماره %s برگزیده شد." % GameManager.to_fa_num(current_i + 1), CafeSocialTheme.COL_GOLD_BRIGHT)
 
 		var entry: Dictionary = _create_cosmetic_tile(tex, current_i == _selected_avatar_id, is_locked, on_tap)
 		entry_ref.append(entry)
@@ -1718,7 +1717,6 @@ func _render_frames() -> void:
 			_selected_frame_id = cur_fid
 			for other in frame_entries:
 				_apply_cosmetic_tile_state(other, other == entry_ref[0], true)
-			show_toast("قاب شماره %s برگزیده شد." % GameManager.to_fa_num(cur_fid), CafeSocialTheme.COL_GOLD_BRIGHT)
 
 		var entry: Dictionary = _create_cosmetic_tile(f_tex, cur_fid == _selected_frame_id, is_locked, on_tap)
 		entry_ref.append(entry)

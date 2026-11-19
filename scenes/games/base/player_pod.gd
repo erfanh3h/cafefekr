@@ -64,6 +64,7 @@ func _init_radial_ring() -> void:
 
 func _configure_bidi() -> void:
 	HudTheme.configure_bidi_label(name_label, true)
+	name_label.justification_flags = TextServer.JUSTIFICATION_NONE
 	HudTheme.configure_bidi_label(lbl_counter, false)
 	HudTheme.configure_bidi_label(lbl_ring_timer, false)
 	if is_instance_valid(lbl_status):
@@ -128,7 +129,8 @@ func _apply_mode_metrics() -> void:
 			name_font_px = 15
 			counter_font_px = 14
 			timer_font_px = 10
-			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_FILL
+			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			name_label.justification_flags = TextServer.JUSTIFICATION_NONE
 			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			if counter_badge.visible and not lbl_counter.text.strip_edges().is_empty():
 				counter_badge.custom_minimum_size = Vector2(34.0, 24.0)

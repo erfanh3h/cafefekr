@@ -17,10 +17,67 @@ static func _has_ancestor_scroll(node: Node) -> bool:
 static func _notify_host_toast(host: Control, msg: String) -> void:
 	if not is_instance_valid(host):
 		return
-	if host.has_method("_show_toast"):
-		host._show_toast(msg)
-	elif host.has_method("show_toast"):
-		host.show_toast(msg)
+	_show_bottom_center_toast(host, msg)
+
+static func _show_bottom_center_toast(host: Control, msg: String) -> void:
+	if not is_instance_valid(host) or not host.is_inside_tree():
+		return
+	var root: Viewport = host.get_viewport()
+	if not root:
+		return
+
+	var old = root.find_child("SocialBottomCenterToast", false, false)
+	if is_instance_valid(old):
+		old.queue_free()
+
+	var toast_layer = CanvasLayer.new()
+	toast_layer.name = "SocialBottomCenterToast"
+	toast_layer.layer = 120
+	root.add_child(toast_layer)
+
+	var panel = PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	panel.offset_left = 32.0
+	panel.offset_right = -32.0
+	panel.offset_bottom = -96.0
+	panel.offset_top = -156.0
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = Color(0.10, 0.07, 0.05, 0.96)
+	sb.border_color = Color(0.92, 0.74, 0.30, 0.95)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(14)
+	sb.shadow_color = Color(0, 0, 0, 0.55)
+	sb.shadow_size = 6
+	sb.content_margin_left = 20
+	sb.content_margin_right = 20
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	panel.add_theme_stylebox_override("panel", sb)
+	toast_layer.add_child(panel)
+
+	var lbl = Label.new()
+	lbl.text = msg
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
+	panel.add_child(lbl)
+
+	panel.modulate.a = 0.0
+	var tw = toast_layer.create_tween()
+	tw.tween_property(panel, "modulate:a", 1.0, 0.20)
+	tw.tween_interval(2.2)
+	tw.tween_property(panel, "modulate:a", 0.0, 0.30)
+	tw.tween_callback(func():
+		if is_instance_valid(toast_layer):
+			toast_layer.queue_free()
+	)
 
 
 static func _refresh_host(host: Control) -> void:
@@ -367,7 +424,18 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 		)
 		act_row.add_child(b_gacc)
 
-	if not is_read:
+		var b_grej := CafeSocialTheme.make_button("رد دعوت", "crimson", Vector2(140, 46), 22)
+		b_grej.pressed.connect(func():
+			AudioManager.sfx_tap()
+			b_grej.disabled = true
+			NetworkManager.respond_game_invite_realtime(g_inv_id, "reject")
+			NetworkManager.api.mark_notification_read(nid, func(_ok: bool, _c2: int, _d2: Variant):
+				_refresh_host(host)
+			)
+		)
+		act_row.add_child(b_grej)
+
+	elif not is_read:
 		has_acts = true
 		var b_mark := CafeSocialTheme.make_button("خوانده شد", "bronze", Vector2(140, 46), 22)
 		b_mark.pressed.connect(func():

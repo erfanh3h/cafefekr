@@ -510,7 +510,7 @@ func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_f
 	root.name = "RotationPaddle_%d" % rot_id
 	root.position = pos
 
-	var dial_x: float = -0.044 if is_ccw else 0.044
+	var dial_x: float = -0.048 if is_ccw else 0.048
 	var ccw_key: int = 1 if is_ccw else 0
 
 	# 1. Stepped Pill-Shaped 24K Gold Bezel + Dial Housing (5 static meshes baked into 1 cached ArrayMesh)
@@ -518,7 +518,7 @@ func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_f
 		var h_temp = Node3D.new()
 		var bezel_center = MeshInstance3D.new()
 		var bz_box = BoxMesh.new()
-		bz_box.size = Vector3(0.096, 0.016, 0.072)
+		bz_box.size = Vector3(0.108, 0.016, 0.072)
 		bezel_center.mesh = bz_box
 		bezel_center.material_override = mat_gold_rail
 		h_temp.add_child(bezel_center)
@@ -527,7 +527,7 @@ func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_f
 			var bzc_cyl = CylinderMesh.new()
 			bzc_cyl.top_radius = 0.036; bzc_cyl.bottom_radius = 0.037; bzc_cyl.height = 0.016; bzc_cyl.radial_segments = 16; bzc_cyl.rings = 1
 			bz_cap.mesh = bzc_cyl
-			bz_cap.position = Vector3(end_sign * 0.048, 0.0, 0.0)
+			bz_cap.position = Vector3(end_sign * 0.054, 0.0, 0.0)
 			bz_cap.material_override = mat_gold_rail
 			h_temp.add_child(bz_cap)
 		var dial_well = MeshInstance3D.new()
@@ -553,10 +553,10 @@ func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_f
 
 	# 2. Inner Interactive Core Pill Plate (3 parts baked into 1 single MeshInstance3D!)
 	var plate_temp = Node3D.new()
-	var pl_c = MeshInstance3D.new(); var pl_box = BoxMesh.new(); pl_box.size = Vector3(0.090, 0.020, 0.062); pl_c.mesh = pl_box; plate_temp.add_child(pl_c)
+	var pl_c = MeshInstance3D.new(); var pl_box = BoxMesh.new(); pl_box.size = Vector3(0.102, 0.020, 0.062); pl_c.mesh = pl_box; plate_temp.add_child(pl_c)
 	for end_sign in [-1.0, 1.0]:
 		var pl_cap = MeshInstance3D.new(); var plc_cyl = CylinderMesh.new(); plc_cyl.top_radius = 0.031; plc_cyl.bottom_radius = 0.031; plc_cyl.height = 0.020; plc_cyl.radial_segments = 16; plc_cyl.rings = 1
-		pl_cap.mesh = plc_cyl; pl_cap.position = Vector3(end_sign * 0.045, 0.0, 0.0); plate_temp.add_child(pl_cap)
+		pl_cap.mesh = plc_cyl; pl_cap.position = Vector3(end_sign * 0.051, 0.0, 0.0); plate_temp.add_child(pl_cap)
 	var plate_baked = BaseGameBoard.bake_node_tree_to_mesh(plate_temp, false)
 	plate_temp.free()
 
@@ -641,13 +641,13 @@ func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_f
 	var lbl = Label3D.new()
 	lbl.name = "DirLabel"
 	lbl.font = _font_hekayat
-	lbl.font_size = 36
-	lbl.outline_size = 10
+	lbl.font_size = 28
+	lbl.outline_size = 8
 	lbl.modulate = Color(1.0, 0.96, 0.74)
 	lbl.outline_modulate = Color(0.04, 0.03, 0.02, 0.98)
-	lbl.position = Vector3(0.020 if is_ccw else -0.020, 0.015, 0.0)
+	lbl.position = Vector3(0.024 if is_ccw else -0.024, 0.015, 0.0)
 	lbl.rotation.x = -PI * 0.5
-	lbl.pixel_size = 0.00092
+	lbl.pixel_size = 0.00075
 	lbl.text = label_fa
 	root.add_child(lbl)
 
@@ -975,14 +975,14 @@ func _build_rotation_paddles() -> void:
 	# Position each of the 8 rotation buttons clearly on its quadrant console:
 	# Left button = CCW (odd id: 1, 3, 5, 7) and Right button = CW (even id: 2, 4, 6, 8)
 	var btn_specs: Array = [
-		{"id": 1, "pos": Vector3(-0.288, BOARD_SURFACE_Y + 0.004, -0.458), "ccw": true,  "txt": "چرخش چپ"},
-		{"id": 2, "pos": Vector3(-0.102, BOARD_SURFACE_Y + 0.004, -0.458), "ccw": false, "txt": "چرخش راست"},
-		{"id": 3, "pos": Vector3(0.102,  BOARD_SURFACE_Y + 0.004, -0.458), "ccw": true,  "txt": "چرخش چپ"},
-		{"id": 4, "pos": Vector3(0.288,  BOARD_SURFACE_Y + 0.004, -0.458), "ccw": false, "txt": "چرخش راست"},
-		{"id": 5, "pos": Vector3(-0.288, BOARD_SURFACE_Y + 0.004,  0.458), "ccw": true,  "txt": "چرخش چپ"},
-		{"id": 6, "pos": Vector3(-0.102, BOARD_SURFACE_Y + 0.004,  0.458), "ccw": false, "txt": "چرخش راست"},
-		{"id": 7, "pos": Vector3(0.102,  BOARD_SURFACE_Y + 0.004,  0.458), "ccw": true,  "txt": "چرخش چپ"},
-		{"id": 8, "pos": Vector3(0.288,  BOARD_SURFACE_Y + 0.004,  0.458), "ccw": false, "txt": "چرخش راست"}
+		{"id": 1, "pos": Vector3(-0.288, BOARD_SURFACE_Y + 0.004, -0.458), "ccw": true,  "txt": "چپ"},
+		{"id": 2, "pos": Vector3(-0.102, BOARD_SURFACE_Y + 0.004, -0.458), "ccw": false, "txt": "راست"},
+		{"id": 3, "pos": Vector3(0.102,  BOARD_SURFACE_Y + 0.004, -0.458), "ccw": true,  "txt": "چپ"},
+		{"id": 4, "pos": Vector3(0.288,  BOARD_SURFACE_Y + 0.004, -0.458), "ccw": false, "txt": "راست"},
+		{"id": 5, "pos": Vector3(-0.288, BOARD_SURFACE_Y + 0.004,  0.458), "ccw": true,  "txt": "چپ"},
+		{"id": 6, "pos": Vector3(-0.102, BOARD_SURFACE_Y + 0.004,  0.458), "ccw": false, "txt": "راست"},
+		{"id": 7, "pos": Vector3(0.102,  BOARD_SURFACE_Y + 0.004,  0.458), "ccw": true,  "txt": "چپ"},
+		{"id": 8, "pos": Vector3(0.288,  BOARD_SURFACE_Y + 0.004,  0.458), "ccw": false, "txt": "راست"}
 	]
 	for spec in btn_specs:
 		var rid: int = int(spec["id"])

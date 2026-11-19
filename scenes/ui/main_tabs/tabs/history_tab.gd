@@ -92,6 +92,12 @@ func _load_leaderboard(lb_type: String) -> void:
 	for c in lb_list_vbox.get_children():
 		c.queue_free()
 	lb_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت رتبه‌بندی..."))
+	if lb_type == "clans":
+		if is_instance_valid(your_rank_footer):
+			your_rank_footer.visible = false
+	else:
+		if is_instance_valid(your_rank_footer):
+			your_rank_footer.visible = true
 	_update_your_rank_footer([], lb_type, {})
 
 	var on_received := func(ok: bool, _c: int, data: Variant) -> void:
@@ -230,9 +236,9 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 
 		var is_me: bool = (item_uid == my_uid and not my_uid.is_empty() and lb_type != "clans")
 
-		# --- Compact Scannable Outer Card (74px tall -> 6-8 rows visible) ---
+		# --- Enhanced Scannable Outer Card (92px tall) ---
 		var card: Button = Button.new()
-		card.custom_minimum_size = Vector2(0, 74)
+		card.custom_minimum_size = Vector2(0, 92)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.flat = false
 		card.focus_mode = Control.FOCUS_NONE
@@ -254,8 +260,8 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pad.add_theme_constant_override("margin_left", 56)
 		pad.add_theme_constant_override("margin_right", 34)
-		pad.add_theme_constant_override("margin_top", 8)
-		pad.add_theme_constant_override("margin_bottom", 8)
+		pad.add_theme_constant_override("margin_top", 10)
+		pad.add_theme_constant_override("margin_bottom", 10)
 		card.add_child(pad)
 
 		var row: HBoxContainer = HBoxContainer.new()
@@ -438,10 +444,10 @@ func _build_metric_box(metric_val: int, icon_tex: Texture2D, show_dash: bool = f
 
 	var ico: TextureRect = TextureRect.new()
 	ico.texture = icon_tex
-	ico.custom_minimum_size = Vector2(22, 22)
+	ico.custom_minimum_size = Vector2(28, 28)
 	ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	ico.modulate = Color(1.0, 0.92, 0.52, 1.0)
+	ico.modulate = Color(1.0, 0.84, 0.22, 1.0) # Golden tone for left icon
 	ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	val_box.add_child(ico)
 
@@ -450,7 +456,7 @@ func _build_metric_box(metric_val: int, icon_tex: Texture2D, show_dash: bool = f
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-	val_lbl.add_theme_font_size_override("font_size", 24)
+	val_lbl.add_theme_font_size_override("font_size", 25)
 	val_lbl.add_theme_color_override("font_color", Color("#FFD86B"))
 	val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
 	val_lbl.add_theme_constant_override("shadow_offset_y", 2)
@@ -463,6 +469,12 @@ func _build_metric_box(metric_val: int, icon_tex: Texture2D, show_dash: bool = f
 func _update_your_rank_footer(raw_list: Array, lb_type: String, extra_meta: Dictionary = {}) -> void:
 	if not is_instance_valid(your_rank_footer):
 		return
+	if lb_type == "clans":
+		your_rank_footer.visible = false
+		for c in your_rank_footer.get_children():
+			c.queue_free()
+		return
+	your_rank_footer.visible = true
 	for c in your_rank_footer.get_children():
 		c.queue_free()
 

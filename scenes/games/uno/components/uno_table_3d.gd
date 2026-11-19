@@ -216,19 +216,11 @@ func _build_tabletop() -> void:
 	_add_torus(self, 0.258, 0.264, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
 
 	# =========================================================================
-	# 2. 3D DIRECTION FLOW INDICATOR (Spinner removed per design request)
+	# 2. 3D DIRECTION FLOW INDICATOR (Direction arrow and text removed per design request)
 	# =========================================================================
 	_direction_pivot = Node3D.new()
 	_direction_pivot.position = Vector3(-0.03, y_base + 0.004, 0.265)
 	add_child(_direction_pivot)
-
-	_add_box(_direction_pivot, Vector3(0.26, 0.005, 0.044), Vector3(0.0, 0.001, 0.0), mat_walnut)
-	_add_box(_direction_pivot, Vector3(0.27, 0.003, 0.048), Vector3(0.0, 0.0, 0.0), mat_bronze)
-
-	_direction_arrow_lbl = _create_label_3d("↻ ساعتگرد", 28, Color(0.98, 0.90, 0.62), 0.00105)
-	_direction_arrow_lbl.position = Vector3(0.0, 0.005, 0.0)
-	_direction_arrow_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	_direction_pivot.add_child(_direction_arrow_lbl)
 
 	# =========================================================================
 	# 3. DRAW PILE (Left of Center) - Sculpted Dealer Shoe + Thick 3D UNO Deck
@@ -701,18 +693,7 @@ func update_3d_opponent_fans(seat_counts: Dictionary, active_seat: int, seat_nam
 			_add_box(card_pivot, Vector3(0.058, 0.084, 0.003), Vector3(0.0, 0.0, 0.0004), c_mat)
 			_add_box(card_pivot, Vector3(0.030, 0.042, 0.0034), Vector3(0.0, 0.0, 0.0006), mat_card_red_oval, Vector3(0.0, 0.0, -18.0))
 
-		# 3. Floating 3D Seat Badge (Player Name + Card Count + UNO / Turn Halo)
-		var badge_str: String = "%s • %s🃏" % [p_name, UnoCardWidget.to_fa_digits(str(count))]
-		if has_uno or count == 1:
-			badge_str = "🔥 UNO! • " + badge_str
-		elif is_turn:
-			badge_str = "🟢 " + badge_str
-		var badge_col: Color = Color(1.0, 0.48, 0.48) if (has_uno or count == 1) else (Color(0.46, 0.98, 0.66) if is_turn else Color(0.95, 0.90, 0.78))
-		var seat_lbl: Label3D = _create_label_3d(badge_str, 30, badge_col, 0.00112)
-		seat_lbl.position = Vector3(0.0, 0.112, 0.0)
-		seat_lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		seat_lbl.no_depth_test = true
-		holder.add_child(seat_lbl)
+		# (Opponent cards count is displayed on top opponent headers per design request)
 
 func get_opponent_seat_screen_pos(seat_idx: int) -> Vector2:
 	var vp: Viewport = get_viewport()

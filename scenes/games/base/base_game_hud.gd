@@ -3322,6 +3322,9 @@ func _exit_tree() -> void:
 
 # Phase 2: All 4 buttons (✓, ✕, 🎯, 👥) are visible
 
+var _bs_ship_row: HBoxContainer = null
+var _bs_ship_buttons: Dictionary = {}
+
 func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color, is_primary: bool = false) -> void:
 	if not is_instance_valid(btn):
 		return
@@ -3333,10 +3336,10 @@ func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color
 	normal_sb.set_corner_radius_all(14)
 	normal_sb.shadow_color = Color(0, 0, 0, 0.45)
 	normal_sb.shadow_size = 4
-	normal_sb.content_margin_left = 10
-	normal_sb.content_margin_right = 10
-	normal_sb.content_margin_top = 4
-	normal_sb.content_margin_bottom = 4
+	normal_sb.content_margin_left = 22
+	normal_sb.content_margin_right = 22
+	normal_sb.content_margin_top = 8
+	normal_sb.content_margin_bottom = 8
 
 	var hover_sb = normal_sb.duplicate() as StyleBoxFlat
 	hover_sb.bg_color = bg_col.lightened(0.12)
@@ -3350,8 +3353,10 @@ func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color
 	disabled_sb.border_color = Color(0.36, 0.34, 0.38, 0.50)
 	disabled_sb.set_border_width_all(1)
 	disabled_sb.set_corner_radius_all(14)
-	disabled_sb.content_margin_left = 10
-	disabled_sb.content_margin_right = 10
+	disabled_sb.content_margin_left = 22
+	disabled_sb.content_margin_right = 22
+	disabled_sb.content_margin_top = 8
+	disabled_sb.content_margin_bottom = 8
 
 	btn.add_theme_stylebox_override("normal", normal_sb)
 	btn.add_theme_stylebox_override("hover", hover_sb)
@@ -3359,7 +3364,7 @@ func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color
 	btn.add_theme_stylebox_override("disabled", disabled_sb)
 
 	btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn.add_theme_font_size_override("font_size", 19 if is_primary else 18)
+	btn.add_theme_font_size_override("font_size", 24 if is_primary else 22)
 	btn.add_theme_color_override("font_color", Color.WHITE if is_primary else Color(0.96, 0.94, 0.90))
 	btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	btn.add_theme_constant_override("outline_size", 3)
@@ -3368,6 +3373,48 @@ func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
+func _build_battleship_ship_row() -> void:
+	if not is_instance_valid(fekrbekr_actions):
+		return
+	if is_instance_valid(_bs_ship_row):
+		return
+
+	_bs_ship_row = HBoxContainer.new()
+	_bs_ship_row.name = "BattleshipShipRow"
+	_bs_ship_row.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_bs_ship_row.offset_left = 0.0
+	_bs_ship_row.offset_right = 0.0
+	_bs_ship_row.offset_top = 0.0
+	_bs_ship_row.offset_bottom = 54.0
+	_bs_ship_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_bs_ship_row.add_theme_constant_override("separation", 10)
+	_bs_ship_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bs_ship_row.visible = false
+	fekrbekr_actions.add_child(_bs_ship_row)
+
+	var ship_specs = [
+		{"len": 5, "txt": "🚢 ناو ۵"},
+		{"len": 4, "txt": "🚢 ناو ۴"},
+		{"len": 3, "txt": "🚢 ناو ۳"},
+		{"len": 2, "txt": "🚢 ناو ۲"}
+	]
+	for spec in ship_specs:
+		var s_len = int(spec["len"])
+		var btn = Button.new()
+		btn.text = spec["txt"]
+		btn.custom_minimum_size = Vector2(88.0, 48.0)
+		btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		_style_monopoly_action_button(btn, Color(0.12, 0.28, 0.44, 0.96), Color(0.48, 0.78, 1.0, 0.90), false)
+		btn.add_theme_font_size_override("font_size", 22)
+		ActionVFXManager.apply_button_juice(btn, "tap_button")
+		btn.pressed.connect(func():
+			var board = get_tree().get_first_node_in_group("battleship_board")
+			if is_instance_valid(board) and board.has_method("select_or_rotate_ship"):
+				board.select_or_rotate_ship(s_len)
+		)
+		_bs_ship_row.add_child(btn)
+		_bs_ship_buttons[s_len] = btn
+
 func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 	if not (GameManager.current_game_type in [GameTypes.FEKRBEKR, GameTypes.BATTLESHIP]) or not GameManager.is_game_active:
 		if is_instance_valid(fekrbekr_actions):
@@ -3375,7 +3422,30 @@ func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 		return
 	if is_instance_valid(fekrbekr_actions):
 		fekrbekr_actions.visible = true
+
 	var is_bs: bool = (GameManager.current_game_type == GameTypes.BATTLESHIP)
+	var is_bs_phase1: bool = (is_bs and not is_play_phase)
+
+	if is_bs_phase1:
+		_build_battleship_ship_row()
+		if is_instance_valid(_bs_ship_row):
+			_bs_ship_row.visible = true
+		if is_instance_valid(fekrbekr_actions):
+			fekrbekr_actions.offset_top = -_safe_bottom_inset - 124.0
+		var vbox = fekrbekr_actions.get_node_or_null("VBox") as Control
+		if is_instance_valid(vbox):
+			vbox.offset_top = 62.0
+			vbox.offset_bottom = 120.0
+	else:
+		if is_instance_valid(_bs_ship_row):
+			_bs_ship_row.visible = false
+		if is_instance_valid(fekrbekr_actions):
+			fekrbekr_actions.offset_top = -_safe_bottom_inset - 64.0
+		var vbox = fekrbekr_actions.get_node_or_null("VBox") as Control
+		if is_instance_valid(vbox):
+			vbox.offset_top = 0.0
+			vbox.offset_bottom = 0.0
+
 	if is_instance_valid(btn_fekr_submit):
 		btn_fekr_submit.visible = (not is_play_phase) if is_bs else true
 		if not is_bs:
@@ -3394,6 +3464,22 @@ func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 	if is_instance_valid(btn_fekr_dual):
 		btn_fekr_dual.visible = is_play_phase
 		btn_fekr_dual.text = "👥 نمای همزمان" if is_bs else "👥 نمای دوطرفه"
+
+	# Sizing & Font sizing:
+	if not is_play_phase:
+		# Phase 1: Center with padding, no stretched width, larger font & icons
+		for btn in [btn_fekr_submit, btn_fekr_clear]:
+			if is_instance_valid(btn):
+				btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				btn.custom_minimum_size = Vector2(170.0, 56.0)
+				btn.add_theme_font_size_override("font_size", 26)
+	else:
+		# Phase 2: Larger text & icons, comfortable sizing
+		for btn in [btn_fekr_submit, btn_fekr_clear, btn_fekr_opp, btn_fekr_dual]:
+			if is_instance_valid(btn):
+				btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				btn.custom_minimum_size = Vector2(120.0, 54.0)
+				btn.add_theme_font_size_override("font_size", 22)
 
 static func _fa_digits(val: Variant) -> String:
 	var s = str(val)

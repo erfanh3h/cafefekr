@@ -2817,4 +2817,3 @@ func _build_persian_tar_instrument(parent: Node3D, pos: Vector3) -> void:
 	for peg_i: int in range(3):
 		var py: float = 0.89 + float(peg_i) * 0.042
 		_add_cyl(tar, 0.005, 0.005, 0.085, Vector3(0.0, py, 0.018), mat_brass, Vector3(0.0, 0.0, 90.0), 6)
-

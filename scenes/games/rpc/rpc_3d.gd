@@ -238,12 +238,12 @@ func _setup_materials() -> void:
 	# Physical 3D Object Materials
 	# Rock: Polished Slate & Granite Mineral with crisp rim lighting
 	mat_rock_obsidian = StandardMaterial3D.new()
-	mat_rock_obsidian.albedo_color = Color(0.56, 0.55, 0.53)
-	mat_rock_obsidian.metallic = 0.35
-	mat_rock_obsidian.roughness = 0.28
+	mat_rock_obsidian.albedo_color = Color(0.68, 0.67, 0.65)
+	mat_rock_obsidian.metallic = 0.28
+	mat_rock_obsidian.roughness = 0.38
 	mat_rock_obsidian.rim_enabled = true
-	mat_rock_obsidian.rim = 0.70
-	mat_rock_obsidian.rim_tint = 0.40
+	mat_rock_obsidian.rim = 0.85
+	mat_rock_obsidian.rim_tint = 0.50
 
 	mat_rock_crystal_p1 = StandardMaterial3D.new()
 	mat_rock_crystal_p1.albedo_color = Color(1.0, 0.20, 0.25)
@@ -356,13 +356,13 @@ func _build_board_architecture() -> void:
 	arch.name = "BoardArchitecture"
 	add_child(arch)
 
-	# Felt Base Pad
+	# Felt Base Pad (Compacted to remove empty bottom space)
 	var felt = MeshInstance3D.new()
 	var felt_box = BoxMesh.new()
-	felt_box.size = Vector3(1.38, 0.010, 1.22)
+	felt_box.size = Vector3(1.38, 0.010, 0.86)
 	felt.mesh = felt_box
 	felt.material_override = mat_felt_base
-	felt.position = Vector3(0, -0.024, 0)
+	felt.position = Vector3(0, -0.024, -0.14)
 	arch.add_child(felt)
 
 func _build_center_arena() -> void:
@@ -371,54 +371,7 @@ func _build_center_arena() -> void:
 	arena_center.position = Vector3(0, 0.040, -0.14)
 	add_child(arena_center)
 
-	# Raised Circular Dueling Platform
-	var dais = MeshInstance3D.new()
-	var dais_cyl = CylinderMesh.new()
-	dais_cyl.top_radius = 0.29
-	dais_cyl.bottom_radius = 0.31
-	dais_cyl.height = 0.022
-	dais_cyl.radial_segments = 36
-	dais.mesh = dais_cyl
-	dais.material_override = mat_mahogany_dark
-	dais.position = Vector3(0, 0.011, 0)
-	arena_center.add_child(dais)
-
-	# 24K Gold Dais Trim Ring
-	var trim = MeshInstance3D.new()
-	var trim_torus = TorusMesh.new()
-	trim_torus.inner_radius = 0.28
-	trim_torus.outer_radius = 0.305
-	trim_torus.rings = 36
-	trim_torus.ring_segments = 14
-	trim.mesh = trim_torus
-	trim.material_override = mat_gold_trim
-	trim.position = Vector3(0, 0.022, 0)
-	arena_center.add_child(trim)
-
-	# Inner Celestial Velvet Circle
-	var velvet = MeshInstance3D.new()
-	var velvet_cyl = CylinderMesh.new()
-	velvet_cyl.top_radius = 0.275
-	velvet_cyl.bottom_radius = 0.275
-	velvet_cyl.height = 0.006
-	velvet_cyl.radial_segments = 32
-	velvet.mesh = velvet_cyl
-	velvet.material_override = mat_arena_velvet
-	velvet.position = Vector3(0, 0.023, 0)
-	arena_center.add_child(velvet)
-
-	# 8 Inlaid Golden Starburst Rays
-	for i in range(8):
-		var angle: float = float(i) * (TAU / 8.0)
-		var ray = MeshInstance3D.new()
-		var ray_box = BoxMesh.new()
-		ray_box.size = Vector3(0.005, 0.002, 0.24)
-		ray.mesh = ray_box
-		ray.material_override = mat_gold_trim
-		ray.position = Vector3(sin(angle) * 0.13, 0.0265, cos(angle) * 0.13)
-		ray.rotation = Vector3(0, angle, 0)
-		arena_center.add_child(ray)
-
+	# Decorative circle and line rays removed per user request for clean, modern dueling field
 	clash_container = Node3D.new()
 	clash_container.name = "ClashContainer"
 	arena_center.add_child(clash_container)
@@ -460,7 +413,8 @@ func _build_action_dock() -> void:
 
 	var hbox = HBoxContainer.new()
 	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	hbox.add_theme_constant_override("separation", 10)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 14)
 	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_action_dock_panel.add_child(hbox)
 
@@ -475,13 +429,14 @@ func _build_action_dock() -> void:
 		var c_label: String = item["label"]
 		var btn = Button.new()
 		btn.name = "BtnChoice_" + c_type
-		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.custom_minimum_size = Vector2(0, 56)
+		btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		btn.custom_minimum_size = Vector2(130.0, 56.0)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		btn.text = c_label
 		btn.add_theme_font_override("font", _FONT_FA)
-		btn.add_theme_font_size_override("font_size", 22)
+		btn.add_theme_font_size_override("font_size", 25)
 		btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 		btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 		btn.add_theme_constant_override("outline_size", 3)
@@ -493,6 +448,10 @@ func _build_action_dock() -> void:
 		normal_sb.set_corner_radius_all(14)
 		normal_sb.shadow_color = Color(0, 0, 0, 0.45)
 		normal_sb.shadow_size = 4
+		normal_sb.content_margin_left = 20
+		normal_sb.content_margin_right = 20
+		normal_sb.content_margin_top = 8
+		normal_sb.content_margin_bottom = 8
 		btn.add_theme_stylebox_override("normal", normal_sb)
 
 		var hover_sb = normal_sb.duplicate() as StyleBoxFlat
@@ -504,6 +463,17 @@ func _build_action_dock() -> void:
 		pressed_sb.bg_color = Color(0.35, 0.25, 0.10, 0.98)
 		btn.add_theme_stylebox_override("pressed", pressed_sb)
 
+		var dis_sb = StyleBoxFlat.new()
+		dis_sb.bg_color = Color(0.14, 0.13, 0.16, 0.78)
+		dis_sb.border_color = Color(0.36, 0.34, 0.38, 0.50)
+		dis_sb.set_border_width_all(1)
+		dis_sb.set_corner_radius_all(14)
+		dis_sb.content_margin_left = 20
+		dis_sb.content_margin_right = 20
+		dis_sb.content_margin_top = 8
+		dis_sb.content_margin_bottom = 8
+		btn.add_theme_stylebox_override("disabled", dis_sb)
+
 		var sel_type: String = c_type
 		btn.pressed.connect(func() -> void:
 			_select_choice(sel_type)
@@ -511,11 +481,25 @@ func _build_action_dock() -> void:
 		hbox.add_child(btn)
 		_action_choice_buttons[c_type] = btn
 
+func _is_start_dialog_open() -> bool:
+	if not GameManager.is_game_active:
+		return true
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
+			return true
+		var so = hud.get_node_or_null("StartGameOverlay") as Control
+		if is_instance_valid(so) and so.visible:
+			return true
+	return false
+
 func _refresh_choice_buttons() -> void:
+	var is_locked: bool = not GameManager.is_game_active or is_board_locked or _is_start_dialog_open() or is_choice_confirmed
 	for c_type in _action_choice_buttons.keys():
 		var btn: Button = _action_choice_buttons[c_type]
 		if not is_instance_valid(btn):
 			continue
+		btn.disabled = is_locked
 		var is_sel: bool = (c_type == my_selected_choice)
 		if is_sel:
 			var sel_sb = StyleBoxFlat.new()
@@ -525,6 +509,10 @@ func _refresh_choice_buttons() -> void:
 			sel_sb.set_corner_radius_all(14)
 			sel_sb.shadow_color = Color(1.0, 0.85, 0.30, 0.50)
 			sel_sb.shadow_size = 6
+			sel_sb.content_margin_left = 20
+			sel_sb.content_margin_right = 20
+			sel_sb.content_margin_top = 8
+			sel_sb.content_margin_bottom = 8
 			btn.add_theme_stylebox_override("normal", sel_sb)
 		else:
 			var normal_sb = StyleBoxFlat.new()
@@ -534,6 +522,10 @@ func _refresh_choice_buttons() -> void:
 			normal_sb.set_corner_radius_all(14)
 			normal_sb.shadow_color = Color(0, 0, 0, 0.45)
 			normal_sb.shadow_size = 4
+			normal_sb.content_margin_left = 20
+			normal_sb.content_margin_right = 20
+			normal_sb.content_margin_top = 8
+			normal_sb.content_margin_bottom = 8
 			btn.add_theme_stylebox_override("normal", normal_sb)
 
 func _notification(what: int) -> void:
@@ -687,6 +679,15 @@ func _create_rock_node(gamer_id: int) -> Node3D:
 	band.position = Vector3(0, 0.052, 0)
 	band.rotation_degrees = Vector3(18, 25, 0)
 	rock.add_child(band)
+
+	# 5. Distinct 3D Stone Emoji Crest for instant recognition
+	var rock_lbl = Label3D.new()
+	rock_lbl.text = "🪨"
+	rock_lbl.font_size = 36
+	rock_lbl.pixel_size = 0.0015
+	rock_lbl.position = Vector3(0, 0.135, 0)
+	rock_lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	rock.add_child(rock_lbl)
 
 	return rock
 
@@ -1091,7 +1092,7 @@ func _handle_pointer_tap(screen_pos: Vector2) -> void:
 	_select_choice(choice)
 
 func _select_choice(choice: String) -> void:
-	if is_board_locked or not GameManager.is_game_active:
+	if is_board_locked or not GameManager.is_game_active or _is_start_dialog_open() or is_choice_confirmed:
 		return
 	_last_click_time = Time.get_ticks_msec() / 1000.0
 	my_selected_choice = choice
@@ -1273,14 +1274,14 @@ func _clear_clash_nodes() -> void:
 func _play_clash_sequence(p1_sel: String, p2_sel: String, winner_id: int) -> void:
 	_clear_clash_nodes()
 
-	# Spawn P1's object on Left and P2's object on Right
+	# Spawn P1's object on my side (+Z) and P2's object on enemy side (-Z)
 	p1_clash_node = _create_object_by_type(p1_sel, 1)
-	p1_clash_node.position = Vector3(-0.24, 0.16, 0.0)
+	p1_clash_node.position = Vector3(0.0, 0.16, 0.24)
 	p1_clash_node.scale = Vector3(0.1, 0.1, 0.1)
 	clash_container.add_child(p1_clash_node)
 
 	p2_clash_node = _create_object_by_type(p2_sel, 2)
-	p2_clash_node.position = Vector3(0.24, 0.16, 0.0)
+	p2_clash_node.position = Vector3(0.0, 0.16, -0.24)
 	p2_clash_node.scale = Vector3(0.1, 0.1, 0.1)
 	clash_container.add_child(p2_clash_node)
 
@@ -1291,15 +1292,15 @@ func _play_clash_sequence(p1_sel: String, p2_sel: String, winner_id: int) -> voi
 	tw.tween_property(p1_clash_node, "scale", Vector3(1.3, 1.3, 1.3), 0.35)
 	tw.tween_property(p2_clash_node, "scale", Vector3(1.3, 1.3, 1.3), 0.35)
 
-	# 2. Anticipation: Pull back slightly
+	# 2. Anticipation: Pull back slightly along Z (my side +Z, enemy side -Z)
 	var tw2 = _create_tracked_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	tw2.tween_property(p1_clash_node, "position:x", -0.28, 0.20).set_delay(0.38)
-	tw2.tween_property(p2_clash_node, "position:x", 0.28, 0.20).set_delay(0.38)
+	tw2.tween_property(p1_clash_node, "position:z", 0.28, 0.20).set_delay(0.38)
+	tw2.tween_property(p2_clash_node, "position:z", -0.28, 0.20).set_delay(0.38)
 
-	# 3. THE CLASH: Rush together to center
+	# 3. THE CLASH: Rush together to center along Z
 	var tw3 = _create_tracked_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw3.tween_property(p1_clash_node, "position:x", -0.04, 0.14).set_delay(0.58)
-	tw3.tween_property(p2_clash_node, "position:x", 0.04, 0.14).set_delay(0.58)
+	tw3.tween_property(p1_clash_node, "position:z", 0.04, 0.14).set_delay(0.58)
+	tw3.tween_property(p2_clash_node, "position:z", -0.04, 0.14).set_delay(0.58)
 
 	# 4. Impact Resolution based on outcome
 	tw3.chain().tween_callback(func():
@@ -1318,8 +1319,8 @@ func _resolve_clash_impact(p1_sel: String, p2_sel: String, winner_id: int) -> vo
 		# DRAW: Clash and bounce back with dual shockwaves
 		AudioManager.play_sound("hit")
 		var tw = _create_tracked_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tw.tween_property(p1_clash_node, "position:x", -0.16, 0.22)
-		tw.tween_property(p2_clash_node, "position:x", 0.16, 0.22)
+		tw.tween_property(p1_clash_node, "position:z", 0.16, 0.22)
+		tw.tween_property(p2_clash_node, "position:z", -0.16, 0.22)
 		_spawn_clash_ring(center_world, Color(1.0, 0.90, 0.40))
 		_spawn_clash_ring(center_world + Vector3(0, 0.02, 0), Color(0.9, 0.95, 1.0))
 	else:

@@ -306,37 +306,37 @@ func _build_master_cabinet() -> void:
 	# 1. Master Base Plinth (Dark Walnut)
 	var plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
-	plinth_mesh.size = Vector3(1.24, 0.030, 1.48)
+	plinth_mesh.size = Vector3(1.24, 0.030, 1.16)
 	plinth.mesh = plinth_mesh
 	plinth.material_override = mat_plinth
-	plinth.position = Vector3(0, -0.012, 0.0)
+	plinth.position = Vector3(0, -0.012, GRID_CENTER_Z)
 	board_decor_root.add_child(plinth)
 
 	# 2. Polished Outer Frame (Warm Mahogany)
 	var frame = MeshInstance3D.new()
 	var frame_mesh = BoxMesh.new()
-	frame_mesh.size = Vector3(1.20, 0.044, 1.44)
+	frame_mesh.size = Vector3(1.20, 0.044, 1.12)
 	frame.mesh = frame_mesh
 	frame.material_override = mat_frame
-	frame.position = Vector3(0, 0.016, 0.0)
+	frame.position = Vector3(0, 0.016, GRID_CENTER_Z)
 	board_decor_root.add_child(frame)
 
 	# 3. Stepped Brass Perimeter Inset Ring
 	var brass_ring = MeshInstance3D.new()
 	var brass_ring_mesh = BoxMesh.new()
-	brass_ring_mesh.size = Vector3(1.13, 0.008, 1.37)
+	brass_ring_mesh.size = Vector3(1.13, 0.008, 1.05)
 	brass_ring.mesh = brass_ring_mesh
 	brass_ring.material_override = mat_brass_trim
-	brass_ring.position = Vector3(0, 0.038, 0.0)
+	brass_ring.position = Vector3(0, 0.038, GRID_CENTER_Z)
 	board_decor_root.add_child(brass_ring)
 
-	# 4. Recessed Obsidian Velvet Playing Bed (Encloses entire grid and console)
+	# 4. Recessed Obsidian Velvet Playing Bed (Encloses entire grid)
 	var bed = MeshInstance3D.new()
 	var bed_mesh = BoxMesh.new()
-	bed_mesh.size = Vector3(1.11, 0.020, 1.35)
+	bed_mesh.size = Vector3(1.11, 0.020, 1.03)
 	bed.mesh = bed_mesh
 	bed.material_override = mat_playing_bed
-	bed.position = Vector3(0, 0.035, 0.0)
+	bed.position = Vector3(0, 0.035, GRID_CENTER_Z)
 	board_decor_root.add_child(bed)
 
 	# 5. Four Corner Brass Bracket Plates & Dome Rivets
@@ -347,10 +347,10 @@ func _build_master_cabinet() -> void:
 	rivet_mesh.height = 0.018
 
 	var corners = [
-		Vector3(-0.56, 0.022, -0.68),
-		Vector3(0.56, 0.022, -0.68),
-		Vector3(-0.56, 0.022, 0.68),
-		Vector3(0.56, 0.022, 0.68)
+		Vector3(-0.56, 0.022, GRID_CENTER_Z - 0.52),
+		Vector3(0.56, 0.022, GRID_CENTER_Z - 0.52),
+		Vector3(-0.56, 0.022, GRID_CENTER_Z + 0.52),
+		Vector3(0.56, 0.022, GRID_CENTER_Z + 0.52)
 	]
 	for c_pos in corners:
 		var c_inst = MeshInstance3D.new()
@@ -585,7 +585,7 @@ func _build_action_dock() -> void:
 	_action_dock_panel.offset_left = 10.0
 	_action_dock_panel.offset_right = -10.0
 	_action_dock_panel.offset_bottom = -bottom_pad
-	_action_dock_panel.offset_top = -bottom_pad - 114.0
+	_action_dock_panel.offset_top = -bottom_pad - 128.0
 	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_action_dock_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	dock_root.add_child(_action_dock_panel)
@@ -599,7 +599,7 @@ func _build_action_dock() -> void:
 	# Row 1: 1..9 Digits + Erase button (10 buttons)
 	var hbox_digits = HBoxContainer.new()
 	hbox_digits.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox_digits.custom_minimum_size = Vector2(0, 52)
+	hbox_digits.custom_minimum_size = Vector2(0, 56)
 	hbox_digits.add_theme_constant_override("separation", 4)
 	hbox_digits.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(hbox_digits)
@@ -627,13 +627,13 @@ func _build_action_dock() -> void:
 		var btn = Button.new()
 		btn.name = "BtnDigit_%d" % d
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.custom_minimum_size = Vector2(0, 50)
+		btn.custom_minimum_size = Vector2(0, 56)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		btn.text = "%s\n۰/۹" % _fa_num(d)
 		if _game_font:
 			btn.add_theme_font_override("font", _game_font)
-		btn.add_theme_font_size_override("font_size", 15)
+		btn.add_theme_font_size_override("font_size", 19)
 		btn.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
 		btn.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.08, 0.95))
 		btn.add_theme_constant_override("outline_size", 3)
@@ -668,13 +668,13 @@ func _build_action_dock() -> void:
 	var btn_erase = Button.new()
 	btn_erase.name = "BtnDigit_Erase"
 	btn_erase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_erase.custom_minimum_size = Vector2(0, 50)
+	btn_erase.custom_minimum_size = Vector2(0, 56)
 	btn_erase.focus_mode = Control.FOCUS_NONE
 	btn_erase.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_erase.text = "✕\nپاک"
 	if _game_font:
 		btn_erase.add_theme_font_override("font", _game_font)
-	btn_erase.add_theme_font_size_override("font_size", 14)
+	btn_erase.add_theme_font_size_override("font_size", 17)
 	btn_erase.add_theme_color_override("font_color", Color(1.0, 0.70, 0.70))
 	btn_erase.add_theme_color_override("font_outline_color", Color(0.08, 0.02, 0.02, 0.95))
 	btn_erase.add_theme_constant_override("outline_size", 3)
@@ -701,17 +701,22 @@ func _build_action_dock() -> void:
 	hbox_digits.add_child(btn_erase)
 	_action_digit_buttons[0] = btn_erase
 
-	# Row 2: Monopoly-styled Solve & Verify Button
+	# Row 2: Monopoly-styled Solve & Verify Button (Centered with padding, no stretched width)
+	var hbox_solve = HBoxContainer.new()
+	hbox_solve.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox_solve.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(hbox_solve)
+
 	_action_solve_btn = Button.new()
 	_action_solve_btn.name = "BtnActionSolve"
-	_action_solve_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_action_solve_btn.custom_minimum_size = Vector2(0, 52)
+	_action_solve_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_action_solve_btn.custom_minimum_size = Vector2(260.0, 56.0)
 	_action_solve_btn.focus_mode = Control.FOCUS_NONE
 	_action_solve_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_solve_btn.text = "✨ بررسی و ثبت حل سودوکو"
 	if _game_font:
 		_action_solve_btn.add_theme_font_override("font", _game_font)
-	_action_solve_btn.add_theme_font_size_override("font_size", 20)
+	_action_solve_btn.add_theme_font_size_override("font_size", 25)
 	_action_solve_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_solve_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_action_solve_btn.add_theme_constant_override("outline_size", 3)
@@ -723,8 +728,10 @@ func _build_action_dock() -> void:
 	solve_normal.set_corner_radius_all(14)
 	solve_normal.shadow_color = Color(0, 0, 0, 0.45)
 	solve_normal.shadow_size = 4
-	solve_normal.content_margin_left = 8
-	solve_normal.content_margin_right = 8
+	solve_normal.content_margin_left = 28
+	solve_normal.content_margin_right = 28
+	solve_normal.content_margin_top = 8
+	solve_normal.content_margin_bottom = 8
 
 	var solve_hover = solve_normal.duplicate() as StyleBoxFlat
 	solve_hover.bg_color = Color(0.16, 0.52, 0.28, 0.98)
@@ -732,11 +739,34 @@ func _build_action_dock() -> void:
 	var solve_pressed = solve_normal.duplicate() as StyleBoxFlat
 	solve_pressed.bg_color = Color(0.09, 0.36, 0.18, 0.98)
 
+	var solve_dis = StyleBoxFlat.new()
+	solve_dis.bg_color = Color(0.14, 0.13, 0.16, 0.78)
+	solve_dis.border_color = Color(0.36, 0.34, 0.38, 0.50)
+	solve_dis.set_border_width_all(1)
+	solve_dis.set_corner_radius_all(14)
+	solve_dis.content_margin_left = 28
+	solve_dis.content_margin_right = 28
+	solve_dis.content_margin_top = 8
+	solve_dis.content_margin_bottom = 8
+
 	_action_solve_btn.add_theme_stylebox_override("normal", solve_normal)
 	_action_solve_btn.add_theme_stylebox_override("hover", solve_hover)
 	_action_solve_btn.add_theme_stylebox_override("pressed", solve_pressed)
+	_action_solve_btn.add_theme_stylebox_override("disabled", solve_dis)
 	_action_solve_btn.pressed.connect(_on_solve_button_tapped)
-	vbox.add_child(_action_solve_btn)
+	hbox_solve.add_child(_action_solve_btn)
+
+func _is_start_dialog_open() -> bool:
+	if not GameManager.is_game_active:
+		return true
+	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	if is_instance_valid(hud):
+		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
+			return true
+		var so = hud.get_node_or_null("StartGameOverlay") as Control
+		if is_instance_valid(so) and so.visible:
+			return true
+	return false
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_SIZE_CHANGED:
@@ -746,6 +776,8 @@ func _notification(what: int) -> void:
 			_action_dock_panel.offset_top = -bottom_pad - 114.0
 
 func _on_digit_button_pressed(digit: int) -> void:
+	if not GameManager.is_game_active or _is_start_dialog_open():
+		return
 	AudioManager.play_sound("tap_button")
 	if selected_digit == digit:
 		selected_digit = -1
@@ -835,8 +867,16 @@ func _update_numbers_count() -> void:
 			btn_solve_label.text = "✨ بررسی و ثبت حل (%s/۸۱)" % _fa_num(filled_cnt)
 			btn_solve_label.modulate = Color(0.95, 0.95, 0.95)
 
+	var is_locked: bool = not GameManager.is_game_active or _is_start_dialog_open()
+	for b in _action_digit_buttons:
+		if is_instance_valid(b):
+			b.disabled = is_locked
+
 	if is_instance_valid(_action_solve_btn):
-		if filled_cnt >= TOTAL_CELLS:
+		_action_solve_btn.disabled = is_locked
+		if is_locked:
+			_action_solve_btn.text = "✨ آماده شروع بازی..."
+		elif filled_cnt >= TOTAL_CELLS:
 			_action_solve_btn.text = "✨ ثبت و ارسال حل نهایی"
 		else:
 			_action_solve_btn.text = "✨ بررسی و ثبت حل (%s/۸۱)" % _fa_num(filled_cnt)
@@ -1290,6 +1330,8 @@ func _erase_cell(idx: int) -> void:
 	_refresh_board_visuals()
 
 func _on_solve_button_tapped() -> void:
+	if not GameManager.is_game_active or _is_start_dialog_open():
+		return
 	AudioManager.play_sound("tap_button")
 	
 	if is_instance_valid(btn_solve_pivot):
