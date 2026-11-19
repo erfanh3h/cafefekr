@@ -1260,11 +1260,11 @@ func _open_game_menu_drawer() -> void:
 	_close_camera_popover()
 	if not is_instance_valid(game_menu_drawer):
 		return
-	var g_info := GameRegistry.get_game_info(GameManager.current_game_type)
+	var g_info: Dictionary = GameRegistry.get_game_info(GameManager.current_game_type)
 	if is_instance_valid(lbl_menu_game_title):
 		lbl_menu_game_title.text = str(g_info.get("name_fa", "کافه فکر"))
 	if is_instance_valid(lbl_menu_round_info):
-		var r_txt := lbl_round.text if is_instance_valid(lbl_round) else ""
+		var r_txt: String = lbl_round.text if is_instance_valid(lbl_round) else ""
 		lbl_menu_round_info.text = r_txt if not r_txt.is_empty() else "مسابقه آنلاین"
 	if is_instance_valid(btn_surrender):
 		btn_surrender.visible = not GameManager.is_spectating
@@ -1298,7 +1298,7 @@ func _show_menu_rules() -> void:
 		menu_view.visible = false
 	if is_instance_valid(rules_view):
 		rules_view.visible = true
-	var g_info := GameRegistry.get_game_info(GameManager.current_game_type)
+	var g_info: Dictionary = GameRegistry.get_game_info(GameManager.current_game_type)
 	if is_instance_valid(lbl_rules_title):
 		lbl_rules_title.text = "راهنمای %s" % str(g_info.get("name_fa", "بازی"))
 	if is_instance_valid(lbl_rules_body):
@@ -3072,7 +3072,7 @@ func stop_timer() -> void:
 
 
 func set_camera_mode_indicator(is_top_down: bool) -> void:
-	var target_tex := _cam_3d_tex if is_top_down else _cam_2d_tex
+	var target_tex: Texture2D = _cam_3d_tex if is_top_down else _cam_2d_tex
 	if btn_cam_top and is_instance_valid(btn_cam_top):
 		btn_cam_top.text = ""
 		if img_cam_top and is_instance_valid(img_cam_top):
@@ -3238,7 +3238,7 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 
 
 func _update_audio_visual() -> void:
-	var audio_on := AudioManager.is_music_enabled
+	var audio_on: bool = bool(AudioManager.is_music_enabled)
 	if is_instance_valid(img_audio):
 		img_audio.texture = _sound_on_tex if audio_on else _sound_off_tex
 	if is_instance_valid(btn_audio):

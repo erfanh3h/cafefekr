@@ -671,7 +671,7 @@ func _register_extra_player_card(idx: int, card: PanelContainer) -> Dictionary:
 		rb.top_level = true
 		rb.visible = false
 	_attach_card_decorations(idx, card, av, nm, rl, sc)
-	var av_frame := av_cont.get_node_or_null("AvatarMedallionFrame") as Panel if is_instance_valid(av_cont) else null
+	var av_frame: Panel = (av_cont.get_node_or_null("AvatarMedallionFrame") as Panel) if is_instance_valid(av_cont) else null
 	var bundle := {
 		"card": card,
 		"avatar": av,
@@ -898,7 +898,7 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 	_cached_timer_danger = -1
 	_update_score_badges_visibility()
 
-	var is_simul := GameRegistry.is_simultaneous(GameManager.current_game_type)
+	var is_simul: bool = bool(GameRegistry.is_simultaneous(GameManager.current_game_type))
 	var is_p1 := (turn == 1)
 	var is_me := (turn == my_idx)
 
@@ -949,7 +949,7 @@ func _apply_timer_visual_state(is_danger: bool, box_style: StyleBox, fill_col: C
 
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	var is_simul := GameRegistry.is_simultaneous(GameManager.current_game_type)
+	var is_simul: bool = bool(GameRegistry.is_simultaneous(GameManager.current_game_type))
 	var active_list: Array[int] = [1, 2] if is_simul else [turn]
 	_update_card_timer_visuals(remaining_sec, total_sec, active_list)
 

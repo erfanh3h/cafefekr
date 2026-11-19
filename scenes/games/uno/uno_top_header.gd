@@ -63,8 +63,8 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 	var total_players := _get_total_players()
 	_apply_layout_for_player_count(total_players)
 
-	var d1 := GameManager.get_player_data_by_gamer_id(1) if total_players > 2 else p1_data
-	var d2 := GameManager.get_player_data_by_gamer_id(2) if total_players > 2 else p2_data
+	var d1: Dictionary = GameManager.get_player_data_by_gamer_id(1) if total_players > 2 else p1_data
+	var d2: Dictionary = GameManager.get_player_data_by_gamer_id(2) if total_players > 2 else p2_data
 	super.setup_players(d1, d2, my_idx)
 
 	for idx in [3, 4]:
@@ -76,14 +76,14 @@ func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> voi
 			card.visible = false
 			continue
 		card.visible = true
-		var p_data := GameManager.get_player_data_by_gamer_id(idx)
+		var p_data: Dictionary = GameManager.get_player_data_by_gamer_id(idx)
 		var p_name := str(p_data.get("name", p_data.get("username", "بازیکن %d" % idx)))
 		_player_names[idx] = p_name
 		if is_instance_valid(info["name"]):
 			info["name"].text = p_name
 			HudTheme.configure_bidi_label(info["name"], true)
 		var av_id := int(p_data.get("image", p_data.get("user_image", 0)))
-		var p_fid := GameManager.get_player_frame_id(p_data)
+		var p_fid: int = int(GameManager.get_player_frame_id(p_data))
 		var tex := _get_cached_avatar(av_id)
 		if is_instance_valid(info["avatar"]):
 			if tex:
