@@ -96,6 +96,11 @@ var mat_selected_halo_p2: StandardMaterial3D
 var mat_digest_rune: StandardMaterial3D
 var mat_slash_beam: StandardMaterial3D
 
+# 2D Action Dock Controls
+var _action_dock_layer: CanvasLayer
+var _action_dock_panel: Panel
+var _action_choice_buttons: Dictionary = {}
+
 func _ready() -> void:
 	game_type = GameTypes.RPC
 	_setup_materials()
@@ -103,6 +108,7 @@ func _ready() -> void:
 	_build_center_arena()
 	_build_selection_pedestals()
 	_build_score_trackers()
+	_build_action_dock()
 	super._ready()
 
 func _process(delta: float) -> void:
@@ -230,27 +236,30 @@ func _setup_materials() -> void:
 	mat_sapphire_lit.emission_energy_multiplier = 2.2
 
 	# Physical 3D Object Materials
-	# Rock: Dark Obsidian Mineral
+	# Rock: Polished Slate & Granite Mineral with crisp rim lighting
 	mat_rock_obsidian = StandardMaterial3D.new()
-	mat_rock_obsidian.albedo_color = Color(0.14, 0.15, 0.18)
-	mat_rock_obsidian.metallic = 0.25
-	mat_rock_obsidian.roughness = 0.48
+	mat_rock_obsidian.albedo_color = Color(0.56, 0.55, 0.53)
+	mat_rock_obsidian.metallic = 0.35
+	mat_rock_obsidian.roughness = 0.28
+	mat_rock_obsidian.rim_enabled = true
+	mat_rock_obsidian.rim = 0.70
+	mat_rock_obsidian.rim_tint = 0.40
 
 	mat_rock_crystal_p1 = StandardMaterial3D.new()
-	mat_rock_crystal_p1.albedo_color = Color(0.85, 0.12, 0.18)
+	mat_rock_crystal_p1.albedo_color = Color(1.0, 0.20, 0.25)
 	mat_rock_crystal_p1.metallic = 0.30
 	mat_rock_crystal_p1.roughness = 0.15
 	mat_rock_crystal_p1.emission_enabled = true
-	mat_rock_crystal_p1.emission = Color(0.80, 0.10, 0.15)
-	mat_rock_crystal_p1.emission_energy_multiplier = 0.85
+	mat_rock_crystal_p1.emission = Color(1.0, 0.18, 0.22)
+	mat_rock_crystal_p1.emission_energy_multiplier = 2.4
 
 	mat_rock_crystal_p2 = StandardMaterial3D.new()
-	mat_rock_crystal_p2.albedo_color = Color(0.12, 0.45, 0.90)
+	mat_rock_crystal_p2.albedo_color = Color(0.20, 0.60, 1.0)
 	mat_rock_crystal_p2.metallic = 0.30
 	mat_rock_crystal_p2.roughness = 0.15
 	mat_rock_crystal_p2.emission_enabled = true
-	mat_rock_crystal_p2.emission = Color(0.10, 0.40, 0.85)
-	mat_rock_crystal_p2.emission_energy_multiplier = 0.85
+	mat_rock_crystal_p2.emission = Color(0.18, 0.55, 1.0)
+	mat_rock_crystal_p2.emission_energy_multiplier = 2.4
 
 	# Paper: Antique Illuminated Parchment
 	mat_paper_parchment = StandardMaterial3D.new()
@@ -417,6 +426,8 @@ func _build_center_arena() -> void:
 # --- 3D Selection Pedestals & Interactive Objects ---
 
 func _build_selection_pedestals() -> void:
+	# Board simplified per request: 3D pedestals removed from bottom of board,
+	# choices cleanly moved to bottom action dock.
 	pedestals.clear()
 	pedestal_areas.clear()
 	pedestal_objects.clear()
@@ -424,139 +435,113 @@ func _build_selection_pedestals() -> void:
 	selection_aura_rings.clear()
 	hover_rings.clear()
 
+func _build_action_dock() -> void:
+	_action_dock_layer = CanvasLayer.new()
+	_action_dock_layer.name = "RPCActionLayer"
+	_action_dock_layer.layer = 10
+	add_child(_action_dock_layer)
+
+	var dock_root = Control.new()
+	dock_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_layer.add_child(dock_root)
+
+	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
+	_action_dock_panel = Panel.new()
+	_action_dock_panel.name = "RPCActionPanel"
+	_action_dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_action_dock_panel.offset_left = 12.0
+	_action_dock_panel.offset_right = -12.0
+	_action_dock_panel.offset_bottom = -bottom_pad
+	_action_dock_panel.offset_top = -bottom_pad - 64.0
+	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	dock_root.add_child(_action_dock_panel)
+
+	var hbox = HBoxContainer.new()
+	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.add_theme_constant_override("separation", 10)
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_panel.add_child(hbox)
+
 	var choices = [
-		{"type": "rock", "name_fa": "سنگ", "x": -0.38},
-		{"type": "paper", "name_fa": "کاغذ", "x": 0.0},
-		{"type": "cutter", "name_fa": "قیچی", "x": 0.38}
+		{"type": "rock", "label": "🪨 سنگ"},
+		{"type": "paper", "label": "📜 کاغذ"},
+		{"type": "cutter", "label": "✂️ قیچی"}
 	]
 
-	var ped_group = Node3D.new()
-	ped_group.name = "SelectionPedestalsGroup"
-	ped_group.position = Vector3(0, 0.040, 0.28)
-	add_child(ped_group)
+	for item in choices:
+		var c_type: String = item["type"]
+		var c_label: String = item["label"]
+		var btn = Button.new()
+		btn.name = "BtnChoice_" + c_type
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.custom_minimum_size = Vector2(0, 56)
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.text = c_label
+		btn.add_theme_font_override("font", _FONT_FA)
+		btn.add_theme_font_size_override("font_size", 22)
+		btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
+		btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
+		btn.add_theme_constant_override("outline_size", 3)
 
-	for ch in choices:
-		var c_type: String = ch["type"]
-		var c_name: String = ch["name_fa"]
-		var px: float = ch["x"]
+		var normal_sb = StyleBoxFlat.new()
+		normal_sb.bg_color = Color(0.14, 0.10, 0.08, 0.95)
+		normal_sb.border_color = Color(0.84, 0.68, 0.35, 0.75)
+		normal_sb.set_border_width_all(3)
+		normal_sb.set_corner_radius_all(14)
+		normal_sb.shadow_color = Color(0, 0, 0, 0.45)
+		normal_sb.shadow_size = 4
+		btn.add_theme_stylebox_override("normal", normal_sb)
 
-		var ped = Node3D.new()
-		ped.name = "Pedestal_" + c_type
-		ped.position = Vector3(px, 0, 0)
-		ped_group.add_child(ped)
-		pedestals[c_type] = ped
+		var hover_sb = normal_sb.duplicate() as StyleBoxFlat
+		hover_sb.bg_color = Color(0.22, 0.16, 0.12, 0.98)
+		hover_sb.border_color = Color(1.0, 0.88, 0.45, 0.98)
+		btn.add_theme_stylebox_override("hover", hover_sb)
 
-		# Octagonal / Circular Carved Walnut Pedestal Base
-		var base_mesh = MeshInstance3D.new()
-		var cyl = CylinderMesh.new()
-		cyl.top_radius = 0.135
-		cyl.bottom_radius = 0.148
-		cyl.height = 0.034
-		cyl.radial_segments = 28
-		base_mesh.mesh = cyl
-		base_mesh.material_override = mat_walnut_frame
-		base_mesh.position = Vector3(0, 0.017, 0)
-		ped.add_child(base_mesh)
+		var pressed_sb = normal_sb.duplicate() as StyleBoxFlat
+		pressed_sb.bg_color = Color(0.35, 0.25, 0.10, 0.98)
+		btn.add_theme_stylebox_override("pressed", pressed_sb)
 
-		# 24K Gold Trim Rim
-		var rim = MeshInstance3D.new()
-		var torus = TorusMesh.new()
-		torus.inner_radius = 0.130
-		torus.outer_radius = 0.144
-		torus.rings = 28
-		rim.mesh = torus
-		rim.material_override = mat_gold_trim
-		rim.position = Vector3(0, 0.034, 0)
-		ped.add_child(rim)
+		var sel_type: String = c_type
+		btn.pressed.connect(func() -> void:
+			_select_choice(sel_type)
+		)
+		hbox.add_child(btn)
+		_action_choice_buttons[c_type] = btn
 
-		# Velvet Cushion Top
-		var cushion = MeshInstance3D.new()
-		var c_cyl = CylinderMesh.new()
-		c_cyl.top_radius = 0.126
-		c_cyl.bottom_radius = 0.126
-		c_cyl.height = 0.008
-		c_cyl.radial_segments = 24
-		cushion.mesh = c_cyl
-		cushion.material_override = mat_pedestal_velvet
-		cushion.position = Vector3(0, 0.035, 0)
-		ped.add_child(cushion)
+func _refresh_choice_buttons() -> void:
+	for c_type in _action_choice_buttons.keys():
+		var btn: Button = _action_choice_buttons[c_type]
+		if not is_instance_valid(btn):
+			continue
+		var is_sel: bool = (c_type == my_selected_choice)
+		if is_sel:
+			var sel_sb = StyleBoxFlat.new()
+			sel_sb.bg_color = Color(0.12, 0.44, 0.24, 0.98)
+			sel_sb.border_color = Color(1.0, 0.90, 0.38, 1.0)
+			sel_sb.set_border_width_all(3)
+			sel_sb.set_corner_radius_all(14)
+			sel_sb.shadow_color = Color(1.0, 0.85, 0.30, 0.50)
+			sel_sb.shadow_size = 6
+			btn.add_theme_stylebox_override("normal", sel_sb)
+		else:
+			var normal_sb = StyleBoxFlat.new()
+			normal_sb.bg_color = Color(0.14, 0.10, 0.08, 0.95)
+			normal_sb.border_color = Color(0.84, 0.68, 0.35, 0.75)
+			normal_sb.set_border_width_all(3)
+			normal_sb.set_corner_radius_all(14)
+			normal_sb.shadow_color = Color(0, 0, 0, 0.45)
+			normal_sb.shadow_size = 4
+			btn.add_theme_stylebox_override("normal", normal_sb)
 
-		# Target Hover Ring (illuminates on mouse hover)
-		var h_ring = MeshInstance3D.new()
-		var hr_torus = TorusMesh.new()
-		hr_torus.inner_radius = 0.116
-		hr_torus.outer_radius = 0.128
-		hr_torus.rings = 24
-		h_ring.mesh = hr_torus
-		h_ring.material_override = mat_pedestal_hover
-		h_ring.position = Vector3(0, 0.0395, 0)
-		h_ring.visible = false
-		ped.add_child(h_ring)
-		hover_rings[c_type] = h_ring
-
-		# Selected Halo Ring (pulses around selected object)
-		var s_halo = MeshInstance3D.new()
-		var sh_torus = TorusMesh.new()
-		sh_torus.inner_radius = 0.122
-		sh_torus.outer_radius = 0.136
-		sh_torus.rings = 28
-		s_halo.mesh = sh_torus
-		s_halo.material_override = mat_selected_halo_p1
-		s_halo.position = Vector3(0, 0.040, 0)
-		s_halo.visible = false
-		ped.add_child(s_halo)
-		selection_halos[c_type] = s_halo
-
-		# Concentric Inner Selection Aura Ring
-		var s_aura = MeshInstance3D.new()
-		var sa_torus = TorusMesh.new()
-		sa_torus.inner_radius = 0.098
-		sa_torus.outer_radius = 0.114
-		sa_torus.rings = 24
-		s_aura.mesh = sa_torus
-		s_aura.material_override = mat_selected_halo_p1
-		s_aura.position = Vector3(0, 0.038, 0)
-		s_aura.visible = false
-		ped.add_child(s_aura)
-		selection_aura_rings[c_type] = s_aura
-
-
-		# 3D Persian Label ("سنگ", "کاغذ", "قیچی")
-		var lbl = Label3D.new()
-		lbl.text = c_name
-		lbl.font = _FONT_FA
-		lbl.font_size = 48
-		lbl.pixel_size = 0.0008
-		lbl.modulate = Color(1.0, 0.92, 0.70)
-		lbl.outline_size = 4
-		lbl.outline_modulate = Color(0.12, 0.06, 0.02)
-		lbl.rotation_degrees = Vector3(-90, 0, 0)
-		lbl.position = Vector3(0, 0.041, 0.170)
-		ped.add_child(lbl)
-
-		# The Physical 3D Object Resting on Pedestal
-		var obj = _create_object_by_type(c_type, my_player_index if my_player_index in [1, 2] else 1)
-		obj.name = "Object_" + c_type
-		obj.position = Vector3(0, 0.050, 0)
-		ped.add_child(obj)
-		pedestal_objects[c_type] = obj
-
-		# Interactive Area3D Hitbox for Clicking/Hovering
-		var area = Area3D.new()
-		area.name = "PedestalArea_" + c_type
-		area.set_meta("rpc_type", c_type)
-		area.input_ray_pickable = true
-		area.collision_layer = 1
-		area.collision_mask = 1
-		var col = CollisionShape3D.new()
-		var c_shape = CylinderShape3D.new()
-		c_shape.radius = 0.18
-		c_shape.height = 0.35
-		col.shape = c_shape
-		col.position = Vector3(0, 0.14, 0)
-		area.add_child(col)
-		ped.add_child(area)
-		pedestal_areas[c_type] = area
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_SIZE_CHANGED:
+		if is_instance_valid(_action_dock_panel):
+			var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
+			_action_dock_panel.offset_bottom = -bottom_pad
+			_action_dock_panel.offset_top = -bottom_pad - 64.0
 
 # --- Score Trackers & Status Labels ---
 
@@ -657,36 +642,46 @@ func _create_object_by_type(choice_type: String, gamer_id: int) -> Node3D:
 func _create_rock_node(gamer_id: int) -> Node3D:
 	var rock = Node3D.new()
 
-	# 1. Main Obsidian Polyhedral Boulder
+	# 1. Main Granite Polyhedral Boulder with crisp facets
 	var body = MeshInstance3D.new()
 	var sphere = SphereMesh.new()
-	sphere.radius = 0.068
-	sphere.height = 0.115
-	sphere.radial_segments = 14
-	sphere.rings = 8
+	sphere.radius = 0.070
+	sphere.height = 0.118
+	sphere.radial_segments = 16
+	sphere.rings = 10
 	body.mesh = sphere
 	body.material_override = mat_rock_obsidian
 	body.position = Vector3(0, 0.055, 0)
 	rock.add_child(body)
 
-	# 2. Glowing Geode Crystalline Clusters
+	# 2. Raised Secondary Mineral Facet Shell
+	var shell = MeshInstance3D.new()
+	var prism_body = PrismMesh.new()
+	prism_body.size = Vector3(0.088, 0.062, 0.088)
+	shell.mesh = prism_body
+	shell.material_override = mat_rock_obsidian
+	shell.position = Vector3(0, 0.062, 0)
+	shell.rotation_degrees = Vector3(15, 45, 10)
+	rock.add_child(shell)
+
+	# 3. Glowing Geode Crystalline Clusters
 	var mat_crystal = mat_rock_crystal_p1 if gamer_id == 1 else mat_rock_crystal_p2
 	for ang in [0.4, 2.2, 4.3]:
 		var crystal = MeshInstance3D.new()
 		var prism = PrismMesh.new()
-		prism.size = Vector3(0.026, 0.046, 0.026)
+		prism.size = Vector3(0.030, 0.052, 0.030)
 		crystal.mesh = prism
 		crystal.material_override = mat_crystal
-		crystal.position = Vector3(cos(ang) * 0.044, 0.065, sin(ang) * 0.044)
+		crystal.position = Vector3(cos(ang) * 0.046, 0.068, sin(ang) * 0.046)
 		crystal.rotation = Vector3(0.2, ang, 0.3)
 		rock.add_child(crystal)
 
-	# 3. 24K Gold Inlaid Runic Band
+	# 4. 24K Gold Inlaid Runic Band with Metallic Highlights
 	var band = MeshInstance3D.new()
 	var torus = TorusMesh.new()
-	torus.inner_radius = 0.055
-	torus.outer_radius = 0.066
-	torus.rings = 20
+	torus.inner_radius = 0.058
+	torus.outer_radius = 0.070
+	torus.rings = 24
 	band.mesh = torus
 	band.material_override = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
 	band.position = Vector3(0, 0.052, 0)
@@ -1130,6 +1125,14 @@ func _select_choice(choice: String) -> void:
 		tw.tween_property(obj, "scale", Vector3(1.32, 1.32, 1.32), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tw.tween_property(obj, "scale", Vector3.ONE, 0.14)
 
+	_refresh_choice_buttons()
+	if _action_choice_buttons.has(choice) and is_instance_valid(_action_choice_buttons[choice]):
+		var btn: Button = _action_choice_buttons[choice]
+		btn.pivot_offset = btn.size * 0.5
+		var tw_b = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw_b.tween_property(btn, "scale", Vector2(1.08, 1.08), 0.10)
+		tw_b.tween_property(btn, "scale", Vector2.ONE, 0.12)
+
 	# Update HUD banner in real-time
 	var choice_names = {"rock": "سنگ", "paper": "کاغذ", "cutter": "قیچی"}
 	var c_fa = choice_names.get(choice, choice)
@@ -1157,6 +1160,7 @@ func on_new_turn_round() -> void:
 			selection_aura_rings[k].visible = false
 	_clear_clash_nodes()
 	_update_score_trackers()
+	_refresh_choice_buttons()
 
 func on_finish_turn_round(data: Dictionary) -> void:
 	# Both players' choices revealed! Play dramatic clash in arena.

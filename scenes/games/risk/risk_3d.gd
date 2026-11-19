@@ -1806,8 +1806,8 @@ func _fit_command_dock_height() -> void:
 	if not is_instance_valid(_command_dock_panel):
 		return
 	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
-	var content_h: float = _command_dock_margin.get_combined_minimum_size().y if is_instance_valid(_command_dock_margin) else 180.0
-	var target_h: float = clampf(content_h + 6.0, 110.0, 336.0)
+	var content_h: float = _command_dock_margin.get_combined_minimum_size().y if is_instance_valid(_command_dock_margin) else 160.0
+	var target_h: float = clampf(content_h + 4.0, 96.0, 260.0)
 	_command_dock_panel.offset_left = 10.0
 	_command_dock_panel.offset_right = -10.0
 	_command_dock_panel.offset_bottom = -bottom_pad
@@ -1914,7 +1914,7 @@ func _refresh_floating_hud() -> void:
 				24, 14, true
 			)
 			btn_roll_again.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			btn_roll_again.custom_minimum_size = Vector2(0, 56)
+			btn_roll_again.custom_minimum_size = Vector2(0, 48)
 			btn_roll_again.pressed.connect(func() -> void:
 				AudioManager.sfx_button()
 				send_move(Commands.Attack, {})
@@ -1927,7 +1927,7 @@ func _refresh_floating_hud() -> void:
 				Color(0.78, 0.62, 0.34),
 				22, 14
 			)
-			btn_stop_atk.custom_minimum_size = Vector2(166, 56)
+			btn_stop_atk.custom_minimum_size = Vector2(166, 48)
 			btn_stop_atk.pressed.connect(func() -> void:
 				AudioManager.sfx_button()
 				send_move(Commands.Cancel_Attack, {"stop": true})
@@ -1946,7 +1946,7 @@ func _refresh_floating_hud() -> void:
 					23, 14, true
 				)
 				btn_def_cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				btn_def_cancel.custom_minimum_size = Vector2(0, 56)
+				btn_def_cancel.custom_minimum_size = Vector2(0, 48)
 				btn_def_cancel.pressed.connect(func() -> void:
 					AudioManager.sfx_button()
 					send_move(Commands.Cancel_Attack, {})
@@ -1991,7 +1991,7 @@ func _refresh_floating_hud() -> void:
 				23, 14, true
 			)
 			btn_defend.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			btn_defend.custom_minimum_size = Vector2(0, 56)
+			btn_defend.custom_minimum_size = Vector2(0, 48)
 			btn_defend.pressed.connect(func() -> void:
 				AudioManager.sfx_button()
 				send_move(Commands.DefenderArmy, {"count": selected_army_commit})
@@ -2005,7 +2005,7 @@ func _refresh_floating_hud() -> void:
 					Color(0.38, 0.88, 0.96),
 					22, 14, true
 				)
-				btn_cancel_atk.custom_minimum_size = Vector2(142, 56)
+				btn_cancel_atk.custom_minimum_size = Vector2(142, 48)
 				btn_cancel_atk.pressed.connect(func() -> void:
 					AudioManager.sfx_button()
 					send_move(Commands.DefenderArmy, {"count": 0, "cancel": true})
@@ -2048,7 +2048,7 @@ func _refresh_floating_hud() -> void:
 				23, 14, true
 			)
 			btn_commit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			btn_commit.custom_minimum_size = Vector2(0, 56)
+			btn_commit.custom_minimum_size = Vector2(0, 48)
 			btn_commit.pressed.connect(func() -> void:
 				AudioManager.sfx_button()
 				send_move(Commands.AttackerArmy, {"count": selected_army_commit})
@@ -2062,7 +2062,7 @@ func _refresh_floating_hud() -> void:
 					Color(0.96, 0.82, 0.28),
 					21, 14
 				)
-				btn_canon.custom_minimum_size = Vector2(156, 56)
+				btn_canon.custom_minimum_size = Vector2(156, 48)
 				btn_canon.pressed.connect(func() -> void:
 					AudioManager.sfx_button()
 					send_move(Commands.Use_Strategy, {"strategy": "Canon"})
@@ -2092,19 +2092,19 @@ func _refresh_floating_hud() -> void:
 
 		var btn_d1: Button = _make_styled_button("🗺️ ۲ قاره", Color(0.12, 0.36, 0.22, 0.98), Color(0.42, 0.90, 0.58), 22, 14, true)
 		btn_d1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn_d1.custom_minimum_size = Vector2(0, 54)
+		btn_d1.custom_minimum_size = Vector2(0, 48)
 		btn_d1.pressed.connect(func() -> void: _send_draw_card(1))
 		_action_buttons_row.add_child(btn_d1)
 
 		var btn_d3: Button = _make_styled_button("⚖️ ۱+۱ ترکیبی", Color(0.30, 0.23, 0.09, 0.98), Color(0.96, 0.80, 0.32), 22, 14, true)
 		btn_d3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn_d3.custom_minimum_size = Vector2(0, 54)
+		btn_d3.custom_minimum_size = Vector2(0, 48)
 		btn_d3.pressed.connect(func() -> void: _send_draw_card(3))
 		_action_buttons_row.add_child(btn_d3)
 
 		var btn_d2: Button = _make_styled_button("⚡ ۲ استراتژی", Color(0.40, 0.14, 0.16, 0.98), Color(0.92, 0.44, 0.44), 22, 14, true)
 		btn_d2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn_d2.custom_minimum_size = Vector2(0, 54)
+		btn_d2.custom_minimum_size = Vector2(0, 48)
 		btn_d2.pressed.connect(func() -> void: _send_draw_card(2))
 		_action_buttons_row.add_child(btn_d2)
 		call_deferred("_fit_command_dock_height")
@@ -2124,7 +2124,7 @@ func _refresh_floating_hud() -> void:
 
 	if selected_source_continent != "" or selected_strategy_name != "":
 		var btn_clear: Button = _make_styled_button("✖ لغو", Color(0.22, 0.14, 0.12, 0.94), Color(0.66, 0.48, 0.34), 21, 14)
-		btn_clear.custom_minimum_size = Vector2(96, 54)
+		btn_clear.custom_minimum_size = Vector2(96, 48)
 		btn_clear.pressed.connect(func() -> void:
 			AudioManager.sfx_tap()
 			selected_hand_card_idx = -1
@@ -2136,7 +2136,7 @@ func _refresh_floating_hud() -> void:
 		_action_buttons_row.add_child(btn_clear)
 
 	var btn_pass: Button = _make_styled_button("⏭️ پایان نوبت", Color(0.24, 0.17, 0.10, 0.96), Color(0.84, 0.66, 0.32), 22, 14)
-	btn_pass.custom_minimum_size = Vector2(146, 54)
+	btn_pass.custom_minimum_size = Vector2(146, 48)
 	if _action_buttons_row.get_child_count() == 0:
 		btn_pass.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_pass.pressed.connect(func() -> void:
@@ -2148,7 +2148,7 @@ func _refresh_floating_hud() -> void:
 
 func _add_compact_army_stepper(max_allowed: int, icon_str: String) -> void:
 	var btn_minus: Button = _make_styled_button("−", Color(0.20, 0.14, 0.10, 0.95), Color(0.76, 0.58, 0.32), 24, 12)
-	btn_minus.custom_minimum_size = Vector2(48, 56)
+	btn_minus.custom_minimum_size = Vector2(48, 48)
 	btn_minus.pressed.connect(func() -> void:
 		AudioManager.sfx_tap()
 		selected_army_commit = max(0, selected_army_commit - 1)
@@ -2166,7 +2166,7 @@ func _add_compact_army_stepper(max_allowed: int, icon_str: String) -> void:
 	_action_buttons_row.add_child(count_chip)
 
 	var btn_plus: Button = _make_styled_button("+", Color(0.20, 0.14, 0.10, 0.95), Color(0.76, 0.58, 0.32), 24, 12)
-	btn_plus.custom_minimum_size = Vector2(48, 56)
+	btn_plus.custom_minimum_size = Vector2(48, 48)
 	btn_plus.pressed.connect(func() -> void:
 		AudioManager.sfx_tap()
 		selected_army_commit = min(max_allowed, selected_army_commit + 1)
@@ -2255,7 +2255,7 @@ func _populate_attack_action_controls() -> void:
 		23, 14, true
 	)
 	btn_atk.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_atk.custom_minimum_size = Vector2(0, 54)
+	btn_atk.custom_minimum_size = Vector2(0, 48)
 	btn_atk.pressed.connect(_send_declare_attack)
 	_action_buttons_row.add_child(btn_atk)
 
@@ -2325,7 +2325,7 @@ func _populate_strategy_action_controls() -> void:
 		23, 14, true
 	)
 	btn_play.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_play.custom_minimum_size = Vector2(0, 54)
+	btn_play.custom_minimum_size = Vector2(0, 48)
 	btn_play.pressed.connect(_send_use_strategy)
 	_action_buttons_row.add_child(btn_play)
 

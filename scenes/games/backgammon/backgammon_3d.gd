@@ -107,6 +107,10 @@ var _bear_p2_ring: MeshInstance3D = null
 
 var _dice_nodes: Array[Dictionary] = []
 var _roll_btn_ui: Dictionary = {}
+var _action_dock_layer: CanvasLayer = null
+var _action_dock_root: Control = null
+var _action_dock_panel: Panel = null
+var _action_roll_btn: Button = null
 
 var _vfx_time: float = 0.0
 var _sparkle_accum: float = 0.0
@@ -165,8 +169,89 @@ func _ready() -> void:
 	_build_3d_backgammon_board()
 	_init_board_state()
 	_rebuild_all_3d_pieces()
+	_build_2d_action_dock()
+	var vp = get_viewport()
+	if vp and not vp.size_changed.is_connected(_enforce_dock_geometry):
+		vp.size_changed.connect(_enforce_dock_geometry)
+	call_deferred("_enforce_dock_geometry")
 	_refresh_ui_and_highlights()
 	super._ready()
+
+func _enforce_dock_geometry() -> void:
+	if is_instance_valid(_action_dock_panel):
+		var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
+		_action_dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		_action_dock_panel.offset_left = 12.0
+		_action_dock_panel.offset_right = -12.0
+		_action_dock_panel.offset_bottom = -bottom_pad
+		_action_dock_panel.offset_top = -bottom_pad - 62.0
+
+func _build_2d_action_dock() -> void:
+	if is_instance_valid(_action_dock_root):
+		return
+	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
+	_action_dock_layer = CanvasLayer.new()
+	_action_dock_layer.layer = 10
+	add_child(_action_dock_layer)
+
+	_action_dock_root = Control.new()
+	_action_dock_root.name = "BackgammonActionDock"
+	_action_dock_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_action_dock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_layer.add_child(_action_dock_root)
+
+	_action_dock_panel = Panel.new()
+	_action_dock_panel.name = "ActionPanel"
+	_action_dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_action_dock_panel.offset_left = 12.0
+	_action_dock_panel.offset_right = -12.0
+	_action_dock_panel.offset_bottom = -bottom_pad
+	_action_dock_panel.offset_top = -bottom_pad - 62.0
+	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var p_style := StyleBoxEmpty.new()
+	_action_dock_panel.add_theme_stylebox_override("panel", p_style)
+	_action_dock_root.add_child(_action_dock_panel)
+
+	_action_roll_btn = Button.new()
+	_action_roll_btn.name = "BtnActionRollDice"
+	_action_roll_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_action_roll_btn.focus_mode = Control.FOCUS_NONE
+	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_action_roll_btn.text = "🎲 پرتاب تاس"
+	_action_roll_btn.add_theme_font_override("font", _FONT_FA)
+	_action_roll_btn.add_theme_font_size_override("font_size", 22)
+	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
+	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
+	_action_roll_btn.add_theme_constant_override("outline_size", 4)
+
+	var normal_sb = StyleBoxFlat.new()
+	normal_sb.bg_color = Color(0.12, 0.44, 0.24, 0.96)
+	normal_sb.border_color = Color(1.0, 0.88, 0.35, 0.98)
+	normal_sb.set_border_width_all(3)
+	normal_sb.set_corner_radius_all(16)
+	normal_sb.shadow_color = Color(0, 0, 0, 0.50)
+	normal_sb.shadow_size = 5
+
+	var hover_sb = normal_sb.duplicate() as StyleBoxFlat
+	hover_sb.bg_color = Color(0.16, 0.52, 0.28, 0.98)
+	hover_sb.border_color = Color(1.0, 0.94, 0.50, 1.0)
+
+	var pressed_sb = normal_sb.duplicate() as StyleBoxFlat
+	pressed_sb.bg_color = Color(0.09, 0.36, 0.18, 0.98)
+
+	var disabled_sb = StyleBoxFlat.new()
+	disabled_sb.bg_color = Color(0.14, 0.13, 0.16, 0.78)
+	disabled_sb.border_color = Color(0.36, 0.34, 0.38, 0.50)
+	disabled_sb.set_border_width_all(1)
+	disabled_sb.set_corner_radius_all(16)
+
+	_action_roll_btn.add_theme_stylebox_override("normal", normal_sb)
+	_action_roll_btn.add_theme_stylebox_override("hover", hover_sb)
+	_action_roll_btn.add_theme_stylebox_override("pressed", pressed_sb)
+	_action_roll_btn.add_theme_stylebox_override("disabled", disabled_sb)
+
+	_action_roll_btn.pressed.connect(_on_roll_button_tapped)
+	_action_dock_panel.add_child(_action_roll_btn)
 
 
 func is_interacting_with_piece() -> bool:
@@ -990,74 +1075,12 @@ func _build_bottom_dice_and_roll_console() -> void:
 		var d_ui = _build_single_3d_die(d_i, Vector3(slot_x, SURFACE_Y + 0.008, DICE_TRAY_Z - 0.026))
 		_dice_nodes.append(d_ui)
 
-	# 2. Large Tactile 3D Roll Dice Button at the Bottom of the Board (Z = +0.665)
-	_roll_btn_ui = _build_3d_roll_button(Vector3(0.0, SURFACE_Y + 0.018, ROLL_BTN_Z))
+	# 2. Roll Dice Button is now hosted in the 2D Bottom Action Dock
+	_roll_btn_ui = {}
 
 
-func _build_3d_roll_button(pos: Vector3) -> Dictionary:
-	var btn_size = Vector3(0.82, 0.038, 0.142)
-	var root = Node3D.new()
-	root.name = "BtnRollDice3D"
-	root.position = pos
-	add_child(root)
-
-	# 24K Gold Bezel Base
-	var bezel = MeshInstance3D.new()
-	var bz_box = BoxMesh.new()
-	bz_box.size = btn_size + Vector3(0.024, -0.004, 0.024)
-	bz_box.material = mat_gold_trim
-	bezel.mesh = bz_box
-	root.add_child(bezel)
-
-	# Tactile Button Cap
-	var cap = MeshInstance3D.new()
-	var cap_box = BoxMesh.new()
-	cap_box.size = btn_size
-	cap_box.material = mat_btn_roll_active
-	cap.mesh = cap_box
-	cap.position = Vector3(0, 0.006, 0)
-	root.add_child(cap)
-
-	# Twin 3D Decorative Mini-Dice Sculptures on Left & Right ends of the Button
-	for side_x in [-0.345, 0.345]:
-		var mini_ped = MeshInstance3D.new()
-		var mp_cyl = CylinderMesh.new()
-		mp_cyl.top_radius = 0.024
-		mp_cyl.bottom_radius = 0.027
-		mp_cyl.height = 0.006
-		mp_cyl.material = mat_gold_trim
-		mini_ped.mesh = mp_cyl
-		mini_ped.position = Vector3(side_x, btn_size.y * 0.5 + 0.008, 0)
-		root.add_child(mini_ped)
-
-		var mini_die = MeshInstance3D.new()
-		var md_box = BoxMesh.new()
-		md_box.size = Vector3(0.030, 0.030, 0.030)
-		md_box.material = mat_die_ivory
-		mini_die.mesh = md_box
-		mini_die.position = Vector3(side_x, btn_size.y * 0.5 + 0.023, 0)
-		mini_die.rotation_degrees = Vector3(18, 32, -15)
-		root.add_child(mini_die)
-
-	var lbl = _create_3d_label("🎲 پرتاب تاس", 34, Color(1.0, 0.98, 0.90))
-	lbl.position = Vector3(0, btn_size.y * 0.5 + 0.010, 0)
-	root.add_child(lbl)
-
-	var area = Area3D.new()
-	area.name = "Area_RollDice"
-	area.set_meta("hit_type", "btn_roll")
-	var col = CollisionShape3D.new()
-	var shape = BoxShape3D.new()
-	shape.size = btn_size + Vector3(0.14, 0.12, 0.10)
-	col.shape = shape
-	area.add_child(col)
-	root.add_child(area)
-
-	return {
-		"root": root,
-		"cap": cap,
-		"label": lbl,
-	}
+func _build_3d_roll_button(_pos: Vector3) -> Dictionary:
+	return {}
 
 
 func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
@@ -1731,36 +1754,27 @@ func _refresh_ui_and_highlights() -> void:
 		else:
 			slot.visible = false
 
-	# 6. Always-Visible Bottom 3D Roll Dice Button State (hidden completely in spectator mode)
-	if not _roll_btn_ui.is_empty() and is_instance_valid(_roll_btn_ui.get("root")):
-		var btn_cap: MeshInstance3D = _roll_btn_ui["cap"]
-		var btn_lbl: Label3D = _roll_btn_ui["label"]
+	# 6. Always-Visible Bottom Roll Dice Button State on 2D Action Dock
+	if is_instance_valid(_action_roll_btn) and is_instance_valid(_action_dock_root):
 		if GameManager.is_spectating:
-			_roll_btn_ui["root"].visible = false
+			_action_dock_root.visible = false
 		else:
-			_roll_btn_ui["root"].visible = true
-
-		if not GameManager.is_game_active:
-			btn_cap.material_override = mat_btn_roll_disabled
-			btn_lbl.text = "🎲 آماده شروع بازی..."
-			btn_lbl.modulate = Color(0.88, 0.86, 0.80)
-		elif is_my_turn and not dices_rolled:
-			btn_cap.material_override = mat_btn_roll_active
-			btn_lbl.text = "🎲 پرتاب تاس"
-			btn_lbl.modulate = Color(1.0, 0.98, 0.90)
-		elif is_my_turn and dices_rolled:
-			if not current_dices.is_empty() and _has_any_available_move(my_id):
-				btn_cap.material_override = mat_btn_roll_moved
-				btn_lbl.text = "✨ حرکت دهید (%s)" % _fa_digits(current_dices.size())
-				btn_lbl.modulate = Color(0.95, 0.96, 1.0)
+			_action_dock_root.visible = true
+			if not GameManager.is_game_active:
+				_action_roll_btn.disabled = true
+				_action_roll_btn.text = "🎲 آماده شروع بازی..."
+			elif is_my_turn and not dices_rolled:
+				_action_roll_btn.disabled = false
+				_action_roll_btn.text = "🎲 پرتاب تاس"
+			elif is_my_turn and dices_rolled:
+				_action_roll_btn.disabled = true
+				if not current_dices.is_empty() and _has_any_available_move(my_id):
+					_action_roll_btn.text = "✨ حرکت دهید (%s)" % _fa_digits(current_dices.size())
+				else:
+					_action_roll_btn.text = "⏳ در حال تعویض نوبت..."
 			else:
-				btn_cap.material_override = mat_btn_roll_disabled
-				btn_lbl.text = "⏳ در حال تعویض نوبت..."
-				btn_lbl.modulate = Color(0.80, 0.82, 0.88)
-		else:
-			btn_cap.material_override = mat_btn_roll_disabled
-			btn_lbl.text = "⏳ نوبت حریف..."
-			btn_lbl.modulate = Color(0.75, 0.78, 0.84)
+				_action_roll_btn.disabled = true
+				_action_roll_btn.text = "⏳ نوبت حریف..."
 
 
 func _sync_hud_scores() -> void:
@@ -2388,16 +2402,11 @@ func _handle_screen_tap(screen_pos: Vector2) -> bool:
 	var dir = cam.project_ray_normal(screen_pos)
 	var to = from + dir * 15.0
 
-	# 1. Check 3D Board Plane Intersection first for ultra-reliable Dice Tray & Roll Button tapping!
+	# 1. Check 3D Board Plane Intersection first for ultra-reliable Dice Tray tapping!
 	var board_plane = Plane(Vector3.UP, SURFACE_Y + 0.04)
 	var plane_hit = board_plane.intersects_ray(from, dir)
 	if plane_hit != null:
 		var local_hit: Vector3 = to_local(plane_hit)
-		# Roll Button Zone (Z around ROLL_BTN_Z = 0.665)
-		if absf(local_hit.x) <= 0.48 and absf(local_hit.z - ROLL_BTN_Z) <= 0.095:
-			_mark_interaction()
-			_on_roll_button_tapped()
-			return true
 		# Bottom Dice Tray Zone (Z around DICE_TRAY_Z = 0.445)
 		if absf(local_hit.x) <= (DICE_TRAY_W * 0.52) and absf(local_hit.z - DICE_TRAY_Z) <= (DICE_TRAY_L * 0.56):
 			_mark_interaction()
@@ -2476,11 +2485,11 @@ func _on_roll_button_tapped() -> void:
 		show_hint("تاس‌ها قبلاً پرتاب شده‌اند؛ روی خانه سبز مقصد بزنید!")
 		return
 
-	if _roll_btn_ui.has("root") and is_instance_valid(_roll_btn_ui["root"]):
-		var b_root: Node3D = _roll_btn_ui["root"]
+	if is_instance_valid(_action_roll_btn):
+		_action_roll_btn.pivot_offset = _action_roll_btn.size * 0.5
 		var tw = create_tween()
-		tw.tween_property(b_root, "scale", Vector3(0.94, 0.85, 0.94), 0.07)
-		tw.tween_property(b_root, "scale", Vector3.ONE, 0.10)
+		tw.tween_property(_action_roll_btn, "scale", Vector2(0.95, 0.95), 0.06)
+		tw.tween_property(_action_roll_btn, "scale", Vector2.ONE, 0.08)
 
 	AudioManager.sfx_tap()
 	send_move(Commands.Roll_Dice, {})

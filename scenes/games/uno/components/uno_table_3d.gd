@@ -216,34 +216,8 @@ func _build_tabletop() -> void:
 	_add_torus(self, 0.258, 0.264, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
 
 	# =========================================================================
-	# 2. ANIMATED 3D DIRECTION ORBIT RING & FLOW INDICATOR
+	# 2. 3D DIRECTION FLOW INDICATOR (Spinner removed per design request)
 	# =========================================================================
-	_direction_orbit_ring = Node3D.new()
-	_direction_orbit_ring.position = ring_center + Vector3(0.0, 0.003, 0.0)
-	add_child(_direction_orbit_ring)
-
-	_direction_bead_mat = StandardMaterial3D.new()
-	_direction_bead_mat.albedo_color = UNO_COLORS["red"]
-	_direction_bead_mat.emission_enabled = true
-	_direction_bead_mat.emission = UNO_COLORS["red"]
-	_direction_bead_mat.emission_energy_multiplier = 1.15
-	_direction_bead_mat.roughness = 0.18
-
-	# 6 Orbiting Brass-Cased Gem Nodes on the Arena Ring
-	for b_i: int in range(6):
-		var ang: float = float(b_i) * TAU / 6.0
-		var bx: float = cos(ang) * 0.305
-		var bz: float = sin(ang) * 0.305
-		_add_cyl(_direction_orbit_ring, 0.014, 0.016, 0.005, Vector3(bx, 0.002, bz), mat_bronze, Vector3.ZERO, 12)
-		var gem_mi: MeshInstance3D = MeshInstance3D.new()
-		var sm: SphereMesh = SphereMesh.new()
-		sm.radius = 0.010
-		sm.height = 0.013
-		gem_mi.mesh = sm
-		gem_mi.position = Vector3(bx, 0.006, bz)
-		gem_mi.material_override = _direction_bead_mat
-		_direction_orbit_ring.add_child(gem_mi)
-
 	_direction_pivot = Node3D.new()
 	_direction_pivot.position = Vector3(-0.03, y_base + 0.004, 0.265)
 	add_child(_direction_pivot)

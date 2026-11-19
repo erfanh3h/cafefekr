@@ -539,6 +539,9 @@ func is_overlay_open() -> bool:
 func _apply_bottom_safe_insets() -> void:
 	var insets: Dictionary = HudTheme.get_safe_insets(get_viewport())
 	_safe_bottom_inset = int(insets.get("bottom", 14))
+	if is_instance_valid(fekrbekr_actions):
+		fekrbekr_actions.offset_bottom = -_safe_bottom_inset
+		fekrbekr_actions.offset_top = -_safe_bottom_inset - 64.0
 	if is_instance_valid(sub_header_rail):
 		sub_header_rail.visible = false
 		sub_header_rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -951,34 +954,15 @@ func _setup_connections() -> void:
 
 	
 
-	# Style FekrBekr Center-Right HUD Action Buttons (unified natural wooden background across all 4 buttons)
-
+	# Style FekrBekr / Battleship bottom action dock buttons like Monopoly
 	if is_instance_valid(btn_fekr_submit):
-
-		KenneyUI.style_button(btn_fekr_submit, KenneyUI.COLOR_WOOD)
-
-		KenneyUI.style_button(btn_fekr_clear, KenneyUI.COLOR_WOOD)
-
-		KenneyUI.style_button(btn_fekr_opp, KenneyUI.COLOR_WOOD)
-
-		KenneyUI.style_button(btn_fekr_dual, KenneyUI.COLOR_WOOD)
-
-		_ensure_clean_white_fekr_icons()
-
-		btn_fekr_submit.text = ""
-
-		btn_fekr_clear.text = ""
-
-		btn_fekr_opp.text = ""
-
-		btn_fekr_dual.text = ""
+		_style_monopoly_action_button(btn_fekr_submit, Color(0.12, 0.44, 0.24, 0.96), Color(0.92, 0.74, 0.30, 0.95), true)
+		_style_monopoly_action_button(btn_fekr_clear, Color(0.38, 0.16, 0.16, 0.96), Color(0.85, 0.55, 0.55, 0.90), false)
+		_style_monopoly_action_button(btn_fekr_opp, Color(0.16, 0.24, 0.38, 0.96), Color(0.55, 0.75, 1.0, 0.90), false)
+		_style_monopoly_action_button(btn_fekr_dual, Color(0.24, 0.18, 0.32, 0.96), Color(0.78, 0.62, 0.95, 0.90), false)
 
 		var fekr_btns = [btn_fekr_submit, btn_fekr_clear, btn_fekr_opp, btn_fekr_dual]
-
 		for b in fekr_btns:
-
-			b.pivot_offset = b.custom_minimum_size / 2.0
-
 			ActionVFXManager.apply_button_juice(b, "tap_button")
 
 		btn_fekr_submit.pressed.connect(func():
@@ -3338,37 +3322,78 @@ func _exit_tree() -> void:
 
 # Phase 2: All 4 buttons (✓, ✕, 🎯, 👥) are visible
 
-func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
-
-	if not (GameManager.current_game_type in [GameTypes.FEKRBEKR, GameTypes.BATTLESHIP]) or not GameManager.is_game_active:
-
-		if is_instance_valid(fekrbekr_actions):
-
-			fekrbekr_actions.visible = false
-
+func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color, is_primary: bool = false) -> void:
+	if not is_instance_valid(btn):
 		return
+	var bw: int = 3 if is_primary else 2
+	var normal_sb = StyleBoxFlat.new()
+	normal_sb.bg_color = bg_col
+	normal_sb.border_color = Color(1.0, 0.92, 0.42, 0.98) if is_primary else border_col
+	normal_sb.set_border_width_all(bw)
+	normal_sb.set_corner_radius_all(14)
+	normal_sb.shadow_color = Color(0, 0, 0, 0.45)
+	normal_sb.shadow_size = 4
+	normal_sb.content_margin_left = 10
+	normal_sb.content_margin_right = 10
+	normal_sb.content_margin_top = 4
+	normal_sb.content_margin_bottom = 4
 
+	var hover_sb = normal_sb.duplicate() as StyleBoxFlat
+	hover_sb.bg_color = bg_col.lightened(0.12)
+	hover_sb.border_color = normal_sb.border_color.lightened(0.18)
+
+	var pressed_sb = normal_sb.duplicate() as StyleBoxFlat
+	pressed_sb.bg_color = bg_col.darkened(0.12)
+
+	var disabled_sb = StyleBoxFlat.new()
+	disabled_sb.bg_color = Color(0.14, 0.13, 0.16, 0.78)
+	disabled_sb.border_color = Color(0.36, 0.34, 0.38, 0.50)
+	disabled_sb.set_border_width_all(1)
+	disabled_sb.set_corner_radius_all(14)
+	disabled_sb.content_margin_left = 10
+	disabled_sb.content_margin_right = 10
+
+	btn.add_theme_stylebox_override("normal", normal_sb)
+	btn.add_theme_stylebox_override("hover", hover_sb)
+	btn.add_theme_stylebox_override("pressed", pressed_sb)
+	btn.add_theme_stylebox_override("disabled", disabled_sb)
+
+	btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	btn.add_theme_font_size_override("font_size", 19 if is_primary else 18)
+	btn.add_theme_color_override("font_color", Color.WHITE if is_primary else Color(0.96, 0.94, 0.90))
+	btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
+	btn.add_theme_constant_override("outline_size", 3)
+	btn.clip_text = true
+	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
+	if not (GameManager.current_game_type in [GameTypes.FEKRBEKR, GameTypes.BATTLESHIP]) or not GameManager.is_game_active:
+		if is_instance_valid(fekrbekr_actions):
+			fekrbekr_actions.visible = false
+		return
 	if is_instance_valid(fekrbekr_actions):
-
 		fekrbekr_actions.visible = true
-
 	var is_bs: bool = (GameManager.current_game_type == GameTypes.BATTLESHIP)
-
 	if is_instance_valid(btn_fekr_submit):
-
 		btn_fekr_submit.visible = (not is_play_phase) if is_bs else true
-
+		if not is_bs:
+			btn_fekr_submit.text = "✅ ثبت حدس" if is_play_phase else "✅ ثبت رمز"
+		else:
+			btn_fekr_submit.text = "✅ تأیید چیدمان"
 	if is_instance_valid(btn_fekr_clear):
-
 		btn_fekr_clear.visible = (not is_play_phase) if is_bs else true
-
+		if not is_bs:
+			btn_fekr_clear.text = "✕ پاک کردن"
+		else:
+			btn_fekr_clear.text = "🎲 چیدمان خودکار"
 	if is_instance_valid(btn_fekr_opp):
-
 		btn_fekr_opp.visible = is_play_phase
-
+		btn_fekr_opp.text = "🎯 میدان نبرد" if is_bs else "🎯 صفحه حریف"
 	if is_instance_valid(btn_fekr_dual):
-
 		btn_fekr_dual.visible = is_play_phase
+		btn_fekr_dual.text = "👥 نمای همزمان" if is_bs else "👥 نمای دوطرفه"
 
 static func _fa_digits(val: Variant) -> String:
 	var s = str(val)

@@ -411,20 +411,6 @@ func _build_hud() -> void:
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(bottom_dock)
 
-	# Subtle Translucent Bottom Lip Cradle behind the base of the cards
-	var card_lip: Panel = Panel.new()
-	card_lip.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	card_lip.offset_left = 10
-	card_lip.offset_right = -10
-	card_lip.offset_top = -60
-	card_lip.offset_bottom = 0
-	card_lip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card_lip.add_theme_stylebox_override(
-		"panel",
-		_make_glass_style(Color(0.06, 0.04, 0.03, 0.66), Color(0.84, 0.67, 0.30, 0.42), 20, 1)
-	)
-	bottom_dock.add_child(card_lip)
-
 	# Compact Top Bar of Hand Dock: Left = Sort + Count, Right = Thumb-Zone Draw / Pass CTA
 	contextual_action_bar = HBoxContainer.new()
 	contextual_action_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -471,9 +457,9 @@ func _build_hud() -> void:
 
 	# Right Thumb-Zone Primary Action Pills (Draw / Pass)
 	draw_action_btn = Button.new()
-	draw_action_btn.text = "🃏 کشیدن"
-	draw_action_btn.custom_minimum_size = Vector2(144, 44)
-	draw_action_btn.pivot_offset = Vector2(72, 22)
+	draw_action_btn.text = "🃏 کشیدن کارت"
+	draw_action_btn.custom_minimum_size = Vector2(150, 44)
+	draw_action_btn.pivot_offset = Vector2(75, 22)
 	_style_action_button(draw_action_btn, Color(0.11, 0.42, 0.78, 0.96), Color(0.50, 0.82, 1.0), Color.WHITE, 21, 18)
 	draw_action_btn.visible = false
 	draw_action_btn.pressed.connect(_on_draw_action_pressed)
@@ -891,15 +877,15 @@ func _rebuild_hand_cards(_playable_cnt: int) -> void:
 		selected_card_uid = -1
 		return
 
-	# Dynamic viewport-aware card sizing & exact overlap so up to 10 cards fit 100% centered with ZERO right overflow!
+	# Dynamic viewport-aware card sizing & adaptive overlap so even 15+ cards fit and select effortlessly
 	var vp_w: float = get_viewport().get_visible_rect().size.x if get_viewport() else 720.0
 	var avail_w: float = maxf(280.0, (hand_scroll.size.x if (is_instance_valid(hand_scroll) and hand_scroll.size.x > 100.0) else (vp_w - 24.0)) - 24.0)
-	var card_w: float = clampf(avail_w / 6.4, 80.0, 104.0)
+	var card_w: float = clampf(avail_w / maxf(6.0, float(total_cards) * 0.62), 68.0, 104.0)
 	var slot_w: float = card_w + 6.0
 	var sep: int = 4
 	if total_cards > 1:
 		var fit_sep: float = (avail_w - float(total_cards) * slot_w) / float(total_cards - 1)
-		sep = clampi(int(floor(fit_sep)), -int(roundf(card_w * 0.42)), 6)
+		sep = clampi(int(floor(fit_sep)), -int(roundf(card_w * 0.56)), 6)
 	hand_cards_box.add_theme_constant_override("separation", sep)
 
 	var still_exists: bool = false
@@ -951,8 +937,12 @@ func _scroll_to_card_uid(uid: int) -> void:
 	if max_scroll <= 0:
 		hand_scroll.scroll_horizontal = 0
 		return
-	var target_x: int = int(cw.position.x + cw.size.x * 0.5 - hand_scroll.size.x * 0.5)
-	hand_scroll.scroll_horizontal = clampi(target_x, 0, max_scroll)
+	var target_x: int = clampi(int(cw.position.x + cw.size.x * 0.5 - hand_scroll.size.x * 0.5), 0, max_scroll)
+	if is_inside_tree():
+		var tw: Tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(hand_scroll, "scroll_horizontal", target_x, 0.20)
+	else:
+		hand_scroll.scroll_horizontal = target_x
 
 func _refresh_action_buttons(playable_cnt: int) -> void:
 	if not is_instance_valid(draw_action_btn):
@@ -967,8 +957,8 @@ func _refresh_action_buttons(playable_cnt: int) -> void:
 		_draw_pulse_tween.kill()
 		draw_action_btn.scale = Vector2.ONE
 	if can_draw:
+		draw_action_btn.text = "🃏 کشیدن کارت"
 		if playable_cnt == 0:
-			draw_action_btn.text = "🃏 کشیدن کارت"
 			draw_action_btn.custom_minimum_size = Vector2(166, 46)
 			_style_action_button(draw_action_btn, Color(0.12, 0.46, 0.86, 0.98), Color(1.0, 0.88, 0.36), Color.WHITE, 21, 18)
 			if is_inside_tree() and not _is_mobile_gpu:
@@ -977,8 +967,7 @@ func _refresh_action_buttons(playable_cnt: int) -> void:
 				_draw_pulse_tween.tween_property(draw_action_btn, "scale", Vector2(1.06, 1.06), 0.55).set_trans(Tween.TRANS_SINE)
 				_draw_pulse_tween.tween_property(draw_action_btn, "scale", Vector2.ONE, 0.55).set_trans(Tween.TRANS_SINE)
 		else:
-			draw_action_btn.text = "🃏 +۱ کارت"
-			draw_action_btn.custom_minimum_size = Vector2(122, 40)
+			draw_action_btn.custom_minimum_size = Vector2(150, 44)
 			_style_action_button(draw_action_btn, Color(0.10, 0.18, 0.28, 0.86), Color(0.45, 0.72, 0.96, 0.70), Color(0.90, 0.96, 1.0), 19, 16)
 
 	# Show "Pass Turn" pill immediately after drawing a playable card
@@ -1035,6 +1024,7 @@ func _on_hand_card_tapped(uid: int, card_data: Dictionary, _widget: Control) -> 
 		(_card_widgets_by_uid[prev_uid] as UnoCardWidget).set_selected_state(false, true)
 	if _card_widgets_by_uid.has(uid) and is_instance_valid(_card_widgets_by_uid[uid]):
 		(_card_widgets_by_uid[uid] as UnoCardWidget).set_selected_state(true, true)
+		call_deferred("_scroll_to_card_uid", uid)
 
 func _on_hand_card_play_confirmed(uid: int, card_data: Dictionary, widget: Control) -> void:
 	if not is_my_turn:

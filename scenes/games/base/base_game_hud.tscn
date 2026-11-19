@@ -548,20 +548,20 @@ autowrap_mode = 3
 [node name="FekrBekrActions" type="Control" parent="." unique_id=993819013]
 visible = false
 layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
+anchors_preset = 12
+anchor_left = 0.0
+anchor_top = 1.0
 anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -84.0
-offset_top = -180.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -78.0
 offset_right = -12.0
-offset_bottom = 180.0
-grow_horizontal = 0
-grow_vertical = 2
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 0
 mouse_filter = 2
 
-[node name="VBox" type="VBoxContainer" parent="FekrBekrActions" unique_id=50973572]
+[node name="VBox" type="HBoxContainer" parent="FekrBekrActions" unique_id=50973572]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -569,104 +569,32 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="BtnFekrSubmit" type="Button" parent="FekrBekrActions/VBox" unique_id=1897185198]
-custom_minimum_size = Vector2(72, 76)
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-
-[node name="Icon" type="TextureRect" parent="FekrBekrActions/VBox/BtnFekrSubmit" unique_id=1362936645]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("14_check")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="BtnFekrClear" type="Button" parent="FekrBekrActions/VBox" unique_id=1098886873]
-custom_minimum_size = Vector2(72, 76)
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-
-[node name="Icon" type="TextureRect" parent="FekrBekrActions/VBox/BtnFekrClear" unique_id=1397088415]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("15_cross")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="BtnFekrOpponent" type="Button" parent="FekrBekrActions/VBox" unique_id=920463102]
-custom_minimum_size = Vector2(72, 76)
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-
-[node name="Icon" type="TextureRect" parent="FekrBekrActions/VBox/BtnFekrOpponent" unique_id=556877260]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("16_aim")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="BtnFekrDual" type="Button" parent="FekrBekrActions/VBox" unique_id=1387599801]
-custom_minimum_size = Vector2(72, 76)
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-
-[node name="Icon" type="TextureRect" parent="FekrBekrActions/VBox/BtnFekrDual" unique_id=57121638]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("17_expand")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="DisconnectPauseDialog" type="Control" parent="." unique_id=749419226]
 visible = false

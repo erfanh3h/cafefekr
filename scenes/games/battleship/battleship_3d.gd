@@ -600,14 +600,6 @@ func _build_phase1_setup_ui() -> void:
 		lbl_s.position = Vector3(bx, 0.036, 0.022)
 		drydock_root.add_child(lbl_s)
 
-	# Right Large Button: Randomize Fleet ("🎲 چیدمان تصادفی")
-	_create_drydock_3d_button(
-		Vector3(CMD_BTN_RANDOM_X, 0.028, 0.022),
-		Vector3(0.36, 0.010, 0.082),
-		"🎲 چیدمان تصادفی",
-		Color(0.15, 0.64, 0.40)
-	)
-
 func _create_selected_ship_rotate_indicator() -> Node3D:
 	var root = Node3D.new()
 	var torus = TorusMesh.new()

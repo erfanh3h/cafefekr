@@ -120,6 +120,11 @@ var _cat_row_nodes: Array[Dictionary] = []
 var _dice_nodes: Array[Dictionary] = []
 var _btn_roll_node: Dictionary = {}
 var _btn_submit_node: Dictionary = {}
+var _action_dock_layer: CanvasLayer = null
+var _action_dock_root: Control = null
+var _action_dock_panel: Panel = null
+var _action_roll_btn: Button = null
+var _action_submit_btn: Button = null
 var _status_lbl_3d: Label3D = null
 var _col_header_labels: Array[Label3D] = []
 
@@ -133,8 +138,140 @@ func _ready() -> void:
 	if ResourceLoader.exists("res://assets/fonts/hekayat.ttf"):
 		_game_font = load("res://assets/fonts/hekayat.ttf")
 	init_board()
+	_build_2d_action_dock()
+	var vp = get_viewport()
+	if vp and not vp.size_changed.is_connected(_enforce_dock_geometry):
+		vp.size_changed.connect(_enforce_dock_geometry)
+	call_deferred("_enforce_dock_geometry")
 	super._ready()
 	_hide_hands_for_yatzy()
+
+func _enforce_dock_geometry() -> void:
+	if is_instance_valid(_action_dock_panel):
+		var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
+		_action_dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		_action_dock_panel.offset_left = 12.0
+		_action_dock_panel.offset_right = -12.0
+		_action_dock_panel.offset_bottom = -bottom_pad
+		_action_dock_panel.offset_top = -bottom_pad - 62.0
+
+func _build_2d_action_dock() -> void:
+	if is_instance_valid(_action_dock_root):
+		return
+	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
+	_action_dock_layer = CanvasLayer.new()
+	_action_dock_layer.layer = 10
+	add_child(_action_dock_layer)
+
+	_action_dock_root = Control.new()
+	_action_dock_root.name = "YatzyActionDock"
+	_action_dock_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_action_dock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_layer.add_child(_action_dock_root)
+
+	_action_dock_panel = Panel.new()
+	_action_dock_panel.name = "ActionPanel"
+	_action_dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_action_dock_panel.offset_left = 12.0
+	_action_dock_panel.offset_right = -12.0
+	_action_dock_panel.offset_bottom = -bottom_pad
+	_action_dock_panel.offset_top = -bottom_pad - 62.0
+	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var p_style := StyleBoxEmpty.new()
+	_action_dock_panel.add_theme_stylebox_override("panel", p_style)
+	_action_dock_root.add_child(_action_dock_panel)
+
+	var hbox := HBoxContainer.new()
+	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hbox.add_theme_constant_override("separation", 10)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	_action_dock_panel.add_child(hbox)
+
+	_action_roll_btn = Button.new()
+	_action_roll_btn.name = "BtnActionRollDice"
+	_action_roll_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_action_roll_btn.custom_minimum_size = Vector2(0, 54)
+	_action_roll_btn.focus_mode = Control.FOCUS_NONE
+	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_action_roll_btn.text = "🎲 تاس بریز (۳)"
+	_action_roll_btn.clip_text = true
+	_action_roll_btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if _game_font:
+		_action_roll_btn.add_theme_font_override("font", _game_font)
+	_action_roll_btn.add_theme_font_size_override("font_size", 20)
+	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
+	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
+	_action_roll_btn.add_theme_constant_override("outline_size", 3)
+
+	var roll_normal = StyleBoxFlat.new()
+	roll_normal.bg_color = Color(0.12, 0.38, 0.72, 0.96)
+	roll_normal.border_color = Color(1.0, 0.88, 0.35, 0.98)
+	roll_normal.set_border_width_all(3)
+	roll_normal.set_corner_radius_all(14)
+	roll_normal.shadow_color = Color(0, 0, 0, 0.45)
+	roll_normal.shadow_size = 4
+	roll_normal.content_margin_left = 8
+	roll_normal.content_margin_right = 8
+
+	var roll_hover = roll_normal.duplicate() as StyleBoxFlat
+	roll_hover.bg_color = Color(0.16, 0.46, 0.85, 0.98)
+
+	var roll_pressed = roll_normal.duplicate() as StyleBoxFlat
+	roll_pressed.bg_color = Color(0.09, 0.30, 0.60, 0.98)
+
+	var dis_sb = StyleBoxFlat.new()
+	dis_sb.bg_color = Color(0.14, 0.13, 0.16, 0.78)
+	dis_sb.border_color = Color(0.36, 0.34, 0.38, 0.50)
+	dis_sb.set_border_width_all(1)
+	dis_sb.set_corner_radius_all(14)
+	dis_sb.content_margin_left = 8
+	dis_sb.content_margin_right = 8
+
+	_action_roll_btn.add_theme_stylebox_override("normal", roll_normal)
+	_action_roll_btn.add_theme_stylebox_override("hover", roll_hover)
+	_action_roll_btn.add_theme_stylebox_override("pressed", roll_pressed)
+	_action_roll_btn.add_theme_stylebox_override("disabled", dis_sb)
+	_action_roll_btn.pressed.connect(_on_roll_button_clicked)
+	hbox.add_child(_action_roll_btn)
+
+	_action_submit_btn = Button.new()
+	_action_submit_btn.name = "BtnActionSubmitScore"
+	_action_submit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_action_submit_btn.custom_minimum_size = Vector2(0, 54)
+	_action_submit_btn.focus_mode = Control.FOCUS_NONE
+	_action_submit_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_action_submit_btn.text = "✅ ثبت امتیاز"
+	_action_submit_btn.clip_text = true
+	_action_submit_btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if _game_font:
+		_action_submit_btn.add_theme_font_override("font", _game_font)
+	_action_submit_btn.add_theme_font_size_override("font_size", 20)
+	_action_submit_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
+	_action_submit_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
+	_action_submit_btn.add_theme_constant_override("outline_size", 3)
+
+	var sub_normal = StyleBoxFlat.new()
+	sub_normal.bg_color = Color(0.12, 0.44, 0.24, 0.96)
+	sub_normal.border_color = Color(1.0, 0.88, 0.35, 0.98)
+	sub_normal.set_border_width_all(3)
+	sub_normal.set_corner_radius_all(14)
+	sub_normal.shadow_color = Color(0, 0, 0, 0.45)
+	sub_normal.shadow_size = 4
+	sub_normal.content_margin_left = 8
+	sub_normal.content_margin_right = 8
+
+	var sub_hover = sub_normal.duplicate() as StyleBoxFlat
+	sub_hover.bg_color = Color(0.16, 0.52, 0.28, 0.98)
+
+	var sub_pressed = sub_normal.duplicate() as StyleBoxFlat
+	sub_pressed.bg_color = Color(0.09, 0.36, 0.18, 0.98)
+
+	_action_submit_btn.add_theme_stylebox_override("normal", sub_normal)
+	_action_submit_btn.add_theme_stylebox_override("hover", sub_hover)
+	_action_submit_btn.add_theme_stylebox_override("pressed", sub_pressed)
+	_action_submit_btn.add_theme_stylebox_override("disabled", dis_sb)
+	_action_submit_btn.pressed.connect(_on_submit_button_clicked)
+	hbox.add_child(_action_submit_btn)
 
 func _hide_hands_for_yatzy() -> void:
 	pass
@@ -555,21 +692,9 @@ func _build_3d_arena() -> void:
 		var d_node = _build_single_3d_die(d_idx, Vector3(dice_x_positions[d_idx], BOARD_H + 0.010, 0.376))
 		_dice_nodes.append(d_node)
 
-	# 4. Lower 3D Tactile Action Buttons Dock (Z = +0.695)
-	_btn_roll_node = _build_3d_action_button(
-		"BtnRollDice",
-		Vector3(0.242, BOARD_H + 0.016, 0.695),
-		Vector3(0.45, 0.032, 0.132),
-		"🎲 تاس بریز (۳)",
-		mat_btn_roll_active
-	)
-	_btn_submit_node = _build_3d_action_button(
-		"BtnSubmitScore",
-		Vector3(-0.242, BOARD_H + 0.016, 0.695),
-		Vector3(0.45, 0.032, 0.132),
-		"✅ ثبت امتیاز",
-		mat_btn_submit_active
-	)
+	# 4. Action Buttons are now hosted in the 2D Bottom Action Dock
+	_btn_roll_node = {}
+	_btn_submit_node = {}
 
 # ==============================================================================
 # 3D SCULPTED CATEGORY ROW (خانه امتیاز) BUILDER — NO TEXT OVERFLOW
@@ -1259,33 +1384,29 @@ func _refresh_visuals() -> void:
 	var can_act = GameManager.is_game_active and not is_round_played and not is_board_locked and not GameManager.is_spectating
 	var can_roll = can_act and (remaining_rolls > 0) and not is_rolling_dice
 
-	if _btn_roll_node.has("root") and is_instance_valid(_btn_roll_node["root"]):
-		(_btn_roll_node["root"] as Node3D).visible = not GameManager.is_spectating
-	if _btn_submit_node.has("root") and is_instance_valid(_btn_submit_node["root"]):
-		(_btn_submit_node["root"] as Node3D).visible = not GameManager.is_spectating
-
-	if _btn_roll_node.has("cap"):
-		(_btn_roll_node["cap"] as MeshInstance3D).material_override = mat_btn_roll_active if can_roll else mat_btn_roll_disabled
-		var roll_lbl: Label3D = _btn_roll_node["label"]
-		if remaining_rolls > 0:
-			roll_lbl.text = "🎲 تاس بریز (%s)" % _fa_digits(remaining_rolls)
-			roll_lbl.modulate = Color(1.0, 0.98, 0.90) if can_roll else Color(0.65, 0.65, 0.68)
+	if is_instance_valid(_action_roll_btn) and is_instance_valid(_action_submit_btn) and is_instance_valid(_action_dock_root):
+		if GameManager.is_spectating:
+			_action_dock_root.visible = false
 		else:
-			roll_lbl.text = "🎲 تاسی نمانده (۰)"
-			roll_lbl.modulate = Color(0.65, 0.65, 0.68)
+			_action_dock_root.visible = true
+			# Roll button
+			_action_roll_btn.disabled = not can_roll
+			if remaining_rolls > 0:
+				_action_roll_btn.text = "🎲 تاس بریز (%s)" % _fa_digits(remaining_rolls)
+			else:
+				_action_roll_btn.text = "🎲 تاسی نمانده (۰)"
 
-	if _btn_submit_node.has("cap"):
-		(_btn_submit_node["cap"] as MeshInstance3D).material_override = mat_btn_submit_active if can_act else mat_btn_submit_disabled
-		var sub_lbl: Label3D = _btn_submit_node["label"]
-		var my_arr = p1_board if my_player_index == 1 else p2_board
-		var eq_name = CATEGORY_NAMES_FA[equipped_index] if (equipped_index >= 0 and equipped_index < NUM_CATEGORIES) else ""
-		var eq_pts = int(my_arr[equipped_index]["calc"]) if (equipped_index >= 0 and equipped_index < my_arr.size()) else 0
-		if is_round_played:
-			sub_lbl.text = "⏳ منتظر حرکت حریف..."
-			sub_lbl.modulate = Color(0.75, 0.85, 0.95)
-		else:
-			sub_lbl.text = "✅ ثبت %s (%s)" % [eq_name, _fa_digits(eq_pts)]
-			sub_lbl.modulate = Color(1.0, 0.98, 0.90) if can_act else Color(0.65, 0.65, 0.68)
+			# Submit button
+			var my_arr = p1_board if my_player_index == 1 else p2_board
+			var eq_name = CATEGORY_NAMES_FA[equipped_index] if (equipped_index >= 0 and equipped_index < NUM_CATEGORIES) else ""
+			var eq_pts = int(my_arr[equipped_index]["calc"]) if (equipped_index >= 0 and equipped_index < my_arr.size()) else 0
+			_action_submit_btn.disabled = not can_act or is_round_played
+			if is_round_played:
+				_action_submit_btn.text = "⏳ منتظر حرکت حریف..."
+			elif eq_name != "":
+				_action_submit_btn.text = "✅ ثبت %s (%s)" % [eq_name, _fa_digits(eq_pts)]
+			else:
+				_action_submit_btn.text = "✅ ثبت امتیاز"
 
 	if is_instance_valid(_status_lbl_3d):
 		if is_round_played:
@@ -1515,11 +1636,11 @@ func _on_roll_button_clicked() -> void:
 		show_hint("تاسی برای پرتاب مجدد باقی نمانده است!")
 		return
 
-	if _btn_roll_node.has("root"):
-		var b_root: Node3D = _btn_roll_node["root"]
+	if is_instance_valid(_action_roll_btn):
+		_action_roll_btn.pivot_offset = _action_roll_btn.size * 0.5
 		var tw = create_tween()
-		tw.tween_property(b_root, "scale", Vector3(0.94, 0.85, 0.94), 0.07)
-		tw.tween_property(b_root, "scale", Vector3.ONE, 0.10)
+		tw.tween_property(_action_roll_btn, "scale", Vector2(0.95, 0.95), 0.06)
+		tw.tween_property(_action_roll_btn, "scale", Vector2.ONE, 0.08)
 
 	remaining_rolls -= 1
 	var kept: Array[int] = held_dice_indices.duplicate()
@@ -1541,11 +1662,11 @@ func _on_submit_button_clicked() -> void:
 		show_hint("لطفاً یک خانه خالی انتخاب کنید!")
 		return
 
-	if _btn_submit_node.has("root"):
-		var b_root: Node3D = _btn_submit_node["root"]
+	if is_instance_valid(_action_submit_btn):
+		_action_submit_btn.pivot_offset = _action_submit_btn.size * 0.5
 		var tw = create_tween()
-		tw.tween_property(b_root, "scale", Vector3(0.94, 0.85, 0.94), 0.07)
-		tw.tween_property(b_root, "scale", Vector3.ONE, 0.10)
+		tw.tween_property(_action_submit_btn, "scale", Vector2(0.95, 0.95), 0.06)
+		tw.tween_property(_action_submit_btn, "scale", Vector2.ONE, 0.08)
 
 	AudioManager.play_sound("add_peace")
 	is_round_played = true

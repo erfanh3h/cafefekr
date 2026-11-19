@@ -201,16 +201,16 @@ func _init_materials() -> void:
 	mat_well_socket.roughness = 0.65
 	mat_well_socket.metallic = 0.20
 
-	# Unrevealed Armored Mechanical Tile Cap (Rich Naval Slate & Warm Bronze-Walnut sheen)
+	# Unrevealed Armored Mechanical Tile Cap (Clean, bright steel & naval titanium sheen)
 	mat_cap_normal = StandardMaterial3D.new()
-	mat_cap_normal.albedo_color = Color(0.18, 0.24, 0.30)
-	mat_cap_normal.metallic = 0.42
-	mat_cap_normal.roughness = 0.28
+	mat_cap_normal.albedo_color = Color(0.50, 0.58, 0.66)
+	mat_cap_normal.metallic = 0.38
+	mat_cap_normal.roughness = 0.22
 
 	mat_cap_boss = StandardMaterial3D.new()
-	mat_cap_boss.albedo_color = Color(0.24, 0.32, 0.39)
-	mat_cap_boss.metallic = 0.52
-	mat_cap_boss.roughness = 0.24
+	mat_cap_boss.albedo_color = Color(0.60, 0.68, 0.76)
+	mat_cap_boss.metallic = 0.45
+	mat_cap_boss.roughness = 0.18
 
 	mat_gold_rivet = StandardMaterial3D.new()
 	mat_gold_rivet.albedo_color = Color(0.95, 0.78, 0.32)

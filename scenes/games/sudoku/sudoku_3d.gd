@@ -87,6 +87,14 @@ var btn_solve_mesh: MeshInstance3D
 var btn_solve_label: Label3D
 var lbl_status_hint: Label3D
 
+# 2D Action Dock Controls
+var _action_dock_layer: CanvasLayer
+var _action_dock_panel: Panel
+var _action_digit_buttons: Array = []
+var _action_solve_btn: Button
+var _digit_selected_style: StyleBoxFlat
+var _digit_completed_style: StyleBoxFlat
+
 # Materials
 var mat_plinth: StandardMaterial3D
 var mat_frame: StandardMaterial3D
@@ -552,138 +560,207 @@ func _build_sudoku_grid() -> void:
 			cell_labels[idx] = lbl
 
 func _build_bottom_console() -> void:
-	# 1. Master Console Wood Base Plinth (Cleanly contained inside bed bounds)
-	var console_plinth = MeshInstance3D.new()
-	var plinth_mesh = BoxMesh.new()
-	plinth_mesh.size = Vector3(1.06, 0.024, 0.32)
-	console_plinth.mesh = plinth_mesh
-	console_plinth.material_override = mat_plinth
-	console_plinth.position = Vector3(0, 0.024, 0.485)
-	console_root.add_child(console_plinth)
-
-	# 2. Brass Divider Trim Bar
-	var trim_bar = MeshInstance3D.new()
-	var trim_mesh = BoxMesh.new()
-	trim_mesh.size = Vector3(1.04, 0.008, 0.008)
-	trim_bar.mesh = trim_mesh
-	trim_bar.material_override = mat_brass_trim
-	trim_bar.position = Vector3(0, 0.038, CONSOLE_Z - 0.082)
-	console_root.add_child(trim_bar)
-
-	# 3. Dynamic Status Hint & Guidance Label
-	lbl_status_hint = Label3D.new()
-	if _game_font:
-		lbl_status_hint.font = _game_font
-	lbl_status_hint.font_size = 28
-	lbl_status_hint.pixel_size = 0.00135
-	lbl_status_hint.rotation_degrees = Vector3(-90, 0, 0)
-	lbl_status_hint.position = Vector3(0, 0.040, CONSOLE_Z - 0.062)
-	lbl_status_hint.text = "یک عدد را از پایین انتخاب و روی خانه‌های جدول بزنید"
-	lbl_status_hint.modulate = Color(0.95, 0.92, 0.82)
-	lbl_status_hint.outline_modulate = Color(0.06, 0.06, 0.08)
-	lbl_status_hint.outline_size = 8
-	console_root.add_child(lbl_status_hint)
-
-	# 4. 9 Enlarged Tactile Mechanical Keycap Buttons (1..9)
 	pad_btn_roots.resize(10)
 	pad_btn_pivots.resize(10)
 	pad_btn_meshes.resize(10)
 	pad_btn_labels.resize(10)
 	pad_btn_count_labels.resize(10)
+	_build_action_dock()
 
-	var pad_base_mesh = BoxMesh.new()
-	pad_base_mesh.size = Vector3(PAD_BTN_W + 0.006, 0.012, PAD_BTN_D + 0.006)
+func _build_action_dock() -> void:
+	_action_dock_layer = CanvasLayer.new()
+	_action_dock_layer.name = "SudokuActionLayer"
+	_action_dock_layer.layer = 10
+	add_child(_action_dock_layer)
 
-	var pad_key_mesh = BoxMesh.new()
-	pad_key_mesh.size = Vector3(PAD_BTN_W, PAD_BTN_H, PAD_BTN_D)
+	var dock_root = Control.new()
+	dock_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_layer.add_child(dock_root)
 
-	var start_x = -((9 - 1) * PAD_SPACING) * 0.5
+	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
+	_action_dock_panel = Panel.new()
+	_action_dock_panel.name = "SudokuActionPanel"
+	_action_dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_action_dock_panel.offset_left = 10.0
+	_action_dock_panel.offset_right = -10.0
+	_action_dock_panel.offset_bottom = -bottom_pad
+	_action_dock_panel.offset_top = -bottom_pad - 114.0
+	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	dock_root.add_child(_action_dock_panel)
+
+	var vbox = VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 6)
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_action_dock_panel.add_child(vbox)
+
+	# Row 1: 1..9 Digits + Erase button (10 buttons)
+	var hbox_digits = HBoxContainer.new()
+	hbox_digits.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox_digits.custom_minimum_size = Vector2(0, 52)
+	hbox_digits.add_theme_constant_override("separation", 4)
+	hbox_digits.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(hbox_digits)
+
+	_action_digit_buttons.resize(10)
+
+	_digit_selected_style = StyleBoxFlat.new()
+	_digit_selected_style.bg_color = Color(0.42, 0.30, 0.10, 0.98)
+	_digit_selected_style.border_color = Color(1.0, 0.90, 0.38, 1.0)
+	_digit_selected_style.set_border_width_all(3)
+	_digit_selected_style.set_corner_radius_all(10)
+	_digit_selected_style.shadow_color = Color(1.0, 0.85, 0.30, 0.45)
+	_digit_selected_style.shadow_size = 5
+
+	_digit_completed_style = StyleBoxFlat.new()
+	_digit_completed_style.bg_color = Color(0.10, 0.22, 0.14, 0.90)
+	_digit_completed_style.border_color = Color(0.40, 0.85, 0.50, 0.65)
+	_digit_completed_style.set_border_width_all(2)
+	_digit_completed_style.set_corner_radius_all(10)
+	_digit_completed_style.shadow_color = Color(0, 0, 0, 0.35)
+	_digit_completed_style.shadow_size = 2
+
+	# Digits 1 to 9
 	for d in range(1, 10):
-		var btn_root = Node3D.new()
-		btn_root.name = "PadBtn_%d" % d
-		var x = start_x + float(d - 1) * PAD_SPACING
-		btn_root.position = Vector3(x, 0.036, CONSOLE_Z)
-		console_root.add_child(btn_root)
-		pad_btn_roots[d] = btn_root
-
-		# Stationary Brass Socket Ring
-		var base_inst = MeshInstance3D.new()
-		base_inst.mesh = pad_base_mesh
-		base_inst.material_override = mat_brass_trim
-		base_inst.position = Vector3(0, -0.005, 0)
-		btn_root.add_child(base_inst)
-
-		# Animated Tactile Pivot
-		var pivot = Node3D.new()
-		pivot.name = "KeyPivot"
-		btn_root.add_child(pivot)
-		pad_btn_pivots[d] = pivot
-
-		# Beveled Physical Keycap
-		var b_mesh = MeshInstance3D.new()
-		b_mesh.mesh = pad_key_mesh
-		b_mesh.material_override = mat_pad_normal
-		pivot.add_child(b_mesh)
-		pad_btn_meshes[d] = b_mesh
-
-		# Extra-Large Prominent Persian Digit Label
-		var lbl_d = Label3D.new()
+		var btn = Button.new()
+		btn.name = "BtnDigit_%d" % d
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.custom_minimum_size = Vector2(0, 50)
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.text = "%s\n۰/۹" % _fa_num(d)
 		if _game_font:
-			lbl_d.font = _game_font
-		lbl_d.font_size = 60
-		lbl_d.pixel_size = 0.00140
-		lbl_d.rotation_degrees = Vector3(-90, 0, 0)
-		lbl_d.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, -0.016)
-		lbl_d.text = _fa_num(d)
-		lbl_d.modulate = Color(1.0, 0.95, 0.82)
-		lbl_d.outline_modulate = Color(0.05, 0.05, 0.08)
-		lbl_d.outline_size = 8
-		pivot.add_child(lbl_d)
-		pad_btn_labels[d] = lbl_d
+			btn.add_theme_font_override("font", _game_font)
+		btn.add_theme_font_size_override("font_size", 15)
+		btn.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
+		btn.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.08, 0.95))
+		btn.add_theme_constant_override("outline_size", 3)
+		btn.add_theme_constant_override("line_spacing", -3)
 
-		# Remaining Count Badge Label
-		var lbl_cnt = Label3D.new()
-		if _game_font:
-			lbl_cnt.font = _game_font
-		lbl_cnt.font_size = 24
-		lbl_cnt.pixel_size = 0.00125
-		lbl_cnt.rotation_degrees = Vector3(-90, 0, 0)
-		lbl_cnt.position = Vector3(0, PAD_BTN_H * 0.5 + 0.004, 0.028)
-		lbl_cnt.text = "۰/۹"
-		lbl_cnt.modulate = Color(0.75, 0.82, 0.88)
-		lbl_cnt.outline_modulate = Color(0.05, 0.05, 0.08)
-		lbl_cnt.outline_size = 6
-		pivot.add_child(lbl_cnt)
-		pad_btn_count_labels[d] = lbl_cnt
+		var normal_sb = StyleBoxFlat.new()
+		normal_sb.bg_color = Color(0.12, 0.09, 0.07, 0.94)
+		normal_sb.border_color = Color(0.84, 0.68, 0.35, 0.65)
+		normal_sb.set_border_width_all(2)
+		normal_sb.set_corner_radius_all(10)
+		normal_sb.shadow_color = Color(0, 0, 0, 0.40)
+		normal_sb.shadow_size = 3
+		btn.add_theme_stylebox_override("normal", normal_sb)
 
-	# 5. Centered Action Button: Submit & Solve (✨ بررسی و ثبت حل)
-	btn_solve_root = Node3D.new()
-	btn_solve_root.name = "BtnSolve"
-	btn_solve_root.position = Vector3(0.0, ACTION_BTN_Y, ACTION_BTN_Z)
-	console_root.add_child(btn_solve_root)
+		var hover_sb = normal_sb.duplicate() as StyleBoxFlat
+		hover_sb.bg_color = Color(0.18, 0.14, 0.10, 0.98)
+		hover_sb.border_color = Color(1.0, 0.85, 0.45, 0.90)
+		btn.add_theme_stylebox_override("hover", hover_sb)
 
-	btn_solve_pivot = Node3D.new()
-	btn_solve_root.add_child(btn_solve_pivot)
+		var pressed_sb = normal_sb.duplicate() as StyleBoxFlat
+		pressed_sb.bg_color = Color(0.32, 0.22, 0.08, 0.98)
+		btn.add_theme_stylebox_override("pressed", pressed_sb)
 
-	var solve_mesh = BoxMesh.new()
-	solve_mesh.size = Vector3(0.56, 0.026, 0.068)
-	btn_solve_mesh = MeshInstance3D.new()
-	btn_solve_mesh.mesh = solve_mesh
-	btn_solve_mesh.material_override = mat_btn_solve
-	btn_solve_pivot.add_child(btn_solve_mesh)
+		var digit_val: int = d
+		btn.pressed.connect(func() -> void:
+			_on_digit_button_pressed(digit_val)
+		)
+		hbox_digits.add_child(btn)
+		_action_digit_buttons[d] = btn
 
-	btn_solve_label = Label3D.new()
+	# Erase Button (index 0)
+	var btn_erase = Button.new()
+	btn_erase.name = "BtnDigit_Erase"
+	btn_erase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_erase.custom_minimum_size = Vector2(0, 50)
+	btn_erase.focus_mode = Control.FOCUS_NONE
+	btn_erase.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_erase.text = "✕\nپاک"
 	if _game_font:
-		btn_solve_label.font = _game_font
-	btn_solve_label.font_size = 34
-	btn_solve_label.pixel_size = 0.00140
-	btn_solve_label.rotation_degrees = Vector3(-90, 0, 0)
-	btn_solve_label.position = Vector3(0, 0.016, 0)
-	btn_solve_label.text = "✨ بررسی و ثبت حل"
-	btn_solve_label.modulate = Color(1.0, 1.0, 0.90)
-	btn_solve_label.outline_modulate = Color(0.04, 0.12, 0.06)
-	btn_solve_label.outline_size = 8
-	btn_solve_pivot.add_child(btn_solve_label)
+		btn_erase.add_theme_font_override("font", _game_font)
+	btn_erase.add_theme_font_size_override("font_size", 14)
+	btn_erase.add_theme_color_override("font_color", Color(1.0, 0.70, 0.70))
+	btn_erase.add_theme_color_override("font_outline_color", Color(0.08, 0.02, 0.02, 0.95))
+	btn_erase.add_theme_constant_override("outline_size", 3)
+	btn_erase.add_theme_constant_override("line_spacing", -3)
+
+	var erase_sb = StyleBoxFlat.new()
+	erase_sb.bg_color = Color(0.22, 0.08, 0.08, 0.92)
+	erase_sb.border_color = Color(0.90, 0.35, 0.35, 0.70)
+	erase_sb.set_border_width_all(2)
+	erase_sb.set_corner_radius_all(10)
+	btn_erase.add_theme_stylebox_override("normal", erase_sb)
+
+	var erase_hover = erase_sb.duplicate() as StyleBoxFlat
+	erase_hover.bg_color = Color(0.30, 0.10, 0.10, 0.98)
+	btn_erase.add_theme_stylebox_override("hover", erase_hover)
+
+	var erase_pressed = erase_sb.duplicate() as StyleBoxFlat
+	erase_pressed.bg_color = Color(0.40, 0.12, 0.12, 0.98)
+	btn_erase.add_theme_stylebox_override("pressed", erase_pressed)
+
+	btn_erase.pressed.connect(func() -> void:
+		_on_digit_button_pressed(0)
+	)
+	hbox_digits.add_child(btn_erase)
+	_action_digit_buttons[0] = btn_erase
+
+	# Row 2: Monopoly-styled Solve & Verify Button
+	_action_solve_btn = Button.new()
+	_action_solve_btn.name = "BtnActionSolve"
+	_action_solve_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_action_solve_btn.custom_minimum_size = Vector2(0, 52)
+	_action_solve_btn.focus_mode = Control.FOCUS_NONE
+	_action_solve_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_action_solve_btn.text = "✨ بررسی و ثبت حل سودوکو"
+	if _game_font:
+		_action_solve_btn.add_theme_font_override("font", _game_font)
+	_action_solve_btn.add_theme_font_size_override("font_size", 20)
+	_action_solve_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
+	_action_solve_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
+	_action_solve_btn.add_theme_constant_override("outline_size", 3)
+
+	var solve_normal = StyleBoxFlat.new()
+	solve_normal.bg_color = Color(0.12, 0.44, 0.24, 0.96)
+	solve_normal.border_color = Color(1.0, 0.88, 0.35, 0.98)
+	solve_normal.set_border_width_all(3)
+	solve_normal.set_corner_radius_all(14)
+	solve_normal.shadow_color = Color(0, 0, 0, 0.45)
+	solve_normal.shadow_size = 4
+	solve_normal.content_margin_left = 8
+	solve_normal.content_margin_right = 8
+
+	var solve_hover = solve_normal.duplicate() as StyleBoxFlat
+	solve_hover.bg_color = Color(0.16, 0.52, 0.28, 0.98)
+
+	var solve_pressed = solve_normal.duplicate() as StyleBoxFlat
+	solve_pressed.bg_color = Color(0.09, 0.36, 0.18, 0.98)
+
+	_action_solve_btn.add_theme_stylebox_override("normal", solve_normal)
+	_action_solve_btn.add_theme_stylebox_override("hover", solve_hover)
+	_action_solve_btn.add_theme_stylebox_override("pressed", solve_pressed)
+	_action_solve_btn.pressed.connect(_on_solve_button_tapped)
+	vbox.add_child(_action_solve_btn)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_SIZE_CHANGED:
+		if is_instance_valid(_action_dock_panel):
+			var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
+			_action_dock_panel.offset_bottom = -bottom_pad
+			_action_dock_panel.offset_top = -bottom_pad - 114.0
+
+func _on_digit_button_pressed(digit: int) -> void:
+	AudioManager.play_sound("tap_button")
+	if selected_digit == digit:
+		selected_digit = -1
+		selected_cell_idx = -1
+		if is_instance_valid(lbl_status_hint):
+			lbl_status_hint.text = "یک عدد را از پایین انتخاب و روی خانه‌های جدول بزنید"
+	else:
+		selected_digit = digit
+		if is_instance_valid(lbl_status_hint):
+			if digit == 0:
+				lbl_status_hint.text = "حالت پاک کردن فعال شد • روی خانه مورد نظر بزنید"
+			else:
+				lbl_status_hint.text = "عدد %s انتخاب شد • روی خانه مورد نظر بزنید" % _fa_num(digit)
+	_update_numbers_count()
+	_refresh_board_visuals()
 
 func _update_numbers_count() -> void:
 	for d in range(1, 10):
@@ -715,7 +792,35 @@ func _update_numbers_count() -> void:
 				pad_btn_meshes[d].material_override = mat_pad_normal
 				pad_btn_pivots[d].position.y = 0.0
 
+		# Update 2D action digit buttons
+		if d < _action_digit_buttons.size() and is_instance_valid(_action_digit_buttons[d]):
+			var btn: Button = _action_digit_buttons[d]
+			if is_full:
+				btn.text = "%s\n✓" % _fa_num(d)
+				btn.add_theme_stylebox_override("normal", _digit_completed_style)
+			elif d == selected_digit:
+				btn.text = "%s\n%s/۹" % [_fa_num(d), _fa_num(cnt)]
+				btn.add_theme_stylebox_override("normal", _digit_selected_style)
+			else:
+				btn.text = "%s\n%s/۹" % [_fa_num(d), _fa_num(cnt)]
+				var normal_sb = StyleBoxFlat.new()
+				normal_sb.bg_color = Color(0.12, 0.09, 0.07, 0.94)
+				normal_sb.border_color = Color(0.84, 0.68, 0.35, 0.65)
+				normal_sb.set_border_width_all(2)
+				normal_sb.set_corner_radius_all(10)
+				btn.add_theme_stylebox_override("normal", normal_sb)
 
+	if 0 < _action_digit_buttons.size() and is_instance_valid(_action_digit_buttons[0]):
+		var btn0: Button = _action_digit_buttons[0]
+		if selected_digit == 0:
+			btn0.add_theme_stylebox_override("normal", _digit_selected_style)
+		else:
+			var erase_sb = StyleBoxFlat.new()
+			erase_sb.bg_color = Color(0.22, 0.08, 0.08, 0.92)
+			erase_sb.border_color = Color(0.90, 0.35, 0.35, 0.70)
+			erase_sb.set_border_width_all(2)
+			erase_sb.set_corner_radius_all(10)
+			btn0.add_theme_stylebox_override("normal", erase_sb)
 
 	# Update Solve Button styling (ready if all 81 filled)
 	var filled_cnt = 0
@@ -729,6 +834,12 @@ func _update_numbers_count() -> void:
 		else:
 			btn_solve_label.text = "✨ بررسی و ثبت حل (%s/۸۱)" % _fa_num(filled_cnt)
 			btn_solve_label.modulate = Color(0.95, 0.95, 0.95)
+
+	if is_instance_valid(_action_solve_btn):
+		if filled_cnt >= TOTAL_CELLS:
+			_action_solve_btn.text = "✨ ثبت و ارسال حل نهایی"
+		else:
+			_action_solve_btn.text = "✨ بررسی و ثبت حل (%s/۸۱)" % _fa_num(filled_cnt)
 
 func _refresh_board_visuals() -> void:
 	_calculate_conflicts()
@@ -1128,6 +1239,9 @@ func _on_cell_tapped(idx: int) -> void:
 			_erase_cell(idx)
 		else:
 			_place_number_on_cell(idx, selected_digit)
+	elif selected_digit == 0:
+		if board_values[idx] > 0 and not is_base:
+			_erase_cell(idx)
 	else:
 		# No digit selected in pad:
 		# Tapping an already filled player cell removes it directly!

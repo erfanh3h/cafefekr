@@ -95,7 +95,7 @@ func setup_card(
 	require_confirm_tap = confirm_tap
 	fan_angle_deg = angle_deg
 	fan_arc_y = arc_y
-	_card_w = clampf(card_width, 76.0, 112.0)
+	_card_w = clampf(card_width, 68.0, 112.0)
 	_card_h = roundf(_card_w * 1.42)
 	_build_ui()
 	_apply_visual_state(false)
@@ -310,10 +310,10 @@ func _apply_visual_state(animate: bool) -> void:
 
 	var is_mobile: bool = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	if is_selected:
-		target_y = 6.0
-		target_scale = Vector2(1.08, 1.08)
+		target_y = -4.0
+		target_scale = Vector2(1.10, 1.10)
 		target_rot = 0.0
-		target_z = 20
+		target_z = 50
 		_card_style.set_border_width_all(5)
 		_card_style.border_color = Color(0.38, 0.98, 0.62) if is_playable else Color(1.0, 0.50, 0.50)
 		if not is_mobile:
