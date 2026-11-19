@@ -309,18 +309,22 @@ func _enforce_hud_geometry() -> void:
 	if is_instance_valid(hud_root):
 		hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if is_instance_valid(status_pill):
-		var top_y: float = 264.0 if _get_total_players() <= 2 else 320.0
+		var top_y: float = 166.0 if _get_total_players() <= 2 else 224.0
 		var tree: SceneTree = get_tree()
 		if tree:
 			var hud: Node = tree.get_first_node_in_group("base_game_hud")
 			if not is_instance_valid(hud):
 				hud = tree.root.find_child("BaseGameHUD", true, false)
 			if is_instance_valid(hud):
-				var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
-				if is_instance_valid(header):
-					var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
-					if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
-						top_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 8.0, 220.0, 356.0)
+				var rail: Control = hud.get_node_or_null("SubHeaderRail") as Control
+				if is_instance_valid(rail) and rail.size.y > 10.0:
+					top_y = clampf(rail.global_position.y + rail.size.y + 8.0, 152.0, 310.0)
+				else:
+					var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
+					if is_instance_valid(header):
+						var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
+						if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
+							top_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 50.0, 152.0, 310.0)
 		status_pill.set_anchors_preset(Control.PRESET_TOP_WIDE)
 		status_pill.offset_left = 12.0
 		status_pill.offset_right = -12.0
@@ -328,11 +332,12 @@ func _enforce_hud_geometry() -> void:
 		status_pill.offset_bottom = top_y + 46.0
 		status_pill.clip_contents = true
 	if is_instance_valid(bottom_dock):
+		var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 		bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 		bottom_dock.offset_left = 10.0
 		bottom_dock.offset_right = -10.0
-		bottom_dock.offset_top = -316.0
-		bottom_dock.offset_bottom = -92.0
+		bottom_dock.offset_top = -bottom_pad - 224.0
+		bottom_dock.offset_bottom = -bottom_pad
 		bottom_dock.clip_contents = true
 	if is_instance_valid(dock_panel):
 		dock_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -414,13 +419,14 @@ func _build_hud() -> void:
 	status_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	phb.add_child(status_label)
 
-	# 2. Bottom Floating Gamer Command Dock (Sits cleanly above BottomBar — zero dead gap!)
+	# 2. Bottom Floating Gamer Command Dock (Anchored cleanly in cleared bottom HUD space)
+	var init_bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	bottom_dock = Control.new()
 	bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_dock.offset_left = 12
 	bottom_dock.offset_right = -12
-	bottom_dock.offset_top = -316
-	bottom_dock.offset_bottom = -92
+	bottom_dock.offset_top = -init_bottom_pad - 224.0
+	bottom_dock.offset_bottom = -init_bottom_pad
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bottom_dock.visible = not GameManager.is_spectating
 	hud_root.add_child(bottom_dock)

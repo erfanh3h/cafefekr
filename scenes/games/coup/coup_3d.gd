@@ -346,10 +346,11 @@ func _enforce_hud_geometry() -> void:
 		status_pill.offset_right = half_w
 		_sync_top_pill_position()
 	if is_instance_valid(bottom_dock):
+		var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 		bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 		bottom_dock.offset_left = 10.0
 		bottom_dock.offset_right = -10.0
-		bottom_dock.offset_bottom = -92.0
+		bottom_dock.offset_bottom = -bottom_pad
 		_fit_bottom_dock_height()
 
 func _build_hud() -> void:
@@ -408,12 +409,13 @@ func _build_hud() -> void:
 	pill_hbox.add_child(deck_badge_lbl)
 
 	# 2. Strictly Bounded Full-Width Bottom Command Dock (Panel + clip_contents NEVER overflows right!)
+	var init_bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	bottom_dock = Panel.new()
 	bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_dock.offset_left = 10
 	bottom_dock.offset_right = -10
-	bottom_dock.offset_top = -140
-	bottom_dock.offset_bottom = -92
+	bottom_dock.offset_top = -init_bottom_pad - 144.0
+	bottom_dock.offset_bottom = -init_bottom_pad
 	bottom_dock.clip_contents = true
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_STOP
 	bottom_dock.add_theme_stylebox_override(
@@ -993,18 +995,22 @@ func _refresh_all_visuals() -> void:
 func _sync_top_pill_position() -> void:
 	if not is_instance_valid(status_pill):
 		return
-	var target_y: float = 264.0 if _get_total_players() <= 2 else 320.0
+	var target_y: float = 166.0 if _get_total_players() <= 2 else 224.0
 	var tree: SceneTree = get_tree()
 	if tree:
 		var hud: Node = tree.get_first_node_in_group("base_game_hud")
 		if not is_instance_valid(hud):
 			hud = tree.root.find_child("BaseGameHUD", true, false)
 		if is_instance_valid(hud):
-			var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
-			if is_instance_valid(header):
-				var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
-				if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
-					target_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 8.0, 220.0, 356.0)
+			var rail: Control = hud.get_node_or_null("SubHeaderRail") as Control
+			if is_instance_valid(rail) and rail.size.y > 10.0:
+				target_y = clampf(rail.global_position.y + rail.size.y + 8.0, 152.0, 310.0)
+			else:
+				var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
+				if is_instance_valid(header):
+					var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
+					if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
+						target_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 50.0, 152.0, 310.0)
 	if absf(target_y - _last_top_pill_y) > 1.0:
 		_last_top_pill_y = target_y
 		status_pill.offset_top = target_y
@@ -1434,12 +1440,13 @@ func _resize_bottom_dock_deferred() -> void:
 func _fit_bottom_dock_height() -> void:
 	if not is_instance_valid(bottom_dock):
 		return
+	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	var content_h: float = dock_margin.get_combined_minimum_size().y if is_instance_valid(dock_margin) else 160.0
 	var target_h: float = clampf(content_h + 6.0, 144.0, 356.0)
 	bottom_dock.offset_left = 10.0
 	bottom_dock.offset_right = -10.0
-	bottom_dock.offset_bottom = -92.0
-	bottom_dock.offset_top = -92.0 - target_h
+	bottom_dock.offset_bottom = -bottom_pad
+	bottom_dock.offset_top = -bottom_pad - target_h
 
 func _add_dock_info_label(txt: String, col: Color) -> void:
 	var lbl: Label = Label.new()

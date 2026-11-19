@@ -307,19 +307,20 @@ func _enforce_hud_geometry() -> void:
 		turn_status_pill.offset_left = -half_pill
 		turn_status_pill.offset_right = half_pill
 		_sync_top_pill_position()
+	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	if is_instance_valid(bottom_dock):
 		bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 		bottom_dock.offset_left = 8.0
 		bottom_dock.offset_right = -8.0
-		bottom_dock.offset_top = -336.0
-		bottom_dock.offset_bottom = -92.0
+		bottom_dock.offset_top = -bottom_pad - 244.0
+		bottom_dock.offset_bottom = -bottom_pad
 		bottom_dock.clip_contents = true
 	if is_instance_valid(call_uno_btn):
 		call_uno_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 		call_uno_btn.offset_left = 14.0
 		call_uno_btn.offset_right = 88.0
-		call_uno_btn.offset_top = -418.0
-		call_uno_btn.offset_bottom = -344.0
+		call_uno_btn.offset_top = -bottom_pad - 326.0
+		call_uno_btn.offset_bottom = -bottom_pad - 252.0
 	if is_instance_valid(wild_modal_panel):
 		var mw: float = minf(390.0, vp_w - 36.0)
 		wild_modal_panel.custom_minimum_size = Vector2(mw, 410.0)
@@ -398,13 +399,14 @@ func _build_hud() -> void:
 	deck_count_chip_label.add_theme_color_override("font_color", Color(0.78, 0.88, 0.96))
 	pill_hbox.add_child(deck_count_chip_label)
 
-	# --- 2. Open Floating Handheld Card Fan Sitting Cleanly Above BottomBar (Clipped strictly inside viewport!) ---
+	# --- 2. Open Floating Handheld Card Fan in Cleared Bottom HUD Space (Clipped strictly inside viewport!) ---
+	var init_bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	bottom_dock = Control.new()
 	bottom_dock.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_dock.offset_left = 8
 	bottom_dock.offset_right = -8
-	bottom_dock.offset_top = -336
-	bottom_dock.offset_bottom = -92
+	bottom_dock.offset_top = -init_bottom_pad - 244.0
+	bottom_dock.offset_bottom = -init_bottom_pad
 	bottom_dock.clip_contents = true
 	bottom_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(bottom_dock)
@@ -491,8 +493,8 @@ func _build_hud() -> void:
 	call_uno_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	call_uno_btn.offset_left = 14
 	call_uno_btn.offset_right = 88
-	call_uno_btn.offset_top = -418
-	call_uno_btn.offset_bottom = -344
+	call_uno_btn.offset_top = -init_bottom_pad - 326.0
+	call_uno_btn.offset_bottom = -init_bottom_pad - 252.0
 	call_uno_btn.pivot_offset = Vector2(37, 37)
 	_style_action_button(call_uno_btn, Color(0.86, 0.14, 0.18, 0.98), Color(1.0, 0.88, 0.32), Color(1.0, 0.98, 0.86), 18, 37)
 	call_uno_btn.visible = false
@@ -789,18 +791,22 @@ func _refresh_all_visuals() -> void:
 func _sync_top_pill_position() -> void:
 	if not is_instance_valid(turn_status_pill):
 		return
-	var target_y: float = 264.0 if _get_total_players() <= 2 else 320.0
+	var target_y: float = 166.0 if _get_total_players() <= 2 else 224.0
 	var tree: SceneTree = get_tree()
 	if tree:
 		var hud: Node = tree.get_first_node_in_group("base_game_hud")
 		if not is_instance_valid(hud):
 			hud = tree.root.find_child("BaseGameHUD", true, false)
 		if is_instance_valid(hud):
-			var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
-			if is_instance_valid(header):
-				var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
-				if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
-					target_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 8.0, 220.0, 356.0)
+			var rail: Control = hud.get_node_or_null("SubHeaderRail") as Control
+			if is_instance_valid(rail) and rail.size.y > 10.0:
+				target_y = clampf(rail.global_position.y + rail.size.y + 8.0, 152.0, 310.0)
+			else:
+				var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
+				if is_instance_valid(header):
+					var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
+					if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
+						target_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 50.0, 152.0, 310.0)
 	if absf(target_y - _last_top_pill_y) > 1.0:
 		_last_top_pill_y = target_y
 		turn_status_pill.offset_top = target_y

@@ -448,10 +448,11 @@ func _enforce_hud_geometry() -> void:
 		_top_strip.offset_right = half_w
 		_sync_top_strip_position()
 	if is_instance_valid(_command_dock_panel):
+		var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 		_command_dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 		_command_dock_panel.offset_left = 10.0
 		_command_dock_panel.offset_right = -10.0
-		_command_dock_panel.offset_bottom = -92.0
+		_command_dock_panel.offset_bottom = -bottom_pad
 		_fit_command_dock_height()
 	if is_instance_valid(_inspector_panel):
 		_inspector_panel.custom_minimum_size = Vector2(minf(650.0, vp_w - 28.0), minf(700.0, vp_h - 220.0))
@@ -516,13 +517,14 @@ func _build_floating_ui() -> void:
 	top_hbox.add_child(_top_decks_lbl)
 
 	# --- 2. Strictly Bounded Bottom-Anchored Command Dock (Panel + clip_contents NEVER overflows right!) ---
+	var init_bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	_command_dock_panel = Panel.new()
 	_command_dock_panel.name = "SleekCommandDock"
 	_command_dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_command_dock_panel.offset_left = 10
 	_command_dock_panel.offset_right = -10
-	_command_dock_panel.offset_top = -250
-	_command_dock_panel.offset_bottom = -92
+	_command_dock_panel.offset_top = -init_bottom_pad - 158.0
+	_command_dock_panel.offset_bottom = -init_bottom_pad
 	_command_dock_panel.clip_contents = true
 	_command_dock_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_command_dock_panel.visible = not GameManager.is_spectating
@@ -1733,18 +1735,22 @@ func _refresh_top_header() -> void:
 func _sync_top_strip_position() -> void:
 	if not is_instance_valid(_top_strip):
 		return
-	var target_y: float = 264.0 if total_players <= 2 else 320.0
+	var target_y: float = 166.0 if total_players <= 2 else 224.0
 	var tree: SceneTree = get_tree()
 	if tree:
 		var hud: Node = tree.get_first_node_in_group("base_game_hud")
 		if not is_instance_valid(hud):
 			hud = tree.root.find_child("BaseGameHUD", true, false)
 		if is_instance_valid(hud):
-			var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
-			if is_instance_valid(header):
-				var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
-				if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
-					target_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 8.0, 220.0, 356.0)
+			var rail: Control = hud.get_node_or_null("SubHeaderRail") as Control
+			if is_instance_valid(rail) and rail.size.y > 10.0:
+				target_y = clampf(rail.global_position.y + rail.size.y + 8.0, 152.0, 310.0)
+			else:
+				var header: Node = hud.current_top_header if ("current_top_header" in hud and is_instance_valid(hud.current_top_header)) else hud.get_node_or_null("TopHeader")
+				if is_instance_valid(header):
+					var vbox_main: Control = header.get_node_or_null("Margin/VBoxMain") as Control
+					if is_instance_valid(vbox_main) and vbox_main.size.y > 40.0:
+						target_y = clampf(vbox_main.global_position.y + vbox_main.size.y + 50.0, 152.0, 310.0)
 	if absf(target_y - _last_top_strip_y) > 1.0:
 		_last_top_strip_y = target_y
 		_top_strip.offset_top = target_y
@@ -1799,12 +1805,13 @@ func _refresh_phase_stepper() -> void:
 func _fit_command_dock_height() -> void:
 	if not is_instance_valid(_command_dock_panel):
 		return
+	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	var content_h: float = _command_dock_margin.get_combined_minimum_size().y if is_instance_valid(_command_dock_margin) else 180.0
 	var target_h: float = clampf(content_h + 6.0, 110.0, 336.0)
 	_command_dock_panel.offset_left = 10.0
 	_command_dock_panel.offset_right = -10.0
-	_command_dock_panel.offset_bottom = -92.0
-	_command_dock_panel.offset_top = -92.0 - target_h
+	_command_dock_panel.offset_bottom = -bottom_pad
+	_command_dock_panel.offset_top = -bottom_pad - target_h
 
 func _refresh_floating_hud() -> void:
 	_update_hud_visibility()

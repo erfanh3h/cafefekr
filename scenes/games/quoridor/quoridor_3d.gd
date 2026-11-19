@@ -622,22 +622,24 @@ func _enforce_dock_geometry() -> void:
 	if is_instance_valid(dock_root):
 		dock_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if is_instance_valid(dock_panel):
+		var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 		dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 		dock_panel.offset_left = 10.0
 		dock_panel.offset_right = -10.0
-		dock_panel.offset_bottom = -92.0
+		dock_panel.offset_bottom = -bottom_pad
 		dock_panel.clip_contents = true
 		_fit_dock_height()
 
 func _fit_dock_height() -> void:
 	if not is_instance_valid(dock_panel):
 		return
+	var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	var content_h: float = dock_margin.get_combined_minimum_size().y if is_instance_valid(dock_margin) else 124.0
 	var target_h: float = clampf(content_h + 6.0, 108.0, 220.0)
 	dock_panel.offset_left = 10.0
 	dock_panel.offset_right = -10.0
-	dock_panel.offset_bottom = -92.0
-	dock_panel.offset_top = -92.0 - target_h
+	dock_panel.offset_bottom = -bottom_pad
+	dock_panel.offset_top = -bottom_pad - target_h
 
 func _build_action_dock() -> void:
 	dock_layer = CanvasLayer.new()
@@ -651,13 +653,14 @@ func _build_action_dock() -> void:
 	dock_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dock_layer.add_child(dock_root)
 
+	var init_bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 	dock_panel = Panel.new()
 	dock_panel.name = "QuoridorActionDock"
 	dock_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	dock_panel.offset_left = 10.0
 	dock_panel.offset_right = -10.0
-	dock_panel.offset_top = -220.0
-	dock_panel.offset_bottom = -92.0
+	dock_panel.offset_top = -init_bottom_pad - 128.0
+	dock_panel.offset_bottom = -init_bottom_pad
 	dock_panel.clip_contents = true
 	dock_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	dock_panel.add_theme_stylebox_override(
