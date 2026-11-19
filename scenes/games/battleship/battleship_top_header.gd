@@ -91,5 +91,5 @@ func _highlight_both_players() -> void:
 
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	var active_list: Array[int] = [1, 2] if (is_setup_phase or not (turn in [1, 2])) else [turn]
+	var active_list: Array = [1, 2] if (is_setup_phase or not (turn in [1, 2])) else [turn]
 	_update_card_timer_visuals(remaining_sec, total_sec, active_list)

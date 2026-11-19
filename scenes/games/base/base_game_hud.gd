@@ -368,10 +368,10 @@ var _last_pause_sec_ticked: int = -1
 
 
 # Audio and Camera Badges
-var _sound_on_tex = preload("res://assets/images/badges/sound-on.png")
-var _sound_off_tex = preload("res://assets/images/badges/sound-off.png")
-var _cam_3d_tex = preload("res://assets/images/badges/3d.png")
-var _cam_2d_tex = preload("res://assets/images/badges/2d.png")
+var _sound_on_tex: Texture2D = preload("res://assets/images/badges/sound-on.png")
+var _sound_off_tex: Texture2D = preload("res://assets/images/badges/sound-off.png")
+var _cam_3d_tex: Texture2D = preload("res://assets/images/badges/3d.png")
+var _cam_2d_tex: Texture2D = preload("res://assets/images/badges/2d.png")
 
 
 

@@ -63,7 +63,7 @@ static var _tex_sound_on: Texture2D = preload("res://assets/images/badges/sound-
 static var _tex_sound_off: Texture2D = preload("res://assets/images/badges/sound-off.png")
 
 var _cards: Dictionary = {} # player_index (1..4) -> Dictionary of controls
-var _active_players: Array[int] = [1]
+var _active_players: Array = [1]
 var _player_count: int = 2
 var _audio_enabled: bool = true
 var _camera_popover_open: bool = false
@@ -344,7 +344,7 @@ func set_active_player(player_index: int, prompt_text: String = "") -> void:
 	set_simultaneous_active([player_index], prompt_text)
 
 
-func set_simultaneous_active(indices: Array[int], prompt_text: String = "") -> void:
+func set_simultaneous_active(indices: Array, prompt_text: String = "") -> void:
 	_active_players = indices.duplicate()
 	var compact := _player_count > 2
 	for idx in _cards.keys():

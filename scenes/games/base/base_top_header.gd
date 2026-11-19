@@ -126,7 +126,7 @@ var _turn_toast_persistent: bool = false
 var _current_turn: int = 1
 var _my_player_index: int = 1
 var _total_players: int = 2
-var _active_card_indices: Array[int] = [1]
+var _active_card_indices: Array = [1]
 var _last_critical_sec: int = -1
 var _last_displayed_sec: int = -1
 var _last_p1_score: int = 0
@@ -703,7 +703,7 @@ func _set_role_badge(player_idx: int, text: String, accent_col: Color = Color(-1
 		rl.add_theme_stylebox_override("normal", HudTheme.make_status_pill_style(accent_col, 0.78))
 
 
-func _set_active_cards_visual(active_indices: Array[int], is_danger: bool = false, pulse_active: bool = false) -> void:
+func _set_active_cards_visual(active_indices: Array, is_danger: bool = false, pulse_active: bool = false) -> void:
 	_active_card_indices = active_indices.duplicate()
 	var compact := _total_players > 2
 	for idx in [1, 2, 3, 4]:
@@ -738,7 +738,7 @@ func _set_active_cards_visual(active_indices: Array[int], is_danger: bool = fals
 			t_chip.visible = is_act and not t_chip.text.is_empty()
 
 
-func _update_card_timer_visuals(remaining_sec: float, total_sec: float, active_indices: Array[int]) -> void:
+func _update_card_timer_visuals(remaining_sec: float, total_sec: float, active_indices: Array) -> void:
 	var pct := clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
 	var is_danger := (remaining_sec <= 4.0 and remaining_sec > 0.0)
 	var sec_ceil := maxi(0, int(ceil(remaining_sec)))
@@ -902,7 +902,7 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 	var is_p1 := (turn == 1)
 	var is_me := (turn == my_idx)
 
-	var active_list: Array[int] = [1, 2] if is_simul else [turn]
+	var active_list: Array = [1, 2] if is_simul else [turn]
 	_set_active_cards_visual(active_list, false, not is_simul)
 
 	# Lightweight fading turn toast
@@ -950,7 +950,7 @@ func _apply_timer_visual_state(is_danger: bool, box_style: StyleBox, fill_col: C
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 	var is_simul: bool = bool(GameRegistry.is_simultaneous(GameManager.current_game_type))
-	var active_list: Array[int] = [1, 2] if is_simul else [turn]
+	var active_list: Array = [1, 2] if is_simul else [turn]
 	_update_card_timer_visuals(remaining_sec, total_sec, active_list)
 
 
