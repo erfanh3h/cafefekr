@@ -415,15 +415,15 @@ static func make_emote_bubble_style(is_kori: bool = true) -> StyleBoxFlat:
 	sb.bg_color = Color(0.14, 0.09, 0.05, 0.96) if is_kori else Color(0.14, 0.09, 0.05, 0.88)
 	sb.border_color = COL_GOLD_ACTIVE if is_kori else Color(COL_GOLD_BRUSHED.r, COL_GOLD_BRUSHED.g, COL_GOLD_BRUSHED.b, 0.85)
 	sb.set_border_width_all(2)
-	sb.border_width_bottom = 3
-	sb.set_corner_radius_all(18 if is_kori else 22)
+	sb.border_width_bottom = 2
+	sb.set_corner_radius_all(14 if is_kori else 22)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.58)
-	sb.shadow_size = 12
-	sb.shadow_offset = Vector2(0, 4)
-	sb.content_margin_left = 14 if is_kori else 8
-	sb.content_margin_right = 14 if is_kori else 8
-	sb.content_margin_top = 8 if is_kori else 8
-	sb.content_margin_bottom = 8 if is_kori else 8
+	sb.shadow_size = 8 if is_kori else 12
+	sb.shadow_offset = Vector2(0, 3)
+	sb.content_margin_left = 12 if is_kori else 8
+	sb.content_margin_right = 12 if is_kori else 8
+	sb.content_margin_top = 4 if is_kori else 8
+	sb.content_margin_bottom = 4 if is_kori else 8
 	return sb
 
 

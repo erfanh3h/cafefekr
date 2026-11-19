@@ -25,6 +25,14 @@ func _is_score_based_game() -> bool:
 	return true
 
 
+func _is_simultaneous_turn() -> bool:
+	return true
+
+
+func _get_simultaneous_turn_text() -> String:
+	return "پاسخ به سوال"
+
+
 func _build_extra_player_cards() -> void:
 	var players_row2 := _get_or_create_players_row2()
 	if not players_row2 or not is_instance_valid(p2_card):
@@ -78,6 +86,7 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			_set_role_badge(idx, "🔒 ثبت شد", HudTheme.COL_EMERALD)
 		else:
 			_set_role_badge(idx, "")
+	_apply_opponent_only_layout()
 
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
@@ -126,6 +135,7 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	_apply_layout_for_player_count(total_players)
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
+	set_match_meta_text("مسابقه اطلاعات عمومی (%s نفره)" % _fa_digits(total_players))
 	update_quiz_scores(_quiz_scores)
 	_set_active_cards_visual(_get_active_player_indices(), false, false)
 
@@ -138,6 +148,7 @@ func set_local_answered(answered: bool) -> void:
 
 
 func _on_turn_changed(_turn: int) -> void:
+	super.update_turn(_turn, _my_player_index, _player_names.get(1, ""), _player_names.get(2, ""))
 	_set_active_cards_visual(_get_active_player_indices(), false, false)
 	if GameManager.is_game_active:
 		if _local_answered_confirmed:
@@ -147,7 +158,7 @@ func _on_turn_changed(_turn: int) -> void:
 
 
 func update_timer(remaining_sec: float, total_sec: float, _turn: int) -> void:
-	_update_card_timer_visuals(remaining_sec, total_sec, _get_active_player_indices())
+	super.update_timer(remaining_sec, total_sec, _turn)
 
 
 func set_player_surrendered(gid: int) -> void:
@@ -189,6 +200,7 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 	next_scores[1] = p1_score
 	next_scores[2] = p2_score
 	update_quiz_scores(next_scores)
+	set_current_result_scores(p1_score, p2_score)
 
 
 func update_quiz_scores(scores: Dictionary) -> void:
@@ -204,8 +216,10 @@ func update_quiz_scores(scores: Dictionary) -> void:
 		var b := _get_player_card_bundle(gid)
 		var lbl: Label = b.get("score", null)
 		var badge: PanelContainer = lbl.get_parent() as PanelContainer if is_instance_valid(lbl) else null
+		var score_str := _fa_digits(val) if val >= 0 else ("-%s" % _fa_digits(abs(val)))
+		update_player_counter(gid, score_str)
 		if is_instance_valid(lbl):
-			lbl.text = _fa_digits(val) if val >= 0 else ("-%s" % _fa_digits(abs(val)))
+			lbl.text = score_str
 			var txt_col := HudTheme.COL_EMERALD if val > 0 else (HudTheme.COL_DANGER if val < 0 else HudTheme.COL_TEXT_GOLD)
 			lbl.add_theme_color_override("font_color", txt_col)
 			if is_instance_valid(badge):
@@ -214,6 +228,7 @@ func update_quiz_scores(scores: Dictionary) -> void:
 					badge.add_theme_stylebox_override("panel", _score_styles[sb_key])
 			if val != prev_val:
 				_animate_score_bump(badge if is_instance_valid(badge) else lbl)
+	set_current_result_scores(int(_quiz_scores.get(1, 0)), int(_quiz_scores.get(2, 0)))
 
 
 func set_quiz_turn_banner(text: String, col: Color = HudTheme.COL_TEXT_GOLD) -> void:
@@ -223,6 +238,7 @@ func set_quiz_turn_banner(text: String, col: Color = HudTheme.COL_TEXT_GOLD) -> 
 func set_question_number(turn_num: int, total: int = 10) -> void:
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "سوال %s از %s" % [_fa_digits(turn_num), _fa_digits(total)]
+	set_match_meta_text("سوال %s از %s" % [_fa_digits(turn_num), _fa_digits(total)])
 	if turn_num > 0:
 		show_turn_toast("سوال %s از %s" % [_fa_digits(turn_num), _fa_digits(total)], HudTheme.COL_TEXT_GOLD, false, 1.6)
 

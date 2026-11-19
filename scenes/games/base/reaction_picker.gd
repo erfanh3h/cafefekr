@@ -190,8 +190,8 @@ func _build_kori_list() -> void:
 	normal_style.set_corner_radius_all(12)
 	normal_style.content_margin_left = 10
 	normal_style.content_margin_right = 10
-	normal_style.content_margin_top = 8
-	normal_style.content_margin_bottom = 8
+	normal_style.content_margin_top = 4
+	normal_style.content_margin_bottom = 4
 	normal_style.shadow_color = Color(0, 0, 0, 0.30)
 	normal_style.shadow_size = 3
 
@@ -202,14 +202,14 @@ func _build_kori_list() -> void:
 	for idx in range(KORIS.size()):
 		var card := PanelContainer.new()
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.custom_minimum_size = Vector2(0, 56)
+		card.custom_minimum_size = Vector2(0, 38)
 		card.mouse_filter = Control.MOUSE_FILTER_PASS
 		card.add_theme_stylebox_override("panel", normal_style)
 
 		var lbl := Label.new()
 		lbl.text = KORIS[idx]
 		lbl.add_theme_font_override("font", FONT_UI)
-		lbl.add_theme_font_size_override("font_size", 14)
+		lbl.add_theme_font_size_override("font_size", 12)
 		lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 		lbl.add_theme_constant_override("shadow_offset_y", 1)
@@ -267,7 +267,7 @@ func _open_downward(anchor_btn: Control) -> void:
 	var bottom_i: float = float(insets.get("bottom", 14))
 
 	var panel_w: float = clampf(vp_size.x - left_i - right_i - 8.0, 310.0, 396.0)
-	var panel_h: float = clampf(vp_size.y * 0.42, 320.0, 420.0)
+	var panel_h: float = clampf(vp_size.y * 0.36, 260.0, 360.0)
 
 	var pos_x: float = vp_size.x - panel_w - right_i
 	var pos_y: float = top_i + 148.0
@@ -298,6 +298,8 @@ func _open_downward(anchor_btn: Control) -> void:
 
 
 func open_stickers(anchor_btn: Control = null) -> void:
+	if GameManager.chat_and_stickers_disabled:
+		return
 	if is_instance_valid(lbl_title):
 		lbl_title.text = "😊 استیکرها و ایموجی‌ها"
 	if is_instance_valid(sticker_scroll):
@@ -308,6 +310,8 @@ func open_stickers(anchor_btn: Control = null) -> void:
 
 
 func open_koris(anchor_btn: Control = null) -> void:
+	if GameManager.chat_and_stickers_disabled:
+		return
 	if is_instance_valid(lbl_title):
 		lbl_title.text = "💬 کری‌خوانی سریع"
 	if is_instance_valid(sticker_scroll):

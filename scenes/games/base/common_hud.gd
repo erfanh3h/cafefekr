@@ -20,17 +20,89 @@ signal rules_requested()
 signal surrender_requested()
 signal leave_match_requested()
 
-const TOP_BTN_SIZE := Vector2(40, 40)
-const SOCIAL_BTN_SIZE := Vector2(38, 38)
+const TOP_BTN_SIZE := Vector2(46, 46)
+const SOCIAL_BTN_SIZE := Vector2(46, 46)
 const POD_SCENE_PATH := "res://scenes/games/base/player_pod.tscn"
 
 const QUICK_CHATS_FA: Array[String] = [
-	"عجب حرکتی!",
-	"نوبت منه!",
-	"برنده منم!",
-	"عالی بازی کردی!",
+	"شکست دیگه عادتت شده!",
+	"عجب حرکت هوشمندانه‌ای بود!",
+	"برنده فقط منم!",
+	"بازی شروع نشده، تمومه!",
+	"خیلی خوب بازی کردی!",
+	"حریف من نیستی!",
+	"بازم بردم!",
+	"اون استراتژی عالی بود!",
+	"قهرمان برگشته!",
+	"این فقط تمرین بود!",
+	"خوشم اومد از سبک بازیت!",
+	"یه باخت دیگه تو کارنامت!",
 	"بهتره تسلیم شی!",
-	"شانس آوردی!",
+	"آفرین!",
+	"سریع‌تر از اینم می‌بازی؟",
+	"حیف وقتی که گذاشتی!",
+	"حرکتت واقعاً تحسین‌برانگیز بود!",
+	"بهتره تمرین کنی!",
+	"حالا یاد گرفتی؟",
+	"ممنونم!",
+	"راحت‌تر از این نبود!",
+	"این فقط شروعشه!",
+	"اون تاکتیک خیلی جالب بود!",
+	"تو حتی نزدیک هم نشدی!",
+	"پایانش همین بود؟",
+	"این یکی رو عالی مدیریت کردی!",
+	"بازم دیر کردی!",
+	"این برد مال منه!",
+	"ایده خوبی داشتی، بهش ادامه بده!",
+	"مثل همیشه برنده!",
+	"یک حرکت و تموم!",
+	"این حرکت غیرمنتظره بود",
+	"بازی رو یاد بگیر!",
+	"بهترین بودن سخته!",
+	"خیلی خوب مسیر بازی رو تغییر دادی!",
+	"حریف من نیستی!",
+	"دوباره باختی!",
+	"این تاکتیکت واقعاً کارساز بود!",
+	"تو از اول هم شانسی نداشتی!",
+	"بردم، طبق معمول!",
+	"پیشرفتت تو این بازی محسوسه!",
+	"تسلیم شو، هنوز وقت داری!",
+	"بازم ساده بردم!",
+	"خیلی خوب کنترل کردی اوضاع رو!",
+	"این فقط یه گرم کردن بود!",
+	"قهرمان برگشت!",
+	"اون تصمیم واقعاً درست بود!",
+	"دیر رسیدی به بازی!",
+	"بازی کردن با تو وقت تلف کردنه!",
+	"حرکت نهایی‌ات خیلی قوی بود!",
+	"با همین سرعت می‌بازی!",
+	"یه کلاس درس دیگه برات بود!",
+	"این راندو خیلی حرفه‌ای زدی!",
+	"هنوز مونده تا به من برسی!",
+	"فقط نگاه کن چطور برنده می‌شم!",
+	"خیلی خوب بود!",
+	"شروع نکرده باختی!",
+	"پایان داستان تو همین‌جاست!",
+	"عجب حرکت هوشمندانه‌ای!",
+	"به همین سادگی!",
+	"این فقط یک نمایش بود!",
+	"عالی بازی کردی!",
+	"پایان رو از الان می‌دونم!",
+	"خسته نشدی از باختن؟",
+	"به به!",
+	"دوباره شانس داری، امتحان کن!",
+	"فکر کنم هنوز نوبتت نشده!",
+	"اون تاکتیک معرکه بود!",
+	"بازی براتو تفریحه، برا من زندگیه!",
+	"توی لیگ خودت بازی کن!",
+	"چقد خوب دفاع کردی!",
+	"این بود تمام توانت؟",
+	"امروز روز تو نبود!",
+	"بازی خفنی کردی!",
+	"شاید دفعه بعد!",
+	"باید تلاش بیشتری کنی!",
+	"ایده فوق‌العاده‌ای بود!",
+	"هنوز اول راحته!"
 ]
 
 const QUICK_CHATS_EN: Array[String] = [
@@ -187,12 +259,17 @@ func _apply_safe_insets() -> void:
 func _sync_edge_positions() -> void:
 	if not is_inside_tree():
 		return
-	var btn_2d_bottom: float = btn_view_2d3d.position.y + btn_view_2d3d.size.y
-	spectator_pill.position = Vector2(0.0, btn_2d_bottom + 6.0)
+	var overlay_pos: Vector2 = edge_overlay.global_position
 
-	var btn_set_bottom: float = btn_settings.position.y + btn_settings.size.y
-	var rail_x: float = maxf(0.0, edge_overlay.size.x - SOCIAL_BTN_SIZE.x - 1.0)
-	social_rail.position = Vector2(rail_x, btn_set_bottom + 8.0)
+	var btn_2d_rect: Rect2 = btn_view_2d3d.get_global_rect()
+	var pill_x: float = maxf(0.0, btn_2d_rect.position.x - overlay_pos.x + (btn_2d_rect.size.x - spectator_pill.size.x) * 0.5)
+	var pill_y: float = maxf(0.0, btn_2d_rect.end.y - overlay_pos.y + 6.0)
+	spectator_pill.position = Vector2(pill_x, pill_y)
+
+	var set_rect: Rect2 = btn_settings.get_global_rect()
+	var rail_x: float = maxf(0.0, set_rect.position.x - overlay_pos.x + (set_rect.size.x - SOCIAL_BTN_SIZE.x) * 0.5)
+	var rail_y: float = maxf(0.0, set_rect.end.y - overlay_pos.y + 8.0)
+	social_rail.position = Vector2(rail_x, rail_y)
 
 
 func _connect_signals() -> void:
@@ -245,21 +322,43 @@ func setup_hud(players_data: Array, is_spectator: bool = false) -> void:
 	_is_spectator = is_spectator
 	_clear_pods()
 
-	# Filter out local player in Player Mode (Opponents Only); keep all in Spectator Mode
+	# Determine local player ID if not explicitly set
+	var found_local_id: String = local_player_id
+	if found_local_id.is_empty():
+		for raw in players_data:
+			if raw is Dictionary:
+				var p: Dictionary = raw as Dictionary
+				if bool(p.get("is_local", false)) or bool(p.get("is_me", false)) or bool(p.get("is_self", false)):
+					found_local_id = str(p.get("id", p.get("player_id", p.get("user_id", p.get("gamer_id", "")))))
+					break
+		if found_local_id.is_empty() and Engine.has_singleton("GameManager"):
+			var gm: Object = Engine.get_singleton("GameManager")
+			if gm != null and gm.has_method("get_user_id"):
+				found_local_id = str(gm.get_user_id())
+
+	# Filter out local player in Player Mode (Opponents Only); keep ALL players in Spectator Mode
 	var visible_players: Array[Dictionary] = []
 	for raw in players_data:
 		if not (raw is Dictionary):
 			continue
 		var p: Dictionary = raw as Dictionary
-		var pid: String = str(p.get("id", p.get("player_id", "")))
-		var is_local_entry: bool = bool(p.get("is_local", false)) or (not local_player_id.is_empty() and pid == local_player_id)
-		if is_local_entry and not local_player_id.is_empty():
-			pass
-		elif is_local_entry and local_player_id.is_empty():
+		var pid: String = str(p.get("id", p.get("player_id", p.get("user_id", p.get("gamer_id", "")))))
+		var is_local_entry: bool = bool(p.get("is_local", false)) \
+			or bool(p.get("is_me", false)) \
+			or bool(p.get("is_self", false)) \
+			or (not found_local_id.is_empty() and pid == found_local_id)
+
+		if is_local_entry and local_player_id.is_empty():
 			local_player_id = pid
+
 		if not is_spectator and is_local_entry:
 			continue
 		visible_players.append(p)
+
+	# Fallback safety: If in 2P Player Mode neither player was marked local, treat the first player as local
+	if not is_spectator and players_data.size() == 2 and visible_players.size() == 2:
+		local_player_id = str(players_data[0].get("id", players_data[0].get("player_id", "local")))
+		visible_players.remove_at(0)
 
 	var max_pods: int = 4 if is_spectator else 3
 	if visible_players.size() > max_pods:
@@ -291,40 +390,40 @@ func setup_hud(players_data: Array, is_spectator: bool = false) -> void:
 	call_deferred("_sync_edge_positions")
 
 
-func update_player_counter(player_id: String, value: String) -> void:
-	if not _pods_by_id.has(player_id):
+func update_player_counter(player_id: Variant, value: Variant) -> void:
+	var pid_str: String = str(player_id)
+	if not _pods_by_id.has(pid_str):
 		return
-	var pod: PlayerPod = _pods_by_id[player_id] as PlayerPod
+	var pod: PlayerPod = _pods_by_id[pid_str] as PlayerPod
 	if is_instance_valid(pod):
-		pod.set_counter(value)
+		pod.set_counter(str(value))
 
 
-func set_active_turn(active_player_id: String, is_local_player: bool = false) -> void:
-	_active_player_id = active_player_id
-	# Spectators never see local player's bottom glow / turn bar
+func set_active_turn(active_player_id: Variant, is_local_player: bool = false) -> void:
+	var act_id_str: String = str(active_player_id)
+	_active_player_id = act_id_str
+	# Spectators never see local player's bottom glow
 	_is_local_turn = (is_local_player and not _is_spectator)
 
 	for pid in _pods_by_id.keys():
 		var pod: PlayerPod = _pods_by_id[pid] as PlayerPod
 		if is_instance_valid(pod):
-			var pod_active: bool = (not _is_local_turn) and (str(pid) == active_player_id)
+			var pod_active: bool = (not _is_local_turn) and (str(pid) == act_id_str)
 			pod.set_active_turn(pod_active)
 
-	local_turn_bar_wrap.visible = _is_local_turn
+	local_turn_bar_wrap.visible = true
 	_set_bottom_glow_active(_is_local_turn)
-	if _is_local_turn:
-		local_turn_bar.value = 100.0
-		_update_local_turn_visuals(15.0, 15.0, false)
+	local_turn_bar.value = 100.0
+	_update_local_turn_visuals(15.0, 15.0, false)
 
 
 func update_timer(seconds_left: float, max_seconds: float) -> void:
-	if _is_local_turn:
-		var safe_max: float = maxf(1.0, max_seconds)
-		var pct: float = clampf((seconds_left / safe_max) * 100.0, 0.0, 100.0)
-		var is_danger: bool = (seconds_left > 0.0 and seconds_left <= 4.0)
-		local_turn_bar.value = pct
-		_update_local_turn_visuals(seconds_left, max_seconds, is_danger)
-		return
+	var safe_max: float = maxf(1.0, max_seconds)
+	var pct: float = clampf((seconds_left / safe_max) * 100.0, 0.0, 100.0)
+	var is_danger: bool = (seconds_left > 0.0 and seconds_left <= 4.0)
+	local_turn_bar_wrap.visible = true
+	local_turn_bar.value = pct
+	_update_local_turn_visuals(seconds_left, max_seconds, is_danger)
 
 	if _pods_by_id.has(_active_player_id):
 		var pod: PlayerPod = _pods_by_id[_active_player_id] as PlayerPod
@@ -419,13 +518,18 @@ func _refresh_spectator_and_locale_ui() -> void:
 	set_audio_enabled(_audio_enabled)
 
 
-func _update_local_turn_visuals(seconds_left: float, _max_seconds: float, is_danger: bool) -> void:
-	var sec_str: String = HudTheme.format_seconds(seconds_left, _is_fa())
-	if _is_fa():
-		lbl_local_turn.text = "نوبت شما • %s" % sec_str
+func _update_local_turn_visuals(_seconds_left: float, _max_seconds: float, is_danger: bool) -> void:
+	if _is_local_turn:
+		lbl_local_turn.text = "نوبت شما" if _is_fa() else "Your Turn"
 	else:
-		lbl_local_turn.text = "Your Turn • %s" % sec_str
+		var act_name := "حریف"
+		if _pods_by_id.has(_active_player_id):
+			var pod: PlayerPod = _pods_by_id[_active_player_id] as PlayerPod
+			if is_instance_valid(pod) and is_instance_valid(pod.name_label):
+				act_name = pod.name_label.text
+		lbl_local_turn.text = ("نوبت %s" % act_name) if _is_fa() else ("%s's Turn" % act_name)
 
+	var fill_color: Color = HudTheme.COL_DANGER if is_danger else HudTheme.COL_GOLD_ACTIVE
 	local_turn_bar.add_theme_stylebox_override("fill", HudTheme.make_local_turn_bar_fill_style(is_danger))
 	local_turn_pill.add_theme_stylebox_override("panel", HudTheme.make_local_turn_pill_style(is_danger))
 	lbl_local_turn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.84) if is_danger else HudTheme.COL_TEXT_GOLD)
@@ -446,6 +550,8 @@ func _set_bottom_glow_active(active: bool) -> void:
 
 
 func _spawn_reaction_bubble(sender_id: String, content: Variant, is_text: bool, hold_sec: float) -> void:
+	if GameManager.chat_and_stickers_disabled:
+		return
 	var existing: Node = emote_layer.get_node_or_null("Emote_%s" % sender_id)
 	if is_instance_valid(existing):
 		existing.queue_free()
@@ -453,37 +559,42 @@ func _spawn_reaction_bubble(sender_id: String, content: Variant, is_text: bool, 
 	var seq: int = int(_emote_seqs.get(sender_id, 0)) + 1
 	_emote_seqs[sender_id] = seq
 
+	var is_local: bool = (sender_id == local_player_id)
 	var bubble := PanelContainer.new()
 	bubble.name = "Emote_%s" % sender_id
 	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bubble.add_theme_stylebox_override("panel", HudTheme.make_emote_bubble_style(is_text))
-
-	var b_size: Vector2 = Vector2(210.0, 56.0) if is_text else Vector2(74.0, 74.0)
-	bubble.custom_minimum_size = b_size
-	bubble.size = b_size
 
 	if is_text:
 		var lbl := Label.new()
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		lbl.text = str(content)
 		lbl.add_theme_font_override("font", HudTheme.get_ui_font())
-		lbl.add_theme_font_size_override("font_size", 14)
+		lbl.add_theme_font_size_override("font_size", 15 if is_local else 12)
 		lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		HudTheme.configure_bidi_label(lbl, false)
+		lbl.text_direction = Control.TEXT_DIRECTION_RTL if locale_code == "fa" else Control.TEXT_DIRECTION_LTR
+		lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 		bubble.add_child(lbl)
+		bubble.custom_minimum_size = Vector2(0, 38 if is_local else 28)
 	elif content is Texture2D:
 		var tex_rect := TextureRect.new()
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tex_rect.texture = content as Texture2D
-		tex_rect.custom_minimum_size = Vector2(58.0, 58.0)
+		tex_rect.custom_minimum_size = Vector2(72.0, 72.0)
 		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		bubble.add_child(tex_rect)
+		bubble.custom_minimum_size = Vector2(88.0, 88.0)
 
 	emote_layer.add_child(bubble)
+	bubble.reset_size()
+	var b_size: Vector2 = bubble.size
+	if b_size.x <= 0.0:
+		b_size.x = bubble.custom_minimum_size.x if bubble.custom_minimum_size.x > 0 else 120.0
+	if b_size.y <= 0.0:
+		b_size.y = bubble.custom_minimum_size.y if bubble.custom_minimum_size.y > 0 else (28.0 if is_text else 88.0)
 
 	var vp_size: Vector2 = get_viewport_rect().size
 	var min_x: float = float(_safe_left) + 42.0
@@ -528,6 +639,8 @@ func _toggle_picker_popover(mode: String, anchor_btn: Button) -> void:
 
 
 func _open_picker_popover(mode: String, anchor_btn: Button) -> void:
+	if GameManager.chat_and_stickers_disabled:
+		return
 	_picker_mode = mode
 	for ch in picker_grid.get_children():
 		ch.queue_free()
@@ -556,7 +669,7 @@ func _open_picker_popover(mode: String, anchor_btn: Button) -> void:
 			)
 			picker_grid.add_child(chat_btn)
 	else:
-		for r_id in range(1, 13):
+		for r_id in range(1, 17):
 			var icon_btn := Button.new()
 			icon_btn.custom_minimum_size = Vector2(64, 64)
 			HudTheme.apply_rail_button_style(icon_btn, false)
@@ -601,16 +714,25 @@ func _position_picker_downward_inward(anchor_btn: Control) -> void:
 	var is_chat: bool = (_picker_mode == "chat")
 	var vp_size: Vector2 = get_viewport_rect().size
 	var pop_w: float = clampf(vp_size.x - float(_safe_left) - float(_safe_right) - SOCIAL_BTN_SIZE.x - 24.0, 240.0, 324.0)
-	var pop_h: float = 228.0 if is_chat else 276.0
+	var pop_h: float = 228.0 if is_chat else 312.0
 	picker_scroll.custom_minimum_size = Vector2(0.0, pop_h - 54.0)
 
 	var btn_rect: Rect2 = anchor_btn.get_global_rect()
-	# Open INWARD (to the left of the right-edge social button) and DOWNWARD from its top edge
-	var x: float = clampf(btn_rect.position.x - pop_w - 8.0, float(_safe_left), maxf(float(_safe_left), vp_size.x - pop_w - float(_safe_right)))
+	var x: float
+	var piv_x: float
+	if btn_rect.position.x > vp_size.x * 0.5:
+		# Anchor is on the right -> popover opens INWARD (to the left)
+		x = clampf(btn_rect.position.x - pop_w - 8.0, float(_safe_left), maxf(float(_safe_left), vp_size.x - pop_w - float(_safe_right)))
+		piv_x = pop_w
+	else:
+		# Anchor is on the left -> popover opens INWARD (to the right)
+		x = clampf(btn_rect.end.x + 8.0, float(_safe_left), maxf(float(_safe_left), vp_size.x - pop_w - float(_safe_right)))
+		piv_x = 0.0
+
 	var y: float = clampf(btn_rect.position.y, float(_safe_top), maxf(float(_safe_top), vp_size.y - pop_h - 16.0))
 	picker_popover.position = Vector2(x, y)
 	picker_popover.size = Vector2(pop_w, pop_h)
-	picker_popover.pivot_offset = Vector2(pop_w, 18.0)
+	picker_popover.pivot_offset = Vector2(piv_x, 18.0)
 
 
 func _close_picker_popover() -> void:

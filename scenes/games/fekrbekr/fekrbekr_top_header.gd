@@ -20,6 +20,14 @@ func _is_score_based_game() -> bool:
 	return false
 
 
+func _is_simultaneous_turn() -> bool:
+	return true
+
+
+func _get_simultaneous_turn_text() -> String:
+	return "تعیین رمز مخفی" if is_setup_phase else "حدس رمز"
+
+
 func _to_fa_num(n: int) -> String:
 	return _fa_digits(n)
 
@@ -40,6 +48,7 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 		var r_idx := round_num if round_num > 0 else 1
 		if is_instance_valid(lbl_round):
 			lbl_round.text = "حدس %s از ۱۲" % _to_fa_num(r_idx)
+		set_match_meta_text("🔍 حدس %s از ۱۲ — رمز ۴ مهره" % _to_fa_num(r_idx))
 		_highlight_both_players()
 		show_turn_toast("🔍 حدس %s از ۱۲ — رمز حریف را بیابید" % _to_fa_num(r_idx), HudTheme.COL_TEXT_GOLD, false, 2.0)
 
@@ -52,12 +61,14 @@ func set_setup_phase() -> void:
 		return
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "مرحله ۱: تعیین رمز"
+	set_match_meta_text("🔐 مرحله ۱: تعیین رمز ۴ مهره")
 	_highlight_both_players()
 	show_turn_toast("🔐 ۴ مهره غیرتکراری برای رمز بچینید", HudTheme.COL_TEXT_GOLD, false, 2.4)
 
 
 func set_waiting_opponent(custom_text: String = "حرکت شما ثبت شد — منتظر حریف...") -> void:
 	is_guess_submitted = true
+	set_match_meta_text("⏳ حرکت شما ثبت شد — منتظر حریف...")
 	show_turn_toast("⏳ " + custom_text, HudTheme.COL_TEXT_SAND, false, 2.4)
 
 
@@ -69,10 +80,7 @@ func set_round_wait(_time_sec: int) -> void:
 
 
 func update_turn(turn: int, my_idx: int, _p1_n: String, _p2_n: String) -> void:
-	_current_turn = turn
-	_my_player_index = my_idx
-	_last_critical_sec = -1
-	_cached_timer_danger = -1
+	super.update_turn(turn, my_idx, _p1_n, _p2_n)
 	is_setup_phase = (turn == 0)
 	is_guess_submitted = false
 	_update_score_badges_visibility()
@@ -85,6 +93,7 @@ func update_turn(turn: int, my_idx: int, _p1_n: String, _p2_n: String) -> void:
 		return
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "حدس %s از ۱۲" % _to_fa_num(turn)
+	set_match_meta_text("🔍 حدس %s از ۱۲ — رمز ۴ مهره" % _to_fa_num(turn))
 	_highlight_both_players()
 	show_turn_toast("🔍 حدس %s از ۱۲ — رمز ۴ رنگ را بیابید" % _to_fa_num(turn), HudTheme.COL_TEXT_GOLD, false, 2.0)
 
@@ -94,4 +103,4 @@ func _highlight_both_players() -> void:
 
 
 func update_timer(remaining_sec: float, total_sec: float, _turn: int) -> void:
-	_update_card_timer_visuals(remaining_sec, total_sec, [1, 2])
+	super.update_timer(remaining_sec, total_sec, _turn)

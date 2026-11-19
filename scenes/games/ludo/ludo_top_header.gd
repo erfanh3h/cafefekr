@@ -54,6 +54,7 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 				sb.custom_minimum_size = Vector2(44, 36) if is_compact else Vector2(48, 40)
 		if is_player_disabled(idx):
 			_apply_disabled_visual(idx)
+	_apply_opponent_only_layout()
 
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
@@ -96,6 +97,7 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	_apply_layout_for_player_count(total_players)
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
+	set_match_meta_text("🎲 منچ (%s نفره) | تاس ۶ = جایزه" % _fa_digits(total_players))
 
 
 func update_home_counts(counts: Variant, rank1: Variant = 0, rank2: Variant = 0) -> void:
@@ -118,15 +120,18 @@ func update_ludo_home_counts(home_counts: Array, rank1: int = 0, rank2: int = 0)
 	for idx in [1, 2, 3, 4]:
 		var b := _get_player_card_bundle(idx)
 		var lbl: Label = b.get("score", null)
-		if not is_instance_valid(lbl):
-			continue
 		var cnt := int(home_counts[idx - 1]) if idx - 1 < home_counts.size() else 0
-		if rank1 == idx:
-			lbl.text = "👑"
-		elif rank2 == idx:
-			lbl.text = "🥈"
-		else:
-			lbl.text = "%s/۴" % _fa_digits(cnt)
+		var badge_str := "👑" if rank1 == idx else ("🥈" if rank2 == idx else "%s/۴" % _fa_digits(cnt))
+		if is_instance_valid(lbl):
+			lbl.text = badge_str
+		update_player_counter(idx, badge_str)
+		if not is_player_disabled(idx):
+			if cnt >= 4 or rank1 == idx:
+				_set_role_badge(idx, "🏁 برنده", HudTheme.COL_GOLD_ACTIVE)
+			elif cnt == 3:
+				_set_role_badge(idx, "🏁 ۱ مهره تا برد", HudTheme.COL_EMERALD)
+			else:
+				_set_role_badge(idx, "")
 
 
 func reset_header() -> void:
@@ -137,15 +142,7 @@ func reset_header() -> void:
 
 
 func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
-	_current_turn = turn
-	_my_player_index = my_idx
-	_last_critical_sec = -1
-	_cached_timer_danger = -1
-	_player_names[1] = p1_n
-	_player_names[2] = p2_n
-
-	_apply_layout_for_player_count(_get_total_players())
-	_set_active_cards_visual([turn], false, true)
+	super.update_turn(turn, my_idx, p1_n, p2_n)
 
 	if not GameManager.is_game_active or turn <= 0:
 		hide_turn_toast()
@@ -157,4 +154,4 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	_update_card_timer_visuals(remaining_sec, total_sec, [turn])
+	super.update_timer(remaining_sec, total_sec, turn)

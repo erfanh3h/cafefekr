@@ -8,6 +8,7 @@ signal user_logged_out()
 signal user_data_updated(user_data: Dictionary)
 signal game_started(game_id: String, game_data: Dictionary)
 signal game_finished(winner_id: Variant)
+signal chat_and_stickers_toggled(disabled: bool)
 
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SESSION_PATH: String = "user://session.cfg"
@@ -65,6 +66,11 @@ var local_player_surrendered: bool = false
 var opponent_player_surrendered: bool = false
 var ludo_rank1: int = 0
 var ludo_rank2: int = 0
+var chat_and_stickers_disabled: bool = false
+
+func set_chat_and_stickers_disabled(disabled: bool) -> void:
+	chat_and_stickers_disabled = disabled
+	chat_and_stickers_toggled.emit(disabled)
 
 # Live Spectator State
 var is_spectating: bool = false

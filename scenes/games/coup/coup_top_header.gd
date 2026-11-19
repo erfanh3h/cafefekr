@@ -59,6 +59,7 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 				sb.custom_minimum_size = Vector2(48, 36) if is_compact else Vector2(54, 40)
 		if is_player_disabled(idx):
 			_apply_disabled_visual(idx)
+	_apply_opponent_only_layout()
 
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
@@ -103,6 +104,7 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	_apply_layout_for_player_count(total_players)
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
+	set_match_meta_text("🎭 کودتا (%s نفره) | ۷ سکه = کودتا" % _fa_digits(total_players))
 	_render_player_badges(0, 0)
 
 
@@ -135,15 +137,10 @@ func _render_player_badges(rank1: int = 0, rank2: int = 0) -> void:
 
 		var b := _get_player_card_bundle(idx)
 		var sl: Label = b.get("score", null)
+		var badge_str := "👑" if rank1 == idx else ("🥈" if rank2 == idx else ("💀" if is_dead else "🪙%s" % _fa_digits(coins)))
 		if is_instance_valid(sl):
-			if rank1 == idx:
-				sl.text = "👑"
-			elif rank2 == idx:
-				sl.text = "🥈"
-			elif is_dead:
-				sl.text = "💀"
-			else:
-				sl.text = "🪙%s" % _fa_digits(coins)
+			sl.text = badge_str
+		update_player_counter(idx, badge_str)
 
 		if not is_dead:
 			var inf_txt := "♥ ۱ نفوذ" if alive_cnt == 1 else ("♥♥ %s نفوذ" % _fa_digits(alive_cnt))
@@ -164,15 +161,7 @@ func reset_header() -> void:
 
 
 func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
-	_current_turn = turn
-	_my_player_index = my_idx
-	_last_critical_sec = -1
-	_cached_timer_danger = -1
-	_player_names[1] = p1_n
-	_player_names[2] = p2_n
-
-	_apply_layout_for_player_count(_get_total_players())
-	_set_active_cards_visual([turn], false, true)
+	super.update_turn(turn, my_idx, p1_n, p2_n)
 
 	if not GameManager.is_game_active or turn <= 0:
 		hide_turn_toast()
@@ -184,4 +173,4 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	_update_card_timer_visuals(remaining_sec, total_sec, [turn])
+	super.update_timer(remaining_sec, total_sec, turn)

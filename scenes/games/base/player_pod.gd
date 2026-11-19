@@ -25,8 +25,11 @@ enum PodMode {
 @onready var ring_timer_badge: PanelContainer = $PodContent/AvatarRingSlot/RingTimerBadge
 @onready var lbl_ring_timer: Label = $PodContent/AvatarRingSlot/RingTimerBadge/LblRingTimer
 @onready var name_label: Label = $PodContent/NameLabel
+@onready var role_dot: Panel = $PodContent/RoleDot
 @onready var counter_badge: PanelContainer = $PodContent/CounterBadge
 @onready var lbl_counter: Label = $PodContent/CounterBadge/LblCounter
+@onready var status_badge: PanelContainer = $PodContent/StatusBadge
+@onready var lbl_status: Label = $PodContent/StatusBadge/LblStatus
 @onready var btn_profile: Button = $BtnProfile
 
 var player_id: String = ""
@@ -63,6 +66,8 @@ func _configure_bidi() -> void:
 	HudTheme.configure_bidi_label(name_label, true)
 	HudTheme.configure_bidi_label(lbl_counter, false)
 	HudTheme.configure_bidi_label(lbl_ring_timer, false)
+	if is_instance_valid(lbl_status):
+		HudTheme.configure_bidi_label(lbl_status, true)
 
 
 func setup_pod(player_data: Dictionary, mode: PodMode, use_fa_digits: bool = true) -> void:
@@ -91,71 +96,119 @@ func setup_pod(player_data: Dictionary, mode: PodMode, use_fa_digits: bool = tru
 	var col_val: Variant = player_data.get("color", null)
 	if col_val is Color:
 		_seat_color = col_val as Color
+	elif col_val is String and not String(col_val).is_empty():
+		_seat_color = Color.from_string(String(col_val), HudTheme.get_seat_accent(seat_index))
 	else:
 		_seat_color = HudTheme.get_seat_accent(seat_index)
 
-	set_counter(str(player_data.get("counter", "۰" if _use_persian_digits else "0")))
+	set_counter(str(player_data.get("counter", "")))
+	set_status_badge(str(player_data.get("status", "")))
 	_apply_mode_metrics()
 	_apply_pod_styles()
 	set_active_turn(false)
 
 
 func _apply_mode_metrics() -> void:
-	var av_size: float = 42.0
-	var ring_size: float = 48.0
+	var av_size: float = 40.0
+	var ring_size: float = 46.0
 	var dot_size: float = 13.0
-	var name_font_px: int = 12
-	var counter_font_px: int = 12
+	var name_font_px: int = 13
+	var counter_font_px: int = 13
 	var timer_font_px: int = 10
 
 	match _mode:
 		PodMode.HORIZONTAL_PILL:
 			pod_content.vertical = false
 			pod_content.add_theme_constant_override("separation", 8)
-			custom_minimum_size = Vector2(204.0, 52.0)
-			size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			av_size = 38.0
-			ring_size = 44.0
-			dot_size = 12.0
-			name_font_px = 14
-			counter_font_px = 13
+			custom_minimum_size = Vector2(210.0, 50.0)
+			size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			av_size = 40.0
+			ring_size = 46.0
+			dot_size = 13.0
+			name_font_px = 15
+			counter_font_px = 14
 			timer_font_px = 10
 			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_FILL
 			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			counter_badge.custom_minimum_size = Vector2(36.0, 26.0)
-			lbl_initial.add_theme_font_size_override("font_size", 14)
+			if counter_badge.visible and not lbl_counter.text.strip_edges().is_empty():
+				counter_badge.custom_minimum_size = Vector2(34.0, 24.0)
+			else:
+				counter_badge.visible = false
+				counter_badge.custom_minimum_size = Vector2.ZERO
+			if is_instance_valid(status_badge):
+				if status_badge.visible and is_instance_valid(lbl_status) and not lbl_status.text.strip_edges().is_empty():
+					status_badge.custom_minimum_size = Vector2(0, 24.0)
+				else:
+					status_badge.visible = false
+					status_badge.custom_minimum_size = Vector2.ZERO
+			if is_instance_valid(lbl_status):
+				lbl_status.add_theme_font_size_override("font_size", 13)
+			lbl_initial.add_theme_font_size_override("font_size", 17)
+			role_dot.visible = false
+			role_dot.custom_minimum_size = Vector2.ZERO
+			seat_dot.visible = true
 
 		PodMode.VERTICAL_STANDARD:
 			pod_content.vertical = true
 			pod_content.add_theme_constant_override("separation", 3)
-			custom_minimum_size = Vector2(82.0, 78.0)
-			size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			av_size = 42.0
-			ring_size = 48.0
+			custom_minimum_size = Vector2(76.0, 78.0)
+			size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			av_size = 44.0
+			ring_size = 50.0
 			dot_size = 13.0
-			name_font_px = 12
-			counter_font_px = 12
+			name_font_px = 13
+			counter_font_px = 13
 			timer_font_px = 10
 			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			counter_badge.custom_minimum_size = Vector2(34.0, 20.0)
-			lbl_initial.add_theme_font_size_override("font_size", 15)
+			if counter_badge.visible and not lbl_counter.text.strip_edges().is_empty():
+				counter_badge.custom_minimum_size = Vector2(32.0, 22.0)
+			else:
+				counter_badge.visible = false
+				counter_badge.custom_minimum_size = Vector2.ZERO
+			if is_instance_valid(status_badge):
+				if status_badge.visible and is_instance_valid(lbl_status) and not lbl_status.text.strip_edges().is_empty():
+					status_badge.custom_minimum_size = Vector2(0, 20.0)
+				else:
+					status_badge.visible = false
+					status_badge.custom_minimum_size = Vector2.ZERO
+			if is_instance_valid(lbl_status):
+				lbl_status.add_theme_font_size_override("font_size", 12)
+			lbl_initial.add_theme_font_size_override("font_size", 17)
+			role_dot.visible = false
+			role_dot.custom_minimum_size = Vector2.ZERO
+			seat_dot.visible = true
 
 		PodMode.VERTICAL_COMPACT:
 			pod_content.vertical = true
 			pod_content.add_theme_constant_override("separation", 2)
-			custom_minimum_size = Vector2(56.0, 66.0)
+			custom_minimum_size = Vector2(58.0, 68.0)
 			size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			av_size = 34.0
 			ring_size = 40.0
-			dot_size = 12.0
-			name_font_px = 10
-			counter_font_px = 10
+			dot_size = 11.0
+			name_font_px = 11
+			counter_font_px = 11
 			timer_font_px = 9
 			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			counter_badge.custom_minimum_size = Vector2(28.0, 17.0)
-			lbl_initial.add_theme_font_size_override("font_size", 12)
+			if counter_badge.visible and not lbl_counter.text.strip_edges().is_empty():
+				counter_badge.custom_minimum_size = Vector2(28.0, 18.0)
+			else:
+				counter_badge.visible = false
+				counter_badge.custom_minimum_size = Vector2.ZERO
+			if is_instance_valid(status_badge):
+				if status_badge.visible and is_instance_valid(lbl_status) and not lbl_status.text.strip_edges().is_empty():
+					status_badge.custom_minimum_size = Vector2(0, 16.0)
+				else:
+					status_badge.visible = false
+					status_badge.custom_minimum_size = Vector2.ZERO
+			if is_instance_valid(lbl_status):
+				lbl_status.add_theme_font_size_override("font_size", 10)
+			lbl_initial.add_theme_font_size_override("font_size", 13)
+			role_dot.visible = false
+			role_dot.custom_minimum_size = Vector2.ZERO
+			seat_dot.visible = true
 
 	avatar_ring_slot.custom_minimum_size = Vector2(ring_size, ring_size)
 	var av_radius: int = int(ceil(av_size * 0.5))
@@ -171,21 +224,25 @@ func _apply_mode_metrics() -> void:
 	seat_dot.offset_top = 0.0
 	seat_dot.offset_right = 0.0
 	seat_dot.offset_bottom = dot_size
+	role_dot.custom_minimum_size = Vector2(dot_size, dot_size)
 	var sb_dot := StyleBoxFlat.new()
 	sb_dot.bg_color = _seat_color
 	sb_dot.border_color = HudTheme.COL_WALNUT_DEEP
 	sb_dot.set_border_width_all(2)
 	sb_dot.set_corner_radius_all(int(ceil(dot_size * 0.5)))
+	sb_dot.shadow_color = Color(0, 0, 0, 0.3)
+	sb_dot.shadow_size = 2
 	seat_dot.add_theme_stylebox_override("panel", sb_dot)
+	role_dot.add_theme_stylebox_override("panel", sb_dot)
 
 	name_label.add_theme_font_size_override("font_size", name_font_px)
 	lbl_counter.add_theme_font_size_override("font_size", counter_font_px)
 	lbl_ring_timer.add_theme_font_size_override("font_size", timer_font_px)
 
 	var sb_counter: StyleBoxFlat = HudTheme.make_score_badge_style("normal")
-	sb_counter.set_corner_radius_all(8 if _mode == PodMode.VERTICAL_COMPACT else 10)
-	sb_counter.content_margin_left = 4 if _mode == PodMode.VERTICAL_COMPACT else 6
-	sb_counter.content_margin_right = 4 if _mode == PodMode.VERTICAL_COMPACT else 6
+	sb_counter.set_corner_radius_all(7 if _mode == PodMode.VERTICAL_COMPACT else 9)
+	sb_counter.content_margin_left = 3 if _mode == PodMode.VERTICAL_COMPACT else 5
+	sb_counter.content_margin_right = 3 if _mode == PodMode.VERTICAL_COMPACT else 5
 	sb_counter.content_margin_top = 1
 	sb_counter.content_margin_bottom = 1
 	counter_badge.add_theme_stylebox_override("panel", sb_counter)
@@ -197,49 +254,75 @@ func _apply_pod_styles() -> void:
 		modulate = Color(0.68, 0.64, 0.62, 0.78)
 		return
 
-	var radius: int = 22 if _mode == PodMode.HORIZONTAL_PILL else (13 if _mode == PodMode.VERTICAL_COMPACT else 16)
-	var pad_h: int = 10 if _mode == PodMode.HORIZONTAL_PILL else (4 if _mode == PodMode.VERTICAL_COMPACT else 8)
-	var pad_v: int = 5 if _mode == PodMode.HORIZONTAL_PILL else (4 if _mode == PodMode.VERTICAL_COMPACT else 6)
+	var radius: int = 22 if _mode == PodMode.HORIZONTAL_PILL else (12 if _mode == PodMode.VERTICAL_COMPACT else 16)
+	var pad_h: int = 10 if _mode == PodMode.HORIZONTAL_PILL else (4 if _mode == PodMode.VERTICAL_COMPACT else 6)
+	var pad_v: int = 5 if _mode == PodMode.HORIZONTAL_PILL else (4 if _mode == PodMode.VERTICAL_COMPACT else 5)
 	add_theme_stylebox_override("panel", HudTheme.make_pod_style(_is_active, _is_danger, radius, pad_h, pad_v))
 	modulate = Color.WHITE if _is_active else Color(0.90, 0.87, 0.83, 0.94)
 
 
 func set_counter(value: String) -> void:
-	lbl_counter.text = HudTheme.fa_digits(value) if _use_persian_digits else value
+	if not is_instance_valid(counter_badge) or not is_instance_valid(lbl_counter):
+		return
+	var clean := value.strip_edges()
+	if clean.is_empty():
+		counter_badge.visible = false
+		counter_badge.custom_minimum_size = Vector2.ZERO
+		lbl_counter.text = ""
+		return
+	var min_w: float = 34.0 if _mode == PodMode.HORIZONTAL_PILL else (28.0 if _mode == PodMode.VERTICAL_COMPACT else 32.0)
+	var min_h: float = 24.0 if _mode == PodMode.HORIZONTAL_PILL else (18.0 if _mode == PodMode.VERTICAL_COMPACT else 22.0)
+	counter_badge.custom_minimum_size = Vector2(min_w, min_h)
+	counter_badge.visible = true
+	lbl_counter.text = HudTheme.fa_digits(clean) if _use_persian_digits else clean
+
+
+func set_status_badge(text: String, color: Color = Color(-1, -1, -1)) -> void:
+	if not is_instance_valid(status_badge) or not is_instance_valid(lbl_status):
+		return
+	var clean := text.strip_edges()
+	if clean.is_empty():
+		status_badge.visible = false
+		status_badge.custom_minimum_size = Vector2.ZERO
+		lbl_status.text = ""
+		return
+	var min_h: float = 24.0 if _mode == PodMode.HORIZONTAL_PILL else (16.0 if _mode == PodMode.VERTICAL_COMPACT else 20.0)
+	status_badge.custom_minimum_size = Vector2(0.0, min_h)
+	status_badge.visible = true
+	lbl_status.text = HudTheme.fa_digits(clean) if _use_persian_digits else clean
+	if color.r >= 0.0:
+		lbl_status.add_theme_color_override("font_color", color)
+	else:
+		lbl_status.add_theme_color_override("font_color", HudTheme.COL_TEXT_SAND)
+
+
+func set_eliminated(eliminated: bool, reason: String = "") -> void:
+	_is_eliminated = eliminated
+	if eliminated and not reason.is_empty():
+		set_counter(reason)
+	_apply_pod_styles()
 
 
 func set_active_turn(active: bool) -> void:
 	_is_active = active
 	if not active:
 		_is_danger = false
-	turn_ring.visible = active
-	ring_timer_badge.visible = active and not lbl_ring_timer.text.is_empty()
-	if active:
-		turn_ring.value = 100.0
-		turn_ring.tint_progress = HudTheme.COL_DANGER if _is_danger else HudTheme.COL_GOLD_ACTIVE
+	# Timer is universal horizontal bar; radial ring around avatar is completely removed
+	turn_ring.visible = false
+	ring_timer_badge.visible = false
 	_apply_pod_styles()
 
 
-func update_ring_timer(seconds_left: float, max_seconds: float) -> void:
+func update_ring_timer(seconds_left: float, _max_seconds: float) -> void:
+	# Keep radial ring suppressed — all timers handled by universal horizontal bar
+	turn_ring.visible = false
+	ring_timer_badge.visible = false
 	if not _is_active:
 		return
-	var safe_max: float = maxf(1.0, max_seconds)
-	var pct: float = clampf((seconds_left / safe_max) * 100.0, 0.0, 100.0)
 	var danger: bool = (seconds_left > 0.0 and seconds_left <= 4.0)
-
-	turn_ring.visible = true
-	turn_ring.value = pct
-	turn_ring.tint_progress = HudTheme.COL_DANGER if danger else HudTheme.COL_GOLD_ACTIVE
-
-	lbl_ring_timer.text = HudTheme.format_seconds(seconds_left, _use_persian_digits)
-	ring_timer_badge.visible = true
-
 	if danger != _is_danger:
 		_is_danger = danger
 		_apply_pod_styles()
-
-	ring_timer_badge.add_theme_stylebox_override("panel", HudTheme.make_timer_chip_style(danger))
-	lbl_ring_timer.add_theme_color_override("font_color", Color(1.0, 0.84, 0.84) if danger else HudTheme.COL_TEXT_GOLD)
 
 
 func get_emote_anchor_global_pos() -> Vector2:

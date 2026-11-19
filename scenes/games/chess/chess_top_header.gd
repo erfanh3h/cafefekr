@@ -4,20 +4,20 @@ extends "res://scenes/games/base/base_top_header.gd"
 # Chess Top Header — Warm Classic Parlor Compact HUD
 # Preserves AFK missed-turn strike dot indicators inside compact 2-player cards.
 
-@onready var p1_missed_turns_box: HBoxContainer = $Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns
-@onready var p1_dot1: Panel = $Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns/P1Dot1
-@onready var p1_dot2: Panel = $Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns/P1Dot2
-@onready var p1_dot3: Panel = $Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns/P1Dot3
-@onready var p1_strike_count_lbl: Label = $Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns/P1StrikeCount
+@onready var p1_missed_turns_box: HBoxContainer = get_node_or_null("Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns")
+@onready var p1_dot1: Panel = get_node_or_null("Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns/P1Dot1")
+@onready var p1_dot2: Panel = get_node_or_null("Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns/P1Dot2")
+@onready var p1_dot3: Panel = get_node_or_null("Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns/P1Dot3")
+@onready var p1_strike_count_lbl: Label = get_node_or_null("Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns/P1StrikeCount")
 
-@onready var p2_missed_turns_box: HBoxContainer = $Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns
-@onready var p2_dot1: Panel = $Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns/P2Dot1
-@onready var p2_dot2: Panel = $Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns/P2Dot2
-@onready var p2_dot3: Panel = $Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns/P2Dot3
-@onready var p2_strike_count_lbl: Label = $Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns/P2StrikeCount
+@onready var p2_missed_turns_box: HBoxContainer = get_node_or_null("Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns")
+@onready var p2_dot1: Panel = get_node_or_null("Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns/P2Dot1")
+@onready var p2_dot2: Panel = get_node_or_null("Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns/P2Dot2")
+@onready var p2_dot3: Panel = get_node_or_null("Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns/P2Dot3")
+@onready var p2_strike_count_lbl: Label = get_node_or_null("Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns/P2StrikeCount")
 
-@onready var afk_rule_row: HBoxContainer = $Margin/VBoxMain/MatchDetailsBox/VBox/AfkRuleRow
-@onready var lbl_afk_rule: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/AfkRuleRow/LblAfkRule
+@onready var afk_rule_row: HBoxContainer = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox/AfkRuleRow")
+@onready var lbl_afk_rule: Label = get_node_or_null("Margin/VBoxMain/MatchDetailsBox/VBox/AfkRuleRow/LblAfkRule")
 
 var _dot_style_empty: StyleBoxFlat
 var _dot_style_filled: StyleBoxFlat
@@ -37,9 +37,10 @@ func _ready() -> void:
 	if is_instance_valid(p2_dot3):
 		p2_dot3.visible = false
 	if is_instance_valid(p1_missed_turns_box):
-		p1_missed_turns_box.visible = true
+		p1_missed_turns_box.visible = false
 	if is_instance_valid(p2_missed_turns_box):
-		p2_missed_turns_box.visible = true
+		p2_missed_turns_box.visible = false
+	set_penalty_box_visible(true)
 	update_not_played_turns(1, 0)
 	update_not_played_turns(2, 0)
 
@@ -75,11 +76,21 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 		_max_missed_turns = 2
 	if is_instance_valid(lbl_afk_rule):
 		lbl_afk_rule.text = "هر نوبت: %s ثانیه | %s نوبت بدون حرکت = باخت" % [_fa_digits(int(turn_time)), _fa_digits(_max_missed_turns)]
+	set_match_meta_text("⏱ %s ثانیه | %s خطا = باخت" % [_fa_digits(int(turn_time)), _fa_digits(_max_missed_turns)])
+	set_penalty_box_visible(true)
 	update_not_played_turns(1, 0)
 	update_not_played_turns(2, 0)
 
 
 func update_not_played_turns(gamer_id: int, count: int) -> void:
+	var clamped_count := clampi(count, 0, _max_missed_turns)
+	set_penalty_box_visible(true)
+	update_penalty_dots(gamer_id, clamped_count, _max_missed_turns)
+
+	# Opponent pod remains clean with no empty/extra containers on the right
+	update_player_counter(gamer_id, "")
+	_set_role_badge(gamer_id, "")
+
 	var dots := [p1_dot1, p1_dot2] if gamer_id == 1 else [p2_dot1, p2_dot2]
 	var count_lbl: Label = p1_strike_count_lbl if gamer_id == 1 else p2_strike_count_lbl
 	var box: HBoxContainer = p1_missed_turns_box if gamer_id == 1 else p2_missed_turns_box
@@ -87,7 +98,6 @@ func update_not_played_turns(gamer_id: int, count: int) -> void:
 	if not is_instance_valid(count_lbl) or dots.is_empty():
 		return
 
-	var clamped_count := clampi(count, 0, _max_missed_turns)
 	for i in range(dots.size()):
 		var dot = dots[i]
 		if not is_instance_valid(dot):

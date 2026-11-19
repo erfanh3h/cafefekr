@@ -67,6 +67,7 @@ func _apply_layout_for_player_count(total_players: int) -> void:
 			_apply_disabled_visual(idx)
 		else:
 			_set_role_badge(idx, _format_role_text(idx), HudTheme.get_seat_accent(idx))
+	_apply_opponent_only_layout()
 
 
 func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
@@ -111,6 +112,7 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	_apply_layout_for_player_count(total_players)
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
+	set_match_meta_text("⚔️ ریسک استرایک (%s نفره) | ۲ نشان فتح = برد" % _fa_digits(total_players))
 	update_risk_player_stats(_token_counts, _continent_counts, _strategy_counts)
 
 
@@ -143,29 +145,16 @@ func update_risk_player_stats(token_counts: Array, continent_counts: Array, stra
 			set_player_disabled(idx, true, "💀 حذف شد")
 		var b := _get_player_card_bundle(idx)
 		var lbl: Label = b.get("score", null)
+		var badge_str := "👑۲" if rank1 == idx else (("🥈%s" % _fa_digits(t_cnt)) if (rank2 == idx and t_cnt < 2) else ("💀" if is_player_disabled(idx) else "👑%s" % _fa_digits(t_cnt)))
 		if is_instance_valid(lbl):
-			if rank1 == idx:
-				lbl.text = "👑۲"
-			elif rank2 == idx and t_cnt < 2:
-				lbl.text = "🥈%s" % _fa_digits(t_cnt)
-			elif is_player_disabled(idx):
-				lbl.text = "💀"
-			else:
-				lbl.text = "👑%s" % _fa_digits(t_cnt)
+			lbl.text = badge_str
+		update_player_counter(idx, badge_str)
 		if not is_player_disabled(idx):
 			_set_role_badge(idx, _format_role_text(idx), HudTheme.get_seat_accent(idx))
 
 
 func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
-	_current_turn = turn
-	_my_player_index = my_idx
-	_last_critical_sec = -1
-	_cached_timer_danger = -1
-	_player_names[1] = p1_n
-	_player_names[2] = p2_n
-
-	_apply_layout_for_player_count(_get_total_players())
-	_set_active_cards_visual([turn], false, true)
+	super.update_turn(turn, my_idx, p1_n, p2_n)
 
 	if not GameManager.is_game_active or turn <= 0:
 		hide_turn_toast()
@@ -177,7 +166,7 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	_update_card_timer_visuals(remaining_sec, total_sec, [turn])
+	super.update_timer(remaining_sec, total_sec, turn)
 
 
 func _to_int(val: Variant, default_val: int = 0) -> int:

@@ -68,6 +68,8 @@ signal top_view_requested()
 @onready var img_audio: TextureRect = $GameMenuDrawer/Card/MenuView/BtnAudio/Icon
 @onready var btn_game_info: Button = $GameMenuDrawer/Card/MenuView/BtnGameInfo
 @onready var btn_surrender: Button = $GameMenuDrawer/Card/MenuView/BtnSurrender
+@onready var btn_toggle_chat: Button = $GameMenuDrawer/Card/MenuView/BtnToggleChat
+@onready var img_toggle_chat: TextureRect = $GameMenuDrawer/Card/MenuView/BtnToggleChat/Icon
 @onready var btn_close_menu: Button = $GameMenuDrawer/Card/MenuView/BtnCloseMenu
 @onready var btn_rules_back: Button = $GameMenuDrawer/Card/RulesView/RulesHeader/BtnRulesBack
 @onready var lbl_rules_title: Label = $GameMenuDrawer/Card/RulesView/RulesHeader/LblRulesTitle
@@ -482,18 +484,46 @@ func _ensure_top_header_for_current_game() -> void:
 
 			current_top_header.header_height_changed.connect(_on_header_height_changed)
 
+		if current_top_header.has_signal("view_mode_toggled"):
+			current_top_header.view_mode_toggled.connect(func(_is_2d: bool):
+				top_view_requested.emit()
+			)
+
+		if current_top_header.has_signal("chat_pressed"):
+			current_top_header.chat_pressed.connect(func(anchor: Button):
+				if GameManager.is_spectating:
+					return
+				_close_camera_popover()
+				if not GameManager.is_game_active:
+					show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
+					return
+				AudioManager.sfx_button()
+				reaction_picker.open_koris(anchor)
+			)
+
+		if current_top_header.has_signal("emoji_pressed"):
+			current_top_header.emoji_pressed.connect(func(anchor: Button):
+				if GameManager.is_spectating:
+					return
+				_close_camera_popover()
+				if not GameManager.is_game_active:
+					show_toast_hint("لطفاً تا شروع مسابقه صبر کنید...")
+					return
+				AudioManager.sfx_button()
+				reaction_picker.open_stickers(anchor)
+			)
+
 		_on_header_height_changed(current_top_header.offset_bottom)
 
 
 
 func _on_header_height_changed(new_height: float) -> void:
-	var clamped_h: float = maxf(112.0, new_height)
+	var clamped_h: float = maxf(68.0, new_height)
 	if is_instance_valid(top_header_slot):
 		top_header_slot.offset_bottom = clamped_h
 	if is_instance_valid(sub_header_rail):
-		var rail_top: float = clamped_h - 2.0
-		sub_header_rail.offset_top = rail_top
-		sub_header_rail.offset_bottom = rail_top + 42.0
+		sub_header_rail.visible = false
+		sub_header_rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func is_overlay_open() -> bool:
@@ -510,12 +540,8 @@ func _apply_bottom_safe_insets() -> void:
 	var insets: Dictionary = HudTheme.get_safe_insets(get_viewport())
 	_safe_bottom_inset = int(insets.get("bottom", 14))
 	if is_instance_valid(sub_header_rail):
-		sub_header_rail.offset_left = float(insets.get("left", 10))
-		sub_header_rail.offset_right = -float(insets.get("right", 10))
-		if is_instance_valid(top_header_slot):
-			var rail_top: float = maxf(110.0, top_header_slot.offset_bottom - 2.0)
-			sub_header_rail.offset_top = rail_top
-			sub_header_rail.offset_bottom = rail_top + 42.0
+		sub_header_rail.visible = false
+		sub_header_rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _ready() -> void:
@@ -527,6 +553,14 @@ func _ready() -> void:
 	_setup_connections()
 
 	_apply_bottom_safe_insets()
+
+	if is_instance_valid(sub_header_rail):
+		sub_header_rail.visible = false
+		sub_header_rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	if is_instance_valid(lbl_timer):
+		lbl_timer.visible = false
+		lbl_timer.text = ""
 
 	surrender_dialog.visible = false
 
@@ -574,7 +608,9 @@ func _ready() -> void:
 
 	turn_time_left = def_time
 
-	lbl_timer.text = "%02d ثانیه" % int(def_time)
+	if is_instance_valid(lbl_timer):
+		lbl_timer.text = ""
+		lbl_timer.visible = false
 
 	turn_timer_bar.value = 100.0
 
@@ -816,6 +852,13 @@ func _setup_connections() -> void:
 	HudTheme.apply_drawer_item_style(btn_audio, "default")
 	HudTheme.apply_drawer_item_style(btn_game_info, "default")
 	HudTheme.apply_drawer_item_style(btn_surrender, "danger")
+	if is_instance_valid(btn_toggle_chat):
+		_update_chat_toggle_button_visuals()
+		btn_toggle_chat.pressed.connect(func():
+			AudioManager.sfx_button()
+			GameManager.set_chat_and_stickers_disabled(not GameManager.chat_and_stickers_disabled)
+			_update_chat_toggle_button_visuals()
+		)
 	HudTheme.apply_drawer_item_style(btn_close_menu, "primary")
 	HudTheme.apply_drawer_item_style(btn_rules_back, "default")
 	HudTheme.configure_bidi_label(lbl_rules_body, false)
@@ -1287,6 +1330,7 @@ func _open_game_menu_drawer() -> void:
 	if is_instance_valid(rules_view):
 		rules_view.visible = false
 	_update_audio_visual()
+	_update_chat_toggle_button_visuals()
 	game_menu_drawer.visible = true
 	var card := game_menu_drawer.get_node_or_null("Card") as Control
 	if is_instance_valid(card):
@@ -1305,6 +1349,18 @@ func _close_game_menu_drawer() -> void:
 		menu_view.visible = true
 	if is_instance_valid(rules_view):
 		rules_view.visible = false
+
+
+func _update_chat_toggle_button_visuals() -> void:
+	if not is_instance_valid(btn_toggle_chat):
+		return
+	var dis := GameManager.chat_and_stickers_disabled
+	btn_toggle_chat.text = "چت و استیکر: غیرفعال" if dis else "چت و استیکر: فعال"
+	if is_instance_valid(img_toggle_chat):
+		img_toggle_chat.modulate = Color(0.6, 0.6, 0.6, 0.5) if dis else Color.WHITE
+	HudTheme.apply_drawer_item_style(btn_toggle_chat, "danger" if dis else "default")
+	if is_instance_valid(current_top_header) and current_top_header.has_method("set_chat_and_stickers_enabled"):
+		current_top_header.set_chat_and_stickers_enabled(not dis)
 
 
 func _show_menu_rules() -> void:
@@ -1980,7 +2036,9 @@ func show_match_loading(status_text: String = "در حال آماده‌سازی
 
 	lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 
-	lbl_timer.text = "%02d ثانیه" % int(turn_duration)
+	if is_instance_valid(lbl_timer):
+		lbl_timer.text = ""
+		lbl_timer.visible = false
 
 	turn_timer_bar.value = 100.0
 
@@ -2483,7 +2541,8 @@ func resume_timer_on_user_reconnected(remaining_time: int) -> void:
 
 	if is_instance_valid(lbl_timer):
 
-		lbl_timer.text = "%02d ثانیه" % sec
+		lbl_timer.text = ""
+		lbl_timer.visible = false
 
 	if is_instance_valid(turn_timer_bar):
 
@@ -2558,7 +2617,8 @@ func sync_reconnect_timer(payload: Dictionary) -> void:
 
 	if is_instance_valid(lbl_timer):
 
-		lbl_timer.text = "%02d ثانیه" % sec
+		lbl_timer.text = ""
+		lbl_timer.visible = false
 
 	if is_instance_valid(turn_timer_bar):
 
@@ -3068,7 +3128,9 @@ func stop_timer() -> void:
 
 	turn_timer_bar.value = 0.0
 
-	lbl_timer.text = "-- ثانیه"
+	if is_instance_valid(lbl_timer):
+		lbl_timer.text = ""
+		lbl_timer.visible = false
 
 	if is_instance_valid(current_top_header) and current_top_header.has_method("update_timer"):
 		current_top_header.update_timer(0.0, max(1.0, turn_duration), 0)
@@ -3078,6 +3140,8 @@ func stop_timer() -> void:
 
 
 func set_camera_mode_indicator(is_top_down: bool) -> void:
+	if is_instance_valid(current_top_header) and current_top_header.has_method("set_camera_mode_indicator"):
+		current_top_header.set_camera_mode_indicator(is_top_down)
 	var target_tex: Texture2D = _cam_3d_tex if is_top_down else _cam_2d_tex
 	if btn_cam_top and is_instance_valid(btn_cam_top):
 		btn_cam_top.text = ""

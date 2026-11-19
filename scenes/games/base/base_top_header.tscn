@@ -1,9 +1,13 @@
-[gd_scene load_steps=12 format=3 uid="uid://basetopheader01"]
+[gd_scene load_steps=22 format=3 uid="uid://basetopheader01"]
 
 [ext_resource type="Script" path="res://scenes/games/base/base_top_header.gd" id="1_header_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font_ui"]
 [ext_resource type="Theme" uid="uid://commonhudtheme01" path="res://scenes/games/base/common_hud_theme.tres" id="4_hud_theme"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/3d.png" id="5_icon_3d"]
+[ext_resource type="Texture2D" path="res://assets/images/config.png" id="6_icon_settings"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/chat.png" id="7_icon_chat"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/sticker.png" id="8_icon_emote"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 content_margin_left = 10.0
@@ -91,6 +95,130 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_local_bar_bg"]
+bg_color = Color(0.09, 0.06, 0.04, 0.84)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.352941, 0.258824, 0.168627, 0.45)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_local_bar_fill"]
+bg_color = Color(0.960784, 0.768627, 0.317647, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+shadow_color = Color(0.960784, 0.768627, 0.317647, 0.55)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_local_pill"]
+content_margin_left = 14.0
+content_margin_top = 3.0
+content_margin_right = 14.0
+content_margin_bottom = 4.0
+bg_color = Color(0.101961, 0.0666667, 0.0431373, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.960784, 0.768627, 0.317647, 0.9)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
+shadow_color = Color(0.909804, 0.635294, 0.188235, 0.28)
+shadow_size = 8
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_spectator_pill"]
+content_margin_left = 7.0
+content_margin_top = 3.0
+content_margin_right = 7.0
+content_margin_bottom = 3.0
+bg_color = Color(0.11, 0.07, 0.04, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.788235, 0.615686, 0.305882, 0.75)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_right = 11
+corner_radius_bottom_left = 11
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_icon_btn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_match_meta"]
+content_margin_left = 14.0
+content_margin_top = 4.0
+content_margin_right = 14.0
+content_margin_bottom = 4.0
+bg_color = Color(0.12, 0.08, 0.05, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.65, 0.50, 0.28, 0.55)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_penalty_box"]
+content_margin_left = 6.0
+content_margin_top = 3.0
+content_margin_right = 6.0
+content_margin_bottom = 3.0
+bg_color = Color(0.10, 0.07, 0.04, 0.90)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.48, 0.38, 0.22, 0.80)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_strike_empty"]
+bg_color = Color(0.18, 0.12, 0.08, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.50, 0.40, 0.25, 0.80)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_match_result"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(0.12, 0.08, 0.05, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.72, 0.54, 0.25, 0.80)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 4
+shadow_offset = Vector2(0, 1)
+
 [node name="BaseTopHeader" type="Control"]
 layout_mode = 3
 anchors_preset = 10
@@ -116,17 +244,353 @@ theme_override_constants/margin_right = 10
 [node name="VBoxMain" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 alignment = 0
 
+[node name="TopRow" type="HBoxContainer" parent="Margin/VBoxMain"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 0
+
+[node name="PlayersContainer" type="HBoxContainer" parent="Margin/VBoxMain/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 0
+
+[node name="BtnSettings" type="Button" parent="Margin/VBoxMain/TopRow"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_icon_btn")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Margin/VBoxMain/TopRow/BtnSettings"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_icon_settings")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnView2D3D" type="Button" parent="Margin/VBoxMain/TopRow"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_icon_btn")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Margin/VBoxMain/TopRow/BtnView2D3D"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_icon_3d")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnChat" type="Button" parent="Margin/VBoxMain/TopRow"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_icon_btn")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Margin/VBoxMain/TopRow/BtnChat"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_icon_chat")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnEmoji" type="Button" parent="Margin/VBoxMain/TopRow"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_icon_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_icon_btn")
+flat = true
+
+[node name="Icon" type="TextureRect" parent="Margin/VBoxMain/TopRow/BtnEmoji"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_icon_emote")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MatchMetaRibbon" type="PanelContainer" parent="Margin/VBoxMain"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_match_meta")
+
+[node name="LblMatchMeta" type="Label" parent="Margin/VBoxMain/MatchMetaRibbon"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.72, 0.90)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+text_direction = 3
+
+[node name="LocalTurnBarWrap" type="MarginContainer" parent="Margin/VBoxMain"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 6
+
+[node name="LocalTurnVBox" type="VBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="LocalTurnProgressBar" type="ProgressBar" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_local_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_local_bar_fill")
+value = 100.0
+show_percentage = false
+
+[node name="LocalTurnPillCenter" type="CenterContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="LocalTurnPill" type="PanelContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_local_pill")
+
+[node name="LblLocalTurn" type="Label" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984314, 0.952941, 0.894118, 1)
+theme_override_colors/font_shadow_color = Color(0.04, 0.02, 0.01, 0.85)
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 12
+text = "نوبت شما"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BelowTimerRow" type="HBoxContainer" parent="Margin/VBoxMain"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 0
+
+[node name="PenaltyDetailsBox" type="PanelContainer" parent="Margin/VBoxMain/BelowTimerRow"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_penalty_box")
+
+[node name="VBox" type="VBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="OppRow" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 0
+
+[node name="LblOppTitle" type="Label" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92, 0.86, 0.78, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "حریف:"
+text_direction = 3
+
+[node name="OppDots" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="OppDot1" type="Panel" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
+
+[node name="OppDot2" type="Panel" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
+
+[node name="LblOppCount" type="Label" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "۰/۲"
+text_direction = 3
+
+[node name="MyRow" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 0
+
+[node name="LblMyTitle" type="Label" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92, 0.86, 0.78, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "شما:"
+text_direction = 3
+
+[node name="MyDots" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="MyDot1" type="Panel" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
+
+[node name="MyDot2" type="Panel" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
+
+[node name="LblMyCount" type="Label" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "۰/۲"
+text_direction = 3
+
+[node name="BelowTimerSpacer" type="Control" parent="Margin/VBoxMain/BelowTimerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="MatchResultBox" type="PanelContainer" parent="Margin/VBoxMain/BelowTimerRow"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_match_result")
+
+[node name="HBox" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/MatchResultBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="LblResultTitle" type="Label" parent="Margin/VBoxMain/BelowTimerRow/MatchResultBox/HBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.85, 0.78, 0.68, 0.90)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "نتیجه:"
+text_direction = 3
+
+[node name="LblResultScore" type="Label" parent="Margin/VBoxMain/BelowTimerRow/MatchResultBox/HBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 12
+text = "۲ - ۲"
+text_direction = 3
+
 [node name="PlayersRow" type="HBoxContainer" parent="Margin/VBoxMain"]
+visible = false
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
 [node name="P1Card" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow"]
-custom_minimum_size = Vector2(0, 84)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
@@ -137,12 +601,12 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -237,7 +701,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="P2Card" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow"]
-custom_minimum_size = Vector2(0, 84)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
@@ -248,12 +712,12 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="AvatarContainer" type="Control" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="Avatar" type="TextureRect" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -404,3 +868,59 @@ theme_override_styles/background = SubResource("StyleBoxFlat_turn_timer_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_timer_fill")
 value = 100.0
 show_percentage = false
+
+[node name="EdgeOverlay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="SpectatorPill" type="PanelContainer" parent="EdgeOverlay"]
+visible = false
+layout_mode = 1
+offset_left = 10.0
+offset_top = 58.0
+offset_right = 96.0
+offset_bottom = 86.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_spectator_pill")
+
+[node name="HBox" type="HBoxContainer" parent="EdgeOverlay/SpectatorPill"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Icon" type="Label" parent="EdgeOverlay/SpectatorPill/HBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 12
+text = "👁"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LblSpectator" type="Label" parent="EdgeOverlay/SpectatorPill/HBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.788235, 0.94902, 0.858824, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 11
+text = "تماشاچی"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomTurnGlow" type="TextureRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -124.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+expand_mode = 1

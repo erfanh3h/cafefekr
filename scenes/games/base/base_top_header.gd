@@ -1,988 +1,32 @@
 class_name BaseTopHeader
 extends Control
 
-# Base Top Header for Cafe Fekr — Warm Classic Parlor Shared HUD
-# Compact (<12% viewport height) portrait header supporting 2-4 players with:
-# - Integrated bottom-edge card turn timer bars + compact seconds chips
-# - Lightweight fading TurnStatusToast (replacing heavy permanent turn banner)
-# - Top-corner Menu/Settings trigger + compact live spectator counter
-# - Strictly below-avatar emote & Kori pop-ups (zero overlap over names/counters)
-# - Full Persian RTL & English LTR BiDi support and mobile safe-area insets
+# Base Top Header for Cafe Fekr — Warm Classic Parlor Shared HUD (Godot 4 Mobile Portrait)
+# Features:
+# - Single compact Top Row: 2D/3D View Toggle (Left) | Dynamic PlayersContainer (Center) | Settings (Right)
+# - Player Mode: Local player card is removed completely; Opponents Only are shown (1-pod horizontal pill in 2P, 2-3 vertical pods in 3-4P)
+# - Spectator Mode: All 2-4 players shown (2-3 standard vertical, or 4 ultra-compact vertical)
+# - Vertical Social Rail tucked directly beneath Settings button (Chat & Emoji 38x38px with 8px gap)
+# - Tiny Spectator Pill below 2D button when spectating
+# - Dual Visual Turn & Timer System (digits removed):
+#     - Active opponent turn: clockwise radial gold progress ring on avatar (turns danger red <4s)
+#     - Local player turn: slim 4px gold progress bar below header + centered floating pill "نوبت شما" + bottom edge glow
+# - 100% empty and pass-through bottom area for board/card gameplay
+# - Strict backwards-compatibility: legacy nodes (p1_card, p2_card, match_details_box, lbl_timer) preserved and hidden
 
+signal view_mode_toggled(is_2d: bool)
+signal chat_pressed(anchor_btn: Button)
+signal emoji_pressed(anchor_btn: Button)
+signal menu_requested()
+signal player_profile_clicked(player_index: int)
 signal p1_profile_clicked()
 signal p2_profile_clicked()
-signal player_profile_clicked(player_index: int)
-signal menu_requested()
 signal header_height_changed(new_height: float)
 
-const CARD_HEIGHT_2P := 84.0
-const CARD_HEIGHT_MULTI := 68.0
-const MENU_COL_WIDTH := 46.0
-
-var _profile_clicks_enabled: bool = false
-
-func set_profile_clicks_enabled(enabled: bool) -> void:
-	_profile_clicks_enabled = enabled
-
-func _can_emit_profile_click() -> bool:
-	return _profile_clicks_enabled and GameManager.is_game_active
-
-# --- Player 1 Card Nodes ---
-@onready var p1_card: PanelContainer = $Margin/VBoxMain/PlayersRow/P1Card
-@onready var p1_avatar: TextureRect = $Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer/Avatar
-@onready var p1_name: Label = $Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/Name
-@onready var p1_role_badge: Label = $Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/RoleBadge
-@onready var p1_score_lbl: Label = $Margin/VBoxMain/PlayersRow/P1Card/HBox/ScoreBadge/Score
-@onready var p1_reaction_bubble: Control = $Margin/VBoxMain/PlayersRow/P1Card/ReactionBubble
-@onready var p1_reaction_icon: TextureRect = $Margin/VBoxMain/PlayersRow/P1Card/ReactionBubble/BubbleFrame/Icon
-@onready var btn_p1_profile: Button = $Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer/BtnP1Profile
-
-# --- Player 2 Card Nodes ---
-@onready var p2_card: PanelContainer = $Margin/VBoxMain/PlayersRow/P2Card
-@onready var p2_avatar: TextureRect = $Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer/Avatar
-@onready var p2_name: Label = $Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/Name
-@onready var p2_role_badge: Label = $Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/RoleBadge
-@onready var p2_score_lbl: Label = $Margin/VBoxMain/PlayersRow/P2Card/HBox/ScoreBadge/Score
-@onready var p2_reaction_bubble: Control = $Margin/VBoxMain/PlayersRow/P2Card/ReactionBubble
-@onready var p2_reaction_icon: TextureRect = $Margin/VBoxMain/PlayersRow/P2Card/ReactionBubble/BubbleFrame/Icon
-@onready var btn_p2_profile: Button = $Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer/BtnP2Profile
-
-# --- Legacy Match Details & Turn Timer Nodes (kept alive & hidden for 100% compatibility) ---
-@onready var match_details_box: PanelContainer = $Margin/VBoxMain/MatchDetailsBox
-@onready var lbl_round: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/RoundPanel/LblRound
-@onready var lbl_turn_banner: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/TurnBanner
-@onready var lbl_timer: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/TimerRow/LblTimer
-@onready var turn_timer_bar: ProgressBar = $Margin/VBoxMain/MatchDetailsBox/VBox/TurnTimerBar
-
-# --- Dynamic Player 3 & Player 4 Cards (for 3-4 player games) ---
-var p3_card: PanelContainer = null
-var p4_card: PanelContainer = null
-var _players_row2: HBoxContainer = null
-var _p4_empty_spacer: Control = null
-var _row2_menu_spacer: Control = null
-var _extra_cards: Dictionary = {} # idx (3,4) -> Dictionary of child node refs
-var _card_decorations: Dictionary = {} # idx (1..4) -> {timer_bar, timer_fill, timer_chip, seat_dot, overlay}
-var _disabled_players: Dictionary = {} # idx (1..4) -> reason string
-var _player_names: Dictionary = {
-	1: "بازیکن ۱",
-	2: "بازیکن ۲",
-	3: "بازیکن ۳",
-	4: "بازیکن ۴"
-}
-var _reaction_seqs: Dictionary = {1: 0, 2: 0, 3: 0, 4: 0}
-
-# --- Theme Styles (Warm Classic Parlor) ---
-var _style_p1_active: StyleBoxFlat
-var _style_p1_inactive: StyleBoxFlat
-var _style_p2_active: StyleBoxFlat
-var _style_p2_inactive: StyleBoxFlat
-var _style_p3_active: StyleBoxFlat
-var _style_p3_inactive: StyleBoxFlat
-var _style_p4_active: StyleBoxFlat
-var _style_p4_inactive: StyleBoxFlat
-var _style_card_active_danger: StyleBoxFlat
-var _style_card_disabled: StyleBoxFlat
-var _timer_style_fill: StyleBoxFlat
-var _timer_style_bg: StyleBoxFlat
-var _style_match_box_normal: StyleBoxFlat
-var _style_match_box_p1: StyleBoxFlat
-var _style_match_box_p2: StyleBoxFlat
-var _style_match_box_p3: StyleBoxFlat
-var _style_match_box_p4: StyleBoxFlat
-var _style_match_box_danger: StyleBoxFlat
-var _style_timer_pill_normal: StyleBoxFlat
-var _style_timer_pill_danger: StyleBoxFlat
-var _style_avatar_p1_active: StyleBoxFlat
-var _style_avatar_p1_idle: StyleBoxFlat
-var _style_avatar_p2_active: StyleBoxFlat
-var _style_avatar_p2_idle: StyleBoxFlat
-var _style_avatar_p3_active: StyleBoxFlat
-var _style_avatar_p3_idle: StyleBoxFlat
-var _style_avatar_p4_active: StyleBoxFlat
-var _style_avatar_p4_idle: StyleBoxFlat
-var _style_chip_normal: StyleBoxFlat
-var _style_chip_danger: StyleBoxFlat
-
-# --- Dynamic Game-UI Decorations ---
-var _p1_avatar_frame: Panel = null
-var _p2_avatar_frame: Panel = null
-var _p1_side_tag: Label = null
-var _p2_side_tag: Label = null
-var _p1_score_badge: PanelContainer = null
-var _p2_score_badge: PanelContainer = null
-var _timer_icon: TextureRect = null
-var _timer_vfx_overlay: Control = null
-var _spectator_badge_panel: PanelContainer = null
-var _lbl_spectator_count: Label = null
-var _menu_col: VBoxContainer = null
-var _btn_hud_menu: Button = null
-var _turn_toast_panel: PanelContainer = null
-var _lbl_turn_toast: Label = null
-var _turn_toast_seq: int = 0
-var _turn_toast_tween: Tween = null
-var _turn_toast_persistent: bool = false
-
-# --- State ---
-var _current_turn: int = 1
-var _my_player_index: int = 1
-var _total_players: int = 2
-var _active_card_indices: Array = [1]
-var _last_critical_sec: int = -1
-var _last_displayed_sec: int = -1
-var _last_p1_score: int = 0
-var _last_p2_score: int = 0
-var _cached_timer_danger: int = -1
-var _cached_timer_box_style: StyleBox = null
-var _cached_timer_fill_color: Color = Color(-1.0, -1.0, -1.0, -1.0)
-var _safe_top_inset: int = 16
-var _p1_reaction_seq: int = 0
-var _p2_reaction_seq: int = 0
-
-static var _avatar_cache: Dictionary = {}
-static var _reaction_cache: Dictionary = {}
-static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
-static var _font_vazir: FontFile = preload("res://assets/fonts/Vazir.ttf")
-static var _tex_time_icon: Texture2D = preload("res://assets/icons/General/time.png")
-static var _tex_menu_icon: Texture2D = preload("res://assets/icons/General/setting.png")
-
-
-static func _get_cached_avatar(av_id: int) -> Texture2D:
-	if _avatar_cache.has(av_id):
-		return _avatar_cache[av_id]
-	var path = "res://assets/icons/Avatars/%d.png" % av_id
-	if ResourceLoader.exists(path):
-		var tex = load(path)
-		_avatar_cache[av_id] = tex
-		return tex
-	return null
-
-
-static func _get_cached_reaction(r_id: int) -> Texture2D:
-	if _reaction_cache.has(r_id):
-		return _reaction_cache[r_id]
-	var path = "res://assets/icons/Reactions/%d.png" % r_id
-	if ResourceLoader.exists(path):
-		var tex = load(path)
-		_reaction_cache[r_id] = tex
-		return tex
-	return null
-
-
-static func _fa_digits(val: Variant) -> String:
-	return HudTheme.fa_digits(val)
-
-
-func _ready() -> void:
-	_setup_styles()
-	_build_game_ui_enhancements()
-	_apply_safe_area_insets()
-	_update_score_badges_visibility()
-	_connect_buttons()
-	if not NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
-		NetworkManager.spectator_count_updated.connect(_on_spectator_count_updated)
-	update_spectator_count(GameManager.spectator_count)
-	if is_instance_valid(p1_reaction_bubble):
-		p1_reaction_bubble.top_level = true
-		p1_reaction_bubble.visible = false
-	if is_instance_valid(p2_reaction_bubble):
-		p2_reaction_bubble.top_level = true
-		p2_reaction_bubble.visible = false
-
-
-func _exit_tree() -> void:
-	if is_instance_valid(NetworkManager) and NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
-		NetworkManager.spectator_count_updated.disconnect(_on_spectator_count_updated)
-
-
-func _apply_safe_area_insets() -> void:
-	var insets := HudTheme.get_safe_insets(get_viewport())
-	_safe_top_inset = int(insets.get("top", 16))
-	var margin := get_node_or_null("Margin") as MarginContainer
-	if is_instance_valid(margin):
-		margin.add_theme_constant_override("margin_top", _safe_top_inset)
-		margin.add_theme_constant_override("margin_left", int(insets.get("left", 10)))
-		margin.add_theme_constant_override("margin_right", int(insets.get("right", 10)))
-	_sync_header_height()
-
-
-func _sync_header_height() -> void:
-	var is_multi := _total_players > 2
-	var cards_h: float = (CARD_HEIGHT_MULTI * 2.0 + 6.0) if is_multi else CARD_HEIGHT_2P
-	# Keep total visible footprint compact (<12% of 1280px = 153px for 2P)
-	var desired_h: float = float(_safe_top_inset) + cards_h + 12.0
-	if not is_multi:
-		desired_h = clampf(desired_h, 112.0, 148.0)
-	else:
-		desired_h = clampf(desired_h, 164.0, 204.0)
-	offset_bottom = desired_h
-	_position_turn_toast()
-	header_height_changed.emit(desired_h)
-
-
-func _on_spectator_count_updated(game_id: String, count: int) -> void:
-	var active_gid: String = GameManager.active_game_id
-	var spec_gid: String = GameManager.spectated_game_id
-	var open_gid: String = GameManager.get_open_game_id()
-	if game_id.is_empty() or game_id == active_gid or game_id == spec_gid or game_id == open_gid:
-		update_spectator_count(count)
-
-
-func update_spectator_count(count: int) -> void:
-	var safe_count: int = maxi(0, count)
-	if is_instance_valid(_spectator_badge_panel):
-		_spectator_badge_panel.visible = (safe_count > 0)
-	if is_instance_valid(_lbl_spectator_count) and safe_count > 0:
-		_lbl_spectator_count.text = _fa_digits(safe_count)
-
-
-func _connect_buttons() -> void:
-	if is_instance_valid(btn_p1_profile):
-		btn_p1_profile.focus_mode = Control.FOCUS_NONE
-		btn_p1_profile.pressed.connect(func():
-			if _can_emit_profile_click():
-				p1_profile_clicked.emit()
-		)
-	if is_instance_valid(btn_p2_profile):
-		btn_p2_profile.focus_mode = Control.FOCUS_NONE
-		btn_p2_profile.pressed.connect(func():
-			if _can_emit_profile_click():
-				p2_profile_clicked.emit()
-		)
-
-
-func _setup_styles() -> void:
-	var compact := _total_players > 2
-	_style_p1_active = HudTheme.make_player_card_style(true, false, compact)
-	_style_p1_inactive = HudTheme.make_player_card_style(false, false, compact)
-	_style_p2_active = HudTheme.make_player_card_style(true, false, compact)
-	_style_p2_inactive = HudTheme.make_player_card_style(false, false, compact)
-	_style_p3_active = HudTheme.make_player_card_style(true, false, true)
-	_style_p3_inactive = HudTheme.make_player_card_style(false, false, true)
-	_style_p4_active = HudTheme.make_player_card_style(true, false, true)
-	_style_p4_inactive = HudTheme.make_player_card_style(false, false, true)
-	_style_card_active_danger = HudTheme.make_player_card_style(true, true, compact)
-	_style_card_disabled = HudTheme.make_disabled_card_style(compact)
-
-	# Transparent avatar medallion rings (decorative avatar frames handle framing)
-	_style_avatar_p1_active = StyleBoxFlat.new()
-	_style_avatar_p1_active.bg_color = Color(0, 0, 0, 0)
-	_style_avatar_p1_active.border_color = Color(0, 0, 0, 0)
-	_style_avatar_p1_active.set_border_width_all(0)
-	_style_avatar_p1_idle = _style_avatar_p1_active.duplicate()
-	_style_avatar_p2_active = _style_avatar_p1_active.duplicate()
-	_style_avatar_p2_idle = _style_avatar_p1_active.duplicate()
-	_style_avatar_p3_active = _style_avatar_p1_active.duplicate()
-	_style_avatar_p3_idle = _style_avatar_p1_active.duplicate()
-	_style_avatar_p4_active = _style_avatar_p1_active.duplicate()
-	_style_avatar_p4_idle = _style_avatar_p1_active.duplicate()
-
-	# Hidden legacy MatchDetailsBox styles (Warm Classic Parlor fallback if a child ever shows it)
-	_style_match_box_normal = HudTheme.make_turn_toast_style()
-	_style_match_box_p1 = _style_match_box_normal.duplicate()
-	_style_match_box_p2 = _style_match_box_normal.duplicate()
-	_style_match_box_p3 = _style_match_box_normal.duplicate()
-	_style_match_box_p4 = _style_match_box_normal.duplicate()
-	_style_match_box_danger = _style_match_box_normal.duplicate()
-	_style_match_box_danger.border_color = HudTheme.COL_DANGER
-
-	_style_timer_pill_normal = HudTheme.make_timer_chip_style(false)
-	_style_timer_pill_danger = HudTheme.make_timer_chip_style(true)
-	_style_chip_normal = HudTheme.make_timer_chip_style(false)
-	_style_chip_danger = HudTheme.make_timer_chip_style(true)
-
-	_timer_style_bg = HudTheme.make_card_timer_track_style()
-	_timer_style_fill = HudTheme.make_card_timer_fill_style(HudTheme.COL_GOLD_ACTIVE)
-
-	if is_instance_valid(turn_timer_bar):
-		turn_timer_bar.custom_minimum_size = Vector2(0, 6)
-		turn_timer_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		turn_timer_bar.add_theme_stylebox_override("background", _timer_style_bg)
-		turn_timer_bar.add_theme_stylebox_override("fill", _timer_style_fill)
-
-	if is_instance_valid(match_details_box):
-		match_details_box.visible = false
-		match_details_box.add_theme_stylebox_override("panel", _style_match_box_normal)
-
-
-func _build_game_ui_enhancements() -> void:
-	# 1. Enhance Player 1 & Player 2 Cards + attach integrated bottom timer bars & seat dots
-	_enhance_player_card(1)
-	_enhance_player_card(2)
-
-	# 2. Keep legacy MatchDetailsBox collapsed to save vertical screen space
-	if is_instance_valid(match_details_box):
-		match_details_box.visible = false
-
-	# 3. Add Top-Corner Menu/Settings Button + Compact Spectator Counter to PlayersRow
-	var players_row := get_node_or_null("Margin/VBoxMain/PlayersRow") as HBoxContainer
-	if is_instance_valid(players_row) and not is_instance_valid(_menu_col):
-		_menu_col = VBoxContainer.new()
-		_menu_col.name = "MenuColumn"
-		_menu_col.custom_minimum_size = Vector2(MENU_COL_WIDTH, 0)
-		_menu_col.size_flags_horizontal = Control.SIZE_SHRINK_END
-		_menu_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		_menu_col.alignment = BoxContainer.ALIGNMENT_CENTER
-		_menu_col.add_theme_constant_override("separation", 4)
-		_menu_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		players_row.add_child(_menu_col)
-
-		_btn_hud_menu = Button.new()
-		_btn_hud_menu.name = "BtnHudMenu"
-		_btn_hud_menu.custom_minimum_size = Vector2(46, 46)
-		_btn_hud_menu.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		_btn_hud_menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		_btn_hud_menu.tooltip_text = "منوی بازی و تنظیمات"
-		HudTheme.apply_floating_button_style(_btn_hud_menu, false)
-		_btn_hud_menu.pressed.connect(func():
-			AudioManager.play_sound("click")
-			menu_requested.emit()
-		)
-		_menu_col.add_child(_btn_hud_menu)
-
-		var menu_icon := TextureRect.new()
-		menu_icon.name = "Icon"
-		menu_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
-		menu_icon.offset_left = 10
-		menu_icon.offset_top = 10
-		menu_icon.offset_right = -10
-		menu_icon.offset_bottom = -10
-		menu_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		menu_icon.texture = _tex_menu_icon
-		menu_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		menu_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		menu_icon.modulate = HudTheme.COL_TEXT_GOLD
-		_btn_hud_menu.add_child(menu_icon)
-
-		# Compact live spectator badge directly under menu button (hidden when 0)
-		_spectator_badge_panel = PanelContainer.new()
-		_spectator_badge_panel.name = "SpectatorCountBadge"
-		_spectator_badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_spectator_badge_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		var sb_spec := StyleBoxFlat.new()
-		sb_spec.bg_color = Color(HudTheme.COL_EMERALD_BG.r, HudTheme.COL_EMERALD_BG.g, HudTheme.COL_EMERALD_BG.b, 0.94)
-		sb_spec.border_color = Color(HudTheme.COL_EMERALD.r, HudTheme.COL_EMERALD.g, HudTheme.COL_EMERALD.b, 0.85)
-		sb_spec.set_border_width_all(1)
-		sb_spec.set_corner_radius_all(8)
-		sb_spec.content_margin_left = 5
-		sb_spec.content_margin_right = 5
-		sb_spec.content_margin_top = 1
-		sb_spec.content_margin_bottom = 1
-		_spectator_badge_panel.add_theme_stylebox_override("panel", sb_spec)
-
-		var spec_hbox := HBoxContainer.new()
-		spec_hbox.layout_direction = Control.LAYOUT_DIRECTION_LTR
-		spec_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		spec_hbox.add_theme_constant_override("separation", 3)
-		spec_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_spectator_badge_panel.add_child(spec_hbox)
-
-		var spec_eye := Label.new()
-		spec_eye.text = "👁"
-		spec_eye.add_theme_font_size_override("font_size", 11)
-		spec_eye.add_theme_color_override("font_color", Color(0.76, 0.98, 0.85))
-		spec_eye.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		spec_hbox.add_child(spec_eye)
-
-		_lbl_spectator_count = Label.new()
-		_lbl_spectator_count.name = "LblSpectatorCount"
-		if _font_vazir:
-			_lbl_spectator_count.add_theme_font_override("font", _font_vazir)
-		_lbl_spectator_count.add_theme_font_size_override("font_size", 12)
-		_lbl_spectator_count.add_theme_color_override("font_color", Color(0.76, 0.98, 0.85))
-		_lbl_spectator_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		spec_hbox.add_child(_lbl_spectator_count)
-		_spectator_badge_panel.visible = false
-		_menu_col.add_child(_spectator_badge_panel)
-
-	# 4. Build Lightweight Fading Floating TurnStatusToast
-	if not is_instance_valid(_turn_toast_panel):
-		_turn_toast_panel = PanelContainer.new()
-		_turn_toast_panel.name = "TurnStatusToast"
-		_turn_toast_panel.visible = false
-		_turn_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_turn_toast_panel.z_index = 18
-		_turn_toast_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-		_turn_toast_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-		_turn_toast_panel.grow_vertical = Control.GROW_DIRECTION_END
-		_turn_toast_panel.add_theme_stylebox_override("panel", HudTheme.make_turn_toast_style())
-		add_child(_turn_toast_panel)
-
-		_lbl_turn_toast = Label.new()
-		_lbl_turn_toast.name = "LblTurnToast"
-		_lbl_turn_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if _font_vazir:
-			_lbl_turn_toast.add_theme_font_override("font", _font_vazir)
-		_lbl_turn_toast.add_theme_font_size_override("font_size", 15)
-		_lbl_turn_toast.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
-		_lbl_turn_toast.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
-		_lbl_turn_toast.add_theme_constant_override("shadow_offset_y", 1)
-		_lbl_turn_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_lbl_turn_toast.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		HudTheme.configure_bidi_label(_lbl_turn_toast, false)
-		_turn_toast_panel.add_child(_lbl_turn_toast)
-		_position_turn_toast()
-
-
-func _position_turn_toast() -> void:
-	if not is_instance_valid(_turn_toast_panel):
-		return
-	var is_multi: bool = _total_players > 2
-	var cards_h: float = (CARD_HEIGHT_MULTI * 2.0 + 6.0) if is_multi else CARD_HEIGHT_2P
-	var top_y: float = float(_safe_top_inset) + cards_h + 10.0
-	_turn_toast_panel.offset_top = top_y
-	_turn_toast_panel.offset_bottom = top_y + 34.0
-	_turn_toast_panel.offset_left = -125.0
-	_turn_toast_panel.offset_right = 125.0
-
-
-func show_turn_toast(msg: String, text_color: Color = HudTheme.COL_TEXT_GOLD, persistent: bool = false, duration: float = 1.9) -> void:
-	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.text = msg
-		lbl_turn_banner.add_theme_color_override("font_color", text_color)
-	if not is_instance_valid(_turn_toast_panel) or not is_instance_valid(_lbl_turn_toast):
-		return
-	var trimmed := msg.strip_edges()
-	if trimmed.is_empty():
-		hide_turn_toast()
-		return
-	_turn_toast_seq += 1
-	var my_seq := _turn_toast_seq
-	_turn_toast_persistent = persistent
-	_position_turn_toast()
-	_lbl_turn_toast.text = trimmed
-	_lbl_turn_toast.add_theme_color_override("font_color", text_color)
-
-	if is_instance_valid(_turn_toast_tween):
-		_turn_toast_tween.kill()
-		_turn_toast_tween = null
-
-	_turn_toast_panel.visible = true
-	_turn_toast_panel.modulate.a = 0.0
-	_turn_toast_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_turn_toast_tween.tween_property(_turn_toast_panel, "modulate:a", 0.94 if persistent else 1.0, 0.16)
-	if not persistent:
-		_turn_toast_tween.tween_interval(duration)
-		_turn_toast_tween.tween_property(_turn_toast_panel, "modulate:a", 0.0, 0.30)
-		_turn_toast_tween.tween_callback(func():
-			if _turn_toast_seq == my_seq and is_instance_valid(_turn_toast_panel) and not _turn_toast_persistent:
-				_turn_toast_panel.visible = false
-		)
-
-
-func hide_turn_toast() -> void:
-	_turn_toast_persistent = false
-	_turn_toast_seq += 1
-	if is_instance_valid(_turn_toast_tween):
-		_turn_toast_tween.kill()
-		_turn_toast_tween = null
-	if is_instance_valid(_turn_toast_panel):
-		_turn_toast_panel.visible = false
-
-
-func _attach_card_decorations(player_idx: int, card: PanelContainer, avatar_rect: TextureRect, name_lbl: Label, role_lbl: Label, score_lbl: Label) -> void:
-	if not is_instance_valid(card):
-		return
-
-	# Clean BiDi typography on name & role
-	if is_instance_valid(name_lbl):
-		if _font_vazir:
-			name_lbl.add_theme_font_override("font", _font_vazir)
-		name_lbl.add_theme_font_size_override("font_size", 16 if _total_players > 2 else 18)
-		name_lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
-		name_lbl.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
-		name_lbl.add_theme_constant_override("shadow_offset_y", 1)
-		name_lbl.remove_theme_constant_override("outline_size")
-		HudTheme.configure_bidi_label(name_lbl, true)
-
-	if is_instance_valid(role_lbl):
-		if _font_vazir:
-			role_lbl.add_theme_font_override("font", _font_vazir)
-		role_lbl.add_theme_font_size_override("font_size", 12 if _total_players > 2 else 13)
-		role_lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_SAND)
-		role_lbl.remove_theme_constant_override("outline_size")
-		role_lbl.add_theme_stylebox_override("normal", HudTheme.make_status_pill_style(HudTheme.get_seat_accent(player_idx), 0.72))
-		HudTheme.configure_bidi_label(role_lbl, true)
-		role_lbl.visible = false
-
-	# Compact Score Badge
-	if is_instance_valid(score_lbl):
-		var score_badge := score_lbl.get_parent() as PanelContainer
-		if is_instance_valid(score_badge):
-			if player_idx == 1:
-				_p1_score_badge = score_badge
-			elif player_idx == 2:
-				_p2_score_badge = score_badge
-			score_badge.custom_minimum_size = Vector2(38, 36) if _total_players > 2 else Vector2(40, 40)
-			score_badge.add_theme_stylebox_override("panel", HudTheme.make_score_badge_style("normal"))
-			if _font_hekayat:
-				score_lbl.add_theme_font_override("font", _font_hekayat)
-			score_lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
-			score_lbl.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
-			score_lbl.add_theme_constant_override("shadow_offset_y", 1)
-			score_lbl.remove_theme_constant_override("outline_size")
-			score_lbl.add_theme_font_size_override("font_size", 24 if _total_players > 2 else 28)
-			if score_lbl.text.is_empty() or score_lbl.text == "0":
-				score_lbl.text = _fa_digits(0)
-
-	# Subtle 10x10 Seat Color Dot on Avatar Bottom Corner
-	var seat_dot: Panel = null
-	if is_instance_valid(avatar_rect):
-		var av_container := avatar_rect.get_parent() as Control
-		if is_instance_valid(av_container):
-			var existing_side_tag := av_container.get_node_or_null("PlayerSideTag")
-			if is_instance_valid(existing_side_tag):
-				existing_side_tag.queue_free()
-
-			var av_frame := av_container.get_node_or_null("AvatarMedallionFrame") as Panel
-			if not is_instance_valid(av_frame):
-				av_frame = Panel.new()
-				av_frame.name = "AvatarMedallionFrame"
-				av_frame.visible = false
-				av_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
-				av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				av_container.add_child(av_frame)
-				av_container.move_child(av_frame, 0)
-			if player_idx == 1:
-				_p1_avatar_frame = av_frame
-			elif player_idx == 2:
-				_p2_avatar_frame = av_frame
-
-			seat_dot = av_container.get_node_or_null("SeatAccentDot") as Panel
-			if not is_instance_valid(seat_dot):
-				seat_dot = Panel.new()
-				seat_dot.name = "SeatAccentDot"
-				seat_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				seat_dot.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-				av_container.add_child(seat_dot)
-			seat_dot.offset_left = -15
-			seat_dot.offset_top = -15
-			seat_dot.offset_right = -1
-			seat_dot.offset_bottom = -1
-			var sb_dot := StyleBoxFlat.new()
-			sb_dot.bg_color = HudTheme.get_seat_accent(player_idx)
-			sb_dot.border_color = HudTheme.COL_WALNUT_DEEP
-			sb_dot.set_border_width_all(2)
-			sb_dot.set_corner_radius_all(7)
-			seat_dot.add_theme_stylebox_override("panel", sb_dot)
-
-			# Keep profile button topmost inside AvatarContainer
-			for ch in av_container.get_children():
-				if ch is Button:
-					(ch as Button).focus_mode = Control.FOCUS_NONE
-					av_container.move_child(ch, av_container.get_child_count() - 1)
-					break
-
-	# In-Card Right-Aligned Turn Timer Chip (vertically centered inside card HBox)
-	var card_hbox: HBoxContainer = card.get_node_or_null("HBox") as HBoxContainer
-	var card_timer_chip: Label = null
-	if is_instance_valid(card_hbox):
-		card_hbox.add_theme_constant_override("separation", 6 if _total_players > 2 else 8)
-		var existing_chip: Node = card_hbox.get_node_or_null("CardTimerChip")
-		if is_instance_valid(existing_chip):
-			card_hbox.remove_child(existing_chip)
-			existing_chip.queue_free()
-		card_timer_chip = Label.new()
-		card_timer_chip.name = "CardTimerChip"
-		card_timer_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_timer_chip.visible = false
-		card_timer_chip.custom_minimum_size = Vector2(34, 24)
-		card_timer_chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		if _font_vazir:
-			card_timer_chip.add_theme_font_override("font", _font_vazir)
-		card_timer_chip.add_theme_font_size_override("font_size", 11)
-		card_timer_chip.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
-		card_timer_chip.add_theme_stylebox_override("normal", _style_chip_normal)
-		card_timer_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		card_timer_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		card_timer_chip.text = ""
-		card_hbox.add_child(card_timer_chip)
-
-	# Integrated Bottom-Edge Progress Bar (inside CardChromeOverlay)
-	var old_overlay: Node = card.get_node_or_null("CardChromeOverlay")
-	if is_instance_valid(old_overlay):
-		card.remove_child(old_overlay)
-		old_overlay.queue_free()
-
-	var overlay := Control.new()
-	overlay.name = "CardChromeOverlay"
-	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.clip_contents = false
-	card.add_child(overlay)
-
-	var card_timer_fill: StyleBoxFlat = HudTheme.make_card_timer_fill_style(HudTheme.COL_GOLD_ACTIVE)
-	var card_timer_bar := ProgressBar.new()
-	card_timer_bar.name = "CardTimerBar"
-	card_timer_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card_timer_bar.show_percentage = false
-	card_timer_bar.min_value = 0.0
-	card_timer_bar.max_value = 100.0
-	card_timer_bar.value = 100.0
-	card_timer_bar.visible = false
-	card_timer_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	card_timer_bar.offset_left = -4.0
-	card_timer_bar.offset_right = 4.0
-	card_timer_bar.offset_top = 2.0
-	card_timer_bar.offset_bottom = 8.0
-	card_timer_bar.add_theme_stylebox_override("background", HudTheme.make_card_timer_track_style())
-	card_timer_bar.add_theme_stylebox_override("fill", card_timer_fill)
-	overlay.add_child(card_timer_bar)
-
-	_card_decorations[player_idx] = {
-		"overlay": overlay,
-		"timer_bar": card_timer_bar,
-		"timer_fill": card_timer_fill,
-		"timer_chip": card_timer_chip,
-		"seat_dot": seat_dot,
-	}
-
-
-func _enhance_player_card(player_idx: int) -> void:
-	var card := p1_card if player_idx == 1 else p2_card
-	var avatar_rect := p1_avatar if player_idx == 1 else p2_avatar
-	var name_lbl := p1_name if player_idx == 1 else p2_name
-	var role_lbl := p1_role_badge if player_idx == 1 else p2_role_badge
-	var score_lbl := p1_score_lbl if player_idx == 1 else p2_score_lbl
-	_attach_card_decorations(player_idx, card, avatar_rect, name_lbl, role_lbl, score_lbl)
-
-
-func _register_extra_player_card(idx: int, card: PanelContainer) -> Dictionary:
-	if not is_instance_valid(card):
-		return {}
-	card.custom_minimum_size = Vector2(0, CARD_HEIGHT_MULTI)
-	var av_cont := card.get_node_or_null("HBox/AvatarContainer") as Control
-	var av := card.get_node_or_null("HBox/AvatarContainer/Avatar") as TextureRect
-	var nm := card.get_node_or_null("HBox/InfoBox/Name") as Label
-	var rl := card.get_node_or_null("HBox/InfoBox/RoleBadge") as Label
-	var sc := card.get_node_or_null("HBox/ScoreBadge/Score") as Label
-	var rb := card.get_node_or_null("ReactionBubble") as Control
-	var ri := card.get_node_or_null("ReactionBubble/BubbleFrame/Icon") as TextureRect
-	var btn: Button = null
-	if is_instance_valid(av_cont):
-		av_cont.custom_minimum_size = Vector2(46, 46)
-		if is_instance_valid(av):
-			av.custom_minimum_size = Vector2(46, 46)
-		for ch in av_cont.get_children():
-			if ch is Button:
-				btn = ch as Button
-				break
-	if is_instance_valid(btn):
-		for c in btn.pressed.get_connections():
-			btn.pressed.disconnect(c["callable"])
-		btn.focus_mode = Control.FOCUS_NONE
-		var captured_idx := idx
-		btn.pressed.connect(func():
-			if _can_emit_profile_click():
-				player_profile_clicked.emit(captured_idx)
-		)
-	if is_instance_valid(rb):
-		rb.top_level = true
-		rb.visible = false
-	_attach_card_decorations(idx, card, av, nm, rl, sc)
-	var av_frame: Panel = (av_cont.get_node_or_null("AvatarMedallionFrame") as Panel) if is_instance_valid(av_cont) else null
-	var bundle := {
-		"card": card,
-		"avatar": av,
-		"avatar_container": av_cont,
-		"av_frame": av_frame,
-		"name": nm,
-		"role": rl,
-		"score": sc,
-		"reaction_bubble": rb,
-		"reaction_icon": ri,
-	}
-	_extra_cards[idx] = bundle
-	if idx == 3:
-		p3_card = card
-	elif idx == 4:
-		p4_card = card
-	return bundle
-
-
-func _set_role_badge(player_idx: int, text: String, accent_col: Color = Color(-1, -1, -1)) -> void:
-	var b := _get_player_card_bundle(player_idx)
-	var rl: Label = b.get("role", null)
-	if not is_instance_valid(rl):
-		return
-	var trimmed := text.strip_edges()
-	rl.text = trimmed
-	rl.visible = not trimmed.is_empty()
-	if accent_col.r >= 0.0:
-		rl.add_theme_stylebox_override("normal", HudTheme.make_status_pill_style(accent_col, 0.78))
-
-
-func _set_active_cards_visual(active_indices: Array, is_danger: bool = false, pulse_active: bool = false) -> void:
-	_active_card_indices = active_indices.duplicate()
-	var compact := _total_players > 2
-	for idx in [1, 2, 3, 4]:
-		var b := _get_player_card_bundle(idx)
-		var card: PanelContainer = b.get("card", null)
-		if not is_instance_valid(card) or not card.visible:
-			continue
-		var dec: Dictionary = _card_decorations.get(idx, {})
-		var t_bar: ProgressBar = dec.get("timer_bar", null)
-		var t_chip: Label = dec.get("timer_chip", null)
-
-		if is_player_disabled(idx):
-			_apply_disabled_visual(idx)
-			if is_instance_valid(t_bar):
-				t_bar.visible = false
-			if is_instance_valid(t_chip):
-				t_chip.visible = false
-			continue
-
-		var is_act := active_indices.has(idx)
-		var style_act := _style_card_active_danger if is_danger else (_style_p1_active if not compact else _style_p3_active)
-		var style_idle := _style_p1_inactive if not compact else _style_p3_inactive
-		card.add_theme_stylebox_override("panel", style_act if is_act else style_idle)
-		card.modulate = Color.WHITE if is_act else Color(0.88, 0.85, 0.82, 0.94)
-		if is_act and pulse_active:
-			_animate_card_pulse(card)
-		elif not is_act:
-			card.scale = Vector2.ONE
-		if is_instance_valid(t_bar):
-			t_bar.visible = is_act
-		if is_instance_valid(t_chip):
-			t_chip.visible = is_act and not t_chip.text.is_empty()
-
-
-func _update_card_timer_visuals(remaining_sec: float, total_sec: float, active_indices: Array) -> void:
-	var pct := clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
-	var is_danger := (remaining_sec <= 4.0 and remaining_sec > 0.0)
-	var sec_ceil := maxi(0, int(ceil(remaining_sec)))
-	var chip_str := "%s″" % _fa_digits(sec_ceil)
-	var fill_col := HudTheme.COL_DANGER if is_danger else HudTheme.COL_GOLD_ACTIVE
-
-	for idx in [1, 2, 3, 4]:
-		var dec: Dictionary = _card_decorations.get(idx, {})
-		if dec.is_empty():
-			continue
-		var is_act := active_indices.has(idx) and not is_player_disabled(idx)
-		var t_bar: ProgressBar = dec.get("timer_bar", null)
-		var t_fill: StyleBoxFlat = dec.get("timer_fill", null)
-		var t_chip: Label = dec.get("timer_chip", null)
-		if is_instance_valid(t_bar):
-			t_bar.visible = is_act
-			if is_act:
-				t_bar.value = pct
-		if is_instance_valid(t_fill) and is_act:
-			t_fill.bg_color = fill_col
-		if is_instance_valid(t_chip):
-			t_chip.visible = is_act
-			if is_act:
-				t_chip.text = chip_str
-				t_chip.add_theme_stylebox_override("normal", _style_chip_danger if is_danger else _style_chip_normal)
-				t_chip.add_theme_color_override("font_color", Color(1.0, 0.82, 0.82) if is_danger else HudTheme.COL_TEXT_GOLD)
-
-	var danger_i := 1 if is_danger else 0
-	if danger_i != _cached_timer_danger:
-		_cached_timer_danger = danger_i
-		_set_active_cards_visual(active_indices, is_danger, false)
-
-	if is_danger and sec_ceil != _last_critical_sec:
-		_last_critical_sec = sec_ceil
-		for idx in active_indices:
-			var dec: Dictionary = _card_decorations.get(idx, {})
-			var t_chip: Label = dec.get("timer_chip", null)
-			if is_instance_valid(t_chip):
-				_animate_chip_warning(t_chip)
-
-	# Keep hidden legacy timer nodes synchronized
-	if is_instance_valid(lbl_timer) and sec_ceil != _last_displayed_sec:
-		_last_displayed_sec = sec_ceil
-		lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % sec_ceil)
-	if is_instance_valid(turn_timer_bar):
-		turn_timer_bar.value = pct
-
-
-func _animate_chip_warning(chip: Control) -> void:
-	if not is_instance_valid(chip):
-		return
-	chip.pivot_offset = chip.size * 0.5
-	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(chip, "scale", Vector2(1.18, 1.18), 0.11)
-	tw.tween_property(chip, "scale", Vector2.ONE, 0.13)
-
-
-func _is_score_based_game() -> bool:
-	var g_type = GameManager.current_game_type
-	if g_type == GameTypes.CHESS or g_type == GameTypes.FEKRBEKR:
-		return false
-	return GameRegistry.has_round_score(g_type)
-
-
-func _update_score_badges_visibility() -> void:
-	var show_scores := _is_score_based_game()
-	if is_instance_valid(_p1_score_badge):
-		_p1_score_badge.visible = show_scores
-	elif is_instance_valid(p1_score_lbl) and p1_score_lbl.get_parent() is Control:
-		(p1_score_lbl.get_parent() as Control).visible = show_scores
-	if is_instance_valid(_p2_score_badge):
-		_p2_score_badge.visible = show_scores
-	elif is_instance_valid(p2_score_lbl) and p2_score_lbl.get_parent() is Control:
-		(p2_score_lbl.get_parent() as Control).visible = show_scores
-
-
-func _get_role_badge_text(_player_idx: int) -> String:
-	# Clean compact cards: hide redundant static role labels ("مهره قرمز" / "بازیکن ۱").
-	# Games with live gameplay status (Monopoly props, Coup lives, UNO alert, etc.) set badges explicitly.
-	return ""
-
-
-func setup_match(game_name_fa: String, _mode_title: String, round_num: int, max_rounds: int, turn_time: float) -> void:
-	_last_displayed_sec = -1
-	_last_critical_sec = -1
-	_update_score_badges_visibility()
-	update_spectator_count(GameManager.spectator_count)
-	if is_instance_valid(lbl_round):
-		if max_rounds <= 1:
-			lbl_round.text = "%s" % game_name_fa
-		else:
-			lbl_round.text = "راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
-	if is_instance_valid(lbl_turn_banner):
-		lbl_turn_banner.text = "بازی درحال آغاز است"
-	if is_instance_valid(lbl_timer):
-		lbl_timer.text = "%s ثانیه" % _fa_digits("%02d" % int(turn_time))
-	if is_instance_valid(turn_timer_bar):
-		turn_timer_bar.value = 100.0
-	_set_role_badge(1, _get_role_badge_text(1))
-	_set_role_badge(2, _get_role_badge_text(2))
-
-
-func set_round(round_num: int, max_rounds: int) -> void:
-	_update_score_badges_visibility()
-	if is_instance_valid(lbl_round):
-		if max_rounds <= 1:
-			var g_info = GameRegistry.get_game_info(GameManager.current_game_type)
-			var game_name_fa = g_info.get("name_fa", "بازی")
-			lbl_round.text = "%s" % game_name_fa
-		else:
-			lbl_round.text = "راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
-
-
-func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
-	_profile_clicks_enabled = false
-	_my_player_index = my_idx
-	_update_score_badges_visibility()
-
-	var p1_str := str(p1_data.get("name", p1_data.get("username", "میزبان")))
-	var p2_str := str(p2_data.get("name", p2_data.get("username", "مهمان")))
-	_player_names[1] = p1_str
-	_player_names[2] = p2_str
-
-	if is_instance_valid(p1_name):
-		p1_name.text = p1_str
-		HudTheme.configure_bidi_label(p1_name, true)
-	if is_instance_valid(p2_name):
-		p2_name.text = p2_str
-		HudTheme.configure_bidi_label(p2_name, true)
-
-	if is_instance_valid(p1_avatar):
-		var p1_img_id = int(p1_data.get("image", p1_data.get("user_image", 0)))
-		var p1_fid = GameManager.get_player_frame_id(p1_data)
-		var tex1 = _get_cached_avatar(p1_img_id)
-		if tex1:
-			p1_avatar.texture = tex1
-		var p1_parent = p1_avatar.get_parent()
-		CafeSocialTheme.apply_frame_to_container(p1_parent if p1_parent is Control else p1_avatar, p1_avatar, p1_fid)
-
-	if is_instance_valid(p2_avatar):
-		var p2_img_id = int(p2_data.get("image", p2_data.get("user_image", 0)))
-		var p2_fid = GameManager.get_player_frame_id(p2_data)
-		var tex2 = _get_cached_avatar(p2_img_id)
-		if tex2:
-			p2_avatar.texture = tex2
-		var p2_parent = p2_avatar.get_parent()
-		CafeSocialTheme.apply_frame_to_container(p2_parent if p2_parent is Control else p2_avatar, p2_avatar, p2_fid)
-
-	_set_role_badge(1, _get_role_badge_text(1))
-	_set_role_badge(2, _get_role_badge_text(2))
-
-
-func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
-	_current_turn = turn
-	_my_player_index = my_idx
-	_last_critical_sec = -1
-	_cached_timer_danger = -1
-	_update_score_badges_visibility()
-
-	var is_simul: bool = bool(GameRegistry.is_simultaneous(GameManager.current_game_type))
-	var is_p1 := (turn == 1)
-	var is_me := (turn == my_idx)
-
-	var active_list: Array = [1, 2] if is_simul else [turn]
-	_set_active_cards_visual(active_list, false, not is_simul)
-
-	# Lightweight fading turn toast
-	if not GameManager.is_game_active:
-		hide_turn_toast()
-	elif is_simul:
-		var sim_text := "سنگ، کاغذ یا قیچی را انتخاب کنید!" if GameManager.current_game_type == GameTypes.RPC else ("خانه‌های امن را باز کنید!" if GameManager.current_game_type == GameTypes.MSWEEPER else "حرکت خود را انتخاب کنید")
-		show_turn_toast(sim_text, HudTheme.COL_TEXT_GOLD, false, 2.0)
-	elif is_me:
-		show_turn_toast("نوبت شماست", HudTheme.COL_TEXT_GOLD, false, 1.7)
-	else:
-		var opp_name := p1_n if is_p1 else p2_n
-		show_turn_toast("نوبت %s" % opp_name, HudTheme.COL_TEXT_SAND, false, 1.5)
-
-	_invalidate_timer_visual_cache()
-	_on_turn_changed(turn)
-
-
-func _animate_card_pulse(card: Control) -> void:
-	if not is_instance_valid(card):
-		return
-	card.pivot_offset = card.size * 0.5
-	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(card, "scale", Vector2(1.03, 1.03), 0.16)
-	tw.tween_property(card, "scale", Vector2.ONE, 0.14)
-
-
-func _invalidate_timer_visual_cache() -> void:
-	_cached_timer_danger = -1
-	_cached_timer_box_style = null
-	_cached_timer_fill_color = Color(-1.0, -1.0, -1.0, -1.0)
-
-
-func _apply_timer_visual_state(is_danger: bool, box_style: StyleBox, fill_col: Color) -> void:
-	var danger_i: int = 1 if is_danger else 0
-	if danger_i != _cached_timer_danger:
-		_cached_timer_danger = danger_i
-	if is_instance_valid(match_details_box) and box_style != null and box_style != _cached_timer_box_style:
-		_cached_timer_box_style = box_style
-		match_details_box.add_theme_stylebox_override("panel", box_style)
-	if is_instance_valid(_timer_style_fill) and fill_col != _cached_timer_fill_color:
-		_cached_timer_fill_color = fill_col
-		_timer_style_fill.bg_color = fill_col
-
-
-func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	var is_simul: bool = bool(GameRegistry.is_simultaneous(GameManager.current_game_type))
-	var active_list: Array = [1, 2] if is_simul else [turn]
-	_update_card_timer_visuals(remaining_sec, total_sec, active_list)
-
-
-func update_scores(p1_score: int, p2_score: int) -> void:
-	_update_score_badges_visibility()
-	if is_instance_valid(p1_score_lbl):
-		p1_score_lbl.text = _fa_digits(p1_score)
-		if p1_score > _last_p1_score and _is_score_based_game():
-			_animate_score_bump(p1_score_lbl.get_parent() as Control)
-		_last_p1_score = p1_score
-	if is_instance_valid(p2_score_lbl):
-		p2_score_lbl.text = _fa_digits(p2_score)
-		if p2_score > _last_p2_score and _is_score_based_game():
-			_animate_score_bump(p2_score_lbl.get_parent() as Control)
-		_last_p2_score = p2_score
-
-
-func _animate_score_bump(badge: Control) -> void:
-	if not is_instance_valid(badge):
-		return
-	badge.pivot_offset = badge.size * 0.5
-	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(badge, "scale", Vector2(1.20, 1.20), 0.14)
-	tw.tween_property(badge, "scale", Vector2.ONE, 0.16)
-
+const CARD_HEIGHT_2P := 42.0
+const CARD_HEIGHT_MULTI := 58.0
+const MENU_COL_WIDTH := 40.0
+const POD_SCENE_PATH := "res://scenes/games/base/player_pod.tscn"
 
 const KORIS: Array[String] = [
 	"شکست دیگه عادتت شده!",
@@ -1037,7 +81,7 @@ const KORIS: Array[String] = [
 	"حرکت نهایی‌ات خیلی قوی بود!",
 	"با همین سرعت می‌بازی!",
 	"یه کلاس درس دیگه برات بود!",
-	"این راندو خیلی حرفه‌ای بازی کردی!",
+	"این راندو خیلی حرفه‌ای زدی!",
 	"هنوز مونده تا به من برسی!",
 	"فقط نگاه کن چطور برنده می‌شم!",
 	"خیلی خوب بود!",
@@ -1065,178 +109,1119 @@ const KORIS: Array[String] = [
 	"هنوز اول راحته!"
 ]
 
+@export var show_timer_digits: bool = false
+@export var opponent_only_mode: bool = true
 
-func show_reaction(user_index: int, reaction_id: int) -> void:
-	var b := _get_player_card_bundle(user_index)
-	var bubble: Control = b.get("reaction_bubble", null)
-	var icon: TextureRect = b.get("reaction_icon", null)
-	var player_card: Control = b.get("card", null)
-	var av_container: Control = b.get("avatar_container", null)
-	if not is_instance_valid(bubble) or not is_instance_valid(icon):
+# --- Modern Balanced Top Row & Pure Icon Controls ---
+@onready var top_row: HBoxContainer = $Margin/VBoxMain/TopRow
+@onready var btn_settings: Button = $Margin/VBoxMain/TopRow/BtnSettings
+@onready var btn_view_2d3d: Button = $Margin/VBoxMain/TopRow/BtnView2D3D
+@onready var img_view_2d3d: TextureRect = $Margin/VBoxMain/TopRow/BtnView2D3D/Icon
+@onready var players_container: HBoxContainer = $Margin/VBoxMain/TopRow/PlayersContainer
+@onready var btn_chat: Button = $Margin/VBoxMain/TopRow/BtnChat
+@onready var btn_emoji: Button = $Margin/VBoxMain/TopRow/BtnEmoji
+
+@onready var match_meta_ribbon: PanelContainer = $Margin/VBoxMain/MatchMetaRibbon
+@onready var lbl_match_meta: Label = $Margin/VBoxMain/MatchMetaRibbon/LblMatchMeta
+
+@onready var local_turn_bar_wrap: MarginContainer = $Margin/VBoxMain/LocalTurnBarWrap
+@onready var local_turn_bar: ProgressBar = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnProgressBar
+@onready var local_turn_pill: PanelContainer = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill
+@onready var lbl_local_turn: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill/LblLocalTurn
+
+@onready var edge_overlay: Control = $EdgeOverlay
+@onready var spectator_pill: PanelContainer = $EdgeOverlay/SpectatorPill
+@onready var lbl_spectator: Label = $EdgeOverlay/SpectatorPill/HBox/LblSpectator
+@onready var penalty_details_box: PanelContainer = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox
+@onready var opp_dot1: Panel = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot1
+@onready var opp_dot2: Panel = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot2
+@onready var lbl_opp_penalty: Label = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/LblOppCount
+@onready var my_dot1: Panel = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot1
+@onready var my_dot2: Panel = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot2
+@onready var lbl_my_penalty: Label = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/LblMyCount
+@onready var match_result_box: PanelContainer = $Margin/VBoxMain/BelowTimerRow/MatchResultBox
+@onready var lbl_result_title: Label = $Margin/VBoxMain/BelowTimerRow/MatchResultBox/HBox/LblResultTitle
+@onready var lbl_result_score: Label = $Margin/VBoxMain/BelowTimerRow/MatchResultBox/HBox/LblResultScore
+var social_rail: VBoxContainer = null
+
+@onready var bottom_turn_glow: TextureRect = $BottomTurnGlow
+
+# --- Legacy Player 1 & 2 Nodes (kept for 100% backwards compatibility) ---
+@onready var p1_card: PanelContainer = $Margin/VBoxMain/PlayersRow/P1Card
+@onready var p1_avatar: TextureRect = $Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer/Avatar
+@onready var p1_name: Label = $Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/Name
+@onready var p1_role_badge: Label = $Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/RoleBadge
+@onready var p1_score_lbl: Label = $Margin/VBoxMain/PlayersRow/P1Card/HBox/ScoreBadge/Score
+@onready var _p1_score_badge: PanelContainer = $Margin/VBoxMain/PlayersRow/P1Card/HBox/ScoreBadge
+@onready var p1_reaction_bubble: Control = $Margin/VBoxMain/PlayersRow/P1Card/ReactionBubble
+@onready var p1_reaction_icon: TextureRect = $Margin/VBoxMain/PlayersRow/P1Card/ReactionBubble/BubbleFrame/Icon
+@onready var btn_p1_profile: Button = $Margin/VBoxMain/PlayersRow/P1Card/HBox/AvatarContainer/BtnP1Profile
+
+@onready var p2_card: PanelContainer = $Margin/VBoxMain/PlayersRow/P2Card
+@onready var p2_avatar: TextureRect = $Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer/Avatar
+@onready var p2_name: Label = $Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/Name
+@onready var p2_role_badge: Label = $Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/RoleBadge
+@onready var p2_score_lbl: Label = $Margin/VBoxMain/PlayersRow/P2Card/HBox/ScoreBadge/Score
+@onready var _p2_score_badge: PanelContainer = $Margin/VBoxMain/PlayersRow/P2Card/HBox/ScoreBadge
+@onready var p2_reaction_bubble: Control = $Margin/VBoxMain/PlayersRow/P2Card/ReactionBubble
+@onready var p2_reaction_icon: TextureRect = $Margin/VBoxMain/PlayersRow/P2Card/ReactionBubble/BubbleFrame/Icon
+@onready var btn_p2_profile: Button = $Margin/VBoxMain/PlayersRow/P2Card/HBox/AvatarContainer/BtnP2Profile
+
+var p3_card: PanelContainer = null
+var p4_card: PanelContainer = null
+var _players_row2: HBoxContainer = null
+var _p4_empty_spacer: Control = null
+var _row2_menu_spacer: Control = null
+var _extra_cards: Dictionary = {}
+var _card_decorations: Dictionary = {}
+var _style_card_disabled: StyleBoxFlat = null
+
+# --- Legacy Match Details & Turn Timer Nodes (hidden) ---
+@onready var match_details_box: PanelContainer = $Margin/VBoxMain/MatchDetailsBox
+@onready var lbl_round: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/RoundPanel/LblRound
+@onready var lbl_turn_banner: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/TurnBanner
+@onready var lbl_timer: Label = $Margin/VBoxMain/MatchDetailsBox/VBox/TimerRow/LblTimer
+@onready var turn_timer_bar: ProgressBar = $Margin/VBoxMain/MatchDetailsBox/VBox/TurnTimerBar
+
+# --- Dynamic State ---
+var _profile_clicks_enabled: bool = false
+var _is_2d_mode: bool = false
+var _current_turn: int = 1
+var _my_player_index: int = 1
+var _total_players: int = 2
+var _safe_top_inset: int = 16
+var _last_displayed_sec: int = -1
+var _last_critical_sec: int = -1
+
+var _pods_by_idx: Dictionary = {} # int (1..4) -> PlayerPod
+var _cached_counters: Dictionary = {} # int -> String
+var _cached_statuses: Dictionary = {} # int -> Dictionary {text, color}
+var _p1_raw_data: Dictionary = {}
+var _p2_raw_data: Dictionary = {}
+var _extra_raw_data: Dictionary = {}
+var _disabled_players: Dictionary = {} # int -> String
+var _player_names: Dictionary = {
+	1: "بازیکن ۱",
+	2: "بازیکن ۲",
+	3: "بازیکن ۳",
+	4: "بازیکن ۴"
+}
+
+var _turn_toast_panel: PanelContainer = null
+var _lbl_turn_toast: Label = null
+var _turn_toast_seq: int = 0
+var _turn_toast_tween: Tween = null
+var _turn_toast_persistent: bool = false
+var _bottom_glow_tween: Tween = null
+
+static var _pod_scene: PackedScene = preload(POD_SCENE_PATH)
+static var _avatar_cache: Dictionary = {}
+static var _reaction_cache: Dictionary = {}
+static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
+static var _font_vazir: FontFile = preload("res://assets/fonts/Vazir.ttf")
+static var _tex_2d: Texture2D = preload("res://assets/images/badges/2d.png")
+static var _tex_3d: Texture2D = preload("res://assets/images/badges/3d.png")
+static var _tex_menu_icon: Texture2D = preload("res://assets/images/config.png")
+
+
+static func _get_cached_avatar(av_id: int) -> Texture2D:
+	if _avatar_cache.has(av_id):
+		return _avatar_cache[av_id]
+	var path = "res://assets/icons/Avatars/%d.png" % av_id
+	if ResourceLoader.exists(path):
+		var tex = load(path)
+		_avatar_cache[av_id] = tex
+		return tex
+	return null
+
+
+static func _get_cached_reaction(r_id: int) -> Texture2D:
+	if _reaction_cache.has(r_id):
+		return _reaction_cache[r_id]
+	var path = "res://assets/icons/Reactions/%d.png" % r_id
+	if ResourceLoader.exists(path):
+		var tex = load(path)
+		_reaction_cache[r_id] = tex
+		return tex
+	return null
+
+
+static func _fa_digits(val: Variant) -> String:
+	return HudTheme.fa_digits(val)
+
+
+func set_profile_clicks_enabled(enabled: bool) -> void:
+	_profile_clicks_enabled = enabled
+
+
+func _can_emit_profile_click() -> bool:
+	return _profile_clicks_enabled and GameManager.is_game_active
+
+
+func _ready() -> void:
+	_setup_styles()
+	_apply_safe_area_insets()
+	_setup_modern_controls()
+	_connect_buttons()
+	_rebuild_pods()
+	if not NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
+		NetworkManager.spectator_count_updated.connect(_on_spectator_count_updated)
+	if not GameManager.chat_and_stickers_toggled.is_connected(_on_chat_and_stickers_toggled):
+		GameManager.chat_and_stickers_toggled.connect(_on_chat_and_stickers_toggled)
+	set_chat_and_stickers_enabled(not GameManager.chat_and_stickers_disabled)
+	update_spectator_count(GameManager.spectator_count)
+
+
+func _exit_tree() -> void:
+	if is_instance_valid(NetworkManager) and NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
+		NetworkManager.spectator_count_updated.disconnect(_on_spectator_count_updated)
+	if is_instance_valid(GameManager) and GameManager.chat_and_stickers_toggled.is_connected(_on_chat_and_stickers_toggled):
+		GameManager.chat_and_stickers_toggled.disconnect(_on_chat_and_stickers_toggled)
+
+
+func _on_chat_and_stickers_toggled(disabled: bool) -> void:
+	set_chat_and_stickers_enabled(not disabled)
+
+
+func set_chat_and_stickers_enabled(enabled: bool) -> void:
+	if is_instance_valid(btn_chat):
+		btn_chat.visible = enabled
+	if is_instance_valid(btn_emoji):
+		btn_emoji.visible = enabled
+
+
+func _apply_safe_area_insets() -> void:
+	var insets := HudTheme.get_safe_insets(get_viewport())
+	_safe_top_inset = int(insets.get("top", 16))
+	var margin := get_node_or_null("Margin") as MarginContainer
+	if is_instance_valid(margin):
+		margin.add_theme_constant_override("margin_top", _safe_top_inset)
+		margin.add_theme_constant_override("margin_left", int(insets.get("left", 10)))
+		margin.add_theme_constant_override("margin_right", int(insets.get("right", 10)))
+	if is_instance_valid(edge_overlay):
+		var spec := edge_overlay.get_node_or_null("SpectatorPill") as Control
+		if is_instance_valid(spec):
+			spec.offset_top = float(_safe_top_inset) + 42.0
+		var rail := edge_overlay.get_node_or_null("SocialRail") as Control
+		if is_instance_valid(rail):
+			rail.offset_top = float(_safe_top_inset) + 42.0
+	_sync_header_height()
+
+
+func _get_current_header_height() -> float:
+	var bar_h: float = 24.0 if (is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible) else 0.0
+	var meta_h: float = 26.0 if (is_instance_valid(match_meta_ribbon) and match_meta_ribbon.visible) else 0.0
+	var has_below: bool = (is_instance_valid(penalty_details_box) and penalty_details_box.visible) or (is_instance_valid(match_result_box) and match_result_box.visible)
+	var below_h: float = 34.0 if has_below else 0.0
+	var row_h: float = 56.0 if _total_players <= 2 else 84.0
+	return float(_safe_top_inset) + row_h + bar_h + meta_h + below_h
+
+
+func _sync_header_height() -> void:
+	var desired_h: float = _get_current_header_height()
+	offset_bottom = desired_h
+	_position_turn_toast()
+	header_height_changed.emit(desired_h)
+
+
+func _apply_pure_icon_button(btn: Button) -> void:
+	if not is_instance_valid(btn):
+		return
+	var empty := StyleBoxEmpty.new()
+	btn.add_theme_stylebox_override("normal", empty)
+	btn.add_theme_stylebox_override("hover", empty)
+	btn.add_theme_stylebox_override("pressed", empty)
+	btn.add_theme_stylebox_override("disabled", empty)
+	btn.add_theme_stylebox_override("focus", empty)
+	btn.flat = true
+	btn.button_down.connect(func():
+		btn.modulate = Color(1.35, 1.35, 1.35, 0.82)
+	)
+	btn.button_up.connect(func():
+		btn.modulate = Color.WHITE
+	)
+
+
+func _setup_modern_controls() -> void:
+	if is_instance_valid(btn_settings):
+		_apply_pure_icon_button(btn_settings)
+		btn_settings.pressed.connect(func():
+			AudioManager.sfx_button()
+			menu_requested.emit()
+		)
+
+	if is_instance_valid(btn_view_2d3d):
+		_apply_pure_icon_button(btn_view_2d3d)
+		btn_view_2d3d.pressed.connect(func():
+			_is_2d_mode = not _is_2d_mode
+			if is_instance_valid(img_view_2d3d):
+				img_view_2d3d.texture = _tex_3d if _is_2d_mode else _tex_2d
+			AudioManager.sfx_button()
+			view_mode_toggled.emit(_is_2d_mode)
+		)
+
+	if is_instance_valid(btn_chat):
+		_apply_pure_icon_button(btn_chat)
+		btn_chat.pressed.connect(func():
+			chat_pressed.emit(btn_chat)
+		)
+
+	if is_instance_valid(btn_emoji):
+		_apply_pure_icon_button(btn_emoji)
+		btn_emoji.pressed.connect(func():
+			emoji_pressed.emit(btn_emoji)
+		)
+
+	if is_instance_valid(bottom_turn_glow):
+		bottom_turn_glow.texture = HudTheme.make_bottom_edge_glow_texture()
+		bottom_turn_glow.visible = false
+
+	if is_instance_valid(spectator_pill):
+		spectator_pill.add_theme_stylebox_override("panel", HudTheme.make_spectator_pill_style())
+		spectator_pill.visible = GameManager.is_spectating
+
+	var players_row := get_node_or_null("Margin/VBoxMain/PlayersRow") as Control
+	if is_instance_valid(players_row):
+		players_row.visible = false
+		players_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if is_instance_valid(match_details_box):
+		match_details_box.visible = false
+		match_details_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	_build_turn_toast()
+
+
+func _setup_styles() -> void:
+	if is_instance_valid(local_turn_bar):
+		local_turn_bar.add_theme_stylebox_override("background", HudTheme.make_local_turn_bar_track_style())
+		local_turn_bar.add_theme_stylebox_override("fill", HudTheme.make_local_turn_bar_fill_style(false))
+	if is_instance_valid(local_turn_pill):
+		local_turn_pill.add_theme_stylebox_override("panel", HudTheme.make_local_turn_pill_style(false))
+	if is_instance_valid(lbl_local_turn):
+		lbl_local_turn.text = "نوبت شما"
+		HudTheme.configure_bidi_label(lbl_local_turn, false)
+
+
+func _build_turn_toast() -> void:
+	if is_instance_valid(_turn_toast_panel):
+		return
+	_turn_toast_panel = PanelContainer.new()
+	_turn_toast_panel.name = "TurnStatusToast"
+	_turn_toast_panel.visible = false
+	_turn_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_turn_toast_panel.z_index = 18
+	_turn_toast_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_turn_toast_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_turn_toast_panel.grow_vertical = Control.GROW_DIRECTION_END
+	_turn_toast_panel.add_theme_stylebox_override("panel", HudTheme.make_turn_toast_style())
+	add_child(_turn_toast_panel)
+
+	_lbl_turn_toast = Label.new()
+	_lbl_turn_toast.name = "LblTurnToast"
+	_lbl_turn_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _font_vazir:
+		_lbl_turn_toast.add_theme_font_override("font", _font_vazir)
+	_lbl_turn_toast.add_theme_font_size_override("font_size", 14)
+	_lbl_turn_toast.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
+	_lbl_turn_toast.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
+	_lbl_turn_toast.add_theme_constant_override("shadow_offset_y", 1)
+	_lbl_turn_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_turn_toast.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	HudTheme.configure_bidi_label(_lbl_turn_toast, false)
+	_turn_toast_panel.add_child(_lbl_turn_toast)
+	_position_turn_toast()
+
+
+func _position_turn_toast() -> void:
+	if not is_instance_valid(_turn_toast_panel):
+		return
+	var top_y: float = offset_bottom + 6.0
+	_turn_toast_panel.offset_top = top_y
+	_turn_toast_panel.offset_bottom = top_y + 32.0
+	_turn_toast_panel.offset_left = -120.0
+	_turn_toast_panel.offset_right = 120.0
+
+
+func show_turn_toast(msg: String, text_color: Color = HudTheme.COL_TEXT_GOLD, persistent: bool = false, duration: float = 1.8) -> void:
+	if not is_instance_valid(_turn_toast_panel) or not is_instance_valid(_lbl_turn_toast):
+		return
+	var trimmed := msg.strip_edges()
+	if trimmed.is_empty():
+		hide_turn_toast()
+		return
+	_turn_toast_seq += 1
+	var my_seq := _turn_toast_seq
+	_turn_toast_persistent = persistent
+	_position_turn_toast()
+	_lbl_turn_toast.text = trimmed
+	_lbl_turn_toast.add_theme_color_override("font_color", text_color)
+
+	if is_instance_valid(_turn_toast_tween):
+		_turn_toast_tween.kill()
+		_turn_toast_tween = null
+
+	_turn_toast_panel.visible = true
+	_turn_toast_panel.modulate.a = 0.0
+	_turn_toast_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_turn_toast_tween.tween_property(_turn_toast_panel, "modulate:a", 0.94 if persistent else 1.0, 0.16)
+	if not persistent:
+		_turn_toast_tween.tween_interval(duration)
+		_turn_toast_tween.tween_property(_turn_toast_panel, "modulate:a", 0.0, 0.28)
+		_turn_toast_tween.tween_callback(func():
+			if _turn_toast_seq == my_seq and is_instance_valid(_turn_toast_panel) and not _turn_toast_persistent:
+				_turn_toast_panel.visible = false
+		)
+
+
+func hide_turn_toast() -> void:
+	_turn_toast_persistent = false
+	_turn_toast_seq += 1
+	if is_instance_valid(_turn_toast_tween):
+		_turn_toast_tween.kill()
+		_turn_toast_tween = null
+	if is_instance_valid(_turn_toast_panel):
+		_turn_toast_panel.visible = false
+
+
+func _connect_buttons() -> void:
+	if is_instance_valid(btn_p1_profile):
+		btn_p1_profile.focus_mode = Control.FOCUS_NONE
+		btn_p1_profile.pressed.connect(func():
+			if _can_emit_profile_click():
+				p1_profile_clicked.emit()
+		)
+	if is_instance_valid(btn_p2_profile):
+		btn_p2_profile.focus_mode = Control.FOCUS_NONE
+		btn_p2_profile.pressed.connect(func():
+			if _can_emit_profile_click():
+				p2_profile_clicked.emit()
+		)
+
+
+func _on_spectator_count_updated(game_id: String, count: int) -> void:
+	var active_gid: String = GameManager.active_game_id
+	var spec_gid: String = GameManager.spectated_game_id
+	var open_gid: String = GameManager.get_open_game_id()
+	if game_id.is_empty() or game_id == active_gid or game_id == spec_gid or game_id == open_gid:
+		update_spectator_count(count)
+
+
+func update_spectator_count(count: int) -> void:
+	var safe_count: int = maxi(0, count)
+	if is_instance_valid(spectator_pill):
+		spectator_pill.visible = GameManager.is_spectating or safe_count > 0
+	if is_instance_valid(lbl_spectator):
+		lbl_spectator.text = "تماشاچی (%s)" % _fa_digits(safe_count) if safe_count > 0 else "تماشاچی"
+
+
+func _get_player_data_for_index(idx: int) -> Dictionary:
+	var p_data: Dictionary = {}
+	if GameManager.match_players.size() >= idx and idx > 0:
+		p_data = GameManager.get_player_data_by_gamer_id(idx)
+	if p_data.is_empty():
+		if idx == 1:
+			p_data = _p1_raw_data
+		elif idx == 2:
+			p_data = _p2_raw_data
+		elif _extra_raw_data.has(idx):
+			p_data = _extra_raw_data[idx]
+
+	var name_str := str(p_data.get("name", p_data.get("username", _player_names.get(idx, "بازیکن %d" % idx))))
+	var av_id := int(p_data.get("image", p_data.get("user_image", 0)))
+	var av_tex: Texture2D = _get_cached_avatar(av_id)
+	var col_val: Color = HudTheme.get_seat_accent(idx)
+
+	return {
+		"id": str(idx),
+		"index": idx,
+		"seat_index": idx,
+		"name": name_str,
+		"avatar_texture": av_tex,
+		"color": col_val,
+		"counter": str(_cached_counters.get(idx, "")),
+		"eliminated": is_player_disabled(idx)
+	}
+
+
+func _rebuild_pods() -> void:
+	if not is_instance_valid(players_container):
 		return
 
-	var next_seq: int = int(_reaction_seqs.get(user_index, 0)) + 1
-	_reaction_seqs[user_index] = next_seq
-	if user_index == 1:
-		_p1_reaction_seq = next_seq
-	elif user_index == 2:
-		_p2_reaction_seq = next_seq
+	for child in players_container.get_children():
+		child.queue_free()
+	_pods_by_idx.clear()
 
-	var bubble_frame := bubble.get_node_or_null("BubbleFrame") as PanelContainer
-	var kori_lbl: Label = null
-	if is_instance_valid(bubble_frame):
-		kori_lbl = bubble_frame.get_node_or_null("KoriLabel") as Label
-		if not is_instance_valid(kori_lbl):
-			kori_lbl = Label.new()
-			kori_lbl.name = "KoriLabel"
-			if _font_vazir:
-				kori_lbl.add_theme_font_override("font", _font_vazir)
-			kori_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			kori_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			kori_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			kori_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			bubble_frame.add_child(kori_lbl)
-		kori_lbl.add_theme_font_size_override("font_size", 18)
-		kori_lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
-		kori_lbl.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
-		kori_lbl.add_theme_constant_override("shadow_offset_y", 1)
-		HudTheme.configure_bidi_label(kori_lbl, false)
+	var is_spec := GameManager.is_spectating or not opponent_only_mode
+	if is_instance_valid(spectator_pill):
+		spectator_pill.visible = GameManager.is_spectating
 
-	var is_kori: bool = reaction_id > 100
-	var vp_w: float = get_viewport_rect().size.x
-	var kori_w: float = clampf(vp_w - 196.0, 200.0, 284.0)
-	var bubble_size: Vector2 = Vector2(kori_w, 72.0) if is_kori else Vector2(92.0, 92.0)
-	var hold_duration: float = 3.6 if is_kori else 2.2
+	var my_idx := _my_player_index
+	if my_idx <= 0:
+		my_idx = GameManager.my_player_index
+	if my_idx <= 0:
+		my_idx = 1
 
-	if is_kori:
-		var k_idx: int = clampi(reaction_id - 101, 0, KORIS.size() - 1)
-		icon.visible = false
-		if is_instance_valid(kori_lbl):
-			kori_lbl.visible = true
-			kori_lbl.custom_minimum_size = Vector2(kori_w - 32.0, 48.0)
-			kori_lbl.text = "💬 " + KORIS[k_idx]
-		if is_instance_valid(bubble_frame):
-			bubble_frame.add_theme_stylebox_override("panel", HudTheme.make_emote_bubble_style(true))
+	var total := clampi(_total_players, 2, 4)
+
+	# In Player mode: opponents only. In Spectator mode: all players.
+	var display_indices: Array[int] = []
+	if is_spec:
+		for i in range(1, total + 1):
+			display_indices.append(i)
 	else:
-		if is_instance_valid(kori_lbl):
-			kori_lbl.visible = false
-		icon.visible = true
-		icon.custom_minimum_size = Vector2(72.0, 72.0)
-		var r_tex: Texture2D = _get_cached_reaction(reaction_id)
-		if r_tex:
-			icon.texture = r_tex
-		if is_instance_valid(bubble_frame):
-			bubble_frame.add_theme_stylebox_override("panel", HudTheme.make_emote_bubble_style(false))
+		for i in range(1, total + 1):
+			if i != my_idx:
+				display_indices.append(i)
 
-	if is_instance_valid(bubble_frame):
-		var half: Vector2 = bubble_size * 0.5
-		bubble_frame.custom_minimum_size = bubble_size
-		bubble_frame.offset_left = -half.x
-		bubble_frame.offset_top = -half.y
-		bubble_frame.offset_right = half.x
-		bubble_frame.offset_bottom = half.y
-		bubble_frame.size = bubble_size
+	var mode: PlayerPod.PodMode = PlayerPod.PodMode.VERTICAL_STANDARD
+	if not is_spec and display_indices.size() == 1:
+		mode = PlayerPod.PodMode.HORIZONTAL_PILL
+	elif is_spec and total == 4:
+		mode = PlayerPod.PodMode.VERTICAL_COMPACT
+	else:
+		mode = PlayerPod.PodMode.VERTICAL_STANDARD
 
-	# Anchor BELOW the player's avatar/card bottom edge AND offset inward toward horizontal center
-	# so bubbles never collide with Left (2D) or Right (Chat / Emoji) SubHeaderRail buttons.
-	bubble.z_index = 32
-	bubble.top_level = true
-	bubble.size = Vector2.ZERO
-	bubble.custom_minimum_size = Vector2.ZERO
-	bubble.pivot_offset = Vector2.ZERO
-	if is_instance_valid(player_card):
-		var card_rect: Rect2 = player_card.get_global_rect()
-		var av_rect: Rect2 = av_container.get_global_rect() if is_instance_valid(av_container) else card_rect
-		var half_w: float = bubble_size.x * 0.5
-		var av_center_x: float = av_rect.get_center().x
-		var is_left_seat: bool = av_center_x < (vp_w * 0.5)
-		var insets: Dictionary = HudTheme.get_safe_insets(get_viewport())
-		var left_clear: float = float(insets.get("left", 10)) + 42.0 + 12.0
-		var right_clear: float = float(insets.get("right", 10)) + 92.0 + 12.0
-		var shifted_x: float = av_center_x + (40.0 if is_left_seat else -40.0)
-		var min_cx: float = left_clear + half_w
-		var max_cx: float = vp_w - right_clear - half_w
-		var anchor_x: float = clampf(shifted_x, min_cx, maxf(min_cx, max_cx))
-		var anchor_y: float = maxf(card_rect.end.y, av_rect.end.y) + 10.0 + bubble_size.y * 0.5
-		if is_kori and max_cx < min_cx:
-			anchor_x = clampf(vp_w * 0.5, half_w + 12.0, maxf(half_w + 12.0, vp_w - half_w - 12.0))
-			anchor_y = maxf(card_rect.end.y, av_rect.end.y) + 58.0 + bubble_size.y * 0.5
-		bubble.global_position = Vector2(anchor_x, anchor_y)
+	for idx in display_indices:
+		var p_data := _get_player_data_for_index(idx)
+		var pod: PlayerPod = _pod_scene.instantiate() as PlayerPod
+		players_container.add_child(pod)
+		pod.setup_pod(p_data, mode, true)
+		if _cached_counters.has(idx):
+			pod.set_counter(str(_cached_counters[idx]))
+		else:
+			pod.set_counter("")
+		if _cached_statuses.has(idx):
+			var st_info: Dictionary = _cached_statuses[idx]
+			pod.set_status_badge(str(st_info.get("text", "")), st_info.get("color", Color(-1, -1, -1)))
+		else:
+			pod.set_status_badge("")
+		pod.pod_pressed.connect(func(_pid: String) -> void:
+			if _can_emit_profile_click():
+				player_profile_clicked.emit(idx)
+				if idx == 1:
+					p1_profile_clicked.emit()
+				elif idx == 2:
+					p2_profile_clicked.emit()
+		)
+		_pods_by_idx[idx] = pod
 
-	bubble.visible = true
-	bubble.scale = Vector2(0.25, 0.25)
-	bubble.modulate.a = 0.0
-	bubble.rotation_degrees = -4.0 if (user_index % 2 == 1) else 4.0
-	AudioManager.play_sound("chat")
-
-	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(bubble, "scale", Vector2(1.06, 1.06), 0.18)
-	tw.parallel().tween_property(bubble, "modulate:a", 1.0, 0.14)
-	tw.parallel().tween_property(bubble, "rotation_degrees", 0.0, 0.18)
-	tw.tween_property(bubble, "scale", Vector2.ONE, 0.10)
-
-	await get_tree().create_timer(hold_duration).timeout
-	if int(_reaction_seqs.get(user_index, 0)) != next_seq:
-		return
-	if is_instance_valid(bubble) and bubble.visible:
-		var fade_tw := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		fade_tw.tween_property(bubble, "scale", Vector2(0.88, 0.88), 0.22)
-		fade_tw.parallel().tween_property(bubble, "modulate:a", 0.0, 0.24)
-		await fade_tw.finished
-		if int(_reaction_seqs.get(user_index, 0)) == next_seq and is_instance_valid(bubble):
-			bubble.visible = false
-			bubble.scale = Vector2.ONE
-			bubble.rotation_degrees = 0.0
+	_setup_initial_result_display()
+	_sync_header_height()
 
 
-func reset_header() -> void:
+func set_opponent_only_mode(enabled: bool) -> void:
+	opponent_only_mode = enabled
+	_rebuild_pods()
+
+
+func _apply_opponent_only_layout() -> void:
+	_rebuild_pods()
+
+
+func setup_players(p1_data: Dictionary, p2_data: Dictionary, my_idx: int) -> void:
 	_profile_clicks_enabled = false
+	_my_player_index = my_idx
+	_p1_raw_data = p1_data
+	_p2_raw_data = p2_data
+
+	var p1_str := str(p1_data.get("name", p1_data.get("username", "میزبان")))
+	var p2_str := str(p2_data.get("name", p2_data.get("username", "مهمان")))
+	_player_names[1] = p1_str
+	_player_names[2] = p2_str
+
+	if is_instance_valid(p1_name):
+		p1_name.text = p1_str
+	if is_instance_valid(p2_name):
+		p2_name.text = p2_str
+
+	_rebuild_pods()
+
+
+func setup_match(game_name_fa: String, _mode_title: String, round_num: int, max_rounds: int, _turn_time: float) -> void:
 	_last_displayed_sec = -1
 	_last_critical_sec = -1
-	_invalidate_timer_visual_cache()
-	_last_p1_score = 0
-	_last_p2_score = 0
-	_update_score_badges_visibility()
-	hide_turn_toast()
+	update_spectator_count(GameManager.spectator_count)
+	var meta_str := "%s" % game_name_fa if max_rounds <= 1 else "راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
+	if is_instance_valid(lbl_round):
+		lbl_round.text = meta_str
+	set_match_meta_text(meta_str)
 	if is_instance_valid(lbl_turn_banner):
 		lbl_turn_banner.text = "بازی درحال آغاز است"
-	if is_instance_valid(p1_score_lbl):
-		p1_score_lbl.text = _fa_digits(0)
-	if is_instance_valid(p2_score_lbl):
-		p2_score_lbl.text = _fa_digits(0)
 	if is_instance_valid(lbl_timer):
-		lbl_timer.text = "--"
+		lbl_timer.text = ""
+		lbl_timer.visible = false
 	if is_instance_valid(turn_timer_bar):
 		turn_timer_bar.value = 100.0
 
+	_rebuild_pods()
+
+
+func set_round(round_num: int, max_rounds: int) -> void:
+	var meta_str := ""
+	if max_rounds <= 1:
+		var g_info = GameRegistry.get_game_info(GameManager.current_game_type)
+		var game_name_fa = g_info.get("name_fa", "بازی")
+		meta_str = "%s" % game_name_fa
+	else:
+		meta_str = "راند %s از %s" % [_fa_digits(round_num), _fa_digits(max_rounds)]
+	if is_instance_valid(lbl_round):
+		lbl_round.text = meta_str
+	set_match_meta_text(meta_str)
+
+
+func set_match_meta_text(text: String) -> void:
+	if not is_instance_valid(match_meta_ribbon) or not is_instance_valid(lbl_match_meta):
+		return
+	var clean := text.strip_edges()
+	if clean.is_empty():
+		match_meta_ribbon.visible = false
+	else:
+		lbl_match_meta.text = clean
+		match_meta_ribbon.visible = not (is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible)
+
+
+func update_player_counter(player_idx: int, val_str: String) -> void:
+	_cached_counters[player_idx] = val_str
+	if _pods_by_idx.has(player_idx):
+		var pod: PlayerPod = _pods_by_idx[player_idx]
+		if is_instance_valid(pod):
+			pod.set_counter(val_str)
+
+
+func update_scores(p1_s: int, p2_s: int) -> void:
+	if not _is_score_based_game():
+		return
+	update_player_counter(1, str(p1_s))
+	update_player_counter(2, str(p2_s))
+	if is_instance_valid(p1_score_lbl):
+		p1_score_lbl.text = _fa_digits(p1_s)
+	if is_instance_valid(p2_score_lbl):
+		p2_score_lbl.text = _fa_digits(p2_s)
+	set_current_result_scores(p1_s, p2_s)
+
+
+func set_current_result_scores(p1_s: int, p2_s: int) -> void:
+	if not _is_score_based_game():
+		if is_instance_valid(match_result_box):
+			match_result_box.visible = false
+		return
+	if is_instance_valid(lbl_result_score):
+		lbl_result_score.text = "%s - %s" % [_fa_digits(p1_s), _fa_digits(p2_s)]
+	if is_instance_valid(match_result_box):
+		match_result_box.visible = true
+	_sync_header_height()
+
+
+func set_current_result_text(text: String) -> void:
+	if not is_instance_valid(match_result_box) or not is_instance_valid(lbl_result_score):
+		return
+	var clean := text.strip_edges()
+	if clean.is_empty():
+		match_result_box.visible = false
+	else:
+		lbl_result_score.text = clean
+		match_result_box.visible = true
+	_sync_header_height()
+
+
+func _setup_initial_result_display() -> void:
+	if not _is_score_based_game():
+		if is_instance_valid(match_result_box):
+			match_result_box.visible = false
+		return
+	var g_type = GameManager.current_game_type
+	if g_type == GameTypes.OTHELLO:
+		set_current_result_scores(2, 2)
+	elif g_type in [GameTypes.DOTBOX, GameTypes.MILL, GameTypes.BATTLESHIP, GameTypes.BOXFOUR, GameTypes.FOURINROW, GameTypes.MNUMBERS, GameTypes.YATZY, GameTypes.YINSH, GameTypes.QUIZ]:
+		set_current_result_scores(GameManager.p1_score, GameManager.p2_score)
+	elif GameRegistry.has_round_score(g_type) and GameManager.max_rounds > 1:
+		set_current_result_scores(GameManager.p1_score, GameManager.p2_score)
+	else:
+		if is_instance_valid(match_result_box):
+			match_result_box.visible = false
+
+
+func _pulse_bottom_glow() -> void:
+	if not is_instance_valid(bottom_turn_glow):
+		return
+	if is_instance_valid(_bottom_glow_tween):
+		_bottom_glow_tween.kill()
+	bottom_turn_glow.visible = true
+	bottom_turn_glow.modulate.a = 0.25
+	_bottom_glow_tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_bottom_glow_tween.tween_property(bottom_turn_glow, "modulate:a", 0.85, 0.9)
+	_bottom_glow_tween.tween_property(bottom_turn_glow, "modulate:a", 0.25, 0.9)
+
+
+func _is_simultaneous_turn() -> bool:
+	var g_type = GameManager.current_game_type
+	if g_type == GameTypes.QUIZ:
+		return true
+	return false
+
+
+func _get_simultaneous_turn_text() -> String:
+	var g_type = GameManager.current_game_type
+	if g_type == GameTypes.QUIZ:
+		return "پاسخ به سوال"
+	return "اقدام همزمان"
+
+
+func _get_player_color_for_turn(turn: int) -> Color:
+	if _is_simultaneous_turn():
+		return Color.WHITE
+	var p_data := _get_player_data_for_index(turn)
+	var col_val: Variant = p_data.get("color", null)
+	if col_val is Color:
+		return col_val as Color
+	return HudTheme.get_seat_accent(turn)
+
+
+func _apply_turn_bar_colors(turn: int, is_danger: bool) -> void:
+	var fill_color: Color
+	if is_danger:
+		fill_color = HudTheme.COL_DANGER
+	elif _is_simultaneous_turn():
+		fill_color = Color.WHITE
+	else:
+		fill_color = _get_player_color_for_turn(turn)
+
+	if is_instance_valid(local_turn_bar):
+		var sb_fill := StyleBoxFlat.new()
+		sb_fill.bg_color = fill_color
+		sb_fill.set_corner_radius_all(2)
+		local_turn_bar.add_theme_stylebox_override("fill", sb_fill)
+
+	if is_instance_valid(local_turn_pill):
+		var sb_pill := StyleBoxFlat.new()
+		sb_pill.content_margin_left = 12.0
+		sb_pill.content_margin_top = 2.0
+		sb_pill.content_margin_right = 12.0
+		sb_pill.content_margin_bottom = 2.0
+		sb_pill.bg_color = Color(0.10, 0.07, 0.04, 0.94)
+		sb_pill.border_color = Color(fill_color.r, fill_color.g, fill_color.b, 0.85)
+		sb_pill.set_border_width_all(1)
+		sb_pill.set_corner_radius_all(10)
+		sb_pill.shadow_color = Color(0, 0, 0, 0.4)
+		sb_pill.shadow_size = 3
+		local_turn_pill.add_theme_stylebox_override("panel", sb_pill)
+
+
+func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
+	_current_turn = turn
+	_my_player_index = my_idx
+	if not p1_n.is_empty(): _player_names[1] = p1_n
+	if not p2_n.is_empty(): _player_names[2] = p2_n
+
+	if _pods_by_idx.is_empty():
+		_rebuild_pods()
+
+	var is_spec := GameManager.is_spectating or not opponent_only_mode
+	var is_simul := _is_simultaneous_turn()
+	var is_me := (not is_spec and turn == my_idx)
+
+	# Highlight active pod border/glow (radial progress ring is removed)
+	for idx in _pods_by_idx:
+		var pod: PlayerPod = _pods_by_idx[idx]
+		if is_instance_valid(pod):
+			pod.set_active_turn(idx == turn)
+
+	# Universal Timer Bar is visible during any active game turn
+	if is_instance_valid(local_turn_bar_wrap):
+		local_turn_bar_wrap.visible = GameManager.is_game_active
+	if is_instance_valid(match_meta_ribbon):
+		match_meta_ribbon.visible = false
+
+	# Set pill text
+	if is_instance_valid(lbl_local_turn):
+		if is_simul:
+			lbl_local_turn.text = _get_simultaneous_turn_text()
+		elif is_me:
+			lbl_local_turn.text = "نوبت شما"
+		else:
+			var opp_name := str(_player_names.get(turn, "بازیکن %d" % turn))
+			lbl_local_turn.text = "نوبت %s" % opp_name
+
+	_apply_turn_bar_colors(turn, false)
+
+	# Bottom edge glow only pulses for local player's turn
+	if is_me and not is_simul and GameManager.is_game_active:
+		_pulse_bottom_glow()
+	else:
+		if is_instance_valid(bottom_turn_glow):
+			bottom_turn_glow.visible = false
+		if is_instance_valid(_bottom_glow_tween):
+			_bottom_glow_tween.kill()
+			_bottom_glow_tween = null
+
+	_sync_header_height()
+
+	if not GameManager.is_game_active:
+		hide_turn_toast()
+	elif is_simul:
+		show_turn_toast(_get_simultaneous_turn_text(), HudTheme.COL_TEXT_IVORY, false, 1.5)
+	elif is_me:
+		show_turn_toast("✨ نوبت شماست!", HudTheme.COL_TEXT_GOLD, false, 1.8)
+	else:
+		var opp_name := str(_player_names.get(turn, "بازیکن %d" % turn))
+		show_turn_toast("نوبت %s" % opp_name, HudTheme.COL_TEXT_SAND, false, 1.5)
+
+
+func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
+	var pct := clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
+	var is_danger := (remaining_sec <= 4.0 and remaining_sec > 0.0)
+
+	# Universal Turn Bar progress for all players
+	if is_instance_valid(local_turn_bar_wrap):
+		local_turn_bar_wrap.visible = GameManager.is_game_active
+	if is_instance_valid(local_turn_bar):
+		local_turn_bar.value = pct
+
+	_apply_turn_bar_colors(turn, is_danger)
+
+	for idx in _pods_by_idx:
+		var pod: PlayerPod = _pods_by_idx[idx]
+		if is_instance_valid(pod) and idx == turn:
+			pod.update_ring_timer(remaining_sec, total_sec)
+
+	# Clean silent timer: ticking numbers suppressed
+	if is_instance_valid(lbl_timer):
+		lbl_timer.text = ""
+		lbl_timer.visible = false
+	if is_instance_valid(turn_timer_bar):
+		turn_timer_bar.value = pct
+
+
+func set_penalty_box_visible(enabled: bool) -> void:
+	if is_instance_valid(penalty_details_box):
+		penalty_details_box.visible = enabled
+		_sync_header_height()
+
+
+func update_penalty_dots(gamer_id: int, count: int, max_count: int = 2) -> void:
+	var is_me: bool = (gamer_id == _my_player_index)
+	var dots: Array = [my_dot1, my_dot2] if is_me else [opp_dot1, opp_dot2]
+	var count_lbl: Label = lbl_my_penalty if is_me else lbl_opp_penalty
+	if not is_instance_valid(count_lbl):
+		return
+	var clamped := clampi(count, 0, max_count)
+	count_lbl.text = "%s/%s" % [_fa_digits(clamped), _fa_digits(max_count)]
+	for i in range(dots.size()):
+		var dot = dots[i]
+		if not is_instance_valid(dot):
+			continue
+		var sb := StyleBoxFlat.new()
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(4)
+		if clamped > i:
+			if clamped >= max_count:
+				sb.bg_color = HudTheme.COL_DANGER
+				sb.border_color = Color(1.0, 0.78, 0.78, 1.0)
+			else:
+				sb.bg_color = HudTheme.COL_AMBER_GLOW
+				sb.border_color = HudTheme.COL_GOLD_ACTIVE
+		else:
+			sb.bg_color = HudTheme.COL_WALNUT_DEEP
+			sb.border_color = HudTheme.COL_BRONZE_MUTED
+		dot.add_theme_stylebox_override("panel", sb)
+
+
+func update_not_played_turns(gamer_id: int, count: int) -> void:
+	set_penalty_box_visible(true)
+	update_penalty_dots(gamer_id, count, 2)
+
+
+func set_camera_mode_indicator(is_top_down: bool) -> void:
+	_is_2d_mode = is_top_down
+	if is_instance_valid(img_view_2d3d):
+		img_view_2d3d.texture = _tex_3d if is_top_down else _tex_2d
+
+
+func is_player_disabled(player_idx: int) -> bool:
+	return _disabled_players.has(player_idx)
+
+
+func set_player_disabled(player_idx: int, disabled: bool, reason_text: String = "خارج شد") -> void:
+	if disabled:
+		_disabled_players[player_idx] = reason_text
+	else:
+		_disabled_players.erase(player_idx)
+	if _pods_by_idx.has(player_idx):
+		var pod: PlayerPod = _pods_by_idx[player_idx]
+		if is_instance_valid(pod):
+			pod.set_eliminated(disabled)
+
+
+func reset_header() -> void:
+	_current_turn = 1
 	_disabled_players.clear()
-	for idx in [1, 2, 3, 4]:
-		var b := _get_player_card_bundle(idx)
-		var c: PanelContainer = b.get("card", null)
-		if is_instance_valid(c):
-			c.modulate = Color.WHITE
-			c.scale = Vector2.ONE
-			c.add_theme_stylebox_override("panel", _style_p1_inactive if _total_players <= 2 else _style_p3_inactive)
-		var nm: Label = b.get("name", null)
-		if is_instance_valid(nm):
-			nm.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
-		var rl: Label = b.get("role", null)
-		if is_instance_valid(rl):
-			rl.add_theme_color_override("font_color", HudTheme.COL_TEXT_SAND)
-			rl.visible = false
-		var rb: Control = b.get("reaction_bubble", null)
-		if is_instance_valid(rb):
-			rb.top_level = true
-			rb.visible = false
-		var dec: Dictionary = _card_decorations.get(idx, {})
-		var t_bar: ProgressBar = dec.get("timer_bar", null)
-		var t_chip: Label = dec.get("timer_chip", null)
-		if is_instance_valid(t_bar):
-			t_bar.visible = false
-			t_bar.value = 100.0
-		if is_instance_valid(t_chip):
-			t_chip.visible = false
-			t_chip.text = ""
+	_cached_counters.clear()
+	set_penalty_box_visible(false)
+	if is_instance_valid(match_result_box):
+		match_result_box.visible = false
+	if is_instance_valid(local_turn_bar_wrap):
+		local_turn_bar_wrap.visible = false
+	if is_instance_valid(bottom_turn_glow):
+		bottom_turn_glow.visible = false
+	hide_turn_toast()
+	_rebuild_pods()
+
+
+func show_reaction(user_index: int, reaction_id: int) -> void:
+	if GameManager.chat_and_stickers_disabled:
+		return
+	var vp_sz := get_viewport_rect().size
+	var my_idx: int = _my_player_index if _my_player_index > 0 else GameManager.my_player_index
+
+	# Determine if this reaction is from local player or an opponent
+	var is_opponent: bool = true
+	if user_index == my_idx or (GameManager.my_player_index > 0 and user_index == GameManager.my_player_index):
+		is_opponent = false
+	elif GameManager.user_data and int(GameManager.user_data.get("id", -1)) == user_index:
+		is_opponent = false
+
+	# Resolve user_index to gamer_id (1..4) if passed as database ID or if not directly in pods
+	var resolved_idx: int = user_index
+	if not _pods_by_idx.has(resolved_idx):
+		for p in GameManager.match_players:
+			if int(p.get("id", 0)) == user_index or int(p.get("user_id", 0)) == user_index or int(p.get("playerId", 0)) == user_index:
+				resolved_idx = int(p.get("gamer_id", 0))
+				break
+
+	var spawn_pos: Vector2 = Vector2.ZERO
+
+	if is_opponent:
+		var target_pod: PlayerPod = null
+		if _pods_by_idx.has(resolved_idx):
+			target_pod = _pods_by_idx[resolved_idx]
+		elif _pods_by_idx.size() > 0:
+			target_pod = _pods_by_idx.values()[0]
+
+		if is_instance_valid(target_pod):
+			var pod_rect := target_pod.get_global_rect()
+			spawn_pos = Vector2(pod_rect.get_center().x, pod_rect.end.y + 6.0)
+		else:
+			spawn_pos = Vector2(80.0, float(_safe_top_inset) + 56.0)
+	else:
+		# Local player sent sticker: spawn in lower-middle screen prominently above cards/hand
+		spawn_pos = Vector2(vp_sz.x * 0.5, vp_sz.y - 210.0)
+
+	_spawn_floating_reaction(is_opponent, reaction_id, spawn_pos)
+
+
+func _spawn_floating_reaction(is_opponent: bool, reaction_id: int, spawn_pos: Vector2) -> void:
+	var is_kori: bool = reaction_id > 100
+	var vp_sz := get_viewport_rect().size
+	var bubble := PanelContainer.new()
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bubble.top_level = true
+	bubble.z_index = 100
+
+	var bubble_style := StyleBoxFlat.new()
+	bubble_style.bg_color = Color(0.12, 0.08, 0.05, 0.96)
+	bubble_style.border_color = HudTheme.COL_GOLD_ACTIVE if not is_opponent else HudTheme.COL_GOLD_BRUSHED
+	bubble_style.set_border_width_all(2)
+	bubble_style.border_width_bottom = 2
+	bubble_style.shadow_color = Color(0, 0, 0, 0.60)
+	bubble_style.shadow_size = 14 if not is_opponent else (8 if is_kori else 12)
+	bubble_style.shadow_offset = Vector2(0, 4 if not is_opponent else 3)
+
+	if not is_opponent:
+		# Local player sent reaction: prominent speech bubble
+		bubble_style.set_corner_radius_all(18)
+		bubble_style.content_margin_left = 18
+		bubble_style.content_margin_right = 18
+		bubble_style.content_margin_top = 8 if is_kori else 10
+		bubble_style.content_margin_bottom = 8 if is_kori else 10
+	else:
+		# Opponent reaction: compact and clean at bottom of pod
+		bubble_style.set_corner_radius_all(14 if is_kori else 20)
+		bubble_style.content_margin_left = 12
+		bubble_style.content_margin_right = 12
+		bubble_style.content_margin_top = 4 if is_kori else 10
+		bubble_style.content_margin_bottom = 4 if is_kori else 10
+	bubble.add_theme_stylebox_override("panel", bubble_style)
+
+	if is_kori:
+		var k_idx: int = clampi(reaction_id - 101, 0, KORIS.size() - 1)
+		var msg_text: String = KORIS[k_idx]
+		var lbl := Label.new()
+		if _font_vazir:
+			lbl.add_theme_font_override("font", _font_vazir)
+		# Local player chat gets larger font size 15, opponent gets 12
+		lbl.add_theme_font_size_override("font_size", 15 if not is_opponent else 12)
+		lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
+		lbl.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
+		lbl.add_theme_constant_override("shadow_offset_y", 1)
+		lbl.text_direction = Control.TEXT_DIRECTION_RTL
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
+		lbl.text = msg_text
+		bubble.add_child(lbl)
+		bubble.custom_minimum_size = Vector2(0, 38 if not is_opponent else 28)
+	else:
+		var icon_rect := TextureRect.new()
+		icon_rect.custom_minimum_size = Vector2(112, 112)
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var r_tex := _get_cached_reaction(reaction_id)
+		if r_tex:
+			icon_rect.texture = r_tex
+		bubble.add_child(icon_rect)
+		bubble.custom_minimum_size = Vector2(136, 136)
+
+	# Opponent reaction special VFX: luminous expanding golden aura shockwave
+	var aura: Panel = null
+	if is_opponent:
+		aura = Panel.new()
+		aura.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var aura_sb := StyleBoxFlat.new()
+		aura_sb.bg_color = Color(HudTheme.COL_GOLD_ACTIVE.r, HudTheme.COL_GOLD_ACTIVE.g, HudTheme.COL_GOLD_ACTIVE.b, 0.45)
+		aura_sb.set_corner_radius_all(18 if is_kori else 24)
+		aura.add_theme_stylebox_override("panel", aura_sb)
+		aura.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		aura.show_behind_parent = true
+		bubble.add_child(aura)
+
+	add_child(bubble)
+	bubble.reset_size()
+
+	var bubble_w: float = bubble.size.x
+	var bubble_h: float = bubble.size.y
+	if bubble_w <= 0.0:
+		bubble_w = bubble.custom_minimum_size.x if bubble.custom_minimum_size.x > 0 else 136.0
+	if bubble_h <= 0.0:
+		bubble_h = bubble.custom_minimum_size.y if bubble.custom_minimum_size.y > 0 else ((38.0 if not is_opponent else 28.0) if is_kori else 136.0)
+	var half_w: float = bubble_w * 0.5
+	var target_x: float = clampf(spawn_pos.x - half_w, 12.0, maxf(12.0, vp_sz.x - bubble_w - 12.0))
+	var target_y: float = spawn_pos.y
+	if not is_opponent:
+		target_y = clampf(spawn_pos.y, 160.0, maxf(160.0, vp_sz.y - bubble_h - 100.0))
+
+	bubble.global_position = Vector2(target_x, target_y if not is_opponent else target_y - 6.0)
+	bubble.scale = Vector2(0.18, 0.18)
+	bubble.pivot_offset = Vector2(half_w, 0.0 if is_opponent else bubble_h * 0.5)
+	bubble.modulate.a = 0.0
+
+	AudioManager.play_sound("chat")
+
+	var tw := create_tween().set_parallel(false)
+	tw.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(bubble, "scale", Vector2(1.10, 1.10), 0.20)
+	tw.parallel().tween_property(bubble, "modulate:a", 1.0, 0.14)
+	if is_opponent:
+		tw.parallel().tween_property(bubble, "global_position:y", target_y + 4.0, 0.20)
+		if is_instance_valid(aura):
+			tw.parallel().tween_property(aura, "scale", Vector2(1.35, 1.35), 0.32)
+			tw.parallel().tween_property(aura, "modulate:a", 0.0, 0.32)
+	else:
+		tw.parallel().tween_property(bubble, "global_position:y", target_y - 12.0, 0.20)
+	tw.tween_property(bubble, "scale", Vector2.ONE, 0.08)
+
+	var idle_tw: Tween = null
+	if is_opponent:
+		idle_tw = create_tween().set_loops(3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		idle_tw.tween_property(bubble, "global_position:y", target_y, 0.5)
+		idle_tw.tween_property(bubble, "global_position:y", target_y + 4.0, 0.5)
+
+	tw.tween_interval(2.6 if not is_kori else 3.2)
+	tw.tween_callback(func():
+		if is_instance_valid(idle_tw) and idle_tw.is_valid():
+			idle_tw.kill()
+	)
+	tw.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(bubble, "scale", Vector2(0.80, 0.80), 0.18)
+	tw.parallel().tween_property(bubble, "modulate:a", 0.0, 0.18)
+	tw.tween_callback(bubble.queue_free)
+
+
+# --- Backwards Compatibility Helpers for Child Classes ---
+func _update_two_row_visibility(total_players: int) -> void:
+	_total_players = clampi(total_players, 2, 4)
+	_rebuild_pods()
+
+
+func _get_player_card_bundle(player_idx: int) -> Dictionary:
+	return {
+		"card": p1_card if player_idx == 1 else p2_card,
+		"avatar": p1_avatar if player_idx == 1 else p2_avatar,
+		"avatar_container": (p1_avatar.get_parent() as Control) if (player_idx == 1 and is_instance_valid(p1_avatar)) else ((p2_avatar.get_parent() as Control) if is_instance_valid(p2_avatar) else null),
+		"name": p1_name if player_idx == 1 else p2_name,
+		"role": p1_role_badge if player_idx == 1 else p2_role_badge,
+		"score": p1_score_lbl if player_idx == 1 else p2_score_lbl,
+		"reaction_bubble": p1_reaction_bubble if player_idx == 1 else p2_reaction_bubble,
+		"reaction_icon": p1_reaction_icon if player_idx == 1 else p2_reaction_icon,
+	}
+
+
+func _set_role_badge(player_idx: int, text: String, color: Color = Color.WHITE) -> void:
+	_cached_statuses[player_idx] = {"text": text, "color": color}
+	if _pods_by_idx.has(player_idx):
+		var pod: PlayerPod = _pods_by_idx[player_idx]
+		if is_instance_valid(pod):
+			pod.set_status_badge(text, color)
+
+
+func _set_active_cards_visual(_active_indices: Array, _is_danger: bool = false, _pulse_active: bool = false) -> void:
+	pass
+
+
+func _update_card_timer_visuals(remaining_sec: float, total_sec: float, active_indices: Array) -> void:
+	var turn: int = active_indices[0] if not active_indices.is_empty() else _current_turn
+	update_timer(remaining_sec, total_sec, turn)
+
+
+func _is_score_based_game() -> bool:
+	var g_type = GameManager.current_game_type
+	if g_type == GameTypes.CHESS or g_type == GameTypes.QUORIDOR or g_type == GameTypes.FEKRBEKR or g_type == GameTypes.COUP or g_type == GameTypes.UNO or g_type == GameTypes.MONOPOLY or g_type == GameTypes.RISK:
+		return false
+	if g_type in [GameTypes.OTHELLO, GameTypes.DOTBOX, GameTypes.MILL, GameTypes.BATTLESHIP, GameTypes.BOXFOUR, GameTypes.FOURINROW, GameTypes.MNUMBERS, GameTypes.YATZY, GameTypes.YINSH, GameTypes.QUIZ]:
+		return true
+	return GameRegistry.has_round_score(g_type)
+
+
+func _on_turn_changed(_turn: int) -> void:
+	pass
+
+
+func _update_score_badges_visibility() -> void:
+	var show_scores := _is_score_based_game()
+	if is_instance_valid(_p1_score_badge):
+		_p1_score_badge.visible = show_scores
+	elif is_instance_valid(p1_score_lbl) and p1_score_lbl.get_parent() is Control:
+		(p1_score_lbl.get_parent() as Control).visible = show_scores
+	if is_instance_valid(_p2_score_badge):
+		_p2_score_badge.visible = show_scores
+	elif is_instance_valid(p2_score_lbl) and p2_score_lbl.get_parent() is Control:
+		(p2_score_lbl.get_parent() as Control).visible = show_scores
+
+
+func _apply_disabled_visual(player_idx: int) -> void:
+	if _pods_by_idx.has(player_idx):
+		var pod: PlayerPod = _pods_by_idx[player_idx]
+		if is_instance_valid(pod):
+			var is_dis := is_player_disabled(player_idx)
+			var reason: String = str(_disabled_players.get(player_idx, "خارج شد"))
+			pod.set_eliminated(is_dis, reason)
+
+
+func _animate_card_pulse(card: Control) -> void:
+	if not is_instance_valid(card):
+		return
+	card.pivot_offset = card.size * 0.5
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(card, "scale", Vector2(1.03, 1.03), 0.16)
+	tw.tween_property(card, "scale", Vector2.ONE, 0.14)
+
+
+func _animate_score_bump(badge: Control) -> void:
+	if not is_instance_valid(badge):
+		return
+	badge.pivot_offset = badge.size * 0.5
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(badge, "scale", Vector2(1.20, 1.20), 0.14)
+	tw.tween_property(badge, "scale", Vector2.ONE, 0.16)
 
 
 func _get_or_create_players_row2() -> HBoxContainer:
@@ -1258,139 +1243,35 @@ func _get_or_create_players_row2() -> HBoxContainer:
 	_players_row2.visible = false
 	vbox_main.add_child(_players_row2)
 	vbox_main.move_child(_players_row2, players_row.get_index() + 1)
-
-	_p4_empty_spacer = Control.new()
-	_p4_empty_spacer.name = "P4EmptySpacer"
-	_p4_empty_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_p4_empty_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_p4_empty_spacer.visible = false
-	_players_row2.add_child(_p4_empty_spacer)
-
-	# Symmetrical spacer on Row 2 aligning with MenuColumn on Row 1
-	_row2_menu_spacer = Control.new()
-	_row2_menu_spacer.name = "Row2MenuSpacer"
-	_row2_menu_spacer.custom_minimum_size = Vector2(MENU_COL_WIDTH, 0)
-	_row2_menu_spacer.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_row2_menu_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_players_row2.add_child(_row2_menu_spacer)
 	return _players_row2
 
 
-func _update_two_row_visibility(total_players: int) -> void:
-	_total_players = clampi(total_players, 2, 4)
-	var is_multi := _total_players > 2
-	var card_h := CARD_HEIGHT_MULTI if is_multi else CARD_HEIGHT_2P
-	var av_sz := Vector2(46, 46) if is_multi else Vector2(56, 56)
-
-	for idx in [1, 2, 3, 4]:
-		var b := _get_player_card_bundle(idx)
-		var c: PanelContainer = b.get("card", null)
-		var av_cont: Control = b.get("avatar_container", null)
-		var av: TextureRect = b.get("avatar", null)
-		var nm: Label = b.get("name", null)
-		if is_instance_valid(c):
-			c.custom_minimum_size = Vector2(0, card_h)
-		if is_instance_valid(av_cont):
-			av_cont.custom_minimum_size = av_sz
-		if is_instance_valid(av):
-			av.custom_minimum_size = av_sz
-		if is_instance_valid(nm):
-			nm.add_theme_font_size_override("font_size", 16 if is_multi else 18)
-
-	var row2 := _get_or_create_players_row2()
-	if is_instance_valid(row2):
-		row2.visible = is_multi
-		row2.add_theme_constant_override("separation", 8)
-		if is_instance_valid(_p4_empty_spacer):
-			row2.move_child(_p4_empty_spacer, row2.get_child_count() - 1)
-			_p4_empty_spacer.visible = (_total_players == 3)
-		if is_instance_valid(_row2_menu_spacer):
-			row2.move_child(_row2_menu_spacer, row2.get_child_count() - 1)
-			_row2_menu_spacer.visible = is_multi
-
-	_sync_header_height()
-
-
-func _get_player_card_bundle(player_idx: int) -> Dictionary:
-	if player_idx == 1:
-		return {
-			"card": p1_card,
-			"avatar": p1_avatar,
-			"avatar_container": p1_avatar.get_parent() as Control if is_instance_valid(p1_avatar) else null,
-			"av_frame": _p1_avatar_frame,
-			"name": p1_name,
-			"role": p1_role_badge,
-			"score": p1_score_lbl,
-			"reaction_bubble": p1_reaction_bubble,
-			"reaction_icon": p1_reaction_icon,
-		}
-	elif player_idx == 2:
-		return {
-			"card": p2_card,
-			"avatar": p2_avatar,
-			"avatar_container": p2_avatar.get_parent() as Control if is_instance_valid(p2_avatar) else null,
-			"av_frame": _p2_avatar_frame,
-			"name": p2_name,
-			"role": p2_role_badge,
-			"score": p2_score_lbl,
-			"reaction_bubble": p2_reaction_bubble,
-			"reaction_icon": p2_reaction_icon,
-		}
-	elif _extra_cards.has(player_idx):
-		return _extra_cards[player_idx]
-	return {}
-
-
-func is_player_disabled(player_idx: int) -> bool:
-	return _disabled_players.has(player_idx)
-
-
-func set_player_disabled(player_idx: int, disabled: bool, reason_text: String = "خارج شد") -> void:
-	if player_idx < 1 or player_idx > 4:
-		return
-	if disabled:
-		_disabled_players[player_idx] = reason_text if not reason_text.is_empty() else "خارج شد"
-	else:
-		_disabled_players.erase(player_idx)
-	_apply_disabled_visual(player_idx)
-
-
-func _apply_disabled_visual(player_idx: int) -> void:
-	var b := _get_player_card_bundle(player_idx)
-	var card: PanelContainer = b.get("card", null)
-	var nm: Label = b.get("name", null)
-	var rl: Label = b.get("role", null)
-	var dec: Dictionary = _card_decorations.get(player_idx, {})
-	if is_player_disabled(player_idx):
-		var reason: String = str(_disabled_players.get(player_idx, "خارج شد"))
-		if is_instance_valid(card):
-			if is_instance_valid(_style_card_disabled):
-				card.add_theme_stylebox_override("panel", _style_card_disabled)
-			card.modulate = Color(0.58, 0.56, 0.54, 0.60)
-			card.scale = Vector2(0.97, 0.97)
-		if is_instance_valid(nm):
-			nm.add_theme_color_override("font_color", Color(0.70, 0.68, 0.66, 0.85))
-		if is_instance_valid(rl):
-			var has_prefix := reason.begins_with("💀") or reason.begins_with("🏳") or reason.begins_with("🚫") or reason.begins_with("📡") or reason.begins_with("⏱")
-			rl.text = reason if has_prefix else ("🚫 %s" % reason)
-			rl.visible = true
-			rl.add_theme_color_override("font_color", Color(0.95, 0.62, 0.62, 0.94))
-		var t_bar: ProgressBar = dec.get("timer_bar", null)
-		var t_chip: Label = dec.get("timer_chip", null)
-		if is_instance_valid(t_bar):
-			t_bar.visible = false
-		if is_instance_valid(t_chip):
-			t_chip.visible = false
-	else:
-		if is_instance_valid(card):
-			card.modulate = Color.WHITE
-			card.scale = Vector2.ONE
-		if is_instance_valid(nm):
-			nm.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
-		if is_instance_valid(rl):
-			rl.add_theme_color_override("font_color", HudTheme.COL_TEXT_SAND)
-
-
-# Virtual hook for child headers
-func _on_turn_changed(_turn: int) -> void:
-	pass
+func _register_extra_player_card(idx: int, card: PanelContainer) -> Dictionary:
+	if not is_instance_valid(card):
+		return {}
+	card.custom_minimum_size = Vector2(0, CARD_HEIGHT_MULTI)
+	var av_cont := card.get_node_or_null("HBox/AvatarContainer") as Control
+	var av := card.get_node_or_null("HBox/AvatarContainer/Avatar") as TextureRect
+	var nm := card.get_node_or_null("HBox/InfoBox/Name") as Label
+	var rl := card.get_node_or_null("HBox/InfoBox/RoleBadge") as Label
+	var sc := card.get_node_or_null("HBox/ScoreBadge/Score") as Label
+	var rb := card.get_node_or_null("ReactionBubble") as Control
+	var ri := card.get_node_or_null("ReactionBubble/BubbleFrame/Icon") as TextureRect
+	var av_frame: Panel = (av_cont.get_node_or_null("AvatarMedallionFrame") as Panel) if is_instance_valid(av_cont) else null
+	var bundle := {
+		"card": card,
+		"avatar": av,
+		"avatar_container": av_cont,
+		"av_frame": av_frame,
+		"name": nm,
+		"role": rl,
+		"score": sc,
+		"reaction_bubble": rb,
+		"reaction_icon": ri,
+	}
+	_extra_cards[idx] = bundle
+	if idx == 3:
+		p3_card = card
+	elif idx == 4:
+		p4_card = card
+	return bundle

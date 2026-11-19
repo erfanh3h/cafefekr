@@ -5,12 +5,12 @@
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_display"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_ui"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/3d.png" id="5_icon_3d"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/setting.png" id="6_icon_settings"]
+[ext_resource type="Texture2D" path="res://assets/images/config.png" id="6_icon_settings"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/watch.png" id="7_icon_watch"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/chat.png" id="8_icon_chat"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/sticker.png" id="9_icon_emote"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/sound-on.png" id="10_icon_sound"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/info.png" id="11_icon_info"]
+[ext_resource type="Texture2D" path="res://assets/images/info.png" id="11_icon_info"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/surrender.png" id="12_icon_surrender"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_clear"]
@@ -179,8 +179,8 @@ stretch_mode = 5
 visible = false
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 46
-theme_override_constants/margin_right = 46
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
 
 [node name="LocalTurnVBox" type="VBoxContainer" parent="SafeAreaMargin/MainTopVBox/LocalTurnBarWrap"]
 layout_mode = 2
@@ -211,7 +211,7 @@ mouse_filter = 2
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("4_font_ui")
 theme_override_font_sizes/font_size = 13
-text = "نوبت شما • ۱۵ث"
+text = "نوبت شما"
 horizontal_alignment = 1
 vertical_alignment = 1
 text_direction = 3

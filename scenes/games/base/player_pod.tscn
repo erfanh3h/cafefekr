@@ -65,10 +65,10 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_counter_badge"]
-content_margin_left = 6.0
-content_margin_top = 1.0
-content_margin_right = 6.0
-content_margin_bottom = 1.0
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
 bg_color = Color(0.08, 0.05, 0.03, 0.92)
 border_width_left = 1
 border_width_top = 1
@@ -79,6 +79,22 @@ corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status_badge"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(0.12, 0.08, 0.05, 0.90)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.65, 0.50, 0.28, 0.70)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="PlayerPod" type="PanelContainer"]
 custom_minimum_size = Vector2(82, 78)
@@ -212,8 +228,16 @@ clip_text = true
 text_overrun_behavior = 3
 text_direction = 3
 
+[node name="RoleDot" type="Panel" parent="PodContent"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_seat_dot")
+
 [node name="CounterBadge" type="PanelContainer" parent="PodContent"]
-custom_minimum_size = Vector2(34, 20)
+visible = false
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -225,8 +249,27 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("2_font_ui")
-theme_override_font_sizes/font_size = 12
-text = "۰"
+theme_override_font_sizes/font_size = 13
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+text_direction = 3
+
+[node name="StatusBadge" type="PanelContainer" parent="PodContent"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_status_badge")
+
+[node name="LblStatus" type="Label" parent="PodContent/StatusBadge"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92, 0.86, 0.78, 1)
+theme_override_fonts/font = ExtResource("2_font_ui")
+theme_override_font_sizes/font_size = 11
+text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 text_direction = 3
