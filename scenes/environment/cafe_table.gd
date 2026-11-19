@@ -932,6 +932,22 @@ func _get_baked_bucket_info(mat: Material) -> Dictionary:
 	if sm.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
 		return {"key": "raw_%d" % sm.get_instance_id(), "mat": sm, "color": Color.WHITE, "uv_scale": Vector2.ONE}
 
+	if sm.albedo_texture != null and sm.emission_enabled:
+		var k_tex_em: String = "vc_tex_em_%d" % sm.albedo_texture.get_instance_id()
+		if not _baked_bucket_mats.has(k_tex_em):
+			var bm_te: StandardMaterial3D = StandardMaterial3D.new()
+			bm_te.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			bm_te.albedo_texture = sm.albedo_texture
+			bm_te.vertex_color_use_as_albedo = true
+			bm_te.vertex_color_is_srgb = true
+			_baked_bucket_mats[k_tex_em] = bm_te
+		return {
+			"key": k_tex_em,
+			"mat": _baked_bucket_mats[k_tex_em],
+			"color": sm.albedo_color,
+			"uv_scale": Vector2(sm.uv1_scale.x, sm.uv1_scale.y)
+		}
+
 	if sm.emission_enabled:
 		var k_em: String = "vc_emissive"
 		if not _baked_bucket_mats.has(k_em):
@@ -1235,12 +1251,17 @@ func _init_lounge_materials() -> void:
 	if ResourceLoader.exists("res://assets/images/background2.png"):
 		wood_tex = load("res://assets/images/background2.png") as Texture2D
 
-	# Lightweight mobile-optimized Persian craft textures (256x256 / 512x512, ~280 KB total on disk, VRAM-compressed)
+	# Lightweight mobile-optimized Persian craft, window & antique book textures (128-512px, VRAM-compressed)
 	var tex_baize: Texture2D = _load_cafe_tex("parlor_baize_felt.jpg")
 	var tex_carpet: Texture2D = _load_cafe_tex("persian_carpet.jpg")
 	var tex_minakari: Texture2D = _load_cafe_tex("persian_minakari.jpg")
 	var tex_khatam: Texture2D = _load_cafe_tex("persian_khatam.jpg")
 	var tex_termeh: Texture2D = _load_cafe_tex("persian_termeh.jpg")
+	var tex_window_view: Texture2D = _load_cafe_tex("persian_window_view.jpg")
+	var tex_book_hafez: Texture2D = _load_cafe_tex("book_hafez_tazhib.jpg")
+	var tex_book_shamseh: Texture2D = _load_cafe_tex("book_leather_shamseh.jpg")
+	var tex_book_spine: Texture2D = _load_cafe_tex("book_spine_ornate.jpg")
+	var tex_book_cloth: Texture2D = _load_cafe_tex("book_vintage_cloth.jpg")
 
 	# Mobile-friendly velvet-baize material (zero normal-map shader overhead, zero specular glare in 2D mode)
 	var mat_baize: StandardMaterial3D = StandardMaterial3D.new()
@@ -1286,20 +1307,33 @@ func _init_lounge_materials() -> void:
 	var mat_leaf_mid: StandardMaterial3D = _make_mat(Color(0.20, 0.44, 0.15), 0.40, 0.02)
 	var mat_leaf_bright: StandardMaterial3D = _make_mat(Color(0.28, 0.52, 0.19), 0.38, 0.02)
 
-	var mat_book_red: StandardMaterial3D = _make_mat(Color(0.56, 0.13, 0.12), 0.48, 0.02)
-	var mat_book_green: StandardMaterial3D = _make_mat(Color(0.12, 0.34, 0.19), 0.48, 0.02)
-	var mat_book_navy: StandardMaterial3D = _make_mat(Color(0.13, 0.22, 0.40), 0.48, 0.02)
-	var mat_book_brown: StandardMaterial3D = _make_mat(Color(0.39, 0.21, 0.10), 0.50, 0.02)
+	# Textured antique Persian book bindings (vertex-color tinted -> only 4 shared GPU surfaces across all shelves!)
+	var mat_book_red: StandardMaterial3D = _make_mat(Color(0.92, 0.34, 0.30) if tex_book_spine != null else Color(0.56, 0.13, 0.12), 0.48, 0.03, tex_book_spine, Vector3.ONE)
+	var mat_book_green: StandardMaterial3D = _make_mat(Color(0.36, 0.72, 0.46) if tex_book_spine != null else Color(0.12, 0.34, 0.19), 0.48, 0.03, tex_book_spine, Vector3.ONE)
+	var mat_book_navy: StandardMaterial3D = _make_mat(Color(0.36, 0.52, 0.86) if tex_book_spine != null else Color(0.13, 0.22, 0.40), 0.48, 0.03, tex_book_spine, Vector3.ONE)
+	var mat_book_brown: StandardMaterial3D = _make_mat(Color(0.84, 0.62, 0.42) if tex_book_spine != null else Color(0.39, 0.21, 0.10), 0.50, 0.03, tex_book_spine, Vector3.ONE)
 	var mat_book_ochre: StandardMaterial3D = _make_mat(Color(0.64, 0.43, 0.18), 0.48, 0.02)
-	var mat_book_burgundy: StandardMaterial3D = _make_mat(Color(0.42, 0.10, 0.15), 0.48, 0.02)
+	var mat_book_burgundy: StandardMaterial3D = _make_mat(Color(0.78, 0.28, 0.38) if tex_book_spine != null else Color(0.42, 0.10, 0.15), 0.48, 0.03, tex_book_spine, Vector3.ONE)
+	var mat_book_hafez: StandardMaterial3D = _make_mat(Color(0.96, 0.94, 0.90) if tex_book_hafez != null else Color(0.16, 0.26, 0.52), 0.42, 0.06, tex_book_hafez, Vector3.ONE)
+	var mat_book_shamseh_ruby: StandardMaterial3D = _make_mat(Color(0.80, 0.26, 0.26) if tex_book_shamseh != null else Color(0.54, 0.12, 0.12), 0.46, 0.05, tex_book_shamseh, Vector3.ONE)
+	var mat_book_shamseh_emerald: StandardMaterial3D = _make_mat(Color(0.28, 0.64, 0.40) if tex_book_shamseh != null else Color(0.12, 0.36, 0.20), 0.46, 0.05, tex_book_shamseh, Vector3.ONE)
+	var mat_book_shamseh_lapis: StandardMaterial3D = _make_mat(Color(0.30, 0.48, 0.82) if tex_book_shamseh != null else Color(0.14, 0.24, 0.46), 0.46, 0.05, tex_book_shamseh, Vector3.ONE)
+	var mat_book_shamseh_tan: StandardMaterial3D = _make_mat(Color(0.96, 0.88, 0.74) if tex_book_shamseh != null else Color(0.66, 0.48, 0.24), 0.46, 0.05, tex_book_shamseh, Vector3.ONE)
+	var mat_book_cloth_ochre: StandardMaterial3D = _make_mat(Color(0.92, 0.76, 0.44) if tex_book_cloth != null else Color(0.64, 0.46, 0.20), 0.72, 0.0, tex_book_cloth, Vector3.ONE)
+	var mat_book_cloth_teal: StandardMaterial3D = _make_mat(Color(0.36, 0.70, 0.68) if tex_book_cloth != null else Color(0.14, 0.42, 0.44), 0.72, 0.0, tex_book_cloth, Vector3.ONE)
+	var mat_book_cloth_crimson: StandardMaterial3D = _make_mat(Color(0.80, 0.28, 0.28) if tex_book_cloth != null else Color(0.52, 0.12, 0.14), 0.72, 0.0, tex_book_cloth, Vector3.ONE)
+	var mat_book_cloth_olive: StandardMaterial3D = _make_mat(Color(0.58, 0.66, 0.40) if tex_book_cloth != null else Color(0.30, 0.38, 0.18), 0.72, 0.0, tex_book_cloth, Vector3.ONE)
 	var mat_book_pages: StandardMaterial3D = _make_mat(Color(0.84, 0.77, 0.65), 0.68, 0.0)
 
-	# Cozy evening Persian twilight window palette (deep indigo dusk & warm amber horizon)
-	var mat_sky_top: StandardMaterial3D = _make_emissive_mat(Color(0.13, 0.18, 0.38), Color(0.16, 0.22, 0.46), 1.05, 0.90)
-	var mat_sky_mid: StandardMaterial3D = _make_emissive_mat(Color(0.38, 0.26, 0.34), Color(0.46, 0.30, 0.36), 1.10, 0.90)
-	var mat_sky_horizon: StandardMaterial3D = _make_emissive_mat(Color(0.80, 0.48, 0.24), Color(0.88, 0.54, 0.22), 1.25, 0.90)
-	var mat_city_stone: StandardMaterial3D = _make_mat(Color(0.22, 0.16, 0.18), 0.68, 0.05)
-	var mat_window_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.86, 0.48), Color(1.0, 0.78, 0.32), 2.10, 0.20)
+	# Cozy evening Persian twilight arched-window artwork (0ms unshaded textured emissive plane!)
+	var mat_window_twilight_view: StandardMaterial3D = _make_emissive_mat(
+		Color(0.96, 0.94, 0.90) if tex_window_view != null else Color(0.26, 0.22, 0.40),
+		Color(0.96, 0.94, 0.90) if tex_window_view != null else Color(0.38, 0.28, 0.46),
+		1.05,
+		0.85
+	)
+	if tex_window_view != null:
+		mat_window_twilight_view.albedo_texture = tex_window_view
 
 	# Warm Persian parlor & craft accent materials (all baked into minimal shared texture/vertex-color surfaces!)
 	var mat_rug_crimson: StandardMaterial3D = _make_mat(Color(0.48, 0.10, 0.11), 0.88, 0.0)
@@ -1361,12 +1395,17 @@ func _init_lounge_materials() -> void:
 		"book_brown": mat_book_brown,
 		"book_ochre": mat_book_ochre,
 		"book_burgundy": mat_book_burgundy,
+		"book_hafez": mat_book_hafez,
+		"book_shamseh_ruby": mat_book_shamseh_ruby,
+		"book_shamseh_emerald": mat_book_shamseh_emerald,
+		"book_shamseh_lapis": mat_book_shamseh_lapis,
+		"book_shamseh_tan": mat_book_shamseh_tan,
+		"book_cloth_ochre": mat_book_cloth_ochre,
+		"book_cloth_teal": mat_book_cloth_teal,
+		"book_cloth_crimson": mat_book_cloth_crimson,
+		"book_cloth_olive": mat_book_cloth_olive,
 		"book_pages": mat_book_pages,
-		"sky_top": mat_sky_top,
-		"sky_mid": mat_sky_mid,
-		"sky_horizon": mat_sky_horizon,
-		"city_stone": mat_city_stone,
-		"window_glow": mat_window_glow,
+		"window_twilight_view": mat_window_twilight_view,
 		"rug_crimson": mat_rug_crimson,
 		"rug_navy": mat_rug_navy,
 		"rug_gold": mat_rug_gold,
@@ -1844,9 +1883,10 @@ func _build_back_bookcase_and_sign(parent: Node3D) -> void:
 	_populate_book_row(bc, -0.61, -0.20, 0.562, 0.0, 8, 0.20, 0.25)
 	_populate_book_row(bc, 0.20, 0.61, 0.562, 0.0, 8, 0.20, 0.25)
 
-	_build_horizontal_book(bc, Vector3(0.0, 0.582, 0.02), Vector3(0.32, 0.042, 0.20), _shared_mats["book_brown"], 2.0)
-	_build_horizontal_book(bc, Vector3(0.0, 0.624, 0.02), Vector3(0.28, 0.038, 0.18), _shared_mats["book_red"], -3.0)
-	_build_horizontal_book(bc, Vector3(0.0, 0.660, 0.02), Vector3(0.24, 0.034, 0.16), _shared_mats["book_green"], 1.5)
+	var center_stack_mats: Array[Material] = _pick_random_book_cover_mats(3)
+	_build_horizontal_book(bc, Vector3(0.0, 0.582, 0.02), Vector3(0.32, 0.042, 0.20), center_stack_mats[0], 2.0)
+	_build_horizontal_book(bc, Vector3(0.0, 0.624, 0.02), Vector3(0.28, 0.038, 0.18), center_stack_mats[1], -3.0)
+	_build_horizontal_book(bc, Vector3(0.0, 0.660, 0.02), Vector3(0.24, 0.034, 0.16), center_stack_mats[2], 1.5)
 	_add_cyl(bc, 0.028, 0.038, 0.022, Vector3(0.02, 0.688, 0.03), mat_brass, Vector3.ZERO, 10)
 	_add_sphere(bc, 0.042, 0.052, Vector3(0.02, 0.718, 0.03), mat_brass, Vector3.ZERO, 10)
 	_add_cyl(bc, 0.012, 0.024, 0.028, Vector3(0.02, 0.752, 0.03), mat_aged_brass, Vector3.ZERO, 10)
@@ -1993,25 +2033,66 @@ func _build_cafe_fekr_plaque(parent: Node3D, pos: Vector3, mat_mahogany: Materia
 	plaque.add_child(lbl_en)
 
 
+func _pick_random_book_cover_mats(count: int) -> Array[Material]:
+	var pool: Array[Material] = [
+		_shared_mats["book_hafez"],
+		_shared_mats["book_shamseh_ruby"],
+		_shared_mats["book_shamseh_emerald"],
+		_shared_mats["book_shamseh_lapis"],
+		_shared_mats["book_shamseh_tan"],
+		_shared_mats["book_cloth_ochre"],
+		_shared_mats["book_cloth_teal"],
+		_shared_mats["book_cloth_crimson"],
+		_shared_mats["book_cloth_olive"]
+	]
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.randomize()
+	var n: int = pool.size()
+	for i: int in range(n - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp: Material = pool[i]
+		pool[i] = pool[j]
+		pool[j] = tmp
+	var result: Array[Material] = []
+	for k: int in range(count):
+		result.append(pool[k % n])
+	return result
+
+
 func _populate_book_row(parent: Node3D, x_start: float, x_end: float, y_shelf: float, z_pos: float, count: int, h_min: float, h_max: float) -> void:
 	var book_mats: Array[Material] = [
 		_shared_mats["book_red"],
 		_shared_mats["book_green"],
 		_shared_mats["book_navy"],
 		_shared_mats["book_brown"],
-		_shared_mats["book_ochre"],
-		_shared_mats["book_burgundy"]
+		_shared_mats["book_burgundy"],
+		_shared_mats["book_cloth_ochre"],
+		_shared_mats["book_cloth_teal"],
+		_shared_mats["book_cloth_crimson"],
+		_shared_mats["book_cloth_olive"],
+		_shared_mats["book_shamseh_ruby"],
+		_shared_mats["book_shamseh_emerald"],
+		_shared_mats["book_shamseh_lapis"],
+		_shared_mats["book_shamseh_tan"],
+		_shared_mats["book_hafez"]
 	]
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.randomize()
 	var mat_brass: Material = _shared_mats["aged_brass"]
 	var total_w: float = x_end - x_start
 	var step_x: float = total_w / float(maxi(count, 1))
+	var prev_mat_idx: int = -1
 
 	for i: int in range(count):
 		var bx: float = x_start + (float(i) + 0.5) * step_x
-		var bw: float = step_x * 0.88
-		var bh: float = lerpf(h_min, h_max, float((i * 7 + 3) % 11) / 10.0)
-		var bd: float = 0.16 + float((i * 5) % 4) * 0.012
-		var b_mat: Material = book_mats[(i * 3 + int(absf(x_start * 10.0))) % book_mats.size()]
+		var bw: float = step_x * rng.randf_range(0.84, 0.92)
+		var bh: float = lerpf(h_min, h_max, rng.randf())
+		var bd: float = rng.randf_range(0.155, 0.195)
+		var mat_idx: int = rng.randi_range(0, book_mats.size() - 1)
+		if mat_idx == prev_mat_idx:
+			mat_idx = (mat_idx + 1 + rng.randi_range(0, book_mats.size() - 2)) % book_mats.size()
+		prev_mat_idx = mat_idx
+		var b_mat: Material = book_mats[mat_idx]
 		var tilt_z: float = 0.0
 		if i == count - 1 and count >= 5:
 			tilt_z = 7.5
@@ -2160,29 +2241,15 @@ func _build_left_window_and_lounge(parent: Node3D) -> void:
 	win_root.rotation_degrees = Vector3(0.0, 28.0, 0.0)
 	left_area.add_child(win_root)
 
-	_add_box(win_root, Vector3(0.84, 0.56, 0.02), Vector3(0.0, 0.48, -0.18), _shared_mats["sky_top"])
-	_add_box(win_root, Vector3(0.84, 0.52, 0.02), Vector3(0.0, -0.02, -0.18), _shared_mats["sky_mid"])
-	_add_box(win_root, Vector3(0.84, 0.52, 0.02), Vector3(0.0, -0.50, -0.18), _shared_mats["sky_horizon"])
-
-	var mat_stone: Material = _shared_mats["city_stone"]
-	var mat_win_glow: Material = _shared_mats["window_glow"]
-	_add_box(win_root, Vector3(0.24, 0.65, 0.08), Vector3(-0.18, -0.32, -0.12), mat_stone)
-	_add_sphere(win_root, 0.11, 0.18, Vector3(-0.18, 0.04, -0.12), mat_stone, Vector3.ZERO, 10)
-	_add_cyl(win_root, 0.008, 0.018, 0.09, Vector3(-0.18, 0.16, -0.12), mat_stone, Vector3.ZERO, 8)
-	_add_box(win_root, Vector3(0.28, 0.72, 0.09), Vector3(0.14, -0.28, -0.11), mat_stone)
-	_add_sphere(win_root, 0.12, 0.16, Vector3(0.14, 0.12, -0.11), mat_stone, Vector3.ZERO, 10)
-	_add_cyl(win_root, 0.045, 0.032, 0.08, Vector3(-0.04, 0.44, -0.08), mat_stone, Vector3.ZERO, 8)
-	_add_sphere(win_root, 0.048, 0.065, Vector3(-0.04, 0.49, -0.08), mat_stone, Vector3.ZERO, 8)
-	_add_sphere(win_root, 0.024, 0.036, Vector3(-0.04, 0.43, -0.07), mat_win_glow, Vector3.ZERO, 8)
-
-	for wy_idx: int in range(5):
-		var wy: float = -0.52 + float(wy_idx) * 0.115
-		for wx_pos: float in [-0.24, -0.14, 0.04, 0.14, 0.23]:
-			_add_box(win_root, Vector3(0.034, 0.056, 0.015), Vector3(wx_pos, wy, -0.062), mat_win_glow)
+	# Single 2-triangle unshaded Persian twilight window vista (replaces ~35 skyline boxes for faster mobile GPU!)
+	_add_plane(win_root, Vector2(0.78, 1.50), Vector3(0.0, 0.01, -0.09), _shared_mats["window_twilight_view"], Vector3(90.0, 0.0, 0.0))
 
 	_add_box(win_root, Vector3(0.065, 1.32, 0.12), Vector3(-0.39, -0.12, 0.0), mat_walnut_dark)
 	_add_box(win_root, Vector3(0.065, 1.32, 0.12), Vector3(0.39, -0.12, 0.0), mat_walnut_dark)
 	_add_box(win_root, Vector3(0.84, 0.07, 0.14), Vector3(0.0, -0.76, 0.01), mat_walnut_pol)
+	# Subtle walnut arch spandrels masking the upper corners of the rectangular vista plane cleanly behind the arch
+	_add_box(win_root, Vector3(0.28, 0.14, 0.09), Vector3(-0.35, 0.74, -0.02), mat_walnut_dark, Vector3(0.0, 0.0, 42.0))
+	_add_box(win_root, Vector3(0.28, 0.14, 0.09), Vector3(0.35, 0.74, -0.02), mat_walnut_dark, Vector3(0.0, 0.0, -42.0))
 	for a_i: int in range(7):
 		var at: float = float(a_i) / 6.0
 		var aang: float = lerpf(-1.45, 1.45, at)
@@ -2321,8 +2388,9 @@ func _build_right_curtain_and_side_table(parent: Node3D) -> void:
 	_add_torus(teacup_grp, 0.014, 0.022, Vector3(0.052, 0.046, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 10)
 	_add_cyl(teacup_grp, 0.045, 0.045, 0.004, Vector3(0.0, 0.068, 0.0), _shared_mats["coffee"], Vector3.ZERO, 12)
 
-	_build_horizontal_book(side_tbl_r, Vector3(0.09, 0.122, 0.08), Vector3(0.24, 0.044, 0.17), _shared_mats["book_green"], -16.0)
-	_build_horizontal_book(side_tbl_r, Vector3(0.09, 0.164, 0.08), Vector3(0.22, 0.040, 0.16), _shared_mats["book_brown"], -10.0)
+	var side_stack_mats: Array[Material] = _pick_random_book_cover_mats(2)
+	_build_horizontal_book(side_tbl_r, Vector3(0.09, 0.122, 0.08), Vector3(0.24, 0.044, 0.17), side_stack_mats[0], -16.0)
+	_build_horizontal_book(side_tbl_r, Vector3(0.09, 0.164, 0.08), Vector3(0.22, 0.040, 0.16), side_stack_mats[1], -10.0)
 	_build_potted_broadleaf_plant(side_tbl_r, Vector3(0.14, 0.10, -0.10), 1.0, true)
 	_build_mini_brass_candle_lantern(side_tbl_r, Vector3(-0.14, 0.10, -0.11))
 
