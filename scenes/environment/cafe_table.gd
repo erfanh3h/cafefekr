@@ -116,6 +116,16 @@ var _steam_step_accum: float = 0.0
 var _side_lamp_light: OmniLight3D = null
 var _board_node_added_connected: bool = false
 var _baked_bucket_mats: Dictionary = {}
+var _window_vista_mat: StandardMaterial3D = null
+var _last_window_view_idx: int = -1
+
+const WINDOW_VIEW_TEXTURES: Array[String] = [
+	"persian_window_view.jpg",
+	"persian_window_rain.jpg",
+	"persian_window_garden.jpg",
+	"persian_window_snow.jpg",
+	"persian_window_sunset.jpg"
+]
 
 
 func _ready() -> void:
@@ -501,6 +511,7 @@ func play_desk_approach_intro(duration: float = INTRO_GLIDE_DURATION) -> void:
 
 func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 	clear_board()
+	randomize_window_view()
 	set_menu_showcase_visible(false)
 	is_top_down_view = false
 	_sync_2d_3d_visibility_and_lighting(false)
@@ -929,6 +940,8 @@ func _get_baked_bucket_info(mat: Material) -> Dictionary:
 	if not (mat is StandardMaterial3D):
 		return {"key": "raw_%d" % mat.get_instance_id(), "mat": mat, "color": Color.WHITE, "uv_scale": Vector2.ONE}
 	var sm: StandardMaterial3D = mat as StandardMaterial3D
+	if _window_vista_mat != null and sm == _window_vista_mat:
+		return {"key": "window_vista", "mat": _window_vista_mat, "color": Color.WHITE, "uv_scale": Vector2.ONE}
 	if sm.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
 		return {"key": "raw_%d" % sm.get_instance_id(), "mat": sm, "color": Color.WHITE, "uv_scale": Vector2.ONE}
 
@@ -1246,22 +1259,43 @@ func _load_cafe_tex(filename: String) -> Texture2D:
 	return null
 
 
+func randomize_window_view() -> void:
+	if _window_vista_mat == null or WINDOW_VIEW_TEXTURES.is_empty():
+		return
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.randomize()
+	var count: int = WINDOW_VIEW_TEXTURES.size()
+	var idx: int = rng.randi_range(0, count - 1)
+	if count > 1 and idx == _last_window_view_idx:
+		idx = (idx + 1 + rng.randi_range(0, count - 2)) % count
+	_last_window_view_idx = idx
+	# Lazy-load ONLY the single selected window texture so mobile VRAM stays minimal (~1 texture in memory)
+	var chosen_tex: Texture2D = _load_cafe_tex(WINDOW_VIEW_TEXTURES[idx])
+	if chosen_tex == null and idx != 0:
+		chosen_tex = _load_cafe_tex(WINDOW_VIEW_TEXTURES[0])
+	_window_vista_mat.albedo_texture = chosen_tex
+	_window_vista_mat.albedo_color = Color(0.96, 0.94, 0.90) if chosen_tex != null else Color(0.26, 0.22, 0.40)
+
+
 func _init_lounge_materials() -> void:
 	var wood_tex: Texture2D = null
 	if ResourceLoader.exists("res://assets/images/background2.png"):
 		wood_tex = load("res://assets/images/background2.png") as Texture2D
 
-	# Lightweight mobile-optimized Persian craft, window & antique book textures (128-512px, VRAM-compressed)
+	# Lightweight mobile-optimized Persian craft & antique book textures (128-512px, VRAM-compressed)
 	var tex_baize: Texture2D = _load_cafe_tex("parlor_baize_felt.jpg")
 	var tex_carpet: Texture2D = _load_cafe_tex("persian_carpet.jpg")
 	var tex_minakari: Texture2D = _load_cafe_tex("persian_minakari.jpg")
 	var tex_khatam: Texture2D = _load_cafe_tex("persian_khatam.jpg")
 	var tex_termeh: Texture2D = _load_cafe_tex("persian_termeh.jpg")
-	var tex_window_view: Texture2D = _load_cafe_tex("persian_window_view.jpg")
 	var tex_book_hafez: Texture2D = _load_cafe_tex("book_hafez_tazhib.jpg")
 	var tex_book_shamseh: Texture2D = _load_cafe_tex("book_leather_shamseh.jpg")
 	var tex_book_spine: Texture2D = _load_cafe_tex("book_spine_ornate.jpg")
 	var tex_book_cloth: Texture2D = _load_cafe_tex("book_vintage_cloth.jpg")
+	var tex_book_shahnameh: Texture2D = _load_cafe_tex("book_shahnameh_epic.jpg")
+	var tex_book_abru: Texture2D = _load_cafe_tex("book_marbled_abru.jpg")
+	var tex_book_golestan: Texture2D = _load_cafe_tex("book_golestan_floral.jpg")
+	var tex_book_filigree: Texture2D = _load_cafe_tex("book_spine_filigree.jpg")
 
 	# Mobile-friendly velvet-baize material (zero normal-map shader overhead, zero specular glare in 2D mode)
 	var mat_baize: StandardMaterial3D = StandardMaterial3D.new()
@@ -1307,7 +1341,7 @@ func _init_lounge_materials() -> void:
 	var mat_leaf_mid: StandardMaterial3D = _make_mat(Color(0.20, 0.44, 0.15), 0.40, 0.02)
 	var mat_leaf_bright: StandardMaterial3D = _make_mat(Color(0.28, 0.52, 0.19), 0.38, 0.02)
 
-	# Textured antique Persian book bindings (vertex-color tinted -> only 4 shared GPU surfaces across all shelves!)
+	# Textured antique Persian book bindings (8 lightweight textures -> 22 distinct editions via vertex-color tinting!)
 	var mat_book_red: StandardMaterial3D = _make_mat(Color(0.92, 0.34, 0.30) if tex_book_spine != null else Color(0.56, 0.13, 0.12), 0.48, 0.03, tex_book_spine, Vector3.ONE)
 	var mat_book_green: StandardMaterial3D = _make_mat(Color(0.36, 0.72, 0.46) if tex_book_spine != null else Color(0.12, 0.34, 0.19), 0.48, 0.03, tex_book_spine, Vector3.ONE)
 	var mat_book_navy: StandardMaterial3D = _make_mat(Color(0.36, 0.52, 0.86) if tex_book_spine != null else Color(0.13, 0.22, 0.40), 0.48, 0.03, tex_book_spine, Vector3.ONE)
@@ -1315,6 +1349,10 @@ func _init_lounge_materials() -> void:
 	var mat_book_ochre: StandardMaterial3D = _make_mat(Color(0.64, 0.43, 0.18), 0.48, 0.02)
 	var mat_book_burgundy: StandardMaterial3D = _make_mat(Color(0.78, 0.28, 0.38) if tex_book_spine != null else Color(0.42, 0.10, 0.15), 0.48, 0.03, tex_book_spine, Vector3.ONE)
 	var mat_book_hafez: StandardMaterial3D = _make_mat(Color(0.96, 0.94, 0.90) if tex_book_hafez != null else Color(0.16, 0.26, 0.52), 0.42, 0.06, tex_book_hafez, Vector3.ONE)
+	var mat_book_shahnameh: StandardMaterial3D = _make_mat(Color(0.96, 0.94, 0.90) if tex_book_shahnameh != null else Color(0.56, 0.10, 0.12), 0.42, 0.06, tex_book_shahnameh, Vector3.ONE)
+	var mat_book_golestan: StandardMaterial3D = _make_mat(Color(0.96, 0.95, 0.92) if tex_book_golestan != null else Color(0.08, 0.36, 0.32), 0.40, 0.05, tex_book_golestan, Vector3.ONE)
+	var mat_book_abru_cobalt: StandardMaterial3D = _make_mat(Color(0.95, 0.94, 0.92) if tex_book_abru != null else Color(0.14, 0.36, 0.54), 0.56, 0.02, tex_book_abru, Vector3.ONE)
+	var mat_book_abru_amber: StandardMaterial3D = _make_mat(Color(0.98, 0.84, 0.62) if tex_book_abru != null else Color(0.62, 0.46, 0.24), 0.56, 0.02, tex_book_abru, Vector3.ONE)
 	var mat_book_shamseh_ruby: StandardMaterial3D = _make_mat(Color(0.80, 0.26, 0.26) if tex_book_shamseh != null else Color(0.54, 0.12, 0.12), 0.46, 0.05, tex_book_shamseh, Vector3.ONE)
 	var mat_book_shamseh_emerald: StandardMaterial3D = _make_mat(Color(0.28, 0.64, 0.40) if tex_book_shamseh != null else Color(0.12, 0.36, 0.20), 0.46, 0.05, tex_book_shamseh, Vector3.ONE)
 	var mat_book_shamseh_lapis: StandardMaterial3D = _make_mat(Color(0.30, 0.48, 0.82) if tex_book_shamseh != null else Color(0.14, 0.24, 0.46), 0.46, 0.05, tex_book_shamseh, Vector3.ONE)
@@ -1323,17 +1361,20 @@ func _init_lounge_materials() -> void:
 	var mat_book_cloth_teal: StandardMaterial3D = _make_mat(Color(0.36, 0.70, 0.68) if tex_book_cloth != null else Color(0.14, 0.42, 0.44), 0.72, 0.0, tex_book_cloth, Vector3.ONE)
 	var mat_book_cloth_crimson: StandardMaterial3D = _make_mat(Color(0.80, 0.28, 0.28) if tex_book_cloth != null else Color(0.52, 0.12, 0.14), 0.72, 0.0, tex_book_cloth, Vector3.ONE)
 	var mat_book_cloth_olive: StandardMaterial3D = _make_mat(Color(0.58, 0.66, 0.40) if tex_book_cloth != null else Color(0.30, 0.38, 0.18), 0.72, 0.0, tex_book_cloth, Vector3.ONE)
+	var mat_book_filigree_plum: StandardMaterial3D = _make_mat(Color(0.68, 0.30, 0.56) if tex_book_filigree != null else Color(0.36, 0.14, 0.30), 0.46, 0.05, tex_book_filigree, Vector3.ONE)
+	var mat_book_filigree_saffron: StandardMaterial3D = _make_mat(Color(0.94, 0.72, 0.28) if tex_book_filigree != null else Color(0.72, 0.50, 0.16), 0.46, 0.05, tex_book_filigree, Vector3.ONE)
+	var mat_book_filigree_copper: StandardMaterial3D = _make_mat(Color(0.84, 0.44, 0.26) if tex_book_filigree != null else Color(0.58, 0.26, 0.14), 0.46, 0.05, tex_book_filigree, Vector3.ONE)
+	var mat_book_filigree_teal: StandardMaterial3D = _make_mat(Color(0.24, 0.62, 0.60) if tex_book_filigree != null else Color(0.12, 0.38, 0.38), 0.46, 0.05, tex_book_filigree, Vector3.ONE)
+	var mat_book_filigree_ivory: StandardMaterial3D = _make_mat(Color(0.95, 0.90, 0.80) if tex_book_filigree != null else Color(0.78, 0.72, 0.60), 0.48, 0.04, tex_book_filigree, Vector3.ONE)
 	var mat_book_pages: StandardMaterial3D = _make_mat(Color(0.84, 0.77, 0.65), 0.68, 0.0)
 
-	# Cozy evening Persian twilight arched-window artwork (0ms unshaded textured emissive plane!)
-	var mat_window_twilight_view: StandardMaterial3D = _make_emissive_mat(
-		Color(0.96, 0.94, 0.90) if tex_window_view != null else Color(0.26, 0.22, 0.40),
-		Color(0.96, 0.94, 0.90) if tex_window_view != null else Color(0.38, 0.28, 0.46),
-		1.05,
-		0.85
-	)
-	if tex_window_view != null:
-		mat_window_twilight_view.albedo_texture = tex_window_view
+	# Persistent unshaded arched-window vista material (swapped randomly across 5 Persian views on each game!)
+	_window_vista_mat = StandardMaterial3D.new()
+	_window_vista_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_window_vista_mat.roughness = 0.85
+	_window_vista_mat.albedo_color = Color(0.96, 0.94, 0.90)
+	randomize_window_view()
+	var mat_window_twilight_view: StandardMaterial3D = _window_vista_mat
 
 	# Warm Persian parlor & craft accent materials (all baked into minimal shared texture/vertex-color surfaces!)
 	var mat_rug_crimson: StandardMaterial3D = _make_mat(Color(0.48, 0.10, 0.11), 0.88, 0.0)
@@ -1396,6 +1437,10 @@ func _init_lounge_materials() -> void:
 		"book_ochre": mat_book_ochre,
 		"book_burgundy": mat_book_burgundy,
 		"book_hafez": mat_book_hafez,
+		"book_shahnameh": mat_book_shahnameh,
+		"book_golestan": mat_book_golestan,
+		"book_abru_cobalt": mat_book_abru_cobalt,
+		"book_abru_amber": mat_book_abru_amber,
 		"book_shamseh_ruby": mat_book_shamseh_ruby,
 		"book_shamseh_emerald": mat_book_shamseh_emerald,
 		"book_shamseh_lapis": mat_book_shamseh_lapis,
@@ -1404,6 +1449,11 @@ func _init_lounge_materials() -> void:
 		"book_cloth_teal": mat_book_cloth_teal,
 		"book_cloth_crimson": mat_book_cloth_crimson,
 		"book_cloth_olive": mat_book_cloth_olive,
+		"book_filigree_plum": mat_book_filigree_plum,
+		"book_filigree_saffron": mat_book_filigree_saffron,
+		"book_filigree_copper": mat_book_filigree_copper,
+		"book_filigree_teal": mat_book_filigree_teal,
+		"book_filigree_ivory": mat_book_filigree_ivory,
 		"book_pages": mat_book_pages,
 		"window_twilight_view": mat_window_twilight_view,
 		"rug_crimson": mat_rug_crimson,
@@ -2036,6 +2086,10 @@ func _build_cafe_fekr_plaque(parent: Node3D, pos: Vector3, mat_mahogany: Materia
 func _pick_random_book_cover_mats(count: int) -> Array[Material]:
 	var pool: Array[Material] = [
 		_shared_mats["book_hafez"],
+		_shared_mats["book_shahnameh"],
+		_shared_mats["book_golestan"],
+		_shared_mats["book_abru_cobalt"],
+		_shared_mats["book_abru_amber"],
 		_shared_mats["book_shamseh_ruby"],
 		_shared_mats["book_shamseh_emerald"],
 		_shared_mats["book_shamseh_lapis"],
@@ -2043,7 +2097,12 @@ func _pick_random_book_cover_mats(count: int) -> Array[Material]:
 		_shared_mats["book_cloth_ochre"],
 		_shared_mats["book_cloth_teal"],
 		_shared_mats["book_cloth_crimson"],
-		_shared_mats["book_cloth_olive"]
+		_shared_mats["book_cloth_olive"],
+		_shared_mats["book_filigree_plum"],
+		_shared_mats["book_filigree_saffron"],
+		_shared_mats["book_filigree_copper"],
+		_shared_mats["book_filigree_teal"],
+		_shared_mats["book_filigree_ivory"]
 	]
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
@@ -2074,7 +2133,16 @@ func _populate_book_row(parent: Node3D, x_start: float, x_end: float, y_shelf: f
 		_shared_mats["book_shamseh_emerald"],
 		_shared_mats["book_shamseh_lapis"],
 		_shared_mats["book_shamseh_tan"],
-		_shared_mats["book_hafez"]
+		_shared_mats["book_hafez"],
+		_shared_mats["book_shahnameh"],
+		_shared_mats["book_golestan"],
+		_shared_mats["book_abru_cobalt"],
+		_shared_mats["book_abru_amber"],
+		_shared_mats["book_filigree_plum"],
+		_shared_mats["book_filigree_saffron"],
+		_shared_mats["book_filigree_copper"],
+		_shared_mats["book_filigree_teal"],
+		_shared_mats["book_filigree_ivory"]
 	]
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
