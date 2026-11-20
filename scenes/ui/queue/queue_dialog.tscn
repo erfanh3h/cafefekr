@@ -1,23 +1,46 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/queue/queue_dialog.gd" id="1_queue_script"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/badges/rank.png" id="3_crest_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="4_button_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="5_font_hekayat"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="6_close_tex"]
-[ext_resource type="Script" path="res://scenes/ui/queue/queue_radar_vfx.gd" id="7_radar_script"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/rank.png" id="2_crest_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="5_close_tex"]
+[ext_resource type="Script" path="res://scenes/ui/queue/queue_radar_vfx.gd" id="6_radar_script"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
-content_margin_left = 34.0
-content_margin_top = 34.0
-content_margin_right = 34.0
-content_margin_bottom = 34.0
-texture = ExtResource("2_board_tex")
-texture_margin_left = 60.0
-texture_margin_top = 60.0
-texture_margin_right = 60.0
-texture_margin_bottom = 60.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.11, 0.072, 0.045, 0.97)
+border_width_left = 2
+border_width_top = 3
+border_width_right = 2
+border_width_bottom = 4
+border_color = Color(0.86, 0.69, 0.30, 0.96)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0, 0, 0.65)
+shadow_size = 18
+shadow_offset = Vector2(0, 8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mode_pill"]
+content_margin_left = 14.0
+content_margin_top = 3.0
+content_margin_right = 14.0
+content_margin_bottom = 3.0
+bg_color = Color(0.19, 0.125, 0.065, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.84, 0.67, 0.30, 0.62)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_crest"]
 content_margin_left = 10.0
@@ -29,92 +52,126 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(1.0, 0.82, 0.30, 0.96)
-corner_radius_top_left = 44
-corner_radius_top_right = 44
-corner_radius_bottom_right = 44
-corner_radius_bottom_left = 44
+border_color = Color(1, 0.82, 0.3, 0.96)
+corner_radius_top_left = 42
+corner_radius_top_right = 42
+corner_radius_bottom_right = 42
+corner_radius_bottom_left = 42
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer_pill"]
-content_margin_left = 24.0
-content_margin_top = 6.0
-content_margin_right = 24.0
-content_margin_bottom = 6.0
-bg_color = Color(0.10, 0.06, 0.04, 0.88)
+content_margin_left = 22.0
+content_margin_top = 5.0
+content_margin_right = 22.0
+content_margin_bottom = 5.0
+bg_color = Color(0.085, 0.055, 0.032, 0.94)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.86, 0.68, 0.28, 0.86)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
-texture = ExtResource("4_button_tex")
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_bg"]
+bg_color = Color(0.075, 0.048, 0.03, 0.94)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_fill"]
+bg_color = Color(0.28, 0.88, 0.52, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="QueueDialog" type="PanelContainer"]
-custom_minimum_size = Vector2(600, 0)
+custom_minimum_size = Vector2(560, 0)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -310.0
-offset_right = 300.0
-offset_bottom = 310.0
+offset_left = -280.0
+offset_top = -290.0
+offset_right = 280.0
+offset_bottom = 290.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
-theme_override_styles/panel = SubResource("StyleBoxTexture_board")
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
 script = ExtResource("1_queue_script")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="TopRow" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="BtnCloseTop" type="TextureButton" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
-texture_normal = ExtResource("6_close_tex")
-texture_pressed = ExtResource("6_close_tex")
-texture_hover = ExtResource("6_close_tex")
+size_flags_vertical = 4
+texture_normal = ExtResource("5_close_tex")
+texture_pressed = ExtResource("5_close_tex")
+texture_hover = ExtResource("5_close_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="LblTitle" type="Label" parent="Margin/VBox/TopRow"]
+[node name="TitleBox" type="VBoxContainer" parent="Margin/VBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="LblTitle" type="Label" parent="Margin/VBox/TopRow/TitleBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.984, 0.953, 0.894, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("5_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 28
 text = "جستجوی حریف آنلاین"
 horizontal_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
+[node name="LblModePill" type="Label" parent="Margin/VBox/TopRow/TitleBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.96, 0.82, 0.44, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_mode_pill")
+text = "مسابقه رده‌بندی دو نفره"
+horizontal_alignment = 1
+
 [node name="RightSpacer" type="Control" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
 
+[node name="HeaderDivider" type="ColorRect" parent="Margin/VBox"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.84, 0.67, 0.30, 0.32)
+
 [node name="RadarStage" type="Control" parent="Margin/VBox"]
-custom_minimum_size = Vector2(216, 216)
+custom_minimum_size = Vector2(184, 184)
 layout_mode = 2
 size_flags_horizontal = 4
 
@@ -126,32 +183,54 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-script = ExtResource("7_radar_script")
+script = ExtResource("6_radar_script")
 
 [node name="CenterCrest" type="PanelContainer" parent="Margin/VBox/RadarStage"]
-custom_minimum_size = Vector2(88, 88)
+custom_minimum_size = Vector2(82, 82)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -44.0
-offset_top = -44.0
-offset_right = 44.0
-offset_bottom = 44.0
+offset_left = -41.0
+offset_top = -41.0
+offset_right = 41.0
+offset_bottom = 41.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_crest")
 
 [node name="CenterIcon" type="TextureRect" parent="Margin/VBox/RadarStage/CenterCrest"]
-custom_minimum_size = Vector2(60, 60)
+custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("3_crest_tex")
+texture = ExtResource("2_crest_tex")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="CapacityBox" type="VBoxContainer" parent="Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="LblCapacity" type="Label" parent="Margin/VBox/CapacityBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.86, 0.56, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 13
+text = "ظرفیت اتاق: ۱ از ۴ بازیکن"
+horizontal_alignment = 1
+
+[node name="CapacityBar" type="ProgressBar" parent="Margin/VBox/CapacityBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bar_fill")
+max_value = 4.0
+value = 1.0
+show_percentage = false
 
 [node name="SlotsContainer" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -162,36 +241,50 @@ alignment = 1
 [node name="LblStatus" type="Label" parent="Margin/VBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.95, 0.88, 0.72, 1)
-theme_override_fonts/font = ExtResource("5_font_hekayat")
-theme_override_font_sizes/font_size = 21
-text = "در حال جستجوی حریف..."
+theme_override_colors/font_color = Color(0.92, 0.85, 0.72, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 15
+text = "در حال جستجوی حریف هم‌سطح..."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="TimerPill" type="PanelContainer" parent="Margin/VBox"]
+[node name="TimerBox" type="VBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="TimerPill" type="PanelContainer" parent="Margin/VBox/TimerBox"]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_timer_pill")
 
-[node name="LblTimer" type="Label" parent="Margin/VBox/TimerPill"]
+[node name="LblTimer" type="Label" parent="Margin/VBox/TimerBox/TimerPill"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("5_font_hekayat")
-theme_override_font_sizes/font_size = 36
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 32
 text = "۰۰:۰۰"
 horizontal_alignment = 1
 
+[node name="AcceptProgressBar" type="ProgressBar" parent="Margin/VBox/TimerBox"]
+visible = false
+custom_minimum_size = Vector2(0, 9)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bar_fill")
+max_value = 15.0
+value = 15.0
+show_percentage = false
+
 [node name="BtnCancel" type="Button" parent="Margin/VBox"]
-custom_minimum_size = Vector2(220, 58)
+custom_minimum_size = Vector2(240, 58)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.35, 0.05, 0.05, 0.95)
+theme_override_colors/font_shadow_color = Color(0.35, 0.05, 0.05, 0.9)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("5_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "انصراف از صف"

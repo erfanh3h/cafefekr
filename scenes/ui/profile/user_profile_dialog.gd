@@ -507,43 +507,48 @@ func _render_clan_card(clan_id: String, clan_d: Dictionary) -> void:
 
 
 func _render_rankings_and_achievements(prof: Dictionary) -> void:
-	# Header with statistics.png icon as requested
-	var stat_ico = load("res://assets/images/statistics.png")
+	var stat_ico: Texture2D = load("res://assets/images/statistics.png")
 	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("آمار و رتبه‌بندی رقابتی", stat_ico))
 
 	var st: Dictionary = prof.get("stats", {}) if typeof(prof.get("stats")) == TYPE_DICTIONARY else {}
 	var hist: Dictionary = prof.get("history", {}) if typeof(prof.get("history")) == TYPE_DICTIONARY else {}
 
-	var tot_wins := int(st.get("total_wins", 0))
-	var tot_losses := int(st.get("total_losses", 0))
-	var tot_draws := int(st.get("total_draws", 0))
-	var tot_matches := int(st.get("total_matches", tot_wins + tot_losses + tot_draws))
-	var win_rate := float(st.get("win_rate", 0.0))
+	var win_rank: int = int(hist.get("win_rank", 0))
+	var draw_rank: int = int(hist.get("draw_rank", 0))
+	var lose_rank: int = int(hist.get("lose_rank", 0))
 
-	# 1. Overall Ranking Card (Icon removed as requested)
+	var win_cr: int = int(hist.get("win_classic_rank", 0))
+	var draw_cr: int = int(hist.get("draw_classic_rank", 0))
+	var lose_cr: int = int(hist.get("lose_classic_rank", 0))
+
+	var r1: int = int(hist.get("rank1_multi_rank", 0))
+	var r2: int = int(hist.get("rank2_multi_rank", 0))
+	var rn: int = int(hist.get("rankn_multi_rank", 0))
+
+	var fallback_wins: int = win_rank + win_cr + r1
+	var fallback_draws: int = draw_rank + draw_cr + r2
+	var fallback_losses: int = lose_rank + lose_cr + rn
+
+	var tot_wins: int = int(st.get("total_wins", fallback_wins))
+	var tot_losses: int = int(st.get("total_losses", fallback_losses))
+	var tot_draws: int = int(st.get("total_draws", fallback_draws))
+	var tot_matches: int = int(st.get("total_matches", tot_wins + tot_losses + tot_draws))
+	if tot_matches < (tot_wins + tot_losses + tot_draws):
+		tot_matches = tot_wins + tot_losses + tot_draws
+	var wr_pct: int = int(round(float(st.get("win_rate", (float(tot_wins) / float(max(1, tot_matches))) * 100.0)))) if tot_matches > 0 else 0
+
+	# 1. Executive KPI Overview Banner
 	var tier: Dictionary = prof.get("tier", {}) if typeof(prof.get("tier")) == TYPE_DICTIONARY else {}
-	var tier_title := str(tier.get("title_fa", prof.get("rank_title", "تازه‌کار")))
-	var score_val := int(prof.get("score", prof.get("user_score", 0)))
-	var card_overall := RankingCard.new()
-	card_overall.setup_mode(
-		"رده‌بندی کلی و امتیاز کافه",
-		"%s (%s)" % [tier_title, GameManager.to_fa_num(score_val)],
-		tot_wins,
-		tot_draws,
-		tot_losses,
-		null
-	)
-	_body_vbox.add_child(card_overall)
+	var tier_title: String = str(tier.get("title_fa", prof.get("rank_title", "تازه‌کار")))
+	var score_val: int = int(prof.get("score", prof.get("user_score", 0)))
+	_body_vbox.add_child(_build_profile_kpi_summary_card(tier_title, score_val, tot_matches, tot_wins, tot_draws, tot_losses, wr_pct))
 
-	# 2. 2-Player Rank Mode Card (Icon removed as requested)
-	var win_rank := int(hist.get("win_rank", 0))
-	var draw_rank := int(hist.get("draw_rank", 0))
-	var lose_rank := int(hist.get("lose_rank", 0))
+	# 2. 2-Player Rank Mode Card
 	if (win_rank + draw_rank + lose_rank) > 0:
-		var card_rank := RankingCard.new()
+		var card_rank: RankingCard = RankingCard.new()
 		card_rank.setup_mode(
-			"رده‌بندی دو نفره (Rank)",
-			"حالت رقابتی",
+			"رده‌بندی دو نفره",
+			"رقابتی آنلاین",
 			win_rank,
 			draw_rank,
 			lose_rank,
@@ -551,15 +556,12 @@ func _render_rankings_and_achievements(prof: Dictionary) -> void:
 		)
 		_body_vbox.add_child(card_rank)
 
-	# 3. Classic / AI Mode Card (کلاسیک تک‌نفره / هوش مصنوعی)
-	var win_cr := int(hist.get("win_classic_rank", 0))
-	var draw_cr := int(hist.get("draw_classic_rank", 0))
-	var lose_cr := int(hist.get("lose_classic_rank", 0))
+	# 3. Classic / AI Mode Card
 	if (win_cr + draw_cr + lose_cr) > 0:
-		var card_cr := RankingCard.new()
+		var card_cr: RankingCard = RankingCard.new()
 		card_cr.setup_mode(
-			"کلاسیک تک‌نفره (هوش مصنوعی)",
-			"تمرین و مهارت",
+			"کلاسیک تک‌نفره",
+			"هوش مصنوعی",
 			win_cr,
 			draw_cr,
 			lose_cr,
@@ -567,15 +569,12 @@ func _render_rankings_and_achievements(prof: Dictionary) -> void:
 		)
 		_body_vbox.add_child(card_cr)
 
-	# 4. Multiplayer Ranking Card (رده‌بندی چندنفره)
-	var r1 := int(hist.get("rank1_multi_rank", 0))
-	var r2 := int(hist.get("rank2_multi_rank", 0))
-	var rn := int(hist.get("rankn_multi_rank", 0))
+	# 4. Multiplayer Ranking Card
 	if (r1 + r2 + rn) > 0:
-		var card_mr := RankingCard.new()
+		var card_mr: RankingCard = RankingCard.new()
 		card_mr.setup_multiplayer(
-			"رده‌بندی چندنفره (منچ، ریسک، اونو، مونوپولی)",
-			"مسابقات تیمی و گروهی",
+			"رده‌بندی چندنفره",
+			"رقابت گروهی",
 			r1,
 			r2,
 			rn,
@@ -589,12 +588,161 @@ func _render_rankings_and_achievements(prof: Dictionary) -> void:
 		_render_achievements_grid(achs)
 
 
+func _build_profile_kpi_summary_card(
+	tier_title: String,
+	score_val: int,
+	total_matches: int,
+	wins: int,
+	draws: int,
+	losses: int,
+	win_rate_pct: int
+) -> PanelContainer:
+	var card: PanelContainer = PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.16, 0.10, 0.06, 0.97)
+	sb.border_color = Color(0.84, 0.67, 0.30, 0.88)
+	sb.border_width_left = 1
+	sb.border_width_right = 1
+	sb.border_width_bottom = 1
+	sb.border_width_top = 2
+	sb.set_corner_radius_all(16)
+	sb.content_margin_left = 14.0
+	sb.content_margin_right = 14.0
+	sb.content_margin_top = 12.0
+	sb.content_margin_bottom = 12.0
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.40)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2(0, 3)
+	card.add_theme_stylebox_override("panel", sb)
+
+	var vb: VBoxContainer = VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 10)
+	card.add_child(vb)
+
+	# Header: Tier Pill + Summary Heading
+	var hdr: HBoxContainer = HBoxContainer.new()
+	hdr.add_theme_constant_override("separation", 8)
+	hdr.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_child(hdr)
+
+	var tier_pill: PanelContainer = CafeSocialTheme.make_badge_pill(
+		"%s  •  %s امتیاز" % [tier_title, GameManager.to_fa_num(score_val)],
+		CafeSocialTheme.COL_GOLD_BRIGHT,
+		Color(0.24, 0.17, 0.06, 0.96),
+		CafeSocialTheme.COL_GOLD_ANTIQUE,
+		15
+	)
+	hdr.add_child(tier_pill)
+
+	var lbl_h: Label = CafeSocialTheme.make_title("کارنامه کلی", 21, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	lbl_h.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hdr.add_child(lbl_h)
+
+	# 3 Executive KPI Wells (RTL order: Win Rate left, Wins center, Total Matches right)
+	var kpi_row: HBoxContainer = HBoxContainer.new()
+	kpi_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	kpi_row.add_theme_constant_override("separation", 8)
+	vb.add_child(kpi_row)
+
+	var wr_col: Color = CafeSocialTheme.COL_MUTED_SAND
+	if total_matches > 0:
+		if win_rate_pct >= 55:
+			wr_col = CafeSocialTheme.COL_EMERALD_TEXT
+		elif win_rate_pct >= 35:
+			wr_col = CafeSocialTheme.COL_GOLD_BRIGHT
+		else:
+			wr_col = CafeSocialTheme.COL_CRIMSON_TEXT
+
+	kpi_row.add_child(_make_kpi_well("%s٪" % GameManager.to_fa_num(win_rate_pct), "نرخ برد کل", wr_col))
+	kpi_row.add_child(_make_kpi_well(GameManager.to_fa_num(wins), "پیروزی‌ها", CafeSocialTheme.COL_EMERALD_TEXT))
+	kpi_row.add_child(_make_kpi_well(GameManager.to_fa_num(total_matches), "کل مسابقات", CafeSocialTheme.COL_GOLD_BRIGHT))
+
+	# Overall Segmented Win/Draw/Loss Bar
+	var bar_track: PanelContainer = PanelContainer.new()
+	bar_track.custom_minimum_size = Vector2(0, 10)
+	bar_track.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar_track.clip_contents = true
+	var track_sb: StyleBoxFlat = StyleBoxFlat.new()
+	track_sb.bg_color = Color(0.07, 0.04, 0.02, 0.94)
+	track_sb.border_color = Color(0.45, 0.34, 0.19, 0.65)
+	track_sb.set_border_width_all(1)
+	track_sb.set_corner_radius_all(5)
+	track_sb.content_margin_left = 1.0
+	track_sb.content_margin_right = 1.0
+	track_sb.content_margin_top = 1.0
+	track_sb.content_margin_bottom = 1.0
+	bar_track.add_theme_stylebox_override("panel", track_sb)
+	vb.add_child(bar_track)
+
+	var seg_row: HBoxContainer = HBoxContainer.new()
+	seg_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	seg_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	seg_row.add_theme_constant_override("separation", 2)
+	bar_track.add_child(seg_row)
+
+	var sum_wl: int = wins + draws + losses
+	if sum_wl > 0:
+		var seg_vals: Array[int] = [losses, draws, wins]
+		var seg_cols: Array[Color] = [
+			Color(0.86, 0.34, 0.34, 0.92),
+			Color(0.94, 0.76, 0.28, 0.92),
+			Color(0.30, 0.84, 0.48, 0.96)
+		]
+		for i in range(seg_vals.size()):
+			if seg_vals[i] <= 0:
+				continue
+			var seg: Panel = Panel.new()
+			seg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			seg.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			seg.size_flags_stretch_ratio = float(seg_vals[i])
+			var seg_sb: StyleBoxFlat = StyleBoxFlat.new()
+			seg_sb.bg_color = seg_cols[i]
+			seg_sb.set_corner_radius_all(3)
+			seg.add_theme_stylebox_override("panel", seg_sb)
+			seg_row.add_child(seg)
+
+	# Compact W/D/L Legend
+	var legend_lbl: Label = CafeSocialTheme.make_body(
+		"برد: %s  •  مساوی: %s  •  باخت: %s" % [GameManager.to_fa_num(wins), GameManager.to_fa_num(draws), GameManager.to_fa_num(losses)],
+		15,
+		CafeSocialTheme.COL_MUTED_SAND,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		false
+	)
+	vb.add_child(legend_lbl)
+	return card
+
+
+func _make_kpi_well(val_txt: String, caption_txt: String, accent_col: Color) -> PanelContainer:
+	var p: PanelContainer = PanelContainer.new()
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var st: StyleBoxFlat = StyleBoxFlat.new()
+	st.bg_color = Color(0.10, 0.06, 0.03, 0.94)
+	st.border_color = Color(accent_col.r, accent_col.g, accent_col.b, 0.42)
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(12)
+	st.content_margin_left = 6.0
+	st.content_margin_right = 6.0
+	st.content_margin_top = 8.0
+	st.content_margin_bottom = 8.0
+	p.add_theme_stylebox_override("panel", st)
+
+	var vb: VBoxContainer = VBoxContainer.new()
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_theme_constant_override("separation", 2)
+	p.add_child(vb)
+
+	vb.add_child(CafeSocialTheme.make_title(val_txt, 24, accent_col, HORIZONTAL_ALIGNMENT_CENTER, false))
+	vb.add_child(CafeSocialTheme.make_body(caption_txt, 14, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, false))
+	return p
+
+
 func _render_achievements_grid(achs: Array) -> void:
-	# Icon removed from header as requested
-	var ach_header := CafeSocialTheme.make_ornate_section_header("دستاوردهای کسب‌شده", null, "%s نشان افتخار" % GameManager.to_fa_num(achs.size()))
+	var ach_header: PanelContainer = CafeSocialTheme.make_ornate_section_header("دستاوردهای کسب‌شده", null, "%s نشان افتخار" % GameManager.to_fa_num(achs.size()))
 	_body_vbox.add_child(ach_header)
 
-	var ach_grid := GridContainer.new()
+	var ach_grid: GridContainer = GridContainer.new()
 	ach_grid.columns = 2
 	ach_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ach_grid.add_theme_constant_override("h_separation", 8)
@@ -604,26 +752,27 @@ func _render_achievements_grid(achs: Array) -> void:
 	for ach in achs:
 		if typeof(ach) != TYPE_DICTIONARY:
 			continue
-		var ac := PanelContainer.new()
+		var ach_d: Dictionary = ach as Dictionary
+		var ac: PanelContainer = PanelContainer.new()
 		ac.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var asb := StyleBoxFlat.new()
+		var asb: StyleBoxFlat = StyleBoxFlat.new()
 		asb.bg_color = Color(0.14, 0.09, 0.05, 0.95)
 		asb.border_color = CafeSocialTheme.COL_GOLD_ANTIQUE
 		asb.set_border_width_all(1)
-		asb.set_corner_radius_all(10)
+		asb.set_corner_radius_all(12)
 		asb.content_margin_left = 10.0
 		asb.content_margin_right = 10.0
 		asb.content_margin_top = 8.0
 		asb.content_margin_bottom = 8.0
 		ac.add_theme_stylebox_override("panel", asb)
 
-		var av := VBoxContainer.new()
+		var av: VBoxContainer = VBoxContainer.new()
 		av.add_theme_constant_override("separation", 2)
 		ac.add_child(av)
 
-		var atitle := "%s %s" % [str(ach.get("icon", "🎖️")), str(ach.get("title", "نشان"))]
-		av.add_child(CafeSocialTheme.make_title(atitle, 19, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true))
-		av.add_child(CafeSocialTheme.make_body(str(ach.get("desc", "")), 15, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
+		var raw_title: String = str(ach_d.get("title", "نشان افتخار"))
+		av.add_child(CafeSocialTheme.make_title(raw_title, 18, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true))
+		av.add_child(CafeSocialTheme.make_body(str(ach_d.get("desc", "")), 14, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
 		ach_grid.add_child(ac)
 
 
@@ -631,25 +780,23 @@ func _render_favorite_games_section(prof: Dictionary) -> void:
 	var st: Dictionary = prof.get("stats", {}) if typeof(prof.get("stats")) == TYPE_DICTIONARY else {}
 	var favs: Array = st.get("most_played_games", []) if typeof(st.get("most_played_games")) == TYPE_ARRAY else []
 
-	# If stats did not include most_played_games, calculate top games from history
 	if favs.is_empty():
 		favs = _compute_favorites_from_history(prof.get("history", {}))
 
 	if favs.is_empty():
 		return
 
-	# Icon removed from header as requested
-	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("بازی‌های محبوب و پربازدید", null))
+	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("بازی‌های محبوب و پربازی", null))
 
-	# Horizontally Scrollable Carousel for Favorite Games
-	var h_scroll := ScrollContainer.new()
-	h_scroll.custom_minimum_size = Vector2(0, 168)
+	# Horizontally Scrollable Carousel for Favorite Games (202px tall to fit 188px cards + shadow)
+	var h_scroll: ScrollContainer = ScrollContainer.new()
+	h_scroll.custom_minimum_size = Vector2(0, 202)
 	h_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	h_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_body_vbox.add_child(h_scroll)
 
-	var h_row := HBoxContainer.new()
+	var h_row: HBoxContainer = HBoxContainer.new()
 	h_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	h_row.add_theme_constant_override("separation", 10)
 	h_scroll.add_child(h_row)
@@ -657,31 +804,32 @@ func _render_favorite_games_section(prof: Dictionary) -> void:
 	for fg in favs:
 		if typeof(fg) != TYPE_DICTIONARY:
 			continue
-		var gtype := str(fg.get("game_type", ""))
-		var t_matches := int(fg.get("total_matches", 0))
-		var w_rate := float(fg.get("win_rate", 0.0))
-		var w_wins := int(fg.get("wins", 0))
+		var fgd: Dictionary = fg as Dictionary
+		var gtype: String = str(fgd.get("game_type", ""))
+		var t_matches: int = int(fgd.get("total_matches", 0))
+		var w_rate: float = float(fgd.get("win_rate", 0.0))
+		var w_wins: int = int(fgd.get("wins", 0))
 
-		var item := FavoriteGameItem.new()
+		var item: FavoriteGameItem = FavoriteGameItem.new()
 		item.setup(gtype, t_matches, w_rate, w_wins)
 		h_row.add_child(item)
 
-	# Expandable Full Games History Breakdown
+	# Expandable Full Games History Breakdown (deduplicated: mode cards already rendered above)
 	var hist_dict: Dictionary = prof.get("history", {}) if typeof(prof.get("history")) == TYPE_DICTIONARY else {}
 	if not hist_dict.is_empty():
-		var full_history_box := VBoxContainer.new()
+		var full_history_box: VBoxContainer = VBoxContainer.new()
 		full_history_box.visible = false
 		full_history_box.add_theme_constant_override("separation", 8)
 		_body_vbox.add_child(full_history_box)
 
-		var btn_expand_hist := CafeSocialTheme.make_button("▼ مشاهده آمار تفکیکی تمامی بازی‌ها", "bronze", Vector2(0, 46), 18)
+		var btn_expand_hist: Button = CafeSocialTheme.make_button("▼ مشاهده آمار تفکیکی تمامی بازی‌ها", "bronze", Vector2(0, 48), 18)
 		btn_expand_hist.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_expand_hist.pressed.connect(func():
 			AudioManager.sfx_tap()
 			full_history_box.visible = not full_history_box.visible
 			btn_expand_hist.text = "▲ بستن آمار تفکیکی بازی‌ها" if full_history_box.visible else "▼ مشاهده آمار تفکیکی تمامی بازی‌ها"
 			if full_history_box.visible and full_history_box.get_child_count() == 0:
-				GamesHistoryViewHelper.populate_games_history(full_history_box, hist_dict)
+				GamesHistoryViewHelper.populate_games_history(full_history_box, hist_dict, false)
 		)
 		_body_vbox.add_child(btn_expand_hist)
 

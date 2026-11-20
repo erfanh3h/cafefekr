@@ -284,19 +284,27 @@ var btn_p2_profile: Button:
 
 @onready var intro_game_title: Label = $StartGameOverlay/Card/VBox/GameTitle
 
-@onready var intro_p1_avatar: TextureRect = $StartGameOverlay/Card/VBox/VSBox/IntroP1/Avatar
+@onready var intro_p1_card: PanelContainer = $StartGameOverlay/Card/VBox/VSBox/IntroP1Card
 
-@onready var intro_p1_name: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP1/Name
+@onready var intro_p1_avatar: TextureRect = $StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1/Avatar
 
-@onready var intro_p1_role: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP1/Role
+@onready var intro_p1_name: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1/Name
 
-@onready var intro_p2_avatar: TextureRect = $StartGameOverlay/Card/VBox/VSBox/IntroP2/Avatar
+@onready var intro_p1_role: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1/Role
 
-@onready var intro_p2_name: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP2/Name
+@onready var intro_vs_medallion: PanelContainer = $StartGameOverlay/Card/VBox/VSBox/VSMedallion
 
-@onready var intro_p2_role: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP2/Role
+@onready var intro_p2_card: PanelContainer = $StartGameOverlay/Card/VBox/VSBox/IntroP2Card
 
-@onready var intro_countdown_lbl: Label = $StartGameOverlay/Card/VBox/Countdown
+@onready var intro_p2_avatar: TextureRect = $StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2/Avatar
+
+@onready var intro_p2_name: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2/Name
+
+@onready var intro_p2_role: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2/Role
+
+@onready var intro_countdown_ring: PanelContainer = $StartGameOverlay/Card/VBox/CountdownRing
+
+@onready var intro_countdown_lbl: Label = $StartGameOverlay/Card/VBox/CountdownRing/Countdown
 
 @onready var intro_status_lbl: Label = $StartGameOverlay/Card/VBox/Status
 
@@ -1516,9 +1524,10 @@ func reset_for_new_match(keep_start_overlay: bool = false) -> void:
 
 	if not is_countdown_running:
 
-		intro_countdown_lbl.text = "⏳"
+		intro_countdown_lbl.text = "..."
 
-		intro_countdown_lbl.add_theme_font_size_override("font_size", 56)
+		intro_countdown_lbl.add_theme_font_size_override("font_size", 46)
+		_set_intro_countdown_ring_style(false)
 
 	_ensure_top_header_for_current_game()
 
@@ -1537,338 +1546,268 @@ func reset_for_new_match(keep_start_overlay: bool = false) -> void:
 var _intro_extra_cols: Dictionary = {}
 
 
+func _apply_intro_role_pill(role_lbl: Label, card_panel: PanelContainer, text_str: String, accent_col: Color) -> void:
+	if is_instance_valid(role_lbl):
+		role_lbl.text = text_str
+		role_lbl.visible = true
+		role_lbl.add_theme_color_override("font_color", accent_col.lightened(0.28))
+		var pill_sb: StyleBoxFlat = StyleBoxFlat.new()
+		pill_sb.content_margin_left = 10.0
+		pill_sb.content_margin_right = 10.0
+		pill_sb.content_margin_top = 3.0
+		pill_sb.content_margin_bottom = 3.0
+		pill_sb.bg_color = Color(accent_col.r * 0.24, accent_col.g * 0.24, accent_col.b * 0.24, 0.92)
+		pill_sb.border_color = Color(accent_col.r, accent_col.g, accent_col.b, 0.72)
+		pill_sb.set_border_width_all(1)
+		pill_sb.set_corner_radius_all(10)
+		role_lbl.add_theme_stylebox_override("normal", pill_sb)
+	if is_instance_valid(card_panel):
+		var c_sb: StyleBoxFlat = StyleBoxFlat.new()
+		c_sb.content_margin_left = 10.0
+		c_sb.content_margin_top = 14.0
+		c_sb.content_margin_right = 10.0
+		c_sb.content_margin_bottom = 12.0
+		c_sb.bg_color = Color(0.16, 0.105, 0.065, 0.95)
+		c_sb.border_width_left = 1
+		c_sb.border_width_top = 3
+		c_sb.border_width_right = 1
+		c_sb.border_width_bottom = 2
+		c_sb.border_color = Color(accent_col.r, accent_col.g, accent_col.b, 0.72)
+		c_sb.set_corner_radius_all(16)
+		card_panel.add_theme_stylebox_override("panel", c_sb)
+
+
+func _set_intro_countdown_ring_style(is_go: bool) -> void:
+	if not is_instance_valid(intro_countdown_ring):
+		return
+	var r_sb: StyleBoxFlat = StyleBoxFlat.new()
+	r_sb.content_margin_left = 12.0
+	r_sb.content_margin_right = 12.0
+	r_sb.content_margin_top = 8.0
+	r_sb.content_margin_bottom = 8.0
+	r_sb.set_border_width_all(3)
+	r_sb.set_corner_radius_all(56)
+	if is_go:
+		r_sb.bg_color = Color(0.08, 0.23, 0.14, 0.98)
+		r_sb.border_color = Color(0.32, 0.96, 0.54, 1.0)
+	else:
+		r_sb.bg_color = Color(0.155, 0.095, 0.048, 0.98)
+		r_sb.border_color = Color(0.96, 0.78, 0.30, 0.95)
+	intro_countdown_ring.add_theme_stylebox_override("panel", r_sb)
+
+
+func _apply_intro_roles_for_game() -> void:
+	var gtype: String = GameManager.current_game_type
+	var p1_txt: String = "مهره قرمز"
+	var p2_txt: String = "مهره آبی"
+	var p1_col: Color = Color(0.96, 0.38, 0.38)
+	var p2_col: Color = Color(0.36, 0.74, 1.0)
+	if gtype == GameTypes.FEKRBEKR:
+		p1_txt = "طراح و کاشف"
+		p2_txt = "طراح و کاشف"
+		p1_col = Color(0.96, 0.78, 0.32)
+		p2_col = Color(0.96, 0.78, 0.32)
+	elif gtype == GameTypes.CHESS or gtype == GameTypes.BACKGAMMON:
+		p1_txt = "مهره سفید"
+		p2_txt = "مهره سیاه"
+		p1_col = Color(0.94, 0.88, 0.76)
+		p2_col = Color(0.62, 0.72, 0.88)
+	elif gtype == GameTypes.OTHELLO:
+		p1_txt = "مهره سیاه"
+		p2_txt = "مهره سفید"
+		p1_col = Color(0.62, 0.72, 0.88)
+		p2_col = Color(0.94, 0.88, 0.76)
+	elif gtype == GameTypes.CHECKERS:
+		p1_txt = "مهره قرمز"
+		p2_txt = "مهره سیاه"
+		p1_col = Color(0.96, 0.38, 0.38)
+		p2_col = Color(0.62, 0.72, 0.88)
+	elif gtype == GameTypes.QUIZ:
+		p1_txt = "بازیکن ۱"
+		p2_txt = "بازیکن ۲"
+		p1_col = Color(0.96, 0.78, 0.32)
+		p2_col = Color(0.38, 0.82, 0.98)
+	_apply_intro_role_pill(intro_p1_role, intro_p1_card, p1_txt, p1_col)
+	_apply_intro_role_pill(intro_p2_role, intro_p2_card, p2_txt, p2_col)
+
 
 func _ensure_intro_extra_col(idx: int) -> Dictionary:
-
 	if _intro_extra_cols.has(idx) and is_instance_valid(_intro_extra_cols[idx].get("box")):
-
 		return _intro_extra_cols[idx]
-
-	var vs_box = get_node_or_null("StartGameOverlay/Card/VBox/VSBox") as HBoxContainer
-
+	var vs_box: HBoxContainer = get_node_or_null("StartGameOverlay/Card/VBox/VSBox") as HBoxContainer
 	if not vs_box:
-
 		return {}
+	var card: PanelContainer = PanelContainer.new()
+	card.name = "IntroP%dCard" % idx
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	var col = VBoxContainer.new()
-
+	var col: VBoxContainer = VBoxContainer.new()
 	col.name = "IntroP%d" % idx
-
-	col.add_theme_constant_override("separation", 8)
-
+	col.add_theme_constant_override("separation", 6)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	card.add_child(col)
 
-	
-
-	var av = TextureRect.new()
-
+	var av: TextureRect = TextureRect.new()
 	av.name = "Avatar"
-
-	av.custom_minimum_size = Vector2(104, 104)
-
+	av.custom_minimum_size = Vector2(64, 64)
 	av.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-
 	av.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-
 	av.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-
 	col.add_child(av)
 
-	
-
-	var nm = Label.new()
-
+	var nm: Label = Label.new()
 	nm.name = "Name"
-
+	nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nm.clip_text = true
+	nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	nm.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-
-	nm.add_theme_font_size_override("font_size", 30)
-
-	nm.add_theme_color_override("font_color", Color(1.0, 0.90, 0.80, 1.0))
-
+	nm.add_theme_font_size_override("font_size", 18)
+	nm.add_theme_color_override("font_color", Color(0.984, 0.953, 0.894, 1.0))
 	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
 	col.add_child(nm)
 
-	
-
-	var rl = Label.new()
-
+	var rl: Label = Label.new()
 	rl.name = "Role"
-
-	rl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-
-	rl.add_theme_font_size_override("font_size", 26)
-
+	rl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	rl.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
+	rl.add_theme_font_size_override("font_size", 12)
 	rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
 	col.add_child(rl)
 
-	
-
-	vs_box.add_child(col)
-
-	var info = {"box": col, "avatar": av, "name": nm, "role": rl}
-
+	vs_box.add_child(card)
+	var info: Dictionary = {"box": card, "vbox": col, "avatar": av, "name": nm, "role": rl}
 	_intro_extra_cols[idx] = info
-
 	return info
 
 
-
 func _sync_multiplayer_intro_columns() -> void:
-
-	var vs_box = get_node_or_null("StartGameOverlay/Card/VBox/VSBox") as HBoxContainer
-
-	var vs_lbl = get_node_or_null("StartGameOverlay/Card/VBox/VSBox/VSLabel") as Label
-
+	var vs_box: HBoxContainer = get_node_or_null("StartGameOverlay/Card/VBox/VSBox") as HBoxContainer
 	if not vs_box:
-
 		return
-
-	var total_p = GameManager.match_players.size()
-
+	var total_p: int = GameManager.match_players.size()
 	if total_p <= 2:
-
-		vs_box.add_theme_constant_override("separation", 40)
-
-		if is_instance_valid(vs_lbl):
-
-			vs_lbl.visible = true
-
+		vs_box.add_theme_constant_override("separation", 12)
+		if is_instance_valid(intro_vs_medallion):
+			intro_vs_medallion.visible = true
 		if is_instance_valid(intro_p1_avatar):
-
-			intro_p1_avatar.custom_minimum_size = Vector2(120, 120)
-
+			intro_p1_avatar.custom_minimum_size = Vector2(84, 84)
 		if is_instance_valid(intro_p2_avatar):
-
-			intro_p2_avatar.custom_minimum_size = Vector2(120, 120)
-
+			intro_p2_avatar.custom_minimum_size = Vector2(84, 84)
+		if is_instance_valid(intro_p1_name):
+			intro_p1_name.add_theme_font_size_override("font_size", 21)
+		if is_instance_valid(intro_p2_name):
+			intro_p2_name.add_theme_font_size_override("font_size", 21)
 		for idx in [3, 4]:
-
 			if _intro_extra_cols.has(idx) and is_instance_valid(_intro_extra_cols[idx].get("box")):
-
 				_intro_extra_cols[idx]["box"].visible = false
-
 		return
 
-	
-
-	vs_box.add_theme_constant_override("separation", 24 if total_p == 3 else 18)
-
-	if is_instance_valid(vs_lbl):
-
-		vs_lbl.visible = false
-
+	vs_box.add_theme_constant_override("separation", 8 if total_p == 4 else 10)
+	if is_instance_valid(intro_vs_medallion):
+		intro_vs_medallion.visible = false
+	var compact_av: Vector2 = Vector2(62, 62) if total_p >= 4 else Vector2(72, 72)
 	if is_instance_valid(intro_p1_avatar):
-
-		intro_p1_avatar.custom_minimum_size = Vector2(104, 104)
-
+		intro_p1_avatar.custom_minimum_size = compact_av
 	if is_instance_valid(intro_p2_avatar):
-
-		intro_p2_avatar.custom_minimum_size = Vector2(104, 104)
-
-	
+		intro_p2_avatar.custom_minimum_size = compact_av
+	if is_instance_valid(intro_p1_name):
+		intro_p1_name.add_theme_font_size_override("font_size", 17 if total_p >= 4 else 19)
+	if is_instance_valid(intro_p2_name):
+		intro_p2_name.add_theme_font_size_override("font_size", 17 if total_p >= 4 else 19)
 
 	for idx in [3, 4]:
-
-		var col_info = _ensure_intro_extra_col(idx)
-
+		var col_info: Dictionary = _ensure_intro_extra_col(idx)
 		if col_info.is_empty():
-
 			continue
-
 		if idx <= total_p:
-
 			col_info["box"].visible = true
-
-			var p_data = GameManager.get_player_data_by_gamer_id(idx)
-
-			var p_name = str(p_data.get("name", p_data.get("username", "بازیکن %d" % idx)))
-
+			var p_data: Dictionary = GameManager.get_player_data_by_gamer_id(idx)
+			var p_name: String = str(p_data.get("name", p_data.get("username", "بازیکن %s" % _fa_digits(idx))))
 			col_info["name"].text = p_name
-
-			var av_id = int(p_data.get("image", p_data.get("user_image", 0)))
-			var p_fid = GameManager.get_player_frame_id(p_data)
-
-			var tex = BaseTopHeaderClass._get_cached_avatar(av_id)
-
+			col_info["name"].add_theme_font_size_override("font_size", 17 if total_p >= 4 else 19)
+			var av_id: int = int(p_data.get("image", p_data.get("user_image", 0)))
+			var p_fid: int = GameManager.get_player_frame_id(p_data)
+			var tex: Texture2D = BaseTopHeaderClass._get_cached_avatar(av_id)
 			if tex:
-
 				col_info["avatar"].texture = tex
-			var av_ctrl: TextureRect = col_info["avatar"]
+			var av_ctrl: TextureRect = col_info["avatar"] as TextureRect
 			if is_instance_valid(av_ctrl):
-				av_ctrl.custom_minimum_size = Vector2(106, 106)
-				var av_p = av_ctrl.get_parent()
+				av_ctrl.custom_minimum_size = compact_av
+				var av_p: Node = av_ctrl.get_parent()
 				CafeSocialTheme.apply_frame_to_container(av_p if av_p is Control else av_ctrl, av_ctrl, p_fid)
-
 			if idx == 3:
-
-				col_info["role"].text = "🟢 مهره سبز"
-
-				col_info["role"].add_theme_color_override("font_color", Color(0.32, 0.92, 0.48))
-
+				_apply_intro_role_pill(col_info["role"] as Label, col_info["box"] as PanelContainer, "مهره سبز", Color(0.32, 0.90, 0.50))
 			else:
-
-				col_info["role"].text = "🟡 مهره زرد"
-
-				col_info["role"].add_theme_color_override("font_color", Color(1.0, 0.86, 0.25))
-
+				_apply_intro_role_pill(col_info["role"] as Label, col_info["box"] as PanelContainer, "مهره زرد", Color(0.98, 0.84, 0.28))
 		else:
-
 			col_info["box"].visible = false
 
 
-
 func setup_match(game_title: String = "تیک تاک تو", mode_title: String = "لابی دوستانه") -> void:
-
 	visible = true
-
 	if is_instance_valid(user_profile_dialog):
 		user_profile_dialog.visible = false
 		user_profile_dialog.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
 	set_fekrbekr_hud_buttons(false)
 	set_spectator_mode(GameManager.is_spectating)
-
 	_ensure_top_header_for_current_game()
 
-
-
 	if intro_cafe_title:
-
 		intro_cafe_title.text = mode_title
-
 	if intro_game_title:
-
 		intro_game_title.text = game_title
-
 	intro_p1_role.visible = true
-
 	intro_p2_role.visible = true
-
 	if not is_countdown_running:
+		intro_countdown_lbl.text = "..."
+		intro_countdown_lbl.add_theme_font_size_override("font_size", 46)
+		_set_intro_countdown_ring_style(false)
 
-		intro_countdown_lbl.text = "⏳"
+	var my_idx: int = GameManager.my_player_index
+	var is_multi: bool = GameManager.match_players.size() > 2
+	var p1_data: Dictionary = GameManager.get_player_data_by_gamer_id(1) if is_multi else (GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data())
+	var p2_data: Dictionary = GameManager.get_player_data_by_gamer_id(2) if is_multi else (GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data())
 
-		intro_countdown_lbl.add_theme_font_size_override("font_size", 56)
-
-	
-
-	var my_idx = GameManager.my_player_index
-
-	var is_multi = GameManager.match_players.size() > 2
-
-	var p1_data = GameManager.get_player_data_by_gamer_id(1) if is_multi else (GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data())
-
-	var p2_data = GameManager.get_player_data_by_gamer_id(2) if is_multi else (GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data())
-
-	
-
-	var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
-
+	var def_time: float = GameRegistry.get_turn_time(GameManager.current_game_type)
 	turn_duration = def_time
-
 	turn_time_left = def_time
 
-	
-
 	if is_instance_valid(current_top_header):
-
 		current_top_header.setup_players(p1_data, p2_data, my_idx)
-
 		current_top_header.setup_match(game_title, mode_title, GameManager.current_round, GameManager.max_rounds, def_time)
 
-
-
 	# Setup intro names and roles
-
-	var p1_name_str = p1_data.get("name", p1_data.get("username", "بازیکن ۱"))
-
-	var p2_name_str = p2_data.get("name", p2_data.get("username", "بازیکن ۲"))
-
+	var p1_name_str: String = str(p1_data.get("name", p1_data.get("username", "بازیکن ۱")))
+	var p2_name_str: String = str(p2_data.get("name", p2_data.get("username", "بازیکن ۲")))
 	intro_p1_name.text = p1_name_str
-
 	intro_p2_name.text = p2_name_str
-
-	if GameManager.current_game_type == GameTypes.FEKRBEKR:
-
-		intro_p1_role.text = "🔐 طراح و کاشف رمز"
-
-		intro_p2_role.text = "🔐 طراح و کاشف رمز"
-
-		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
-
-		intro_p2_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
-
-		intro_p1_role.visible = true
-
-		intro_p2_role.visible = true
-
-	elif GameManager.current_game_type == GameTypes.CHESS:
-
-		intro_p1_role.text = "🔴 ارتش قرمز"
-
-		intro_p2_role.text = "🔵 ارتش آبی"
-
-		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
-
-		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
-
-		intro_p1_role.visible = true
-
-		intro_p2_role.visible = true
-
-	else:
-
-		intro_p1_role.text = "🔴 مهره قرمز"
-
-		intro_p2_role.text = "🔵 مهره آبی"
-
-		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
-
-		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
-
-		intro_p1_role.visible = true
-
-		intro_p2_role.visible = true
-
-	
-
+	_apply_intro_roles_for_game()
 	_sync_multiplayer_intro_columns()
 
-	var av1_id = int(p1_data.get("image", p1_data.get("user_image", 0)))
-	var p1_fid = GameManager.get_player_frame_id(p1_data)
-	var tex1 = BaseTopHeaderClass._get_cached_avatar(av1_id)
+	var av1_id: int = int(p1_data.get("image", p1_data.get("user_image", 0)))
+	var p1_fid: int = GameManager.get_player_frame_id(p1_data)
+	var tex1: Texture2D = BaseTopHeaderClass._get_cached_avatar(av1_id)
 	if is_instance_valid(intro_p1_avatar):
 		if tex1:
 			intro_p1_avatar.texture = tex1
-		var p1_p = intro_p1_avatar.get_parent()
+		var p1_p: Node = intro_p1_avatar.get_parent()
 		CafeSocialTheme.apply_frame_to_container(p1_p if p1_p is Control else intro_p1_avatar, intro_p1_avatar, p1_fid)
 
-	var av2_id = int(p2_data.get("image", p2_data.get("user_image", 0)))
-	var p2_fid = GameManager.get_player_frame_id(p2_data)
-	var tex2 = BaseTopHeaderClass._get_cached_avatar(av2_id)
+	var av2_id: int = int(p2_data.get("image", p2_data.get("user_image", 0)))
+	var p2_fid: int = GameManager.get_player_frame_id(p2_data)
+	var tex2: Texture2D = BaseTopHeaderClass._get_cached_avatar(av2_id)
 	if is_instance_valid(intro_p2_avatar):
 		if tex2:
 			intro_p2_avatar.texture = tex2
-		var p2_p = intro_p2_avatar.get_parent()
+		var p2_p: Node = intro_p2_avatar.get_parent()
 		CafeSocialTheme.apply_frame_to_container(p2_p if p2_p is Control else intro_p2_avatar, intro_p2_avatar, p2_fid)
 
-
-
 	# Initial clean state before game actually starts
-
 	is_game_finished = false
-
 	is_game_started = false
-
 	is_timer_active = false
-
 	if _turn_glow_tween and is_instance_valid(_turn_glow_tween):
-
 		_turn_glow_tween.kill()
-
 		_turn_glow_tween = null
 
 
@@ -1931,49 +1870,39 @@ var _countdown_run_id: int = 0
 
 
 func _start_loading_pulse() -> void:
-
 	_stop_loading_pulse()
-
-	if not intro_countdown_lbl or not is_instance_valid(intro_countdown_lbl):
-
+	var pulse_target: Control = intro_countdown_ring if is_instance_valid(intro_countdown_ring) else intro_countdown_lbl
+	if not is_instance_valid(pulse_target):
 		return
-
-	intro_countdown_lbl.custom_minimum_size = Vector2(360, 130)
-
-	intro_countdown_lbl.pivot_offset = Vector2(180, 65)
-
-	intro_countdown_lbl.scale = Vector2.ONE
-
+	pulse_target.pivot_offset = pulse_target.custom_minimum_size * 0.5
+	pulse_target.scale = Vector2.ONE
 	_loading_pulse_tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	_loading_pulse_tween.tween_property(intro_countdown_lbl, "scale", Vector2(1.12, 1.12), 0.55)
-
-	_loading_pulse_tween.tween_property(intro_countdown_lbl, "scale", Vector2(0.94, 0.94), 0.55)
-
+	_loading_pulse_tween.tween_property(pulse_target, "scale", Vector2(1.07, 1.07), 0.65)
+	_loading_pulse_tween.tween_property(pulse_target, "scale", Vector2(0.96, 0.96), 0.65)
 
 
 func _stop_loading_pulse() -> void:
-
 	if _loading_pulse_tween and _loading_pulse_tween.is_valid():
-
 		_loading_pulse_tween.kill()
-
 		_loading_pulse_tween = null
-
 	if _countdown_pulse_tween and _countdown_pulse_tween.is_valid():
-
 		_countdown_pulse_tween.kill()
-
 		_countdown_pulse_tween = null
-
-	if intro_countdown_lbl and is_instance_valid(intro_countdown_lbl):
-
-		intro_countdown_lbl.custom_minimum_size = Vector2(360, 130)
-
-		intro_countdown_lbl.pivot_offset = Vector2(180, 65)
-
+	if is_instance_valid(intro_countdown_ring):
+		intro_countdown_ring.pivot_offset = intro_countdown_ring.custom_minimum_size * 0.5
+		intro_countdown_ring.scale = Vector2.ONE
+	if is_instance_valid(intro_countdown_lbl):
 		intro_countdown_lbl.scale = Vector2.ONE
 
+
+func _clamp_intro_card_size() -> void:
+	if not is_instance_valid(intro_card):
+		return
+	var vp_w: float = get_viewport_rect().size.x if get_viewport() != null else 720.0
+	var target_w: float = clampf(vp_w - 36.0, 320.0, 600.0)
+	intro_card.custom_minimum_size = Vector2(target_w, 0.0)
+	intro_card.offset_left = -target_w * 0.5
+	intro_card.offset_right = target_w * 0.5
 
 
 func _kill_overlay_tweens() -> void:
@@ -1987,6 +1916,7 @@ func _kill_overlay_tweens() -> void:
 
 func _show_start_overlay_immediately() -> void:
 	_kill_overlay_tweens()
+	_clamp_intro_card_size()
 	if is_instance_valid(start_overlay):
 		start_overlay.visible = true
 		start_overlay.modulate.a = 1.0
@@ -2001,79 +1931,47 @@ func _show_start_overlay_immediately() -> void:
 
 
 # Shows the initial match connection loading overlay
-
 func show_match_loading(status_text: String = "در حال آماده‌سازی میز مسابقه و همگام‌سازی بازیکنان...", immediate: bool = false) -> void:
-
 	if is_start_overlay_dismissed or is_game_started:
-
 		return
-
 	is_game_finished = false
-
 	is_game_started = false
-
 	is_timer_active = false
-
 	is_countdown_running = false
-
 	lbl_turn_banner.text = "بازی درحال آغاز است"
-
 	lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-
 	if is_instance_valid(lbl_timer):
 		lbl_timer.text = ""
 		lbl_timer.visible = false
-
 	turn_timer_bar.value = 100.0
 
-	
-
+	_clamp_intro_card_size()
 	intro_status_lbl.text = status_text
-
-	intro_countdown_lbl.custom_minimum_size = Vector2(360, 130)
-
-	intro_countdown_lbl.pivot_offset = Vector2(180, 65)
-
-	intro_countdown_lbl.text = "⏳"
-
-	intro_countdown_lbl.add_theme_font_size_override("font_size", 56)
-
-	intro_countdown_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.25))
-
+	intro_countdown_lbl.text = "..."
+	intro_countdown_lbl.add_theme_font_size_override("font_size", 46)
+	intro_countdown_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.30))
+	_set_intro_countdown_ring_style(false)
 	intro_p1_role.visible = true
-
 	intro_p2_role.visible = true
 
-	
-
 	_start_loading_pulse()
-
-	
 
 	if immediate:
 		_show_start_overlay_immediately()
 	elif not start_overlay.visible:
-
 		ActionVFXManager.animate_dialog_open(intro_card, start_overlay, true)
 
 
-
 func set_overlay_status(status_text: String) -> void:
-
 	intro_status_lbl.text = status_text
 
 
-
 # Ignore server Game_Play_Time elapsed counter ticks when local play_start_countdown is already running
-
 func update_start_countdown_time(_sec: int) -> void:
-
 	return
 
 
-
 # Plays synchronized pre-game loading countdown
-
 func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int = 5, immediate: bool = true) -> void:
 	if is_start_overlay_dismissed or is_game_started or GameManager.is_game_active:
 		if on_finished.is_valid():
@@ -2093,46 +1991,32 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 		lbl_turn_banner.text = "بازی درحال آغاز است"
 		lbl_turn_banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	_stop_loading_pulse()
-	intro_countdown_lbl.add_theme_font_size_override("font_size", 98)
+	_clamp_intro_card_size()
+	_set_intro_countdown_ring_style(false)
+	intro_countdown_lbl.add_theme_font_size_override("font_size", 62)
+	intro_countdown_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.30))
 	if immediate or start_overlay.visible:
 		_show_start_overlay_immediately()
 	else:
 		start_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 		ActionVFXManager.animate_dialog_open(intro_card, start_overlay, true)
-	intro_status_lbl.text = "میز مسابقه آماده است! نبرد آغاز می‌شود در:"
+	intro_status_lbl.text = "میز مسابقه آماده است — بازی آغاز می‌شود در:"
 
-	# Reveal game-specific roles when real countdown begins
-	if GameManager.current_game_type == GameTypes.FEKRBEKR:
-		intro_p1_role.text = "🔐 طراح و کاشف رمز"
-		intro_p2_role.text = "🔐 طراح و کاشف رمز"
-		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
-		intro_p2_role.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35))
-	elif GameManager.current_game_type == GameTypes.CHESS:
-		intro_p1_role.text = "🔴 ارتش قرمز"
-		intro_p2_role.text = "🔵 ارتش آبی"
-		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
-		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
-	else:
-		intro_p1_role.text = "🔴 مهره قرمز"
-		intro_p2_role.text = "🔵 مهره آبی"
-		intro_p1_role.add_theme_color_override("font_color", Color(1.0, 0.38, 0.38))
-		intro_p2_role.add_theme_color_override("font_color", Color(0.38, 0.78, 1.0))
-	intro_p1_role.visible = true
-	intro_p2_role.visible = true
+	_apply_intro_roles_for_game()
 	if immediate:
 		intro_p1_role.modulate.a = 1.0
 		intro_p2_role.modulate.a = 1.0
 	else:
 		intro_p1_role.modulate.a = 0.0
 		intro_p2_role.modulate.a = 0.0
-		var tw_roles = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tw_roles.tween_property(intro_p1_role, "modulate:a", 1.0, 0.4)
-		tw_roles.tween_property(intro_p2_role, "modulate:a", 1.0, 0.4)
+		var tw_roles: Tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw_roles.tween_property(intro_p1_role, "modulate:a", 1.0, 0.35)
+		tw_roles.tween_property(intro_p2_role, "modulate:a", 1.0, 0.35)
 
 	for i in range(total_seconds, 0, -1):
 		if my_run_id != _countdown_run_id or not start_overlay.visible or is_start_overlay_dismissed:
 			return
-		intro_countdown_lbl.text = "%d" % i
+		intro_countdown_lbl.text = _fa_digits(i)
 		_pulse_countdown_label()
 		AudioManager.play_sound("time")
 		await get_tree().create_timer(1.0).timeout
@@ -2142,7 +2026,9 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 
 	if start_overlay.visible and not is_start_overlay_dismissed:
 		intro_countdown_lbl.text = "شروع!"
-		intro_countdown_lbl.add_theme_color_override("font_color", Color(0.35, 0.95, 0.45))
+		intro_countdown_lbl.add_theme_font_size_override("font_size", 36)
+		intro_countdown_lbl.add_theme_color_override("font_color", Color(0.42, 0.98, 0.62))
+		_set_intro_countdown_ring_style(true)
 		_pulse_countdown_label()
 		AudioManager.play_sound("bell")
 		await get_tree().create_timer(0.4).timeout
@@ -2158,7 +2044,6 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 
 
 # Guarantees the loading overlay is dismissed as soon as the intro countdown finishes or match becomes active
-
 func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
 	_countdown_run_id += 1
 	_stop_loading_pulse()
@@ -2194,7 +2079,7 @@ func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
 	if GameManager.is_game_active:
 		is_game_started = true
 		if not is_timer_active and not is_game_finished:
-			var def_time = GameRegistry.get_turn_time(GameManager.current_game_type)
+			var def_time: float = GameRegistry.get_turn_time(GameManager.current_game_type)
 			start_turn_timer(def_time)
 	else:
 		if is_instance_valid(lbl_turn_banner):
@@ -2203,24 +2088,15 @@ func force_dismiss_start_overlay(emit_finished: bool = true) -> void:
 
 
 func _pulse_countdown_label() -> void:
-
-	if not intro_countdown_lbl or not is_instance_valid(intro_countdown_lbl):
-
+	var pulse_target: Control = intro_countdown_ring if is_instance_valid(intro_countdown_ring) else intro_countdown_lbl
+	if not is_instance_valid(pulse_target):
 		return
-
 	if _countdown_pulse_tween and _countdown_pulse_tween.is_valid():
-
 		_countdown_pulse_tween.kill()
-
-	intro_countdown_lbl.custom_minimum_size = Vector2(360, 130)
-
-	intro_countdown_lbl.pivot_offset = Vector2(180, 65)
-
-	intro_countdown_lbl.scale = Vector2(1.16, 1.16)
-
-	_countdown_pulse_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-	_countdown_pulse_tween.tween_property(intro_countdown_lbl, "scale", Vector2.ONE, 0.20)
+	pulse_target.pivot_offset = pulse_target.size * 0.5
+	pulse_target.scale = Vector2(1.16, 1.16)
+	_countdown_pulse_tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_countdown_pulse_tween.tween_property(pulse_target, "scale", Vector2.ONE, 0.24)
 
 
 

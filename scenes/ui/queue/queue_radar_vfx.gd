@@ -151,6 +151,18 @@ func _draw() -> void:
 		var a_end: float = a_start + (TAU / float(inner_arcs)) * 0.55
 		draw_arc(c, inner_r, a_start, a_end, 14, Color(1.0, 0.94, 0.75, 0.52), 2.0, true)
 
+	# 4b. Segmented Multi-Player Capacity Arcs (highlights filled seats around crest)
+	if _is_multi_mode and _total_slots >= 2:
+		var cap_r: float = max_r * 0.50
+		var gap: float = 0.16
+		var slice: float = TAU / float(_total_slots)
+		for s in range(_total_slots):
+			var sa0: float = -PI * 0.5 + float(s) * slice + gap * 0.5
+			var sa1: float = sa0 + slice - gap
+			var is_seat_ready: bool = _is_match_found or (s < _filled_slots)
+			var seg_col: Color = Color(0.32, 0.98, 0.58, 0.92) if is_seat_ready else Color(col.r, col.g, col.b, 0.22)
+			draw_arc(c, cap_r, sa0, sa1, 16, seg_col, 3.6 if is_seat_ready else 2.0, true)
+
 	# 5. Orbiting Player Beacons on the Outer Ring (2 for 1v1, 4 for Multi-Rank)
 	var beacon_n: int = clampi(_total_slots, 2, 4)
 	for b in range(beacon_n):
@@ -158,7 +170,7 @@ func _draw() -> void:
 		var pos: Vector2 = c + Vector2(cos(ba), sin(ba)) * outer_r
 		var is_active_seat: bool = _is_match_found or (b < _filled_slots)
 		if is_active_seat:
-			var bcol := Color(0.35, 1.0, 0.62, 0.98) if (_is_match_found or (_is_multi_mode and b < _filled_slots)) else Color(1.0, 0.88, 0.36, 0.98)
+			var bcol: Color = Color(0.35, 1.0, 0.62, 0.98) if (_is_match_found or (_is_multi_mode and b < _filled_slots)) else Color(1.0, 0.88, 0.36, 0.98)
 			draw_circle(pos, 8.5, Color(bcol.r, bcol.g, bcol.b, 0.28))
 			draw_circle(pos, 4.6, bcol)
 			draw_circle(pos, 2.2, Color(1.0, 1.0, 1.0, 0.95))

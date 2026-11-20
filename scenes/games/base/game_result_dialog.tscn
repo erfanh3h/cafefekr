@@ -1,96 +1,160 @@
-[gd_scene load_steps=12 format=3 uid="uid://cxresultdialog01"]
+[gd_scene load_steps=18 format=3 uid="uid://cxresultdialog01"]
 
 [ext_resource type="Script" path="res://scenes/games/base/game_result_dialog.gd" id="1_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="3_btn_wood"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="3_board_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/particles/flare_01.png" id="4_flare_tex"]
 [ext_resource type="Texture2D" path="res://assets/particles/star_04.png" id="5_star_tex"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/cup.png" id="6_cup_tex"]
 [ext_resource type="Texture2D" path="res://assets/particles/spark_01.png" id="7_spark_tex"]
 [ext_resource type="Texture2D" path="res://assets/particles/smoke_01.png" id="8_smoke_tex"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_modal_board"]
-content_margin_left = 34.0
-content_margin_top = 34.0
-content_margin_right = 34.0
-content_margin_bottom = 34.0
-texture = ExtResource("3_board_tex")
-texture_margin_left = 60.0
-texture_margin_top = 60.0
-texture_margin_right = 60.0
-texture_margin_bottom = 60.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel_base"]
+content_margin_left = 22.0
+content_margin_top = 22.0
+content_margin_right = 22.0
+content_margin_bottom = 22.0
+bg_color = Color(0.11, 0.072, 0.045, 0.97)
+border_width_left = 2
+border_width_top = 4
+border_width_right = 2
+border_width_bottom = 3
+border_color = Color(0.92, 0.74, 0.30, 0.96)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0, 0, 0.65)
+shadow_size = 18
+shadow_offset = Vector2(0, 8)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_plaque"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
 bg_color = Color(0.18, 0.11, 0.05, 0.98)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(1, 0.85, 0.3, 1)
-corner_radius_top_left = 50
-corner_radius_top_right = 50
-corner_radius_bottom_right = 50
-corner_radius_bottom_left = 50
-shadow_color = Color(1, 0.8, 0.2, 0.4)
-shadow_size = 14
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_winner"]
-content_margin_left = 16.0
-content_margin_top = 14.0
-content_margin_right = 16.0
-content_margin_bottom = 14.0
-bg_color = Color(0.22, 0.14, 0.08, 0.95)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 0.85, 0.3, 1)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(1, 0.8, 0.2, 0.3)
-shadow_size = 8
+corner_radius_top_left = 46
+corner_radius_top_right = 46
+corner_radius_bottom_right = 46
+corner_radius_bottom_left = 46
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_winner"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.20, 0.135, 0.072, 0.96)
+border_width_left = 2
+border_width_top = 3
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.98, 0.82, 0.30, 0.96)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_normal"]
-content_margin_left = 16.0
-content_margin_top = 14.0
-content_margin_right = 16.0
-content_margin_bottom = 14.0
-bg_color = Color(0.12, 0.08, 0.05, 0.85)
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.145, 0.095, 0.06, 0.92)
+border_width_left = 1
+border_width_top = 2
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.45, 0.33, 0.20, 0.72)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vs_disc"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.17, 0.11, 0.055, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.38, 0.28, 0.18, 0.7)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
+border_color = Color(0.84, 0.67, 0.30, 0.85)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip"]
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.18, 0.12, 0.07, 0.9)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_score_well"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.085, 0.055, 0.032, 0.92)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.65, 0.52, 0.25, 0.8)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
+border_color = Color(0.75, 0.58, 0.26, 0.45)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
-texture = ExtResource("3_btn_wood")
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip_coin"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.22, 0.15, 0.05, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.95, 0.78, 0.30, 0.85)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip_xp"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.10, 0.22, 0.16, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.86, 0.56, 0.85)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mode_pill"]
+content_margin_left = 16.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 4.0
+bg_color = Color(0.18, 0.12, 0.06, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.84, 0.67, 0.30, 0.55)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [node name="GameResultDialog" type="Control"]
 layout_mode = 3
@@ -108,13 +172,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.04, 0.02, 0.01, 0.75)
+color = Color(0.04, 0.025, 0.015, 0.82)
 
 [node name="ConfettiShower" type="CPUParticles2D" parent="."]
 position = Vector2(360, 80)
 emitting = false
-amount = 40
-lifetime = 2.5
+amount = 36
+lifetime = 2.4
 texture = ExtResource("5_star_tex")
 emission_shape = 3
 emission_rect_extents = Vector2(300, 10)
@@ -126,27 +190,27 @@ initial_velocity_max = 260.0
 angular_velocity_min = -180.0
 angular_velocity_max = 180.0
 scale_amount_min = 0.14
-scale_amount_max = 0.36
+scale_amount_max = 0.34
 color = Color(1, 0.88, 0.35, 1)
 
 [node name="DefeatParticles" type="CPUParticles2D" parent="."]
 position = Vector2(360, 80)
 emitting = false
-amount = 24
-lifetime = 3.2
+amount = 20
+lifetime = 3.0
 texture = ExtResource("8_smoke_tex")
 emission_shape = 3
 emission_rect_extents = Vector2(300, 10)
 direction = Vector2(0, 1)
 spread = 25.0
-gravity = Vector2(0, 45)
+gravity = Vector2(0, 42)
 initial_velocity_min = 20.0
-initial_velocity_max = 60.0
+initial_velocity_max = 56.0
 angular_velocity_min = -35.0
 angular_velocity_max = 35.0
 scale_amount_min = 0.08
-scale_amount_max = 0.2
-color = Color(0.4, 0.5, 0.72, 0.4)
+scale_amount_max = 0.18
+color = Color(0.45, 0.55, 0.75, 0.38)
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -157,72 +221,82 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(640, 0)
+custom_minimum_size = Vector2(560, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_modal_board")
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel_base")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 alignment = 1
 
+[node name="LblModeTag" type="Label" parent="CenterContainer/Panel/VBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.95, 0.82, 0.48, 1)
+theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_mode_pill")
+text = "پایان مسابقه"
+horizontal_alignment = 1
+
 [node name="EmblemBox" type="Control" parent="CenterContainer/Panel/VBox"]
-custom_minimum_size = Vector2(160, 140)
+custom_minimum_size = Vector2(150, 126)
 layout_mode = 2
 size_flags_horizontal = 4
 
 [node name="AuraRay" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox"]
-custom_minimum_size = Vector2(200, 200)
+custom_minimum_size = Vector2(176, 176)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = -100.0
-offset_right = 100.0
-offset_bottom = 100.0
+offset_left = -88.0
+offset_top = -78.0
+offset_right = 88.0
+offset_bottom = 98.0
 grow_horizontal = 2
 grow_vertical = 2
-pivot_offset = Vector2(100, 100)
+pivot_offset = Vector2(88, 88)
 texture = ExtResource("4_flare_tex")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="AuraSparkles" type="CPUParticles2D" parent="CenterContainer/Panel/VBox/EmblemBox"]
-position = Vector2(80, 70)
+position = Vector2(75, 72)
 emitting = false
-amount = 16
-lifetime = 1.2
+amount = 14
+lifetime = 1.15
 texture = ExtResource("7_spark_tex")
 spread = 180.0
 gravity = Vector2(0, 0)
-initial_velocity_min = 35.0
-initial_velocity_max = 85.0
+initial_velocity_min = 32.0
+initial_velocity_max = 78.0
 scale_amount_min = 0.12
-scale_amount_max = 0.28
+scale_amount_max = 0.25
 color = Color(1, 0.95, 0.6, 0.9)
 
 [node name="Plaque" type="PanelContainer" parent="CenterContainer/Panel/VBox/EmblemBox"]
-custom_minimum_size = Vector2(100, 100)
+custom_minimum_size = Vector2(88, 88)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -50.0
-offset_top = -50.0
-offset_right = 50.0
-offset_bottom = 50.0
+offset_left = -44.0
+offset_top = -34.0
+offset_right = 44.0
+offset_bottom = 54.0
 grow_horizontal = 2
 grow_vertical = 2
-pivot_offset = Vector2(50, 50)
+pivot_offset = Vector2(44, 44)
 theme_override_styles/panel = SubResource("StyleBoxFlat_plaque")
 
 [node name="IconCenter" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox/Plaque"]
-custom_minimum_size = Vector2(70, 70)
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -235,16 +309,16 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -60.0
-offset_top = -8.0
-offset_right = 60.0
-offset_bottom = 26.0
+offset_left = -56.0
+offset_top = 0.0
+offset_right = 56.0
+offset_bottom = 32.0
 grow_horizontal = 2
 theme_override_constants/separation = 4
 alignment = 1
 
 [node name="StarLeft" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox/StarCrown"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("5_star_tex")
@@ -252,7 +326,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="StarCenter" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox/StarCrown"]
-custom_minimum_size = Vector2(38, 38)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("5_star_tex")
@@ -260,7 +334,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="StarRight" type="TextureRect" parent="CenterContainer/Panel/VBox/EmblemBox/StarCrown"]
-custom_minimum_size = Vector2(28, 28)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 size_flags_vertical = 4
 texture = ExtResource("5_star_tex")
@@ -274,44 +348,50 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 34
-text = "🏆 پیروزی درخشان!"
+text = "پیروزی درخشان!"
 horizontal_alignment = 1
 
 [node name="LblSubtitle" type="Label" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.9, 0.82, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-text = "تبریک! با بازی هوشمندانه برنده این رقابت شدی."
+theme_override_colors/font_color = Color(0.86, 0.79, 0.68, 1)
+theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_font_sizes/font_size = 15
+text = "با بازی هوشمندانه و دقیق برنده این مسابقه شدید."
 horizontal_alignment = 1
 autowrap_mode = 2
 
+[node name="Divider" type="ColorRect" parent="CenterContainer/Panel/VBox"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.84, 0.67, 0.30, 0.30)
+
 [node name="MatchupBox" type="HBoxContainer" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="P1Card" type="PanelContainer" parent="CenterContainer/Panel/VBox/MatchupBox"]
-custom_minimum_size = Vector2(0, 170)
+custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_player_winner")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 7
 alignment = 1
 
 [node name="WinnerTag" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
 layout_mode = 2
+size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.85, 0.28, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "👑 برنده مسابقه"
+theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_font_sizes/font_size = 13
+text = "برنده مسابقه"
 horizontal_alignment = 1
 
 [node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
-custom_minimum_size = Vector2(70, 70)
+custom_minimum_size = Vector2(68, 68)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
@@ -319,9 +399,10 @@ stretch_mode = 5
 
 [node name="Name" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.96, 0.9, 1)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.984, 0.953, 0.894, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 21
+theme_override_font_sizes/font_size = 20
 text = "بازیکن ۱"
 horizontal_alignment = 1
 clip_text = true
@@ -330,40 +411,51 @@ text_overrun_behavior = 3
 [node name="Score" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
 visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.28, 1)
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.30, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_score_well")
 text = "۳"
 horizontal_alignment = 1
 
-[node name="LblVS" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox"]
+[node name="VSMedallion" type="PanelContainer" parent="CenterContainer/Panel/VBox/MatchupBox"]
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_vs_disc")
+
+[node name="LblVS" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/VSMedallion"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.80, 0.36, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 20
 text = "VS"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="P2Card" type="PanelContainer" parent="CenterContainer/Panel/VBox/MatchupBox"]
-custom_minimum_size = Vector2(0, 170)
+custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_player_normal")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 7
 alignment = 1
 
 [node name="WinnerTag" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.55, 0.45, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.72, 0.64, 0.54, 1)
+theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_font_sizes/font_size = 13
 text = "بازیکن ۲"
 horizontal_alignment = 1
 
 [node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
-custom_minimum_size = Vector2(70, 70)
+custom_minimum_size = Vector2(68, 68)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
@@ -371,9 +463,10 @@ stretch_mode = 5
 
 [node name="Name" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.85, 0.8, 1)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.87, 0.80, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 21
+theme_override_font_sizes/font_size = 20
 text = "بازیکن ۲"
 horizontal_alignment = 1
 clip_text = true
@@ -382,53 +475,57 @@ text_overrun_behavior = 3
 [node name="Score" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
 visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.8, 0.7, 1)
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.86, 0.80, 0.70, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_score_well")
 text = "۰"
 horizontal_alignment = 1
 
-[node name="RewardsHBox" type="HBoxContainer" parent="CenterContainer/Panel/VBox"]
+[node name="RewardsHBox" type="HFlowContainer" parent="CenterContainer/Panel/VBox"]
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 16
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 alignment = 1
 
 [node name="CoinChip" type="PanelContainer" parent="CenterContainer/Panel/VBox/RewardsHBox"]
 visible = false
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip_coin")
 
 [node name="LblCoin" type="Label" parent="CenterContainer/Panel/VBox/RewardsHBox/CoinChip"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
+theme_override_colors/font_color = Color(1, 0.88, 0.34, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-text = "💰 +۵۰ سکه طلایی"
+theme_override_font_sizes/font_size = 19
+text = "+۵۰ سکه"
 
 [node name="XPChip" type="PanelContainer" parent="CenterContainer/Panel/VBox/RewardsHBox"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip_xp")
 
 [node name="LblXP" type="Label" parent="CenterContainer/Panel/VBox/RewardsHBox/XPChip"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.95, 0.55, 1)
+theme_override_colors/font_color = Color(0.42, 0.96, 0.62, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-text = "⭐ +۱۵ امتیاز کافه"
+theme_override_font_sizes/font_size = 19
+text = "+۱۵ تجربه"
 
 [node name="ButtonsRow" type="HBoxContainer" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="BtnReturn" type="Button" parent="CenterContainer/Panel/VBox/ButtonsRow"]
-custom_minimum_size = Vector2(300, 72)
+custom_minimum_size = Vector2(280, 62)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.05, 0.15, 0.35, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "خروج از بازی"

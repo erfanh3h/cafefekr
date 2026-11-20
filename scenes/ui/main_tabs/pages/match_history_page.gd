@@ -1267,90 +1267,190 @@ func _render_stats_matrix(holder: VBoxContainer) -> void:
 
 
 func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> void:
-	var title: Label = Label.new()
-	title.text = "📊 کارنامه و آمار کل مسابقات"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	title.add_theme_font_override("font", _font_hekayat)
-	title.add_theme_font_size_override("font_size", 36)
-	title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
-	holder.add_child(title)
+	holder.add_child(CafeSocialTheme.make_ornate_section_header("کارنامه و آمار بازی‌های من", null))
 
 	var w_rank: int = int(hist.get("win_rank", 0))
-	var l_rank: int = int(hist.get("lose_rank", 0))
 	var d_rank: int = int(hist.get("draw_rank", 0))
+	var l_rank: int = int(hist.get("lose_rank", 0))
+
 	var w_cr: int = int(hist.get("win_classic_rank", 0))
+	var d_cr: int = int(hist.get("draw_classic_rank", 0))
+	var l_cr: int = int(hist.get("lose_classic_rank", 0))
+
 	var r1_mr: int = int(hist.get("rank1_multi_rank", 0))
 	var r2_mr: int = int(hist.get("rank2_multi_rank", 0))
+	var rn_mr: int = int(hist.get("rankn_multi_rank", 0))
 
-	var total_played: int = w_rank + l_rank + d_rank + w_cr + r1_mr + r2_mr
 	var total_wins: int = w_rank + w_cr + r1_mr
-	var win_rate: int = int(round((float(total_wins) / float(max(1, total_played))) * 100.0))
+	var total_draws: int = d_rank + d_cr + r2_mr
+	var total_losses: int = l_rank + l_cr + rn_mr
+	var total_played: int = total_wins + total_draws + total_losses
+	var win_rate: int = int(round((float(total_wins) / float(total_played)) * 100.0)) if total_played > 0 else 0
 
-	var stat_cards_data: Array[Dictionary] = [
-		{"label": "پیروزی‌های رنک", "val": GameManager.to_fa_num(w_rank), "col": Color(0.35, 0.95, 0.45), "sub": "مسابقات دو نفره"},
-		{"label": "شکست‌های رنک", "val": GameManager.to_fa_num(l_rank), "col": Color(0.95, 0.40, 0.40), "sub": "مسابقات دو نفره"},
-		{"label": "تک‌نفره (AI)", "val": GameManager.to_fa_num(w_cr), "col": Color(0.45, 0.85, 1.0), "sub": "کلاسیک هوش مصنوعی"},
-		{"label": "مقام اول چندنفره", "val": GameManager.to_fa_num(r1_mr), "col": Color(1.0, 0.85, 0.35), "sub": "منچ، ریسک، مونوپولی"},
-		{"label": "کل مسابقات", "val": GameManager.to_fa_num(total_played), "col": Color(0.95, 0.90, 0.80), "sub": "مجموع کل بازی‌ها"},
-		{"label": "درصد برد کل", "val": "%s٪" % GameManager.to_fa_num(win_rate), "col": Color(1.0, 0.90, 0.35), "sub": "نرخ موفقیت"},
+	# === 1. HERO CAREER SUMMARY CARD ===
+	var hero_card: PanelContainer = PanelContainer.new()
+	hero_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var hero_sb: StyleBoxFlat = StyleBoxFlat.new()
+	hero_sb.bg_color = Color(0.16, 0.10, 0.06, 0.97)
+	hero_sb.border_color = Color(0.86, 0.68, 0.30, 0.90)
+	hero_sb.border_width_left = 1
+	hero_sb.border_width_right = 1
+	hero_sb.border_width_bottom = 1
+	hero_sb.border_width_top = 2
+	hero_sb.set_corner_radius_all(18)
+	hero_sb.content_margin_left = 14.0
+	hero_sb.content_margin_right = 14.0
+	hero_sb.content_margin_top = 14.0
+	hero_sb.content_margin_bottom = 14.0
+	hero_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+	hero_sb.shadow_size = 6
+	hero_sb.shadow_offset = Vector2(0, 3)
+	hero_card.add_theme_stylebox_override("panel", hero_sb)
+	holder.add_child(hero_card)
+
+	var hv: VBoxContainer = VBoxContainer.new()
+	hv.add_theme_constant_override("separation", 12)
+	hero_card.add_child(hv)
+
+	var wr_col: Color = CafeSocialTheme.COL_MUTED_SAND
+	if total_played > 0:
+		if win_rate >= 55:
+			wr_col = CafeSocialTheme.COL_EMERALD_TEXT
+		elif win_rate >= 35:
+			wr_col = CafeSocialTheme.COL_GOLD_BRIGHT
+		else:
+			wr_col = CafeSocialTheme.COL_CRIMSON_TEXT
+
+	# 3 Executive KPI Wells (RTL: Win Rate left, Wins center, Total Matches right)
+	var kpi_row: HBoxContainer = HBoxContainer.new()
+	kpi_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	kpi_row.add_theme_constant_override("separation", 10)
+	hv.add_child(kpi_row)
+
+	kpi_row.add_child(_create_history_kpi_well("%s٪" % GameManager.to_fa_num(win_rate), "نرخ برد کل", wr_col))
+	kpi_row.add_child(_create_history_kpi_well(GameManager.to_fa_num(total_wins), "کل پیروزی‌ها", CafeSocialTheme.COL_EMERALD_TEXT))
+	kpi_row.add_child(_create_history_kpi_well(GameManager.to_fa_num(total_played), "کل مسابقات", CafeSocialTheme.COL_GOLD_BRIGHT))
+
+	# Overall Proportional Segmented Distribution Bar
+	var bar_track: PanelContainer = PanelContainer.new()
+	bar_track.custom_minimum_size = Vector2(0, 12)
+	bar_track.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar_track.clip_contents = true
+	var track_sb: StyleBoxFlat = StyleBoxFlat.new()
+	track_sb.bg_color = Color(0.07, 0.04, 0.02, 0.94)
+	track_sb.border_color = Color(0.45, 0.34, 0.19, 0.65)
+	track_sb.set_border_width_all(1)
+	track_sb.set_corner_radius_all(6)
+	track_sb.content_margin_left = 1.0
+	track_sb.content_margin_right = 1.0
+	track_sb.content_margin_top = 1.0
+	track_sb.content_margin_bottom = 1.0
+	bar_track.add_theme_stylebox_override("panel", track_sb)
+	hv.add_child(bar_track)
+
+	var seg_row: HBoxContainer = HBoxContainer.new()
+	seg_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	seg_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	seg_row.add_theme_constant_override("separation", 2)
+	bar_track.add_child(seg_row)
+
+	if total_played > 0:
+		var seg_vals: Array[int] = [total_losses, total_draws, total_wins]
+		var seg_cols: Array[Color] = [
+			Color(0.86, 0.34, 0.34, 0.92),
+			Color(0.94, 0.76, 0.28, 0.92),
+			Color(0.30, 0.84, 0.48, 0.96)
+		]
+		for i in range(seg_vals.size()):
+			if seg_vals[i] <= 0:
+				continue
+			var seg: Panel = Panel.new()
+			seg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			seg.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			seg.size_flags_stretch_ratio = float(seg_vals[i])
+			var seg_sb: StyleBoxFlat = StyleBoxFlat.new()
+			seg_sb.bg_color = seg_cols[i]
+			seg_sb.set_corner_radius_all(4)
+			seg.add_theme_stylebox_override("panel", seg_sb)
+			seg_row.add_child(seg)
+
+	var legend: Label = Label.new()
+	legend.text = "برد و مقام اول: %s  •  مساوی و دوم: %s  •  باخت و سایر: %s" % [
+		GameManager.to_fa_num(total_wins),
+		GameManager.to_fa_num(total_draws),
+		GameManager.to_fa_num(total_losses)
 	]
+	legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	legend.add_theme_font_override("font", _font_vazir)
+	legend.add_theme_font_size_override("font_size", 14)
+	legend.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
+	hv.add_child(legend)
 
-	var grid: GridContainer = GridContainer.new()
-	grid.columns = 2
-	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	grid.add_theme_constant_override("h_separation", 14)
-	grid.add_theme_constant_override("v_separation", 14)
-	holder.add_child(grid)
+	# === 2. MODE PERFORMANCE BREAKDOWN (SINGLE CLEAN SET, NO DUPLICATION) ===
+	var m_spacer: Control = Control.new()
+	m_spacer.custom_minimum_size = Vector2(0, 6)
+	holder.add_child(m_spacer)
 
-	for sc in stat_cards_data:
-		var card: PanelContainer = PanelContainer.new()
-		card.custom_minimum_size = Vector2(0, 130)
-		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
+	holder.add_child(CafeSocialTheme.make_ornate_section_header("عملکرد به تفکیک حالت مسابقه", null))
 
-		var pad: MarginContainer = MarginContainer.new()
-		pad.add_theme_constant_override("margin_left", 8)
-		pad.add_theme_constant_override("margin_right", 8)
-		card.add_child(pad)
+	var card_rank: RankingCard = RankingCard.new()
+	card_rank.setup_mode("رده‌بندی دو نفره", "رقابتی آنلاین", w_rank, d_rank, l_rank, null)
+	holder.add_child(card_rank)
 
-		var cv: VBoxContainer = VBoxContainer.new()
-		cv.alignment = BoxContainer.ALIGNMENT_CENTER
-		cv.add_theme_constant_override("separation", 4)
-		pad.add_child(cv)
+	var card_cr: RankingCard = RankingCard.new()
+	card_cr.setup_mode("کلاسیک تک‌نفره", "هوش مصنوعی", w_cr, d_cr, l_cr, null)
+	holder.add_child(card_cr)
 
-		var lbl_title: Label = Label.new()
-		lbl_title.text = str(sc["label"])
-		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_title.add_theme_font_override("font", _font_hekayat)
-		lbl_title.add_theme_font_size_override("font_size", 22)
-		lbl_title.add_theme_color_override("font_color", Color(0.85, 0.78, 0.65))
-		cv.add_child(lbl_title)
+	var card_mr: RankingCard = RankingCard.new()
+	card_mr.setup_multiplayer("رده‌بندی چندنفره", "رقابت گروهی", r1_mr, r2_mr, rn_mr, null)
+	holder.add_child(card_mr)
 
-		var lbl_val: Label = Label.new()
-		lbl_val.text = str(sc["val"])
-		lbl_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_val.add_theme_font_override("font", _font_hekayat)
-		lbl_val.add_theme_font_size_override("font_size", 36)
-		lbl_val.add_theme_color_override("font_color", sc["col"] as Color)
-		cv.add_child(lbl_val)
-
-		var lbl_sub: Label = Label.new()
-		lbl_sub.text = str(sc["sub"])
-		lbl_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_sub.add_theme_font_override("font", _font_vazir)
-		lbl_sub.add_theme_font_size_override("font_size", 16)
-		lbl_sub.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
-		cv.add_child(lbl_sub)
-
-		grid.add_child(card)
-
+	# === 3. PER-GAME ANALYTICS WITH FILTER/SORT ===
 	var g_spacer: Control = Control.new()
-	g_spacer.custom_minimum_size = Vector2(0, 10)
+	g_spacer.custom_minimum_size = Vector2(0, 8)
 	holder.add_child(g_spacer)
 
-	GamesHistoryViewHelper.populate_games_history(holder, hist)
+	GamesHistoryViewHelper.populate_games_history(holder, hist, false)
 
 	var stats_spacer: Control = Control.new()
 	stats_spacer.custom_minimum_size = Vector2(0, 40)
 	stats_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(stats_spacer)
+
+
+func _create_history_kpi_well(val_txt: String, caption_txt: String, accent_col: Color) -> PanelContainer:
+	var p: PanelContainer = PanelContainer.new()
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var st: StyleBoxFlat = StyleBoxFlat.new()
+	st.bg_color = Color(0.10, 0.06, 0.03, 0.94)
+	st.border_color = Color(accent_col.r, accent_col.g, accent_col.b, 0.45)
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(13)
+	st.content_margin_left = 6.0
+	st.content_margin_right = 6.0
+	st.content_margin_top = 10.0
+	st.content_margin_bottom = 10.0
+	p.add_theme_stylebox_override("panel", st)
+
+	var vb: VBoxContainer = VBoxContainer.new()
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_theme_constant_override("separation", 3)
+	p.add_child(vb)
+
+	var lbl_v: Label = Label.new()
+	lbl_v.text = val_txt
+	lbl_v.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_v.add_theme_font_override("font", _font_hekayat)
+	lbl_v.add_theme_font_size_override("font_size", 28)
+	lbl_v.add_theme_color_override("font_color", accent_col)
+	vb.add_child(lbl_v)
+
+	var lbl_c: Label = Label.new()
+	lbl_c.text = caption_txt
+	lbl_c.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_c.add_theme_font_override("font", _font_vazir)
+	lbl_c.add_theme_font_size_override("font_size", 14)
+	lbl_c.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
+	vb.add_child(lbl_c)
+	return p

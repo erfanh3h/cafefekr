@@ -1,87 +1,145 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/multi_rank/multi_rank_dialog.gd" id="1_multi_rank_script"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="3_close_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="2_close_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/games/ludo.png" id="5_preview_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="6_button_tex"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
-texture = ExtResource("2_board_tex")
-texture_margin_left = 60.0
-texture_margin_top = 60.0
-texture_margin_right = 60.0
-texture_margin_bottom = 60.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+content_margin_left = 18.0
+content_margin_top = 18.0
+content_margin_right = 18.0
+content_margin_bottom = 18.0
+bg_color = Color(0.11, 0.072, 0.045, 0.97)
+border_width_left = 2
+border_width_top = 3
+border_width_right = 2
+border_width_bottom = 4
+border_color = Color(0.86, 0.69, 0.30, 0.96)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0, 0, 0.65)
+shadow_size = 18
+shadow_offset = Vector2(0, 8)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_preview_card"]
-bg_color = Color(0.14, 0.09, 0.06, 0.95)
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.165, 0.11, 0.068, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.85, 0.72, 0.38, 0.85)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
-shadow_color = Color(0, 0, 0, 0.5)
-shadow_size = 8
+border_color = Color(0.86, 0.70, 0.34, 0.85)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_diff_badge"]
-bg_color = Color(0.18, 0.12, 0.08, 0.85)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cap_badge"]
+content_margin_left = 10.0
+content_margin_top = 3.0
+content_margin_right = 10.0
+content_margin_bottom = 3.0
+bg_color = Color(0.09, 0.22, 0.14, 0.94)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.55, 0.42, 0.28, 0.7)
+border_color = Color(0.32, 0.88, 0.54, 0.78)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
-content_margin_left = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_diff_badge"]
+content_margin_left = 10.0
+content_margin_top = 3.0
+content_margin_right = 10.0
+content_margin_bottom = 3.0
+bg_color = Color(0.20, 0.14, 0.07, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.68, 0.32, 0.72)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reward_gold"]
+content_margin_left = 10.0
 content_margin_top = 4.0
-content_margin_right = 12.0
+content_margin_right = 10.0
 content_margin_bottom = 4.0
+bg_color = Color(0.21, 0.145, 0.055, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.95, 0.78, 0.30, 0.75)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reward_silver"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.14, 0.15, 0.19, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.68, 0.76, 0.88, 0.68)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon_frame"]
-bg_color = Color(0.08, 0.05, 0.03, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.85, 0.35, 0.9)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
 content_margin_left = 4.0
 content_margin_top = 4.0
 content_margin_right = 4.0
 content_margin_bottom = 4.0
+bg_color = Color(0.08, 0.05, 0.03, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.98, 0.82, 0.32, 0.92)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [node name="MultiRankDialog" type="PanelContainer"]
-custom_minimum_size = Vector2(660, 1160)
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -330.0
-offset_top = -580.0
-offset_right = 330.0
-offset_bottom = 580.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 44.0
+offset_right = -20.0
+offset_bottom = -44.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_board")
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
 script = ExtResource("1_multi_rank_script")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
@@ -89,12 +147,14 @@ theme_override_constants/separation = 12
 
 [node name="TopRow" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="BtnClose" type="TextureButton" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
-texture_normal = ExtResource("3_close_tex")
+size_flags_vertical = 4
+texture_normal = ExtResource("2_close_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
@@ -106,94 +166,142 @@ alignment = 1
 
 [node name="LblTitle" type="Label" parent="Margin/VBox/TopRow/TitleBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.94, 0.82, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_color = Color(0.984, 0.953, 0.894, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 28
-text = "رقابت چند نفره آنلاین"
+text = "رقابت ۴ نفره آنلاین"
 horizontal_alignment = 1
 
 [node name="LblSubtitle" type="Label" parent="Margin/VBox/TopRow/TitleBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.8, 0.65, 0.9)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 18
-text = "جدال هیجان‌انگیز ۴ نفره — با تکمیل ظرفیت نبرد آغاز می‌شود"
+theme_override_colors/font_color = Color(0.84, 0.76, 0.64, 0.92)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 13
+text = "بازی دلخواه را انتخاب کنید — با تکمیل ظرفیت ۴ بازیکن مسابقه آغاز می‌شود"
 horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="Placeholder" type="Control" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
 
+[node name="HeaderDivider" type="ColorRect" parent="Margin/VBox"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.84, 0.67, 0.30, 0.32)
+
 [node name="SelectedPreviewCard" type="PanelContainer" parent="Margin/VBox"]
-custom_minimum_size = Vector2(0, 126)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_preview_card")
 
 [node name="Margin" type="MarginContainer" parent="Margin/VBox/SelectedPreviewCard"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 2
+theme_override_constants/margin_bottom = 2
 
-[node name="HBox" type="HBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin"]
+[node name="VBoxHero" type="VBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HBox" type="HBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero"]
 layout_mode = 2
 theme_override_constants/separation = 14
 alignment = 1
 
-[node name="VBoxInfo" type="VBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox"]
+[node name="VBoxInfo" type="VBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 2
+theme_override_constants/separation = 6
 alignment = 1
 
-[node name="LblPreviewName" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo"]
+[node name="LblPreviewName" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/HBox/VBoxInfo"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_color = Color(0.984, 0.953, 0.894, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 28
 text = "منچ"
 horizontal_alignment = 2
 
-[node name="HBoxBadges" type="HBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo"]
+[node name="HBoxBadges" type="HBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/HBox/VBoxInfo"]
 layout_mode = 2
+theme_override_constants/separation = 6
 alignment = 2
 
-[node name="DiffBadge" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HBoxBadges"]
+[node name="DiffBadge" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/HBox/VBoxInfo/HBoxBadges"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_diff_badge")
 
-[node name="LblDiff" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HBoxBadges/DiffBadge"]
+[node name="LblDiff" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/HBox/VBoxInfo/HBoxBadges/DiffBadge"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.9, 0.5, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 18
-text = "ظرفیت: ۴ بازیکن آنلاین"
+theme_override_colors/font_color = Color(0.98, 0.86, 0.45, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 12
+text = "سختی: متوسط"
 
-[node name="LblPreviewRewards" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo"]
+[node name="CapBadge" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/HBox/VBoxInfo/HBoxBadges"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 15
-text = "پاداش: 🏆 اول ۱۲+ کاپ | 🥈 دوم ۴+ کاپ"
-horizontal_alignment = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_cap_badge")
 
-[node name="IconFrame" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox"]
-custom_minimum_size = Vector2(80, 80)
+[node name="LblCap" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/HBox/VBoxInfo/HBoxBadges/CapBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.96, 0.62, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 12
+text = "۴ بازیکن آنلاین"
+
+[node name="IconFrame" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/HBox"]
+custom_minimum_size = Vector2(78, 78)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_icon_frame")
 
-[node name="PreviewIcon" type="TextureRect" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/IconFrame"]
+[node name="PreviewIcon" type="TextureRect" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/HBox/IconFrame"]
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("5_preview_tex")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="RewardsRow" type="HBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="SecondPill" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/RewardsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_reward_silver")
+
+[node name="LblSecond" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/RewardsRow/SecondPill"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.84, 0.90, 0.98, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 12
+text = "مقام دوم: +۴ کاپ • +۳۰ تجربه"
+horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="FirstPill" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/RewardsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_reward_gold")
+
+[node name="LblFirst" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/VBoxHero/RewardsRow/FirstPill"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.40, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 12
+text = "مقام اول: +۱۲ کاپ • +۵۰ تجربه"
+horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="ScrollGames" type="ScrollContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -212,12 +320,12 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnStartGame" type="Button" parent="Margin/VBox/BottomRow"]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
-text = "ورود به صف ۴ نفره ⚔️"
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 26
+text = "ورود به صف ۴ نفره — منچ"
