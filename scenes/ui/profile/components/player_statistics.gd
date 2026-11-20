@@ -7,6 +7,8 @@ extends HBoxContainer
 ## 2. Player Level (سطح بازیکن)
 ## 3. Friends Count (تعداد دوستان) or Coins (سکه شما if self)
 
+const FONT_VAZIR: FontFile = preload("res://assets/fonts/Vazir.ttf")
+
 var _card_score: PanelContainer
 var _card_level: PanelContainer
 var _card_friends: PanelContainer
@@ -24,38 +26,37 @@ func _init() -> void:
 
 
 func _build_ui() -> void:
-	# Card 1: Score / Cafe Fekr Points (Gold Accent)
-	var sc_res := _create_stat_card("امتیاز کافه", CafeSocialTheme.COL_GOLD_BRIGHT)
-	_card_score = sc_res["panel"]
-	_lbl_score_val = sc_res["val_label"]
+	var sc_res: Dictionary = _create_stat_card("امتیاز کافه", CafeSocialTheme.COL_GOLD_BRIGHT)
+	_card_score = sc_res["panel"] as PanelContainer
+	_lbl_score_val = sc_res["val_label"] as Label
 	add_child(_card_score)
 
-	# Card 2: Level (Emerald Accent)
-	var lvl_res := _create_stat_card("سطح بازیکن", CafeSocialTheme.COL_EMERALD_TEXT)
-	_card_level = lvl_res["panel"]
-	_lbl_level_val = lvl_res["val_label"]
+	var lvl_res: Dictionary = _create_stat_card("سطح بازیکن", CafeSocialTheme.COL_EMERALD_TEXT)
+	_card_level = lvl_res["panel"] as PanelContainer
+	_lbl_level_val = lvl_res["val_label"] as Label
 	add_child(_card_level)
 
-	# Card 3: Friends / Coins (Warm Cream Accent)
-	var fr_res := _create_stat_card("دوستان", CafeSocialTheme.COL_WARM_CREAM)
-	_card_friends = fr_res["panel"]
-	_lbl_friends_val = fr_res["val_label"]
-	_lbl_friends_title = fr_res["title_label"]
+	var fr_res: Dictionary = _create_stat_card("دوستان", CafeSocialTheme.COL_WARM_CREAM)
+	_card_friends = fr_res["panel"] as PanelContainer
+	_lbl_friends_val = fr_res["val_label"] as Label
+	_lbl_friends_title = fr_res["title_label"] as Label
 	add_child(_card_friends)
 
 
 func _create_stat_card(title: String, accent_col: Color) -> Dictionary:
-	var p := PanelContainer.new()
+	var p: PanelContainer = PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	p.custom_minimum_size = Vector2(0, 88)
+	p.custom_minimum_size = Vector2(0, 84)
 
-	# Clean, refined dark walnut well card without inner ornamental icons
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.12, 0.08, 0.05, 0.94)
-	sb.border_color = Color(0.48, 0.36, 0.20, 0.70)
-	sb.set_border_width_all(1)
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.14, 0.09, 0.05, 0.96)
+	sb.border_color = Color(accent_col.r, accent_col.g, accent_col.b, 0.55)
+	sb.border_width_left = 1
+	sb.border_width_right = 1
+	sb.border_width_bottom = 1
+	sb.border_width_top = 2
 	sb.set_corner_radius_all(14)
-	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.35)
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
 	sb.shadow_size = 4
 	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 6.0
@@ -64,17 +65,20 @@ func _create_stat_card(title: String, accent_col: Color) -> Dictionary:
 	sb.content_margin_bottom = 8.0
 	p.add_theme_stylebox_override("panel", sb)
 
-	var vb := VBoxContainer.new()
+	var vb: VBoxContainer = VBoxContainer.new()
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
-	vb.add_theme_constant_override("separation", 2)
+	vb.add_theme_constant_override("separation", 3)
 	p.add_child(vb)
 
-	# Large Crisp Number (Zero icons as requested)
-	var val_lbl := CafeSocialTheme.make_title("۰", 28, accent_col, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var val_lbl: Label = CafeSocialTheme.make_title("۰", 26, accent_col, HORIZONTAL_ALIGNMENT_CENTER, false)
 	vb.add_child(val_lbl)
 
-	# Label Underneath
-	var tit_lbl := CafeSocialTheme.make_body(title, 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var tit_lbl: Label = Label.new()
+	tit_lbl.text = title
+	tit_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tit_lbl.add_theme_font_override("font", FONT_VAZIR)
+	tit_lbl.add_theme_font_size_override("font_size", 14)
+	tit_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 	vb.add_child(tit_lbl)
 
 	return {

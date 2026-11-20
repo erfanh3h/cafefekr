@@ -106,6 +106,89 @@ shadow_color = Color(0, 0, 0, 0.72)
 shadow_size = 20
 shadow_offset = Vector2(0, 8)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_card"]
+content_margin_left = 22.0
+content_margin_top = 24.0
+content_margin_right = 22.0
+content_margin_bottom = 24.0
+bg_color = Color(0.11, 0.072, 0.045, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 4
+border_color = Color(0.84, 0.67, 0.30, 0.96)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0, 0, 0.65)
+shadow_size = 18
+shadow_offset = Vector2(0, 8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_intro_mode_pill"]
+content_margin_left = 18.0
+content_margin_top = 5.0
+content_margin_right = 18.0
+content_margin_bottom = 5.0
+bg_color = Color(0.19, 0.125, 0.065, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.84, 0.67, 0.30, 0.68)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_intro_player_card"]
+content_margin_left = 10.0
+content_margin_top = 14.0
+content_margin_right = 10.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.105, 0.065, 0.95)
+border_width_left = 2
+border_width_top = 3
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.75, 0.58, 0.28, 0.62)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_intro_vs_disc"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.18, 0.115, 0.055, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.78, 0.32, 0.94)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_intro_countdown_ring"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.155, 0.095, 0.048, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.96, 0.78, 0.30, 0.95)
+corner_radius_top_left = 56
+corner_radius_top_right = 56
+corner_radius_bottom_right = 56
+corner_radius_bottom_left = 56
+
 [node name="BaseGameHUD" type="Control" unique_id=845529260]
 layout_mode = 3
 anchors_preset = 15
@@ -775,129 +858,174 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.06, 0.04, 0.02, 1)
+color = Color(0.05, 0.03, 0.02, 0.84)
 
 [node name="Card" type="PanelContainer" parent="StartGameOverlay" unique_id=1503515022]
-custom_minimum_size = Vector2(640, 620)
+custom_minimum_size = Vector2(560, 0)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -320.0
-offset_top = -310.0
-offset_right = 320.0
-offset_bottom = 310.0
+offset_left = -280.0
+offset_top = -255.0
+offset_right = 280.0
+offset_bottom = 255.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_modal_board")
+theme_override_styles/panel = SubResource("StyleBoxFlat_start_card")
 
 [node name="VBox" type="VBoxContainer" parent="StartGameOverlay/Card" unique_id=1125139661]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 alignment = 1
 
 [node name="CafeTitle" type="Label" parent="StartGameOverlay/Card/VBox" unique_id=1716186520]
 layout_mode = 2
+size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
-text = "☕ کافه فکر — مسابقه آنلاین"
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("StyleBoxFlat_intro_mode_pill")
+text = "کافه فکر — مسابقه آنلاین"
 horizontal_alignment = 1
 
 [node name="GameTitle" type="Label" parent="StartGameOverlay/Card/VBox" unique_id=1157532697]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
+theme_override_colors/font_color = Color(0.984314, 0.952941, 0.894118, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 34
 text = "تیک تاک تو (دوز ۳×۳)"
 horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="HeaderDivider" type="ColorRect" parent="StartGameOverlay/Card/VBox"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.84, 0.67, 0.30, 0.34)
 
 [node name="VSBox" type="HBoxContainer" parent="StartGameOverlay/Card/VBox" unique_id=479182373]
 layout_mode = 2
-theme_override_constants/separation = 20
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
 alignment = 1
 
-[node name="IntroP1" type="VBoxContainer" parent="StartGameOverlay/Card/VBox/VSBox" unique_id=1537018962]
+[node name="IntroP1Card" type="PanelContainer" parent="StartGameOverlay/Card/VBox/VSBox"]
 layout_mode = 2
-theme_override_constants/separation = 6
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_intro_player_card")
+
+[node name="IntroP1" type="VBoxContainer" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1Card" unique_id=1537018962]
+layout_mode = 2
+theme_override_constants/separation = 7
 alignment = 1
 
-[node name="Avatar" type="TextureRect" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1" unique_id=463699896]
-custom_minimum_size = Vector2(80, 80)
+[node name="Avatar" type="TextureRect" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1" unique_id=463699896]
+custom_minimum_size = Vector2(84, 84)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Name" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1" unique_id=1132827501]
+[node name="Name" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1" unique_id=1132827501]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.8, 1)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.984314, 0.952941, 0.894118, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 21
 text = "بازیکن ۱"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
-[node name="Role" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1" unique_id=1852789009]
+[node name="Role" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1" unique_id=1852789009]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "🔴 مهره قرمز"
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.48, 0.48, 1)
+theme_override_fonts/font = ExtResource("21_font_ui")
+theme_override_font_sizes/font_size = 13
+text = "مهره قرمز"
 horizontal_alignment = 1
 
-[node name="VSLabel" type="Label" parent="StartGameOverlay/Card/VBox/VSBox" unique_id=414555304]
+[node name="VSMedallion" type="PanelContainer" parent="StartGameOverlay/Card/VBox/VSBox"]
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_intro_vs_disc")
+
+[node name="VSLabel" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/VSMedallion" unique_id=414555304]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 46
-text = "⚔️"
+theme_override_font_sizes/font_size = 24
+text = "VS"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="IntroP2" type="VBoxContainer" parent="StartGameOverlay/Card/VBox/VSBox" unique_id=1842455648]
+[node name="IntroP2Card" type="PanelContainer" parent="StartGameOverlay/Card/VBox/VSBox"]
 layout_mode = 2
-theme_override_constants/separation = 6
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_intro_player_card")
+
+[node name="IntroP2" type="VBoxContainer" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2Card" unique_id=1842455648]
+layout_mode = 2
+theme_override_constants/separation = 7
 alignment = 1
 
-[node name="Avatar" type="TextureRect" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2" unique_id=1080241036]
-custom_minimum_size = Vector2(80, 80)
+[node name="Avatar" type="TextureRect" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2" unique_id=1080241036]
+custom_minimum_size = Vector2(84, 84)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Name" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2" unique_id=1163653815]
+[node name="Name" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2" unique_id=1163653815]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.8, 1)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.984314, 0.952941, 0.894118, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 21
 text = "بازیکن ۲"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
-[node name="Role" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2" unique_id=1310841826]
+[node name="Role" type="Label" parent="StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2" unique_id=1310841826]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.35, 0.75, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "🔵 مهره آبی"
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.45, 0.80, 1, 1)
+theme_override_fonts/font = ExtResource("21_font_ui")
+theme_override_font_sizes/font_size = 13
+text = "مهره آبی"
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="StartGameOverlay/Card/VBox" unique_id=583950931]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.78, 0.65, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-text = "آماده‌باشید... بازی به‌زودی آغاز می‌شود"
+theme_override_colors/font_color = Color(0.84, 0.77, 0.65, 1)
+theme_override_fonts/font = ExtResource("21_font_ui")
+theme_override_font_sizes/font_size = 15
+text = "آماده‌باشید... میز مسابقه به‌زودی آماده می‌شود"
 horizontal_alignment = 1
+autowrap_mode = 2
 
-[node name="Countdown" type="Label" parent="StartGameOverlay/Card/VBox" unique_id=2117733696]
-custom_minimum_size = Vector2(240, 90)
+[node name="CountdownRing" type="PanelContainer" parent="StartGameOverlay/Card/VBox"]
+custom_minimum_size = Vector2(112, 112)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_colors/font_color = Color(1, 0.88, 0.25, 1)
+theme_override_styles/panel = SubResource("StyleBoxFlat_intro_countdown_ring")
+
+[node name="Countdown" type="Label" parent="StartGameOverlay/Card/VBox/CountdownRing" unique_id=2117733696]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(1, 0.88, 0.30, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
+theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 64
+theme_override_font_sizes/font_size = 54
 text = "..."
 horizontal_alignment = 1
 vertical_alignment = 1

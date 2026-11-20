@@ -1,49 +1,104 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/lobby/lobby_dialog.gd" id="1_lobby_script"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="3_button_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="5_close_tex"]
-[ext_resource type="Texture2D" path="res://assets/icons/General/refresh.png" id="6_refresh_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/games/tictactoe.jpg" id="7_tictactoe_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="2_button_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="4_close_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/refresh.png" id="5_refresh_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/games/tictactoe.jpg" id="6_tictactoe_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="7_font_vazir"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
-texture = ExtResource("2_board_tex")
-texture_margin_left = 60.0
-texture_margin_top = 60.0
-texture_margin_right = 60.0
-texture_margin_bottom = 60.0
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
-texture = ExtResource("3_button_tex")
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_room_row"]
-texture = ExtResource("3_button_tex")
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input_box"]
-bg_color = Color(0.12, 0.08, 0.05, 0.9)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+bg_color = Color(0.11, 0.07, 0.04, 0.98)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.58, 0.45, 0.28, 0.85)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-content_margin_left = 20.0
-content_margin_top = 16.0
-content_margin_right = 20.0
-content_margin_bottom = 16.0
+border_color = Color(0.84, 0.66, 0.3, 0.92)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+shadow_color = Color(0, 0, 0, 0.62)
+shadow_size = 14
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
+texture = ExtResource("2_button_tex")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input_box"]
+bg_color = Color(0.08, 0.05, 0.03, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.56, 0.43, 0.25, 0.85)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input_focus"]
+bg_color = Color(0.11, 0.07, 0.04, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.98, 0.82, 0.34, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_select_game_normal"]
+bg_color = Color(0.17, 0.11, 0.07, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.84, 0.67, 0.32, 0.9)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 6
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_select_game_hover"]
+bg_color = Color(0.22, 0.14, 0.08, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.86, 0.4, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 shadow_color = Color(0, 0, 0, 0.45)
 shadow_size = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_select_game_btn"]
-bg_color = Color(0, 0, 0, 0)
+shadow_offset = Vector2(0, 3)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_gold"]
-bg_color = Color(0.9, 0.72, 0.22, 0.95)
+bg_color = Color(0.93, 0.75, 0.25, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.92, 0.58, 0.9)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
@@ -54,58 +109,119 @@ content_margin_right = 14.0
 content_margin_bottom = 8.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon_frame"]
-bg_color = Color(0, 0, 0, 0)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_match_header"]
-bg_color = Color(0.14, 0.09, 0.06, 0.98)
+bg_color = Color(0.08, 0.05, 0.03, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.92, 0.78, 0.38, 0.95)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(0, 0, 0, 0.55)
-shadow_size = 8
-shadow_offset = Vector2(0, 4)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_code_box"]
-bg_color = Color(0.22, 0.15, 0.1, 0.9)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.85, 0.7, 0.35, 0.8)
+border_color = Color(0.84, 0.66, 0.3, 0.88)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_form_card"]
+bg_color = Color(0.15, 0.09, 0.05, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.64, 0.49, 0.26, 0.78)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 content_margin_left = 14.0
-content_margin_top = 8.0
+content_margin_top = 14.0
 content_margin_right = 14.0
+content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quick_chip"]
+bg_color = Color(0.24, 0.16, 0.09, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.84, 0.67, 0.32, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_privacy_pill"]
+bg_color = Color(0.1, 0.26, 0.16, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.36, 0.8, 0.5, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_match_header"]
+bg_color = Color(0.15, 0.09, 0.06, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.88, 0.72, 0.35, 0.9)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 6
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_code_box"]
+bg_color = Color(0.2, 0.13, 0.08, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.68, 0.32, 0.8)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
 content_margin_bottom = 8.0
 
 [node name="LobbyDialog" type="PanelContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 40.0
-offset_right = -20.0
-offset_bottom = -40.0
+offset_left = 16.0
+offset_top = 34.0
+offset_right = -16.0
+offset_bottom = -34.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_board")
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
 script = ExtResource("1_lobby_script")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
@@ -113,32 +229,39 @@ theme_override_constants/separation = 12
 
 [node name="TopRow" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="BtnCloseTop" type="TextureButton" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
-texture_normal = ExtResource("5_close_tex")
+texture_normal = ExtResource("4_close_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
 [node name="LblTitle" type="Label" parent="Margin/VBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 28
 text = "اتاق‌های بازی آنلاین (لابی)"
 horizontal_alignment = 1
 
 [node name="BtnRefresh" type="TextureButton" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
-texture_normal = ExtResource("6_refresh_tex")
+texture_normal = ExtResource("5_refresh_tex")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="HeaderDivider" type="ColorRect" parent="Margin/VBox"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.84, 0.66, 0.3, 0.35)
 
 [node name="ViewList" type="VBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -151,21 +274,21 @@ theme_override_constants/separation = 12
 alignment = 1
 
 [node name="BtnShowCreate" type="Button" parent="Margin/VBox/ViewList/ActionsRow"]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ساخت اتاق جدید"
 
 [node name="BtnShowJoinCode" type="Button" parent="Margin/VBox/ViewList/ActionsRow"]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ورود با شناسه اتاق"
@@ -173,6 +296,7 @@ text = "ورود با شناسه اتاق"
 [node name="ScrollList" type="ScrollContainer" parent="Margin/VBox/ViewList"]
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
 [node name="LobbiesContainer" type="VBoxContainer" parent="Margin/VBox/ViewList/ScrollList"]
 layout_mode = 2
@@ -183,56 +307,47 @@ theme_override_constants/separation = 10
 visible = false
 layout_mode = 2
 size_flags_vertical = 6
-text = ""
+theme_override_colors/font_color = Color(0.84, 0.77, 0.65, 0.9)
+theme_override_fonts/font = ExtResource("7_font_vazir")
+theme_override_font_sizes/font_size = 18
+text = "اتاق فعالی در حال حاضر وجود ندارد."
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="ViewCreate" type="VBoxContainer" parent="Margin/VBox"]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="CreateScroll" type="ScrollContainer" parent="Margin/VBox/ViewCreate"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CreateFormVBox" type="VBoxContainer" parent="Margin/VBox/ViewCreate/CreateScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 14
 
-[node name="LblCreateTitle" type="Label" parent="Margin/VBox/ViewCreate"]
+[node name="LblCreateTitle" type="Label" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "مشخصات و تنظیمات اتاق جدید:"
+theme_override_colors/font_color = Color(0.95, 0.83, 0.5, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 21
+text = "۱. انتخاب بازی"
 horizontal_alignment = 2
 
-[node name="InputRoomName" type="LineEdit" parent="Margin/VBox/ViewCreate"]
-custom_minimum_size = Vector2(0, 64)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_colors/font_placeholder_color = Color(0.72, 0.64, 0.52, 0.75)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_input_box")
-placeholder_text = "نام اتاق (مثال: اتاق دوستانه)"
-alignment = 1
-
-[node name="InputRoomPassword" type="LineEdit" parent="Margin/VBox/ViewCreate"]
-custom_minimum_size = Vector2(0, 64)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_colors/font_placeholder_color = Color(0.72, 0.64, 0.52, 0.75)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBoxFlat_input_box")
-placeholder_text = "🔒 رمز عبور اتاق (اختیاری)"
-alignment = 1
-max_length = 20
-
-[node name="BtnSelectGame" type="Button" parent="Margin/VBox/ViewCreate"]
-custom_minimum_size = Vector2(0, 88)
+[node name="BtnSelectGame" type="Button" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox"]
+custom_minimum_size = Vector2(0, 102)
 layout_mode = 2
 focus_mode = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_select_game_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_select_game_btn")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_select_game_btn")
-theme_override_styles/focus = SubResource("StyleBoxFlat_select_game_btn")
-flat = true
+theme_override_styles/normal = SubResource("StyleBoxFlat_select_game_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_select_game_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_select_game_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_select_game_normal")
 
-[node name="Margin" type="MarginContainer" parent="Margin/VBox/ViewCreate/BtnSelectGame"]
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/BtnSelectGame"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -240,68 +355,182 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 6
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
-[node name="HBox" type="HBoxContainer" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin"]
+[node name="HBox" type="HBoxContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/BtnSelectGame/Margin"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="PillChange" type="PanelContainer" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox"]
+[node name="PillChange" type="PanelContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/BtnSelectGame/Margin/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_pill_gold")
 
-[node name="LblChangeHint" type="Label" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox/PillChange"]
+[node name="LblChangeHint" type="Label" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/BtnSelectGame/Margin/HBox/PillChange"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.18, 0.1, 0.02, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.16, 0.09, 0.02, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 19
 text = "تغییر بازی ▾"
 horizontal_alignment = 1
 
-[node name="Spacer" type="Control" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox"]
+[node name="VBoxGameInfo" type="VBoxContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/BtnSelectGame/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
-
-[node name="VBoxGameInfo" type="VBoxContainer" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 3
 alignment = 1
 
-[node name="LblSelectedGame" type="Label" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox/VBoxGameInfo"]
+[node name="LblSelectedGame" type="Label" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/BtnSelectGame/Margin/HBox/VBoxGameInfo"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
+theme_override_colors/font_color = Color(1, 0.97, 0.9, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 25
 text = "تیک تاک تو"
 horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
 
-[node name="IconFrame" type="PanelContainer" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox"]
-custom_minimum_size = Vector2(68, 68)
+[node name="LblSelectedGameMeta" type="Label" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/BtnSelectGame/Margin/HBox/VBoxGameInfo"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.76, 0.6, 0.95)
+theme_override_fonts/font = ExtResource("7_font_vazir")
+theme_override_font_sizes/font_size = 15
+text = "۲ نفره  •  ساده"
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="IconFrame" type="PanelContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/BtnSelectGame/Margin/HBox"]
+custom_minimum_size = Vector2(76, 76)
+layout_mode = 2
+size_flags_vertical = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_icon_frame")
 
-[node name="SelectedGameIcon" type="TextureRect" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox/IconFrame"]
+[node name="SelectedGameIcon" type="TextureRect" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/BtnSelectGame/Margin/HBox/IconFrame"]
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("7_tictactoe_tex")
+texture = ExtResource("6_tictactoe_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SpacerBottom" type="Control" parent="Margin/VBox/ViewCreate"]
+[node name="LblSettingsSection" type="Label" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox"]
 layout_mode = 2
-size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.95, 0.83, 0.5, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 21
+text = "۲. مشخصات اتاق"
+horizontal_alignment = 2
+
+[node name="RoomSettingsCard" type="PanelContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_form_card")
+
+[node name="SettingsVBox" type="VBoxContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NameLabelRow" type="HBoxContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="BtnQuickName" type="Button" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox/NameLabelRow"]
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.88, 0.52, 1)
+theme_override_fonts/font = ExtResource("7_font_vazir")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_quick_chip")
+theme_override_styles/hover = SubResource("StyleBoxFlat_quick_chip")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_quick_chip")
+text = "پیشنهاد نام"
+
+[node name="LblRoomNameField" type="Label" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox/NameLabelRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.94, 0.87, 0.74, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 20
+text = "نام اتاق *"
+horizontal_alignment = 2
+
+[node name="InputRoomName" type="LineEdit" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox"]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_placeholder_color = Color(0.68, 0.6, 0.48, 0.72)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_input_box")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
+placeholder_text = "مثال: اتاق دوستانه کافه"
+alignment = 1
+max_length = 28
+
+[node name="FieldDivider" type="ColorRect" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.8, 0.62, 0.28, 0.22)
+
+[node name="PwdLabelRow" type="HBoxContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="PrivacyBadge" type="PanelContainer" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox/PwdLabelRow"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_privacy_pill")
+
+[node name="LblPrivacyBadge" type="Label" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox/PwdLabelRow/PrivacyBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.95, 0.68, 1)
+theme_override_fonts/font = ExtResource("7_font_vazir")
+theme_override_font_sizes/font_size = 13
+text = "عمومی — ورود آزاد"
+horizontal_alignment = 1
+
+[node name="LblRoomPwdField" type="Label" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox/PwdLabelRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.94, 0.87, 0.74, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 20
+text = "رمز عبور (اختیاری)"
+horizontal_alignment = 2
+
+[node name="InputRoomPassword" type="LineEdit" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/RoomSettingsCard/SettingsVBox"]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
+theme_override_colors/font_placeholder_color = Color(0.68, 0.6, 0.48, 0.72)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("StyleBoxFlat_input_box")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
+placeholder_text = "خالی بگذارید تا اتاق عمومی باشد"
+alignment = 1
+max_length = 20
+
+[node name="LblCreateHint" type="Label" parent="Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 0.92)
+theme_override_fonts/font = ExtResource("7_font_vazir")
+theme_override_font_sizes/font_size = 15
+text = "برای فعال شدن دکمه ایجاد، یک نام برای اتاق وارد کنید."
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="CreateButtonsRow" type="HBoxContainer" parent="Margin/VBox/ViewCreate"]
 layout_mode = 2
@@ -309,51 +538,77 @@ theme_override_constants/separation = 12
 alignment = 1
 
 [node name="BtnCreateConfirm" type="Button" parent="Margin/VBox/ViewCreate/CreateButtonsRow"]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ایجاد اتاق"
 
 [node name="BtnCreateCancel" type="Button" parent="Margin/VBox/ViewCreate/CreateButtonsRow"]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.12, 0.12, 0.12, 0.9)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-text = "بازگشت به لیست"
+text = "بازگشت"
 
 [node name="ViewJoinCode" type="VBoxContainer" parent="Margin/VBox"]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 
-[node name="LblJoinTitle" type="Label" parent="Margin/VBox/ViewJoinCode"]
+[node name="JoinCodeCard" type="PanelContainer" parent="Margin/VBox/ViewJoinCode"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_form_card")
+
+[node name="JoinVBox" type="VBoxContainer" parent="Margin/VBox/ViewJoinCode/JoinCodeCard"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LblJoinTitle" type="Label" parent="Margin/VBox/ViewJoinCode/JoinCodeCard/JoinVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 24
-text = "ورود مستقیم با شناسه ۶ رقمی:"
+text = "ورود مستقیم با شناسه ۶ رقمی"
 horizontal_alignment = 2
 
-[node name="InputJoinCode" type="LineEdit" parent="Margin/VBox/ViewJoinCode"]
+[node name="LblJoinDesc" type="Label" parent="Margin/VBox/ViewJoinCode/JoinCodeCard/JoinVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.84, 0.77, 0.65, 0.92)
+theme_override_fonts/font = ExtResource("7_font_vazir")
+theme_override_font_sizes/font_size = 15
+text = "شناسه ۶ کاراکتری که میزبان اتاق برایتان ارسال کرده را وارد کنید."
+horizontal_alignment = 2
+autowrap_mode = 3
+
+[node name="InputJoinCode" type="LineEdit" parent="Margin/VBox/ViewJoinCode/JoinCodeCard/JoinVBox"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
+theme_override_colors/font_placeholder_color = Color(0.68, 0.6, 0.48, 0.72)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 26
-placeholder_text = "کد ۶ رقمی اتاق (مثال: A1B2C3)"
+theme_override_styles/normal = SubResource("StyleBoxFlat_input_box")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
+placeholder_text = "مثال: A1B2C3"
 alignment = 1
 max_length = 6
+
+[node name="JoinSpacer" type="Control" parent="Margin/VBox/ViewJoinCode"]
+layout_mode = 2
+size_flags_vertical = 3
 
 [node name="JoinButtonsRow" type="HBoxContainer" parent="Margin/VBox/ViewJoinCode"]
 layout_mode = 2
@@ -361,24 +616,25 @@ theme_override_constants/separation = 12
 alignment = 1
 
 [node name="BtnJoinConfirm" type="Button" parent="Margin/VBox/ViewJoinCode/JoinButtonsRow"]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-text = "پیوستن"
+text = "پیوستن به اتاق"
 
 [node name="BtnJoinCancel" type="Button" parent="Margin/VBox/ViewJoinCode/JoinButtonsRow"]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.85, 0.8, 0.75, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.95, 0.9, 0.84, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-text = "بازگشت به لیست"
+text = "بازگشت"
 
 [node name="ViewInside" type="VBoxContainer" parent="Margin/VBox"]
 visible = false
@@ -415,7 +671,7 @@ alignment = 1
 [node name="LblGameSub" type="Label" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/GameRow/VBoxGameInfo"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.8, 0.6, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 16
 text = "بازی انتخابی اتاق مسابقه:"
 horizontal_alignment = 2
@@ -426,7 +682,7 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 24
 text = "تیک تاک تو"
 horizontal_alignment = 2
@@ -434,13 +690,13 @@ clip_text = true
 text_overrun_behavior = 3
 
 [node name="IconFrame" type="PanelContainer" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/GameRow"]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(68, 68)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_icon_frame")
 
 [node name="InsideGameIcon" type="TextureRect" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/GameRow/IconFrame"]
 layout_mode = 2
-texture = ExtResource("7_tictactoe_tex")
+texture = ExtResource("6_tictactoe_tex")
 expand_mode = 1
 stretch_mode = 5
 
@@ -456,7 +712,7 @@ alignment = 1
 [node name="BtnCopyCode" type="Button" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/CodePill/HBoxCode"]
 custom_minimum_size = Vector2(96, 44)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 18
 text = "کپی کد"
 
@@ -466,7 +722,7 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 22
 text = "کد اتاق: ABC123"
 horizontal_alignment = 2
@@ -476,7 +732,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.5, 0.95)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 22
 text = "بازیکنان حاضر در این مسابقه:"
 horizontal_alignment = 2
@@ -497,12 +753,12 @@ theme_override_constants/separation = 10
 alignment = 1
 
 [node name="BtnReady" type="Button" parent="Margin/VBox/ViewInside/InsideButtonsRow"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.5
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "اعلام آمادگی"
@@ -510,37 +766,39 @@ clip_text = true
 
 [node name="BtnStart" type="Button" parent="Margin/VBox/ViewInside/InsideButtonsRow"]
 visible = false
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.6
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "شروع مسابقه"
 clip_text = true
 
 [node name="BtnLeaveLobby" type="Button" parent="Margin/VBox/ViewInside/InsideButtonsRow"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.35, 0.05, 0.05, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 20
 text = "خروج از اتاق"
 clip_text = true
 
 [node name="LblStatus" type="Label" parent="Margin/VBox"]
-custom_minimum_size = Vector2(0, 28)
+custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.95, 0.86, 0.65, 0.95)
+theme_override_fonts/font = ExtResource("7_font_vazir")
+theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="GameSelectModal" type="Control" parent="."]
 visible = false
@@ -561,30 +819,27 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.72)
+color = Color(0.04, 0.02, 0.01, 0.8)
 
 [node name="Panel" type="PanelContainer" parent="GameSelectModal"]
-custom_minimum_size = Vector2(680, 1240)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -340.0
-offset_top = -620.0
-offset_right = 340.0
-offset_bottom = 620.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 36.0
+offset_right = -18.0
+offset_bottom = -36.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_board")
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
 
 [node name="ModalMargin" type="MarginContainer" parent="GameSelectModal/Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
 [node name="VBox" type="VBoxContainer" parent="GameSelectModal/Panel/ModalMargin"]
 layout_mode = 2
@@ -595,9 +850,9 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnCloseGameSelect" type="TextureButton" parent="GameSelectModal/Panel/ModalMargin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
-texture_normal = ExtResource("5_close_tex")
+texture_normal = ExtResource("4_close_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
@@ -607,20 +862,20 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.75, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 28
 text = "انتخاب بازی"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="GameSelectModal/Panel/ModalMargin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
 
 [node name="LblModalSubtitle" type="Label" parent="GameSelectModal/Panel/ModalMargin/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.82, 0.7, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.86, 0.79, 0.66, 0.95)
+theme_override_fonts/font = ExtResource("7_font_vazir")
+theme_override_font_sizes/font_size = 16
 text = "بازی مورد نظر خود را برای ایجاد اتاق انتخاب کنید"
 horizontal_alignment = 1
 
