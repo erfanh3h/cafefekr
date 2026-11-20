@@ -61,8 +61,8 @@ const STRATEGY_META: Dictionary = {
 	"Army": {
 		"fa": "ارتش کمکی",
 		"icon": "⚔️",
-		"short": "+۱ تاس نبرد / ۱ قاره",
-		"desc": "در نبرد +۱ تاس اضافه می‌دهد، یا خارج از نبرد ۱ کارت قاره می‌کشد.",
+		"short": "تاس + سپر / ۱ قاره",
+		"desc": "در نبرد به سقف تاس (۳ حمله / ۲ دفاع) کمک کرده و سپر تلفات می‌شود؛ خارج از نبرد ۱ کارت قاره می‌کشد.",
 		"color": Color(0.82, 0.24, 0.22),
 		"needs_target_player": false,
 		"needs_target_continent": false,
@@ -122,7 +122,7 @@ const STRATEGY_META: Dictionary = {
 		"fa": "توپخانه سنگین",
 		"icon": "🎯",
 		"short": "+۱ به بالاترین تاس",
-		"desc": "به بالاترین تاس شما در نبرد فعلی یا نبرد بعدی +۱ امتیاز اضافه می‌کند.",
+		"desc": "در حمله یا دفاع به بالاترین تاس شما در نبرد +۱ امتیاز اضافه می‌کند.",
 		"color": Color(0.84, 0.64, 0.18),
 		"needs_target_player": false,
 		"needs_target_continent": false,
@@ -131,8 +131,8 @@ const STRATEGY_META: Dictionary = {
 	"Cancel": {
 		"fa": "لغو تهاجم",
 		"icon": "🛡️",
-		"short": "لغو کامل حمله دشمن",
-		"desc": "در زمان دفاع، حمله فعلی دشمن را فوراً لغو و بدون تلفات متوقف می‌کند.",
+		"short": "لغو فوری حمله حریف",
+		"desc": "در زمان دفاع، حمله فعلی دشمن را فوراً و بدون تلفات لغو می‌کند.",
 		"color": Color(0.20, 0.68, 0.74),
 		"needs_target_player": false,
 		"needs_target_continent": false,
@@ -189,29 +189,7 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 			bolster.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			root.add_child(bolster)
 
-	# 2. Subtle Inlaid Cartography Latitude & Meridian Lines + Twin Brass Compass Roses on the Felt
-	var grid_mat: Material = mats.get("ocean_line", mats["brass"])
-	for gx: float in [-0.38, -0.19, 0.0, 0.19, 0.38]:
-		var lon: MeshInstance3D = MeshInstance3D.new()
-		var lon_bm: BoxMesh = BoxMesh.new()
-		lon_bm.size = Vector3(0.0022, 0.0008, 0.70)
-		lon_bm.material = grid_mat
-		lon.mesh = lon_bm
-		lon.position = Vector3(gx, y_felt + 0.001, 0.005)
-		lon.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(lon)
-	for gz: float in [-0.20, 0.0, 0.20]:
-		var lat: MeshInstance3D = MeshInstance3D.new()
-		var lat_bm: BoxMesh = BoxMesh.new()
-		lat_bm.size = Vector3(1.09, 0.0008, 0.0022)
-		lat_bm.material = grid_mat
-		lat.mesh = lat_bm
-		lat.position = Vector3(0.0, y_felt + 0.001, gz)
-		lat.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(lat)
-
-	_build_compass_rose_inlay(root, Vector3(-0.19, y_felt + 0.0015, 0.305), 0.038, mats)
-	_build_compass_rose_inlay(root, Vector3(0.19, y_felt + 0.0015, 0.305), 0.038, mats)
+	# 2. Clean Emerald Felt Playing Bed (No noisy grid lines or twin compass roses competing with sea-lanes)
 
 	# 3. Interactive 3D Dice Rolling Tray (Appears in center during combat rolls, clickable to roll!)
 	var dice_arena: Node3D = Node3D.new()
@@ -697,14 +675,8 @@ static func build_continent_node(
 	inner_rim.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(inner_rim)
 
-	var citadel_mi: MeshInstance3D = MeshInstance3D.new()
-	if _rook_mesh:
-		citadel_mi.mesh = _rook_mesh
-		citadel_mi.scale = Vector3(0.26, 0.26, 0.26)
-		citadel_mi.material_override = mats["parchment"]
-		citadel_mi.position = Vector3(-rad * 0.56, 0.023, -rad * 0.42)
-		citadel_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(citadel_mi)
+	# Citadel mesh intentionally omitted to keep continent discs clean and garrison counts unobstructed
+	var citadel_mi: MeshInstance3D = null
 
 	# 4. Selection / Valid Target Glowing Halo Ring
 	var aura_ring: MeshInstance3D = MeshInstance3D.new()
