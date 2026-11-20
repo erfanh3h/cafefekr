@@ -1934,9 +1934,13 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 							host.current_clans_subtab = "my_clan"
 							host.refresh_my_clan_data(true)
 						else:
-							var s_dlg = host.get_tree().root.find_child("SocialDialog", true, false)
-							if s_dlg and s_dlg.has_method("open"):
-								s_dlg.open("clans")
+							var shell: Node = host.get_tree().root.find_child("MainTabShell", true, false)
+							if shell and shell.has_method("switch_to_tab"):
+								shell.switch_to_tab("social")
+							else:
+								var s_dlg: Node = host.get_tree().root.find_child("SocialDialog", true, false)
+								if s_dlg and s_dlg.has_method("open"):
+									s_dlg.open("clans")
 					elif typeof(dj) == TYPE_DICTIONARY:
 						if is_instance_valid(b_join):
 							b_join.disabled = false

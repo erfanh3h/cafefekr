@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/play_tab.gd" id="1_play_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
@@ -11,6 +11,9 @@
 [ext_resource type="Texture2D" path="res://assets/images/badges/lobby.png" id="9_lobby_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/watch.png" id="10_watch_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/exit.png" id="11_exit_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/history.png" id="12_history_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/friends.png" id="13_friends_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/badges/notifications.png" id="14_notifications_tex"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wood_btn"]
 texture = ExtResource("4_button_frame")
@@ -101,6 +104,22 @@ shadow_size = 8
 shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_top_btn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_top_badge"]
+content_margin_left = 5.0
+content_margin_top = 1.0
+content_margin_right = 5.0
+content_margin_bottom = 1.0
+bg_color = Color(0.88, 0.14, 0.14, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.88, 0.45, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="PlayTab" type="Control"]
 layout_mode = 3
@@ -194,10 +213,17 @@ layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="BtnExit" type="Button" parent="Scroll/Content/TopBarRow/HBox"]
-custom_minimum_size = Vector2(56, 56)
+[node name="RightActions" type="HBoxContainer" parent="Scroll/Content/TopBarRow/HBox"]
 layout_mode = 2
 size_flags_vertical = 4
+theme_override_constants/separation = 10
+alignment = 2
+
+[node name="BtnHistory" type="Button" parent="Scroll/Content/TopBarRow/HBox/RightActions"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "تاریخچه بازی‌ها"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 theme_override_styles/normal = SubResource("StyleBoxEmpty_top_btn")
@@ -207,7 +233,133 @@ theme_override_styles/disabled = SubResource("StyleBoxEmpty_top_btn")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_top_btn")
 flat = true
 
-[node name="IconExit" type="TextureRect" parent="Scroll/Content/TopBarRow/HBox/BtnExit"]
+[node name="IconHistory" type="TextureRect" parent="Scroll/Content/TopBarRow/HBox/RightActions/BtnHistory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_history_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BtnFriends" type="Button" parent="Scroll/Content/TopBarRow/HBox/RightActions"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "دوستان"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_top_btn")
+flat = true
+
+[node name="IconFriends" type="TextureRect" parent="Scroll/Content/TopBarRow/HBox/RightActions/BtnFriends"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_friends_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="Scroll/Content/TopBarRow/HBox/RightActions/BtnFriends"]
+visible = false
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -22.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 22.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_top_badge")
+
+[node name="LblCount" type="Label" parent="Scroll/Content/TopBarRow/HBox/RightActions/BtnFriends/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 16
+text = "۱"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BtnNotifications" type="Button" parent="Scroll/Content/TopBarRow/HBox/RightActions"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "اعلان‌ها"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_top_btn")
+flat = true
+
+[node name="IconNotifications" type="TextureRect" parent="Scroll/Content/TopBarRow/HBox/RightActions/BtnNotifications"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("14_notifications_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Badge" type="PanelContainer" parent="Scroll/Content/TopBarRow/HBox/RightActions/BtnNotifications"]
+visible = false
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -22.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 22.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_top_badge")
+
+[node name="LblCount" type="Label" parent="Scroll/Content/TopBarRow/HBox/RightActions/BtnNotifications/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font_hekayat")
+theme_override_font_sizes/font_size = 16
+text = "۱"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BtnExit" type="Button" parent="Scroll/Content/TopBarRow/HBox/RightActions"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "خروج"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_top_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_top_btn")
+flat = true
+
+[node name="IconExit" type="TextureRect" parent="Scroll/Content/TopBarRow/HBox/RightActions/BtnExit"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
