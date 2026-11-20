@@ -452,6 +452,9 @@ func get_frame_id() -> int:
 	var f = int(user_data.get("profile_frame", user_data.get("avatar_frame", user_data.get("frame_id", 1))))
 	return clampi(f, 1, 20) if f >= 1 else 1
 
+func get_my_frame_id() -> int:
+	return get_frame_id()
+
 static func get_player_frame_id(dict: Dictionary) -> int:
 	var f = int(dict.get("profile_frame", dict.get("avatar_frame", dict.get("frame_id", 1))))
 	return clampi(f, 1, 20) if f >= 1 else 1

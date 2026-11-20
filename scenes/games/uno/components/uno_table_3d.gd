@@ -524,29 +524,8 @@ func _build_uno_bell_prop(pos: Vector3, mat_walnut: Material, mat_brass: Materia
 	_uno_bell_root.add_child(bell_body)
 
 func _build_uno_chips_bowl_prop(_pos: Vector3, _mat_wood: Material, _mat_brass: Material) -> void:
-	return
-	var bowl: Node3D = Node3D.new()
-	bowl.name = "UnoChipBowl3D"
-	bowl.position = pos
-	add_child(bowl)
-
-	_add_cyl(bowl, 0.072, 0.054, 0.018, Vector3(0.0, 0.009, 0.0), mat_wood, Vector3.ZERO, 20)
-	_add_torus(bowl, 0.064, 0.073, Vector3(0.0, 0.018, 0.0), mat_brass)
-
-	var chip_specs: Array[Dictionary] = [
-		{"pos": Vector3(-0.020, 0.020, -0.015), "count": 3, "col": UNO_COLORS["red"]},
-		{"pos": Vector3(0.020, 0.020, -0.015), "count": 3, "col": UNO_COLORS["blue"]},
-		{"pos": Vector3(-0.016, 0.020, 0.020), "count": 2, "col": UNO_COLORS["yellow"]},
-		{"pos": Vector3(0.020, 0.020, 0.018), "count": 3, "col": UNO_COLORS["green"]},
-	]
-	for cs: Dictionary in chip_specs:
-		var c_mat: StandardMaterial3D = StandardMaterial3D.new()
-		c_mat.albedo_color = cs["col"]
-		c_mat.roughness = 0.24
-		var base_p: Vector3 = cs["pos"]
-		for i: int in range(int(cs["count"])):
-			var y_off: float = float(i) * 0.0055
-			_add_cyl(bowl, 0.017, 0.017, 0.005, base_p + Vector3(0.0, y_off, 0.0), c_mat, Vector3.ZERO, 14)
+	# Removed per design request (four colorful pieces removed from desk)
+	pass
 
 func set_uno_bell_alert(enabled: bool) -> void:
 	_uno_bell_alert_active = enabled

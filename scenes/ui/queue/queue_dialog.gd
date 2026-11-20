@@ -365,7 +365,7 @@ func _rebuild_1v1_slots(opponent_found: bool) -> void:
 	if my_name.is_empty():
 		my_name = "شما"
 	var my_av: int = GameManager.get_avatar_id()
-	var my_fid: int = GameManager.get_my_frame_id()
+	var my_fid: int = GameManager.get_frame_id()
 
 	var my_sub: String = "تأیید شد ✓" if _local_accepted else ("در انتظار تأیید شما" if opponent_found else "آماده (شما)")
 	var my_card: PanelContainer = _make_slot_card(my_name, my_sub, true, true, my_av, my_fid, false, _local_accepted)
@@ -431,7 +431,7 @@ func _rebuild_multi_slots(filled_count: int, required_count: int, queuers: Array
 	if my_name.is_empty():
 		my_name = "شما"
 	var my_av: int = GameManager.get_avatar_id()
-	var my_fid: int = GameManager.get_my_frame_id()
+	var my_fid: int = GameManager.get_frame_id()
 
 	var parsed_players: Array[Dictionary] = []
 	for q in queuers:

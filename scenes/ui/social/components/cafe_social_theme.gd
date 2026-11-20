@@ -30,6 +30,9 @@ const TEX_FRAME_SMALL = preload("res://assets/images/frames/frame_small.png")
 const TEX_FRAME_TALL = preload("res://assets/images/frames/frame_tall.png")
 const TEX_CHAT_OTHER = preload("res://assets/images/frames/chat_other.png")
 const TEX_CHAT_MY = preload("res://assets/images/frames/chat_my.png")
+const TEX_CONFIG = preload("res://assets/images/config.png")
+const TEX_DELETE = preload("res://assets/images/delete.png")
+const TEX_PLUS = preload("res://assets/images/frames/plus.png")
 
 # Authentic Cafe Fekr Icons & Badges
 const ICO_REFRESH = preload("res://assets/icons/General/refresh.png")
