@@ -95,19 +95,11 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_board_shell")
 
 [node name="HBox" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar"]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 8
 alignment = 1
 
-[node name="BtnProfile" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-mouse_default_cursor_shape = 2
-text = "تاریخچه"
-
 [node name="BtnCosmetics" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -115,7 +107,7 @@ mouse_default_cursor_shape = 2
 text = "تصویر نمایه"
 
 [node name="BtnFrames" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -123,20 +115,12 @@ mouse_default_cursor_shape = 2
 text = "قاب آواتار"
 
 [node name="BtnPrivacy" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "تنظیمات"
-
-[node name="BtnNotifications" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-mouse_default_cursor_shape = 2
-text = "اعلان‌ها"
 
 [node name="Scroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
 layout_mode = 2
@@ -149,13 +133,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 16
 
-[node name="ProfileContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 14
-
 [node name="CosmeticsContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 14
@@ -170,11 +148,4 @@ theme_override_constants/separation = 14
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 14
-
-[node name="NotificationsContent" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
 theme_override_constants/separation = 14

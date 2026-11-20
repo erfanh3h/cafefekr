@@ -2,11 +2,10 @@ extends Control
 
 ## Cafe Fekr — Master Five-Tab Application Shell
 ## Integrates:
-## 1. Top Utility Bar (Exit, Watch Live, Sound Settings)
-## 2. Compact Persistent User Header (~110px)
-## 3. Persistent 5-Tab Content Area (Social, History, Play, Library, User)
-## 4. Bottom Tab Navigation (Gold/Walnut/Emerald with reactive states)
-## 5. Dynamic Background Crossfading for each dedicated tab artwork
+## 1. Persistent 5-Tab Content Area (Clan/اتحاد, Leaderboard/برترین‌ها, Play/بازی, Library/کتابخانه, User/کاربر)
+## 2. Dedicated Top-Right Sub-Pages opened from PlayTab (Notifications, Match History, Friends)
+## 3. Bottom Tab Navigation (Gold/Walnut/Emerald with reactive states)
+## 4. Dynamic Background Crossfading for each dedicated tab and sub-page artwork
 
 signal exit_requested()
 signal watch_live_requested()
@@ -26,15 +25,15 @@ signal spectate_match_requested(game_id: String, game_type: String)
 
 @onready var bg_rect: TextureRect = $BackgroundLayer/BgRect
 @onready var bg_rect_fade: TextureRect = $BackgroundLayer/BgRectFade
-var top_utility_bar = null
-var compact_user_header = null
+var top_utility_bar: Variant = null
+var compact_user_header: Variant = null
 @onready var tab_content_container: MarginContainer = $MainVBox/TabContentContainer
-@onready var bottom_navigation = $MainVBox/BottomNavigation
+@onready var bottom_navigation: Control = $MainVBox/BottomNavigation
 
-@onready var sound_settings_popup = $OverlayLayer/SoundSettingsPopup
-@onready var exit_confirm_dialog = $OverlayLayer/ExitConfirmDialog
+@onready var sound_settings_popup: Variant = $OverlayLayer/SoundSettingsPopup
+@onready var exit_confirm_dialog: Variant = $OverlayLayer/ExitConfirmDialog
 
-const BG_MAP := {
+const BG_MAP: Dictionary = {
 	"social": preload("res://assets/images/tabs/social_bg.jpg"),
 	"history": preload("res://assets/images/tabs/history_bg.jpg"),
 	"play": preload("res://assets/images/menu_bg.jpg"),
@@ -42,7 +41,7 @@ const BG_MAP := {
 	"user": preload("res://assets/images/tabs/user_bg.jpg")
 }
 
-const TAB_SCENES := {
+const TAB_SCENES: Dictionary = {
 	"social": preload("res://scenes/ui/main_tabs/tabs/social_tab.tscn"),
 	"history": preload("res://scenes/ui/main_tabs/tabs/history_tab.tscn"),
 	"play": preload("res://scenes/ui/main_tabs/tabs/play_tab.tscn"),
@@ -50,9 +49,21 @@ const TAB_SCENES := {
 	"user": preload("res://scenes/ui/main_tabs/tabs/user_tab.tscn")
 }
 
-const BG_SHADER = preload("res://scenes/ui/main_tabs/shaders/tab_bg_color_grade.gdshader")
+const SUBPAGE_SCENES: Dictionary = {
+	"notifications": preload("res://scenes/ui/main_tabs/pages/notifications_page.tscn"),
+	"match_history": preload("res://scenes/ui/main_tabs/pages/match_history_page.tscn"),
+	"friends": preload("res://scenes/ui/main_tabs/pages/friends_page.tscn")
+}
 
-const BG_CONFIG := {
+const SUBPAGE_BG_KEY: Dictionary = {
+	"notifications": "user",
+	"match_history": "user",
+	"friends": "social"
+}
+
+const BG_SHADER: Shader = preload("res://scenes/ui/main_tabs/shaders/tab_bg_color_grade.gdshader")
+
+const BG_CONFIG: Dictionary = {
 	"play": {
 		"saturation": 0.85,
 		"brightness": 0.88,
@@ -86,51 +97,66 @@ const BG_CONFIG := {
 }
 
 var _cached_tabs: Dictionary = {}
+var _cached_subpages: Dictionary = {}
 var current_tab_name: String = ""
+var current_subpage_name: String = ""
+var _subpage_return_tab: String = "play"
 var active_tab_name: String:
 	get: return current_tab_name
 var _bg_tween: Tween = null
 
+
 func _ready() -> void:
-	# Wire Bottom Navigation
 	bottom_navigation.tab_selected.connect(func(t_name: String):
 		switch_to_tab(t_name)
 	)
 
-	# Apply initial background color grading
 	_apply_bg_shader(bg_rect, BG_CONFIG["play"])
 	_apply_bg_shader(bg_rect_fade, BG_CONFIG["play"])
 
-	# Enter Play tab by default
 	switch_to_tab("play")
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		if visible and not current_subpage_name.is_empty():
+			close_subpage()
 
 
 func switch_to_tab(tab_name: String) -> void:
 	if tab_name not in BG_MAP:
 		tab_name = "play"
 
-	if current_tab_name == tab_name and _cached_tabs.has(tab_name):
+	var was_in_subpage: bool = not current_subpage_name.is_empty()
+	if not was_in_subpage and current_tab_name == tab_name and _cached_tabs.has(tab_name):
 		return
 
-	var old_tab_name = current_tab_name
+	# Close any active sub-page first
+	if was_in_subpage:
+		for p_key: Variant in _cached_subpages.keys():
+			var p_node: Control = _cached_subpages[p_key] as Control
+			if is_instance_valid(p_node):
+				p_node.visible = false
+		current_subpage_name = ""
+
 	current_tab_name = tab_name
 
-	# Update bottom navigation button state if needed
-	if bottom_navigation.current_tab != tab_name:
+	# Update bottom navigation button state
+	if bottom_navigation.current_tab != tab_name or bottom_navigation.has_subpage_open:
 		bottom_navigation.select_tab(tab_name, false)
 
 	# 1. Smooth Background Crossfade
 	_crossfade_background(BG_MAP[tab_name], tab_name)
 
 	# 2. Swap Tab Content cleanly (preserving cached states)
-	for t_key in _cached_tabs.keys():
-		var node: Control = _cached_tabs[t_key]
+	for t_key: Variant in _cached_tabs.keys():
+		var node: Control = _cached_tabs[t_key] as Control
 		if is_instance_valid(node):
-			node.visible = (t_key == tab_name)
+			node.visible = (str(t_key) == tab_name)
 
 	if not _cached_tabs.has(tab_name):
-		var scene: PackedScene = TAB_SCENES[tab_name]
-		var tab_instance: Control = scene.instantiate()
+		var scene: PackedScene = TAB_SCENES[tab_name] as PackedScene
+		var tab_instance: Control = scene.instantiate() as Control
 		tab_instance.set_anchors_preset(Control.PRESET_FULL_RECT)
 		tab_instance.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tab_instance.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -138,13 +164,72 @@ func switch_to_tab(tab_name: String) -> void:
 		_cached_tabs[tab_name] = tab_instance
 		_wire_tab_signals(tab_name, tab_instance)
 	else:
-		_cached_tabs[tab_name].visible = true
+		(_cached_tabs[tab_name] as Control).visible = true
 
 	# Trigger state refreshes where appropriate
 	if tab_name == "play" and _cached_tabs.has("play"):
 		_cached_tabs["play"].update_ranked_state()
 	elif tab_name == "user" and _cached_tabs.has("user"):
 		_cached_tabs["user"].refresh_all()
+
+
+func open_subpage(page_name: String) -> Control:
+	if page_name not in SUBPAGE_SCENES:
+		return null
+
+	if current_subpage_name.is_empty():
+		_subpage_return_tab = current_tab_name if not current_tab_name.is_empty() else "play"
+
+	current_subpage_name = page_name
+	if bottom_navigation.has_method("set_subpage_active"):
+		bottom_navigation.set_subpage_active(true)
+
+	# 1. Crossfade background to match requested artwork (Profile bg for Notifications/History, Social bg for Friends)
+	var bg_key: String = str(SUBPAGE_BG_KEY.get(page_name, "user"))
+	_crossfade_background(BG_MAP[bg_key], bg_key)
+
+	# 2. Hide all main tabs and other sub-pages
+	for t_key: Variant in _cached_tabs.keys():
+		var t_node: Control = _cached_tabs[t_key] as Control
+		if is_instance_valid(t_node):
+			t_node.visible = false
+
+	for p_key: Variant in _cached_subpages.keys():
+		var p_node: Control = _cached_subpages[p_key] as Control
+		if is_instance_valid(p_node):
+			p_node.visible = (str(p_key) == page_name)
+
+	# 3. Instantiate or reuse cached sub-page
+	var page_inst: Control = null
+	if not _cached_subpages.has(page_name):
+		var scene: PackedScene = SUBPAGE_SCENES[page_name] as PackedScene
+		page_inst = scene.instantiate() as Control
+		page_inst.set_anchors_preset(Control.PRESET_FULL_RECT)
+		page_inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		page_inst.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		tab_content_container.add_child(page_inst)
+		_cached_subpages[page_name] = page_inst
+		_wire_subpage_signals(page_name, page_inst)
+	else:
+		page_inst = _cached_subpages[page_name] as Control
+		page_inst.visible = true
+		if page_inst.has_method("refresh_all"):
+			page_inst.refresh_all()
+
+	return page_inst
+
+
+func close_subpage() -> void:
+	if current_subpage_name.is_empty():
+		return
+	var target_tab: String = _subpage_return_tab if not _subpage_return_tab.is_empty() else "play"
+	switch_to_tab(target_tab)
+
+
+func open_direct_message_with(user_id: String, username: String) -> void:
+	var friends_page: Control = open_subpage("friends")
+	if is_instance_valid(friends_page) and friends_page.has_method("open_direct_message_with"):
+		friends_page.open_direct_message_with(user_id, username)
 
 
 func _wire_tab_signals(tab_name: String, tab_inst: Control) -> void:
@@ -158,10 +243,25 @@ func _wire_tab_signals(tab_name: String, tab_inst: Control) -> void:
 				tab_inst.watch_live_requested.connect(func(): watch_live_requested.emit())
 			if tab_inst.has_signal("exit_requested"):
 				tab_inst.exit_requested.connect(func(): exit_confirm_dialog.open())
+			if tab_inst.has_signal("notifications_page_requested"):
+				tab_inst.notifications_page_requested.connect(func(): open_subpage("notifications"))
+			if tab_inst.has_signal("history_page_requested"):
+				tab_inst.history_page_requested.connect(func(): open_subpage("match_history"))
+			if tab_inst.has_signal("friends_page_requested"):
+				tab_inst.friends_page_requested.connect(func(): open_subpage("friends"))
 		"social":
 			tab_inst.spectate_match_requested.connect(func(gid: String, gtype: String):
 				spectate_match_requested.emit(gid, gtype)
 			)
+			if tab_inst.has_signal("open_dm_requested"):
+				tab_inst.open_dm_requested.connect(func(uid: String, uname: String):
+					open_direct_message_with(uid, uname)
+				)
+			if tab_inst.has_signal("clan_badge_changed"):
+				tab_inst.clan_badge_changed.connect(func(cnt: int):
+					if bottom_navigation.has_method("set_clan_badge"):
+						bottom_navigation.set_clan_badge(cnt)
+				)
 		"user":
 			tab_inst.change_username_requested.connect(func(): change_username_requested.emit())
 			tab_inst.phone_upgrade_requested.connect(func(): phone_upgrade_requested.emit())
@@ -178,14 +278,29 @@ func _wire_tab_signals(tab_name: String, tab_inst: Control) -> void:
 			)
 
 
+func _wire_subpage_signals(_page_name: String, page_inst: Control) -> void:
+	if page_inst.has_signal("back_requested"):
+		page_inst.back_requested.connect(func():
+			close_subpage()
+		)
+	if page_inst.has_signal("open_dm_requested"):
+		page_inst.open_dm_requested.connect(func(uid: String, uname: String):
+			open_direct_message_with(uid, uname)
+		)
+	if page_inst.has_signal("spectate_match_requested"):
+		page_inst.spectate_match_requested.connect(func(gid: String, gtype: String):
+			spectate_match_requested.emit(gid, gtype)
+		)
+
+
 func _apply_bg_shader(rect: TextureRect, cfg: Dictionary) -> void:
 	if not is_instance_valid(rect):
 		return
 	if rect.material == null or not (rect.material is ShaderMaterial):
-		var mat = ShaderMaterial.new()
+		var mat: ShaderMaterial = ShaderMaterial.new()
 		mat.shader = BG_SHADER
 		rect.material = mat
-	var sm = rect.material as ShaderMaterial
+	var sm: ShaderMaterial = rect.material as ShaderMaterial
 	sm.set_shader_parameter("saturation", cfg.get("saturation", 0.5))
 	sm.set_shader_parameter("brightness", cfg.get("brightness", 0.6))
 	sm.set_shader_parameter("contrast", 1.05)
@@ -223,6 +338,8 @@ func update_ranked_button_state() -> void:
 func update_user_header() -> void:
 	if is_instance_valid(compact_user_header):
 		compact_user_header.update_ui()
+	if _cached_tabs.has("play") and is_instance_valid(_cached_tabs["play"]):
+		_cached_tabs["play"].update_ranked_state()
 	if _cached_tabs.has("user") and is_instance_valid(_cached_tabs["user"]):
 		_cached_tabs["user"].refresh_all()
 
@@ -232,4 +349,6 @@ func open_tab(t_name: String) -> void:
 
 
 func get_active_tab_instance() -> Control:
-	return _cached_tabs.get(current_tab_name, null)
+	if not current_subpage_name.is_empty():
+		return _cached_subpages.get(current_subpage_name, null) as Control
+	return _cached_tabs.get(current_tab_name, null) as Control

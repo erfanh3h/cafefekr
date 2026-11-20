@@ -2,17 +2,17 @@ extends Control
 
 ## Five-Item Antique Bottom Navigation for Cafe Fekr
 ## Tabs in exact order:
-## 0: Social (کافه)
-## 1: History (برترین‌ها)
+## 0: Social / Clan (اتحاد)
+## 1: History / Leaderboard (برترین‌ها)
 ## 2: Play (بازی) - Center Tab & Default
 ## 3: Library (کتابخانه)
 ## 4: User (کاربر)
 
 signal tab_selected(tab_name: String)
 
-const TAB_NAMES = ["social", "history", "play", "library", "user"]
-const COL_LABEL_ACTIVE := Color("#FFD86B")
-const COL_LABEL_INACTIVE := Color("#BCA98E")
+const TAB_NAMES: Array[String] = ["social", "history", "play", "library", "user"]
+const COL_LABEL_ACTIVE: Color = Color("#FFD86B")
+const COL_LABEL_INACTIVE: Color = Color("#BCA98E")
 
 @onready var btn_social: Button = $PanelFrame/Margin/HBox/BtnSocial
 @onready var btn_history: Button = $PanelFrame/Margin/HBox/BtnHistory
@@ -24,8 +24,11 @@ const COL_LABEL_INACTIVE := Color("#BCA98E")
 @onready var lbl_badge_social: Label = $PanelFrame/Margin/HBox/BtnSocial/Badge/LblCount
 
 var current_tab: String = "play"
+var has_subpage_open: bool = false
+var _clan_badge_count: int = 0
 var _tab_buttons: Dictionary = {}
 var _tab_tweens: Dictionary = {}
+
 
 func _ready() -> void:
 	_tab_buttons = {
@@ -36,7 +39,7 @@ func _ready() -> void:
 		"user": btn_user,
 	}
 
-	for t_name in _tab_buttons.keys():
+	for t_name: Variant in _tab_buttons.keys():
 		var btn: Button = _tab_buttons[t_name] as Button
 		ActionVFXManager.apply_button_juice(btn, "tap_button")
 		var captured_name: String = str(t_name)
@@ -44,18 +47,12 @@ func _ready() -> void:
 			_on_tab_pressed(captured_name)
 		)
 
-	# Listen to social badges if available
-	NetworkManager.social_notification_received.connect(func(_p): update_social_badge())
-	NetworkManager.social_dm_received.connect(func(_p): update_social_badge())
-	NetworkManager.social_init_received.connect(func(_p): update_social_badge())
-	NetworkManager.social_badges_changed.connect(update_social_badge)
-
 	select_tab("play", false)
 	update_social_badge()
 
 
 func _on_tab_pressed(tab_name: String) -> void:
-	if current_tab == tab_name:
+	if current_tab == tab_name and not has_subpage_open:
 		return
 	AudioManager.sfx_tap()
 	select_tab(tab_name, true)
@@ -64,15 +61,29 @@ func _on_tab_pressed(tab_name: String) -> void:
 func select_tab(tab_name: String, emit_event: bool = true) -> void:
 	if tab_name not in TAB_NAMES:
 		return
+	has_subpage_open = false
 	current_tab = tab_name
 
-	for t_key in _tab_buttons.keys():
+	for t_key: Variant in _tab_buttons.keys():
 		var btn: Button = _tab_buttons[t_key] as Button
 		var is_sel: bool = (str(t_key) == current_tab)
 		_style_tab_item(btn, str(t_key), is_sel)
 
 	if emit_event:
 		tab_selected.emit(current_tab)
+
+
+func set_subpage_active(active: bool) -> void:
+	has_subpage_open = active
+	for t_key: Variant in _tab_buttons.keys():
+		var btn: Button = _tab_buttons[t_key] as Button
+		var is_sel: bool = (not active) and (str(t_key) == current_tab)
+		_style_tab_item(btn, str(t_key), is_sel)
+
+
+func set_clan_badge(count: int) -> void:
+	_clan_badge_count = max(0, count)
+	update_social_badge()
 
 
 func _style_tab_item(btn: Button, tab_name: String, is_selected: bool) -> void:
@@ -96,7 +107,7 @@ func _style_tab_item(btn: Button, tab_name: String, is_selected: bool) -> void:
 
 	if is_instance_valid(highlight):
 		highlight.visible = is_selected
-		highlight.modulate.a = 0.0 if is_selected else 0.0
+		highlight.modulate.a = 0.0
 
 	if is_instance_valid(lbl):
 		if is_selected:
@@ -139,9 +150,8 @@ func _style_tab_item(btn: Button, tab_name: String, is_selected: bool) -> void:
 func update_social_badge() -> void:
 	if not is_instance_valid(badge_social):
 		return
-	var total: int = NetworkManager.unread_dms_count + NetworkManager.incoming_friend_requests_count
-	if total > 0:
+	if _clan_badge_count > 0:
 		badge_social.visible = true
-		lbl_badge_social.text = GameManager.to_fa_num(total)
+		lbl_badge_social.text = "۹۹+" if _clan_badge_count > 99 else GameManager.to_fa_num(_clan_badge_count)
 	else:
 		badge_social.visible = false

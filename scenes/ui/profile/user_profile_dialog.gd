@@ -385,9 +385,13 @@ func _render_overview_tab() -> void:
 	actions.private_message_pressed.connect(func():
 		if _is_self or rel != "friend":
 			return
-		var target_uid := _current_user_id
+		var target_uid: String = _current_user_id
 		close()
-		var s_dlg := get_tree().root.find_child("SocialDialog", true, false)
+		var shell: Node = get_tree().root.find_child("MainTabShell", true, false)
+		if shell and shell.has_method("open_direct_message_with"):
+			shell.open_direct_message_with(target_uid, uname)
+			return
+		var s_dlg: Node = get_tree().root.find_child("SocialDialog", true, false)
 		if s_dlg and s_dlg.has_method("open_direct_message_with"):
 			s_dlg.open_direct_message_with(target_uid, uname)
 	)
