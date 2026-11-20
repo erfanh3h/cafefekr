@@ -11,7 +11,7 @@ const FontHekayat: Font = preload("res://assets/fonts/hekayat.ttf")
 
 # --- Camera Framing (Mandatory on BaseGameBoard scenes) ---
 var camera_distance: float = 2.68
-var camera_pitch: float = -0.84
+var camera_pitch: float = -1.12
 
 # --- Authoritative Monopoly State ---
 var total_players: int = 2
@@ -114,7 +114,7 @@ var _cached_result_dlg: Control = null
 
 func _init() -> void:
 	camera_distance = 2.42
-	camera_pitch = -0.86
+	camera_pitch = -1.12
 
 
 func _ready() -> void:
@@ -1631,13 +1631,13 @@ func _on_zoom_cycle_pressed() -> void:
 	match _zoom_preset_idx:
 		0:
 			camera_distance = 2.26
-			camera_pitch = -0.86
+			camera_pitch = -1.12
 		1:
 			camera_distance = 1.90
-			camera_pitch = -0.78
+			camera_pitch = -0.96
 		2:
 			camera_distance = 2.62
-			camera_pitch = -0.92
+			camera_pitch = -1.24
 	_enforce_camera_framing()
 
 

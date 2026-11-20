@@ -178,7 +178,7 @@ var _cached_start_ov: Control = null
 var _cached_result_dlg: Control = null
 
 var camera_distance: float = 2.42
-var camera_pitch: float = -0.82
+var camera_pitch: float = -1.08
 
 # ==============================================================================
 # 1. INITIALIZATION & LIFECYCLE
@@ -187,7 +187,7 @@ var camera_pitch: float = -0.82
 func _init() -> void:
 	# Immersive 3D Cafe Fekr Lounge perspective showing the room, opponent chairs, and 3D tabletop
 	camera_distance = 2.42
-	camera_pitch = -0.82
+	camera_pitch = -1.08
 
 func _ready() -> void:
 	game_type = GameTypes.UNO

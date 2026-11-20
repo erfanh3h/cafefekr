@@ -26,8 +26,8 @@ const YAW_MIN: float = -0.50
 const YAW_MAX: float = 0.50
 
 const PITCH_LOUNGE_REF: float = -0.34 # Wide establishing cafe lounge horizon angle (-19.5 deg)
-const PITCH_DEFAULT: float = -0.80    # -45.8 degrees (Real playable tabletop game angle)
-const PITCH_MIN: float = -1.160       # -66.5 degrees (Steep board inspection angle)
+const PITCH_DEFAULT: float = -1.14    # -65.3 degrees (Steep playable tabletop angle nearer 90 deg)
+const PITCH_MIN: float = -1.420       # -81.4 degrees (Near top-down 3D board inspection angle)
 const PITCH_MAX: float = -0.280       # -16.0 degrees (Panoramic lounge view)
 
 # Cinematic Match Opening Approach (starts wide in the warm cafe parlor, then glides slowly into the desk)
@@ -118,6 +118,31 @@ var _board_node_added_connected: bool = false
 var _baked_bucket_mats: Dictionary = {}
 var _window_vista_mat: StandardMaterial3D = null
 var _last_window_view_idx: int = -1
+var _carpet_mat: StandardMaterial3D = null
+var _last_carpet_idx: int = -1
+var _chair_style_meshes: Dictionary = {} # int style_idx -> ArrayMesh
+var _last_chair_style_idx: int = -1
+
+# Interactive Cafe Environment Props (Zero-Physics Ray-Sphere Picking + Tweens)
+var _interactive_props: Array[Dictionary] = []
+var _prop_tweens: Dictionary = {}
+var _last_prop_interact_ms: int = 0
+var _desk_lamp_shade_mat: StandardMaterial3D = null
+var _left_lamp_shade_mat: StandardMaterial3D = null
+var _right_lantern_glow_mat: StandardMaterial3D = null
+var _desk_lamp_on: bool = true
+var _left_lamp_on: bool = true
+var _right_lantern_on: bool = true
+var _window_door_left: Node3D = null
+var _window_door_right: Node3D = null
+var _window_doors_open: bool = false
+var _khatam_lid_pivot: Node3D = null
+var _khatam_box_open: bool = false
+var _armillary_rings_pivot: Node3D = null
+var _clock_hands_pivot: Node3D = null
+var _samovar_teapot_pivot: Node3D = null
+var _hero_book_pivot: Node3D = null
+var _hero_book_pulled: bool = false
 
 const WINDOW_VIEW_TEXTURES: Array[String] = [
 	"persian_window_view.jpg",
@@ -126,6 +151,16 @@ const WINDOW_VIEW_TEXTURES: Array[String] = [
 	"persian_window_snow.jpg",
 	"persian_window_sunset.jpg"
 ]
+
+const CARPET_TEXTURES: Array[String] = [
+	"persian_carpet.jpg",
+	"persian_carpet_isfahan.jpg",
+	"persian_carpet_tabriz.jpg",
+	"persian_carpet_shiraz.jpg",
+	"persian_carpet_kerman.jpg"
+]
+
+const CHAIR_STYLE_COUNT: int = 4
 
 
 func _ready() -> void:
@@ -371,7 +406,8 @@ func _resolve_board_camera_framing() -> Dictionary:
 		if "camera_pitch" in current_board_node:
 			var bp: float = float(current_board_node.get("camera_pitch"))
 			if bp < -0.45:
-				desired_pitch = bp
+				# Keep starting angle steeper / closer to 90 deg while respecting extra-steep boards
+				desired_pitch = clampf(minf(bp - 0.22, PITCH_DEFAULT), -1.30, PITCH_DEFAULT)
 		if "camera_distance" in current_board_node:
 			var bd: float = float(current_board_node.get("camera_distance"))
 			if bd >= ZOOM_MIN and bd <= ZOOM_MAX:
@@ -512,6 +548,8 @@ func play_desk_approach_intro(duration: float = INTRO_GLIDE_DURATION) -> void:
 func spawn_board(board_packed_scene: PackedScene) -> Node3D:
 	clear_board()
 	randomize_window_view()
+	randomize_carpet()
+	randomize_chair_style()
 	set_menu_showcase_visible(false)
 	is_top_down_view = false
 	_sync_2d_3d_visibility_and_lighting(false)
@@ -758,8 +796,11 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 			_mouse_start_pos = event.position
 			_is_dragging = false
 		else:
+			var was_clean_tap: bool = _mouse_pressed and not _is_dragging and event.position.distance_to(_mouse_start_pos) <= DRAG_THRESHOLD
 			_mouse_pressed = false
 			_is_dragging = false
+			if was_clean_tap:
+				_try_interact_with_cafe_prop(event.position)
 
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
@@ -788,11 +829,14 @@ func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 			var p1: Vector2 = pts[1] as Vector2
 			_prev_pinch_dist = p0.distance_to(p1)
 	else:
+		var was_single_tap: bool = (_active_touches.size() == 1 and not _is_dragging and event.position.distance_to(_drag_start_pos) <= DRAG_THRESHOLD)
 		_active_touches.erase(event.index)
 		if _active_touches.size() < 2:
 			_prev_pinch_dist = -1.0
 		if _active_touches.is_empty():
 			_is_dragging = false
+			if was_single_tap:
+				_try_interact_with_cafe_prop(event.position)
 
 
 func _handle_screen_drag(event: InputEventScreenDrag) -> void:
@@ -916,6 +960,8 @@ func _optimize_board_for_mobile(node: Node) -> void:
 
 
 func _collect_static_meshes_recursive(node: Node, root_ref: Node3D, out_list: Array[MeshInstance3D]) -> void:
+	if node != root_ref and node.has_meta("skip_bake"):
+		return
 	if node is MeshInstance3D:
 		var mi: MeshInstance3D = node as MeshInstance3D
 		if mi.visible and mi.mesh != null and not mi.has_meta("skip_bake"):
@@ -942,6 +988,14 @@ func _get_baked_bucket_info(mat: Material) -> Dictionary:
 	var sm: StandardMaterial3D = mat as StandardMaterial3D
 	if _window_vista_mat != null and sm == _window_vista_mat:
 		return {"key": "window_vista", "mat": _window_vista_mat, "color": Color.WHITE, "uv_scale": Vector2.ONE}
+	if _carpet_mat != null and sm == _carpet_mat:
+		return {"key": "floor_carpet", "mat": _carpet_mat, "color": Color.WHITE, "uv_scale": Vector2.ONE}
+	if _desk_lamp_shade_mat != null and sm == _desk_lamp_shade_mat:
+		return {"key": "desk_lamp_shade", "mat": _desk_lamp_shade_mat, "color": Color.WHITE, "uv_scale": Vector2.ONE}
+	if _left_lamp_shade_mat != null and sm == _left_lamp_shade_mat:
+		return {"key": "left_lamp_shade", "mat": _left_lamp_shade_mat, "color": Color.WHITE, "uv_scale": Vector2.ONE}
+	if _right_lantern_glow_mat != null and sm == _right_lantern_glow_mat:
+		return {"key": "right_lantern_glow", "mat": _right_lantern_glow_mat, "color": Color.WHITE, "uv_scale": Vector2.ONE}
 	if sm.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
 		return {"key": "raw_%d" % sm.get_instance_id(), "mat": sm, "color": Color.WHITE, "uv_scale": Vector2.ONE}
 
@@ -1154,6 +1208,12 @@ func _bake_static_branch_to_merged_mesh(branch_root: Node3D, baked_name: String 
 	return baked_mi
 
 
+func _bake_interactive_prop_branch(prop_root: Node3D, baked_name: String) -> MeshInstance3D:
+	var baked_mi: MeshInstance3D = _bake_static_branch_to_merged_mesh(prop_root, baked_name)
+	prop_root.set_meta("skip_bake", true)
+	return baked_mi
+
+
 func _make_mat(albedo: Color, rough: float = 0.4, metal: float = 0.0, tex: Texture2D = null, uv_scale: Vector3 = Vector3.ONE) -> StandardMaterial3D:
 	var m: StandardMaterial3D = StandardMaterial3D.new()
 	m.albedo_color = albedo
@@ -1274,7 +1334,361 @@ func randomize_window_view() -> void:
 	if chosen_tex == null and idx != 0:
 		chosen_tex = _load_cafe_tex(WINDOW_VIEW_TEXTURES[0])
 	_window_vista_mat.albedo_texture = chosen_tex
-	_window_vista_mat.albedo_color = Color(0.96, 0.94, 0.90) if chosen_tex != null else Color(0.26, 0.22, 0.40)
+	var open_boost: Color = Color(1.02, 0.99, 0.95) if _window_doors_open else Color(0.92, 0.90, 0.86)
+	_window_vista_mat.albedo_color = open_boost if chosen_tex != null else Color(0.26, 0.22, 0.40)
+
+
+func randomize_carpet() -> void:
+	if _carpet_mat == null or CARPET_TEXTURES.is_empty():
+		return
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.randomize()
+	var count: int = CARPET_TEXTURES.size()
+	var idx: int = rng.randi_range(0, count - 1)
+	if count > 1 and idx == _last_carpet_idx:
+		idx = (idx + 1 + rng.randi_range(0, count - 2)) % count
+	_last_carpet_idx = idx
+	# Lazy-load ONLY the single selected Persian carpet texture so mobile VRAM stays minimal
+	var chosen_tex: Texture2D = _load_cafe_tex(CARPET_TEXTURES[idx])
+	if chosen_tex == null and idx != 0:
+		chosen_tex = _load_cafe_tex(CARPET_TEXTURES[0])
+	_carpet_mat.albedo_texture = chosen_tex
+	_carpet_mat.albedo_color = Color(0.88, 0.85, 0.80) if chosen_tex != null else Color(0.48, 0.10, 0.11)
+
+
+# ============================================================================
+# SENIOR UI/UX INTERACTIVE CAFE PROPS (ZERO-PHYSICS RAY-SPHERE PICKING)
+# ============================================================================
+
+func _register_interactive_prop(prop_id: String, node: Node3D, local_offset: Vector3, radius: float) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	_interactive_props.append({
+		"id": prop_id,
+		"node": node,
+		"offset": local_offset,
+		"radius": radius,
+		"base_pos": node.position,
+		"base_rot": node.rotation_degrees,
+		"base_scale": node.scale
+	})
+
+
+func _play_cafe_sfx(sound_name: String) -> void:
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am and am.has_method("play_sound"):
+		am.call("play_sound", sound_name)
+
+
+func _kill_prop_tween(prop_id: String) -> void:
+	if _prop_tweens.has(prop_id):
+		var old_tw: Variant = _prop_tweens[prop_id]
+		if old_tw is Tween and is_instance_valid(old_tw as Tween):
+			(old_tw as Tween).kill()
+		_prop_tweens.erase(prop_id)
+
+
+func _spawn_steam_puff(world_origin: Vector3, count: int = 3) -> void:
+	if not _lounge_root or not is_instance_valid(_lounge_root):
+		return
+	var mat_steam: Material = _shared_mats.get("steam", null) as Material
+	if mat_steam == null:
+		return
+	for i: int in range(count):
+		var puff: MeshInstance3D = _add_sphere(_lounge_root, 0.015, 0.032, Vector3.ZERO, mat_steam, Vector3.ZERO, 8)
+		puff.set_meta("skip_bake", true)
+		var jitter: Vector3 = Vector3((float(i) - float(count - 1) * 0.5) * 0.016, float(i) * 0.012, sin(float(i) * 2.1) * 0.012)
+		puff.global_position = world_origin + jitter
+		puff.scale = Vector3(0.45, 0.45, 0.45)
+		var target_pos: Vector3 = puff.position + Vector3(jitter.x * 1.9, 0.21 + float(i) * 0.04, jitter.z * 1.5)
+		var tw: Tween = create_tween().set_parallel(true)
+		var delay_s: float = float(i) * 0.09
+		tw.tween_property(puff, "position", target_pos, 1.15).set_delay(delay_s).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tw.tween_property(puff, "scale", Vector3(1.55, 1.85, 1.55), 0.55).set_delay(delay_s).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(puff, "scale", Vector3(0.02, 0.02, 0.02), 0.60).set_delay(delay_s + 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.chain().tween_callback(func() -> void:
+			if is_instance_valid(puff):
+				puff.queue_free()
+		)
+
+
+func _try_interact_with_cafe_prop(screen_pos: Vector2) -> bool:
+	if not is_board_view_active or is_transitioning or is_top_down_view:
+		return false
+	if camera == null or not is_instance_valid(camera) or _interactive_props.is_empty():
+		return false
+	if _is_board_consuming_input():
+		return false
+	var now_ms: int = Time.get_ticks_msec()
+	if now_ms - _last_prop_interact_ms < 120:
+		return false
+
+	var ray_origin: Vector3 = camera.project_ray_origin(screen_pos)
+	var ray_dir: Vector3 = camera.project_ray_normal(screen_pos)
+
+	# Protect active game board felt surface: never steal taps aimed at the playing surface!
+	var board_hit_t: float = INF
+	if absf(ray_dir.y) > 0.0001:
+		var t_plane: float = (0.068 - ray_origin.y) / ray_dir.y
+		if t_plane > 0.0:
+			var p_hit: Vector3 = ray_origin + ray_dir * t_plane
+			if absf(p_hit.x) <= 0.755 and absf(p_hit.z) <= 0.735:
+				board_hit_t = t_plane
+
+	var best_t: float = INF
+	var best_entry: Dictionary = {}
+
+	for entry: Dictionary in _interactive_props:
+		var prop_node: Node3D = entry["node"] as Node3D
+		if prop_node == null or not is_instance_valid(prop_node) or not prop_node.is_visible_in_tree():
+			continue
+		var world_center: Vector3 = prop_node.to_global(entry["offset"] as Vector3)
+		var oc: Vector3 = world_center - ray_origin
+		var proj: float = oc.dot(ray_dir)
+		if proj <= 0.0:
+			continue
+		var r: float = float(entry["radius"])
+		var perp_sq: float = oc.length_squared() - proj * proj
+		if perp_sq <= r * r:
+			var t_hit: float = proj - sqrt(maxf(0.0, r * r - perp_sq))
+			if t_hit < board_hit_t and t_hit < best_t:
+				best_t = t_hit
+				best_entry = entry
+
+	if best_entry.is_empty():
+		return false
+
+	_last_prop_interact_ms = now_ms
+	_trigger_cafe_prop_interaction(best_entry)
+	var vp: Viewport = get_viewport()
+	if vp:
+		vp.set_input_as_handled()
+	return true
+
+
+func _tween_tactile_squash_pulse(prop_id: String, node: Node3D, base_scale: Vector3, stretch_y: float = 1.09, squash_xz: float = 0.94) -> Tween:
+	_kill_prop_tween(prop_id)
+	var tw: Tween = create_tween()
+	_prop_tweens[prop_id] = tw
+	tw.tween_property(node, "scale", Vector3(base_scale.x * squash_xz, base_scale.y * stretch_y, base_scale.z * squash_xz), 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(node, "scale", Vector3(base_scale.x * 1.03, base_scale.y * 0.97, base_scale.z * 1.03), 0.11).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(node, "scale", base_scale, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	return tw
+
+
+func _toggle_window_doors() -> void:
+	_window_doors_open = not _window_doors_open
+	_kill_prop_tween("window_doors")
+	_play_cafe_sfx("tap_button")
+
+	# Right-hand rule around +Y: left hinge swings -104 deg, right hinge swings +104 deg -> both open INWARD into the parlor!
+	var left_target: float = -104.0 if _window_doors_open else 0.0
+	var right_target: float = 104.0 if _window_doors_open else 0.0
+	var dur: float = 0.62 if _window_doors_open else 0.48
+	var trans_type: int = Tween.TRANS_BACK if _window_doors_open else Tween.TRANS_CUBIC
+	var ease_type: int = Tween.EASE_OUT if _window_doors_open else Tween.EASE_IN_OUT
+
+	var tw: Tween = create_tween().set_parallel(true)
+	_prop_tweens["window_doors"] = tw
+	if _window_door_left and is_instance_valid(_window_door_left):
+		tw.tween_property(_window_door_left, "rotation_degrees:y", left_target, dur).set_trans(trans_type).set_ease(ease_type)
+	if _window_door_right and is_instance_valid(_window_door_right):
+		tw.tween_property(_window_door_right, "rotation_degrees:y", right_target, dur).set_delay(0.04).set_trans(trans_type).set_ease(ease_type)
+	if _window_vista_mat != null:
+		var target_vista: Color = Color(1.03, 1.00, 0.96) if _window_doors_open else Color(0.92, 0.90, 0.86)
+		tw.tween_property(_window_vista_mat, "albedo_color", target_vista, 0.42).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+func _toggle_lamp_material(prop_id: String, mat: StandardMaterial3D, is_on: bool, on_albedo: Color, on_emit: Color, on_energy: float, off_albedo: Color) -> void:
+	if mat == null:
+		return
+	var mat_key: String = prop_id + "_mat"
+	_kill_prop_tween(mat_key)
+	var tw: Tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_prop_tweens[mat_key] = tw
+	tw.tween_property(mat, "albedo_color", on_albedo if is_on else off_albedo, 0.24)
+	tw.tween_property(mat, "emission", on_emit if is_on else Color(0.06, 0.04, 0.02), 0.24)
+	tw.tween_property(mat, "emission_energy_multiplier", on_energy if is_on else 0.04, 0.24)
+
+
+func _trigger_cafe_prop_interaction(entry: Dictionary) -> void:
+	var prop_id: String = entry["id"] as String
+	var node: Node3D = entry["node"] as Node3D
+	if node == null or not is_instance_valid(node):
+		return
+	var base_pos: Vector3 = entry["base_pos"] as Vector3
+	var base_rot: Vector3 = entry["base_rot"] as Vector3
+	var base_scale: Vector3 = entry["base_scale"] as Vector3
+
+	match prop_id:
+		"window_doors":
+			_toggle_window_doors()
+
+		"desk_abajour":
+			_desk_lamp_on = not _desk_lamp_on
+			_play_cafe_sfx("tap_button")
+			_tween_tactile_squash_pulse(prop_id, node, base_scale, 1.08, 0.95)
+			_toggle_lamp_material(
+				prop_id, _desk_lamp_shade_mat, _desk_lamp_on,
+				Color(0.96, 0.84, 0.60), Color(1.0, 0.75, 0.36), 1.28, Color(0.46, 0.38, 0.28)
+			)
+			if not _is_mobile_gpu and has_node("TableLampLight"):
+				var tl: OmniLight3D = get_node("TableLampLight") as OmniLight3D
+				if tl:
+					var l_tw: Tween = create_tween()
+					l_tw.tween_property(tl, "light_energy", 0.84 if _desk_lamp_on else 0.28, 0.24)
+
+		"desk_hourglass":
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("time")
+			var tw_hg: Tween = create_tween()
+			_prop_tweens[prop_id] = tw_hg
+			var cur_z: float = node.rotation_degrees.z
+			var next_z: float = cur_z + 180.0
+			tw_hg.tween_property(node, "position:y", base_pos.y + 0.085, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw_hg.tween_property(node, "rotation_degrees:z", next_z, 0.34).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN_OUT)
+			tw_hg.tween_property(node, "position:y", base_pos.y, 0.18).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+			tw_hg.tween_callback(func() -> void:
+				if is_instance_valid(node):
+					node.rotation_degrees.z = fmod(node.rotation_degrees.z, 360.0)
+			)
+
+		"desk_khatam_box":
+			_khatam_box_open = not _khatam_box_open
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("move_peace")
+			var tw_kb: Tween = create_tween().set_parallel(true)
+			_prop_tweens[prop_id] = tw_kb
+			if _khatam_lid_pivot and is_instance_valid(_khatam_lid_pivot):
+				var lid_ang: float = -108.0 if _khatam_box_open else 0.0
+				var t_trans: int = Tween.TRANS_BACK if _khatam_box_open else Tween.TRANS_BOUNCE
+				tw_kb.tween_property(_khatam_lid_pivot, "rotation_degrees:x", lid_ang, 0.42).set_trans(t_trans).set_ease(Tween.EASE_OUT)
+			tw_kb.tween_property(node, "scale", Vector3(base_scale.x * 1.05, base_scale.y * 0.94, base_scale.z * 1.05), 0.10)
+			tw_kb.chain().tween_property(node, "scale", base_scale, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+		"desk_tea_tray":
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("bell")
+			var tw_tea: Tween = create_tween()
+			_prop_tweens[prop_id] = tw_tea
+			tw_tea.tween_property(node, "position:y", base_pos.y + 0.016, 0.10).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw_tea.parallel().tween_property(node, "rotation_degrees:z", base_rot.z + 4.5, 0.10)
+			tw_tea.tween_property(node, "position:y", base_pos.y, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			tw_tea.parallel().tween_property(node, "rotation_degrees:z", base_rot.z - 3.0, 0.14)
+			tw_tea.tween_property(node, "rotation_degrees:z", base_rot.z, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			_spawn_steam_puff(node.to_global(Vector3(-0.026, 0.085, 0.014)), 3)
+
+		"desk_ajil_dish":
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("dice")
+			var tw_aj: Tween = create_tween()
+			_prop_tweens[prop_id] = tw_aj
+			tw_aj.tween_property(node, "position:y", base_pos.y + 0.024, 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw_aj.parallel().tween_property(node, "rotation_degrees:y", node.rotation_degrees.y + 28.0, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw_aj.tween_property(node, "position:y", base_pos.y, 0.16).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+
+		"estante_armillary":
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("bell")
+			var tw_arm: Tween = create_tween().set_parallel(true)
+			_prop_tweens[prop_id] = tw_arm
+			if _armillary_rings_pivot and is_instance_valid(_armillary_rings_pivot):
+				var cur_y: float = _armillary_rings_pivot.rotation_degrees.y
+				var cur_z: float = _armillary_rings_pivot.rotation_degrees.z
+				tw_arm.tween_property(_armillary_rings_pivot, "rotation_degrees:y", cur_y + 360.0, 1.25).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+				tw_arm.tween_property(_armillary_rings_pivot, "rotation_degrees:z", cur_z + 18.0, 0.30).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+				tw_arm.chain().tween_property(_armillary_rings_pivot, "rotation_degrees:z", cur_z, 0.55).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+			else:
+				tw_arm.tween_property(node, "rotation_degrees:y", node.rotation_degrees.y + 360.0, 1.15).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+
+		"estante_clock":
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("time")
+			var tw_clk: Tween = create_tween()
+			_prop_tweens[prop_id] = tw_clk
+			if _clock_hands_pivot and is_instance_valid(_clock_hands_pivot):
+				var h_tw: Tween = create_tween()
+				h_tw.tween_property(_clock_hands_pivot, "rotation_degrees:z", _clock_hands_pivot.rotation_degrees.z - 360.0, 0.72).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+			tw_clk.tween_property(node, "position:y", base_pos.y + 0.018, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw_clk.parallel().tween_property(node, "rotation_degrees:z", base_rot.z + 8.0, 0.08)
+			tw_clk.tween_property(node, "rotation_degrees:z", base_rot.z - 8.0, 0.10)
+			tw_clk.tween_property(node, "rotation_degrees:z", base_rot.z + 4.5, 0.09)
+			tw_clk.tween_property(node, "position:y", base_pos.y, 0.12).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+			tw_clk.parallel().tween_property(node, "rotation_degrees:z", base_rot.z, 0.12)
+
+		"estante_samovar":
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("bell")
+			var tw_sam: Tween = create_tween()
+			_prop_tweens[prop_id] = tw_sam
+			if _samovar_teapot_pivot and is_instance_valid(_samovar_teapot_pivot):
+				var tp: Node3D = _samovar_teapot_pivot
+				tw_sam.tween_property(tp, "position:y", 0.252, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				tw_sam.parallel().tween_property(tp, "rotation_degrees:z", 13.0, 0.08)
+				tw_sam.tween_property(tp, "rotation_degrees:z", -11.0, 0.11)
+				tw_sam.tween_property(tp, "rotation_degrees:z", 6.0, 0.10)
+				tw_sam.tween_property(tp, "position:y", 0.235, 0.12).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+				tw_sam.parallel().tween_property(tp, "rotation_degrees:z", 0.0, 0.12)
+			else:
+				_tween_tactile_squash_pulse(prop_id, node, base_scale, 1.07, 0.96)
+			_spawn_steam_puff(node.to_global(Vector3(0.0, 0.295, 0.0)), 4)
+
+		"estante_bust":
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("tap")
+			var tw_b: Tween = create_tween()
+			_prop_tweens[prop_id] = tw_b
+			tw_b.tween_property(node, "rotation_degrees", base_rot + Vector3(11.0, 12.0, 0.0), 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw_b.tween_property(node, "rotation_degrees", base_rot + Vector3(-4.0, -6.0, 0.0), 0.20).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			tw_b.tween_property(node, "rotation_degrees", base_rot, 0.26).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+		"estante_books":
+			_hero_book_pulled = not _hero_book_pulled
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("move_peace")
+			if _hero_book_pivot and is_instance_valid(_hero_book_pivot):
+				var tw_bk: Tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				_prop_tweens[prop_id] = tw_bk
+				var target_z: float = 0.115 if _hero_book_pulled else 0.02
+				var target_yaw: float = 11.5 if _hero_book_pulled else 1.5
+				var target_pitch: float = -6.0 if _hero_book_pulled else 0.0
+				tw_bk.tween_property(_hero_book_pivot, "position:z", target_z, 0.36)
+				tw_bk.tween_property(_hero_book_pivot, "rotation_degrees:y", target_yaw, 0.36)
+				tw_bk.tween_property(_hero_book_pivot, "rotation_degrees:x", target_pitch, 0.36)
+
+		"estante_sign":
+			_kill_prop_tween(prop_id)
+			_play_cafe_sfx("bell")
+			var tw_sg: Tween = create_tween()
+			_prop_tweens[prop_id] = tw_sg
+			tw_sg.tween_property(node, "scale", base_scale * 1.045, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw_sg.parallel().tween_property(node, "rotation_degrees:x", base_rot.x - 5.5, 0.12)
+			tw_sg.tween_property(node, "rotation_degrees:x", base_rot.x + 3.0, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			tw_sg.parallel().tween_property(node, "scale", base_scale, 0.20).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw_sg.tween_property(node, "rotation_degrees:x", base_rot.x, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+		"left_table_lamp":
+			_left_lamp_on = not _left_lamp_on
+			_play_cafe_sfx("tap_button")
+			_tween_tactile_squash_pulse(prop_id, node, base_scale, 1.07, 0.95)
+			_toggle_lamp_material(
+				prop_id, _left_lamp_shade_mat, _left_lamp_on,
+				Color(0.96, 0.84, 0.62), Color(1.0, 0.76, 0.38), 1.32, Color(0.45, 0.37, 0.27)
+			)
+
+		"right_table_lantern":
+			_right_lantern_on = not _right_lantern_on
+			_play_cafe_sfx("tap_button")
+			_kill_prop_tween(prop_id)
+			var tw_rl: Tween = create_tween()
+			_prop_tweens[prop_id] = tw_rl
+			tw_rl.tween_property(node, "rotation_degrees:z", base_rot.z + 7.0, 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw_rl.tween_property(node, "rotation_degrees:z", base_rot.z - 5.0, 0.13)
+			tw_rl.tween_property(node, "rotation_degrees:z", base_rot.z, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			_toggle_lamp_material(
+				prop_id, _right_lantern_glow_mat, _right_lantern_on,
+				Color(0.98, 0.76, 0.34), Color(1.0, 0.70, 0.22), 1.55, Color(0.36, 0.28, 0.20)
+			)
 
 
 func _init_lounge_materials() -> void:
@@ -1284,7 +1698,6 @@ func _init_lounge_materials() -> void:
 
 	# Lightweight mobile-optimized Persian craft & antique book textures (128-512px, VRAM-compressed)
 	var tex_baize: Texture2D = _load_cafe_tex("parlor_baize_felt.jpg")
-	var tex_carpet: Texture2D = _load_cafe_tex("persian_carpet.jpg")
 	var tex_minakari: Texture2D = _load_cafe_tex("persian_minakari.jpg")
 	var tex_khatam: Texture2D = _load_cafe_tex("persian_khatam.jpg")
 	var tex_termeh: Texture2D = _load_cafe_tex("persian_termeh.jpg")
@@ -1326,7 +1739,24 @@ func _init_lounge_materials() -> void:
 	var mat_emerald_jade: StandardMaterial3D = _make_mat(Color(0.11, 0.42, 0.25), 0.24, 0.15)
 	var mat_bulb_glow: StandardMaterial3D = _make_emissive_mat(Color(1.0, 0.94, 0.78), Color(1.0, 0.84, 0.48), 2.35, 0.15)
 	var mat_lampshade_glow: StandardMaterial3D = _make_emissive_mat(Color(0.96, 0.84, 0.62), Color(1.0, 0.76, 0.38), 1.32, 0.44)
-	var mat_abajour_shade: StandardMaterial3D = _make_emissive_mat(Color(0.96, 0.84, 0.60), Color(1.0, 0.75, 0.36), 1.28, 0.40)
+	_desk_lamp_shade_mat = _make_emissive_mat(Color(0.96, 0.84, 0.60), Color(1.0, 0.75, 0.36), 1.28, 0.40)
+	_left_lamp_shade_mat = _make_emissive_mat(Color(0.96, 0.84, 0.62), Color(1.0, 0.76, 0.38), 1.32, 0.44)
+	_right_lantern_glow_mat = _make_emissive_mat(Color(0.98, 0.76, 0.34), Color(1.0, 0.70, 0.22), 1.55, 0.22)
+	var mat_abajour_shade: StandardMaterial3D = _desk_lamp_shade_mat
+
+	# Mobile-optimized lightweight glass pane & diagonal reflection sheen for interactive hinged window doors
+	var mat_window_glass: StandardMaterial3D = StandardMaterial3D.new()
+	mat_window_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_window_glass.albedo_color = Color(0.84, 0.92, 1.0, 0.20)
+	mat_window_glass.roughness = 0.08
+	mat_window_glass.metallic = 0.14
+	mat_window_glass.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	var mat_window_glass_glint: StandardMaterial3D = StandardMaterial3D.new()
+	mat_window_glass_glint.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_window_glass_glint.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat_window_glass_glint.albedo_color = Color(1.0, 0.97, 0.88, 0.11)
+	mat_window_glass_glint.cull_mode = BaseMaterial3D.CULL_DISABLED
 
 	var mat_leather_green: StandardMaterial3D = _make_mat(Color(0.12, 0.26, 0.15), 0.40, 0.06)
 	var mat_leather_green_dark: StandardMaterial3D = _make_mat(Color(0.07, 0.16, 0.09), 0.46, 0.04)
@@ -1398,8 +1828,14 @@ func _init_lounge_materials() -> void:
 	var mat_persian_copper: StandardMaterial3D = _make_mat(Color(0.76, 0.37, 0.19), 0.30, 0.78)
 	var mat_persian_saffron: StandardMaterial3D = _make_mat(Color(0.88, 0.64, 0.16), 0.42, 0.04)
 
-	var mat_persian_carpet: StandardMaterial3D = _make_mat(Color(0.88, 0.85, 0.80) if tex_carpet != null else Color(0.48, 0.10, 0.11), 0.90, 0.0, tex_carpet, Vector3.ONE)
-	mat_persian_carpet.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	# Persistent Persian floor carpet material (swapped randomly across 5 regional carpets on each game!)
+	_carpet_mat = StandardMaterial3D.new()
+	_carpet_mat.roughness = 0.90
+	_carpet_mat.metallic = 0.0
+	_carpet_mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	_carpet_mat.albedo_color = Color(0.88, 0.85, 0.80)
+	randomize_carpet()
+	var mat_persian_carpet: StandardMaterial3D = _carpet_mat
 
 	var mat_minakari_ceramic: StandardMaterial3D = _make_mat(Color(0.95, 0.97, 0.98) if tex_minakari != null else Color(0.08, 0.56, 0.62), 0.22, 0.05, tex_minakari, Vector3.ONE)
 	var mat_khatam_inlay: StandardMaterial3D = _make_mat(Color(0.92, 0.88, 0.82) if tex_khatam != null else Color(0.68, 0.52, 0.24), 0.30, 0.08, tex_khatam, Vector3(1.2, 1.2, 1.2))
@@ -1477,7 +1913,11 @@ func _init_lounge_materials() -> void:
 		"persian_carpet": mat_persian_carpet,
 		"minakari_ceramic": mat_minakari_ceramic,
 		"khatam_inlay": mat_khatam_inlay,
-		"termeh_fabric": mat_termeh_fabric
+		"termeh_fabric": mat_termeh_fabric,
+		"window_glass": mat_window_glass,
+		"window_glass_glint": mat_window_glass_glint,
+		"left_lamp_shade": _left_lamp_shade_mat,
+		"right_lantern_glow": _right_lantern_glow_mat
 	}
 
 
@@ -1510,6 +1950,21 @@ func _build_luxury_game_environment() -> void:
 	_steam_wisps.clear()
 	_steam_base_positions.clear()
 	_steam_phases.clear()
+	_interactive_props.clear()
+	_prop_tweens.clear()
+	_desk_lamp_on = true
+	_left_lamp_on = true
+	_right_lantern_on = true
+	_window_doors_open = false
+	_khatam_box_open = false
+	_hero_book_pulled = false
+	_window_door_left = null
+	_window_door_right = null
+	_khatam_lid_pivot = null
+	_armillary_rings_pivot = null
+	_clock_hands_pivot = null
+	_samovar_teapot_pivot = null
+	_hero_book_pivot = null
 
 	# 1. Foreground Luxury Carved Walnut Gaming Table, Reusable Green Felt, Corner Desk Abajour & Tea Corner
 	var table_root: Node3D = get_node_or_null("TableRoot") as Node3D
@@ -1760,82 +2215,174 @@ func _build_desk_abajour(table_root: Node3D) -> void:
 	_add_cyl(abajour, 0.006, 0.014, 0.026, Vector3(0.0, shade_y + 0.078, 0.0), mat_brass, Vector3.ZERO, 10)
 	_add_sphere(abajour, 0.010, 0.018, Vector3(0.0, shade_y + 0.095, 0.0), mat_brass, Vector3.ZERO, 10)
 
-	# Bake the Desk Abajour into a single multi-surface MeshInstance3D
-	_bake_static_branch_to_merged_mesh(abajour, "BakedDeskAbajourMesh")
+	# Bake the Desk Abajour into a single multi-surface MeshInstance3D & register interactive lamp toggle
+	_bake_interactive_prop_branch(abajour, "BakedDeskAbajourMesh")
+	_register_interactive_prop("desk_abajour", abajour, Vector3(0.0, 0.18, 0.0), 0.17)
 
 
 # ============================================================================
-# 2. MULTI-PLAYER TUFTED DARK-GREEN LEATHER CHAIRS (2, 3, OR 4 PLAYERS)
+# 2. MULTI-PLAYER PERSIAN PARLOR CHAIRS (4 RANDOMIZED STYLES + GROUNDED BASES)
 # ============================================================================
+
+func _get_or_build_chair_style_mesh(style_idx: int) -> ArrayMesh:
+	var idx: int = clampi(style_idx, 0, CHAIR_STYLE_COUNT - 1)
+	if _chair_style_meshes.has(idx):
+		var cached: ArrayMesh = _chair_style_meshes[idx] as ArrayMesh
+		if cached != null:
+			return cached
+	var temp_chair: Node3D = Node3D.new()
+	match idx:
+		0:
+			_populate_chair_style_0_chesterfield(temp_chair)
+		1:
+			_populate_chair_style_1_qajar_wingback(temp_chair)
+		2:
+			_populate_chair_style_2_isfahan_medallion(temp_chair)
+		3:
+			_populate_chair_style_3_orosi_lattice(temp_chair)
+	var baked: ArrayMesh = _bake_node_tree_to_array_mesh(temp_chair)
+	temp_chair.free()
+	if baked != null:
+		_chair_style_meshes[idx] = baked
+	return baked
+
+
+func randomize_chair_style() -> void:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.randomize()
+	var idx: int = rng.randi_range(0, CHAIR_STYLE_COUNT - 1)
+	if CHAIR_STYLE_COUNT > 1 and idx == _last_chair_style_idx:
+		idx = (idx + 1 + rng.randi_range(0, CHAIR_STYLE_COUNT - 2)) % CHAIR_STYLE_COUNT
+	_last_chair_style_idx = idx
+	var chosen_mesh: ArrayMesh = _get_or_build_chair_style_mesh(idx)
+	if chosen_mesh == null:
+		return
+	_chair_shared_mesh = chosen_mesh
+	for ch_mi: MeshInstance3D in [_chair_north, _chair_south, _chair_west, _chair_east]:
+		if ch_mi and is_instance_valid(ch_mi):
+			ch_mi.mesh = _chair_shared_mesh
+
 
 func _build_player_chairs_around_table(chairs_parent: Node3D) -> void:
-	# Build one detailed chair template and bake it into a single shared ArrayMesh
-	# so rendering 2, 3, or 4 chairs around the table uses only 1 MeshInstance3D per chair!
-	var temp_chair: Node3D = Node3D.new()
-	_populate_tufted_chair_geometry(temp_chair)
-	_chair_shared_mesh = _bake_node_tree_to_array_mesh(temp_chair)
-	temp_chair.free()
+	_chair_style_meshes.clear()
+	_last_chair_style_idx = -1
 
-	if _chair_shared_mesh == null:
-		return
-
-	# 1. NORTH CHAIR (Opponent Side — Behind Table, Facing +Z)
+	# 1. NORTH CHAIR (Opponent Side — Behind Table, Facing +Z; grounded flush at carpet y = -0.77)
 	_chair_north = MeshInstance3D.new()
 	_chair_north.name = "NorthOpponentChair"
-	_chair_north.mesh = _chair_shared_mesh
 	_chair_north.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_chair_north.position = Vector3(0.0, 0.0, -1.42)
 	_chair_north.rotation_degrees = Vector3(0.0, 0.0, 0.0)
 	chairs_parent.add_child(_chair_north)
 
 	# 2. SOUTH CHAIR (My Side — Front of Table, Facing -Z)
-	# Positioned at Z = +1.22, Y = -0.22 so its arched walnut crest rail, brass nailhead studs,
-	# and upper diamond-tufted green leather backrest are visible in both 3D & 2D views without blocking the board!
 	_chair_south = MeshInstance3D.new()
 	_chair_south.name = "SouthPlayerChair"
-	_chair_south.mesh = _chair_shared_mesh
 	_chair_south.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_chair_south.position = Vector3(0.0, -0.22, 1.22)
 	_chair_south.rotation_degrees = Vector3(0.0, 180.0, 0.0)
 	chairs_parent.add_child(_chair_south)
 
-	# 3. WEST CHAIR (Player 3 — Left Side of Table, Angled Toward Table Center)
+	# 3. WEST CHAIR (Player 3 — Left Side of Table, Angled Toward Table Center; grounded flush at carpet)
 	_chair_west = MeshInstance3D.new()
 	_chair_west.name = "WestPlayerChair"
-	_chair_west.mesh = _chair_shared_mesh
 	_chair_west.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_chair_west.position = Vector3(-0.92, -0.05, -0.40)
+	_chair_west.position = Vector3(-0.92, -0.09, -0.40)
 	_chair_west.rotation_degrees = Vector3(0.0, 68.0, 0.0)
 	_chair_west.scale = Vector3(0.88, 0.88, 0.88)
 	_chair_west.visible = false
 	chairs_parent.add_child(_chair_west)
 
-	# 4. EAST CHAIR (Player 4 — Right Side of Table, Angled Toward Table Center)
+	# 4. EAST CHAIR (Player 4 — Right Side of Table, Angled Toward Table Center; grounded flush at carpet)
 	_chair_east = MeshInstance3D.new()
 	_chair_east.name = "EastPlayerChair"
-	_chair_east.mesh = _chair_shared_mesh
 	_chair_east.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_chair_east.position = Vector3(0.92, -0.05, -0.40)
+	_chair_east.position = Vector3(0.92, -0.09, -0.40)
 	_chair_east.rotation_degrees = Vector3(0.0, -68.0, 0.0)
 	_chair_east.scale = Vector3(0.88, 0.88, 0.88)
 	_chair_east.visible = false
 	chairs_parent.add_child(_chair_east)
 
+	randomize_chair_style()
 
-func _populate_tufted_chair_geometry(chair: Node3D) -> void:
+
+func _add_grounded_chair_base(chair: Node3D, mat_wood_main: Material, mat_wood_dark: Material, mat_accent: Material, stretcher_style: int = 0) -> void:
+	# Proper architectural chair base descending cleanly from seat rail (y = -0.17) to carpet floor (y = -0.77)
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+
+	# Carved Seat-Frame Apron & Recessed Under-Seat Plinth
+	_add_box(chair, Vector3(0.78, 0.068, 0.44), Vector3(0.0, -0.175, 0.21), mat_wood_dark)
+	_add_box(chair, Vector3(0.80, 0.020, 0.46), Vector3(0.0, -0.145, 0.21), mat_wood_main)
+	_add_box(chair, Vector3(0.80, 0.018, 0.46), Vector3(0.0, -0.205, 0.21), mat_wood_main)
+	# Front apron inlay strip & carved center rosette
+	_add_box(chair, Vector3(0.54, 0.036, 0.014), Vector3(0.0, -0.175, 0.432), mat_accent)
+	_add_sphere(chair, 0.016, 0.016, Vector3(0.0, -0.175, 0.442), mat_brass, Vector3.ZERO, 8)
+
+	# 4 Sculpted Legs Grounded Flush on Carpet Floor (y = -0.77) with Turned Knees, Rings & Brass Sabot Caps
+	var leg_specs: Array[Dictionary] = [
+		{"x": -0.355, "z": 0.39, "rake_x": 3.5, "rake_z": -3.0},
+		{"x": 0.355, "z": 0.39, "rake_x": 3.5, "rake_z": 3.0},
+		{"x": -0.355, "z": 0.01, "rake_x": -4.5, "rake_z": -2.5},
+		{"x": 0.355, "z": 0.01, "rake_x": -4.5, "rake_z": 2.5}
+	]
+	for spec: Dictionary in leg_specs:
+		var lx: float = float(spec["x"])
+		var lz: float = float(spec["z"])
+		var rx: float = float(spec["rake_x"])
+		var rz: float = float(spec["rake_z"])
+		# Upper knee block & turned collar
+		_add_box(chair, Vector3(0.062, 0.088, 0.062), Vector3(lx, -0.215, lz), mat_wood_main)
+		_add_torus(chair, 0.022, 0.036, Vector3(lx, -0.262, lz), mat_aged, Vector3.ZERO, 10)
+		# Tapered turned leg shaft reaching floor
+		var foot_x: float = lx + sin(deg_to_rad(rz)) * 0.16
+		var foot_z: float = lz + sin(deg_to_rad(rx)) * 0.18
+		var mid_x: float = (lx + foot_x) * 0.5
+		var mid_z: float = (lz + foot_z) * 0.5
+		_add_cyl(chair, 0.030, 0.019, 0.47, Vector3(mid_x, -0.495, mid_z), mat_wood_dark, Vector3(rx, 0.0, rz), 10)
+		# Turned decorative baluster bulb along upper-mid shaft
+		if stretcher_style == 0 or stretcher_style == 1:
+			_add_sphere(chair, 0.034, 0.052, Vector3(lerpf(lx, foot_x, 0.25), -0.345, lerpf(lz, foot_z, 0.25)), mat_wood_main, Vector3.ZERO, 8)
+		else:
+			_add_torus(chair, 0.018, 0.028, Vector3(lerpf(lx, foot_x, 0.30), -0.365, lerpf(lz, foot_z, 0.30)), mat_brass, Vector3.ZERO, 10)
+		# Polished Antique-Brass Sabot Foot Cap Resting on Carpet (y = -0.77)
+		_add_cyl(chair, 0.021, 0.024, 0.044, Vector3(foot_x, -0.748, foot_z), mat_brass, Vector3.ZERO, 10)
+		_add_torus(chair, 0.018, 0.025, Vector3(foot_x, -0.726, foot_z), mat_aged, Vector3.ZERO, 10)
+
+	# Structural Cross-Stretchers (H-Stretcher or Box Perimeter Stretcher at y = -0.57)
+	var st_y: float = -0.57
+	for side_s: float in [-1.0, 1.0]:
+		_add_cyl(chair, 0.014, 0.014, 0.39, Vector3(side_s * 0.36, st_y, 0.20), mat_wood_main, Vector3(90.0, 0.0, 0.0), 8)
+	if stretcher_style == 0 or stretcher_style == 1:
+		# Classical Turned H-Stretcher with Central Brass Boss
+		_add_cyl(chair, 0.015, 0.015, 0.72, Vector3(0.0, st_y, 0.20), mat_wood_main, Vector3(0.0, 0.0, 90.0), 8)
+		_add_sphere(chair, 0.026, 0.030, Vector3(0.0, st_y, 0.20), mat_aged, Vector3.ZERO, 8)
+		_add_torus(chair, 0.016, 0.024, Vector3(-0.18, st_y, 0.20), mat_wood_dark, Vector3(0.0, 0.0, 90.0), 8)
+		_add_torus(chair, 0.016, 0.024, Vector3(0.18, st_y, 0.20), mat_wood_dark, Vector3(0.0, 0.0, 90.0), 8)
+	else:
+		# Perimeter Box Stretchers (Front + Rear + Brass Center Collar)
+		_add_cyl(chair, 0.013, 0.013, 0.72, Vector3(0.0, st_y, 0.395), mat_wood_main, Vector3(0.0, 0.0, 90.0), 8)
+		_add_cyl(chair, 0.013, 0.013, 0.72, Vector3(0.0, st_y, 0.005), mat_wood_dark, Vector3(0.0, 0.0, 90.0), 8)
+		_add_torus(chair, 0.015, 0.022, Vector3(0.0, st_y, 0.395), mat_brass, Vector3(0.0, 0.0, 90.0), 8)
+
+
+func _populate_chair_style_0_chesterfield(chair: Node3D) -> void:
+	# STYLE 0: Classic Emerald Diamond-Tufted Leather Chesterfield Club Chair (with Grounded Carved Walnut & Brass Base)
 	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
 	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
 	var mat_leather: Material = _shared_mats["leather_green"]
 	var mat_leather_dark: Material = _shared_mats["leather_green_dark"]
 	var mat_brass: Material = _shared_mats["brass"]
 
+	_add_grounded_chair_base(chair, mat_walnut_pol, mat_walnut_dark, _shared_mats["aged_brass"], 0)
+
 	# Main Curved Leather Backrest Shell & Seat Cushion
 	_add_box(chair, Vector3(0.82, 0.54, 0.085), Vector3(0.0, 0.16, 0.0), mat_leather_dark, Vector3(-5.0, 0.0, 0.0))
-	_add_cyl(chair, 0.41, 0.41, 0.085, Vector3(0.0, 0.22, 0.0), mat_leather_dark, Vector3(85.0, 0.0, 0.0), 18)
-	_add_box(chair, Vector3(0.80, 0.12, 0.44), Vector3(0.0, -0.12, 0.22), mat_leather_dark)
-	_add_box(chair, Vector3(0.74, 0.08, 0.40), Vector3(0.0, -0.06, 0.22), mat_leather)
+	_add_cyl(chair, 0.41, 0.41, 0.085, Vector3(0.0, 0.22, 0.0), mat_leather_dark, Vector3(85.0, 0.0, 0.0), 16)
+	_add_box(chair, Vector3(0.78, 0.10, 0.44), Vector3(0.0, -0.10, 0.21), mat_leather_dark)
+	_add_box(chair, Vector3(0.74, 0.08, 0.40), Vector3(0.0, -0.05, 0.21), mat_leather)
 
-	# Diamond-Tufted Padded Green Leather Cushion Puffs (both front & back of backrest so South chair looks rich from behind too!)
+	# Diamond-Tufted Padded Green Leather Cushion Puffs (front & back of backrest)
 	var row_ys: Array[float] = [0.36, 0.25, 0.14, 0.03]
 	for r_idx: int in range(row_ys.size()):
 		var ry: float = row_ys[r_idx]
@@ -1848,13 +2395,13 @@ func _populate_tufted_chair_geometry(chair: Node3D) -> void:
 			var py: float = ry - arch_drop
 			var pz: float = 0.040 + (0.20 - absf(py - 0.20)) * 0.045
 			_add_box(chair, Vector3(0.105, 0.105, 0.056), Vector3(cx, py, 0.0), mat_leather, Vector3(-5.0, 0.0, 45.0))
-			_add_sphere(chair, 0.062, 0.048, Vector3(cx, py, pz + 0.010), mat_leather, Vector3(90.0, 0.0, 0.0), 10)
-			_add_sphere(chair, 0.058, 0.042, Vector3(cx, py, -0.038), mat_leather, Vector3(90.0, 0.0, 0.0), 10)
+			_add_sphere(chair, 0.060, 0.046, Vector3(cx, py, pz + 0.010), mat_leather, Vector3(90.0, 0.0, 0.0), 8)
+			_add_sphere(chair, 0.056, 0.040, Vector3(cx, py, -0.038), mat_leather, Vector3(90.0, 0.0, 0.0), 8)
 			if r_idx < 3 and c_idx < cols - 1:
 				var bx: float = cx + spacing * 0.5
 				var by: float = py - spacing * 0.38
-				_add_sphere(chair, 0.008, 0.008, Vector3(bx, by, pz + 0.026), mat_brass, Vector3.ZERO, 8)
-				_add_sphere(chair, 0.008, 0.008, Vector3(bx, by, -0.048), mat_brass, Vector3.ZERO, 8)
+				_add_sphere(chair, 0.008, 0.008, Vector3(bx, by, pz + 0.026), mat_brass, Vector3.ZERO, 6)
+				_add_sphere(chair, 0.008, 0.008, Vector3(bx, by, -0.048), mat_brass, Vector3.ZERO, 6)
 
 	# Carved Arched Walnut Crest Rail & Side Stiles
 	var arch_segs: int = 9
@@ -1867,21 +2414,156 @@ func _populate_tufted_chair_geometry(chair: Node3D) -> void:
 		_add_box(chair, Vector3(0.13, 0.048, 0.092), Vector3(ax, ay, 0.005), mat_walnut_pol, Vector3(-5.0, 0.0, rot_z))
 		var nx: float = sin(ang) * 0.42
 		var ny: float = 0.11 + cos(ang) * 0.30
-		_add_sphere(chair, 0.0075, 0.012, Vector3(nx, ny, 0.054), mat_brass, Vector3.ZERO, 8)
-		_add_sphere(chair, 0.0075, 0.012, Vector3(nx, ny, -0.046), mat_brass, Vector3.ZERO, 8)
+		_add_sphere(chair, 0.0075, 0.012, Vector3(nx, ny, 0.054), mat_brass, Vector3.ZERO, 6)
+		_add_sphere(chair, 0.0075, 0.012, Vector3(nx, ny, -0.046), mat_brass, Vector3.ZERO, 6)
 
-	# Scrolled Walnut Ear Knuckles, Side Posts & Curved Armrests
+	# Scrolled Walnut Ear Knuckles, Side Posts & Curved Armrests (Anchored Firmly into Seat Apron)
 	for side_s: float in [-1.0, 1.0]:
-		_add_sphere(chair, 0.046, 0.072, Vector3(side_s * 0.45, 0.31, 0.01), mat_walnut_pol, Vector3.ZERO, 10)
-		_add_torus(chair, 0.026, 0.044, Vector3(side_s * 0.45, 0.31, 0.02), mat_walnut_pol, Vector3(90.0, 0.0, 0.0), 12)
-		_add_box(chair, Vector3(0.056, 0.42, 0.088), Vector3(side_s * 0.43, 0.10, 0.005), mat_walnut_pol, Vector3(-5.0, 0.0, side_s * -4.0))
+		_add_sphere(chair, 0.046, 0.072, Vector3(side_s * 0.45, 0.31, 0.01), mat_walnut_pol, Vector3.ZERO, 8)
+		_add_torus(chair, 0.026, 0.044, Vector3(side_s * 0.45, 0.31, 0.02), mat_walnut_pol, Vector3(90.0, 0.0, 0.0), 10)
+		_add_box(chair, Vector3(0.056, 0.46, 0.088), Vector3(side_s * 0.42, 0.08, 0.005), mat_walnut_pol, Vector3(-5.0, 0.0, side_s * -4.0))
 		for n_idx: int in range(6):
 			var n_y: float = -0.04 + float(n_idx) * 0.056
 			var n_x: float = side_s * (0.39 + float(n_idx) * 0.003)
-			_add_sphere(chair, 0.0075, 0.012, Vector3(n_x, n_y, 0.054), mat_brass, Vector3.ZERO, 8)
-		_add_box(chair, Vector3(0.062, 0.040, 0.36), Vector3(side_s * 0.46, 0.02, 0.18), mat_walnut_pol, Vector3(4.0, side_s * -6.0, 0.0))
-		_add_sphere(chair, 0.036, 0.046, Vector3(side_s * 0.44, 0.01, 0.35), mat_walnut_pol, Vector3.ZERO, 10)
-		_add_cyl(chair, 0.024, 0.020, 0.22, Vector3(side_s * 0.44, -0.09, 0.32), mat_walnut_dark, Vector3.ZERO, 10)
+			_add_sphere(chair, 0.0075, 0.012, Vector3(n_x, n_y, 0.054), mat_brass, Vector3.ZERO, 6)
+		_add_box(chair, Vector3(0.062, 0.040, 0.38), Vector3(side_s * 0.41, 0.02, 0.20), mat_walnut_pol, Vector3(4.0, side_s * -4.0, 0.0))
+		_add_sphere(chair, 0.036, 0.046, Vector3(side_s * 0.39, 0.01, 0.37), mat_walnut_pol, Vector3.ZERO, 8)
+		_add_cyl(chair, 0.024, 0.026, 0.19, Vector3(side_s * 0.38, -0.085, 0.36), mat_walnut_dark, Vector3.ZERO, 8)
+
+
+func _populate_chair_style_1_qajar_wingback(chair: Node3D) -> void:
+	# STYLE 1: Royal Qajar Crimson Velvet & Termeh Wingback Throne Chair
+	var mat_mahogany: Material = _shared_mats["mahogany"]
+	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
+	var mat_velvet: Material = _shared_mats["velvet_curtain"]
+	var mat_termeh: Material = _shared_mats["termeh_fabric"]
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+
+	_add_grounded_chair_base(chair, mat_mahogany, mat_walnut_dark, _shared_mats["rug_gold"], 1)
+
+	# Plush Crimson Termeh Seat Cushion with Gold Welt Trim
+	_add_box(chair, Vector3(0.76, 0.11, 0.43), Vector3(0.0, -0.095, 0.21), mat_velvet)
+	_add_box(chair, Vector3(0.72, 0.055, 0.39), Vector3(0.0, -0.035, 0.21), mat_termeh)
+	_add_box(chair, Vector3(0.77, 0.012, 0.44), Vector3(0.0, -0.145, 0.21), mat_aged)
+
+	# Tall Sculpted Persian Pointed-Arch Wingback Panel (Vertical Channel Tufting!)
+	_add_box(chair, Vector3(0.78, 0.62, 0.088), Vector3(0.0, 0.20, 0.0), mat_velvet, Vector3(-5.0, 0.0, 0.0))
+	for ch_i: int in range(-2, 3):
+		var cx: float = float(ch_i) * 0.145
+		var ch_h: float = 0.56 - absf(float(ch_i)) * 0.045
+		_add_cyl(chair, 0.068, 0.068, ch_h, Vector3(cx, 0.19, 0.030), mat_termeh, Vector3(-5.0, 0.0, 0.0), 10)
+		_add_cyl(chair, 0.062, 0.062, ch_h, Vector3(cx, 0.19, -0.030), mat_velvet, Vector3(-5.0, 0.0, 0.0), 10)
+
+	# Pointed Persian Arch Crown Molding & Brass Shamseh Crest Finial
+	for side_s: float in [-1.0, 1.0]:
+		_add_box(chair, Vector3(0.32, 0.052, 0.098), Vector3(side_s * 0.24, 0.49, 0.004), mat_mahogany, Vector3(-5.0, 0.0, side_s * -24.0))
+		_add_box(chair, Vector3(0.058, 0.58, 0.096), Vector3(side_s * 0.41, 0.16, 0.004), mat_mahogany, Vector3(-5.0, 0.0, 0.0))
+		# Sculpted Wing Cheeks Wrapping Forward with Brass Studs
+		_add_box(chair, Vector3(0.062, 0.34, 0.20), Vector3(side_s * 0.40, 0.28, 0.10), mat_velvet, Vector3(0.0, side_s * -14.0, 0.0))
+		_add_box(chair, Vector3(0.032, 0.35, 0.026), Vector3(side_s * 0.38, 0.28, 0.195), mat_mahogany, Vector3(0.0, side_s * -14.0, 0.0))
+		for s_i: int in range(5):
+			_add_sphere(chair, 0.008, 0.010, Vector3(side_s * 0.37, 0.14 + float(s_i) * 0.065, 0.205), mat_brass, Vector3.ZERO, 6)
+		# Rolled Velvet-Capped Armrests & Turned Mahogany Posts
+		_add_cyl(chair, 0.044, 0.044, 0.37, Vector3(side_s * 0.39, 0.03, 0.21), mat_velvet, Vector3(90.0, 0.0, 0.0), 10)
+		_add_sphere(chair, 0.046, 0.052, Vector3(side_s * 0.39, 0.03, 0.39), mat_mahogany, Vector3.ZERO, 8)
+		_add_cyl(chair, 0.025, 0.028, 0.18, Vector3(side_s * 0.38, -0.075, 0.37), mat_mahogany, Vector3.ZERO, 8)
+	# Regal Crown Finial at Arch Apex
+	_add_torus(chair, 0.030, 0.046, Vector3(0.0, 0.56, 0.012), mat_brass, Vector3(90.0, 0.0, 0.0), 12)
+	_add_sphere(chair, 0.024, 0.038, Vector3(0.0, 0.565, 0.016), mat_aged, Vector3.ZERO, 8)
+	_add_sphere(chair, 0.016, 0.034, Vector3(0.0, 0.618, 0.014), mat_brass, Vector3.ZERO, 8)
+
+
+func _populate_chair_style_2_isfahan_medallion(chair: Node3D) -> void:
+	# STYLE 2: Isfahan Peacock-Teal & Shiraz Khatam-Kari Oval Medallion Parlour Armchair
+	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
+	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
+	var mat_teal: Material = _shared_mats["book_cloth_teal"]
+	var mat_khatam: Material = _shared_mats["khatam_inlay"]
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+
+	_add_grounded_chair_base(chair, mat_walnut_pol, mat_walnut_dark, mat_khatam, 2)
+
+	# Rounded Upholstered Teal Seat Cushion with Brass Trim Piping
+	_add_box(chair, Vector3(0.74, 0.095, 0.42), Vector3(0.0, -0.095, 0.21), mat_teal)
+	_add_cyl(chair, 0.37, 0.37, 0.075, Vector3(0.0, -0.070, 0.22), mat_teal, Vector3.ZERO, 16)
+	_add_torus(chair, 0.355, 0.378, Vector3(0.0, -0.128, 0.21), mat_aged, Vector3.ZERO, 16)
+
+	# Graceful Oval Medallion Backrest Framed in Carved Walnut & Brass Beading
+	var med_y: float = 0.22
+	_add_cyl(chair, 0.36, 0.36, 0.076, Vector3(0.0, med_y, 0.0), mat_teal, Vector3(85.0, 0.0, 0.0), 18)
+	_add_sphere(chair, 0.32, 0.105, Vector3(0.0, med_y, 0.018), mat_teal, Vector3(85.0, 0.0, 0.0), 12)
+	_add_sphere(chair, 0.30, 0.088, Vector3(0.0, med_y, -0.018), mat_teal, Vector3(85.0, 0.0, 0.0), 12)
+	# Central Golden Sunburst Button Tuft (Front & Back)
+	_add_torus(chair, 0.036, 0.052, Vector3(0.0, med_y, 0.068), mat_brass, Vector3(85.0, 0.0, 0.0), 12)
+	_add_sphere(chair, 0.022, 0.022, Vector3(0.0, med_y, 0.072), mat_aged, Vector3.ZERO, 8)
+	_add_sphere(chair, 0.022, 0.022, Vector3(0.0, med_y, -0.060), mat_brass, Vector3.ZERO, 8)
+	# Carved Walnut Oval Perimeter Frame + Inner Brass Filigree Ring
+	_add_torus(chair, 0.34, 0.395, Vector3(0.0, med_y, 0.0), mat_walnut_pol, Vector3(85.0, 0.0, 0.0), 20)
+	_add_torus(chair, 0.325, 0.342, Vector3(0.0, med_y, 0.036), mat_brass, Vector3(85.0, 0.0, 0.0), 18)
+	_add_torus(chair, 0.325, 0.342, Vector3(0.0, med_y, -0.036), mat_aged, Vector3(85.0, 0.0, 0.0), 18)
+	# Khatam-Kari Crest Cartouche atop the Medallion
+	_add_box(chair, Vector3(0.18, 0.078, 0.055), Vector3(0.0, 0.60, 0.008), mat_walnut_pol)
+	_add_box(chair, Vector3(0.14, 0.052, 0.062), Vector3(0.0, 0.60, 0.010), mat_khatam)
+	_add_sphere(chair, 0.016, 0.022, Vector3(0.0, 0.648, 0.010), mat_brass, Vector3.ZERO, 8)
+
+	# Structural Side Uprights & Curved Gooseneck Armrests with Padded Teal Cuffs
+	for side_s: float in [-1.0, 1.0]:
+		_add_cyl(chair, 0.024, 0.028, 0.28, Vector3(side_s * 0.35, -0.02, 0.01), mat_walnut_dark, Vector3(-6.0, 0.0, side_s * 6.0), 8)
+		_add_box(chair, Vector3(0.054, 0.034, 0.36), Vector3(side_s * 0.39, 0.035, 0.19), mat_walnut_pol, Vector3(5.0, side_s * -5.0, 0.0))
+		_add_box(chair, Vector3(0.062, 0.028, 0.20), Vector3(side_s * 0.39, 0.058, 0.18), mat_teal, Vector3(5.0, side_s * -5.0, 0.0))
+		_add_cyl(chair, 0.020, 0.024, 0.20, Vector3(side_s * 0.37, -0.065, 0.35), mat_walnut_pol, Vector3(14.0, 0.0, 0.0), 8)
+		_add_sphere(chair, 0.028, 0.034, Vector3(side_s * 0.38, 0.025, 0.36), mat_brass, Vector3.ZERO, 8)
+
+
+func _populate_chair_style_3_orosi_lattice(chair: Node3D) -> void:
+	# STYLE 3: Carved Persian Walnut & Saffron-Gold Orosi Geometric Lattice Salon Chair
+	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
+	var mat_walnut_mid: Material = _shared_mats["walnut_mid"]
+	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
+	var mat_saffron: Material = _shared_mats["persian_saffron"]
+	var mat_termeh: Material = _shared_mats["termeh_fabric"]
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+
+	_add_grounded_chair_base(chair, mat_walnut_pol, mat_walnut_dark, mat_brass, 3)
+
+	# Plush Saffron-Gold & Termeh-Bordered Persian Seat Cushion
+	_add_box(chair, Vector3(0.76, 0.088, 0.43), Vector3(0.0, -0.102, 0.21), mat_termeh)
+	_add_box(chair, Vector3(0.70, 0.068, 0.38), Vector3(0.0, -0.055, 0.21), mat_saffron)
+	for c_x: float in [-0.35, 0.35]:
+		_add_cyl(chair, 0.032, 0.032, 0.38, Vector3(c_x, -0.055, 0.21), mat_termeh, Vector3(90.0, 0.0, 0.0), 8)
+
+	# Carved Walnut Outer Arched Backrest Frame (Open-Work Persian Girih / Orosi Salon Style)
+	for side_s: float in [-1.0, 1.0]:
+		_add_box(chair, Vector3(0.054, 0.66, 0.064), Vector3(side_s * 0.39, 0.16, 0.0), mat_walnut_pol, Vector3(-5.0, 0.0, 0.0))
+		_add_sphere(chair, 0.032, 0.048, Vector3(side_s * 0.39, 0.50, -0.025), mat_brass, Vector3.ZERO, 8)
+		# Sculpted Paddle Armrests + Baluster Supports
+		_add_box(chair, Vector3(0.064, 0.032, 0.39), Vector3(side_s * 0.40, 0.04, 0.20), mat_walnut_pol, Vector3(3.0, 0.0, 0.0))
+		_add_cyl(chair, 0.022, 0.026, 0.19, Vector3(side_s * 0.38, -0.065, 0.36), mat_walnut_mid, Vector3.ZERO, 8)
+		_add_torus(chair, 0.018, 0.028, Vector3(side_s * 0.38, -0.055, 0.36), mat_aged, Vector3.ZERO, 8)
+
+	# Upper & Lower Carved Cross-Rails + Arched Crest Rail
+	_add_box(chair, Vector3(0.78, 0.046, 0.060), Vector3(0.0, -0.02, 0.015), mat_walnut_mid, Vector3(-5.0, 0.0, 0.0))
+	var crest_segs: int = 7
+	for ci: int in range(crest_segs):
+		var ct: float = float(ci) / float(crest_segs - 1)
+		var cang: float = lerpf(-0.92, 0.92, ct)
+		var cx: float = sin(cang) * 0.46
+		var cy: float = 0.24 + cos(cang) * 0.30
+		_add_box(chair, Vector3(0.145, 0.052, 0.066), Vector3(cx, cy, -0.018), mat_walnut_pol, Vector3(-5.0, 0.0, -rad_to_deg(cang) * 0.65))
+
+	# Crisp Geometric Orosi Diamond Lattice Splats & Central Brass Shamseh Star Medallion
+	for diag_s: float in [-1.0, 1.0]:
+		_add_box(chair, Vector3(0.026, 0.54, 0.032), Vector3(0.0, 0.24, 0.0), mat_walnut_mid, Vector3(-5.0, 0.0, diag_s * 42.0))
+		_add_box(chair, Vector3(0.022, 0.38, 0.028), Vector3(diag_s * 0.20, 0.24, 0.0), mat_walnut_mid, Vector3(-5.0, 0.0, diag_s * -42.0))
+		_add_box(chair, Vector3(0.022, 0.38, 0.028), Vector3(diag_s * 0.20, 0.24, 0.0), mat_walnut_mid, Vector3(-5.0, 0.0, diag_s * 42.0))
+	# Central Brass & Turquoise Orosi Star Rosette
+	_add_box(chair, Vector3(0.14, 0.14, 0.036), Vector3(0.0, 0.24, 0.0), mat_walnut_pol, Vector3(-5.0, 0.0, 45.0))
+	_add_box(chair, Vector3(0.105, 0.105, 0.044), Vector3(0.0, 0.24, 0.0), mat_brass, Vector3(-5.0, 0.0, 45.0))
+	_add_box(chair, Vector3(0.072, 0.072, 0.050), Vector3(0.0, 0.24, 0.0), _shared_mats["persian_turquoise"], Vector3(-5.0, 0.0, 0.0))
+	_add_sphere(chair, 0.020, 0.030, Vector3(0.0, 0.24, 0.015), mat_brass, Vector3.ZERO, 8)
 
 
 # ============================================================================
@@ -1936,11 +2618,16 @@ func _build_back_bookcase_and_sign(parent: Node3D) -> void:
 	var center_stack_mats: Array[Material] = _pick_random_book_cover_mats(3)
 	_build_horizontal_book(bc, Vector3(0.0, 0.582, 0.02), Vector3(0.32, 0.042, 0.20), center_stack_mats[0], 2.0)
 	_build_horizontal_book(bc, Vector3(0.0, 0.624, 0.02), Vector3(0.28, 0.038, 0.18), center_stack_mats[1], -3.0)
-	_build_horizontal_book(bc, Vector3(0.0, 0.660, 0.02), Vector3(0.24, 0.034, 0.16), center_stack_mats[2], 1.5)
-	_add_cyl(bc, 0.028, 0.038, 0.022, Vector3(0.02, 0.688, 0.03), mat_brass, Vector3.ZERO, 10)
-	_add_sphere(bc, 0.042, 0.052, Vector3(0.02, 0.718, 0.03), mat_brass, Vector3.ZERO, 10)
-	_add_cyl(bc, 0.012, 0.024, 0.028, Vector3(0.02, 0.752, 0.03), mat_aged_brass, Vector3.ZERO, 10)
-	_add_sphere(bc, 0.014, 0.022, Vector3(0.02, 0.772, 0.03), mat_brass, Vector3.ZERO, 8)
+	_hero_book_pivot = _build_horizontal_book(bc, Vector3(0.0, 0.660, 0.02), Vector3(0.24, 0.034, 0.16), center_stack_mats[2], 1.5)
+	if _hero_book_pivot:
+		_hero_book_pivot.name = "HeroEstanteBookPivot"
+		_bake_interactive_prop_branch(_hero_book_pivot, "BakedHeroEstanteBookMesh")
+		_register_interactive_prop("estante_books", _hero_book_pivot, Vector3.ZERO, 0.19)
+	# Small brass finial figurine perched neatly beside the center book stack
+	_add_cyl(bc, 0.022, 0.030, 0.018, Vector3(0.17, 0.570, 0.08), mat_brass, Vector3.ZERO, 10)
+	_add_sphere(bc, 0.030, 0.038, Vector3(0.17, 0.596, 0.08), mat_brass, Vector3.ZERO, 10)
+	_add_cyl(bc, 0.010, 0.018, 0.022, Vector3(0.17, 0.624, 0.08), mat_aged_brass, Vector3.ZERO, 10)
+	_add_sphere(bc, 0.011, 0.018, Vector3(0.17, 0.642, 0.08), mat_brass, Vector3.ZERO, 8)
 
 	_populate_book_row(bc, -0.61, -0.32, 0.162, 0.0, 5, 0.20, 0.24)
 	_populate_book_row(bc, 0.32, 0.61, 0.162, 0.0, 5, 0.20, 0.24)
@@ -2082,6 +2769,9 @@ func _build_cafe_fekr_plaque(parent: Node3D, pos: Vector3, mat_mahogany: Materia
 	lbl_en.position = Vector3(0.0, -0.145, 0.044)
 	plaque.add_child(lbl_en)
 
+	_bake_interactive_prop_branch(plaque, "BakedCafeFekrPlaqueMesh")
+	_register_interactive_prop("estante_sign", plaque, Vector3(0.0, 0.0, 0.03), 0.36)
+
 
 func _pick_random_book_cover_mats(count: int) -> Array[Material]:
 	var pool: Array[Material] = [
@@ -2169,7 +2859,7 @@ func _populate_book_row(parent: Node3D, x_start: float, x_end: float, y_shelf: f
 		_add_box(parent, Vector3(bw * 0.92, 0.008, 0.006), Vector3(bx, y_shelf + bh * 0.24, z_pos + bd * 0.5 + 0.002), mat_brass, Vector3(0.0, 0.0, tilt_z))
 
 
-func _build_horizontal_book(parent: Node3D, pos: Vector3, size: Vector3, mat_cover: Material, yaw_deg: float) -> void:
+func _build_horizontal_book(parent: Node3D, pos: Vector3, size: Vector3, mat_cover: Material, yaw_deg: float) -> Node3D:
 	var b_node: Node3D = Node3D.new()
 	b_node.position = pos
 	b_node.rotation_degrees = Vector3(0.0, yaw_deg, 0.0)
@@ -2179,6 +2869,7 @@ func _build_horizontal_book(parent: Node3D, pos: Vector3, size: Vector3, mat_cov
 	_add_box(b_node, Vector3(size.x * 0.98, size.y, 0.012), Vector3(0.0, 0.0, size.z * 0.5), mat_cover)
 	_add_box(b_node, Vector3(0.010, size.y * 0.92, 0.016), Vector3(-size.x * 0.30, 0.0, size.z * 0.5), _shared_mats["aged_brass"])
 	_add_box(b_node, Vector3(0.010, size.y * 0.92, 0.016), Vector3(size.x * 0.30, 0.0, size.z * 0.5), _shared_mats["aged_brass"])
+	return b_node
 
 
 func _build_armillary_sphere(parent: Node3D, pos: Vector3, mat_brass: Material, mat_aged_brass: Material, mat_wood: Material) -> void:
@@ -2193,16 +2884,26 @@ func _build_armillary_sphere(parent: Node3D, pos: Vector3, mat_brass: Material, 
 	_add_sphere(arm, 0.028, 0.036, Vector3(0.0, 0.075, 0.0), mat_aged_brass, Vector3.ZERO, 10)
 
 	var center_y: float = 0.255
-	_add_torus(arm, 0.145, 0.162, Vector3(0.0, center_y, 0.0), mat_brass, Vector3(90.0, 12.0, 0.0), 18)
-	_add_torus(arm, 0.148, 0.164, Vector3(0.0, center_y, 0.0), mat_aged_brass, Vector3(8.0, 0.0, -18.0), 18)
-	_add_torus(arm, 0.122, 0.142, Vector3(0.0, center_y, 0.0), mat_brass, Vector3(62.0, 28.0, 15.0), 16)
-	_add_torus(arm, 0.118, 0.132, Vector3(0.0, center_y, 0.0), mat_aged_brass, Vector3(90.0, -52.0, 22.0), 16)
-	_add_torus(arm, 0.095, 0.108, Vector3(0.0, center_y, 0.0), mat_brass, Vector3(35.0, 45.0, -25.0), 14)
+	var rings_pivot: Node3D = Node3D.new()
+	rings_pivot.name = "ArmillaryRingsPivot"
+	rings_pivot.position = Vector3(0.0, center_y, 0.0)
+	arm.add_child(rings_pivot)
+	_armillary_rings_pivot = rings_pivot
 
-	_add_sphere(arm, 0.074, 0.148, Vector3(0.0, center_y, 0.0), _shared_mats["book_ochre"], Vector3(0.0, 0.0, -23.5), 12)
-	_add_torus(arm, 0.072, 0.078, Vector3(0.0, center_y, 0.0), mat_brass, Vector3(0.0, 0.0, -23.5), 14)
-	_add_cyl(arm, 0.005, 0.005, 0.36, Vector3(0.0, center_y, 0.0), mat_brass, Vector3(0.0, 0.0, -23.5), 8)
-	_add_sphere(arm, 0.014, 0.028, Vector3(0.068, center_y + 0.165, 0.0), mat_brass, Vector3.ZERO, 8)
+	_add_torus(rings_pivot, 0.145, 0.162, Vector3.ZERO, mat_brass, Vector3(90.0, 12.0, 0.0), 16)
+	_add_torus(rings_pivot, 0.148, 0.164, Vector3.ZERO, mat_aged_brass, Vector3(8.0, 0.0, -18.0), 16)
+	_add_torus(rings_pivot, 0.122, 0.142, Vector3.ZERO, mat_brass, Vector3(62.0, 28.0, 15.0), 14)
+	_add_torus(rings_pivot, 0.118, 0.132, Vector3.ZERO, mat_aged_brass, Vector3(90.0, -52.0, 22.0), 14)
+	_add_torus(rings_pivot, 0.095, 0.108, Vector3.ZERO, mat_brass, Vector3(35.0, 45.0, -25.0), 12)
+
+	_add_sphere(rings_pivot, 0.074, 0.148, Vector3.ZERO, _shared_mats["book_ochre"], Vector3(0.0, 0.0, -23.5), 10)
+	_add_torus(rings_pivot, 0.072, 0.078, Vector3.ZERO, mat_brass, Vector3(0.0, 0.0, -23.5), 12)
+	_add_cyl(rings_pivot, 0.005, 0.005, 0.36, Vector3.ZERO, mat_brass, Vector3(0.0, 0.0, -23.5), 8)
+	_add_sphere(rings_pivot, 0.014, 0.028, Vector3(0.068, 0.165, 0.0), mat_brass, Vector3.ZERO, 8)
+
+	_bake_interactive_prop_branch(rings_pivot, "BakedArmillaryRingsMesh")
+	_bake_interactive_prop_branch(arm, "BakedArmillaryBaseMesh")
+	_register_interactive_prop("estante_armillary", arm, Vector3(0.0, 0.24, 0.0), 0.22)
 
 
 func _build_marble_portrait_bust(parent: Node3D, pos: Vector3, mat_marble: Material) -> void:
@@ -2235,6 +2936,9 @@ func _build_marble_portrait_bust(parent: Node3D, pos: Vector3, mat_marble: Mater
 	for c_off: Vector3 in curl_offsets:
 		_add_sphere(bust, 0.024, 0.044, c_off, mat_marble, Vector3.ZERO, 8)
 
+	_bake_interactive_prop_branch(bust, "BakedMarbleBustMesh")
+	_register_interactive_prop("estante_bust", bust, Vector3(0.0, 0.20, 0.0), 0.19)
+
 
 func _build_vintage_shelf_clock(parent: Node3D, pos: Vector3, mat_brass: Material, mat_aged_brass: Material, mat_dial: Material, mat_dark: Material) -> void:
 	var clk: Node3D = Node3D.new()
@@ -2246,11 +2950,21 @@ func _build_vintage_shelf_clock(parent: Node3D, pos: Vector3, mat_brass: Materia
 	_add_cyl(clk, 0.088, 0.088, 0.075, Vector3(0.0, 0.105, 0.0), mat_aged_brass, Vector3(90.0, 0.0, 0.0), 16)
 	_add_torus(clk, 0.078, 0.092, Vector3(0.0, 0.105, 0.038), mat_brass, Vector3(90.0, 0.0, 0.0), 16)
 	_add_cyl(clk, 0.076, 0.076, 0.010, Vector3(0.0, 0.105, 0.036), mat_dial, Vector3(90.0, 0.0, 0.0), 16)
-	_add_sphere(clk, 0.008, 0.012, Vector3(0.0, 0.105, 0.044), mat_dark, Vector3.ZERO, 8)
-	_add_box(clk, Vector3(0.006, 0.048, 0.006), Vector3(-0.012, 0.122, 0.044), mat_dark, Vector3(0.0, 0.0, 28.0))
-	_add_box(clk, Vector3(0.005, 0.062, 0.006), Vector3(0.018, 0.118, 0.044), mat_dark, Vector3(0.0, 0.0, -48.0))
 	_add_cyl(clk, 0.016, 0.024, 0.028, Vector3(0.0, 0.202, 0.0), mat_brass, Vector3.ZERO, 10)
 	_add_torus(clk, 0.022, 0.030, Vector3(0.0, 0.228, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 12)
+
+	var hands_pivot: Node3D = Node3D.new()
+	hands_pivot.name = "ClockHandsPivot"
+	hands_pivot.position = Vector3(0.0, 0.105, 0.044)
+	clk.add_child(hands_pivot)
+	_clock_hands_pivot = hands_pivot
+	_add_sphere(hands_pivot, 0.008, 0.012, Vector3.ZERO, mat_dark, Vector3.ZERO, 8)
+	_add_box(hands_pivot, Vector3(0.006, 0.048, 0.006), Vector3(-0.012, 0.017, 0.0), mat_dark, Vector3(0.0, 0.0, 28.0))
+	_add_box(hands_pivot, Vector3(0.005, 0.062, 0.006), Vector3(0.018, 0.013, 0.0), mat_dark, Vector3(0.0, 0.0, -48.0))
+
+	_bake_interactive_prop_branch(hands_pivot, "BakedClockHandsMesh")
+	_bake_interactive_prop_branch(clk, "BakedVintageClockMesh")
+	_register_interactive_prop("estante_clock", clk, Vector3(0.0, 0.12, 0.02), 0.16)
 
 
 func _build_trailing_ivy_vine(parent: Node3D, top_pos: Vector3, length: float, side_dir: float) -> void:
@@ -2309,29 +3023,52 @@ func _build_left_window_and_lounge(parent: Node3D) -> void:
 	win_root.rotation_degrees = Vector3(0.0, 28.0, 0.0)
 	left_area.add_child(win_root)
 
-	# Single 2-triangle unshaded Persian twilight window vista (replaces ~35 skyline boxes for faster mobile GPU!)
-	_add_plane(win_root, Vector2(0.78, 1.50), Vector3(0.0, 0.01, -0.09), _shared_mats["window_twilight_view"], Vector3(90.0, 0.0, 0.0))
+	# Single 2-triangle unshaded Persian window vista (swapped randomly across 5 scenes per match!)
+	_add_plane(win_root, Vector2(0.76, 1.50), Vector3(0.0, 0.01, -0.095), _shared_mats["window_twilight_view"], Vector3(90.0, 0.0, 0.0))
 
-	_add_box(win_root, Vector3(0.065, 1.32, 0.12), Vector3(-0.39, -0.12, 0.0), mat_walnut_dark)
-	_add_box(win_root, Vector3(0.065, 1.32, 0.12), Vector3(0.39, -0.12, 0.0), mat_walnut_dark)
-	_add_box(win_root, Vector3(0.84, 0.07, 0.14), Vector3(0.0, -0.76, 0.01), mat_walnut_pol)
+	# Upgraded Architectural Carved Walnut Casing, Deep Reveals, Sill & Corbel Brackets
+	for side_s: float in [-1.0, 1.0]:
+		# Outer carved jamb + inner stepped molding reveal + brass casing rosette
+		_add_box(win_root, Vector3(0.072, 1.30, 0.135), Vector3(side_s * 0.405, -0.10, 0.0), mat_walnut_dark)
+		_add_box(win_root, Vector3(0.028, 1.24, 0.155), Vector3(side_s * 0.368, -0.11, 0.012), mat_walnut_pol)
+		_add_box(win_root, Vector3(0.014, 1.18, 0.012), Vector3(side_s * 0.415, -0.11, 0.070), mat_aged_brass)
+		# Carved walnut sill corbel bracket underneath sill
+		_add_box(win_root, Vector3(0.062, 0.082, 0.125), Vector3(side_s * 0.345, -0.822, 0.035), mat_walnut_mid)
+		_add_sphere(win_root, 0.026, 0.032, Vector3(side_s * 0.345, -0.848, 0.088), mat_aged_brass, Vector3.ZERO, 8)
+	# Deep Molded Walnut Window Sill & Brass Lip Inlay
+	_add_box(win_root, Vector3(0.92, 0.056, 0.185), Vector3(0.0, -0.752, 0.030), mat_walnut_pol)
+	_add_box(win_root, Vector3(0.88, 0.026, 0.155), Vector3(0.0, -0.785, 0.018), mat_walnut_dark)
+	_add_box(win_root, Vector3(0.86, 0.008, 0.010), Vector3(0.0, -0.728, 0.118), mat_brass)
+	# Carved Walnut & Brass Transom Bar Separating Upper Orosi Stained-Glass Arch from Hinged Casement Doors
+	_add_box(win_root, Vector3(0.76, 0.044, 0.115), Vector3(0.0, 0.285, 0.012), mat_walnut_pol)
+	_add_box(win_root, Vector3(0.74, 0.010, 0.012), Vector3(0.0, 0.285, 0.072), mat_aged_brass)
 	# Subtle walnut arch spandrels masking the upper corners of the rectangular vista plane cleanly behind the arch
-	_add_box(win_root, Vector3(0.28, 0.14, 0.09), Vector3(-0.35, 0.74, -0.02), mat_walnut_dark, Vector3(0.0, 0.0, 42.0))
-	_add_box(win_root, Vector3(0.28, 0.14, 0.09), Vector3(0.35, 0.74, -0.02), mat_walnut_dark, Vector3(0.0, 0.0, -42.0))
-	for a_i: int in range(7):
-		var at: float = float(a_i) / 6.0
-		var aang: float = lerpf(-1.45, 1.45, at)
-		var ax: float = sin(aang) * 0.39
-		var ay: float = 0.42 + cos(aang) * 0.36
-		_add_box(win_root, Vector3(0.16, 0.065, 0.12), Vector3(ax, ay, 0.0), mat_walnut_dark, Vector3(0.0, 0.0, -rad_to_deg(aang)))
+	_add_box(win_root, Vector3(0.30, 0.15, 0.095), Vector3(-0.35, 0.74, -0.02), mat_walnut_dark, Vector3(0.0, 0.0, 42.0))
+	_add_box(win_root, Vector3(0.30, 0.15, 0.095), Vector3(0.35, 0.74, -0.02), mat_walnut_dark, Vector3(0.0, 0.0, -42.0))
+	# Rich 11-Segment Arched Crown Molding + Inner Brass Arch Fillet + Apex Keystone
+	for a_i: int in range(11):
+		var at: float = float(a_i) / 10.0
+		var aang: float = lerpf(-1.46, 1.46, at)
+		var ax: float = sin(aang) * 0.402
+		var ay: float = 0.415 + cos(aang) * 0.372
+		var rot_z: float = -rad_to_deg(aang)
+		_add_box(win_root, Vector3(0.125, 0.068, 0.140), Vector3(ax, ay, 0.004), mat_walnut_dark, Vector3(0.0, 0.0, rot_z))
+		_add_box(win_root, Vector3(0.115, 0.020, 0.155), Vector3(sin(aang) * 0.370, 0.415 + cos(aang) * 0.340, 0.014), mat_walnut_pol, Vector3(0.0, 0.0, rot_z))
+	_add_box(win_root, Vector3(0.078, 0.088, 0.162), Vector3(0.0, 0.790, 0.016), mat_walnut_pol)
+	_add_box(win_root, Vector3(0.042, 0.042, 0.016), Vector3(0.0, 0.790, 0.096), mat_brass, Vector3(0.0, 0.0, 45.0))
 
-	for mx: float in [-0.19, 0.0, 0.19]:
-		_add_box(win_root, Vector3(0.020, 1.24, 0.035), Vector3(mx, -0.10, 0.02), mat_walnut_dark)
-	for my: float in [-0.52, -0.26, 0.0, 0.26, 0.44]:
-		_add_box(win_root, Vector3(0.76, 0.020, 0.035), Vector3(0.0, my, 0.02), mat_walnut_dark)
+	# Upper Fixed Transom Mullions ONLY (lower window opening stays 100% clear for the hinged glass doors!)
+	for mx: float in [-0.18, 0.0, 0.18]:
+		_add_box(win_root, Vector3(0.018, 0.44, 0.032), Vector3(mx, 0.51, 0.012), mat_walnut_dark)
+	_add_box(win_root, Vector3(0.68, 0.018, 0.032), Vector3(0.0, 0.48, 0.012), mat_walnut_dark)
 
 	# Glowing Stained-Glass Transom Diamonds Inside the Window Arch (0ms unshaded emissive)
 	_build_window_stained_glass_transom(win_root)
+
+	# Interactive Hinged Wooden & Translucent Glass Double Casement Doors (Tap Window to Swing Open/Closed!)
+	_window_door_left = _build_window_casement_door(win_root, true)
+	_window_door_right = _build_window_casement_door(win_root, false)
+	_register_interactive_prop("window_doors", win_root, Vector3(0.0, -0.14, 0.06), 0.52)
 
 	_build_potted_broadleaf_plant(left_area, Vector3(-1.14, 0.18, -1.56), 0.85, false)
 
@@ -2365,11 +3102,13 @@ func _build_left_window_and_lounge(parent: Node3D) -> void:
 	_add_sphere(lamp_l, 0.036, 0.042, Vector3(0.0, 0.248, 0.0), mat_brass, Vector3.ZERO, 10)
 
 	var shade_y: float = 0.345
-	_add_cyl(lamp_l, 0.115, 0.225, 0.21, Vector3(0.0, shade_y, 0.0), _shared_mats["lampshade_glow"], Vector3.ZERO, 18)
+	_add_cyl(lamp_l, 0.115, 0.225, 0.21, Vector3(0.0, shade_y, 0.0), _shared_mats["left_lamp_shade"], Vector3.ZERO, 18)
 	_add_torus(lamp_l, 0.108, 0.120, Vector3(0.0, shade_y + 0.105, 0.0), mat_brass, Vector3.ZERO, 16)
 	_add_torus(lamp_l, 0.218, 0.230, Vector3(0.0, shade_y - 0.105, 0.0), mat_brass, Vector3.ZERO, 18)
 	_add_cyl(lamp_l, 0.008, 0.018, 0.036, Vector3(0.0, shade_y + 0.126, 0.0), mat_brass, Vector3.ZERO, 8)
 	_add_sphere(lamp_l, 0.014, 0.024, Vector3(0.0, shade_y + 0.148, 0.0), mat_brass, Vector3.ZERO, 8)
+	_bake_interactive_prop_branch(lamp_l, "BakedLeftBrassLampMesh")
+	_register_interactive_prop("left_table_lamp", lamp_l, Vector3(0.0, 0.26, 0.0), 0.23)
 
 	# Isfahan Turquoise Mina-Kari Amphora Vase resting beside the Left Brass Lamp (baked into LeftLoungeMesh!)
 	_build_minakari_vase(side_tbl_l, Vector3(-0.18, 0.14, 0.12))
@@ -2567,28 +3306,34 @@ func _build_table_persian_tea_tray(parent: Node3D, pos: Vector3) -> void:
 	_add_cyl(tray, 0.008, 0.020, 0.016, Vector3(sx, 0.050, sz), mat_aged, Vector3.ZERO, 10)
 	_add_sphere(tray, 0.007, 0.010, Vector3(sx, 0.062, sz), mat_brass, Vector3.ZERO, 8)
 
+	_bake_interactive_prop_branch(tray, "BakedPersianTeaTrayMesh")
+	_register_interactive_prop("desk_tea_tray", tray, Vector3(0.0, 0.04, 0.0), 0.13)
+
 
 func _build_table_brass_hourglass(parent: Node3D, pos: Vector3) -> void:
-	# Classic antique brass sand timer resting on the far back-left walnut rail
+	# Classic antique brass sand timer resting on the far back-left walnut rail (centered at mid-height for crisp 180 deg flip!)
 	var hg: Node3D = Node3D.new()
 	hg.name = "BrassHourglass"
-	hg.position = pos
+	hg.position = pos + Vector3(0.0, 0.058, 0.0)
 	parent.add_child(hg)
 
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
 	var mat_sand: Material = _shared_mats["stained_amber"]
 
-	# Base & Top Cap
-	_add_cyl(hg, 0.034, 0.038, 0.008, Vector3(0.0, 0.004, 0.0), mat_aged, Vector3.ZERO, 10)
-	_add_cyl(hg, 0.038, 0.034, 0.008, Vector3(0.0, 0.112, 0.0), mat_aged, Vector3.ZERO, 10)
+	# Symmetric Bottom & Top Brass Caps
+	_add_cyl(hg, 0.034, 0.038, 0.008, Vector3(0.0, -0.054, 0.0), mat_aged, Vector3.ZERO, 10)
+	_add_cyl(hg, 0.038, 0.034, 0.008, Vector3(0.0, 0.054, 0.0), mat_aged, Vector3.ZERO, 10)
 	# Twin Glass Bulbs with Warm Golden Sand
-	_add_cyl(hg, 0.005, 0.025, 0.048, Vector3(0.0, 0.032, 0.0), mat_sand, Vector3.ZERO, 10)
-	_add_cyl(hg, 0.025, 0.005, 0.048, Vector3(0.0, 0.084, 0.0), mat_sand, Vector3.ZERO, 10)
+	_add_cyl(hg, 0.005, 0.025, 0.048, Vector3(0.0, -0.026, 0.0), mat_sand, Vector3.ZERO, 10)
+	_add_cyl(hg, 0.025, 0.005, 0.048, Vector3(0.0, 0.026, 0.0), mat_sand, Vector3.ZERO, 10)
 	# 3 Slender Vertical Brass Pillars
 	for i: int in range(3):
 		var ang: float = float(i) * (TAU / 3.0) + 0.4
-		_add_cyl(hg, 0.003, 0.003, 0.104, Vector3(cos(ang) * 0.028, 0.058, sin(ang) * 0.028), mat_brass, Vector3.ZERO, 6)
+		_add_cyl(hg, 0.003, 0.003, 0.104, Vector3(cos(ang) * 0.028, 0.0, sin(ang) * 0.028), mat_brass, Vector3.ZERO, 6)
+
+	_bake_interactive_prop_branch(hg, "BakedBrassHourglassMesh")
+	_register_interactive_prop("desk_hourglass", hg, Vector3.ZERO, 0.10)
 
 
 func _build_floor_rug_and_corners(parent: Node3D) -> void:
@@ -2667,8 +3412,9 @@ func _build_bookcase_cove_lights_and_decor(bc: Node3D) -> void:
 	for glow_s: float in [-1.0, 1.0]:
 		_add_cyl(bc, 0.14, 0.14, 0.008, Vector3(glow_s * 0.98, 1.38, 0.10), mat_cove, Vector3(90.0, 0.0, 0.0), 12)
 
-	# 2. Classic Persian Brass Samovar Centered Flush on the Open Center-Lower Shelf
+	# 2. Classic Persian Brass Samovar Centered Flush on the Open Center-Lower Shelf (Interactive Steaming Teapot!)
 	var sam: Node3D = Node3D.new()
+	sam.name = "PersianSamovar"
 	sam.position = Vector3(0.0, 0.161, 0.04)
 	bc.add_child(sam)
 	_add_box(sam, Vector3(0.11, 0.018, 0.11), Vector3(0.0, 0.009, 0.0), mat_aged)
@@ -2676,13 +3422,22 @@ func _build_bookcase_cove_lights_and_decor(bc: Node3D) -> void:
 	_add_sphere(sam, 0.068, 0.125, Vector3(0.0, 0.112, 0.0), mat_brass, Vector3.ZERO, 10)
 	_add_cyl(sam, 0.038, 0.054, 0.055, Vector3(0.0, 0.192, 0.0), mat_aged, Vector3.ZERO, 10)
 	_add_torus(sam, 0.034, 0.044, Vector3(0.0, 0.220, 0.0), mat_brass, Vector3.ZERO, 10)
-	# Small porcelain teapot perched on top of the Samovar crown
-	_add_sphere(sam, 0.034, 0.044, Vector3(0.0, 0.252, 0.0), _shared_mats["porcelain"], Vector3.ZERO, 8)
-	_add_sphere(sam, 0.010, 0.012, Vector3(0.0, 0.278, 0.0), mat_brass, Vector3.ZERO, 6)
 	# Side Handles & Front Brass Tap
 	_add_torus(sam, 0.014, 0.022, Vector3(-0.072, 0.124, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 8)
 	_add_torus(sam, 0.014, 0.022, Vector3(0.072, 0.124, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 8)
 	_add_cyl(sam, 0.006, 0.009, 0.038, Vector3(0.0, 0.094, 0.076), mat_brass, Vector3(90.0, 0.0, 0.0), 6)
+	# Small porcelain teapot perched on its own pivot atop the Samovar crown (rattles & steams when tapped!)
+	var teapot_piv: Node3D = Node3D.new()
+	teapot_piv.name = "SamovarTeapotPivot"
+	teapot_piv.position = Vector3(0.0, 0.235, 0.0)
+	sam.add_child(teapot_piv)
+	_samovar_teapot_pivot = teapot_piv
+	_add_sphere(teapot_piv, 0.034, 0.044, Vector3(0.0, 0.017, 0.0), _shared_mats["porcelain"], Vector3.ZERO, 8)
+	_add_sphere(teapot_piv, 0.010, 0.012, Vector3(0.0, 0.043, 0.0), mat_brass, Vector3.ZERO, 6)
+	_add_cyl(teapot_piv, 0.005, 0.008, 0.032, Vector3(0.034, 0.022, 0.0), _shared_mats["porcelain"], Vector3(0.0, 0.0, -42.0), 6)
+	_bake_interactive_prop_branch(teapot_piv, "BakedSamovarTeapotMesh")
+	_bake_interactive_prop_branch(sam, "BakedPersianSamovarMesh")
+	_register_interactive_prop("estante_samovar", sam, Vector3(0.0, 0.15, 0.0), 0.18)
 
 	# 2B. Isfahan Mina-Kari Turquoise Display Plate & Hammered Copper Persian Ewer Flanking the Samovar
 	_build_minakari_display_plate(bc, Vector3(-0.22, 0.162, 0.05))
@@ -2740,14 +3495,65 @@ func _build_bookcase_cove_lights_and_decor(bc: Node3D) -> void:
 		_add_box(art, Vector3(0.14, 0.008, 0.010), Vector3(0.0, 0.262, 0.042), mat_cove)
 
 
+func _build_window_casement_door(win_root: Node3D, is_left: bool) -> Node3D:
+	# Mobile-optimized hinged walnut & translucent glass casement window door (1 single baked MeshInstance3D per leaf!)
+	var dir: float = 1.0 if is_left else -1.0
+	var door_piv: Node3D = Node3D.new()
+	door_piv.name = "LeftWindowDoorPivot" if is_left else "RightWindowDoorPivot"
+	door_piv.position = Vector3(-0.354 if is_left else 0.354, -0.22, 0.056)
+	win_root.add_child(door_piv)
+
+	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
+	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+	var mat_glass: Material = _shared_mats["window_glass"]
+	var mat_glint: Material = _shared_mats["window_glass_glint"]
+
+	var w: float = 0.352
+	var h: float = 0.985
+	var cx: float = dir * (w * 0.5)
+
+	# Carved Walnut Sash Perimeter Frame (Outer Hinge Stile, Inner Meeting Stile, Top Rail, Deep Bottom Rail)
+	_add_box(door_piv, Vector3(0.034, h, 0.030), Vector3(dir * 0.017, 0.0, 0.0), mat_walnut_pol)
+	_add_box(door_piv, Vector3(0.030, h, 0.030), Vector3(dir * (w - 0.015), 0.0, 0.0), mat_walnut_pol)
+	_add_box(door_piv, Vector3(w, 0.036, 0.030), Vector3(cx, h * 0.5 - 0.018, 0.0), mat_walnut_pol)
+	_add_box(door_piv, Vector3(w, 0.054, 0.030), Vector3(cx, -h * 0.5 + 0.027, 0.0), mat_walnut_pol)
+	# Subtle Brass Astragal Accent Along the Center Meeting Edge
+	_add_box(door_piv, Vector3(0.008, h - 0.04, 0.034), Vector3(dir * (w - 0.004), 0.0, 0.002), mat_aged)
+
+	# Fine Georgian / Persian Sash Muntins Creating 6 Crisp Glass Lites
+	_add_box(door_piv, Vector3(0.014, h - 0.08, 0.018), Vector3(cx, 0.006, 0.0), mat_walnut_dark)
+	_add_box(door_piv, Vector3(w - 0.06, 0.014, 0.018), Vector3(cx, 0.165, 0.0), mat_walnut_dark)
+	_add_box(door_piv, Vector3(w - 0.06, 0.014, 0.018), Vector3(cx, -0.155, 0.0), mat_walnut_dark)
+
+	# Translucent Window Glass Pane (Lightweight Alpha StandardMaterial3D — Zero Screen-Space Refraction Cost!)
+	_add_box(door_piv, Vector3(w - 0.058, h - 0.082, 0.007), Vector3(cx, 0.008, 0.0), mat_glass)
+	# Subtle Diagonal Specular Glass Reflection Sheen Strip for Crisp Mobile Readability
+	_add_plane(door_piv, Vector2(0.042, 0.62), Vector3(cx - dir * 0.025, 0.04, 0.006), mat_glint, Vector3(90.0, 0.0, 24.0 * dir))
+
+	# Twin Antique-Brass Barrel Hinges Along the Outer Pivot Edge
+	for hy: float in [-0.34, 0.34]:
+		_add_cyl(door_piv, 0.009, 0.009, 0.056, Vector3(0.0, hy, 0.016), mat_brass, Vector3.ZERO, 8)
+
+	# Sculpted Antique-Brass Door Latch Backplate & Curved Handle Near Meeting Stile
+	var hx: float = dir * (w - 0.022)
+	_add_box(door_piv, Vector3(0.018, 0.095, 0.008), Vector3(hx, -0.02, 0.018), mat_aged)
+	_add_cyl(door_piv, 0.007, 0.007, 0.024, Vector3(hx, -0.01, 0.028), mat_brass, Vector3(90.0, 0.0, 0.0), 8)
+	_add_box(door_piv, Vector3(0.012, 0.052, 0.010), Vector3(hx - dir * 0.014, -0.032, 0.038), mat_brass, Vector3(0.0, 0.0, dir * 16.0))
+
+	_bake_interactive_prop_branch(door_piv, "BakedLeftWindowDoorMesh" if is_left else "BakedRightWindowDoorMesh")
+	return door_piv
+
+
 func _build_window_stained_glass_transom(win_root: Node3D) -> void:
 	# Persian Orosi stained-glass geometric diamond ornaments tucked inside the window arch (0ms unshaded emissive)
 	var jewels: Array[Dictionary] = [
 		{"pos": Vector3(0.0, 0.58, -0.02), "size": Vector3(0.11, 0.11, 0.016), "mat": _shared_mats["stained_amber"]},
 		{"pos": Vector3(-0.18, 0.48, -0.02), "size": Vector3(0.085, 0.085, 0.016), "mat": _shared_mats["stained_emerald"]},
 		{"pos": Vector3(0.18, 0.48, -0.02), "size": Vector3(0.085, 0.085, 0.016), "mat": _shared_mats["stained_ruby"]},
-		{"pos": Vector3(-0.10, 0.34, -0.02), "size": Vector3(0.068, 0.068, 0.016), "mat": _shared_mats["stained_cobalt"]},
-		{"pos": Vector3(0.10, 0.34, -0.02), "size": Vector3(0.068, 0.068, 0.016), "mat": _shared_mats["stained_turquoise"]}
+		{"pos": Vector3(-0.10, 0.36, -0.02), "size": Vector3(0.068, 0.068, 0.016), "mat": _shared_mats["stained_cobalt"]},
+		{"pos": Vector3(0.10, 0.36, -0.02), "size": Vector3(0.068, 0.068, 0.016), "mat": _shared_mats["stained_turquoise"]}
 	]
 	for j: Dictionary in jewels:
 		var j_pos: Vector3 = j["pos"] as Vector3
@@ -2758,7 +3564,7 @@ func _build_window_stained_glass_transom(win_root: Node3D) -> void:
 
 
 func _build_mini_brass_candle_lantern(parent: Node3D, pos: Vector3) -> void:
-	# Warm glowing antique brass tabletop lantern on the right side table to balance the left brass lamp
+	# Warm glowing antique brass tabletop lantern on the right side table (Interactive Toggle ON/OFF!)
 	var lan: Node3D = Node3D.new()
 	lan.name = "RightTableLantern"
 	lan.position = pos
@@ -2766,25 +3572,26 @@ func _build_mini_brass_candle_lantern(parent: Node3D, pos: Vector3) -> void:
 
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
-	var mat_glow: Material = _shared_mats["stained_amber"]
-	var mat_bulb: Material = _shared_mats["bulb_glow"]
+	var mat_glow: Material = _shared_mats["right_lantern_glow"]
 
 	_add_cyl(lan, 0.052, 0.060, 0.016, Vector3(0.0, 0.008, 0.0), mat_aged, Vector3.ZERO, 8)
 	_add_cyl(lan, 0.042, 0.046, 0.115, Vector3(0.0, 0.074, 0.0), mat_glow, Vector3.ZERO, 8)
-	_add_sphere(lan, 0.018, 0.032, Vector3(0.0, 0.068, 0.0), mat_bulb, Vector3.ZERO, 6)
 	for i: int in range(4):
 		var ang: float = float(i) * (PI * 0.5) + 0.4
 		_add_box(lan, Vector3(0.007, 0.122, 0.007), Vector3(cos(ang) * 0.046, 0.074, sin(ang) * 0.046), mat_brass)
 	_add_cyl(lan, 0.014, 0.056, 0.048, Vector3(0.0, 0.156, 0.0), mat_brass, Vector3.ZERO, 8)
 	_add_torus(lan, 0.012, 0.018, Vector3(0.0, 0.190, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 8)
 
+	_bake_interactive_prop_branch(lan, "BakedRightTableLanternMesh")
+	_register_interactive_prop("right_table_lantern", lan, Vector3(0.0, 0.09, 0.0), 0.13)
+
 
 # ============================================================================
-# 7. AUTHENTIC PERSIAN PARLOR CRAFTS (100% STATIC BAKED, ZERO EXTRA DRAW CALLS)
+# 7. AUTHENTIC PERSIAN PARLOR CRAFTS (MOBILE-OPTIMIZED BAKED & INTERACTIVE)
 # ============================================================================
 
 func _build_table_khatam_box(parent: Node3D, pos: Vector3) -> void:
-	# Shiraz Khatam-Kari textured geometric inlaid keepsake box on the back-right walnut rail (4 primitives!)
+	# Shiraz Khatam-Kari inlaid keepsake box on back-right walnut rail (Interactive Hinged Lid + Heirloom Jewel!)
 	var bx: Node3D = Node3D.new()
 	bx.name = "PersianKhatamBox"
 	bx.position = pos
@@ -2794,11 +3601,29 @@ func _build_table_khatam_box(parent: Node3D, pos: Vector3) -> void:
 	var mat_khatam: Material = _shared_mats["khatam_inlay"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
+	var mat_velvet: Material = _shared_mats["velvet_curtain"]
+	var mat_jewel: Material = _shared_mats["stained_emerald"]
 
-	_add_box(bx, Vector3(0.126, 0.036, 0.088), Vector3(0.0, 0.018, 0.0), mat_khatam)
-	_add_box(bx, Vector3(0.132, 0.010, 0.094), Vector3(0.0, 0.039, 0.0), mat_aged)
-	_add_plane(bx, Vector2(0.118, 0.080), Vector3(0.0, 0.045, 0.0), mat_khatam)
-	_add_box(bx, Vector3(0.020, 0.014, 0.008), Vector3(0.0, 0.026, 0.046), mat_brass)
+	# Lower Keepsake Box Body + Velvet Cushion + Hidden Glowing Emerald Ring/Heirloom Inside!
+	_add_box(bx, Vector3(0.126, 0.034, 0.088), Vector3(0.0, 0.017, 0.0), mat_khatam)
+	_add_box(bx, Vector3(0.112, 0.008, 0.074), Vector3(0.0, 0.034, 0.0), mat_velvet)
+	_add_torus(bx, 0.014, 0.020, Vector3(0.0, 0.040, 0.0), mat_brass, Vector3.ZERO, 10)
+	_add_sphere(bx, 0.012, 0.012, Vector3(0.0, 0.044, 0.0), mat_jewel, Vector3.ZERO, 8)
+	_add_box(bx, Vector3(0.020, 0.012, 0.008), Vector3(0.0, 0.024, 0.046), mat_brass)
+
+	# Rear-Hinged Khatam-Kari Lid Pivot (Swings Open Smoothly When Tapped!)
+	var lid_piv: Node3D = Node3D.new()
+	lid_piv.name = "KhatamLidPivot"
+	lid_piv.position = Vector3(0.0, 0.035, -0.044)
+	bx.add_child(lid_piv)
+	_khatam_lid_pivot = lid_piv
+	_add_box(lid_piv, Vector3(0.132, 0.012, 0.094), Vector3(0.0, 0.006, 0.044), mat_aged)
+	_add_plane(lid_piv, Vector2(0.118, 0.080), Vector3(0.0, 0.013, 0.044), mat_khatam)
+	_add_box(lid_piv, Vector3(0.016, 0.008, 0.008), Vector3(0.0, 0.005, 0.092), mat_brass)
+
+	_bake_interactive_prop_branch(lid_piv, "BakedKhatamLidMesh")
+	_bake_interactive_prop_branch(bx, "BakedKhatamBoxMesh")
+	_register_interactive_prop("desk_khatam_box", bx, Vector3(0.0, 0.03, 0.0), 0.11)
 
 
 func _build_table_ajil_dish(parent: Node3D, pos: Vector3) -> void:
@@ -2821,6 +3646,9 @@ func _build_table_ajil_dish(parent: Node3D, pos: Vector3) -> void:
 	_add_sphere(dish, 0.020, 0.016, Vector3(-0.014, 0.034, 0.006), mat_pistachio, Vector3.ZERO, 6)
 	_add_sphere(dish, 0.018, 0.015, Vector3(0.015, 0.034, -0.008), mat_cream, Vector3.ZERO, 6)
 	_add_box(dish, Vector3(0.044, 0.010, 0.010), Vector3(0.004, 0.041, 0.008), mat_saffron, Vector3(8.0, 26.0, -10.0))
+
+	_bake_interactive_prop_branch(dish, "BakedPersianAjilDishMesh")
+	_register_interactive_prop("desk_ajil_dish", dish, Vector3(0.0, 0.03, 0.0), 0.10)
 
 
 func _build_persian_qalyan(parent: Node3D, pos: Vector3) -> void:

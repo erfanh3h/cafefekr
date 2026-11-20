@@ -67,7 +67,7 @@ var _sacrifice_peeked: bool = false
 
 # --- Camera Framing (Mandatory on BaseGameBoard scenes) ---
 var camera_distance: float = 2.42
-var camera_pitch: float = -0.82
+var camera_pitch: float = -1.08
 
 # --- 3D Table Component ---
 var table_3d: Node3D
@@ -113,7 +113,7 @@ var _cached_result_dlg: Control = null
 
 func _init() -> void:
 	camera_distance = 2.42
-	camera_pitch = -0.82
+	camera_pitch = -1.08
 
 func _ready() -> void:
 	game_type = GameTypes.COUP

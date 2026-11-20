@@ -110,7 +110,7 @@ var _log_vbox: VBoxContainer
 var _battle_logs: Array[String] = []
 
 var camera_distance: float = 2.52
-var camera_pitch: float = -0.88
+var camera_pitch: float = -1.14
 var _is_mobile_gpu: bool = false
 var _hud_vis_accum: float = 0.0
 var _cached_hud: Node = null
@@ -124,7 +124,7 @@ var _cached_result_dlg: Control = null
 func _init() -> void:
 	# Immersive 3D Cafe Fekr Lounge perspective showing the room, chairs, and 3D War-Map
 	camera_distance = 2.52
-	camera_pitch = -0.88
+	camera_pitch = -1.14
 
 func _ready() -> void:
 	game_type = GameTypes.RISK
