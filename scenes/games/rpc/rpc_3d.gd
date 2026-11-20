@@ -414,7 +414,7 @@ func _build_action_dock() -> void:
 	_action_dock_panel.offset_left = 12.0
 	_action_dock_panel.offset_right = -12.0
 	_action_dock_panel.offset_bottom = -bottom_pad
-	_action_dock_panel.offset_top = -bottom_pad - 64.0
+	_action_dock_panel.offset_top = -bottom_pad - 74.0
 	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_action_dock_panel.visible = false
 	_action_dock_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
@@ -440,12 +440,14 @@ func _build_action_dock() -> void:
 		btn.name = "BtnChoice_" + c_type
 		btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		btn.custom_minimum_size = Vector2(130.0, 56.0)
+		btn.custom_minimum_size = Vector2(148.0, 62.0)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		btn.text = c_label
+		btn.clip_text = false
+		btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 		btn.add_theme_font_override("font", _FONT_FA)
-		btn.add_theme_font_size_override("font_size", 25)
+		btn.add_theme_font_size_override("font_size", 28)
 		btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 		btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 		btn.add_theme_constant_override("outline_size", 3)
@@ -544,7 +546,7 @@ func _notification(what: int) -> void:
 		if is_instance_valid(_action_dock_panel):
 			var bottom_pad: float = float(HudTheme.get_safe_insets(get_viewport()).get("bottom", 14))
 			_action_dock_panel.offset_bottom = -bottom_pad
-			_action_dock_panel.offset_top = -bottom_pad - 64.0
+			_action_dock_panel.offset_top = -bottom_pad - 74.0
 
 # --- Score Trackers & Status Labels ---
 

@@ -337,6 +337,10 @@ func mark_notification_read(notification_id: String, callback: Callable = Callab
 func mark_all_notifications_read(callback: Callable = Callable()) -> void:
 	_post_json("/notifications/read-all", {}, _get_auth_headers(), callback)
 
+func delete_notification(notification_id: String, callback: Callable = Callable()) -> void:
+	_post_json("/notifications/delete", {"notification_id": notification_id}, _get_auth_headers(), callback)
+
+
 func update_notification_preferences(prefs: Dictionary, callback: Callable = Callable()) -> void:
 	_post_json("/notifications/preferences", prefs, _get_auth_headers(), callback)
 

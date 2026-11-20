@@ -354,9 +354,26 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 				"دعوت‌نامه‌های بازی، درخواست‌های دوستی و رویدادهای اتحاد شما اینجا نمایش داده می‌شوند."
 			))
 		else:
+			var rendered_any: bool = false
 			for n in items:
 				if typeof(n) == TYPE_DICTIONARY:
-					n_vbox.add_child(_build_notification_card(host, n as Dictionary, lbl_unread_sub, btn_read_all))
+					var nd: Dictionary = n as Dictionary
+					var ex_st: Dictionary = _get_resolved_status(nd, nd.get("payload", {}), str(nd.get("notification_id", nd.get("_id", ""))), str(nd.get("type", "")))
+					if not ex_st.is_empty() and str(ex_st.get("kind", "")) in ["accept", "reject"]:
+						var d_nid: String = str(nd.get("notification_id", nd.get("_id", "")))
+						if not d_nid.is_empty():
+							NetworkManager.api.delete_notification(d_nid)
+						continue
+					n_vbox.add_child(_build_notification_card(host, nd, lbl_unread_sub, btn_read_all))
+					rendered_any = true
+
+			if not rendered_any:
+				n_vbox.add_child(CafeSocialTheme.make_empty_state(
+					CafeSocialTheme.ICO_STAR,
+					"اعلانی وجود ندارد",
+					"دعوت‌نامه‌های بازی، درخواست‌های دوستی و رویدادهای اتحاد شما اینجا نمایش داده می‌شوند."
+				))
+
 
 		var bottom_spacer: Control = Control.new()
 		bottom_spacer.custom_minimum_size = Vector2(0, 44)
@@ -504,6 +521,47 @@ static func _extract_api_error(data: Variant) -> String:
 	return ""
 
 
+static func _delete_and_remove_card(
+	card: PanelContainer,
+	nid: String,
+	was_unread_ref: Array,
+	lbl_unread_sub: Label,
+	btn_read_all: TextureButton,
+	host: Control
+) -> void:
+	if not nid.is_empty():
+		NetworkManager.api.delete_notification(nid, func(_o, _c2, _d2): pass)
+	if was_unread_ref.size() > 0 and bool(was_unread_ref[0]):
+		was_unread_ref[0] = false
+		NetworkManager.unread_notifications_count = max(0, NetworkManager.unread_notifications_count - 1)
+		NetworkManager.notify_social_badges_changed()
+		_set_unread_subtitle(lbl_unread_sub, NetworkManager.unread_notifications_count)
+		if is_instance_valid(btn_read_all) and NetworkManager.unread_notifications_count <= 0:
+			btn_read_all.disabled = true
+		if is_instance_valid(host) and host.has_method("_update_main_tab_buttons"):
+			host._update_main_tab_buttons()
+	if is_instance_valid(card):
+		var p_node: Node = card.get_parent()
+		card.queue_free()
+		if is_instance_valid(p_node) and is_instance_valid(p_node.get_tree()):
+			p_node.get_tree().process_frame.connect(func():
+				if not is_instance_valid(p_node):
+					return
+				var card_count: int = 0
+				for ch in p_node.get_children():
+					if ch is PanelContainer and not ch.is_queued_for_deletion():
+						card_count += 1
+				if card_count == 0:
+					for ch in p_node.get_children():
+						ch.queue_free()
+					p_node.add_child(CafeSocialTheme.make_empty_state(
+						CafeSocialTheme.ICO_STAR,
+						"اعلانی وجود ندارد",
+						"دعوت‌نامه‌های بازی، درخواست‌های دوستی و رویدادهای اتحاد شما اینجا نمایش داده می‌شوند."
+					))
+			, Object.CONNECT_ONE_SHOT)
+
+
 static func _build_notification_card(
 	host: Control,
 	n: Dictionary,
@@ -516,7 +574,7 @@ static func _build_notification_card(
 	var payload: Dictionary = n.get("payload", {}) if typeof(n.get("payload")) == TYPE_DICTIONARY else {}
 	var actor_id: String = str(n.get("actor_id", ""))
 	var actor_name: String = str(n.get("actor_name", "بازیکن"))
-	var time_str: String = CafeSocialTheme.format_time_fa(str(n.get("created_at", "")))
+	var time_str: String = CafeSocialTheme.format_shamsi_datetime_fa(str(n.get("created_at", "")))
 	var action_key: String = _make_action_key(ntype, payload)
 	var existing_status: Dictionary = _get_resolved_status(n, payload, nid, ntype)
 	var was_unread_ref: Array = [not is_read]
@@ -560,20 +618,7 @@ static func _build_notification_card(
 		true
 	))
 
-	var ico_wrap: PanelContainer = PanelContainer.new()
-	ico_wrap.custom_minimum_size = Vector2(56, 56)
-	ico_wrap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	ico_wrap.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(
-		Color(0.10, 0.06, 0.03, 0.95),
-		CafeSocialTheme.COL_BRONZE_BORDER if is_read else CafeSocialTheme.COL_GOLD_BRIGHT,
-		14, 2, 8.0, 8.0
-	))
-	var ico: TextureRect = TextureRect.new()
-	ico.texture = _get_notif_icon(ntype)
-	ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	ico_wrap.add_child(ico)
-	top_row.add_child(ico_wrap)
+	# Top right icon per type removed per user request
 
 	# Bottom action / status row
 	var act_row: HBoxContainer = HBoxContainer.new()
@@ -591,7 +636,7 @@ static func _build_notification_card(
 	elif ntype == "friend_request_received" and payload.has("request_id"):
 		has_acts = true
 		var rid: String = str(payload.get("request_id", ""))
-		var b_acc: Button = CafeSocialTheme.make_friend_button("accept", "پذیرش دوستی", Vector2(0, 46))
+		var b_acc: Button = CafeSocialTheme.make_button("پذیرش دوستی", "emerald", Vector2(0, 46), 22)
 		b_acc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_acc.pressed.connect(func():
 			AudioManager.sfx_button()
@@ -599,20 +644,11 @@ static func _build_notification_card(
 			NetworkManager.api.respond_friend_request(rid, "accept", func(ok: bool, code: int, d: Variant):
 				if ok:
 					NetworkManager.incoming_friend_requests_count = max(0, NetworkManager.incoming_friend_requests_count - 1)
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						"✓ درخواست دوستی پذیرفته شد", "accept",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
 					_notify_host_toast(host, "درخواست دوستی پذیرفته شد!")
 				elif code >= 400 and code < 500:
-					var err_txt: String = _extract_api_error(d)
-					var fallback_txt: String = err_txt if not err_txt.is_empty() else "این درخواست دوستی قبلاً بررسی یا لغو شده است"
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						fallback_txt, "neutral",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
+					_notify_host_toast(host, "این درخواست دوستی قبلاً بررسی یا لغو شده است")
 				else:
 					_set_buttons_disabled(act_row, false)
 					_notify_host_toast(host, "خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.")
@@ -620,27 +656,18 @@ static func _build_notification_card(
 		)
 		act_row.add_child(b_acc)
 
-		var b_rej: Button = CafeSocialTheme.make_friend_button("reject", "رد", Vector2(110, 46))
+		var b_rej: Button = CafeSocialTheme.make_button("رد", "crimson", Vector2(110, 46), 22)
 		b_rej.pressed.connect(func():
 			AudioManager.sfx_tap()
 			_set_buttons_disabled(act_row, true)
 			NetworkManager.api.respond_friend_request(rid, "reject", func(ok: bool, code: int, d: Variant):
 				if ok:
 					NetworkManager.incoming_friend_requests_count = max(0, NetworkManager.incoming_friend_requests_count - 1)
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						"✕ درخواست دوستی رد شد", "reject",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
 					_notify_host_toast(host, "درخواست دوستی رد شد.")
 				elif code >= 400 and code < 500:
-					var err_txt: String = _extract_api_error(d)
-					var fallback_txt: String = err_txt if not err_txt.is_empty() else "این درخواست دوستی قبلاً بررسی یا لغو شده است"
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						fallback_txt, "neutral",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
+					_notify_host_toast(host, "این درخواست دوستی قبلاً بررسی یا لغو شده است")
 				else:
 					_set_buttons_disabled(act_row, false)
 					_notify_host_toast(host, "خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.")
@@ -658,20 +685,11 @@ static func _build_notification_card(
 			_set_buttons_disabled(act_row, true)
 			NetworkManager.api.respond_clan_invitation(inv_id, "accept", func(ok: bool, code: int, d: Variant):
 				if ok:
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						"✓ دعوت به اتحاد پذیرفته شد", "accept",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
 					_notify_host_toast(host, "به اتحاد خوش آمدید!")
 				elif code >= 400 and code < 500:
-					var err_txt: String = _extract_api_error(d)
-					var fallback_txt: String = err_txt if not err_txt.is_empty() else "این دعوت‌نامه قبلاً بررسی یا منقضی شده است"
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						fallback_txt, "neutral",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
+					_notify_host_toast(host, "این دعوت‌نامه قبلاً بررسی یا منقضی شده است")
 				else:
 					_set_buttons_disabled(act_row, false)
 					_notify_host_toast(host, "خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.")
@@ -685,20 +703,11 @@ static func _build_notification_card(
 			_set_buttons_disabled(act_row, true)
 			NetworkManager.api.respond_clan_invitation(inv_id, "reject", func(ok: bool, code: int, d: Variant):
 				if ok:
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						"✕ دعوت به اتحاد رد شد", "reject",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
 					_notify_host_toast(host, "دعوت به اتحاد رد شد.")
 				elif code >= 400 and code < 500:
-					var err_txt: String = _extract_api_error(d)
-					var fallback_txt: String = err_txt if not err_txt.is_empty() else "این دعوت‌نامه قبلاً بررسی یا منقضی شده است"
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						fallback_txt, "neutral",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
+					_notify_host_toast(host, "این دعوت‌نامه قبلاً بررسی یا منقضی شده است")
 				else:
 					_set_buttons_disabled(act_row, false)
 					_notify_host_toast(host, "خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.")
@@ -716,20 +725,11 @@ static func _build_notification_card(
 			_set_buttons_disabled(act_row, true)
 			NetworkManager.api.respond_clan_join_request(c_req_id, "accept", func(ok: bool, code: int, d: Variant):
 				if ok:
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						"✓ درخواست عضویت در اتحاد پذیرفته شد", "accept",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
 					_notify_host_toast(host, "درخواست عضویت در اتحاد پذیرفته شد!")
 				elif code >= 400 and code < 500:
-					var err_txt: String = _extract_api_error(d)
-					var fallback_txt: String = err_txt if not err_txt.is_empty() else "این درخواست عضویت قبلاً بررسی شده است"
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						fallback_txt, "neutral",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
+					_notify_host_toast(host, "این درخواست عضویت قبلاً بررسی شده است")
 				else:
 					_set_buttons_disabled(act_row, false)
 					_notify_host_toast(host, "خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.")
@@ -743,20 +743,11 @@ static func _build_notification_card(
 			_set_buttons_disabled(act_row, true)
 			NetworkManager.api.respond_clan_join_request(c_req_id, "reject", func(ok: bool, code: int, d: Variant):
 				if ok:
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						"✕ درخواست عضویت در اتحاد رد شد", "reject",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
 					_notify_host_toast(host, "درخواست عضویت در اتحاد رد شد.")
 				elif code >= 400 and code < 500:
-					var err_txt: String = _extract_api_error(d)
-					var fallback_txt: String = err_txt if not err_txt.is_empty() else "این درخواست عضویت قبلاً بررسی شده است"
-					_commit_notification_status(
-						card, act_row, nid, action_key,
-						fallback_txt, "neutral",
-						was_unread_ref, lbl_unread_sub, btn_read_all, host
-					)
+					_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
+					_notify_host_toast(host, "این درخواست عضویت قبلاً بررسی شده است")
 				else:
 					_set_buttons_disabled(act_row, false)
 					_notify_host_toast(host, "خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.")
@@ -790,11 +781,7 @@ static func _build_notification_card(
 		b_gacc.pressed.connect(func():
 			AudioManager.sfx_button()
 			NetworkManager.respond_game_invite_realtime(g_inv_id, "accept")
-			_commit_notification_status(
-				card, act_row, nid, action_key,
-				"✓ دعوت مسابقه پذیرفته شد", "accept",
-				was_unread_ref, lbl_unread_sub, btn_read_all, host
-			)
+			_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
 			_notify_host_toast(host, "دعوت مسابقه پذیرفته شد!")
 		)
 		act_row.add_child(b_gacc)
@@ -803,16 +790,13 @@ static func _build_notification_card(
 		b_grej.pressed.connect(func():
 			AudioManager.sfx_tap()
 			NetworkManager.respond_game_invite_realtime(g_inv_id, "reject")
-			_commit_notification_status(
-				card, act_row, nid, action_key,
-				"✕ دعوت مسابقه رد شد", "reject",
-				was_unread_ref, lbl_unread_sub, btn_read_all, host
-			)
+			_delete_and_remove_card(card, nid, was_unread_ref, lbl_unread_sub, btn_read_all, host)
 			_notify_host_toast(host, "دعوت مسابقه رد شد.")
 		)
 		act_row.add_child(b_grej)
 
 	elif not is_read:
+
 		has_acts = true
 		var b_mark: Button = CafeSocialTheme.make_button("خوانده شد", "bronze", Vector2(140, 46), 22)
 		b_mark.pressed.connect(func():

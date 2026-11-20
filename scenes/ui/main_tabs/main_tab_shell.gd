@@ -171,6 +171,8 @@ func switch_to_tab(tab_name: String) -> void:
 		_cached_tabs["play"].update_ranked_state()
 	elif tab_name == "user" and _cached_tabs.has("user"):
 		_cached_tabs["user"].refresh_all()
+	elif tab_name == "social" and _cached_tabs.has("social"):
+		_cached_tabs["social"].refresh_my_clan_data(false)
 
 
 func open_subpage(page_name: String) -> Control:

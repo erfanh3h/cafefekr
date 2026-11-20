@@ -86,13 +86,13 @@ func _build_ui_shell() -> void:
 
 	var btn_back: TextureButton = TextureButton.new()
 	btn_back.name = "BtnBackFriends"
-	btn_back.texture_normal = preload("res://assets/images/back.png")
+	btn_back.texture_normal = CafeSocialTheme.TEX_CLOSE
 	btn_back.custom_minimum_size = Vector2(58, 58)
 	btn_back.ignore_texture_size = true
 	btn_back.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn_back.focus_mode = Control.FOCUS_NONE
 	btn_back.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn_back.tooltip_text = "بازگشت"
+	btn_back.tooltip_text = "بستن"
 	ActionVFXManager.apply_button_juice(btn_back, "tap_button")
 	btn_back.pressed.connect(func():
 		AudioManager.sfx_tap()

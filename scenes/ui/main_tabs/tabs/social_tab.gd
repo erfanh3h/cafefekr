@@ -23,6 +23,7 @@ var _clan_chat_messages: Array = []
 var _clan_chat_has_more: bool = true
 var _clan_chat_is_loading_older: bool = false
 var _clan_unread_chat_count: int = 0
+var _is_clan_data_loaded: bool = false
 
 # Dynamic references for active clan chat & members
 var _clan_chat_list_vbox: VBoxContainer = null
@@ -38,8 +39,14 @@ func _ready() -> void:
 	_connect_realtime_signals()
 	if NetworkManager.is_online and not NetworkManager.is_social_connected and GameManager.is_logged_in and not GameManager.token.is_empty():
 		NetworkManager.connect_social_namespace()
-	_preload_clan_data()
-	_refresh_current_tab()
+	if SocialClansView._check_user_has_clan(self):
+		_is_clan_data_loaded = true
+		_refresh_current_tab()
+		refresh_my_clan_data(false)
+	else:
+		_refresh_current_tab()
+		refresh_my_clan_data(true)
+
 
 
 func _connect_realtime_signals() -> void:
@@ -130,15 +137,7 @@ func _build_ui_shell() -> void:
 
 
 func _preload_clan_data() -> void:
-	if not GameManager.is_logged_in:
-		return
-	NetworkManager.api.get_my_clan(func(ok: bool, _c: int, data: Variant):
-		if not is_instance_valid(self):
-			return
-		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
-			_my_clan_data = data["result"]
-			_update_main_tab_buttons()
-	)
+	refresh_my_clan_data(false)
 
 
 func _show_toast(txt: String, col: Color = CafeSocialTheme.COL_EMERALD_TEXT) -> void:
@@ -160,6 +159,9 @@ func _update_main_tab_buttons() -> void:
 
 func _refresh_current_tab() -> void:
 	var body_vbox: VBoxContainer = _clear_content()
+	if not _is_clan_data_loaded and not SocialClansView._check_user_has_clan(self):
+		body_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت اطلاعات اتحاد..."))
+		return
 	SocialClansView.render(self, body_vbox)
 
 
@@ -220,11 +222,13 @@ func _send_clan_chat_message() -> void:
 
 func refresh_my_clan_data(force_render: bool = true) -> void:
 	if not GameManager.is_logged_in:
+		_is_clan_data_loaded = true
 		return
-	var prev_has_clan: bool = typeof(_my_clan_data.get("clan")) == TYPE_DICTIONARY and not _my_clan_data["clan"].is_empty()
+	var prev_has_clan: bool = SocialClansView._check_user_has_clan(self)
 	NetworkManager.api.get_my_clan(func(ok: bool, _c: int, data: Variant):
 		if not is_instance_valid(self):
 			return
+		_is_clan_data_loaded = true
 		if ok and typeof(data) == TYPE_DICTIONARY and typeof(data.get("result")) == TYPE_DICTIONARY:
 			_my_clan_data = data["result"]
 			var c_obj: Variant = _my_clan_data.get("clan", null)
@@ -240,9 +244,12 @@ func refresh_my_clan_data(force_render: bool = true) -> void:
 			if force_render:
 				if not now_has_clan and current_clans_subtab in ["chat", "members"]:
 					current_clans_subtab = "my_clan"
-					_refresh_current_tab()
-				elif (now_has_clan != prev_has_clan) or current_clans_subtab != "chat":
-					_refresh_current_tab()
+				_refresh_current_tab()
+			elif (now_has_clan != prev_has_clan) or (current_clans_subtab != "chat" and not prev_has_clan):
+				_refresh_current_tab()
+		else:
+			if force_render:
+				_refresh_current_tab()
 	)
 
 

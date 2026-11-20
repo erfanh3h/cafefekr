@@ -154,6 +154,13 @@ static func switch_subtab_in_place(host: Control, new_subtab: String) -> void:
 		host._refresh_current_tab()
 		return
 
+	# If shell state doesn't match has_clan (e.g. NavTabs has wrong set of tabs), rebuild entire shell!
+	var nav_tabs: Node = shell.get_node_or_null("ClanNavTabs")
+	var has_clan_tabs: bool = (nav_tabs != null and nav_tabs.find_child("ClanTab_chat", false, false) != null)
+	if has_clan != has_clan_tabs:
+		host._refresh_current_tab()
+		return
+
 	# Reset per-subtab dynamic references without tearing down the persistent header/nav!
 	host._clan_chat_list_vbox = null
 	host._clan_chat_scroll = null

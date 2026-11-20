@@ -1243,11 +1243,15 @@ static func make_empty_state(
 	subtitle_txt: String,
 	cta_txt: String = "",
 	cta_variant: String = "gold",
-	cta_cb: Callable = Callable()
+	cta_cb: Callable = Callable(),
+	use_frame: bool = true
 ) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(0, 180)
-	card.add_theme_stylebox_override("panel", create_frame_style(true, 42.0, 32.0))
+	if use_frame:
+		card.add_theme_stylebox_override("panel", create_frame_style(true, 42.0, 32.0))
+	else:
+		card.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 
 	var vbox := VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -1482,6 +1486,11 @@ static func format_chat_datetime_fa(iso_str: String) -> String:
 		if not time_part.is_empty():
 			return GameManager.to_fa_num(time_part)
 	return GameManager.to_fa_num(s)
+
+
+static func format_shamsi_datetime_fa(iso_str: String) -> String:
+	return format_chat_datetime_fa(iso_str)
+
 
 
 static func get_game_thumb(game_type: String) -> Texture2D:

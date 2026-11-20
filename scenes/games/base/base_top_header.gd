@@ -399,6 +399,7 @@ func _setup_styles() -> void:
 		local_turn_pill.add_theme_stylebox_override("panel", HudTheme.make_local_turn_pill_style(false))
 	if is_instance_valid(lbl_local_turn):
 		lbl_local_turn.text = "نوبت شما"
+		lbl_local_turn.add_theme_font_size_override("font_size", 15)
 		HudTheme.configure_bidi_label(lbl_local_turn, false)
 
 
@@ -421,7 +422,7 @@ func _build_turn_toast() -> void:
 	_lbl_turn_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _font_vazir:
 		_lbl_turn_toast.add_theme_font_override("font", _font_vazir)
-	_lbl_turn_toast.add_theme_font_size_override("font_size", 14)
+	_lbl_turn_toast.add_theme_font_size_override("font_size", 17)
 	_lbl_turn_toast.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
 	_lbl_turn_toast.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
 	_lbl_turn_toast.add_theme_constant_override("shadow_offset_y", 1)
@@ -437,7 +438,7 @@ func _position_turn_toast() -> void:
 		return
 	var top_y: float = offset_bottom + 6.0
 	_turn_toast_panel.offset_top = top_y
-	_turn_toast_panel.offset_bottom = top_y + 32.0
+	_turn_toast_panel.offset_bottom = top_y + 36.0
 	_turn_toast_panel.offset_left = -120.0
 	_turn_toast_panel.offset_right = 120.0
 
@@ -1056,8 +1057,8 @@ func _spawn_floating_reaction(is_opponent: bool, reaction_id: int, spawn_pos: Ve
 		var lbl := Label.new()
 		if _font_vazir:
 			lbl.add_theme_font_override("font", _font_vazir)
-		# Local player chat gets larger font size 15, opponent gets 12
-		lbl.add_theme_font_size_override("font_size", 15 if not is_opponent else 12)
+		# Local player chat gets larger font size 15, opponent gets 14 (was 12)
+		lbl.add_theme_font_size_override("font_size", 15 if not is_opponent else 14)
 		lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
 		lbl.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
 		lbl.add_theme_constant_override("shadow_offset_y", 1)
@@ -1067,7 +1068,7 @@ func _spawn_floating_reaction(is_opponent: bool, reaction_id: int, spawn_pos: Ve
 		lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 		lbl.text = msg_text
 		bubble.add_child(lbl)
-		bubble.custom_minimum_size = Vector2(0, 38 if not is_opponent else 28)
+		bubble.custom_minimum_size = Vector2(0, 38 if not is_opponent else 32)
 	else:
 		var icon_rect := TextureRect.new()
 		icon_rect.custom_minimum_size = Vector2(112, 112)

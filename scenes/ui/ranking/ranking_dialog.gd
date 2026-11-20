@@ -214,7 +214,7 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 
 func _create_rank_row(rank: int, username: String, subtitle: String, val_str: String, img_id: int, entry_dict: Dictionary) -> void:
 	var card := Button.new()
-	card.custom_minimum_size = Vector2(0, 140)
+	card.custom_minimum_size = Vector2(0, 150)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.flat = false
 	card.focus_mode = Control.FOCUS_NONE
@@ -315,7 +315,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	name_lbl.clip_text = false
 	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-	name_lbl.add_theme_font_size_override("font_size", 26)
+	name_lbl.add_theme_font_size_override("font_size", 28)
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))
 	name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 	name_lbl.add_theme_constant_override("shadow_outline_size", 3)
@@ -338,7 +338,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		tag_lbl.clip_text = false
 		tag_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		tag_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		tag_lbl.add_theme_font_size_override("font_size", 18)
+		tag_lbl.add_theme_font_size_override("font_size", 20)
 		tag_lbl.add_theme_color_override("font_color", Color(0.98, 0.84, 0.42, 1.0))
 		tag_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 		tag_lbl.add_theme_constant_override("shadow_outline_size", 2)
@@ -352,17 +352,26 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		sub_lbl.clip_text = false
 		sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		sub_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		sub_lbl.add_theme_font_size_override("font_size", 18)
+		sub_lbl.add_theme_font_size_override("font_size", 20)
 		sub_lbl.add_theme_color_override("font_color", Color(0.92, 0.82, 0.55, 1.0))
 		sub_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 		sub_lbl.add_theme_constant_override("shadow_outline_size", 2)
 		text_col.add_child(sub_lbl)
 
-	# 4. Score or Wins Value (Far Left in RTL card)
+	# 4. Score or Wins Value (Far Left in RTL card) with Golden Icon
 	var val_box := HBoxContainer.new()
 	val_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	val_box.add_theme_constant_override("separation", 6)
 	val_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var ico := TextureRect.new()
+	ico.texture = CafeSocialTheme.ICO_CUP if current_tab == "win" else CafeSocialTheme.ICO_STAR
+	ico.custom_minimum_size = Vector2(30, 30)
+	ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ico.modulate = Color(1.0, 0.84, 0.22, 1.0) # Golden color
+	ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	val_box.add_child(ico)
 
 	if current_tab == "win":
 		var val_lbl := Label.new()
@@ -371,7 +380,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		val_lbl.add_theme_font_size_override("font_size", 28)
+		val_lbl.add_theme_font_size_override("font_size", 30)
 		val_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.38, 1.0))
 		val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 		val_lbl.add_theme_constant_override("shadow_outline_size", 3)
@@ -383,7 +392,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		val_lbl.add_theme_font_size_override("font_size", 26)
+		val_lbl.add_theme_font_size_override("font_size", 28)
 		val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
 		val_lbl.add_theme_constant_override("shadow_outline_size", 0)
 		val_box.add_child(val_lbl)

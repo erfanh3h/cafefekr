@@ -155,7 +155,7 @@ func _enforce_dock_geometry() -> void:
 		_action_dock_panel.offset_left = 12.0
 		_action_dock_panel.offset_right = -12.0
 		_action_dock_panel.offset_bottom = -bottom_pad
-		_action_dock_panel.offset_top = -bottom_pad - 62.0
+		_action_dock_panel.offset_top = -bottom_pad - 72.0
 
 func _build_2d_action_dock() -> void:
 	if is_instance_valid(_action_dock_root):
@@ -178,7 +178,7 @@ func _build_2d_action_dock() -> void:
 	_action_dock_panel.offset_left = 12.0
 	_action_dock_panel.offset_right = -12.0
 	_action_dock_panel.offset_bottom = -bottom_pad
-	_action_dock_panel.offset_top = -bottom_pad - 62.0
+	_action_dock_panel.offset_top = -bottom_pad - 72.0
 	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var p_style := StyleBoxEmpty.new()
 	_action_dock_panel.add_theme_stylebox_override("panel", p_style)
@@ -194,15 +194,15 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.name = "BtnActionRollDice"
 	_action_roll_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_action_roll_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_action_roll_btn.custom_minimum_size = Vector2(170.0, 54.0)
+	_action_roll_btn.custom_minimum_size = Vector2(210.0, 58.0)
 	_action_roll_btn.focus_mode = Control.FOCUS_NONE
 	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_roll_btn.text = "🎲 تاس بریز (۳)"
-	_action_roll_btn.clip_text = true
-	_action_roll_btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_action_roll_btn.clip_text = false
+	_action_roll_btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	if _game_font:
 		_action_roll_btn.add_theme_font_override("font", _game_font)
-	_action_roll_btn.add_theme_font_size_override("font_size", 24)
+	_action_roll_btn.add_theme_font_size_override("font_size", 25)
 	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_action_roll_btn.add_theme_constant_override("outline_size", 3)
@@ -246,7 +246,7 @@ func _build_2d_action_dock() -> void:
 	_action_submit_btn.name = "BtnActionSubmitScore"
 	_action_submit_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_action_submit_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_action_submit_btn.custom_minimum_size = Vector2(205.0, 54.0)
+	_action_submit_btn.custom_minimum_size = Vector2(230.0, 58.0)
 	_action_submit_btn.focus_mode = Control.FOCUS_NONE
 	_action_submit_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_submit_btn.text = "✅ ثبت امتیاز"
@@ -254,7 +254,7 @@ func _build_2d_action_dock() -> void:
 	_action_submit_btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	if _game_font:
 		_action_submit_btn.add_theme_font_override("font", _game_font)
-	_action_submit_btn.add_theme_font_size_override("font_size", 20)
+	_action_submit_btn.add_theme_font_size_override("font_size", 24)
 	_action_submit_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_submit_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_action_submit_btn.add_theme_constant_override("outline_size", 3)
@@ -1068,6 +1068,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 	core_box.size = Vector3(DIE_SIZE * 0.94, DIE_SIZE * 0.94, DIE_SIZE * 0.94)
 	core_box.material = mat_die_chamfer
 	chamfer_core.mesh = core_box
+	chamfer_core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	die_pivot.add_child(chamfer_core)
 
 	# 3 Overlapping Beveled Face Slabs (X, Y, Z) forming a rounded-edge casino die
@@ -1082,6 +1083,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 		slab_box.size = slab_size
 		slab_box.material = mat_die_ivory
 		slab_inst.mesh = slab_box
+		slab_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		die_pivot.add_child(slab_inst)
 		face_meshes.append(slab_inst)
 
@@ -1093,6 +1095,7 @@ func _build_single_3d_die(die_idx: int, slot_pos: Vector3) -> Dictionary:
 		temp_pips.free()
 	var pips_mi = MeshInstance3D.new()
 	pips_mi.mesh = _cached_yatzy_pips_mesh
+	pips_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	die_pivot.add_child(pips_mi)
 
 	# 4. Framed 3D Brass & Obsidian Numeral Plaque in front of each die well

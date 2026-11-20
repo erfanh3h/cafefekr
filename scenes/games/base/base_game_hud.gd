@@ -3402,10 +3402,11 @@ func _build_battleship_ship_row() -> void:
 		var s_len = int(spec["len"])
 		var btn = Button.new()
 		btn.text = spec["txt"]
-		btn.custom_minimum_size = Vector2(96.0, 46.0)
+		btn.custom_minimum_size = Vector2(110.0, 52.0)
 		btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_style_monopoly_action_button(btn, Color(0.12, 0.28, 0.44, 0.96), Color(0.48, 0.78, 1.0, 0.90), false)
-		btn.add_theme_font_size_override("font_size", 18)
+		btn.add_theme_font_size_override("font_size", 22)
 		btn.clip_text = false
 		btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 		ActionVFXManager.apply_button_juice(btn, "tap_button")
@@ -3433,11 +3434,15 @@ func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 		if is_instance_valid(_bs_ship_row):
 			_bs_ship_row.visible = true
 		if is_instance_valid(fekrbekr_actions):
-			fekrbekr_actions.offset_top = -_safe_bottom_inset - 130.0
+			fekrbekr_actions.offset_top = -_safe_bottom_inset - 124.0
 		var vbox = fekrbekr_actions.get_node_or_null("VBox") as Control
 		if is_instance_valid(vbox):
-			vbox.offset_top = 56.0
-			vbox.offset_bottom = 120.0
+			vbox.anchor_top = 0.0
+			vbox.anchor_bottom = 0.0
+			vbox.offset_top = 62.0
+			vbox.offset_bottom = 118.0
+			vbox.offset_left = 0.0
+			vbox.offset_right = 0.0
 	else:
 		if is_instance_valid(_bs_ship_row):
 			_bs_ship_row.visible = false
@@ -3445,8 +3450,12 @@ func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 			fekrbekr_actions.offset_top = -_safe_bottom_inset - 64.0
 		var vbox = fekrbekr_actions.get_node_or_null("VBox") as Control
 		if is_instance_valid(vbox):
+			vbox.anchor_top = 0.0
+			vbox.anchor_bottom = 1.0
 			vbox.offset_top = 0.0
 			vbox.offset_bottom = 0.0
+			vbox.offset_left = 0.0
+			vbox.offset_right = 0.0
 
 	if is_instance_valid(btn_fekr_submit):
 		btn_fekr_submit.visible = (not is_play_phase) if is_bs else true
@@ -3469,12 +3478,13 @@ func set_fekrbekr_hud_buttons(is_play_phase: bool) -> void:
 
 	# Sizing & Font sizing:
 	if not is_play_phase:
-		# Phase 1: Center with padding, no stretched width, comfortable font & icons
+		# Phase 1: Center with padding, no stretched width or height, comfortable font & icons
 		for btn in [btn_fekr_submit, btn_fekr_clear]:
 			if is_instance_valid(btn):
 				btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-				btn.custom_minimum_size = Vector2(195.0, 54.0)
-				btn.add_theme_font_size_override("font_size", 20)
+				btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				btn.custom_minimum_size = Vector2(210.0, 56.0) if is_bs else Vector2(195.0, 54.0)
+				btn.add_theme_font_size_override("font_size", 22)
 				btn.clip_text = false
 				btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	else:

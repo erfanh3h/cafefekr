@@ -481,7 +481,7 @@ func _build_tabletop() -> void:
 	# 7. INTERACTIVE 3D GOLDEN UNO BELL & CHIP BOWL ON THE FELT
 	# =========================================================================
 	_build_uno_bell_prop(Vector3(0.355, y_base + 0.003, 0.215), mat_walnut, mat_bronze, mat_uno_red)
-	_build_uno_chips_bowl_prop(Vector3(-0.425, y_base + 0.003, 0.215), mat_mahogany, mat_bronze)
+	# _build_uno_chips_bowl_prop removed per design request (four colorful pieces removed from desk)
 
 func _build_uno_bell_prop(pos: Vector3, mat_walnut: Material, mat_brass: Material, mat_red: Material) -> void:
 	_uno_bell_root = Node3D.new()
@@ -523,7 +523,8 @@ func _build_uno_bell_prop(pos: Vector3, mat_walnut: Material, mat_brass: Materia
 	)
 	_uno_bell_root.add_child(bell_body)
 
-func _build_uno_chips_bowl_prop(pos: Vector3, mat_wood: Material, mat_brass: Material) -> void:
+func _build_uno_chips_bowl_prop(_pos: Vector3, _mat_wood: Material, _mat_brass: Material) -> void:
+	return
 	var bowl: Node3D = Node3D.new()
 	bowl.name = "UnoChipBowl3D"
 	bowl.position = pos

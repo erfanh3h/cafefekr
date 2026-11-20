@@ -6,9 +6,9 @@ extends RefCounted
 ## Blocked player management resides strictly in UserProfileDialog Privacy Settings.
 
 static func render(host: Control, body_vbox: VBoxContainer) -> void:
-	# Sub-navigation bar (3 antique subtabs)
+	# Sub-navigation bar (3 subtabs without frame per user request)
 	var sub_bar := PanelContainer.new()
-	sub_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 38.0, 18.0))
+	sub_bar.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	body_vbox.add_child(sub_bar)
 
 	var sub_row := HBoxContainer.new()
@@ -168,14 +168,15 @@ static func update_friend_presence(host: Control, target_uid: String, new_status
 static func _populate_requests(host: Control, list_vbox: VBoxContainer) -> void:
 	list_vbox.add_child(CafeSocialTheme.make_ornate_section_header(
 		"درخواست‌های دریافتی",
-		CafeSocialTheme.ICO_STAR,
+		null,
 		"%s درخواست در انتظار تایید شما" % GameManager.to_fa_num(host._incoming_requests.size())
 	))
 	if host._incoming_requests.is_empty():
 		list_vbox.add_child(CafeSocialTheme.make_empty_state(
 			CafeSocialTheme.ICO_CHECK,
 			"درخواست دریافتی جدیدی نیست",
-			"تمام درخواست‌های دوستی خود را بررسی کرده‌اید."
+			"تمام درخواست‌های دوستی خود را بررسی کرده‌اید.",
+			"", "gold", Callable(), false
 		))
 	else:
 		for req in host._incoming_requests:
@@ -184,7 +185,7 @@ static func _populate_requests(host: Control, list_vbox: VBoxContainer) -> void:
 
 	list_vbox.add_child(CafeSocialTheme.make_ornate_section_header(
 		"درخواست‌های ارسالی",
-		CafeSocialTheme.ICO_EXP,
+		null,
 		"%s درخواست در انتظار پاسخ دیگران" % GameManager.to_fa_num(host._outgoing_requests.size())
 	))
 	if host._outgoing_requests.is_empty():
@@ -196,9 +197,9 @@ static func _populate_requests(host: Control, list_vbox: VBoxContainer) -> void:
 
 
 static func _populate_search_and_discover(host: Control, list_vbox: VBoxContainer) -> void:
-	# Search box inside framed plaque
+	# Search box without frame per user request
 	var search_card := PanelContainer.new()
-	search_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
+	search_card.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	list_vbox.add_child(search_card)
 
 	var sc_vbox := VBoxContainer.new()
@@ -239,7 +240,7 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 						"نام کاربری دقیق‌تر یا بخشی از شناسه بازیکن را امتحان کنید."
 					))
 				else:
-					results_box.add_child(CafeSocialTheme.make_ornate_section_header("نتایج جستجو", CafeSocialTheme.ICO_STAR))
+					results_box.add_child(CafeSocialTheme.make_ornate_section_header("نتایج جستجو", null))
 					for item in arr:
 						if typeof(item) == TYPE_DICTIONARY:
 							results_box.add_child(_build_player_card(host, item, "search"))
@@ -270,7 +271,7 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 			var suggested: Array = res.get("suggested_friends", [])
 
 			discover_box.add_child(CafeSocialTheme.make_ornate_section_header(
-				"هم‌بازی‌های اخیر شما", CafeSocialTheme.ICO_HISTORY, "بازیکنانی که اخیراً با آن‌ها رقابت کرده‌اید"
+				"هم‌بازی‌های اخیر شما", null, "بازیکنانی که اخیراً با آن‌ها رقابت کرده‌اید"
 			))
 			if recent.is_empty():
 				discover_box.add_child(CafeSocialTheme.make_body("هنوز هم‌بازی اخیری ثبت نشده است.", 23, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
@@ -280,7 +281,7 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 						discover_box.add_child(_build_player_card(host, r_u, "search"))
 
 			discover_box.add_child(CafeSocialTheme.make_ornate_section_header(
-				"پیشنهادهای دوستی", CafeSocialTheme.ICO_RANKING, "بر اساس دوستان مشترک و هم‌سطحی شما"
+				"پیشنهادهای دوستی", null, "بر اساس دوستان مشترک و هم‌سطحی شما"
 			))
 			if suggested.is_empty():
 				discover_box.add_child(CafeSocialTheme.make_body("در حال حاضر پیشنهاد جدیدی موجود نیست.", 23, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))

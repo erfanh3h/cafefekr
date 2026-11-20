@@ -633,14 +633,44 @@ func _build_action_dock() -> void:
 		btn.custom_minimum_size = Vector2(0, 62)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		btn.text = "%s\n۰/۹" % _fa_num(d)
+		btn.text = ""
+
+		var vbox_lbls = VBoxContainer.new()
+		vbox_lbls.name = "VBoxLabels"
+		vbox_lbls.set_anchors_preset(Control.PRESET_FULL_RECT)
+		vbox_lbls.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox_lbls.add_theme_constant_override("separation", -2)
+		vbox_lbls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+		var lbl_main = Label.new()
+		lbl_main.name = "LblDigit"
+		lbl_main.text = _fa_num(d)
+		lbl_main.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_main.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		if _game_font:
-			btn.add_theme_font_override("font", _game_font)
-		btn.add_theme_font_size_override("font_size", 22)
-		btn.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
-		btn.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.08, 0.95))
-		btn.add_theme_constant_override("outline_size", 3)
-		btn.add_theme_constant_override("line_spacing", -3)
+			lbl_main.add_theme_font_override("font", _game_font)
+		lbl_main.add_theme_font_size_override("font_size", 25) # 3px bigger than before (22 -> 25)
+		lbl_main.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
+		lbl_main.add_theme_color_override("font_shadow_color", Color(0.04, 0.02, 0.01, 0.95))
+		lbl_main.add_theme_constant_override("shadow_offset_y", 1)
+		lbl_main.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox_lbls.add_child(lbl_main)
+
+		var lbl_sub = Label.new()
+		lbl_sub.name = "LblSub"
+		lbl_sub.text = "۰/۹"
+		lbl_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_sub.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		if _game_font:
+			lbl_sub.add_theme_font_override("font", _game_font)
+		lbl_sub.add_theme_font_size_override("font_size", 14)
+		lbl_sub.add_theme_color_override("font_color", Color(0.85, 0.82, 0.75, 0.88))
+		lbl_sub.add_theme_color_override("font_shadow_color", Color(0.04, 0.02, 0.01, 0.90))
+		lbl_sub.add_theme_constant_override("shadow_offset_y", 1)
+		lbl_sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox_lbls.add_child(lbl_sub)
+
+		btn.add_child(vbox_lbls)
 
 		var normal_sb = StyleBoxFlat.new()
 		normal_sb.bg_color = Color(0.12, 0.09, 0.07, 0.94)
@@ -837,14 +867,21 @@ func _update_numbers_count() -> void:
 		# Update 2D action digit buttons
 		if d < _action_digit_buttons.size() and is_instance_valid(_action_digit_buttons[d]):
 			var btn: Button = _action_digit_buttons[d]
+			var lbl_s = btn.get_node_or_null("VBoxLabels/LblSub") as Label
 			if is_full:
-				btn.text = "%s\n✓" % _fa_num(d)
+				if is_instance_valid(lbl_s):
+					lbl_s.text = "✓"
+					lbl_s.add_theme_color_override("font_color", Color(0.40, 1.0, 0.60))
 				btn.add_theme_stylebox_override("normal", _digit_completed_style)
 			elif d == selected_digit:
-				btn.text = "%s\n%s/۹" % [_fa_num(d), _fa_num(cnt)]
+				if is_instance_valid(lbl_s):
+					lbl_s.text = "%s/۹" % _fa_num(cnt)
+					lbl_s.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
 				btn.add_theme_stylebox_override("normal", _digit_selected_style)
 			else:
-				btn.text = "%s\n%s/۹" % [_fa_num(d), _fa_num(cnt)]
+				if is_instance_valid(lbl_s):
+					lbl_s.text = "%s/۹" % _fa_num(cnt)
+					lbl_s.add_theme_color_override("font_color", Color(0.85, 0.82, 0.75, 0.88))
 				var normal_sb = StyleBoxFlat.new()
 				normal_sb.bg_color = Color(0.12, 0.09, 0.07, 0.94)
 				normal_sb.border_color = Color(0.84, 0.68, 0.35, 0.65)

@@ -233,9 +233,9 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 
 		var is_me: bool = (item_uid == my_uid and not my_uid.is_empty() and lb_type != "clans")
 
-		# --- Enhanced Scannable Outer Card (92px tall) ---
+		# --- Enhanced Scannable Outer Card (Taller height +2px fonts) ---
 		var card: Button = Button.new()
-		card.custom_minimum_size = Vector2(0, 92)
+		card.custom_minimum_size = Vector2(0, 110)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.flat = false
 		card.focus_mode = Control.FOCUS_NONE
@@ -272,13 +272,13 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 
 		# 2. Avatar / Clan Emblem Plaque (Immediately to the left of Rank)
 		var av_frame: PanelContainer = PanelContainer.new()
-		av_frame.custom_minimum_size = Vector2(52, 52)
+		av_frame.custom_minimum_size = Vector2(58, 58)
 		av_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		av_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		av_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 		var avatar: TextureRect = TextureRect.new()
-		avatar.custom_minimum_size = Vector2(44, 44)
+		avatar.custom_minimum_size = Vector2(50, 50)
 		avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -311,7 +311,7 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 		name_lbl.clip_text = true
 		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		name_lbl.add_theme_font_size_override("font_size", 22)
+		name_lbl.add_theme_font_size_override("font_size", 24)
 		name_lbl.add_theme_color_override("font_color", Color("#FFF7E0") if not is_me else Color("#FFD86B"))
 		name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
 		name_lbl.add_theme_constant_override("shadow_offset_y", 2)
@@ -337,7 +337,7 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 		sub_lbl.clip_text = true
 		sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		sub_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		sub_lbl.add_theme_font_size_override("font_size", 16)
+		sub_lbl.add_theme_font_size_override("font_size", 18)
 		sub_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 		sub_lbl.add_theme_constant_override("shadow_offset_y", 1)
 		sub_lbl.add_theme_constant_override("shadow_outline_size", 1)
@@ -379,7 +379,7 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 
 func _build_rank_badge(rank: int, highlight: bool = false) -> PanelContainer:
 	var rank_frame: PanelContainer = PanelContainer.new()
-	rank_frame.custom_minimum_size = Vector2(44, 44)
+	rank_frame.custom_minimum_size = Vector2(48, 48)
 	rank_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rank_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -412,20 +412,20 @@ func _build_rank_badge(rank: int, highlight: bool = false) -> PanelContainer:
 
 	if rank == 1:
 		rank_lbl.text = "🥇"
-		rank_lbl.add_theme_font_size_override("font_size", 24)
+		rank_lbl.add_theme_font_size_override("font_size", 26)
 	elif rank == 2:
 		rank_lbl.text = "🥈"
-		rank_lbl.add_theme_font_size_override("font_size", 24)
+		rank_lbl.add_theme_font_size_override("font_size", 26)
 	elif rank == 3:
 		rank_lbl.text = "🥉"
-		rank_lbl.add_theme_font_size_override("font_size", 24)
+		rank_lbl.add_theme_font_size_override("font_size", 26)
 	elif rank > 0:
 		rank_lbl.text = GameManager.to_fa_num(int(rank))
-		rank_lbl.add_theme_font_size_override("font_size", 21)
+		rank_lbl.add_theme_font_size_override("font_size", 23)
 		rank_lbl.add_theme_color_override("font_color", Color("#FFD86B") if highlight else Color("#EFE2CB"))
 	else:
 		rank_lbl.text = "—"
-		rank_lbl.add_theme_font_size_override("font_size", 20)
+		rank_lbl.add_theme_font_size_override("font_size", 22)
 		rank_lbl.add_theme_color_override("font_color", Color("#CBB89D"))
 
 	rank_frame.add_child(rank_lbl)
@@ -441,7 +441,7 @@ func _build_metric_box(metric_val: int, icon_tex: Texture2D, show_dash: bool = f
 
 	var ico: TextureRect = TextureRect.new()
 	ico.texture = icon_tex
-	ico.custom_minimum_size = Vector2(28, 28)
+	ico.custom_minimum_size = Vector2(30, 30)
 	ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	ico.modulate = Color(1.0, 0.84, 0.22, 1.0) # Golden tone for left icon
@@ -453,7 +453,7 @@ func _build_metric_box(metric_val: int, icon_tex: Texture2D, show_dash: bool = f
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-	val_lbl.add_theme_font_size_override("font_size", 25)
+	val_lbl.add_theme_font_size_override("font_size", 27)
 	val_lbl.add_theme_color_override("font_color", Color("#FFD86B"))
 	val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
 	val_lbl.add_theme_constant_override("shadow_offset_y", 2)
