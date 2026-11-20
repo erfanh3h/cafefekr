@@ -1,81 +1,219 @@
-[gd_scene load_steps=10 format=3 uid="uid://ba61w4y3qevpl"]
+[gd_scene load_steps=20 format=3 uid="uid://ba61w4y3qevpl"]
 
 [ext_resource type="Script" path="res://scenes/ui/auth/login_dialog.gd" id="1_login_script"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="3_button_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="2_button_tex"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="5_close_tex"]
+[ext_resource type="Texture2D" path="res://assets/icons/General/logo_transparent.png" id="6_logo_tex"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
-texture = ExtResource("2_board_tex")
-texture_margin_left = 60.0
-texture_margin_top = 60.0
-texture_margin_right = 60.0
-texture_margin_bottom = 60.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.11, 0.07, 0.04, 0.985)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.88, 0.7, 0.32, 0.94)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0, 0, 0.65)
+shadow_size = 16
+shadow_offset = Vector2(0, 8)
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
-texture = ExtResource("3_button_tex")
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_crest"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.17, 0.11, 0.06, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.94, 0.76, 0.34, 0.92)
+corner_radius_top_left = 44
+corner_radius_top_right = 44
+corner_radius_bottom_right = 44
+corner_radius_bottom_left = 44
+shadow_color = Color(0.95, 0.76, 0.3, 0.18)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_form_card"]
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+bg_color = Color(0.15, 0.09, 0.05, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.62, 0.47, 0.25, 0.76)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input"]
-content_margin_left = 18.0
+content_margin_left = 16.0
 content_margin_top = 12.0
-content_margin_right = 18.0
+content_margin_right = 16.0
 content_margin_bottom = 12.0
-bg_color = Color(0.12, 0.08, 0.05, 0.96)
+bg_color = Color(0.08, 0.05, 0.03, 0.96)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.85, 0.68, 0.32, 0.9)
+border_color = Color(0.58, 0.44, 0.24, 0.86)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
-shadow_color = Color(0, 0, 0, 0.4)
-shadow_size = 4
-shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input_focus"]
-content_margin_left = 18.0
+content_margin_left = 16.0
 content_margin_top = 12.0
-content_margin_right = 18.0
+content_margin_right = 16.0
 content_margin_bottom = 12.0
-bg_color = Color(0.14, 0.09, 0.06, 0.98)
+bg_color = Color(0.11, 0.07, 0.04, 0.98)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.88, 0.45, 1)
+border_color = Color(1, 0.85, 0.38, 1)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
-shadow_color = Color(1, 0.82, 0.3, 0.3)
-shadow_size = 8
-shadow_offset = Vector2(0, 2)
+shadow_color = Color(1, 0.82, 0.3, 0.22)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_otp_hidden"]
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_otp_slot"]
+bg_color = Color(0.08, 0.05, 0.03, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.56, 0.43, 0.24, 0.84)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_phone_pill"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.17, 0.11, 0.06, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.74, 0.57, 0.28, 0.8)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip_btn"]
+content_margin_left = 12.0
+content_margin_top = 5.0
+content_margin_right = 12.0
+content_margin_bottom = 5.0
+bg_color = Color(0.24, 0.16, 0.08, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.86, 0.68, 0.32, 0.86)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resend_btn"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.16, 0.1, 0.06, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.43, 0.25, 0.65)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status_banner"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.24, 0.1, 0.09, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.86, 0.35, 0.32, 0.85)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_step_pill"]
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+bg_color = Color(0.17, 0.11, 0.06, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.52, 0.4, 0.22, 0.72)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
+texture = ExtResource("2_button_tex")
 
 [node name="LoginDialog" type="PanelContainer"]
-custom_minimum_size = Vector2(640, 560)
+custom_minimum_size = Vector2(616, 0)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -320.0
-offset_top = -280.0
-offset_right = 320.0
-offset_bottom = 280.0
+offset_left = -308.0
+offset_top = -270.0
+offset_right = 308.0
+offset_bottom = 270.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_board")
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
 script = ExtResource("1_login_script")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
@@ -87,65 +225,186 @@ alignment = 1
 
 [node name="BtnCloseTop" type="TextureButton" parent="Margin/VBox/TopRow"]
 visible = false
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 texture_normal = ExtResource("5_close_tex")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="LblTitle" type="Label" parent="Margin/VBox/TopRow"]
+[node name="BrandCenter" type="VBoxContainer" parent="Margin/VBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="CrestCircle" type="PanelContainer" parent="Margin/VBox/TopRow/BrandCenter"]
+custom_minimum_size = Vector2(82, 82)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_crest")
+
+[node name="LogoIcon" type="TextureRect" parent="Margin/VBox/TopRow/BrandCenter/CrestCircle"]
+modulate = Color(1, 0.92, 0.72, 1)
+layout_mode = 2
+texture = ExtResource("6_logo_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LblTitle" type="Label" parent="Margin/VBox/TopRow/BrandCenter"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.93, 0.74, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("3_font_hekayat")
 theme_override_font_sizes/font_size = 30
-text = "ورود به کافه فکر"
+text = "به کافه فکر خوش آمدید"
 horizontal_alignment = 1
+
+[node name="LblTagline" type="Label" parent="Margin/VBox/TopRow/BrandCenter"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.84, 0.77, 0.65, 0.94)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 15
+text = "با شماره موبایل وارد شوید تا امتیاز و پیشرفت شما همیشه محفوظ بماند"
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Spacer" type="Control" parent="Margin/VBox/TopRow"]
 visible = false
-custom_minimum_size = Vector2(48, 48)
+custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
+
+[node name="StepperRow" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="StepPill3" type="PanelContainer" parent="Margin/VBox/StepperRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_step_pill")
+
+[node name="LblStep3" type="Label" parent="Margin/VBox/StepperRow/StepPill3"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.65, 0.54, 0.9)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 14
+text = "۳. نام کاربری"
+horizontal_alignment = 1
+
+[node name="Connector2" type="ColorRect" parent="Margin/VBox/StepperRow"]
+custom_minimum_size = Vector2(16, 2)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.55, 0.43, 0.25, 0.5)
+
+[node name="StepPill2" type="PanelContainer" parent="Margin/VBox/StepperRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_step_pill")
+
+[node name="LblStep2" type="Label" parent="Margin/VBox/StepperRow/StepPill2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.65, 0.54, 0.9)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 14
+text = "۲. کد تأیید"
+horizontal_alignment = 1
+
+[node name="Connector1" type="ColorRect" parent="Margin/VBox/StepperRow"]
+custom_minimum_size = Vector2(16, 2)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.55, 0.43, 0.25, 0.5)
+
+[node name="StepPill1" type="PanelContainer" parent="Margin/VBox/StepperRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_step_pill")
+
+[node name="LblStep1" type="Label" parent="Margin/VBox/StepperRow/StepPill1"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.46, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 14
+text = "۱. موبایل"
+horizontal_alignment = 1
+
+[node name="HeaderDivider" type="ColorRect" parent="Margin/VBox"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.86, 0.68, 0.32, 0.3)
 
 [node name="Step1_Phone" type="VBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="LblSubtitle" type="Label" parent="Margin/VBox/Step1_Phone"]
+[node name="PhoneCard" type="PanelContainer" parent="Margin/VBox/Step1_Phone"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "شماره موبایل خود را وارد کنید:"
-horizontal_alignment = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_form_card")
 
-[node name="InputPhone" type="LineEdit" parent="Margin/VBox/Step1_Phone"]
-custom_minimum_size = Vector2(0, 64)
+[node name="CardVBox" type="VBoxContainer" parent="Margin/VBox/Step1_Phone/PhoneCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LabelRow" type="HBoxContainer" parent="Margin/VBox/Step1_Phone/PhoneCard/CardVBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="LblPhoneBadge" type="Label" parent="Margin/VBox/Step1_Phone/PhoneCard/CardVBox/LabelRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.7, 0.56, 0.9)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 13
+text = "۱۱ رقم با ۰۹"
+
+[node name="LblSubtitle" type="Label" parent="Margin/VBox/Step1_Phone/PhoneCard/CardVBox/LabelRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.89, 0.56, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 21
+text = "شماره موبایل"
+horizontal_alignment = 2
+
+[node name="InputPhone" type="LineEdit" parent="Margin/VBox/Step1_Phone/PhoneCard/CardVBox"]
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_colors/font_placeholder_color = Color(0.65, 0.56, 0.44, 0.68)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxFlat_input")
 theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
 placeholder_text = "09xxxxxxxxx"
 alignment = 1
-max_length = 13
+max_length = 14
+virtual_keyboard_type = 4
+
+[node name="LblPhoneHint" type="Label" parent="Margin/VBox/Step1_Phone/PhoneCard/CardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 0.69, 0.57, 0.9)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 13
+text = "کد تأیید ۴ رقمی به صورت رایگان برای شما پیامک می‌شود."
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="BtnSendCode" type="Button" parent="Margin/VBox/Step1_Phone"]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 25
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
-text = "دریافت کد تأیید (SMS)"
+text = "دریافت کد تأیید"
 
 [node name="OrSeparator" type="HBoxContainer" parent="Margin/VBox/Step1_Phone"]
 visible = false
@@ -154,7 +413,7 @@ theme_override_constants/separation = 12
 alignment = 1
 
 [node name="LineLeft" type="ColorRect" parent="Margin/VBox/Step1_Phone/OrSeparator"]
-custom_minimum_size = Vector2(120, 2)
+custom_minimum_size = Vector2(100, 2)
 layout_mode = 2
 size_flags_vertical = 4
 color = Color(0.6, 0.45, 0.3, 0.6)
@@ -162,27 +421,27 @@ color = Color(0.6, 0.45, 0.3, 0.6)
 [node name="LblOr" type="Label" parent="Margin/VBox/Step1_Phone/OrSeparator"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.75, 0.55, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 20
 text = "یا"
 horizontal_alignment = 1
 
 [node name="LineRight" type="ColorRect" parent="Margin/VBox/Step1_Phone/OrSeparator"]
-custom_minimum_size = Vector2(120, 2)
+custom_minimum_size = Vector2(100, 2)
 layout_mode = 2
 size_flags_vertical = 4
 color = Color(0.6, 0.45, 0.3, 0.6)
 
 [node name="BtnGuestLogin" type="Button" parent="Margin/VBox/Step1_Phone"]
 visible = false
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.1, 0.18, 0.28, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ورود به عنوان مهمان"
 
@@ -191,94 +450,267 @@ visible = false
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="LblSubtitle" type="Label" parent="Margin/VBox/Step2_Code"]
+[node name="PhoneSummaryPill" type="PanelContainer" parent="Margin/VBox/Step2_Code"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "کد تأیید پیامک شده را وارد کنید:"
-horizontal_alignment = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_phone_pill")
 
-[node name="InputCode" type="LineEdit" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(0, 64)
+[node name="PillHBox" type="HBoxContainer" parent="Margin/VBox/Step2_Code/PhoneSummaryPill"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="BtnBackPhone" type="Button" parent="Margin/VBox/Step2_Code/PhoneSummaryPill/PillHBox"]
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.88, 0.48, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_chip_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_chip_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_chip_btn")
+text = "ویرایش شماره"
+
+[node name="LblSubtitle" type="Label" parent="Margin/VBox/Step2_Code/PhoneSummaryPill/PillHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 32
-theme_override_styles/normal = SubResource("StyleBoxFlat_input")
-theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
-placeholder_text = "کد ۴ رقمی"
+theme_override_colors/font_color = Color(0.98, 0.92, 0.78, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 15
+text = "کد ارسال شده به ۰۹۱۲۳۴۵۶۷۸۹"
+horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="OtpCard" type="PanelContainer" parent="Margin/VBox/Step2_Code"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_form_card")
+
+[node name="OtpVBox" type="VBoxContainer" parent="Margin/VBox/Step2_Code/OtpCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LblOtpPrompt" type="Label" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.89, 0.56, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 20
+text = "کد تأیید ۴ رقمی را وارد کنید"
+horizontal_alignment = 1
+
+[node name="OtpStage" type="Control" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox"]
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+
+[node name="OtpSlotsRow" type="HBoxContainer" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Slot0" type="PanelContainer" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage/OtpSlotsRow"]
+custom_minimum_size = Vector2(68, 72)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_otp_slot")
+
+[node name="Digit" type="Label" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage/OtpSlotsRow/Slot0"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.86, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 34
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot1" type="PanelContainer" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage/OtpSlotsRow"]
+custom_minimum_size = Vector2(68, 72)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_otp_slot")
+
+[node name="Digit" type="Label" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage/OtpSlotsRow/Slot1"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.86, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 34
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot2" type="PanelContainer" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage/OtpSlotsRow"]
+custom_minimum_size = Vector2(68, 72)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_otp_slot")
+
+[node name="Digit" type="Label" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage/OtpSlotsRow/Slot2"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.86, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 34
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot3" type="PanelContainer" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage/OtpSlotsRow"]
+custom_minimum_size = Vector2(68, 72)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_otp_slot")
+
+[node name="Digit" type="Label" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage/OtpSlotsRow/Slot3"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.86, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 34
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InputCode" type="LineEdit" parent="Margin/VBox/Step2_Code/OtpCard/OtpVBox/OtpStage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0, 0, 0, 0)
+theme_override_colors/font_selected_color = Color(0, 0, 0, 0)
+theme_override_colors/caret_color = Color(0, 0, 0, 0)
+theme_override_colors/selection_color = Color(0, 0, 0, 0)
+theme_override_styles/normal = SubResource("StyleBoxFlat_otp_hidden")
+theme_override_styles/focus = SubResource("StyleBoxFlat_otp_hidden")
 alignment = 1
 max_length = 4
+virtual_keyboard_type = 2
 
 [node name="BtnVerifyCode" type="Button" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 25
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "تأیید و ورود به بازی"
 
-[node name="BtnBackPhone" type="Button" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(260, 60)
+[node name="BtnResendCode" type="Button" parent="Margin/VBox/Step2_Code"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.12, 0.12, 0.12, 0.9)
-theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
-text = "ویرایش شماره موبایل"
+focus_mode = 0
+theme_override_colors/font_color = Color(0.95, 0.84, 0.52, 1)
+theme_override_colors/font_disabled_color = Color(0.72, 0.65, 0.54, 0.85)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_resend_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_resend_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_resend_btn")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_resend_btn")
+text = "ارسال مجدد کد تأیید"
 
 [node name="Step3_Username" type="VBoxContainer" parent="Margin/VBox"]
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="LblSubtitle" type="Label" parent="Margin/VBox/Step3_Username"]
+[node name="UsernameCard" type="PanelContainer" parent="Margin/VBox/Step3_Username"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
-text = "لطفاً نام کاربری خود را انتخاب کنید:"
-horizontal_alignment = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_form_card")
 
-[node name="InputUsername" type="LineEdit" parent="Margin/VBox/Step3_Username"]
-custom_minimum_size = Vector2(0, 64)
+[node name="CardVBox" type="VBoxContainer" parent="Margin/VBox/Step3_Username/UsernameCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LabelRow" type="HBoxContainer" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="LblCharCount" type="Label" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox/LabelRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 0.68, 0.56, 0.9)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 13
+text = "۰ / ۳۰"
+
+[node name="LblSubtitle" type="Label" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox/LabelRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.89, 0.56, 1)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 21
+text = "نام کاربری شما"
+horizontal_alignment = 2
+
+[node name="InputUsername" type="LineEdit" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox"]
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_colors/font_placeholder_color = Color(0.65, 0.56, 0.44, 0.68)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxFlat_input")
 theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
-placeholder_text = "نام کاربری (حداقل ۳ حرف)"
+placeholder_text = "مثلاً: آرش یا استاد شطرنج"
 alignment = 1
 max_length = 30
 
-[node name="LblRepSubtitle" type="Label" parent="Margin/VBox/Step3_Username"]
+[node name="LblUsernameHint" type="Label" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.78, 0.65, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
-text = "کد معرف (اختیاری):"
+theme_override_colors/font_color = Color(0.78, 0.71, 0.58, 0.92)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 13
+text = "حداقل ۳ کاراکتر — این نام در مسابقات و جدول رده‌بندی نمایش داده می‌شود."
 horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="InputRepId" type="LineEdit" parent="Margin/VBox/Step3_Username"]
-custom_minimum_size = Vector2(0, 60)
+[node name="RefDivider" type="ColorRect" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.78, 0.62, 0.3, 0.22)
+
+[node name="BtnToggleReferral" type="Button" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_colors/font_color = Color(0.95, 0.84, 0.52, 0.96)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_chip_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_chip_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_chip_btn")
+text = "کد معرف دارید؟ (اختیاری) ▾"
+
+[node name="ReferralBox" type="VBoxContainer" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblRepSubtitle" type="Label" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox/ReferralBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.78, 0.65, 0.95)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 14
+text = "کد معرف ۶ رقمی دوستتان را وارد کنید:"
+horizontal_alignment = 2
+
+[node name="InputRepId" type="LineEdit" parent="Margin/VBox/Step3_Username/UsernameCard/CardVBox/ReferralBox"]
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_colors/font_placeholder_color = Color(0.65, 0.56, 0.44, 0.68)
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_input")
 theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
 placeholder_text = "کد معرف ۶ رقمی"
@@ -286,21 +718,26 @@ alignment = 1
 max_length = 6
 
 [node name="BtnSubmitUsername" type="Button" parent="Margin/VBox/Step3_Username"]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = ExtResource("3_font_hekayat")
+theme_override_font_sizes/font_size = 25
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ثبت نام و شروع بازی"
 
-[node name="LblStatus" type="Label" parent="Margin/VBox"]
-custom_minimum_size = Vector2(0, 40)
+[node name="StatusBanner" type="PanelContainer" parent="Margin/VBox"]
+visible = false
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_styles/panel = SubResource("StyleBoxFlat_status_banner")
+
+[node name="LblStatus" type="Label" parent="Margin/VBox/StatusBanner"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.72, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 3
