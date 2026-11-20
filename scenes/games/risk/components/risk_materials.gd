@@ -121,21 +121,29 @@ static func create_palette() -> Dictionary:
 	parchment.roughness = 0.56
 	mats["parchment"] = parchment
 
-	# Sea-Lane Bridges (Idle: thin, subtle & secondary; Active: highlighted only during interaction)
+	# Sea-Lane Bridges (Idle: ultra-subtle inlay; Active: luminous golden/crimson route)
 	var bridge_idle = StandardMaterial3D.new()
-	bridge_idle.albedo_color = Color(0.62, 0.50, 0.26, 0.36)
+	bridge_idle.albedo_color = Color(0.62, 0.50, 0.26, 0.20)
 	bridge_idle.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	bridge_idle.metallic = 0.45
-	bridge_idle.roughness = 0.48
+	bridge_idle.metallic = 0.42
+	bridge_idle.roughness = 0.52
 	mats["bridge_idle"] = bridge_idle
 
 	var bridge_active = StandardMaterial3D.new()
-	bridge_active.albedo_color = Color(0.96, 0.78, 0.28, 0.92)
+	bridge_active.albedo_color = Color(0.98, 0.80, 0.28, 0.94)
 	bridge_active.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	bridge_active.emission_enabled = true
-	bridge_active.emission = Color(0.92, 0.68, 0.20)
-	bridge_active.emission_energy_multiplier = 1.05
+	bridge_active.emission = Color(0.94, 0.72, 0.20)
+	bridge_active.emission_energy_multiplier = 1.15
 	mats["bridge_active"] = bridge_active
+
+	var bridge_attack = StandardMaterial3D.new()
+	bridge_attack.albedo_color = Color(0.96, 0.30, 0.24, 0.96)
+	bridge_attack.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	bridge_attack.emission_enabled = true
+	bridge_attack.emission = Color(0.92, 0.22, 0.18)
+	bridge_attack.emission_energy_multiplier = 1.35
+	mats["bridge_attack"] = bridge_attack
 
 	# 3D Battle Dice Materials (High-Contrast Attacker Ruby-Crimson & Defender Royal Cobalt-Obsidian)
 	var die_attacker = StandardMaterial3D.new()
@@ -211,19 +219,29 @@ static func create_palette() -> Dictionary:
 	return mats
 
 static func get_continent_material(c_id: String, is_highlighted: bool = false) -> StandardMaterial3D:
-	var key = "%s_%s" % [c_id, "hi" if is_highlighted else "lo"]
+	return get_continent_material_state(c_id, "highlighted" if is_highlighted else "normal")
+
+static func get_continent_material_state(c_id: String, visual_state: String = "normal") -> StandardMaterial3D:
+	var key: String = "%s_%s" % [c_id, visual_state]
 	if _continent_mat_cache.has(key) and is_instance_valid(_continent_mat_cache[key]):
 		return _continent_mat_cache[key]
 	var base_col: Color = CONTINENT_COLORS.get(c_id, Color(0.26, 0.48, 0.36))
-	var col: Color = base_col.lightened(0.12) if is_highlighted else base_col
-	var mat = StandardMaterial3D.new()
-	mat.albedo_color = col
-	mat.roughness = 0.40 if is_highlighted else 0.48
-	mat.metallic = 0.12
-	if is_highlighted:
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
+	if visual_state == "highlighted":
+		mat.albedo_color = base_col.lightened(0.14)
+		mat.roughness = 0.38
+		mat.metallic = 0.14
 		mat.emission_enabled = true
 		mat.emission = base_col
-		mat.emission_energy_multiplier = 0.22
+		mat.emission_energy_multiplier = 0.24
+	elif visual_state == "dimmed":
+		mat.albedo_color = base_col.darkened(0.46).lerp(Color(0.12, 0.15, 0.14), 0.38)
+		mat.roughness = 0.68
+		mat.metallic = 0.06
+	else:
+		mat.albedo_color = base_col
+		mat.roughness = 0.48
+		mat.metallic = 0.12
 	_continent_mat_cache[key] = mat
 	return mat
 
