@@ -197,15 +197,20 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.custom_minimum_size = Vector2(210.0, 58.0)
 	_action_roll_btn.focus_mode = Control.FOCUS_NONE
 	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	_action_roll_btn.text = "🎲 تاس بریز (۳)"
+	_action_roll_btn.text = "تاس بریز (۳)"
 	_action_roll_btn.clip_text = false
 	_action_roll_btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	if _game_font:
 		_action_roll_btn.add_theme_font_override("font", _game_font)
 	_action_roll_btn.add_theme_font_size_override("font_size", 25)
 	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
-	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
-	_action_roll_btn.add_theme_constant_override("outline_size", 3)
+	_action_roll_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	_action_roll_btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72))
+	_action_roll_btn.add_theme_color_override("font_focus_color", Color(1.0, 0.98, 0.92))
+	_action_roll_btn.add_theme_color_override("font_hover_pressed_color", Color(1.0, 0.96, 0.78))
+	_action_roll_btn.add_theme_color_override("font_disabled_color", Color(0.76, 0.72, 0.66, 0.85))
+	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.05, 0.025, 0.01, 0.78))
+	_action_roll_btn.add_theme_constant_override("outline_size", 2)
 
 	var roll_normal = StyleBoxFlat.new()
 	roll_normal.bg_color = Color(0.12, 0.38, 0.72, 0.96)
@@ -239,6 +244,7 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.add_theme_stylebox_override("hover", roll_hover)
 	_action_roll_btn.add_theme_stylebox_override("pressed", roll_pressed)
 	_action_roll_btn.add_theme_stylebox_override("disabled", dis_sb)
+	_action_roll_btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	_action_roll_btn.pressed.connect(_on_roll_button_clicked)
 	hbox.add_child(_action_roll_btn)
 
@@ -249,15 +255,20 @@ func _build_2d_action_dock() -> void:
 	_action_submit_btn.custom_minimum_size = Vector2(230.0, 58.0)
 	_action_submit_btn.focus_mode = Control.FOCUS_NONE
 	_action_submit_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	_action_submit_btn.text = "✅ ثبت امتیاز"
+	_action_submit_btn.text = "ثبت امتیاز"
 	_action_submit_btn.clip_text = false
 	_action_submit_btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	if _game_font:
 		_action_submit_btn.add_theme_font_override("font", _game_font)
 	_action_submit_btn.add_theme_font_size_override("font_size", 24)
 	_action_submit_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
-	_action_submit_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
-	_action_submit_btn.add_theme_constant_override("outline_size", 3)
+	_action_submit_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	_action_submit_btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72))
+	_action_submit_btn.add_theme_color_override("font_focus_color", Color(1.0, 0.98, 0.92))
+	_action_submit_btn.add_theme_color_override("font_hover_pressed_color", Color(1.0, 0.96, 0.78))
+	_action_submit_btn.add_theme_color_override("font_disabled_color", Color(0.76, 0.72, 0.66, 0.85))
+	_action_submit_btn.add_theme_color_override("font_outline_color", Color(0.05, 0.025, 0.01, 0.78))
+	_action_submit_btn.add_theme_constant_override("outline_size", 2)
 
 	var sub_normal = StyleBoxFlat.new()
 	sub_normal.bg_color = Color(0.12, 0.44, 0.24, 0.96)
@@ -281,6 +292,7 @@ func _build_2d_action_dock() -> void:
 	_action_submit_btn.add_theme_stylebox_override("hover", sub_hover)
 	_action_submit_btn.add_theme_stylebox_override("pressed", sub_pressed)
 	_action_submit_btn.add_theme_stylebox_override("disabled", dis_sb)
+	_action_submit_btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	_action_submit_btn.pressed.connect(_on_submit_button_clicked)
 	hbox.add_child(_action_submit_btn)
 
@@ -1424,9 +1436,9 @@ func _refresh_visuals() -> void:
 			# Roll button
 			_action_roll_btn.disabled = not can_roll
 			if remaining_rolls > 0:
-				_action_roll_btn.text = "🎲 تاس بریز (%s)" % _fa_digits(remaining_rolls)
+				_action_roll_btn.text = "تاس بریز (%s)" % _fa_digits(remaining_rolls)
 			else:
-				_action_roll_btn.text = "🎲 تاسی نمانده (۰)"
+				_action_roll_btn.text = "تاسی نمانده (۰)"
 
 			# Submit button
 			var my_arr = p1_board if my_player_index == 1 else p2_board
@@ -1434,11 +1446,11 @@ func _refresh_visuals() -> void:
 			var eq_pts = int(my_arr[equipped_index]["calc"]) if (equipped_index >= 0 and equipped_index < my_arr.size()) else 0
 			_action_submit_btn.disabled = not can_act or is_round_played
 			if is_round_played:
-				_action_submit_btn.text = "⏳ منتظر حرکت حریف..."
+				_action_submit_btn.text = "منتظر حرکت حریف..."
 			elif eq_name != "":
-				_action_submit_btn.text = "✅ ثبت %s (%s)" % [eq_name, _fa_digits(eq_pts)]
+				_action_submit_btn.text = "ثبت %s (%s)" % [eq_name, _fa_digits(eq_pts)]
 			else:
-				_action_submit_btn.text = "✅ ثبت امتیاز"
+				_action_submit_btn.text = "ثبت امتیاز"
 
 	if is_instance_valid(_status_lbl_3d):
 		if is_round_played:

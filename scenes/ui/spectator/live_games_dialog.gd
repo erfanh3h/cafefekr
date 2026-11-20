@@ -1,14 +1,19 @@
 class_name LiveGamesDialog
 extends Control
 
-## Cafe Fekr — Centered Live Spectator Browser Dialog
+## Cafe Fekr — Refined Live Spectator Browser Dialog
 ## Fetches ongoing active matches from both Socket.IO backend RAM and REST API,
-## and renders a centered antique Cafe Fekr card browser with clean hierarchy.
+## and renders a double-beveled antique walnut & gold parlor browser with clean hierarchy.
 
 signal closed()
 
+const TEX_REFRESH: Texture2D = preload("res://assets/images/frames/refresh.png")
+
 var _dim_overlay: ColorRect = null
 var main_panel: PanelContainer = null
+var _inner_bezel: PanelContainer = null
+var _lbl_live_sub: Label = null
+var _live_dot: Panel = null
 var _scope_row: HBoxContainer = null
 var _mode_row: HBoxContainer = null
 var _game_filter_hbox: HBoxContainer = null
@@ -103,6 +108,7 @@ func refresh() -> void:
 	var req_token: int = _request_token
 	_merged_games.clear()
 	_is_loading = true
+	_update_live_header_status(-1)
 	_show_loading_state()
 
 	# Source 1: Direct Socket.IO /social query (live RAM games in kafehfekrbackend)
@@ -167,7 +173,7 @@ func _ingest_games_array(arr: Array) -> void:
 	var target_mode_norm: String = _normalize_mode(current_game_mode)
 	for item in arr:
 		if typeof(item) == TYPE_DICTIONARY:
-			var d: Dictionary = item
+			var d: Dictionary = item as Dictionary
 			var gid: String = str(d.get("game_id", ""))
 			if gid.is_empty():
 				continue
@@ -182,7 +188,7 @@ func _ingest_games_array(arr: Array) -> void:
 			if not _merged_games.has(gid):
 				_merged_games[gid] = d
 			else:
-				var existing: Dictionary = _merged_games[gid]
+				var existing: Dictionary = _merged_games[gid] as Dictionary
 				if int(d.get("spectator_count", 0)) > int(existing.get("spectator_count", 0)):
 					existing["spectator_count"] = int(d.get("spectator_count", 0))
 				if str(existing.get("game_score_type", "")).is_empty() and not str(d.get("game_score_type", "")).is_empty():
@@ -192,6 +198,159 @@ func _ingest_games_array(arr: Array) -> void:
 				if ex_players.is_empty() and not new_players.is_empty():
 					existing["players"] = new_players
 				_merged_games[gid] = existing
+
+
+func _make_parlor_outer_frame_style() -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.125, 0.075, 0.042, 0.99)
+	sb.border_color = Color(0.89, 0.70, 0.29, 0.98)
+	sb.border_width_left = 3
+	sb.border_width_right = 3
+	sb.border_width_top = 4
+	sb.border_width_bottom = 4
+	sb.set_corner_radius_all(26)
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
+	sb.shadow_size = 24
+	sb.shadow_offset = Vector2(0, 10)
+	sb.content_margin_left = 7.0
+	sb.content_margin_right = 7.0
+	sb.content_margin_top = 7.0
+	sb.content_margin_bottom = 7.0
+	return sb
+
+
+func _make_parlor_inner_inlay_style() -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.082, 0.048, 0.027, 0.98)
+	sb.border_color = Color(0.78, 0.59, 0.24, 0.44)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(20)
+	sb.content_margin_left = 14.0
+	sb.content_margin_right = 14.0
+	sb.content_margin_top = 14.0
+	sb.content_margin_bottom = 14.0
+	return sb
+
+
+func _make_header_crown_style() -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.165, 0.100, 0.056, 0.97)
+	sb.border_color = Color(0.85, 0.67, 0.28, 0.62)
+	sb.border_width_left = 1
+	sb.border_width_right = 1
+	sb.border_width_top = 1
+	sb.border_width_bottom = 2
+	sb.corner_radius_top_left = 16
+	sb.corner_radius_top_right = 16
+	sb.corner_radius_bottom_left = 14
+	sb.corner_radius_bottom_right = 14
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.34)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2(0, 3)
+	sb.content_margin_left = 12.0
+	sb.content_margin_right = 12.0
+	sb.content_margin_top = 10.0
+	sb.content_margin_bottom = 10.0
+	return sb
+
+
+func _make_medallion_wrap() -> PanelContainer:
+	var wrap: PanelContainer = PanelContainer.new()
+	wrap.custom_minimum_size = Vector2(46, 46)
+	wrap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.11, 0.065, 0.036, 0.95)
+	sb.border_color = Color(0.82, 0.64, 0.28, 0.72)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(23)
+	sb.content_margin_left = 4.0
+	sb.content_margin_right = 4.0
+	sb.content_margin_top = 4.0
+	sb.content_margin_bottom = 4.0
+	wrap.add_theme_stylebox_override("panel", sb)
+	return wrap
+
+
+func _make_track_style(corner: int = 14, pad_x: float = 6.0, pad_y: float = 6.0) -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.036, 0.020, 0.94)
+	sb.border_color = Color(0.50, 0.36, 0.18, 0.64)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(corner)
+	sb.content_margin_left = pad_x
+	sb.content_margin_right = pad_x
+	sb.content_margin_top = pad_y
+	sb.content_margin_bottom = pad_y
+	return sb
+
+
+func _style_segment_button(
+	btn: Button,
+	is_active: bool,
+	bg_active: Color,
+	border_active: Color,
+	text_active: Color,
+	font_res: Font,
+	font_size: int
+) -> void:
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.add_theme_font_override("font", font_res)
+	btn.add_theme_font_size_override("font_size", font_size)
+
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.set_corner_radius_all(10)
+	sb.content_margin_left = 8.0
+	sb.content_margin_right = 8.0
+	sb.content_margin_top = 6.0
+	sb.content_margin_bottom = 6.0
+
+	var txt_col: Color = Color(0.84, 0.78, 0.68, 0.90)
+	if is_active:
+		sb.bg_color = bg_active
+		sb.border_color = border_active
+		sb.set_border_width_all(2)
+		txt_col = text_active
+	else:
+		sb.bg_color = Color(0.115, 0.072, 0.042, 0.88)
+		sb.border_color = Color(0.38, 0.28, 0.16, 0.45)
+		sb.set_border_width_all(1)
+
+	var sb_hover: StyleBoxFlat = sb.duplicate() as StyleBoxFlat
+	sb_hover.bg_color = sb.bg_color.lightened(0.08)
+
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb_hover)
+	btn.add_theme_stylebox_override("pressed", sb)
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	btn.add_theme_stylebox_override("disabled", sb)
+
+	btn.add_theme_color_override("font_color", txt_col)
+	btn.add_theme_color_override("font_hover_color", text_active if is_active else Color(1.0, 0.98, 0.92, 1.0))
+	btn.add_theme_color_override("font_pressed_color", txt_col)
+	btn.add_theme_color_override("font_focus_color", txt_col)
+	btn.add_theme_color_override("font_hover_pressed_color", txt_col)
+	btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.50, 0.44, 0.6))
+
+
+func _update_live_header_status(count: int) -> void:
+	if not is_instance_valid(_lbl_live_sub) or not is_instance_valid(_live_dot):
+		return
+	var dot_sb: StyleBoxFlat = StyleBoxFlat.new()
+	dot_sb.set_corner_radius_all(5)
+	if count < 0:
+		_lbl_live_sub.text = "در حال دریافت مسابقات زنده..."
+		_lbl_live_sub.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
+		dot_sb.bg_color = CafeSocialTheme.COL_GOLD_BRIGHT
+	elif count == 0:
+		_lbl_live_sub.text = "مسابقه‌ای با این فیلتر فعال نیست"
+		_lbl_live_sub.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
+		dot_sb.bg_color = Color(0.58, 0.52, 0.46, 0.85)
+	else:
+		_lbl_live_sub.text = "%s مسابقه زنده در حال برگزاری" % GameManager.to_fa_num(count)
+		_lbl_live_sub.add_theme_color_override("font_color", CafeSocialTheme.COL_EMERALD_TEXT)
+		dot_sb.bg_color = Color(0.32, 0.92, 0.52, 1.0)
+	_live_dot.add_theme_stylebox_override("panel", dot_sb)
 
 
 func _build_ui() -> void:
@@ -206,7 +365,7 @@ func _build_ui() -> void:
 	_dim_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_dim_overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_dim_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
-	_dim_overlay.color = Color(0.03, 0.015, 0.01, 0.80)
+	_dim_overlay.color = Color(0.02, 0.012, 0.008, 0.84)
 	_dim_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dim_overlay.gui_input.connect(func(ev: InputEvent):
 		if ev is InputEventMouseButton and ev.pressed:
@@ -215,51 +374,58 @@ func _build_ui() -> void:
 	)
 	add_child(_dim_overlay)
 
-	# Screen-bounded Margin host so the dialog can NEVER overflow left/right of viewport
-	var screen_margin := MarginContainer.new()
+	# Safe Viewport-Bounded Outer Margin Host
+	var screen_margin: MarginContainer = MarginContainer.new()
 	screen_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	screen_margin.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	screen_margin.grow_vertical = Control.GROW_DIRECTION_BOTH
 	screen_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	screen_margin.add_theme_constant_override("margin_left", 24)
-	screen_margin.add_theme_constant_override("margin_right", 24)
-	screen_margin.add_theme_constant_override("margin_top", 54)
-	screen_margin.add_theme_constant_override("margin_bottom", 54)
+	screen_margin.add_theme_constant_override("margin_left", 20)
+	screen_margin.add_theme_constant_override("margin_right", 20)
+	screen_margin.add_theme_constant_override("margin_top", 34)
+	screen_margin.add_theme_constant_override("margin_bottom", 34)
 	add_child(screen_margin)
 
+	# Double-Beveled Antique Walnut & Gold Parlor Frame
 	main_panel = PanelContainer.new()
 	main_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	main_panel.clip_contents = true
+	main_panel.clip_contents = false
 	main_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	main_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
+	main_panel.add_theme_stylebox_override("panel", _make_parlor_outer_frame_style())
 	screen_margin.add_child(main_panel)
 
-	var inner := MarginContainer.new()
-	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	inner.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	inner.add_theme_constant_override("margin_left", 18)
-	inner.add_theme_constant_override("margin_right", 18)
-	inner.add_theme_constant_override("margin_top", 22)
-	inner.add_theme_constant_override("margin_bottom", 22)
-	main_panel.add_child(inner)
+	_inner_bezel = PanelContainer.new()
+	_inner_bezel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_inner_bezel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_inner_bezel.clip_contents = true
+	_inner_bezel.add_theme_stylebox_override("panel", _make_parlor_inner_inlay_style())
+	main_panel.add_child(_inner_bezel)
 
-	var root := VBoxContainer.new()
+	var root: VBoxContainer = VBoxContainer.new()
 	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_theme_constant_override("separation", 12)
-	inner.add_child(root)
+	root.add_theme_constant_override("separation", 10)
+	_inner_bezel.add_child(root)
 
-	# 1. Header Row (Close left, Ornate Title + Subtitle center, Refresh right)
-	var header := HBoxContainer.new()
+	# 1. Sculpted Parlor Header Crown (Close Medallion + Title/Live Status + Refresh Medallion)
+	var header_crown: PanelContainer = PanelContainer.new()
+	header_crown.add_theme_stylebox_override("panel", _make_header_crown_style())
+	root.add_child(header_crown)
+
+	var header: HBoxContainer = HBoxContainer.new()
 	header.add_theme_constant_override("separation", 10)
 	header.alignment = BoxContainer.ALIGNMENT_CENTER
-	root.add_child(header)
+	header_crown.add_child(header)
 
-	var btn_close := TextureButton.new()
+	var close_wrap: PanelContainer = _make_medallion_wrap()
+	header.add_child(close_wrap)
+
+	var btn_close: TextureButton = TextureButton.new()
 	btn_close.texture_normal = CafeSocialTheme.TEX_CLOSE
-	btn_close.custom_minimum_size = Vector2(48, 48)
-	btn_close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	btn_close.custom_minimum_size = Vector2(36, 36)
+	btn_close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_close.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	btn_close.ignore_texture_size = true
 	btn_close.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn_close.focus_mode = Control.FOCUS_NONE
@@ -269,9 +435,9 @@ func _build_ui() -> void:
 		AudioManager.sfx_button()
 		close()
 	)
-	header.add_child(btn_close)
+	close_wrap.add_child(btn_close)
 
-	var title_box := VBoxContainer.new()
+	var title_box: VBoxContainer = VBoxContainer.new()
 	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	title_box.add_theme_constant_override("separation", 2)
@@ -279,23 +445,43 @@ func _build_ui() -> void:
 
 	title_box.add_child(CafeSocialTheme.make_title(
 		"تماشای زنده بازی‌ها",
-		30,
+		28,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
 	))
-	title_box.add_child(CafeSocialTheme.make_body(
-		"مسابقات در حال برگزاری کافه فکر را به صورت زنده تماشا کنید",
-		18,
+
+	var live_row: HBoxContainer = HBoxContainer.new()
+	live_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	live_row.add_theme_constant_override("separation", 7)
+	title_box.add_child(live_row)
+
+	_lbl_live_sub = CafeSocialTheme.make_body(
+		"مسابقات زنده کافه فکر",
+		15,
 		CafeSocialTheme.COL_MUTED_SAND,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
-	))
+	)
+	live_row.add_child(_lbl_live_sub)
 
-	var btn_ref := TextureButton.new()
-	btn_ref.texture_normal = preload("res://assets/images/frames/refresh.png")
-	btn_ref.custom_minimum_size = Vector2(48, 48)
-	btn_ref.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_live_dot = Panel.new()
+	_live_dot.custom_minimum_size = Vector2(9, 9)
+	_live_dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var init_dot: StyleBoxFlat = StyleBoxFlat.new()
+	init_dot.bg_color = Color(0.32, 0.92, 0.52, 1.0)
+	init_dot.set_corner_radius_all(5)
+	_live_dot.add_theme_stylebox_override("panel", init_dot)
+	live_row.add_child(_live_dot)
+
+	var ref_wrap: PanelContainer = _make_medallion_wrap()
+	header.add_child(ref_wrap)
+
+	var btn_ref: TextureButton = TextureButton.new()
+	btn_ref.texture_normal = TEX_REFRESH
+	btn_ref.custom_minimum_size = Vector2(36, 36)
+	btn_ref.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_ref.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	btn_ref.ignore_texture_size = true
 	btn_ref.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn_ref.focus_mode = Control.FOCUS_NONE
@@ -306,30 +492,37 @@ func _build_ui() -> void:
 		AudioManager.sfx_tap()
 		refresh()
 	)
-	header.add_child(btn_ref)
+	ref_wrap.add_child(btn_ref)
 
-	# 2. Scope Subtab Bar (All | Friends | Clan) - Clean KenneyUI tabs without shadow/well background
-	var scope_well := PanelContainer.new()
-	scope_well.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	# 1b. Ornamental Gold Hairline Divider
+	var divider: ColorRect = ColorRect.new()
+	divider.custom_minimum_size = Vector2(0, 2)
+	divider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	divider.color = Color(0.84, 0.66, 0.28, 0.32)
+	root.add_child(divider)
+
+	# 2. Scope Segmented Bar (All | Friends | Clan)
+	var scope_well: PanelContainer = PanelContainer.new()
+	scope_well.add_theme_stylebox_override("panel", _make_track_style(14, 6.0, 6.0))
 	root.add_child(scope_well)
 
 	_scope_row = HBoxContainer.new()
-	_scope_row.add_theme_constant_override("separation", 10)
+	_scope_row.add_theme_constant_override("separation", 6)
 	scope_well.add_child(_scope_row)
 
 	# 2b. Game Mode Filter Row (All | Rank | MultiRank | ClassicRank | Lobby)
-	var mode_well := PanelContainer.new()
-	mode_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 8.0, 6.0))
+	var mode_well: PanelContainer = PanelContainer.new()
+	mode_well.add_theme_stylebox_override("panel", _make_track_style(12, 6.0, 5.0))
 	root.add_child(mode_well)
 
 	_mode_row = HBoxContainer.new()
-	_mode_row.add_theme_constant_override("separation", 6)
+	_mode_row.add_theme_constant_override("separation", 5)
 	_mode_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	mode_well.add_child(_mode_row)
 
-	# 3. Clean 1-Row Scrollable Game Filter Row (no outer box/padding around icons)
-	var filter_scroll := ScrollContainer.new()
-	filter_scroll.custom_minimum_size = Vector2(0, 86)
+	# 3. Framed Scrollable Game Filter Strip
+	var filter_scroll: ScrollContainer = ScrollContainer.new()
+	filter_scroll.custom_minimum_size = Vector2(0, 74)
 	filter_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	filter_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	filter_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
@@ -349,12 +542,21 @@ func _build_ui() -> void:
 	_scroll_games.clip_contents = true
 	root.add_child(_scroll_games)
 
+	var list_pad: MarginContainer = MarginContainer.new()
+	list_pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list_pad.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	list_pad.add_theme_constant_override("margin_left", 2)
+	list_pad.add_theme_constant_override("margin_right", 2)
+	list_pad.add_theme_constant_override("margin_top", 2)
+	list_pad.add_theme_constant_override("margin_bottom", 8)
+	_scroll_games.add_child(list_pad)
+
 	_list_vbox = VBoxContainer.new()
 	_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_list_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	_list_vbox.add_theme_constant_override("separation", 14)
-	_scroll_games.add_child(_list_vbox)
+	_list_vbox.add_theme_constant_override("separation", 12)
+	list_pad.add_child(_list_vbox)
 
 	_render_filters()
 
@@ -363,28 +565,29 @@ func _render_filters() -> void:
 	if is_instance_valid(_scope_row):
 		for c in _scope_row.get_children():
 			c.queue_free()
+		# RTL visual order: All rightmost
 		var scopes: Array = [
-			{"id": "all", "label": "همه بازی‌ها"},
+			{"id": "clan", "label": "اتحاد من"},
 			{"id": "friends", "label": "دوستان"},
-			{"id": "clan", "label": "کلن من"},
+			{"id": "all", "label": "همه بازی‌ها"},
 		]
 		for sc in scopes:
-			var sc_d: Dictionary = sc
+			var sc_d: Dictionary = sc as Dictionary
 			var sid: String = str(sc_d["id"])
-			var b := Button.new()
+			var is_sel: bool = (current_scope == sid)
+			var b: Button = Button.new()
 			b.text = str(sc_d["label"])
-			b.custom_minimum_size = Vector2(0, 56)
+			b.custom_minimum_size = Vector2(0, 44)
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			b.focus_mode = Control.FOCUS_NONE
-			b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			b.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-			b.add_theme_font_size_override("font_size", 24)
-			if current_scope == sid:
-				KenneyUI.style_button(b, KenneyUI.COLOR_YELLOW)
-				b.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
-			else:
-				KenneyUI.style_button(b, KenneyUI.COLOR_GREY)
-				b.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+			_style_segment_button(
+				b,
+				is_sel,
+				Color(0.58, 0.41, 0.12, 0.98),
+				Color(1.0, 0.86, 0.36, 1.0),
+				Color(1.0, 0.98, 0.90, 1.0),
+				CafeSocialTheme.FONT_TITLE,
+				21
+			)
 			ActionVFXManager.apply_button_juice(b, "tap_button")
 			b.pressed.connect(func():
 				AudioManager.sfx_tap()
@@ -398,23 +601,30 @@ func _render_filters() -> void:
 		for c in _mode_row.get_children():
 			c.queue_free()
 		var modes: Array = [
-			{"id": "", "label": "همه حالت‌ها"},
-			{"id": "Rank", "label": "رقابتی"},
-			{"id": "MultiRank", "label": "چندنفره"},
-			{"id": "ClassicRank", "label": "کلاسیک"},
 			{"id": "Lobby", "label": "لابی"},
+			{"id": "ClassicRank", "label": "کلاسیک"},
+			{"id": "MultiRank", "label": "چندنفره"},
+			{"id": "Rank", "label": "رقابتی"},
+			{"id": "", "label": "همه"},
 		]
 		for md in modes:
-			var md_d: Dictionary = md
+			var md_d: Dictionary = md as Dictionary
 			var mid: String = str(md_d["id"])
 			var is_m_sel: bool = (_normalize_mode(current_game_mode) == _normalize_mode(mid))
-			var bm := CafeSocialTheme.make_button(
-				str(md_d["label"]),
-				"emerald" if is_m_sel else "muted",
-				Vector2(0, 44),
-				20
-			)
+			var bm: Button = Button.new()
+			bm.text = str(md_d["label"])
+			bm.custom_minimum_size = Vector2(0, 38)
 			bm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			_style_segment_button(
+				bm,
+				is_m_sel,
+				Color(0.13, 0.34, 0.21, 0.98),
+				Color(0.42, 0.86, 0.56, 0.95),
+				Color(0.96, 1.0, 0.96, 1.0),
+				CafeSocialTheme.FONT_BODY,
+				15
+			)
+			ActionVFXManager.apply_button_juice(bm, "tap_button")
 			bm.pressed.connect(func():
 				AudioManager.sfx_tap()
 				current_game_mode = mid
@@ -427,46 +637,79 @@ func _render_filters() -> void:
 		for c in _game_filter_hbox.get_children():
 			c.queue_free()
 
-		# Spectatable games + "all"
-		var gfilters: Array = [{"id": "", "label": "همه"}]
+		# 1. Explicit labeled "همه بازی‌ها" chip (replaces confusing question.png icon)
+		var is_all_sel: bool = current_game_type.is_empty()
+		var btn_all: Button = Button.new()
+		btn_all.text = "همه بازی‌ها"
+		btn_all.custom_minimum_size = Vector2(92, 62)
+		btn_all.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_style_segment_button(
+			btn_all,
+			is_all_sel,
+			Color(0.32, 0.21, 0.08, 0.98),
+			Color(0.98, 0.82, 0.32, 1.0),
+			CafeSocialTheme.COL_GOLD_BRIGHT,
+			CafeSocialTheme.FONT_BODY,
+			15
+		)
+		ActionVFXManager.apply_button_juice(btn_all, "tap_button")
+		btn_all.pressed.connect(func():
+			AudioManager.sfx_tap()
+			current_game_type = ""
+			_render_filters()
+			refresh()
+		)
+		_game_filter_hbox.add_child(btn_all)
+
+		# 2. Framed Spectatable Game Icon Chips
 		for g in GamesHistoryViewHelper.GAMES_LIST:
-			var gid_check: String = str(g.get("id", "")).strip_edges().to_lower()
+			var gid_raw: String = str(g.get("id", ""))
+			var gid_check: String = gid_raw.strip_edges().to_lower()
 			if gid_check in NON_SPECTATABLE_GAMES:
 				continue
-			gfilters.append({"id": g["id"], "label": g["name_fa"]})
+			var is_sel: bool = (current_game_type == gid_raw)
 
-		for gf in gfilters:
-			var gf_d: Dictionary = gf
-			var gid_f: String = str(gf_d["id"])
-			var is_sel: bool = (current_game_type == gid_f)
+			var tile: PanelContainer = PanelContainer.new()
+			tile.custom_minimum_size = Vector2(64, 64)
+			tile.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var tile_sb: StyleBoxFlat = StyleBoxFlat.new()
+			tile_sb.set_corner_radius_all(13)
+			tile_sb.content_margin_left = 4.0
+			tile_sb.content_margin_right = 4.0
+			tile_sb.content_margin_top = 4.0
+			tile_sb.content_margin_bottom = 4.0
+			if is_sel:
+				tile_sb.bg_color = Color(0.28, 0.19, 0.07, 0.98)
+				tile_sb.border_color = Color(1.0, 0.86, 0.34, 1.0)
+				tile_sb.set_border_width_all(2)
+				tile_sb.shadow_color = Color(1.0, 0.82, 0.24, 0.35)
+				tile_sb.shadow_size = 5
+			else:
+				tile_sb.bg_color = Color(0.11, 0.068, 0.038, 0.90)
+				tile_sb.border_color = Color(0.48, 0.35, 0.19, 0.55)
+				tile_sb.set_border_width_all(1)
+			tile.add_theme_stylebox_override("panel", tile_sb)
+			_game_filter_hbox.add_child(tile)
 
-			var btn := TextureButton.new()
-			btn.custom_minimum_size = Vector2(80, 80)
-			btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var btn: TextureButton = TextureButton.new()
+			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			btn.ignore_texture_size = true
 			btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 			btn.focus_mode = Control.FOCUS_NONE
 			btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			btn.tooltip_text = str(gf_d["label"])
-			if gid_f.is_empty():
-				btn.texture_normal = preload("res://assets/images/frames/question.png")
-			else:
-				btn.texture_normal = CafeSocialTheme.get_game_thumb(gid_f)
-
-			# No box or padding: fill button directly with game icon; selected icon is brighter/lighter
-			if is_sel:
-				btn.self_modulate = Color(1.22, 1.22, 1.22, 1.0)
-			else:
-				btn.self_modulate = Color(0.55, 0.52, 0.48, 0.72)
+			btn.tooltip_text = str(g.get("name_fa", gid_raw))
+			btn.texture_normal = CafeSocialTheme.get_game_thumb(gid_raw)
+			btn.self_modulate = Color(1.12, 1.10, 1.06, 1.0) if is_sel else Color(0.76, 0.72, 0.66, 0.82)
 
 			ActionVFXManager.apply_button_juice(btn, "tap_button")
 			btn.pressed.connect(func():
 				AudioManager.sfx_tap()
-				current_game_type = gid_f
+				current_game_type = gid_raw
 				_render_filters()
 				refresh()
 			)
-			_game_filter_hbox.add_child(btn)
+			tile.add_child(btn)
 
 
 func _show_loading_state() -> void:
@@ -476,6 +719,70 @@ func _show_loading_state() -> void:
 		c.queue_free()
 	_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	_list_vbox.add_child(CafeSocialTheme.make_loading_state("در حال دریافت مسابقات زنده..."))
+
+
+func _build_empty_state_card() -> PanelContainer:
+	var card: PanelContainer = PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.135, 0.082, 0.046, 0.95)
+	sb.border_color = Color(0.68, 0.52, 0.25, 0.65)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(18)
+	sb.content_margin_left = 20.0
+	sb.content_margin_right = 20.0
+	sb.content_margin_top = 24.0
+	sb.content_margin_bottom = 24.0
+	card.add_theme_stylebox_override("panel", sb)
+
+	var vb: VBoxContainer = VBoxContainer.new()
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_theme_constant_override("separation", 10)
+	card.add_child(vb)
+
+	vb.add_child(CafeSocialTheme.make_title(
+		"مسابقه زنده‌ای یافت نشد",
+		24,
+		CafeSocialTheme.COL_GOLD_BRIGHT,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		false
+	))
+
+	var has_filters: bool = (current_scope != "all") or (not current_game_mode.is_empty()) or (not current_game_type.is_empty())
+	var sub_msg: String = "در حال حاضر مسابقه‌ای با فیلترهای انتخابی شما در جریان نیست." if has_filters else "فعلاً هیچ مسابقه قابل تماشایی در کافه فعال نیست. لحظاتی دیگر دوباره بررسی کنید."
+	vb.add_child(CafeSocialTheme.make_body(
+		sub_msg,
+		17,
+		CafeSocialTheme.COL_MUTED_SAND,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		true
+	))
+
+	var btn_row: HBoxContainer = HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 10)
+	vb.add_child(btn_row)
+
+	var btn_retry: Button = CafeSocialTheme.make_button("بروزرسانی فهرست", "emerald", Vector2(154, 44), 17)
+	btn_retry.pressed.connect(func():
+		AudioManager.sfx_tap()
+		refresh()
+	)
+	btn_row.add_child(btn_retry)
+
+	if has_filters:
+		var btn_reset: Button = CafeSocialTheme.make_button("نمایش همه بازی‌ها", "bronze", Vector2(154, 44), 17)
+		btn_reset.pressed.connect(func():
+			AudioManager.sfx_tap()
+			current_scope = "all"
+			current_game_mode = ""
+			current_game_type = ""
+			_render_filters()
+			refresh()
+		)
+		btn_row.add_child(btn_reset)
+
+	return card
 
 
 func _render_games_list() -> void:
@@ -493,22 +800,17 @@ func _render_games_list() -> void:
 		return sa > sb
 	)
 
+	_update_live_header_status(items.size())
+
 	if items.is_empty():
 		_list_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		var empty_lbl := CafeSocialTheme.make_body(
-			"در حال حاضر مسابقه زنده‌ای با این فیلتر در جریان نیست.",
-			23,
-			CafeSocialTheme.COL_MUTED_SAND,
-			HORIZONTAL_ALIGNMENT_CENTER,
-			true
-		)
-		_list_vbox.add_child(empty_lbl)
+		_list_vbox.add_child(_build_empty_state_card())
 		return
 
 	_list_vbox.alignment = BoxContainer.ALIGNMENT_BEGIN
 	for item in items:
 		if typeof(item) == TYPE_DICTIONARY:
-			_list_vbox.add_child(_build_match_card(item))
+			_list_vbox.add_child(_build_match_card(item as Dictionary))
 
 
 func _build_match_card(m: Dictionary) -> PanelContainer:
@@ -521,86 +823,110 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	var has_clanmate: bool = bool(m.get("has_clanmate", false))
 	var players: Array = m.get("players", []) if typeof(m.get("players")) == TYPE_ARRAY else []
 
-	var card := PanelContainer.new()
+	var card: PanelContainer = PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
-	card.add_theme_stylebox_override(
-		"panel",
-		CafeSocialTheme.create_frame_style(true, 18.0, 14.0)
-	)
+	var card_sb: StyleBoxFlat = StyleBoxFlat.new()
+	card_sb.bg_color = Color(0.155, 0.095, 0.054, 0.97)
+	card_sb.border_color = Color(0.84, 0.66, 0.28, 0.84) if (has_friend or has_clanmate) else Color(0.68, 0.52, 0.25, 0.72)
+	card_sb.border_width_left = 1
+	card_sb.border_width_right = 1
+	card_sb.border_width_bottom = 1
+	card_sb.border_width_top = 2
+	card_sb.set_corner_radius_all(18)
+	card_sb.content_margin_left = 14.0
+	card_sb.content_margin_right = 14.0
+	card_sb.content_margin_top = 12.0
+	card_sb.content_margin_bottom = 12.0
+	card_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+	card_sb.shadow_size = 7
+	card_sb.shadow_offset = Vector2(0, 3)
+	card.add_theme_stylebox_override("panel", card_sb)
 
-	var vbox := VBoxContainer.new()
+	var vbox: VBoxContainer = VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 10)
 	card.add_child(vbox)
 
-	# Row 1: Top-left Eye+Count pill (+ optional mode/relation badge), Title + Thumbnail right
-	var top_row := HBoxContainer.new()
+	# Row 1: Badges (Left) + Title & Meta (Center-Right) + Game Thumbnail (Far-Right)
+	var top_row: HBoxContainer = HBoxContainer.new()
 	top_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_theme_constant_override("separation", 10)
+	top_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(top_row)
 
-	var badges_col := HBoxContainer.new()
-	badges_col.alignment = BoxContainer.ALIGNMENT_BEGIN
+	var badges_col: VBoxContainer = VBoxContainer.new()
+	badges_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	badges_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	badges_col.add_theme_constant_override("separation", 6)
+	badges_col.add_theme_constant_override("separation", 5)
 	top_row.add_child(badges_col)
 
-	# Watcher count pill: Eye icon on left, count on right (LTR), NO "تماشاگر" text
-	var eye_pill := PanelContainer.new()
-	var eye_st := StyleBoxFlat.new()
+	# Live Viewer Pill (Emerald dot + Persian count — zero raw emojis)
+	var eye_pill: PanelContainer = PanelContainer.new()
+	var eye_st: StyleBoxFlat = StyleBoxFlat.new()
 	eye_st.bg_color = CafeSocialTheme.COL_EMERALD_BG
 	eye_st.border_color = CafeSocialTheme.COL_EMERALD_BORDER
 	eye_st.set_border_width_all(1)
 	eye_st.set_corner_radius_all(10)
-	eye_st.content_margin_left = 10.0
-	eye_st.content_margin_right = 10.0
-	eye_st.content_margin_top = 4.0
-	eye_st.content_margin_bottom = 4.0
+	eye_st.content_margin_left = 9.0
+	eye_st.content_margin_right = 9.0
+	eye_st.content_margin_top = 3.0
+	eye_st.content_margin_bottom = 3.0
 	eye_pill.add_theme_stylebox_override("panel", eye_st)
-	var eye_hbox := HBoxContainer.new()
-	eye_hbox.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	var eye_hbox: HBoxContainer = HBoxContainer.new()
 	eye_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	eye_hbox.add_theme_constant_override("separation", 5)
+	eye_hbox.add_theme_constant_override("separation", 6)
 	eye_pill.add_child(eye_hbox)
-	eye_hbox.add_child(CafeSocialTheme.make_body("👁", 18, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
-	eye_hbox.add_child(CafeSocialTheme.make_body(GameManager.to_fa_num(spec_cnt), 19, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
+	eye_hbox.add_child(CafeSocialTheme.make_body("%s بیننده" % GameManager.to_fa_num(spec_cnt), 14, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
+	var live_pip: Panel = Panel.new()
+	live_pip.custom_minimum_size = Vector2(8, 8)
+	live_pip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var pip_sb: StyleBoxFlat = StyleBoxFlat.new()
+	pip_sb.bg_color = Color(0.34, 0.94, 0.56, 1.0)
+	pip_sb.set_corner_radius_all(4)
+	live_pip.add_theme_stylebox_override("panel", pip_sb)
+	eye_hbox.add_child(live_pip)
 	badges_col.add_child(eye_pill)
 
+	var tag_row: HBoxContainer = HBoxContainer.new()
+	tag_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	tag_row.add_theme_constant_override("separation", 5)
+	badges_col.add_child(tag_row)
+
 	if not mode_fa.is_empty():
-		badges_col.add_child(CafeSocialTheme.make_badge_pill(
+		tag_row.add_child(CafeSocialTheme.make_badge_pill(
 			mode_fa,
 			CafeSocialTheme.COL_WARM_CREAM,
-			Color(0.14, 0.10, 0.06, 0.94),
+			Color(0.11, 0.07, 0.04, 0.94),
 			CafeSocialTheme.COL_BRONZE_BORDER,
-			17
+			13
 		))
 	if has_friend:
-		badges_col.add_child(CafeSocialTheme.make_badge_pill(
+		tag_row.add_child(CafeSocialTheme.make_badge_pill(
 			"دوست",
 			CafeSocialTheme.COL_GOLD_BRIGHT,
-			Color(0.18, 0.12, 0.05, 0.95),
+			Color(0.20, 0.13, 0.05, 0.96),
 			CafeSocialTheme.COL_GOLD_ANTIQUE,
-			17
+			13
 		))
 	elif has_clanmate:
-		badges_col.add_child(CafeSocialTheme.make_badge_pill(
-			"کلن",
+		tag_row.add_child(CafeSocialTheme.make_badge_pill(
+			"اتحاد",
 			CafeSocialTheme.COL_GOLD_BRIGHT,
-			Color(0.18, 0.12, 0.05, 0.95),
+			Color(0.20, 0.13, 0.05, 0.96),
 			CafeSocialTheme.COL_GOLD_ANTIQUE,
-			17
+			13
 		))
 
-	var title_col := VBoxContainer.new()
+	var title_col: VBoxContainer = VBoxContainer.new()
 	title_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	title_col.add_theme_constant_override("separation", 2)
 	top_row.add_child(title_col)
 
-	var t_lbl := CafeSocialTheme.make_title(
+	var t_lbl: Label = CafeSocialTheme.make_title(
 		"مسابقه %s" % gtitle,
-		24,
+		23,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		false
@@ -610,9 +936,9 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	t_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	title_col.add_child(t_lbl)
 
-	var sub_lbl := CafeSocialTheme.make_body(
-		"%s بازیکن • در حال رقابت" % GameManager.to_fa_num(maxi(2, players.size())),
-		17,
+	var sub_lbl: Label = CafeSocialTheme.make_body(
+		"%s بازیکن  •  در حال رقابت" % GameManager.to_fa_num(maxi(2, players.size())),
+		15,
 		CafeSocialTheme.COL_MUTED_SAND,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		false
@@ -622,39 +948,39 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	title_col.add_child(sub_lbl)
 
-	var thumb_wrap := PanelContainer.new()
+	var thumb_wrap: PanelContainer = PanelContainer.new()
 	thumb_wrap.custom_minimum_size = Vector2(60, 60)
 	thumb_wrap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	thumb_wrap.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(Color(0.08, 0.05, 0.03), CafeSocialTheme.COL_GOLD_ANTIQUE, 14, 2, 4.0, 4.0))
 	top_row.add_child(thumb_wrap)
 
-	var thumb := TextureRect.new()
+	var thumb: TextureRect = TextureRect.new()
 	thumb.texture = CafeSocialTheme.get_game_thumb(gtype)
 	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	thumb_wrap.add_child(thumb)
 
-	# Row 2: Players Matchup Strip (2-col Grid for >2 players so cards NEVER overflow horizontally)
+	# Row 2: Players Matchup Strip
 	if not players.is_empty():
-		var players_well := PanelContainer.new()
+		var players_well: PanelContainer = PanelContainer.new()
 		players_well.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		players_well.clip_contents = true
-		players_well.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(12, 10.0, 8.0))
+		players_well.add_theme_stylebox_override("panel", _make_track_style(12, 10.0, 8.0))
 		vbox.add_child(players_well)
 
-		var make_player_chip := func(pd: Dictionary) -> HBoxContainer:
-			var p_chip := HBoxContainer.new()
+		var make_player_chip: Callable = func(pd: Dictionary) -> HBoxContainer:
+			var p_chip: HBoxContainer = HBoxContainer.new()
 			p_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			p_chip.alignment = BoxContainer.ALIGNMENT_CENTER
 			p_chip.add_theme_constant_override("separation", 6)
 			var av_id: int = int(pd.get("avatar", pd.get("image", 0)))
 			var fr_id: int = int(pd.get("profile_frame", 0))
-			p_chip.add_child(CafeSocialTheme.make_avatar_badge(av_id, maxi(1, fr_id), 48.0, "", false))
+			p_chip.add_child(CafeSocialTheme.make_avatar_badge(av_id, maxi(1, fr_id), 44.0, "", false))
 			var pname: String = str(pd.get("username", "بازیکن"))
 			var c_info: Variant = pd.get("clan", null)
 			if typeof(c_info) == TYPE_DICTIONARY and not str((c_info as Dictionary).get("tag", "")).is_empty():
 				pname += " [%s]" % str((c_info as Dictionary).get("tag", ""))
-			var p_lbl := CafeSocialTheme.make_body(pname, 20, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+			var p_lbl: Label = CafeSocialTheme.make_body(pname, 18, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 			p_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			p_lbl.clip_text = true
 			p_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -662,7 +988,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 			return p_chip
 
 		if players.size() > 2:
-			var players_grid := GridContainer.new()
+			var players_grid: GridContainer = GridContainer.new()
 			players_grid.columns = 2
 			players_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			players_grid.add_theme_constant_override("h_separation", 10)
@@ -672,7 +998,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 				if typeof(p_item) == TYPE_DICTIONARY:
 					players_grid.add_child(make_player_chip.call(p_item as Dictionary))
 		else:
-			var players_row := HBoxContainer.new()
+			var players_row: HBoxContainer = HBoxContainer.new()
 			players_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			players_row.alignment = BoxContainer.ALIGNMENT_CENTER
 			players_row.add_theme_constant_override("separation", 8)
@@ -682,13 +1008,19 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 				if typeof(p_item) != TYPE_DICTIONARY:
 					continue
 				if i > 0:
-					var vs_lbl := CafeSocialTheme.make_title("⚔", 22, CafeSocialTheme.COL_GOLD_ANTIQUE, HORIZONTAL_ALIGNMENT_CENTER, false)
-					vs_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-					players_row.add_child(vs_lbl)
+					var vs_pill: PanelContainer = CafeSocialTheme.make_badge_pill(
+						"در برابر",
+						CafeSocialTheme.COL_GOLD_BRIGHT,
+						Color(0.18, 0.12, 0.05, 0.95),
+						CafeSocialTheme.COL_GOLD_ANTIQUE,
+						13
+					)
+					vs_pill.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+					players_row.add_child(vs_pill)
 				players_row.add_child(make_player_chip.call(p_item as Dictionary))
 
 	# Row 3: Full-width Watch Action Button
-	var btn_watch := CafeSocialTheme.make_button("تماشای زنده مسابقه", "gold", Vector2(0, 54), 25)
+	var btn_watch: Button = CafeSocialTheme.make_button("تماشای زنده مسابقه", "gold", Vector2(0, 50), 22, null, true)
 	btn_watch.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_watch.pressed.connect(func():
 		AudioManager.sfx_button()

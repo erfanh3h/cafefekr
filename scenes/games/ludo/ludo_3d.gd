@@ -261,12 +261,17 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.custom_minimum_size = Vector2(250.0, 56.0)
 	_action_roll_btn.focus_mode = Control.FOCUS_NONE
 	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	_action_roll_btn.text = "🎲 پرتاب تاس"
+	_action_roll_btn.text = "پرتاب تاس"
 	_action_roll_btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 	_action_roll_btn.add_theme_font_size_override("font_size", 26)
 	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
-	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
-	_action_roll_btn.add_theme_constant_override("outline_size", 4)
+	_action_roll_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	_action_roll_btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72))
+	_action_roll_btn.add_theme_color_override("font_focus_color", Color(1.0, 0.98, 0.92))
+	_action_roll_btn.add_theme_color_override("font_hover_pressed_color", Color(1.0, 0.96, 0.78))
+	_action_roll_btn.add_theme_color_override("font_disabled_color", Color(0.76, 0.72, 0.66, 0.85))
+	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.05, 0.025, 0.01, 0.78))
+	_action_roll_btn.add_theme_constant_override("outline_size", 2)
 
 	var normal_sb = StyleBoxFlat.new()
 	normal_sb.bg_color = Color(0.12, 0.44, 0.24, 0.96)
@@ -301,6 +306,7 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.add_theme_stylebox_override("hover", hover_sb)
 	_action_roll_btn.add_theme_stylebox_override("pressed", pressed_sb)
 	_action_roll_btn.add_theme_stylebox_override("disabled", disabled_sb)
+	_action_roll_btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 	_action_roll_btn.pressed.connect(_request_roll_dice)
 	hbox.add_child(_action_roll_btn)
@@ -1170,10 +1176,10 @@ func _update_interactive_highlights() -> void:
 					_action_roll_btn.text = "بدون حرکت ممکن (پایان نوبت...)"
 			elif can_roll_now:
 				_action_roll_btn.disabled = false
-				_action_roll_btn.text = "🎲 پرتاب تاس"
+				_action_roll_btn.text = "پرتاب تاس"
 			elif my_turn and has_rolled_this_turn:
 				_action_roll_btn.disabled = true
-				_action_roll_btn.text = "✨ تاس %s — مهره خود را حرکت دهید" % _fa_int(current_dice)
+				_action_roll_btn.text = "تاس %s — مهره خود را حرکت دهید" % _fa_int(current_dice)
 			else:
 				_action_roll_btn.disabled = true
 				var turn_color_fa = FACTION_NAMES_FA.get(current_turn, "")

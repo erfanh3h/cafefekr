@@ -128,7 +128,7 @@ theme_override_styles/slider = SubResource("StyleBoxFlat_slider_bg")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_slider_fill")
 theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_slider_fill")
 max_value = 100.0
-value = 100.0
+value = 50.0
 
 [node name="LblMusicPct" type="Label" parent="CenterContainer/Panel/Margin/VBox/MusicRow/HBox"]
 custom_minimum_size = Vector2(50, 0)
@@ -136,7 +136,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
 theme_override_fonts/font = ExtResource("3_font_vazir")
 theme_override_font_sizes/font_size = 20
-text = "۱۰۰%"
+text = "۵۰%"
 horizontal_alignment = 1
 
 [node name="CheckMusic" type="CheckButton" parent="CenterContainer/Panel/Margin/VBox/MusicRow/HBox"]

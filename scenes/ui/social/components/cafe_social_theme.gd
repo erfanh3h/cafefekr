@@ -513,6 +513,8 @@ static func make_button(
 	b.add_theme_color_override("font_color", COL_IVORY)
 	b.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
 	b.add_theme_color_override("font_pressed_color", COL_WARM_CREAM)
+	b.add_theme_color_override("font_focus_color", COL_IVORY)
+	b.add_theme_color_override("font_hover_pressed_color", COL_WARM_CREAM)
 	b.add_theme_color_override("font_disabled_color", Color(0.65, 0.60, 0.55, 0.65))
 	b.add_theme_color_override("font_shadow_color", Color(0.05, 0.02, 0.01, 0.92))
 	b.add_theme_constant_override("shadow_offset_y", 2)

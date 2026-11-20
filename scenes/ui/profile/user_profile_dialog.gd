@@ -52,7 +52,12 @@ signal change_username_requested()
 
 var _dim_overlay: ColorRect
 var panel: PanelContainer
+var _inner_bezel: PanelContainer
 var _lbl_title: Label
+var _lbl_header_sub: Label
+var _status_pill: PanelContainer
+var _status_dot: Panel
+var _lbl_status_pill: Label
 var _toast_panel: PanelContainer
 var _lbl_toast: Label
 
@@ -80,6 +85,77 @@ func _exit_tree() -> void:
 		active_instance = null
 
 
+func _make_parlor_outer_frame_style() -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.125, 0.075, 0.042, 0.99)
+	sb.border_color = Color(0.89, 0.70, 0.29, 0.98)
+	sb.border_width_left = 3
+	sb.border_width_right = 3
+	sb.border_width_top = 4
+	sb.border_width_bottom = 4
+	sb.set_corner_radius_all(26)
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
+	sb.shadow_size = 24
+	sb.shadow_offset = Vector2(0, 10)
+	sb.content_margin_left = 7.0
+	sb.content_margin_right = 7.0
+	sb.content_margin_top = 7.0
+	sb.content_margin_bottom = 7.0
+	return sb
+
+
+func _make_parlor_inner_inlay_style() -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.082, 0.048, 0.027, 0.98)
+	sb.border_color = Color(0.78, 0.59, 0.24, 0.44)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(20)
+	sb.content_margin_left = 14.0
+	sb.content_margin_right = 14.0
+	sb.content_margin_top = 14.0
+	sb.content_margin_bottom = 14.0
+	return sb
+
+
+func _make_header_crown_style() -> StyleBoxFlat:
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.165, 0.100, 0.056, 0.97)
+	sb.border_color = Color(0.85, 0.67, 0.28, 0.62)
+	sb.border_width_left = 1
+	sb.border_width_right = 1
+	sb.border_width_top = 1
+	sb.border_width_bottom = 2
+	sb.corner_radius_top_left = 16
+	sb.corner_radius_top_right = 16
+	sb.corner_radius_bottom_left = 14
+	sb.corner_radius_bottom_right = 14
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.34)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2(0, 3)
+	sb.content_margin_left = 12.0
+	sb.content_margin_right = 12.0
+	sb.content_margin_top = 10.0
+	sb.content_margin_bottom = 10.0
+	return sb
+
+
+func _make_icon_medallion_frame() -> PanelContainer:
+	var wrap: PanelContainer = PanelContainer.new()
+	wrap.custom_minimum_size = Vector2(46, 46)
+	wrap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.11, 0.065, 0.036, 0.95)
+	sb.border_color = Color(0.82, 0.64, 0.28, 0.72)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(23)
+	sb.content_margin_left = 4.0
+	sb.content_margin_right = 4.0
+	sb.content_margin_top = 4.0
+	sb.content_margin_bottom = 4.0
+	wrap.add_theme_stylebox_override("panel", sb)
+	return wrap
+
+
 func _build_shell() -> void:
 	for c in get_children():
 		c.queue_free()
@@ -87,7 +163,7 @@ func _build_shell() -> void:
 	# 1. Warm cinematic vignette dim overlay
 	_dim_overlay = ColorRect.new()
 	_dim_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_dim_overlay.color = Color(0.02, 0.012, 0.008, 0.82)
+	_dim_overlay.color = Color(0.02, 0.012, 0.008, 0.84)
 	_dim_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dim_overlay.gui_input.connect(func(ev: InputEvent):
 		if ev is InputEventMouseButton and ev.pressed:
@@ -96,46 +172,56 @@ func _build_shell() -> void:
 	)
 	add_child(_dim_overlay)
 
-	# 2. Outer MarginContainer (responsive portrait margins)
-	var outer := MarginContainer.new()
+	# 2. Safe Viewport-Bounded Outer MarginContainer (never collides with screen edges)
+	var outer: MarginContainer = MarginContainer.new()
 	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	outer.add_theme_constant_override("margin_left", 14)
-	outer.add_theme_constant_override("margin_right", 14)
-	outer.add_theme_constant_override("margin_top", 18)
-	outer.add_theme_constant_override("margin_bottom", 18)
+	outer.add_theme_constant_override("margin_left", 20)
+	outer.add_theme_constant_override("margin_right", 20)
+	outer.add_theme_constant_override("margin_top", 34)
+	outer.add_theme_constant_override("margin_bottom", 34)
 	add_child(outer)
 
-	# 3. Main Antique Walnut Board Shell
+	# 3. Sculpted Double-Beveled Antique Walnut & Gold Parlor Frame
 	panel = PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
+	panel.clip_contents = false
+	panel.add_theme_stylebox_override("panel", _make_parlor_outer_frame_style())
 	outer.add_child(panel)
 
-	var inner := MarginContainer.new()
-	inner.add_theme_constant_override("margin_left", 12)
-	inner.add_theme_constant_override("margin_right", 12)
-	inner.add_theme_constant_override("margin_top", 12)
-	inner.add_theme_constant_override("margin_bottom", 12)
-	panel.add_child(inner)
+	# 3b. Inner Gold-Hairline Inlay Chamber
+	_inner_bezel = PanelContainer.new()
+	_inner_bezel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_inner_bezel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_inner_bezel.clip_contents = true
+	_inner_bezel.add_theme_stylebox_override("panel", _make_parlor_inner_inlay_style())
+	panel.add_child(_inner_bezel)
 
-	var root_vbox := VBoxContainer.new()
-	root_vbox.add_theme_constant_override("separation", 8)
-	inner.add_child(root_vbox)
+	var root_vbox: VBoxContainer = VBoxContainer.new()
+	root_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root_vbox.add_theme_constant_override("separation", 10)
+	_inner_bezel.add_child(root_vbox)
 
-	# 4. Top Header Bar (Close Button + Dialog Title)
-	var top_bar := PanelContainer.new()
-	top_bar.add_theme_stylebox_override("panel", CafeSocialTheme.create_well_style(16, 12.0, 8.0))
+	# 4. Sculpted Parlor Header Crown (Close Medallion + Title/Subtitle + Live Presence Pill)
+	var top_bar: PanelContainer = PanelContainer.new()
+	top_bar.add_theme_stylebox_override("panel", _make_header_crown_style())
 	root_vbox.add_child(top_bar)
 
-	var top_row := HBoxContainer.new()
+	var top_row: HBoxContainer = HBoxContainer.new()
 	top_row.add_theme_constant_override("separation", 10)
+	top_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	top_bar.add_child(top_row)
 
-	var btn_close := TextureButton.new()
+	var close_wrap: PanelContainer = _make_icon_medallion_frame()
+	top_row.add_child(close_wrap)
+
+	var btn_close: TextureButton = TextureButton.new()
 	btn_close.name = "BtnCloseTop"
 	btn_close.texture_normal = CafeSocialTheme.TEX_CLOSE
-	btn_close.custom_minimum_size = Vector2(46, 46)
+	btn_close.custom_minimum_size = Vector2(36, 36)
+	btn_close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_close.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	btn_close.ignore_texture_size = true
 	btn_close.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn_close.focus_mode = Control.FOCUS_NONE
@@ -145,15 +231,60 @@ func _build_shell() -> void:
 		AudioManager.sfx_button()
 		close()
 	)
-	top_row.add_child(btn_close)
+	close_wrap.add_child(btn_close)
 
-	_lbl_title = CafeSocialTheme.make_title("مشخصات بازیکن", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var title_stack: VBoxContainer = VBoxContainer.new()
+	title_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_stack.alignment = BoxContainer.ALIGNMENT_CENTER
+	title_stack.add_theme_constant_override("separation", 1)
+	top_row.add_child(title_stack)
+
+	_lbl_title = CafeSocialTheme.make_title("مشخصات بازیکن", 27, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
 	_lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top_row.add_child(_lbl_title)
+	title_stack.add_child(_lbl_title)
 
-	var top_spacer := Control.new()
-	top_spacer.custom_minimum_size = Vector2(46, 46)
-	top_row.add_child(top_spacer)
+	_lbl_header_sub = CafeSocialTheme.make_body("پرونده رسمی کافه فکر", 15, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_lbl_header_sub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_stack.add_child(_lbl_header_sub)
+
+	# Presence / Identity Pill on right (balances close medallion visually)
+	_status_pill = PanelContainer.new()
+	_status_pill.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var st_sb: StyleBoxFlat = StyleBoxFlat.new()
+	st_sb.bg_color = Color(0.10, 0.06, 0.035, 0.94)
+	st_sb.border_color = Color(0.60, 0.46, 0.24, 0.72)
+	st_sb.set_border_width_all(1)
+	st_sb.set_corner_radius_all(14)
+	st_sb.content_margin_left = 10.0
+	st_sb.content_margin_right = 10.0
+	st_sb.content_margin_top = 5.0
+	st_sb.content_margin_bottom = 5.0
+	_status_pill.add_theme_stylebox_override("panel", st_sb)
+	top_row.add_child(_status_pill)
+
+	var st_row: HBoxContainer = HBoxContainer.new()
+	st_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	st_row.add_theme_constant_override("separation", 6)
+	_status_pill.add_child(st_row)
+
+	_lbl_status_pill = CafeSocialTheme.make_body("آفلاین", 14, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, false)
+	st_row.add_child(_lbl_status_pill)
+
+	_status_dot = Panel.new()
+	_status_dot.custom_minimum_size = Vector2(9, 9)
+	_status_dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var dot_sb: StyleBoxFlat = StyleBoxFlat.new()
+	dot_sb.bg_color = Color(0.55, 0.50, 0.45, 0.90)
+	dot_sb.set_corner_radius_all(5)
+	_status_dot.add_theme_stylebox_override("panel", dot_sb)
+	st_row.add_child(_status_dot)
+
+	# 4b. Ornamental Gold Hairline Accent Divider
+	var divider: ColorRect = ColorRect.new()
+	divider.custom_minimum_size = Vector2(0, 2)
+	divider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	divider.color = Color(0.84, 0.66, 0.28, 0.32)
+	root_vbox.add_child(divider)
 
 	# 5. Toast Feedback Banner
 	_toast_panel = PanelContainer.new()
@@ -161,7 +292,7 @@ func _build_shell() -> void:
 	_toast_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(true))
 	root_vbox.add_child(_toast_panel)
 
-	_lbl_toast = CafeSocialTheme.make_body("", 21, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
+	_lbl_toast = CafeSocialTheme.make_body("", 19, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
 	_toast_panel.add_child(_lbl_toast)
 
 	# 6. Scrollable Main Content Container
@@ -171,10 +302,18 @@ func _build_shell() -> void:
 	_scroll_body.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	root_vbox.add_child(_scroll_body)
 
+	var scroll_pad: MarginContainer = MarginContainer.new()
+	scroll_pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_pad.add_theme_constant_override("margin_left", 2)
+	scroll_pad.add_theme_constant_override("margin_right", 2)
+	scroll_pad.add_theme_constant_override("margin_top", 2)
+	scroll_pad.add_theme_constant_override("margin_bottom", 10)
+	_scroll_body.add_child(scroll_pad)
+
 	_body_vbox = VBoxContainer.new()
 	_body_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_body_vbox.add_theme_constant_override("separation", 10)
-	_scroll_body.add_child(_body_vbox)
+	_body_vbox.add_theme_constant_override("separation", 12)
+	scroll_pad.add_child(_body_vbox)
 
 
 func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
@@ -307,8 +446,9 @@ func _render_overview_tab() -> void:
 
 	var prof := _effective_data()
 
-	var uname := str(prof.get("name", prof.get("username", "بازیکن")))
-	var rel := str(prof.get("relationship", "none"))
+	var uname: String = str(prof.get("name", prof.get("username", "بازیکن")))
+	var rel: String = str(prof.get("relationship", "none"))
+	_update_header_meta(prof)
 
 	# --------------------------------------------------------------------------
 	# A. Profile Header Component (Circle dot removed, no icon under name)
@@ -452,19 +592,93 @@ func _render_overview_tab() -> void:
 	_render_favorite_games_section(prof)
 
 
-func _render_clan_card(clan_id: String, clan_d: Dictionary) -> void:
-	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("باشگاه و کلن بازیکن", CafeSocialTheme.ICO_ARMY))
+func _update_header_meta(prof: Dictionary) -> void:
+	if not is_instance_valid(_lbl_header_sub) or not is_instance_valid(_status_pill):
+		return
+	var tier_d: Dictionary = prof.get("tier", {}) if typeof(prof.get("tier")) == TYPE_DICTIONARY else {}
+	var tier_fa: String = str(tier_d.get("title_fa", prof.get("rank_title", ""))).strip_edges()
+	if _is_bot:
+		_lbl_header_sub.text = "حریف هوشمند کافه فکر"
+	elif _is_self:
+		_lbl_header_sub.text = "پرونده شخصی شما" if tier_fa.is_empty() else "پرونده شما  •  %s" % tier_fa
+	elif not _current_role_text.is_empty():
+		_lbl_header_sub.text = _current_role_text
+	elif not tier_fa.is_empty():
+		_lbl_header_sub.text = "رتبه: %s" % tier_fa
+	else:
+		_lbl_header_sub.text = "پرونده رسمی بازیکن"
 
-	var c_card := PanelContainer.new()
-	c_card.custom_minimum_size = Vector2(0, 108)
-	c_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 16.0, 10.0))
+	var pres_dict: Dictionary = prof.get("presence", {}) if typeof(prof.get("presence")) == TYPE_DICTIONARY else {"status": str(prof.get("status", "online" if _is_self else "offline"))}
+	var p_info: Dictionary = CafeSocialTheme.format_presence(pres_dict)
+	var st_key: String = str(pres_dict.get("status", "online" if _is_self else "offline")).strip_edges().to_lower()
+	var pill_txt: String = "آفلاین"
+	var dot_col: Color = Color(0.55, 0.50, 0.45, 0.90)
+	var border_col: Color = Color(0.52, 0.42, 0.28, 0.65)
+	var text_col: Color = CafeSocialTheme.COL_MUTED_SAND
+
+	if _is_bot:
+		pill_txt = "ربات"
+		dot_col = Color(0.45, 0.78, 0.98, 1.0)
+		border_col = Color(0.40, 0.68, 0.90, 0.75)
+		text_col = Color(0.75, 0.90, 1.0, 1.0)
+	elif bool(p_info.get("is_in_game", false)) or st_key == "in_game":
+		pill_txt = "در بازی"
+		dot_col = CafeSocialTheme.COL_GOLD_BRIGHT
+		border_col = CafeSocialTheme.COL_GOLD_ANTIQUE
+		text_col = CafeSocialTheme.COL_GOLD_BRIGHT
+	elif st_key == "online" or st_key == "in_lobby" or st_key == "in_queue" or _is_self:
+		pill_txt = "آنلاین"
+		dot_col = Color(0.32, 0.90, 0.52, 1.0)
+		border_col = CafeSocialTheme.COL_EMERALD_BORDER
+		text_col = CafeSocialTheme.COL_EMERALD_TEXT
+
+	_lbl_status_pill.text = pill_txt
+	_lbl_status_pill.add_theme_color_override("font_color", text_col)
+	var dot_sb: StyleBoxFlat = StyleBoxFlat.new()
+	dot_sb.bg_color = dot_col
+	dot_sb.set_corner_radius_all(5)
+	_status_dot.add_theme_stylebox_override("panel", dot_sb)
+	var pill_sb: StyleBoxFlat = StyleBoxFlat.new()
+	pill_sb.bg_color = Color(0.10, 0.06, 0.035, 0.94)
+	pill_sb.border_color = border_col
+	pill_sb.set_border_width_all(1)
+	pill_sb.set_corner_radius_all(14)
+	pill_sb.content_margin_left = 10.0
+	pill_sb.content_margin_right = 10.0
+	pill_sb.content_margin_top = 5.0
+	pill_sb.content_margin_bottom = 5.0
+	_status_pill.add_theme_stylebox_override("panel", pill_sb)
+
+
+func _render_clan_card(clan_id: String, clan_d: Dictionary) -> void:
+	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("اتحاد بازیکن", CafeSocialTheme.ICO_ARMY))
+
+	var c_card: PanelContainer = PanelContainer.new()
+	c_card.custom_minimum_size = Vector2(0, 96)
+	var c_sb: StyleBoxFlat = StyleBoxFlat.new()
+	c_sb.bg_color = Color(0.155, 0.095, 0.054, 0.96)
+	c_sb.border_color = Color(0.82, 0.64, 0.28, 0.78)
+	c_sb.border_width_left = 1
+	c_sb.border_width_right = 1
+	c_sb.border_width_bottom = 1
+	c_sb.border_width_top = 2
+	c_sb.set_corner_radius_all(16)
+	c_sb.content_margin_left = 14.0
+	c_sb.content_margin_right = 14.0
+	c_sb.content_margin_top = 12.0
+	c_sb.content_margin_bottom = 12.0
+	c_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.36)
+	c_sb.shadow_size = 6
+	c_sb.shadow_offset = Vector2(0, 3)
+	c_card.add_theme_stylebox_override("panel", c_sb)
 	_body_vbox.add_child(c_card)
 
-	var crow := HBoxContainer.new()
-	crow.add_theme_constant_override("separation", 10)
+	var crow: HBoxContainer = HBoxContainer.new()
+	crow.add_theme_constant_override("separation", 12)
+	crow.alignment = BoxContainer.ALIGNMENT_CENTER
 	c_card.add_child(crow)
 
-	var b_view_clan := CafeSocialTheme.make_button("مشاهده کلن", "gold", Vector2(110, 44), 18)
+	var b_view_clan: Button = CafeSocialTheme.make_button("مشاهده اتحاد", "gold", Vector2(118, 44), 17)
 	b_view_clan.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b_view_clan.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -472,36 +686,36 @@ func _render_clan_card(clan_id: String, clan_d: Dictionary) -> void:
 	)
 	crow.add_child(b_view_clan)
 
-	var cinfo := VBoxContainer.new()
+	var cinfo: VBoxContainer = VBoxContainer.new()
 	cinfo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cinfo.alignment = BoxContainer.ALIGNMENT_CENTER
-	cinfo.add_theme_constant_override("separation", 2)
+	cinfo.add_theme_constant_override("separation", 3)
 	crow.add_child(cinfo)
 
-	var cname := str(clan_d.get("name", "کلن کافه فکر"))
-	var ctag := str(clan_d.get("tag", ""))
-	var clvl := int(clan_d.get("clan_level", 1))
-	var crole := str(clan_d.get("role", "member"))
-	var crole_fa: String = str({"leader": "رهبر کلن", "co_leader": "قائم‌مقام رهبر", "elder": "ارشد کلن", "member": "عضو رسمی"}.get(crole, "عضو کلن"))
+	var cname: String = str(clan_d.get("name", "اتحاد کافه فکر"))
+	var ctag: String = str(clan_d.get("tag", ""))
+	var clvl: int = int(clan_d.get("clan_level", 1))
+	var crole: String = str(clan_d.get("role", "member"))
+	var crole_fa: String = str({"leader": "رهبر اتحاد", "co_leader": "قائم‌مقام رهبر", "elder": "ارشد اتحاد", "member": "عضو رسمی"}.get(crole, "عضو اتحاد"))
 
-	var ctitle_row := HBoxContainer.new()
+	var ctitle_row: HBoxContainer = HBoxContainer.new()
 	ctitle_row.alignment = BoxContainer.ALIGNMENT_END
 	ctitle_row.add_theme_constant_override("separation", 6)
 	cinfo.add_child(ctitle_row)
 
 	if not ctag.is_empty():
-		ctitle_row.add_child(CafeSocialTheme.make_badge_pill("[%s]" % ctag, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.12, 0.08, 0.04), CafeSocialTheme.COL_GOLD_ANTIQUE, 16))
+		ctitle_row.add_child(CafeSocialTheme.make_badge_pill("[%s]" % ctag, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.12, 0.08, 0.04), CafeSocialTheme.COL_GOLD_ANTIQUE, 15))
 
-	var c_nm_lbl := CafeSocialTheme.make_title(cname, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	var c_nm_lbl: Label = CafeSocialTheme.make_title(cname, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	c_nm_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	c_nm_lbl.clip_text = true
 	c_nm_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	ctitle_row.add_child(c_nm_lbl)
 
-	cinfo.add_child(CafeSocialTheme.make_body("سمت: %s  •  سطح کلن: %s" % [crole_fa, GameManager.to_fa_num(clvl)], 17, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
+	cinfo.add_child(CafeSocialTheme.make_body("سمت: %s  •  سطح %s" % [crole_fa, GameManager.to_fa_num(clvl)], 16, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
 
-	var emb_id := int(clan_d.get("emblem_id", 1))
-	var c_emb_node := CafeSocialTheme.make_clan_emblem(emb_id, 54.0)
+	var emb_id: int = int(clan_d.get("emblem_id", 1))
+	var c_emb_node: Control = CafeSocialTheme.make_clan_emblem(emb_id, 54.0)
 	c_emb_node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	crow.add_child(c_emb_node)
 
@@ -822,12 +1036,12 @@ func _render_favorite_games_section(prof: Dictionary) -> void:
 		full_history_box.add_theme_constant_override("separation", 8)
 		_body_vbox.add_child(full_history_box)
 
-		var btn_expand_hist: Button = CafeSocialTheme.make_button("▼ مشاهده آمار تفکیکی تمامی بازی‌ها", "bronze", Vector2(0, 48), 18)
+		var btn_expand_hist: Button = CafeSocialTheme.make_button("مشاهده آمار تفکیکی همه بازی‌ها", "bronze", Vector2(0, 48), 18)
 		btn_expand_hist.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_expand_hist.pressed.connect(func():
 			AudioManager.sfx_tap()
 			full_history_box.visible = not full_history_box.visible
-			btn_expand_hist.text = "▲ بستن آمار تفکیکی بازی‌ها" if full_history_box.visible else "▼ مشاهده آمار تفکیکی تمامی بازی‌ها"
+			btn_expand_hist.text = "بستن آمار تفکیکی بازی‌ها" if full_history_box.visible else "مشاهده آمار تفکیکی همه بازی‌ها"
 			if full_history_box.visible and full_history_box.get_child_count() == 0:
 				GamesHistoryViewHelper.populate_games_history(full_history_box, hist_dict, false)
 		)

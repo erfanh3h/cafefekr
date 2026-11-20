@@ -1709,6 +1709,10 @@ func _init_lounge_materials() -> void:
 	var tex_book_abru: Texture2D = _load_cafe_tex("book_marbled_abru.jpg")
 	var tex_book_golestan: Texture2D = _load_cafe_tex("book_golestan_floral.jpg")
 	var tex_book_filigree: Texture2D = _load_cafe_tex("book_spine_filigree.jpg")
+	var tex_chair_emerald: Texture2D = _load_cafe_tex("chair_leather_emerald.jpg")
+	var tex_chair_crimson: Texture2D = _load_cafe_tex("chair_velvet_crimson.jpg")
+	var tex_chair_teal: Texture2D = _load_cafe_tex("chair_damask_teal.jpg")
+	var tex_chair_cognac: Texture2D = _load_cafe_tex("chair_leather_cognac.jpg")
 
 	# Mobile-friendly velvet-baize material (zero normal-map shader overhead, zero specular glare in 2D mode)
 	var mat_baize: StandardMaterial3D = StandardMaterial3D.new()
@@ -1842,6 +1846,17 @@ func _init_lounge_materials() -> void:
 	var mat_termeh_fabric: StandardMaterial3D = _make_mat(Color(0.88, 0.84, 0.80) if tex_termeh != null else Color(0.48, 0.10, 0.11), 0.86, 0.0, tex_termeh, Vector3(1.4, 1.4, 1.4))
 	mat_termeh_fabric.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 
+	# Rich textured upholstery materials for the 4 randomized 3D Persian parlor chairs
+	var mat_chair_emerald: StandardMaterial3D = _make_mat(Color(0.95, 0.96, 0.94) if tex_chair_emerald != null else Color(0.11, 0.28, 0.16), 0.42, 0.05, tex_chair_emerald, Vector3(1.15, 1.15, 1.15))
+	var mat_chair_crimson: StandardMaterial3D = _make_mat(Color(0.96, 0.92, 0.90) if tex_chair_crimson != null else Color(0.48, 0.09, 0.12), 0.84, 0.02, tex_chair_crimson, Vector3(1.10, 1.10, 1.10))
+	mat_chair_crimson.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	var mat_chair_teal: StandardMaterial3D = _make_mat(Color(0.96, 0.97, 0.96) if tex_chair_teal != null else Color(0.09, 0.42, 0.46), 0.76, 0.03, tex_chair_teal, Vector3(1.0, 1.0, 1.0))
+	mat_chair_teal.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	var mat_chair_cognac: StandardMaterial3D = _make_mat(Color(0.96, 0.94, 0.90) if tex_chair_cognac != null else Color(0.56, 0.28, 0.12), 0.38, 0.06, tex_chair_cognac, Vector3(1.15, 1.15, 1.15))
+	var mat_chair_crimson_trim: StandardMaterial3D = _make_mat(Color(0.32, 0.06, 0.08), 0.72, 0.03)
+	var mat_chair_teal_trim: StandardMaterial3D = _make_mat(Color(0.06, 0.26, 0.30), 0.64, 0.04)
+	var mat_chair_cognac_trim: StandardMaterial3D = _make_mat(Color(0.36, 0.17, 0.07), 0.44, 0.05)
+
 	_shared_mats = {
 		"baize_emerald": mat_baize,
 		"baize_border": mat_baize_border,
@@ -1917,7 +1932,14 @@ func _init_lounge_materials() -> void:
 		"window_glass": mat_window_glass,
 		"window_glass_glint": mat_window_glass_glint,
 		"left_lamp_shade": _left_lamp_shade_mat,
-		"right_lantern_glow": _right_lantern_glow_mat
+		"right_lantern_glow": _right_lantern_glow_mat,
+		"chair_emerald": mat_chair_emerald,
+		"chair_crimson": mat_chair_crimson,
+		"chair_teal": mat_chair_teal,
+		"chair_cognac": mat_chair_cognac,
+		"chair_crimson_trim": mat_chair_crimson_trim,
+		"chair_teal_trim": mat_chair_teal_trim,
+		"chair_cognac_trim": mat_chair_cognac_trim
 	}
 
 
@@ -2307,263 +2329,264 @@ func _build_player_chairs_around_table(chairs_parent: Node3D) -> void:
 
 
 func _add_grounded_chair_base(chair: Node3D, mat_wood_main: Material, mat_wood_dark: Material, mat_accent: Material, stretcher_style: int = 0) -> void:
-	# Proper architectural chair base descending cleanly from seat rail (y = -0.17) to carpet floor (y = -0.77)
+	# Refined architectural parlor chair base descending cleanly from seat apron (y = -0.15) to carpet floor (y = -0.77)
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
 
-	# Carved Seat-Frame Apron & Recessed Under-Seat Plinth
-	_add_box(chair, Vector3(0.78, 0.068, 0.44), Vector3(0.0, -0.175, 0.21), mat_wood_dark)
-	_add_box(chair, Vector3(0.80, 0.020, 0.46), Vector3(0.0, -0.145, 0.21), mat_wood_main)
-	_add_box(chair, Vector3(0.80, 0.018, 0.46), Vector3(0.0, -0.205, 0.21), mat_wood_main)
-	# Front apron inlay strip & carved center rosette
-	_add_box(chair, Vector3(0.54, 0.036, 0.014), Vector3(0.0, -0.175, 0.432), mat_accent)
-	_add_sphere(chair, 0.016, 0.016, Vector3(0.0, -0.175, 0.442), mat_brass, Vector3.ZERO, 8)
+	# Sculpted Seat-Frame Apron with Recessed Molding & Rounded Front Corner Columns
+	_add_box(chair, Vector3(0.74, 0.062, 0.42), Vector3(0.0, -0.172, 0.21), mat_wood_dark)
+	_add_box(chair, Vector3(0.76, 0.016, 0.44), Vector3(0.0, -0.140, 0.21), mat_wood_main)
+	_add_box(chair, Vector3(0.75, 0.014, 0.43), Vector3(0.0, -0.204, 0.21), mat_wood_main)
+	# Subtle front & side inlay trim + center gilded medallion
+	_add_box(chair, Vector3(0.50, 0.024, 0.012), Vector3(0.0, -0.172, 0.422), mat_accent)
+	_add_box(chair, Vector3(0.012, 0.022, 0.28), Vector3(-0.372, -0.172, 0.21), mat_accent)
+	_add_box(chair, Vector3(0.012, 0.022, 0.28), Vector3(0.372, -0.172, 0.21), mat_accent)
+	_add_torus(chair, 0.012, 0.019, Vector3(0.0, -0.172, 0.428), mat_brass, Vector3(90.0, 0.0, 0.0), 10)
 
-	# 4 Sculpted Legs Grounded Flush on Carpet Floor (y = -0.77) with Turned Knees, Rings & Brass Sabot Caps
+	# 4 Sleek Tapered Parlor Legs Grounded Flush on Carpet Floor (y = -0.77)
 	var leg_specs: Array[Dictionary] = [
-		{"x": -0.355, "z": 0.39, "rake_x": 3.5, "rake_z": -3.0},
-		{"x": 0.355, "z": 0.39, "rake_x": 3.5, "rake_z": 3.0},
-		{"x": -0.355, "z": 0.01, "rake_x": -4.5, "rake_z": -2.5},
-		{"x": 0.355, "z": 0.01, "rake_x": -4.5, "rake_z": 2.5}
+		{"x": -0.340, "z": 0.385, "rake_x": 3.2, "rake_z": -2.8},
+		{"x": 0.340, "z": 0.385, "rake_x": 3.2, "rake_z": 2.8},
+		{"x": -0.340, "z": 0.025, "rake_x": -4.0, "rake_z": -2.2},
+		{"x": 0.340, "z": 0.025, "rake_x": -4.0, "rake_z": 2.2}
 	]
 	for spec: Dictionary in leg_specs:
 		var lx: float = float(spec["x"])
 		var lz: float = float(spec["z"])
 		var rx: float = float(spec["rake_x"])
 		var rz: float = float(spec["rake_z"])
-		# Upper knee block & turned collar
-		_add_box(chair, Vector3(0.062, 0.088, 0.062), Vector3(lx, -0.215, lz), mat_wood_main)
-		_add_torus(chair, 0.022, 0.036, Vector3(lx, -0.262, lz), mat_aged, Vector3.ZERO, 10)
-		# Tapered turned leg shaft reaching floor
-		var foot_x: float = lx + sin(deg_to_rad(rz)) * 0.16
-		var foot_z: float = lz + sin(deg_to_rad(rx)) * 0.18
+		var foot_x: float = lx + sin(deg_to_rad(rz)) * 0.14
+		var foot_z: float = lz + sin(deg_to_rad(rx)) * 0.16
+		# Rounded carved upper knee capital (no clunky sharp cubes!)
+		_add_cyl(chair, 0.030, 0.028, 0.072, Vector3(lx, -0.195, lz), mat_wood_main, Vector3.ZERO, 10)
+		_add_torus(chair, 0.020, 0.031, Vector3(lx, -0.232, lz), mat_aged, Vector3.ZERO, 10)
+		# Sleek upper-to-lower tapered leg shaft
 		var mid_x: float = (lx + foot_x) * 0.5
 		var mid_z: float = (lz + foot_z) * 0.5
-		_add_cyl(chair, 0.030, 0.019, 0.47, Vector3(mid_x, -0.495, mid_z), mat_wood_dark, Vector3(rx, 0.0, rz), 10)
-		# Turned decorative baluster bulb along upper-mid shaft
-		if stretcher_style == 0 or stretcher_style == 1:
-			_add_sphere(chair, 0.034, 0.052, Vector3(lerpf(lx, foot_x, 0.25), -0.345, lerpf(lz, foot_z, 0.25)), mat_wood_main, Vector3.ZERO, 8)
-		else:
-			_add_torus(chair, 0.018, 0.028, Vector3(lerpf(lx, foot_x, 0.30), -0.365, lerpf(lz, foot_z, 0.30)), mat_brass, Vector3.ZERO, 10)
-		# Polished Antique-Brass Sabot Foot Cap Resting on Carpet (y = -0.77)
-		_add_cyl(chair, 0.021, 0.024, 0.044, Vector3(foot_x, -0.748, foot_z), mat_brass, Vector3.ZERO, 10)
-		_add_torus(chair, 0.018, 0.025, Vector3(foot_x, -0.726, foot_z), mat_aged, Vector3.ZERO, 10)
+		_add_cyl(chair, 0.026, 0.015, 0.50, Vector3(mid_x, -0.482, mid_z), mat_wood_dark, Vector3(rx, 0.0, rz), 10)
+		# Subtle refined brass ankle collar near upper third
+		var ring_t: float = 0.28
+		_add_torus(chair, 0.015, 0.024, Vector3(lerpf(lx, foot_x, ring_t), -0.360, lerpf(lz, foot_z, ring_t)), mat_aged, Vector3.ZERO, 10)
+		# Polished Antique-Brass Sabot Foot Cap Resting Flush at y = -0.77
+		_add_cyl(chair, 0.017, 0.021, 0.046, Vector3(foot_x, -0.747, foot_z), mat_brass, Vector3.ZERO, 10)
+		_add_torus(chair, 0.015, 0.021, Vector3(foot_x, -0.724, foot_z), mat_aged, Vector3.ZERO, 10)
 
-	# Structural Cross-Stretchers (H-Stretcher or Box Perimeter Stretcher at y = -0.57)
-	var st_y: float = -0.57
-	for side_s: float in [-1.0, 1.0]:
-		_add_cyl(chair, 0.014, 0.014, 0.39, Vector3(side_s * 0.36, st_y, 0.20), mat_wood_main, Vector3(90.0, 0.0, 0.0), 8)
-	if stretcher_style == 0 or stretcher_style == 1:
-		# Classical Turned H-Stretcher with Central Brass Boss
-		_add_cyl(chair, 0.015, 0.015, 0.72, Vector3(0.0, st_y, 0.20), mat_wood_main, Vector3(0.0, 0.0, 90.0), 8)
-		_add_sphere(chair, 0.026, 0.030, Vector3(0.0, st_y, 0.20), mat_aged, Vector3.ZERO, 8)
-		_add_torus(chair, 0.016, 0.024, Vector3(-0.18, st_y, 0.20), mat_wood_dark, Vector3(0.0, 0.0, 90.0), 8)
-		_add_torus(chair, 0.016, 0.024, Vector3(0.18, st_y, 0.20), mat_wood_dark, Vector3(0.0, 0.0, 90.0), 8)
+	# Delicate Turned Structural Stretchers (y = -0.58)
+	var st_y: float = -0.58
+	if stretcher_style == 0 or stretcher_style == 2:
+		# Classic H-Stretcher with Slim Turned Rods & Central Brass Rosette
+		for side_s: float in [-1.0, 1.0]:
+			_add_cyl(chair, 0.011, 0.011, 0.36, Vector3(side_s * 0.35, st_y, 0.205), mat_wood_main, Vector3(90.0, 0.0, 0.0), 8)
+		_add_cyl(chair, 0.012, 0.012, 0.70, Vector3(0.0, st_y, 0.205), mat_wood_main, Vector3(0.0, 0.0, 90.0), 8)
+		_add_sphere(chair, 0.020, 0.024, Vector3(0.0, st_y, 0.205), mat_aged, Vector3.ZERO, 8)
 	else:
-		# Perimeter Box Stretchers (Front + Rear + Brass Center Collar)
-		_add_cyl(chair, 0.013, 0.013, 0.72, Vector3(0.0, st_y, 0.395), mat_wood_main, Vector3(0.0, 0.0, 90.0), 8)
-		_add_cyl(chair, 0.013, 0.013, 0.72, Vector3(0.0, st_y, 0.005), mat_wood_dark, Vector3(0.0, 0.0, 90.0), 8)
-		_add_torus(chair, 0.015, 0.022, Vector3(0.0, st_y, 0.395), mat_brass, Vector3(0.0, 0.0, 90.0), 8)
+		# Graceful X-Stretcher Meeting at a Turned Brass Finial
+		_add_cyl(chair, 0.011, 0.011, 0.76, Vector3(0.0, st_y, 0.205), mat_wood_main, Vector3(0.0, 27.0, 90.0), 8)
+		_add_cyl(chair, 0.011, 0.011, 0.76, Vector3(0.0, st_y, 0.205), mat_wood_main, Vector3(0.0, -27.0, 90.0), 8)
+		_add_sphere(chair, 0.022, 0.032, Vector3(0.0, st_y + 0.012, 0.205), mat_brass, Vector3.ZERO, 8)
 
 
 func _populate_chair_style_0_chesterfield(chair: Node3D) -> void:
-	# STYLE 0: Classic Emerald Diamond-Tufted Leather Chesterfield Club Chair (with Grounded Carved Walnut & Brass Base)
+	# STYLE 0: Classic Emerald Diamond-Tufted Leather Chesterfield Parlor Chair (Textured Leather + Sculpted Walnut Arch)
 	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
 	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
-	var mat_leather: Material = _shared_mats["leather_green"]
-	var mat_leather_dark: Material = _shared_mats["leather_green_dark"]
-	var mat_brass: Material = _shared_mats["brass"]
-
-	_add_grounded_chair_base(chair, mat_walnut_pol, mat_walnut_dark, _shared_mats["aged_brass"], 0)
-
-	# Main Curved Leather Backrest Shell & Seat Cushion
-	_add_box(chair, Vector3(0.82, 0.54, 0.085), Vector3(0.0, 0.16, 0.0), mat_leather_dark, Vector3(-5.0, 0.0, 0.0))
-	_add_cyl(chair, 0.41, 0.41, 0.085, Vector3(0.0, 0.22, 0.0), mat_leather_dark, Vector3(85.0, 0.0, 0.0), 16)
-	_add_box(chair, Vector3(0.78, 0.10, 0.44), Vector3(0.0, -0.10, 0.21), mat_leather_dark)
-	_add_box(chair, Vector3(0.74, 0.08, 0.40), Vector3(0.0, -0.05, 0.21), mat_leather)
-
-	# Diamond-Tufted Padded Green Leather Cushion Puffs (front & back of backrest)
-	var row_ys: Array[float] = [0.36, 0.25, 0.14, 0.03]
-	for r_idx: int in range(row_ys.size()):
-		var ry: float = row_ys[r_idx]
-		var cols: int = 5 if (r_idx % 2 == 0) else 4
-		var spacing: float = 0.145
-		var start_x: float = -float(cols - 1) * spacing * 0.5
-		for c_idx: int in range(cols):
-			var cx: float = start_x + float(c_idx) * spacing
-			var arch_drop: float = (cx * cx) * 0.28
-			var py: float = ry - arch_drop
-			var pz: float = 0.040 + (0.20 - absf(py - 0.20)) * 0.045
-			_add_box(chair, Vector3(0.105, 0.105, 0.056), Vector3(cx, py, 0.0), mat_leather, Vector3(-5.0, 0.0, 45.0))
-			_add_sphere(chair, 0.060, 0.046, Vector3(cx, py, pz + 0.010), mat_leather, Vector3(90.0, 0.0, 0.0), 8)
-			_add_sphere(chair, 0.056, 0.040, Vector3(cx, py, -0.038), mat_leather, Vector3(90.0, 0.0, 0.0), 8)
-			if r_idx < 3 and c_idx < cols - 1:
-				var bx: float = cx + spacing * 0.5
-				var by: float = py - spacing * 0.38
-				_add_sphere(chair, 0.008, 0.008, Vector3(bx, by, pz + 0.026), mat_brass, Vector3.ZERO, 6)
-				_add_sphere(chair, 0.008, 0.008, Vector3(bx, by, -0.048), mat_brass, Vector3.ZERO, 6)
-
-	# Carved Arched Walnut Crest Rail & Side Stiles
-	var arch_segs: int = 9
-	for i: int in range(arch_segs):
-		var t: float = float(i) / float(arch_segs - 1)
-		var ang: float = lerpf(-1.12, 1.12, t)
-		var ax: float = sin(ang) * 0.47
-		var ay: float = 0.12 + cos(ang) * 0.34
-		var rot_z: float = -rad_to_deg(ang) * 0.72
-		_add_box(chair, Vector3(0.13, 0.048, 0.092), Vector3(ax, ay, 0.005), mat_walnut_pol, Vector3(-5.0, 0.0, rot_z))
-		var nx: float = sin(ang) * 0.42
-		var ny: float = 0.11 + cos(ang) * 0.30
-		_add_sphere(chair, 0.0075, 0.012, Vector3(nx, ny, 0.054), mat_brass, Vector3.ZERO, 6)
-		_add_sphere(chair, 0.0075, 0.012, Vector3(nx, ny, -0.046), mat_brass, Vector3.ZERO, 6)
-
-	# Scrolled Walnut Ear Knuckles, Side Posts & Curved Armrests (Anchored Firmly into Seat Apron)
-	for side_s: float in [-1.0, 1.0]:
-		_add_sphere(chair, 0.046, 0.072, Vector3(side_s * 0.45, 0.31, 0.01), mat_walnut_pol, Vector3.ZERO, 8)
-		_add_torus(chair, 0.026, 0.044, Vector3(side_s * 0.45, 0.31, 0.02), mat_walnut_pol, Vector3(90.0, 0.0, 0.0), 10)
-		_add_box(chair, Vector3(0.056, 0.46, 0.088), Vector3(side_s * 0.42, 0.08, 0.005), mat_walnut_pol, Vector3(-5.0, 0.0, side_s * -4.0))
-		for n_idx: int in range(6):
-			var n_y: float = -0.04 + float(n_idx) * 0.056
-			var n_x: float = side_s * (0.39 + float(n_idx) * 0.003)
-			_add_sphere(chair, 0.0075, 0.012, Vector3(n_x, n_y, 0.054), mat_brass, Vector3.ZERO, 6)
-		_add_box(chair, Vector3(0.062, 0.040, 0.38), Vector3(side_s * 0.41, 0.02, 0.20), mat_walnut_pol, Vector3(4.0, side_s * -4.0, 0.0))
-		_add_sphere(chair, 0.036, 0.046, Vector3(side_s * 0.39, 0.01, 0.37), mat_walnut_pol, Vector3.ZERO, 8)
-		_add_cyl(chair, 0.024, 0.026, 0.19, Vector3(side_s * 0.38, -0.085, 0.36), mat_walnut_dark, Vector3.ZERO, 8)
-
-
-func _populate_chair_style_1_qajar_wingback(chair: Node3D) -> void:
-	# STYLE 1: Royal Qajar Crimson Velvet & Termeh Wingback Throne Chair
-	var mat_mahogany: Material = _shared_mats["mahogany"]
-	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
-	var mat_velvet: Material = _shared_mats["velvet_curtain"]
-	var mat_termeh: Material = _shared_mats["termeh_fabric"]
+	var mat_leather: Material = _shared_mats["chair_emerald"]
+	var mat_trim: Material = _shared_mats["leather_green_dark"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
 
-	_add_grounded_chair_base(chair, mat_mahogany, mat_walnut_dark, _shared_mats["rug_gold"], 1)
+	_add_grounded_chair_base(chair, mat_walnut_pol, mat_walnut_dark, mat_aged, 0)
 
-	# Plush Crimson Termeh Seat Cushion with Gold Welt Trim
-	_add_box(chair, Vector3(0.76, 0.11, 0.43), Vector3(0.0, -0.095, 0.21), mat_velvet)
-	_add_box(chair, Vector3(0.72, 0.055, 0.39), Vector3(0.0, -0.035, 0.21), mat_termeh)
-	_add_box(chair, Vector3(0.77, 0.012, 0.44), Vector3(0.0, -0.145, 0.21), mat_aged)
+	# Plush Rounded Waterfall Seat Cushion Wrapped in Diamond-Tufted Emerald Leather
+	_add_box(chair, Vector3(0.72, 0.082, 0.39), Vector3(0.0, -0.092, 0.205), mat_trim)
+	_add_box(chair, Vector3(0.68, 0.068, 0.36), Vector3(0.0, -0.052, 0.205), mat_leather)
+	_add_cyl(chair, 0.040, 0.040, 0.68, Vector3(0.0, -0.068, 0.388), mat_leather, Vector3(0.0, 0.0, 90.0), 10)
+	_add_cyl(chair, 0.010, 0.010, 0.72, Vector3(0.0, -0.126, 0.405), mat_aged, Vector3(0.0, 0.0, 90.0), 8)
 
-	# Tall Sculpted Persian Pointed-Arch Wingback Panel (Vertical Channel Tufting!)
-	_add_box(chair, Vector3(0.78, 0.62, 0.088), Vector3(0.0, 0.20, 0.0), mat_velvet, Vector3(-5.0, 0.0, 0.0))
-	for ch_i: int in range(-2, 3):
-		var cx: float = float(ch_i) * 0.145
-		var ch_h: float = 0.56 - absf(float(ch_i)) * 0.045
-		_add_cyl(chair, 0.068, 0.068, ch_h, Vector3(cx, 0.19, 0.030), mat_termeh, Vector3(-5.0, 0.0, 0.0), 10)
-		_add_cyl(chair, 0.062, 0.062, ch_h, Vector3(cx, 0.19, -0.030), mat_velvet, Vector3(-5.0, 0.0, 0.0), 10)
-
-	# Pointed Persian Arch Crown Molding & Brass Shamseh Crest Finial
+	# Contoured Arched Chesterfield Backrest (Smooth Textured Cushion Panel — Zero Blocky Primitives!)
+	_add_box(chair, Vector3(0.74, 0.42, 0.088), Vector3(0.0, 0.13, 0.004), mat_leather, Vector3(-6.0, 0.0, 0.0))
+	_add_cyl(chair, 0.37, 0.37, 0.086, Vector3(0.0, 0.22, -0.008), mat_leather, Vector3(84.0, 0.0, 0.0), 18)
+	# Soft padded leather bolsters on left/right inner edges
 	for side_s: float in [-1.0, 1.0]:
-		_add_box(chair, Vector3(0.32, 0.052, 0.098), Vector3(side_s * 0.24, 0.49, 0.004), mat_mahogany, Vector3(-5.0, 0.0, side_s * -24.0))
-		_add_box(chair, Vector3(0.058, 0.58, 0.096), Vector3(side_s * 0.41, 0.16, 0.004), mat_mahogany, Vector3(-5.0, 0.0, 0.0))
-		# Sculpted Wing Cheeks Wrapping Forward with Brass Studs
-		_add_box(chair, Vector3(0.062, 0.34, 0.20), Vector3(side_s * 0.40, 0.28, 0.10), mat_velvet, Vector3(0.0, side_s * -14.0, 0.0))
-		_add_box(chair, Vector3(0.032, 0.35, 0.026), Vector3(side_s * 0.38, 0.28, 0.195), mat_mahogany, Vector3(0.0, side_s * -14.0, 0.0))
+		_add_cyl(chair, 0.044, 0.044, 0.42, Vector3(side_s * 0.36, 0.13, 0.006), mat_trim, Vector3(-6.0, 0.0, 0.0), 10)
+
+	# Continuous 13-Segment Sculpted Carved-Walnut Crown Arch & Brass Nailhead Piping
+	var arch_segs: int = 13
+	for i: int in range(arch_segs):
+		var t: float = float(i) / float(arch_segs - 1)
+		var ang: float = lerpf(-1.35, 1.35, t)
+		var ax: float = sin(ang) * 0.405
+		var ay: float = 0.215 + cos(ang) * 0.375
+		var rot_z: float = -rad_to_deg(ang)
+		var az: float = -0.008 - (ay - 0.215) * 0.105
+		_add_box(chair, Vector3(0.105, 0.046, 0.102), Vector3(ax, ay, az), mat_walnut_pol, Vector3(-6.0, 0.0, rot_z))
+		if i % 2 == 0:
+			var nx: float = sin(ang) * 0.372
+			var ny: float = 0.215 + cos(ang) * 0.342
+			_add_sphere(chair, 0.007, 0.009, Vector3(nx, ny, az + 0.052), mat_brass, Vector3.ZERO, 6)
+			_add_sphere(chair, 0.007, 0.009, Vector3(nx, ny, az - 0.052), mat_aged, Vector3.ZERO, 6)
+	# Subtle gilded crest scroll at top apex
+	_add_torus(chair, 0.018, 0.032, Vector3(0.0, 0.605, -0.048), mat_aged, Vector3(84.0, 0.0, 0.0), 10)
+
+	# Graceful Swept Walnut Side Stiles & Leather-Cuffed Armrests
+	for side_s: float in [-1.0, 1.0]:
+		_add_cyl(chair, 0.028, 0.030, 0.40, Vector3(side_s * 0.398, 0.06, 0.012), mat_walnut_pol, Vector3(-6.0, 0.0, 0.0), 10)
+		# Curved walnut armrest rail + plush emerald leather arm pad
+		_add_box(chair, Vector3(0.056, 0.032, 0.36), Vector3(side_s * 0.385, 0.035, 0.195), mat_walnut_pol, Vector3(3.5, side_s * -3.5, 0.0))
+		_add_box(chair, Vector3(0.062, 0.026, 0.22), Vector3(side_s * 0.384, 0.058, 0.190), mat_leather, Vector3(3.5, side_s * -3.5, 0.0))
+		_add_sphere(chair, 0.032, 0.036, Vector3(side_s * 0.372, 0.025, 0.370), mat_walnut_pol, Vector3.ZERO, 8)
+		# Sleek turned front arm post connecting cleanly into seat corner
+		_add_cyl(chair, 0.020, 0.024, 0.175, Vector3(side_s * 0.362, -0.065, 0.365), mat_walnut_dark, Vector3(6.0, 0.0, 0.0), 10)
+		_add_torus(chair, 0.016, 0.024, Vector3(side_s * 0.362, -0.055, 0.365), mat_aged, Vector3.ZERO, 8)
+
+
+func _populate_chair_style_1_qajar_wingback(chair: Node3D) -> void:
+	# STYLE 1: Royal Qajar Crimson Velvet Damask Wingback Armchair (Seamless Curved Arch + Sculpted Wing Cheeks)
+	var mat_mahogany: Material = _shared_mats["mahogany"]
+	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
+	var mat_velvet: Material = _shared_mats["chair_crimson"]
+	var mat_trim: Material = _shared_mats["chair_crimson_trim"]
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+
+	_add_grounded_chair_base(chair, mat_mahogany, mat_walnut_dark, mat_brass, 1)
+
+	# Plush Rounded Crimson Damask Seat Cushion with Antique Gold Piping
+	_add_box(chair, Vector3(0.72, 0.088, 0.40), Vector3(0.0, -0.090, 0.205), mat_trim)
+	_add_box(chair, Vector3(0.68, 0.068, 0.36), Vector3(0.0, -0.048, 0.205), mat_velvet)
+	_add_cyl(chair, 0.042, 0.042, 0.68, Vector3(0.0, -0.064, 0.390), mat_velvet, Vector3(0.0, 0.0, 90.0), 10)
+	_add_box(chair, Vector3(0.73, 0.012, 0.415), Vector3(0.0, -0.132, 0.205), mat_aged)
+
+	# Seamless Tall Sculpted Crimson Damask Backrest (Rounded Crown Silhouette — No Disconnected Cylinders!)
+	_add_box(chair, Vector3(0.70, 0.48, 0.086), Vector3(0.0, 0.16, 0.002), mat_velvet, Vector3(-6.0, 0.0, 0.0))
+	_add_cyl(chair, 0.35, 0.35, 0.084, Vector3(0.0, 0.36, -0.020), mat_velvet, Vector3(84.0, 0.0, 0.0), 18)
+
+	# Smooth Continuous Mahogany Crown Arch Wrapping the Backrest
+	var crown_segs: int = 11
+	for i: int in range(crown_segs):
+		var t: float = float(i) / float(crown_segs - 1)
+		var ang: float = lerpf(-1.42, 1.42, t)
+		var cx: float = sin(ang) * 0.380
+		var cy: float = 0.360 + cos(ang) * 0.365
+		var cz: float = -0.020 - (cy - 0.360) * 0.105
+		_add_box(chair, Vector3(0.11, 0.042, 0.098), Vector3(cx, cy, cz), mat_mahogany, Vector3(-6.0, 0.0, -rad_to_deg(ang)))
+
+	# Regal Persian Shamseh Brass Crest Medallion Perched Cleanly on Crown Apex
+	_add_torus(chair, 0.022, 0.038, Vector3(0.0, 0.742, -0.060), mat_brass, Vector3(84.0, 0.0, 0.0), 12)
+	_add_sphere(chair, 0.020, 0.026, Vector3(0.0, 0.742, -0.058), mat_trim, Vector3.ZERO, 8)
+	_add_sphere(chair, 0.012, 0.026, Vector3(0.0, 0.785, -0.064), mat_brass, Vector3.ZERO, 8)
+
+	# Gracefully Contoured Velvet Wing Cheeks, Brass Stud Piping & Rolled Velvet Armrests
+	for side_s: float in [-1.0, 1.0]:
+		# Mahogany vertical rear stiles
+		_add_cyl(chair, 0.026, 0.028, 0.50, Vector3(side_s * 0.376, 0.14, 0.004), mat_mahogany, Vector3(-6.0, 0.0, 0.0), 10)
+		# Tapered curved velvet wing cheek flowing smoothly from crown down into armrest
+		_add_box(chair, Vector3(0.056, 0.34, 0.17), Vector3(side_s * 0.368, 0.25, 0.088), mat_velvet, Vector3(-6.0, side_s * -10.0, 0.0))
+		_add_cyl(chair, 0.032, 0.026, 0.36, Vector3(side_s * 0.360, 0.25, 0.168), mat_trim, Vector3(-6.0, 0.0, 0.0), 10)
+		# Delicate brass nailhead studs along front edge of each wing
 		for s_i: int in range(5):
-			_add_sphere(chair, 0.008, 0.010, Vector3(side_s * 0.37, 0.14 + float(s_i) * 0.065, 0.205), mat_brass, Vector3.ZERO, 6)
-		# Rolled Velvet-Capped Armrests & Turned Mahogany Posts
-		_add_cyl(chair, 0.044, 0.044, 0.37, Vector3(side_s * 0.39, 0.03, 0.21), mat_velvet, Vector3(90.0, 0.0, 0.0), 10)
-		_add_sphere(chair, 0.046, 0.052, Vector3(side_s * 0.39, 0.03, 0.39), mat_mahogany, Vector3.ZERO, 8)
-		_add_cyl(chair, 0.025, 0.028, 0.18, Vector3(side_s * 0.38, -0.075, 0.37), mat_mahogany, Vector3.ZERO, 8)
-	# Regal Crown Finial at Arch Apex
-	_add_torus(chair, 0.030, 0.046, Vector3(0.0, 0.56, 0.012), mat_brass, Vector3(90.0, 0.0, 0.0), 12)
-	_add_sphere(chair, 0.024, 0.038, Vector3(0.0, 0.565, 0.016), mat_aged, Vector3.ZERO, 8)
-	_add_sphere(chair, 0.016, 0.034, Vector3(0.0, 0.618, 0.014), mat_brass, Vector3.ZERO, 8)
+			_add_sphere(chair, 0.0065, 0.008, Vector3(side_s * 0.354, 0.12 + float(s_i) * 0.062, 0.194 - float(s_i) * 0.006), mat_brass, Vector3.ZERO, 6)
+		# Plush rolled velvet armrests with carved mahogany scroll knuckles
+		_add_cyl(chair, 0.042, 0.042, 0.34, Vector3(side_s * 0.368, 0.032, 0.215), mat_velvet, Vector3(90.0, 0.0, 0.0), 12)
+		_add_torus(chair, 0.024, 0.042, Vector3(side_s * 0.368, 0.032, 0.382), mat_mahogany, Vector3(90.0, 0.0, 0.0), 10)
+		_add_sphere(chair, 0.026, 0.026, Vector3(side_s * 0.368, 0.032, 0.388), mat_aged, Vector3.ZERO, 8)
+		_add_box(chair, Vector3(0.048, 0.15, 0.32), Vector3(side_s * 0.366, -0.058, 0.205), mat_trim)
 
 
 func _populate_chair_style_2_isfahan_medallion(chair: Node3D) -> void:
-	# STYLE 2: Isfahan Peacock-Teal & Shiraz Khatam-Kari Oval Medallion Parlour Armchair
+	# STYLE 2: Isfahan Peacock-Teal Brocade Oval Medallion Salon Chair (Proportioned Sculpted Frame + Floral Medallion Texture)
 	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
 	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
-	var mat_teal: Material = _shared_mats["book_cloth_teal"]
+	var mat_teal: Material = _shared_mats["chair_teal"]
+	var mat_trim: Material = _shared_mats["chair_teal_trim"]
 	var mat_khatam: Material = _shared_mats["khatam_inlay"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
 
 	_add_grounded_chair_base(chair, mat_walnut_pol, mat_walnut_dark, mat_khatam, 2)
 
-	# Rounded Upholstered Teal Seat Cushion with Brass Trim Piping
-	_add_box(chair, Vector3(0.74, 0.095, 0.42), Vector3(0.0, -0.095, 0.21), mat_teal)
-	_add_cyl(chair, 0.37, 0.37, 0.075, Vector3(0.0, -0.070, 0.22), mat_teal, Vector3.ZERO, 16)
-	_add_torus(chair, 0.355, 0.378, Vector3(0.0, -0.128, 0.21), mat_aged, Vector3.ZERO, 16)
+	# Contoured Rounded Brocade Seat Cushion with Antique Gold Piping
+	_add_box(chair, Vector3(0.70, 0.076, 0.38), Vector3(0.0, -0.094, 0.205), mat_trim)
+	_add_box(chair, Vector3(0.66, 0.064, 0.35), Vector3(0.0, -0.056, 0.205), mat_teal)
+	_add_cyl(chair, 0.036, 0.036, 0.66, Vector3(0.0, -0.072, 0.382), mat_teal, Vector3(0.0, 0.0, 90.0), 10)
+	_add_cyl(chair, 0.009, 0.009, 0.70, Vector3(0.0, -0.128, 0.398), mat_aged, Vector3(0.0, 0.0, 90.0), 8)
 
-	# Graceful Oval Medallion Backrest Framed in Carved Walnut & Brass Beading
-	var med_y: float = 0.22
-	_add_cyl(chair, 0.36, 0.36, 0.076, Vector3(0.0, med_y, 0.0), mat_teal, Vector3(85.0, 0.0, 0.0), 18)
-	_add_sphere(chair, 0.32, 0.105, Vector3(0.0, med_y, 0.018), mat_teal, Vector3(85.0, 0.0, 0.0), 12)
-	_add_sphere(chair, 0.30, 0.088, Vector3(0.0, med_y, -0.018), mat_teal, Vector3(85.0, 0.0, 0.0), 12)
-	# Central Golden Sunburst Button Tuft (Front & Back)
-	_add_torus(chair, 0.036, 0.052, Vector3(0.0, med_y, 0.068), mat_brass, Vector3(85.0, 0.0, 0.0), 12)
-	_add_sphere(chair, 0.022, 0.022, Vector3(0.0, med_y, 0.072), mat_aged, Vector3.ZERO, 8)
-	_add_sphere(chair, 0.022, 0.022, Vector3(0.0, med_y, -0.060), mat_brass, Vector3.ZERO, 8)
-	# Carved Walnut Oval Perimeter Frame + Inner Brass Filigree Ring
-	_add_torus(chair, 0.34, 0.395, Vector3(0.0, med_y, 0.0), mat_walnut_pol, Vector3(85.0, 0.0, 0.0), 20)
-	_add_torus(chair, 0.325, 0.342, Vector3(0.0, med_y, 0.036), mat_brass, Vector3(85.0, 0.0, 0.0), 18)
-	_add_torus(chair, 0.325, 0.342, Vector3(0.0, med_y, -0.036), mat_aged, Vector3(85.0, 0.0, 0.0), 18)
-	# Khatam-Kari Crest Cartouche atop the Medallion
-	_add_box(chair, Vector3(0.18, 0.078, 0.055), Vector3(0.0, 0.60, 0.008), mat_walnut_pol)
-	_add_box(chair, Vector3(0.14, 0.052, 0.062), Vector3(0.0, 0.60, 0.010), mat_khatam)
-	_add_sphere(chair, 0.016, 0.022, Vector3(0.0, 0.648, 0.010), mat_brass, Vector3.ZERO, 8)
+	# Gracefully Proportioned Vertical-Oval Medallion Backrest (Upholstered in Isfahan Peacock-Teal Brocade!)
+	var med_y: float = 0.275
+	var med_z: float = -0.012
+	var med_node: Node3D = Node3D.new()
+	med_node.position = Vector3(0.0, med_y, med_z)
+	med_node.rotation_degrees = Vector3(-6.0, 0.0, 0.0)
+	med_node.scale = Vector3(1.06, 1.18, 1.0)
+	chair.add_child(med_node)
 
-	# Structural Side Uprights & Curved Gooseneck Armrests with Padded Teal Cuffs
+	# Textured cushioned brocade medallion disc (clean flat-domed profile — no weird bulgy sphere!)
+	_add_cyl(med_node, 0.295, 0.295, 0.068, Vector3.ZERO, mat_teal, Vector3(90.0, 0.0, 0.0), 20)
+	# Sleek beveled carved-walnut oval outer frame + delicate inner brass fillet ring
+	_add_torus(med_node, 0.285, 0.330, Vector3.ZERO, mat_walnut_pol, Vector3(90.0, 0.0, 0.0), 20)
+	_add_torus(med_node, 0.274, 0.288, Vector3(0.0, 0.0, 0.032), mat_brass, Vector3(90.0, 0.0, 0.0), 18)
+	_add_torus(med_node, 0.274, 0.288, Vector3(0.0, 0.0, -0.032), mat_aged, Vector3(90.0, 0.0, 0.0), 18)
+	# Refined Khatam-Kari crest ribbon atop the oval
+	_add_box(med_node, Vector3(0.145, 0.048, 0.042), Vector3(0.0, 0.335, 0.0), mat_walnut_pol)
+	_add_box(med_node, Vector3(0.110, 0.030, 0.048), Vector3(0.0, 0.335, 0.0), mat_khatam)
+	_add_sphere(med_node, 0.015, 0.022, Vector3(0.0, 0.368, 0.0), mat_brass, Vector3.ZERO, 8)
+
+	# Sculpted Lower Walnut Back-Support Posts Anchoring Medallion into Seat Frame
 	for side_s: float in [-1.0, 1.0]:
-		_add_cyl(chair, 0.024, 0.028, 0.28, Vector3(side_s * 0.35, -0.02, 0.01), mat_walnut_dark, Vector3(-6.0, 0.0, side_s * 6.0), 8)
-		_add_box(chair, Vector3(0.054, 0.034, 0.36), Vector3(side_s * 0.39, 0.035, 0.19), mat_walnut_pol, Vector3(5.0, side_s * -5.0, 0.0))
-		_add_box(chair, Vector3(0.062, 0.028, 0.20), Vector3(side_s * 0.39, 0.058, 0.18), mat_teal, Vector3(5.0, side_s * -5.0, 0.0))
-		_add_cyl(chair, 0.020, 0.024, 0.20, Vector3(side_s * 0.37, -0.065, 0.35), mat_walnut_pol, Vector3(14.0, 0.0, 0.0), 8)
-		_add_sphere(chair, 0.028, 0.034, Vector3(side_s * 0.38, 0.025, 0.36), mat_brass, Vector3.ZERO, 8)
+		_add_cyl(chair, 0.022, 0.026, 0.24, Vector3(side_s * 0.26, -0.03, 0.018), mat_walnut_dark, Vector3(-6.0, 0.0, side_s * 16.0), 10)
+		# Slender Curved Louis-Style Walnut Armrests with Padded Teal Brocade Cuffs
+		_add_box(chair, Vector3(0.048, 0.028, 0.34), Vector3(side_s * 0.368, 0.040, 0.195), mat_walnut_pol, Vector3(4.0, side_s * -4.0, 0.0))
+		_add_box(chair, Vector3(0.056, 0.024, 0.20), Vector3(side_s * 0.366, 0.062, 0.190), mat_teal, Vector3(4.0, side_s * -4.0, 0.0))
+		_add_cyl(chair, 0.018, 0.022, 0.19, Vector3(side_s * 0.354, -0.058, 0.355), mat_walnut_pol, Vector3(12.0, 0.0, 0.0), 10)
+		_add_sphere(chair, 0.024, 0.028, Vector3(side_s * 0.360, 0.032, 0.362), mat_brass, Vector3.ZERO, 8)
 
 
 func _populate_chair_style_3_orosi_lattice(chair: Node3D) -> void:
-	# STYLE 3: Carved Persian Walnut & Saffron-Gold Orosi Geometric Lattice Salon Chair
+	# STYLE 3: Warm Cognac Quilted-Leather & Carved Walnut Persian Salon Armchair (Sleek Crown Rail + Khatam Inlay)
 	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
 	var mat_walnut_mid: Material = _shared_mats["walnut_mid"]
 	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
-	var mat_saffron: Material = _shared_mats["persian_saffron"]
-	var mat_termeh: Material = _shared_mats["termeh_fabric"]
+	var mat_cognac: Material = _shared_mats["chair_cognac"]
+	var mat_trim: Material = _shared_mats["chair_cognac_trim"]
+	var mat_khatam: Material = _shared_mats["khatam_inlay"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
 
-	_add_grounded_chair_base(chair, mat_walnut_pol, mat_walnut_dark, mat_brass, 3)
+	_add_grounded_chair_base(chair, mat_walnut_pol, mat_walnut_dark, mat_khatam, 3)
 
-	# Plush Saffron-Gold & Termeh-Bordered Persian Seat Cushion
-	_add_box(chair, Vector3(0.76, 0.088, 0.43), Vector3(0.0, -0.102, 0.21), mat_termeh)
-	_add_box(chair, Vector3(0.70, 0.068, 0.38), Vector3(0.0, -0.055, 0.21), mat_saffron)
-	for c_x: float in [-0.35, 0.35]:
-		_add_cyl(chair, 0.032, 0.032, 0.38, Vector3(c_x, -0.055, 0.21), mat_termeh, Vector3(90.0, 0.0, 0.0), 8)
+	# Plush Quilted Cognac Saddle-Leather Seat Cushion with Brass-Studded Skirt
+	_add_box(chair, Vector3(0.72, 0.082, 0.39), Vector3(0.0, -0.092, 0.205), mat_trim)
+	_add_box(chair, Vector3(0.68, 0.066, 0.36), Vector3(0.0, -0.052, 0.205), mat_cognac)
+	_add_cyl(chair, 0.038, 0.038, 0.68, Vector3(0.0, -0.068, 0.386), mat_cognac, Vector3(0.0, 0.0, 90.0), 10)
+	for b_i: int in range(-4, 5):
+		_add_sphere(chair, 0.0065, 0.008, Vector3(float(b_i) * 0.075, -0.118, 0.402), mat_brass, Vector3.ZERO, 6)
 
-	# Carved Walnut Outer Arched Backrest Frame (Open-Work Persian Girih / Orosi Salon Style)
+	# Upholstered Quilted Cognac Backrest Inset Inside Carved Walnut Gallery Frame
+	_add_box(chair, Vector3(0.66, 0.46, 0.074), Vector3(0.0, 0.23, -0.008), mat_cognac, Vector3(-6.0, 0.0, 0.0))
+	_add_box(chair, Vector3(0.68, 0.022, 0.082), Vector3(0.0, 0.005, 0.016), mat_walnut_mid, Vector3(-6.0, 0.0, 0.0))
+
+	# Clean Sculpted Side Stiles with Turned Antique-Brass Corner Finials
 	for side_s: float in [-1.0, 1.0]:
-		_add_box(chair, Vector3(0.054, 0.66, 0.064), Vector3(side_s * 0.39, 0.16, 0.0), mat_walnut_pol, Vector3(-5.0, 0.0, 0.0))
-		_add_sphere(chair, 0.032, 0.048, Vector3(side_s * 0.39, 0.50, -0.025), mat_brass, Vector3.ZERO, 8)
-		# Sculpted Paddle Armrests + Baluster Supports
-		_add_box(chair, Vector3(0.064, 0.032, 0.39), Vector3(side_s * 0.40, 0.04, 0.20), mat_walnut_pol, Vector3(3.0, 0.0, 0.0))
-		_add_cyl(chair, 0.022, 0.026, 0.19, Vector3(side_s * 0.38, -0.065, 0.36), mat_walnut_mid, Vector3.ZERO, 8)
-		_add_torus(chair, 0.018, 0.028, Vector3(side_s * 0.38, -0.055, 0.36), mat_aged, Vector3.ZERO, 8)
+		_add_cyl(chair, 0.026, 0.028, 0.64, Vector3(side_s * 0.355, 0.19, -0.004), mat_walnut_pol, Vector3(-6.0, 0.0, 0.0), 10)
+		_add_torus(chair, 0.018, 0.030, Vector3(side_s * 0.355, 0.505, -0.038), mat_aged, Vector3(-6.0, 0.0, 0.0), 10)
+		_add_sphere(chair, 0.024, 0.038, Vector3(side_s * 0.355, 0.535, -0.042), mat_brass, Vector3.ZERO, 8)
+		# Sleek Carved Walnut Armrests with Quilted Cognac Leather Cuffs & Baluster Supports
+		_add_box(chair, Vector3(0.056, 0.030, 0.36), Vector3(side_s * 0.372, 0.038, 0.195), mat_walnut_pol, Vector3(3.0, side_s * -3.0, 0.0))
+		_add_box(chair, Vector3(0.062, 0.024, 0.22), Vector3(side_s * 0.370, 0.060, 0.190), mat_cognac, Vector3(3.0, side_s * -3.0, 0.0))
+		_add_cyl(chair, 0.020, 0.024, 0.18, Vector3(side_s * 0.358, -0.062, 0.360), mat_walnut_mid, Vector3(6.0, 0.0, 0.0), 10)
+		_add_torus(chair, 0.016, 0.024, Vector3(side_s * 0.358, -0.052, 0.360), mat_brass, Vector3.ZERO, 8)
 
-	# Upper & Lower Carved Cross-Rails + Arched Crest Rail
-	_add_box(chair, Vector3(0.78, 0.046, 0.060), Vector3(0.0, -0.02, 0.015), mat_walnut_mid, Vector3(-5.0, 0.0, 0.0))
-	var crest_segs: int = 7
+	# Gracefully Arched Carved Walnut Crown Rail with Centered Khatam-Kari Inlay Panel
+	var crest_segs: int = 9
 	for ci: int in range(crest_segs):
 		var ct: float = float(ci) / float(crest_segs - 1)
-		var cang: float = lerpf(-0.92, 0.92, ct)
-		var cx: float = sin(cang) * 0.46
-		var cy: float = 0.24 + cos(cang) * 0.30
-		_add_box(chair, Vector3(0.145, 0.052, 0.066), Vector3(cx, cy, -0.018), mat_walnut_pol, Vector3(-5.0, 0.0, -rad_to_deg(cang) * 0.65))
-
-	# Crisp Geometric Orosi Diamond Lattice Splats & Central Brass Shamseh Star Medallion
-	for diag_s: float in [-1.0, 1.0]:
-		_add_box(chair, Vector3(0.026, 0.54, 0.032), Vector3(0.0, 0.24, 0.0), mat_walnut_mid, Vector3(-5.0, 0.0, diag_s * 42.0))
-		_add_box(chair, Vector3(0.022, 0.38, 0.028), Vector3(diag_s * 0.20, 0.24, 0.0), mat_walnut_mid, Vector3(-5.0, 0.0, diag_s * -42.0))
-		_add_box(chair, Vector3(0.022, 0.38, 0.028), Vector3(diag_s * 0.20, 0.24, 0.0), mat_walnut_mid, Vector3(-5.0, 0.0, diag_s * 42.0))
-	# Central Brass & Turquoise Orosi Star Rosette
-	_add_box(chair, Vector3(0.14, 0.14, 0.036), Vector3(0.0, 0.24, 0.0), mat_walnut_pol, Vector3(-5.0, 0.0, 45.0))
-	_add_box(chair, Vector3(0.105, 0.105, 0.044), Vector3(0.0, 0.24, 0.0), mat_brass, Vector3(-5.0, 0.0, 45.0))
-	_add_box(chair, Vector3(0.072, 0.072, 0.050), Vector3(0.0, 0.24, 0.0), _shared_mats["persian_turquoise"], Vector3(-5.0, 0.0, 0.0))
-	_add_sphere(chair, 0.020, 0.030, Vector3(0.0, 0.24, 0.015), mat_brass, Vector3.ZERO, 8)
+		var cang: float = lerpf(-0.88, 0.88, ct)
+		var cx: float = sin(cang) * 0.43
+		var cy: float = 0.23 + cos(cang) * 0.30
+		var cz: float = -0.008 - (cy - 0.23) * 0.105
+		_add_box(chair, Vector3(0.115, 0.048, 0.082), Vector3(cx, cy, cz), mat_walnut_pol, Vector3(-6.0, 0.0, -rad_to_deg(cang) * 0.58))
+	_add_box(chair, Vector3(0.28, 0.032, 0.088), Vector3(0.0, 0.525, -0.038), mat_khatam, Vector3(-6.0, 0.0, 0.0))
+	_add_torus(chair, 0.016, 0.026, Vector3(0.0, 0.525, 0.008), mat_brass, Vector3(84.0, 0.0, 0.0), 10)
 
 
 # ============================================================================

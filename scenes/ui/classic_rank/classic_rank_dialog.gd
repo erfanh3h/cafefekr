@@ -1,32 +1,46 @@
 extends PanelContainer
 
 # Classic Rank Game Selection Dialog
-# Allows the gamer to pick any game from the cafe and start an immediate match
+# Allows the gamer to filter & pick any game from the cafe and start an immediate match
 # against an AI bot (difficulty level 2) to earn XP based on game difficulty.
 
 signal closed()
 signal start_game_requested(game_type: String)
 
-@onready var btn_close: TextureButton = $Margin/VBox/TopRow/BtnClose
-@onready var lbl_title: Label = $Margin/VBox/TopRow/TitleBox/LblTitle
-@onready var lbl_subtitle: Label = $Margin/VBox/TopRow/TitleBox/LblSubtitle
+const FONT_HEKAYAT: FontFile = preload("res://assets/fonts/hekayat.ttf")
+const FONT_VAZIR: FontFile = preload("res://assets/fonts/Vazir.ttf")
+const TEX_CHECK_SEAL: Texture2D = preload("res://assets/images/frames/check.png")
+
+@onready var btn_close: TextureButton = $InnerBezel/VBox/HeaderCrown/TopRow/CloseWrap/BtnClose
+@onready var lbl_title: Label = $InnerBezel/VBox/HeaderCrown/TopRow/TitleBox/LblTitle
+@onready var lbl_subtitle: Label = $InnerBezel/VBox/HeaderCrown/TopRow/TitleBox/LblSubtitle
+@onready var lbl_count: Label = $InnerBezel/VBox/HeaderCrown/TopRow/CountPill/LblCount
 
 # Preview card for currently selected game
-@onready var selected_preview_card: PanelContainer = $Margin/VBox/SelectedPreviewCard
-@onready var preview_icon: TextureRect = $Margin/VBox/SelectedPreviewCard/Margin/HBox/IconFrame/PreviewIcon
-@onready var lbl_preview_name: Label = $Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/LblPreviewName
-@onready var lbl_preview_diff: Label = $Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HBoxBadges/DiffBadge/LblDiff
-@onready var diff_badge: PanelContainer = $Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HBoxBadges/DiffBadge
-@onready var lbl_preview_rewards: Label = $Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/LblPreviewRewards
+@onready var selected_preview_card: PanelContainer = $InnerBezel/VBox/SelectedPreviewCard
+@onready var preview_icon: TextureRect = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/IconFrame/PreviewIcon
+@onready var lbl_preview_name: Label = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HeaderInfoRow/LblPreviewName
+@onready var lbl_preview_diff: Label = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HeaderInfoRow/DiffBadge/LblDiff
+@onready var diff_badge: PanelContainer = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HeaderInfoRow/DiffBadge
+@onready var win_chip: PanelContainer = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow/WinChip
+@onready var draw_chip: PanelContainer = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow/DrawChip
+@onready var lose_chip: PanelContainer = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow/LoseChip
+@onready var lbl_win_xp: Label = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow/WinChip/LblWinXp
+@onready var lbl_draw_xp: Label = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow/DrawChip/LblDrawXp
+@onready var lbl_lose_xp: Label = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow/LoseChip/LblLoseXp
+
+# Difficulty filter row
+@onready var filter_row: HBoxContainer = $InnerBezel/VBox/FilterTrack/FilterRow
 
 # Grid of games
-@onready var scroll_games: ScrollContainer = $Margin/VBox/ScrollGames
-@onready var game_grid: GridContainer = $Margin/VBox/ScrollGames/GameGrid
+@onready var scroll_games: ScrollContainer = $InnerBezel/VBox/ScrollGames
+@onready var game_grid: GridContainer = $InnerBezel/VBox/ScrollGames/GameGrid
 
 # Bottom Start Game action
-@onready var btn_start_game: Button = $Margin/VBox/BottomRow/BtnStartGame
+@onready var btn_start_game: Button = $InnerBezel/VBox/BottomRow/BtnStartGame
 
 var selected_game_type: String = GameTypes.TIC_TAC_TOE
+var _difficulty_filter: String = "all" # "all" | "easy" | "normal" | "hard"
 var _game_cards: Dictionary = {} # game_type -> Button card
 
 # All playable games ordered logically
@@ -63,72 +77,223 @@ var _style_card_hover: StyleBoxFlat
 var _style_card_selected: StyleBoxFlat
 var _cached_game_textures: Dictionary = {}
 
+
 func _get_game_texture(g_type: String) -> Texture2D:
 	if _cached_game_textures.has(g_type):
-		return _cached_game_textures[g_type]
-	var icon_path = "res://assets/images/games/%s.png" % g_type.to_lower()
+		return _cached_game_textures[g_type] as Texture2D
+	var icon_path: String = "res://assets/images/games/%s.png" % g_type.to_lower()
 	if not ResourceLoader.exists(icon_path):
 		icon_path = "res://assets/images/games/%s.jpg" % g_type.to_lower()
 	var tex: Texture2D = null
 	if ResourceLoader.exists(icon_path):
-		tex = load(icon_path)
+		tex = load(icon_path) as Texture2D
 	if not tex:
 		for ext in ["png", "jpg"]:
-			var raw_path = ProjectSettings.globalize_path("res://assets/images/games/%s.%s" % [g_type.to_lower(), ext])
+			var raw_path: String = ProjectSettings.globalize_path("res://assets/images/games/%s.%s" % [g_type.to_lower(), ext])
 			if FileAccess.file_exists(raw_path):
-				var img = Image.load_from_file(raw_path)
+				var img: Image = Image.load_from_file(raw_path)
 				if img and not img.is_empty():
 					tex = ImageTexture.create_from_image(img)
 					break
 	if not tex:
-		tex = load("res://assets/icons/General/lobby.png")
+		tex = load("res://assets/icons/General/lobby.png") as Texture2D
 	_cached_game_textures[g_type] = tex
 	return tex
+
 
 func _ready() -> void:
 	visible = false
 	_setup_styles()
-	
-	KenneyUI.style_button(btn_start_game, KenneyUI.COLOR_GREEN)
+	_style_start_button()
 	ActionVFXManager.apply_button_juice(btn_start_game, "tap_button")
-	
+	ActionVFXManager.apply_button_juice(btn_close, "tap_button")
+
 	btn_close.pressed.connect(_on_close_pressed)
 	btn_start_game.pressed.connect(_on_start_game_pressed)
-	
+
+	_render_filter_bar()
 	_populate_games_grid()
 	_update_selected_preview()
 
+
 func _setup_styles() -> void:
-	# Clean transparent card style (no dark box or shadow under game icon)
+	# Subtle antique walnut card pedestal for unselected games
 	_style_card_normal = StyleBoxFlat.new()
-	_style_card_normal.bg_color = Color(0, 0, 0, 0)
+	_style_card_normal.bg_color = Color(0.135, 0.084, 0.048, 0.94)
 	_style_card_normal.set_corner_radius_all(18)
-	_style_card_normal.set_border_width_all(0)
-	_style_card_normal.shadow_size = 0
+	_style_card_normal.set_border_width_all(1)
+	_style_card_normal.border_color = Color(0.56, 0.42, 0.22, 0.65)
+	_style_card_normal.shadow_color = Color(0.0, 0.0, 0.0, 0.34)
+	_style_card_normal.shadow_size = 5
+	_style_card_normal.shadow_offset = Vector2(0, 2)
 
 	# Hover style
 	_style_card_hover = StyleBoxFlat.new()
-	_style_card_hover.bg_color = Color(0, 0, 0, 0)
+	_style_card_hover.bg_color = Color(0.18, 0.115, 0.064, 0.96)
 	_style_card_hover.set_corner_radius_all(18)
-	_style_card_hover.set_border_width_all(3)
-	_style_card_hover.border_color = Color(1.0, 0.94, 0.55, 0.9)
-	_style_card_hover.shadow_size = 0
+	_style_card_hover.set_border_width_all(2)
+	_style_card_hover.border_color = Color(0.95, 0.80, 0.38, 0.92)
+	_style_card_hover.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+	_style_card_hover.shadow_size = 6
+	_style_card_hover.shadow_offset = Vector2(0, 3)
 
 	# Selected style with crisp golden border & luminous glow
 	_style_card_selected = StyleBoxFlat.new()
-	_style_card_selected.bg_color = Color(0.98, 0.84, 0.25, 0.12)
+	_style_card_selected.bg_color = Color(0.24, 0.16, 0.06, 0.98)
 	_style_card_selected.set_corner_radius_all(18)
-	_style_card_selected.set_border_width_all(4)
-	_style_card_selected.border_color = Color(1.0, 0.90, 0.35, 1.0)
-	_style_card_selected.shadow_color = Color(1.0, 0.85, 0.20, 0.50)
-	_style_card_selected.shadow_size = 8
+	_style_card_selected.set_border_width_all(3)
+	_style_card_selected.border_color = Color(1.0, 0.86, 0.32, 1.0)
+	_style_card_selected.shadow_color = Color(1.0, 0.82, 0.22, 0.45)
+	_style_card_selected.shadow_size = 10
+	_style_card_selected.shadow_offset = Vector2(0, 2)
+
+
+func _style_start_button() -> void:
+	if not is_instance_valid(btn_start_game):
+		return
+	var sb_norm: StyleBoxFlat = StyleBoxFlat.new()
+	sb_norm.bg_color = Color(0.14, 0.46, 0.27, 0.99)
+	sb_norm.border_color = Color(0.92, 0.78, 0.34, 0.96)
+	sb_norm.border_width_left = 2
+	sb_norm.border_width_right = 2
+	sb_norm.border_width_top = 2
+	sb_norm.border_width_bottom = 3
+	sb_norm.set_corner_radius_all(16)
+	sb_norm.shadow_color = Color(0.0, 0.0, 0.0, 0.50)
+	sb_norm.shadow_size = 8
+	sb_norm.shadow_offset = Vector2(0, 4)
+	sb_norm.content_margin_left = 18.0
+	sb_norm.content_margin_right = 18.0
+	sb_norm.content_margin_top = 12.0
+	sb_norm.content_margin_bottom = 12.0
+
+	var sb_hover: StyleBoxFlat = sb_norm.duplicate() as StyleBoxFlat
+	sb_hover.bg_color = Color(0.18, 0.54, 0.33, 1.0)
+	sb_hover.border_color = Color(1.0, 0.88, 0.46, 1.0)
+
+	var sb_press: StyleBoxFlat = sb_norm.duplicate() as StyleBoxFlat
+	sb_press.bg_color = Color(0.11, 0.36, 0.21, 1.0)
+	sb_press.content_margin_top = 14.0
+	sb_press.content_margin_bottom = 10.0
+
+	var sb_dis: StyleBoxFlat = sb_norm.duplicate() as StyleBoxFlat
+	sb_dis.bg_color = Color(0.18, 0.18, 0.17, 0.75)
+	sb_dis.border_color = Color(0.45, 0.42, 0.38, 0.55)
+
+	btn_start_game.flat = false
+	btn_start_game.focus_mode = Control.FOCUS_NONE
+	btn_start_game.add_theme_stylebox_override("normal", sb_norm)
+	btn_start_game.add_theme_stylebox_override("hover", sb_hover)
+	btn_start_game.add_theme_stylebox_override("pressed", sb_press)
+	btn_start_game.add_theme_stylebox_override("disabled", sb_dis)
+	btn_start_game.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+	btn_start_game.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))
+	btn_start_game.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
+	btn_start_game.add_theme_color_override("font_pressed_color", Color(0.95, 0.90, 0.78, 1.0))
+	btn_start_game.add_theme_color_override("font_focus_color", Color(1.0, 0.98, 0.92, 1.0))
+	btn_start_game.add_theme_color_override("font_hover_pressed_color", Color(0.95, 0.90, 0.78, 1.0))
+	btn_start_game.add_theme_color_override("font_disabled_color", Color(0.72, 0.68, 0.62, 0.65))
+	btn_start_game.add_theme_color_override("font_outline_color", Color(0.05, 0.08, 0.04, 0.82))
+	btn_start_game.add_theme_constant_override("outline_size", 2)
+
+
+func _render_filter_bar() -> void:
+	if not is_instance_valid(filter_row):
+		return
+	for c in filter_row.get_children():
+		c.queue_free()
+
+	# RTL visual order (rightmost = All, then Easy, Normal, Hard)
+	var filters: Array = [
+		{"id": "hard", "label": "سخت", "accent": Color(0.94, 0.44, 0.40, 1.0)},
+		{"id": "normal", "label": "متوسط", "accent": Color(0.98, 0.82, 0.34, 1.0)},
+		{"id": "easy", "label": "آسان", "accent": Color(0.42, 0.88, 0.56, 1.0)},
+		{"id": "all", "label": "همه بازی‌ها", "accent": Color(0.96, 0.80, 0.32, 1.0)}
+	]
+
+	for f_item in filters:
+		var fd: Dictionary = f_item as Dictionary
+		var fid: String = str(fd["id"])
+		var flabel: String = str(fd["label"])
+		var faccent: Color = fd["accent"] as Color
+		var is_active: bool = (_difficulty_filter == fid)
+
+		var btn: Button = Button.new()
+		btn.text = flabel
+		btn.custom_minimum_size = Vector2(0, 42)
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.add_theme_font_override("font", FONT_VAZIR)
+		btn.add_theme_font_size_override("font_size", 16)
+
+		var sb: StyleBoxFlat = StyleBoxFlat.new()
+		sb.set_corner_radius_all(10)
+		sb.content_margin_left = 8.0
+		sb.content_margin_right = 8.0
+		sb.content_margin_top = 6.0
+		sb.content_margin_bottom = 6.0
+
+		var text_col: Color = Color(0.84, 0.78, 0.68, 0.90)
+		if is_active:
+			sb.bg_color = Color(0.24, 0.16, 0.07, 0.98)
+			sb.border_color = faccent
+			sb.set_border_width_all(2)
+			text_col = faccent
+		else:
+			sb.bg_color = Color(0.11, 0.068, 0.04, 0.85)
+			sb.border_color = Color(0.36, 0.26, 0.15, 0.45)
+			sb.set_border_width_all(1)
+
+		var sb_hover: StyleBoxFlat = sb.duplicate() as StyleBoxFlat
+		sb_hover.bg_color = sb.bg_color.lightened(0.08)
+
+		btn.add_theme_stylebox_override("normal", sb)
+		btn.add_theme_stylebox_override("hover", sb_hover)
+		btn.add_theme_stylebox_override("pressed", sb)
+		btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		btn.add_theme_stylebox_override("disabled", sb)
+
+		btn.add_theme_color_override("font_color", text_col)
+		btn.add_theme_color_override("font_hover_color", Color(1.0, 0.98, 0.92, 1.0))
+		btn.add_theme_color_override("font_pressed_color", text_col)
+		btn.add_theme_color_override("font_focus_color", text_col)
+		btn.add_theme_color_override("font_hover_pressed_color", text_col)
+		btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.50, 0.44, 0.6))
+
+		ActionVFXManager.apply_button_juice(btn, "tap_button")
+		btn.pressed.connect(func():
+			AudioManager.sfx_tap()
+			if _difficulty_filter != fid:
+				_difficulty_filter = fid
+				_render_filter_bar()
+				_populate_games_grid()
+				_update_selected_preview()
+		)
+		filter_row.add_child(btn)
+
+
+func _get_filtered_games() -> Array[String]:
+	if _difficulty_filter == "all":
+		return AVAILABLE_GAMES
+	var out: Array[String] = []
+	for g_type in AVAILABLE_GAMES:
+		if GameRegistry.get_difficulty(g_type) == _difficulty_filter:
+			out.append(g_type)
+	return out
+
 
 func open(default_game: String = "") -> void:
 	if not default_game.is_empty():
 		selected_game_type = GameRegistry.normalize_type(default_game)
+		_difficulty_filter = "all"
+		_render_filter_bar()
+		_populate_games_grid()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	_update_selected_preview()
 	_update_grid_selection_visuals()
+
 
 func close() -> void:
 	ActionVFXManager.animate_dialog_close(self, null, func():
@@ -136,9 +301,11 @@ func close() -> void:
 		closed.emit()
 	)
 
+
 func _on_close_pressed() -> void:
 	AudioManager.sfx_tap()
 	close()
+
 
 func _on_start_game_pressed() -> void:
 	AudioManager.sfx_button()
@@ -146,125 +313,200 @@ func _on_start_game_pressed() -> void:
 	closed.emit()
 	start_game_requested.emit(selected_game_type)
 
+
 func _calculate_game_card_height() -> float:
-	var total_w := 560.0
+	var total_w: float = 590.0
 	if is_instance_valid(scroll_games) and scroll_games.size.x > 100.0:
 		total_w = scroll_games.size.x - 14.0
 	elif is_instance_valid(game_grid) and game_grid.size.x > 100.0:
 		total_w = game_grid.size.x
-	var cell_w := floor((total_w - 12.0) / 2.0)
+	var cell_w: float = floor((total_w - 12.0) / 2.0)
 	return maxf(160.0, cell_w)
+
 
 func _populate_games_grid() -> void:
 	game_grid.columns = 2
 	for child in game_grid.get_children():
 		child.queue_free()
 	_game_cards.clear()
-	
-	var initial_h := _calculate_game_card_height()
-	for g_type in AVAILABLE_GAMES:
-		var card = _create_game_card(g_type, initial_h)
+
+	var filtered: Array[String] = _get_filtered_games()
+	if is_instance_valid(lbl_count):
+		lbl_count.text = "%s بازی" % GameManager.to_fa_num(filtered.size())
+
+	if not filtered.is_empty() and not (selected_game_type in filtered):
+		selected_game_type = filtered[0]
+
+	var initial_h: float = _calculate_game_card_height()
+	for g_type in filtered:
+		var card: Control = _create_game_card(g_type, initial_h)
 		game_grid.add_child(card)
 		_game_cards[g_type] = card
 
-func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
-	var is_selected = (g_type == selected_game_type)
-	
-	# Native Button control ensures robust child clipping and anchor support
-	# 2 games per row with 1:1 square aspect ratio (height = width)
-	var card = Button.new()
+	if is_instance_valid(scroll_games):
+		scroll_games.scroll_vertical = 0
+
+
+func _get_difficulty_palette(diff: String) -> Dictionary:
+	if diff == "easy":
+		return {
+			"text": Color(0.50, 0.94, 0.64, 1.0),
+			"bg": Color(0.10, 0.24, 0.15, 0.94),
+			"border": Color(0.36, 0.82, 0.52, 0.86)
+		}
+	elif diff == "normal":
+		return {
+			"text": Color(0.99, 0.85, 0.38, 1.0),
+			"bg": Color(0.24, 0.17, 0.06, 0.94),
+			"border": Color(0.90, 0.72, 0.28, 0.88)
+		}
+	return {
+		"text": Color(0.99, 0.56, 0.52, 1.0),
+		"bg": Color(0.28, 0.10, 0.10, 0.94),
+		"border": Color(0.88, 0.36, 0.34, 0.88)
+	}
+
+
+func _create_game_card(g_type: String, initial_h: float = 250.0) -> Control:
+	var is_selected: bool = (g_type == selected_game_type)
+	var diff: String = GameRegistry.get_difficulty(g_type)
+	var diff_name: String = GameRegistry.get_difficulty_name_fa(g_type)
+	var diff_pal: Dictionary = _get_difficulty_palette(diff)
+
+	var card: Button = Button.new()
 	card.custom_minimum_size = Vector2(0, initial_h)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.clip_contents = true
-	card.flat = true
+	card.flat = false
+	card.focus_mode = Control.FOCUS_NONE
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	card.pivot_offset = Vector2(initial_h / 2.0, initial_h / 2.0)
-	
+
 	card.item_rect_changed.connect(func():
-		var w = card.size.x
+		var w: float = card.size.x
 		if w > 80.0:
-			var target_h = floor(w)
+			var target_h: float = floor(w)
 			if absf(card.custom_minimum_size.y - target_h) > 2.0:
 				card.set_deferred("custom_minimum_size", Vector2(0, target_h))
 				card.pivot_offset = Vector2(w / 2.0, target_h / 2.0)
 	)
-	
-	var st = _style_card_selected if is_selected else _style_card_normal
+
+	var st: StyleBoxFlat = _style_card_selected if is_selected else _style_card_normal
 	card.add_theme_stylebox_override("normal", st)
 	card.add_theme_stylebox_override("hover", _style_card_hover)
 	card.add_theme_stylebox_override("pressed", st)
-	card.add_theme_stylebox_override("focus", st)
-	
-	# 1. Cover artwork (clean, no dark backdrop or shadow overlay)
-	var img = TextureRect.new()
-	img.set_anchors_preset(Control.PRESET_FULL_RECT)
+	card.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	card.add_theme_stylebox_override("disabled", st)
+
+	# 1. Inset Cover Artwork
+	var art_margin: MarginContainer = MarginContainer.new()
+	art_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	art_margin.add_theme_constant_override("margin_left", 7)
+	art_margin.add_theme_constant_override("margin_right", 7)
+	art_margin.add_theme_constant_override("margin_top", 7)
+	art_margin.add_theme_constant_override("margin_bottom", 7)
+	art_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(art_margin)
+
+	var img: TextureRect = TextureRect.new()
+	img.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	img.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	img.modulate = Color(1.12, 1.08, 1.02)
+	img.modulate = Color(1.08, 1.05, 1.01)
 	img.texture = _get_game_texture(g_type)
-	card.add_child(img)
-	
-	# Golden Selection Checkmark Badge
-	var sel_badge := PanelContainer.new()
+	art_margin.add_child(img)
+
+	# 2. Compact Difficulty Pill (Top-Left)
+	var d_pill: PanelContainer = PanelContainer.new()
+	d_pill.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	d_pill.offset_left = 10.0
+	d_pill.offset_top = 10.0
+	d_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var d_sb: StyleBoxFlat = StyleBoxFlat.new()
+	d_sb.bg_color = diff_pal["bg"] as Color
+	d_sb.border_color = diff_pal["border"] as Color
+	d_sb.set_border_width_all(1)
+	d_sb.set_corner_radius_all(9)
+	d_sb.content_margin_left = 8.0
+	d_sb.content_margin_right = 8.0
+	d_sb.content_margin_top = 2.0
+	d_sb.content_margin_bottom = 2.0
+	d_pill.add_theme_stylebox_override("panel", d_sb)
+	card.add_child(d_pill)
+
+	var d_lbl: Label = Label.new()
+	d_lbl.text = diff_name
+	d_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	d_lbl.add_theme_font_override("font", FONT_VAZIR)
+	d_lbl.add_theme_font_size_override("font_size", 12)
+	d_lbl.add_theme_color_override("font_color", diff_pal["text"] as Color)
+	d_pill.add_child(d_lbl)
+
+	# 3. Golden Selection Seal (Top-Right, uses texture icon instead of raw Unicode glyph)
+	var sel_badge: PanelContainer = PanelContainer.new()
 	sel_badge.name = "SelectionBadge"
 	sel_badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	sel_badge.offset_left = -40.0
-	sel_badge.offset_top = 8.0
+	sel_badge.offset_left = -42.0
+	sel_badge.offset_top = 10.0
 	sel_badge.offset_right = -10.0
-	sel_badge.offset_bottom = 38.0
+	sel_badge.offset_bottom = 42.0
 	sel_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	sel_badge.pivot_offset = Vector2(15.0, 15.0)
-	var badge_sb := StyleBoxFlat.new()
-	badge_sb.bg_color = Color(0.98, 0.82, 0.25, 0.98)
+	sel_badge.pivot_offset = Vector2(16.0, 16.0)
+	var badge_sb: StyleBoxFlat = StyleBoxFlat.new()
+	badge_sb.bg_color = Color(0.98, 0.82, 0.28, 0.98)
 	badge_sb.border_color = Color(0.18, 0.12, 0.04, 0.95)
 	badge_sb.set_border_width_all(2)
-	badge_sb.set_corner_radius_all(15)
-	badge_sb.shadow_color = Color(0, 0, 0, 0.40)
-	badge_sb.shadow_size = 3
+	badge_sb.set_corner_radius_all(16)
+	badge_sb.content_margin_left = 5.0
+	badge_sb.content_margin_right = 5.0
+	badge_sb.content_margin_top = 5.0
+	badge_sb.content_margin_bottom = 5.0
+	badge_sb.shadow_color = Color(0, 0, 0, 0.45)
+	badge_sb.shadow_size = 4
 	sel_badge.add_theme_stylebox_override("panel", badge_sb)
 	sel_badge.visible = is_selected
 
-	var badge_lbl := Label.new()
-	badge_lbl.text = "✓"
-	badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	badge_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	badge_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	badge_lbl.add_theme_font_size_override("font_size", 20)
-	badge_lbl.add_theme_color_override("font_color", Color(0.12, 0.08, 0.02, 1.0))
-	sel_badge.add_child(badge_lbl)
+	var badge_ico: TextureRect = TextureRect.new()
+	badge_ico.texture = TEX_CHECK_SEAL
+	badge_ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	badge_ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	badge_ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sel_badge.add_child(badge_ico)
 	card.add_child(sel_badge)
-	
-	# 4. Bottom title ribbon banner based on game difficulty
-	var banner = PanelContainer.new()
+
+	# 4. Bottom Title Ribbon Banner
+	var banner: PanelContainer = PanelContainer.new()
 	banner.anchor_top = 0.74
 	banner.anchor_right = 1.0
 	banner.anchor_bottom = 1.0
-	banner.offset_left = 4.0
-	banner.offset_right = -4.0
-	banner.offset_bottom = -4.0
+	banner.offset_left = 5.0
+	banner.offset_right = -5.0
+	banner.offset_bottom = -5.0
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(g_type, 40.0, 4.0))
-	
-	var lbl = Label.new()
+	banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(g_type, 36.0, 4.0))
+
+	var lbl: Label = Label.new()
 	lbl.text = GameTypes.get_display_name_fa(g_type)
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl.clip_text = true
 	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl.add_theme_font_size_override("font_size", 24)
+	lbl.add_theme_font_override("font", FONT_HEKAYAT)
+	lbl.add_theme_font_size_override("font_size", 22)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-	lbl.add_theme_constant_override("shadow_outline_size", 3)
+	lbl.add_theme_constant_override("shadow_outline_size", 2)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner.add_child(lbl)
 	card.add_child(banner)
-	
+
 	card.mouse_filter = Control.MOUSE_FILTER_PASS
-	
+
 	# Smooth 60fps Viewport-Coordinate Drag Scrolling + Clean Tap Selection
-	var drag_state = {"active": false, "dragging": false, "start_y": 0.0, "start_scroll": 0}
+	var drag_state: Dictionary = {"active": false, "dragging": false, "start_y": 0.0, "start_scroll": 0}
 	card.gui_input.connect(func(event: InputEvent):
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
@@ -273,77 +515,111 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 				drag_state["start_y"] = get_viewport().get_mouse_position().y
 				drag_state["start_scroll"] = scroll_games.scroll_vertical
 			else:
-				var was_dragging = drag_state["dragging"]
-				var was_active = drag_state["active"]
+				var was_dragging: bool = bool(drag_state["dragging"])
+				var was_active: bool = bool(drag_state["active"])
 				drag_state["active"] = false
 				drag_state["dragging"] = false
 				if was_active and not was_dragging:
-					var dy_release = absf(get_viewport().get_mouse_position().y - float(drag_state["start_y"]))
+					var dy_release: float = absf(get_viewport().get_mouse_position().y - float(drag_state["start_y"]))
 					if dy_release <= 14.0:
 						AudioManager.sfx_tap()
 						_select_game(g_type)
-		elif event is InputEventMouseMotion and drag_state["active"]:
-			var dy = get_viewport().get_mouse_position().y - float(drag_state["start_y"])
-			if absf(dy) > 12.0 or drag_state["dragging"]:
+		elif event is InputEventMouseMotion and bool(drag_state["active"]):
+			var dy: float = get_viewport().get_mouse_position().y - float(drag_state["start_y"])
+			if absf(dy) > 12.0 or bool(drag_state["dragging"]):
 				drag_state["dragging"] = true
-				scroll_games.scroll_vertical = max(0, int(drag_state["start_scroll"]) - int(dy))
+				scroll_games.scroll_vertical = maxi(0, int(drag_state["start_scroll"]) - int(dy))
 	)
-	
+
 	return card
+
 
 func _select_game(g_type: String) -> void:
 	selected_game_type = g_type
 	_update_selected_preview()
 	_update_grid_selection_visuals()
 
+
 func _update_grid_selection_visuals() -> void:
 	for g_type in _game_cards:
-		var c = _game_cards[g_type]
+		var c: Button = _game_cards[g_type] as Button
 		if not is_instance_valid(c):
 			continue
-		var is_sel = (g_type == selected_game_type)
-		var st = _style_card_selected if is_sel else _style_card_normal
+		var is_sel: bool = (g_type == selected_game_type)
+		var st: StyleBoxFlat = _style_card_selected if is_sel else _style_card_normal
 		c.add_theme_stylebox_override("normal", st)
 		c.add_theme_stylebox_override("hover", _style_card_hover)
 		c.add_theme_stylebox_override("pressed", st)
-		c.add_theme_stylebox_override("focus", st)
-		var badge = c.get_node_or_null("SelectionBadge") as Control
+		c.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		var badge: Control = c.get_node_or_null("SelectionBadge") as Control
 		if is_instance_valid(badge):
 			if is_sel and not badge.visible:
 				badge.visible = true
 				badge.scale = Vector2(0.5, 0.5)
-				var tw = badge.create_tween()
-				tw.tween_property(badge, "scale", Vector2(1.2, 1.2), 0.10).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				var tw: Tween = badge.create_tween()
+				tw.tween_property(badge, "scale", Vector2(1.16, 1.16), 0.10).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 				tw.tween_property(badge, "scale", Vector2.ONE, 0.08)
 			elif not is_sel:
 				badge.visible = false
 		if is_sel:
-			var tw_c = c.create_tween()
-			tw_c.tween_property(c, "scale", Vector2(1.03, 1.03), 0.08)
+			var tw_c: Tween = c.create_tween()
+			tw_c.tween_property(c, "scale", Vector2(1.025, 1.025), 0.08)
 			tw_c.tween_property(c, "scale", Vector2.ONE, 0.10)
+
+
+func _style_xp_chip(chip: PanelContainer, border_col: Color) -> void:
+	if not is_instance_valid(chip):
+		return
+	var sb: StyleBoxFlat = StyleBoxFlat.new()
+	sb.bg_color = Color(0.09, 0.055, 0.032, 0.95)
+	sb.border_color = border_col
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(10)
+	sb.content_margin_left = 8.0
+	sb.content_margin_right = 8.0
+	sb.content_margin_top = 5.0
+	sb.content_margin_bottom = 5.0
+	chip.add_theme_stylebox_override("panel", sb)
+
 
 func _update_selected_preview() -> void:
 	if not is_instance_valid(preview_icon):
 		return
-	var cover_path = "res://assets/images/games/%s.png" % selected_game_type.to_lower()
-	if not ResourceLoader.exists(cover_path):
-		cover_path = "res://assets/images/games/%s.jpg" % selected_game_type.to_lower()
-	if ResourceLoader.exists(cover_path):
-		preview_icon.texture = load(cover_path)
-	else:
-		preview_icon.texture = load("res://assets/icons/General/lobby.png")
-	
-	lbl_preview_name.text = GameTypes.get_display_name_fa(selected_game_type)
-	
-	var diff = GameRegistry.get_difficulty(selected_game_type)
-	var diff_name = GameRegistry.get_difficulty_name_fa(selected_game_type)
-	lbl_preview_diff.text = "درجه سختی: " + diff_name
-	
-	var badge_col = Color(0.4, 0.9, 0.5) if diff == "easy" else (Color(1.0, 0.88, 0.4) if diff == "normal" else Color(1.0, 0.5, 0.4))
-	lbl_preview_diff.add_theme_color_override("font_color", badge_col)
-	
-	# Rewards info
-	var win_xp = 15 if diff == "easy" else (25 if diff == "normal" else 40)
-	var draw_xp = 8 if diff == "easy" else (14 if diff == "normal" else 20)
-	var lose_xp = 4 if diff == "easy" else (7 if diff == "normal" else 10)
-	lbl_preview_rewards.text = "پاداش: 🏆 برد %d+ XP | 🤝 مساوی %d+ XP | 👏 باخت %d+ XP" % [win_xp, draw_xp, lose_xp]
+	preview_icon.texture = _get_game_texture(selected_game_type)
+
+	var game_name_fa: String = GameTypes.get_display_name_fa(selected_game_type)
+	lbl_preview_name.text = game_name_fa
+
+	var diff: String = GameRegistry.get_difficulty(selected_game_type)
+	var diff_name: String = GameRegistry.get_difficulty_name_fa(selected_game_type)
+	var pal: Dictionary = _get_difficulty_palette(diff)
+
+	lbl_preview_diff.text = "سختی: %s" % diff_name
+	lbl_preview_diff.add_theme_color_override("font_color", pal["text"] as Color)
+	if is_instance_valid(diff_badge):
+		var d_sb: StyleBoxFlat = StyleBoxFlat.new()
+		d_sb.bg_color = pal["bg"] as Color
+		d_sb.border_color = pal["border"] as Color
+		d_sb.set_border_width_all(1)
+		d_sb.set_corner_radius_all(10)
+		d_sb.content_margin_left = 10.0
+		d_sb.content_margin_right = 10.0
+		d_sb.content_margin_top = 3.0
+		d_sb.content_margin_bottom = 3.0
+		diff_badge.add_theme_stylebox_override("panel", d_sb)
+
+	# 3-Chip XP Breakdown (Persian digits, zero raw emojis)
+	var win_xp: int = 15 if diff == "easy" else (25 if diff == "normal" else 40)
+	var draw_xp: int = 8 if diff == "easy" else (14 if diff == "normal" else 20)
+	var lose_xp: int = 4 if diff == "easy" else (7 if diff == "normal" else 10)
+
+	lbl_win_xp.text = "برد +%s XP" % GameManager.to_fa_num(win_xp)
+	lbl_draw_xp.text = "مساوی +%s XP" % GameManager.to_fa_num(draw_xp)
+	lbl_lose_xp.text = "باخت +%s XP" % GameManager.to_fa_num(lose_xp)
+
+	_style_xp_chip(win_chip, Color(0.36, 0.80, 0.50, 0.62))
+	_style_xp_chip(draw_chip, Color(0.84, 0.68, 0.28, 0.60))
+	_style_xp_chip(lose_chip, Color(0.56, 0.44, 0.30, 0.52))
+
+	if is_instance_valid(btn_start_game):
+		btn_start_game.text = "شروع مسابقه %s" % game_name_fa

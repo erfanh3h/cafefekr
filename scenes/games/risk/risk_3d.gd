@@ -420,6 +420,7 @@ func _make_styled_button(
 ) -> Button:
 	var btn: Button = Button.new()
 	btn.text = text_str
+	btn.flat = false
 	btn.clip_text = true
 	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	btn.focus_mode = Control.FOCUS_NONE
@@ -427,18 +428,31 @@ func _make_styled_button(
 	if FontHekayat:
 		btn.add_theme_font_override("font", FontHekayat)
 	btn.add_theme_font_size_override("font_size", font_sz)
-	btn.add_theme_color_override("font_color", Color(1.0, 0.97, 0.88) if is_highlighted else Color(0.95, 0.90, 0.78))
-	btn.add_theme_constant_override("outline_size", 3)
-	btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 
-	var bw: int = 3 if is_highlighted else 2
-	var normal_sb: StyleBoxFlat = _make_panel_style(bg_col, border_col, radius, bw, 8, 5)
-	var hover_sb: StyleBoxFlat = _make_panel_style(bg_col.lightened(0.10), border_col.lightened(0.20), radius, bw, 8, 5)
-	var pressed_sb: StyleBoxFlat = _make_panel_style(bg_col.darkened(0.12), border_col, radius, bw, 8, 5)
+	var base_fg: Color = Color(1.0, 0.98, 0.92) if is_highlighted else Color(0.96, 0.92, 0.84)
+	btn.add_theme_color_override("font_color", base_fg)
+	btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.96))
+	btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72))
+	btn.add_theme_color_override("font_focus_color", base_fg)
+	btn.add_theme_color_override("font_hover_pressed_color", Color(1.0, 0.96, 0.78))
+	btn.add_theme_color_override("font_disabled_color", Color(0.70, 0.66, 0.60, 0.82))
+	btn.add_theme_constant_override("outline_size", 2)
+	btn.add_theme_color_override("font_outline_color", Color(0.05, 0.025, 0.01, 0.78))
+
+	var bw: int = 2
+	var normal_sb: StyleBoxFlat = _make_panel_style(bg_col, border_col, radius, bw, 10, 6)
+	normal_sb.border_width_bottom = 3
+	var hover_sb: StyleBoxFlat = _make_panel_style(bg_col.lightened(0.11), border_col.lightened(0.18), radius, bw, 10, 6)
+	hover_sb.border_width_bottom = 3
+	var pressed_sb: StyleBoxFlat = _make_panel_style(bg_col.darkened(0.12), border_col, radius, bw, 10, 7)
+	pressed_sb.border_width_bottom = 2
+	var disabled_sb: StyleBoxFlat = _make_panel_style(Color(0.14, 0.12, 0.10, 0.78), Color(0.38, 0.34, 0.30, 0.52), radius, 1, 10, 6)
 
 	btn.add_theme_stylebox_override("normal", normal_sb)
 	btn.add_theme_stylebox_override("hover", hover_sb)
 	btn.add_theme_stylebox_override("pressed", pressed_sb)
+	btn.add_theme_stylebox_override("disabled", disabled_sb)
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	return btn
 
 func _enforce_hud_geometry() -> void:
@@ -510,18 +524,18 @@ func _build_floating_ui() -> void:
 	top_hbox.add_theme_constant_override("separation", 7)
 	_top_strip.add_child(top_hbox)
 
-	var btn_log: Button = _make_styled_button("📜 گزارش", Color(0.16, 0.11, 0.07, 0.94), Color(0.72, 0.54, 0.26), 15, 12)
-	btn_log.custom_minimum_size = Vector2(76, 32)
+	var btn_log: Button = _make_styled_button("گزارش", Color(0.18, 0.12, 0.08, 0.95), Color(0.76, 0.58, 0.28), 16, 12)
+	btn_log.custom_minimum_size = Vector2(74, 32)
 	btn_log.pressed.connect(_toggle_battle_log_panel)
 	top_hbox.add_child(btn_log)
 
-	var btn_inspect: Button = _make_styled_button("👁️ بازیکنان", Color(0.16, 0.11, 0.07, 0.94), Color(0.72, 0.54, 0.26), 15, 12)
-	btn_inspect.custom_minimum_size = Vector2(92, 32)
+	var btn_inspect: Button = _make_styled_button("بازیکنان", Color(0.18, 0.12, 0.08, 0.95), Color(0.76, 0.58, 0.28), 16, 12)
+	btn_inspect.custom_minimum_size = Vector2(88, 32)
 	btn_inspect.pressed.connect(func() -> void: _toggle_opponent_inspector(0))
 	top_hbox.add_child(btn_inspect)
 
 	_top_decks_lbl = Label.new()
-	_top_decks_lbl.text = "👑 ۰/۲ | 🗺️ ۴۲ | ⚡ ۳۸"
+	_top_decks_lbl.text = "تاج ۰/۲  |  قاره ۴۲  |  استراتژی ۳۸"
 	_top_decks_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_top_decks_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_top_decks_lbl.clip_text = true
@@ -893,11 +907,11 @@ func _build_hand_card_widget(
 		var sm: Dictionary = Risk3DFactory.STRATEGY_META.get(cid, {})
 		accent_col = sm.get("color", Color(0.76, 0.24, 0.24))
 		title_txt = str(sm.get("fa", cid))
-		icon_txt = str(sm.get("icon", "⚡"))
+		icon_txt = "دفاعی" if cid == "Cancel" else ("نبرد" if cid in ["Army", "Canon"] else "استراتژی")
 		if compact_combat:
-			sub_txt = "✨ قابل بازی" if is_playable_now else "نوبت عادی"
+			sub_txt = "قابل بازی" if is_playable_now else "نوبت عادی"
 		elif cid == "Cancel":
-			sub_txt = "🛡️ مخصوص دفاع"
+			sub_txt = "مخصوص دفاع"
 		else:
 			sub_txt = str(sm.get("short", "استراتژی"))
 
@@ -925,7 +939,7 @@ func _build_hand_card_widget(
 	banner.custom_minimum_size = Vector2(0, 24 if compact_combat else 28)
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var banner_sb: StyleBoxFlat = StyleBoxFlat.new()
-	banner_sb.bg_color = accent_col.darkened(0.08)
+	banner_sb.bg_color = accent_col.darkened(0.10)
 	banner_sb.set_corner_radius_all(6)
 	banner_sb.content_margin_left = 6
 	banner_sb.content_margin_right = 6
@@ -941,18 +955,21 @@ func _build_hand_card_widget(
 	var badge_lbl: Label = Label.new()
 	badge_lbl.text = "×" + Risk3DFactory.fa_digits(count)
 	badge_lbl.add_theme_font_override("font", FontHekayat)
-	badge_lbl.add_theme_font_size_override("font_size", 20 if compact_combat else 23)
+	badge_lbl.add_theme_font_size_override("font_size", 19 if compact_combat else 22)
 	badge_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.45) if count > 1 else Color(1.0, 0.98, 0.90))
-	badge_lbl.add_theme_constant_override("outline_size", 3)
-	badge_lbl.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.96))
+	badge_lbl.add_theme_constant_override("outline_size", 2)
+	badge_lbl.add_theme_color_override("font_outline_color", Color(0.05, 0.025, 0.01, 0.80))
 	badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_hbox.add_child(badge_lbl)
 
 	var ic_lbl: Label = Label.new()
-	ic_lbl.text = icon_txt
+	ic_lbl.text = "قاره" if kind == "continent" else icon_txt
 	ic_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ic_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	ic_lbl.add_theme_font_size_override("font_size", 16 if compact_combat else 18)
+	ic_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ic_lbl.add_theme_font_override("font", FontHekayat)
+	ic_lbl.add_theme_font_size_override("font_size", 14 if compact_combat else 15)
+	ic_lbl.add_theme_color_override("font_color", Color(0.98, 0.94, 0.84, 0.94))
 	ic_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_hbox.add_child(ic_lbl)
 
@@ -985,6 +1002,12 @@ func _build_hand_card_widget(
 	hit_btn.flat = true
 	hit_btn.focus_mode = Control.FOCUS_NONE
 	hit_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var empty_sb: StyleBoxEmpty = StyleBoxEmpty.new()
+	hit_btn.add_theme_stylebox_override("normal", empty_sb)
+	hit_btn.add_theme_stylebox_override("hover", empty_sb)
+	hit_btn.add_theme_stylebox_override("pressed", empty_sb)
+	hit_btn.add_theme_stylebox_override("focus", empty_sb)
+	hit_btn.add_theme_stylebox_override("disabled", empty_sb)
 	var idx_copy: int = card_idx
 	hit_btn.pressed.connect(func() -> void:
 		AudioManager.sfx_tap()
@@ -1994,8 +2017,8 @@ func _refresh_floating_hud() -> void:
 	# 1. Update Slim Top Tactical Bar
 	var my_tok_cnt: int = my_tokens.size()
 	if is_instance_valid(_top_decks_lbl):
-		var expand_tag: String = " • 🧭" if expand_ignore_adjacency else ""
-		_top_decks_lbl.text = "👑 %s/۲  |  🗺️ %s  |  ⚡ %s%s" % [
+		var expand_tag: String = "  •  حمله آزاد" if expand_ignore_adjacency else ""
+		_top_decks_lbl.text = "تاج %s/۲  |  قاره %s  |  استراتژی %s%s" % [
 			Risk3DFactory.fa_digits(my_tok_cnt),
 			Risk3DFactory.fa_digits(continent_deck_count),
 			Risk3DFactory.fa_digits(strategy_deck_count),
@@ -2102,11 +2125,11 @@ func _refresh_floating_hud() -> void:
 		var def_canon: int = _to_int(active_attack.get("defender_canon_bonus", 0))
 		var atk_dice_n: int = clampi(atk_forces + atk_army_rem, 1, 3)
 		var def_dice_n: int = clampi(def_forces + def_army_rem, 1, 2)
-		var atk_bonus_tag: String = (" 🎯+%s" % Risk3DFactory.fa_digits(atk_canon)) if atk_canon > 0 else ""
-		var def_bonus_tag: String = (" 🎯+%s" % Risk3DFactory.fa_digits(def_canon)) if def_canon > 0 else ""
+		var atk_bonus_tag: String = (" | توپخانه +%s" % Risk3DFactory.fa_digits(atk_canon)) if atk_canon > 0 else ""
+		var def_bonus_tag: String = (" | توپخانه +%s" % Risk3DFactory.fa_digits(def_canon)) if def_canon > 0 else ""
 
 		if atk_id == my_player_index:
-			_selection_info_lbl.text = "⚔️ %s (🎲×%s%s)  VS  🛡️ %s (%s • 🎲×%s%s)" % [
+			_selection_info_lbl.text = "حمله: %s (%s تاس%s)  در برابر  %s (%s • %s تاس%s)" % [
 				src_fa, Risk3DFactory.fa_digits(atk_dice_n), atk_bonus_tag,
 				tgt_fa, _get_player_name(def_id), Risk3DFactory.fa_digits(def_dice_n), def_bonus_tag
 			]
@@ -2115,16 +2138,16 @@ func _refresh_floating_hud() -> void:
 				detail_parts.append("سپر ارتش شما: +%s" % Risk3DFactory.fa_digits(atk_army_rem))
 			if def_army_rem > 0:
 				detail_parts.append("سپر ارتش مدافع: +%s" % Risk3DFactory.fa_digits(def_army_rem))
-			_set_tactical_detail(" | ".join(detail_parts))
+			_set_tactical_detail("  |  ".join(detail_parts))
 
 			var btn_roll_again: Button = _make_styled_button(
-				"🎲 پرتاب مجدد (%s تاس)" % Risk3DFactory.fa_digits(atk_dice_n),
-				Color(0.50, 0.14, 0.14, 0.98),
-				Color(0.98, 0.50, 0.36),
+				"پرتاب مجدد (%s تاس)" % Risk3DFactory.fa_digits(atk_dice_n),
+				Color(0.54, 0.15, 0.14, 0.98),
+				Color(0.98, 0.56, 0.36),
 				22, 14, true
 			)
 			btn_roll_again.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			btn_roll_again.custom_minimum_size = Vector2(0, 48)
+			btn_roll_again.custom_minimum_size = Vector2(0, 50)
 			btn_roll_again.pressed.connect(func() -> void:
 				AudioManager.sfx_button()
 				send_move(Commands.Attack, {})
@@ -2133,12 +2156,12 @@ func _refresh_floating_hud() -> void:
 
 			if _count_my_strategy("Canon") > 0 and atk_canon == 0:
 				var btn_atk_canon: Button = _make_styled_button(
-					"🎯 توپخانه (+۱)",
-					Color(0.36, 0.26, 0.08, 0.98),
+					"توپخانه (+۱)",
+					Color(0.42, 0.29, 0.08, 0.98),
 					Color(0.96, 0.82, 0.28),
-					19, 14, true
+					20, 14, true
 				)
-				btn_atk_canon.custom_minimum_size = Vector2(132, 48)
+				btn_atk_canon.custom_minimum_size = Vector2(130, 50)
 				btn_atk_canon.pressed.connect(func() -> void:
 					AudioManager.sfx_button()
 					send_move(Commands.Use_Strategy, {"strategy": "Canon"})
@@ -2146,33 +2169,33 @@ func _refresh_floating_hud() -> void:
 				_action_buttons_row.add_child(btn_atk_canon)
 
 			var btn_stop_atk: Button = _make_styled_button(
-				"⏹️ توقف",
-				Color(0.22, 0.16, 0.12, 0.96),
-				Color(0.78, 0.62, 0.34),
-				21, 14
+				"توقف حمله",
+				Color(0.24, 0.17, 0.12, 0.96),
+				Color(0.80, 0.64, 0.36),
+				20, 14
 			)
-			btn_stop_atk.custom_minimum_size = Vector2(104, 48)
+			btn_stop_atk.custom_minimum_size = Vector2(114, 50)
 			btn_stop_atk.pressed.connect(func() -> void:
 				AudioManager.sfx_button()
 				send_move(Commands.Cancel_Attack, {"stop": true})
 			)
 			_action_buttons_row.add_child(btn_stop_atk)
 		elif def_id == my_player_index:
-			_selection_info_lbl.text = "🛡️ دفاع در %s (🎲×%s%s)  VS  ⚔️ %s (🎲×%s%s)" % [
+			_selection_info_lbl.text = "دفاع در %s (%s تاس%s)  در برابر  %s (%s تاس%s)" % [
 				tgt_fa, Risk3DFactory.fa_digits(def_dice_n), def_bonus_tag,
 				_get_player_name(atk_id), Risk3DFactory.fa_digits(atk_dice_n), atk_bonus_tag
 			]
 			var can_def_react: bool = (_count_my_strategy("Cancel") > 0 or _count_my_strategy("Canon") > 0)
-			_set_tactical_detail("می‌توانید همین حالا کارت‌های «لغو تهاجم» یا «توپخانه» را از دستتان بازی کنید." if can_def_react else "در انتظار تصمیم مهاجم برای پرتاب بعدی یا توقف حمله...")
+			_set_tactical_detail("می‌توانید همین حالا کارت‌های «لغو تهاجم» یا «توپخانه» را بازی کنید." if can_def_react else "در انتظار تصمیم مهاجم برای پرتاب بعدی یا توقف حمله...")
 			if _count_my_strategy("Cancel") > 0:
 				var btn_def_cancel: Button = _make_styled_button(
-					"🛡️ لغو حمله",
-					Color(0.14, 0.36, 0.44, 0.98),
-					Color(0.38, 0.88, 0.96),
+					"لغو حمله",
+					Color(0.14, 0.38, 0.46, 0.98),
+					Color(0.42, 0.90, 0.96),
 					21, 14, true
 				)
 				btn_def_cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				btn_def_cancel.custom_minimum_size = Vector2(0, 48)
+				btn_def_cancel.custom_minimum_size = Vector2(0, 50)
 				btn_def_cancel.pressed.connect(func() -> void:
 					AudioManager.sfx_button()
 					send_move(Commands.Cancel_Attack, {})
@@ -2180,20 +2203,20 @@ func _refresh_floating_hud() -> void:
 				_action_buttons_row.add_child(btn_def_cancel)
 			if _count_my_strategy("Canon") > 0 and def_canon == 0:
 				var btn_def_canon_atk: Button = _make_styled_button(
-					"🎯 توپخانه (+۱)",
-					Color(0.36, 0.26, 0.08, 0.98),
+					"توپخانه (+۱)",
+					Color(0.42, 0.29, 0.08, 0.98),
 					Color(0.96, 0.82, 0.28),
 					20, 14, true
 				)
 				btn_def_canon_atk.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				btn_def_canon_atk.custom_minimum_size = Vector2(0, 48)
+				btn_def_canon_atk.custom_minimum_size = Vector2(0, 50)
 				btn_def_canon_atk.pressed.connect(func() -> void:
 					AudioManager.sfx_button()
 					send_move(Commands.Use_Strategy, {"strategy": "Canon"})
 				)
 				_action_buttons_row.add_child(btn_def_canon_atk)
 		else:
-			_selection_info_lbl.text = "🎲 نبرد %s و %s در «%s»" % [_get_player_name(atk_id), _get_player_name(def_id), tgt_fa]
+			_selection_info_lbl.text = "نبرد %s و %s در «%s»" % [_get_player_name(atk_id), _get_player_name(def_id), tgt_fa]
 			_set_tactical_detail("")
 		call_deferred("_fit_command_dock_height")
 		return
@@ -2209,8 +2232,8 @@ func _refresh_floating_hud() -> void:
 		var def_canon: int = _to_int(active_attack.get("defender_canon_bonus", 0))
 		var def_already: int = _to_int(active_attack.get("defender_army", 0))
 		var atk_total_dice: int = clampi(atk_forces + atk_extra, 1, 3)
-		var atk_c_tag: String = (" 🎯+%s" % Risk3DFactory.fa_digits(atk_canon)) if atk_canon > 0 else ""
-		var def_c_tag: String = (" 🎯+%s" % Risk3DFactory.fa_digits(def_canon)) if def_canon > 0 else ""
+		var atk_c_tag: String = (" | توپخانه +%s" % Risk3DFactory.fa_digits(atk_canon)) if atk_canon > 0 else ""
+		var def_c_tag: String = (" | توپخانه +%s" % Risk3DFactory.fa_digits(def_canon)) if def_canon > 0 else ""
 
 		if def_id == my_player_index:
 			var my_army_cards: int = _count_my_strategy("Army")
@@ -2222,28 +2245,30 @@ func _refresh_floating_hud() -> void:
 			var total_def_army: int = def_already + selected_army_commit
 			var total_def_dice: int = clampi(my_def_forces + total_def_army, 1, 2)
 
-			_selection_info_lbl.text = "🛡️ دفاع در %s (🎲×%s%s)  VS  ⚔️ %s (🎲×%s%s)" % [
+			_selection_info_lbl.text = "دفاع در %s (%s تاس%s)  در برابر  %s (%s تاس%s)" % [
 				tgt_fa, Risk3DFactory.fa_digits(total_def_dice), def_c_tag,
 				_get_player_name(atk_id), Risk3DFactory.fa_digits(atk_total_dice), atk_c_tag
 			]
-			var def_notes: Array[String] = ["سقف تاس دفاع: ۲ (تساوی به نفع مدافع!)"]
+			var def_notes: Array[String] = ["سقف تاس دفاع: ۲ (تساوی به نفع مدافع)"]
 			if total_def_army > 0:
 				def_notes.append("سپر ارتش: +%s" % Risk3DFactory.fa_digits(total_def_army))
 			elif allowed_def_army > 0 or has_canon or has_cancel:
-				def_notes.append("کارت‌های روشن پایین را برای دفاع تاکتیکی لمس کنید")
-			_set_tactical_detail(" • ".join(def_notes))
+				def_notes.append("کارت‌های روشن بالا را برای دفاع تاکتیکی لمس کنید")
+			_set_tactical_detail("  •  ".join(def_notes))
 
+			# Put army stepper cleanly in the dedicated tactical sub-row when tactics coexist so buttons NEVER clip!
 			if allowed_def_army > 0:
-				_add_compact_army_stepper(allowed_def_army, "🛡️")
+				_show_sub_choice_row()
+				_add_compact_army_stepper(allowed_def_army, "ارتش دفاعی", _sub_choice_row)
 
 			var btn_defend: Button = _make_styled_button(
-				"🎲 دفاع (%s تاس)" % Risk3DFactory.fa_digits(total_def_dice),
-				Color(0.14, 0.40, 0.22, 0.98),
-				Color(0.42, 0.92, 0.58),
-				21, 14, true
+				"دفاع (%s تاس)" % Risk3DFactory.fa_digits(total_def_dice),
+				Color(0.14, 0.44, 0.24, 0.98),
+				Color(0.45, 0.94, 0.60),
+				22, 14, true
 			)
 			btn_defend.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			btn_defend.custom_minimum_size = Vector2(0, 48)
+			btn_defend.custom_minimum_size = Vector2(0, 50)
 			btn_defend.pressed.connect(func() -> void:
 				AudioManager.sfx_button()
 				send_move(Commands.DefenderArmy, {"count": selected_army_commit})
@@ -2252,12 +2277,12 @@ func _refresh_floating_hud() -> void:
 
 			if has_canon and def_canon == 0:
 				var btn_def_canon: Button = _make_styled_button(
-					"🎯 توپخانه (+۱)",
-					Color(0.36, 0.26, 0.08, 0.98),
+					"توپخانه (+۱)",
+					Color(0.42, 0.29, 0.08, 0.98),
 					Color(0.96, 0.82, 0.28),
-					19, 14, true
+					20, 14, true
 				)
-				btn_def_canon.custom_minimum_size = Vector2(126, 48)
+				btn_def_canon.custom_minimum_size = Vector2(128, 50)
 				btn_def_canon.pressed.connect(func() -> void:
 					AudioManager.sfx_button()
 					send_move(Commands.Use_Strategy, {"strategy": "Canon"})
@@ -2266,19 +2291,19 @@ func _refresh_floating_hud() -> void:
 
 			if has_cancel:
 				var btn_cancel_atk: Button = _make_styled_button(
-					"🛡️ لغو حمله",
-					Color(0.14, 0.34, 0.44, 0.98),
-					Color(0.38, 0.88, 0.96),
+					"لغو حمله",
+					Color(0.14, 0.36, 0.46, 0.98),
+					Color(0.42, 0.90, 0.96),
 					20, 14, true
 				)
-				btn_cancel_atk.custom_minimum_size = Vector2(118, 48)
+				btn_cancel_atk.custom_minimum_size = Vector2(118, 50)
 				btn_cancel_atk.pressed.connect(func() -> void:
 					AudioManager.sfx_button()
 					send_move(Commands.DefenderArmy, {"count": 0, "cancel": true})
 				)
 				_action_buttons_row.add_child(btn_cancel_atk)
 		else:
-			_selection_info_lbl.text = "⏳ انتظار دفاع %s در «%s» (مهاجم: 🎲×%s%s)" % [
+			_selection_info_lbl.text = "در انتظار دفاع %s در «%s» (مهاجم: %s تاس%s)" % [
 				_get_player_name(def_id), tgt_fa, Risk3DFactory.fa_digits(atk_total_dice), atk_c_tag
 			]
 			_set_tactical_detail("")
@@ -2295,7 +2320,7 @@ func _refresh_floating_hud() -> void:
 		var def_base_dice: int = clampi(def_forces, 1, 2)
 		var atk_canon: int = _to_int(active_attack.get("attacker_canon_bonus", 0))
 		var atk_already: int = _to_int(active_attack.get("attacker_army", 0))
-		var atk_c_tag: String = (" 🎯+%s" % Risk3DFactory.fa_digits(atk_canon)) if atk_canon > 0 else ""
+		var atk_c_tag: String = (" | توپخانه +%s" % Risk3DFactory.fa_digits(atk_canon)) if atk_canon > 0 else ""
 
 		if atk_id == my_player_index:
 			var my_army_cards: int = _count_my_strategy("Army")
@@ -2305,7 +2330,7 @@ func _refresh_floating_hud() -> void:
 			var total_atk_army: int = atk_already + selected_army_commit
 			var total_atk_dice: int = clampi(my_src_forces + total_atk_army, 1, 3)
 
-			_selection_info_lbl.text = "⚔️ %s (🎲×%s%s)  VS  🛡️ %s (%s • 🎲×%s)" % [
+			_selection_info_lbl.text = "حمله: %s (%s تاس%s)  در برابر  %s (%s • %s تاس)" % [
 				src_fa, Risk3DFactory.fa_digits(total_atk_dice), atk_c_tag,
 				tgt_fa, _get_player_name(def_id), Risk3DFactory.fa_digits(def_base_dice)
 			]
@@ -2313,20 +2338,21 @@ func _refresh_floating_hud() -> void:
 			if total_atk_army > 0:
 				atk_notes.append("سپر ارتش: +%s" % Risk3DFactory.fa_digits(total_atk_army))
 			elif allowed_atk_army > 0:
-				atk_notes.append("ارتش کمکی = رسیدن به ۳ تاس + سپر تلفات")
-			_set_tactical_detail(" • ".join(atk_notes))
+				atk_notes.append("ارتش کمکی = رسیدن به ۳ تاس و سپر تلفات")
+			_set_tactical_detail("  •  ".join(atk_notes))
 
 			if allowed_atk_army > 0:
-				_add_compact_army_stepper(allowed_atk_army, "⚔️")
+				_show_sub_choice_row()
+				_add_compact_army_stepper(allowed_atk_army, "ارتش تهاجمی", _sub_choice_row)
 
 			var btn_commit: Button = _make_styled_button(
-				"⚔️ حمله (%s تاس)" % Risk3DFactory.fa_digits(total_atk_dice),
-				Color(0.50, 0.14, 0.14, 0.98),
-				Color(0.98, 0.50, 0.36),
+				"شروع نبرد (%s تاس)" % Risk3DFactory.fa_digits(total_atk_dice),
+				Color(0.54, 0.15, 0.14, 0.98),
+				Color(0.98, 0.56, 0.36),
 				22, 14, true
 			)
 			btn_commit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			btn_commit.custom_minimum_size = Vector2(0, 48)
+			btn_commit.custom_minimum_size = Vector2(0, 50)
 			btn_commit.pressed.connect(func() -> void:
 				AudioManager.sfx_button()
 				send_move(Commands.AttackerArmy, {"count": selected_army_commit})
@@ -2335,26 +2361,26 @@ func _refresh_floating_hud() -> void:
 
 			if _count_my_strategy("Canon") > 0 and atk_canon == 0:
 				var btn_canon: Button = _make_styled_button(
-					"🎯 توپخانه (+۱)",
-					Color(0.36, 0.26, 0.08, 0.98),
+					"توپخانه (+۱)",
+					Color(0.42, 0.29, 0.08, 0.98),
 					Color(0.96, 0.82, 0.28),
 					20, 14, true
 				)
-				btn_canon.custom_minimum_size = Vector2(138, 48)
+				btn_canon.custom_minimum_size = Vector2(138, 50)
 				btn_canon.pressed.connect(func() -> void:
 					AudioManager.sfx_button()
 					send_move(Commands.Use_Strategy, {"strategy": "Canon"})
 				)
 				_action_buttons_row.add_child(btn_canon)
 		else:
-			_selection_info_lbl.text = "⏳ %s در حال تقویت حمله: %s ⬅️ %s" % [_get_player_name(atk_id), src_fa, tgt_fa]
+			_selection_info_lbl.text = "%s در حال تقویت حمله: %s به %s" % [_get_player_name(atk_id), src_fa, tgt_fa]
 			_set_tactical_detail("")
 		call_deferred("_fit_command_dock_height")
 		return
 
 	# 6. NOT MY TURN
 	if not _is_my_turn():
-		_selection_info_lbl.text = "⏳ نوبت %s • %s" % [_get_player_name(_active_turn), _phase_fa(game_state)]
+		_selection_info_lbl.text = "نوبت %s  •  %s" % [_get_player_name(_active_turn), _phase_fa(game_state)]
 		_set_tactical_detail(_build_continent_inspect_text(_inspected_continent_id) if _inspected_continent_id != "" else "")
 		call_deferred("_fit_command_dock_height")
 		return
@@ -2362,27 +2388,27 @@ func _refresh_floating_hud() -> void:
 	# 7. MY TURN - DRAW PHASE (`Draw`) — 3 Equal-Width Full-Row Buttons (ZERO Scroll!)
 	if game_state == "Draw":
 		if not _first_3d_deck_picked.is_empty():
-			var first_fa: String = "قاره 🗺️" if _first_3d_deck_picked == "continent" else "استراتژی ⚡"
-			_selection_info_lbl.text = "🃏 انتخاب اول: %s — دسته دوم را بزنید" % first_fa
+			var first_fa: String = "قاره" if _first_3d_deck_picked == "continent" else "استراتژی"
+			_selection_info_lbl.text = "انتخاب اول: %s — دسته دوم را انتخاب کنید" % first_fa
 		else:
-			_selection_info_lbl.text = "🎴 نوبت شماست — ۲ کارت از دسته‌ها بکشید:"
+			_selection_info_lbl.text = "نوبت شماست — ۲ کارت از دسته‌ها بکشید:"
 		_set_tactical_detail("")
 
-		var btn_d1: Button = _make_styled_button("🗺️ ۲ قاره", Color(0.12, 0.36, 0.22, 0.98), Color(0.42, 0.90, 0.58), 22, 14, true)
+		var btn_d1: Button = _make_styled_button("۲ کارت قاره", Color(0.13, 0.39, 0.24, 0.98), Color(0.45, 0.92, 0.60), 21, 14, true)
 		btn_d1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn_d1.custom_minimum_size = Vector2(0, 48)
+		btn_d1.custom_minimum_size = Vector2(0, 50)
 		btn_d1.pressed.connect(func() -> void: _send_draw_card(1))
 		_action_buttons_row.add_child(btn_d1)
 
-		var btn_d3: Button = _make_styled_button("⚖️ ۱+۱ ترکیبی", Color(0.30, 0.23, 0.09, 0.98), Color(0.96, 0.80, 0.32), 22, 14, true)
+		var btn_d3: Button = _make_styled_button("۱ قاره + ۱ استراتژی", Color(0.36, 0.26, 0.09, 0.98), Color(0.96, 0.80, 0.34), 20, 14, true)
 		btn_d3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn_d3.custom_minimum_size = Vector2(0, 48)
+		btn_d3.custom_minimum_size = Vector2(0, 50)
 		btn_d3.pressed.connect(func() -> void: _send_draw_card(3))
 		_action_buttons_row.add_child(btn_d3)
 
-		var btn_d2: Button = _make_styled_button("⚡ ۲ استراتژی", Color(0.40, 0.14, 0.16, 0.98), Color(0.92, 0.44, 0.44), 22, 14, true)
+		var btn_d2: Button = _make_styled_button("۲ کارت استراتژی", Color(0.46, 0.15, 0.17, 0.98), Color(0.94, 0.48, 0.46), 21, 14, true)
 		btn_d2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn_d2.custom_minimum_size = Vector2(0, 48)
+		btn_d2.custom_minimum_size = Vector2(0, 50)
 		btn_d2.pressed.connect(func() -> void: _send_draw_card(2))
 		_action_buttons_row.add_child(btn_d2)
 		call_deferred("_fit_command_dock_height")
@@ -2395,7 +2421,7 @@ func _refresh_floating_hud() -> void:
 		_populate_attack_action_controls()
 	else:
 		if _attacked_this_turn:
-			_selection_info_lbl.text = "✅ حمله این نوبت انجام شد — کارت استراتژی بازی کنید یا پایان نوبت بزنید"
+			_selection_info_lbl.text = "حمله این نوبت انجام شد — کارت استراتژی بازی کنید یا پایان نوبت بزنید"
 			_set_tactical_detail(_build_continent_inspect_text(_inspected_continent_id) if _inspected_continent_id != "" else "")
 		elif _has_any_valid_attack():
 			_selection_info_lbl.text = "قدم ۱: روی قاره سبز (مبدأ حمله) یا کارت استراتژی بزنید"
@@ -2405,8 +2431,8 @@ func _refresh_floating_hud() -> void:
 			_set_tactical_detail(_build_continent_inspect_text(_inspected_continent_id) if _inspected_continent_id != "" else "")
 
 	if selected_source_continent != "" or selected_strategy_name != "":
-		var btn_clear: Button = _make_styled_button("🔄 تغییر", Color(0.22, 0.14, 0.12, 0.94), Color(0.66, 0.48, 0.34), 20, 14)
-		btn_clear.custom_minimum_size = Vector2(96, 48)
+		var btn_clear: Button = _make_styled_button("تغییر", Color(0.24, 0.16, 0.12, 0.96), Color(0.70, 0.52, 0.36), 20, 14)
+		btn_clear.custom_minimum_size = Vector2(92, 50)
 		btn_clear.pressed.connect(func() -> void:
 			AudioManager.sfx_tap()
 			selected_hand_card_idx = -1
@@ -2417,9 +2443,9 @@ func _refresh_floating_hud() -> void:
 		)
 		_action_buttons_row.add_child(btn_clear)
 
-	var pass_label: String = "⏭️ پایان نوبت" if _attacked_this_turn else "⏭️ پایان نوبت (+⚡)"
-	var btn_pass: Button = _make_styled_button(pass_label, Color(0.24, 0.17, 0.10, 0.96), Color(0.84, 0.66, 0.32), 21, 14)
-	btn_pass.custom_minimum_size = Vector2(158, 48)
+	var pass_label: String = "پایان نوبت" if _attacked_this_turn else "پایان نوبت (+۱ کارت)"
+	var btn_pass: Button = _make_styled_button(pass_label, Color(0.28, 0.20, 0.10, 0.96), Color(0.88, 0.70, 0.34), 21, 14)
+	btn_pass.custom_minimum_size = Vector2(170, 50)
 	if _action_buttons_row.get_child_count() == 0:
 		btn_pass.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_pass.pressed.connect(func() -> void:
@@ -2429,33 +2455,37 @@ func _refresh_floating_hud() -> void:
 	_action_buttons_row.add_child(btn_pass)
 	call_deferred("_fit_command_dock_height")
 
-func _add_compact_army_stepper(max_allowed: int, icon_str: String) -> void:
-	var btn_minus: Button = _make_styled_button("−", Color(0.20, 0.14, 0.10, 0.95), Color(0.76, 0.58, 0.32), 24, 12)
-	btn_minus.custom_minimum_size = Vector2(44, 48)
+func _add_compact_army_stepper(max_allowed: int, label_prefix: String, target_row: HBoxContainer = null) -> void:
+	var row: HBoxContainer = target_row if is_instance_valid(target_row) else _action_buttons_row
+	var btn_minus: Button = _make_styled_button("-", Color(0.22, 0.15, 0.10, 0.96), Color(0.78, 0.60, 0.34), 24, 12)
+	btn_minus.custom_minimum_size = Vector2(44, 42)
+	btn_minus.disabled = (selected_army_commit <= 0)
 	btn_minus.pressed.connect(func() -> void:
 		AudioManager.sfx_tap()
 		selected_army_commit = max(0, selected_army_commit - 1)
 		_refresh_floating_hud()
 	)
-	_action_buttons_row.add_child(btn_minus)
+	row.add_child(btn_minus)
 
 	var count_chip: Label = Label.new()
-	count_chip.text = "%s+%s" % [icon_str, Risk3DFactory.fa_digits(selected_army_commit)]
-	count_chip.custom_minimum_size = Vector2(54, 0)
+	count_chip.text = "%s: +%s" % [label_prefix, Risk3DFactory.fa_digits(selected_army_commit)]
+	count_chip.custom_minimum_size = Vector2(138, 0)
 	count_chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	count_chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	count_chip.add_theme_font_override("font", FontHekayat)
-	count_chip.add_theme_font_size_override("font_size", 22)
+	count_chip.add_theme_font_size_override("font_size", 20)
 	count_chip.add_theme_color_override("font_color", Color(1.0, 0.92, 0.46))
-	_action_buttons_row.add_child(count_chip)
+	row.add_child(count_chip)
 
-	var btn_plus: Button = _make_styled_button("+", Color(0.20, 0.14, 0.10, 0.95), Color(0.76, 0.58, 0.32), 24, 12)
-	btn_plus.custom_minimum_size = Vector2(44, 48)
+	var btn_plus: Button = _make_styled_button("+", Color(0.22, 0.15, 0.10, 0.96), Color(0.78, 0.60, 0.34), 24, 12)
+	btn_plus.custom_minimum_size = Vector2(44, 42)
+	btn_plus.disabled = (selected_army_commit >= max_allowed)
 	btn_plus.pressed.connect(func() -> void:
 		AudioManager.sfx_tap()
 		selected_army_commit = min(max_allowed, selected_army_commit + 1)
 		_refresh_floating_hud()
 	)
-	_action_buttons_row.add_child(btn_plus)
+	row.add_child(btn_plus)
 
 func _show_sub_choice_row() -> void:
 	if is_instance_valid(_sub_choice_row):
@@ -2470,25 +2500,25 @@ func _populate_attack_action_controls() -> void:
 	if selected_target_continent == "":
 		var valid_targets: Array[String] = _get_valid_attack_target_continents(selected_source_continent)
 		if valid_targets.is_empty():
-			_selection_info_lbl.text = "🚩 %s (×%s) — دشمن هم‌مرزی برای حمله نیست" % [src_fa, Risk3DFactory.fa_digits(my_cnt)]
+			_selection_info_lbl.text = "%s (×%s) — دشمن هم‌مرزی برای حمله نیست" % [src_fa, Risk3DFactory.fa_digits(my_cnt)]
 			_set_tactical_detail("قاره سبز دیگری انتخاب کنید یا کارت استراتژی بازی کنید.")
 			return
 		_show_sub_choice_row()
 		for tc: String in valid_targets:
 			var btn_t: Button = _make_styled_button(
-				"🎯 %s (%s)" % [_continent_fa(tc), _format_continent_enemy_compact(tc)],
-				Color(0.42, 0.14, 0.14, 0.98),
-				Color(0.98, 0.46, 0.36),
-				20, 12, true
+				"حمله به %s (%s)" % [_continent_fa(tc), _format_continent_enemy_compact(tc)],
+				Color(0.46, 0.15, 0.14, 0.98),
+				Color(0.98, 0.50, 0.38),
+				19, 12, true
 			)
-			btn_t.custom_minimum_size = Vector2(166, 44)
+			btn_t.custom_minimum_size = Vector2(182, 44)
 			var tc_copy: String = tc
 			btn_t.pressed.connect(func() -> void:
 				AudioManager.sfx_tap()
 				_select_target_continent_for_attack(tc_copy)
 			)
 			_sub_choice_row.add_child(btn_t)
-		_selection_info_lbl.text = "قدم ۲: هدف قرمز حمله از «%s» (🎲×%s) را انتخاب کنید:" % [src_fa, Risk3DFactory.fa_digits(my_base_dice)]
+		_selection_info_lbl.text = "قدم ۲: هدف قرمز حمله از «%s» (%s تاس) را انتخاب کنید:" % [src_fa, Risk3DFactory.fa_digits(my_base_dice)]
 		_set_tactical_detail("")
 		return
 
@@ -2504,7 +2534,7 @@ func _populate_attack_action_controls() -> void:
 
 	var def_cnt: int = _to_int(players_state.get(selected_target_player, {}).get("continents", {}).get(selected_target_continent, 1))
 	var def_base_dice: int = clampi(def_cnt, 1, 2)
-	_selection_info_lbl.text = "⚔️ %s (🎲×%s)  VS  🛡️ %s (%s • 🎲×%s)" % [
+	_selection_info_lbl.text = "حمله: %s (%s تاس)  در برابر  %s (%s • %s تاس)" % [
 		src_fa, Risk3DFactory.fa_digits(my_base_dice), tgt_fa, _get_player_name(selected_target_player), Risk3DFactory.fa_digits(def_base_dice)
 	]
 	_set_tactical_detail("")
@@ -2517,12 +2547,12 @@ func _populate_attack_action_controls() -> void:
 			var d_cnt: int = _to_int(players_state.get(d_pid, {}).get("continents", {}).get(selected_target_continent, 1))
 			var f_col: Color = RiskMaterials.FACTION_COLORS.get(d_pid, Color(0.95, 0.78, 0.30))
 			var chip: Button = _make_styled_button(
-				"%s%s (×%s)" % ["✓ " if is_sel_d else "", _get_player_name(d_pid), Risk3DFactory.fa_digits(d_cnt)],
-				f_col.darkened(0.38) if is_sel_d else Color(0.14, 0.11, 0.08, 0.94),
+				"%s%s (×%s)" % ["● " if is_sel_d else "", _get_player_name(d_pid), Risk3DFactory.fa_digits(d_cnt)],
+				f_col.darkened(0.38) if is_sel_d else Color(0.15, 0.11, 0.08, 0.94),
 				Color(1.0, 0.88, 0.34) if is_sel_d else f_col.lightened(0.18),
 				19, 12, is_sel_d
 			)
-			chip.custom_minimum_size = Vector2(146, 42)
+			chip.custom_minimum_size = Vector2(148, 42)
 			var cap_d: int = d_pid
 			chip.pressed.connect(func() -> void:
 				AudioManager.sfx_tap()
@@ -2532,13 +2562,13 @@ func _populate_attack_action_controls() -> void:
 			_sub_choice_row.add_child(chip)
 
 	var btn_atk: Button = _make_styled_button(
-		"⚔️ شروع حمله به «%s»" % tgt_fa,
-		Color(0.52, 0.14, 0.14, 0.98),
-		Color(0.98, 0.52, 0.36),
-		23, 14, true
+		"شروع حمله به «%s»" % tgt_fa,
+		Color(0.54, 0.15, 0.14, 0.98),
+		Color(0.98, 0.56, 0.36),
+		22, 14, true
 	)
 	btn_atk.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_atk.custom_minimum_size = Vector2(0, 48)
+	btn_atk.custom_minimum_size = Vector2(0, 50)
 	btn_atk.pressed.connect(_send_declare_attack)
 	_action_buttons_row.add_child(btn_atk)
 
@@ -2546,11 +2576,11 @@ func _populate_strategy_action_controls() -> void:
 	var sm: Dictionary = Risk3DFactory.STRATEGY_META.get(selected_strategy_name, {})
 	var strat_fa: String = str(sm.get("fa", selected_strategy_name))
 	var desc: String = str(sm.get("desc", ""))
-	_selection_info_lbl.text = "⚡ استراتژی «%s»" % strat_fa
+	_selection_info_lbl.text = "استراتژی «%s»" % strat_fa
 	_set_tactical_detail(desc)
 
 	if bool(sm.get("combat_only", false)):
-		_selection_info_lbl.text = "🛡️ «%s» مخصوص زمان دفاع است" % strat_fa
+		_selection_info_lbl.text = "«%s» مخصوص زمان دفاع است" % strat_fa
 		return
 
 	var needs_p: bool = bool(sm.get("needs_target_player", false))
@@ -2559,7 +2589,7 @@ func _populate_strategy_action_controls() -> void:
 	if needs_p:
 		var opps: Array[int] = _get_valid_opponent_targets_for_strategy(selected_strategy_name)
 		if opps.is_empty():
-			_selection_info_lbl.text = "⚡ «%s» — حریف واجد شرایطی نیست" % strat_fa
+			_selection_info_lbl.text = "«%s» — حریف واجد شرایطی نیست" % strat_fa
 			return
 		if selected_target_player == 0 or not opps.has(selected_target_player):
 			selected_target_player = opps[0]
@@ -2570,8 +2600,8 @@ func _populate_strategy_action_controls() -> void:
 				var is_sel_o: bool = (o_pid == selected_target_player)
 				var f_col: Color = RiskMaterials.FACTION_COLORS.get(o_pid, Color(0.95, 0.78, 0.30))
 				var o_chip: Button = _make_styled_button(
-					"%s%s" % ["🎯 " if is_sel_o else "", _get_player_name(o_pid)],
-					f_col.darkened(0.38) if is_sel_o else Color(0.14, 0.11, 0.08, 0.94),
+					"%s%s" % ["● " if is_sel_o else "", _get_player_name(o_pid)],
+					f_col.darkened(0.38) if is_sel_o else Color(0.15, 0.11, 0.08, 0.94),
 					Color(1.0, 0.88, 0.34) if is_sel_o else f_col.lightened(0.18),
 					19, 12, is_sel_o
 				)
@@ -2598,17 +2628,17 @@ func _populate_strategy_action_controls() -> void:
 		if selected_target_continent == "" or not valid_c.has(selected_target_continent):
 			selected_target_continent = valid_c[0]
 
-		_selection_info_lbl.text = "💥 تخریب «%s» از %s" % [_continent_fa(selected_target_continent), _get_player_name(selected_target_player)]
+		_selection_info_lbl.text = "تخریب «%s» از %s" % [_continent_fa(selected_target_continent), _get_player_name(selected_target_player)]
 		_set_tactical_detail("برای تغییر قاره هدف، روی قاره سبز روی میز بزنید.")
 
 	var btn_play: Button = _make_styled_button(
-		"⚡ اجرای «%s»" % strat_fa,
-		Color(0.14, 0.40, 0.22, 0.98),
-		Color(0.42, 0.94, 0.58),
-		23, 14, true
+		"اجرای «%s»" % strat_fa,
+		Color(0.14, 0.44, 0.24, 0.98),
+		Color(0.45, 0.94, 0.60),
+		22, 14, true
 	)
 	btn_play.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_play.custom_minimum_size = Vector2(0, 48)
+	btn_play.custom_minimum_size = Vector2(0, 50)
 	btn_play.pressed.connect(_send_use_strategy)
 	_action_buttons_row.add_child(btn_play)
 

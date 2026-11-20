@@ -228,12 +228,17 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.custom_minimum_size = Vector2(250.0, 56.0)
 	_action_roll_btn.focus_mode = Control.FOCUS_NONE
 	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	_action_roll_btn.text = "🎲 پرتاب تاس"
+	_action_roll_btn.text = "پرتاب تاس"
 	_action_roll_btn.add_theme_font_override("font", _FONT_FA)
 	_action_roll_btn.add_theme_font_size_override("font_size", 26)
 	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
-	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
-	_action_roll_btn.add_theme_constant_override("outline_size", 4)
+	_action_roll_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	_action_roll_btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72))
+	_action_roll_btn.add_theme_color_override("font_focus_color", Color(1.0, 0.98, 0.92))
+	_action_roll_btn.add_theme_color_override("font_hover_pressed_color", Color(1.0, 0.96, 0.78))
+	_action_roll_btn.add_theme_color_override("font_disabled_color", Color(0.76, 0.72, 0.66, 0.85))
+	_action_roll_btn.add_theme_color_override("font_outline_color", Color(0.05, 0.025, 0.01, 0.78))
+	_action_roll_btn.add_theme_constant_override("outline_size", 2)
 
 	var normal_sb = StyleBoxFlat.new()
 	normal_sb.bg_color = Color(0.12, 0.44, 0.24, 0.96)
@@ -268,6 +273,7 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.add_theme_stylebox_override("hover", hover_sb)
 	_action_roll_btn.add_theme_stylebox_override("pressed", pressed_sb)
 	_action_roll_btn.add_theme_stylebox_override("disabled", disabled_sb)
+	_action_roll_btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 	_action_roll_btn.pressed.connect(_on_roll_button_tapped)
 	hbox.add_child(_action_roll_btn)
@@ -1798,16 +1804,16 @@ func _refresh_ui_and_highlights() -> void:
 			_action_dock_root.visible = true
 			if is_my_turn and not dices_rolled:
 				_action_roll_btn.disabled = false
-				_action_roll_btn.text = "🎲 پرتاب تاس"
+				_action_roll_btn.text = "پرتاب تاس"
 			elif is_my_turn and dices_rolled:
 				_action_roll_btn.disabled = true
 				if not current_dices.is_empty() and _has_any_available_move(my_id):
-					_action_roll_btn.text = "✨ حرکت دهید (%s)" % _fa_digits(current_dices.size())
+					_action_roll_btn.text = "حرکت دهید (%s)" % _fa_digits(current_dices.size())
 				else:
-					_action_roll_btn.text = "⏳ در حال تعویض نوبت..."
+					_action_roll_btn.text = "در حال تعویض نوبت..."
 			else:
 				_action_roll_btn.disabled = true
-				_action_roll_btn.text = "⏳ نوبت حریف..."
+				_action_roll_btn.text = "نوبت حریف..."
 
 
 func _sync_hud_scores() -> void:

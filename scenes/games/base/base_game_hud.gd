@@ -3238,12 +3238,19 @@ func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color
 	btn.add_theme_stylebox_override("hover", hover_sb)
 	btn.add_theme_stylebox_override("pressed", pressed_sb)
 	btn.add_theme_stylebox_override("disabled", disabled_sb)
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
+	var base_fg: Color = Color(1.0, 0.98, 0.92) if is_primary else Color(0.96, 0.94, 0.90)
 	btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 	btn.add_theme_font_size_override("font_size", 24 if is_primary else 22)
-	btn.add_theme_color_override("font_color", Color.WHITE if is_primary else Color(0.96, 0.94, 0.90))
-	btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
-	btn.add_theme_constant_override("outline_size", 3)
+	btn.add_theme_color_override("font_color", base_fg)
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72))
+	btn.add_theme_color_override("font_focus_color", base_fg)
+	btn.add_theme_color_override("font_hover_pressed_color", Color(1.0, 0.96, 0.78))
+	btn.add_theme_color_override("font_disabled_color", Color(0.72, 0.68, 0.62, 0.80))
+	btn.add_theme_color_override("font_outline_color", Color(0.05, 0.025, 0.01, 0.78))
+	btn.add_theme_constant_override("outline_size", 2)
 	btn.clip_text = true
 	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	btn.focus_mode = Control.FOCUS_NONE
@@ -3269,10 +3276,10 @@ func _build_battleship_ship_row() -> void:
 	fekrbekr_actions.add_child(_bs_ship_row)
 
 	var ship_specs = [
-		{"len": 5, "txt": "🚢 ناو ۵"},
-		{"len": 4, "txt": "🚢 ناو ۴"},
-		{"len": 3, "txt": "🚢 ناو ۳"},
-		{"len": 2, "txt": "🚢 ناو ۲"}
+		{"len": 5, "txt": "ناو ۵"},
+		{"len": 4, "txt": "ناو ۴"},
+		{"len": 3, "txt": "ناو ۳"},
+		{"len": 2, "txt": "ناو ۲"}
 	]
 	for spec in ship_specs:
 		var s_len = int(spec["len"])
