@@ -478,6 +478,7 @@ theme_override_fonts/font = ExtResource("4_font_vazir")
 theme_override_font_sizes/font_size = 15
 text = "کد ارسال شده به ۰۹۱۲۳۴۵۶۷۸۹"
 horizontal_alignment = 2
+text_direction = 3
 clip_text = true
 text_overrun_behavior = 3
 

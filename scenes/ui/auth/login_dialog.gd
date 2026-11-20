@@ -295,6 +295,8 @@ func _show_step2() -> void:
 	_update_stepper(2)
 	lbl_title.text = "تأیید شماره موبایل"
 	lbl_tagline.text = "کد ۴ رقمی پیامک‌شده را در کادر زیر وارد کنید"
+	lbl_step2_subtitle.text_direction = Control.TEXT_DIRECTION_RTL
+	lbl_step2_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 	var pretty_phone: String = _format_phone_fa(current_phone)
 	if current_phone == "09131234567" or current_phone.ends_with("1234567"):
@@ -374,8 +376,8 @@ func _is_valid_iran_phone(normalized: String) -> bool:
 func _format_phone_fa(normalized: String) -> String:
 	var fa: String = GameManager.to_fa_num(normalized)
 	if fa.length() == 11:
-		return "%s %s %s" % [fa.substr(0, 4), fa.substr(4, 3), fa.substr(7, 4)]
-	return fa
+		return "\u2066%s %s %s\u2069" % [fa.substr(0, 4), fa.substr(4, 3), fa.substr(7, 4)]
+	return "\u2066%s\u2069" % fa
 
 
 func _on_phone_text_changed(new_text: String) -> void:
