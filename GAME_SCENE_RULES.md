@@ -1,7 +1,7 @@
 # Cafe Fekr — Game Scene Architecture & Implementation Rules
-> **Version:** 2.1  
+> **Version:** 2.2  
 > **Target Engine:** Godot 4.x (GDScript)  
-> **Scope:** General UI, 3D Environment, Game Logic, Socket Networking, and Porting Standards for ALL present and future Cafe Fekr games (TicTacToe, Chess, FekrBekr, Checkers, Backgammon, Four-in-a-Row, Othello, Mill, DotBox, Battleship, Sudoku, Yatzy, etc.).
+> **Scope:** General UI, Five-Tab Main Navigation, 3D Environment, Game Logic, Socket Networking, and Porting Standards for ALL present and future Cafe Fekr games (TicTacToe, Chess, FekrBekr, Checkers, Backgammon, Four-in-a-Row, Othello, Mill, DotBox, Battleship, Sudoku, Yatzy, etc.).
 
 ---
 
@@ -47,33 +47,60 @@
 
 ## 1. Architectural Philosophy
 
-In Cafe Fekr, **the in-game experience is shared across ALL board games**:
-1. **The 3D Cafe Environment is Constant**: The wooden cafe table, cozy warm lighting, candlelight, luxury tabletop props, and camera orbit/zoom system (`scenes/environment/cafe_table.tscn`) remain identical for every game (with no disembodied 3D hands).
-2. **The 2D In-Game HUD is Constant**: The top player cards, round count, turn banner, turn timer bar, 8-button bottom control bar, toast hints, reaction bubbles, pause/disconnect dialogs, and match result dialogs (`scenes/games/base/base_game_hud.tscn`) are unified and shared.
-3. **Only the Board Changes**: Each game provides its own 3D board scene that is spawned dynamically inside `cafe_table`'s `BoardContainer`. Every board inherits from `BaseGameBoard` (`scripts/games/base_game_board.gd`).
-4. **Header Inheritance for Special Game Elements**: If a game has specific UI elements not present in all games (e.g. Chess has AFK missed turns strikes, whereas TicTacToe does not), its header MUST inherit from `BaseTopHeader` (`scenes/games/base/base_top_header.gd`).
+In Cafe Fekr, the application operates on two primary states: **The Main Menu Hub (`MainTabShell`)** and **The In-Game Experience (`BaseGameHUD` + `CafeTable`)**:
+
+1. **The Modern Five-Tab Navigation Hub (`MainTabShell`):**
+   - The main menu operates through a portrait-first, 5-tab application architecture (`scenes/ui/main_tabs/`):
+     - **`SocialTab` (اجتماعی / اتحاد):** Friend lists, Clan hub (اتحاد), Direct Messages, and clan challenges.
+     - **`HistoryTab` (برترین‌ها):** Global leaderboards (Score, Wins, Friends, Clans) styled with antique wooden frames, medals, level badges, and 1-tap player/clan profiles.
+     - **`PlayTab` (بازی):** The core gameplay launcher resting over the 3D cafe table with 4 primary game mode cards (Ranked, Classic, Lobby, Multi-Player), top Watch Live button, and Exit button.
+     - **`LibraryTab` (کتابخانه بازی‌ها):** Catalog of all 25 games with live search, category filter chips, and 2-part RTL game guide viewer.
+     - **`UserTab` (کاربر و تنظیمات):** Top player profile banner, personal match history with replay/review modals, doubled-size game stats matrix, 5-per-row avatar picker, privacy and volume settings, and notifications center.
+     - **`BottomNavigation`:** Persistent 5-button bottom bar styled with a single, continuous antique `frame_tall` wooden plaque (9-slice stretched, non-tiled) with 15–20px content padding.
+2. **The 3D Cafe Environment is Constant:** The wooden cafe table, cozy warm lighting, candlelight, luxury tabletop props, and camera orbit/zoom system (`scenes/environment/cafe_table.tscn`) remain identical for every game (with strictly NO disembodied 3D hands). In the main menu, it provides the warm ambient 3D background behind `PlayTab`.
+3. **The 2D In-Game HUD is Constant:** The top player cards, round count, turn banner, turn timer bar, 8-button bottom control bar, toast hints, reaction bubbles, pause/disconnect dialogs, and match result dialogs (`scenes/games/base/base_game_hud.tscn`) are unified and shared.
+4. **Only the Board Changes:** Each game provides its own 3D board scene that is spawned dynamically inside `cafe_table`'s `BoardContainer`. Every board inherits from `BaseGameBoard` (`scripts/games/base_game_board.gd`).
+5. **Header Inheritance for Special Game Elements:** If a game has specific UI elements not present in all games (e.g. Chess has AFK missed turns strikes, whereas TicTacToe does not), its header MUST inherit from `BaseTopHeader` (`scenes/games/base/base_top_header.gd`).
+6. **Menu $\leftrightarrow$ In-Game Transition Lifecycle:**
+   - Entering a match hides `MainTabShell` (`visible = false`), reveals `BaseGameHUD` (`visible = true`), and spawns the 3D board into `BoardContainer`.
+   - Concluding a match and returning to the menu hides `BaseGameHUD`, clears the board via `cafe_table.clear_board()`, and re-enables `MainTabShell` (`visible = true`), safely returning the player to `PlayTab` with zero memory leaks.
 
 ```
 +-----------------------------------------------------------------------------------+
-|                                  MAIN SCENE                                       |
+|                                  MAIN SCENE (main.tscn)                           |
 |                                                                                   |
 |  +-----------------------------------------------------------------------------+  |
 |  | [3D Environment] CafeTable (scenes/environment/cafe_table.tscn)              |  |
 |  |   |- Camera3D (Damped Orbit, Tilt, Zoom, 2D Top-Down Toggle, Drag Lock)     |  |
 |  |   |- Environment Lighting (OmniLight3D Lamp + Candlelight Flicker)           |  |
-|  |   |- Realistic Hands (Player Hand + Opponent Hand with dynamic sleeve color)|  |
+|  |   |- Luxury Tabletop Props (Hourglass, Dice Tray, Rulebooks, Persian Plate) |  |
 |  |   |- BoardContainer (Node3D)                                                 |  |
-|  |        \--> [Spawned Game Board] (e.g. TicTacToe3D, Chess3D, Checkers3D, FekrBekr3D, Yatzy3D)     |  |
+|  |        \--> [Spawned Game Board 3D] (e.g. TicTacToe3D, Chess3D, Yatzy3D)    |  |
 |  +-----------------------------------------------------------------------------+  |
 |                                                                                   |
 |  +-----------------------------------------------------------------------------+  |
-|  | [2D CanvasLayer] BaseGameHUD (scenes/games/base/base_game_hud.tscn)         |  |
-|  |   |- Dynamic TopHeaderSlot (Loads BaseTopHeader or specialized child header)|  |
-|  |   |- MatchDetailsBox (Round label, Turn Banner, Countdown, TurnTimerBar)    |  |
+|  | [2D CanvasLayer - Menu State] MainTabShell (scenes/ui/main_tabs/)            |  |
+|  |   |- PlayTab (4 Wooden Mode Cards, Watch Live Button, Exit Button)          |  |
+|  |   |- LibraryTab (25 Games Catalog, Search, Category Chips, RTL Rules View)  |  |
+|  |   |- HistoryTab (برترین‌ها: 4 Leaderboards, Medals, RTL Names, Level Badges)   |  |
+|  |   |- SocialTab (Friends, Clans / اتحاد, DMs, Challenges)                      |  |
+|  |   |- UserTab (Profile Header, History Reviews, Stats Matrix, Avatars, Audio) |  |
+|  |   \- BottomNavigation (Continuous Antique Frame Plaque, 5 Tab Buttons)      |  |
+|  +-----------------------------------------------------------------------------+  |
+|                                                                                   |
+|  +-----------------------------------------------------------------------------+  |
+|  | [2D CanvasLayer - Match State] BaseGameHUD (scenes/games/base/base_game_hud)|  |
+|  |   |- Dynamic TopHeaderSlot (BaseTopHeader or Specialized Child Header)       |  |
+|  |   |- MatchDetailsBox (Round label, Turn Banner, Countdown, TurnTimerBar VFX)|  |
 |  |   |- ToastHint (Bottom-center notification pill, Font size 32)              |  |
 |  |   |- BottomBar (8 Buttons: 4 Camera Controls + 4 Match Controls)            |  |
 |  |   |- DisconnectPauseDialog (60s Opponent Disconnect Countdown & Progress)   |  |
-|  |   |- Dialogs (StartGameOverlay, RoundFinishBanner, GameResultDialog)        |  |
+|  |   \- Dialogs (StartGameOverlay, RoundFinishBanner, GameResultDialog)        |  |
+|  +-----------------------------------------------------------------------------+  |
+|                                                                                   |
+|  +-----------------------------------------------------------------------------+  |
+|  | [2D CanvasLayer - Spectate] SpectatorOverlay (scenes/ui/spectator/)          |  |
+|  |   |- Viewer Count Pill (👁️ %d تماشاگر), Live Banner, Leave Button          |  |
 |  +-----------------------------------------------------------------------------+  |
 +-----------------------------------------------------------------------------------+
 ```
@@ -205,6 +232,37 @@ Matches Flutter's `DialogComponent().showTimerDialog` and backend `UserDisconnec
   - In `show_result(...)`, always ensure `panel.visible = true`, `panel.modulate.a = 1.0`, `panel.mouse_filter = Control.MOUSE_FILTER_STOP`, and `btn_return.disabled = false`.
   - **CRITICAL:** Because `close()` and `close_immediate()` set `panel.visible = false`, `show_result()` MUST explicitly re-enable `panel.visible = true`, otherwise only the dark background DimOverlay will display and trap the user in a black screen!
 - **Return to Menu:** Clicking `"بازگشت به لابی کافه"` (`BtnReturn`) emits `return_to_menu_requested`, which triggers `leave_game_requested` on HUD, clearing board caches and smoothly returning to the main menu.
+
+### 2.8. Antique Frame Styling, Universal Padding (15–20px Rule) & RTL Typography Standards
+
+Across all main tabs (`PlayTab`, `LibraryTab`, `HistoryTab`, `SocialTab`, `UserTab`), sub-views, and modal dialogs:
+- **Centralized Frame Factory (`CafeSocialTheme.create_frame_style`):**
+  - All wooden frame panels MUST be created or configured via `CafeSocialTheme.create_frame_style(is_tall, pad_x, pad_y)`:
+    - `is_tall = false`: Uses `frame_small.png` (height 56px, 9-slice margins: left 50, right 50, top 18, bottom 18). Used for single-line cards, leaderboard rows, member rows, and compact sub-nav headers.
+    - `is_tall = true`: Uses `frame_tall.png` (height 97px, 9-slice margins: left 50, right 50, top 26, bottom 26). Used for multi-line cards, bottom navigation bar, search plaques, detail view headers, and dialog bodies.
+- **Strict 9-Slice Stretch Mode (No Tiling / Repeated Seams):**
+  - In Godot `StyleBoxTexture`, always set:
+    ```gdscript
+    sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH # 0
+    sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH   # 0
+    ```
+  - **NEVER** set `axis_stretch_horizontal = AXIS_STRETCH_MODE_TILE (1)` on wide frames like `BottomNavigation` (1080px wide) or modal boxes, as doing so repeats the 457px middle section of the frame texture across the screen, producing ugly seams.
+- **Universal Content Padding Standards (15–20px Mandatory Rule):**
+  - **CRITICAL LAW**: Every framed box (`PanelContainer`, `Button` with frame style, or `StyleBoxTexture`) MUST enforce horizontal and vertical content margins between 15 and 20px (standard default: `pad_x = 20.0, pad_y = 16.0`).
+  - Child layout containers (`MarginContainer`) inside framed panels MUST match these overrides (`margin_left = 20`, `margin_right = 20`, `margin_top = 16`, `margin_bottom = 16`).
+  - **PROHIBITION**: Never allow text, badges, or buttons to sit with 0–10px padding against an antique frame, as the ornate golden border bevels will clip into and obscure the content.
+- **RTL Typography, Leaderboards & Data Alignment:**
+  - **Leaderboard Sequence (Right-to-Left):**
+    1. Rank Number / Medal (🥇, 🥈, 🥉, or Persian integer) on far right.
+    2. Avatar / Clan Emblem Medallion.
+    3. Player / Clan Name: Positioned immediately to the left of the avatar. Must have `size_flags_horizontal = Control.SIZE_EXPAND_FILL`, `horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT`, and `clip_text = false` so it fills the available middle width cleanly without being squashed by neighboring spacers.
+    4. Gamer Level: Level Icon (`BADGE_LEVEL`) + Persian integer level number.
+    5. Score / Wins Count on far left.
+  - **Persian Numerals & Integer Casting:**
+    - All leaderboard numbers, levels, wins, XP, and scores MUST be cast to `int(...)` and formatted via `GameManager.to_fa_num(int(val))`.
+    - Never display unrounded floats (e.g. `12.0`) or Latin digits on Persian leaderboards and stats.
+  - **Game Documentation RTL:**
+    - All game rules and overview rich text in `LibraryTab` MUST be explicitly right-aligned (`align = right`) and flagged for RTL rendering.
 
 ---
 
@@ -590,6 +648,10 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Stale Turn Banner in Simultaneous Games** | In simultaneous games (e.g. `RPC`), never display turn-based text ("نوبت قرمز/آبی" or "بازی درحال آغاز است") during active play; always show clear prompts ("سنگ، کاغذ یا قیچی را انتخاب کنید!" / "✅ انتخاب شما: ...") and dismiss start overlays immediately on `New_Turn_Round`. |
 | ❌ **No Start-Countdown Glitch or Double-Tick** | Keep `StartGameOverlay/Card/VBox/Countdown` at a fixed `custom_minimum_size = Vector2(360, 130)` and `pivot_offset = Vector2(180, 65)`, and never let `Game_Play_Time` or background `_process` timers overwrite or double-tick during `play_start_countdown()`. |
 | ❌ **No Front-Lip Text in TicTacToe** | Never add front-frame `Label3D` text on the `TicTacToe` 3D board. |
+| ❌ **No Tiling Seams on Antique Frames** | Always set `axis_stretch_horizontal = 0` (STRETCH) on `StyleBoxTexture` for frames; never use tile mode (`1`) on wide bars or modals. |
+| ❌ **No Small/Zero Padding on Frames** | Always enforce 15–20px horizontal and vertical padding (`content_margin` and `MarginContainer`) so content does not touch golden bevels. |
+| ❌ **No Floating UserHeader in Menu** | Player profile information belongs exclusively inside `UserTab`; do not render duplicate floating headers on other tabs. |
+| ❌ **No Floats or Latin Digits in Leaderboards** | Always cast leaderboard values to integer and format via `GameManager.to_fa_num(int(...))`. |
 | ❌ **Cross-Game Side-Effect Prohibition** | When changing or fixing something in a game, it MUST NOT affect any other game (only affects if it was common on both). Never introduce collateral changes to existing games. |
 
 ---

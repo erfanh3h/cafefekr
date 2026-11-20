@@ -13,9 +13,10 @@ Built with **Godot 4.7** using **GDScript**, this mobile-first portrait applicat
 | **Engine / Language** | Godot 4.7 (Mobile renderer / D3D12), GDScript |
 | **Orientation & Resolution** | Portrait (1080 × 1920 base, 540 × 960 window override, `canvas_items/expand`) |
 | **Target Platforms** | Android (APK, arm64-v8a / armeabi-v7a / x86_64), Windows Desktop |
-| **Version** | `2.0.0` (Client-side force-update check via `allowed_version`) |
+| **Version** | `2.2.0` (Five-Tab Redesign Release) |
 | **Persian Typography** | `res://assets/fonts/Vazir.ttf` (UI standard) & `res://assets/fonts/hekayat.ttf` (In-game 3D & score typography) |
 | **Networking** | REST HTTP (`APIClient`) + Custom WebSocket Socket.IO v4 client (`SocketIOClient`) |
+| **Navigation Hub** | Modern 5-Tab Navigation Hub (`MainTabShell`) + Antique 9-Slice Wood Frame Engine |
 | **Active Games** | 25 distinct 3D board game scenes inheriting from `BaseGameBoard` |
 | **Live Spectator System** | Full spectator browser (`LiveGamesDialog`), in-game overlay (`SpectatorOverlay`), and read-only board sync |
 | **Core Directive** | **Zero Cross-Game Regressions** & Strict Game Isolation (see `GAME_SCENE_RULES.md`) |
@@ -45,23 +46,24 @@ The client follows a decoupled singleton-and-scene architecture:
 |  |                                      2D CANVAS UI LAYER                                      |  |
 |  |                                                                                              |  |
 |  |  +---------------------------------------+      +-----------------------------------------+  |  |
-|  |  |           MAIN MENU & DOCK            |      |            IN-GAME HUD (HUD)            |  |  |
+|  |  |   MAIN TAB SHELL (scenes/ui/main_tabs)|      |            IN-GAME HUD (HUD)            |  |  |
 |  |  |                                       |      |  (scenes/games/base/base_game_hud.tscn) |  |  |
-|  |  | - UserHeader (Coins, Level, Avatar)   |      |                                         |  |  |
-|  |  | - Mode Cards (Rank, Classic, Lobby)   |      |  - TopHeaderSlot (Player Plaques)       |  |  |
-|  |  | - Watch Live Button (Live Matches)    |      |  - MatchDetailsBox (Turn/Timer Bar VFX) |  |  |
-|  |  | - Bottom Dock (Ranking, History, etc.)|      |  - ToastHint (Floating Notifications)   |  |  |
-|  |  +---------------------------------------+      |  - BottomBar (8 Wood Action Buttons)    |  |  |
-|  |                                                 |  - Dialogs (Countdown, Disconnect Pause)|  |  |
+|  |  | - PlayTab (Modes, Live Watch, Exit)   |      |                                         |  |  |
+|  |  | - LibraryTab (25 Games, Search, Rules)|      |  - TopHeaderSlot (Player Plaques)       |  |  |
+|  |  | - HistoryTab (برترین‌ها Leaderboards)    |      |  - MatchDetailsBox (Turn/Timer Bar VFX) |  |  |
+|  |  | - SocialTab (Friends, Clans / اتحاد)   |      |  - ToastHint (Floating Notifications)   |  |  |
+|  |  | - UserTab (Profile, Reviews, Audio)   |      |  - BottomBar (8 Wood Action Buttons)    |  |  |
+|  |  | - BottomNavigation (Continuous Frame) |      |  - Dialogs (Countdown, Disconnect Pause)|  |  |
 |  |  +---------------------------------------+      |  - GameResultDialog (Victory/Defeat)    |  |  |
-|  |  |           MODAL DIALOGS               |      +-----------------------------------------+  |  |
-|  |  |                                       |                                                   |  |
-|  |  | - LoginDialog, QueueDialog, PickBan   |      +-----------------------------------------+  |  |
-|  |  | - SocialDialog (Friends, Clans, Chat) |      |          SPECTATOR OVERLAY              |  |  |
-|  |  | - LiveGamesDialog (Spectator Browser) |      | (scenes/ui/spectator/spectator_overlay) |  |  |
-|  |  | - UserProfileDialog, Store, Rules     |      |  - Viewer Count Pill (👁️ %d تماشاگر)   |  |  |
-|  |  +---------------------------------------+      |  - Exit Button ("ترک تماشا")            |  |  |
 |  |                                                 +-----------------------------------------+  |  |
+|  |  +---------------------------------------+                                                   |  |
+|  |  |           MODAL DIALOGS               |      +-----------------------------------------+  |  |
+|  |  |                                       |      |          SPECTATOR OVERLAY              |  |  |
+|  |  | - LoginDialog, QueueDialog, PickBan   |      | (scenes/ui/spectator/spectator_overlay) |  |  |
+|  |  | - LiveGamesDialog (Spectator Browser) |      |  - Viewer Count Pill (👁️ %d تماشاگر)   |  |  |
+|  |  | - UserProfileDialog, ClanDetailsModal |      |  - Exit Button ("ترک تماشا")            |  |  |
+|  |  | - MatchReviewDialog, ExitConfirm      |      +-----------------------------------------+  |  |
+|  |  +---------------------------------------+                                                   |  |
 |  +----------------------------------------------------------------------------------------------+  |
 +----------------------------------------------------------------------------------------------------+
 ```
@@ -74,7 +76,7 @@ The client follows a decoupled singleton-and-scene architecture:
 cafefekr/
 ├── project.godot               # Godot 4.7 engine configuration file (warnings calibrated)
 ├── export_presets.cfg          # Android & Windows export build configurations
-├── GAME_SCENE_RULES.md         # 68 KB mandatory engineering rules & standards document
+├── GAME_SCENE_RULES.md         # 75 KB mandatory engineering rules & standards document
 ├── icon.svg                    # Application icon
 │
 ├── android/                    # Android build template & gradle assets
@@ -83,7 +85,7 @@ cafefekr/
 │   ├── audio/                  # SFX (piece taps, wins, losses, timer ticks) & music
 │   ├── fonts/                  # Persian TTF fonts (Vazir.ttf, hekayat.ttf)
 │   ├── icons/                  # 100% transparent vector and PNG UI icons
-│   └── images/                 # Textured buttons, badges, frames, and game cards
+│   └── images/                 # Textured buttons, badges, frames (frame_small, frame_tall), and game cards
 │
 ├── autoload/                   # Global singleton managers (autoload order matters)
 │   ├── game_manager.gd         # Session persistence, Level/XP curve, match & spectator state
@@ -111,21 +113,32 @@ cafefekr/
 │   │
 │   ├── main/                   # Root scene
 │   │   ├── main.tscn           # Application entry point
-│   │   └── main.gd             # Master coordinator (match lifecycle, spectator flow)
+│   │   └── main.gd             # Master coordinator (tab navigation, match lifecycle, spectator flow)
 │   │
-│   └── ui/                     # Application dialogs & menus
+│   └── ui/                     # Application dialogs & main navigation
+│       ├── main_tabs/          # Five-Tab Main Navigation System
+│       │   ├── main_tab_shell.tscn / .gd       # 5-Tab Root Coordinator & Background Swapper
+│       │   ├── components/
+│       │   │   └── bottom_navigation.tscn / .gd # Persistent 5-Button Antique Nav Bar
+│       │   └── tabs/
+│       │       ├── play_tab.tscn / .gd         # Play Tab (4 Mode Cards, Watch Live, Exit)
+│       │       ├── library_tab.tscn / .gd      # 25 Games Catalog, Live Search, RTL Guide
+│       │       ├── history_tab.tscn / .gd      # برترین‌ها (4 Leaderboards, Medals, RTL)
+│       │       ├── social_tab.tscn / .gd       # Social Hub (Friends, Clans / اتحاد, DMs)
+│       │       └── user_tab.tscn / .gd         # User Profile, History, Stats, Avatars, Audio
+│       │
 │       ├── auth/               # LoginDialog (Phone SMS OTP login)
 │       ├── classic_rank/       # ClassicRankDialog (Bot match selector)
-│       ├── header/             # UserHeader (Top player info bar)
-│       ├── history/            # GameHistoryDialog (Match history records)
+│       ├── header/             # UserHeader (Top player info bar component)
+│       ├── history/            # GamesHistoryViewHelper (Game stats matrix & match reviews)
 │       ├── lobby/              # LobbyDialog (Custom rooms create/join)
 │       ├── multi_rank/         # MultiRankDialog (3-player queue)
 │       ├── profile/            # UserProfileDialog (Personalization, stats, spectator privacy)
 │       ├── queue/              # QueueDialog (Ranked queue & acceptance)
 │       ├── rank/               # PickBanDialog (7-turn draft) & RankedBreakoutDialog
-│       ├── ranking/            # RankingDialog (Global leaderboards)
-│       ├── rules/              # RulesDialog (Game instructions viewer)
-│       ├── social/             # SocialDialog (Friends, Clans, DMs, Notifications)
+│       ├── ranking/            # RankingDialog (Global leaderboards fallback modal)
+│       ├── rules/              # RulesDialog (Game instructions viewer modal)
+│       ├── social/             # Social views & modals (Friends, Clans, DMs, Notifications)
 │       ├── spectator/          # Live Spectator UI components
 │       │   ├── live_games_dialog.gd # Match discovery browser modal
 │       │   └── spectator_overlay.gd # In-game live spectator HUD
@@ -144,7 +157,9 @@ cafefekr/
 │   └── shaders/
 │       └── solid_white_tint.gdshader
 │
-└── tests/                      # Manual test stubs
+└── tests/                      # Automated Test Suites
+    ├── test_tab_navigation.tscn # 5-Tab Navigation & component integrity test
+    └── test_main_integration.tscn # Full game lifecycle, match, & regression test
 ```
 
 ---
@@ -183,7 +198,71 @@ cafefekr/
 
 ---
 
-## 5. Live Spectator Mode Architecture
+## 5. Five-Tab Main Navigation System (`MainTabShell`)
+
+The menu was completely redesigned into an elegant, five-tab portrait hub (`scenes/ui/main_tabs/`):
+
+### 5.1. The 5 Core Application Tabs
+1. **`PlayTab` (بازی):**
+   - Renders over the active 3D cafe environment with ambient candlelight and props.
+   - 4 carved wooden mode cards with antique gold trim:
+     - **بازی رقابتی (Ranked):** 7-turn draft pick/ban series with dynamic Elo ratings.
+     - **بازی آزاد (Classic):** Single-game offline training against AI bots.
+     - **لابی بازی‌ها (Lobby):** Custom rooms browser and creation.
+     - **بازی‌های چندنفره (Multi-Player):** 3 to 4-player games queue (e.g. Ludo, Risk, Monopoly).
+   - Top-left **"تماشای زنده" (Watch Live)** button to browse and spectate ongoing matches.
+   - Top-right **"خروج" (Exit)** button with confirmation modal.
+2. **`LibraryTab` (کتابخانه بازی‌ها):**
+   - Full catalog of all 25 Cafe Fekr board games.
+   - Real-time search by Persian or English name with enlarged input box.
+   - Category filter chips: **همه** (All), **دونفره** (2-Player), **خانوادگی** (Family), **فکری** (Brain/Strategy), **کارتی** (Card/Dice).
+   - Detailed 2-part RTL game guide viewer:
+     - **معرفی کلی (Overview):** Players, duration, genre, and summary.
+     - **قوانین و راهنما (Rules & Guide):** Full RTL right-aligned illustrated rules.
+3. **`HistoryTab` (برترین‌ها - Global Leaderboards):**
+   - 4 leaderboard sub-tabs: **امتیاز** (Score), **پیروزی** (Wins), **دوستان** (Friends), **اتحاد** (Clans).
+   - Antique `frame_small` row cards with 20px horizontal and 16px vertical padding.
+   - RTL column sequence: Rank Number/Medal (🥇, 🥈, 🥉) $\rightarrow$ Avatar / Clan Emblem $\rightarrow$ Expanding Name $\rightarrow$ Level Badge $\rightarrow$ Score / Wins.
+   - All numbers rendered as Persian integers via `GameManager.to_fa_num(int(...))`.
+   - 1-tap player inspection opens `UserProfileDialog`; 1-tap clan opens `ClanDetailsModal`.
+4. **`SocialTab` (اجتماعی و اتحاد):**
+   - **Friends Subsections:** دوستان من (My Friends with presence badges), درخواست‌ها (Incoming/Outgoing requests), یافتن بازیکن (Player search).
+   - **Clan Hub (اتحاد):** اتحاد من (My Clan with weekly challenges), اعضا (Clan members list), چت اتحاد (Realtime clan chat with compose bar), اتحادها و رتبه‌بندی (Directory & Clan leaderboard).
+   - **Direct Messages (گفتگوها):** One-on-one private messaging with unread counter badges.
+5. **`UserTab` (کاربر و تنظیمات):**
+   - Integrated top profile banner: Avatar medallion, honorific title, player level, and animated XP progress bar (wallet/coins removed from header for clean aesthetics).
+   - **تاریخچه (History & Match Reviews):** Recent matches list with 1-tap match review dialogs (round breakdown, outcome, score) and doubled-size game statistics cards (`GamesHistoryViewHelper`).
+   - **آواتارها (Avatars):** 27-avatar selector with 5 avatars per row, centered layout, and bottom submit button.
+   - **حریم خصوصی و تنظیمات (Privacy & Audio Settings):** Master Sound & Music volume sliders moved here with enlarged touch toggles and privacy toggles.
+   - **اعلان‌ها (Notifications):** Centralized notification feed with "خواندن همه" (Mark all read) button.
+
+### 5.2. Persistent Bottom Navigation Bar (`BottomNavigation`)
+- Styled using a **single, continuous `frame_tall` wooden plaque** across all 5 buttons.
+- Utilizes 9-slice stretch mode (`axis_stretch_horizontal = 0`) to prevent repeated/tiled seams across wide screens.
+- Active tab features glowing jewel highlight, enlarged gold-tinted icon, and Persian title badge.
+- Content margins strictly locked to 20px horizontal and 16px vertical padding.
+
+---
+
+## 6. Antique Framing Engine & Universal Padding Standards (15–20px)
+
+All cards, banners, and modals follow a unified antique visual identity:
+
+- **Centralized Frame Factory (`CafeSocialTheme.create_frame_style`):**
+  - `is_tall = false`: `frame_small.png` (56px height, 9-slice margins: left/right 50, top/bottom 18).
+  - `is_tall = true`: `frame_tall.png` (97px height, 9-slice margins: left/right 50, top/bottom 26).
+  - Stretch Mode: `axis_stretch_horizontal = 0` (STRETCH) and `axis_stretch_vertical = 0` (STRETCH).
+- **Universal Content Padding Rule (15–20px Mandatory):**
+  - Standard default padding: `pad_x = 20.0, pad_y = 16.0`.
+  - Enforced across all framed `PanelContainer` nodes and their child `MarginContainer` constants.
+  - Prevents text, icons, and buttons from clipping into the golden outer bevels of the frames.
+- **RTL Alignment & Persian Numerals:**
+  - All numbers on leaderboards, stats, and scores are formatted using `GameManager.to_fa_num(int(...))`.
+  - In horizontal rows, player/clan names use `size_flags_horizontal = SIZE_EXPAND_FILL` and right alignment to prevent text squashing.
+
+---
+
+## 7. Live Spectator Mode Architecture
 
 The client provides a complete spectator experience:
 
@@ -228,7 +307,7 @@ The client provides a complete spectator experience:
 
 ---
 
-## 6. 3D Cafe Environment & Camera (`CafeTable`)
+## 8. 3D Cafe Environment & Camera (`CafeTable`)
 
 The 3D environment (`scenes/environment/cafe_table.tscn` / `cafe_table.gd`) remains constant across all games:
 - **Central Focus:** Table center at `Vector3(0.0, 0.08, -0.04)`.
@@ -243,7 +322,7 @@ The 3D environment (`scenes/environment/cafe_table.tscn` / `cafe_table.gd`) rema
 
 ---
 
-## 7. The 2D In-Game HUD (`BaseGameHUD`)
+## 9. The 2D In-Game HUD (`BaseGameHUD`)
 
 Unified interface rendered on a `CanvasLayer` (`scenes/games/base/base_game_hud.tscn`):
 1. **Top Header Slot (`TopHeaderSlot`):** Instantiates `BaseTopHeader` or a specialized inherited header. Displays Royal Crimson (P1) and Sapphire (P2) player plaques, avatar frames, role pills, and scores (hidden if `GameRegistry.has_round_score` is false).
@@ -260,7 +339,7 @@ Unified interface rendered on a `CanvasLayer` (`scenes/games/base/base_game_hud.
 
 ---
 
-## 8. Base Game Board Contract (`BaseGameBoard`)
+## 10. Base Game Board Contract (`BaseGameBoard`)
 
 Every board extends `BaseGameBoard` (`scripts/games/base_game_board.gd`):
 
@@ -282,7 +361,7 @@ extends "res://scripts/games/base_game_board.gd"
 
 ---
 
-## 9. Catalog of the 25 Board Games
+## 11. Catalog of the 25 Board Games
 
 | Game ID | Persian Title | Players | Turn Time | Rounds | Scoring Type | Header |
 |---|---|---|---|---|---|---|
@@ -314,7 +393,7 @@ extends "res://scripts/games/base_game_board.gd"
 
 ---
 
-## 10. Building & Exporting
+## 12. Building & Exporting
 
 ### Prerequisites
 - Godot Engine **4.7** (Mobile feature profile).
@@ -327,3 +406,30 @@ extends "res://scripts/games/base_game_board.gd"
    - **Android:** Generates `cafefekr.apk` (or architecture-specific APKs: `v7`, `v8`, `x86_64`).
    - **Windows Desktop:** Generates `cafefekr.exe` and `cafefekr.pck`.
 4. Click **Export Project**.
+
+---
+
+## 13. Automated Test Suites & Quality Assurance
+
+Cafe Fekr includes automated headless test scenes for continuous integration and regression validation:
+
+### 13.1. Tab Navigation Suite (`tests/test_tab_navigation.tscn`)
+Validates the complete 5-tab application shell:
+- Singletons readiness (`GameManager`, `AudioManager`, `ActionVFXManager`).
+- Tab switching across all 5 main tabs (`PlayTab`, `LibraryTab`, `HistoryTab`, `SocialTab`, `UserTab`).
+- Component integrity: Bottom navigation layout, 25-game catalog search, 4 leaderboard sub-tabs, user profile header and audio controls.
+
+```powershell
+& "D:\Games\Godot_v4.7.2-stable_win64_console.exe" --path "cafefekr" --headless --scene "tests/test_tab_navigation.tscn"
+```
+
+### 13.2. Full Integration & Lifecycle Suite (`tests/test_main_integration.tscn`)
+Validates match lifecycles and zero cross-game regressions:
+- Main menu to match transition (`MainTabShell` hidden $\rightarrow$ `BaseGameHUD` shown $\rightarrow$ 3D board mounted).
+- Socket.IO connection dispatch and signal bubbling.
+- Live Spectator launch and exit.
+- Match completion and return-to-menu cleanup without residual state leaks.
+
+```powershell
+& "D:\Games\Godot_v4.7.2-stable_win64_console.exe" --path "cafefekr" --headless --scene "tests/test_main_integration.tscn"
+```
