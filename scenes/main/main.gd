@@ -125,6 +125,8 @@ var _ranked_locked_remain_lbl: Label = null
 var social_dialog: Control = null
 var live_games_dialog: LiveGamesDialog = null
 var btn_social_hub: Button = null
+var _social_badge_panel: PanelContainer = null
+var _social_badge_lbl: Label = null
 var btn_watch_live: Button = null
 var _active_invite_banner: Control = null
 var spectator_overlay: SpectatorOverlay = null
@@ -154,6 +156,8 @@ func _ready() -> void:
 		_update_ranked_button_state()
 		if GameManager.is_force_update_required:
 			_show_force_update_dialog()
+		elif GameManager.is_optional_update_available and not GameManager.optional_update_dismissed and _splash_dismissed:
+			_show_optional_update_dialog()
 	)
 	
 	# Safety fallback timer: ensure splash always dismisses even if offline or slow server response
@@ -163,6 +167,8 @@ func _ready() -> void:
 				if GameManager.is_force_update_required:
 					_show_force_update_dialog()
 					return
+				elif GameManager.is_optional_update_available and not GameManager.optional_update_dismissed:
+					_show_optional_update_dialog()
 				if not NetworkManager.is_online:
 					_show_offline_dialog()
 			)
@@ -181,6 +187,8 @@ func _ready() -> void:
 				if GameManager.is_force_update_required:
 					_show_force_update_dialog()
 					return
+				elif GameManager.is_optional_update_available and not GameManager.optional_update_dismissed:
+					_show_optional_update_dialog()
 				if msg == "OFFLINE" or not NetworkManager.is_online:
 					NetworkManager.connect_to_game_server()
 					_show_offline_dialog()
@@ -3128,6 +3136,120 @@ func _show_force_update_dialog() -> void:
 	canvas_layer.add_child(_force_update_overlay)
 	ActionVFXManager.animate_dialog_open(panel, _force_update_overlay, true)
 
+var _optional_update_overlay: Control = null
+
+func _show_optional_update_dialog() -> void:
+	if _optional_update_overlay and is_instance_valid(_optional_update_overlay):
+		_optional_update_overlay.visible = true
+		return
+
+	var canvas_layer = $CanvasLayer
+	var font_hekayat = preload("res://assets/fonts/hekayat.ttf")
+
+	_optional_update_overlay = Control.new()
+	_optional_update_overlay.name = "OptionalUpdateOverlay"
+	_optional_update_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_optional_update_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_optional_update_overlay.z_index = 99
+
+	var dark_bg = ColorRect.new()
+	dark_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dark_bg.color = Color(0.04, 0.02, 0.01, 0.82)
+	dark_bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	dark_bg.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed:
+			_close_optional_update_dialog()
+	)
+	_optional_update_overlay.add_child(dark_bg)
+
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_STOP
+	_optional_update_overlay.add_child(center)
+
+	var panel = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(620, 420)
+	var panel_sb = StyleBoxTexture.new()
+	panel_sb.texture = preload("res://assets/images/frames/board.png")
+	panel_sb.texture_margin_left = 60.0
+	panel_sb.texture_margin_top = 60.0
+	panel_sb.texture_margin_right = 60.0
+	panel_sb.texture_margin_bottom = 60.0
+	panel.add_theme_stylebox_override("panel", panel_sb)
+	center.add_child(panel)
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 24)
+	panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 18)
+	margin.add_child(vbox)
+
+	var lbl_title = Label.new()
+	lbl_title.text = "✨ به‌روزرسانی جدید"
+	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_title.add_theme_font_override("font", font_hekayat)
+	lbl_title.add_theme_font_size_override("font_size", 32)
+	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	lbl_title.add_theme_constant_override("shadow_outline_size", 3)
+	vbox.add_child(lbl_title)
+
+	var lbl_msg = Label.new()
+	var new_ver_str = (" (نسخه %s)" % GameManager.latest_version) if not GameManager.latest_version.is_empty() else ""
+	lbl_msg.text = "نسخه جدیدتری از کافه فکر آماده دانلود است" + new_ver_str + ".\nآیا مایلید هم‌اکنون بازی را به‌روزرسانی کنید؟"
+	lbl_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_msg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl_msg.add_theme_font_override("font", font_hekayat)
+	lbl_msg.add_theme_font_size_override("font_size", 22)
+	lbl_msg.add_theme_color_override("font_color", Color(0.95, 0.90, 0.82))
+	vbox.add_child(lbl_msg)
+
+	var btn_row = HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 16)
+	vbox.add_child(btn_row)
+
+	var btn_later = Button.new()
+	btn_later.text = "بعداً"
+	btn_later.custom_minimum_size = Vector2(160, 56)
+	btn_later.add_theme_font_override("font", font_hekayat)
+	btn_later.add_theme_font_size_override("font_size", 22)
+	KenneyUI.style_button(btn_later, KenneyUI.COLOR_GREY)
+	btn_later.pressed.connect(func():
+		AudioManager.sfx_tap()
+		_close_optional_update_dialog()
+	)
+	btn_row.add_child(btn_later)
+
+	var btn_update = Button.new()
+	btn_update.text = "به‌روزرسانی"
+	btn_update.custom_minimum_size = Vector2(200, 56)
+	btn_update.add_theme_font_override("font", font_hekayat)
+	btn_update.add_theme_font_size_override("font_size", 22)
+	KenneyUI.style_button(btn_update, KenneyUI.COLOR_GREEN)
+	btn_update.pressed.connect(func():
+		AudioManager.sfx_tap()
+		var target_url = GameManager.update_download_url if not GameManager.update_download_url.is_empty() else "https://myket.ir/app/kafeh.fekr.classic"
+		OS.shell_open(target_url)
+		_close_optional_update_dialog()
+	)
+	btn_row.add_child(btn_update)
+
+	canvas_layer.add_child(_optional_update_overlay)
+	ActionVFXManager.animate_dialog_open(panel, _optional_update_overlay, false)
+
+func _close_optional_update_dialog() -> void:
+	GameManager.optional_update_dismissed = true
+	if _optional_update_overlay and is_instance_valid(_optional_update_overlay):
+		_optional_update_overlay.visible = false
+
 func _show_queue_closed_dialog() -> void:
 	if _queue_closed_overlay and is_instance_valid(_queue_closed_overlay):
 		_queue_closed_overlay.visible = true
@@ -3393,8 +3515,6 @@ func _setup_social_hub_integration() -> void:
 			social_dialog.closed.connect(_update_backdrop_state)
 
 	var dock_hbox = get_node_or_null("CanvasLayer/MenuContainer/BottomDock/HBoxDock")
-	var social_badge_panel: PanelContainer = null
-	var social_badge_lbl: Label = null
 
 	if is_instance_valid(dock_hbox) and not is_instance_valid(btn_social_hub):
 		btn_social_hub = Button.new()
@@ -3430,23 +3550,23 @@ func _setup_social_hub_integration() -> void:
 		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		vbox.add_child(ico)
 
-		social_badge_panel = PanelContainer.new()
-		social_badge_panel.visible = false
-		social_badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		social_badge_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-		social_badge_panel.offset_left = -42
-		social_badge_panel.offset_top = 2
-		social_badge_panel.offset_right = -2
-		social_badge_panel.offset_bottom = 36
+		_social_badge_panel = PanelContainer.new()
+		_social_badge_panel.visible = false
+		_social_badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_social_badge_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		_social_badge_panel.offset_left = -42
+		_social_badge_panel.offset_top = 2
+		_social_badge_panel.offset_right = -2
+		_social_badge_panel.offset_bottom = 36
 		var bst := StyleBoxFlat.new()
 		bst.bg_color = Color(0.84, 0.16, 0.16, 0.98)
 		bst.border_color = Color(1.0, 0.85, 0.36, 1.0)
 		bst.set_border_width_all(2)
 		bst.set_corner_radius_all(14)
-		social_badge_panel.add_theme_stylebox_override("panel", bst)
-		social_badge_lbl = CafeSocialTheme.make_body("۰", 17, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
-		social_badge_panel.add_child(social_badge_lbl)
-		btn_social_hub.add_child(social_badge_panel)
+		_social_badge_panel.add_theme_stylebox_override("panel", bst)
+		_social_badge_lbl = CafeSocialTheme.make_body("۰", 17, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
+		_social_badge_panel.add_child(_social_badge_lbl)
+		btn_social_hub.add_child(_social_badge_panel)
 
 		ActionVFXManager.apply_button_juice(btn_social_hub, "tap_button")
 		btn_social_hub.pressed.connect(func():
@@ -3458,15 +3578,7 @@ func _setup_social_hub_integration() -> void:
 		dock_hbox.add_child(btn_social_hub)
 		dock_hbox.move_child(btn_social_hub, 0)
 
-	var update_social_badge = func(_p = null):
-		if not is_instance_valid(social_badge_panel) or not is_instance_valid(social_badge_lbl):
-			return
-		var total_u = NetworkManager.unread_dms_count + NetworkManager.incoming_friend_requests_count
-		if total_u > 0:
-			social_badge_panel.visible = true
-			social_badge_lbl.text = GameManager.to_fa_num(total_u) if total_u <= 99 else "۹۹+"
-		else:
-			social_badge_panel.visible = false
+	update_social_badge()
 
 	if is_instance_valid(ui_canvas) and not is_instance_valid(live_games_dialog):
 		live_games_dialog = LiveGamesDialog.new()
@@ -3481,7 +3593,7 @@ func _setup_social_hub_integration() -> void:
 		spectator_overlay.leave_spectate_requested.connect(_on_leave_spectate_pressed)
 
 	NetworkManager.social_init_received.connect(update_social_badge)
-	NetworkManager.social_notification_received.connect(update_social_badge)
+	NetworkManager.social_notification_received.connect(_on_social_notification_received)
 	NetworkManager.social_dm_received.connect(update_social_badge)
 	NetworkManager.social_badges_changed.connect(update_social_badge)
 	NetworkManager.social_game_invite_received.connect(_on_social_game_invite_received)
@@ -3496,6 +3608,28 @@ func _setup_social_hub_integration() -> void:
 		if GameManager.is_spectating and is_instance_valid(spectator_overlay):
 			spectator_overlay.update_turn_display(t)
 	)
+
+
+func update_social_badge(_p = null) -> void:
+	if not is_instance_valid(_social_badge_panel) or not is_instance_valid(_social_badge_lbl):
+		return
+	var total_u = NetworkManager.unread_dms_count + NetworkManager.incoming_friend_requests_count
+	if total_u > 0:
+		_social_badge_panel.visible = true
+		_social_badge_lbl.text = GameManager.to_fa_num(total_u) if total_u <= 99 else "۹۹+"
+	else:
+		_social_badge_panel.visible = false
+
+
+func _on_social_notification_received(payload: Dictionary) -> void:
+	update_social_badge(payload)
+	var title = str(payload.get("title", "اعلان جدید")).strip_edges()
+	var body = str(payload.get("body", payload.get("message", ""))).strip_edges()
+	var display_text = "📬 " + title + ((": " + body) if not body.is_empty() else "")
+	if GameManager.is_game_active and is_instance_valid(base_game_hud) and base_game_hud.has_method("show_toast_hint"):
+		base_game_hud.show_toast_hint(display_text)
+	else:
+		_show_menu_toast(display_text)
 
 
 func _on_social_game_invite_received(payload: Dictionary) -> void:
@@ -3695,7 +3829,9 @@ func _handle_forced_or_manual_logout() -> void:
 	if is_instance_valid(login_dialog) and not login_dialog.visible:
 		_show_backdrop()
 		login_dialog.open()
-		_show_menu_toast("نشست شما پایان یافت. لطفاً دوباره وارد شوید.")
+		var toast_msg = GameManager.last_auth_error if not GameManager.last_auth_error.is_empty() else "نشست شما پایان یافت. لطفاً دوباره وارد شوید."
+		_show_menu_toast(toast_msg)
+		GameManager.last_auth_error = ""
 
 
 func _on_spectate_rejected(payload: Dictionary) -> void:

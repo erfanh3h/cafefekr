@@ -23,8 +23,12 @@ var is_guest: bool = false
 var server_config: Dictionary = {}
 var is_queue_open: bool = true
 var is_force_update_required: bool = false
+var is_optional_update_available: bool = false
+var optional_update_dismissed: bool = false
 var allowed_version: String = ""
 var latest_version: String = ""
+var update_download_url: String = ""
+var last_auth_error: String = ""
 
 func get_app_version() -> String:
 	return str(ProjectSettings.get_setting("application/config/version", "2.0.0"))

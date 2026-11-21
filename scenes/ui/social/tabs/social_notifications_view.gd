@@ -611,7 +611,7 @@ static func _build_notification_card(
 		true
 	))
 	text_col.add_child(CafeSocialTheme.make_body(
-		str(n.get("body", "")),
+		str(n.get("body", n.get("message", ""))),
 		20,
 		CafeSocialTheme.COL_MUTED_SAND if is_read else CafeSocialTheme.COL_IVORY,
 		HORIZONTAL_ALIGNMENT_RIGHT,

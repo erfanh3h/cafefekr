@@ -181,6 +181,11 @@ func restore_session(callback: Callable) -> void:
 			print("[NetworkManager] Saved token invalid or expired (401).")
 			GameManager.logout()
 			callback.call(false, "Invalid token")
+		elif response_code == 403:
+			print("[NetworkManager] Account banned (403).")
+			GameManager.last_auth_error = "حساب کاربری شما توسط مدیریت مسدود شده است."
+			GameManager.logout()
+			callback.call(false, "BANNED")
 		else:
 			print("[NetworkManager] Server unreachable or network error (%d). Preserving local session." % response_code)
 			var cached_data = GameManager.load_saved_user_data()
@@ -204,13 +209,20 @@ func fetch_server_config(callback: Callable = Callable()) -> void:
 				GameManager.is_queue_open = bool(cfg.get("is_queue_open", true))
 				GameManager.latest_version = str(cfg.get("latest_version", ""))
 				GameManager.allowed_version = str(cfg.get("allowed_version", ""))
+				GameManager.update_download_url = str(cfg.get("download_url", cfg.get("update_url", "")))
 				var app_ver = GameManager.get_app_version()
 				if not GameManager.is_version_ok(app_ver, GameManager.allowed_version):
 					GameManager.is_force_update_required = true
+					GameManager.is_optional_update_available = false
 					print("[NetworkManager] App version %s is outdated! Allowed version is %s. Force update required." % [app_ver, GameManager.allowed_version])
 				else:
 					GameManager.is_force_update_required = false
-					print("[NetworkManager] Server config loaded. Queue open: %s, Allowed ver: %s" % [GameManager.is_queue_open, GameManager.allowed_version])
+					if not GameManager.latest_version.is_empty() and not GameManager.is_version_ok(app_ver, GameManager.latest_version):
+						GameManager.is_optional_update_available = true
+						print("[NetworkManager] Optional update available: %s -> %s" % [app_ver, GameManager.latest_version])
+					else:
+						GameManager.is_optional_update_available = false
+					print("[NetworkManager] Server config loaded. Queue open: %s, Allowed ver: %s, Latest ver: %s" % [GameManager.is_queue_open, GameManager.allowed_version, GameManager.latest_version])
 		if callback.is_valid():
 			callback.call(success, GameManager.server_config)
 	)
@@ -246,7 +258,8 @@ func _on_presence_heartbeat() -> void:
 func join_matchmaking_queue(pre_game_id: Variant = null) -> void:
 	var auth = {
 		"token": GameManager.token,
-		"pre_game_id": pre_game_id
+		"pre_game_id": pre_game_id,
+		"version": GameManager.get_app_version()
 	}
 	socket.connect_namespace("/queue", auth)
 
@@ -291,6 +304,8 @@ func join_lobby(auth_data: Dictionary = {}) -> void:
 	var auth = auth_data.duplicate()
 	if not auth.has("token"):
 		auth["token"] = GameManager.token
+	if not auth.has("version"):
+		auth["version"] = GameManager.get_app_version()
 	socket.connect_namespace("/lobby", auth)
 
 func leave_lobby() -> void:
@@ -310,7 +325,8 @@ func start_classic_rank(game_type: String) -> void:
 		"token": GameManager.token,
 		"game_type": game_type,
 		"username": GameManager.get_username(),
-		"user_image": GameManager.get_avatar_id()
+		"user_image": GameManager.get_avatar_id(),
+		"version": GameManager.get_app_version()
 	}
 	print("[NetworkManager] Requesting Classic Rank match for %s..." % game_type)
 	socket.connect_namespace("/classic-rank", auth)
@@ -322,7 +338,8 @@ func join_multi_rank_queue(game_type: String) -> void:
 	current_multi_rank_game_type = game_type
 	var auth = {
 		"token": GameManager.token,
-		"game_type": game_type
+		"game_type": game_type,
+		"version": GameManager.get_app_version()
 	}
 	print("[NetworkManager] Joining 4-player Multi-Rank queue (/multi-queue) for %s..." % game_type)
 	socket.connect_namespace("/multi-queue", auth)
@@ -339,7 +356,8 @@ func join_active_game(game_id: String) -> void:
 	GameManager.set_active_game(game_id)
 	var auth = {
 		"token": GameManager.token,
-		"game_id": game_id
+		"game_id": game_id,
+		"version": GameManager.get_app_version()
 	}
 	socket.connect_namespace("/game", auth)
 
@@ -389,7 +407,10 @@ func send_game_reaction(reaction_id: Variant) -> void:
 func connect_social_namespace() -> void:
 	if GameManager.token.is_empty():
 		return
-	var auth = {"token": GameManager.token}
+	var auth = {
+		"token": GameManager.token,
+		"version": GameManager.get_app_version()
+	}
 	socket.connect_namespace("/social", auth)
 
 func disconnect_social_namespace() -> void:
@@ -977,5 +998,15 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 					socket.disconnect_namespace(ns_to_dc)
 			if api != null:
 				api.set_token("")
+			var logout_reason: String = ""
+			var logout_msg: String = ""
+			if typeof(payload) == TYPE_DICTIONARY:
+				logout_reason = str(payload.get("reason", ""))
+				logout_msg = str(payload.get("message", ""))
+			if logout_reason == "banned" or logout_msg.contains("مسدود"):
+				print("[NetworkManager] Account banned by administrator. Forcing logout.")
+				GameManager.last_auth_error = "حساب کاربری شما توسط مدیریت مسدود شده است."
+			elif logout_reason == "force_update":
+				GameManager.last_auth_error = logout_msg if not logout_msg.is_empty() else "نسخه بازی شما قدیمی است."
 			if GameManager.is_logged_in:
 				GameManager.logout()
