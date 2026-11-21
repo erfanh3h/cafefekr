@@ -1985,6 +1985,20 @@ func _on_game_finished(data: Dictionary) -> void:
 		pick_ban_dialog.show_game_finished_dialog("این بازی به پایان رسیده است.")
 		return
 
+	# If match was terminated/canceled before start (e.g. connection timeout / player left)
+	if data.get("is_terminated", false) or data.get("reason", "") == "terminated":
+		var term_msg: String = str(data.get("message", "مسابقه به دلیل عدم اتصال تمام بازیکنان لغو شد."))
+		print("[Main] Match terminated before start: %s" % term_msg)
+		_hide_backdrop()
+		menu_container.visible = true
+		user_header.visible = true
+		if is_instance_valid(cafe_table):
+			cafe_table.visible = false
+		base_game_hud.visible = false
+		if is_instance_valid(pick_ban_dialog):
+			pick_ban_dialog.show_game_finished_dialog(term_msg)
+		return
+
 	var board = cafe_table.current_board_node
 	if not board or not is_instance_valid(board):
 		print("[Main] Game_Finished received without an active board. Returning to main menu.")
