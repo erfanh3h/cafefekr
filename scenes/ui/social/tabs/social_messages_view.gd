@@ -83,6 +83,9 @@ static func _render_conversations_stage(host: Control, body_vbox: VBoxContainer)
 		for conv in host._conversations:
 			if typeof(conv) == TYPE_DICTIONARY:
 				list_box.add_child(_build_conversation_card(host, conv))
+		var end_sp := Control.new()
+		end_sp.custom_minimum_size = Vector2(0, 32)
+		list_box.add_child(end_sp)
 	)
 
 
@@ -133,7 +136,7 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	row.add_child(meta_col)
 
 	if not upd_time.is_empty():
-		var t_lbl := CafeSocialTheme.make_body(upd_time, 21, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+		var t_lbl := CafeSocialTheme.make_body(upd_time, CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
 		t_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		meta_col.add_child(t_lbl)
 	if unread > 0:
@@ -142,7 +145,7 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 			CafeSocialTheme.COL_IVORY,
 			Color(0.16, 0.56, 0.30, 0.98),
 			Color(0.54, 0.96, 0.68),
-			18
+			CafeSocialTheme.FONT_SIZE_BADGE
 		)
 		u_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		meta_col.add_child(u_pill)
@@ -404,7 +407,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	ActionVFXManager.apply_button_juice(btn_send, "tap_button")
 	dm_input_row.add_child(btn_send)
 
-	host._dm_input = CafeSocialTheme.make_line_edit("پیام ...", 52.0, 22)
+	host._dm_input = CafeSocialTheme.make_line_edit("پیام ...", 56.0, CafeSocialTheme.FONT_SIZE_BODY)
 	host._dm_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dm_input_row.add_child(host._dm_input)
 
@@ -559,7 +562,7 @@ static func render_messages(host: Control) -> void:
 			msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			msg_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			msg_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-			msg_lbl.add_theme_font_size_override("font_size", 24)
+			msg_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BODY)
 			if from_me:
 				msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 			else:
@@ -577,14 +580,14 @@ static func render_messages(host: Control) -> void:
 				var tick_lbl := Label.new()
 				tick_lbl.text = read_tick
 				tick_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-				tick_lbl.add_theme_font_size_override("font_size", 16)
+				tick_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 				tick_lbl.add_theme_color_override("font_color", Color(0.72, 0.95, 0.78, 0.92))
 				footer_row.add_child(tick_lbl)
 			if not dt_str.is_empty():
 				var time_lbl := Label.new()
 				time_lbl.text = dt_str
 				time_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-				time_lbl.add_theme_font_size_override("font_size", 17)
+				time_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 				time_lbl.add_theme_color_override("font_color", Color(0.85, 0.82, 0.72, 0.85))
 				footer_row.add_child(time_lbl)
 		else:
@@ -593,7 +596,7 @@ static func render_messages(host: Control) -> void:
 				var time_lbl := Label.new()
 				time_lbl.text = dt_str
 				time_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-				time_lbl.add_theme_font_size_override("font_size", 17)
+				time_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 				time_lbl.add_theme_color_override("font_color", Color(0.85, 0.82, 0.72, 0.88) if render_as_sticker else Color(0.42, 0.32, 0.20, 0.90))
 				footer_row.add_child(time_lbl)
 		b_vbox.add_child(footer_row)
@@ -638,7 +641,7 @@ static func _open_dm_sticker_picker(host: Control) -> void:
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(620, 0)
+	CafeSocialTheme.constrain_modal_card(card, host, 620.0, 24.0)
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	center.add_child(card)
 
@@ -736,7 +739,9 @@ static func _open_friend_picker_modal(host: Control) -> void:
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(640, 920)
+	var vp_h: float = host.get_viewport_rect().size.y if is_instance_valid(host) and host.get_viewport() != null else 1280.0
+	card.custom_minimum_size = Vector2(640, minf(920.0, vp_h * 0.82))
+	CafeSocialTheme.constrain_modal_card(card, host, 640.0, 24.0)
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
 	center.add_child(card)
 

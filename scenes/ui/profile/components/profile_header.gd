@@ -51,9 +51,10 @@ func _make_stat_crest(tex: Texture2D, font_sz: int, text_col: Color, y_top_off: 
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	lbl.add_theme_font_size_override("font_size", font_sz)
+	lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	lbl.add_theme_font_size_override("font_size", CafeSocialTheme.clamp_font_size(font_sz))
 	lbl.add_theme_color_override("font_color", text_col)
+	CafeSocialTheme.apply_wood_text_shadow(lbl, 2)
 	lbl.text = "۰"
 	holder.add_child(lbl)
 
@@ -100,7 +101,7 @@ func _build_ui() -> void:
 	info_col.add_theme_constant_override("separation", 4)
 	hero_row.add_child(info_col)
 
-	_lbl_username = CafeSocialTheme.make_title("بازیکن کافه فکر", 28, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_username = CafeSocialTheme.make_title("بازیکن کافه فکر", 30, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	_lbl_username.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_username.clip_text = true
 	_lbl_username.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -112,7 +113,7 @@ func _build_ui() -> void:
 	_clan_box.visible = false
 	info_col.add_child(_clan_box)
 
-	_lbl_id = CafeSocialTheme.make_body("شناسه: -", 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_id = CafeSocialTheme.make_body("شناسه: -", 22, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	_lbl_id.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_id.clip_text = true
 	_lbl_id.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -134,7 +135,7 @@ func _build_ui() -> void:
 	hero_row.add_child(_avatar_holder)
 
 	# Optional Personal Status Quote
-	_lbl_status_msg = CafeSocialTheme.make_body("", 19, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true)
+	_lbl_status_msg = CafeSocialTheme.make_body("", 22, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true)
 	_lbl_status_msg.visible = false
 	main_vbox.add_child(_lbl_status_msg)
 
@@ -203,18 +204,20 @@ func _build_clan_chip(clan_id: String, clan_d: Dictionary) -> void:
 	var display_name := (cname.substr(0, 14) + "…") if cname.length() > 15 else cname
 	var clan_btn := Button.new()
 	clan_btn.text = display_name
-	clan_btn.custom_minimum_size = Vector2(0, 32)
+	clan_btn.custom_minimum_size = Vector2(0, 42)
 	clan_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
 	clan_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	clan_btn.focus_mode = Control.FOCUS_NONE
+	clan_btn.clip_text = true
+	clan_btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	clan_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	clan_btn.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	clan_btn.add_theme_font_size_override("font_size", 17)
+	clan_btn.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	clan_btn.add_theme_font_size_override("font_size", 22)
 	clan_btn.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	clan_btn.add_theme_color_override("font_hover_color", CafeSocialTheme.COL_IVORY)
 
-	var c_sb := CafeSocialTheme.create_card_style(Color(0.18, 0.11, 0.05, 0.95), CafeSocialTheme.COL_GOLD_ANTIQUE, 10, 1, 10.0, 3.0)
-	var c_sb_h := CafeSocialTheme.create_card_style(Color(0.28, 0.17, 0.08, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 10, 1, 10.0, 3.0)
+	var c_sb := CafeSocialTheme.create_card_style(Color(0.18, 0.11, 0.05, 0.95), CafeSocialTheme.COL_GOLD_ANTIQUE, 10, 1, 10.0, 4.0)
+	var c_sb_h := CafeSocialTheme.create_card_style(Color(0.28, 0.17, 0.08, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 10, 1, 10.0, 4.0)
 	clan_btn.add_theme_stylebox_override("normal", c_sb)
 	clan_btn.add_theme_stylebox_override("hover", c_sb_h)
 	clan_btn.add_theme_stylebox_override("pressed", c_sb)

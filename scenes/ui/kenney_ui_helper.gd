@@ -15,7 +15,16 @@ const COLOR_WOOD = "wood"
 # Cache styleboxes so we don't recreate textures on every call
 static var _style_cache: Dictionary = {}
 static var _wood_tex = preload("res://assets/images/frames/button.png")
-static var _font_hekayat = preload("res://assets/fonts/hekayat.ttf")
+static var _font_vazir = preload("res://assets/fonts/Vazir.ttf")
+static var _font_vazir_bold: FontVariation = null
+
+static func _get_button_font() -> Font:
+	if _font_vazir_bold == null:
+		var fv := FontVariation.new()
+		fv.base_font = _font_vazir
+		fv.variation_embolden = 0.26
+		_font_vazir_bold = fv
+	return _font_vazir_bold
 
 static func get_button_style(color: String = "wood", state: String = "normal") -> StyleBoxTexture:
 	var key = "%s_%s" % [color.to_lower(), state]
@@ -51,28 +60,28 @@ static func get_button_style(color: String = "wood", state: String = "normal") -
 		
 	if state == "pressed":
 		sb.modulate_color = base_tint * Color(0.85, 0.82, 0.78, 1.0)
-		sb.content_margin_left = 40.0
-		sb.content_margin_right = 40.0
-		sb.content_margin_top = 25.0 # Tactile 3px depress shift
-		sb.content_margin_bottom = 19.0
+		sb.content_margin_left = 24.0
+		sb.content_margin_right = 24.0
+		sb.content_margin_top = 20.0 # Tactile 3px depress shift
+		sb.content_margin_bottom = 14.0
 	elif state == "hover":
 		sb.modulate_color = base_tint * Color(1.14, 1.10, 1.04, 1.0) # Subtle warm highlight
-		sb.content_margin_left = 40.0
-		sb.content_margin_right = 40.0
-		sb.content_margin_top = 22.0
-		sb.content_margin_bottom = 22.0
+		sb.content_margin_left = 24.0
+		sb.content_margin_right = 24.0
+		sb.content_margin_top = 17.0
+		sb.content_margin_bottom = 17.0
 	elif state == "disabled":
 		sb.modulate_color = base_tint * Color(0.55, 0.52, 0.5, 0.7)
-		sb.content_margin_left = 40.0
-		sb.content_margin_right = 40.0
-		sb.content_margin_top = 22.0
-		sb.content_margin_bottom = 22.0
+		sb.content_margin_left = 24.0
+		sb.content_margin_right = 24.0
+		sb.content_margin_top = 17.0
+		sb.content_margin_bottom = 17.0
 	else: # normal
 		sb.modulate_color = base_tint
-		sb.content_margin_left = 40.0
-		sb.content_margin_right = 40.0
-		sb.content_margin_top = 22.0
-		sb.content_margin_bottom = 22.0
+		sb.content_margin_left = 24.0
+		sb.content_margin_right = 24.0
+		sb.content_margin_top = 17.0
+		sb.content_margin_bottom = 17.0
 		
 	_style_cache[key] = sb
 	return sb
@@ -92,21 +101,20 @@ static func style_button(btn: BaseButton, color: String = "wood", sound: String 
 	btn.add_theme_stylebox_override("focus", st_hover)
 	btn.add_theme_stylebox_override("disabled", st_dis)
 	
-	# Font styling: Persian Hekayat font
-	if _font_hekayat:
-		btn.add_theme_font_override("font", _font_hekayat)
+	# Font styling: Crisp bold Persian Vazir font for all UI buttons
+	btn.add_theme_font_override("font", _get_button_font())
 		
-	# Generous, thumb-friendly font sizing & touch target view
+	# Generous, thumb-friendly font sizing & touch target view (hard floor 26px on wood buttons)
 	var cur_size = btn.get_theme_font_size("font_size")
-	if cur_size < 28:
-		btn.add_theme_font_size_override("font_size", 28)
+	if cur_size < 26:
+		btn.add_theme_font_size_override("font_size", 26)
 		
 	if btn.custom_minimum_size.y == 0:
-		btn.custom_minimum_size.y = 104
+		btn.custom_minimum_size.y = 92
 	elif btn.custom_minimum_size.y < 60:
-		btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y + 18.0, 72.0)
-	elif btn.custom_minimum_size.y < 100:
-		btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y + 20.0, 100.0)
+		btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y + 14.0, 64.0)
+	elif btn.custom_minimum_size.y < 88:
+		btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y + 12.0, 76.0)
 		
 	# High-Contrast Color Harmony for Authentic Wooden Background (UX Art of Coloring)
 	# Crisp warm ivory / light bone white text
@@ -116,12 +124,12 @@ static func style_button(btn: BaseButton, color: String = "wood", sound: String 
 	btn.add_theme_color_override("font_focus_color", Color(1.0, 0.97, 0.92, 1.0))
 	btn.add_theme_color_override("font_disabled_color", Color(0.68, 0.65, 0.62, 0.6))
 	
-	# Deep rich dark espresso shadow & outline for razor-sharp legibility against wood
-	btn.add_theme_color_override("font_shadow_color", Color(0.08, 0.04, 0.02, 0.95))
+	# Crisp dark drop shadow & outline for legibility against wood textures
+	btn.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
 	btn.add_theme_constant_override("shadow_offset_y", 2)
 	btn.add_theme_constant_override("shadow_offset_x", 0)
 	btn.add_theme_constant_override("shadow_outline_size", 2)
-	btn.add_theme_color_override("font_outline_color", Color(0.12, 0.06, 0.02, 0.95))
+	btn.add_theme_color_override("font_outline_color", Color(0.10, 0.05, 0.02, 0.90))
 	btn.add_theme_constant_override("outline_size", 2)
 	
 	ActionVFXManager.apply_button_juice(btn, sound)

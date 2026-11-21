@@ -352,6 +352,10 @@ static func _fa_digits(val: Variant) -> String:
 func _ready() -> void:
 	_setup_styles()
 	_build_game_ui_enhancements()
+	_apply_safe_area_insets()
+	var vp := get_viewport()
+	if vp and not vp.size_changed.is_connected(_apply_safe_area_insets):
+		vp.size_changed.connect(_apply_safe_area_insets)
 	_update_score_badges_visibility()
 	_connect_buttons()
 	if not NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
@@ -364,7 +368,15 @@ func _ready() -> void:
 		p2_reaction_bubble.top_level = true
 		p2_reaction_bubble.visible = false
 
+func _apply_safe_area_insets() -> void:
+	var margin_node := get_node_or_null("Margin") as MarginContainer
+	if is_instance_valid(margin_node):
+		CafeSocialTheme.apply_safe_area_to_margin(margin_node, 12, 36, 12, 0, true, false)
+
 func _exit_tree() -> void:
+	var vp := get_viewport()
+	if vp and vp.size_changed.is_connected(_apply_safe_area_insets):
+		vp.size_changed.disconnect(_apply_safe_area_insets)
 	if is_instance_valid(NetworkManager) and NetworkManager.spectator_count_updated.is_connected(_on_spectator_count_updated):
 		NetworkManager.spectator_count_updated.disconnect(_on_spectator_count_updated)
 
@@ -558,10 +570,19 @@ func _build_game_ui_enhancements() -> void:
 		sb_round.content_margin_bottom = 1
 		round_panel.add_theme_stylebox_override("panel", sb_round)
 
+	if is_instance_valid(lbl_round):
+		lbl_round.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BODY)
+
 	if is_instance_valid(lbl_turn_banner):
 		lbl_turn_banner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl_turn_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_turn_banner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl_turn_banner.clip_text = true
+		lbl_turn_banner.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		lbl_turn_banner.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BODY)
+
+	if is_instance_valid(lbl_timer):
+		lbl_timer.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BODY)
 
 	if timer_row and is_instance_valid(lbl_timer):
 		timer_row.add_theme_constant_override("separation", 6)
@@ -620,7 +641,7 @@ func _build_game_ui_enhancements() -> void:
 		spec_eye.text = "👁"
 		spec_eye.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		spec_eye.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		spec_eye.add_theme_font_size_override("font_size", 18)
+		spec_eye.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		spec_eye.add_theme_color_override("font_color", Color(0.74, 1.0, 0.84, 1.0))
 		spec_eye.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		spec_hbox.add_child(spec_eye)
@@ -631,7 +652,7 @@ func _build_game_ui_enhancements() -> void:
 		_lbl_spectator_count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		if _font_hekayat:
 			_lbl_spectator_count.add_theme_font_override("font", _font_hekayat)
-		_lbl_spectator_count.add_theme_font_size_override("font_size", 20)
+		_lbl_spectator_count.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		_lbl_spectator_count.add_theme_color_override("font_color", Color(0.74, 1.0, 0.84, 1.0))
 		_lbl_spectator_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		spec_hbox.add_child(_lbl_spectator_count)
@@ -689,13 +710,17 @@ func _enhance_player_card(player_idx: int) -> void:
 
 	# B. Crisp Game Typography & Role Pill Styling
 	if is_instance_valid(name_lbl):
+		name_lbl.add_theme_font_size_override("font_size", 24)
 		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90))
 		name_lbl.add_theme_color_override("font_outline_color", Color(0.10, 0.05, 0.02, 0.95))
 		name_lbl.add_theme_constant_override("outline_size", 3)
 		name_lbl.clip_text = true
+		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 	if is_instance_valid(role_lbl):
 		role_lbl.add_theme_font_size_override("font_size", 24)
+		role_lbl.clip_text = true
+		role_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		role_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.78))
 		role_lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.04, 0.02, 0.9))
 		role_lbl.add_theme_constant_override("outline_size", 2)

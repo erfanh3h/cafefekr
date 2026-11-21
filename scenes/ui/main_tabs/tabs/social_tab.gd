@@ -122,11 +122,10 @@ func _build_ui_shell() -> void:
 
 	var title_lbl := Label.new()
 	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	title_lbl.add_theme_font_size_override("font_size", 34)
+	title_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	title_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_SCREEN_TITLE)
 	title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
-	title_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
-	title_lbl.add_theme_constant_override("shadow_outline_size", 2)
+	CafeSocialTheme.apply_wood_text_shadow(title_lbl, 3)
 	title_lbl.text = "کافه"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	top_row.add_child(title_lbl)
@@ -137,7 +136,7 @@ func _build_ui_shell() -> void:
 	_toast_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(true))
 	root_vbox.add_child(_toast_panel)
 
-	lbl_status_toast = CafeSocialTheme.make_body("", 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
+	lbl_status_toast = CafeSocialTheme.make_body("", 24, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
 	_toast_panel.add_child(lbl_status_toast)
 
 	# 3. 3-Hub Navigation Bar inside frame_small (remove frame under these 3 tabs)

@@ -14,7 +14,7 @@ dest_files=["res://.godot/imported/hekayat.ttf-1fc3f1939f9793e1a29f6c8457f0bc62.
 
 Rendering=null
 antialiasing=1
-generate_mipmaps=false
+generate_mipmaps=true
 disable_embedded_bitmaps=true
 multichannel_signed_distance_field=false
 msdf_pixel_range=8

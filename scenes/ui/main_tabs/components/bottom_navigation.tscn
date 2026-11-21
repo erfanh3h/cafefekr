@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" path="res://assets/icons/tabs/tab_play.png" id="4_play_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/info.png" id="5_library_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/level.png" id="6_user_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="7_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="7_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/frame_tall.png" id="8_frame_tall_tex"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_bar_bg"]
@@ -153,11 +153,17 @@ stretch_mode = 5
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnSocial/VBox"]
 layout_mode = 2
 mouse_filter = 2
+theme_type_variation = &"BottomNavLabel"
 theme_override_colors/font_color = Color(0.80, 0.74, 0.65, 0.92)
-theme_override_fonts/font = ExtResource("7_font_hekayat")
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("7_font_vazir")
 theme_override_font_sizes/font_size = 24
 text = "کافه"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="Badge" type="PanelContainer" parent="PanelFrame/Margin/HBox/BtnSocial"]
 visible = false
@@ -165,19 +171,20 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -52.0
-offset_top = 6.0
-offset_right = -16.0
-offset_bottom = 38.0
+offset_left = -56.0
+offset_top = 4.0
+offset_right = -14.0
+offset_bottom = 40.0
 grow_horizontal = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
 
 [node name="LblCount" type="Label" parent="PanelFrame/Margin/HBox/BtnSocial/Badge"]
 layout_mode = 2
+theme_type_variation = &"Badge"
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("7_font_hekayat")
-theme_override_font_sizes/font_size = 19
+theme_override_fonts/font = ExtResource("7_font_vazir")
+theme_override_font_sizes/font_size = 22
 text = "۱"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -244,11 +251,17 @@ stretch_mode = 5
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnHistory/VBox"]
 layout_mode = 2
 mouse_filter = 2
+theme_type_variation = &"BottomNavLabel"
 theme_override_colors/font_color = Color(0.80, 0.74, 0.65, 0.92)
-theme_override_fonts/font = ExtResource("7_font_hekayat")
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("7_font_vazir")
 theme_override_font_sizes/font_size = 24
 text = "برترین‌ها"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnPlay" type="Button" parent="PanelFrame/Margin/HBox"]
 layout_mode = 2
@@ -312,11 +325,17 @@ stretch_mode = 5
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnPlay/VBox"]
 layout_mode = 2
 mouse_filter = 2
+theme_type_variation = &"BottomNavLabel"
 theme_override_colors/font_color = Color(1, 0.92, 0.45, 1)
-theme_override_fonts/font = ExtResource("7_font_hekayat")
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("7_font_vazir")
 theme_override_font_sizes/font_size = 26
 text = "بازی"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnLibrary" type="Button" parent="PanelFrame/Margin/HBox"]
 layout_mode = 2
@@ -380,11 +399,17 @@ stretch_mode = 5
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnLibrary/VBox"]
 layout_mode = 2
 mouse_filter = 2
+theme_type_variation = &"BottomNavLabel"
 theme_override_colors/font_color = Color(0.80, 0.74, 0.65, 0.92)
-theme_override_fonts/font = ExtResource("7_font_hekayat")
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("7_font_vazir")
 theme_override_font_sizes/font_size = 24
 text = "کتابخانه"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnUser" type="Button" parent="PanelFrame/Margin/HBox"]
 layout_mode = 2
@@ -448,8 +473,14 @@ stretch_mode = 5
 [node name="Lbl" type="Label" parent="PanelFrame/Margin/HBox/BtnUser/VBox"]
 layout_mode = 2
 mouse_filter = 2
+theme_type_variation = &"BottomNavLabel"
 theme_override_colors/font_color = Color(0.80, 0.74, 0.65, 0.92)
-theme_override_fonts/font = ExtResource("7_font_hekayat")
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("7_font_vazir")
 theme_override_font_sizes/font_size = 24
 text = "کاربر"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3

@@ -19,9 +19,14 @@ var active_lb_tab: String = "score" # "score" | "win" | "friends" | "clans"
 var active_section: String = "leaderboard" # compatibility
 
 var _SCORE_ICON = preload("res://assets/images/badges/score.png")
-var _HEKAYAT_FONT = preload("res://assets/fonts/hekayat.ttf")
 
 func _ready() -> void:
+	var lbl_title := get_node_or_null("OuterMargin/MainPanel/InnerMargin/VBox/TitleRow/LblTitle") as Label
+	if is_instance_valid(lbl_title):
+		lbl_title.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		lbl_title.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_SCREEN_TITLE)
+		CafeSocialTheme.apply_wood_text_shadow(lbl_title, 3)
+
 	ActionVFXManager.apply_button_juice(btn_lb_score, "tap_button")
 	ActionVFXManager.apply_button_juice(btn_lb_win, "tap_button")
 	ActionVFXManager.apply_button_juice(btn_lb_friends, "tap_button")
@@ -67,7 +72,8 @@ func _style_lb_btn(btn: Button, is_act: bool) -> void:
 		btn.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
 	else:
 		KenneyUI.style_button(btn, KenneyUI.COLOR_GREY)
-		btn.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+		btn.add_theme_color_override("font_color", Color(0.92, 0.88, 0.80, 0.92))
+	CafeSocialTheme.configure_single_line_tab(btn, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 62.0, 6.0)
 
 
 func _load_leaderboard(lb_type: String) -> void:
@@ -245,10 +251,9 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		var rank_lbl := Label.new()
 		rank_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		rank_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		rank_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		rank_lbl.add_theme_font_size_override("font_size", 42)
-		rank_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-		rank_lbl.add_theme_constant_override("shadow_outline_size", 3)
+		rank_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		rank_lbl.add_theme_font_size_override("font_size", 36)
+		CafeSocialTheme.apply_wood_text_shadow(rank_lbl, 3)
 
 		if rank == 1:
 			rank_lbl.text = "🥇"
@@ -299,13 +304,12 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.clip_text = true
-		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		name_lbl.add_theme_font_size_override("font_size", 40)
+		# Mandatory GAME_SCENE_RULES.md guardrail: preserve clip_text = false + SIZE_EXPAND_FILL on leaderboard names
+		name_lbl.clip_text = false
+		name_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		name_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_CARD_TITLE)
 		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0) if not is_me else Color(1.0, 0.90, 0.35, 1.0))
-		name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-		name_lbl.add_theme_constant_override("shadow_outline_size", 4)
+		CafeSocialTheme.apply_wood_text_shadow(name_lbl, 3)
 		name_col.add_child(name_lbl)
 
 		if lb_type == "clans":
@@ -322,11 +326,10 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			tag_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			tag_lbl.clip_text = true
 			tag_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-			tag_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-			tag_lbl.add_theme_font_size_override("font_size", 28)
+			tag_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+			tag_lbl.add_theme_font_size_override("font_size", 24)
 			tag_lbl.add_theme_color_override("font_color", Color(0.98, 0.84, 0.42, 1.0))
-			tag_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-			tag_lbl.add_theme_constant_override("shadow_outline_size", 3)
+			CafeSocialTheme.apply_wood_text_shadow(tag_lbl, 2)
 			name_col.add_child(tag_lbl)
 		else:
 			var sub_lbl := Label.new()
@@ -336,11 +339,10 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			sub_lbl.clip_text = true
 			sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-			sub_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-			sub_lbl.add_theme_font_size_override("font_size", 28)
+			sub_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+			sub_lbl.add_theme_font_size_override("font_size", 24)
 			sub_lbl.add_theme_color_override("font_color", Color(0.92, 0.82, 0.55, 1.0))
-			sub_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-			sub_lbl.add_theme_constant_override("shadow_outline_size", 3)
+			CafeSocialTheme.apply_wood_text_shadow(sub_lbl, 2)
 			name_col.add_child(sub_lbl)
 
 		# 4. Score or Wins count (Far Left)
@@ -354,22 +356,20 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			val_lbl.text = GameManager.to_fa_num(int(win_val))
 			val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-			val_lbl.add_theme_font_size_override("font_size", 48)
+			val_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+			val_lbl.add_theme_font_size_override("font_size", 38)
 			val_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.38, 1.0))
-			val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-			val_lbl.add_theme_constant_override("shadow_outline_size", 4)
+			CafeSocialTheme.apply_wood_text_shadow(val_lbl, 3)
 			val_box.add_child(val_lbl)
 		else:
-			# Score tab (and clans / friends): No icon, no shadow under text, font_size +2px (40)
 			var val_lbl := Label.new()
 			val_lbl.text = GameManager.to_fa_num(int(score_val))
 			val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-			val_lbl.add_theme_font_size_override("font_size", 40)
+			val_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+			val_lbl.add_theme_font_size_override("font_size", 36)
 			val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
-			val_lbl.add_theme_constant_override("shadow_outline_size", 0)
+			CafeSocialTheme.apply_wood_text_shadow(val_lbl, 2)
 			val_box.add_child(val_lbl)
 
 		# Assembly in LTR order: [val_box (Left)] -> [name_col (Aligns Right)] -> [av_frame] -> [rank_frame (Right)]
@@ -392,3 +392,8 @@ func _render_leaderboard_list(list: Array, lb_type: String) -> void:
 			)
 
 		lb_list_vbox.add_child(card)
+
+	var bottom_spacer := Control.new()
+	bottom_spacer.custom_minimum_size = Vector2(0, 36)
+	bottom_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lb_list_vbox.add_child(bottom_spacer)

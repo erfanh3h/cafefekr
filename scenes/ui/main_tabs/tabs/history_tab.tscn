@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/history_tab.gd" id="1_history_script"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="2_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/frame_small.png" id="3_frame_small_tex"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_board_shell"]
@@ -61,11 +61,13 @@ alignment = 2
 
 [node name="LblTitle" type="Label" parent="OuterMargin/MainPanel/InnerMargin/VBox/TitleRow"]
 layout_mode = 2
+theme_type_variation = &"ScreenTitle"
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
-theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 32
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("2_font_vazir")
+theme_override_font_sizes/font_size = 42
 text = "دیوان برترین‌ها"
 horizontal_alignment = 2
 
@@ -79,7 +81,7 @@ theme_override_constants/separation = 8
 alignment = 1
 
 [node name="BtnLbScore" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -87,7 +89,7 @@ mouse_default_cursor_shape = 2
 text = "امتیاز کل"
 
 [node name="BtnLbWin" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -95,7 +97,7 @@ mouse_default_cursor_shape = 2
 text = "بیشترین پیروزی"
 
 [node name="BtnLbFriends" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -103,7 +105,7 @@ mouse_default_cursor_shape = 2
 text = "دوستان"
 
 [node name="BtnLbClans" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 62)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0

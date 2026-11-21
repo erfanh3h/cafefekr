@@ -5,8 +5,6 @@ extends RefCounted
 # Used by both UserProfileDialog (when inspecting any player's details)
 # and GameHistoryDialog (under the "Games History" tab for user's own statistics).
 
-static var _font_hekayat = preload("res://assets/fonts/hekayat.ttf")
-
 const GAMES_LIST: Array[Dictionary] = [
 	{"id": "TicTacToe", "key": "tictactoe", "name_fa": "تیک تاک تو", "multi": false},
 	{"id": "Chess", "key": "chess", "name_fa": "شطرنج", "multi": false},
@@ -45,8 +43,9 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 		var empty_lbl = Label.new()
 		empty_lbl.text = "هنوز آماری برای بازی‌ها ثبت نشده است."
 		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		empty_lbl.add_theme_font_override("font", _font_hekayat)
-		empty_lbl.add_theme_font_size_override("font_size", 30)
+		empty_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		empty_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		empty_lbl.add_theme_font_size_override("font_size", 28)
 		empty_lbl.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72))
 		target_container.add_child(empty_lbl)
 		return
@@ -55,9 +54,10 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 	var mode_summary_title = Label.new()
 	mode_summary_title.text = "🏆 آمار حالت‌های رتبه‌بندی"
 	mode_summary_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	mode_summary_title.add_theme_font_override("font", _font_hekayat)
+	mode_summary_title.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	mode_summary_title.add_theme_font_size_override("font_size", 28)
 	mode_summary_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	CafeSocialTheme.apply_wood_text_shadow(mode_summary_title)
 	target_container.add_child(mode_summary_title)
 
 	var modes_vbox = VBoxContainer.new()
@@ -110,9 +110,10 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 	games_title.text = "🎮 آمار بازی‌ها به تفکیک"
 	games_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	games_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	games_title.add_theme_font_override("font", _font_hekayat)
+	games_title.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	games_title.add_theme_font_size_override("font_size", 28)
 	games_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	CafeSocialTheme.apply_wood_text_shadow(games_title)
 	games_header_box.add_child(games_title)
 
 	# Compute and partition games
@@ -184,10 +185,10 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 
 		var btn_toggle = Button.new()
 		btn_toggle.text = "▼ مشاهده سایر بازی‌ها (%s)" % GameManager.to_fa_num(unplayed_games.size())
-		btn_toggle.custom_minimum_size = Vector2(260, 52)
+		btn_toggle.custom_minimum_size = Vector2(280, 58)
 		btn_toggle.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		btn_toggle.add_theme_font_override("font", _font_hekayat)
-		btn_toggle.add_theme_font_size_override("font_size", 22)
+		btn_toggle.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		btn_toggle.add_theme_font_size_override("font_size", 24)
 		KenneyUI.style_button(btn_toggle, KenneyUI.COLOR_GREY)
 		btn_toggle.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -199,6 +200,10 @@ static func populate_games_history(target_container: VBoxContainer, history_data
 		)
 		target_container.add_child(btn_toggle)
 
+	var bot_spacer := Control.new()
+	bot_spacer.custom_minimum_size = Vector2(0, 32)
+	target_container.add_child(bot_spacer)
+
 static func _wrap_pad(control: Control, horiz_margin: int = 12) -> MarginContainer:
 	var m = MarginContainer.new()
 	m.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -209,8 +214,8 @@ static func _wrap_pad(control: Control, horiz_margin: int = 12) -> MarginContain
 
 static func _create_mode_card(title_text: String, val1: int, val2: int, val3: int, label1: String, label2: String, label3: String) -> PanelContainer:
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0, 140)
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
+	panel.custom_minimum_size = Vector2(0, 154)
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 14.0))
 
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -225,7 +230,7 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 	if total_matches > 0:
 		var lbl_total = Label.new()
 		lbl_total.text = "%s بازی" % GameManager.to_fa_num(total_matches)
-		lbl_total.add_theme_font_override("font", _font_hekayat)
+		lbl_total.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
 		lbl_total.add_theme_font_size_override("font_size", 22)
 		lbl_total.add_theme_color_override("font_color", Color(0.85, 0.78, 0.65))
 		header_row.add_child(lbl_total)
@@ -234,7 +239,8 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 	lbl_title.text = title_text
 	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl_title.add_theme_font_override("font", _font_hekayat)
+	lbl_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_title.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	lbl_title.add_theme_font_size_override("font_size", 26)
 	lbl_title.add_theme_color_override("font_color", Color(1.0, 0.94, 0.82))
 	header_row.add_child(lbl_title)
@@ -246,17 +252,17 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 	vbox.add_child(stats_row)
 
 	# Win / Rank 1 (Green)
-	var pill1 = _create_stat_pill("%s: %s" % [label1, GameManager.to_fa_num(val1)], Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.95), 20)
+	var pill1 = _create_stat_pill("%s: %s" % [label1, GameManager.to_fa_num(val1)], Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.95), 22)
 	pill1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stats_row.add_child(pill1)
 
 	# Draw / Rank 2 (Yellow)
-	var pill2 = _create_stat_pill("%s: %s" % [label2, GameManager.to_fa_num(val2)], Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.95), 20)
+	var pill2 = _create_stat_pill("%s: %s" % [label2, GameManager.to_fa_num(val2)], Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.95), 22)
 	pill2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stats_row.add_child(pill2)
 
 	# Lose / Rank 3+ (Red)
-	var pill3 = _create_stat_pill("%s: %s" % [label3, GameManager.to_fa_num(val3)], Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.95), 20)
+	var pill3 = _create_stat_pill("%s: %s" % [label3, GameManager.to_fa_num(val3)], Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.95), 22)
 	pill3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stats_row.add_child(pill3)
 
@@ -264,8 +270,8 @@ static func _create_mode_card(title_text: String, val1: int, val2: int, val3: in
 
 static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) -> PanelContainer:
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0, 136)
-	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
+	panel.custom_minimum_size = Vector2(0, 150)
+	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 14.0))
 
 	var hbox = HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 14)
@@ -318,7 +324,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	else:
 		lbl_matches.text = "بدون مسابقه"
 		lbl_matches.add_theme_color_override("font_color", Color(0.60, 0.55, 0.50))
-	lbl_matches.add_theme_font_override("font", _font_hekayat)
+	lbl_matches.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
 	lbl_matches.add_theme_font_size_override("font_size", 22)
 	row1.add_child(lbl_matches)
 
@@ -326,7 +332,7 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 	lbl_name.text = str(info["name_fa"])
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl_name.add_theme_font_override("font", _font_hekayat)
+	lbl_name.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	lbl_name.add_theme_font_size_override("font_size", 26)
 	lbl_name.add_theme_color_override("font_color", Color.WHITE if not is_dimmed else Color(0.75, 0.70, 0.65))
 	row1.add_child(lbl_name)
@@ -345,15 +351,15 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 		var d_cnt = int(info["draw"])
 		var l_cnt = int(info["lose"])
 
-		var p1 = _create_stat_pill("اول: %s" % GameManager.to_fa_num(max(r1_cnt, w_cnt)), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 20)
+		var p1 = _create_stat_pill("اول: %s" % GameManager.to_fa_num(max(r1_cnt, w_cnt)), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 22)
 		p1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p1)
 
-		var p2 = _create_stat_pill("دوم: %s" % GameManager.to_fa_num(max(r2_cnt, d_cnt)), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 20)
+		var p2 = _create_stat_pill("دوم: %s" % GameManager.to_fa_num(max(r2_cnt, d_cnt)), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 22)
 		p2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p2)
 
-		var p3 = _create_stat_pill("سایر: %s" % GameManager.to_fa_num(max(rn_cnt, l_cnt)), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 20)
+		var p3 = _create_stat_pill("سایر: %s" % GameManager.to_fa_num(max(rn_cnt, l_cnt)), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 22)
 		p3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p3)
 	else:
@@ -361,22 +367,23 @@ static func _create_game_stat_card(info: Dictionary, is_dimmed: bool = false) ->
 		var d_cnt = int(info["draw"])
 		var l_cnt = int(info["lose"])
 
-		var p1 = _create_stat_pill("برد: %s" % GameManager.to_fa_num(w_cnt), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 20)
+		var p1 = _create_stat_pill("برد: %s" % GameManager.to_fa_num(w_cnt), Color(0.35, 0.88, 0.45), Color(0.12, 0.28, 0.15, 0.85), 22)
 		p1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p1)
 
-		var p2 = _create_stat_pill("مساوی: %s" % GameManager.to_fa_num(d_cnt), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 20)
+		var p2 = _create_stat_pill("مساوی: %s" % GameManager.to_fa_num(d_cnt), Color(1.0, 0.85, 0.35), Color(0.28, 0.24, 0.10, 0.85), 22)
 		p2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p2)
 
-		var p3 = _create_stat_pill("باخت: %s" % GameManager.to_fa_num(l_cnt), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 20)
+		var p3 = _create_stat_pill("باخت: %s" % GameManager.to_fa_num(l_cnt), Color(0.95, 0.45, 0.45), Color(0.30, 0.12, 0.12, 0.85), 22)
 		p3.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(p3)
 
 	return panel
 
-static func _create_stat_pill(text_content: String, text_color: Color, bg_color: Color, font_size: int = 24) -> PanelContainer:
+static func _create_stat_pill(text_content: String, text_color: Color, bg_color: Color, font_size: int = 22) -> PanelContainer:
 	var pill = PanelContainer.new()
+	pill.custom_minimum_size = Vector2(0, 42)
 	var sb = StyleBoxFlat.new()
 	sb.bg_color = bg_color
 	sb.border_width_left = 1
@@ -385,9 +392,9 @@ static func _create_stat_pill(text_content: String, text_color: Color, bg_color:
 	sb.border_width_bottom = 1
 	sb.border_color = Color(text_color.r, text_color.g, text_color.b, 0.6)
 	sb.set_corner_radius_all(10)
-	sb.content_margin_left = 8.0
+	sb.content_margin_left = 6.0
 	sb.content_margin_top = 4.0
-	sb.content_margin_right = 8.0
+	sb.content_margin_right = 6.0
 	sb.content_margin_bottom = 4.0
 	pill.add_theme_stylebox_override("panel", sb)
 
@@ -395,8 +402,10 @@ static func _create_stat_pill(text_content: String, text_color: Color, bg_color:
 	lbl.text = text_content
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_override("font", _font_hekayat)
-	lbl.add_theme_font_size_override("font_size", font_size)
+	lbl.clip_text = true
+	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	lbl.add_theme_font_size_override("font_size", CafeSocialTheme.clamp_font_size(font_size))
 	lbl.add_theme_color_override("font_color", text_color)
 	pill.add_child(lbl)
 
@@ -405,14 +414,15 @@ static func _create_stat_pill(text_content: String, text_color: Color, bg_color:
 static func _create_empty_card(msg: String) -> PanelContainer:
 	var p = PanelContainer.new()
 	p.custom_minimum_size = Vector2(0, 112)
-	p.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 14.0, 10.0))
+	p.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 14.0, 12.0))
 
 	var lbl = Label.new()
 	lbl.text = msg
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_override("font", _font_hekayat)
-	lbl.add_theme_font_size_override("font_size", 26)
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	lbl.add_theme_font_size_override("font_size", 24)
 	lbl.add_theme_color_override("font_color", Color(0.8, 0.75, 0.68))
 	p.add_child(lbl)
 	return p

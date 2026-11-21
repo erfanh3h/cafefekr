@@ -9,6 +9,7 @@ signal closed()
 signal spectate_match_requested(game_id: String, game_type: String)
 
 var _dim_overlay: ColorRect
+var _margin_outer: MarginContainer
 var main_panel: PanelContainer
 var _toast_panel: PanelContainer
 var lbl_status_toast: Label
@@ -64,6 +65,17 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_ui_shell()
 	_connect_realtime_signals()
+	if get_viewport() != null:
+		get_viewport().size_changed.connect(_apply_responsive_margins)
+	call_deferred("_apply_responsive_margins")
+
+
+func _apply_responsive_margins() -> void:
+	if not is_instance_valid(_margin_outer):
+		return
+	var vp_w: float = get_viewport_rect().size.x
+	var side_pad: int = maxi(14, int((vp_w - 760.0) * 0.5)) if vp_w > 820.0 else 14
+	CafeSocialTheme.apply_safe_area_to_margin(_margin_outer, side_pad, 20, side_pad, 20)
 
 
 func _connect_realtime_signals() -> void:
@@ -103,6 +115,7 @@ func open(initial_tab: String = "friends", dm_partner_id: String = "", dm_partne
 	if initial_tab not in ["friends", "clans", "messages", "notifs"]:
 		initial_tab = "friends"
 
+	_apply_responsive_margins()
 	_preload_badge_counts()
 	_switch_main_tab(initial_tab)
 	ActionVFXManager.animate_dialog_open(main_panel, self, true)
@@ -157,19 +170,19 @@ func _build_ui_shell() -> void:
 	)
 	add_child(_dim_overlay)
 
-	var margin_outer := MarginContainer.new()
-	margin_outer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin_outer.add_theme_constant_override("margin_left", 14)
-	margin_outer.add_theme_constant_override("margin_right", 14)
-	margin_outer.add_theme_constant_override("margin_top", 20)
-	margin_outer.add_theme_constant_override("margin_bottom", 20)
-	add_child(margin_outer)
+	_margin_outer = MarginContainer.new()
+	_margin_outer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_margin_outer.add_theme_constant_override("margin_left", 14)
+	_margin_outer.add_theme_constant_override("margin_right", 14)
+	_margin_outer.add_theme_constant_override("margin_top", 20)
+	_margin_outer.add_theme_constant_override("margin_bottom", 20)
+	add_child(_margin_outer)
 
 	main_panel = PanelContainer.new()
 	main_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	main_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
-	margin_outer.add_child(main_panel)
+	_margin_outer.add_child(main_panel)
 
 	var inner_margin := MarginContainer.new()
 	inner_margin.add_theme_constant_override("margin_left", 18)

@@ -288,9 +288,15 @@ static func _create_responsive_modal(host: Control, preferred_w: float = 620.0, 
 	)
 	overlay.add_child(dim)
 
+	var safe_wrap := MarginContainer.new()
+	safe_wrap.set_anchors_preset(Control.PRESET_FULL_RECT)
+	CafeSocialTheme.apply_safe_area_to_margin(safe_wrap, 12, 12, 12, 12, true, true)
+	overlay.add_child(safe_wrap)
+
 	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(center)
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	safe_wrap.add_child(center)
 
 	var modal_w := _calc_modal_width(host, preferred_w)
 	var card := PanelContainer.new()
@@ -365,7 +371,7 @@ static func _build_shared_header(host: Control, has_clan: bool) -> PanelContaine
 		left_col.add_theme_constant_override("separation", 2)
 		hbox.add_child(left_col)
 
-		var b_create_quick := CafeSocialTheme.make_button("تاسیس اتحاد", "gold", Vector2(124, 42), 19)
+		var b_create_quick := CafeSocialTheme.make_button("تاسیس اتحاد", "gold", Vector2(142, 50), CafeSocialTheme.FONT_SIZE_BADGE)
 		b_create_quick.pressed.connect(func():
 			AudioManager.sfx_button()
 			open_clan_create_modal(host)
@@ -375,13 +381,11 @@ static func _build_shared_header(host: Control, has_clan: bool) -> PanelContaine
 		var title_col := VBoxContainer.new()
 		title_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		title_col.alignment = BoxContainer.ALIGNMENT_CENTER
-		title_col.add_theme_constant_override("separation", 2)
+		title_col.add_theme_constant_override("separation", 4)
 		hbox.add_child(title_col)
 
-		title_col.add_child(CafeSocialTheme.make_title("اتحادهای کافه فکر", 25, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
-		var sub_t := CafeSocialTheme.make_body("باشگاه اجتماعی، چالش‌های هفتگی و مسابقات گروهی", 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
-		sub_t.clip_text = true
-		sub_t.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		title_col.add_child(CafeSocialTheme.make_title("اتحادهای کافه فکر", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
+		var sub_t := CafeSocialTheme.make_body("باشگاه اجتماعی، چالش‌های هفتگی و مسابقات گروهی", CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true)
 		title_col.add_child(sub_t)
 
 		hbox.add_child(CafeSocialTheme.make_clan_emblem(1, 52.0))
@@ -415,7 +419,7 @@ static func _build_shared_header(host: Control, has_clan: bool) -> PanelContaine
 		CafeSocialTheme.COL_EMERALD_TEXT,
 		CafeSocialTheme.COL_EMERALD_BG,
 		CafeSocialTheme.COL_EMERALD_BORDER,
-		16
+		CafeSocialTheme.FONT_SIZE_BADGE
 	)
 	if online_pill.get_child_count() > 0 and online_pill.get_child(0) is Label:
 		host._clan_online_pill_lbl = online_pill.get_child(0) as Label
@@ -425,7 +429,7 @@ static func _build_shared_header(host: Control, has_clan: bool) -> PanelContaine
 	var center_col := VBoxContainer.new()
 	center_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	center_col.add_theme_constant_override("separation", 2)
+	center_col.add_theme_constant_override("separation", 4)
 	hbox.add_child(center_col)
 
 	var name_row := HBoxContainer.new()
@@ -434,23 +438,25 @@ static func _build_shared_header(host: Control, has_clan: bool) -> PanelContaine
 	center_col.add_child(name_row)
 
 	if not ctag.is_empty():
-		var tag_lbl := CafeSocialTheme.make_body("[%s]" % ctag, 18 if is_chat_compact else 19, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false)
+		var tag_lbl := CafeSocialTheme.make_body("[%s]" % ctag, CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false)
 		name_row.add_child(tag_lbl)
 
-	var name_lbl := CafeSocialTheme.make_title(cname, 22 if is_chat_compact else 25, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	var name_lbl := CafeSocialTheme.make_title(cname, 26 if is_chat_compact else 28, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	name_lbl.clip_text = true
 	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_row.add_child(name_lbl)
 
 	if not is_chat_compact:
-		var meta_row := HBoxContainer.new()
-		meta_row.alignment = BoxContainer.ALIGNMENT_END
-		meta_row.add_theme_constant_override("separation", 6)
+		var meta_row := HFlowContainer.new()
+		meta_row.alignment = FlowContainer.ALIGNMENT_END
+		meta_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		meta_row.add_theme_constant_override("h_separation", 6)
+		meta_row.add_theme_constant_override("v_separation", 4)
 		center_col.add_child(meta_row)
 
-		meta_row.add_child(CafeSocialTheme.make_badge_pill("سطح %s" % GameManager.to_fa_num(clvl), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 15))
-		meta_row.add_child(CafeSocialTheme.make_badge_pill(my_role_fa, CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 15))
-		meta_row.add_child(CafeSocialTheme.make_body("%s/%s عضو" % [GameManager.to_fa_num(mem_cnt), GameManager.to_fa_num(max_mem)], 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
+		meta_row.add_child(CafeSocialTheme.make_badge_pill("سطح %s" % GameManager.to_fa_num(clvl), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, CafeSocialTheme.FONT_SIZE_BADGE))
+		meta_row.add_child(CafeSocialTheme.make_badge_pill(my_role_fa, CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
+		meta_row.add_child(CafeSocialTheme.make_body("%s/%s عضو" % [GameManager.to_fa_num(mem_cnt), GameManager.to_fa_num(max_mem)], CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
 
 	# Right Emblem
 	hbox.add_child(CafeSocialTheme.make_clan_emblem(emb_id, 42.0 if is_chat_compact else 56.0))
@@ -488,15 +494,15 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 		var is_active: bool = (str(host.current_clans_subtab) in match_ids)
 		var btn := Button.new()
 		btn.name = "ClanTab_" + tid
-		btn.custom_minimum_size = Vector2(0, 48)
+		btn.custom_minimum_size = Vector2(0, 56)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 		var st_norm := StyleBoxFlat.new()
 		st_norm.set_corner_radius_all(11)
-		st_norm.content_margin_left = 6.0
-		st_norm.content_margin_right = 6.0
+		st_norm.content_margin_left = 4.0
+		st_norm.content_margin_right = 4.0
 		st_norm.content_margin_top = 4.0
 		st_norm.content_margin_bottom = 4.0
 
@@ -527,11 +533,12 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 		var lbl := Label.new()
 		lbl.text = td["label"]
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-		lbl.add_theme_font_size_override("font_size", 21 if has_clan else 22)
-		lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY if is_active else Color(0.82, 0.76, 0.68, 0.85))
-		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
-		lbl.add_theme_constant_override("shadow_outline_size", 2)
+		lbl.clip_text = true
+		lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
+		lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY if is_active else Color(0.86, 0.80, 0.72, 0.90))
+		CafeSocialTheme.apply_wood_text_shadow(lbl, 2)
 		var b_cnt := int(td.get("badge", 0))
 		if b_cnt > 0:
 			var b_pill := PanelContainer.new()
@@ -540,7 +547,7 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 			bp_sb.bg_color = Color(0.84, 0.18, 0.16, 0.98)
 			bp_sb.border_color = CafeSocialTheme.COL_GOLD_BRIGHT
 			bp_sb.set_border_width_all(1)
-			bp_sb.set_corner_radius_all(9)
+			bp_sb.set_corner_radius_all(10)
 			bp_sb.content_margin_left = 6.0
 			bp_sb.content_margin_right = 6.0
 			bp_sb.content_margin_top = 1.0
@@ -549,8 +556,8 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 			var b_lbl := Label.new()
 			b_lbl.text = GameManager.to_fa_num(b_cnt) if b_cnt <= 99 else "۹۹+"
 			b_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			b_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-			b_lbl.add_theme_font_size_override("font_size", 13)
+			b_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+			b_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 			b_lbl.add_theme_color_override("font_color", Color.WHITE)
 			b_pill.add_child(b_lbl)
 			h.add_child(b_pill)
@@ -611,12 +618,12 @@ static func _build_top_pagination_widget(host: Control) -> Control:
 		var btn := Button.new()
 		btn.name = "BtnLoadOlder"
 		btn.text = "📜 بارگذاری پیام‌های قدیمی‌تر"
-		btn.custom_minimum_size = Vector2(0, 38)
+		btn.custom_minimum_size = Vector2(0, 48)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		btn.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		btn.add_theme_font_size_override("font_size", 17)
+		btn.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		btn.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 		btn.add_theme_stylebox_override("normal", CafeSocialTheme._get_flat_btn_style("muted", "normal", 10))
 		btn.add_theme_stylebox_override("hover", CafeSocialTheme._get_flat_btn_style("bronze", "normal", 10))
@@ -632,8 +639,8 @@ static func _build_top_pagination_widget(host: Control) -> Control:
 		lbl.text = "🏁 ابتدای تاریخچه گفتگوهای اتحاد"
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		lbl.add_theme_font_size_override("font_size", 16)
-		lbl.add_theme_color_override("font_color", Color(0.55, 0.45, 0.30, 0.75))
+		lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
+		lbl.add_theme_color_override("font_color", Color(0.68, 0.58, 0.44, 0.85))
 		holder.add_child(lbl)
 
 	return holder
@@ -809,7 +816,7 @@ static func _build_date_divider_pill(label_txt: String) -> Control:
 	st.content_margin_top = 3.0
 	st.content_margin_bottom = 3.0
 	pill.add_theme_stylebox_override("panel", st)
-	pill.add_child(CafeSocialTheme.make_body(label_txt, 15, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false))
+	pill.add_child(CafeSocialTheme.make_body(label_txt, CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false))
 	wrap.add_child(pill)
 	return wrap
 
@@ -847,7 +854,7 @@ static func _build_pinned_challenge_strip(host: Control) -> Control:
 	h.add_theme_constant_override("separation", 8)
 	bar.add_child(h)
 
-	var b_go := CafeSocialTheme.make_button("مشاهده", "emerald", Vector2(86, 32), 16)
+	var b_go := CafeSocialTheme.make_button("مشاهده", "emerald", Vector2(106, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 	b_go.pressed.connect(func():
 		AudioManager.sfx_tap()
 		switch_subtab_in_place(host, "my_clan")
@@ -857,7 +864,7 @@ static func _build_pinned_challenge_strip(host: Control) -> Control:
 	var extra_txt := " (+%s چالش دیگر)" % GameManager.to_fa_num(open_chals.size() - 1) if open_chals.size() > 1 else ""
 	var lbl := CafeSocialTheme.make_body(
 		"⚔️ چالش فعال: %s (%s/%s)%s" % [gt_fa, GameManager.to_fa_num(cur_p), GameManager.to_fa_num(p_cnt), extra_txt],
-		17, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false
+		CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false
 	)
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl.clip_text = true
@@ -902,12 +909,12 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	chat_well.add_child(host._clan_chat_scroll)
 
 	# Floating "Jump to bottom / New messages" pill
-	var jump_btn := CafeSocialTheme.make_button("↓ رفتن به آخرین پیام", "emerald", Vector2(180, 38), 17)
+	var jump_btn := CafeSocialTheme.make_button("↓ رفتن به آخرین پیام", "emerald", Vector2(236, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 	jump_btn.visible = false
 	jump_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	jump_btn.offset_left = -90.0
-	jump_btn.offset_right = 90.0
-	jump_btn.offset_top = -48.0
+	jump_btn.offset_left = -118.0
+	jump_btn.offset_right = 118.0
+	jump_btn.offset_top = -58.0
 	jump_btn.offset_bottom = -10.0
 	jump_btn.set_meta("unread_count", 0)
 	jump_btn.pressed.connect(func():
@@ -989,7 +996,7 @@ static func _build_clan_chat_view(host: Control, holder: VBoxContainer) -> void:
 	inp_row.add_child(btn_send)
 
 	# Text Input
-	host._clan_chat_input = CafeSocialTheme.make_line_edit("پیام به اعضای اتحاد...", 48.0, 21)
+	host._clan_chat_input = CafeSocialTheme.make_line_edit("پیام به اعضای اتحاد...", 54.0, CafeSocialTheme.FONT_SIZE_BODY)
 	host._clan_chat_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inp_row.add_child(host._clan_chat_input)
 
@@ -1377,7 +1384,7 @@ static func _build_single_chat_bubble(host: Control, msg: Dictionary, my_uid: St
 		msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		msg_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		msg_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		msg_lbl.add_theme_font_size_override("font_size", 20)
+		msg_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BODY)
 		# Crisp contrast: ivory on dark chat_my.png, dark walnut on parchment chat_other.png
 		if is_mine:
 			msg_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
@@ -1390,7 +1397,7 @@ static func _build_single_chat_bubble(host: Control, msg: Dictionary, my_uid: St
 		date_lbl.text = time_str
 		date_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if is_mine else HORIZONTAL_ALIGNMENT_RIGHT
 		date_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		date_lbl.add_theme_font_size_override("font_size", 14)
+		date_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		if render_as_sticker:
 			date_lbl.add_theme_color_override("font_color", Color(0.84, 0.78, 0.66, 0.85))
 		elif is_mine:
@@ -1456,7 +1463,7 @@ static func _build_system_chat_bubble(text: String, time_str: String = "") -> Co
 	var full_txt := text
 	if not time_str.is_empty():
 		full_txt += " (%s)" % time_str
-	var lbl := CafeSocialTheme.make_body(full_txt, 17, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	var lbl := CafeSocialTheme.make_body(full_txt, CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(lbl)
 
@@ -1506,8 +1513,8 @@ static func _build_challenge_chat_bubble(host: Control, meta: Dictionary, desc_t
 	top_row.add_child(col)
 
 	var gt_fa: String = str(meta.get("game_title_fa", GameRegistry.get_display_name_fa(chal_gt)))
-	col.add_child(CafeSocialTheme.make_title("چالش دوستانه %s" % gt_fa, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
-	col.add_child(CafeSocialTheme.make_body(desc_text, 17, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	col.add_child(CafeSocialTheme.make_title("چالش دوستانه %s" % gt_fa, 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	col.add_child(CafeSocialTheme.make_body(desc_text, CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	var chal_act := _build_challenge_action_row(host, meta, my_uid, my_role, true)
 	if chal_act != null:
@@ -1757,7 +1764,7 @@ static func _open_invite_friend_to_clan_modal(host: Control, cdict: Dictionary) 
 			frow.add_theme_constant_override("separation", 10)
 			fcard.add_child(frow)
 
-			var b_inv := CafeSocialTheme.make_button("دعوت", "emerald", Vector2(102, 42), 19)
+			var b_inv := CafeSocialTheme.make_button("دعوت", "emerald", Vector2(114, 50), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 			b_inv.pressed.connect(func():
 				AudioManager.sfx_button()
 				b_inv.disabled = true
@@ -1779,11 +1786,11 @@ static func _open_invite_friend_to_clan_modal(host: Control, cdict: Dictionary) 
 			fcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			fcol.alignment = BoxContainer.ALIGNMENT_CENTER
 			frow.add_child(fcol)
-			fcol.add_child(CafeSocialTheme.make_title(fname, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false))
+			fcol.add_child(CafeSocialTheme.make_title(fname, 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false))
 			var f_score := int(f.get("score", 0))
-			fcol.add_child(CafeSocialTheme.make_body("امتیاز: %s" % GameManager.to_fa_num(f_score), 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
+			fcol.add_child(CafeSocialTheme.make_body("امتیاز: %s" % GameManager.to_fa_num(f_score), CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
 
-			frow.add_child(CafeSocialTheme.make_avatar_badge(int(f.get("image", 0)), int(f.get("profile_frame", 1)), 50.0))
+			frow.add_child(CafeSocialTheme.make_avatar_badge(int(f.get("image", 0)), int(f.get("profile_frame", 1)), 54.0))
 			list_vb.add_child(fcard)
 
 	if not host._friends_list.is_empty():
@@ -1798,7 +1805,7 @@ static func _open_invite_friend_to_clan_modal(host: Control, cdict: Dictionary) 
 			populate_friends.call(host._friends_list)
 		)
 
-	var b_close := CafeSocialTheme.make_button("بستن", "muted", Vector2(0, 46), 20)
+	var b_close := CafeSocialTheme.make_button("بستن", "muted", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 	b_close.pressed.connect(func(): overlay.queue_free())
 	vbox.add_child(b_close)
 
@@ -1865,10 +1872,10 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 				leader_name = str(m.get("username", ""))
 				break
 	if not leader_name.is_empty():
-		desc_row.add_child(CafeSocialTheme.make_badge_pill("👑 %s" % leader_name, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.12, 0.07, 0.04), CafeSocialTheme.COL_BRONZE_BORDER, 16))
+		desc_row.add_child(CafeSocialTheme.make_badge_pill("👑 %s" % leader_name, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.12, 0.07, 0.04), CafeSocialTheme.COL_BRONZE_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 
 	var desc := str(cdict.get("description", "")).strip_edges()
-	var desc_lbl := CafeSocialTheme.make_body(desc if not desc.is_empty() else "باشگاه اختصاصی بازیکنان کافه فکر", 19, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true)
+	var desc_lbl := CafeSocialTheme.make_body(desc if not desc.is_empty() else "باشگاه اختصاصی بازیکنان کافه فکر", CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	desc_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	desc_row.add_child(desc_lbl)
 
@@ -1907,8 +1914,9 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 	vbox.add_child(act_row)
 
 	if my_role in ["leader", "co_leader"]:
-		var b_settings := CafeSocialTheme.make_button("تنظیمات", "bronze", Vector2(0, 50), 21)
+		var b_settings := CafeSocialTheme.make_button("تنظیمات", "bronze", Vector2(0, 54), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 		b_settings.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		CafeSocialTheme.configure_single_line_tab(b_settings, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 54.0, 8.0)
 		b_settings.pressed.connect(func():
 			AudioManager.sfx_tap()
 			_open_clan_settings_modal(host, cdict)
@@ -1916,16 +1924,18 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 		act_row.add_child(b_settings)
 
 	if my_role in ["leader", "co_leader", "elder"]:
-		var b_invite := CafeSocialTheme.make_button("دعوت دوست", "gold", Vector2(0, 50), 21)
+		var b_invite := CafeSocialTheme.make_button("دعوت دوست", "gold", Vector2(0, 54), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 		b_invite.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		CafeSocialTheme.configure_single_line_tab(b_invite, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 54.0, 8.0)
 		b_invite.pressed.connect(func():
 			AudioManager.sfx_tap()
 			_open_invite_friend_to_clan_modal(host, cdict)
 		)
 		act_row.add_child(b_invite)
 
-	var b_challenge := CafeSocialTheme.make_button("چالش دوستانه", "emerald", Vector2(0, 50), 22, CafeSocialTheme.ICO_LOBBY, true)
+	var b_challenge := CafeSocialTheme.make_button("چالش دوستانه", "emerald", Vector2(0, 54), CafeSocialTheme.FONT_SIZE_TAB_COMPACT, CafeSocialTheme.ICO_LOBBY, true)
 	b_challenge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CafeSocialTheme.configure_single_line_tab(b_challenge, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 54.0, 8.0)
 	b_challenge.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_open_friendly_challenge_modal(host)
@@ -1956,7 +1966,7 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 
 		req_bv.add_child(CafeSocialTheme.make_title(
 			"🔔 %s درخواست عضویت جدید در انتظار تایید شما" % GameManager.to_fa_num(pending_reqs.size()),
-			21, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true
+			CafeSocialTheme.FONT_SIZE_TAB_COMPACT, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true
 		))
 		for req in pending_reqs:
 			if typeof(req) == TYPE_DICTIONARY:
@@ -2033,13 +2043,17 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 
 	var b_leave_bottom := CafeSocialTheme.make_button(
 		"انحلال اتحاد" if my_role == "leader" else "خروج از اتحاد",
-		"crimson", Vector2(220, 44), 19
+		"crimson", Vector2(240, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT
 	)
 	b_leave_bottom.pressed.connect(func():
 		AudioManager.sfx_tap()
 		_trigger_leave_or_disband_clan(host, cdict, my_role)
 	)
 	danger_row.add_child(b_leave_bottom)
+
+	var ov_bottom_pad := Control.new()
+	ov_bottom_pad.custom_minimum_size = Vector2(0, 36)
+	vbox.add_child(ov_bottom_pad)
 
 
 static func _build_weekly_challenge_card(ch: Dictionary) -> PanelContainer:
@@ -2072,15 +2086,15 @@ static func _build_weekly_challenge_card(ch: Dictionary) -> PanelContainer:
 		CafeSocialTheme.COL_EMERALD_TEXT if done else CafeSocialTheme.COL_GOLD_BRIGHT,
 		CafeSocialTheme.COL_EMERALD_BG if done else Color(0.18, 0.11, 0.04),
 		CafeSocialTheme.COL_EMERALD_BORDER if done else CafeSocialTheme.COL_GOLD_ANTIQUE,
-		18
+		CafeSocialTheme.FONT_SIZE_BADGE
 	)
 	cr.add_child(pill)
 
-	var ct := CafeSocialTheme.make_title(str(ch.get("title", "")), 25, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true)
+	var ct := CafeSocialTheme.make_title(str(ch.get("title", "")), 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	ct.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cr.add_child(ct)
 
-	cv.add_child(CafeSocialTheme.make_body(str(ch.get("desc", "")), 20, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	cv.add_child(CafeSocialTheme.make_body(str(ch.get("desc", "")), CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	var prog := int(ch.get("progress", 0))
 	var targ: int = maxi(1, int(ch.get("target", 1)))
@@ -2112,7 +2126,7 @@ static func _build_join_request_card(host: Control, req: Dictionary) -> PanelCon
 	rrow.add_theme_constant_override("separation", 10)
 	rcard.add_child(rrow)
 
-	var b_no := CafeSocialTheme.make_button("رد", "crimson", Vector2(88, 44), 20)
+	var b_no := CafeSocialTheme.make_button("رد", "crimson", Vector2(96, 50), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 	b_no.pressed.connect(func():
 		b_no.disabled = true
 		NetworkManager.api.respond_clan_join_request(rid, "reject", func(ok: bool, _c: int, _d: Variant):
@@ -2126,7 +2140,7 @@ static func _build_join_request_card(host: Control, req: Dictionary) -> PanelCon
 	)
 	rrow.add_child(b_no)
 
-	var b_ok := CafeSocialTheme.make_button("پذیرش", "emerald", Vector2(110, 44), 20)
+	var b_ok := CafeSocialTheme.make_button("پذیرش", "emerald", Vector2(118, 50), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 	b_ok.pressed.connect(func():
 		b_ok.disabled = true
 		NetworkManager.api.respond_clan_join_request(rid, "accept", func(ok: bool, _c: int, _d: Variant):
@@ -2143,8 +2157,8 @@ static func _build_join_request_card(host: Control, req: Dictionary) -> PanelCon
 	var rcol := VBoxContainer.new()
 	rcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rrow.add_child(rcol)
-	rcol.add_child(CafeSocialTheme.make_title(str(ru.get("username", "بازیکن")), 24, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT))
-	rcol.add_child(CafeSocialTheme.make_body("امتیاز: %s" % GameManager.to_fa_num(int(ru.get("score", 0))), 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	rcol.add_child(CafeSocialTheme.make_title(str(ru.get("username", "بازیکن")), 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT))
+	rcol.add_child(CafeSocialTheme.make_body("امتیاز: %s" % GameManager.to_fa_num(int(ru.get("score", 0))), CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	rrow.add_child(CafeSocialTheme.make_avatar_badge(int(ru.get("image", 0)), int(ru.get("profile_frame", 1)), 60.0))
 	return rcard
@@ -2205,10 +2219,10 @@ static func _build_activity_entry_row(entry: Dictionary) -> HBoxContainer:
 		_:
 			text_desc = custom_msg if not custom_msg.is_empty() else "رویداد جدید در اتحاد ثبت شد"
 
-	var time_lbl := CafeSocialTheme.make_body(CafeSocialTheme.format_time_fa(str(entry.get("created_at", ""))), 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_LEFT, false)
+	var time_lbl := CafeSocialTheme.make_body(CafeSocialTheme.format_time_fa(str(entry.get("created_at", ""))), CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_LEFT, false)
 	h.add_child(time_lbl)
 
-	var d_lbl := CafeSocialTheme.make_body(text_desc, 18, act_col, HORIZONTAL_ALIGNMENT_RIGHT, true)
+	var d_lbl := CafeSocialTheme.make_body(text_desc, CafeSocialTheme.FONT_SIZE_SUBTITLE, act_col, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	d_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(d_lbl)
 
@@ -2267,21 +2281,21 @@ static func _build_clan_members_tab(host: Control, holder: VBoxContainer, cdict:
 	sum_row.add_theme_constant_override("separation", 10)
 	sum_bar.add_child(sum_row)
 
-	var lbl_contrib := CafeSocialTheme.make_body("مشارکت: %s" % GameManager.to_fa_num(total_contrib), 17, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var lbl_contrib := CafeSocialTheme.make_body("مشارکت: %s" % GameManager.to_fa_num(total_contrib), CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
 	sum_row.add_child(lbl_contrib)
-	sum_row.add_child(CafeSocialTheme.make_body("•", 15, CafeSocialTheme.COL_BRONZE_BORDER, HORIZONTAL_ALIGNMENT_CENTER, false))
+	sum_row.add_child(CafeSocialTheme.make_body("•", CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_BRONZE_BORDER, HORIZONTAL_ALIGNMENT_CENTER, false))
 
 	var on_row := HBoxContainer.new()
 	on_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	on_row.add_theme_constant_override("separation", 4)
-	var lbl_on_val := CafeSocialTheme.make_title(GameManager.to_fa_num(online_cnt), 18, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var lbl_on_val := CafeSocialTheme.make_title(GameManager.to_fa_num(online_cnt), CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false)
 	host._clan_members_online_val_lbl = lbl_on_val
 	on_row.add_child(lbl_on_val)
-	on_row.add_child(CafeSocialTheme.make_body("آنلاین:", 17, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
+	on_row.add_child(CafeSocialTheme.make_body("آنلاین:", CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
 	sum_row.add_child(on_row)
 
-	sum_row.add_child(CafeSocialTheme.make_body("•", 15, CafeSocialTheme.COL_BRONZE_BORDER, HORIZONTAL_ALIGNMENT_CENTER, false))
-	sum_row.add_child(CafeSocialTheme.make_body("اعضا: %s/%s" % [GameManager.to_fa_num(members.size()), GameManager.to_fa_num(max_cap)], 17, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false))
+	sum_row.add_child(CafeSocialTheme.make_body("•", CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_BRONZE_BORDER, HORIZONTAL_ALIGNMENT_CENTER, false))
+	sum_row.add_child(CafeSocialTheme.make_body("اعضا: %s/%s" % [GameManager.to_fa_num(members.size()), GameManager.to_fa_num(max_cap)], CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false))
 
 	# B. Search + Sort Cycle + 3 Clean Filter Chips (Zero horizontal overflow!)
 	var filter_card := PanelContainer.new()
@@ -2312,10 +2326,11 @@ static func _build_clan_members_tab(host: Control, holder: VBoxContainer, cdict:
 		"contrib": "مرتب‌سازی: مشارکت ▾",
 		"score": "مرتب‌سازی: امتیاز ▾",
 	}
-	var btn_sort := CafeSocialTheme.make_button(sort_labels["role"], "bronze", Vector2(168, 44), 17)
+	var btn_sort := CafeSocialTheme.make_button(sort_labels["role"], "bronze", Vector2(204, 52), CafeSocialTheme.FONT_SIZE_BADGE)
+	CafeSocialTheme.configure_single_line_tab(btn_sort, CafeSocialTheme.FONT_SIZE_BADGE, 52.0, 8.0)
 	search_row.add_child(btn_sort)
 
-	var search_input := CafeSocialTheme.make_line_edit("جستجوی نام عضو...", 44.0, 19)
+	var search_input := CafeSocialTheme.make_line_edit("جستجوی نام عضو...", 52.0, CafeSocialTheme.FONT_SIZE_BODY)
 	search_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	search_row.add_child(search_input)
 
@@ -2422,8 +2437,9 @@ static func _build_clan_members_tab(host: Control, holder: VBoxContainer, cdict:
 
 	for pd in pill_defs:
 		var pid: String = pd["id"]
-		var pb := CafeSocialTheme.make_button(pd["label"], "muted", Vector2(0, 38), 18)
+		var pb := CafeSocialTheme.make_button(pd["label"], "muted", Vector2(0, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 		pb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		CafeSocialTheme.configure_single_line_tab(pb, CafeSocialTheme.FONT_SIZE_BADGE, 48.0, 6.0)
 		pb.pressed.connect(func():
 			AudioManager.sfx_tap()
 			cur_filter[0] = pid
@@ -2432,6 +2448,10 @@ static func _build_clan_members_tab(host: Control, holder: VBoxContainer, cdict:
 		)
 		pill_buttons[pid] = pb
 		pills_row.add_child(pb)
+
+	var mem_bottom_pad := Control.new()
+	mem_bottom_pad.custom_minimum_size = Vector2(0, 36)
+	m_vbox.add_child(mem_bottom_pad)
 
 	search_input.text_changed.connect(func(_t: String): apply_filter_visibility.call())
 	update_pill_styles.call()
@@ -2495,7 +2515,7 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 	row.add_child(act_col)
 
 	if not is_self and bool(p_info.get("is_in_game", false)):
-		var b_spec := CafeSocialTheme.make_button("تماشا", "emerald", Vector2(74, 34), 16)
+		var b_spec := CafeSocialTheme.make_button("تماشا", "emerald", Vector2(90, 46), CafeSocialTheme.FONT_SIZE_BADGE)
 		b_spec.pressed.connect(func():
 			AudioManager.sfx_button()
 			NetworkManager.request_spectate_game(str(p_info.get("game_id", "")), m_uid)
@@ -2504,7 +2524,7 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 		act_col.add_child(b_spec)
 
 	if is_self:
-		act_col.add_child(CafeSocialTheme.make_badge_pill("شما", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 15))
+		act_col.add_child(CafeSocialTheme.make_badge_pill("شما", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 	elif can_manage:
 		var b_mgr := TextureButton.new()
 		b_mgr.custom_minimum_size = Vector2(38, 38)
@@ -2554,13 +2574,13 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 		CafeSocialTheme.COL_GOLD_BRIGHT if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_TEXT if m_role in ["co_leader", "elder"] else CafeSocialTheme.COL_MUTED_SAND),
 		Color(0.20, 0.13, 0.05) if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_BG if m_role in ["co_leader", "elder"] else Color(0.11, 0.08, 0.05)),
 		CafeSocialTheme.COL_GOLD_ANTIQUE if m_role == "leader" else (CafeSocialTheme.COL_EMERALD_BORDER if m_role in ["co_leader", "elder"] else CafeSocialTheme.COL_BRONZE_BORDER),
-		14
+		CafeSocialTheme.FONT_SIZE_BADGE
 	)
 	top_info_row.add_child(role_badge)
 
 	var nm_lbl := CafeSocialTheme.make_title(
 		m_name,
-		23,
+		26,
 		CafeSocialTheme.COL_GOLD_BRIGHT if m_role == "leader" else CafeSocialTheme.COL_IVORY,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		false
@@ -2571,22 +2591,24 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 	top_info_row.add_child(nm_lbl)
 
 	# Row 2: Contribution & Score
-	var meta_row := HBoxContainer.new()
-	meta_row.alignment = BoxContainer.ALIGNMENT_END
-	meta_row.add_theme_constant_override("separation", 6)
+	var meta_row := HFlowContainer.new()
+	meta_row.alignment = FlowContainer.ALIGNMENT_END
+	meta_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	meta_row.add_theme_constant_override("h_separation", 6)
+	meta_row.add_theme_constant_override("v_separation", 2)
 	col.add_child(meta_row)
 
-	var score_lbl := CafeSocialTheme.make_body("امتیاز: %s" % GameManager.to_fa_num(m_score), 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
-	var dot_lbl := CafeSocialTheme.make_body("•", 15, CafeSocialTheme.COL_BRONZE_BORDER, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var score_lbl := CafeSocialTheme.make_body("امتیاز: %s" % GameManager.to_fa_num(m_score), CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	var dot_lbl := CafeSocialTheme.make_body("•", CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_BRONZE_BORDER, HORIZONTAL_ALIGNMENT_CENTER, false)
 
 	var contrib_val_lbl := Label.new()
 	contrib_val_lbl.text = "+%s" % GameManager.to_fa_num(m_contrib)
 	contrib_val_lbl.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	contrib_val_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT if m_contrib > 0 else CafeSocialTheme.COL_MUTED_SAND)
-	contrib_val_lbl.add_theme_font_size_override("font_size", 16)
+	contrib_val_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 	contrib_val_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
 
-	var contrib_title_lbl := CafeSocialTheme.make_body("مشارکت:", 16, CafeSocialTheme.COL_GOLD_BRIGHT if m_contrib > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	var contrib_title_lbl := CafeSocialTheme.make_body("مشارکت:", CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_GOLD_BRIGHT if m_contrib > 0 else CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false)
 
 	meta_row.add_child(score_lbl)
 	meta_row.add_child(dot_lbl)
@@ -2647,17 +2669,17 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 	p_col.add_theme_constant_override("separation", 3)
 	top_h.add_child(p_col)
 
-	p_col.add_child(CafeSocialTheme.make_title(m_name, 28, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false))
+	p_col.add_child(CafeSocialTheme.make_title(m_name, 30, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false))
 	p_col.add_child(CafeSocialTheme.make_body("سمت: %s • مشارکت: %s • امتیاز: %s" % [
 		m_role_fa,
 		GameManager.to_fa_num(int(m_dict.get("weekly_contribution", 0))),
 		GameManager.to_fa_num(int(m_dict.get("score", 0)))
-	], 18, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
+	], CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	top_h.add_child(CafeSocialTheme.make_avatar_badge(int(m_dict.get("image", 0)), int(m_dict.get("profile_frame", 1)), 72.0))
 
 	# Action 1: View Profile
-	var b_prof := CafeSocialTheme.make_button("مشاهده پروفایل بازیکن", "gold", Vector2(0, 50), 22)
+	var b_prof := CafeSocialTheme.make_button("مشاهده پروفایل بازیکن", "gold", Vector2(0, 54), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 	b_prof.pressed.connect(func():
 		overlay.queue_free()
 		UserProfileDialog.show_user(m_dict, m_role_fa, host)
@@ -2666,7 +2688,7 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 
 	# Action 2: Direct Message (if not self)
 	if m_uid != my_uid:
-		var b_dm := CafeSocialTheme.make_button("ارسال پیام خصوصی", "emerald", Vector2(0, 50), 22)
+		var b_dm := CafeSocialTheme.make_button("ارسال پیام خصوصی", "emerald", Vector2(0, 54), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 		b_dm.pressed.connect(func():
 			overlay.queue_free()
 			host.open_direct_message_with(m_uid, m_name)
@@ -2676,7 +2698,7 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 		# Action 3: Invite to Game (disabled when offline)
 		var m_pres: Dictionary = m_dict.get("presence", {}) if typeof(m_dict.get("presence")) == TYPE_DICTIONARY else {}
 		var m_is_online := str(m_pres.get("status", m_dict.get("status", "offline"))) != "offline"
-		var b_inv := CafeSocialTheme.make_button("دعوت به بازی دوستانه", "bronze", Vector2(0, 50), 22)
+		var b_inv := CafeSocialTheme.make_button("دعوت به بازی دوستانه", "bronze", Vector2(0, 54), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 		if not m_is_online:
 			b_inv.disabled = true
 			b_inv.modulate = Color(0.55, 0.52, 0.48, 0.50)
@@ -2702,11 +2724,11 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 	if can_manage:
 		var sep := HSeparator.new()
 		vbox.add_child(sep)
-		vbox.add_child(CafeSocialTheme.make_body("اختیارات مدیریتی شما برای این عضو:", 18, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+		vbox.add_child(CafeSocialTheme.make_body("اختیارات مدیریتی شما برای این عضو:", CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
 
 		# Promote actions
 		if my_role in ["leader", "co_leader"] and m_role == "member":
-			var b_p1 := CafeSocialTheme.make_button("ارتقا به ارشد (Elder)", "sapphire", Vector2(0, 48), 21)
+			var b_p1 := CafeSocialTheme.make_button("ارتقا به ارشد (Elder)", "sapphire", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 			b_p1.pressed.connect(func():
 				NetworkManager.api.change_clan_member_role(m_uid, "elder", func(ok: bool, _c: int, _d: Variant):
 					overlay.queue_free()
@@ -2720,7 +2742,7 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 			)
 			vbox.add_child(b_p1)
 		elif my_role == "leader" and m_role == "elder":
-			var b_p2 := CafeSocialTheme.make_button("ارتقا به قائم‌مقام رهبر (Co-Leader)", "sapphire", Vector2(0, 48), 21)
+			var b_p2 := CafeSocialTheme.make_button("ارتقا به قائم‌مقام رهبر (Co-Leader)", "sapphire", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 			b_p2.pressed.connect(func():
 				NetworkManager.api.change_clan_member_role(m_uid, "co_leader", func(ok: bool, _c: int, _d: Variant):
 					overlay.queue_free()
@@ -2737,7 +2759,7 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 		# Demote actions
 		if my_role == "leader" and m_role in ["co_leader", "elder"]:
 			var target_r := "member" if m_role == "elder" else "elder"
-			var b_dem := CafeSocialTheme.make_button("تنزل درجه", "bronze", Vector2(0, 48), 21)
+			var b_dem := CafeSocialTheme.make_button("تنزل درجه", "bronze", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 			b_dem.pressed.connect(func():
 				NetworkManager.api.change_clan_member_role(m_uid, target_r, func(ok: bool, _c: int, _d: Variant):
 					overlay.queue_free()
@@ -2753,7 +2775,7 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 
 		# Transfer Leadership
 		if my_role == "leader":
-			var b_lead := CafeSocialTheme.make_button("انتقال رهبری اتحاد به این عضو", "gold", Vector2(0, 48), 21, CafeSocialTheme.ICO_KING)
+			var b_lead := CafeSocialTheme.make_button("انتقال رهبری اتحاد به این عضو", "gold", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT, CafeSocialTheme.ICO_KING)
 			b_lead.pressed.connect(func():
 				overlay.queue_free()
 				CafeSocialTheme.show_confirm_modal(
@@ -2774,7 +2796,7 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 			vbox.add_child(b_lead)
 
 		# Kick from clan
-		var b_kick := CafeSocialTheme.make_button("اخراج از اتحاد", "crimson", Vector2(0, 48), 21)
+		var b_kick := CafeSocialTheme.make_button("اخراج از اتحاد", "crimson", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 		b_kick.pressed.connect(func():
 			overlay.queue_free()
 			CafeSocialTheme.show_confirm_modal(
@@ -2794,7 +2816,7 @@ static func _open_member_interaction_sheet(host: Control, m_dict: Dictionary, my
 		)
 		vbox.add_child(b_kick)
 
-	var b_close := CafeSocialTheme.make_button("بستن", "muted", Vector2(0, 46), 20)
+	var b_close := CafeSocialTheme.make_button("بستن", "muted", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 	b_close.pressed.connect(func(): overlay.queue_free())
 	vbox.add_child(b_close)
 
@@ -2851,17 +2873,17 @@ static func _build_no_clan_overview(host: Control, holder: VBoxContainer) -> voi
 	hero.add_child(hv)
 
 	hv.add_child(CafeSocialTheme.make_clan_emblem(1, 88.0))
-	hv.add_child(CafeSocialTheme.make_title("به یک اتحاد بپیوندید یا اتحاد خودتان را بسازید!", 29, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	hv.add_child(CafeSocialTheme.make_title("به یک اتحاد بپیوندید یا اتحاد خودتان را بسازید!", 32, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
 	hv.add_child(CafeSocialTheme.make_body(
 		"در اتحادهای کافه فکر می‌توانید با دوستان خود چت کنید، چالش‌های هفتگی را فتح کرده و پاداش بگیرید، مسابقات دوستانه بسازید و نام اتحاد خود را در صدر جدول قهرمانان ثبت کنید.",
-		20, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true
+		CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true
 	))
 	hv.add_child(CafeSocialTheme.make_badge_pill(
 		"تاسیس اتحاد رایگان است • سهمیه: ۱ اتحاد",
 		CafeSocialTheme.COL_EMERALD_TEXT,
 		CafeSocialTheme.COL_EMERALD_BG,
 		CafeSocialTheme.COL_EMERALD_BORDER,
-		17
+		CafeSocialTheme.FONT_SIZE_BADGE
 	))
 
 	var btn_row := HBoxContainer.new()
@@ -2869,21 +2891,27 @@ static func _build_no_clan_overview(host: Control, holder: VBoxContainer) -> voi
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	hv.add_child(btn_row)
 
-	var b_search := CafeSocialTheme.make_button("جستجوی اتحادها", "emerald", Vector2(0, 50), 20)
+	var b_search := CafeSocialTheme.make_button("جستجوی اتحادها", "emerald", Vector2(0, 56), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 	b_search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CafeSocialTheme.configure_single_line_tab(b_search, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 56.0, 8.0)
 	b_search.pressed.connect(func():
 		AudioManager.sfx_tap()
 		switch_subtab_in_place(host, "discover")
 	)
 	btn_row.add_child(b_search)
 
-	var b_create := CafeSocialTheme.make_button("تاسیس اتحاد (رایگان)", "gold", Vector2(0, 50), 20)
+	var b_create := CafeSocialTheme.make_button("تاسیس اتحاد (رایگان)", "gold", Vector2(0, 56), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 	b_create.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CafeSocialTheme.configure_single_line_tab(b_create, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 56.0, 8.0)
 	b_create.pressed.connect(func():
 		AudioManager.sfx_button()
 		open_clan_create_modal(host)
 	)
 	btn_row.add_child(b_create)
+
+	var nc_bottom_pad := Control.new()
+	nc_bottom_pad.custom_minimum_size = Vector2(0, 36)
+	vbox.add_child(nc_bottom_pad)
 
 
 static func _build_incoming_invitation_card(host: Control, inv: Dictionary) -> PanelContainer:
@@ -2910,7 +2938,7 @@ static func _build_incoming_invitation_card(host: Control, inv: Dictionary) -> P
 	irow.add_theme_constant_override("separation", 10)
 	icard.add_child(irow)
 
-	var b_rej := CafeSocialTheme.make_button("رد", "crimson", Vector2(88, 46), 20)
+	var b_rej := CafeSocialTheme.make_button("رد", "crimson", Vector2(96, 50), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 	b_rej.pressed.connect(func():
 		AudioManager.sfx_tap()
 		NetworkManager.api.respond_clan_invitation(inv_id, "reject", func(_ok: bool, _c: int, _d: Variant):
@@ -2922,7 +2950,7 @@ static func _build_incoming_invitation_card(host: Control, inv: Dictionary) -> P
 	)
 	irow.add_child(b_rej)
 
-	var b_acc := CafeSocialTheme.make_button("پذیرش", "emerald", Vector2(110, 46), 20)
+	var b_acc := CafeSocialTheme.make_button("پذیرش", "emerald", Vector2(118, 50), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 	b_acc.pressed.connect(func():
 		AudioManager.sfx_button()
 		NetworkManager.api.respond_clan_invitation(inv_id, "accept", func(ok: bool, _c: int, d: Variant):
@@ -2943,11 +2971,11 @@ static func _build_incoming_invitation_card(host: Control, inv: Dictionary) -> P
 	ic_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ic_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	irow.add_child(ic_col)
-	ic_col.add_child(CafeSocialTheme.make_title("%s  [%s]" % [cname, ctag], 25, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT))
+	ic_col.add_child(CafeSocialTheme.make_title("%s  [%s]" % [cname, ctag], 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT))
 	ic_col.add_child(CafeSocialTheme.make_body("سطح %s • %s عضو" % [
 		GameManager.to_fa_num(int(c_sub.get("clan_level", 1))),
 		GameManager.to_fa_num(int(c_sub.get("member_count", 1)))
-	], 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT))
+	], CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT))
 
 	irow.add_child(CafeSocialTheme.make_clan_emblem(emb, 60.0))
 	return icard
@@ -2959,16 +2987,18 @@ static func _build_clan_discover_view(host: Control, holder: VBoxContainer) -> v
 	holder.add_child(mode_row)
 
 	var is_lb: bool = (str(host.current_clans_subtab) == "leaderboard")
-	var btn_dir := CafeSocialTheme.make_button("جستجوی اتحادها", "gold" if not is_lb else "muted", Vector2(0, 44), 20)
+	var btn_dir := CafeSocialTheme.make_button("جستجوی اتحادها", "gold" if not is_lb else "muted", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 	btn_dir.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CafeSocialTheme.configure_single_line_tab(btn_dir, CafeSocialTheme.FONT_SIZE_TAB_LABEL, 52.0, 8.0)
 	btn_dir.pressed.connect(func():
 		AudioManager.sfx_tap()
 		switch_subtab_in_place(host, "discover")
 	)
 	mode_row.add_child(btn_dir)
 
-	var btn_lb := CafeSocialTheme.make_button("برترین اتحادها", "gold" if is_lb else "muted", Vector2(0, 44), 20)
+	var btn_lb := CafeSocialTheme.make_button("برترین اتحادها", "gold" if is_lb else "muted", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 	btn_lb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CafeSocialTheme.configure_single_line_tab(btn_lb, CafeSocialTheme.FONT_SIZE_TAB_LABEL, 52.0, 8.0)
 	btn_lb.pressed.connect(func():
 		AudioManager.sfx_tap()
 		switch_subtab_in_place(host, "leaderboard")
@@ -3003,10 +3033,10 @@ static func _build_clan_search_inner(host: Control, holder: VBoxContainer) -> vo
 	s_row.add_theme_constant_override("separation", 8)
 	sv.add_child(s_row)
 
-	var btn_s := CafeSocialTheme.make_button("جستجو", "gold", Vector2(110, 52), 22)
+	var btn_s := CafeSocialTheme.make_button("جستجو", "gold", Vector2(118, 54), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 	s_row.add_child(btn_s)
 
-	var inp := CafeSocialTheme.make_line_edit("جستجوی نام یا تگ اتحاد (مثلاً CAFE#)...", 52.0, 21)
+	var inp := CafeSocialTheme.make_line_edit("جستجوی نام یا تگ اتحاد (مثلاً CAFE#)...", 54.0, CafeSocialTheme.FONT_SIZE_BODY)
 	inp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	s_row.add_child(inp)
 
@@ -3041,6 +3071,9 @@ static func _build_clan_search_inner(host: Control, holder: VBoxContainer) -> vo
 		for cl in arr:
 			if typeof(cl) == TYPE_DICTIONARY:
 				res_vbox.add_child(_build_clan_directory_card(host, cl))
+		var sr_pad := Control.new()
+		sr_pad.custom_minimum_size = Vector2(0, 36)
+		res_vbox.add_child(sr_pad)
 
 	var do_search := func(force_refresh: bool = false):
 		var q_str := inp.text.strip_edges()
@@ -3081,8 +3114,9 @@ static func _build_clan_search_inner(host: Control, holder: VBoxContainer) -> vo
 
 	for fd in f_defs:
 		var fid: String = fd["id"]
-		var fb := CafeSocialTheme.make_button(fd["label"], "muted", Vector2(0, 40), 19)
+		var fb := CafeSocialTheme.make_button(fd["label"], "muted", Vector2(0, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 		fb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		CafeSocialTheme.configure_single_line_tab(fb, CafeSocialTheme.FONT_SIZE_BADGE, 48.0, 6.0)
 		fb.pressed.connect(func():
 			AudioManager.sfx_tap()
 			filter_jt[0] = fid
@@ -3162,22 +3196,22 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 	left_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	left_col.add_theme_constant_override("separation", 4)
 	row.add_child(left_col)
-	left_col.add_child(CafeSocialTheme.make_badge_pill("امتیاز %s" % GameManager.to_fa_num(cscore), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 16))
-	left_col.add_child(CafeSocialTheme.make_badge_pill("%s/%s عضو" % [GameManager.to_fa_num(mem_cnt), GameManager.to_fa_num(max_mem)], CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 15))
+	left_col.add_child(CafeSocialTheme.make_badge_pill("امتیاز %s" % GameManager.to_fa_num(cscore), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, CafeSocialTheme.FONT_SIZE_BADGE))
+	left_col.add_child(CafeSocialTheme.make_badge_pill("%s/%s عضو" % [GameManager.to_fa_num(mem_cnt), GameManager.to_fa_num(max_mem)], CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 
-	# Center info
+	# Center info (Preserve clip_text = false + SIZE_EXPAND_FILL for clan leaderboard names!)
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
-	info.add_theme_constant_override("separation", 2)
+	info.add_theme_constant_override("separation", 4)
 	row.add_child(info)
 
 	var title_col := CafeSocialTheme.COL_GOLD_BRIGHT if rank_num == 1 else (Color(0.92, 0.94, 0.98) if rank_num == 2 else (Color(0.96, 0.76, 0.54) if rank_num == 3 else CafeSocialTheme.COL_IVORY))
-	var title_lbl := CafeSocialTheme.make_title("%s  [%s]" % [cname, ctag], 24, title_col, HORIZONTAL_ALIGNMENT_RIGHT, false)
-	title_lbl.clip_text = true
-	title_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var title_lbl := CafeSocialTheme.make_title("%s  [%s]" % [cname, ctag], 26, title_col, HORIZONTAL_ALIGNMENT_RIGHT, true)
+	title_lbl.clip_text = false
+	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.add_child(title_lbl)
-	info.add_child(CafeSocialTheme.make_body("سطح %s  •  عضویت: %s" % [GameManager.to_fa_num(lvl), jtype_fa], 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
+	info.add_child(CafeSocialTheme.make_body("سطح %s  •  عضویت: %s" % [GameManager.to_fa_num(lvl), jtype_fa], CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	row.add_child(CafeSocialTheme.make_clan_emblem(emb_id, 56.0))
 
@@ -3191,7 +3225,7 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 		medal_ico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		row.add_child(medal_ico)
 	elif rank_num > 3:
-		row.add_child(CafeSocialTheme.make_badge_pill("#%s" % GameManager.to_fa_num(rank_num), CafeSocialTheme.COL_MUTED_SAND, Color(0.11, 0.07, 0.04), CafeSocialTheme.COL_BRONZE_BORDER, 16))
+		row.add_child(CafeSocialTheme.make_badge_pill("#%s" % GameManager.to_fa_num(rank_num), CafeSocialTheme.COL_MUTED_SAND, Color(0.11, 0.07, 0.04), CafeSocialTheme.COL_BRONZE_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 
 	var viewer_has_clan := _check_user_has_clan(host)
 	var my_cid := _get_my_clan_id(host)
@@ -3200,17 +3234,17 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 	if is_my_clan:
 		var mine_row := HBoxContainer.new()
 		mine_row.alignment = BoxContainer.ALIGNMENT_CENTER
-		mine_row.add_child(CafeSocialTheme.make_badge_pill("★ اتحاد شما", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 17))
+		mine_row.add_child(CafeSocialTheme.make_badge_pill("★ اتحاد شما", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 		root.add_child(mine_row)
 	elif viewer_has_clan:
-		var b_view := CafeSocialTheme.make_button("مشاهده جزئیات اتحاد", "muted", Vector2(0, 38), 18)
+		var b_view := CafeSocialTheme.make_button("مشاهده جزئیات اتحاد", "muted", Vector2(0, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 		b_view.pressed.connect(func():
 			AudioManager.sfx_tap()
 			CafeSocialTheme.show_clan_details_modal(host, cid, cl)
 		)
 		root.add_child(b_view)
 	else:
-		var b_join := CafeSocialTheme.make_button("عضویت در اتحاد" if jtype == "open" else "ارسال درخواست عضویت", "emerald" if jtype == "open" else "bronze", Vector2(0, 42), 19)
+		var b_join := CafeSocialTheme.make_button("عضویت در اتحاد" if jtype == "open" else "ارسال درخواست عضویت", "emerald" if jtype == "open" else "bronze", Vector2(0, 50), CafeSocialTheme.FONT_SIZE_BADGE)
 		b_join.pressed.connect(func():
 			AudioManager.sfx_button()
 			b_join.disabled = true
@@ -3336,13 +3370,13 @@ static func _build_clan_leaderboard_inner(host: Control, holder: VBoxContainer) 
 		sticky.add_child(sh)
 
 		var my_score := int(cdict.get("weekly_score" if host.current_clan_lb_mode == "clans_weekly" else "clan_score", 0))
-		sh.add_child(CafeSocialTheme.make_badge_pill("امتیاز: %s" % GameManager.to_fa_num(my_score), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 16))
-		sticky_rank_lbl = CafeSocialTheme.make_title("رتبه اتحاد شما (%s): در حال بررسی..." % str(cdict.get("name", "اتحاد من")), 19, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+		sh.add_child(CafeSocialTheme.make_badge_pill("امتیاز: %s" % GameManager.to_fa_num(my_score), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, CafeSocialTheme.FONT_SIZE_BADGE))
+		sticky_rank_lbl = CafeSocialTheme.make_title("رتبه اتحاد شما (%s): در حال بررسی..." % str(cdict.get("name", "اتحاد من")), CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 		sticky_rank_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sticky_rank_lbl.clip_text = true
 		sticky_rank_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		sh.add_child(sticky_rank_lbl)
-		sh.add_child(CafeSocialTheme.make_clan_emblem(int(cdict.get("emblem_id", 1)), 34.0))
+		sh.add_child(CafeSocialTheme.make_clan_emblem(int(cdict.get("emblem_id", 1)), 36.0))
 
 	var render_lb := func(arr: Array):
 		if not is_instance_valid(lb_vbox):
@@ -3367,6 +3401,9 @@ static func _build_clan_leaderboard_inner(host: Control, holder: VBoxContainer) 
 				if not my_cid.is_empty() and icid == my_cid:
 					my_found_rank = rnk
 				lb_vbox.add_child(_build_clan_directory_card(host, item, rnk))
+		var lb_pad := Control.new()
+		lb_pad.custom_minimum_size = Vector2(0, 36)
+		lb_vbox.add_child(lb_pad)
 		if is_instance_valid(sticky_rank_lbl):
 			var cdict2: Dictionary = host._my_clan_data.get("clan", {}) if typeof(host._my_clan_data.get("clan")) == TYPE_DICTIONARY else {}
 			var cname2 := str(cdict2.get("name", "اتحاد شما"))
@@ -3414,11 +3451,11 @@ static func _build_challenge_action_row(host: Control, meta: Dictionary, my_uid:
 	act_row.add_theme_constant_override("separation", 8)
 
 	if chal_status == "closed":
-		act_row.add_child(CafeSocialTheme.make_badge_pill("چالش بسته شد", CafeSocialTheme.COL_CRIMSON_TEXT, Color(0.22, 0.06, 0.06, 0.94), CafeSocialTheme.COL_CRIMSON_BORDER, 17))
+		act_row.add_child(CafeSocialTheme.make_badge_pill("چالش بسته شد", CafeSocialTheme.COL_CRIMSON_TEXT, Color(0.22, 0.06, 0.06, 0.94), CafeSocialTheme.COL_CRIMSON_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 		return act_row
 
 	if chal_status == "started":
-		act_row.add_child(CafeSocialTheme.make_badge_pill("مسابقه شروع شد", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 17))
+		act_row.add_child(CafeSocialTheme.make_badge_pill("مسابقه شروع شد", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 		return act_row
 
 	var already_joined: bool = false
@@ -3435,12 +3472,12 @@ static func _build_challenge_action_row(host: Control, meta: Dictionary, my_uid:
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		Color(0.18, 0.12, 0.04),
 		CafeSocialTheme.COL_GOLD_ANTIQUE,
-		17
+		CafeSocialTheme.FONT_SIZE_BADGE
 	))
 
 	var can_close: bool = (not ch_id.is_empty()) and (chal_creator == my_uid or my_role in ["leader", "co_leader"])
 	if can_close:
-		var b_close := CafeSocialTheme.make_button("بستن چالش", "crimson", Vector2(110, 40), 18)
+		var b_close := CafeSocialTheme.make_button("بستن چالش", "crimson", Vector2(130, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 		b_close.pressed.connect(func():
 			AudioManager.sfx_tap()
 			b_close.disabled = true
@@ -3466,7 +3503,7 @@ static func _build_challenge_action_row(host: Control, meta: Dictionary, my_uid:
 			CafeSocialTheme.COL_EMERALD_TEXT,
 			CafeSocialTheme.COL_EMERALD_BG,
 			CafeSocialTheme.COL_EMERALD_BORDER,
-			17
+			CafeSocialTheme.FONT_SIZE_BADGE
 		))
 		# Auto-trigger start
 		NetworkManager.start_clan_challenge_realtime(ch_id)
@@ -3482,7 +3519,7 @@ static func _build_challenge_action_row(host: Control, meta: Dictionary, my_uid:
 					)
 			)
 	elif not ch_id.is_empty() and chal_creator == my_uid and cur_players >= 2 and cur_players < p_count:
-		var b_start := CafeSocialTheme.make_button("شروع زودهنگام", "emerald", Vector2(120, 40), 19)
+		var b_start := CafeSocialTheme.make_button("شروع زودهنگام", "emerald", Vector2(146, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 		b_start.pressed.connect(func():
 			AudioManager.sfx_button()
 			b_start.disabled = true
@@ -3492,7 +3529,7 @@ static func _build_challenge_action_row(host: Control, meta: Dictionary, my_uid:
 		act_row.add_child(b_start)
 
 	if not already_joined and cur_players < p_count:
-		var b_acc := CafeSocialTheme.make_button("پیوستن به چالش", "emerald", Vector2(130, 40), 19)
+		var b_acc := CafeSocialTheme.make_button("پیوستن به چالش", "emerald", Vector2(154, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 		b_acc.pressed.connect(func():
 			AudioManager.sfx_button()
 			b_acc.disabled = true
@@ -3524,7 +3561,7 @@ static func _build_challenge_action_row(host: Control, meta: Dictionary, my_uid:
 		)
 		act_row.add_child(b_acc)
 	elif already_joined and cur_players < p_count and chal_creator != my_uid:
-		act_row.add_child(CafeSocialTheme.make_badge_pill("در انتظار هم‌تیمی‌ها", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 17))
+		act_row.add_child(CafeSocialTheme.make_badge_pill("در انتظار هم‌تیمی‌ها", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 
 	return act_row
 
@@ -3564,8 +3601,8 @@ static func _build_overview_challenge_card(host: Control, chal: Dictionary, my_u
 	info.add_theme_constant_override("separation", 2)
 	top.add_child(info)
 
-	info.add_child(CafeSocialTheme.make_title("چالش دوستانه %s (%s نفره)" % [gt_fa, GameManager.to_fa_num(p_count)], 24, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
-	info.add_child(CafeSocialTheme.make_body("ایجاد شده توسط %s" % creator_name, 18, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	info.add_child(CafeSocialTheme.make_title("چالش دوستانه %s (%s نفره)" % [gt_fa, GameManager.to_fa_num(p_count)], 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true))
+	info.add_child(CafeSocialTheme.make_body("ایجاد شده توسط %s" % creator_name, CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 	var thumb_tex := CafeSocialTheme.get_game_thumb(gt)
 	if thumb_tex != null:
@@ -3611,10 +3648,10 @@ static func open_clan_create_modal(host: Control) -> void:
 	sp.custom_minimum_size = Vector2(44, 44)
 	top.add_child(sp)
 
-	vbox.add_child(CafeSocialTheme.make_badge_pill("ساخت اتحاد رایگان است • سهمیه هر بازیکن: ۱ اتحاد", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, 17))
+	vbox.add_child(CafeSocialTheme.make_badge_pill("ساخت اتحاد رایگان است • سهمیه هر بازیکن: ۱ اتحاد", CafeSocialTheme.COL_EMERALD_TEXT, CafeSocialTheme.COL_EMERALD_BG, CafeSocialTheme.COL_EMERALD_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 
 	# Emblem Picker
-	vbox.add_child(CafeSocialTheme.make_body("نشان (لوگو) اتحاد را انتخاب کنید:", 19, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
+	vbox.add_child(CafeSocialTheme.make_body("نشان (لوگو) اتحاد را انتخاب کنید:", CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT))
 	var selected_emblem := [1]
 	var emb_center := CenterContainer.new()
 	emb_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -3658,13 +3695,13 @@ static func open_clan_create_modal(host: Control) -> void:
 		emb_grid.add_child(eb)
 	update_emb_sel.call()
 
-	var inp_name := CafeSocialTheme.make_line_edit("نام اتحاد (۳ تا ۲۴ حرف، مثلاً: عقاب‌های کافه فکر)", 56.0, 23)
+	var inp_name := CafeSocialTheme.make_line_edit("نام اتحاد (۳ تا ۲۴ حرف، مثلاً: عقاب‌های کافه فکر)", 58.0, CafeSocialTheme.FONT_SIZE_BODY)
 	vbox.add_child(inp_name)
 
-	var inp_tag := CafeSocialTheme.make_line_edit("تگ یکتای اتحاد (۲ تا ۱۰ حرف یا عدد، مثلاً: CAFE1)", 56.0, 23)
+	var inp_tag := CafeSocialTheme.make_line_edit("تگ یکتای اتحاد (۲ تا ۱۰ حرف یا عدد، مثلاً: CAFE1)", 58.0, CafeSocialTheme.FONT_SIZE_BODY)
 	vbox.add_child(inp_tag)
 
-	var inp_desc := CafeSocialTheme.make_line_edit("معرفی کوتاه و قوانین اتحاد (اختیاری)...", 56.0, 21)
+	var inp_desc := CafeSocialTheme.make_line_edit("معرفی کوتاه و قوانین اتحاد (اختیاری)...", 58.0, CafeSocialTheme.FONT_SIZE_SUBTITLE)
 	vbox.add_child(inp_desc)
 
 	var join_type_val := ["open"]
@@ -3672,9 +3709,9 @@ static func open_clan_create_modal(host: Control) -> void:
 	jt_row.add_theme_constant_override("separation", 8)
 	vbox.add_child(jt_row)
 
-	var b_jt_req := CafeSocialTheme.make_button("نیازمند تایید", "muted", Vector2(0, 48), 21)
+	var b_jt_req := CafeSocialTheme.make_button("نیازمند تایید", "muted", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 	b_jt_req.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var b_jt_open := CafeSocialTheme.make_button("عضویت آزاد", "emerald", Vector2(0, 48), 21)
+	var b_jt_open := CafeSocialTheme.make_button("عضویت آزاد", "emerald", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 	b_jt_open.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var refresh_jt := func():
@@ -3692,16 +3729,16 @@ static func open_clan_create_modal(host: Control) -> void:
 	)
 	jt_row.add_child(b_jt_req)
 	jt_row.add_child(b_jt_open)
-	jt_row.add_child(CafeSocialTheme.make_body("نوع عضویت:", 21, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
+	jt_row.add_child(CafeSocialTheme.make_body("نوع عضویت:", CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
 
 	var err_panel := PanelContainer.new()
 	err_panel.visible = false
 	err_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_card_style(Color(0.28, 0.08, 0.08, 0.96), CafeSocialTheme.COL_CRIMSON_TEXT, 12, 1, 10.0, 6.0))
-	var err_lbl := CafeSocialTheme.make_body("", 20, CafeSocialTheme.COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	var err_lbl := CafeSocialTheme.make_body("", CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_CENTER, true)
 	err_panel.add_child(err_lbl)
 	vbox.add_child(err_panel)
 
-	var b_submit := CafeSocialTheme.make_button("تاسیس اتحاد (رایگان)", "gold", Vector2(0, 58), 25, CafeSocialTheme.ICO_CHECK, true)
+	var b_submit := CafeSocialTheme.make_button("تاسیس اتحاد (رایگان)", "gold", Vector2(0, 60), CafeSocialTheme.FONT_SIZE_TAB_LABEL, CafeSocialTheme.ICO_CHECK, true)
 	b_submit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_submit.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -3760,9 +3797,9 @@ static func _open_clan_settings_modal(host: Control, cdict: Dictionary) -> void:
 	var card: PanelContainer = m_res["card"]
 	var vbox: VBoxContainer = m_res["vbox"]
 
-	vbox.add_child(CafeSocialTheme.make_title("تنظیمات اتحاد %s" % str(cdict.get("name", "")), 26, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(CafeSocialTheme.make_title("تنظیمات اتحاد %s" % str(cdict.get("name", "")), 30, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
 
-	var inp_desc := CafeSocialTheme.make_line_edit("توضیحات و قوانین اتحاد...", 52.0, 21)
+	var inp_desc := CafeSocialTheme.make_line_edit("توضیحات و قوانین اتحاد...", 56.0, CafeSocialTheme.FONT_SIZE_BODY)
 	inp_desc.text = str(cdict.get("description", ""))
 	vbox.add_child(inp_desc)
 
@@ -3784,7 +3821,7 @@ static func _open_clan_settings_modal(host: Control, cdict: Dictionary) -> void:
 
 	for jd in jt_defs:
 		var jid: String = jd["id"]
-		var jb := CafeSocialTheme.make_button(jd["label"], "muted", Vector2(0, 46), 21)
+		var jb := CafeSocialTheme.make_button(jd["label"], "muted", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 		jb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		jb.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -3799,12 +3836,12 @@ static func _open_clan_settings_modal(host: Control, cdict: Dictionary) -> void:
 	btn_row.add_theme_constant_override("separation", 12)
 	vbox.add_child(btn_row)
 
-	var b_cancel := CafeSocialTheme.make_button("بستن", "bronze", Vector2(0, 52), 22)
+	var b_cancel := CafeSocialTheme.make_button("بستن", "bronze", Vector2(0, 54), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 	b_cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_cancel.pressed.connect(func(): overlay.queue_free())
 	btn_row.add_child(b_cancel)
 
-	var b_save := CafeSocialTheme.make_button("ذخیره تغییرات", "emerald", Vector2(0, 52), 22, CafeSocialTheme.ICO_CHECK)
+	var b_save := CafeSocialTheme.make_button("ذخیره تغییرات", "emerald", Vector2(0, 54), CafeSocialTheme.FONT_SIZE_TAB_LABEL, CafeSocialTheme.ICO_CHECK)
 	b_save.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_save.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -3829,12 +3866,12 @@ static func _open_clan_settings_modal(host: Control, cdict: Dictionary) -> void:
 	vbox.add_child(dz_sep)
 
 	var my_role := str(cdict.get("my_role", "member"))
-	var dz_lbl := CafeSocialTheme.make_body("ناحیه خطر", 17, CafeSocialTheme.COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	var dz_lbl := CafeSocialTheme.make_body("ناحیه خطر", CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	vbox.add_child(dz_lbl)
 
 	var b_danger := CafeSocialTheme.make_button(
 		"انحلال کامل اتحاد" if my_role == "leader" else "خروج از اتحاد",
-		"crimson", Vector2(0, 46), 20
+		"crimson", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT
 	)
 	b_danger.pressed.connect(func():
 		AudioManager.sfx_tap()
@@ -3867,7 +3904,7 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 	)
 	top.add_child(bx)
 
-	var ttl := CafeSocialTheme.make_title("ایجاد چالش دوستانه در اتحاد", 26, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
+	var ttl := CafeSocialTheme.make_title("ایجاد چالش دوستانه در اتحاد", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(ttl)
 
@@ -3875,10 +3912,10 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 	sp.custom_minimum_size = Vector2(44, 44)
 	top.add_child(sp)
 
-	vbox.add_child(CafeSocialTheme.make_body("بازی مورد نظر و تعداد بازیکنان را انتخاب کنید:", 18, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(CafeSocialTheme.make_body("بازی مورد نظر و تعداد بازیکنان را انتخاب کنید:", CafeSocialTheme.FONT_SIZE_SUBTITLE, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	# Quick Search & Game Category Filter Chips
-	var g_search := CafeSocialTheme.make_line_edit("جستجوی نام بازی...", 42.0, 18)
+	var g_search := CafeSocialTheme.make_line_edit("جستجوی نام بازی...", 52.0, CafeSocialTheme.FONT_SIZE_BODY)
 	vbox.add_child(g_search)
 
 	var g_filter_row := HBoxContainer.new()
@@ -3932,8 +3969,9 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 
 	for gfd in [{"id": "duo", "label": "دونفره"}, {"id": "multi", "label": "چندنفره"}, {"id": "all", "label": "همه بازی‌ها"}]:
 		var gfid: String = gfd["id"]
-		var fb := CafeSocialTheme.make_button(gfd["label"], "muted", Vector2(0, 36), 17)
+		var fb := CafeSocialTheme.make_button(gfd["label"], "muted", Vector2(0, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 		fb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		CafeSocialTheme.configure_single_line_tab(fb, CafeSocialTheme.FONT_SIZE_BADGE, 48.0, 6.0)
 		fb.pressed.connect(func():
 			AudioManager.sfx_tap()
 			g_filter[0] = gfid
@@ -3947,7 +3985,7 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 
 	# Player count selector panel
 	var pcount_panel := PanelContainer.new()
-	pcount_panel.custom_minimum_size = Vector2(0, 72)
+	pcount_panel.custom_minimum_size = Vector2(0, 76)
 	var pc_sb := StyleBoxFlat.new()
 	pc_sb.bg_color = Color(0.12, 0.08, 0.04, 0.95)
 	pc_sb.border_color = Color(0.50, 0.38, 0.20, 0.65)
@@ -3968,7 +4006,7 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 	p_btns_row.add_theme_constant_override("separation", 8)
 	pcount_row.add_child(p_btns_row)
 
-	var p_lbl := CafeSocialTheme.make_title("تعداد بازیکنان:", 22, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT)
+	var p_lbl := CafeSocialTheme.make_title("تعداد بازیکنان:", CafeSocialTheme.FONT_SIZE_TAB_COMPACT, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT)
 	pcount_row.add_child(p_lbl)
 
 	var refresh_pcount_ui := func():
@@ -3995,8 +4033,9 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 	var cnt_labels: Dictionary = {2: "۲ نفره", 3: "۳ نفره", 4: "۴ نفره"}
 	for cnt in [2, 3, 4]:
 		var chosen_cnt: int = int(cnt)
-		var pb := CafeSocialTheme.make_button(str(cnt_labels[cnt]), "muted", Vector2(0, 44), 21)
+		var pb := CafeSocialTheme.make_button(str(cnt_labels[cnt]), "muted", Vector2(0, 48), CafeSocialTheme.FONT_SIZE_BADGE)
 		pb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		CafeSocialTheme.configure_single_line_tab(pb, CafeSocialTheme.FONT_SIZE_BADGE, 48.0, 4.0)
 		pb.pressed.connect(func():
 			AudioManager.sfx_tap()
 			selected_pcount[0] = chosen_cnt
@@ -4011,7 +4050,7 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 		var is_multi_g: bool = GameRegistry.is_multiplayer_game(g_str)
 
 		var gbtn := Button.new()
-		gbtn.custom_minimum_size = Vector2(0, 96)
+		gbtn.custom_minimum_size = Vector2(0, 108)
 		gbtn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		gbtn.focus_mode = Control.FOCUS_NONE
 		gbtn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -4034,10 +4073,10 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 		g_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		g_info.alignment = BoxContainer.ALIGNMENT_CENTER
 		g_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		g_info.add_theme_constant_override("separation", 2)
+		g_info.add_theme_constant_override("separation", 4)
 		h.add_child(g_info)
 
-		var g_lbl := CafeSocialTheme.make_title(g_title, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+		var g_lbl := CafeSocialTheme.make_title(g_title, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 		g_lbl.clip_text = true
 		g_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		g_info.add_child(g_lbl)
@@ -4047,7 +4086,7 @@ static func _open_friendly_challenge_modal(host: Control) -> void:
 			CafeSocialTheme.COL_GOLD_BRIGHT if is_multi_g else CafeSocialTheme.COL_MUTED_SAND,
 			Color(0.14, 0.09, 0.04),
 			CafeSocialTheme.COL_GOLD_ANTIQUE if is_multi_g else CafeSocialTheme.COL_BRONZE_BORDER,
-			15
+			CafeSocialTheme.FONT_SIZE_BADGE
 		)
 		p_badge.size_flags_horizontal = Control.SIZE_SHRINK_END
 		g_info.add_child(p_badge)

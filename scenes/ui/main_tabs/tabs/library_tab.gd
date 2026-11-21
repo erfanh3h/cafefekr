@@ -57,6 +57,15 @@ func _ready() -> void:
 		_populate_grid()
 	)
 
+	var lbl_title := get_node_or_null("OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/HeaderRow/LblTitle") as Label
+	if is_instance_valid(lbl_title):
+		lbl_title.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		lbl_title.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_SCREEN_TITLE)
+		CafeSocialTheme.apply_wood_text_shadow(lbl_title, 3)
+	if is_instance_valid(detail_title):
+		detail_title.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		detail_title.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_CARD_TITLE)
+
 	show_browse_view()
 
 
@@ -108,7 +117,7 @@ func _build_category_buttons() -> void:
 		var cid: String = cat["id"]
 		var btn := Button.new()
 		btn.text = cat["label"]
-		btn.custom_minimum_size = Vector2(110, 44)
+		btn.custom_minimum_size = Vector2(124, 56)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		ActionVFXManager.apply_button_juice(btn, "tap_button")
@@ -134,7 +143,8 @@ func _update_filter_button_styles() -> void:
 			b.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
 		else:
 			KenneyUI.style_button(b, KenneyUI.COLOR_GREY)
-			b.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+			b.add_theme_color_override("font_color", Color(0.92, 0.88, 0.80, 0.92))
+		CafeSocialTheme.configure_single_line_tab(b, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 56.0, 14.0)
 
 
 func _populate_grid() -> void:
@@ -158,10 +168,15 @@ func _populate_grid() -> void:
 		var card = _create_game_card(g)
 		grid_container.add_child(card)
 
+	var bottom_pad := Control.new()
+	bottom_pad.custom_minimum_size = Vector2(0, 36)
+	bottom_pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grid_container.add_child(bottom_pad)
+
 
 func _create_game_card(g: Dictionary) -> PanelContainer:
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(0, 140)
+	card.custom_minimum_size = Vector2(0, 180)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
 
@@ -180,9 +195,9 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_top", 14)
 	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_bottom", 12)
+	margin.add_theme_constant_override("margin_bottom", 14)
 	card.add_child(margin)
 
 	var hbox := HBoxContainer.new()
@@ -199,9 +214,10 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 
 	var title_lbl := Label.new()
 	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	title_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	title_lbl.add_theme_font_size_override("font_size", 26)
+	title_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	title_lbl.add_theme_font_size_override("font_size", 32)
 	title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	CafeSocialTheme.apply_wood_text_shadow(title_lbl, 3)
 	title_lbl.text = g["name_fa"]
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	text_col.add_child(title_lbl)
@@ -209,20 +225,24 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var p_str = "%s الی %s نفره" % [GameManager.to_fa_num(g["min_players"]), GameManager.to_fa_num(g["max_players"])] if g["min_players"] != g["max_players"] else "%s نفره" % GameManager.to_fa_num(g["min_players"])
 	var meta_lbl := Label.new()
 	meta_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	meta_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	meta_lbl.add_theme_font_size_override("font_size", 17)
+	meta_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	meta_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 	meta_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_EMERALD_TEXT)
+	CafeSocialTheme.apply_wood_text_shadow(meta_lbl, 2)
 	meta_lbl.text = p_str
 	meta_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	text_col.add_child(meta_lbl)
 
 	var desc_lbl := Label.new()
 	desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	desc_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	desc_lbl.add_theme_font_size_override("font_size", 15)
+	desc_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	desc_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 	desc_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
-	desc_lbl.text = str(g["narrative"]).substr(0, 56) + "..."
+	CafeSocialTheme.apply_wood_text_shadow(desc_lbl, 2)
+	desc_lbl.text = str(g["narrative"]).substr(0, 62) + "..."
 	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc_lbl.max_lines_visible = 2
 	desc_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	text_col.add_child(desc_lbl)
 
@@ -320,13 +340,13 @@ func _make_section_card(title_txt: String, body_lines: Array[String]) -> PanelCo
 	card.add_child(vb)
 
 	if not title_txt.is_empty():
-		vb.add_child(_make_rtl_label(title_txt, CafeSocialTheme.FONT_TITLE, 22, Color(1.0, 0.86, 0.38), 4))
+		vb.add_child(_make_rtl_label(title_txt, CafeSocialTheme.get_ui_bold_font(), 28, Color(1.0, 0.86, 0.38), 6))
 
 	if not body_lines.is_empty():
 		var cleaned: Array[String] = []
 		for l in body_lines:
 			cleaned.append("\u200F" + l.replace("**", ""))
-		var body_lbl := _make_rtl_label("", CafeSocialTheme.FONT_BODY, 18, Color(0.96, 0.93, 0.87), 9)
+		var body_lbl := _make_rtl_label("", CafeSocialTheme.get_ui_font(), CafeSocialTheme.FONT_SIZE_BODY, Color(0.96, 0.93, 0.87), 10)
 		body_lbl.text = "\n".join(cleaned)
 		vb.add_child(body_lbl)
 

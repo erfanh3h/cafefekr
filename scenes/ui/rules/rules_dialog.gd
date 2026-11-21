@@ -86,6 +86,25 @@ func _ready() -> void:
 	_load_docs()
 	_update_selected_game_display()
 	_render_content()
+	_apply_responsive_size()
+	if get_viewport() and not get_viewport().size_changed.is_connected(_apply_responsive_size):
+		get_viewport().size_changed.connect(_apply_responsive_size)
+
+func _apply_responsive_size() -> void:
+	var vp := get_viewport_rect().size
+	if vp.x <= 0.0 or vp.y <= 0.0:
+		return
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var avail_w := vp.x - float(insets["left"]) - float(insets["right"]) - 28.0
+	var avail_h := vp.y - float(insets["top"]) - float(insets["bottom"]) - 36.0
+	var target_w := clampf(avail_w, 340.0, 680.0)
+	var target_h := clampf(avail_h, 520.0, 1200.0)
+	custom_minimum_size = Vector2(target_w, target_h)
+	offset_left = -target_w * 0.5
+	offset_right = target_w * 0.5
+	var center_shift_y := (float(insets["top"]) - float(insets["bottom"])) * 0.5
+	offset_top = -target_h * 0.5 + center_shift_y
+	offset_bottom = target_h * 0.5 + center_shift_y
 
 func _load_docs() -> void:
 	var path = "res://scripts/games/game_docs.json"
@@ -98,6 +117,7 @@ func _load_docs() -> void:
 			_game_docs = json.data
 
 func open() -> void:
+	_apply_responsive_size()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	scroll_content.scroll_vertical = 0
 	_render_content()
@@ -252,11 +272,10 @@ func _create_game_card(g: Dictionary) -> Control:
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl.clip_text = true
 	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	lbl.add_theme_font_size_override("font_size", 24)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
-	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-	lbl.add_theme_constant_override("shadow_outline_size", 3)
+	CafeSocialTheme.apply_wood_text_shadow(lbl, 3)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -280,7 +299,7 @@ func _create_game_card(g: Dictionary) -> Control:
 		
 		var check_lbl = Label.new()
 		check_lbl.text = "✓"
-		check_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		check_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 		check_lbl.add_theme_font_size_override("font_size", 22)
 		check_lbl.add_theme_color_override("font_color", Color(0.15, 0.1, 0.02, 1.0))
 		check_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -354,31 +373,32 @@ func _render_content() -> void:
 	
 	var time_lbl = Label.new()
 	time_lbl.text = "⏱️ مدت بازی: %s" % meta.get("time", "")
-	time_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	time_lbl.add_theme_font_size_override("font_size", 26)
+	time_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	time_lbl.add_theme_font_size_override("font_size", 23)
 	time_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.55))
+	CafeSocialTheme.apply_wood_text_shadow(time_lbl, 2)
 	badges_col.add_child(time_lbl)
 	
 	var diff_lbl = Label.new()
 	diff_lbl.text = "⚡ سطح سختی: %s" % meta.get("diff", "")
-	diff_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	diff_lbl.add_theme_font_size_override("font_size", 26)
+	diff_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	diff_lbl.add_theme_font_size_override("font_size", 23)
 	diff_lbl.add_theme_color_override("font_color", Color(0.9, 0.82, 0.7))
+	CafeSocialTheme.apply_wood_text_shadow(diff_lbl, 2)
 	badges_col.add_child(diff_lbl)
 	h_row.add_child(badges_col)
-	
-	var spacer = Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	h_row.add_child(spacer)
 	
 	# Title
 	var title_lbl = Label.new()
 	title_lbl.text = meta.get("name", "")
-	title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	title_lbl.add_theme_font_size_override("font_size", 38)
+	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	title_lbl.clip_text = true
+	title_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	title_lbl.add_theme_font_size_override("font_size", 32)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
-	title_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	title_lbl.add_theme_constant_override("shadow_outline_size", 3)
+	CafeSocialTheme.apply_wood_text_shadow(title_lbl, 3)
 	h_row.add_child(title_lbl)
 	
 	# Game Cover Icon
@@ -427,13 +447,18 @@ func _render_content() -> void:
 	body_lbl.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	body_lbl.text_direction = Control.TEXT_DIRECTION_RTL
 	body_lbl.language = "fa"
-	body_lbl.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
-	body_lbl.add_theme_font_size_override("font_size", 22)
+	body_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	body_lbl.add_theme_font_size_override("font_size", 25)
 	body_lbl.add_theme_color_override("font_color", Color(0.96, 0.92, 0.86))
+	CafeSocialTheme.apply_wood_text_shadow(body_lbl, 2)
 	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	body_lbl.add_theme_constant_override("line_spacing", 10)
+	body_lbl.add_theme_constant_override("line_spacing", 12)
 	content_box.add_child(body_lbl)
+
+	var bot_spacer := Control.new()
+	bot_spacer.custom_minimum_size = Vector2(0, 32)
+	content_box.add_child(bot_spacer)
 
 func _render_general_guide(mode_key: String) -> void:
 	var title = "رقابت‌های آنلاین رنکد" if mode_key == "rank_mode" else "اتاق‌های دوستانه (لابی)"
@@ -447,17 +472,19 @@ func _render_general_guide(mode_key: String) -> void:
 			
 	var t_lbl = Label.new()
 	t_lbl.text = "🏆 " + title
-	t_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	t_lbl.add_theme_font_size_override("font_size", 36)
+	t_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	t_lbl.add_theme_font_size_override("font_size", 32)
 	t_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
+	CafeSocialTheme.apply_wood_text_shadow(t_lbl, 2)
 	t_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	content_box.add_child(t_lbl)
 	
 	var b_lbl = Label.new()
 	b_lbl.text = text_content
-	b_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	b_lbl.add_theme_font_size_override("font_size", 32)
+	b_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	b_lbl.add_theme_font_size_override("font_size", 26)
 	b_lbl.add_theme_color_override("font_color", Color(0.96, 0.92, 0.86))
+	CafeSocialTheme.apply_wood_text_shadow(b_lbl, 2)
 	b_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	b_lbl.add_theme_constant_override("line_spacing", 14)

@@ -5,8 +5,139 @@ extends RefCounted
 ## Provides cohesive dark walnut / mahogany surfaces, ornate gold/bronze frames,
 ## emerald highlights, crisp RTL Persian typography, and reusable social widgets.
 
-const FONT_TITLE = preload("res://assets/fonts/hekayat.ttf")
+const FONT_TITLE = preload("res://assets/fonts/Vazir.ttf")
 const FONT_BODY = preload("res://assets/fonts/Vazir.ttf")
+const FONT_GAME = preload("res://assets/fonts/hekayat.ttf")
+
+# Centralized 1080p Mobile Typography Scale (Vazir.ttf for all UI; hard floor 22px)
+const FONT_SIZE_SCREEN_TITLE: int = 42     # 40-44px Bold (Screen headers: اتحاد، دیوان برترین‌ها)
+const FONT_SIZE_CARD_TITLE: int = 34       # 32-36px Bold (Mode titles, usernames, modal titles)
+const FONT_SIZE_PRIMARY_BUTTON: int = 34   # 32-36px Bold (Hero CTAs)
+const FONT_SIZE_TAB_LABEL: int = 26        # 24-28px Bold (Standard tabs & filters)
+const FONT_SIZE_TAB_COMPACT: int = 24      # 24px Bold (Tight 5-tab horizontal rows, single-line)
+const FONT_SIZE_FILTER_BUTTON: int = 26    # 24-28px Bold (Leaderboard & library filter pills)
+const FONT_SIZE_BOTTOM_NAV: int = 24       # 24px Bold (Bottom navigation labels)
+const FONT_SIZE_BODY: int = 26             # 26-28px Regular (Settings, clan stats, chat, history)
+const FONT_SIZE_SUBTITLE: int = 23         # 22-24px Regular (Mode descriptions, privacy help)
+const FONT_SIZE_BADGE: int = 22            # 22-24px (Role pills, XP ratio, counters, dates)
+const FONT_SIZE_MIN_FLOOR: int = 22        # Hard floor: NO readable UI text below 22px
+
+static var _font_ui_bold_cache: FontVariation = null
+
+static func get_ui_font() -> Font:
+	return FONT_BODY
+
+static func get_ui_bold_font() -> Font:
+	if _font_ui_bold_cache == null:
+		var fv := FontVariation.new()
+		fv.base_font = FONT_BODY
+		fv.variation_embolden = 0.26
+		_font_ui_bold_cache = fv
+	return _font_ui_bold_cache
+
+static func clamp_font_size(size_px: int) -> int:
+	return maxi(size_px, FONT_SIZE_MIN_FLOOR)
+
+static func apply_wood_text_shadow(ctrl: Control, outline_sz: int = 2) -> void:
+	if not is_instance_valid(ctrl):
+		return
+	ctrl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+	ctrl.add_theme_constant_override("shadow_offset_x", 0)
+	ctrl.add_theme_constant_override("shadow_offset_y", 2)
+	ctrl.add_theme_constant_override("shadow_outline_size", outline_sz)
+
+static func get_safe_area_insets(node: Node) -> Dictionary:
+	var result := {"top": 0.0, "bottom": 0.0, "left": 0.0, "right": 0.0}
+	if not is_instance_valid(node) or not node.is_inside_tree():
+		return result
+	var vp: Viewport = node.get_viewport()
+	if vp == null:
+		return result
+	var vis_size: Vector2 = vp.get_visible_rect().size
+	if vis_size.x <= 1.0 or vis_size.y <= 1.0:
+		return result
+	var win_size: Vector2i = DisplayServer.window_get_size()
+	if win_size.x <= 0 or win_size.y <= 0:
+		return result
+	var safe: Rect2i = DisplayServer.get_display_safe_area()
+	if safe.size.x <= 0 or safe.size.y <= 0:
+		return result
+	var scale_x: float = vis_size.x / float(win_size.x)
+	var scale_y: float = vis_size.y / float(win_size.y)
+	var top_px: float = maxf(0.0, float(safe.position.y)) * scale_y
+	var left_px: float = maxf(0.0, float(safe.position.x)) * scale_x
+	var bottom_px: float = maxf(0.0, float(win_size.y - (safe.position.y + safe.size.y))) * scale_y
+	var right_px: float = maxf(0.0, float(win_size.x - (safe.position.x + safe.size.x))) * scale_x
+	result["top"] = clampf(top_px, 0.0, vis_size.y * 0.14)
+	result["bottom"] = clampf(bottom_px, 0.0, vis_size.y * 0.12)
+	result["left"] = clampf(left_px, 0.0, vis_size.x * 0.10)
+	result["right"] = clampf(right_px, 0.0, vis_size.x * 0.10)
+	return result
+
+static func apply_safe_area_to_margin(
+	mc: MarginContainer,
+	base_left: int = 0,
+	base_top: int = 0,
+	base_right: int = 0,
+	base_bottom: int = 0,
+	include_top: bool = true,
+	include_bottom: bool = true
+) -> void:
+	if not is_instance_valid(mc):
+		return
+	var insets := get_safe_area_insets(mc)
+	var l := base_left + int(round(float(insets["left"])))
+	var r := base_right + int(round(float(insets["right"])))
+	var t := base_top + (int(round(float(insets["top"]))) if include_top else 0)
+	var b := base_bottom + (int(round(float(insets["bottom"]))) if include_bottom else 0)
+	mc.add_theme_constant_override("margin_left", l)
+	mc.add_theme_constant_override("margin_top", t)
+	mc.add_theme_constant_override("margin_right", r)
+	mc.add_theme_constant_override("margin_bottom", b)
+
+static func configure_single_line_tab(
+	btn: Button,
+	font_size: int = FONT_SIZE_TAB_COMPACT,
+	min_height: float = 58.0,
+	pad_x: float = 8.0
+) -> void:
+	if not is_instance_valid(btn):
+		return
+	btn.add_theme_font_override("font", get_ui_bold_font())
+	btn.add_theme_font_size_override("font_size", clamp_font_size(font_size))
+	btn.clip_text = true
+	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y, min_height)
+	for st_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+		if btn.has_theme_stylebox_override(st_name):
+			var sb: StyleBox = btn.get_theme_stylebox(st_name)
+			if sb != null:
+				var dup: StyleBox = sb.duplicate()
+				dup.content_margin_left = pad_x
+				dup.content_margin_right = pad_x
+				btn.add_theme_stylebox_override(st_name, dup)
+
+static func constrain_modal_card(
+	card: Control,
+	host: Node = null,
+	max_width: float = 680.0,
+	horizontal_margin: float = 20.0
+) -> void:
+	if not is_instance_valid(card):
+		return
+	var ref_node: Node = host if is_instance_valid(host) else card
+	if not is_instance_valid(ref_node) or not ref_node.is_inside_tree():
+		card.custom_minimum_size.x = minf(max_width, 660.0)
+		return
+	var vp: Viewport = ref_node.get_viewport()
+	if vp == null:
+		return
+	var vis_w: float = vp.get_visible_rect().size.x
+	var insets := get_safe_area_insets(ref_node)
+	var avail_w: float = vis_w - horizontal_margin * 2.0 - float(insets["left"]) - float(insets["right"])
+	var target_w: float = clampf(avail_w, 320.0, max_width)
+	card.custom_minimum_size.x = target_w
+
 
 # Authentic Cafe Fekr Frames & UI Textures
 const TEX_BOARD = preload("res://assets/images/frames/board.png")
@@ -290,10 +421,10 @@ static func make_metric_card(
 	vbox.add_theme_constant_override("separation", 2)
 	hbox.add_child(vbox)
 
-	var l_lbl := make_body(label_txt, 18, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var l_lbl := make_body(label_txt, FONT_SIZE_BADGE, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
 	vbox.add_child(l_lbl)
 
-	var v_lbl := make_title(val_txt, 24, val_color, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var v_lbl := make_title(val_txt, 28, val_color, HORIZONTAL_ALIGNMENT_CENTER, false)
 	vbox.add_child(v_lbl)
 
 	if icon_tex != null:
@@ -375,7 +506,7 @@ static func create_input_style(focused: bool = false) -> StyleBoxFlat:
 
 static func make_title(
 	txt: String,
-	font_size: int = 35,
+	font_size: int = FONT_SIZE_CARD_TITLE,
 	col: Color = COL_GOLD_BRIGHT,
 	align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_RIGHT,
 	wrap: bool = false
@@ -384,19 +515,17 @@ static func make_title(
 	l.text = txt
 	l.horizontal_alignment = align
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.add_theme_font_override("font", FONT_TITLE)
-	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_font_override("font", get_ui_bold_font())
+	l.add_theme_font_size_override("font_size", clamp_font_size(font_size))
 	l.add_theme_color_override("font_color", col)
-	l.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.90))
-	l.add_theme_constant_override("shadow_offset_y", 2)
-	l.add_theme_constant_override("shadow_outline_size", 3)
+	apply_wood_text_shadow(l, 3)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
 	return l
 
 
 static func make_body(
 	txt: String,
-	font_size: int = 25,
+	font_size: int = FONT_SIZE_BODY,
 	col: Color = COL_WARM_CREAM,
 	align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_RIGHT,
 	wrap: bool = true
@@ -405,27 +534,26 @@ static func make_body(
 	l.text = txt
 	l.horizontal_alignment = align
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.add_theme_font_override("font", FONT_BODY)
-	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_font_override("font", get_ui_font())
+	l.add_theme_font_size_override("font_size", clamp_font_size(font_size))
 	l.add_theme_color_override("font_color", col)
-	l.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.72))
-	l.add_theme_constant_override("shadow_outline_size", 2)
+	apply_wood_text_shadow(l, 2)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
 	return l
 
 
 static func make_line_edit(
 	placeholder: String,
-	min_height: float = 64.0,
-	font_size: int = 26,
+	min_height: float = 68.0,
+	font_size: int = FONT_SIZE_BODY,
 	align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_RIGHT
 ) -> LineEdit:
 	var le := LineEdit.new()
 	le.placeholder_text = placeholder
-	le.custom_minimum_size = Vector2(0, min_height)
+	le.custom_minimum_size = Vector2(0, maxf(min_height, 60.0))
 	le.alignment = align
-	le.add_theme_font_override("font", FONT_BODY)
-	le.add_theme_font_size_override("font_size", font_size)
+	le.add_theme_font_override("font", get_ui_font())
+	le.add_theme_font_size_override("font_size", clamp_font_size(font_size))
 	le.add_theme_color_override("font_color", COL_IVORY)
 	le.add_theme_color_override("font_placeholder_color", Color(0.68, 0.60, 0.48, 0.78))
 	le.add_theme_stylebox_override("normal", create_input_style(false))
@@ -494,26 +622,24 @@ static func _get_flat_btn_style(variant: String, state: String, corner: int) -> 
 static func make_button(
 	txt: String,
 	variant: String = "emerald",
-	min_size: Vector2 = Vector2(140, 56),
-	font_size: int = 25,
+	min_size: Vector2 = Vector2(140, 58),
+	font_size: int = FONT_SIZE_TAB_LABEL,
 	icon_tex: Texture2D = null,
 	use_title_font: bool = false,
 	corner: int = 14
 ) -> Button:
 	var b := Button.new()
 	b.text = txt
-	b.custom_minimum_size = min_size
+	b.custom_minimum_size = Vector2(min_size.x, maxf(min_size.y, 54.0))
 	b.focus_mode = Control.FOCUS_NONE
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	b.add_theme_font_override("font", FONT_TITLE if use_title_font else FONT_BODY)
-	b.add_theme_font_size_override("font_size", font_size)
+	b.add_theme_font_override("font", get_ui_bold_font() if use_title_font else get_ui_font())
+	b.add_theme_font_size_override("font_size", clamp_font_size(font_size))
 	b.add_theme_color_override("font_color", COL_IVORY)
 	b.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
 	b.add_theme_color_override("font_pressed_color", COL_WARM_CREAM)
 	b.add_theme_color_override("font_disabled_color", Color(0.65, 0.60, 0.55, 0.65))
-	b.add_theme_color_override("font_shadow_color", Color(0.05, 0.02, 0.01, 0.92))
-	b.add_theme_constant_override("shadow_offset_y", 2)
-	b.add_theme_constant_override("shadow_outline_size", 2)
+	apply_wood_text_shadow(b, 2)
 
 	b.add_theme_stylebox_override("normal", _get_flat_btn_style(variant, "normal", corner))
 	b.add_theme_stylebox_override("hover", _get_flat_btn_style(variant, "hover", corner))
@@ -536,15 +662,15 @@ static func make_wood_hero_button(
 	txt: String,
 	color_name: String = KenneyUI.COLOR_GREEN,
 	min_size: Vector2 = Vector2(260, 96),
-	font_size: int = 33
+	font_size: int = FONT_SIZE_PRIMARY_BUTTON
 ) -> Button:
 	var b := Button.new()
 	b.text = txt
 	b.custom_minimum_size = min_size
 	b.focus_mode = Control.FOCUS_NONE
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	b.add_theme_font_override("font", FONT_TITLE)
-	b.add_theme_font_size_override("font_size", font_size)
+	b.add_theme_font_override("font", get_ui_bold_font())
+	b.add_theme_font_size_override("font_size", clamp_font_size(font_size))
 	KenneyUI.style_button(b, color_name)
 	return b
 
@@ -625,11 +751,12 @@ static func make_nav_tab(
 		lbl.text = tab_title
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		lbl.add_theme_font_override("font", FONT_TITLE)
-		lbl.add_theme_font_size_override("font_size", 22)
-		lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0) if is_active else Color(0.85, 0.82, 0.78, 0.85))
-		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.90))
-		lbl.add_theme_constant_override("shadow_outline_size", 3)
+		lbl.clip_text = true
+		lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		lbl.add_theme_font_override("font", get_ui_bold_font())
+		lbl.add_theme_font_size_override("font_size", FONT_SIZE_TAB_COMPACT)
+		lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0) if is_active else Color(0.85, 0.82, 0.78, 0.88))
+		apply_wood_text_shadow(lbl, 3)
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		vbox.add_child(lbl)
 
@@ -648,10 +775,10 @@ static func make_nav_tab(
 		var badge := PanelContainer.new()
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-		badge.offset_left = -42
+		badge.offset_left = -46
 		badge.offset_top = 4
 		badge.offset_right = -6
-		badge.offset_bottom = 34
+		badge.offset_bottom = 38
 		var bst := StyleBoxFlat.new()
 		bst.bg_color = Color(0.82, 0.18, 0.16, 0.98)
 		bst.border_color = Color(1.0, 0.86, 0.42, 0.95)
@@ -664,8 +791,8 @@ static func make_nav_tab(
 		bl.text = GameManager.to_fa_num(badge_count) if badge_count <= 99 else "۹۹+"
 		bl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		bl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		bl.add_theme_font_override("font", FONT_BODY)
-		bl.add_theme_font_size_override("font_size", 19)
+		bl.add_theme_font_override("font", get_ui_bold_font())
+		bl.add_theme_font_size_override("font_size", FONT_SIZE_BADGE)
 		bl.add_theme_color_override("font_color", COL_IVORY)
 		badge.add_child(bl)
 		holder.add_child(badge)
@@ -681,13 +808,21 @@ static func make_subtab(label_txt: String, is_active: bool = false, badge_count:
 	var b := make_button(
 		txt,
 		"emerald" if is_active else "muted",
-		Vector2(0, 56),
-		24,
+		Vector2(0, 60),
+		FONT_SIZE_TAB_COMPACT,
 		null,
-		false,
+		true,
 		13
 	)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.clip_text = true
+	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	for st_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+		if b.has_theme_stylebox_override(st_name):
+			var st: StyleBox = b.get_theme_stylebox(st_name).duplicate()
+			st.content_margin_left = 8.0
+			st.content_margin_right = 8.0
+			b.add_theme_stylebox_override(st_name, st)
 	return b
 
 
@@ -1179,40 +1314,38 @@ static func make_friend_button(
 		var lbl := Label.new()
 		lbl.text = label_txt
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		lbl.add_theme_font_override("font", FONT_BODY)
-		lbl.add_theme_font_size_override("font_size", 23)
+		lbl.add_theme_font_override("font", get_ui_bold_font())
+		lbl.add_theme_font_size_override("font_size", FONT_SIZE_TAB_COMPACT)
 		lbl.add_theme_color_override("font_color", COL_IVORY)
-		lbl.add_theme_color_override("font_shadow_color", Color(0.05, 0.02, 0.01, 0.92))
-		lbl.add_theme_constant_override("shadow_offset_y", 2)
-		lbl.add_theme_constant_override("shadow_outline_size", 2)
+		apply_wood_text_shadow(lbl, 2)
 		hbox.add_child(lbl)
 
 	ActionVFXManager.apply_button_juice(b, "tap_button")
 	return b
 
 
-static func make_badge_pill(txt: String, text_col: Color = COL_GOLD_BRIGHT, bg_col: Color = Color(0.10, 0.06, 0.03, 0.94), border_col: Color = Color(0.75, 0.58, 0.25, 0.80), font_size: int = 22) -> PanelContainer:
+static func make_badge_pill(txt: String, text_col: Color = COL_GOLD_BRIGHT, bg_col: Color = Color(0.10, 0.06, 0.03, 0.94), border_col: Color = Color(0.75, 0.58, 0.25, 0.80), font_size: int = FONT_SIZE_BADGE) -> PanelContainer:
 	var pill := PanelContainer.new()
 	var st := StyleBoxFlat.new()
 	st.bg_color = bg_col
 	st.border_color = border_col
 	st.set_border_width_all(1)
 	st.set_corner_radius_all(10)
-	st.content_margin_left = 10.0
-	st.content_margin_right = 10.0
-	st.content_margin_top = 4.0
-	st.content_margin_bottom = 4.0
+	st.content_margin_left = 12.0
+	st.content_margin_right = 12.0
+	st.content_margin_top = 5.0
+	st.content_margin_bottom = 5.0
 	pill.add_theme_stylebox_override("panel", st)
-	pill.add_child(make_body(txt, font_size, text_col, HORIZONTAL_ALIGNMENT_CENTER, false))
+	pill.add_child(make_body(txt, clamp_font_size(font_size), text_col, HORIZONTAL_ALIGNMENT_CENTER, false))
 	return pill
 
 
 static func make_xp_progress_bar(progress_01: float, right_text: String = "", bar_col: Color = Color(0.28, 0.78, 0.42)) -> Control:
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 4)
+	box.add_theme_constant_override("separation", 6)
 
 	var pb := ProgressBar.new()
-	pb.custom_minimum_size = Vector2(0, 20)
+	pb.custom_minimum_size = Vector2(0, 26)
 	pb.min_value = 0.0
 	pb.max_value = 100.0
 	pb.value = clampf(progress_01, 0.0, 1.0) * 100.0
@@ -1222,17 +1355,17 @@ static func make_xp_progress_bar(progress_01: float, right_text: String = "", ba
 	bg_st.bg_color = Color(0.08, 0.05, 0.03, 0.95)
 	bg_st.border_color = Color(0.55, 0.42, 0.22, 0.85)
 	bg_st.set_border_width_all(2)
-	bg_st.set_corner_radius_all(10)
+	bg_st.set_corner_radius_all(12)
 	pb.add_theme_stylebox_override("background", bg_st)
 
 	var fill_st := StyleBoxFlat.new()
 	fill_st.bg_color = bar_col
-	fill_st.set_corner_radius_all(8)
+	fill_st.set_corner_radius_all(10)
 	pb.add_theme_stylebox_override("fill", fill_st)
 	box.add_child(pb)
 
 	if not right_text.is_empty():
-		box.add_child(make_body(right_text, 21, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
+		box.add_child(make_body(right_text, FONT_SIZE_BADGE, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, false))
 
 	return box
 
@@ -1316,7 +1449,7 @@ static func show_confirm_modal(
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(620, 0)
+	constrain_modal_card(card, host, 620.0, 24.0)
 	card.add_theme_stylebox_override("panel", create_board_shell_style())
 	center.add_child(card)
 
@@ -1331,22 +1464,22 @@ static func show_confirm_modal(
 	vbox.add_theme_constant_override("separation", 16)
 	m.add_child(vbox)
 
-	vbox.add_child(make_title(title_txt, 30, COL_CRIMSON_TEXT if is_danger else COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
-	vbox.add_child(make_body(body_txt, 22, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_title(title_txt, FONT_SIZE_CARD_TITLE, COL_CRIMSON_TEXT if is_danger else COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_body(body_txt, FONT_SIZE_BODY, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	var btn_row := HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	btn_row.add_theme_constant_override("separation", 14)
 	vbox.add_child(btn_row)
 
-	var b_cancel := make_button("انصراف", "bronze", Vector2(180, 54), 22)
+	var b_cancel := make_button("انصراف", "bronze", Vector2(180, 60), FONT_SIZE_TAB_LABEL, null, true)
 	b_cancel.pressed.connect(func():
 		AudioManager.sfx_tap()
 		overlay.queue_free()
 	)
 	btn_row.add_child(b_cancel)
 
-	var b_ok := make_button(confirm_txt, "crimson" if is_danger else "emerald", Vector2(180, 54), 22)
+	var b_ok := make_button(confirm_txt, "crimson" if is_danger else "emerald", Vector2(180, 60), FONT_SIZE_TAB_LABEL, null, true)
 	b_ok.pressed.connect(func():
 		AudioManager.sfx_button()
 		overlay.queue_free()
@@ -1356,6 +1489,7 @@ static func show_confirm_modal(
 	btn_row.add_child(b_ok)
 
 	host.add_child(overlay)
+	constrain_modal_card(card, host, 620.0, 24.0)
 	ActionVFXManager.animate_dialog_open(card, overlay, true)
 	return overlay
 
@@ -1517,7 +1651,7 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(640, 0)
+	constrain_modal_card(card, host, 640.0, 20.0)
 	card.add_theme_stylebox_override("panel", create_board_shell_style())
 	center.add_child(card)
 
@@ -1549,7 +1683,7 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 	)
 	top_row.add_child(btn_x)
 
-	var ttl := make_title("دعوت «%s» به مسابقه دوستانه" % target_name, 28, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	var ttl := make_title("دعوت «%s» به مسابقه دوستانه" % target_name, 32, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_child(ttl)
 
@@ -1557,7 +1691,7 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 	sp.custom_minimum_size = Vector2(48, 48)
 	top_row.add_child(sp)
 
-	vbox.add_child(make_body("بازی مورد نظر خود را برای ارسال دعوت‌نامه مستقیم انتخاب کنید:", 19, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_body("بازی مورد نظر خود را برای ارسال دعوت‌نامه مستقیم انتخاب کنید:", FONT_SIZE_SUBTITLE, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	var g_scroll := ScrollContainer.new()
 	g_scroll.custom_minimum_size = Vector2(0, 500)
@@ -1684,7 +1818,7 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(620, 0)
+	constrain_modal_card(card, host, 620.0, 20.0)
 	card.add_theme_stylebox_override("panel", create_board_shell_style())
 	center.add_child(card)
 
@@ -1699,10 +1833,10 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 	vbox.add_theme_constant_override("separation", 12)
 	m.add_child(vbox)
 
-	vbox.add_child(make_title("گزارش تخلف: %s" % target_name, 30, COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_CENTER, true))
-	vbox.add_child(make_body("لطفاً دلیل گزارش را انتخاب کنید تا توسط تیم نظارت بررسی شود:", 20, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_title("گزارش تخلف: %s" % target_name, 32, COL_CRIMSON_TEXT, HORIZONTAL_ALIGNMENT_CENTER, true))
+	vbox.add_child(make_body("لطفاً دلیل گزارش را انتخاب کنید تا توسط تیم نظارت بررسی شود:", FONT_SIZE_SUBTITLE, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
-	var inp_details := make_line_edit("توضیحات تکمیلی (اختیاری)...", 52.0, 22)
+	var inp_details := make_line_edit("توضیحات تکمیلی (اختیاری)...", 60.0, FONT_SIZE_BODY)
 	var selected_reason := ["inappropriate_behavior"]
 	var reason_defs := [
 		{"id": "inappropriate_behavior", "label": "رفتار نامناسب یا توهین در گفتگو"},
@@ -1720,7 +1854,7 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 
 	for r in reason_defs:
 		var rid: String = r["id"]
-		var rb := make_button(r["label"], "muted", Vector2(0, 48), 21)
+		var rb := make_button(r["label"], "muted", Vector2(0, 56), FONT_SIZE_SUBTITLE)
 		rb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rb.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -1737,14 +1871,14 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 	btn_row.add_theme_constant_override("separation", 14)
 	vbox.add_child(btn_row)
 
-	var b_cancel := make_button("انصراف", "bronze", Vector2(180, 52), 22)
+	var b_cancel := make_button("انصراف", "bronze", Vector2(180, 58), FONT_SIZE_TAB_COMPACT, null, true)
 	b_cancel.pressed.connect(func():
 		AudioManager.sfx_tap()
 		overlay.queue_free()
 	)
 	btn_row.add_child(b_cancel)
 
-	var b_send := make_button("ثبت گزارش", "crimson", Vector2(200, 52), 22)
+	var b_send := make_button("ثبت گزارش", "crimson", Vector2(200, 58), FONT_SIZE_TAB_COMPACT, null, true)
 	b_send.pressed.connect(func():
 		AudioManager.sfx_button()
 		b_send.disabled = true
@@ -1757,6 +1891,7 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 	btn_row.add_child(b_send)
 
 	host.add_child(overlay)
+	constrain_modal_card(card, host, 620.0, 20.0)
 	ActionVFXManager.animate_dialog_open(card, overlay, true)
 	return overlay
 
@@ -1784,7 +1919,7 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(640, 0)
+	constrain_modal_card(card, host, 640.0, 20.0)
 	card.add_theme_stylebox_override("panel", create_board_shell_style())
 	center.add_child(card)
 
@@ -1817,7 +1952,7 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 	)
 	top_row.add_child(btn_x)
 
-	var ttl := make_title("مشخصات کلن", 34, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
+	var ttl := make_title("مشخصات کلن", FONT_SIZE_CARD_TITLE, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, true)
 	ttl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_child(ttl)
 
@@ -1848,7 +1983,7 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 
 		# Hero Header
 		var hero := PanelContainer.new()
-		hero.custom_minimum_size = Vector2(0, 152)
+		hero.custom_minimum_size = Vector2(0, 160)
 		hero.add_theme_stylebox_override("panel", create_frame_style(true, 38.0, 26.0))
 		content_holder.add_child(hero)
 
@@ -1868,26 +2003,28 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 		info_vbox.add_child(title_row)
 
 		if not ctag.is_empty():
-			title_row.add_child(make_badge_pill("[%s]" % ctag, COL_GOLD_BRIGHT, Color(0.12, 0.08, 0.04), COL_GOLD_ANTIQUE, 20))
+			title_row.add_child(make_badge_pill("[%s]" % ctag, COL_GOLD_BRIGHT, Color(0.12, 0.08, 0.04), COL_GOLD_ANTIQUE, FONT_SIZE_BADGE))
 
-		var name_lbl := make_title(cname, 34, COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true)
+		var name_lbl := make_title(cname, FONT_SIZE_CARD_TITLE, COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, true)
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		title_row.add_child(name_lbl)
 
 		if not leader_name.is_empty():
-			info_vbox.add_child(make_body("رهبر کلن: %s" % leader_name, 22, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
+			info_vbox.add_child(make_body("رهبر کلن: %s" % leader_name, FONT_SIZE_SUBTITLE, COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
 
 		if not desc.is_empty():
-			info_vbox.add_child(make_body("«%s»" % desc, 21, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
+			info_vbox.add_child(make_body("«%s»" % desc, FONT_SIZE_SUBTITLE, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
 		else:
-			info_vbox.add_child(make_body("باشگاه رسمی اعضای کافه فکر", 20, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
+			info_vbox.add_child(make_body("باشگاه رسمی اعضای کافه فکر", FONT_SIZE_SUBTITLE, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_RIGHT, true))
 
 		h_row.add_child(make_clan_emblem(emb_id, 96.0))
 
-		# Metrics Grid / Row
-		var chips_row := HBoxContainer.new()
-		chips_row.add_theme_constant_override("separation", 10)
-		content_holder.add_child(chips_row)
+		# Metrics Grid (2x2 so 22px+ labels never crush horizontally on 16:9 phones)
+		var chips_grid := GridContainer.new()
+		chips_grid.columns = 2
+		chips_grid.add_theme_constant_override("h_separation", 10)
+		chips_grid.add_theme_constant_override("v_separation", 10)
+		content_holder.add_child(chips_grid)
 
 		var make_chip = func(label_txt: String, val_txt: String, accent: Color) -> PanelContainer:
 			var cp := PanelContainer.new()
@@ -1897,14 +2034,14 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 			cv.alignment = BoxContainer.ALIGNMENT_CENTER
 			cv.add_theme_constant_override("separation", 2)
 			cp.add_child(cv)
-			cv.add_child(make_title(val_txt, 27, accent, HORIZONTAL_ALIGNMENT_CENTER, false))
-			cv.add_child(make_body(label_txt, 19, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false))
+			cv.add_child(make_title(val_txt, 28, accent, HORIZONTAL_ALIGNMENT_CENTER, false))
+			cv.add_child(make_body(label_txt, FONT_SIZE_BADGE, COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false))
 			return cp
 
-		chips_row.add_child(make_chip.call("سطح کلن", GameManager.to_fa_num(clvl), COL_EMERALD_TEXT))
-		chips_row.add_child(make_chip.call("مجموع امتیاز", GameManager.to_fa_num(cscore), COL_GOLD_BRIGHT))
-		chips_row.add_child(make_chip.call("اعضای کلن", "%s / %s" % [GameManager.to_fa_num(mem_cnt), GameManager.to_fa_num(max_mem)], COL_IVORY))
-		chips_row.add_child(make_chip.call("نوع پذیرش", jtype_fa, COL_WARM_CREAM))
+		chips_grid.add_child(make_chip.call("سطح کلن", GameManager.to_fa_num(clvl), COL_EMERALD_TEXT))
+		chips_grid.add_child(make_chip.call("مجموع امتیاز", GameManager.to_fa_num(cscore), COL_GOLD_BRIGHT))
+		chips_grid.add_child(make_chip.call("اعضای کلن", "%s / %s" % [GameManager.to_fa_num(mem_cnt), GameManager.to_fa_num(max_mem)], COL_IVORY))
+		chips_grid.add_child(make_chip.call("نوع پذیرش", jtype_fa, COL_WARM_CREAM))
 
 		# Action buttons row
 		var btn_row := HBoxContainer.new()
@@ -1912,7 +2049,7 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 		btn_row.add_theme_constant_override("separation", 16)
 		content_holder.add_child(btn_row)
 
-		var b_close := make_button("بستن", "bronze", Vector2(180, 56), 23)
+		var b_close := make_button("بستن", "bronze", Vector2(180, 60), FONT_SIZE_TAB_COMPACT, null, true)
 		b_close.pressed.connect(func():
 			AudioManager.sfx_tap()
 			overlay.queue_free()
@@ -1922,7 +2059,7 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 		# Join or Navigate button
 		var cid_str := str(data.get("clan_id", data.get("_id", clan_id)))
 		if not cid_str.is_empty():
-			var b_join := make_button("عضویت در کلن" if jtype == "open" else "ارسال درخواست عضویت", "emerald", Vector2(240, 56), 23)
+			var b_join := make_button("عضویت در کلن" if jtype == "open" else "ارسال درخواست عضویت", "emerald", Vector2(240, 60), FONT_SIZE_TAB_COMPACT, null, true)
 			b_join.pressed.connect(func():
 				AudioManager.sfx_button()
 				b_join.disabled = true
@@ -1963,6 +2100,7 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 		)
 
 	host.add_child(overlay)
+	constrain_modal_card(card, host, 640.0, 20.0)
 	ActionVFXManager.animate_dialog_open(card, overlay, true)
 	return overlay
 

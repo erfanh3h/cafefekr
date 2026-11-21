@@ -61,6 +61,15 @@ func _ready() -> void:
 	KenneyUI.style_button(btn_exit_match, KenneyUI.COLOR_BLUE)
 	btn_exit_match.pressed.connect(_on_exit_pressed)
 	_setup_rtl_game_rows_and_scroll()
+	_apply_safe_area_layout()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_safe_area_layout):
+		get_viewport().size_changed.connect(_apply_safe_area_layout)
+
+
+func _apply_safe_area_layout() -> void:
+	var mc := get_node_or_null("Margin") as MarginContainer
+	if is_instance_valid(mc):
+		CafeSocialTheme.apply_safe_area_to_margin(mc, 16, 20, 16, 20, true, true)
 
 
 func _setup_rtl_game_rows_and_scroll() -> void:
@@ -77,6 +86,10 @@ func _setup_rtl_game_rows_and_scroll() -> void:
 		m_node.add_child(scroll)
 		(vb_node as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		scroll.add_child(vb_node)
+		var bottom_pad := Control.new()
+		bottom_pad.name = "BottomScrollSpacer"
+		bottom_pad.custom_minimum_size = Vector2(0, 32)
+		vb_node.add_child(bottom_pad)
 
 	# 2. Reorder GameRow1..3 into natural Persian RTL flow: [StatusChip (left)] | [InfoBox (right-aligned)] | [Thumb] | [NumBox (right)]
 	for i in range(1, 4):
@@ -84,7 +97,7 @@ func _setup_rtl_game_rows_and_scroll() -> void:
 		if card == null:
 			continue
 		if card is Control:
-			(card as Control).custom_minimum_size = Vector2(0, 96)
+			(card as Control).custom_minimum_size = Vector2(0, 114)
 		var hbox: Node = card.get_node_or_null("Margin/HBox")
 		if hbox is HBoxContainer:
 			var num_box := hbox.get_node_or_null("NumBox")
@@ -92,11 +105,11 @@ func _setup_rtl_game_rows_and_scroll() -> void:
 			var info_box := hbox.get_node_or_null("InfoBox")
 			var status_chip := hbox.get_node_or_null("StatusChip")
 			if thumb is Control:
-				(thumb as Control).custom_minimum_size = Vector2(68, 68)
+				(thumb as Control).custom_minimum_size = Vector2(72, 72)
 			if num_box is Control:
-				(num_box as Control).custom_minimum_size = Vector2(38, 38)
+				(num_box as Control).custom_minimum_size = Vector2(44, 44)
 			if status_chip is Control:
-				(status_chip as Control).custom_minimum_size = Vector2(124, 42)
+				(status_chip as Control).custom_minimum_size = Vector2(152, 48)
 			# Reorder LTR positions so Persian reads right-to-left: StatusChip | InfoBox | Thumb | NumBox
 			if status_chip:
 				hbox.move_child(status_chip, 0)
@@ -112,18 +125,21 @@ func _setup_rtl_game_rows_and_scroll() -> void:
 				title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 				title_lbl.clip_text = true
 				title_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-				title_lbl.add_theme_font_size_override("font_size", 23)
+				title_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+				title_lbl.add_theme_font_size_override("font_size", 24)
 			var sub_lbl: Label = card.get_node_or_null("Margin/HBox/InfoBox/GameIndexSub")
 			if is_instance_valid(sub_lbl):
 				sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 				sub_lbl.clip_text = true
 				sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-				sub_lbl.add_theme_font_size_override("font_size", 16)
+				sub_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+				sub_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 			var st_lbl: Label = card.get_node_or_null("Margin/HBox/StatusChip/StatusLabel")
 			if is_instance_valid(st_lbl):
 				st_lbl.clip_text = true
 				st_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-				st_lbl.add_theme_font_size_override("font_size", 17)
+				st_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+				st_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 
 	# 3. Create 3-card rewards container inside FooterFinishedBox/VBox (replaces plain single-line FinishXP)
 	var fin_vbox: Node = footer_finished_box.get_node_or_null("VBox")
@@ -474,16 +490,16 @@ func _make_reward_card(title_txt: String, val_txt: String, accent: Color, bg_col
 	t_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t_lbl.clip_text = true
 	t_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	t_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	t_lbl.add_theme_font_size_override("font_size", 15)
+	t_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	t_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 	t_lbl.add_theme_color_override("font_color", Color(0.86, 0.80, 0.72))
 	v.add_child(t_lbl)
 
 	var v_lbl := Label.new()
 	v_lbl.text = val_txt
 	v_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	v_lbl.add_theme_font_size_override("font_size", 24)
+	v_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	v_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BODY)
 	v_lbl.add_theme_color_override("font_color", accent)
 	v.add_child(v_lbl)
 
@@ -491,8 +507,10 @@ func _make_reward_card(title_txt: String, val_txt: String, accent: Color, bg_col
 		var s_lbl := Label.new()
 		s_lbl.text = sub_txt
 		s_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		s_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		s_lbl.add_theme_font_size_override("font_size", 14)
+		s_lbl.clip_text = true
+		s_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		s_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+		s_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		s_lbl.add_theme_color_override("font_color", Color(0.80, 0.78, 0.74, 0.90))
 		v.add_child(s_lbl)
 

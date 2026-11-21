@@ -8,6 +8,7 @@ extends Control
 signal closed()
 
 var _dim_overlay: ColorRect = null
+var _screen_margin: MarginContainer = null
 var main_panel: PanelContainer = null
 var _scope_row: HBoxContainer = null
 var _mode_row: HBoxContainer = null
@@ -53,8 +54,19 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	z_index = 48
 	_build_ui()
+	_apply_safe_area_and_width()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_safe_area_and_width):
+		get_viewport().size_changed.connect(_apply_safe_area_and_width)
 	if not NetworkManager.live_games_list_received.is_connected(_on_realtime_live_games_received):
 		NetworkManager.live_games_list_received.connect(_on_realtime_live_games_received)
+
+
+func _apply_safe_area_and_width() -> void:
+	if not is_instance_valid(_screen_margin) or get_viewport() == null:
+		return
+	var vis_w: float = get_viewport().get_visible_rect().size.x
+	var extra_x: int = maxi(20, int(round((vis_w - 680.0) * 0.5))) if vis_w > 740.0 else 20
+	CafeSocialTheme.apply_safe_area_to_margin(_screen_margin, extra_x, 28, extra_x, 28, true, true)
 
 
 func open(initial_scope: String = "all") -> void:
@@ -66,6 +78,7 @@ func open(initial_scope: String = "all") -> void:
 	grow_vertical = Control.GROW_DIRECTION_BOTH
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	_apply_safe_area_and_width()
 	if is_instance_valid(_dim_overlay):
 		_dim_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	if is_instance_valid(main_panel):
@@ -215,17 +228,17 @@ func _build_ui() -> void:
 	)
 	add_child(_dim_overlay)
 
-	# Screen-bounded Margin host so the dialog can NEVER overflow left/right of viewport
-	var screen_margin := MarginContainer.new()
-	screen_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	screen_margin.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	screen_margin.grow_vertical = Control.GROW_DIRECTION_BOTH
-	screen_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	screen_margin.add_theme_constant_override("margin_left", 24)
-	screen_margin.add_theme_constant_override("margin_right", 24)
-	screen_margin.add_theme_constant_override("margin_top", 54)
-	screen_margin.add_theme_constant_override("margin_bottom", 54)
-	add_child(screen_margin)
+	# Screen-bounded Margin host so the dialog can NEVER overflow left/right of viewport or clip notches
+	_screen_margin = MarginContainer.new()
+	_screen_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_screen_margin.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_screen_margin.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_screen_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_screen_margin.add_theme_constant_override("margin_left", 20)
+	_screen_margin.add_theme_constant_override("margin_right", 20)
+	_screen_margin.add_theme_constant_override("margin_top", 28)
+	_screen_margin.add_theme_constant_override("margin_bottom", 28)
+	add_child(_screen_margin)
 
 	main_panel = PanelContainer.new()
 	main_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -233,7 +246,7 @@ func _build_ui() -> void:
 	main_panel.clip_contents = true
 	main_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	main_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
-	screen_margin.add_child(main_panel)
+	_screen_margin.add_child(main_panel)
 
 	var inner := MarginContainer.new()
 	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -279,17 +292,17 @@ func _build_ui() -> void:
 
 	title_box.add_child(CafeSocialTheme.make_title(
 		"تماشای زنده بازی‌ها",
-		30,
+		CafeSocialTheme.FONT_SIZE_CARD_TITLE,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
 	))
 	title_box.add_child(CafeSocialTheme.make_body(
 		"مسابقات در حال برگزاری کافه فکر را به صورت زنده تماشا کنید",
-		18,
+		CafeSocialTheme.FONT_SIZE_BADGE,
 		CafeSocialTheme.COL_MUTED_SAND,
 		HORIZONTAL_ALIGNMENT_CENTER,
-		false
+		true
 	))
 
 	var btn_ref := TextureButton.new()
@@ -377,14 +390,15 @@ func _render_filters() -> void:
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			b.focus_mode = Control.FOCUS_NONE
 			b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			b.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-			b.add_theme_font_size_override("font_size", 24)
+			b.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+			b.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 			if current_scope == sid:
 				KenneyUI.style_button(b, KenneyUI.COLOR_YELLOW)
 				b.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
 			else:
 				KenneyUI.style_button(b, KenneyUI.COLOR_GREY)
 				b.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+			CafeSocialTheme.configure_single_line_tab(b, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 56.0, 6.0)
 			ActionVFXManager.apply_button_juice(b, "tap_button")
 			b.pressed.connect(func():
 				AudioManager.sfx_tap()
@@ -398,7 +412,7 @@ func _render_filters() -> void:
 		for c in _mode_row.get_children():
 			c.queue_free()
 		var modes: Array = [
-			{"id": "", "label": "همه حالت‌ها"},
+			{"id": "", "label": "همه"},
 			{"id": "Rank", "label": "رقابتی"},
 			{"id": "MultiRank", "label": "چندنفره"},
 			{"id": "ClassicRank", "label": "کلاسیک"},
@@ -411,10 +425,11 @@ func _render_filters() -> void:
 			var bm := CafeSocialTheme.make_button(
 				str(md_d["label"]),
 				"emerald" if is_m_sel else "muted",
-				Vector2(0, 44),
-				20
+				Vector2(0, 48),
+				CafeSocialTheme.FONT_SIZE_BADGE
 			)
 			bm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			CafeSocialTheme.configure_single_line_tab(bm, CafeSocialTheme.FONT_SIZE_BADGE, 48.0, 4.0)
 			bm.pressed.connect(func():
 				AudioManager.sfx_tap()
 				current_game_mode = mid
@@ -509,6 +524,9 @@ func _render_games_list() -> void:
 	for item in items:
 		if typeof(item) == TYPE_DICTIONARY:
 			_list_vbox.add_child(_build_match_card(item))
+	var bottom_pad := Control.new()
+	bottom_pad.custom_minimum_size = Vector2(0, 32)
+	_list_vbox.add_child(bottom_pad)
 
 
 func _build_match_card(m: Dictionary) -> PanelContainer:
@@ -563,8 +581,8 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	eye_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	eye_hbox.add_theme_constant_override("separation", 5)
 	eye_pill.add_child(eye_hbox)
-	eye_hbox.add_child(CafeSocialTheme.make_body("👁", 18, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
-	eye_hbox.add_child(CafeSocialTheme.make_body(GameManager.to_fa_num(spec_cnt), 19, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
+	eye_hbox.add_child(CafeSocialTheme.make_body("👁", CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
+	eye_hbox.add_child(CafeSocialTheme.make_body(GameManager.to_fa_num(spec_cnt), CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false))
 	badges_col.add_child(eye_pill)
 
 	if not mode_fa.is_empty():
@@ -573,7 +591,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 			CafeSocialTheme.COL_WARM_CREAM,
 			Color(0.14, 0.10, 0.06, 0.94),
 			CafeSocialTheme.COL_BRONZE_BORDER,
-			17
+			CafeSocialTheme.FONT_SIZE_BADGE
 		))
 	if has_friend:
 		badges_col.add_child(CafeSocialTheme.make_badge_pill(
@@ -581,7 +599,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 			CafeSocialTheme.COL_GOLD_BRIGHT,
 			Color(0.18, 0.12, 0.05, 0.95),
 			CafeSocialTheme.COL_GOLD_ANTIQUE,
-			17
+			CafeSocialTheme.FONT_SIZE_BADGE
 		))
 	elif has_clanmate:
 		badges_col.add_child(CafeSocialTheme.make_badge_pill(
@@ -589,7 +607,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 			CafeSocialTheme.COL_GOLD_BRIGHT,
 			Color(0.18, 0.12, 0.05, 0.95),
 			CafeSocialTheme.COL_GOLD_ANTIQUE,
-			17
+			CafeSocialTheme.FONT_SIZE_BADGE
 		))
 
 	var title_col := VBoxContainer.new()
@@ -600,7 +618,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 
 	var t_lbl := CafeSocialTheme.make_title(
 		"مسابقه %s" % gtitle,
-		24,
+		CafeSocialTheme.FONT_SIZE_BODY,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		false
@@ -612,7 +630,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 
 	var sub_lbl := CafeSocialTheme.make_body(
 		"%s بازیکن • در حال رقابت" % GameManager.to_fa_num(maxi(2, players.size())),
-		17,
+		CafeSocialTheme.FONT_SIZE_BADGE,
 		CafeSocialTheme.COL_MUTED_SAND,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		false
@@ -654,7 +672,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 			var c_info: Variant = pd.get("clan", null)
 			if typeof(c_info) == TYPE_DICTIONARY and not str((c_info as Dictionary).get("tag", "")).is_empty():
 				pname += " [%s]" % str((c_info as Dictionary).get("tag", ""))
-			var p_lbl := CafeSocialTheme.make_body(pname, 20, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+			var p_lbl := CafeSocialTheme.make_body(pname, CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 			p_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			p_lbl.clip_text = true
 			p_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -682,13 +700,13 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 				if typeof(p_item) != TYPE_DICTIONARY:
 					continue
 				if i > 0:
-					var vs_lbl := CafeSocialTheme.make_title("⚔", 22, CafeSocialTheme.COL_GOLD_ANTIQUE, HORIZONTAL_ALIGNMENT_CENTER, false)
+					var vs_lbl := CafeSocialTheme.make_title("⚔", CafeSocialTheme.FONT_SIZE_BADGE, CafeSocialTheme.COL_GOLD_ANTIQUE, HORIZONTAL_ALIGNMENT_CENTER, false)
 					vs_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 					players_row.add_child(vs_lbl)
 				players_row.add_child(make_player_chip.call(p_item as Dictionary))
 
 	# Row 3: Full-width Watch Action Button
-	var btn_watch := CafeSocialTheme.make_button("تماشای زنده مسابقه", "gold", Vector2(0, 54), 25)
+	var btn_watch := CafeSocialTheme.make_button("تماشای زنده مسابقه", "gold", Vector2(0, 56), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 	btn_watch.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_watch.pressed.connect(func():
 		AudioManager.sfx_button()

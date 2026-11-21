@@ -125,6 +125,9 @@ static func _populate_friends_list(host: Control, list_vbox: VBoxContainer) -> v
 	for f in host._friends_list:
 		if typeof(f) == TYPE_DICTIONARY:
 			list_vbox.add_child(_build_player_card(host, f, "friend"))
+	var end_sp := Control.new()
+	end_sp.custom_minimum_size = Vector2(0, 36)
+	list_vbox.add_child(end_sp)
 
 
 static func update_friend_presence(host: Control, target_uid: String, new_status: String) -> void:
@@ -193,6 +196,9 @@ static func _populate_requests(host: Control, list_vbox: VBoxContainer) -> void:
 		for req in host._outgoing_requests:
 			if typeof(req) == TYPE_DICTIONARY and typeof(req.get("user")) == TYPE_DICTIONARY:
 				list_vbox.add_child(_build_player_card(host, req["user"], "outgoing_req", str(req.get("request_id", ""))))
+	var req_end_sp := Control.new()
+	req_end_sp.custom_minimum_size = Vector2(0, 36)
+	list_vbox.add_child(req_end_sp)
 
 
 static func _populate_search_and_discover(host: Control, list_vbox: VBoxContainer) -> void:
@@ -331,8 +337,8 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 	stat_pills.add_theme_constant_override("separation", 6)
 	stat_pills.alignment = BoxContainer.ALIGNMENT_CENTER
 	stats_col.add_child(stat_pills)
-	stat_pills.add_child(CafeSocialTheme.make_badge_pill("امتیاز %s" % GameManager.to_fa_num(score), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_BRONZE_BORDER, 20))
-	stat_pills.add_child(CafeSocialTheme.make_badge_pill("سطح %s" % GameManager.to_fa_num(lvl), CafeSocialTheme.COL_EMERALD_TEXT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_EMERALD_BORDER, 20))
+	stat_pills.add_child(CafeSocialTheme.make_badge_pill("امتیاز %s" % GameManager.to_fa_num(score), CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_BRONZE_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
+	stat_pills.add_child(CafeSocialTheme.make_badge_pill("سطح %s" % GameManager.to_fa_num(lvl), CafeSocialTheme.COL_EMERALD_TEXT, Color(0.10, 0.06, 0.03, 0.94), CafeSocialTheme.COL_EMERALD_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 
 	# Center/Right: Name + Clan + Title (expandable, right aligned, tappable for profile)
 	var info_col := VBoxContainer.new()
@@ -636,8 +642,9 @@ static func _populate_live_games_discovery(host: Control, list_vbox: VBoxContain
 		var sc_dict: Dictionary = sc
 		var sid: String = str(sc_dict["id"])
 		var is_sel: bool = (host.current_live_scope == sid)
-		var b_sc: Button = CafeSocialTheme.make_button(str(sc_dict["label"]), "gold" if is_sel else "muted", Vector2(0, 46), 21)
+		var b_sc: Button = CafeSocialTheme.make_button(str(sc_dict["label"]), "gold" if is_sel else "muted", Vector2(0, 52), CafeSocialTheme.FONT_SIZE_TAB_COMPACT)
 		b_sc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		CafeSocialTheme.configure_single_line_tab(b_sc, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 52.0, 6.0)
 		b_sc.pressed.connect(func():
 			AudioManager.sfx_tap()
 			host.current_live_scope = sid
@@ -661,8 +668,9 @@ static func _populate_live_games_discovery(host: Control, list_vbox: VBoxContain
 		var gf_dict: Dictionary = gf
 		var gid_f: String = str(gf_dict["id"])
 		var is_g_sel: bool = (host.current_live_game_type == gid_f)
-		var b_gf: Button = CafeSocialTheme.make_button(str(gf_dict["label"]), "emerald" if is_g_sel else "bronze", Vector2(0, 42), 19)
+		var b_gf: Button = CafeSocialTheme.make_button(str(gf_dict["label"]), "emerald" if is_g_sel else "bronze", Vector2(0, 50), CafeSocialTheme.FONT_SIZE_BADGE)
 		b_gf.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		CafeSocialTheme.configure_single_line_tab(b_gf, CafeSocialTheme.FONT_SIZE_BADGE, 50.0, 4.0)
 		b_gf.pressed.connect(func():
 			AudioManager.sfx_tap()
 			host.current_live_game_type = gid_f
@@ -779,7 +787,7 @@ static func _build_live_match_card(host: Control, m: Dictionary) -> PanelContain
 		CafeSocialTheme.COL_EMERALD_TEXT,
 		CafeSocialTheme.COL_EMERALD_BG,
 		CafeSocialTheme.COL_EMERALD_BORDER,
-		20
+		CafeSocialTheme.FONT_SIZE_BADGE
 	))
 
 	var title_col: VBoxContainer = VBoxContainer.new()

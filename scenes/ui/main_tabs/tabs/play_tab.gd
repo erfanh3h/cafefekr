@@ -20,6 +20,14 @@ signal exit_requested()
 @onready var btn_lobby: Button = $Scroll/Content/CardsContainer/BtnLobby
 
 func _ready() -> void:
+	for card_btn in [btn_ranked, btn_multi, btn_classic, btn_lobby]:
+		if is_instance_valid(card_btn):
+			var t_lbl := card_btn.get_node_or_null("Margin/HBox/TextCol/CardTitle") as Label
+			if is_instance_valid(t_lbl):
+				t_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+				t_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_CARD_TITLE)
+				CafeSocialTheme.apply_wood_text_shadow(t_lbl, 3)
+
 	ActionVFXManager.apply_button_juice(btn_watch_live, "tap_button")
 	ActionVFXManager.apply_button_juice(btn_exit, "tap_button")
 	ActionVFXManager.apply_button_juice(btn_ranked, "tap_button")

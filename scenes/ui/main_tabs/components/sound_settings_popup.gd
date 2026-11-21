@@ -54,6 +54,7 @@ func open() -> void:
 	slider_sfx.editable = AudioManager.is_sound_enabled
 	_suppress_events = false
 
+	CafeSocialTheme.constrain_modal_card(panel, self, 620.0, 24.0)
 	visible = true
 	ActionVFXManager.animate_dialog_open(panel, self, false)
 

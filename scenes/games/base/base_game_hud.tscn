@@ -482,7 +482,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 32
 text = "📡 وقفه موقت در مسابقه"
 horizontal_alignment = 1
 
@@ -490,10 +490,10 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 26
 text = "ارتباط اینترنتی حریف موقتاً قطع شده است. لطفاً تا بازگشت حریف شکیبا باشید..."
 horizontal_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 3
 
 [node name="TimerBar" type="ProgressBar" parent="DisconnectPauseDialog/Card/VBox" unique_id=1887571068]
 custom_minimum_size = Vector2(0, 14)
@@ -507,7 +507,7 @@ show_percentage = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.82, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 text = "⏳ مهلت بازگشت به بازی: ۳۰ ثانیه"
 horizontal_alignment = 1
 
@@ -556,7 +556,7 @@ theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 32
 text = "🏳️ واگذاری مسابقه"
 horizontal_alignment = 1
 
@@ -564,11 +564,11 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.9, 0.82, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 26
 text = "آیا از واگذاری این مسابقه اطمینان دارید؟
 با تأیید انصراف، بازی به پایان رسیده و پیروزی برای حریف ثبت خواهد شد."
 horizontal_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 3
 
 [node name="BtnHBox" type="HBoxContainer" parent="SurrenderDialog/Card/VBox" unique_id=330112401]
 layout_mode = 2
@@ -580,7 +580,7 @@ custom_minimum_size = Vector2(250, 72)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "🏳️ بله، واگذار می‌کنم"
 
@@ -589,7 +589,7 @@ custom_minimum_size = Vector2(250, 72)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "بازگشت به بازی"
 
@@ -677,7 +677,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.35, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 text = "🔴 مهره قرمز"
 horizontal_alignment = 1
 
@@ -713,7 +713,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.75, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 text = "🔵 مهره آبی"
 horizontal_alignment = 1
 
@@ -721,9 +721,10 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.78, 0.65, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 text = "آماده‌باشید... بازی به‌زودی آغاز می‌شود"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Countdown" type="Label" parent="StartGameOverlay/Card/VBox" unique_id=2117733696]
 custom_minimum_size = Vector2(240, 90)
@@ -781,7 +782,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 34
 text = "✨ پایان راند ۱"
 horizontal_alignment = 1
 
@@ -791,9 +792,10 @@ theme_override_colors/font_color = Color(0.35, 0.95, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 text = "🎉 این راند را شما بردید!"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="ScoreRow" type="Label" parent="RoundFinishBanner/Card/VBox" unique_id=1819010134]
 layout_mode = 2
@@ -801,9 +803,10 @@ theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "مجموع امتیاز راندها: ۱ - ۰"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="ToastHint" type="PanelContainer" parent="." unique_id=1167564156]
 visible = false
@@ -828,7 +831,7 @@ theme_override_colors/font_color = Color(1, 0.94, 0.55, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 32
 text = "نوبتت نیست!"
 horizontal_alignment = 1
 vertical_alignment = 1

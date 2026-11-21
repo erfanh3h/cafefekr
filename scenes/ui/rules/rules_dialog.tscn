@@ -1,11 +1,15 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/rules/rules_dialog.gd" id="1_rules_script"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="3_close_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="5_button_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/games/tictactoe.jpg" id="6_tictactoe_tex"]
+
+[sub_resource type="FontVariation" id="FontVariation_vazir_bold"]
+base_font = ExtResource("4_font_vazir")
+variation_embolden = 0.26
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
 texture = ExtResource("2_board_tex")
@@ -13,6 +17,8 @@ texture_margin_left = 60.0
 texture_margin_top = 60.0
 texture_margin_right = 60.0
 texture_margin_bottom = 60.0
+axis_stretch_horizontal = 0
+axis_stretch_vertical = 0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
 texture = ExtResource("5_button_tex")
@@ -96,7 +102,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnClose" type="TextureButton" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 texture_normal = ExtResource("3_close_tex")
 ignore_texture_size = true
@@ -107,18 +113,21 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 34
 text = "راهنما و دانشنامه بازی‌ها"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="Spacer" type="Control" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 
 [node name="BtnSelectGame" type="Button" parent="Margin/VBox"]
-custom_minimum_size = Vector2(0, 96)
+custom_minimum_size = Vector2(0, 112)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_select_game_btn")
 
@@ -143,49 +152,56 @@ alignment = 1
 
 [node name="PillChange" type="PanelContainer" parent="Margin/VBox/BtnSelectGame/Margin/HBox"]
 layout_mode = 2
+size_flags_vertical = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_pill_gold")
 
 [node name="LblChangeHint" type="Label" parent="Margin/VBox/BtnSelectGame/Margin/HBox/PillChange"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.18, 0.1, 0.02, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 22
 text = "تغییر بازی ▾"
 horizontal_alignment = 1
 
-[node name="Spacer" type="Control" parent="Margin/VBox/BtnSelectGame/Margin/HBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-
 [node name="VBoxGameInfo" type="VBoxContainer" parent="Margin/VBox/BtnSelectGame/Margin/HBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 mouse_filter = 2
 theme_override_constants/separation = 2
 alignment = 1
 
 [node name="LblHintPrefix" type="Label" parent="Margin/VBox/BtnSelectGame/Margin/HBox/VBoxGameInfo"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.84, 0.45, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 16
-text = "بازی انتخابی برای مطالعه قوانین:"
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 22
+text = "بازی انتخابی:"
 horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="LblSelectedGame" type="Label" parent="Margin/VBox/BtnSelectGame/Margin/HBox/VBoxGameInfo"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 28
 text = "تیک تاک تو"
 horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="IconFrame" type="PanelContainer" parent="Margin/VBox/BtnSelectGame/Margin/HBox"]
-custom_minimum_size = Vector2(68, 68)
+custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
+size_flags_vertical = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_icon_frame")
 
@@ -207,14 +223,14 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
 [node name="BtnUnderstood" type="Button" parent="Margin/VBox"]
-custom_minimum_size = Vector2(260, 68)
+custom_minimum_size = Vector2(280, 72)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "متوجه شدم"
 
@@ -243,10 +259,10 @@ theme_override_styles/panel = SubResource("StyleBoxTexture_board")
 
 [node name="ModalMargin" type="MarginContainer" parent="GameSelectModal/Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 32
-theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 32
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
 
 [node name="VBox" type="VBoxContainer" parent="GameSelectModal/Panel/ModalMargin"]
 layout_mode = 2
@@ -257,7 +273,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnCloseGameSelect" type="TextureButton" parent="GameSelectModal/Panel/ModalMargin/VBox/TopRow"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 texture_normal = ExtResource("3_close_tex")
 ignore_texture_size = true
@@ -268,23 +284,29 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.75, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 3
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 36
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 34
 text = "انتخاب بازی برای مطالعه قوانین"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="Spacer" type="Control" parent="GameSelectModal/Panel/ModalMargin/VBox/TopRow"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 
 [node name="LblModalSubtitle" type="Label" parent="GameSelectModal/Panel/ModalMargin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.88, 0.82, 0.7, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 23
 text = "بازی مورد نظر را برای مشاهده راهنما، آموزش و داستان انتخاب کنید"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="ScrollGames" type="ScrollContainer" parent="GameSelectModal/Panel/ModalMargin/VBox"]
 layout_mode = 2

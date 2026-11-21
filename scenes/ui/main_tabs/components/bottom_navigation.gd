@@ -83,14 +83,20 @@ func _style_tab_item(btn: Button, tab_name: String, is_selected: bool) -> void:
 		highlight.visible = is_selected
 
 	if is_instance_valid(lbl):
+		lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		lbl.add_theme_font_size_override("font_size", 26 if tab_name == "play" else CafeSocialTheme.FONT_SIZE_BOTTOM_NAV)
+		lbl.clip_text = true
+		lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		if is_selected:
 			lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.45, 1.0))
-			lbl.add_theme_color_override("font_shadow_color", Color(0.9, 0.6, 0.1, 0.8))
+			lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+			lbl.add_theme_constant_override("shadow_offset_y", 2)
 			lbl.add_theme_constant_override("shadow_outline_size", 3)
 		else:
-			lbl.add_theme_color_override("font_color", Color(0.78, 0.72, 0.62, 0.90))
-			lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
-			lbl.add_theme_constant_override("shadow_outline_size", 1)
+			lbl.add_theme_color_override("font_color", Color(0.84, 0.78, 0.68, 0.92))
+			lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+			lbl.add_theme_constant_override("shadow_offset_y", 2)
+			lbl.add_theme_constant_override("shadow_outline_size", 2)
 
 	if is_instance_valid(icon):
 		icon.pivot_offset = icon.custom_minimum_size / 2.0
@@ -102,6 +108,17 @@ func _style_tab_item(btn: Button, tab_name: String, is_selected: bool) -> void:
 		else:
 			icon.modulate = Color(0.85, 0.82, 0.80, 0.88)
 			icon.scale = Vector2(1.0, 1.0)
+
+
+func apply_safe_area_insets(bottom_inset: int, left_inset: int = 0, right_inset: int = 0) -> void:
+	var base_h: float = 172.0
+	custom_minimum_size.y = base_h + float(bottom_inset)
+	var margin_node := get_node_or_null("PanelFrame/Margin") as MarginContainer
+	if is_instance_valid(margin_node):
+		margin_node.add_theme_constant_override("margin_left", 20 + left_inset)
+		margin_node.add_theme_constant_override("margin_right", 20 + right_inset)
+		margin_node.add_theme_constant_override("margin_top", 16)
+		margin_node.add_theme_constant_override("margin_bottom", 16 + bottom_inset)
 
 
 func update_social_badge() -> void:

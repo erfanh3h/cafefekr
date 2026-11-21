@@ -465,6 +465,8 @@ func _ensure_top_header_for_current_game() -> void:
 
 
 
+var _is_spectator_hud_mode: bool = false
+
 func _ready() -> void:
 
 	_ensure_top_header_for_current_game()
@@ -472,6 +474,11 @@ func _ready() -> void:
 	_setup_card_styles()
 
 	_setup_connections()
+
+	_apply_responsive_layout()
+	var vp := get_viewport()
+	if vp and not vp.size_changed.is_connected(_apply_responsive_layout):
+		vp.size_changed.connect(_apply_responsive_layout)
 
 	surrender_dialog.visible = false
 
@@ -1167,17 +1174,42 @@ func _ensure_clean_white_fekr_icons() -> void:
 
 
 
+func _fit_centered_card(card: Control, max_width: float) -> void:
+	if not is_instance_valid(card):
+		return
+	CafeSocialTheme.constrain_modal_card(card, self, max_width, 20.0)
+	var half_w: float = card.custom_minimum_size.x * 0.5
+	card.offset_left = -half_w
+	card.offset_right = half_w
+
+func _apply_responsive_layout() -> void:
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var bottom_inset: float = float(insets["bottom"])
+	var bbar := get_node_or_null("BottomBar") as Control
+	var bmargin := get_node_or_null("BottomBar/Margin") as MarginContainer
+	if is_instance_valid(bbar):
+		if _is_spectator_hud_mode:
+			bbar.offset_top = -176.0 - bottom_inset
+			bbar.offset_bottom = -96.0 - bottom_inset
+		else:
+			bbar.offset_top = -88.0 - bottom_inset
+			bbar.offset_bottom = 0.0
+	if is_instance_valid(bmargin):
+		CafeSocialTheme.apply_safe_area_to_margin(bmargin, 12, 0, 12, 8, false, not _is_spectator_hud_mode)
+	_fit_centered_card(pause_card, 640.0)
+	_fit_centered_card(surrender_card, 640.0)
+	_fit_centered_card(round_finish_card, 640.0)
+	_fit_centered_card(intro_card, 660.0)
+
 func set_spectator_mode(enabled: bool) -> void:
+	_is_spectator_hud_mode = enabled
 	if is_instance_valid(btn_surrender):
 		btn_surrender.visible = not enabled
 	if is_instance_valid(btn_kori):
 		btn_kori.visible = not enabled
 	if is_instance_valid(btn_reactions):
 		btn_reactions.visible = not enabled
-	var bbar := get_node_or_null("BottomBar") as Control
-	if is_instance_valid(bbar):
-		bbar.offset_top = -176.0 if enabled else -88.0
-		bbar.offset_bottom = -96.0 if enabled else 0.0
+	_apply_responsive_layout()
 	if enabled:
 		set_fekrbekr_hud_buttons(false)
 		if is_instance_valid(reaction_picker):
@@ -2547,8 +2579,6 @@ func show_toast_hint(text: String) -> void:
 
 	lbl_toast.text = text
 
-	
-
 	var font = lbl_toast.get_theme_font("font")
 
 	var font_size = lbl_toast.get_theme_font_size("font_size")
@@ -2559,21 +2589,27 @@ func show_toast_hint(text: String) -> void:
 
 		text_w = font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size).x
 
-	var total_w = max(440.0, text_w + 80.0)
+	var vp_w = get_viewport_rect().size.x if get_viewport() != null else 1080.0
+
+	var max_w = maxf(360.0, vp_w - 36.0)
+
+	var total_w = clampf(maxf(440.0, text_w + 80.0), 360.0, max_w)
+
+	lbl_toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if (text_w + 80.0 > max_w) else TextServer.AUTOWRAP_OFF
 
 	var half_w = total_w / 2.0
 
-	
+	var bottom_inset: float = float(CafeSocialTheme.get_safe_area_insets(self)["bottom"])
 
 	toast_hint.offset_left = -half_w
 
 	toast_hint.offset_right = half_w
 
-	toast_hint.offset_top = -240.0
+	toast_hint.offset_top = -244.0 - bottom_inset
 
-	toast_hint.offset_bottom = -165.0
+	toast_hint.offset_bottom = -165.0 - bottom_inset
 
-	toast_hint.pivot_offset = Vector2(half_w, (240.0 - 165.0) / 2.0)
+	toast_hint.pivot_offset = Vector2(half_w, (244.0 - 165.0) / 2.0)
 
 	
 
@@ -3078,6 +3114,10 @@ func _update_audio_visual() -> void:
 
 
 func _exit_tree() -> void:
+
+	var vp := get_viewport()
+	if vp and vp.size_changed.is_connected(_apply_responsive_layout):
+		vp.size_changed.disconnect(_apply_responsive_layout)
 
 	if _turn_glow_tween and is_instance_valid(_turn_glow_tween):
 

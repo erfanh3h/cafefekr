@@ -1,10 +1,14 @@
-[gd_scene load_steps=10 format=3 uid="uid://ba61w4y3qevpl"]
+[gd_scene load_steps=11 format=3 uid="uid://ba61w4y3qevpl"]
 
 [ext_resource type="Script" path="res://scenes/ui/auth/login_dialog.gd" id="1_login_script"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="3_button_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="5_close_tex"]
+
+[sub_resource type="FontVariation" id="FontVariation_vazir_bold"]
+base_font = ExtResource("4_font_vazir")
+variation_embolden = 0.26
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
 texture = ExtResource("2_board_tex")
@@ -12,6 +16,8 @@ texture_margin_left = 60.0
 texture_margin_top = 60.0
 texture_margin_right = 60.0
 texture_margin_bottom = 60.0
+axis_stretch_horizontal = 0
+axis_stretch_vertical = 0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
 texture = ExtResource("3_button_tex")
@@ -55,16 +61,16 @@ shadow_size = 8
 shadow_offset = Vector2(0, 2)
 
 [node name="LoginDialog" type="PanelContainer"]
-custom_minimum_size = Vector2(640, 560)
+custom_minimum_size = Vector2(640, 580)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -320.0
-offset_top = -280.0
+offset_top = -290.0
 offset_right = 320.0
-offset_bottom = 280.0
+offset_bottom = 290.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_board")
@@ -98,9 +104,10 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 34
 text = "ورود به کافه فکر"
 horizontal_alignment = 1
 
@@ -116,18 +123,21 @@ theme_override_constants/separation = 14
 [node name="LblSubtitle" type="Label" parent="Margin/VBox/Step1_Phone"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 26
 text = "شماره موبایل خود را وارد کنید:"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="InputPhone" type="LineEdit" parent="Margin/VBox/Step1_Phone"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("4_font_vazir")
 theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_input")
 theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
@@ -136,14 +146,14 @@ alignment = 1
 max_length = 13
 
 [node name="BtnSendCode" type="Button" parent="Margin/VBox/Step1_Phone"]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 78)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "دریافت کد تأیید (SMS)"
 
@@ -162,7 +172,9 @@ color = Color(0.6, 0.45, 0.3, 0.6)
 [node name="LblOr" type="Label" parent="Margin/VBox/Step1_Phone/OrSeparator"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.75, 0.55, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
 theme_override_font_sizes/font_size = 22
 text = "یا"
 horizontal_alignment = 1
@@ -175,14 +187,14 @@ color = Color(0.6, 0.45, 0.3, 0.6)
 
 [node name="BtnGuestLogin" type="Button" parent="Margin/VBox/Step1_Phone"]
 visible = false
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 74)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.1, 0.18, 0.28, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ورود به عنوان مهمان"
 
@@ -194,18 +206,21 @@ theme_override_constants/separation = 14
 [node name="LblSubtitle" type="Label" parent="Margin/VBox/Step2_Code"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 26
 text = "کد تأیید پیامک شده را وارد کنید:"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="InputCode" type="LineEdit" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("4_font_vazir")
 theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_input")
 theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
@@ -214,26 +229,26 @@ alignment = 1
 max_length = 4
 
 [node name="BtnVerifyCode" type="Button" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 78)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "تأیید و ورود به بازی"
 
 [node name="BtnBackPhone" type="Button" parent="Margin/VBox/Step2_Code"]
-custom_minimum_size = Vector2(260, 60)
+custom_minimum_size = Vector2(280, 62)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.12, 0.12, 0.12, 0.9)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 24
 text = "ویرایش شماره موبایل"
 
 [node name="Step3_Username" type="VBoxContainer" parent="Margin/VBox"]
@@ -244,18 +259,21 @@ theme_override_constants/separation = 14
 [node name="LblSubtitle" type="Label" parent="Margin/VBox/Step3_Username"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 26
 text = "لطفاً نام کاربری خود را انتخاب کنید:"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="InputUsername" type="LineEdit" parent="Margin/VBox/Step3_Username"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("4_font_vazir")
 theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxFlat_input")
 theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
@@ -266,18 +284,20 @@ max_length = 30
 [node name="LblRepSubtitle" type="Label" parent="Margin/VBox/Step3_Username"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.78, 0.65, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 24
 text = "کد معرف (اختیاری):"
 horizontal_alignment = 1
 
 [node name="InputRepId" type="LineEdit" parent="Margin/VBox/Step3_Username"]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_placeholder_color = Color(0.68, 0.58, 0.46, 0.7)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("4_font_vazir")
 theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxFlat_input")
 theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
@@ -286,21 +306,23 @@ alignment = 1
 max_length = 6
 
 [node name="BtnSubmitUsername" type="Button" parent="Margin/VBox/Step3_Username"]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 78)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ثبت نام و شروع بازی"
 
 [node name="LblStatus" type="Label" parent="Margin/VBox"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 23
 horizontal_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 3

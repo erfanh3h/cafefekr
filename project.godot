@@ -61,6 +61,7 @@ window/handheld/orientation=1
 
 [gui]
 
+theme/custom="res://assets/themes/cafe_ui_theme.tres"
 theme/custom_font="res://assets/fonts/Vazir.ttf"
 
 [input_devices]

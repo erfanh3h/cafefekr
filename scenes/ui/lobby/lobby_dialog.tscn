@@ -1,12 +1,16 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/lobby/lobby_dialog.gd" id="1_lobby_script"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="3_button_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="5_close_tex"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/refresh.png" id="6_refresh_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/games/tictactoe.jpg" id="7_tictactoe_tex"]
+
+[sub_resource type="FontVariation" id="FontVariation_vazir_bold"]
+base_font = ExtResource("4_font_vazir")
+variation_embolden = 0.26
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
 texture = ExtResource("2_board_tex")
@@ -14,6 +18,8 @@ texture_margin_left = 60.0
 texture_margin_top = 60.0
 texture_margin_right = 60.0
 texture_margin_bottom = 60.0
+axis_stretch_horizontal = 0
+axis_stretch_vertical = 0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
 texture = ExtResource("3_button_tex")
@@ -102,10 +108,10 @@ script = ExtResource("1_lobby_script")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
@@ -116,7 +122,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnCloseTop" type="TextureButton" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 texture_normal = ExtResource("5_close_tex")
 ignore_texture_size = true
@@ -127,14 +133,17 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 32
 text = "اتاق‌های بازی آنلاین (لابی)"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnRefresh" type="TextureButton" parent="Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 texture_normal = ExtResource("6_refresh_tex")
 ignore_texture_size = true
@@ -155,24 +164,33 @@ custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ساخت اتاق جدید"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnShowJoinCode" type="Button" parent="Margin/VBox/ViewList/ActionsRow"]
 custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ورود با شناسه اتاق"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="ScrollList" type="ScrollContainer" parent="Margin/VBox/ViewList"]
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
 [node name="LobbiesContainer" type="VBoxContainer" parent="Margin/VBox/ViewList/ScrollList"]
 layout_mode = 2
@@ -183,6 +201,8 @@ theme_override_constants/separation = 10
 visible = false
 layout_mode = 2
 size_flags_vertical = 6
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 24
 text = ""
 
 [node name="ViewCreate" type="VBoxContainer" parent="Margin/VBox"]
@@ -194,36 +214,38 @@ theme_override_constants/separation = 14
 [node name="LblCreateTitle" type="Label" parent="Margin/VBox/ViewCreate"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 26
 text = "مشخصات و تنظیمات اتاق جدید:"
 horizontal_alignment = 2
 
 [node name="InputRoomName" type="LineEdit" parent="Margin/VBox/ViewCreate"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_placeholder_color = Color(0.72, 0.64, 0.52, 0.75)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("4_font_vazir")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_input_box")
 placeholder_text = "نام اتاق (مثال: اتاق دوستانه)"
 alignment = 1
 
 [node name="InputRoomPassword" type="LineEdit" parent="Margin/VBox/ViewCreate"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_placeholder_color = Color(0.72, 0.64, 0.52, 0.75)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_input_box")
 placeholder_text = "🔒 رمز عبور اتاق (اختیاری)"
 alignment = 1
 max_length = 20
 
 [node name="BtnSelectGame" type="Button" parent="Margin/VBox/ViewCreate"]
-custom_minimum_size = Vector2(0, 88)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_select_game_btn")
@@ -260,8 +282,8 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_pill_gold")
 [node name="LblChangeHint" type="Label" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox/PillChange"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.18, 0.1, 0.02, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 22
 text = "تغییر بازی ▾"
 horizontal_alignment = 1
 
@@ -279,10 +301,11 @@ alignment = 1
 [node name="LblSelectedGame" type="Label" parent="Margin/VBox/ViewCreate/BtnSelectGame/Margin/HBox/VBoxGameInfo"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 28
 text = "تیک تاک تو"
 horizontal_alignment = 2
 
@@ -313,24 +336,28 @@ custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "ایجاد اتاق"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnCreateCancel" type="Button" parent="Margin/VBox/ViewCreate/CreateButtonsRow"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.12, 0.12, 0.12, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "بازگشت به لیست"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="ViewJoinCode" type="VBoxContainer" parent="Margin/VBox"]
 visible = false
@@ -341,15 +368,17 @@ theme_override_constants/separation = 16
 [node name="LblJoinTitle" type="Label" parent="Margin/VBox/ViewJoinCode"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.5, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 26
 text = "ورود مستقیم با شناسه ۶ رقمی:"
 horizontal_alignment = 2
 
 [node name="InputJoinCode" type="LineEdit" parent="Margin/VBox/ViewJoinCode"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
+theme_override_fonts/font = ExtResource("4_font_vazir")
 theme_override_font_sizes/font_size = 26
 placeholder_text = "کد ۶ رقمی اتاق (مثال: A1B2C3)"
 alignment = 1
@@ -365,20 +394,28 @@ custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "پیوستن"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnJoinCancel" type="Button" parent="Margin/VBox/ViewJoinCode/JoinButtonsRow"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.85, 0.8, 0.75, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "بازگشت به لیست"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="ViewInside" type="VBoxContainer" parent="Margin/VBox"]
 visible = false
@@ -392,9 +429,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_match_header")
 
 [node name="Margin" type="MarginContainer" parent="Margin/VBox/ViewInside/InsideHeaderCard"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
+theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 14
+theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 12
 
 [node name="HeaderVBox" type="VBoxContainer" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin"]
@@ -414,27 +451,31 @@ alignment = 1
 
 [node name="LblGameSub" type="Label" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/GameRow/VBoxGameInfo"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.8, 0.6, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 16
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 22
 text = "بازی انتخابی اتاق مسابقه:"
 horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="LblGameName" type="Label" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/GameRow/VBoxGameInfo"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 26
 text = "تیک تاک تو"
 horizontal_alignment = 2
 clip_text = true
 text_overrun_behavior = 3
 
 [node name="IconFrame" type="PanelContainer" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/GameRow"]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(68, 68)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_icon_frame")
 
@@ -454,30 +495,36 @@ theme_override_constants/separation = 10
 alignment = 1
 
 [node name="BtnCopyCode" type="Button" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/CodePill/HBoxCode"]
-custom_minimum_size = Vector2(96, 44)
+custom_minimum_size = Vector2(114, 50)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 18
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 22
 text = "کپی کد"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="LblRoomId" type="Label" parent="Margin/VBox/ViewInside/InsideHeaderCard/Margin/HeaderVBox/CodePill/HBoxCode"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.45, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 24
 text = "کد اتاق: ABC123"
 horizontal_alignment = 2
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="LblPlayersHeader" type="Label" parent="Margin/VBox/ViewInside"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.5, 0.95)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 24
 text = "بازیکنان حاضر در این مسابقه:"
 horizontal_alignment = 2
 
@@ -497,50 +544,58 @@ theme_override_constants/separation = 10
 alignment = 1
 
 [node name="BtnReady" type="Button" parent="Margin/VBox/ViewInside/InsideButtonsRow"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.5
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "اعلام آمادگی"
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnStart" type="Button" parent="Margin/VBox/ViewInside/InsideButtonsRow"]
 visible = false
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.6
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.06, 0.28, 0.12, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "شروع مسابقه"
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnLeaveLobby" type="Button" parent="Margin/VBox/ViewInside/InsideButtonsRow"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.35, 0.05, 0.05, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 22
 text = "خروج از اتاق"
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="LblStatus" type="Label" parent="Margin/VBox"]
-custom_minimum_size = Vector2(0, 28)
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="GameSelectModal" type="Control" parent="."]
 visible = false
@@ -581,10 +636,10 @@ theme_override_styles/panel = SubResource("StyleBoxTexture_board")
 
 [node name="ModalMargin" type="MarginContainer" parent="GameSelectModal/Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
 
 [node name="VBox" type="VBoxContainer" parent="GameSelectModal/Panel/ModalMargin"]
 layout_mode = 2
@@ -595,7 +650,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnCloseGameSelect" type="TextureButton" parent="GameSelectModal/Panel/ModalMargin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 texture_normal = ExtResource("5_close_tex")
 ignore_texture_size = true
@@ -606,23 +661,29 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.75, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 32
 text = "انتخاب بازی"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="Spacer" type="Control" parent="GameSelectModal/Panel/ModalMargin/VBox/TopRow"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 
 [node name="LblModalSubtitle" type="Label" parent="GameSelectModal/Panel/ModalMargin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.88, 0.82, 0.7, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 22
 text = "بازی مورد نظر خود را برای ایجاد اتاق انتخاب کنید"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="ScrollGames" type="ScrollContainer" parent="GameSelectModal/Panel/ModalMargin/VBox"]
 layout_mode = 2

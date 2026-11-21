@@ -41,16 +41,16 @@ func _build_ui() -> void:
 	top_row.add_theme_constant_override("separation", 8)
 	vb.add_child(top_row)
 
-	_lbl_percentage = CafeSocialTheme.make_body("۰٪", 19, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_LEFT, false)
+	_lbl_percentage = CafeSocialTheme.make_body("۰٪", 23, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_LEFT, false)
 	top_row.add_child(_lbl_percentage)
 
-	_lbl_level_title = CafeSocialTheme.make_title("پیشرفت سطح ۱", 20, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_level_title = CafeSocialTheme.make_title("پیشرفت سطح ۱", 24, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	_lbl_level_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_child(_lbl_level_title)
 
 	# 2. Progress Bar (Emerald Green & Gold)
 	_progress_bar = ProgressBar.new()
-	_progress_bar.custom_minimum_size = Vector2(0, 16)
+	_progress_bar.custom_minimum_size = Vector2(0, 20)
 	_progress_bar.min_value = 0.0
 	_progress_bar.max_value = 100.0
 	_progress_bar.value = 0.0
@@ -77,10 +77,10 @@ func _build_ui() -> void:
 	bot_row.add_theme_constant_override("separation", 8)
 	vb.add_child(bot_row)
 
-	_lbl_exp_remaining = CafeSocialTheme.make_body("", 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_LEFT, false)
+	_lbl_exp_remaining = CafeSocialTheme.make_body("", 22, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_LEFT, false)
 	bot_row.add_child(_lbl_exp_remaining)
 
-	_lbl_exp_ratio = CafeSocialTheme.make_body("۰ / ۰ XP", 16, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_exp_ratio = CafeSocialTheme.make_body("۰ / ۰ XP", 22, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	_lbl_exp_ratio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bot_row.add_child(_lbl_exp_ratio)
 

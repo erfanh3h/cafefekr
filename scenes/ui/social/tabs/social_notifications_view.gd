@@ -110,6 +110,9 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 		for n in items:
 			if typeof(n) == TYPE_DICTIONARY:
 				n_vbox.add_child(_build_notification_card(host, n))
+		var end_sp := Control.new()
+		end_sp.custom_minimum_size = Vector2(0, 36)
+		n_vbox.add_child(end_sp)
 	)
 
 
@@ -147,7 +150,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 
 	if not time_str.is_empty():
 		top_row.add_child(CafeSocialTheme.make_badge_pill(
-			time_str, CafeSocialTheme.COL_MUTED_SAND, Color(0.08, 0.05, 0.03, 0.9), CafeSocialTheme.COL_BRONZE_BORDER, 17
+			time_str, CafeSocialTheme.COL_MUTED_SAND, Color(0.08, 0.05, 0.03, 0.9), CafeSocialTheme.COL_BRONZE_BORDER, CafeSocialTheme.FONT_SIZE_BADGE
 		))
 
 	var text_col := VBoxContainer.new()
@@ -157,14 +160,14 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 
 	text_col.add_child(CafeSocialTheme.make_title(
 		str(n.get("title", "اعلان")),
-		25,
+		28,
 		CafeSocialTheme.COL_WARM_CREAM if is_read else CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		true
 	))
 	text_col.add_child(CafeSocialTheme.make_body(
 		str(n.get("body", "")),
-		20,
+		24,
 		CafeSocialTheme.COL_MUTED_SAND if is_read else CafeSocialTheme.COL_IVORY,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		true
@@ -193,7 +196,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 	if ntype == "friend_request_received" and payload.has("request_id"):
 		has_acts = true
 		var rid := str(payload.get("request_id", ""))
-		var b_acc := CafeSocialTheme.make_friend_button("accept", "پذیرش دوستی", Vector2(0, 46))
+		var b_acc := CafeSocialTheme.make_friend_button("accept", "پذیرش دوستی", Vector2(0, 52))
 		b_acc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_acc.pressed.connect(func():
 			AudioManager.sfx_button()
@@ -207,7 +210,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 		)
 		act_row.add_child(b_acc)
 
-		var b_rej := CafeSocialTheme.make_friend_button("reject", "رد", Vector2(110, 46))
+		var b_rej := CafeSocialTheme.make_friend_button("reject", "رد", Vector2(116, 52))
 		b_rej.pressed.connect(func():
 			AudioManager.sfx_tap()
 			NetworkManager.api.respond_friend_request(rid, "reject", func(_ok: bool, _c: int, _d: Variant):
@@ -221,7 +224,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 	elif ntype == "clan_invitation_received" and payload.has("invite_id"):
 		has_acts = true
 		var inv_id := str(payload.get("invite_id", ""))
-		var b_join := CafeSocialTheme.make_button("پیوستن به کلن", "emerald", Vector2(0, 46), 22)
+		var b_join := CafeSocialTheme.make_button("پیوستن به کلن", "emerald", Vector2(0, 52), 24)
 		b_join.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_join.pressed.connect(func():
 			AudioManager.sfx_button()
@@ -236,7 +239,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 
 	elif ntype == "direct_message_received" and not actor_id.is_empty():
 		has_acts = true
-		var b_open_dm := CafeSocialTheme.make_button("مشاهده گفتگو", "sapphire", Vector2(0, 46), 22)
+		var b_open_dm := CafeSocialTheme.make_button("مشاهده گفتگو", "sapphire", Vector2(0, 52), 24)
 		b_open_dm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_open_dm.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -249,7 +252,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 	elif ntype == "game_invitation_received" and payload.has("invite_id"):
 		has_acts = true
 		var g_inv_id := str(payload.get("invite_id", ""))
-		var b_gacc := CafeSocialTheme.make_button("قبول دعوت بازی", "emerald", Vector2(0, 46), 22)
+		var b_gacc := CafeSocialTheme.make_button("قبول دعوت بازی", "emerald", Vector2(0, 52), 24)
 		b_gacc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b_gacc.pressed.connect(func():
 			AudioManager.sfx_button()
@@ -261,7 +264,7 @@ static func _build_notification_card(host: Control, n: Dictionary) -> PanelConta
 
 	if not is_read:
 		has_acts = true
-		var b_mark := CafeSocialTheme.make_button("خوانده شد", "bronze", Vector2(140, 46), 22)
+		var b_mark := CafeSocialTheme.make_button("خوانده شد", "bronze", Vector2(148, 52), 24)
 		b_mark.pressed.connect(func():
 			AudioManager.sfx_tap()
 			b_mark.disabled = true

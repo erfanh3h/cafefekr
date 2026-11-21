@@ -38,8 +38,8 @@ var _selected_frame_id: int = 1
 var _my_games_history_data: Dictionary = {}
 var _my_recent_matches: Array = []
 
-var _font_hekayat = preload("res://assets/fonts/hekayat.ttf")
-var _font_vazir = preload("res://assets/fonts/Vazir.ttf")
+var _font_ui_bold: Font = CafeSocialTheme.get_ui_bold_font()
+var _font_vazir: Font = CafeSocialTheme.get_ui_font()
 
 func _ready() -> void:
 	var subnav_bar = get_node_or_null("OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar") as PanelContainer
@@ -118,37 +118,35 @@ func switch_subtab(tab_name: String) -> void:
 
 
 func _style_subnav_btn(btn: Button, is_act: bool) -> void:
-	btn.add_theme_font_override("font", _font_hekayat)
-	btn.add_theme_font_size_override("font_size", 18)
-	btn.clip_text = true
-	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	
 	var col_name = KenneyUI.COLOR_YELLOW if is_act else KenneyUI.COLOR_GREY
 	var st_norm: StyleBoxTexture = KenneyUI.get_button_style(col_name, "normal").duplicate()
-	st_norm.content_margin_left = 6.0
-	st_norm.content_margin_right = 6.0
+	st_norm.content_margin_left = 4.0
+	st_norm.content_margin_right = 4.0
 	st_norm.content_margin_top = 8.0
 	st_norm.content_margin_bottom = 8.0
 	btn.add_theme_stylebox_override("normal", st_norm)
 
 	var st_press: StyleBoxTexture = KenneyUI.get_button_style(col_name, "pressed").duplicate()
-	st_press.content_margin_left = 6.0
-	st_press.content_margin_right = 6.0
+	st_press.content_margin_left = 4.0
+	st_press.content_margin_right = 4.0
 	st_press.content_margin_top = 10.0
 	st_press.content_margin_bottom = 6.0
 	btn.add_theme_stylebox_override("pressed", st_press)
 
 	var st_hover: StyleBoxTexture = KenneyUI.get_button_style(col_name, "hover").duplicate()
-	st_hover.content_margin_left = 6.0
-	st_hover.content_margin_right = 6.0
+	st_hover.content_margin_left = 4.0
+	st_hover.content_margin_right = 4.0
 	st_hover.content_margin_top = 8.0
 	st_hover.content_margin_bottom = 8.0
 	btn.add_theme_stylebox_override("hover", st_hover)
 
+	CafeSocialTheme.configure_single_line_tab(btn, CafeSocialTheme.FONT_SIZE_TAB_COMPACT, 58.0, 4.0)
+
 	if is_act:
 		btn.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
 	else:
-		btn.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+		btn.add_theme_color_override("font_color", Color(0.90, 0.85, 0.78, 0.92))
+		CafeSocialTheme.apply_wood_text_shadow(btn, 2)
 
 
 func show_toast(msg: String, col: Color = CafeSocialTheme.COL_EMERALD_TEXT) -> void:
@@ -192,18 +190,16 @@ func _render_profile() -> void:
 	# Section toggle switcher: [مسابقات اخیر] | [آمار بازی‌ها]
 	var seg_box := HBoxContainer.new()
 	seg_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	seg_box.custom_minimum_size = Vector2(0, 56)
+	seg_box.custom_minimum_size = Vector2(0, 62)
 	seg_box.add_theme_constant_override("separation", 10)
 	content_profile.add_child(seg_box)
 
 	var btn_seg_matches := Button.new()
 	btn_seg_matches.text = "مسابقات اخیر"
 	btn_seg_matches.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_seg_matches.custom_minimum_size = Vector2(0, 52)
+	btn_seg_matches.custom_minimum_size = Vector2(0, 58)
 	btn_seg_matches.focus_mode = Control.FOCUS_NONE
 	btn_seg_matches.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn_seg_matches.add_theme_font_override("font", _font_hekayat)
-	btn_seg_matches.add_theme_font_size_override("font_size", 22)
 	ActionVFXManager.apply_button_juice(btn_seg_matches, "tap_button")
 	_style_subnav_btn(btn_seg_matches, active_history_view == "matches")
 	seg_box.add_child(btn_seg_matches)
@@ -211,11 +207,9 @@ func _render_profile() -> void:
 	var btn_seg_stats := Button.new()
 	btn_seg_stats.text = "آمار کلی"
 	btn_seg_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_seg_stats.custom_minimum_size = Vector2(0, 52)
+	btn_seg_stats.custom_minimum_size = Vector2(0, 58)
 	btn_seg_stats.focus_mode = Control.FOCUS_NONE
 	btn_seg_stats.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn_seg_stats.add_theme_font_override("font", _font_hekayat)
-	btn_seg_stats.add_theme_font_size_override("font_size", 22)
 	ActionVFXManager.apply_button_juice(btn_seg_stats, "tap_button")
 	_style_subnav_btn(btn_seg_stats, active_history_view == "stats")
 	seg_box.add_child(btn_seg_stats)
@@ -304,7 +298,7 @@ func _is_single_round_match(game: Dictionary) -> bool:
 
 func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(0, 146)
+	btn.custom_minimum_size = Vector2(0, 162)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
@@ -404,12 +398,13 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var lbl_opp_name := Label.new()
 	lbl_opp_name.text = ("%s نفره" % GameManager.to_fa_num(users_info.size())) if is_multi_card else opp_name
 	lbl_opp_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_opp_name.custom_minimum_size = Vector2(85, 0)
+	lbl_opp_name.custom_minimum_size = Vector2(96, 0)
 	lbl_opp_name.clip_text = true
 	lbl_opp_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl_opp_name.add_theme_font_override("font", _font_hekayat)
-	lbl_opp_name.add_theme_font_size_override("font_size", 20)
+	lbl_opp_name.add_theme_font_override("font", _font_ui_bold)
+	lbl_opp_name.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 	lbl_opp_name.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	CafeSocialTheme.apply_wood_text_shadow(lbl_opp_name, 2)
 	lbl_opp_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	opp_col.add_child(lbl_opp_name)
 	row.add_child(opp_col)
@@ -427,8 +422,9 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	top_mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var lbl_res := Label.new()
-	lbl_res.add_theme_font_override("font", _font_hekayat)
-	lbl_res.add_theme_font_size_override("font_size", 26)
+	lbl_res.add_theme_font_override("font", _font_ui_bold)
+	lbl_res.add_theme_font_size_override("font_size", 28)
+	CafeSocialTheme.apply_wood_text_shadow(lbl_res, 2)
 	if my_res == "win":
 		lbl_res.text = "برد 🏆"
 		lbl_res.add_theme_color_override("font_color", Color(0.40, 0.95, 0.45))
@@ -460,9 +456,10 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		if not score_str.is_empty():
 			var lbl_score := Label.new()
 			lbl_score.text = "( %s )" % score_str
-			lbl_score.add_theme_font_override("font", _font_hekayat)
+			lbl_score.add_theme_font_override("font", _font_ui_bold)
 			lbl_score.add_theme_font_size_override("font_size", 24)
 			lbl_score.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
+			CafeSocialTheme.apply_wood_text_shadow(lbl_score, 2)
 			top_mid.add_child(lbl_score)
 	center_col.add_child(top_mid)
 
@@ -473,9 +470,10 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	lbl_date.text_direction = Control.TEXT_DIRECTION_RTL
 	lbl_date.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_date.text = shamsi_date
-	lbl_date.add_theme_font_override("font", _font_hekayat)
-	lbl_date.add_theme_font_size_override("font_size", 20)
-	lbl_date.add_theme_color_override("font_color", Color(0.88, 0.82, 0.72))
+	lbl_date.add_theme_font_override("font", _font_vazir)
+	lbl_date.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
+	lbl_date.add_theme_color_override("font_color", Color(0.90, 0.84, 0.74))
+	CafeSocialTheme.apply_wood_text_shadow(lbl_date, 2)
 	center_col.add_child(lbl_date)
 	row.add_child(center_col)
 
@@ -636,10 +634,9 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 	# Global Dialog Shell Frame (board.png)
 	var outer := MarginContainer.new()
 	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	outer.add_theme_constant_override("margin_left", 20)
-	outer.add_theme_constant_override("margin_right", 20)
-	outer.add_theme_constant_override("margin_top", 42)
-	outer.add_theme_constant_override("margin_bottom", 42)
+	var vp_w: float = get_viewport_rect().size.x
+	var side_pad: int = maxi(20, int((vp_w - 720.0) * 0.5)) if vp_w > 780.0 else 20
+	CafeSocialTheme.apply_safe_area_to_margin(outer, side_pad, 36, side_pad, 36)
 	modal.add_child(outer)
 
 	var panel := PanelContainer.new()
@@ -683,7 +680,7 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 	)
 	top_row.add_child(btn_close)
 
-	var lbl_title := CafeSocialTheme.make_title("جزئیات مسابقه", 30, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var lbl_title := CafeSocialTheme.make_title("جزئیات مسابقه", CafeSocialTheme.FONT_SIZE_CARD_TITLE, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
 	lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_child(lbl_title)
 
@@ -764,21 +761,23 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 
 	# Label of game type in Persian UNDER the icon inside difficulty ribbon frame
 	var game_name_banner := PanelContainer.new()
-	game_name_banner.custom_minimum_size = Vector2(280, 60)
+	game_name_banner.custom_minimum_size = Vector2(300, 64)
 	game_name_banner.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	game_name_banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(main_game_type, 48.0, 6.0))
 	hv.add_child(game_name_banner)
 
-	var lbl_game_name := CafeSocialTheme.make_title(game_fa_title, 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var lbl_game_name := CafeSocialTheme.make_title(game_fa_title, 28, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
 	game_name_banner.add_child(lbl_game_name)
 
-	var tag_row := HBoxContainer.new()
-	tag_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	tag_row.add_theme_constant_override("separation", 8)
+	var tag_row := HFlowContainer.new()
+	tag_row.alignment = FlowContainer.ALIGNMENT_CENTER
+	tag_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tag_row.add_theme_constant_override("h_separation", 8)
+	tag_row.add_theme_constant_override("v_separation", 8)
 	hv.add_child(tag_row)
 
-	tag_row.add_child(CafeSocialTheme.make_badge_pill(mode_fa, CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_GOLD_ANTIQUE, 20))
-	tag_row.add_child(CafeSocialTheme.make_badge_pill(s_date, CafeSocialTheme.COL_WARM_CREAM, Color(0.12, 0.09, 0.06, 0.9), CafeSocialTheme.COL_BRONZE_BORDER, 20))
+	tag_row.add_child(CafeSocialTheme.make_badge_pill(mode_fa, CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.COL_WALNUT_CARD, CafeSocialTheme.COL_GOLD_ANTIQUE, CafeSocialTheme.FONT_SIZE_BADGE))
+	tag_row.add_child(CafeSocialTheme.make_badge_pill(s_date, CafeSocialTheme.COL_WARM_CREAM, Color(0.12, 0.09, 0.06, 0.9), CafeSocialTheme.COL_BRONZE_BORDER, CafeSocialTheme.FONT_SIZE_BADGE))
 
 	# 4. Match Outcome & Players Card (shadow box matching rounds card instead of wood frame)
 	var outcome_card := PanelContainer.new()
@@ -885,17 +884,18 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 			lbl_u.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			lbl_u.clip_text = true
 			lbl_u.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-			lbl_u.add_theme_font_override("font", _font_hekayat)
-			lbl_u.add_theme_font_size_override("font_size", 21)
+			lbl_u.add_theme_font_override("font", _font_ui_bold)
+			lbl_u.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 			lbl_u.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT if (is_winner_u or is_self_u) else CafeSocialTheme.COL_IVORY)
+			CafeSocialTheme.apply_wood_text_shadow(lbl_u, 2)
 			pv.add_child(lbl_u)
 
 			if is_winner_u:
-				var win_pill := CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 18)
+				var win_pill := CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.FONT_SIZE_BADGE)
 				win_pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 				pv.add_child(win_pill)
 			elif is_runner_up:
-				var sec_pill := CafeSocialTheme.make_badge_pill("🥈 نفر دوم", Color(0.88, 0.90, 0.95), Color(0.18, 0.16, 0.14, 0.95), Color(0.70, 0.72, 0.78), 16)
+				var sec_pill := CafeSocialTheme.make_badge_pill("🥈 نفر دوم", Color(0.88, 0.90, 0.95), Color(0.18, 0.16, 0.14, 0.95), Color(0.70, 0.72, 0.78), CafeSocialTheme.FONT_SIZE_BADGE)
 				sec_pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 				pv.add_child(sec_pill)
 
@@ -945,15 +945,16 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 		var lbl_opp := Label.new()
 		lbl_opp.text = opp_name
 		lbl_opp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_opp.custom_minimum_size = Vector2(100, 0)
+		lbl_opp.custom_minimum_size = Vector2(110, 0)
 		lbl_opp.clip_text = true
 		lbl_opp.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		lbl_opp.add_theme_font_override("font", _font_hekayat)
-		lbl_opp.add_theme_font_size_override("font_size", 22)
+		lbl_opp.add_theme_font_override("font", _font_ui_bold)
+		lbl_opp.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		lbl_opp.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+		CafeSocialTheme.apply_wood_text_shadow(lbl_opp, 2)
 		opp_item.add_child(lbl_opp)
 		if my_res == "lose" or (not opp_uid.is_empty() and opp_uid == winner_uid):
-			var ow_pill := CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 16)
+			var ow_pill := CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.FONT_SIZE_BADGE)
 			ow_pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			opp_item.add_child(ow_pill)
 		vs_row.add_child(opp_item)
@@ -979,17 +980,19 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 			var lbl_match_score := Label.new()
 			lbl_match_score.text = score_str
 			lbl_match_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			lbl_match_score.add_theme_font_override("font", _font_hekayat)
-			lbl_match_score.add_theme_font_size_override("font_size", 42)
+			lbl_match_score.add_theme_font_override("font", _font_ui_bold)
+			lbl_match_score.add_theme_font_size_override("font_size", 40)
 			lbl_match_score.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+			CafeSocialTheme.apply_wood_text_shadow(lbl_match_score, 3)
 			center_badge_col.add_child(lbl_match_score)
 		else:
 			var lbl_vs := Label.new()
 			lbl_vs.text = "VS"
 			lbl_vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			lbl_vs.add_theme_font_override("font", _font_hekayat)
+			lbl_vs.add_theme_font_override("font", _font_ui_bold)
 			lbl_vs.add_theme_font_size_override("font_size", 32)
 			lbl_vs.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_ANTIQUE)
+			CafeSocialTheme.apply_wood_text_shadow(lbl_vs, 2)
 			center_badge_col.add_child(lbl_vs)
 
 		vs_row.add_child(center_badge_col)
@@ -1005,15 +1008,16 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 		var lbl_my := Label.new()
 		lbl_my.text = my_name
 		lbl_my.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_my.custom_minimum_size = Vector2(100, 0)
+		lbl_my.custom_minimum_size = Vector2(110, 0)
 		lbl_my.clip_text = true
 		lbl_my.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		lbl_my.add_theme_font_override("font", _font_hekayat)
-		lbl_my.add_theme_font_size_override("font_size", 22)
+		lbl_my.add_theme_font_override("font", _font_ui_bold)
+		lbl_my.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		lbl_my.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+		CafeSocialTheme.apply_wood_text_shadow(lbl_my, 2)
 		my_item.add_child(lbl_my)
 		if my_res == "win":
-			var mw_pill := CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, 16)
+			var mw_pill := CafeSocialTheme.make_badge_pill("👑 برنده", CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.16, 0.34, 0.16, 0.98), CafeSocialTheme.COL_GOLD_BRIGHT, CafeSocialTheme.FONT_SIZE_BADGE)
 			mw_pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			my_item.add_child(mw_pill)
 		vs_row.add_child(my_item)
@@ -1022,9 +1026,10 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 	var r_title := Label.new()
 	r_title.text = "جزئیات راندهای مسابقه"
 	r_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	r_title.add_theme_font_override("font", _font_hekayat)
+	r_title.add_theme_font_override("font", _font_ui_bold)
 	r_title.add_theme_font_size_override("font_size", 28)
 	r_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	CafeSocialTheme.apply_wood_text_shadow(r_title, 2)
 	dvbox.add_child(r_title)
 
 	if rounds.is_empty():
@@ -1042,7 +1047,7 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 		srh.add_theme_constant_override("separation", 12)
 		srm.add_child(srh)
 
-		srh.add_child(CafeSocialTheme.make_badge_pill(res_text, res_color, res_bg, res_border, 18))
+		srh.add_child(CafeSocialTheme.make_badge_pill(res_text, res_color, res_bg, res_border, CafeSocialTheme.FONT_SIZE_BADGE))
 
 		var mid_v := VBoxContainer.new()
 		mid_v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1050,8 +1055,9 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 		var l_gname := Label.new()
 		l_gname.text = "راند تک‌دست • %s" % game_fa_title
 		l_gname.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		l_gname.add_theme_font_override("font", _font_hekayat)
-		l_gname.add_theme_font_size_override("font_size", 22)
+		l_gname.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l_gname.add_theme_font_override("font", _font_ui_bold)
+		l_gname.add_theme_font_size_override("font_size", 24)
 		l_gname.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 		mid_v.add_child(l_gname)
 		srh.add_child(mid_v)
@@ -1110,18 +1116,19 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 				r_st_bg = Color(0.24, 0.18, 0.08, 0.95)
 				r_st_border = Color(0.80, 0.65, 0.35)
 
-			rh.add_child(CafeSocialTheme.make_badge_pill(r_status_txt, r_st_color, r_st_bg, r_st_border, 18))
+			rh.add_child(CafeSocialTheme.make_badge_pill(r_status_txt, r_st_color, r_st_bg, r_st_border, CafeSocialTheme.FONT_SIZE_BADGE))
 
 			var r_col := VBoxContainer.new()
 			r_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			r_col.alignment = BoxContainer.ALIGNMENT_CENTER
-			r_col.add_theme_constant_override("separation", 2)
+			r_col.add_theme_constant_override("separation", 4)
 			rh.add_child(r_col)
 
 			var r_lbl := Label.new()
 			r_lbl.text = "راند %s  •  %s" % [GameManager.to_fa_num(i + 1), r_gname]
 			r_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			r_lbl.add_theme_font_override("font", _font_hekayat)
+			r_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			r_lbl.add_theme_font_override("font", _font_ui_bold)
 			r_lbl.add_theme_font_size_override("font_size", 24)
 			r_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 			r_col.add_child(r_lbl)
@@ -1131,8 +1138,8 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 				var r_sub := Label.new()
 				r_sub.text = _format_shamsi_date_ltr(r_date_str)
 				r_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-				r_sub.add_theme_font_override("font", _font_hekayat)
-				r_sub.add_theme_font_size_override("font_size", 18)
+				r_sub.add_theme_font_override("font", _font_vazir)
+				r_sub.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 				r_sub.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 				r_col.add_child(r_sub)
 
@@ -1154,6 +1161,10 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 			rh.add_child(r_icon_frame)
 
 			dvbox.add_child(r_card)
+
+	var dlg_bottom_pad := Control.new()
+	dlg_bottom_pad.custom_minimum_size = Vector2(0, 24)
+	dvbox.add_child(dlg_bottom_pad)
 
 	add_child(modal)
 
@@ -1190,9 +1201,10 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 	var title := Label.new()
 	title.text = "📊 کارنامه و آمار کل مسابقات"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	title.add_theme_font_override("font", _font_hekayat)
-	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_font_override("font", _font_ui_bold)
+	title.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_CARD_TITLE)
 	title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	CafeSocialTheme.apply_wood_text_shadow(title, 2)
 	holder.add_child(title)
 
 	var w_rank = int(hist.get("win_rank", 0))
@@ -1215,7 +1227,7 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 		{"label": "درصد برد کل", "val": "%s٪" % GameManager.to_fa_num(win_rate), "col": Color(1.0, 0.90, 0.35), "sub": "نرخ موفقیت"},
 	]
 
-	# Grid with 2 items per row, double height (200px) and double font size
+	# Grid with 2 items per row
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1225,9 +1237,9 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 
 	for sc in stat_cards_data:
 		var card := PanelContainer.new()
-		card.custom_minimum_size = Vector2(0, 130)
+		card.custom_minimum_size = Vector2(0, 158)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 12.0))
+		card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 14.0))
 
 		var pad := MarginContainer.new()
 		pad.add_theme_constant_override("margin_left", 8)
@@ -1242,25 +1254,30 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 		var lbl_title := Label.new()
 		lbl_title.text = sc["label"]
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_title.add_theme_font_override("font", _font_hekayat)
-		lbl_title.add_theme_font_size_override("font_size", 22)
-		lbl_title.add_theme_color_override("font_color", Color(0.85, 0.78, 0.65))
+		lbl_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl_title.add_theme_font_override("font", _font_ui_bold)
+		lbl_title.add_theme_font_size_override("font_size", 24)
+		lbl_title.add_theme_color_override("font_color", Color(0.90, 0.84, 0.72))
+		CafeSocialTheme.apply_wood_text_shadow(lbl_title, 2)
 		cv.add_child(lbl_title)
 
 		var lbl_val := Label.new()
 		lbl_val.text = sc["val"]
 		lbl_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl_val.add_theme_font_override("font", _font_hekayat)
+		lbl_val.add_theme_font_override("font", _font_ui_bold)
 		lbl_val.add_theme_font_size_override("font_size", 36)
 		lbl_val.add_theme_color_override("font_color", sc["col"])
+		CafeSocialTheme.apply_wood_text_shadow(lbl_val, 3)
 		cv.add_child(lbl_val)
 
 		var lbl_sub := Label.new()
 		lbl_sub.text = sc["sub"]
 		lbl_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		lbl_sub.add_theme_font_override("font", _font_vazir)
-		lbl_sub.add_theme_font_size_override("font_size", 16)
+		lbl_sub.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		lbl_sub.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
+		CafeSocialTheme.apply_wood_text_shadow(lbl_sub, 2)
 		cv.add_child(lbl_sub)
 
 		grid.add_child(card)
@@ -1467,19 +1484,20 @@ func _render_privacy() -> void:
 	content_privacy.add_child(audio_margin)
 
 	var audio_card := PanelContainer.new()
-	audio_card.custom_minimum_size = Vector2(0, 190)
+	audio_card.custom_minimum_size = Vector2(0, 212)
 	audio_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 16.0, 14.0))
+	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 16.0))
 	audio_margin.add_child(audio_card)
 
 	var a_vbox := VBoxContainer.new()
-	a_vbox.add_theme_constant_override("separation", 10)
+	a_vbox.add_theme_constant_override("separation", 12)
 	audio_card.add_child(a_vbox)
 
 	var a_title := Label.new()
-	a_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	a_title.add_theme_font_size_override("font_size", 26)
+	a_title.add_theme_font_override("font", _font_ui_bold)
+	a_title.add_theme_font_size_override("font_size", 28)
 	a_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	CafeSocialTheme.apply_wood_text_shadow(a_title, 2)
 	a_title.text = "تنظیمات صدا و موسیقی کافه فکر"
 	a_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	a_vbox.add_child(a_title)
@@ -1491,9 +1509,9 @@ func _render_privacy() -> void:
 
 	var chk_music := CheckButton.new()
 	chk_music.text = "موسیقی"
-	chk_music.custom_minimum_size = Vector2(80, 50)
-	chk_music.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	chk_music.add_theme_font_size_override("font_size", 22)
+	chk_music.custom_minimum_size = Vector2(110, 52)
+	chk_music.add_theme_font_override("font", _font_ui_bold)
+	chk_music.add_theme_font_size_override("font_size", 24)
 	chk_music.button_pressed = AudioManager.is_music_enabled
 	chk_music.focus_mode = Control.FOCUS_NONE
 	music_row.add_child(chk_music)
@@ -1507,10 +1525,12 @@ func _render_privacy() -> void:
 	music_row.add_child(music_slider)
 
 	var lbl_music_val := Label.new()
-	lbl_music_val.custom_minimum_size = Vector2(50, 0)
-	lbl_music_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	lbl_music_val.add_theme_font_size_override("font_size", 20)
+	lbl_music_val.custom_minimum_size = Vector2(64, 0)
+	lbl_music_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_music_val.add_theme_font_override("font", _font_vazir)
+	lbl_music_val.add_theme_font_size_override("font_size", 24)
 	lbl_music_val.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+	CafeSocialTheme.apply_wood_text_shadow(lbl_music_val, 2)
 	lbl_music_val.text = "%s٪" % GameManager.to_fa_num(int(music_slider.value))
 	music_row.add_child(lbl_music_val)
 
@@ -1531,10 +1551,10 @@ func _render_privacy() -> void:
 	a_vbox.add_child(sfx_row)
 
 	var chk_sfx := CheckButton.new()
-	chk_sfx.text = "جلوه‌ها (SFX)"
-	chk_sfx.custom_minimum_size = Vector2(80, 50)
-	chk_sfx.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	chk_sfx.add_theme_font_size_override("font_size", 22)
+	chk_sfx.text = "جلوه‌ها"
+	chk_sfx.custom_minimum_size = Vector2(110, 52)
+	chk_sfx.add_theme_font_override("font", _font_ui_bold)
+	chk_sfx.add_theme_font_size_override("font_size", 24)
 	chk_sfx.button_pressed = AudioManager.is_sound_enabled
 	chk_sfx.focus_mode = Control.FOCUS_NONE
 	sfx_row.add_child(chk_sfx)
@@ -1548,10 +1568,12 @@ func _render_privacy() -> void:
 	sfx_row.add_child(sfx_slider)
 
 	var lbl_sfx_val := Label.new()
-	lbl_sfx_val.custom_minimum_size = Vector2(50, 0)
-	lbl_sfx_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	lbl_sfx_val.add_theme_font_size_override("font_size", 20)
+	lbl_sfx_val.custom_minimum_size = Vector2(64, 0)
+	lbl_sfx_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_sfx_val.add_theme_font_override("font", _font_vazir)
+	lbl_sfx_val.add_theme_font_size_override("font_size", 24)
 	lbl_sfx_val.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+	CafeSocialTheme.apply_wood_text_shadow(lbl_sfx_val, 2)
 	lbl_sfx_val.text = "%s٪" % GameManager.to_fa_num(int(sfx_slider.value))
 	sfx_row.add_child(lbl_sfx_val)
 
@@ -1568,9 +1590,10 @@ func _render_privacy() -> void:
 
 	# --- 2. Privacy Toggles with Balanced Mobile Sizing ---
 	var p_title := Label.new()
-	p_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	p_title.add_theme_font_size_override("font_size", 26)
+	p_title.add_theme_font_override("font", _font_ui_bold)
+	p_title.add_theme_font_size_override("font_size", 28)
 	p_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
+	CafeSocialTheme.apply_wood_text_shadow(p_title, 2)
 	p_title.text = "حریم خصوصی و دسترسی‌ها"
 	p_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	content_privacy.add_child(p_title)
@@ -1622,9 +1645,9 @@ func _render_privacy() -> void:
 		item_margin.add_theme_constant_override("margin_right", 10)
 
 		var panel := PanelContainer.new()
-		panel.custom_minimum_size = Vector2(0, 108)
+		panel.custom_minimum_size = Vector2(0, 128)
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 16.0, 12.0))
+		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 18.0, 14.0))
 		item_margin.add_child(panel)
 
 		var h := HBoxContainer.new()
@@ -1641,24 +1664,28 @@ func _render_privacy() -> void:
 
 		var v_col := VBoxContainer.new()
 		v_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		v_col.add_theme_constant_override("separation", 2)
+		v_col.add_theme_constant_override("separation", 4)
 		v_col.alignment = BoxContainer.ALIGNMENT_CENTER
 		h.add_child(v_col)
 
 		var lbl_title := Label.new()
-		lbl_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-		lbl_title.add_theme_font_size_override("font_size", 23)
+		lbl_title.add_theme_font_override("font", _font_ui_bold)
+		lbl_title.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BODY)
 		lbl_title.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
+		CafeSocialTheme.apply_wood_text_shadow(lbl_title, 2)
 		lbl_title.text = item["label"]
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		lbl_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v_col.add_child(lbl_title)
 
 		var lbl_desc := Label.new()
-		lbl_desc.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		lbl_desc.add_theme_font_size_override("font_size", 18)
+		lbl_desc.add_theme_font_override("font", _font_vazir)
+		lbl_desc.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_SUBTITLE)
 		lbl_desc.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
+		CafeSocialTheme.apply_wood_text_shadow(lbl_desc, 2)
 		lbl_desc.text = item["desc"]
 		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v_col.add_child(lbl_desc)
 
 		content_privacy.add_child(item_margin)

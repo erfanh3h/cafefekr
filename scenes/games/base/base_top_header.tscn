@@ -171,14 +171,18 @@ theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 text = "بازیکن ۱"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="RoleBadge" type="Label" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 22
 text = "🔴"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="ScoreBadge" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox"]
 custom_minimum_size = Vector2(46, 46)
@@ -273,14 +277,18 @@ theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 text = "بازیکن ۲"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="RoleBadge" type="Label" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 22
 text = "🔵"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="ScoreBadge" type="PanelContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox"]
 custom_minimum_size = Vector2(46, 46)
@@ -354,7 +362,7 @@ theme_override_constants/shadow_outline_size = 2
 theme_override_colors/font_outline_color = Color(0.15, 0.06, 0.02, 0.95)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 26
 text = "راند ۱ از ۵"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -365,9 +373,11 @@ theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 26
 text = "بازی درحال آغاز است..."
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="TimerRow" type="HBoxContainer" parent="Margin/VBoxMain/MatchDetailsBox/VBox"]
 layout_mode = 2
@@ -380,7 +390,7 @@ theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 26
 text = "۱۰ ثانیه"
 horizontal_alignment = 1
 

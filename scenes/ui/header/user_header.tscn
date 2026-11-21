@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/header/user_header.gd" id="1_header_script"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button5.png" id="3_button5_tex"]
@@ -6,9 +6,13 @@
 [ext_resource type="Texture2D" path="res://assets/images/badges/score_frame.png" id="5_cup_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/level_frame.png" id="6_level_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/add.png" id="7_add_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="8_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="8_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/icons/Avatars/0.png" id="9_default_avatar"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/user_header_frame.png" id="10_frame_tex"]
+
+[sub_resource type="FontVariation" id="FontVariation_vazir_bold"]
+base_font = ExtResource("8_font_vazir")
+variation_embolden = 0.26
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_player_card"]
 
@@ -106,7 +110,7 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
 [node name="UserHeader" type="MarginContainer"]
-custom_minimum_size = Vector2(0, 206)
+custom_minimum_size = Vector2(0, 214)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 0
@@ -116,7 +120,7 @@ theme_override_constants/margin_bottom = 0
 script = ExtResource("1_header_script")
 
 [node name="PanelFrame" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(0, 200)
+custom_minimum_size = Vector2(0, 208)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_player_card")
@@ -168,9 +172,10 @@ stretch_mode = 5
 [node name="CoinsLabel" type="Label" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.35, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("8_font_hekayat")
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
 theme_override_font_sizes/font_size = 26
 text = "۵۰"
 vertical_alignment = 1
@@ -219,7 +224,9 @@ offset_top = 6.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0.96, 0.78, 1)
-theme_override_fonts/font = ExtResource("8_font_hekayat")
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
 theme_override_font_sizes/font_size = 24
 text = "۱۰۰۰"
 horizontal_alignment = 1
@@ -257,14 +264,16 @@ offset_top = 6.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.88, 1)
-theme_override_fonts/font = ExtResource("8_font_hekayat")
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
 theme_override_font_sizes/font_size = 30
 text = "۱"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="XpContainer" type="Control" parent="PanelFrame/ContentMargin/HBoxMain/StatsCol"]
-custom_minimum_size = Vector2(174, 22)
+custom_minimum_size = Vector2(180, 30)
 layout_mode = 2
 size_flags_horizontal = 4
 
@@ -290,10 +299,11 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.9, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 17
+theme_override_fonts/font = ExtResource("8_font_vazir")
+theme_override_font_sizes/font_size = 22
 text = "۰ / ۶۰ XP"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -315,10 +325,10 @@ layout_mode = 2
 alignment = 2
 
 [node name="BtnEditUsername" type="Button" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/TopIdentityRow"]
-custom_minimum_size = Vector2(36, 36)
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
-theme_override_fonts/font = ExtResource("8_font_hekayat")
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
 theme_override_font_sizes/font_size = 22
 flat = true
 text = "✏️"
@@ -327,33 +337,37 @@ text = "✏️"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.96, 0.86, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.92)
-theme_override_constants/shadow_outline_size = 4
-theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 30
 text = "کاربر کافه فکر"
 horizontal_alignment = 2
 vertical_alignment = 1
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="BottomIdRow" type="HBoxContainer" parent="PanelFrame/ContentMargin/HBoxMain/UserCol"]
 layout_mode = 2
 alignment = 2
 
 [node name="UserIdBtn" type="Button" parent="PanelFrame/ContentMargin/HBoxMain/UserCol/BottomIdRow"]
-custom_minimum_size = Vector2(148, 40)
+custom_minimum_size = Vector2(160, 46)
 layout_mode = 2
 focus_mode = 0
 theme_override_colors/font_color = Color(0.96, 0.88, 0.72, 1)
 theme_override_colors/font_hover_color = Color(1, 0.96, 0.85, 1)
 theme_override_colors/font_pressed_color = Color(1, 0.9, 0.55, 1)
-theme_override_fonts/font = ExtResource("8_font_hekayat")
-theme_override_font_sizes/font_size = 19
+theme_override_fonts/font = ExtResource("8_font_vazir")
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxFlat_id_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_id_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_id_btn_pressed")
 text = "📋 شناسه: -----"
 alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="AvatarFrame" type="Control" parent="PanelFrame/ContentMargin/HBoxMain"]
 custom_minimum_size = Vector2(80, 80)

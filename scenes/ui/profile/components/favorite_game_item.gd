@@ -13,7 +13,7 @@ var _win_pill: PanelContainer
 
 
 func _init() -> void:
-	custom_minimum_size = Vector2(158, 168)
+	custom_minimum_size = Vector2(188, 204)
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_build_ui()
 
@@ -58,19 +58,19 @@ func _build_ui() -> void:
 
 	# 2. Game Title inside difficulty ribbon frame
 	_name_banner = PanelContainer.new()
-	_name_banner.custom_minimum_size = Vector2(0, 38)
+	_name_banner.custom_minimum_size = Vector2(0, 44)
 	_name_banner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_name_banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style("", 22.0, 2.0))
 	vb.add_child(_name_banner)
 
-	_lbl_name = CafeSocialTheme.make_title("نام بازی", 17, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_lbl_name = CafeSocialTheme.make_title("نام بازی", 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, false)
 	_lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_name.clip_text = true
 	_lbl_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_name_banner.add_child(_lbl_name)
 
 	# 3. Matches Count
-	_lbl_matches = CafeSocialTheme.make_body("۰ بازی", 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_lbl_matches = CafeSocialTheme.make_body("۰ بازی", 22, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
 	vb.add_child(_lbl_matches)
 
 	# 4. Win / Achievement Indicator Pill
@@ -81,14 +81,14 @@ func _build_ui() -> void:
 	wsb.border_color = CafeSocialTheme.COL_EMERALD_BORDER
 	wsb.set_border_width_all(1)
 	wsb.set_corner_radius_all(8)
-	wsb.content_margin_left = 8.0
-	wsb.content_margin_right = 8.0
-	wsb.content_margin_top = 2.0
-	wsb.content_margin_bottom = 2.0
+	wsb.content_margin_left = 10.0
+	wsb.content_margin_right = 10.0
+	wsb.content_margin_top = 3.0
+	wsb.content_margin_bottom = 3.0
 	_win_pill.add_theme_stylebox_override("panel", wsb)
 	vb.add_child(_win_pill)
 
-	_lbl_winrate = CafeSocialTheme.make_body("۰٪ برد", 15, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_lbl_winrate = CafeSocialTheme.make_body("۰٪ برد", 22, CafeSocialTheme.COL_EMERALD_TEXT, HORIZONTAL_ALIGNMENT_CENTER, false)
 	_win_pill.add_child(_lbl_winrate)
 
 

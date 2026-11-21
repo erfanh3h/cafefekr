@@ -21,6 +21,10 @@ func _ready() -> void:
 	btn_close.text = "ثبت"
 	KenneyUI.style_button(btn_close, KenneyUI.COLOR_GREEN)
 	
+	_apply_responsive_size()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_responsive_size):
+		get_viewport().size_changed.connect(_apply_responsive_size)
+
 	btn_close.pressed.connect(_on_bottom_button_pressed)
 	btn_close_top.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -29,7 +33,23 @@ func _ready() -> void:
 	btn_free_coin.pressed.connect(_on_claim_free_coin)
 	_populate_avatars()
 
+func _apply_responsive_size() -> void:
+	var vp := get_viewport_rect().size if get_viewport() != null else Vector2(720.0, 1280.0)
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var usable_w: float = maxf(320.0, vp.x - float(insets["left"]) - float(insets["right"]) - 32.0)
+	var usable_h: float = maxf(540.0, vp.y - float(insets["top"]) - float(insets["bottom"]) - 36.0)
+	var w: float = minf(usable_w, 660.0)
+	var h: float = minf(usable_h, 1160.0)
+	custom_minimum_size = Vector2(w, h)
+	var cy_shift: float = (float(insets["top"]) - float(insets["bottom"])) * 0.5
+	offset_left = -w * 0.5
+	offset_right = w * 0.5
+	offset_top = -h * 0.5 + cy_shift
+	offset_bottom = h * 0.5 + cy_shift
+	pivot_offset = Vector2(w * 0.5, h * 0.5)
+
 func open() -> void:
+	_apply_responsive_size()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	lbl_status.text = ""
 	selected_avatar_id = GameManager.get_avatar_id()

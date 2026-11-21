@@ -1,12 +1,16 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/queue/queue_dialog.gd" id="1_queue_script"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/rank.png" id="3_crest_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="4_button_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="5_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="5_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="6_close_tex"]
 [ext_resource type="Script" path="res://scenes/ui/queue/queue_radar_vfx.gd" id="7_radar_script"]
+
+[sub_resource type="FontVariation" id="FontVariation_vazir_bold"]
+base_font = ExtResource("5_font_vazir")
+variation_embolden = 0.26
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
 content_margin_left = 34.0
@@ -37,9 +41,9 @@ corner_radius_bottom_left = 44
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer_pill"]
 content_margin_left = 24.0
-content_margin_top = 6.0
+content_margin_top = 8.0
 content_margin_right = 24.0
-content_margin_bottom = 6.0
+content_margin_bottom = 8.0
 bg_color = Color(0.10, 0.06, 0.04, 0.88)
 border_width_left = 2
 border_width_top = 2
@@ -100,10 +104,11 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("5_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 32
 text = "جستجوی حریف آنلاین"
 horizontal_alignment = 1
 clip_text = true
@@ -163,11 +168,13 @@ alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.95, 0.88, 0.72, 1)
-theme_override_fonts/font = ExtResource("5_font_hekayat")
-theme_override_font_sizes/font_size = 21
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("5_font_vazir")
+theme_override_font_sizes/font_size = 23
 text = "در حال جستجوی حریف..."
 horizontal_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 3
 
 [node name="TimerPill" type="PanelContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -177,21 +184,22 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_timer_pill")
 [node name="LblTimer" type="Label" parent="Margin/VBox/TimerPill"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("5_font_hekayat")
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
 theme_override_font_sizes/font_size = 36
 text = "۰۰:۰۰"
 horizontal_alignment = 1
 
 [node name="BtnCancel" type="Button" parent="Margin/VBox"]
-custom_minimum_size = Vector2(220, 58)
+custom_minimum_size = Vector2(240, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.35, 0.05, 0.05, 0.95)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("5_font_hekayat")
-theme_override_font_sizes/font_size = 22
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxTexture_btn")
 text = "انصراف از صف"

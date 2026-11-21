@@ -21,7 +21,6 @@ signal pre_game_ready(pre_game_id: String, queuers: Array)
 @onready var btn_cancel: Button = $Margin/VBox/BtnCancel
 
 const CREST_RANK_TEX := preload("res://assets/images/badges/rank.png")
-const FONT_HEKAYAT := preload("res://assets/fonts/hekayat.ttf")
 
 var elapsed_seconds: int = 0
 var timer_active: bool = false
@@ -72,6 +71,8 @@ func _ready() -> void:
 	add_child(accept_timer)
 
 	_setup_accept_ui()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_responsive_size):
+		get_viewport().size_changed.connect(_apply_responsive_size)
 
 	NetworkManager.game_match_found.connect(_on_match_found)
 	NetworkManager.queue_accept_game_received.connect(_on_accept_game_received)
@@ -94,9 +95,11 @@ func _setup_accept_ui() -> void:
 	# Accept Button (Green)
 	btn_accept = Button.new()
 	btn_accept.text = "✓ آماده‌ام"
-	btn_accept.custom_minimum_size = Vector2(0, 74)
+	btn_accept.custom_minimum_size = Vector2(0, 76)
 	btn_accept.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_accept.add_theme_font_override("font", FONT_HEKAYAT)
+	btn_accept.clip_text = true
+	btn_accept.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	btn_accept.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	btn_accept.add_theme_font_size_override("font_size", 26)
 	KenneyUI.style_button(btn_accept, KenneyUI.COLOR_GREEN)
 	btn_accept.pressed.connect(_on_accept_pressed)
@@ -105,9 +108,11 @@ func _setup_accept_ui() -> void:
 	# Reject Button (Red)
 	btn_reject = Button.new()
 	btn_reject.text = "✕ انصراف"
-	btn_reject.custom_minimum_size = Vector2(0, 74)
+	btn_reject.custom_minimum_size = Vector2(0, 76)
 	btn_reject.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_reject.add_theme_font_override("font", FONT_HEKAYAT)
+	btn_reject.clip_text = true
+	btn_reject.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	btn_reject.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	btn_reject.add_theme_font_size_override("font_size", 26)
 	KenneyUI.style_button(btn_reject, KenneyUI.COLOR_RED)
 	btn_reject.pressed.connect(_on_reject_pressed)
@@ -116,8 +121,10 @@ func _setup_accept_ui() -> void:
 	$Margin/VBox.add_child(accept_container)
 
 func _apply_responsive_size() -> void:
-	var vp_w: float = get_viewport_rect().size.x if get_viewport() != null else 720.0
-	var target_w: float = clampf(vp_w - 44.0, 320.0, 600.0)
+	var vp := get_viewport_rect().size if get_viewport() != null else Vector2(720.0, 1280.0)
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var usable_w: float = maxf(320.0, vp.x - float(insets["left"]) - float(insets["right"]) - 40.0)
+	var target_w: float = clampf(usable_w, 320.0, 620.0)
 	custom_minimum_size = Vector2(target_w, 0.0)
 	call_deferred("_recenter_dialog", target_w)
 
@@ -125,11 +132,15 @@ func _recenter_dialog(target_w: float) -> void:
 	if not is_instance_valid(self):
 		return
 	reset_size()
-	var h: float = maxf(size.y, get_combined_minimum_size().y)
+	var vp := get_viewport_rect().size if get_viewport() != null else Vector2(720.0, 1280.0)
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var max_h: float = maxf(460.0, vp.y - float(insets["top"]) - float(insets["bottom"]) - 40.0)
+	var h: float = minf(maxf(size.y, get_combined_minimum_size().y), max_h)
+	var cy_shift: float = (float(insets["top"]) - float(insets["bottom"])) * 0.5
 	offset_left = -target_w * 0.5
 	offset_right = target_w * 0.5
-	offset_top = -h * 0.5
-	offset_bottom = h * 0.5
+	offset_top = -h * 0.5 + cy_shift
+	offset_bottom = h * 0.5 + cy_shift
 	pivot_offset = Vector2(target_w * 0.5, h * 0.5)
 
 func _load_game_art(game_type: String) -> Texture2D:
@@ -290,7 +301,7 @@ func _make_slot_card(title_txt: String, sub_txt: String, is_filled: bool, is_me:
 		q_lbl.text = "✓" if is_filled else "؟"
 		q_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		q_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		q_lbl.add_theme_font_override("font", FONT_HEKAYAT)
+		q_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 		q_lbl.add_theme_font_size_override("font_size", 22 if is_compact else 26)
 		q_lbl.add_theme_color_override("font_color", Color(0.45, 1.0, 0.65) if is_filled else Color(1.0, 0.86, 0.45, 0.85))
 		badge.add_child(q_lbl)
@@ -302,8 +313,8 @@ func _make_slot_card(title_txt: String, sub_txt: String, is_filled: bool, is_me:
 	t_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t_lbl.clip_text = true
 	t_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	t_lbl.add_theme_font_override("font", FONT_HEKAYAT)
-	t_lbl.add_theme_font_size_override("font_size", 16 if is_compact else 19)
+	t_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	t_lbl.add_theme_font_size_override("font_size", 22)
 	t_lbl.add_theme_color_override("font_color", Color(1.0, 0.97, 0.90) if is_filled else Color(0.84, 0.76, 0.64, 0.86))
 	v.add_child(t_lbl)
 
@@ -314,8 +325,8 @@ func _make_slot_card(title_txt: String, sub_txt: String, is_filled: bool, is_me:
 		s_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		s_lbl.clip_text = true
 		s_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		s_lbl.add_theme_font_override("font", FONT_HEKAYAT)
-		s_lbl.add_theme_font_size_override("font_size", 13 if is_compact else 15)
+		s_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+		s_lbl.add_theme_font_size_override("font_size", 22)
 		s_lbl.add_theme_color_override("font_color", Color(0.45, 0.92, 1.0) if is_me else (Color(0.45, 0.98, 0.65) if is_filled else Color(0.75, 0.66, 0.54, 0.75)))
 		v.add_child(s_lbl)
 
@@ -340,7 +351,7 @@ func _rebuild_1v1_slots(opponent_found: bool) -> void:
 	vs_lbl.custom_minimum_size = Vector2(40, 0)
 	vs_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vs_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	vs_lbl.add_theme_font_override("font", FONT_HEKAYAT)
+	vs_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	vs_lbl.add_theme_font_size_override("font_size", 24)
 	vs_lbl.add_theme_color_override("font_color", Color(0.35, 1.0, 0.62) if opponent_found else Color(1.0, 0.84, 0.30))
 	slots_container.add_child(vs_lbl)

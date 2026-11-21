@@ -25,6 +25,30 @@ func _ready() -> void:
 	z_index = 85
 	visible = false
 	_build_ui()
+	_apply_safe_area()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_safe_area):
+		get_viewport().size_changed.connect(_apply_safe_area)
+
+
+func _apply_safe_area() -> void:
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	if is_instance_valid(top_bar_panel):
+		var b_off: float = 14.0 + float(insets["bottom"])
+		var h: float = 82.0
+		var l_off: float = 14.0 + float(insets["left"])
+		var r_off: float = 14.0 + float(insets["right"])
+		if get_viewport() != null:
+			var vis_w: float = get_viewport().get_visible_rect().size.x
+			if vis_w > 760.0:
+				var extra: float = (vis_w - 700.0) * 0.5
+				l_off = maxf(l_off, extra)
+				r_off = maxf(r_off, extra)
+		top_bar_panel.offset_left = l_off
+		top_bar_panel.offset_right = -r_off
+		top_bar_panel.offset_bottom = -b_off
+		top_bar_panel.offset_top = -(b_off + h)
+	if is_instance_valid(end_modal_card):
+		CafeSocialTheme.constrain_modal_card(end_modal_card, self, 620.0, 24.0)
 
 
 func _build_ui() -> void:
@@ -52,7 +76,7 @@ func _build_ui() -> void:
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	top_bar_panel.add_child(hbox)
 
-	btn_leave = CafeSocialTheme.make_button("ترک تماشا", "crimson", Vector2(124, 48), 20)
+	btn_leave = CafeSocialTheme.make_button("ترک تماشا", "crimson", Vector2(132, 50), CafeSocialTheme.FONT_SIZE_BADGE)
 	btn_leave.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	btn_leave.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -84,7 +108,7 @@ func _build_ui() -> void:
 
 	var eye_lbl: Label = CafeSocialTheme.make_body(
 		"👁",
-		19,
+		CafeSocialTheme.FONT_SIZE_BADGE,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
@@ -93,7 +117,7 @@ func _build_ui() -> void:
 
 	lbl_spectator_count = CafeSocialTheme.make_body(
 		"۱",
-		20,
+		CafeSocialTheme.FONT_SIZE_BADGE,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
@@ -110,7 +134,7 @@ func _build_ui() -> void:
 	lbl_game_title = null
 	lbl_turn_status = CafeSocialTheme.make_title(
 		"نوبت فعلی : ...",
-		23,
+		CafeSocialTheme.FONT_SIZE_TAB_COMPACT,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
@@ -137,7 +161,7 @@ func _build_ui() -> void:
 
 	lbl_live_badge = CafeSocialTheme.make_title(
 		"● زنده",
-		20,
+		CafeSocialTheme.FONT_SIZE_BADGE,
 		Color(1.0, 0.96, 0.90, 1.0),
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
@@ -182,7 +206,7 @@ func _build_ui() -> void:
 
 	lbl_end_title = CafeSocialTheme.make_title(
 		"🏁 پایان مسابقه زنده",
-		30,
+		CafeSocialTheme.FONT_SIZE_CARD_TITLE,
 		CafeSocialTheme.COL_GOLD_BRIGHT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		false
@@ -191,20 +215,20 @@ func _build_ui() -> void:
 
 	lbl_end_desc = CafeSocialTheme.make_body(
 		"این مسابقه به پایان رسید.",
-		22,
+		CafeSocialTheme.FONT_SIZE_BODY,
 		CafeSocialTheme.COL_IVORY,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		true
 	)
 	lbl_end_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl_end_desc.custom_minimum_size = Vector2(0, 60)
+	lbl_end_desc.custom_minimum_size = Vector2(0, 64)
 	modal_vbox.add_child(lbl_end_desc)
 
 	var btn_row: HBoxContainer = HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	modal_vbox.add_child(btn_row)
 
-	btn_end_return = CafeSocialTheme.make_button("بازگشت به منو", "gold", Vector2(240, 56), 22)
+	btn_end_return = CafeSocialTheme.make_button("بازگشت به منو", "gold", Vector2(260, 58), CafeSocialTheme.FONT_SIZE_TAB_LABEL)
 	btn_end_return.pressed.connect(func():
 		AudioManager.sfx_button()
 		hide_match_ended()
@@ -218,6 +242,7 @@ func open_for_match(payload: Dictionary) -> void:
 	grow_horizontal = Control.GROW_DIRECTION_BOTH
 	grow_vertical = Control.GROW_DIRECTION_BOTH
 	visible = true
+	_apply_safe_area()
 	hide_match_ended()
 	update_from_payload(payload)
 

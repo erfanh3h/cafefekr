@@ -18,7 +18,6 @@ var current_tab: String = "score" # "score", "win", "friends", or "clans"
 var btn_tab_friends: Button = null
 var btn_tab_clans: Button = null
 
-const _HEKAYAT_FONT = preload("res://assets/fonts/hekayat.ttf")
 const _SCORE_ICON = preload("res://assets/images/badges/score.png")
 
 
@@ -31,9 +30,11 @@ func _ready() -> void:
 		btn_tab_friends = Button.new()
 		btn_tab_friends.text = "رتبه‌بندی دوستان"
 		btn_tab_friends.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn_tab_friends.custom_minimum_size = Vector2(0, 56)
-		btn_tab_friends.add_theme_font_override("font", _HEKAYAT_FONT)
-		btn_tab_friends.add_theme_font_size_override("font_size", 22)
+		btn_tab_friends.custom_minimum_size = Vector2(0, 60)
+		btn_tab_friends.clip_text = true
+		btn_tab_friends.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		btn_tab_friends.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		btn_tab_friends.add_theme_font_size_override("font_size", 24)
 		btn_tab_friends.focus_mode = Control.FOCUS_NONE
 		btn_tab_friends.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -46,9 +47,11 @@ func _ready() -> void:
 		btn_tab_clans = Button.new()
 		btn_tab_clans.text = "کلن‌های برتر"
 		btn_tab_clans.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn_tab_clans.custom_minimum_size = Vector2(0, 56)
-		btn_tab_clans.add_theme_font_override("font", _HEKAYAT_FONT)
-		btn_tab_clans.add_theme_font_size_override("font_size", 22)
+		btn_tab_clans.custom_minimum_size = Vector2(0, 60)
+		btn_tab_clans.clip_text = true
+		btn_tab_clans.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		btn_tab_clans.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		btn_tab_clans.add_theme_font_size_override("font_size", 24)
 		btn_tab_clans.focus_mode = Control.FOCUS_NONE
 		btn_tab_clans.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -57,6 +60,10 @@ func _ready() -> void:
 			load_ranking()
 		)
 		tab_box.add_child(btn_tab_clans)
+
+	_apply_responsive_size()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_responsive_size):
+		get_viewport().size_changed.connect(_apply_responsive_size)
 
 	KenneyUI.style_button(btn_close, KenneyUI.COLOR_BLUE)
 	_update_tab_styles()
@@ -102,7 +109,24 @@ func _update_tab_styles() -> void:
 			b.add_theme_color_override("font_color", Color(0.88, 0.83, 0.74, 0.90))
 
 
+func _apply_responsive_size() -> void:
+	var vp := get_viewport_rect().size if get_viewport() != null else Vector2(720.0, 1280.0)
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var usable_w: float = maxf(320.0, vp.x - float(insets["left"]) - float(insets["right"]) - 32.0)
+	var usable_h: float = maxf(540.0, vp.y - float(insets["top"]) - float(insets["bottom"]) - 36.0)
+	var w: float = minf(usable_w, 660.0)
+	var h: float = minf(usable_h, 1160.0)
+	custom_minimum_size = Vector2(w, h)
+	var cy_shift: float = (float(insets["top"]) - float(insets["bottom"])) * 0.5
+	offset_left = -w * 0.5
+	offset_right = w * 0.5
+	offset_top = -h * 0.5 + cy_shift
+	offset_bottom = h * 0.5 + cy_shift
+	pivot_offset = Vector2(w * 0.5, h * 0.5)
+
+
 func open() -> void:
+	_apply_responsive_size()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	load_ranking()
 
@@ -216,6 +240,10 @@ func _on_ranking_received(success: bool, _code: int, data: Variant) -> void:
 		rank_idx += 1
 		_create_rank_row(rank_idx, username, subtitle, val_text, img_id, u_dict)
 
+	var bot_spacer := Control.new()
+	bot_spacer.custom_minimum_size = Vector2(0, 32)
+	list_container.add_child(bot_spacer)
+
 
 func _create_rank_row(rank: int, username: String, subtitle: String, val_str: String, img_id: int, entry_dict: Dictionary) -> void:
 	var card := Button.new()
@@ -261,9 +289,10 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	var rank_lbl := Label.new()
 	rank_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rank_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	rank_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-	rank_lbl.add_theme_font_size_override("font_size", 30)
-	rank_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	rank_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	rank_lbl.add_theme_font_size_override("font_size", 28)
+	rank_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	rank_lbl.add_theme_constant_override("shadow_offset_y", 2)
 	rank_lbl.add_theme_constant_override("shadow_outline_size", 2)
 	if rank == 1:
 		rank_lbl.text = "🥇"
@@ -319,10 +348,11 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.clip_text = false
 	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
+	name_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	name_lbl.add_theme_font_size_override("font_size", 26)
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))
-	name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	name_lbl.add_theme_constant_override("shadow_offset_y", 2)
 	name_lbl.add_theme_constant_override("shadow_outline_size", 3)
 	text_col.add_child(name_lbl)
 
@@ -342,10 +372,11 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		tag_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tag_lbl.clip_text = false
 		tag_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		tag_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		tag_lbl.add_theme_font_size_override("font_size", 18)
+		tag_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+		tag_lbl.add_theme_font_size_override("font_size", 22)
 		tag_lbl.add_theme_color_override("font_color", Color(0.98, 0.84, 0.42, 1.0))
-		tag_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		tag_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+		tag_lbl.add_theme_constant_override("shadow_offset_y", 2)
 		tag_lbl.add_theme_constant_override("shadow_outline_size", 2)
 		text_col.add_child(tag_lbl)
 	elif not subtitle.is_empty():
@@ -356,10 +387,11 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sub_lbl.clip_text = false
 		sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		sub_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		sub_lbl.add_theme_font_size_override("font_size", 18)
+		sub_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+		sub_lbl.add_theme_font_size_override("font_size", 22)
 		sub_lbl.add_theme_color_override("font_color", Color(0.92, 0.82, 0.55, 1.0))
-		sub_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		sub_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+		sub_lbl.add_theme_constant_override("shadow_offset_y", 2)
 		sub_lbl.add_theme_constant_override("shadow_outline_size", 2)
 		text_col.add_child(sub_lbl)
 
@@ -375,10 +407,11 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
+		val_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 		val_lbl.add_theme_font_size_override("font_size", 28)
 		val_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.38, 1.0))
-		val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+		val_lbl.add_theme_constant_override("shadow_offset_y", 2)
 		val_lbl.add_theme_constant_override("shadow_outline_size", 3)
 		val_box.add_child(val_lbl)
 	else:
@@ -387,10 +420,12 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 		val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		val_lbl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
+		val_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 		val_lbl.add_theme_font_size_override("font_size", 26)
 		val_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35, 1.0))
-		val_lbl.add_theme_constant_override("shadow_outline_size", 0)
+		val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+		val_lbl.add_theme_constant_override("shadow_offset_y", 2)
+		val_lbl.add_theme_constant_override("shadow_outline_size", 2)
 		val_box.add_child(val_lbl)
 
 	row.add_child(val_box)

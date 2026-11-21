@@ -38,6 +38,7 @@ func _ready() -> void:
 
 
 func open() -> void:
+	CafeSocialTheme.constrain_modal_card(panel, self, 620.0, 24.0)
 	visible = true
 	ActionVFXManager.animate_dialog_open(panel, self, false)
 

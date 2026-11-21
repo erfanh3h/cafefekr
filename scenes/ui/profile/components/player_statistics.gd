@@ -47,7 +47,7 @@ func _build_ui() -> void:
 func _create_stat_card(title: String, accent_col: Color) -> Dictionary:
 	var p := PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	p.custom_minimum_size = Vector2(0, 88)
+	p.custom_minimum_size = Vector2(0, 98)
 
 	# Clean, refined dark walnut well card without inner ornamental icons
 	var sb := StyleBoxFlat.new()
@@ -70,11 +70,14 @@ func _create_stat_card(title: String, accent_col: Color) -> Dictionary:
 	p.add_child(vb)
 
 	# Large Crisp Number (Zero icons as requested)
-	var val_lbl := CafeSocialTheme.make_title("۰", 28, accent_col, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var val_lbl := CafeSocialTheme.make_title("۰", 30, accent_col, HORIZONTAL_ALIGNMENT_CENTER, false)
 	vb.add_child(val_lbl)
 
 	# Label Underneath
-	var tit_lbl := CafeSocialTheme.make_body(title, 17, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+	var tit_lbl := CafeSocialTheme.make_body(title, 22, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+	tit_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tit_lbl.clip_text = true
+	tit_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	vb.add_child(tit_lbl)
 
 	return {

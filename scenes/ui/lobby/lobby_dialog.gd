@@ -200,8 +200,38 @@ func _ready() -> void:
 	_setup_scroll_container_touch_drag(scroll_games)
 	_setup_scroll_container_touch_drag(scroll_list)
 	_setup_scroll_container_touch_drag(players_scroll)
+	_apply_responsive_layout()
+	if get_viewport() and not get_viewport().size_changed.is_connected(_apply_responsive_layout):
+		get_viewport().size_changed.connect(_apply_responsive_layout)
+
+func _apply_responsive_layout() -> void:
+	var vp := get_viewport_rect().size
+	if vp.x <= 0.0 or vp.y <= 0.0:
+		return
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var max_w := 700.0
+	var side_pad := 20.0
+	if vp.x > max_w + 40.0:
+		side_pad = (vp.x - max_w) * 0.5
+	offset_left = side_pad + float(insets["left"])
+	offset_right = -(side_pad + float(insets["right"]))
+	offset_top = 36.0 + float(insets["top"])
+	offset_bottom = -(36.0 + float(insets["bottom"]))
+
+	if is_instance_valid(game_select_panel):
+		var avail_w := vp.x - float(insets["left"]) - float(insets["right"]) - 28.0
+		var avail_h := vp.y - float(insets["top"]) - float(insets["bottom"]) - 36.0
+		var pw := clampf(avail_w, 340.0, 680.0)
+		var ph := clampf(avail_h, 520.0, 1240.0)
+		game_select_panel.custom_minimum_size = Vector2(pw, ph)
+		game_select_panel.offset_left = -pw * 0.5
+		game_select_panel.offset_right = pw * 0.5
+		var shift_y := (float(insets["top"]) - float(insets["bottom"])) * 0.5
+		game_select_panel.offset_top = -ph * 0.5 + shift_y
+		game_select_panel.offset_bottom = ph * 0.5 + shift_y
 
 func open() -> void:
+	_apply_responsive_layout()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	active_lobby_id = ""
 	active_lobby_creator_id = ""
@@ -306,9 +336,10 @@ func _build_player_count_selector() -> void:
 	
 	var title_lbl = Label.new()
 	title_lbl.text = "تعداد بازیکنان:"
-	title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	title_lbl.add_theme_font_size_override("font_size", 22)
+	title_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	title_lbl.add_theme_font_size_override("font_size", 24)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.55))
+	CafeSocialTheme.apply_wood_text_shadow(title_lbl, 2)
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	vbox.add_child(title_lbl)
 	
@@ -320,11 +351,13 @@ func _build_player_count_selector() -> void:
 	var labels = {2: "۲ نفره", 3: "۳ نفره", 4: "۴ نفره"}
 	for cnt in [2, 3, 4]:
 		var btn = Button.new()
-		btn.custom_minimum_size = Vector2(0, 52)
+		btn.custom_minimum_size = Vector2(0, 56)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.text = labels[cnt]
-		btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		btn.add_theme_font_size_override("font_size", 22)
+		btn.clip_text = true
+		btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		btn.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		btn.add_theme_font_size_override("font_size", 24)
 		var chosen_cnt = cnt
 		btn.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -397,6 +430,7 @@ func _open_game_select_modal() -> void:
 	game_select_modal.top_level = true
 	game_select_modal.z_index = 40
 	game_select_modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_apply_responsive_layout()
 	game_select_modal.visible = true
 	if _game_cards.is_empty():
 		_populate_game_grid()
@@ -534,11 +568,10 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl.clip_text = true
 	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	lbl.add_theme_font_size_override("font_size", 24)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
-	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-	lbl.add_theme_constant_override("shadow_outline_size", 3)
+	CafeSocialTheme.apply_wood_text_shadow(lbl, 3)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -564,8 +597,8 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 	mode_pill.add_theme_stylebox_override("panel", p_style)
 	var mode_lbl = Label.new()
 	mode_lbl.text = "۲ تا ۴ نفره" if g_type in [GameTypes.LUDO, GameTypes.RISK, GameTypes.UNO, GameTypes.QUIZ, GameTypes.COUP, GameTypes.MONOPOLY] else "۲ نفره"
-	mode_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	mode_lbl.add_theme_font_size_override("font_size", 18)
+	mode_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	mode_lbl.add_theme_font_size_override("font_size", 22)
 	mode_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
 	mode_pill.add_child(mode_lbl)
 	card.add_child(mode_pill)
@@ -642,6 +675,10 @@ func _update_lobbies_list() -> void:
 		var row = _create_lobby_row(lobby)
 		lobbies_container.add_child(row)
 
+	var bot_spacer := Control.new()
+	bot_spacer.custom_minimum_size = Vector2(0, 32)
+	lobbies_container.add_child(bot_spacer)
+
 func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	var lobby_id = lobby.get("lobby_id", "")
 	var lobby_name = lobby.get("lobby_name", "اتاق بازی")
@@ -653,7 +690,7 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	var style = StyleBoxTexture.new()
 	style.texture = _btn_style
 	row_panel.add_theme_stylebox_override("panel", style)
-	row_panel.custom_minimum_size = Vector2(0, 110)
+	row_panel.custom_minimum_size = Vector2(0, 118)
 	
 	var margin = MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 14)
@@ -672,8 +709,9 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	# Join button (Kenney tactile button)
 	var btn_join = Button.new()
 	btn_join.text = "ورود"
-	btn_join.custom_minimum_size = Vector2(92, 54)
-	btn_join.add_theme_font_size_override("font_size", 20)
+	btn_join.custom_minimum_size = Vector2(104, 56)
+	btn_join.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	btn_join.add_theme_font_size_override("font_size", 22)
 	KenneyUI.style_button(btn_join, KenneyUI.COLOR_GREEN)
 	btn_join.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -686,9 +724,11 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	
 	# Player Count Badge
 	var count_lbl = Label.new()
-	count_lbl.text = "%d / %d" % [q_len, max_count]
+	count_lbl.text = "%s / %s" % [GameManager.to_fa_num(int(q_len)), GameManager.to_fa_num(int(max_count))]
+	count_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	count_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
-	count_lbl.add_theme_font_size_override("font_size", 22)
+	count_lbl.add_theme_font_size_override("font_size", 24)
+	CafeSocialTheme.apply_wood_text_shadow(count_lbl, 2)
 	hbox.add_child(count_lbl)
 	
 	# Room & Game Info
@@ -701,8 +741,10 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.clip_text = true
 	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88))
-	name_lbl.add_theme_font_size_override("font_size", 24)
+	name_lbl.add_theme_font_size_override("font_size", 25)
+	CafeSocialTheme.apply_wood_text_shadow(name_lbl, 2)
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	text_col.add_child(name_lbl)
 	
@@ -711,8 +753,10 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	game_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	game_lbl.clip_text = true
 	game_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	game_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
 	game_lbl.add_theme_color_override("font_color", Color(0.9, 0.8, 0.65))
-	game_lbl.add_theme_font_size_override("font_size", 19)
+	game_lbl.add_theme_font_size_override("font_size", 22)
+	CafeSocialTheme.apply_wood_text_shadow(game_lbl, 2)
 	game_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	text_col.add_child(game_lbl)
 	
@@ -778,10 +822,7 @@ func _build_password_modal() -> void:
 	
 	var outer_m = MarginContainer.new()
 	outer_m.set_anchors_preset(Control.PRESET_FULL_RECT)
-	outer_m.add_theme_constant_override("margin_left", 24)
-	outer_m.add_theme_constant_override("margin_right", 24)
-	outer_m.add_theme_constant_override("margin_top", 24)
-	outer_m.add_theme_constant_override("margin_bottom", 24)
+	CafeSocialTheme.apply_safe_area_to_margin(outer_m, 24, 24, 24, 24, true, true)
 	_password_modal.add_child(outer_m)
 	
 	var vcenter = VBoxContainer.new()
@@ -792,7 +833,7 @@ func _build_password_modal() -> void:
 	
 	var panel = PanelContainer.new()
 	panel.name = "Panel"
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var sb = StyleBoxTexture.new()
 	sb.texture = preload("res://assets/images/frames/board.png")
@@ -800,14 +841,17 @@ func _build_password_modal() -> void:
 	sb.texture_margin_top = 60.0
 	sb.texture_margin_right = 60.0
 	sb.texture_margin_bottom = 60.0
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	panel.add_theme_stylebox_override("panel", sb)
+	CafeSocialTheme.constrain_modal_card(panel, self, 560.0, 24.0)
 	vcenter.add_child(panel)
 	
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 14)
-	margin.add_theme_constant_override("margin_top", 16)
-	margin.add_theme_constant_override("margin_right", 14)
-	margin.add_theme_constant_override("margin_bottom", 16)
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_bottom", 18)
 	panel.add_child(margin)
 	
 	var vbox = VBoxContainer.new()
@@ -821,11 +865,10 @@ func _build_password_modal() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	title.add_theme_font_size_override("font_size", 28)
 	title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
-	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	title.add_theme_constant_override("shadow_outline_size", 2)
+	CafeSocialTheme.apply_wood_text_shadow(title, 2)
 	vbox.add_child(title)
 	
 	var desc = Label.new()
@@ -833,19 +876,20 @@ func _build_password_modal() -> void:
 	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	desc.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	desc.add_theme_font_size_override("font_size", 20)
+	desc.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	desc.add_theme_font_size_override("font_size", 23)
 	desc.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
+	CafeSocialTheme.apply_wood_text_shadow(desc, 2)
 	vbox.add_child(desc)
 	
 	var input_pwd = LineEdit.new()
 	input_pwd.name = "InputLobbyPassword"
-	input_pwd.custom_minimum_size = Vector2(0, 58)
+	input_pwd.custom_minimum_size = Vector2(0, 62)
 	input_pwd.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	input_pwd.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	input_pwd.placeholder_text = "رمز عبور..."
 	input_pwd.max_length = 20
-	input_pwd.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	input_pwd.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
 	input_pwd.add_theme_font_size_override("font_size", 24)
 	var in_st = StyleBoxFlat.new()
 	in_st.bg_color = Color(0.12, 0.08, 0.05, 0.95)
@@ -865,19 +909,19 @@ func _build_password_modal() -> void:
 	
 	var btn_ok = Button.new()
 	btn_ok.text = "ورود"
-	btn_ok.custom_minimum_size = Vector2(0, 58)
+	btn_ok.custom_minimum_size = Vector2(0, 62)
 	btn_ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_ok.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn_ok.add_theme_font_size_override("font_size", 22)
+	btn_ok.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	btn_ok.add_theme_font_size_override("font_size", 24)
 	KenneyUI.style_button(btn_ok, KenneyUI.COLOR_GREEN)
 	btn_row.add_child(btn_ok)
 	
 	var btn_cancel = Button.new()
 	btn_cancel.text = "انصراف"
-	btn_cancel.custom_minimum_size = Vector2(0, 58)
+	btn_cancel.custom_minimum_size = Vector2(0, 62)
 	btn_cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_cancel.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn_cancel.add_theme_font_size_override("font_size", 22)
+	btn_cancel.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	btn_cancel.add_theme_font_size_override("font_size", 24)
 	KenneyUI.style_button(btn_cancel, KenneyUI.COLOR_GREY)
 	btn_row.add_child(btn_cancel)
 	
@@ -948,7 +992,7 @@ func _show_inside_view(lobby_data: Dictionary) -> void:
 	active_lobby_game_type = lobby_data.get("game_type", GameTypes.TIC_TAC_TOE)
 	active_lobby_max_players = max(2, int(lobby_data.get("lobby_count", 2)))
 	if active_lobby_max_players > 2:
-		lbl_game_name.text = "%s (%d نفره)" % [GameTypes.get_display_name_fa(active_lobby_game_type), active_lobby_max_players]
+		lbl_game_name.text = "%s (%s نفره)" % [GameTypes.get_display_name_fa(active_lobby_game_type), GameManager.to_fa_num(active_lobby_max_players)]
 	else:
 		lbl_game_name.text = GameTypes.get_display_name_fa(active_lobby_game_type)
 	
@@ -1018,10 +1062,10 @@ func _update_players_list(queuers: Array) -> void:
 		if is_host and not is_this_creator:
 			var btn_kick = Button.new()
 			btn_kick.text = "❌ اخراج"
-			btn_kick.custom_minimum_size = Vector2(84, 48)
+			btn_kick.custom_minimum_size = Vector2(114, 52)
 			btn_kick.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			btn_kick.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-			btn_kick.add_theme_font_size_override("font_size", 18)
+			btn_kick.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+			btn_kick.add_theme_font_size_override("font_size", 22)
 			KenneyUI.style_button(btn_kick, KenneyUI.COLOR_RED)
 			btn_kick.pressed.connect(func():
 				_kick_player(q_uid)
@@ -1040,11 +1084,10 @@ func _update_players_list(queuers: Array) -> void:
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_lbl.clip_text = true
 		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		name_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		name_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 		name_lbl.add_theme_font_size_override("font_size", 26)
 		name_lbl.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
-		name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-		name_lbl.add_theme_constant_override("shadow_outline_size", 2)
+		CafeSocialTheme.apply_wood_text_shadow(name_lbl, 2)
 		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		info_col.add_child(name_lbl)
@@ -1060,8 +1103,8 @@ func _update_players_list(queuers: Array) -> void:
 		badge_style.set_border_width_all(1)
 		
 		var rdy_lbl = Label.new()
-		rdy_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		rdy_lbl.add_theme_font_size_override("font_size", 18)
+		rdy_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		rdy_lbl.add_theme_font_size_override("font_size", 22)
 		
 		if is_this_creator:
 			badge_style.bg_color = Color(0.35, 0.26, 0.08, 0.95)
@@ -1131,7 +1174,7 @@ func _update_players_list(queuers: Array) -> void:
 	var seat_names = ["اول", "دوم", "سوم", "چهارم"]
 	for slot_idx in range(queuers.size(), active_lobby_max_players):
 		var empty_card = PanelContainer.new()
-		empty_card.custom_minimum_size = Vector2(0, 88)
+		empty_card.custom_minimum_size = Vector2(0, 102)
 		empty_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var emp_style = StyleBoxFlat.new()
 		emp_style.bg_color = Color(0.18, 0.12, 0.08, 0.55)
@@ -1166,8 +1209,8 @@ func _update_players_list(queuers: Array) -> void:
 		emp_badge.add_theme_stylebox_override("panel", eb_style)
 		var emp_wait_lbl = Label.new()
 		emp_wait_lbl.text = "⏳ در انتظار"
-		emp_wait_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		emp_wait_lbl.add_theme_font_size_override("font_size", 18)
+		emp_wait_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		emp_wait_lbl.add_theme_font_size_override("font_size", 22)
 		emp_wait_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55, 0.9))
 		emp_badge.add_child(emp_wait_lbl)
 		ehbox.add_child(emp_badge)
@@ -1182,8 +1225,8 @@ func _update_players_list(queuers: Array) -> void:
 		elbl1.text = "در انتظار پیوستن بازیکن %s..." % seat_word
 		elbl1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		elbl1.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		elbl1.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		elbl1.add_theme_font_size_override("font_size", 22)
+		elbl1.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		elbl1.add_theme_font_size_override("font_size", 24)
 		elbl1.add_theme_color_override("font_color", Color(1.0, 0.92, 0.6, 0.95))
 		elbl1.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		evbox.add_child(elbl1)
@@ -1192,21 +1235,25 @@ func _update_players_list(queuers: Array) -> void:
 		elbl2.text = "کد ۶ رقمی اتاق را برای دوستان خود ارسال کنید"
 		elbl2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		elbl2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		elbl2.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		elbl2.add_theme_font_size_override("font_size", 17)
-		elbl2.add_theme_color_override("font_color", Color(0.88, 0.82, 0.7, 0.8))
+		elbl2.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+		elbl2.add_theme_font_size_override("font_size", 22)
+		elbl2.add_theme_color_override("font_color", Color(0.88, 0.82, 0.7, 0.85))
 		elbl2.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		evbox.add_child(elbl2)
 		ehbox.add_child(evbox)
 		
 		empty_card.add_child(ehbox)
 		players_list.add_child(empty_card)
+
+	var pl_bot_spacer := Control.new()
+	pl_bot_spacer.custom_minimum_size = Vector2(0, 28)
+	players_list.add_child(pl_bot_spacer)
 	
 	if is_host:
 		if queuers.size() < active_lobby_max_players:
 			btn_start.disabled = true
 			if active_lobby_max_players > 2:
-				btn_start.text = "در انتظار تکمیل ظرفیت (%d/%d)..." % [queuers.size(), active_lobby_max_players]
+				btn_start.text = "در انتظار تکمیل ظرفیت (%s/%s)..." % [GameManager.to_fa_num(queuers.size()), GameManager.to_fa_num(active_lobby_max_players)]
 			else:
 				btn_start.text = "در انتظار بازیکن دوم..."
 			btn_start.modulate = Color.WHITE

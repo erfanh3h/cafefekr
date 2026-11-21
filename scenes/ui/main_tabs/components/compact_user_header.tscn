@@ -3,11 +3,14 @@
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/components/compact_user_header.gd" id="1_comp_script"]
 [ext_resource type="Texture2D" path="res://assets/icons/Avatars/0.png" id="2_default_avatar"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button5.png" id="3_ring_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="5_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/icons/General/coin.png" id="6_coin_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/score.png" id="7_score_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/add.png" id="8_add_tex"]
+
+[sub_resource type="FontVariation" id="FontVariation_vazir_bold"]
+base_font = ExtResource("5_font_vazir")
+variation_embolden = 0.26
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_panel"]
 bg_color = Color(0.11, 0.07, 0.04, 0.96)
@@ -72,10 +75,10 @@ content_margin_right = 8.0
 content_margin_bottom = 2.0
 
 [node name="CompactUserHeader" type="MarginContainer"]
-custom_minimum_size = Vector2(0, 118)
+custom_minimum_size = Vector2(0, 130)
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 118.0
+offset_bottom = 130.0
 grow_horizontal = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 4
@@ -169,11 +172,13 @@ size_flags_horizontal = 3
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 28
 text = "کاربر کافه فکر"
 horizontal_alignment = 2
+clip_text = true
 text_overrun_behavior = 3
 
 [node name="BottomRow" type="HBoxContainer" parent="Frame/Margin/HBox/IdentityCol"]
@@ -183,7 +188,7 @@ theme_override_constants/separation = 8
 alignment = 2
 
 [node name="XpContainer" type="Control" parent="Frame/Margin/HBox/IdentityCol/BottomRow"]
-custom_minimum_size = Vector2(120, 22)
+custom_minimum_size = Vector2(120, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
@@ -209,11 +214,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.95)
+theme_override_colors/font_color = Color(1, 1, 1, 0.98)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
-theme_override_constants/shadow_outline_size = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("5_font_vazir")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 22
 text = "۰/۶۰"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -227,8 +233,10 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_level_pill")
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 22
 text = "سطح ۱"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -240,7 +248,7 @@ theme_override_constants/separation = 6
 alignment = 1
 
 [node name="CoinPill" type="PanelContainer" parent="Frame/Margin/HBox/BadgesCol"]
-custom_minimum_size = Vector2(120, 36)
+custom_minimum_size = Vector2(132, 42)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge_capsule")
@@ -252,7 +260,7 @@ theme_override_constants/separation = 6
 alignment = 1
 
 [node name="BtnAddCoins" type="TextureButton" parent="Frame/Margin/HBox/BadgesCol/CoinPill/HBoxCoin"]
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_vertical = 4
 focus_mode = 0
@@ -265,8 +273,10 @@ stretch_mode = 5
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 24
 text = "۵۰"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -281,7 +291,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="ScorePill" type="PanelContainer" parent="Frame/Margin/HBox/BadgesCol"]
-custom_minimum_size = Vector2(120, 36)
+custom_minimum_size = Vector2(132, 42)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge_capsule")
@@ -295,9 +305,11 @@ alignment = 1
 [node name="LblScore" type="Label" parent="Frame/Margin/HBox/BadgesCol/ScorePill/HBoxScore"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.95, 0.94, 0.90, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 24
 text = "۹۴"
 horizontal_alignment = 1
 vertical_alignment = 1

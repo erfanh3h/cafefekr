@@ -51,6 +51,7 @@ signal closed()
 signal change_username_requested()
 
 var _dim_overlay: ColorRect
+var _outer_margin: MarginContainer
 var panel: PanelContainer
 var _lbl_title: Label
 var _toast_panel: PanelContainer
@@ -73,11 +74,24 @@ func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_shell()
+	if get_viewport() and not get_viewport().size_changed.is_connected(_apply_responsive_margins):
+		get_viewport().size_changed.connect(_apply_responsive_margins)
 
 
 func _exit_tree() -> void:
 	if active_instance == self:
 		active_instance = null
+
+
+func _apply_responsive_margins() -> void:
+	if not is_instance_valid(_outer_margin):
+		return
+	var vp := get_viewport_rect().size
+	var max_w := 700.0
+	var base_side := 14
+	if vp.x > max_w + 28.0:
+		base_side = int(round((vp.x - max_w) * 0.5))
+	CafeSocialTheme.apply_safe_area_to_margin(_outer_margin, base_side, 18, base_side, 18, true, true)
 
 
 func _build_shell() -> void:
@@ -96,31 +110,28 @@ func _build_shell() -> void:
 	)
 	add_child(_dim_overlay)
 
-	# 2. Outer MarginContainer (responsive portrait margins)
-	var outer := MarginContainer.new()
-	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	outer.add_theme_constant_override("margin_left", 14)
-	outer.add_theme_constant_override("margin_right", 14)
-	outer.add_theme_constant_override("margin_top", 18)
-	outer.add_theme_constant_override("margin_bottom", 18)
-	add_child(outer)
+	# 2. Outer MarginContainer (responsive portrait + safe-area + tablet margins)
+	_outer_margin = MarginContainer.new()
+	_outer_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_outer_margin)
+	_apply_responsive_margins()
 
 	# 3. Main Antique Walnut Board Shell
 	panel = PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_board_shell_style())
-	outer.add_child(panel)
+	_outer_margin.add_child(panel)
 
 	var inner := MarginContainer.new()
-	inner.add_theme_constant_override("margin_left", 12)
-	inner.add_theme_constant_override("margin_right", 12)
-	inner.add_theme_constant_override("margin_top", 12)
-	inner.add_theme_constant_override("margin_bottom", 12)
+	inner.add_theme_constant_override("margin_left", 16)
+	inner.add_theme_constant_override("margin_right", 16)
+	inner.add_theme_constant_override("margin_top", 16)
+	inner.add_theme_constant_override("margin_bottom", 16)
 	panel.add_child(inner)
 
 	var root_vbox := VBoxContainer.new()
-	root_vbox.add_theme_constant_override("separation", 8)
+	root_vbox.add_theme_constant_override("separation", 10)
 	inner.add_child(root_vbox)
 
 	# 4. Top Header Bar (Close Button + Dialog Title)
@@ -135,7 +146,7 @@ func _build_shell() -> void:
 	var btn_close := TextureButton.new()
 	btn_close.name = "BtnCloseTop"
 	btn_close.texture_normal = CafeSocialTheme.TEX_CLOSE
-	btn_close.custom_minimum_size = Vector2(46, 46)
+	btn_close.custom_minimum_size = Vector2(48, 48)
 	btn_close.ignore_texture_size = true
 	btn_close.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	btn_close.focus_mode = Control.FOCUS_NONE
@@ -147,12 +158,12 @@ func _build_shell() -> void:
 	)
 	top_row.add_child(btn_close)
 
-	_lbl_title = CafeSocialTheme.make_title("مشخصات بازیکن", 28, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_lbl_title = CafeSocialTheme.make_title("مشخصات بازیکن", 32, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_CENTER, false)
 	_lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_child(_lbl_title)
 
 	var top_spacer := Control.new()
-	top_spacer.custom_minimum_size = Vector2(46, 46)
+	top_spacer.custom_minimum_size = Vector2(48, 48)
 	top_row.add_child(top_spacer)
 
 	# 5. Toast Feedback Banner
@@ -161,7 +172,7 @@ func _build_shell() -> void:
 	_toast_panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_highlight_card_style(true))
 	root_vbox.add_child(_toast_panel)
 
-	_lbl_toast = CafeSocialTheme.make_body("", 21, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
+	_lbl_toast = CafeSocialTheme.make_body("", 23, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_CENTER, true)
 	_toast_panel.add_child(_lbl_toast)
 
 	# 6. Scrollable Main Content Container
@@ -180,6 +191,7 @@ func _build_shell() -> void:
 func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 	if not is_instance_valid(panel):
 		_build_shell()
+	_apply_responsive_margins()
 
 	z_index = maxi(z_index, 60)
 	move_to_front()
@@ -447,20 +459,24 @@ func _render_overview_tab() -> void:
 	# --------------------------------------------------------------------------
 	_render_favorite_games_section(prof)
 
+	var bot_pad := Control.new()
+	bot_pad.custom_minimum_size = Vector2(0, 32)
+	_body_vbox.add_child(bot_pad)
+
 
 func _render_clan_card(clan_id: String, clan_d: Dictionary) -> void:
 	_body_vbox.add_child(CafeSocialTheme.make_ornate_section_header("باشگاه و کلن بازیکن", CafeSocialTheme.ICO_ARMY))
 
 	var c_card := PanelContainer.new()
-	c_card.custom_minimum_size = Vector2(0, 108)
-	c_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 16.0, 10.0))
+	c_card.custom_minimum_size = Vector2(0, 124)
+	c_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 18.0, 12.0))
 	_body_vbox.add_child(c_card)
 
 	var crow := HBoxContainer.new()
 	crow.add_theme_constant_override("separation", 10)
 	c_card.add_child(crow)
 
-	var b_view_clan := CafeSocialTheme.make_button("مشاهده کلن", "gold", Vector2(110, 44), 18)
+	var b_view_clan := CafeSocialTheme.make_button("مشاهده کلن", "gold", Vector2(132, 52), 22)
 	b_view_clan.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b_view_clan.pressed.connect(func():
 		AudioManager.sfx_button()
@@ -471,7 +487,7 @@ func _render_clan_card(clan_id: String, clan_d: Dictionary) -> void:
 	var cinfo := VBoxContainer.new()
 	cinfo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cinfo.alignment = BoxContainer.ALIGNMENT_CENTER
-	cinfo.add_theme_constant_override("separation", 2)
+	cinfo.add_theme_constant_override("separation", 4)
 	crow.add_child(cinfo)
 
 	var cname := str(clan_d.get("name", "کلن کافه فکر"))
@@ -486,18 +502,19 @@ func _render_clan_card(clan_id: String, clan_d: Dictionary) -> void:
 	cinfo.add_child(ctitle_row)
 
 	if not ctag.is_empty():
-		ctitle_row.add_child(CafeSocialTheme.make_badge_pill("[%s]" % ctag, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.12, 0.08, 0.04), CafeSocialTheme.COL_GOLD_ANTIQUE, 16))
+		ctitle_row.add_child(CafeSocialTheme.make_badge_pill("[%s]" % ctag, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.12, 0.08, 0.04), CafeSocialTheme.COL_GOLD_ANTIQUE, 22))
 
-	var c_nm_lbl := CafeSocialTheme.make_title(cname, 22, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	var c_nm_lbl := CafeSocialTheme.make_title(cname, 26, CafeSocialTheme.COL_IVORY, HORIZONTAL_ALIGNMENT_RIGHT, false)
 	c_nm_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	c_nm_lbl.clip_text = true
 	c_nm_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	ctitle_row.add_child(c_nm_lbl)
 
-	cinfo.add_child(CafeSocialTheme.make_body("سمت: %s  •  سطح کلن: %s" % [crole_fa, GameManager.to_fa_num(clvl)], 17, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false))
+	var c_meta_lbl := CafeSocialTheme.make_body("سمت: %s  •  سطح کلن: %s" % [crole_fa, GameManager.to_fa_num(clvl)], 22, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true)
+	cinfo.add_child(c_meta_lbl)
 
 	var emb_id := int(clan_d.get("emblem_id", 1))
-	var c_emb_node := CafeSocialTheme.make_clan_emblem(emb_id, 54.0)
+	var c_emb_node := CafeSocialTheme.make_clan_emblem(emb_id, 56.0)
 	c_emb_node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	crow.add_child(c_emb_node)
 
@@ -618,8 +635,8 @@ func _render_achievements_grid(achs: Array) -> void:
 		ac.add_child(av)
 
 		var atitle := "%s %s" % [str(ach.get("icon", "🎖️")), str(ach.get("title", "نشان"))]
-		av.add_child(CafeSocialTheme.make_title(atitle, 19, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true))
-		av.add_child(CafeSocialTheme.make_body(str(ach.get("desc", "")), 15, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
+		av.add_child(CafeSocialTheme.make_title(atitle, 23, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, true))
+		av.add_child(CafeSocialTheme.make_body(str(ach.get("desc", "")), 22, CafeSocialTheme.COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_RIGHT, true))
 		ach_grid.add_child(ac)
 
 
@@ -639,7 +656,7 @@ func _render_favorite_games_section(prof: Dictionary) -> void:
 
 	# Horizontally Scrollable Carousel for Favorite Games
 	var h_scroll := ScrollContainer.new()
-	h_scroll.custom_minimum_size = Vector2(0, 168)
+	h_scroll.custom_minimum_size = Vector2(0, 212)
 	h_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	h_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -670,7 +687,7 @@ func _render_favorite_games_section(prof: Dictionary) -> void:
 		full_history_box.add_theme_constant_override("separation", 8)
 		_body_vbox.add_child(full_history_box)
 
-		var btn_expand_hist := CafeSocialTheme.make_button("▼ مشاهده آمار تفکیکی تمامی بازی‌ها", "bronze", Vector2(0, 46), 18)
+		var btn_expand_hist := CafeSocialTheme.make_button("▼ مشاهده آمار تفکیکی تمامی بازی‌ها", "bronze", Vector2(0, 56), 23)
 		btn_expand_hist.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn_expand_hist.pressed.connect(func():
 			AudioManager.sfx_tap()

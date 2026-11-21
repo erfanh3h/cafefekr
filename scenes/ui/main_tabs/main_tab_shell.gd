@@ -101,8 +101,34 @@ func _ready() -> void:
 	_apply_bg_shader(bg_rect, BG_CONFIG["play"])
 	_apply_bg_shader(bg_rect_fade, BG_CONFIG["play"])
 
+	# Safe-area & wide-screen responsive margins (19.5:9/20:9 notches, gesture bars, tablets)
+	if get_viewport() != null:
+		get_viewport().size_changed.connect(_apply_responsive_safe_area)
+	call_deferred("_apply_responsive_safe_area")
+
 	# Enter Play tab by default
 	switch_to_tab("play")
+
+
+func _apply_responsive_safe_area() -> void:
+	if not is_inside_tree():
+		return
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var vp_size := get_viewport().get_visible_rect().size
+	var extra_side: int = 0
+	# On wide tablets/foldables, clamp content column width so cards keep balanced typography
+	if vp_size.x > 820.0:
+		extra_side = int(round((vp_size.x - 760.0) * 0.5))
+	var top_pad: int = int(round(float(insets["top"])))
+	var left_pad: int = extra_side + int(round(float(insets["left"])))
+	var right_pad: int = extra_side + int(round(float(insets["right"])))
+	if is_instance_valid(tab_content_container):
+		tab_content_container.add_theme_constant_override("margin_top", top_pad)
+		tab_content_container.add_theme_constant_override("margin_left", left_pad)
+		tab_content_container.add_theme_constant_override("margin_right", right_pad)
+		tab_content_container.add_theme_constant_override("margin_bottom", 0)
+	if is_instance_valid(bottom_navigation) and bottom_navigation.has_method("apply_safe_area_insets"):
+		bottom_navigation.apply_safe_area_insets(int(round(float(insets["bottom"]))), left_pad, right_pad)
 
 
 func switch_to_tab(tab_name: String) -> void:

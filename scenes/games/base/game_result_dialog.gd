@@ -174,7 +174,7 @@ func _ensure_score_chip() -> void:
 
 	_lbl_score_delta = Label.new()
 	_lbl_score_delta.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	_lbl_score_delta.add_theme_font_size_override("font_size", 21)
+	_lbl_score_delta.add_theme_font_size_override("font_size", 24)
 	_lbl_score_delta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_score_chip.add_child(_lbl_score_delta)
 	rewards_hbox.add_child(_score_chip)
@@ -320,9 +320,9 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 
 		var badge_lbl := Label.new()
 		badge_lbl.text = medals[min(rank_i, medals.size() - 1)]
-		badge_lbl.custom_minimum_size = Vector2(78, 0)
+		badge_lbl.custom_minimum_size = Vector2(88, 0)
 		badge_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		badge_lbl.add_theme_font_size_override("font_size", 20)
+		badge_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		badge_lbl.add_theme_color_override("font_color", accent_cols[min(rank_i, accent_cols.size() - 1)])
 		badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		rh.add_child(badge_lbl)
@@ -334,7 +334,7 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		name_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		name_lbl.add_theme_font_size_override("font_size", 21)
+		name_lbl.add_theme_font_size_override("font_size", 24)
 		name_lbl.add_theme_color_override("font_color", Color(0.55, 0.98, 0.68) if is_me else Color(1.0, 0.96, 0.88))
 		rh.add_child(name_lbl)
 
@@ -354,7 +354,8 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var vp_w: float = get_viewport_rect().size.x if get_viewport() != null else 720.0
 	if panel and is_instance_valid(panel):
-		panel.custom_minimum_size = Vector2(clampf(vp_w - 40.0, 320.0, 640.0), 0.0)
+		CafeSocialTheme.constrain_modal_card(panel, self, 660.0, 20.0)
+		panel.custom_minimum_size.y = 0.0
 		panel.visible = true
 		panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	if is_instance_valid(confetti_shower):

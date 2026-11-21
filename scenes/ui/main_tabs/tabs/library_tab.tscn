@@ -1,7 +1,6 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/library_tab.gd" id="1_lib_script"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/frame_small.png" id="4_frame_small_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/frame_tall.png" id="5_frame_tall_tex"]
@@ -98,11 +97,13 @@ alignment = 2
 
 [node name="LblTitle" type="Label" parent="OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/HeaderRow"]
 layout_mode = 2
+theme_type_variation = &"ScreenTitle"
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
-theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 30
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_font_sizes/font_size = 42
 text = "کتابخانه بازی‌های کافه فکر"
 horizontal_alignment = 2
 
@@ -110,17 +111,17 @@ horizontal_alignment = 2
 layout_mode = 2
 
 [node name="SearchInput" type="LineEdit" parent="OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/SearchRow"]
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxTexture_search_box")
 placeholder_text = "جستجوی نام بازی..."
 alignment = 2
 
 [node name="FilterScroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/BrowseView"]
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 vertical_scroll_mode = 0
 
@@ -185,9 +186,13 @@ alignment = 1
 [node name="Title" type="Label" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox/TextCol"]
 layout_mode = 2
 layout_direction = 2
+theme_type_variation = &"CardTitle"
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
-theme_override_fonts/font = ExtResource("2_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("3_font_vazir")
+theme_override_font_sizes/font_size = 34
 text = "نام بازی"
 horizontal_alignment = 2
 text_direction = 2
@@ -196,13 +201,15 @@ language = "fa"
 [node name="Meta" type="Label" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/HeaderCard/Margin/HBox/TextCol"]
 layout_mode = 2
 layout_direction = 2
+theme_type_variation = &"Subtitle"
 theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 22
 text = "۲ نفره • زمان نوبت: ۳۰ ثانیه"
 horizontal_alignment = 2
-clip_text = true
-text_overrun_behavior = 3
+autowrap_mode = 3
 text_direction = 2
 language = "fa"
 
@@ -226,10 +233,10 @@ horizontal_scroll_mode = 0
 [node name="Margin" type="MarginContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentPanel/ContentScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 36
 
 [node name="ContentVBox" type="VBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/DetailView/ContentPanel/ContentScroll/Margin"]
 layout_mode = 2

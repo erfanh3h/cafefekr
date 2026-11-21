@@ -1,11 +1,15 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/multi_rank/multi_rank_dialog.gd" id="1_multi_rank_script"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_board_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="3_close_tex"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="4_font_hekayat"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/games/ludo.png" id="5_preview_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/button.png" id="6_button_tex"]
+
+[sub_resource type="FontVariation" id="FontVariation_vazir_bold"]
+base_font = ExtResource("4_font_vazir")
+variation_embolden = 0.26
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_board"]
 texture = ExtResource("2_board_tex")
@@ -40,9 +44,9 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 content_margin_left = 12.0
-content_margin_top = 4.0
+content_margin_top = 6.0
 content_margin_right = 12.0
-content_margin_bottom = 4.0
+content_margin_bottom = 6.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon_frame"]
 bg_color = Color(0.08, 0.05, 0.03, 0.95)
@@ -101,42 +105,46 @@ stretch_mode = 5
 [node name="TitleBox" type="VBoxContainer" parent="Margin/VBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 2
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="LblTitle" type="Label" parent="Margin/VBox/TopRow/TitleBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.94, 0.82, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 34
 text = "رقابت چند نفره آنلاین"
 horizontal_alignment = 1
 
 [node name="LblSubtitle" type="Label" parent="Margin/VBox/TopRow/TitleBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.8, 0.65, 0.9)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.92, 0.84, 0.7, 0.95)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 22
 text = "جدال هیجان‌انگیز ۴ نفره — با تکمیل ظرفیت نبرد آغاز می‌شود"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Placeholder" type="Control" parent="Margin/VBox/TopRow"]
 custom_minimum_size = Vector2(44, 44)
 layout_mode = 2
 
 [node name="SelectedPreviewCard" type="PanelContainer" parent="Margin/VBox"]
-custom_minimum_size = Vector2(0, 126)
+custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_preview_card")
 
 [node name="Margin" type="MarginContainer" parent="Margin/VBox/SelectedPreviewCard"]
 layout_mode = 2
 theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_bottom = 12
 
 [node name="HBox" type="HBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin"]
 layout_mode = 2
@@ -146,16 +154,17 @@ alignment = 1
 [node name="VBoxInfo" type="VBoxContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 2
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="LblPreviewName" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.96, 0.88, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 28
 text = "منچ"
 horizontal_alignment = 2
 
@@ -165,25 +174,29 @@ alignment = 2
 
 [node name="DiffBadge" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HBoxBadges"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_diff_badge")
 
 [node name="LblDiff" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/HBoxBadges/DiffBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.9, 0.5, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 18
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 22
 text = "ظرفیت: ۴ بازیکن آنلاین"
+horizontal_alignment = 2
+autowrap_mode = 3
 
 [node name="LblPreviewRewards" type="Label" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 15
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 22
 text = "پاداش: 🏆 اول ۱۲+ کاپ | 🥈 دوم ۴+ کاپ"
 horizontal_alignment = 2
+autowrap_mode = 3
 
 [node name="IconFrame" type="PanelContainer" parent="Margin/VBox/SelectedPreviewCard/Margin/HBox"]
-custom_minimum_size = Vector2(80, 80)
+custom_minimum_size = Vector2(84, 84)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_icon_frame")
@@ -212,12 +225,12 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnStartGame" type="Button" parent="Margin/VBox/BottomRow"]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("4_font_hekayat")
-theme_override_font_sizes/font_size = 28
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 30
 text = "ورود به صف ۴ نفره ⚔️"

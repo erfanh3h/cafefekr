@@ -1,8 +1,7 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/tabs/user_tab.gd" id="1_user_script"]
 [ext_resource type="PackedScene" path="res://scenes/ui/header/user_header.tscn" id="2_user_header"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_hekayat"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/frame_small.png" id="5_frame_small_tex"]
 
@@ -33,9 +32,9 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 content_margin_left = 16.0
-content_margin_top = 8.0
+content_margin_top = 10.0
 content_margin_right = 16.0
-content_margin_bottom = 8.0
+content_margin_bottom = 10.0
 
 [node name="UserTab" type="Control"]
 layout_mode = 3
@@ -84,10 +83,13 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_toast")
 [node name="LblToast" type="Label" parent="OuterMargin/MainPanel/InnerMargin/VBox/ToastPanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.90, 0.80, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 24
 text = "پیام سیستم"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="SubnavBar" type="PanelContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
 layout_mode = 2
@@ -99,44 +101,54 @@ theme_override_constants/separation = 4
 alignment = 1
 
 [node name="BtnProfile" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "تاریخچه"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnCosmetics" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "تصویر نمایه"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnFrames" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "قاب آواتار"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnPrivacy" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "تنظیمات"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="BtnNotifications" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "اعلان‌ها"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="Scroll" type="ScrollContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox"]
 layout_mode = 2
@@ -177,3 +189,7 @@ visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 14
+
+[node name="BottomSpacer" type="Control" parent="OuterMargin/MainPanel/InnerMargin/VBox/Scroll/ContentVBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2

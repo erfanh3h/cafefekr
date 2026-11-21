@@ -97,6 +97,24 @@ func _ready() -> void:
 	
 	_populate_games_grid()
 	_update_selected_preview()
+	_apply_responsive_size()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_responsive_size):
+		get_viewport().size_changed.connect(_apply_responsive_size)
+
+func _apply_responsive_size() -> void:
+	if get_viewport() == null:
+		return
+	var vis: Vector2 = get_viewport().get_visible_rect().size
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var avail_w: float = vis.x - 28.0 - float(insets["left"]) - float(insets["right"])
+	var avail_h: float = vis.y - 36.0 - float(insets["top"]) - float(insets["bottom"])
+	var w: float = clampf(avail_w, 340.0, 668.0)
+	var h: float = clampf(avail_h, 640.0, 1140.0)
+	custom_minimum_size = Vector2(w, h)
+	offset_left = -w * 0.5
+	offset_right = w * 0.5
+	offset_top = -h * 0.5
+	offset_bottom = h * 0.5
 
 func _setup_styles() -> void:
 	# Clean transparent card style (no dark box or shadow under game icon)
@@ -125,6 +143,7 @@ func _setup_styles() -> void:
 func open(default_game: String = "") -> void:
 	if not default_game.is_empty():
 		selected_game_type = GameRegistry.normalize_type(default_game)
+	_apply_responsive_size()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	_update_selected_preview()
 	_update_grid_selection_visuals()
@@ -219,11 +238,12 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl.clip_text = true
 	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl.add_theme_font_size_override("font_size", 24)
+	lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	lbl.add_theme_font_size_override("font_size", 26)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
-	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
-	lbl.add_theme_constant_override("shadow_outline_size", 3)
+	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	lbl.add_theme_constant_override("shadow_offset_y", 2)
+	lbl.add_theme_constant_override("shadow_outline_size", 2)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -301,4 +321,8 @@ func _update_selected_preview() -> void:
 	var win_xp = 15 if diff == "easy" else (25 if diff == "normal" else 40)
 	var draw_xp = 8 if diff == "easy" else (14 if diff == "normal" else 20)
 	var lose_xp = 4 if diff == "easy" else (7 if diff == "normal" else 10)
-	lbl_preview_rewards.text = "پاداش: 🏆 برد %d+ XP | 🤝 مساوی %d+ XP | 👏 باخت %d+ XP" % [win_xp, draw_xp, lose_xp]
+	lbl_preview_rewards.text = "پاداش: 🏆 برد %s+ XP | 🤝 مساوی %s+ XP | 👏 باخت %s+ XP" % [
+		GameManager.to_fa_num(win_xp),
+		GameManager.to_fa_num(draw_xp),
+		GameManager.to_fa_num(lose_xp)
+	]

@@ -11,8 +11,6 @@ signal reaction_selected(reaction_id: int)
 @onready var grid: GridContainer = $CenterContainer/Panel/Margin/VBox/Grid
 @onready var btn_close: Button = $CenterContainer/Panel/Margin/VBox/BtnClose
 
-const FONT_FA = preload("res://assets/fonts/hekayat.ttf")
-
 # Popular, expressive reaction IDs from assets/icons/Reactions (16 items for clean 4x4 layout)
 const POPULAR_REACTIONS: Array[int] = [
 	1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
@@ -109,6 +107,24 @@ func _ready() -> void:
 	btn_close.pressed.connect(close)
 	_build_grid()
 	_build_kori_list()
+	_apply_responsive_size()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_responsive_size):
+		get_viewport().size_changed.connect(_apply_responsive_size)
+
+func _apply_responsive_size() -> void:
+	if not is_instance_valid(panel):
+		return
+	var vp_size := get_viewport_rect().size
+	if vp_size.x <= 0.0 or vp_size.y <= 0.0:
+		return
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var avail_w := vp_size.x - float(insets["left"]) - float(insets["right"]) - 32.0
+	var avail_h := vp_size.y - float(insets["top"]) - float(insets["bottom"]) - 64.0
+	var target_w := clampf(avail_w, 340.0, 640.0)
+	var target_h := clampf(avail_h, 520.0, 840.0)
+	panel.custom_minimum_size = Vector2(target_w, target_h)
+	if is_instance_valid(_kori_scroll):
+		_kori_scroll.custom_minimum_size = Vector2(0, maxf(300.0, target_h - 240.0))
 
 func _build_grid() -> void:
 	for child in grid.get_children():
@@ -195,8 +211,8 @@ func _build_kori_list() -> void:
 
 		var lbl = Label.new()
 		lbl.text = KORIS[idx]
-		lbl.add_theme_font_override("font", FONT_FA)
-		lbl.add_theme_font_size_override("font_size", 22)
+		lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_SUBTITLE)
 		lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 		lbl.add_theme_constant_override("shadow_offset_y", 2)
@@ -241,6 +257,7 @@ func _build_kori_list() -> void:
 	vbox.move_child(_kori_scroll, grid.get_index())
 
 func open_stickers() -> void:
+	_apply_responsive_size()
 	if is_instance_valid(lbl_title):
 		lbl_title.text = "استیکرها و ایموجی‌ها"
 	if is_instance_valid(grid):
@@ -250,6 +267,7 @@ func open_stickers() -> void:
 	ActionVFXManager.animate_dialog_open(panel, self, true)
 
 func open_koris() -> void:
+	_apply_responsive_size()
 	if is_instance_valid(lbl_title):
 		lbl_title.text = "💬 کری‌خوانی"
 	if is_instance_valid(grid):

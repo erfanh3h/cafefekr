@@ -75,8 +75,27 @@ func _ready() -> void:
 	btn_close.pressed.connect(_on_close_pressed)
 	btn_start_game.pressed.connect(_on_start_game_pressed)
 
+	_apply_responsive_size()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_responsive_size):
+		get_viewport().size_changed.connect(_apply_responsive_size)
+
 	_populate_games_grid()
 	_update_selected_preview()
+
+func _apply_responsive_size() -> void:
+	var vp := get_viewport_rect().size if get_viewport() != null else Vector2(720.0, 1280.0)
+	var insets := CafeSocialTheme.get_safe_area_insets(self)
+	var usable_w: float = maxf(320.0, vp.x - float(insets["left"]) - float(insets["right"]) - 32.0)
+	var usable_h: float = maxf(540.0, vp.y - float(insets["top"]) - float(insets["bottom"]) - 36.0)
+	var w: float = minf(usable_w, 660.0)
+	var h: float = minf(usable_h, 1160.0)
+	custom_minimum_size = Vector2(w, h)
+	var cy_shift: float = (float(insets["top"]) - float(insets["bottom"])) * 0.5
+	offset_left = -w * 0.5
+	offset_right = w * 0.5
+	offset_top = -h * 0.5 + cy_shift
+	offset_bottom = h * 0.5 + cy_shift
+	pivot_offset = Vector2(w * 0.5, h * 0.5)
 
 func _setup_styles() -> void:
 	_style_card_normal = StyleBoxFlat.new()
@@ -104,6 +123,7 @@ func open(default_game: String = "") -> void:
 		var norm = GameRegistry.normalize_type(default_game)
 		if norm in AVAILABLE_MULTI_RANK_GAMES:
 			selected_game_type = norm
+	_apply_responsive_size()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	_update_selected_preview()
 	_update_grid_selection_visuals()
@@ -197,10 +217,11 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl.clip_text = true
 	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl.add_theme_font_size_override("font_size", 24)
+	lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	lbl.add_theme_font_size_override("font_size", 26)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
-	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	lbl.add_theme_constant_override("shadow_offset_y", 2)
 	lbl.add_theme_constant_override("shadow_outline_size", 3)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -225,8 +246,8 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 
 	var d_lbl = Label.new()
 	d_lbl.text = "👥 ۴ نفره آنلاین"
-	d_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	d_lbl.add_theme_font_size_override("font_size", 24)
+	d_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	d_lbl.add_theme_font_size_override("font_size", 22)
 	d_lbl.add_theme_color_override("font_color", p_color)
 	cap_pill.add_child(d_lbl)
 	card.add_child(cap_pill)

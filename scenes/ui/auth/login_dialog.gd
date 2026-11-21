@@ -59,6 +59,15 @@ func _ready() -> void:
 	step1_container.visible = true
 	step2_container.visible = false
 	step3_container.visible = false
+	_apply_responsive_layout()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_responsive_layout):
+		get_viewport().size_changed.connect(_apply_responsive_layout)
+
+func _apply_responsive_layout() -> void:
+	CafeSocialTheme.constrain_modal_card(self, self, 660.0, 24.0)
+	var half_w: float = custom_minimum_size.x * 0.5
+	offset_left = -half_w
+	offset_right = half_w
 
 func open() -> void:
 	is_mandatory_username = false
@@ -66,6 +75,7 @@ func open() -> void:
 	btn_guest_login.visible = false
 	$Margin/VBox/Step1_Phone/OrSeparator.visible = false
 	lbl_title.text = "ورود به کافه فکر"
+	_apply_responsive_layout()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	_show_step1()
 
@@ -73,6 +83,7 @@ func open_for_username_completion() -> void:
 	is_mandatory_username = true
 	btn_close_top.visible = false
 	lbl_title.text = "انتخاب نام کاربری"
+	_apply_responsive_layout()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	_show_step3_username()
 
@@ -82,6 +93,7 @@ func open_for_phone_upgrade(reason: String = "") -> void:
 	btn_guest_login.visible = false
 	$Margin/VBox/Step1_Phone/OrSeparator.visible = false
 	lbl_title.text = "ثبت شماره موبایل"
+	_apply_responsive_layout()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	_show_step1()
 	if not reason.is_empty():

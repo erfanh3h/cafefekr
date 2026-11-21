@@ -51,7 +51,10 @@ func _build_ui() -> void:
 	title_box.add_theme_constant_override("separation", 6)
 	hdr.add_child(title_box)
 
-	_lbl_title = CafeSocialTheme.make_title("رده‌بندی", 21, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_title = CafeSocialTheme.make_title("رده‌بندی", 24, CafeSocialTheme.COL_GOLD_BRIGHT, HORIZONTAL_ALIGNMENT_RIGHT, false)
+	_lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lbl_title.clip_text = true
+	_lbl_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	title_box.add_child(_lbl_title)
 
 	_ico_mode = TextureRect.new()
@@ -68,11 +71,11 @@ func _build_ui() -> void:
 
 	# 3. Win Rate Progress Bar & Summary
 	var wr_box := VBoxContainer.new()
-	wr_box.add_theme_constant_override("separation", 3)
+	wr_box.add_theme_constant_override("separation", 4)
 	vb.add_child(wr_box)
 
 	_progress_bar = ProgressBar.new()
-	_progress_bar.custom_minimum_size = Vector2(0, 10)
+	_progress_bar.custom_minimum_size = Vector2(0, 14)
 	_progress_bar.min_value = 0.0
 	_progress_bar.max_value = 100.0
 	_progress_bar.value = 0.0
@@ -82,16 +85,16 @@ func _build_ui() -> void:
 	pb_bg.bg_color = Color(0.06, 0.04, 0.02, 0.9)
 	pb_bg.border_color = Color(0.38, 0.28, 0.16, 0.6)
 	pb_bg.set_border_width_all(1)
-	pb_bg.set_corner_radius_all(5)
+	pb_bg.set_corner_radius_all(6)
 	_progress_bar.add_theme_stylebox_override("background", pb_bg)
 
 	var pb_fill := StyleBoxFlat.new()
 	pb_fill.bg_color = Color(0.28, 0.78, 0.44, 0.95)
-	pb_fill.set_corner_radius_all(5)
+	pb_fill.set_corner_radius_all(6)
 	_progress_bar.add_theme_stylebox_override("fill", pb_fill)
 	wr_box.add_child(_progress_bar)
 
-	_lbl_winrate = CafeSocialTheme.make_body("۰٪ پیروزی", 16, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, false)
+	_lbl_winrate = CafeSocialTheme.make_body("۰٪ پیروزی", 22, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true)
 	wr_box.add_child(_lbl_winrate)
 
 
@@ -114,7 +117,7 @@ func setup_mode(
 	for c in _rank_badge_holder.get_children():
 		c.queue_free()
 	if not rank_text.is_empty():
-		var pill := CafeSocialTheme.make_badge_pill(rank_text, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 17)
+		var pill := CafeSocialTheme.make_badge_pill(rank_text, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 22)
 		_rank_badge_holder.add_child(pill)
 		_rank_badge_holder.visible = true
 	else:
@@ -154,7 +157,7 @@ func setup_multiplayer(
 	for c in _rank_badge_holder.get_children():
 		c.queue_free()
 	if not rank_text.is_empty():
-		var pill := CafeSocialTheme.make_badge_pill(rank_text, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 17)
+		var pill := CafeSocialTheme.make_badge_pill(rank_text, CafeSocialTheme.COL_GOLD_BRIGHT, Color(0.18, 0.12, 0.05), CafeSocialTheme.COL_GOLD_ANTIQUE, 22)
 		_rank_badge_holder.add_child(pill)
 		_rank_badge_holder.visible = true
 	else:
@@ -184,8 +187,12 @@ func _create_chip(txt: String, text_col: Color, bg_col: Color, border_col: Color
 	st.set_corner_radius_all(8)
 	st.content_margin_left = 6.0
 	st.content_margin_right = 6.0
-	st.content_margin_top = 4.0
-	st.content_margin_bottom = 4.0
+	st.content_margin_top = 5.0
+	st.content_margin_bottom = 5.0
 	p.add_theme_stylebox_override("panel", st)
-	p.add_child(CafeSocialTheme.make_body(txt, 16, text_col, HORIZONTAL_ALIGNMENT_CENTER, false))
+	var chip_lbl := CafeSocialTheme.make_body(txt, 22, text_col, HORIZONTAL_ALIGNMENT_CENTER, false)
+	chip_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chip_lbl.clip_text = true
+	chip_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	p.add_child(chip_lbl)
 	return p

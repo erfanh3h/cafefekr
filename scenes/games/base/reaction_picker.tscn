@@ -1,8 +1,12 @@
-[gd_scene load_steps=5 format=3 uid="uid://d2k1v5l8q0n4w"]
+[gd_scene load_steps=6 format=3 uid="uid://d2k1v5l8q0n4w"]
 
 [ext_resource type="Script" path="res://scenes/games/base/reaction_picker.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/board.png" id="2_bg"]
-[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font"]
+
+[sub_resource type="FontVariation" id="FontVariation_vazir_bold"]
+base_font = ExtResource("3_font")
+variation_embolden = 0.26
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel"]
 texture = ExtResource("2_bg")
@@ -56,8 +60,10 @@ theme_override_constants/separation = 16
 [node name="LblTitle" type="Label" parent="CenterContainer/Panel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
-theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 30
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_y = 2
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 34
 text = "کری‌خوانی و ایموجی‌ها"
 horizontal_alignment = 1
 
@@ -70,12 +76,12 @@ theme_override_constants/v_separation = 12
 columns = 4
 
 [node name="BtnClose" type="Button" parent="CenterContainer/Panel/Margin/VBox"]
-custom_minimum_size = Vector2(260, 68)
+custom_minimum_size = Vector2(260, 72)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.12, 0.12, 0.12, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_y = 2
-theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = SubResource("FontVariation_vazir_bold")
+theme_override_font_sizes/font_size = 26
 text = "بستن"

@@ -122,7 +122,15 @@ func _ready() -> void:
 		var v_sb = scroll_games.get_v_scroll_bar()
 		if v_sb:
 			v_sb.custom_minimum_size = Vector2(12, 0)
+	_apply_safe_area_layout()
+	if get_viewport() != null and not get_viewport().size_changed.is_connected(_apply_safe_area_layout):
+		get_viewport().size_changed.connect(_apply_safe_area_layout)
 	_connect_network_signals()
+
+func _apply_safe_area_layout() -> void:
+	var mc := get_node_or_null("Margin") as MarginContainer
+	if is_instance_valid(mc):
+		CafeSocialTheme.apply_safe_area_to_margin(mc, 12, 12, 12, 12, true, true)
 
 var _last_timer_sec: int = -1
 var _last_dc_sec: int = -1
@@ -449,14 +457,14 @@ func _build_timeline() -> void:
 
 	var sys_title_lbl = Label.new()
 	sys_title_lbl.text = "🚫 حذف سیستم:"
-	sys_title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	sys_title_lbl.add_theme_font_size_override("font_size", 15)
+	sys_title_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	sys_title_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 	sys_title_lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.62))
 	sys_strip.add_child(sys_title_lbl)
 
 	for s_idx in range(3):
 		var sys_box = PanelContainer.new()
-		sys_box.custom_minimum_size = Vector2(0, 30)
+		sys_box.custom_minimum_size = Vector2(0, 38)
 		sys_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var sys_sb = StyleBoxFlat.new()
 		sys_sb.bg_color = Color(0.20, 0.06, 0.06, 0.88)
@@ -465,8 +473,8 @@ func _build_timeline() -> void:
 		sys_sb.set_corner_radius_all(8)
 		sys_sb.content_margin_left = 6
 		sys_sb.content_margin_right = 6
-		sys_sb.content_margin_top = 2
-		sys_sb.content_margin_bottom = 2
+		sys_sb.content_margin_top = 3
+		sys_sb.content_margin_bottom = 3
 		sys_box.add_theme_stylebox_override("panel", sys_sb)
 
 		var sys_row = HBoxContainer.new()
@@ -475,7 +483,7 @@ func _build_timeline() -> void:
 		sys_box.add_child(sys_row)
 
 		var sys_img = TextureRect.new()
-		sys_img.custom_minimum_size = Vector2(22, 22)
+		sys_img.custom_minimum_size = Vector2(24, 24)
 		sys_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		sys_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		sys_img.texture = _load_game_texture("tictactoe")
@@ -485,8 +493,8 @@ func _build_timeline() -> void:
 		var sys_name = Label.new()
 		sys_name.text = "..."
 		sys_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		sys_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		sys_name.add_theme_font_size_override("font_size", 14)
+		sys_name.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+		sys_name.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		sys_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		sys_name.clip_text = true
 		sys_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -520,7 +528,7 @@ func _build_timeline() -> void:
 		var t_owner = int(cfg["owner"]) # 1, 2, 0 (sys)
 		
 		var node_box = PanelContainer.new()
-		node_box.custom_minimum_size = Vector2(0, 84)
+		node_box.custom_minimum_size = Vector2(96, 114)
 		node_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		node_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		
@@ -532,16 +540,16 @@ func _build_timeline() -> void:
 		node_box.add_theme_stylebox_override("panel", sb)
 		
 		var margin = MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 3)
-		margin.add_theme_constant_override("margin_top", 3)
-		margin.add_theme_constant_override("margin_right", 3)
-		margin.add_theme_constant_override("margin_bottom", 3)
+		margin.add_theme_constant_override("margin_left", 4)
+		margin.add_theme_constant_override("margin_top", 4)
+		margin.add_theme_constant_override("margin_right", 4)
+		margin.add_theme_constant_override("margin_bottom", 4)
 		node_box.add_child(margin)
 		
 		var vbox = VBoxContainer.new()
 		vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_theme_constant_override("separation", 2)
+		vbox.add_theme_constant_override("separation", 3)
 		margin.add_child(vbox)
 		
 		# Top Action Pill
@@ -550,8 +558,8 @@ func _build_timeline() -> void:
 		var chip_sb = StyleBoxFlat.new()
 		chip_sb.set_corner_radius_all(5)
 		chip_sb.set_border_width_all(1)
-		chip_sb.content_margin_left = 2
-		chip_sb.content_margin_right = 2
+		chip_sb.content_margin_left = 3
+		chip_sb.content_margin_right = 3
 		chip_sb.content_margin_top = 1
 		chip_sb.content_margin_bottom = 1
 		
@@ -559,8 +567,8 @@ func _build_timeline() -> void:
 		lbl_tag.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl_tag.clip_text = true
 		lbl_tag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		lbl_tag.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_tag.add_theme_font_size_override("font_size", 13)
+		lbl_tag.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		lbl_tag.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		lbl_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		
 		if t_type == "ban":
@@ -583,9 +591,9 @@ func _build_timeline() -> void:
 		chip_panel.add_child(lbl_tag)
 		vbox.add_child(chip_panel)
 		
-		# Center Icon Box (36x36)
+		# Center Icon Box (38x38)
 		var frame = PanelContainer.new()
-		frame.custom_minimum_size = Vector2(36, 36)
+		frame.custom_minimum_size = Vector2(38, 38)
 		frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		var frame_sb = StyleBoxFlat.new()
 		frame_sb.bg_color = Color(0.05, 0.03, 0.02, 0.90)
@@ -595,7 +603,7 @@ func _build_timeline() -> void:
 		frame.add_theme_stylebox_override("panel", frame_sb)
 		
 		var img_rect = TextureRect.new()
-		img_rect.custom_minimum_size = Vector2(32, 32)
+		img_rect.custom_minimum_size = Vector2(34, 34)
 		img_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		img_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		img_rect.texture = _load_game_texture("tictactoe")
@@ -604,8 +612,8 @@ func _build_timeline() -> void:
 		
 		var ban_overlay = Label.new()
 		ban_overlay.text = "✕"
-		ban_overlay.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		ban_overlay.add_theme_font_size_override("font_size", 20)
+		ban_overlay.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		ban_overlay.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		ban_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		ban_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		ban_overlay.modulate = Color(1.0, 0.2, 0.2, 0.0)
@@ -617,8 +625,8 @@ func _build_timeline() -> void:
 		var lbl_name = Label.new()
 		lbl_name.text = "شما" if t_owner == my_player_index else ("سیستم" if t_owner == 0 else "حریف")
 		lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_name.add_theme_font_size_override("font_size", 13)
+		lbl_name.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+		lbl_name.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_name.clip_text = true
 		lbl_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -726,7 +734,7 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> PanelContain
 	ban_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ban_mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ban_mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	ban_mark.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+	ban_mark.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
 	ban_mark.add_theme_font_size_override("font_size", 64)
 	ban_mark.add_theme_color_override("font_color", Color(1.0, 0.22, 0.22, 0.92))
 	ban_mark.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
@@ -735,7 +743,7 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> PanelContain
 	
 	# 3. Bottom Difficulty Ribbon Banner with Persian Game Name (matching classic_rank_dialog)
 	var name_banner = PanelContainer.new()
-	name_banner.anchor_top = 0.72
+	name_banner.anchor_top = 0.70
 	name_banner.anchor_right = 1.0
 	name_banner.anchor_bottom = 1.0
 	name_banner.offset_left = 3.0
@@ -751,12 +759,13 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> PanelContain
 	lbl_name.clip_text = true
 	lbl_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl_name.text = GameTypes.get_display_name_fa(g_type)
-	lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_name.add_theme_font_size_override("font_size", 19)
+	lbl_name.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	lbl_name.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl_name.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 	lbl_name.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	lbl_name.add_theme_constant_override("shadow_offset_y", 2)
 	lbl_name.add_theme_constant_override("shadow_outline_size", 2)
 	name_banner.add_child(lbl_name)
 	
@@ -767,17 +776,17 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> PanelContain
 	sel_corner.anchors_preset = Control.PRESET_TOP_RIGHT
 	sel_corner.anchor_left = 1.0
 	sel_corner.anchor_right = 1.0
-	sel_corner.offset_left = -104
+	sel_corner.offset_left = -124
 	sel_corner.offset_top = 6
 	sel_corner.offset_right = -6
-	sel_corner.offset_bottom = 36
+	sel_corner.offset_bottom = 44
 	var sel_corner_sb = StyleBoxFlat.new()
 	sel_corner_sb.bg_color = Color(0.12, 0.72, 0.34, 0.96)
 	sel_corner_sb.set_border_width_all(2)
 	sel_corner_sb.border_color = Color(1, 1, 1, 0.92)
 	sel_corner_sb.set_corner_radius_all(8)
-	sel_corner_sb.content_margin_left = 5
-	sel_corner_sb.content_margin_right = 5
+	sel_corner_sb.content_margin_left = 6
+	sel_corner_sb.content_margin_right = 6
 	sel_corner.add_theme_stylebox_override("panel", sel_corner_sb)
 	
 	var lbl_sel_corner = Label.new()
@@ -785,8 +794,8 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> PanelContain
 	lbl_sel_corner.text = "✓ انتخاب"
 	lbl_sel_corner.clip_text = true
 	lbl_sel_corner.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl_sel_corner.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_sel_corner.add_theme_font_size_override("font_size", 15)
+	lbl_sel_corner.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	lbl_sel_corner.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 	lbl_sel_corner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_sel_corner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl_sel_corner.add_theme_color_override("font_color", Color(1, 1, 1))
@@ -1129,8 +1138,8 @@ func _play_selection_vfx(game_type: String, t_type: String, step_num: int) -> vo
 	var stamp_lbl = Label.new()
 	stamp_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stamp_lbl.text = "🚫 حذف شد" if t_type == "ban" else ("🎯 انتخاب شد" if t_type == "pick" else "🎲 انتخاب سیستم")
-	stamp_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	stamp_lbl.add_theme_font_size_override("font_size", 20)
+	stamp_lbl.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	stamp_lbl.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 	stamp_lbl.add_theme_color_override("font_color", Color.WHITE)
 	stamp_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stamp_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1449,8 +1458,9 @@ func _show_draft_complete_transition() -> void:
 	lbl_h.text = "👑 قرعه‌کشی و انتخاب بازی‌ها تکمیل شد! 👑"
 	lbl_h.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_h.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	lbl_h.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_h.add_theme_font_size_override("font_size", 26)
+	lbl_h.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	lbl_h.add_theme_font_size_override("font_size", 30)
+	CafeSocialTheme.apply_wood_text_shadow(lbl_h, 2)
 	lbl_h.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_h.modulate = Color(1.0, 0.88, 0.3)
 	vbox.add_child(lbl_h)
@@ -1459,8 +1469,8 @@ func _show_draft_complete_transition() -> void:
 	lbl_sub.text = "ترتیب ۳ بازی مسابقه رنک (بهترین از ۳):"
 	lbl_sub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	lbl_sub.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_sub.add_theme_font_size_override("font_size", 20)
+	lbl_sub.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	lbl_sub.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_SUBTITLE)
 	lbl_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_sub.modulate = Color(0.85, 0.78, 0.65)
 	vbox.add_child(lbl_sub)
@@ -1486,7 +1496,7 @@ func _show_draft_complete_transition() -> void:
 	
 	for g_info in games_list:
 		var g_card = PanelContainer.new()
-		g_card.custom_minimum_size = Vector2(0, 250)
+		g_card.custom_minimum_size = Vector2(0, 260)
 		g_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var c_sb = StyleBoxFlat.new()
 		c_sb.bg_color = Color(0.18, 0.12, 0.08, 0.96)
@@ -1513,8 +1523,8 @@ func _show_draft_complete_transition() -> void:
 		c_tag.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		c_tag.clip_text = true
 		c_tag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		c_tag.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		c_tag.add_theme_font_size_override("font_size", 16)
+		c_tag.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		c_tag.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		c_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c_tag.modulate = g_info["accent"]
 		c_vbox.add_child(c_tag)
@@ -1529,7 +1539,7 @@ func _show_draft_complete_transition() -> void:
 		c_vbox.add_child(c_img)
 		
 		var c_name_banner = PanelContainer.new()
-		c_name_banner.custom_minimum_size = Vector2(0, 44)
+		c_name_banner.custom_minimum_size = Vector2(0, 48)
 		c_name_banner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		c_name_banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(str(g_info["game"]), 24.0, 4.0))
 		c_vbox.add_child(c_name_banner)
@@ -1539,8 +1549,8 @@ func _show_draft_complete_transition() -> void:
 		c_name.clip_text = true
 		c_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		c_name.text = GameTypes.get_display_name_fa(str(g_info["game"]))
-		c_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		c_name.add_theme_font_size_override("font_size", 18)
+		c_name.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+		c_name.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BADGE)
 		c_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		c_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		c_name.modulate = Color(1, 1, 1)
@@ -1553,8 +1563,8 @@ func _show_draft_complete_transition() -> void:
 	lbl_loading.text = "⚡ ورود به بازی اول تا ۴ ثانیه دیگر..."
 	lbl_loading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_loading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	lbl_loading.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_loading.add_theme_font_size_override("font_size", 26)
+	lbl_loading.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	lbl_loading.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BODY)
 	lbl_loading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_loading.modulate = Color(0.35, 0.95, 0.55)
 	vbox.add_child(lbl_loading)
@@ -1668,8 +1678,9 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	# Icon & Title
 	var lbl_modal_title = Label.new()
 	lbl_modal_title.text = "⚠️ وضعیت مسابقه"
-	lbl_modal_title.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_modal_title.add_theme_font_size_override("font_size", 28)
+	lbl_modal_title.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	lbl_modal_title.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_CARD_TITLE)
+	CafeSocialTheme.apply_wood_text_shadow(lbl_modal_title, 2)
 	lbl_modal_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_modal_title.modulate = Color(1.0, 0.85, 0.3)
 	vbox.add_child(lbl_modal_title)
@@ -1677,8 +1688,8 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	# Body Message
 	var lbl_msg = Label.new()
 	lbl_msg.text = message
-	lbl_msg.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	lbl_msg.add_theme_font_size_override("font_size", 22)
+	lbl_msg.add_theme_font_override("font", CafeSocialTheme.get_ui_font())
+	lbl_msg.add_theme_font_size_override("font_size", CafeSocialTheme.FONT_SIZE_BODY)
 	lbl_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lbl_msg.modulate = Color(1.0, 0.92, 0.85)
@@ -1691,9 +1702,9 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	# Action Button: Return to Menu
 	var btn_return = Button.new()
 	btn_return.text = "بازگشت به منوی اصلی"
-	btn_return.custom_minimum_size = Vector2(260, 68)
-	btn_return.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn_return.add_theme_font_size_override("font_size", 24)
+	btn_return.custom_minimum_size = Vector2(280, 74)
+	btn_return.add_theme_font_override("font", CafeSocialTheme.get_ui_bold_font())
+	btn_return.add_theme_font_size_override("font_size", 26)
 	KenneyUI.style_button(btn_return, KenneyUI.COLOR_GREEN)
 	btn_return.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	btn_return.pressed.connect(_on_modal_close_pressed)
