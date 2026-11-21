@@ -1,7 +1,7 @@
 # Cafe Fekr — Game Scene Architecture & Implementation Rules
-> **Version:** 2.2  
+> **Version:** 2.3  
 > **Target Engine:** Godot 4.x (GDScript)  
-> **Scope:** General UI, Five-Tab Main Navigation, 3D Environment, Game Logic, Socket Networking, and Porting Standards for ALL present and future Cafe Fekr games (TicTacToe, Chess, FekrBekr, Checkers, Backgammon, Four-in-a-Row, Othello, Mill, DotBox, Battleship, Sudoku, Yatzy, etc.).
+> **Scope:** General UI, Five-Tab Main Navigation, 3D Environment, Game Logic, Socket Networking, and Porting Standards for ALL present and future Cafe Fekr games (TicTacToe, Chess, FekrBekr, Checkers, Backgammon, Four-in-a-Row, Othello, Mill, DotBox, Battleship, Sudoku, Yatzy, Risk Strike, Ludo, etc.).
 
 ---
 
@@ -264,6 +264,20 @@ Across all main tabs (`PlayTab`, `LibraryTab`, `HistoryTab`, `SocialTab`, `UserT
   - **Game Documentation RTL:**
     - All game rules and overview rich text in `LibraryTab` MUST be explicitly right-aligned (`align = right`) and flagged for RTL rendering.
 
+### 2.9. Standardized 20 Avatar Frames Integration Rule (`profile_frame: 1..20`)
+- **Visual Assets & Storage Parity:**
+  - Cafe Fekr features 20 standardized luxury metallic and antique avatar frames (`res://assets/images/avatar_frames/frame_*.png` on client, served via `/static/avatar_frames/frame_*.png` on the FastAPI server).
+  - Frames span ornate brass filigree, royal gold laurel wreaths, dragon crests, diamond runic bezels, and gothic iron borders.
+- **HUD & Profile Integration Standards:**
+  - **In-Game Player Plaques (`BaseTopHeader`):**
+    - The frame overlay sits exactly atop the circular avatar medallion (`120 × 120 px`).
+    - Frames must be centered with `mouse_filter = Control.MOUSE_FILTER_IGNORE` and `expand_mode = TextureRect.EXPAND_IGNORE_SIZE` (or `EXPAND_FIT_WIDTH_PROPORTIONAL`) so the border does not clip or overflow into the player name or turn pills.
+  - **User Profile Banner (`UserTab` & `UserProfileDialog`):**
+    - Large profile headers scale the frame dynamically around the `160 × 160 px` circular portrait.
+    - If `profile_frame == 0` or is null/unset, fallback to the default antique carved bronze ring with no visual artifacts.
+  - **Zero Visual Clipping Guarantee:**
+    - Frame overlays must NEVER cover player status indicators, AFK strikes, or reaction speech bubbles.
+
 ---
 
 ## 3. 3D Cafe Environment & Camera Rules (`CafeTable`)
@@ -294,6 +308,15 @@ The 3D environment represents a cozy, nostalgic board game cafe:
     4. **Traditional Persian Ceramic Plate with Pistachios & Saffron Rock Candy** (`Vector3(0.88, 0, -0.38)`): Glazed turquoise plate with gold rim, pistachio shells, and amber rock candy crystals.
     5. **Vintage Brass Pocket Watch on Chain** (`Vector3(0.62, 0, 0.68)`): Hinged brass case, cream watch face, hands, crown loop, and curved brass chain.
     6. **Stack of Game Tokens / Coasters** (`Vector3(-0.62, 0, -0.68)`): Crimson, sapphire, and obsidian brass-rimmed game tokens.
+- **Procedural 3D Cafe Chairs & Surrounding Atmosphere (`_build_3d_cafe_chairs()` in `cafe_table.gd`):**
+  - To ground the board-game table in an authentic physical room without cluttering the screen or blocking board view, `CafeTable` procedurally places 4 luxury cafe chairs around the table at generous radial clearance (`radius >= 1.18m`):
+    1. **South Chair (Player Perspective)**: Upholstered in rich Cognac Leather (`res://assets/textures/chair_leather_cognac.jpg`) with dark carved walnut legs and brass ferrule caps.
+    2. **North Chair (Opponent Perspective)**: Upholstered in Emerald Leather (`res://assets/textures/chair_leather_emerald.jpg`) with brass studs.
+    3. **West Chair (Left Spectator / Player 3)**: Upholstered in Royal Crimson Velvet (`res://assets/textures/chair_velvet_crimson.jpg`).
+    4. **East Chair (Right Spectator / Player 4)**: Upholstered in Antique Teal Damask fabric (`res://assets/textures/chair_damask_teal.jpg`).
+  - **Obstruction-Free Raycasting Guarantee:**
+    - Chairs are positioned strictly outside the camera zoom bounds and 3D raycasting paths.
+    - Chair meshes MUST set `collision_layer = 0` and `collision_mask = 0` (or lack physics collision shapes) so mouse raycasts never hit chair frames, armrests, or backrests when tapping board cells or tabletop controls.
 - **No 3D Hands Rule (All Games):**
   - Disembodied 3D hands (`RealisticHand` / `player_hand` / `enemy_hand`) are **completely removed and prohibited across ALL games** (including `Checkers`, `Chess`, `TicTacToe`, `FekrBekr`, and `Yatzy`).
   - Pieces, dice, and pegs animate directly on the 3D board using clean physical trajectories (parabolic hops, drops, slides, and rolls) with `ActionVFXManager` impact bursts. `cafe_table.animate_place_piece(...)` is a direct callback pass-through with no hand nodes.
@@ -497,6 +520,9 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
 - **3D Walnut Cabinet & 36 Double-Sided Memory Medallions (`mnumbers_3d.gd` & `mnumbers_3d.tscn`):**
   - Renders a `6×6` grid of `36` recessed obsidian wells (`CELL_SPACING = 0.168m`, indices `0..35`), `36` double-sided 3D lathe-turned Memory Medallions (`18` pairs of numbers `1..18` rendered in Persian digits `۱..۱۸` via `hekayat.ttf`), and left/right mahogany reserve trays holding `18` 3D score medallions per player (no floating text above pieces).
   - Gamer-friendly 3D UX: selecting the 1st tile (`equipped_index`) elevates it with a crisp player-colored rim (clicking it again deselects it); selecting the 2nd tile dispatches the pair to the server.
+- **Immediate First-Piece Reveal & Lock Rule (Race Condition Prevention):**
+  - Upon selecting the first medallion, the client **immediately reveals it face-up and locks it locally** (`is_locked = true`) before awaiting the second medallion click.
+  - This eliminates double-tap race conditions, stops duplicate network dispatches, and prevents the player from accidentally selecting the exact same piece twice.
 - **Exact Server Protocol & 2-Second Reveal Window (`MNumbersGameClass`, `MNumbersGameSession` & `MNumbersController`):**
   - Client sends `Select_Peace` (`{"index1": idx1, "index2": idx2}`). Server emits `Peace_Selected` (`{"user": gamer_id, "index1": idx1, "value1": val1, "index2": idx2, "value2": val2, "is_correct": is_correct}`).
   - If `is_correct == true`: both medallions permanently flip face-up in Player 1 (Ruby Red + 24K Gold) or Player 2 (Sapphire Blue + Platinum), player score increments by `+1`, and side reserve trays update.
@@ -555,6 +581,35 @@ Across all scrollable dialogs and modals (`LobbyDialog` game selector & lobby li
   - **Bonus Turn on Hit**: When `Peace_Selected` returns `number > 0` (`is_turn_win_happened == true`), the shooter scores `+1` and immediately gets a bonus 12s turn without a `Current_Turn` command.
   - **Full Ship Sunk (`checkIsShipCompleted`)**: When the number of hit cells with `cell.number == L` reaches `L` (`2, 3, 4, or 5`), the full 3D enemy warship materializes on the Attack Radar board with a multi-stage chain explosion, shockwave ring, board shudder, and sinking animation.
   - **Switchable 3D Boards (`MY_BOARD` / Attack Radar, `OPP_BOARD` / My Fleet Defense, `DUAL` Side-by-Side)**: Controlled via both the HUD `🎯` / `👥` buttons and 3D board view tabs.
+
+---
+
+### 4.17. Royal Persian Yatzy (`Yatzy` / `تاس ریزان`) 3 Re-rolls Per Round Rule
+- **Dice Mechanics & Re-roll Limits (`YatzyGameClass` & `YatzyController`):**
+  - **Strictly 3 Rolls Per Turn:** Each player gets an initial roll followed by up to **2 re-rolls** (maximum 3 rolls total per turn). After the 3rd roll (`rolls_left == 0`), the roll button disables and the player **must select an open scoring category**.
+  - **Interactive 3D Dice Locking:**
+    - 5 precision-beveled ivory dice with recessed gold pips resting inside a carved walnut tray.
+    - Tapping a die toggles its locked state (`_is_locked[i] = !_is_locked[i]`), elevating the die and adding an emerald/gold retention aura.
+    - Re-rolling only animates and queries server values for unlocked dice.
+- **Scoring Grid & Category Parity:**
+  - **Upper Section:** Ones through Sixes. Reaching $\ge 63$ total points awards the **+35 Upper Section Bonus**.
+  - **Lower Section:** Three of a Kind, Four of a Kind, Full House (25 pts), Small Straight (30 pts), Large Straight (40 pts), Yatzy (50 pts), and Chance.
+  - Selecting a category locks it permanently for that player, syncs points with the server via `Select_Peace`, updates the HUD score badges, and passes turn to the next player.
+
+---
+
+### 4.18. Risk Strike (`Risk` / `ریسک حمله`) 3D Board, Defense Phase & Event Pacing Queue Rules
+- **Overview & Multi-Player Map Layout (`RiskGameClass` & `BaseMultiplayerGameSession`):**
+  - 3D strategic world map spanning 42 territories across 6 continents (North America, South America, Europe, Africa, Asia, Australia) for 2 to 4 players.
+  - Multi-round turn lifecycle: Reinforcement Phase $\rightarrow$ Tactical Card Phase $\rightarrow$ Attack/Invasion Phase $\rightarrow$ Fortification/Maneuver Phase.
+- **Tactical Defense Phase Strategy Cards (`Risk_Pass_Time = 5s`):**
+  - When an attack is declared against a defending territory, the defending player is granted a dedicated **5.0-second reaction time window** (`Risk_Pass_Time = 5s`) to play tactical defense cards (e.g. Tactical Defense, Sabotage, Fortify, Bombard) before dice rolls resolve.
+  - The defender may choose to play a card or tap "رد کردن" (Pass).
+  - Combat dice rolls MUST NOT resolve until either the defender card is played or the 5s timer expires.
+- **Mandatory Event Pacing Queue (`EventQueue`):**
+  - In complex multiplayer strategy games like Risk Strike, multiple game actions (dice rolls, troop casualties, card plays, continent ownership bonuses, player eliminations) fire in rapid succession from the server.
+  - **CRITICAL LAW**: The client **MUST route all combat events, card reveals, and troop movements through a sequential Event Pacing Queue** with generous animation buffers (1.2s to 2.5s per action).
+  - **NEVER** drop, skip, or truncate attack dice animations or conquest notifications. Every player and spectator must observe combat resolution clearly.
 
 ---
 
@@ -652,6 +707,13 @@ Always test headless compilation and automated logic via Godot console:
 | ❌ **No Small/Zero Padding on Frames** | Always enforce 15–20px horizontal and vertical padding (`content_margin` and `MarginContainer`) so content does not touch golden bevels. |
 | ❌ **No Floating UserHeader in Menu** | Player profile information belongs exclusively inside `UserTab`; do not render duplicate floating headers on other tabs. |
 | ❌ **No Floats or Latin Digits in Leaderboards** | Always cast leaderboard values to integer and format via `GameManager.to_fa_num(int(...))`. |
+| ❌ **No Multi-Player Match Abort on Surrender** | In >2P games (Risk, Ludo, Uno), a single player surrendering or timing out must never terminate the match for remaining players. |
+| ❌ **No False Pause for Eliminated Players** | Never trigger disconnect pause timers when an already-eliminated player disconnects; only active players trigger pause. |
+| ❌ **No Dropped Combat VFX in Risk Strike** | Always route combat dice, tactical cards, and conquests through the sequential `EventQueue` with 1.2s–2.5s pacing delays. |
+| ❌ **No Double-Tap Race in Match Numbers** | Selecting the 1st medallion must immediately flip and lock it (`is_locked = true`) before allowing the 2nd piece tap. |
+| ❌ **No Fourth Roll in Yatzy** | Strictly enforce a maximum of 3 rolls per turn before forcing scoring category selection. |
+| ❌ **No Raycast Obstruction from 3D Chairs** | 3D chairs must set collision layer/mask to 0 and remain $>1.15$m from table center so board clicks never hit chairs. |
+| ❌ **No Avatar Frame Clipping** | Standardize avatar frames (`1..20`) to `120×120` in HUD plaques and `160×160` in UserTab without obscuring text. |
 | ❌ **Cross-Game Side-Effect Prohibition** | When changing or fixing something in a game, it MUST NOT affect any other game (only affects if it was common on both). Never introduce collateral changes to existing games. |
 
 ---
@@ -717,3 +779,20 @@ Always test headless compilation and automated logic via Godot console:
   - **1st Missed Turn Warning:** Broadcasts `Commands.Not_played_Turns` with `count: 1`. The client displays a prominent warning toast and sound prompt.
   - **Reset on Move:** As soon as the player makes any valid move or action, their `not_played_turns` counter is immediately reset to 0. An occasional missed turn never compounds into a forfeit.
   - **30-Second Reconnect Safety Floor:** Whenever a player reconnects to a game, their remaining disconnect timer is automatically granted a safety floor of at least 30 seconds (`max(timer.max_time, 30)`), preventing instant forfeit from minor subsequent packet drops.
+
+### 7.4. Multiplayer (>2P) Surrender, Disconnect & AFK Lifecycle Architecture (`BaseMultiplayerGameSession`)
+In 3- to 4-player games (`Risk Strike`, `Ludo`, `Uno`, `Monopoly`, `Coup`, `Quiz`), player departures (surrender, AFK forfeit, disconnect timeout) must NOT abort the match for remaining active players:
+- **Clean Elimination Protocol:**
+  - When an elimination occurs:
+    1. Player is removed from `active_player_indexes`.
+    2. Player's turn timer and disconnect timer are stopped.
+    3. `_on_player_eliminated(eliminated_index)` is invoked to clean up game state, release held cards or territories, and advance the turn immediately if it was the eliminated player's turn.
+    4. Client marks the player plaque as eliminated (darkened portrait, red skull/flag tag) and locks controls for that eliminated client while continuing live play for remaining active players and spectators.
+- **Selective Disconnect Pause Timer (`_sync_timer_pause_state`):**
+  - When a player disconnects, `_sync_timer_pause_state()` evaluates whether the disconnected player is currently in `active_player_indexes`.
+  - The match pause countdown (`Commands.User_Disconnected`) is ONLY triggered if the player is active. If an already-eliminated player closes their app, the match continues completely uninterrupted without false pause dialogs.
+- **AI Bot Fallback & Human Presence Termination (`_check_and_finish_if_no_humans_left`):**
+  - If all human players have surrendered or disconnected and only AI bots remain active in the game session:
+    - The server invokes `_check_and_finish_if_no_humans_left()` to instantly finalize the game session.
+    - Remaining active bots are assigned podium ranks based on current board scores/territories.
+    - This eliminates orphan headless bot loops from consuming server resources.
