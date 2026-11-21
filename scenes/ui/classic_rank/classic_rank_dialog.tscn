@@ -5,37 +5,22 @@
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="3_font_hekayat"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/games/tictactoe.jpg" id="5_preview_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/dialog_tall.png" id="6_dialog_tall_tex"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_parlor_outer"]
-content_margin_left = 7.0
-content_margin_top = 7.0
-content_margin_right = 7.0
-content_margin_bottom = 7.0
-bg_color = Color(0.125, 0.075, 0.042, 0.99)
-border_width_left = 3
-border_width_top = 4
-border_width_right = 3
-border_width_bottom = 4
-border_color = Color(0.89, 0.7, 0.29, 0.98)
-corner_radius_top_left = 26
-corner_radius_top_right = 26
-corner_radius_bottom_right = 26
-corner_radius_bottom_left = 26
-shadow_color = Color(0, 0, 0, 0.72)
-shadow_size = 24
-shadow_offset = Vector2(0, 10)
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_parlor_outer"]
+texture = ExtResource("6_dialog_tall_tex")
+texture_margin_left = 40.0
+texture_margin_top = 80.0
+texture_margin_right = 40.0
+texture_margin_bottom = 60.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_parlor_inner"]
 content_margin_left = 14.0
 content_margin_top = 14.0
 content_margin_right = 14.0
 content_margin_bottom = 14.0
-bg_color = Color(0.082, 0.048, 0.027, 0.98)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.78, 0.59, 0.24, 0.44)
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
 corner_radius_top_left = 20
 corner_radius_top_right = 20
 corner_radius_bottom_right = 20
@@ -184,7 +169,7 @@ offset_right = 336.0
 offset_bottom = 585.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_parlor_outer")
+theme_override_styles/panel = SubResource("StyleBoxTexture_parlor_outer")
 script = ExtResource("1_classic_script")
 
 [node name="InnerBezel" type="PanelContainer" parent="."]

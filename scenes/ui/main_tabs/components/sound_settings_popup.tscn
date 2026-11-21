@@ -3,20 +3,14 @@
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/components/sound_settings_popup.gd" id="1_sound_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font_vazir"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/dialog.png" id="4_dialog_tex"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_popup_panel"]
-bg_color = Color(0.12, 0.08, 0.05, 0.98)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.85, 0.68, 0.28, 0.92)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
-shadow_color = Color(0, 0, 0, 0.65)
-shadow_size = 12
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_popup_panel"]
+texture = ExtResource("4_dialog_tex")
+texture_margin_left = 44.0
+texture_margin_top = 80.0
+texture_margin_right = 44.0
+texture_margin_bottom = 80.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_row_bg"]
 bg_color = Color(0.08, 0.05, 0.03, 0.75)
@@ -78,7 +72,7 @@ grow_vertical = 2
 [node name="Panel" type="PanelContainer" parent="CenterContainer"]
 custom_minimum_size = Vector2(580, 420)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_popup_panel")
+theme_override_styles/panel = SubResource("StyleBoxTexture_popup_panel")
 
 [node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
 layout_mode = 2

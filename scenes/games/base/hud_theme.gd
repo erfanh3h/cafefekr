@@ -329,20 +329,17 @@ static func make_popover_panel_style() -> StyleBoxFlat:
 	return sb
 
 
-static func make_drawer_panel_style() -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(COL_WALNUT_DEEP.r, COL_WALNUT_DEEP.g, COL_WALNUT_DEEP.b, 0.98)
-	sb.border_color = COL_GOLD_BRUSHED
-	sb.set_border_width_all(2)
-	sb.border_width_bottom = 4
-	sb.set_corner_radius_all(22)
-	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
-	sb.shadow_size = 20
-	sb.shadow_offset = Vector2(0, 8)
-	sb.content_margin_left = 18
-	sb.content_margin_right = 18
-	sb.content_margin_top = 18
-	sb.content_margin_bottom = 18
+static func make_drawer_panel_style() -> StyleBox:
+	var sb := StyleBoxTexture.new()
+	sb.texture = preload("res://assets/images/frames/dialog.png")
+	sb.texture_margin_left = 44.0
+	sb.texture_margin_top = 80.0
+	sb.texture_margin_right = 44.0
+	sb.texture_margin_bottom = 80.0
+	sb.content_margin_left = 22.0
+	sb.content_margin_right = 22.0
+	sb.content_margin_top = 28.0
+	sb.content_margin_bottom = 28.0
 	return sb
 
 

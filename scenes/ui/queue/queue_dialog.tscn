@@ -6,25 +6,14 @@
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="4_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="5_close_tex"]
 [ext_resource type="Script" path="res://scenes/ui/queue/queue_radar_vfx.gd" id="6_radar_script"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/dialog.png" id="7_dialog_tex"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
-content_margin_left = 20.0
-content_margin_top = 20.0
-content_margin_right = 20.0
-content_margin_bottom = 20.0
-bg_color = Color(0.11, 0.072, 0.045, 0.97)
-border_width_left = 2
-border_width_top = 3
-border_width_right = 2
-border_width_bottom = 4
-border_color = Color(0.86, 0.69, 0.30, 0.96)
-corner_radius_top_left = 24
-corner_radius_top_right = 24
-corner_radius_bottom_right = 24
-corner_radius_bottom_left = 24
-shadow_color = Color(0, 0, 0, 0.65)
-shadow_size = 18
-shadow_offset = Vector2(0, 8)
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_dialog"]
+texture = ExtResource("7_dialog_tex")
+texture_margin_left = 44.0
+texture_margin_top = 80.0
+texture_margin_right = 44.0
+texture_margin_bottom = 80.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mode_pill"]
 content_margin_left = 14.0
@@ -102,7 +91,7 @@ offset_bottom = 290.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
+theme_override_styles/panel = SubResource("StyleBoxTexture_dialog")
 script = ExtResource("1_queue_script")
 
 [node name="Margin" type="MarginContainer" parent="."]

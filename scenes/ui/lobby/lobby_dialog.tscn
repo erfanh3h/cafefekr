@@ -7,25 +7,14 @@
 [ext_resource type="Texture2D" path="res://assets/icons/General/refresh.png" id="5_refresh_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/games/tictactoe.jpg" id="6_tictactoe_tex"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="7_font_vazir"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/dialog_tall.png" id="8_dialog_tall_tex"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
-bg_color = Color(0.11, 0.07, 0.04, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.84, 0.66, 0.3, 0.92)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
-content_margin_left = 14.0
-content_margin_top = 14.0
-content_margin_right = 14.0
-content_margin_bottom = 14.0
-shadow_color = Color(0, 0, 0, 0.62)
-shadow_size = 14
-shadow_offset = Vector2(0, 6)
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_dialog"]
+texture = ExtResource("8_dialog_tall_tex")
+texture_margin_left = 40.0
+texture_margin_top = 80.0
+texture_margin_right = 40.0
+texture_margin_bottom = 60.0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn"]
 texture = ExtResource("2_button_tex")
@@ -213,7 +202,7 @@ offset_right = -16.0
 offset_bottom = -34.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
+theme_override_styles/panel = SubResource("StyleBoxTexture_dialog")
 script = ExtResource("1_lobby_script")
 
 [node name="Margin" type="MarginContainer" parent="."]
@@ -832,7 +821,7 @@ offset_right = -18.0
 offset_bottom = -36.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
+theme_override_styles/panel = SubResource("StyleBoxTexture_dialog")
 
 [node name="ModalMargin" type="MarginContainer" parent="GameSelectModal/Panel"]
 layout_mode = 2

@@ -10,8 +10,8 @@ const FONT_BODY = preload("res://assets/fonts/Vazir.ttf")
 
 # Authentic Cafe Fekr Frames & UI Textures
 const TEX_BOARD = preload("res://assets/images/frames/board.png")
-const TEX_DIALOG2 = preload("res://assets/images/frames/dialog2.png")
-const TEX_DIALOG3 = preload("res://assets/images/frames/dialog3.png")
+const TEX_DIALOG = preload("res://assets/images/frames/dialog.png")
+const TEX_DIALOG_TALL = preload("res://assets/images/frames/dialog_tall.png")
 const TEX_FRAME = preload("res://assets/images/frames/frame.png")
 const TEX_FRAME2 = preload("res://assets/images/frames/frame2.png")
 const TEX_FRAME3 = preload("res://assets/images/frames/frame3.png")
@@ -116,6 +116,7 @@ const COL_CRIMSON_BG := Color(0.28, 0.10, 0.10, 0.95)
 const COL_CRIMSON_BORDER := Color(0.84, 0.34, 0.32, 0.90)
 
 static var _shell_style_cache: StyleBoxTexture = null
+static var _dialog_style_cache: StyleBoxTexture = null
 static var _frame_banner_cache: StyleBoxTexture = null
 static var _btn_cache: Dictionary = {}
 
@@ -161,17 +162,28 @@ static func create_board_shell_style() -> StyleBoxTexture:
 	if _shell_style_cache != null:
 		return _shell_style_cache
 	var sb := StyleBoxTexture.new()
-	sb.texture = TEX_BOARD
-	sb.texture_margin_left = 60.0
-	sb.texture_margin_top = 60.0
-	sb.texture_margin_right = 60.0
+	sb.texture = TEX_DIALOG_TALL
+	sb.texture_margin_left = 40.0
+	sb.texture_margin_top = 80.0
+	sb.texture_margin_right = 40.0
 	sb.texture_margin_bottom = 60.0
 	_shell_style_cache = sb
 	return sb
 
 
-static func create_dialog_frame_style() -> StyleBoxTexture:
-	return create_board_shell_style()
+static func create_dialog_frame_style(tall: bool = false) -> StyleBoxTexture:
+	if tall:
+		return create_board_shell_style()
+	if _dialog_style_cache != null:
+		return _dialog_style_cache
+	var sb := StyleBoxTexture.new()
+	sb.texture = TEX_DIALOG
+	sb.texture_margin_left = 44.0
+	sb.texture_margin_top = 80.0
+	sb.texture_margin_right = 44.0
+	sb.texture_margin_bottom = 80.0
+	_dialog_style_cache = sb
+	return sb
 
 
 static func create_header_banner_style() -> StyleBoxTexture:
@@ -1326,7 +1338,7 @@ static func show_confirm_modal(
 
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(620, 0)
-	card.add_theme_stylebox_override("panel", create_board_shell_style())
+	card.add_theme_stylebox_override("panel", create_dialog_frame_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
@@ -1532,7 +1544,7 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(640, 0)
-	card.add_theme_stylebox_override("panel", create_board_shell_style())
+	card.add_theme_stylebox_override("panel", create_dialog_frame_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
@@ -1699,7 +1711,7 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(620, 0)
-	card.add_theme_stylebox_override("panel", create_board_shell_style())
+	card.add_theme_stylebox_override("panel", create_dialog_frame_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()
@@ -1799,7 +1811,7 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(640, 0)
-	card.add_theme_stylebox_override("panel", create_board_shell_style())
+	card.add_theme_stylebox_override("panel", create_dialog_frame_style())
 	center.add_child(card)
 
 	var m := MarginContainer.new()

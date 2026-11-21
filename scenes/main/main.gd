@@ -2433,11 +2433,11 @@ func _show_offline_dialog() -> void:
 		panel.custom_minimum_size = Vector2(620, 440)
 		panel.mouse_filter = Control.MOUSE_FILTER_STOP
 		var style = StyleBoxTexture.new()
-		style.texture = preload("res://assets/images/frames/board.png")
-		style.texture_margin_left = 60.0
-		style.texture_margin_top = 60.0
-		style.texture_margin_right = 60.0
-		style.texture_margin_bottom = 60.0
+		style.texture = preload("res://assets/images/frames/dialog.png")
+		style.texture_margin_left = 44.0
+		style.texture_margin_top = 80.0
+		style.texture_margin_right = 44.0
+		style.texture_margin_bottom = 80.0
 		panel.add_theme_stylebox_override("panel", style)
 		center.add_child(panel)
 
@@ -2839,11 +2839,11 @@ func _show_ranked_locked_dialog() -> void:
 		_ranked_locked_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_ranked_locked_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 		var style = StyleBoxTexture.new()
-		style.texture = preload("res://assets/images/frames/board.png")
-		style.texture_margin_left = 60.0
-		style.texture_margin_top = 60.0
-		style.texture_margin_right = 60.0
-		style.texture_margin_bottom = 60.0
+		style.texture = preload("res://assets/images/frames/dialog.png")
+		style.texture_margin_left = 44.0
+		style.texture_margin_top = 80.0
+		style.texture_margin_right = 44.0
+		style.texture_margin_bottom = 80.0
 		_ranked_locked_panel.add_theme_stylebox_override("panel", style)
 		vcenter.add_child(_ranked_locked_panel)
 
@@ -3093,11 +3093,11 @@ func _show_force_update_dialog() -> void:
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(620, 420)
 	var panel_sb = StyleBoxTexture.new()
-	panel_sb.texture = preload("res://assets/images/frames/board.png")
-	panel_sb.texture_margin_left = 60.0
-	panel_sb.texture_margin_top = 60.0
-	panel_sb.texture_margin_right = 60.0
-	panel_sb.texture_margin_bottom = 60.0
+	panel_sb.texture = preload("res://assets/images/frames/dialog.png")
+	panel_sb.texture_margin_left = 44.0
+	panel_sb.texture_margin_top = 80.0
+	panel_sb.texture_margin_right = 44.0
+	panel_sb.texture_margin_bottom = 80.0
 	panel.add_theme_stylebox_override("panel", panel_sb)
 	center.add_child(panel)
 
@@ -3184,11 +3184,11 @@ func _show_optional_update_dialog() -> void:
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(620, 420)
 	var panel_sb = StyleBoxTexture.new()
-	panel_sb.texture = preload("res://assets/images/frames/board.png")
-	panel_sb.texture_margin_left = 60.0
-	panel_sb.texture_margin_top = 60.0
-	panel_sb.texture_margin_right = 60.0
-	panel_sb.texture_margin_bottom = 60.0
+	panel_sb.texture = preload("res://assets/images/frames/dialog.png")
+	panel_sb.texture_margin_left = 44.0
+	panel_sb.texture_margin_top = 80.0
+	panel_sb.texture_margin_right = 44.0
+	panel_sb.texture_margin_bottom = 80.0
 	panel.add_theme_stylebox_override("panel", panel_sb)
 	center.add_child(panel)
 
@@ -3295,11 +3295,11 @@ func _show_queue_closed_dialog() -> void:
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(620, 380)
 	var panel_sb = StyleBoxTexture.new()
-	panel_sb.texture = preload("res://assets/images/frames/board.png")
-	panel_sb.texture_margin_left = 60.0
-	panel_sb.texture_margin_top = 60.0
-	panel_sb.texture_margin_right = 60.0
-	panel_sb.texture_margin_bottom = 60.0
+	panel_sb.texture = preload("res://assets/images/frames/dialog.png")
+	panel_sb.texture_margin_left = 44.0
+	panel_sb.texture_margin_top = 80.0
+	panel_sb.texture_margin_right = 44.0
+	panel_sb.texture_margin_bottom = 80.0
 	panel.add_theme_stylebox_override("panel", panel_sb)
 	center.add_child(panel)
 
@@ -3389,11 +3389,11 @@ func _show_change_username_dialog() -> void:
 	panel.custom_minimum_size = Vector2(620, 440)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var style = StyleBoxTexture.new()
-	style.texture = preload("res://assets/images/frames/board.png")
-	style.texture_margin_left = 60.0
-	style.texture_margin_top = 60.0
-	style.texture_margin_right = 60.0
-	style.texture_margin_bottom = 60.0
+	style.texture = preload("res://assets/images/frames/dialog.png")
+	style.texture_margin_left = 44.0
+	style.texture_margin_top = 80.0
+	style.texture_margin_right = 44.0
+	style.texture_margin_bottom = 80.0
 	panel.add_theme_stylebox_override("panel", style)
 	center.add_child(panel)
 

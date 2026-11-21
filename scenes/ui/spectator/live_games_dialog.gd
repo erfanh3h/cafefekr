@@ -200,31 +200,20 @@ func _ingest_games_array(arr: Array) -> void:
 				_merged_games[gid] = existing
 
 
-func _make_parlor_outer_frame_style() -> StyleBoxFlat:
-	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.125, 0.075, 0.042, 0.99)
-	sb.border_color = Color(0.89, 0.70, 0.29, 0.98)
-	sb.border_width_left = 3
-	sb.border_width_right = 3
-	sb.border_width_top = 4
-	sb.border_width_bottom = 4
-	sb.set_corner_radius_all(26)
-	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.72)
-	sb.shadow_size = 24
-	sb.shadow_offset = Vector2(0, 10)
-	sb.content_margin_left = 7.0
-	sb.content_margin_right = 7.0
-	sb.content_margin_top = 7.0
-	sb.content_margin_bottom = 7.0
+func _make_parlor_outer_frame_style() -> StyleBox:
+	var sb := StyleBoxTexture.new()
+	sb.texture = preload("res://assets/images/frames/dialog_tall.png")
+	sb.texture_margin_left = 40.0
+	sb.texture_margin_top = 80.0
+	sb.texture_margin_right = 40.0
+	sb.texture_margin_bottom = 60.0
 	return sb
 
 
 func _make_parlor_inner_inlay_style() -> StyleBoxFlat:
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = Color(0.082, 0.048, 0.027, 0.98)
-	sb.border_color = Color(0.78, 0.59, 0.24, 0.44)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(20)
+	sb.bg_color = Color(0, 0, 0, 0)
+	sb.border_color = Color(0, 0, 0, 0)
 	sb.content_margin_left = 14.0
 	sb.content_margin_right = 14.0
 	sb.content_margin_top = 14.0

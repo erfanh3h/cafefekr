@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://kydqjkf5lcmx" path="res://scenes/games/base/base_game_hud.gd" id="1_script"]
 [ext_resource type="FontFile" uid="uid://dam3fodlq6nf5" path="res://assets/fonts/hekayat.ttf" id="2_font"]
-[ext_resource type="Texture2D" uid="uid://wus2eq7w77ya" path="res://assets/images/frames/board.png" id="3_board_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/dialog.png" id="3_board_tex"]
 [ext_resource type="Texture2D" uid="uid://dp045caidjtim" path="res://assets/images/frames/button.png" id="3_btn_wood"]
 [ext_resource type="PackedScene" uid="uid://d2k1v5l8q0n4w" path="res://scenes/games/base/reaction_picker.tscn" id="5_picker"]
 [ext_resource type="PackedScene" uid="uid://c43hkjj4xi6xk" path="res://scenes/games/base/game_result_dialog.tscn" id="6_result"]
@@ -30,10 +30,10 @@ texture = ExtResource("3_btn_wood")
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_modal_board"]
 texture = ExtResource("3_board_tex")
-texture_margin_left = 60.0
-texture_margin_top = 60.0
-texture_margin_right = 60.0
-texture_margin_bottom = 60.0
+texture_margin_left = 44.0
+texture_margin_top = 80.0
+texture_margin_right = 44.0
+texture_margin_bottom = 80.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer_bg"]
 bg_color = Color(0.0705882, 0.0431373, 0.027451, 0.92)

@@ -1423,11 +1423,11 @@ func _show_draft_complete_transition() -> void:
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var sb = StyleBoxTexture.new()
-	sb.texture = preload("res://assets/images/frames/board.png")
+	sb.texture = preload("res://assets/images/frames/dialog_tall.png")
 	sb.texture_margin_left = 40.0
-	sb.texture_margin_top = 40.0
+	sb.texture_margin_top = 80.0
 	sb.texture_margin_right = 40.0
-	sb.texture_margin_bottom = 40.0
+	sb.texture_margin_bottom = 60.0
 	panel.add_theme_stylebox_override("panel", sb)
 	outer_margin.add_child(panel)
 	
@@ -1645,11 +1645,11 @@ func show_game_finished_dialog(message: String = "این بازی به پایا�
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var sb = StyleBoxTexture.new()
-	sb.texture = preload("res://assets/images/frames/board.png")
+	sb.texture = preload("res://assets/images/frames/dialog.png")
 	sb.texture_margin_left = 44.0
-	sb.texture_margin_top = 44.0
+	sb.texture_margin_top = 80.0
 	sb.texture_margin_right = 44.0
-	sb.texture_margin_bottom = 44.0
+	sb.texture_margin_bottom = 80.0
 	panel.add_theme_stylebox_override("panel", sb)
 	outer_margin.add_child(panel)
 	

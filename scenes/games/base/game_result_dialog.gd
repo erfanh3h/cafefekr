@@ -59,9 +59,9 @@ var _icon_draw: Texture2D = preload("res://assets/icons/General/draw.png")
 const FONT_HEKAYAT: FontFile = preload("res://assets/fonts/hekayat.ttf")
 const FONT_VAZIR: FontFile = preload("res://assets/fonts/Vazir.ttf")
 
-var _style_panel_win: StyleBoxFlat
-var _style_panel_lose: StyleBoxFlat
-var _style_panel_draw: StyleBoxFlat
+var _style_panel_win: StyleBox
+var _style_panel_lose: StyleBox
+var _style_panel_draw: StyleBox
 var _style_winner: StyleBoxFlat
 var _style_normal: StyleBoxFlat
 var _style_plaque_win: StyleBoxFlat
@@ -110,45 +110,27 @@ func _ready() -> void:
 	)
 
 
-func _make_modal_panel_style(bg: Color, border_col: Color, shadow_col: Color) -> StyleBoxFlat:
-	var mobile_mode: bool = _is_mobile()
-	var sb: StyleBoxFlat = StyleBoxFlat.new()
+func _make_modal_panel_style(modulate_col: Color = Color.WHITE) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = preload("res://assets/images/frames/dialog.png")
+	sb.texture_margin_left = 44.0
+	sb.texture_margin_top = 80.0
+	sb.texture_margin_right = 44.0
+	sb.texture_margin_bottom = 80.0
 	sb.content_margin_left = 22.0
 	sb.content_margin_top = 22.0
 	sb.content_margin_right = 22.0
 	sb.content_margin_bottom = 22.0
-	sb.bg_color = bg
-	sb.border_width_left = 2
-	sb.border_width_top = 4
-	sb.border_width_right = 2
-	sb.border_width_bottom = 3
-	sb.border_color = border_col
-	sb.set_corner_radius_all(24)
-	if not mobile_mode:
-		sb.shadow_color = shadow_col
-		sb.shadow_size = 18
-		sb.shadow_offset = Vector2(0, 8)
+	sb.modulate_color = modulate_col
 	return sb
 
 
 func _setup_styles() -> void:
 	var mobile_mode: bool = _is_mobile()
 
-	_style_panel_win = _make_modal_panel_style(
-		Color(0.115, 0.075, 0.042, 0.97),
-		Color(0.96, 0.78, 0.28, 0.98),
-		Color(0.0, 0.0, 0.0, 0.65)
-	)
-	_style_panel_lose = _make_modal_panel_style(
-		Color(0.095, 0.088, 0.115, 0.97),
-		Color(0.54, 0.62, 0.76, 0.88),
-		Color(0.0, 0.0, 0.0, 0.68)
-	)
-	_style_panel_draw = _make_modal_panel_style(
-		Color(0.115, 0.082, 0.055, 0.97),
-		Color(0.82, 0.66, 0.36, 0.92),
-		Color(0.0, 0.0, 0.0, 0.65)
-	)
+	_style_panel_win = _make_modal_panel_style(Color.WHITE)
+	_style_panel_lose = _make_modal_panel_style(Color(0.88, 0.90, 0.96))
+	_style_panel_draw = _make_modal_panel_style(Color(0.92, 0.92, 0.92))
 
 	# Winner Card Style
 	_style_winner = StyleBoxFlat.new()
