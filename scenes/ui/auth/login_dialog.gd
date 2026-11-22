@@ -155,7 +155,8 @@ func _recenter_vertical() -> void:
 	if is_instance_valid(vp):
 		var vp_h: float = vp.get_visible_rect().size.y
 		if vp_h > 0.0:
-			h = minf(h, vp_h - 48.0)
+			h = minf(h, minf(520.0, vp_h - 40.0))
+	h = clampf(h, 320.0, 540.0)
 	offset_top = -h * 0.5
 	offset_bottom = h * 0.5
 	pivot_offset = Vector2(custom_minimum_size.x * 0.5, h * 0.5)
@@ -577,14 +578,15 @@ func _set_status(msg: String, kind: String = "info") -> void:
 		_clear_status()
 		return
 	lbl_status.text = msg
+	lbl_status.add_theme_font_size_override("font_size", 13)
 	status_banner.visible = true
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(12)
-	sb.content_margin_left = 14.0
-	sb.content_margin_right = 14.0
-	sb.content_margin_top = 9.0
-	sb.content_margin_bottom = 9.0
+	sb.set_corner_radius_all(10)
+	sb.content_margin_left = 12.0
+	sb.content_margin_right = 12.0
+	sb.content_margin_top = 4.0
+	sb.content_margin_bottom = 4.0
 
 	if kind == "error":
 		sb.bg_color = Color(0.28, 0.10, 0.10, 0.94)

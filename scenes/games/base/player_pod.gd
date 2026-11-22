@@ -65,8 +65,9 @@ func _init_radial_ring() -> void:
 func _configure_bidi() -> void:
 	HudTheme.configure_bidi_label(name_label, false)
 	name_label.justification_flags = TextServer.JUSTIFICATION_NONE
-	name_label.clip_text = false
-	name_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	name_label.clip_text = true
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	name_label.visible = true
 	HudTheme.configure_bidi_label(lbl_counter, false)
 	HudTheme.configure_bidi_label(lbl_ring_timer, false)
@@ -172,31 +173,34 @@ func _apply_mode_metrics() -> void:
 
 		PodMode.VERTICAL_STANDARD:
 			pod_content.vertical = true
-			pod_content.add_theme_constant_override("separation", 3)
-			custom_minimum_size = Vector2(76.0, 78.0)
+			pod_content.add_theme_constant_override("separation", 2)
+			custom_minimum_size = Vector2(62.0, 72.0)
 			size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-			av_size = 44.0
-			ring_size = 50.0
-			dot_size = 13.0
-			name_font_px = 13
-			counter_font_px = 13
+			av_size = 40.0
+			ring_size = 46.0
+			dot_size = 12.0
+			name_font_px = 12
+			counter_font_px = 12
 			timer_font_px = 10
 			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			name_label.custom_minimum_size = Vector2(56.0, 16.0)
+			name_label.clip_text = true
+			name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			if counter_badge.visible and not lbl_counter.text.strip_edges().is_empty():
-				counter_badge.custom_minimum_size = Vector2(32.0, 22.0)
+				counter_badge.custom_minimum_size = Vector2(30.0, 20.0)
 			else:
 				counter_badge.visible = false
 				counter_badge.custom_minimum_size = Vector2.ZERO
 			if is_instance_valid(status_badge):
 				if status_badge.visible and is_instance_valid(lbl_status) and not lbl_status.text.strip_edges().is_empty():
-					status_badge.custom_minimum_size = Vector2(0, 20.0)
+					status_badge.custom_minimum_size = Vector2(0, 18.0)
 				else:
 					status_badge.visible = false
 					status_badge.custom_minimum_size = Vector2.ZERO
 			if is_instance_valid(lbl_status):
-				lbl_status.add_theme_font_size_override("font_size", 12)
-			lbl_initial.add_theme_font_size_override("font_size", 17)
+				lbl_status.add_theme_font_size_override("font_size", 11)
+			lbl_initial.add_theme_font_size_override("font_size", 16)
 			role_dot.visible = false
 			role_dot.custom_minimum_size = Vector2.ZERO
 			seat_dot.visible = true
@@ -204,16 +208,19 @@ func _apply_mode_metrics() -> void:
 		PodMode.VERTICAL_COMPACT:
 			pod_content.vertical = true
 			pod_content.add_theme_constant_override("separation", 2)
-			custom_minimum_size = Vector2(58.0, 68.0)
-			size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			av_size = 34.0
-			ring_size = 40.0
-			dot_size = 11.0
+			custom_minimum_size = Vector2(52.0, 64.0)
+			size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			av_size = 32.0
+			ring_size = 38.0
+			dot_size = 10.0
 			name_font_px = 11
 			counter_font_px = 11
 			timer_font_px = 9
 			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			name_label.custom_minimum_size = Vector2(48.0, 14.0)
+			name_label.clip_text = true
+			name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			if counter_badge.visible and not lbl_counter.text.strip_edges().is_empty():
 				counter_badge.custom_minimum_size = Vector2(28.0, 18.0)
 			else:

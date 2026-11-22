@@ -299,9 +299,6 @@ func _apply_safe_area_insets() -> void:
 		margin.add_theme_constant_override("margin_left", int(insets.get("left", 10)))
 		margin.add_theme_constant_override("margin_right", int(insets.get("right", 10)))
 	if is_instance_valid(edge_overlay):
-		var spec := edge_overlay.get_node_or_null("SpectatorPill") as Control
-		if is_instance_valid(spec):
-			spec.offset_top = float(_safe_top_inset) + 42.0
 		var rail := edge_overlay.get_node_or_null("SocialRail") as Control
 		if is_instance_valid(rail):
 			rail.offset_top = float(_safe_top_inset) + 42.0
@@ -309,17 +306,25 @@ func _apply_safe_area_insets() -> void:
 
 
 func _get_current_header_height() -> float:
-	var bar_h: float = 24.0 if (is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible) else 0.0
-	var meta_h: float = 26.0 if (is_instance_valid(match_meta_ribbon) and match_meta_ribbon.visible) else 0.0
+	var bar_h: float = 46.0 if (is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible) else 0.0
+	var meta_h: float = 28.0 if (is_instance_valid(match_meta_ribbon) and match_meta_ribbon.visible) else 0.0
 	var has_below: bool = (is_instance_valid(penalty_details_box) and penalty_details_box.visible) or (is_instance_valid(match_result_box) and match_result_box.visible)
-	var below_h: float = 34.0 if has_below else 0.0
-	var row_h: float = 56.0 if _total_players <= 2 else 84.0
-	return float(_safe_top_inset) + row_h + bar_h + meta_h + below_h
+	var below_h: float = 38.0 if has_below else 0.0
+	var row_h: float = 58.0 if _total_players <= 2 else 86.0
+	var padding: float = 8.0
+	return float(_safe_top_inset) + row_h + bar_h + meta_h + below_h + padding
 
 
 func _sync_header_height() -> void:
 	var desired_h: float = _get_current_header_height()
+	offset_top = 0.0
 	offset_bottom = desired_h
+	custom_minimum_size.y = desired_h
+	if is_instance_valid(spectator_pill):
+		spectator_pill.offset_top = desired_h + 4.0
+		spectator_pill.offset_bottom = desired_h + 30.0
+		spectator_pill.offset_left = 12.0
+		spectator_pill.offset_right = 92.0
 	_position_turn_toast()
 	header_height_changed.emit(desired_h)
 
@@ -512,7 +517,15 @@ func update_spectator_count(count: int) -> void:
 	if is_instance_valid(spectator_pill):
 		spectator_pill.visible = GameManager.is_spectating or safe_count > 0
 	if is_instance_valid(lbl_spectator):
-		lbl_spectator.text = "تماشاچی (%s)" % _fa_digits(safe_count) if safe_count > 0 else "تماشاچی"
+		lbl_spectator.text = "%s" % _fa_digits(safe_count) if safe_count > 0 else "تماشاچی"
+
+
+func _get_player_name(idx: int) -> String:
+	var pd := _get_player_data_for_index(idx)
+	var raw_name: String = str(pd.get("name", pd.get("username", ""))).strip_edges()
+	if raw_name.is_empty():
+		return "بازیکن %s" % _fa_digits(idx)
+	return raw_name
 
 
 func _get_player_data_for_index(idx: int) -> Dictionary:
@@ -577,10 +590,12 @@ func _rebuild_pods() -> void:
 	var mode: PlayerPod.PodMode = PlayerPod.PodMode.VERTICAL_STANDARD
 	if not is_spec and display_indices.size() == 1:
 		mode = PlayerPod.PodMode.HORIZONTAL_PILL
-	elif is_spec and total == 4:
+	elif display_indices.size() >= 3 or (is_spec and total >= 3):
 		mode = PlayerPod.PodMode.VERTICAL_COMPACT
 	else:
 		mode = PlayerPod.PodMode.VERTICAL_STANDARD
+
+	players_container.alignment = BoxContainer.ALIGNMENT_CENTER
 
 	for idx in display_indices:
 		var p_data := _get_player_data_for_index(idx)
@@ -706,11 +721,22 @@ func set_current_result_scores(p1_s: int, p2_s: int) -> void:
 		if is_instance_valid(match_result_box):
 			match_result_box.visible = false
 		return
+	var is_spec: bool = GameManager.is_spectating
+	var my_idx: int = _my_player_index if _my_player_index > 0 else GameManager.my_player_index
+	var my_score: int = p2_s if my_idx == 2 else p1_s
+	var opp_score: int = p1_s if my_idx == 2 else p2_s
+
 	if is_instance_valid(lbl_result_score):
-		lbl_result_score.add_theme_font_size_override("font_size", 15)
-		lbl_result_score.text = "%s - %s" % [_fa_digits(p1_s), _fa_digits(p2_s)]
+		lbl_result_score.add_theme_font_size_override("font_size", 14)
+		if is_spec:
+			var n1: String = _get_player_name(1)
+			var n2: String = _get_player_name(2)
+			lbl_result_score.text = "%s: %s  |  %s: %s" % [n1, _fa_digits(p1_s), n2, _fa_digits(p2_s)]
+		else:
+			lbl_result_score.text = "شما: %s  |  حریف: %s" % [_fa_digits(my_score), _fa_digits(opp_score)]
 	if is_instance_valid(lbl_result_title):
-		lbl_result_title.add_theme_font_size_override("font_size", 13)
+		lbl_result_title.add_theme_font_size_override("font_size", 12)
+		lbl_result_title.text = "نتیجه:"
 	if is_instance_valid(match_result_box):
 		match_result_box.visible = true
 	_sync_header_height()
@@ -983,11 +1009,13 @@ func show_reaction(user_index: int, reaction_id: int) -> void:
 	var my_idx: int = _my_player_index if _my_player_index > 0 else GameManager.my_player_index
 
 	# Determine if this reaction is from local player or an opponent
+	var is_spec: bool = GameManager.is_spectating
 	var is_opponent: bool = true
-	if user_index == my_idx or (GameManager.my_player_index > 0 and user_index == GameManager.my_player_index):
-		is_opponent = false
-	elif GameManager.user_data and int(GameManager.user_data.get("id", -1)) == user_index:
-		is_opponent = false
+	if not is_spec:
+		if user_index == my_idx or (GameManager.my_player_index > 0 and user_index == GameManager.my_player_index):
+			is_opponent = false
+		elif GameManager.user_data and int(GameManager.user_data.get("id", -1)) == user_index:
+			is_opponent = false
 
 	# Resolve user_index to gamer_id (1..4) if passed as database ID or if not directly in pods
 	var resolved_idx: int = user_index

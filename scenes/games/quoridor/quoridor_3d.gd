@@ -1086,9 +1086,31 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 		if current_mode == ACTION_MOVE:
-			var rc := _local_pos_to_canonical_cell(hit_v)
-			if rc.x >= 0:
-				_attempt_pawn_move(rc.x, rc.y)
+			# Check if tap is close to any legal pawn destination (generous mobile touch target snapping)
+			var legal_moves: Array[Vector2i] = get_legal_pawn_moves(my_player_index)
+			var best_legal: Vector2i = Vector2i(-1, -1)
+			var min_dist: float = CELL_STEP * 0.95
+			for lm: Vector2i in legal_moves:
+				var l_vpos: Vector2i = _canonical_to_visual_rc(lm.x, lm.y)
+				var l_cx: float = (float(l_vpos.y) - 4.0) * CELL_STEP
+				var l_cz: float = (float(l_vpos.x) - 4.0) * CELL_STEP
+				var d: float = Vector2(hit_v.x - l_cx, hit_v.z - l_cz).length()
+				if d < min_dist:
+					min_dist = d
+					best_legal = lm
+
+			if best_legal.x >= 0:
+				_attempt_pawn_move(best_legal.x, best_legal.y)
+			else:
+				var rc := _local_pos_to_canonical_cell(hit_v)
+				if rc.x >= 0:
+					var my_pawn: Array = pawns[my_player_index - 1] if (my_player_index >= 1 and my_player_index <= pawns.size()) else []
+					if not my_pawn.is_empty() and rc.x == int(my_pawn[0]) and rc.y == int(my_pawn[1]):
+						_refresh_highlights_and_preview()
+						AudioManager.sfx_tap()
+						show_hint("یکی از خانه‌های روشن‌شده سبز را برای حرکت انتخاب کنید.")
+					else:
+						_attempt_pawn_move(rc.x, rc.y)
 		else:
 			var w_rc := _local_pos_to_canonical_wall(hit_v)
 			if w_rc.x >= 0:
@@ -1101,7 +1123,7 @@ func _local_pos_to_canonical_cell(local_v: Vector3) -> Vector2i:
 		return Vector2i(-1, -1)
 	var cx := (float(vc) - 4.0) * CELL_STEP
 	var cz := (float(vr) - 4.0) * CELL_STEP
-	if absf(local_v.x - cx) > CELL_STEP * 0.52 or absf(local_v.z - cz) > CELL_STEP * 0.52:
+	if absf(local_v.x - cx) > CELL_STEP * 0.70 or absf(local_v.z - cz) > CELL_STEP * 0.70:
 		return Vector2i(-1, -1)
 	return _visual_to_canonical_rc(vr, vc)
 

@@ -136,20 +136,23 @@ shadow_size = 8
 shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_spectator_pill"]
-content_margin_left = 7.0
-content_margin_top = 3.0
-content_margin_right = 7.0
-content_margin_bottom = 3.0
-bg_color = Color(0.11, 0.07, 0.04, 0.9)
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(0.12, 0.08, 0.05, 0.92)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.788235, 0.615686, 0.305882, 0.75)
-corner_radius_top_left = 11
-corner_radius_top_right = 11
-corner_radius_bottom_right = 11
-corner_radius_bottom_left = 11
+border_color = Color(0.85, 0.68, 0.32, 0.82)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 4
+shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_icon_btn"]
 
@@ -225,6 +228,7 @@ anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 148.0
 grow_horizontal = 2
+grow_vertical = 1
 mouse_filter = 2
 theme = ExtResource("4_hud_theme")
 script = ExtResource("1_header_script")
@@ -235,7 +239,7 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
-grow_vertical = 2
+grow_vertical = 1
 mouse_filter = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 16

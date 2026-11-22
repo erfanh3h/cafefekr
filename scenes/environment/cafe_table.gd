@@ -405,9 +405,8 @@ func _resolve_board_camera_framing() -> Dictionary:
 	if current_board_node and is_instance_valid(current_board_node):
 		if "camera_pitch" in current_board_node:
 			var bp: float = float(current_board_node.get("camera_pitch"))
-			if bp < -0.45:
-				# Keep starting angle steeper / closer to 90 deg while respecting extra-steep boards
-				desired_pitch = clampf(minf(bp - 0.22, PITCH_DEFAULT), -1.30, PITCH_DEFAULT)
+			if bp >= PITCH_MIN and bp <= PITCH_MAX:
+				desired_pitch = bp
 		if "camera_distance" in current_board_node:
 			var bd: float = float(current_board_node.get("camera_distance"))
 			if bd >= ZOOM_MIN and bd <= ZOOM_MAX:
@@ -2309,8 +2308,8 @@ func _build_player_chairs_around_table(chairs_parent: Node3D) -> void:
 	_chair_west = MeshInstance3D.new()
 	_chair_west.name = "WestPlayerChair"
 	_chair_west.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_chair_west.position = Vector3(-0.92, -0.09, -0.40)
-	_chair_west.rotation_degrees = Vector3(0.0, 68.0, 0.0)
+	_chair_west.position = Vector3(-1.38, -0.09, -0.15)
+	_chair_west.rotation_degrees = Vector3(0.0, 75.0, 0.0)
 	_chair_west.scale = Vector3(0.88, 0.88, 0.88)
 	_chair_west.visible = false
 	chairs_parent.add_child(_chair_west)
@@ -2319,8 +2318,8 @@ func _build_player_chairs_around_table(chairs_parent: Node3D) -> void:
 	_chair_east = MeshInstance3D.new()
 	_chair_east.name = "EastPlayerChair"
 	_chair_east.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_chair_east.position = Vector3(0.92, -0.09, -0.40)
-	_chair_east.rotation_degrees = Vector3(0.0, -68.0, 0.0)
+	_chair_east.position = Vector3(1.38, -0.09, -0.15)
+	_chair_east.rotation_degrees = Vector3(0.0, -75.0, 0.0)
 	_chair_east.scale = Vector3(0.88, 0.88, 0.88)
 	_chair_east.visible = false
 	chairs_parent.add_child(_chair_east)

@@ -80,6 +80,9 @@ var _current_score_earned: int = 0
 var _score_chip: PanelContainer = null
 var _lbl_score_delta: Label = null
 var _multi_podium_box: VBoxContainer = null
+var _hero_outcome_box: PanelContainer = null
+var _hero_score_lbl: Label = null
+var _self_result_box: PanelContainer = null
 
 
 func _is_mobile() -> bool:
@@ -311,6 +314,12 @@ func _get_side_suffix(game_type: String, p_idx: int) -> String:
 func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 	var matchup_box: Control = p1_card.get_parent() as Control
 	var root_vbox: VBoxContainer = matchup_box.get_parent() as VBoxContainer
+	if is_instance_valid(_hero_outcome_box):
+		_hero_outcome_box.visible = false
+	if is_instance_valid(_self_result_box):
+		_self_result_box.visible = false
+	matchup_box.visible = false
+
 	if not is_instance_valid(_multi_podium_box):
 		_multi_podium_box = VBoxContainer.new()
 		_multi_podium_box.name = "MultiPodiumBox"
@@ -321,7 +330,6 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 	for ch in _multi_podium_box.get_children():
 		ch.queue_free()
 	_multi_podium_box.visible = true
-	matchup_box.visible = false
 
 	var total_p: int = clampi(GameManager.match_players.size(), 3, 4)
 	var ordered_ids: Array[int] = []
@@ -335,7 +343,7 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 		if not ordered_ids.has(pid):
 			ordered_ids.append(pid)
 
-	var medals: Array[String] = ["رتبه اول", "رتبه دوم", "رتبه سوم", "رتبه چهارم"]
+	var medals: Array[String] = ["🥇 رتبه اول", "🥈 رتبه دوم", "🥉 رتبه سوم", "🎖️ رتبه چهارم"]
 	var accent_cols: Array[Color] = [
 		Color(1.0, 0.86, 0.30),
 		Color(0.82, 0.88, 0.96),
@@ -369,7 +377,7 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 		row_card.add_child(rh)
 
 		var badge_lbl: Label = Label.new()
-		badge_lbl.custom_minimum_size = Vector2(82, 0)
+		badge_lbl.custom_minimum_size = Vector2(88, 0)
 		badge_lbl.add_theme_font_override("font", FONT_VAZIR)
 		badge_lbl.add_theme_font_size_override("font_size", 13)
 		badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -401,7 +409,233 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 		_multi_podium_box.add_child(row_card)
 
 
-func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_friendly: bool = true, xp_earned: int = 0, coin_earned: int = 0, score_earned: int = 0) -> void:
+func _build_multiplayer_self_result(my_idx: int, winner_player_index: int) -> void:
+	var matchup_box: Control = p1_card.get_parent() as Control
+	var root_vbox: VBoxContainer = matchup_box.get_parent() as VBoxContainer
+	if is_instance_valid(_multi_podium_box):
+		_multi_podium_box.visible = false
+	if is_instance_valid(_hero_outcome_box):
+		_hero_outcome_box.visible = false
+	matchup_box.visible = false
+
+	if not is_instance_valid(_self_result_box):
+		_self_result_box = PanelContainer.new()
+		_self_result_box.name = "SelfResultBox"
+		_self_result_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		root_vbox.add_child(_self_result_box)
+		root_vbox.move_child(_self_result_box, matchup_box.get_index() + 1)
+
+	for ch in _self_result_box.get_children():
+		ch.queue_free()
+	_self_result_box.visible = true
+
+	var ssb: StyleBoxFlat = StyleBoxFlat.new()
+	ssb.bg_color = Color(0.14, 0.095, 0.06, 0.94)
+	ssb.border_color = Color(0.88, 0.72, 0.35, 0.85)
+	ssb.set_border_width_all(2)
+	ssb.set_corner_radius_all(16)
+	ssb.content_margin_left = 16.0
+	ssb.content_margin_right = 16.0
+	ssb.content_margin_top = 14.0
+	ssb.content_margin_bottom = 14.0
+	_self_result_box.add_theme_stylebox_override("panel", ssb)
+
+	var sv: VBoxContainer = VBoxContainer.new()
+	sv.add_theme_constant_override("separation", 12)
+	sv.alignment = BoxContainer.ALIGNMENT_CENTER
+	_self_result_box.add_child(sv)
+
+	var my_pd: Dictionary = GameManager.get_my_player_data()
+	var my_name: String = str(my_pd.get("name", my_pd.get("username", "شما")))
+	var my_av_id: int = int(my_pd.get("image", my_pd.get("user_image", 0)))
+	var my_fid: int = GameManager.get_player_frame_id(my_pd)
+
+	var row_h: HBoxContainer = HBoxContainer.new()
+	row_h.alignment = BoxContainer.ALIGNMENT_CENTER
+	row_h.add_theme_constant_override("separation", 12)
+	sv.add_child(row_h)
+
+	var status_tag: Label = Label.new()
+	status_tag.custom_minimum_size = Vector2(96, 0)
+	status_tag.add_theme_font_override("font", FONT_VAZIR)
+	status_tag.add_theme_font_size_override("font_size", 13)
+	status_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	if GameManager.local_player_surrendered:
+		_style_tag_pill(status_tag, "انصراف از بازی", Color(1.0, 0.65, 0.65), Color(0.28, 0.10, 0.10, 0.90), Color(0.85, 0.35, 0.35, 0.75))
+	elif GameManager.ludo_rank1 == my_idx and my_idx > 0:
+		_style_tag_pill(status_tag, "🥇 مقام اول", Color(1.0, 0.88, 0.30), Color(0.28, 0.20, 0.06, 0.92), Color(0.95, 0.80, 0.28, 0.85))
+	elif GameManager.ludo_rank2 == my_idx and my_idx > 0:
+		_style_tag_pill(status_tag, "🥈 مقام دوم", Color(0.85, 0.92, 1.0), Color(0.14, 0.20, 0.28, 0.92), Color(0.55, 0.75, 0.95, 0.85))
+	else:
+		_style_tag_pill(status_tag, "نتیجه شما", Color(0.92, 0.88, 0.75), Color(0.20, 0.15, 0.08, 0.90), Color(0.65, 0.50, 0.25, 0.75))
+	row_h.add_child(status_tag)
+
+	var name_lbl: Label = Label.new()
+	name_lbl.text = "%s (شما)" % my_name
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_lbl.clip_text = true
+	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	name_lbl.add_theme_font_override("font", FONT_HEKAYAT)
+	name_lbl.add_theme_font_size_override("font_size", 21)
+	name_lbl.add_theme_color_override("font_color", Color(0.55, 0.98, 0.68))
+	row_h.add_child(name_lbl)
+
+	var av_ctrl: Control = CafeSocialTheme.make_avatar_badge(my_av_id, my_fid, 56.0)
+	row_h.add_child(av_ctrl)
+
+	var notice_panel: PanelContainer = PanelContainer.new()
+	notice_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var nsb: StyleBoxFlat = StyleBoxFlat.new()
+	nsb.bg_color = Color(0.10, 0.14, 0.20, 0.92)
+	nsb.border_color = Color(0.35, 0.52, 0.78, 0.65)
+	nsb.set_border_width_all(1)
+	nsb.set_corner_radius_all(10)
+	nsb.content_margin_left = 12.0
+	nsb.content_margin_right = 12.0
+	nsb.content_margin_top = 8.0
+	nsb.content_margin_bottom = 8.0
+	notice_panel.add_theme_stylebox_override("panel", nsb)
+
+	var notice_lbl: Label = Label.new()
+	notice_lbl.text = "⏳ رقابت سایر بازیکنان روی میز مسابقه همچنان ادامه دارد...\nامتیاز و دستاوردهای شما با موفقیت ثبت شد."
+	notice_lbl.add_theme_font_override("font", FONT_VAZIR)
+	notice_lbl.add_theme_font_size_override("font_size", 13)
+	notice_lbl.add_theme_color_override("font_color", Color(0.82, 0.88, 0.96))
+	notice_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	notice_panel.add_child(notice_lbl)
+	sv.add_child(notice_panel)
+
+
+func _build_2p_hero_outcome(is_winner: bool, is_draw: bool, p1_score: int, p2_score: int, my_idx: int) -> void:
+	var matchup_box: Control = p1_card.get_parent() as Control
+	var root_vbox: VBoxContainer = matchup_box.get_parent() as VBoxContainer
+	if is_instance_valid(_multi_podium_box):
+		_multi_podium_box.visible = false
+	if is_instance_valid(_self_result_box):
+		_self_result_box.visible = false
+	matchup_box.visible = false
+
+	if not is_instance_valid(_hero_outcome_box):
+		_hero_outcome_box = PanelContainer.new()
+		_hero_outcome_box.name = "HeroOutcomeBox"
+		_hero_outcome_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		root_vbox.add_child(_hero_outcome_box)
+		root_vbox.move_child(_hero_outcome_box, matchup_box.get_index() + 1)
+
+	for ch in _hero_outcome_box.get_children():
+		ch.queue_free()
+	_hero_outcome_box.visible = true
+
+	var hsb: StyleBoxFlat = StyleBoxFlat.new()
+	if is_winner:
+		hsb.bg_color = Color(0.18, 0.125, 0.055, 0.96)
+		hsb.border_color = Color(1.0, 0.84, 0.32, 0.95)
+		hsb.shadow_color = Color(1.0, 0.8, 0.2, 0.25)
+	elif is_draw:
+		hsb.bg_color = Color(0.15, 0.12, 0.07, 0.96)
+		hsb.border_color = Color(0.85, 0.72, 0.42, 0.90)
+		hsb.shadow_color = Color(0.65, 0.5, 0.2, 0.20)
+	else:
+		hsb.bg_color = Color(0.12, 0.13, 0.18, 0.96)
+		hsb.border_color = Color(0.55, 0.68, 0.88, 0.85)
+		hsb.shadow_color = Color(0.3, 0.45, 0.7, 0.20)
+	hsb.set_border_width_all(2)
+	hsb.set_corner_radius_all(18)
+	hsb.shadow_size = 0 if _is_mobile() else 8
+	hsb.content_margin_left = 16.0
+	hsb.content_margin_right = 16.0
+	hsb.content_margin_top = 12.0
+	hsb.content_margin_bottom = 12.0
+	_hero_outcome_box.add_theme_stylebox_override("panel", hsb)
+
+	var hv: VBoxContainer = VBoxContainer.new()
+	hv.add_theme_constant_override("separation", 10)
+	hv.alignment = BoxContainer.ALIGNMENT_CENTER
+	_hero_outcome_box.add_child(hv)
+
+	var row_h: HBoxContainer = HBoxContainer.new()
+	row_h.alignment = BoxContainer.ALIGNMENT_CENTER
+	row_h.add_theme_constant_override("separation", 12)
+	hv.add_child(row_h)
+
+	var status_tag: Label = Label.new()
+	status_tag.custom_minimum_size = Vector2(96, 0)
+	status_tag.add_theme_font_override("font", FONT_VAZIR)
+	status_tag.add_theme_font_size_override("font_size", 13)
+	status_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	if is_winner:
+		_style_tag_pill(status_tag, "🏆 پیروزی شما", Color(1.0, 0.88, 0.32), Color(0.28, 0.20, 0.05, 0.95), Color(0.96, 0.78, 0.28, 0.85))
+	elif is_draw:
+		_style_tag_pill(status_tag, "🤝 تساوی", Color(1.0, 0.90, 0.55), Color(0.24, 0.18, 0.08, 0.90), Color(0.80, 0.65, 0.32, 0.75))
+	else:
+		if GameManager.local_player_surrendered:
+			_style_tag_pill(status_tag, "🏳️ انصراف", Color(1.0, 0.60, 0.60), Color(0.28, 0.10, 0.10, 0.90), Color(0.85, 0.35, 0.35, 0.75))
+		else:
+			_style_tag_pill(status_tag, "🏳️ شکست", Color(0.82, 0.88, 0.98), Color(0.14, 0.18, 0.26, 0.90), Color(0.48, 0.65, 0.88, 0.70))
+	row_h.add_child(status_tag)
+
+	var my_pd: Dictionary = GameManager.get_my_player_data()
+	var my_name: String = str(my_pd.get("name", my_pd.get("username", "شما")))
+	var my_av_id: int = int(my_pd.get("image", my_pd.get("user_image", 0)))
+	var my_fid: int = GameManager.get_player_frame_id(my_pd)
+
+	var name_lbl: Label = Label.new()
+	name_lbl.text = "%s (شما)" % my_name
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_lbl.clip_text = true
+	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	name_lbl.add_theme_font_override("font", FONT_HEKAYAT)
+	name_lbl.add_theme_font_size_override("font_size", 21)
+	name_lbl.add_theme_color_override("font_color", Color(0.55, 0.98, 0.68) if is_winner else Color(0.984, 0.953, 0.894))
+	row_h.add_child(name_lbl)
+
+	var av_ctrl: Control = CafeSocialTheme.make_avatar_badge(my_av_id, my_fid, 56.0)
+	row_h.add_child(av_ctrl)
+
+	var show_round_scores: bool = GameRegistry.has_round_score(GameManager.current_game_type) and ((GameManager.current_game_type == GameTypes.QUIZ) or (GameManager.max_rounds > 1) or (p1_score > 0 or p2_score > 0))
+	if show_round_scores:
+		var score_panel: PanelContainer = PanelContainer.new()
+		score_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var sc_sb: StyleBoxFlat = StyleBoxFlat.new()
+		sc_sb.bg_color = Color(0.08, 0.05, 0.03, 0.88)
+		sc_sb.border_color = Color(0.70, 0.55, 0.25, 0.50)
+		sc_sb.set_border_width_all(1)
+		sc_sb.set_corner_radius_all(10)
+		sc_sb.content_margin_left = 12.0
+		sc_sb.content_margin_right = 12.0
+		sc_sb.content_margin_top = 5.0
+		sc_sb.content_margin_bottom = 5.0
+		score_panel.add_theme_stylebox_override("panel", sc_sb)
+
+		var my_s: int = p1_score if my_idx == 1 else p2_score
+		var opp_s: int = p2_score if my_idx == 1 else p1_score
+		var is_spec: bool = GameManager.is_spectating
+
+		_hero_score_lbl = Label.new()
+		_hero_score_lbl.add_theme_font_override("font", FONT_HEKAYAT)
+		_hero_score_lbl.add_theme_font_size_override("font_size", 18)
+		_hero_score_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.55))
+		_hero_score_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+		if is_spec:
+			var p1_name: String = str(GameManager.get_player_name(1))
+			var p2_name: String = str(GameManager.get_player_name(2))
+			_hero_score_lbl.text = "نتیجه: %s: %s  |  %s: %s" % [p1_name, _fa_digits(p1_score), p2_name, _fa_digits(p2_score)]
+		else:
+			_hero_score_lbl.text = "نتیجه مسابقه: شما %s  —  %s حریف" % [_fa_digits(my_s), _fa_digits(opp_s)]
+
+		score_panel.add_child(_hero_score_lbl)
+		hv.add_child(score_panel)
+	else:
+		_hero_score_lbl = null
+
+
+func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_friendly: bool = true, xp_earned: int = 0, coin_earned: int = 0, score_earned: int = 0, is_match_finished: bool = true) -> void:
 	if visible and is_instance_valid(panel) and panel.visible:
 		return
 	visible = true
@@ -576,56 +810,24 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		defeat_particles.emitting = true
 		ActionVFXManager.shake_camera(0.18, 0.22)
 
-	var is_multi_standings: bool = (GameManager.match_players.size() > 2) and not is_draw
-	if is_multi_standings:
-		_build_multiplayer_podium(winner_player_index, my_idx)
+	var matchup_box: Control = p1_card.get_parent() as Control
+	if is_instance_valid(matchup_box):
+		matchup_box.visible = false
+
+	var total_p: int = GameManager.match_players.size()
+	if total_p <= 2:
+		_build_2p_hero_outcome(is_winner, is_draw, p1_score, p2_score, my_idx)
 	else:
-		if is_instance_valid(_multi_podium_box):
-			_multi_podium_box.visible = false
-		if is_instance_valid(p1_card) and is_instance_valid(p1_card.get_parent()):
-			(p1_card.get_parent() as Control).visible = true
-		var p1_data: Dictionary = GameManager.get_my_player_data() if my_idx == 1 else GameManager.get_opponent_player_data()
-		var p2_data: Dictionary = GameManager.get_opponent_player_data() if my_idx == 1 else GameManager.get_my_player_data()
-		var p1_suffix: String = _get_side_suffix(GameManager.current_game_type, 1)
-		var p2_suffix: String = _get_side_suffix(GameManager.current_game_type, 2)
-		lbl_p1_name.text = str(p1_data.get("name", p1_data.get("username", "بازیکن ۱"))) + p1_suffix
-		lbl_p2_name.text = str(p2_data.get("name", p2_data.get("username", "بازیکن ۲"))) + p2_suffix
-		lbl_p1_name.add_theme_color_override("font_color", Color(0.984, 0.953, 0.894))
-		lbl_p2_name.add_theme_color_override("font_color", Color(0.95, 0.92, 0.86))
-		update_scores(p1_score, p2_score)
-		if not is_draw:
-			var winning_idx: int = 0
-			if GameManager.local_player_surrendered:
-				winning_idx = 2 if my_idx == 1 else 1
-			elif GameManager.opponent_player_surrendered:
-				winning_idx = my_idx
-			else:
-				winning_idx = winner_player_index
-			if winning_idx == 1:
-				p1_card.add_theme_stylebox_override("panel", _style_winner)
-				p2_card.add_theme_stylebox_override("panel", _style_normal)
-				_style_tag_pill(p1_winner_tag, "برنده مسابقه", Color(1.0, 0.88, 0.34), Color(0.26, 0.18, 0.05, 0.95), Color(0.96, 0.78, 0.28, 0.85))
-				_style_tag_pill(p2_winner_tag, "بازیکن ۲", Color(0.78, 0.71, 0.60), Color(0.18, 0.13, 0.09, 0.85), Color(0.42, 0.32, 0.22, 0.55))
-			elif winning_idx == 2:
-				p1_card.add_theme_stylebox_override("panel", _style_normal)
-				p2_card.add_theme_stylebox_override("panel", _style_winner)
-				_style_tag_pill(p1_winner_tag, "بازیکن ۱", Color(0.78, 0.71, 0.60), Color(0.18, 0.13, 0.09, 0.85), Color(0.42, 0.32, 0.22, 0.55))
-				_style_tag_pill(p2_winner_tag, "برنده مسابقه", Color(1.0, 0.88, 0.34), Color(0.26, 0.18, 0.05, 0.95), Color(0.96, 0.78, 0.28, 0.85))
+		var really_finished: bool = is_match_finished
+		if GameManager.local_player_surrendered:
+			really_finished = false
+		elif winner_player_index == 0 and GameManager.is_game_active and GameManager.ludo_rank1 == 0:
+			really_finished = false
 
-		var av1_id: int = int(p1_data.get("image", p1_data.get("user_image", 0)))
-		var av2_id: int = int(p2_data.get("image", p2_data.get("user_image", 0)))
-		var f1_id: int = GameManager.get_player_frame_id(p1_data)
-		var f2_id: int = GameManager.get_player_frame_id(p2_data)
-
-		var av1_path: String = "res://assets/icons/Avatars/%d.png" % av1_id
-		if ResourceLoader.exists(av1_path):
-			img_p1_avatar.texture = load(av1_path)
-		_apply_avatar_frame_safe(img_p1_avatar, f1_id, 68.0)
-
-		var av2_path: String = "res://assets/icons/Avatars/%d.png" % av2_id
-		if ResourceLoader.exists(av2_path):
-			img_p2_avatar.texture = load(av2_path)
-		_apply_avatar_frame_safe(img_p2_avatar, f2_id, 68.0)
+		if really_finished:
+			_build_multiplayer_podium(winner_player_index, my_idx)
+		else:
+			_build_multiplayer_self_result(my_idx, winner_player_index)
 
 	panel.scale = Vector2(0.72, 0.72)
 	panel.modulate.a = 0.0
@@ -715,6 +917,18 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 		lbl_p2_score.visible = show_round_scores
 		if show_round_scores:
 			lbl_p2_score.text = prefix % _fa_digits(p2_score)
+
+	if is_instance_valid(_hero_score_lbl):
+		var my_i: int = GameManager.my_player_index
+		var my_s: int = p1_score if my_i == 1 else p2_score
+		var opp_s: int = p2_score if my_i == 1 else p1_score
+		if GameManager.is_spectating:
+			var p1_name: String = str(GameManager.get_player_name(1))
+			var p2_name: String = str(GameManager.get_player_name(2))
+			_hero_score_lbl.text = "نتیجه: %s: %s  |  %s: %s" % [p1_name, _fa_digits(p1_score), p2_name, _fa_digits(p2_score)]
+		else:
+			_hero_score_lbl.text = "نتیجه مسابقه: شما %s  —  %s حریف" % [_fa_digits(my_s), _fa_digits(opp_s)]
+
 	if visible and is_instance_valid(panel) and panel.visible:
 		if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
 			if GameManager.current_game_type in [GameTypes.DOTBOX, GameTypes.OTHELLO, GameTypes.YATZY, GameTypes.RPC, GameTypes.TIC_TAC_TOE] or (GameManager.current_game_type == GameTypes.QUIZ and GameManager.match_players.size() <= 2):
@@ -734,31 +948,14 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 						panel.add_theme_stylebox_override("panel", _style_panel_draw)
 						lbl_title.text = "نتیجه مساوی!"
 						lbl_title.add_theme_color_override("font_color", Color(1.0, 0.90, 0.58))
-						p1_card.add_theme_stylebox_override("panel", _style_normal)
-						p2_card.add_theme_stylebox_override("panel", _style_normal)
-						_style_tag_pill(p1_winner_tag, "مساوی", Color(1.0, 0.90, 0.55), Color(0.24, 0.18, 0.08, 0.9), Color(0.80, 0.65, 0.32, 0.7))
-						_style_tag_pill(p2_winner_tag, "مساوی", Color(1.0, 0.90, 0.55), Color(0.24, 0.18, 0.08, 0.9), Color(0.80, 0.65, 0.32, 0.7))
 					elif won_now:
 						panel.add_theme_stylebox_override("panel", _style_panel_win)
 						lbl_title.text = "پیروزی درخشان!"
 						lbl_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.30))
-						p1_card.add_theme_stylebox_override("panel", _style_winner if score_winner == 1 else _style_normal)
-						p2_card.add_theme_stylebox_override("panel", _style_winner if score_winner == 2 else _style_normal)
-						if score_winner == 1:
-							_style_tag_pill(p1_winner_tag, "برنده مسابقه", Color(1.0, 0.88, 0.34), Color(0.26, 0.18, 0.05, 0.95), Color(0.96, 0.78, 0.28, 0.85))
-							_style_tag_pill(p2_winner_tag, "بازیکن ۲", Color(0.78, 0.71, 0.60), Color(0.18, 0.13, 0.09, 0.85), Color(0.42, 0.32, 0.22, 0.55))
-						else:
-							_style_tag_pill(p1_winner_tag, "بازیکن ۱", Color(0.78, 0.71, 0.60), Color(0.18, 0.13, 0.09, 0.85), Color(0.42, 0.32, 0.22, 0.55))
-							_style_tag_pill(p2_winner_tag, "برنده مسابقه", Color(1.0, 0.88, 0.34), Color(0.26, 0.18, 0.05, 0.95), Color(0.96, 0.78, 0.28, 0.85))
 					else:
 						panel.add_theme_stylebox_override("panel", _style_panel_lose)
 						lbl_title.text = "خسته نباشید!"
 						lbl_title.add_theme_color_override("font_color", Color(0.88, 0.90, 0.96))
-						p1_card.add_theme_stylebox_override("panel", _style_winner if score_winner == 1 else _style_normal)
-						p2_card.add_theme_stylebox_override("panel", _style_winner if score_winner == 2 else _style_normal)
-						if score_winner == 1:
-							_style_tag_pill(p1_winner_tag, "برنده مسابقه", Color(1.0, 0.88, 0.34), Color(0.26, 0.18, 0.05, 0.95), Color(0.96, 0.78, 0.28, 0.85))
-							_style_tag_pill(p2_winner_tag, "بازیکن ۲", Color(0.78, 0.71, 0.60), Color(0.18, 0.13, 0.09, 0.85), Color(0.42, 0.32, 0.22, 0.55))
-						else:
-							_style_tag_pill(p1_winner_tag, "بازیکن ۱", Color(0.78, 0.71, 0.60), Color(0.18, 0.13, 0.09, 0.85), Color(0.42, 0.32, 0.22, 0.55))
-							_style_tag_pill(p2_winner_tag, "برنده مسابقه", Color(1.0, 0.88, 0.34), Color(0.26, 0.18, 0.05, 0.95), Color(0.96, 0.78, 0.28, 0.85))
+
+					if GameManager.match_players.size() <= 2:
+						_build_2p_hero_outcome(won_now, draw_now, p1_score, p2_score, my_i)

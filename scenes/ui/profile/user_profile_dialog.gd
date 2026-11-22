@@ -326,7 +326,7 @@ func open_for_user(user_dict: Dictionary, role_text: String = "") -> void:
 	_current_user_id = str(user_dict.get("_id", user_dict.get("id", user_dict.get("user_id", ""))))
 	var my_uid := str(GameManager.get_user_id())
 	_is_self = (_current_user_id == my_uid or _current_user_id.is_empty()) and GameManager.is_logged_in and not GameManager.is_guest
-	_is_bot = _current_user_id.begins_with("bot_") or _current_user_id.begins_with("test_bot")
+	_is_bot = bool(user_dict.get("is_bot", false)) or bool(user_dict.get("bot", false)) or _current_user_id.begins_with("bot_") or _current_user_id.begins_with("test_bot") or _current_user_id == "0" or str(user_dict.get("type", "")).to_lower() == "bot"
 	if _is_self and _current_user_id.is_empty():
 		_current_user_id = my_uid
 

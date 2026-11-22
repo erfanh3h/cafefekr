@@ -528,7 +528,9 @@ func _ensure_top_header_for_current_game() -> void:
 func _on_header_height_changed(new_height: float) -> void:
 	var clamped_h: float = maxf(68.0, new_height)
 	if is_instance_valid(top_header_slot):
+		top_header_slot.offset_top = 0.0
 		top_header_slot.offset_bottom = clamped_h
+		top_header_slot.custom_minimum_size.y = clamped_h
 	if is_instance_valid(sub_header_rail):
 		sub_header_rail.visible = false
 		sub_header_rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1120,6 +1122,27 @@ func _show_player_profile(player_index: int) -> void:
 	var my_idx = GameManager.my_player_index
 
 	var p_data = GameManager.get_player_data_by_gamer_id(player_index)
+	if p_data.is_empty():
+		p_data = GameManager.get_my_player_data() if player_index == my_idx else GameManager.get_opponent_player_data()
+
+	# If the tapped player is a bot, do NOT open profile details; show clear bot indicator toast instead
+	var is_bot: bool = false
+	if typeof(p_data) == TYPE_DICTIONARY and not p_data.is_empty():
+		if bool(p_data.get("is_bot", false)) or bool(p_data.get("bot", false)):
+			is_bot = true
+		var uid := str(p_data.get("user_id", p_data.get("_id", p_data.get("id", ""))))
+		if uid.begins_with("bot_") or uid.begins_with("test_bot") or uid == "0":
+			is_bot = true
+		var uname := str(p_data.get("name", p_data.get("username", ""))).to_lower()
+		if uname.begins_with("bot_") or uname.begins_with("bot ") or uname == "bot":
+			is_bot = true
+		if str(p_data.get("type", "")).to_lower() == "bot":
+			is_bot = true
+
+	if is_bot:
+		var bot_name: String = str(p_data.get("name", p_data.get("username", "ربات هوشمند")))
+		show_toast_hint("🤖 %s — هوش مصنوعی (ربات) کافه فکر است." % bot_name)
+		return
 
 	var side_tag = "(تماشای زنده)" if GameManager.is_spectating else ("(شما)" if player_index == my_idx else "(حریف)")
 
@@ -3127,14 +3150,13 @@ func show_surrender_notification(surrendered_gamer_id: int) -> void:
 	_surrender_result_tween.tween_interval(1.5)
 
 	_surrender_result_tween.tween_callback(func():
-
-		show_game_result(winner_idx, GameManager.p1_score, GameManager.p2_score)
-
+		var is_multi: bool = GameManager.match_players.size() > 2
+		show_game_result(winner_idx, GameManager.p1_score, GameManager.p2_score, 0, 0, 0, not is_multi)
 	)
 
 
 
-func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int = 0, coin_earned: int = 0, score_earned: int = 0) -> void:
+func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int = 0, coin_earned: int = 0, score_earned: int = 0, is_match_finished: bool = true) -> void:
 
 	if _result_shown:
 
@@ -3161,6 +3183,8 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 	if GameManager.local_player_surrendered:
 
 		final_winner = 2 if GameManager.my_player_index == 1 else 1
+		if GameManager.match_players.size() > 2:
+			is_match_finished = false
 
 	elif GameManager.opponent_player_surrendered:
 
@@ -3181,7 +3205,7 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 	var is_friendly = (xp_earned <= 0 and coin_earned <= 0 and score_earned == 0)
 
 	AudioManager.play_theme_music()
-	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly, xp_earned, coin_earned, score_earned)
+	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly, xp_earned, coin_earned, score_earned, is_match_finished)
 
 
 
