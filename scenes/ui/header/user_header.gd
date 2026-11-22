@@ -23,7 +23,7 @@ signal change_username_requested()
 @onready var lbl_coins: Label = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge/CoinsLabel
 @onready var btn_coins_add: TextureButton = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/CoinBadge/BtnAddCoins
 @onready var lbl_score: Label = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/ScoreCard/ScoreBadge/ScoreLabel
-@onready var lbl_level: Label = $PanelFrame/ContentMargin/HBoxMain/StatsCol/BadgesRow/LevelCard/LevelBadge/LevelLabel
+@onready var lbl_level: Label = $PanelFrame/ContentMargin/HBoxMain/StatsCol/XpContainer/LevelBadge/LevelLabel
 @onready var xp_bar: ProgressBar = $PanelFrame/ContentMargin/HBoxMain/StatsCol/XpContainer/XpBar
 @onready var lbl_xp_value: Label = $PanelFrame/ContentMargin/HBoxMain/StatsCol/XpContainer/XpValueLabel
 

@@ -351,20 +351,7 @@ static func _build_shared_header(host: Control, has_clan: bool) -> PanelContaine
 	var is_chat_compact: bool = has_clan and (str(host.current_clans_subtab) == "chat")
 	var card := PanelContainer.new()
 	card.name = "ClanSharedHeader"
-	var bg_st := StyleBoxFlat.new()
-	bg_st.bg_color = Color(0.12, 0.08, 0.04, 0.96)
-	bg_st.border_color = Color(0.72, 0.54, 0.24, 0.70)
-	bg_st.set_border_width_all(1)
-	bg_st.set_corner_radius_all(14)
-	if not _is_mobile_platform():
-		bg_st.shadow_color = Color(0, 0, 0, 0.35)
-		bg_st.shadow_size = 5
-		bg_st.shadow_offset = Vector2(0, 2)
-	bg_st.content_margin_left = 12.0
-	bg_st.content_margin_right = 12.0
-	bg_st.content_margin_top = 5.0 if is_chat_compact else 8.0
-	bg_st.content_margin_bottom = 5.0 if is_chat_compact else 8.0
-	card.add_theme_stylebox_override("panel", bg_st)
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_clan_top_header_style())
 
 	var hbox := HBoxContainer.new()
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -1843,20 +1830,7 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 	# A. FOCUSED CLAN STATUS & PROGRESS CARD (no duplicate emblem/name from header)
 	# --------------------------------------------------------------------------
 	var hero_card := PanelContainer.new()
-	var h_sb := StyleBoxFlat.new()
-	h_sb.bg_color = Color(0.14, 0.09, 0.05, 0.98)
-	h_sb.border_color = Color(0.85, 0.68, 0.30, 0.85)
-	h_sb.set_border_width_all(2)
-	h_sb.set_corner_radius_all(14)
-	if not _is_mobile_platform():
-		h_sb.shadow_color = Color(0, 0, 0, 0.35)
-		h_sb.shadow_size = 5
-		h_sb.shadow_offset = Vector2(0, 2)
-	h_sb.content_margin_left = 14.0
-	h_sb.content_margin_right = 14.0
-	h_sb.content_margin_top = 12.0
-	h_sb.content_margin_bottom = 12.0
-	hero_card.add_theme_stylebox_override("panel", h_sb)
+	hero_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_panel_box_style(24.0, 18.0))
 	vbox.add_child(hero_card)
 
 	var hv := VBoxContainer.new()
@@ -2057,19 +2031,7 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 static func _build_weekly_challenge_card(ch: Dictionary) -> PanelContainer:
 	var ch_card := PanelContainer.new()
 	var done := bool(ch.get("completed", false))
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.14, 0.24, 0.16, 0.96) if done else Color(0.15, 0.10, 0.06, 0.96)
-	sb.border_color = Color(0.42, 0.85, 0.55, 0.92) if done else Color(0.72, 0.54, 0.24, 0.70)
-	sb.set_border_width_all(2 if done else 1)
-	sb.set_corner_radius_all(14)
-	if not _is_mobile_platform():
-		sb.shadow_color = Color(0, 0, 0, 0.30)
-		sb.shadow_size = 4
-	sb.content_margin_left = 14.0
-	sb.content_margin_right = 16.0
-	sb.content_margin_top = 12.0
-	sb.content_margin_bottom = 12.0
-	ch_card.add_theme_stylebox_override("panel", sb)
+	ch_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(24.0, 12.0))
 
 	var cv := VBoxContainer.new()
 	cv.add_theme_constant_override("separation", 6)
@@ -2481,19 +2443,7 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 	card.set_meta("contrib", m_contrib)
 	card.set_meta("score", m_score)
 
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.16, 0.12, 0.06, 0.96) if is_self else Color(0.14, 0.09, 0.05, 0.96)
-	sb.border_color = CafeSocialTheme.COL_EMERALD_BORDER if is_self else (CafeSocialTheme.COL_GOLD_ANTIQUE if m_role == "leader" else Color(0.50, 0.36, 0.20, 0.62))
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(12)
-	if not _is_mobile_platform():
-		sb.shadow_color = Color(0, 0, 0, 0.26)
-		sb.shadow_size = 3
-	sb.content_margin_left = 10.0
-	sb.content_margin_right = 10.0
-	sb.content_margin_top = 7.0
-	sb.content_margin_bottom = 7.0
-	card.add_theme_stylebox_override("panel", sb)
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(24.0, 10.0))
 
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -3126,33 +3076,7 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 	var jtype_fa := "آزاد" if jtype == "open" else "با تایید"
 
 	var card := PanelContainer.new()
-	var sb := StyleBoxFlat.new()
-	match rank_num:
-		1:
-			sb.bg_color = Color(0.20, 0.14, 0.05, 0.98)
-			sb.border_color = Color(0.98, 0.82, 0.30, 0.98)
-			sb.set_border_width_all(2)
-		2:
-			sb.bg_color = Color(0.16, 0.14, 0.12, 0.97)
-			sb.border_color = Color(0.78, 0.82, 0.88, 0.90)
-			sb.set_border_width_all(2)
-		3:
-			sb.bg_color = Color(0.18, 0.11, 0.06, 0.97)
-			sb.border_color = Color(0.84, 0.54, 0.30, 0.90)
-			sb.set_border_width_all(2)
-		_:
-			sb.bg_color = Color(0.14, 0.09, 0.05, 0.96)
-			sb.border_color = Color(0.55, 0.40, 0.22, 0.65)
-			sb.set_border_width_all(1)
-	sb.set_corner_radius_all(14)
-	if not _is_mobile_platform():
-		sb.shadow_color = Color(0, 0, 0, 0.30)
-		sb.shadow_size = 4
-	sb.content_margin_left = 12.0
-	sb.content_margin_right = 12.0
-	sb.content_margin_top = 9.0
-	sb.content_margin_bottom = 9.0
-	card.add_theme_stylebox_override("panel", sb)
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(24.0, 10.0))
 
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 7)
@@ -3305,6 +3229,14 @@ static func _build_clan_leaderboard_inner(host: Control, holder: VBoxContainer) 
 		var mid: String = m["id"]
 		var act: bool = (str(host.current_clan_lb_mode) == mid)
 		var b := CafeSocialTheme.make_subtab(m["label"], act, 0)
+		var h_sb: StyleBoxTexture = CafeSocialTheme.create_header_banner_style(16.0, 8.0).duplicate()
+		if act:
+			h_sb.modulate_color = Color(1.18, 1.12, 0.92)
+		else:
+			h_sb.modulate_color = Color(0.72, 0.68, 0.62, 0.85)
+		b.add_theme_stylebox_override("normal", h_sb)
+		b.add_theme_stylebox_override("hover", h_sb)
+		b.add_theme_stylebox_override("pressed", h_sb)
 		b.pressed.connect(func():
 			AudioManager.sfx_tap()
 			host.current_clan_lb_mode = mid
@@ -3548,19 +3480,7 @@ static func _build_overview_challenge_card(host: Control, chal: Dictionary, my_u
 	var p_count: int = clampi(int(chal.get("player_count", 2)), 2, 4)
 
 	var card := PanelContainer.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.16, 0.10, 0.06, 0.96)
-	sb.border_color = Color(0.70, 0.54, 0.24, 0.75)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(14)
-	if not _is_mobile_platform():
-		sb.shadow_color = Color(0, 0, 0, 0.30)
-		sb.shadow_size = 4
-	sb.content_margin_left = 14.0
-	sb.content_margin_right = 14.0
-	sb.content_margin_top = 10.0
-	sb.content_margin_bottom = 10.0
-	card.add_theme_stylebox_override("panel", sb)
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(24.0, 12.0))
 
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)

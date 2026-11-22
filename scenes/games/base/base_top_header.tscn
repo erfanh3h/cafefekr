@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" path="res://assets/images/config.png" id="6_icon_settings"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/chat.png" id="7_icon_chat"]
 [ext_resource type="Texture2D" path="res://assets/images/badges/sticker.png" id="8_icon_emote"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/timer_bar.png" id="9_timer_bar_tex"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 content_margin_left = 10.0
@@ -81,12 +82,16 @@ corner_radius_bottom_left = 14
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_round"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_turn_timer_bg"]
-bg_color = Color(0.0705882, 0.0431373, 0.027451, 0.92)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_turn_timer_bg"]
+texture = ExtResource("9_timer_bar_tex")
+texture_margin_left = 145.0
+texture_margin_top = 30.0
+texture_margin_right = 70.0
+texture_margin_bottom = 30.0
+content_margin_left = 34.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 4.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_timer_fill"]
 bg_color = Color(0.960784, 0.768627, 0.317647, 1)
@@ -865,10 +870,10 @@ text = "۱۰ ثانیه"
 horizontal_alignment = 1
 
 [node name="TurnTimerBar" type="ProgressBar" parent="Margin/VBoxMain/MatchDetailsBox/VBox"]
-custom_minimum_size = Vector2(0, 6)
+custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/background = SubResource("StyleBoxFlat_turn_timer_bg")
+theme_override_styles/background = SubResource("StyleBoxTexture_turn_timer_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_timer_fill")
 value = 100.0
 show_percentage = false

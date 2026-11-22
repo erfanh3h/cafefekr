@@ -4,7 +4,7 @@
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font_hekayat"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="3_font_vazir"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/frame_small.png" id="4_frame_small_tex"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/frame_tall.png" id="5_frame_tall_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/frame2.png" id="5_frame_tall_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/frames/close.png" id="6_close_tex"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_board_shell"]
@@ -24,16 +24,16 @@ content_margin_bottom = 22.0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_card_header"]
 texture = ExtResource("5_frame_tall_tex")
-texture_margin_left = 46.0
+texture_margin_left = 40.0
 texture_margin_top = 24.0
-texture_margin_right = 46.0
-texture_margin_bottom = 32.0
+texture_margin_right = 40.0
+texture_margin_bottom = 24.0
 axis_stretch_horizontal = 0
 axis_stretch_vertical = 0
-content_margin_left = 36.0
-content_margin_top = 20.0
-content_margin_right = 36.0
-content_margin_bottom = 30.0
+content_margin_left = 24.0
+content_margin_top = 16.0
+content_margin_right = 24.0
+content_margin_bottom = 16.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_doc_panel"]
 content_margin_left = 10.0

@@ -1516,8 +1516,10 @@ func _trigger_victory_vfx(w_id: int) -> void:
 	var node: Node3D = pawn_nodes[w_id - 1]
 	if is_instance_valid(node):
 		ActionVFXManager.play_win_celebration_vfx(fx_root, node.position, w_id)
-		var beacon := _add_cyl_mesh(fx_root, 0.055, 0.075, 0.42, node.position + Vector3(0.0, 0.22, 0.0), _mat_goal_emerald, 18)
-		beacon.transparency = 0.45
-		var tw := create_tween().set_loops(4)
-		tw.tween_property(beacon, "scale", Vector3(1.3, 1.15, 1.3), 0.25)
-		tw.tween_property(beacon, "scale", Vector3(1.0, 1.0, 1.0), 0.25)
+		# Delicate, elegant celebratory victory ring around winner piece (replaces oversized cylinder)
+		var win_ring := _add_cyl_mesh(fx_root, 0.024, 0.034, 0.012, node.position + Vector3(0.0, 0.03, 0.0), _mat_goal_emerald if w_id == 1 else _mat_brass_gold, 24)
+		win_ring.transparency = 0.25
+		var tw := create_tween()
+		tw.tween_property(win_ring, "scale", Vector3(1.6, 1.0, 1.6), 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(win_ring, "transparency", 1.0, 0.6)
+		tw.tween_callback(win_ring.queue_free)

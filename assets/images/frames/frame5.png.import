@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bg5j0sq11lgdl"
-path="res://.godot/imported/bilboard.png-0965a018cf84cd57e027095a962210de.ctex"
+uid="uid://c6d56ohj6mvwu"
+path="res://.godot/imported/frame5.png-ade73c4eaa9dd04f391a1740b77e14db.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/images/frames/bilboard.png"
-dest_files=["res://.godot/imported/bilboard.png-0965a018cf84cd57e027095a962210de.ctex"]
+source_file="res://assets/images/frames/frame5.png"
+dest_files=["res://.godot/imported/frame5.png-ade73c4eaa9dd04f391a1740b77e14db.ctex"]
 
 [params]
 

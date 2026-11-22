@@ -17,10 +17,6 @@ const TEX_FRAME2 = preload("res://assets/images/frames/frame2.png")
 const TEX_FRAME3 = preload("res://assets/images/frames/frame3.png")
 const TEX_FRAME4 = preload("res://assets/images/frames/frame4.png")
 const TEX_BUTTON = preload("res://assets/images/frames/button.png")
-const TEX_BUTTON2 = preload("res://assets/images/frames/button2.png")
-const TEX_BUTTON3 = preload("res://assets/images/frames/button3.png")
-const TEX_BUTTON4 = preload("res://assets/images/frames/button4.png")
-const TEX_BUTTON5 = preload("res://assets/images/frames/button5.png")
 const TEX_CLOSE = preload("res://assets/images/frames/close.png")
 const TEX_ADD = preload("res://assets/images/frames/add.png")
 const TEX_CHECK = preload("res://assets/images/frames/check.png")
@@ -194,20 +190,67 @@ static func create_dialog_frame_style(tall: bool = false) -> StyleBoxTexture:
 	return sb
 
 
-static func create_header_banner_style() -> StyleBoxTexture:
-	if _frame_banner_cache != null:
-		return _frame_banner_cache
+static func create_header_banner_style(pad_x: float = 22.0, pad_y: float = 12.0) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	sb.texture = TEX_FRAME2
 	sb.texture_margin_left = 40.0
 	sb.texture_margin_top = 24.0
 	sb.texture_margin_right = 40.0
 	sb.texture_margin_bottom = 24.0
-	sb.content_margin_left = 22.0
-	sb.content_margin_right = 22.0
-	sb.content_margin_top = 14.0
-	sb.content_margin_bottom = 14.0
-	_frame_banner_cache = sb
+	sb.content_margin_left = pad_x
+	sb.content_margin_right = pad_x
+	sb.content_margin_top = pad_y
+	sb.content_margin_bottom = pad_y
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	return sb
+
+
+static func create_item_frame_style(pad_x: float = 24.0, pad_y: float = 12.0) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = TEX_FRAME
+	sb.texture_margin_left = 48.0
+	sb.texture_margin_top = 28.0
+	sb.texture_margin_right = 48.0
+	sb.texture_margin_bottom = 28.0
+	sb.content_margin_left = pad_x
+	sb.content_margin_right = pad_x
+	sb.content_margin_top = pad_y
+	sb.content_margin_bottom = pad_y
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	return sb
+
+
+static func create_clan_top_header_style() -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = TEX_FRAME3
+	sb.texture_margin_left = 68.0
+	sb.texture_margin_top = 74.0
+	sb.texture_margin_right = 68.0
+	sb.texture_margin_bottom = 32.0
+	sb.content_margin_left = 38.0
+	sb.content_margin_right = 38.0
+	sb.content_margin_top = 46.0
+	sb.content_margin_bottom = 22.0
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	return sb
+
+
+static func create_panel_box_style(pad_x: float = 24.0, pad_y: float = 18.0) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = TEX_FRAME4
+	sb.texture_margin_left = 48.0
+	sb.texture_margin_top = 42.0
+	sb.texture_margin_right = 48.0
+	sb.texture_margin_bottom = 42.0
+	sb.content_margin_left = pad_x
+	sb.content_margin_right = pad_x
+	sb.content_margin_top = pad_y
+	sb.content_margin_bottom = pad_y
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	return sb
 
 
@@ -718,19 +761,7 @@ static func make_subtab(label_txt: String, is_active: bool = false, badge_count:
 
 static func make_ornate_section_header(title_txt: String, icon_tex: Texture2D = null, subtitle_txt: String = "") -> PanelContainer:
 	var p := PanelContainer.new()
-	var st := StyleBoxFlat.new()
-	st.bg_color = Color(0.18, 0.11, 0.06, 0.92)
-	st.border_color = Color(0.76, 0.58, 0.24, 0.72)
-	st.border_width_bottom = 2
-	st.border_width_top = 1
-	st.border_width_left = 1
-	st.border_width_right = 1
-	st.set_corner_radius_all(14)
-	st.content_margin_left = 16.0
-	st.content_margin_right = 16.0
-	st.content_margin_top = 10.0
-	st.content_margin_bottom = 10.0
-	p.add_theme_stylebox_override("panel", st)
+	p.add_theme_stylebox_override("panel", create_header_banner_style(24.0, 10.0))
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)

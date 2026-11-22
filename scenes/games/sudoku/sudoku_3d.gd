@@ -28,8 +28,8 @@ const TOTAL_GRID_W: float = (3.0 * BLOCK_W) + (2.0 * BLOCK_GAP) # 1.010m
 
 # Bottom Console Metrics (Extra-large mechanical digit buttons & centered submit button)
 const CONSOLE_Z: float = 0.445
-const PAD_BTN_W: float = 0.106
-const PAD_BTN_D: float = 0.104
+const PAD_BTN_W: float = 0.108
+const PAD_BTN_D: float = 0.106
 const PAD_BTN_H: float = 0.026
 const PAD_SPACING: float = 0.116 # Total span = 8 * 0.116 = 0.928m
 const ACTION_BTN_Y: float = 0.038
@@ -602,7 +602,7 @@ func _build_action_dock() -> void:
 	# Row 1: 1..9 Digits + Erase button (10 buttons)
 	var hbox_digits = HBoxContainer.new()
 	hbox_digits.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox_digits.custom_minimum_size = Vector2(0, 62)
+	hbox_digits.custom_minimum_size = Vector2(0, 64)
 	hbox_digits.add_theme_constant_override("separation", 4)
 	hbox_digits.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(hbox_digits)
@@ -630,7 +630,7 @@ func _build_action_dock() -> void:
 		var btn = Button.new()
 		btn.name = "BtnDigit_%d" % d
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.custom_minimum_size = Vector2(0, 62)
+		btn.custom_minimum_size = Vector2(0, 64)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		btn.text = ""
@@ -649,7 +649,7 @@ func _build_action_dock() -> void:
 		lbl_main.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		if _game_font:
 			lbl_main.add_theme_font_override("font", _game_font)
-		lbl_main.add_theme_font_size_override("font_size", 25) # 3px bigger than before (22 -> 25)
+		lbl_main.add_theme_font_size_override("font_size", 27)
 		lbl_main.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
 		lbl_main.add_theme_color_override("font_shadow_color", Color(0.04, 0.02, 0.01, 0.95))
 		lbl_main.add_theme_constant_override("shadow_offset_y", 1)
@@ -663,7 +663,7 @@ func _build_action_dock() -> void:
 		lbl_sub.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		if _game_font:
 			lbl_sub.add_theme_font_override("font", _game_font)
-		lbl_sub.add_theme_font_size_override("font_size", 14)
+		lbl_sub.add_theme_font_size_override("font_size", 15)
 		lbl_sub.add_theme_color_override("font_color", Color(0.85, 0.82, 0.75, 0.88))
 		lbl_sub.add_theme_color_override("font_shadow_color", Color(0.04, 0.02, 0.01, 0.90))
 		lbl_sub.add_theme_constant_override("shadow_offset_y", 1)
@@ -701,13 +701,13 @@ func _build_action_dock() -> void:
 	var btn_erase = Button.new()
 	btn_erase.name = "BtnDigit_Erase"
 	btn_erase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_erase.custom_minimum_size = Vector2(0, 62)
+	btn_erase.custom_minimum_size = Vector2(0, 64)
 	btn_erase.focus_mode = Control.FOCUS_NONE
 	btn_erase.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_erase.text = "✕\nپاک"
 	if _game_font:
 		btn_erase.add_theme_font_override("font", _game_font)
-	btn_erase.add_theme_font_size_override("font_size", 20)
+	btn_erase.add_theme_font_size_override("font_size", 22)
 	btn_erase.add_theme_color_override("font_color", Color(1.0, 0.70, 0.70))
 	btn_erase.add_theme_color_override("font_outline_color", Color(0.08, 0.02, 0.02, 0.95))
 	btn_erase.add_theme_constant_override("outline_size", 3)

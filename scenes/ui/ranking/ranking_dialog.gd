@@ -220,7 +220,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	card.focus_mode = Control.FOCUS_NONE
 	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-	var style_frame := CafeSocialTheme.create_frame_style(false, 54.0, 18.0)
+	var style_frame := CafeSocialTheme.create_item_frame_style(32.0, 12.0)
 	card.add_theme_stylebox_override("normal", style_frame)
 	card.add_theme_stylebox_override("hover", style_frame)
 	card.add_theme_stylebox_override("pressed", style_frame)

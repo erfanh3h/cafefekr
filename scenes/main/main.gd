@@ -1425,17 +1425,15 @@ func _on_turn_changed(turn: int) -> void:
 
 
 func _on_reaction_received(data: Variant) -> void:
-
 	if typeof(data) == TYPE_DICTIONARY:
-
 		var p_id = int(data.get("playerId", 0))
-
 		var r_id = int(data.get("reactionId", 1))
-
+		if r_id <= 0:
+			r_id = 1
+		elif r_id > 16 and r_id <= 100:
+			r_id = ((r_id - 1) % 16) + 1
 		base_game_hud.show_reaction(p_id, r_id)
-
 		if p_id != GameManager.my_player_index and is_instance_valid(cafe_table):
-
 			cafe_table.play_opponent_reaction()
 
 

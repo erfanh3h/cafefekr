@@ -236,13 +236,24 @@ static func _get_cached_avatar(av_id: int) -> Texture2D:
 
 
 static func _get_cached_reaction(r_id: int) -> Texture2D:
-	if _reaction_cache.has(r_id):
-		return _reaction_cache[r_id]
-	var path = "res://assets/icons/Reactions/%d.png" % r_id
+	var safe_id: int = r_id
+	if safe_id <= 0:
+		safe_id = 1
+	elif safe_id > 16:
+		safe_id = ((safe_id - 1) % 16) + 1
+
+	if _reaction_cache.has(safe_id):
+		return _reaction_cache[safe_id]
+	var path = "res://assets/icons/Reactions/%d.png" % safe_id
 	if ResourceLoader.exists(path):
 		var tex = load(path)
-		_reaction_cache[r_id] = tex
+		_reaction_cache[safe_id] = tex
 		return tex
+	# Fallback to reaction 1 if specific icon is missing
+	if safe_id != 1 and ResourceLoader.exists("res://assets/icons/Reactions/1.png"):
+		var fallback_tex = load("res://assets/icons/Reactions/1.png")
+		_reaction_cache[safe_id] = fallback_tex
+		return fallback_tex
 	return null
 
 
@@ -595,7 +606,7 @@ func _rebuild_pods() -> void:
 	else:
 		mode = PlayerPod.PodMode.VERTICAL_STANDARD
 
-	players_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	players_container.alignment = BoxContainer.ALIGNMENT_BEGIN
 
 	for idx in display_indices:
 		var p_data := _get_player_data_for_index(idx)
@@ -824,6 +835,12 @@ func _apply_turn_bar_colors(turn: int, is_danger: bool) -> void:
 		sb_fill.bg_color = fill_color
 		sb_fill.set_corner_radius_all(2)
 		local_turn_bar.add_theme_stylebox_override("fill", sb_fill)
+
+	if is_instance_valid(turn_timer_bar):
+		var sb_timer_fill := StyleBoxFlat.new()
+		sb_timer_fill.bg_color = fill_color
+		sb_timer_fill.set_corner_radius_all(4)
+		turn_timer_bar.add_theme_stylebox_override("fill", sb_timer_fill)
 
 	if is_instance_valid(local_turn_pill):
 		var sb_pill := StyleBoxFlat.new()
@@ -1098,13 +1115,15 @@ func _spawn_floating_reaction(is_opponent: bool, reaction_id: int, spawn_pos: Ve
 		bubble.add_child(lbl)
 		bubble.custom_minimum_size = Vector2(0, 38 if not is_opponent else 32)
 	else:
+		var r_tex := _get_cached_reaction(reaction_id)
+		if r_tex == null:
+			bubble.queue_free()
+			return
 		var icon_rect := TextureRect.new()
 		icon_rect.custom_minimum_size = Vector2(112, 112)
 		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		var r_tex := _get_cached_reaction(reaction_id)
-		if r_tex:
-			icon_rect.texture = r_tex
+		icon_rect.texture = r_tex
 		bubble.add_child(icon_rect)
 		bubble.custom_minimum_size = Vector2(136, 136)
 

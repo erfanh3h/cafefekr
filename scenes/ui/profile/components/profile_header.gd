@@ -61,8 +61,8 @@ func _make_stat_crest(tex: Texture2D, font_sz: int, text_col: Color, y_top_off: 
 
 
 func _build_ui() -> void:
-	# Generous inset padding so badges, clan pill, and avatar never touch the ornate frame edges
-	add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 44.0, 24.0))
+	# Header banner using frame2.png with generous inset padding
+	add_theme_stylebox_override("panel", CafeSocialTheme.create_header_banner_style(36.0, 16.0))
 
 	var main_vbox := VBoxContainer.new()
 	main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
