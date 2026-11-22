@@ -135,7 +135,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	game_type = GameTypes.RISK
-	_is_mobile_gpu = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	_is_mobile_gpu = GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	_mats = RiskMaterials.create_palette()
 	_load_3d_meshes()
 	_detect_players_and_local_id()
@@ -3132,6 +3132,9 @@ func _animate_returned_continent_cards_to_table(from_continent_id: String, count
 		)
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_anim_clock += delta
 	_hud_vis_accum += delta
 	if _hud_vis_accum >= 0.15:

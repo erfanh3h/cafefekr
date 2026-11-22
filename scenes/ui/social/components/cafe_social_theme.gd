@@ -115,6 +115,14 @@ const COL_CRIMSON_TEXT := Color(0.98, 0.54, 0.52, 1.0)
 const COL_CRIMSON_BG := Color(0.28, 0.10, 0.10, 0.95)
 const COL_CRIMSON_BORDER := Color(0.84, 0.34, 0.32, 0.90)
 
+static func is_mobile() -> bool:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree and tree.root and tree.root.has_node("GameManager"):
+		var gm = tree.root.get_node("GameManager")
+		if gm and "is_mobile" in gm:
+			return bool(gm.is_mobile)
+	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or (OS.get_name() in ["Android", "iOS"])
+
 static var _shell_style_cache: StyleBoxTexture = null
 static var _dialog_style_cache: StyleBoxTexture = null
 static var _frame_banner_cache: StyleBoxTexture = null
@@ -275,7 +283,7 @@ static func create_flat_chat_bubble_style(is_mine: bool = false) -> StyleBoxFlat
 		sb.corner_radius_bottom_right = 16
 	sb.set_border_width_all(1)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.35)
-	sb.shadow_size = 5
+	sb.shadow_size = 0 if is_mobile() else 5
 	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 16.0
 	sb.content_margin_right = 16.0
@@ -337,7 +345,7 @@ static func create_card_style(
 	sb.set_border_width_all(border_w)
 	sb.set_corner_radius_all(corner)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.45)
-	sb.shadow_size = 8
+	sb.shadow_size = 0 if is_mobile() else 8
 	sb.shadow_offset = Vector2(0, 3)
 	sb.content_margin_left = pad_x
 	sb.content_margin_right = pad_x
@@ -384,7 +392,7 @@ static func create_input_style(focused: bool = false) -> StyleBoxFlat:
 	sb.content_margin_top = 12.0
 	sb.content_margin_bottom = 12.0
 	sb.shadow_color = Color(0, 0, 0, 0.4)
-	sb.shadow_size = 4
+	sb.shadow_size = 0 if is_mobile() else 4
 	return sb
 
 
@@ -479,7 +487,7 @@ static func _get_flat_btn_style(variant: String, state: String, corner: int) -> 
 	sb.set_corner_radius_all(corner)
 	sb.set_border_width_all(2)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.45)
-	sb.shadow_size = 5
+	sb.shadow_size = 0 if is_mobile() else 5
 	sb.shadow_offset = Vector2(0, 3)
 	sb.content_margin_left = 16.0
 	sb.content_margin_right = 16.0
@@ -2023,7 +2031,7 @@ static func style_parlor_tab_button(btn: Button, is_active: bool, font_size: int
 		sb.border_width_bottom = border_b
 		sb.set_corner_radius_all(12)
 		sb.shadow_color = glow
-		sb.shadow_size = glow_sz
+		sb.shadow_size = 0 if is_mobile() else glow_sz
 		sb.shadow_offset = Vector2(0, 2)
 		sb.content_margin_left = 8.0
 		sb.content_margin_right = 8.0

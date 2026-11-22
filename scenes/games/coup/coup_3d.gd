@@ -117,7 +117,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	game_type = GameTypes.COUP
-	_is_mobile_gpu = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	_is_mobile_gpu = GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	_setup_table_3d()
 	_build_hud()
 	super._ready()
@@ -148,6 +148,9 @@ func _enforce_camera_framing() -> void:
 			table.set_player_seats_count(p_cnt)
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_hud_vis_accum += delta
 	if _hud_vis_accum >= 0.15:
 		_hud_vis_accum = 0.0

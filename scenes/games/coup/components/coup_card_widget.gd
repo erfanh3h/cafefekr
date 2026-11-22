@@ -102,7 +102,7 @@ func _build_ui(card_size: Vector2) -> void:
 	_btn.focus_mode = Control.FOCUS_NONE
 	_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if is_selectable else Control.CURSOR_ARROW
 
-	var is_mobile: bool = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	var is_mobile: bool = GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	_card_style = StyleBoxFlat.new()
 	_card_style.bg_color = base_col
 	_card_style.set_corner_radius_all(15 if is_compact_horizontal else 18)

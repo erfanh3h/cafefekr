@@ -75,6 +75,9 @@ func _ready() -> void:
 	_build_tabletop()
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_anim_time += delta
 
 	# Rotate & gently levitate the Active Color Crystal Beacon

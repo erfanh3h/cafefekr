@@ -58,7 +58,7 @@ func _build_ui() -> void:
 	_panel_style.set_border_width_all(2)
 	_panel_style.set_corner_radius_all(18)
 	_panel_style.shadow_color = Color(0, 0, 0, 0.38)
-	_panel_style.shadow_size = 8
+	_panel_style.shadow_size = 0 if GameManager.is_mobile else 8
 	_panel_style.content_margin_left = 10
 	_panel_style.content_margin_right = 10
 	_panel_style.content_margin_top = 6
@@ -187,21 +187,21 @@ func update_opponent(pid: int, p_name: String, avatar_id: int, cards_left: int, 
 		_panel_style.border_color = Color(0.38, 0.96, 0.58, 1.0)
 		_panel_style.set_border_width_all(3)
 		_panel_style.shadow_color = Color(0.20, 0.90, 0.48, 0.42)
-		_panel_style.shadow_size = 12
+		_panel_style.shadow_size = 0 if GameManager.is_mobile else 12
 		_avatar_frame_style.border_color = Color(0.38, 0.96, 0.58, 1.0)
 	elif cards_left == 1:
 		_panel_style.bg_color = Color(0.22, 0.08, 0.09, 0.95)
 		_panel_style.border_color = Color(0.96, 0.32, 0.32, 0.95)
 		_panel_style.set_border_width_all(2)
 		_panel_style.shadow_color = Color(0.95, 0.22, 0.22, 0.35)
-		_panel_style.shadow_size = 10
+		_panel_style.shadow_size = 0 if GameManager.is_mobile else 10
 		_avatar_frame_style.border_color = Color(0.96, 0.32, 0.32, 0.95)
 	else:
 		_panel_style.bg_color = Color(0.08, 0.11, 0.10, 0.88)
 		_panel_style.border_color = Color(0.78, 0.64, 0.32, 0.42)
 		_panel_style.set_border_width_all(2)
 		_panel_style.shadow_color = Color(0, 0, 0, 0.35)
-		_panel_style.shadow_size = 6
+		_panel_style.shadow_size = 0 if GameManager.is_mobile else 6
 		_avatar_frame_style.border_color = Color(0.84, 0.68, 0.32, 0.65)
 
 func get_card_origin_global_pos() -> Vector2:

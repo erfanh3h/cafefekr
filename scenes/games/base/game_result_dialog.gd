@@ -83,7 +83,7 @@ var _multi_podium_box: VBoxContainer = null
 
 
 func _is_mobile() -> bool:
-	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	return GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
 
 func _ready() -> void:

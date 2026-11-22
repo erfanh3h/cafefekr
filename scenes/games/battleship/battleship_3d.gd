@@ -176,6 +176,9 @@ func _ready() -> void:
 	super._ready()
 
 func _process(_delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	if not is_play_phase and not is_board_saved and GameManager.is_game_active:
 		var hud = _get_hud()
 		if hud and ("is_timer_active" in hud) and ("turn_time_left" in hud):
@@ -853,12 +856,13 @@ func _add_destroyed_ship_damage_and_smoke(ship_root: Node3D, ship_len: int, tota
 
 func _create_continuous_smoke_plume_node(intensity_scale: float = 1.0) -> Node3D:
 	var plume_root = Node3D.new()
+	var is_mobile = GameManager.is_mobile
 
 	# 1. CPUParticles3D billowing dark charcoal/ash 3D smoke spheres
 	var smoke_particles = CPUParticles3D.new()
-	smoke_particles.amount = int(round(18.0 * intensity_scale))
-	smoke_particles.lifetime = 1.75
-	smoke_particles.preprocess = 0.85
+	smoke_particles.amount = maxi(4, int(round((6.0 if is_mobile else 18.0) * intensity_scale)))
+	smoke_particles.lifetime = 1.5 if is_mobile else 1.75
+	smoke_particles.preprocess = 0.5 if is_mobile else 0.85
 	smoke_particles.speed_scale = 1.0
 	smoke_particles.explosiveness = 0.0
 	smoke_particles.randomness = 0.35
@@ -867,8 +871,8 @@ func _create_continuous_smoke_plume_node(intensity_scale: float = 1.0) -> Node3D
 	var puff_mesh = SphereMesh.new()
 	puff_mesh.radius = 0.016 * intensity_scale
 	puff_mesh.height = 0.028 * intensity_scale
-	puff_mesh.radial_segments = 8
-	puff_mesh.rings = 5
+	puff_mesh.radial_segments = 4 if is_mobile else 8
+	puff_mesh.rings = 3 if is_mobile else 5
 	smoke_particles.mesh = puff_mesh
 	smoke_particles.material_override = _mat_smoke_puff
 
@@ -901,28 +905,29 @@ func _create_continuous_smoke_plume_node(intensity_scale: float = 1.0) -> Node3D
 	smoke_particles.emitting = true
 	plume_root.add_child(smoke_particles)
 
-	# 2. Subtle rising glowing ember cinders at the base of the smoke
-	var ember_particles = CPUParticles3D.new()
-	ember_particles.amount = maxi(3, int(round(5.0 * intensity_scale)))
-	ember_particles.lifetime = 0.95
-	ember_particles.preprocess = 0.4
-	ember_particles.local_coords = false
+	# 2. Subtle rising glowing ember cinders at the base of the smoke (suppressed on mobile)
+	if not is_mobile:
+		var ember_particles = CPUParticles3D.new()
+		ember_particles.amount = maxi(3, int(round(5.0 * intensity_scale)))
+		ember_particles.lifetime = 0.95
+		ember_particles.preprocess = 0.4
+		ember_particles.local_coords = false
 
-	var spark_mesh = BoxMesh.new()
-	spark_mesh.size = Vector3(0.005, 0.005, 0.005) * intensity_scale
-	ember_particles.mesh = spark_mesh
-	ember_particles.material_override = _mat_ship_sunk_fire
-	ember_particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	ember_particles.emission_sphere_radius = 0.008 * intensity_scale
-	ember_particles.direction = Vector3(0.18, 1.0, -0.15).normalized()
-	ember_particles.spread = 28.0
-	ember_particles.gravity = Vector3(0.03, 0.10, -0.03)
-	ember_particles.initial_velocity_min = 0.05
-	ember_particles.initial_velocity_max = 0.10
-	ember_particles.scale_amount_min = 0.5
-	ember_particles.scale_amount_max = 1.1
-	ember_particles.emitting = true
-	plume_root.add_child(ember_particles)
+		var spark_mesh = BoxMesh.new()
+		spark_mesh.size = Vector3(0.005, 0.005, 0.005) * intensity_scale
+		ember_particles.mesh = spark_mesh
+		ember_particles.material_override = _mat_ship_sunk_fire
+		ember_particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+		ember_particles.emission_sphere_radius = 0.008 * intensity_scale
+		ember_particles.direction = Vector3(0.18, 1.0, -0.15).normalized()
+		ember_particles.spread = 28.0
+		ember_particles.gravity = Vector3(0.03, 0.10, -0.03)
+		ember_particles.initial_velocity_min = 0.05
+		ember_particles.initial_velocity_max = 0.10
+		ember_particles.scale_amount_min = 0.5
+		ember_particles.scale_amount_max = 1.1
+		ember_particles.emitting = true
+		plume_root.add_child(ember_particles)
 
 	return plume_root
 

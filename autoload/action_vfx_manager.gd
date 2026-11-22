@@ -326,15 +326,16 @@ func apply_button_juice(btn: BaseButton, click_sound: String = "tap_button") -> 
 		
 	btn.pivot_offset = btn.size / 2.0
 	
-	btn.mouse_entered.connect(func():
-		var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tw.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.12)
-	)
-	
-	btn.mouse_exited.connect(func():
-		var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.12)
-	)
+	if not _is_mobile:
+		btn.mouse_entered.connect(func():
+			var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.12)
+		)
+		
+		btn.mouse_exited.connect(func():
+			var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.12)
+		)
 	
 	btn.button_down.connect(func():
 		var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -345,11 +346,12 @@ func apply_button_juice(btn: BaseButton, click_sound: String = "tap_button") -> 
 	
 	btn.button_up.connect(func():
 		var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tw.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.12)
+		tw.tween_property(btn, "scale", Vector2(1.0, 1.0) if _is_mobile else Vector2(1.05, 1.05), 0.12)
 	)
 	
 	btn.pressed.connect(func():
-		spawn_ui_click_burst(btn.get_global_mouse_position())
+		if not _is_mobile:
+			spawn_ui_click_burst(btn.get_global_mouse_position())
 	)
 
 func animate_button_pop(node: Control) -> void:
@@ -462,7 +464,7 @@ func animate_dialog_close(card_node: Control, overlay_node: Control = null, on_c
 		on_complete.call()
 
 func spawn_dialog_sparkle_burst(center_pos: Vector2) -> void:
-	if not is_instance_valid(_ui_canvas_layer):
+	if not is_instance_valid(_ui_canvas_layer) or _is_mobile:
 		return
 		
 	var burst_root = Control.new()

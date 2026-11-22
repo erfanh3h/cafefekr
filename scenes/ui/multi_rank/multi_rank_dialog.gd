@@ -48,7 +48,7 @@ var _cached_game_textures: Dictionary = {}
 
 
 func _is_mobile() -> bool:
-	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	return GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
 
 func _get_game_texture(g_type: String) -> Texture2D:

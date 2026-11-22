@@ -126,6 +126,14 @@ static func style_button(btn: BaseButton, color: String = "wood", sound: String 
 	
 	ActionVFXManager.apply_button_juice(btn, sound)
 
+static func is_mobile() -> bool:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree and tree.root and tree.root.has_node("GameManager"):
+		var gm = tree.root.get_node("GameManager")
+		if gm and "is_mobile" in gm:
+			return bool(gm.is_mobile)
+	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or (OS.get_name() in ["Android", "iOS"])
+
 # Creates an arcade / board-game style panel with chunky borders and rich shadow
 static func create_card_style(border_col: Color, bg_col: Color, corner: int = 18, border_w: int = 4) -> StyleBoxFlat:
 	var sb = StyleBoxFlat.new()
@@ -133,9 +141,12 @@ static func create_card_style(border_col: Color, bg_col: Color, corner: int = 18
 	sb.border_color = border_col
 	sb.set_border_width_all(border_w)
 	sb.set_corner_radius_all(corner)
-	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
-	sb.shadow_size = 14
-	sb.shadow_offset = Vector2(0, 6)
+	if not is_mobile():
+		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
+		sb.shadow_size = 14
+		sb.shadow_offset = Vector2(0, 6)
+	else:
+		sb.shadow_size = 0
 	sb.content_margin_left = 16
 	sb.content_margin_right = 16
 	sb.content_margin_top = 12

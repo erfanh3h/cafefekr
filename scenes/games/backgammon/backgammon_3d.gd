@@ -300,6 +300,9 @@ func _mark_interaction() -> void:
 
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_vfx_time += delta
 	_sparkle_accum += delta
 
@@ -348,7 +351,7 @@ func _process(delta: float) -> void:
 			btn_root.scale = Vector3.ONE
 
 	# 3. Periodic golden sparkle particles on selectable pieces
-	if _sparkle_accum >= 0.28 and not _is_animating_move and is_my_turn and dices_rolled:
+	if not GameManager.is_mobile and _sparkle_accum >= 0.28 and not _is_animating_move and is_my_turn and dices_rolled:
 		_sparkle_accum = 0.0
 		_emit_ambient_selection_sparkles()
 

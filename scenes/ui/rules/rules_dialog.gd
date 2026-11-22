@@ -54,6 +54,9 @@ const GAME_KEYS = [
 	{"key": "msweeper", "name": "مین یاب", "time": "۵ الی ۱۰ دقیقه", "diff": "سخت"}
 ]
 
+func _is_mobile() -> bool:
+	return GameManager.is_mobile
+
 func _ready() -> void:
 	KenneyUI.style_button(btn_understood, KenneyUI.COLOR_GREEN)
 	ActionVFXManager.apply_button_juice(btn_select_game, "tap_button")
@@ -275,7 +278,7 @@ func _create_game_card(g: Dictionary) -> Control:
 		badge_style.border_color = Color(1, 1, 1, 0.95)
 		badge_style.set_border_width_all(2)
 		badge_style.shadow_color = Color(1.0, 0.8, 0.2, 0.5)
-		badge_style.shadow_size = 6
+		badge_style.shadow_size = 0 if _is_mobile() else 6
 		badge.add_theme_stylebox_override("panel", badge_style)
 		
 		var check_lbl = Label.new()

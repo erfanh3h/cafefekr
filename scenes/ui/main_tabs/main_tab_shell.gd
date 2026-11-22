@@ -114,6 +114,12 @@ func _ready() -> void:
 	_apply_bg_shader(bg_rect, BG_CONFIG["play"])
 	_apply_bg_shader(bg_rect_fade, BG_CONFIG["play"])
 
+	if has_node("BackgroundLayer/Sparkles"):
+		var sp: CPUParticles2D = get_node("BackgroundLayer/Sparkles") as CPUParticles2D
+		if sp and GameManager.is_mobile:
+			sp.amount = 6
+			sp.lifetime = 3.0
+
 	switch_to_tab("play")
 
 

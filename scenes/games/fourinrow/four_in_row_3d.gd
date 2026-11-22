@@ -97,6 +97,9 @@ func _ready() -> void:
 	super._ready()
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_hover_bob_time += delta * 4.2
 	if is_instance_valid(hover_ghost_disc) and hover_ghost_disc.visible:
 		hover_ghost_disc.position.z = CHUTE_Z - 0.012 + sin(_hover_bob_time) * 0.009

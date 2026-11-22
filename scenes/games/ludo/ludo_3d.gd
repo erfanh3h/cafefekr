@@ -1049,6 +1049,9 @@ func _build_target_preview_indicator() -> void:
 	_target_preview_ring.add_child(beacon)
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_pulse_time += delta * 4.2
 	var s_pulse = 1.0 + 0.08 * sin(_pulse_time)
 	var y_bob = 0.007 * abs(sin(_pulse_time * 0.85))

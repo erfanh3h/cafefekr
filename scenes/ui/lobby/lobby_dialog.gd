@@ -123,6 +123,9 @@ const MULTI_PLAYER_GAMES: Array[String] = [
 	GameTypes.MONOPOLY
 ]
 
+func _is_mobile() -> bool:
+	return GameManager.is_mobile
+
 func _ready() -> void:
 	KenneyUI.style_button(btn_show_create, KenneyUI.COLOR_YELLOW)
 	KenneyUI.style_button(btn_show_join_code, KenneyUI.COLOR_BLUE)
@@ -516,7 +519,7 @@ func _update_game_grid_selection() -> void:
 			sb.set_border_width_all(3 if is_selected else 0)
 			sb.border_color = Color(1.0, 0.90, 0.35, 1.0)
 			sb.shadow_color = Color(1.0, 0.85, 0.20, 0.45)
-			sb.shadow_size = 6 if is_selected else 0
+			sb.shadow_size = (6 if is_selected else 0) if not _is_mobile() else 0
 			card.add_theme_stylebox_override("normal", sb)
 
 			var badge: Control = card.get_node_or_null("SelectionBadge") as Control
@@ -628,7 +631,7 @@ func _create_game_card(g_type: String, initial_h: float = 260.0) -> Control:
 	badge_sb.set_border_width_all(2)
 	badge_sb.set_corner_radius_all(15)
 	badge_sb.shadow_color = Color(0, 0, 0, 0.40)
-	badge_sb.shadow_size = 3
+	badge_sb.shadow_size = 0 if _is_mobile() else 3
 	sel_badge.add_theme_stylebox_override("panel", badge_sb)
 	sel_badge.visible = is_selected
 
@@ -785,7 +788,7 @@ func _create_lobby_row(lobby: Dictionary) -> PanelContainer:
 	style.content_margin_top = 10.0
 	style.content_margin_bottom = 10.0
 	style.shadow_color = Color(0, 0, 0, 0.35)
-	style.shadow_size = 4
+	style.shadow_size = 0 if _is_mobile() else 4
 	style.shadow_offset = Vector2(0, 2)
 	row_panel.add_theme_stylebox_override("panel", style)
 	row_panel.custom_minimum_size = Vector2(0, 96)
@@ -974,7 +977,7 @@ func _build_password_modal() -> void:
 	sb.content_margin_top = 18.0
 	sb.content_margin_bottom = 18.0
 	sb.shadow_color = Color(0, 0, 0, 0.65)
-	sb.shadow_size = 14
+	sb.shadow_size = 0 if _is_mobile() else 14
 	sb.shadow_offset = Vector2(0, 6)
 	panel.add_theme_stylebox_override("panel", sb)
 	vcenter.add_child(panel)
@@ -1172,7 +1175,7 @@ func _update_players_list(queuers: Array) -> void:
 		else:
 			c_style.border_color = Color(0.62, 0.49, 0.32, 0.72)
 			c_style.shadow_color = Color(0, 0, 0, 0.30)
-		c_style.shadow_size = 4
+		c_style.shadow_size = 0 if _is_mobile() else 4
 		c_style.shadow_offset = Vector2(0, 2)
 		c_style.content_margin_left = 12.0
 		c_style.content_margin_right = 12.0

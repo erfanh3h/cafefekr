@@ -221,6 +221,9 @@ func _make_parlor_inner_inlay_style() -> StyleBoxFlat:
 	return sb
 
 
+func _is_mobile() -> bool:
+	return GameManager.is_mobile
+
 func _make_header_crown_style() -> StyleBoxFlat:
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.bg_color = Color(0.165, 0.100, 0.056, 0.97)
@@ -234,7 +237,7 @@ func _make_header_crown_style() -> StyleBoxFlat:
 	sb.corner_radius_bottom_left = 14
 	sb.corner_radius_bottom_right = 14
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.34)
-	sb.shadow_size = 6
+	sb.shadow_size = 0 if _is_mobile() else 6
 	sb.shadow_offset = Vector2(0, 3)
 	sb.content_margin_left = 12.0
 	sb.content_margin_right = 12.0
@@ -672,7 +675,7 @@ func _render_filters() -> void:
 				tile_sb.border_color = Color(1.0, 0.86, 0.34, 1.0)
 				tile_sb.set_border_width_all(2)
 				tile_sb.shadow_color = Color(1.0, 0.82, 0.24, 0.35)
-				tile_sb.shadow_size = 5
+				tile_sb.shadow_size = 0 if _is_mobile() else 5
 			else:
 				tile_sb.bg_color = Color(0.11, 0.068, 0.038, 0.90)
 				tile_sb.border_color = Color(0.48, 0.35, 0.19, 0.55)
@@ -828,7 +831,7 @@ func _build_match_card(m: Dictionary) -> PanelContainer:
 	card_sb.content_margin_top = 12.0
 	card_sb.content_margin_bottom = 12.0
 	card_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
-	card_sb.shadow_size = 7
+	card_sb.shadow_size = 0 if _is_mobile() else 7
 	card_sb.shadow_offset = Vector2(0, 3)
 	card.add_theme_stylebox_override("panel", card_sb)
 

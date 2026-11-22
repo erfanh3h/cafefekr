@@ -127,7 +127,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	game_type = GameTypes.QUORIDOR
-	_is_mobile_gpu = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	_is_mobile_gpu = GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	add_to_group("board")
 	_init_materials()
 	_build_board_3d()
@@ -141,6 +141,9 @@ func _ready() -> void:
 	call_deferred("_enforce_dock_geometry")
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_pulse_time += delta
 	if not _visible_legal_pads.is_empty():
 		var pulse := 1.0 + 0.085 * sin(_pulse_time * 5.2)

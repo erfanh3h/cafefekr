@@ -102,6 +102,14 @@ static func get_safe_insets(viewport: Viewport) -> Dictionary:
 
 # --- StyleBoxFlat Builders ---
 
+static func is_mobile() -> bool:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree and tree.root and tree.root.has_node("GameManager"):
+		var gm = tree.root.get_node("GameManager")
+		if gm and "is_mobile" in gm:
+			return bool(gm.is_mobile)
+	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or (OS.get_name() in ["Android", "iOS"])
+
 static func make_player_card_style(active: bool, is_danger: bool = false, compact: bool = false) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	if active:
@@ -111,7 +119,7 @@ static func make_player_card_style(active: bool, is_danger: bool = false, compac
 		sb.border_width_bottom = 3
 		var glow := COL_DANGER if is_danger else COL_AMBER_GLOW
 		sb.shadow_color = Color(glow.r, glow.g, glow.b, 0.42 if is_danger else 0.34)
-		sb.shadow_size = 12
+		sb.shadow_size = 0 if is_mobile() else 12
 		sb.shadow_offset = Vector2(0, 3)
 	else:
 		sb.bg_color = Color(COL_LEATHER_IDLE.r, COL_LEATHER_IDLE.g, COL_LEATHER_IDLE.b, 0.86)
@@ -119,7 +127,7 @@ static func make_player_card_style(active: bool, is_danger: bool = false, compac
 		sb.set_border_width_all(1)
 		sb.border_width_bottom = 2
 		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
-		sb.shadow_size = 5
+		sb.shadow_size = 0 if is_mobile() else 5
 		sb.shadow_offset = Vector2(0, 2)
 	sb.set_corner_radius_all(14 if compact else 16)
 	sb.content_margin_left = 8 if compact else 10
@@ -136,7 +144,7 @@ static func make_disabled_card_style(compact: bool = false) -> StyleBoxFlat:
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(14 if compact else 16)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.16)
-	sb.shadow_size = 3
+	sb.shadow_size = 0 if is_mobile() else 3
 	sb.content_margin_left = 8 if compact else 10
 	sb.content_margin_right = 8 if compact else 10
 	sb.content_margin_top = 5 if compact else 6
@@ -221,7 +229,7 @@ static func make_turn_toast_style() -> StyleBoxFlat:
 	sb.border_width_bottom = 2
 	sb.set_corner_radius_all(16)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
-	sb.shadow_size = 8
+	sb.shadow_size = 0 if is_mobile() else 8
 	sb.shadow_offset = Vector2(0, 3)
 	sb.content_margin_left = 18
 	sb.content_margin_right = 18
@@ -249,7 +257,7 @@ static func make_floating_btn_style(state: String = "normal", active_highlight: 
 	sb.border_width_bottom = 3
 	sb.set_corner_radius_all(15)
 	sb.shadow_color = Color(COL_AMBER_GLOW.r, COL_AMBER_GLOW.g, COL_AMBER_GLOW.b, 0.34) if active_highlight else Color(0.0, 0.0, 0.0, 0.45)
-	sb.shadow_size = 8 if active_highlight else 6
+	sb.shadow_size = 0 if is_mobile() else (8 if active_highlight else 6)
 	sb.shadow_offset = Vector2(0, 3)
 	sb.content_margin_left = 8
 	sb.content_margin_right = 8
@@ -290,7 +298,7 @@ static func make_rail_btn_style(state: String = "normal", active_highlight: bool
 	sb.border_width_bottom = 2
 	sb.set_corner_radius_all(13)
 	sb.shadow_color = Color(COL_AMBER_GLOW.r, COL_AMBER_GLOW.g, COL_AMBER_GLOW.b, 0.30) if active_highlight else Color(0.0, 0.0, 0.0, 0.34)
-	sb.shadow_size = 6 if active_highlight else 4
+	sb.shadow_size = 0 if is_mobile() else (6 if active_highlight else 4)
 	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 6
 	sb.content_margin_right = 6
@@ -320,7 +328,7 @@ static func make_popover_panel_style() -> StyleBoxFlat:
 	sb.border_width_bottom = 3
 	sb.set_corner_radius_all(18)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.62)
-	sb.shadow_size = 14
+	sb.shadow_size = 0 if is_mobile() else 14
 	sb.shadow_offset = Vector2(0, 6)
 	sb.content_margin_left = 10
 	sb.content_margin_right = 10
@@ -415,7 +423,7 @@ static func make_emote_bubble_style(is_kori: bool = true) -> StyleBoxFlat:
 	sb.border_width_bottom = 2
 	sb.set_corner_radius_all(14 if is_kori else 22)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.58)
-	sb.shadow_size = 8 if is_kori else 12
+	sb.shadow_size = 0 if is_mobile() else (8 if is_kori else 12)
 	sb.shadow_offset = Vector2(0, 3)
 	sb.content_margin_left = 12 if is_kori else 8
 	sb.content_margin_right = 12 if is_kori else 8
@@ -471,7 +479,7 @@ static func make_pod_style(active: bool, is_danger: bool = false, radius: int = 
 		sb.border_width_bottom = 3
 		var glow := COL_DANGER if is_danger else COL_AMBER_GLOW
 		sb.shadow_color = Color(glow.r, glow.g, glow.b, 0.44 if is_danger else 0.36)
-		sb.shadow_size = 10
+		sb.shadow_size = 0 if is_mobile() else 10
 		sb.shadow_offset = Vector2(0, 3)
 	else:
 		sb.bg_color = Color(COL_LEATHER_IDLE.r, COL_LEATHER_IDLE.g, COL_LEATHER_IDLE.b, 0.88)
@@ -479,7 +487,7 @@ static func make_pod_style(active: bool, is_danger: bool = false, radius: int = 
 		sb.set_border_width_all(1)
 		sb.border_width_bottom = 2
 		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
-		sb.shadow_size = 5
+		sb.shadow_size = 0 if is_mobile() else 5
 		sb.shadow_offset = Vector2(0, 2)
 	sb.set_corner_radius_all(radius)
 	sb.content_margin_left = pad_h
@@ -496,7 +504,7 @@ static func make_spectator_pill_style() -> StyleBoxFlat:
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(11)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.35)
-	sb.shadow_size = 4
+	sb.shadow_size = 0 if is_mobile() else 4
 	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 7
 	sb.content_margin_right = 7
@@ -520,7 +528,7 @@ static func make_local_turn_bar_fill_style(is_danger: bool = false) -> StyleBoxF
 	sb.bg_color = col
 	sb.set_corner_radius_all(2)
 	sb.shadow_color = Color(col.r, col.g, col.b, 0.55)
-	sb.shadow_size = 6
+	sb.shadow_size = 0 if is_mobile() else 6
 	return sb
 
 
@@ -532,7 +540,7 @@ static func make_local_turn_pill_style(is_danger: bool = false) -> StyleBoxFlat:
 	sb.border_width_bottom = 2
 	sb.set_corner_radius_all(13)
 	sb.shadow_color = Color(COL_AMBER_GLOW.r, COL_AMBER_GLOW.g, COL_AMBER_GLOW.b, 0.28)
-	sb.shadow_size = 8
+	sb.shadow_size = 0 if is_mobile() else 8
 	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 14
 	sb.content_margin_right = 14

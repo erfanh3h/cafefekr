@@ -1428,6 +1428,9 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 # Input, Raycasting & Hold-to-Flag Detection
 # ==============================================================================
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	var now = Time.get_ticks_msec() / 1000.0
 
 	# 1. Animate 3D waving royal pennant flags on flagged cells
@@ -1442,7 +1445,7 @@ func _process(delta: float) -> void:
 
 	# 2. Spawn continuous smoldering smoke puffs from exploded bomb craters
 	_smoke_spawn_accum += delta
-	if _smoke_spawn_accum >= 0.25:
+	if not GameManager.is_mobile and _smoke_spawn_accum >= 0.25:
 		_smoke_spawn_accum = 0.0
 		for i in range(TOTAL_CELLS):
 			if cell_state[i] == STATE_MINE_HIT:

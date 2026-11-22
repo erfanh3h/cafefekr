@@ -106,6 +106,10 @@ func _make_parlor_inner_inlay_style() -> StyleBoxFlat:
 	return sb
 
 
+func _is_mobile() -> bool:
+	return GameManager.is_mobile
+
+
 func _make_header_crown_style() -> StyleBoxFlat:
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.bg_color = Color(0.165, 0.100, 0.056, 0.97)
@@ -119,7 +123,7 @@ func _make_header_crown_style() -> StyleBoxFlat:
 	sb.corner_radius_bottom_left = 14
 	sb.corner_radius_bottom_right = 14
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.34)
-	sb.shadow_size = 6
+	sb.shadow_size = 0 if _is_mobile() else 6
 	sb.shadow_offset = Vector2(0, 3)
 	sb.content_margin_left = 12.0
 	sb.content_margin_right = 12.0
@@ -657,7 +661,7 @@ func _render_clan_card(clan_id: String, clan_d: Dictionary) -> void:
 	c_sb.content_margin_top = 12.0
 	c_sb.content_margin_bottom = 12.0
 	c_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.36)
-	c_sb.shadow_size = 6
+	c_sb.shadow_size = 0 if _is_mobile() else 6
 	c_sb.shadow_offset = Vector2(0, 3)
 	c_card.add_theme_stylebox_override("panel", c_sb)
 	_body_vbox.add_child(c_card)
@@ -815,7 +819,7 @@ func _build_profile_kpi_summary_card(
 	sb.content_margin_top = 12.0
 	sb.content_margin_bottom = 12.0
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.40)
-	sb.shadow_size = 6
+	sb.shadow_size = 0 if _is_mobile() else 6
 	sb.shadow_offset = Vector2(0, 3)
 	card.add_theme_stylebox_override("panel", sb)
 

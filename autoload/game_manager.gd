@@ -18,6 +18,7 @@ var token: String = ""
 var user_data: Dictionary = {}
 var is_logged_in: bool = false
 var is_guest: bool = false
+var is_mobile: bool = false
 
 # Server Configuration & Versioning
 var server_config: Dictionary = {}
@@ -281,6 +282,7 @@ func get_player_not_played_turns(gamer_id: int) -> int:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	is_mobile = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or (OS.get_name() in ["Android", "iOS"])
 	get_tree().set_quit_on_go_back(false)
 	_load_or_create_device_id()
 	_load_saved_session_on_boot()

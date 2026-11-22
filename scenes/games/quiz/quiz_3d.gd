@@ -138,6 +138,9 @@ func _exit_tree() -> void:
 	super._exit_tree()
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_anim_time += delta * 2.8
 	if is_instance_valid(center_medallion):
 		center_medallion.rotate_y(delta * (1.5 if is_in_reveal_phase else 0.45))

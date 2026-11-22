@@ -123,6 +123,7 @@ func _ready() -> void:
 		if v_sb:
 			v_sb.custom_minimum_size = Vector2(12, 0)
 	_connect_network_signals()
+	set_process(false)
 
 var _last_timer_sec: int = -1
 var _last_dc_sec: int = -1
@@ -180,7 +181,7 @@ func _connect_network_signals() -> void:
 # ==============================================================================
 
 func _is_mobile() -> bool:
-	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	return GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
 func open(p_pre_game_id: String, queuers: Array) -> void:
 	set_process(true)

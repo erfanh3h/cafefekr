@@ -181,6 +181,9 @@ func _on_pentago_socket_event(_ns: String, event_name: String, data: Variant) ->
 		on_peace_rotated(payload)
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_pulse_time += delta
 	var pulse_fast: float = 1.0 + 0.08 * sin(_pulse_time * 6.0)
 	var pulse_rot: float = 1.0 + 0.07 * sin(_pulse_time * 5.2)

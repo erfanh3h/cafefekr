@@ -165,7 +165,7 @@ const CHAIR_STYLE_COUNT: int = 4
 
 func _ready() -> void:
 	add_to_group("cafe_table")
-	_is_mobile_gpu = OS.has_feature("mobile") or (OS.get_name() in ["Android", "iOS"])
+	_is_mobile_gpu = GameManager.is_mobile or OS.has_feature("mobile") or (OS.get_name() in ["Android", "iOS"])
 	if camera:
 		camera.fov = 54.0
 
@@ -223,7 +223,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if not visible:
+	if not visible or not is_inside_tree():
 		return
 	if _mouse_pressed and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_mouse_pressed = false

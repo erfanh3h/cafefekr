@@ -116,6 +116,10 @@ func _ready() -> void:
 	_update_selected_preview()
 
 
+func _is_mobile() -> bool:
+	return GameManager.is_mobile
+
+
 func _setup_styles() -> void:
 	# Subtle antique walnut card pedestal for unselected games
 	_style_card_normal = StyleBoxFlat.new()
@@ -124,7 +128,7 @@ func _setup_styles() -> void:
 	_style_card_normal.set_border_width_all(1)
 	_style_card_normal.border_color = Color(0.56, 0.42, 0.22, 0.65)
 	_style_card_normal.shadow_color = Color(0.0, 0.0, 0.0, 0.34)
-	_style_card_normal.shadow_size = 5
+	_style_card_normal.shadow_size = 0 if _is_mobile() else 5
 	_style_card_normal.shadow_offset = Vector2(0, 2)
 
 	# Hover style
@@ -134,7 +138,7 @@ func _setup_styles() -> void:
 	_style_card_hover.set_border_width_all(2)
 	_style_card_hover.border_color = Color(0.95, 0.80, 0.38, 0.92)
 	_style_card_hover.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
-	_style_card_hover.shadow_size = 6
+	_style_card_hover.shadow_size = 0 if _is_mobile() else 6
 	_style_card_hover.shadow_offset = Vector2(0, 3)
 
 	# Selected style with crisp golden border & luminous glow
@@ -144,7 +148,7 @@ func _setup_styles() -> void:
 	_style_card_selected.set_border_width_all(3)
 	_style_card_selected.border_color = Color(1.0, 0.86, 0.32, 1.0)
 	_style_card_selected.shadow_color = Color(1.0, 0.82, 0.22, 0.45)
-	_style_card_selected.shadow_size = 10
+	_style_card_selected.shadow_size = 0 if _is_mobile() else 10
 	_style_card_selected.shadow_offset = Vector2(0, 2)
 
 
@@ -160,7 +164,7 @@ func _style_start_button() -> void:
 	sb_norm.border_width_bottom = 3
 	sb_norm.set_corner_radius_all(16)
 	sb_norm.shadow_color = Color(0.0, 0.0, 0.0, 0.50)
-	sb_norm.shadow_size = 8
+	sb_norm.shadow_size = 0 if _is_mobile() else 8
 	sb_norm.shadow_offset = Vector2(0, 4)
 	sb_norm.content_margin_left = 18.0
 	sb_norm.content_margin_right = 18.0
@@ -464,7 +468,7 @@ func _create_game_card(g_type: String, initial_h: float = 250.0) -> Control:
 	badge_sb.content_margin_top = 5.0
 	badge_sb.content_margin_bottom = 5.0
 	badge_sb.shadow_color = Color(0, 0, 0, 0.45)
-	badge_sb.shadow_size = 4
+	badge_sb.shadow_size = 0 if _is_mobile() else 4
 	sel_badge.add_theme_stylebox_override("panel", badge_sb)
 	sel_badge.visible = is_selected
 

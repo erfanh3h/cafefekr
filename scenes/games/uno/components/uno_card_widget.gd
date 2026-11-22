@@ -119,7 +119,7 @@ func _build_ui() -> void:
 	_play_badge.add_theme_font_override("font", FontHekayat)
 	_play_badge.add_theme_font_size_override("font_size", maxi(14, int(roundf(17.0 * sc))))
 	_play_badge.add_theme_color_override("font_color", Color(0.04, 0.14, 0.07))
-	var is_mobile: bool = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	var is_mobile: bool = GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	var pb_style: StyleBoxFlat = StyleBoxFlat.new()
 	pb_style.bg_color = Color(0.32, 0.96, 0.56)
 	pb_style.border_color = Color.WHITE
@@ -308,7 +308,7 @@ func _apply_visual_state(animate: bool) -> void:
 	var target_rot: float = fan_angle_deg
 	var target_z: int = 0
 
-	var is_mobile: bool = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	var is_mobile: bool = GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 	if is_selected:
 		target_y = -4.0
 		target_scale = Vector2(1.10, 1.10)

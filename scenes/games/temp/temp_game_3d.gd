@@ -15,6 +15,9 @@ func _ready() -> void:
 	super._ready()
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_anim_time += delta * 1.8
 	if is_instance_valid(_stand):
 		_stand.position.y = 0.03 + sin(_anim_time) * 0.005

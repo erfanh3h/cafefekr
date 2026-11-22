@@ -258,7 +258,7 @@ func _make_match_card_style(bg: Color, border: Color, stripe_w: int, shadow_col:
 	sb.border_width_right = stripe_w
 	sb.set_corner_radius_all(16)
 	sb.shadow_color = shadow_col
-	sb.shadow_size = 7
+	sb.shadow_size = 0 if GameManager.is_mobile else 7
 	sb.shadow_offset = Vector2(0, 3)
 	sb.content_margin_left = 12.0
 	sb.content_margin_right = 14.0
@@ -1303,7 +1303,7 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 	hero_sb.content_margin_top = 14.0
 	hero_sb.content_margin_bottom = 14.0
 	hero_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
-	hero_sb.shadow_size = 6
+	hero_sb.shadow_size = 0 if GameManager.is_mobile else 6
 	hero_sb.shadow_offset = Vector2(0, 3)
 	hero_card.add_theme_stylebox_override("panel", hero_sb)
 	holder.add_child(hero_card)

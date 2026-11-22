@@ -43,6 +43,9 @@ func _ready() -> void:
 	_build_tabletop()
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_anim_time += delta
 
 	if is_instance_valid(_phase_crystal):

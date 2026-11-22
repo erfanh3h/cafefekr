@@ -802,6 +802,9 @@ func _is_start_dialog_open() -> bool:
 	return false
 
 func _process(_delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	var current_start_open = _is_start_dialog_open()
 	if _last_start_dialog_open != current_start_open or _last_game_active != GameManager.is_game_active:
 		_last_start_dialog_open = current_start_open

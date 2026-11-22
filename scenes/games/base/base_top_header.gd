@@ -810,7 +810,7 @@ func _apply_turn_bar_colors(turn: int, is_danger: bool) -> void:
 		sb_pill.set_border_width_all(1)
 		sb_pill.set_corner_radius_all(10)
 		sb_pill.shadow_color = Color(0, 0, 0, 0.4)
-		sb_pill.shadow_size = 3
+		sb_pill.shadow_size = 0 if GameManager.is_mobile else 3
 		local_turn_pill.add_theme_stylebox_override("panel", sb_pill)
 
 
@@ -1032,7 +1032,7 @@ func _spawn_floating_reaction(is_opponent: bool, reaction_id: int, spawn_pos: Ve
 	bubble_style.set_border_width_all(2)
 	bubble_style.border_width_bottom = 2
 	bubble_style.shadow_color = Color(0, 0, 0, 0.60)
-	bubble_style.shadow_size = 14 if not is_opponent else (8 if is_kori else 12)
+	bubble_style.shadow_size = 0 if GameManager.is_mobile else (14 if not is_opponent else (8 if is_kori else 12))
 	bubble_style.shadow_offset = Vector2(0, 4 if not is_opponent else 3)
 
 	if not is_opponent:

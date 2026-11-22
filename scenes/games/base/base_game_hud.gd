@@ -625,38 +625,41 @@ func _ready() -> void:
 
 	turn_timer_bar.value = 100.0
 
+	if _is_mobile():
+		var drawer_card: Control = game_menu_drawer.get_node_or_null("Card") if is_instance_valid(game_menu_drawer) else null
+		var panels_to_strip = [drawer_card, camera_popover, intro_card, surrender_card, pause_card]
+		for p in panels_to_strip:
+			if is_instance_valid(p) and p is PanelContainer:
+				var sb = p.get_theme_stylebox("panel")
+				if sb is StyleBoxFlat:
+					sb.shadow_size = 0
 
+
+
+func _is_mobile() -> bool:
+	return GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
 func _process(delta: float) -> void:
-
-	if is_pause_active:
-
-		pause_time_left = max(0.0, pause_time_left - delta)
-
-		var p_sec = int(ceil(pause_time_left))
-
-		if p_sec != _last_pause_sec_ticked:
-
-			_last_pause_sec_ticked = p_sec
-
-			lbl_pause_countdown.text = "⏳ مهلت بازگشت به بازی: %d ثانیه" % p_sec
-
-		if pause_total_time > 0:
-
-			pause_timer_bar.value = (pause_time_left / pause_total_time) * 100.0
-
-
-
-	if is_game_finished or is_round_finished or (round_finish_banner and round_finish_banner.visible):
-
+	if not visible:
 		return
 
+	if not is_pause_active and not (is_timer_active and is_game_started and not is_round_finished):
+		return
 
+	if is_pause_active:
+		pause_time_left = max(0.0, pause_time_left - delta)
+		var p_sec = int(ceil(pause_time_left))
+		if p_sec != _last_pause_sec_ticked:
+			_last_pause_sec_ticked = p_sec
+			lbl_pause_countdown.text = "⏳ مهلت بازگشت به بازی: %d ثانیه" % p_sec
+		if pause_total_time > 0:
+			pause_timer_bar.value = (pause_time_left / pause_total_time) * 100.0
+
+	if is_game_finished or is_round_finished or (round_finish_banner and round_finish_banner.visible):
+		return
 
 	if is_timer_active and is_game_started and not is_pause_active and not is_round_finished:
-
 		turn_time_left = max(0.0, turn_time_left - delta)
-
 		var sec = int(ceil(turn_time_left))
 
 		if is_instance_valid(current_top_header):
@@ -691,7 +694,7 @@ func _setup_card_styles() -> void:
 
 	_style_p1_active.shadow_color = Color(1.0, 0.2, 0.25, 0.7)
 
-	_style_p1_active.shadow_size = 18
+	_style_p1_active.shadow_size = 0 if _is_mobile() else 18
 
 	_style_p1_active.shadow_offset = Vector2(0, 4)
 
@@ -745,7 +748,7 @@ func _setup_card_styles() -> void:
 
 	_style_p2_active.shadow_color = Color(0.2, 0.6, 1.0, 0.7)
 
-	_style_p2_active.shadow_size = 18
+	_style_p2_active.shadow_size = 0 if _is_mobile() else 18
 
 	_style_p2_active.shadow_offset = Vector2(0, 4)
 
@@ -815,7 +818,7 @@ func _setup_card_styles() -> void:
 
 	_dot_style_warning.shadow_color = Color(1.0, 0.65, 0.1, 0.6)
 
-	_dot_style_warning.shadow_size = 4
+	_dot_style_warning.shadow_size = 0 if _is_mobile() else 4
 
 
 
@@ -831,7 +834,7 @@ func _setup_card_styles() -> void:
 
 	_dot_style_danger.shadow_color = Color(1.0, 0.15, 0.2, 0.85)
 
-	_dot_style_danger.shadow_size = 6
+	_dot_style_danger.shadow_size = 0 if _is_mobile() else 6
 
 
 
@@ -1944,6 +1947,15 @@ func show_match_loading(status_text: String = "در حال آماده‌سازی
 		lbl_timer.text = ""
 		lbl_timer.visible = false
 	turn_timer_bar.value = 100.0
+
+	if _is_mobile():
+		var drawer_card: Control = game_menu_drawer.get_node_or_null("Card") if is_instance_valid(game_menu_drawer) else null
+		var panels_to_strip = [drawer_card, camera_popover, intro_card, surrender_card, pause_card]
+		for p in panels_to_strip:
+			if is_instance_valid(p) and p is PanelContainer:
+				var sb = p.get_theme_stylebox("panel")
+				if sb is StyleBoxFlat:
+					sb.shadow_size = 0
 
 	_clamp_intro_card_size()
 	intro_status_lbl.text = status_text
@@ -3211,7 +3223,7 @@ func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color
 	normal_sb.set_border_width_all(bw)
 	normal_sb.set_corner_radius_all(14)
 	normal_sb.shadow_color = Color(0, 0, 0, 0.45)
-	normal_sb.shadow_size = 4
+	normal_sb.shadow_size = 0 if _is_mobile() else 4
 	normal_sb.content_margin_left = 10
 	normal_sb.content_margin_right = 10
 	normal_sb.content_margin_top = 6

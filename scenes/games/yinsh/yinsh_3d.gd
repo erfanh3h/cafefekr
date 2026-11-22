@@ -207,6 +207,9 @@ func _on_yinsh_socket_event(_ns: String, event_name: String, data: Variant) -> v
 			on_select_remove_peace(rem_id)
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_pulse_time += delta
 	var pulse_fast = 1.0 + 0.08 * sin(_pulse_time * 5.5)
 	var pulse_slow = 1.0 + 0.05 * sin(_pulse_time * 3.8)

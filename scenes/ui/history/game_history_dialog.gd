@@ -313,7 +313,7 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	style_normal.content_margin_right = 18
 	style_normal.content_margin_top = 10
 	style_normal.content_margin_bottom = 10
-	style_normal.shadow_size = 14
+	style_normal.shadow_size = 0 if GameManager.is_mobile else 14
 	style_normal.shadow_offset = Vector2(0, 3)
 	
 	var style_hover = StyleBoxFlat.new()
@@ -324,7 +324,7 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 	style_hover.content_margin_right = 18
 	style_hover.content_margin_top = 10
 	style_hover.content_margin_bottom = 10
-	style_hover.shadow_size = 18
+	style_hover.shadow_size = 0 if GameManager.is_mobile else 18
 	style_hover.shadow_offset = Vector2(0, 4)
 	
 	if my_res == "win":

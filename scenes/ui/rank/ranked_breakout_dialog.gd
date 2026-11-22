@@ -53,7 +53,7 @@ var _rewards_cards_row: HBoxContainer = null
 var _my_current_rating: int = 1000
 
 func _is_mobile() -> bool:
-	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	return GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
 func _ready() -> void:
 	visible = false
@@ -136,6 +136,7 @@ func _setup_rtl_game_rows_and_scroll() -> void:
 		_rewards_cards_row.visible = false
 		fin_vbox.add_child(_rewards_cards_row)
 		fin_vbox.move_child(_rewards_cards_row, finished_xp_label.get_index() + 1)
+	set_process(false)
 
 func _process(delta: float) -> void:
 	if not visible or _is_dismissing or not _timer_running:

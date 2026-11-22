@@ -51,7 +51,7 @@ var _accept_bar_tween: Tween = null
 
 
 func _is_mobile() -> bool:
-	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	return GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
 
 static func _fa_digits(val: Variant) -> String:

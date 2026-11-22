@@ -263,6 +263,11 @@ static func _get_my_clan_id(host: Control) -> String:
 
 
 static func _is_mobile_platform() -> bool:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree and tree.root and tree.root.has_node("GameManager"):
+		var gm = tree.root.get_node("GameManager")
+		if gm and "is_mobile" in gm:
+			return bool(gm.is_mobile)
 	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
 

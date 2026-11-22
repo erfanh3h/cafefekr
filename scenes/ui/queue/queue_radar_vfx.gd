@@ -20,7 +20,7 @@ var _burst_color: Color = Color(0.30, 0.96, 0.56, 1.0)
 var _motes: Array[Dictionary] = []
 
 func _is_mobile() -> bool:
-	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	return GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

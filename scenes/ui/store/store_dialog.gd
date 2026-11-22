@@ -129,13 +129,13 @@ func _apply_card_style(card: PanelContainer, is_selected: bool) -> void:
 		style.border_color = Color(1.0, 0.85, 0.3, 1.0)
 		style.set_border_width_all(3)
 		style.shadow_color = Color(1.0, 0.8, 0.2, 0.35)
-		style.shadow_size = 8
+		style.shadow_size = 0 if GameManager.is_mobile else 8
 	else:
 		style.bg_color = Color(0.14, 0.09, 0.06, 0.85)
 		style.border_color = Color(0.42, 0.32, 0.2, 0.7)
 		style.set_border_width_all(2)
 		style.shadow_color = Color(0, 0, 0, 0.4)
-		style.shadow_size = 4
+		style.shadow_size = 0 if GameManager.is_mobile else 4
 	style.set_corner_radius_all(16)
 	style.content_margin_left = 8
 	style.content_margin_right = 8

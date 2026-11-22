@@ -70,6 +70,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_pulse_time += delta * 3.6
 	var s_pulse: float = 1.0 + 0.08 * sin(_pulse_time)
 	if is_instance_valid(_dice_halo_ring) and _dice_halo_ring.visible:

@@ -112,6 +112,9 @@ func _ready() -> void:
 	super._ready()
 
 func _process(delta: float) -> void:
+	if not visible or not is_inside_tree():
+		return
+
 	_pulse_time += delta
 	var pulse_scale = 1.0 + 0.065 * sin(_pulse_time * 5.2)
 	var arrow_bob = 0.004 * sin(_pulse_time * 6.5)
