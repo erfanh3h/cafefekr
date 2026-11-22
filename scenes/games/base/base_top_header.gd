@@ -125,7 +125,8 @@ const KORIS: Array[String] = [
 @onready var lbl_match_meta: Label = $Margin/VBoxMain/MatchMetaRibbon/LblMatchMeta
 
 @onready var local_turn_bar_wrap: MarginContainer = $Margin/VBoxMain/LocalTurnBarWrap
-@onready var local_turn_bar: ProgressBar = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnProgressBar
+@onready var timer_bar_frame: Control = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame
+@onready var local_turn_bar: ProgressBar = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame/LocalTurnProgressBar
 @onready var local_turn_pill: PanelContainer = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill
 @onready var lbl_local_turn: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill/LblLocalTurn
 
@@ -213,6 +214,8 @@ var _turn_toast_seq: int = 0
 var _turn_toast_tween: Tween = null
 var _turn_toast_persistent: bool = false
 var _bottom_glow_tween: Tween = null
+var _last_timer_ratio: float = 1.0
+var _last_timer_fill_key: String = ""
 
 static var _pod_scene: PackedScene = preload(POD_SCENE_PATH)
 static var _avatar_cache: Dictionary = {}
@@ -279,6 +282,9 @@ func _ready() -> void:
 		NetworkManager.spectator_count_updated.connect(_on_spectator_count_updated)
 	if not GameManager.chat_and_stickers_toggled.is_connected(_on_chat_and_stickers_toggled):
 		GameManager.chat_and_stickers_toggled.connect(_on_chat_and_stickers_toggled)
+	if is_instance_valid(local_turn_bar_wrap) and not local_turn_bar_wrap.resized.is_connected(_sync_timer_bar_layout):
+		local_turn_bar_wrap.resized.connect(_sync_timer_bar_layout)
+	call_deferred("_sync_timer_bar_layout")
 	set_chat_and_stickers_enabled(not GameManager.chat_and_stickers_disabled)
 	update_spectator_count(GameManager.spectator_count)
 
@@ -317,13 +323,31 @@ func _apply_safe_area_insets() -> void:
 
 
 func _get_current_header_height() -> float:
-	var bar_h: float = 46.0 if (is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible) else 0.0
+	var bar_h: float = 0.0
+	if is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible:
+		var frame_h: float = timer_bar_frame.custom_minimum_size.y if is_instance_valid(timer_bar_frame) else 50.0
+		bar_h = frame_h + 32.0
 	var meta_h: float = 28.0 if (is_instance_valid(match_meta_ribbon) and match_meta_ribbon.visible) else 0.0
 	var has_below: bool = (is_instance_valid(penalty_details_box) and penalty_details_box.visible) or (is_instance_valid(match_result_box) and match_result_box.visible)
 	var below_h: float = 38.0 if has_below else 0.0
 	var row_h: float = 58.0 if _total_players <= 2 else 86.0
 	var padding: float = 8.0
 	return float(_safe_top_inset) + row_h + bar_h + meta_h + below_h + padding
+
+
+func _sync_timer_bar_layout() -> void:
+	if not is_instance_valid(local_turn_bar_wrap) or not is_instance_valid(timer_bar_frame):
+		return
+	var avail_w: float = local_turn_bar_wrap.size.x - 12.0
+	if avail_w <= 1.0:
+		avail_w = 480.0
+	var target_w: float = clampf(avail_w * 0.56, 224.0, 278.0)
+	var target_h: float = clampf(round(target_w / HudTheme.TIMER_BAR_ASPECT), 42.0, 52.0)
+	target_w = round(target_h * HudTheme.TIMER_BAR_ASPECT)
+	if not timer_bar_frame.custom_minimum_size.is_equal_approx(Vector2(target_w, target_h)):
+		timer_bar_frame.custom_minimum_size = Vector2(target_w, target_h)
+		_last_timer_fill_key = ""
+		_sync_header_height()
 
 
 func _sync_header_height() -> void:
@@ -831,10 +855,14 @@ func _apply_turn_bar_colors(turn: int, is_danger: bool) -> void:
 		fill_color = _get_player_color_for_turn(turn)
 
 	if is_instance_valid(local_turn_bar):
-		var sb_fill := StyleBoxFlat.new()
-		sb_fill.bg_color = fill_color
-		sb_fill.set_corner_radius_all(2)
-		local_turn_bar.add_theme_stylebox_override("fill", sb_fill)
+		var frame_sz: Vector2 = timer_bar_frame.custom_minimum_size if is_instance_valid(timer_bar_frame) else Vector2(268.0, 50.0)
+		var trough_w: float = frame_sz.x * HudTheme.TIMER_TROUGH_WIDTH_RATIO
+		var trough_h: float = frame_sz.y * HudTheme.TIMER_TROUGH_HEIGHT_RATIO
+		var ratio_bucket: int = 0 if _last_timer_ratio <= 0.002 else (1 if _last_timer_ratio < 0.08 else 2)
+		var fill_key: String = "%s|%d|%d|%d" % [fill_color.to_html(false), int(is_danger), int(round(trough_h)), ratio_bucket]
+		if fill_key != _last_timer_fill_key:
+			_last_timer_fill_key = fill_key
+			local_turn_bar.add_theme_stylebox_override("fill", HudTheme.make_local_turn_bar_fill_style(is_danger, fill_color, trough_w, trough_h, _last_timer_ratio))
 
 	if is_instance_valid(turn_timer_bar):
 		var sb_timer_fill := StyleBoxFlat.new()
@@ -894,6 +922,10 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 			var opp_name := str(_player_names.get(turn, "بازیکن %d" % turn))
 			lbl_local_turn.text = "نوبت %s" % opp_name
 
+	_last_timer_ratio = 1.0
+	_last_timer_fill_key = ""
+	if is_instance_valid(local_turn_bar):
+		local_turn_bar.value = 100.0
 	_apply_turn_bar_colors(turn, false)
 
 	# Bottom edge glow only pulses for local player's turn
@@ -920,8 +952,10 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 
 
 func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
-	var pct := clampf((remaining_sec / maxf(1.0, total_sec)) * 100.0, 0.0, 100.0)
+	var ratio := clampf(remaining_sec / maxf(1.0, total_sec), 0.0, 1.0)
+	var pct := ratio * 100.0
 	var is_danger := (remaining_sec <= 4.0 and remaining_sec > 0.0)
+	_last_timer_ratio = ratio
 
 	# Universal Turn Bar progress for all players
 	if is_instance_valid(local_turn_bar_wrap):

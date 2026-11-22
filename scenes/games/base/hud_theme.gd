@@ -513,22 +513,40 @@ static func make_spectator_pill_style() -> StyleBoxFlat:
 	return sb
 
 
-static func make_local_turn_bar_track_style() -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.09, 0.06, 0.04, 0.84)
-	sb.border_color = Color(COL_BRONZE_MUTED.r, COL_BRONZE_MUTED.g, COL_BRONZE_MUTED.b, 0.45)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(2)
-	return sb
+const TIMER_BAR_ASPECT: float = 903.0 / 169.0
+const TIMER_TROUGH_LEFT: float = 0.184
+const TIMER_TROUGH_TOP: float = 0.343
+const TIMER_TROUGH_RIGHT: float = 0.935
+const TIMER_TROUGH_BOTTOM: float = 0.645
+const TIMER_TROUGH_WIDTH_RATIO: float = TIMER_TROUGH_RIGHT - TIMER_TROUGH_LEFT
+const TIMER_TROUGH_HEIGHT_RATIO: float = TIMER_TROUGH_BOTTOM - TIMER_TROUGH_TOP
+
+static func make_local_turn_bar_track_style() -> StyleBox:
+	return StyleBoxEmpty.new()
 
 
-static func make_local_turn_bar_fill_style(is_danger: bool = false) -> StyleBoxFlat:
+static func make_local_turn_bar_fill_style(is_danger: bool = false, custom_color: Color = Color(-1.0, -1.0, -1.0, -1.0), trough_w: float = 200.0, trough_h: float = 16.0, fill_ratio: float = 1.0) -> StyleBox:
+	if fill_ratio <= 0.002:
+		return StyleBoxEmpty.new()
 	var sb := StyleBoxFlat.new()
-	var col := COL_DANGER if is_danger else COL_GOLD_ACTIVE
+	var col: Color
+	if is_danger:
+		col = COL_DANGER
+	elif custom_color.r >= 0.0:
+		col = custom_color
+	else:
+		col = COL_GOLD_ACTIVE
 	sb.bg_color = col
-	sb.set_corner_radius_all(2)
-	sb.shadow_color = Color(col.r, col.g, col.b, 0.55)
-	sb.shadow_size = 0 if is_mobile() else 6
+	sb.border_width_top = 1
+	sb.border_color = Color(1.0, 0.78, 0.78, 0.65) if is_danger else Color(1.0, 0.97, 0.88, 0.58)
+	var pill_r: int = maxi(3, int(round(trough_h * 0.5)))
+	var fill_px: float = maxf(0.0, trough_w * clampf(fill_ratio, 0.0, 1.0))
+	var right_r: int = mini(pill_r, maxi(2, int(round(fill_px * 0.45))))
+	var left_r: int = mini(3, right_r)
+	sb.corner_radius_top_left = left_r
+	sb.corner_radius_bottom_left = left_r
+	sb.corner_radius_top_right = right_r
+	sb.corner_radius_bottom_right = right_r
 	return sb
 
 

@@ -127,7 +127,8 @@ const QUICK_CHATS_EN: Array[String] = [
 @onready var btn_settings: Button = $SafeAreaMargin/MainTopVBox/TopRow/BtnSettings
 
 @onready var local_turn_bar_wrap: MarginContainer = $SafeAreaMargin/MainTopVBox/LocalTurnBarWrap
-@onready var local_turn_bar: ProgressBar = $SafeAreaMargin/MainTopVBox/LocalTurnBarWrap/LocalTurnVBox/LocalTurnProgressBar
+@onready var timer_bar_frame: Control = $SafeAreaMargin/MainTopVBox/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame
+@onready var local_turn_bar: ProgressBar = $SafeAreaMargin/MainTopVBox/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame/LocalTurnProgressBar
 @onready var local_turn_pill: PanelContainer = $SafeAreaMargin/MainTopVBox/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill
 @onready var lbl_local_turn: Label = $SafeAreaMargin/MainTopVBox/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill/LblLocalTurn
 
@@ -191,6 +192,9 @@ func _ready() -> void:
 	bottom_turn_glow.texture = HudTheme.make_bottom_edge_glow_texture()
 	bottom_turn_glow.visible = false
 	local_turn_bar_wrap.visible = false
+	if not local_turn_bar_wrap.resized.is_connected(_sync_timer_bar_layout):
+		local_turn_bar_wrap.resized.connect(_sync_timer_bar_layout)
+	call_deferred("_sync_timer_bar_layout")
 
 	# Default preview payload so the scene renders cleanly standalone
 	setup_hud([
@@ -311,9 +315,23 @@ func _connect_signals() -> void:
 
 func _on_viewport_resized() -> void:
 	_apply_safe_insets()
+	_sync_timer_bar_layout()
 	if picker_popover.visible and not _picker_mode.is_empty():
 		var anchor: Button = btn_chat if _picker_mode == "chat" else btn_emoji
 		_position_picker_downward_inward(anchor)
+
+
+func _sync_timer_bar_layout() -> void:
+	if not is_instance_valid(local_turn_bar_wrap) or not is_instance_valid(timer_bar_frame):
+		return
+	var avail_w: float = local_turn_bar_wrap.size.x - 16.0
+	if avail_w <= 1.0:
+		avail_w = 480.0
+	var target_w: float = clampf(avail_w * 0.56, 224.0, 278.0)
+	var target_h: float = clampf(round(target_w / HudTheme.TIMER_BAR_ASPECT), 42.0, 52.0)
+	target_w = round(target_h * HudTheme.TIMER_BAR_ASPECT)
+	if not timer_bar_frame.custom_minimum_size.is_equal_approx(Vector2(target_w, target_h)):
+		timer_bar_frame.custom_minimum_size = Vector2(target_w, target_h)
 
 
 # --- Public Required API ---
@@ -518,7 +536,7 @@ func _refresh_spectator_and_locale_ui() -> void:
 	set_audio_enabled(_audio_enabled)
 
 
-func _update_local_turn_visuals(_seconds_left: float, _max_seconds: float, is_danger: bool) -> void:
+func _update_local_turn_visuals(seconds_left: float, max_seconds: float, is_danger: bool) -> void:
 	if _is_local_turn:
 		lbl_local_turn.text = "نوبت شما" if _is_fa() else "Your Turn"
 	else:
@@ -529,8 +547,11 @@ func _update_local_turn_visuals(_seconds_left: float, _max_seconds: float, is_da
 				act_name = pod.name_label.text
 		lbl_local_turn.text = ("نوبت %s" % act_name) if _is_fa() else ("%s's Turn" % act_name)
 
-	var fill_color: Color = HudTheme.COL_DANGER if is_danger else HudTheme.COL_GOLD_ACTIVE
-	local_turn_bar.add_theme_stylebox_override("fill", HudTheme.make_local_turn_bar_fill_style(is_danger))
+	var frame_sz: Vector2 = timer_bar_frame.custom_minimum_size if is_instance_valid(timer_bar_frame) else Vector2(268.0, 50.0)
+	var trough_w: float = frame_sz.x * HudTheme.TIMER_TROUGH_WIDTH_RATIO
+	var trough_h: float = frame_sz.y * HudTheme.TIMER_TROUGH_HEIGHT_RATIO
+	var ratio: float = clampf(seconds_left / maxf(1.0, max_seconds), 0.0, 1.0)
+	local_turn_bar.add_theme_stylebox_override("fill", HudTheme.make_local_turn_bar_fill_style(is_danger, Color(-1.0, -1.0, -1.0, -1.0), trough_w, trough_h, ratio))
 	local_turn_pill.add_theme_stylebox_override("panel", HudTheme.make_local_turn_pill_style(is_danger))
 	lbl_local_turn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.84) if is_danger else HudTheme.COL_TEXT_GOLD)
 

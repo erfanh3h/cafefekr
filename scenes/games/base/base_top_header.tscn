@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://basetopheader01"]
+[gd_scene load_steps=26 format=3 uid="uid://basetopheader01"]
 
 [ext_resource type="Script" path="res://scenes/games/base/base_top_header.gd" id="1_header_script"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_font"]
@@ -100,26 +100,16 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_local_bar_bg"]
-bg_color = Color(0.09, 0.06, 0.04, 0.84)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.352941, 0.258824, 0.168627, 0.45)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_local_bar_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_local_bar_fill"]
 bg_color = Color(0.960784, 0.768627, 0.317647, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-shadow_color = Color(0.960784, 0.768627, 0.317647, 0.55)
-shadow_size = 6
+border_width_top = 1
+border_color = Color(1, 0.97, 0.88, 0.58)
+corner_radius_top_left = 3
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_local_pill"]
 content_margin_left = 14.0
@@ -415,16 +405,45 @@ theme_override_constants/margin_right = 6
 [node name="LocalTurnVBox" type="VBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 2
 alignment = 1
 
-[node name="LocalTurnProgressBar" type="ProgressBar" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox"]
-custom_minimum_size = Vector2(0, 4)
+[node name="LocalTurnBarCenter" type="CenterContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_local_bar_bg")
+
+[node name="TimerBarFrame" type="Control" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter"]
+custom_minimum_size = Vector2(268, 50)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="TimerFrameTex" type="TextureRect" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_timer_bar_tex")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="LocalTurnProgressBar" type="ProgressBar" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame"]
+layout_mode = 1
+anchor_left = 0.184
+anchor_top = 0.343
+anchor_right = 0.935
+anchor_bottom = 0.645
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxEmpty_local_bar_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_local_bar_fill")
+step = 0.05
 value = 100.0
 show_percentage = false
 
