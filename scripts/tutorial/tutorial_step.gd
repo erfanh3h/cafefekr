@@ -15,10 +15,16 @@ var interactive_hint: String = "روی بخش مشخص‌شده لمس کنید"
 ## Callable returning either a Control, a Rect2 in viewport coordinates, or null.
 var target_provider: Callable = Callable()
 
+## Optional Callable returning a Control or Rect2 representing an entire region
+## (e.g. the full 3D game board or full top HUD header) that the coach dialog
+## must NEVER overlap when positioning itself.
+var avoid_rect_provider: Callable = Callable()
+
 ## Visual spotlight customization
 var padding: float = 10.0
 var corner_radius: float = 18.0
 var card_placement: String = "auto" # "auto" | "top" | "bottom" | "center"
+var scrim_alpha: float = 0.62
 
 ## Interaction model
 ## - allow_target_passthrough: lets touch/click events inside the spotlight reach the target control / 3D board.
@@ -60,6 +66,16 @@ func with_target(provider: Callable, spot_padding: float = 10.0, radius: float =
 	target_provider = provider
 	padding = spot_padding
 	corner_radius = radius
+	return self
+
+
+func with_avoid_rect(provider: Callable) -> TutorialStep:
+	avoid_rect_provider = provider
+	return self
+
+
+func with_scrim_alpha(alpha: float) -> TutorialStep:
+	scrim_alpha = clampf(alpha, 0.0, 0.90)
 	return self
 
 

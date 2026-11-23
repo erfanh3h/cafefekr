@@ -183,12 +183,14 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	var st_view: TutorialStep = TutorialStep.create(
 		"hud_view_2d3d",
 		"تغییر زاویه دوربین (۳D / ۲D)",
-		"با این دکمه می‌توانید هر زمان که بخواهید نمای میز بازی را بین حالت سه‌بعدی و نمای کاملاً عمودی (دوبعدی) تغییر دهید. همین الان امتحانش کنید!"
+		"با این دکمه می‌توانید هر زمان که بخواهید نمای میز بازی را بین حالت سه‌بعدی و نمای عمودی (دوبعدی) تغییر دهید. همین الان امتحانش کنید!"
 	)
 	st_view.with_badge("دکمه‌های بالای بازی")
 	st_view.with_cta("بعدی")
-	st_view.with_hint("می‌توانید همین الان روی دکمه ۳D/۲D بزنید یا «بعدی» را لمس کنید")
-	st_view.with_target(func(): return _get_top_header_node("btn_view_2d3d"), 10.0, 16.0)
+	st_view.with_hint("همین الان روی دکمه ۳D/۲D بزنید یا «بعدی» را لمس کنید")
+	st_view.with_target(func(): return _get_top_header_node("btn_view_2d3d"), 8.0, 16.0)
+	st_view.with_avoid_rect(_get_game_header_avoid_rect)
+	st_view.with_scrim_alpha(0.56)
 	st_view.with_interactive(false, true)
 	st_view.with_placement("bottom")
 	s.append(st_view)
@@ -201,7 +203,9 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	)
 	st_chat.with_badge("دکمه‌های بالای بازی")
 	st_chat.with_cta("بعدی")
-	st_chat.with_target(func(): return _get_top_header_node("btn_chat"), 10.0, 16.0)
+	st_chat.with_target(func(): return _get_top_header_node("btn_chat"), 8.0, 16.0)
+	st_chat.with_avoid_rect(_get_game_header_avoid_rect)
+	st_chat.with_scrim_alpha(0.56)
 	st_chat.with_placement("bottom")
 	st_chat.with_hooks(_on_enter_chat_step)
 	s.append(st_chat)
@@ -214,7 +218,9 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	)
 	st_emoji.with_badge("دکمه‌های بالای بازی")
 	st_emoji.with_cta("بعدی")
-	st_emoji.with_target(func(): return _get_top_header_node("btn_emoji"), 10.0, 16.0)
+	st_emoji.with_target(func(): return _get_top_header_node("btn_emoji"), 8.0, 16.0)
+	st_emoji.with_avoid_rect(_get_game_header_avoid_rect)
+	st_emoji.with_scrim_alpha(0.56)
 	st_emoji.with_placement("bottom")
 	st_emoji.with_hooks(_on_enter_emoji_step)
 	s.append(st_emoji)
@@ -227,7 +233,9 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	)
 	st_settings.with_badge("دکمه‌های بالای بازی")
 	st_settings.with_cta("بعدی")
-	st_settings.with_target(func(): return _get_top_header_node("btn_settings"), 10.0, 16.0)
+	st_settings.with_target(func(): return _get_top_header_node("btn_settings"), 8.0, 16.0)
+	st_settings.with_avoid_rect(_get_game_header_avoid_rect)
+	st_settings.with_scrim_alpha(0.56)
 	st_settings.with_placement("bottom")
 	s.append(st_settings)
 
@@ -239,7 +247,9 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	)
 	st_timer.with_badge("نوار زمان و نوبت")
 	st_timer.with_cta("بزن بریم بازی!")
-	st_timer.with_target(_get_timer_bar_target, 12.0, 16.0)
+	st_timer.with_target(_get_timer_bar_target, 10.0, 16.0)
+	st_timer.with_avoid_rect(_get_game_header_avoid_rect)
+	st_timer.with_scrim_alpha(0.56)
 	st_timer.with_placement("bottom")
 	st_timer.with_hooks(Callable(), _on_exit_timer_step)
 	s.append(st_timer)
@@ -248,13 +258,15 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	var st_move1: TutorialStep = TutorialStep.create(
 		"play_move_1",
 		"نوبت شماست! حرکت اول",
-		"هدف در بازی دوز این است که ۳ مهره خودتان (X) را در یک خط افقی، عمودی یا مورب ردیف کنید.\nبرای یک شروع قدرتمند، خانه وسط را لمس کنید!"
+		"در بازی دوز باید ۳ مهره خودتان (X) را در یک ردیف افقی، عمودی یا مورب بچینید. برای شروع، خانه وسط را لمس کنید!"
 	)
 	st_move1.with_badge("آموزش بازی دوز")
 	st_move1.with_hint("👆 روی خانه طلایی وسط صفحه لمس کنید")
-	st_move1.with_target(func(): return _get_board_cell_rect(4), 10.0, 20.0)
+	st_move1.with_target(func(): return _get_board_cell_rect(4), 8.0, 18.0)
+	st_move1.with_avoid_rect(_get_board_screen_rect)
+	st_move1.with_scrim_alpha(0.40)
 	st_move1.with_interactive(true, false)
-	st_move1.with_placement("bottom")
+	st_move1.with_placement("auto")
 	st_move1.with_hooks(_on_enter_move_1_step)
 	s.append(st_move1)
 
@@ -351,9 +363,11 @@ func _on_tutorial_bot_moved(_cell_idx: int) -> void:
 		)
 		step2.with_badge("آموزش بازی دوز")
 		step2.with_hint("👆 خانه طلایی مشخص‌شده را لمس کنید")
-		step2.with_target(func(): return _get_board_cell_rect(next_cell), 10.0, 20.0)
+		step2.with_target(func(): return _get_board_cell_rect(next_cell), 8.0, 18.0)
+		step2.with_avoid_rect(_get_board_screen_rect)
+		step2.with_scrim_alpha(0.40)
 		step2.with_interactive(true, false)
-		step2.with_placement("bottom")
+		step2.with_placement("auto")
 
 		_board.tutorial_input_enabled = true
 		_board.set_guided_cells([next_cell])
@@ -369,9 +383,11 @@ func _on_tutorial_bot_moved(_cell_idx: int) -> void:
 		)
 		step3.with_badge("حرکت پیروزی!")
 		step3.with_hint("🏆 روی خانه طلایی بزنید تا برنده شوید!")
-		step3.with_target(func(): return _get_board_cell_rect(win_cell), 10.0, 20.0)
+		step3.with_target(func(): return _get_board_cell_rect(win_cell), 8.0, 18.0)
+		step3.with_avoid_rect(_get_board_screen_rect)
+		step3.with_scrim_alpha(0.40)
 		step3.with_interactive(true, false)
-		step3.with_placement("bottom")
+		step3.with_placement("auto")
 
 		_board.tutorial_input_enabled = true
 		if win_cell >= 0:
@@ -406,9 +422,11 @@ func _on_tutorial_draw_reached() -> void:
 		)
 		retry_step.with_badge("آموزش بازی دوز")
 		retry_step.with_hint("👆 خانه طلایی وسط را لمس کنید")
-		retry_step.with_target(func(): return _get_board_cell_rect(4), 10.0, 20.0)
+		retry_step.with_target(func(): return _get_board_cell_rect(4), 8.0, 18.0)
+		retry_step.with_avoid_rect(_get_board_screen_rect)
+		retry_step.with_scrim_alpha(0.40)
 		retry_step.with_interactive(true, false)
-		retry_step.with_placement("bottom")
+		retry_step.with_placement("auto")
 		_overlay.show_step(retry_step, 6, 9, false)
 	)
 
@@ -643,8 +661,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	st_top_watch.with_badge("دکمه‌های بالای صفحه")
 	st_top_watch.with_cta("بعدی")
 	st_top_watch.with_target(func(): return _get_play_tab_btn("btn_watch_live"), 8.0, 16.0)
+	st_top_watch.with_avoid_rect(_get_play_topbar_avoid_rect)
+	st_top_watch.with_scrim_alpha(0.56)
 	st_top_watch.with_placement("bottom")
-	st_top_watch.with_hooks(func(): _switch_main_tab("play"))
+	st_top_watch.with_hooks(_focus_play_tab_top)
 	s.append(st_top_watch)
 
 	# 8. Top Button: Match History (تاریخچه بازی‌ها)
@@ -656,8 +676,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	st_top_history.with_badge("دکمه‌های بالای صفحه")
 	st_top_history.with_cta("بعدی")
 	st_top_history.with_target(func(): return _get_play_tab_btn("btn_history"), 8.0, 14.0)
+	st_top_history.with_avoid_rect(_get_play_topbar_avoid_rect)
+	st_top_history.with_scrim_alpha(0.56)
 	st_top_history.with_placement("bottom")
-	st_top_history.with_hooks(func(): _switch_main_tab("play"))
+	st_top_history.with_hooks(_focus_play_tab_top)
 	s.append(st_top_history)
 
 	# 9. Top Button: Friends & Direct Messages (دوستان و پیام‌ها)
@@ -669,8 +691,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	st_top_friends.with_badge("دکمه‌های بالای صفحه")
 	st_top_friends.with_cta("بعدی")
 	st_top_friends.with_target(func(): return _get_play_tab_btn("btn_friends"), 8.0, 14.0)
+	st_top_friends.with_avoid_rect(_get_play_topbar_avoid_rect)
+	st_top_friends.with_scrim_alpha(0.56)
 	st_top_friends.with_placement("bottom")
-	st_top_friends.with_hooks(func(): _switch_main_tab("play"))
+	st_top_friends.with_hooks(_focus_play_tab_top)
 	s.append(st_top_friends)
 
 	# 10. Top Button: Notifications (اعلان‌ها)
@@ -682,8 +706,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	st_top_notif.with_badge("دکمه‌های بالای صفحه")
 	st_top_notif.with_cta("بعدی")
 	st_top_notif.with_target(func(): return _get_play_tab_btn("btn_notifications"), 8.0, 14.0)
+	st_top_notif.with_avoid_rect(_get_play_topbar_avoid_rect)
+	st_top_notif.with_scrim_alpha(0.56)
 	st_top_notif.with_placement("bottom")
-	st_top_notif.with_hooks(func(): _switch_main_tab("play"))
+	st_top_notif.with_hooks(_focus_play_tab_top)
 	s.append(st_top_notif)
 
 	# 11. Top Button: Exit (خروج)
@@ -695,8 +721,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	st_top_exit.with_badge("دکمه‌های بالای صفحه")
 	st_top_exit.with_cta("بعدی")
 	st_top_exit.with_target(func(): return _get_play_tab_btn("btn_exit"), 8.0, 14.0)
+	st_top_exit.with_avoid_rect(_get_play_topbar_avoid_rect)
+	st_top_exit.with_scrim_alpha(0.56)
 	st_top_exit.with_placement("bottom")
-	st_top_exit.with_hooks(func(): _switch_main_tab("play"))
+	st_top_exit.with_hooks(_focus_play_tab_top)
 	s.append(st_top_exit)
 
 	# 12. Completion Card
@@ -811,6 +839,52 @@ func _get_board_cell_rect(cell_idx: int) -> Rect2:
 	if not is_instance_valid(_board):
 		return Rect2()
 	return _board.get_cell_screen_rect(cell_idx)
+
+
+func _get_board_screen_rect() -> Rect2:
+	if not is_instance_valid(_board):
+		return Rect2()
+	return _board.get_board_screen_rect()
+
+
+func _get_game_header_avoid_rect() -> Rect2:
+	var combined := Rect2()
+	var top_row: Control = _get_top_header_node("top_row")
+	if is_instance_valid(top_row) and top_row.is_visible_in_tree():
+		combined = top_row.get_global_rect()
+	var timer_wrap: Control = _get_top_header_node("local_turn_bar_wrap")
+	if is_instance_valid(timer_wrap) and timer_wrap.is_visible_in_tree():
+		var tr: Rect2 = timer_wrap.get_global_rect()
+		if tr.size.x > 1.0 and tr.size.y > 1.0:
+			combined = tr if combined.size.x <= 1.0 else combined.merge(tr)
+	return combined
+
+
+func _focus_play_tab_top() -> void:
+	_switch_main_tab("play")
+	if not is_instance_valid(_main_tab_shell):
+		return
+	var play_tab: Control = null
+	if _main_tab_shell.has_method("get_tab_instance"):
+		play_tab = _main_tab_shell.call("get_tab_instance", "play") as Control
+	if is_instance_valid(play_tab):
+		var sc: ScrollContainer = play_tab.get_node_or_null("Scroll") as ScrollContainer
+		if is_instance_valid(sc):
+			sc.scroll_vertical = 0
+
+
+func _get_play_topbar_avoid_rect() -> Rect2:
+	if not is_instance_valid(_main_tab_shell):
+		return Rect2()
+	var play_tab: Control = null
+	if _main_tab_shell.has_method("get_tab_instance"):
+		play_tab = _main_tab_shell.call("get_tab_instance", "play") as Control
+	if not is_instance_valid(play_tab):
+		return Rect2()
+	var top_bar: Control = play_tab.get_node_or_null("Scroll/Content/TopBarRow") as Control
+	if is_instance_valid(top_bar) and top_bar.is_visible_in_tree():
+		return top_bar.get_global_rect()
+	return Rect2()
 
 
 func _switch_main_tab(tab_name: String) -> void:

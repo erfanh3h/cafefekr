@@ -340,6 +340,37 @@ func get_cell_screen_rect(cell_idx: int) -> Rect2:
 	return Rect2(min_p, rect_size)
 
 
+func get_board_screen_rect() -> Rect2:
+	var cam: Camera3D = get_viewport().get_camera_3d()
+	if cam == null or not is_instance_valid(cam):
+		return Rect2()
+
+	var half_extent: float = (board_size * 0.5) + 0.14
+	var base_y: float = global_position.y + 0.04
+	var corners: Array[Vector3] = [
+		global_position + Vector3(-half_extent, base_y - global_position.y, -half_extent),
+		global_position + Vector3(half_extent, base_y - global_position.y, -half_extent),
+		global_position + Vector3(half_extent, base_y - global_position.y, half_extent),
+		global_position + Vector3(-half_extent, base_y - global_position.y, half_extent)
+	]
+
+	var min_p := Vector2(INF, INF)
+	var max_p := Vector2(-INF, -INF)
+	for pt in corners:
+		if cam.is_position_behind(pt):
+			return Rect2()
+		var sp: Vector2 = cam.unproject_position(pt)
+		min_p.x = minf(min_p.x, sp.x)
+		min_p.y = minf(min_p.y, sp.y)
+		max_p.x = maxf(max_p.x, sp.x)
+		max_p.y = maxf(max_p.y, sp.y)
+
+	var sz: Vector2 = max_p - min_p
+	if sz.x <= 10.0 or sz.y <= 10.0:
+		return Rect2()
+	return Rect2(min_p, sz)
+
+
 func reset_tutorial_match() -> void:
 	_match_won = false
 	_bot_thinking = false
