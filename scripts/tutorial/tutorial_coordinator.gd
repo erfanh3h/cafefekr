@@ -169,115 +169,125 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	var s: Array[TutorialStep] = []
 
 	# 1. Welcome modal
-	s.append(
-		TutorialStep.create(
-			"game_welcome",
-			"به کافه فکر خوش آمدید!",
-			"قبل از ورود به حساب کاربری، بیایید در یک دست کوتاه و ساده دوز با تمام دکمه‌های صفحه بازی و روش بازی آشنا شویم."
-		).with_badge("آموزش تعاملی").with_cta("شروع آموزش").with_placement("center")
+	var st_welcome: TutorialStep = TutorialStep.create(
+		"game_welcome",
+		"به کافه فکر خوش آمدید!",
+		"قبل از ورود به حساب کاربری، بیایید در یک دست کوتاه و ساده دوز با تمام دکمه‌های صفحه بازی و روش بازی آشنا شویم."
 	)
+	st_welcome.with_badge("آموزش تعاملی")
+	st_welcome.with_cta("شروع آموزش")
+	st_welcome.with_placement("center")
+	s.append(st_welcome)
 
 	# 2. Top Button: 2D/3D Camera Toggle (interactive!)
-	s.append(
-		TutorialStep.create(
-			"hud_view_2d3d",
-			"تغییر زاویه دوربین (۳D / ۲D)",
-			"با این دکمه می‌توانید هر زمان که بخواهید نمای میز بازی را بین حالت سه‌بعدی و نمای کاملاً عمودی (دوبعدی) تغییر دهید. همین الان امتحانش کنید!"
-		).with_badge("دکمه‌های بالای بازی")
-		.with_cta("بعدی")
-		.with_hint("می‌توانید همین الان روی دکمه ۳D/۲D بزنید یا «بعدی» را لمس کنید")
-		.with_target(func(): return _get_top_header_node("btn_view_2d3d"), 10.0, 16.0)
-		.with_interactive(false, true)
-		.with_placement("bottom")
+	var st_view: TutorialStep = TutorialStep.create(
+		"hud_view_2d3d",
+		"تغییر زاویه دوربین (۳D / ۲D)",
+		"با این دکمه می‌توانید هر زمان که بخواهید نمای میز بازی را بین حالت سه‌بعدی و نمای کاملاً عمودی (دوبعدی) تغییر دهید. همین الان امتحانش کنید!"
 	)
+	st_view.with_badge("دکمه‌های بالای بازی")
+	st_view.with_cta("بعدی")
+	st_view.with_hint("می‌توانید همین الان روی دکمه ۳D/۲D بزنید یا «بعدی» را لمس کنید")
+	st_view.with_target(func(): return _get_top_header_node("btn_view_2d3d"), 10.0, 16.0)
+	st_view.with_interactive(false, true)
+	st_view.with_placement("bottom")
+	s.append(st_view)
 
 	# 3. Top Button: Quick Chat / Kori
-	s.append(
-		TutorialStep.create(
-			"hud_chat",
-			"چت و کُری‌خوانی",
-			"از این دکمه برای ارسال پیام‌های آماده، تشویق یا کُری‌خوانی دوستانه در طول مسابقه استفاده کنید."
-		).with_badge("دکمه‌های بالای بازی")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_top_header_node("btn_chat"), 10.0, 16.0)
-		.with_placement("bottom")
-		.with_hooks(func():
-			if is_instance_valid(_base_game_hud):
-				_base_game_hud.show_toast_hint("💬 نمونه کُری‌خوانی: «عجب حرکت هوشمندانه‌ای بود!»")
-		)
+	var st_chat: TutorialStep = TutorialStep.create(
+		"hud_chat",
+		"چت و کُری‌خوانی",
+		"از این دکمه برای ارسال پیام‌های آماده، تشویق یا کُری‌خوانی دوستانه در طول مسابقه استفاده کنید."
 	)
+	st_chat.with_badge("دکمه‌های بالای بازی")
+	st_chat.with_cta("بعدی")
+	st_chat.with_target(func(): return _get_top_header_node("btn_chat"), 10.0, 16.0)
+	st_chat.with_placement("bottom")
+	st_chat.with_hooks(_on_enter_chat_step)
+	s.append(st_chat)
 
 	# 4. Top Button: Emoji & Stickers
-	s.append(
-		TutorialStep.create(
-			"hud_emoji",
-			"استیکر و واکنش",
-			"با این دکمه می‌توانید استیکرهای جذاب و واکنش‌های لحظه‌ای برای حریف ارسال کنید تا هیجان بازی دوچندان شود."
-		).with_badge("دکمه‌های بالای بازی")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_top_header_node("btn_emoji"), 10.0, 16.0)
-		.with_placement("bottom")
-		.with_hooks(func():
-			if is_instance_valid(_base_game_hud):
-				_base_game_hud.show_reaction(2, 1)
-		)
+	var st_emoji: TutorialStep = TutorialStep.create(
+		"hud_emoji",
+		"استیکر و واکنش",
+		"با این دکمه می‌توانید استیکرهای جذاب و واکنش‌های لحظه‌ای برای حریف ارسال کنید تا هیجان بازی دوچندان شود."
 	)
+	st_emoji.with_badge("دکمه‌های بالای بازی")
+	st_emoji.with_cta("بعدی")
+	st_emoji.with_target(func(): return _get_top_header_node("btn_emoji"), 10.0, 16.0)
+	st_emoji.with_placement("bottom")
+	st_emoji.with_hooks(_on_enter_emoji_step)
+	s.append(st_emoji)
 
 	# 5. Top Button: Settings / Menu Drawer
-	s.append(
-		TutorialStep.create(
-			"hud_settings",
-			"منو و تنظیمات بازی",
-			"در این منو به تنظیمات صدا و موسیقی، خواندن قوانین بازی، غیرفعال‌سازی چت و گزینه انصراف از مسابقه دسترسی دارید."
-		).with_badge("دکمه‌های بالای بازی")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_top_header_node("btn_settings"), 10.0, 16.0)
-		.with_placement("bottom")
+	var st_settings: TutorialStep = TutorialStep.create(
+		"hud_settings",
+		"منو و تنظیمات بازی",
+		"در این منو به تنظیمات صدا و موسیقی، خواندن قوانین بازی، غیرفعال‌سازی چت و گزینه انصراف از مسابقه دسترسی دارید."
 	)
+	st_settings.with_badge("دکمه‌های بالای بازی")
+	st_settings.with_cta("بعدی")
+	st_settings.with_target(func(): return _get_top_header_node("btn_settings"), 10.0, 16.0)
+	st_settings.with_placement("bottom")
+	s.append(st_settings)
 
 	# 6. Opponent Pod & Turn Timer Bar
-	s.append(
-		TutorialStep.create(
-			"hud_turn_and_timer",
-			"نوبت بازیکن و نوار زمان",
-			"در بالای صفحه مشخصات حریف دیده می‌شود و این نوار طلایی زمان باقی‌مانده نوبت شما را نشان می‌دهد. هرگاه نوار روشن باشد، نوبت حرکت شماست!"
-		).with_badge("نوار زمان و نوبت")
-		.with_cta("بزن بریم بازی!")
-		.with_target(func():
-			var frame: Control = _get_top_header_node("timer_bar_frame")
-			if is_instance_valid(frame) and frame.is_visible_in_tree():
-				return frame
-			return _get_top_header_node("local_turn_bar_wrap")
-		, 12.0, 16.0)
-		.with_placement("bottom")
-		.with_hooks(Callable(), func():
-			# Ensure any reaction/menu popups opened during HUD exploration are closed before playing
-			if is_instance_valid(_base_game_hud) and _base_game_hud.has_method("reset_for_new_match"):
-				if is_instance_valid(_base_game_hud.reaction_picker) and _base_game_hud.reaction_picker.visible:
-					_base_game_hud.reaction_picker.close()
-		)
+	var st_timer: TutorialStep = TutorialStep.create(
+		"hud_turn_and_timer",
+		"نوبت بازیکن و نوار زمان",
+		"در بالای صفحه مشخصات حریف دیده می‌شود و این نوار طلایی زمان باقی‌مانده نوبت شما را نشان می‌دهد. هرگاه نوار روشن باشد، نوبت حرکت شماست!"
 	)
+	st_timer.with_badge("نوار زمان و نوبت")
+	st_timer.with_cta("بزن بریم بازی!")
+	st_timer.with_target(_get_timer_bar_target, 12.0, 16.0)
+	st_timer.with_placement("bottom")
+	st_timer.with_hooks(Callable(), _on_exit_timer_step)
+	s.append(st_timer)
 
 	# 7. Interactive Gameplay Move 1 — Guided Center Cell (Index 4)
-	s.append(
-		TutorialStep.create(
-			"play_move_1",
-			"نوبت شماست! حرکت اول",
-			"هدف در بازی دوز این است که ۳ مهره خودتان (X) را در یک خط افقی، عمودی یا مورب ردیف کنید.\nبرای یک شروع قدرتمند، خانه وسط را لمس کنید!"
-		).with_badge("آموزش بازی دوز")
-		.with_hint("👆 روی خانه طلایی وسط صفحه لمس کنید")
-		.with_target(func(): return _get_board_cell_rect(4), 10.0, 20.0)
-		.with_interactive(true, false)
-		.with_placement("bottom")
-		.with_hooks(func():
-			_game_phase = "move_1"
-			if is_instance_valid(_board):
-				_board.tutorial_input_enabled = true
-				_board.set_guided_cells([4])
-		)
+	var st_move1: TutorialStep = TutorialStep.create(
+		"play_move_1",
+		"نوبت شماست! حرکت اول",
+		"هدف در بازی دوز این است که ۳ مهره خودتان (X) را در یک خط افقی، عمودی یا مورب ردیف کنید.\nبرای یک شروع قدرتمند، خانه وسط را لمس کنید!"
 	)
+	st_move1.with_badge("آموزش بازی دوز")
+	st_move1.with_hint("👆 روی خانه طلایی وسط صفحه لمس کنید")
+	st_move1.with_target(func(): return _get_board_cell_rect(4), 10.0, 20.0)
+	st_move1.with_interactive(true, false)
+	st_move1.with_placement("bottom")
+	st_move1.with_hooks(_on_enter_move_1_step)
+	s.append(st_move1)
 
 	return s
+
+
+func _on_enter_chat_step() -> void:
+	if is_instance_valid(_base_game_hud):
+		_base_game_hud.show_toast_hint("💬 نمونه کُری‌خوانی: «عجب حرکت هوشمندانه‌ای بود!»")
+
+
+func _on_enter_emoji_step() -> void:
+	if is_instance_valid(_base_game_hud):
+		_base_game_hud.show_reaction(2, 1)
+
+
+func _get_timer_bar_target() -> Control:
+	var frame: Control = _get_top_header_node("timer_bar_frame")
+	if is_instance_valid(frame) and frame.is_visible_in_tree():
+		return frame
+	return _get_top_header_node("local_turn_bar_wrap")
+
+
+func _on_exit_timer_step() -> void:
+	if is_instance_valid(_base_game_hud) and is_instance_valid(_base_game_hud.reaction_picker) and _base_game_hud.reaction_picker.visible:
+		_base_game_hud.reaction_picker.close()
+
+
+func _on_enter_move_1_step() -> void:
+	_game_phase = "move_1"
+	if is_instance_valid(_board):
+		_board.tutorial_input_enabled = true
+		_board.set_guided_cells([4])
 
 
 func _on_tutorial_player_moved(cell_idx: int) -> void:
@@ -338,11 +348,12 @@ func _on_tutorial_bot_moved(_cell_idx: int) -> void:
 			"play_move_2",
 			"حرکت دوم — ساخت ردیف برنده",
 			"حریف مهره‌اش را گذاشت. حالا با انتخاب این خانه، دو مهره X کنار هم قرار می‌گیرند و برای پیروزی آماده می‌شوید!"
-		).with_badge("آموزش بازی دوز") \
-		.with_hint("👆 خانه طلایی مشخص‌شده را لمس کنید") \
-		.with_target(func(): return _get_board_cell_rect(next_cell), 10.0, 20.0) \
-		.with_interactive(true, false) \
-		.with_placement("bottom")
+		)
+		step2.with_badge("آموزش بازی دوز")
+		step2.with_hint("👆 خانه طلایی مشخص‌شده را لمس کنید")
+		step2.with_target(func(): return _get_board_cell_rect(next_cell), 10.0, 20.0)
+		step2.with_interactive(true, false)
+		step2.with_placement("bottom")
 
 		_board.tutorial_input_enabled = true
 		_board.set_guided_cells([next_cell])
@@ -355,11 +366,12 @@ func _on_tutorial_bot_moved(_cell_idx: int) -> void:
 			"play_move_3",
 			"ضربه نهایی — برنده شوید!",
 			"یک حرکت تا پیروزی باقی مانده! این خانه را لمس کنید تا سه مهره شما در یک ردیف کامل شوند و برنده مسابقه شوید."
-		).with_badge("حرکت پیروزی!") \
-		.with_hint("🏆 روی خانه طلایی بزنید تا برنده شوید!") \
-		.with_target(func(): return _get_board_cell_rect(win_cell), 10.0, 20.0) \
-		.with_interactive(true, false) \
-		.with_placement("bottom")
+		)
+		step3.with_badge("حرکت پیروزی!")
+		step3.with_hint("🏆 روی خانه طلایی بزنید تا برنده شوید!")
+		step3.with_target(func(): return _get_board_cell_rect(win_cell), 10.0, 20.0)
+		step3.with_interactive(true, false)
+		step3.with_placement("bottom")
 
 		_board.tutorial_input_enabled = true
 		if win_cell >= 0:
@@ -391,11 +403,12 @@ func _on_tutorial_draw_reached() -> void:
 			"play_retry",
 			"شروع مجدد — خانه وسط را بزنید",
 			"خانه وسط را لمس کنید تا خیلی راحت برنده شوید!"
-		).with_badge("آموزش بازی دوز") \
-		.with_hint("👆 خانه طلایی وسط را لمس کنید") \
-		.with_target(func(): return _get_board_cell_rect(4), 10.0, 20.0) \
-		.with_interactive(true, false) \
-		.with_placement("bottom")
+		)
+		retry_step.with_badge("آموزش بازی دوز")
+		retry_step.with_hint("👆 خانه طلایی وسط را لمس کنید")
+		retry_step.with_target(func(): return _get_board_cell_rect(4), 10.0, 20.0)
+		retry_step.with_interactive(true, false)
+		retry_step.with_placement("bottom")
 		_overlay.show_step(retry_step, 6, 9, false)
 	)
 
@@ -542,159 +555,161 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	var s: Array[TutorialStep] = []
 
 	# 1. Welcome to Main Lobby
-	s.append(
-		TutorialStep.create(
-			"main_welcome",
-			"خوش آمدید به سالن کافه فکر!",
-			"حساب کاربری شما آماده است. بیایید یک گشت سریع و یک‌باره در ۵ بخش اصلی و دکمه‌های بالای صفحه بزنیم."
-		).with_badge("آشنایی با کافه فکر").with_cta("شروع گشت").with_placement("center")
+	var st_main_welcome: TutorialStep = TutorialStep.create(
+		"main_welcome",
+		"خوش آمدید به سالن کافه فکر!",
+		"حساب کاربری شما آماده است. بیایید یک گشت سریع و یک‌باره در ۵ بخش اصلی و دکمه‌های بالای صفحه بزنیم."
 	)
+	st_main_welcome.with_badge("آشنایی با کافه فکر")
+	st_main_welcome.with_cta("شروع گشت")
+	st_main_welcome.with_placement("center")
+	s.append(st_main_welcome)
 
 	# --- 5 MAIN TABS (BottomNavigation) ---
 
 	# 2. Tab: Play (بازی)
-	s.append(
-		TutorialStep.create(
-			"tab_play",
-			"۱. بخش بازی (صفحه اصلی)",
-			"اینجا مرکز رقابت‌های کافه فکر است! می‌توانید وارد رقابت ۱ به ۱، بازی‌های چندنفره، کلاسیک یا لابی دوستانه شوید."
-		).with_badge("تب‌های اصلی (۱ از ۵)")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_bottom_nav_btn("btn_play"), 8.0, 16.0)
-		.with_placement("top")
-		.with_hooks(func(): _switch_main_tab("play"))
+	var st_tab_play: TutorialStep = TutorialStep.create(
+		"tab_play",
+		"۱. بخش بازی (صفحه اصلی)",
+		"اینجا مرکز رقابت‌های کافه فکر است! می‌توانید وارد رقابت ۱ به ۱، بازی‌های چندنفره، کلاسیک یا لابی دوستانه شوید."
 	)
+	st_tab_play.with_badge("تب‌های اصلی (۱ از ۵)")
+	st_tab_play.with_cta("بعدی")
+	st_tab_play.with_target(func(): return _get_bottom_nav_btn("btn_play"), 8.0, 16.0)
+	st_tab_play.with_placement("top")
+	st_tab_play.with_hooks(func(): _switch_main_tab("play"))
+	s.append(st_tab_play)
 
 	# 3. Tab: Social / Clan (اتحاد)
-	s.append(
-		TutorialStep.create(
-			"tab_social",
-			"۲. بخش اتحاد (کلن)",
-			"در بخش اتحاد می‌توانید کلن اختصاصی خودتان را بسازید یا به اتحاد دیگران بپیوندید، با هم‌تیمی‌ها چت کنید و با هم امتیاز بگیرید."
-		).with_badge("تب‌های اصلی (۲ از ۵)")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_bottom_nav_btn("btn_social"), 8.0, 16.0)
-		.with_placement("top")
-		.with_hooks(func(): _switch_main_tab("social"))
+	var st_tab_social: TutorialStep = TutorialStep.create(
+		"tab_social",
+		"۲. بخش اتحاد (کلن)",
+		"در بخش اتحاد می‌توانید کلن اختصاصی خودتان را بسازید یا به اتحاد دیگران بپیوندید، با هم‌تیمی‌ها چت کنید و با هم امتیاز بگیرید."
 	)
+	st_tab_social.with_badge("تب‌های اصلی (۲ از ۵)")
+	st_tab_social.with_cta("بعدی")
+	st_tab_social.with_target(func(): return _get_bottom_nav_btn("btn_social"), 8.0, 16.0)
+	st_tab_social.with_placement("top")
+	st_tab_social.with_hooks(func(): _switch_main_tab("social"))
+	s.append(st_tab_social)
 
 	# 4. Tab: Leaderboard (برترین‌ها)
-	s.append(
-		TutorialStep.create(
-			"tab_history",
-			"۳. بخش برترین‌ها",
-			"رتبه‌بندی برترین بازیکنان کافه فکر را اینجا ببینید و با کسب پیروزی‌های بیشتر، جایگاه خودتان را در جدول بالا ببرید."
-		).with_badge("تب‌های اصلی (۳ از ۵)")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_bottom_nav_btn("btn_history"), 8.0, 16.0)
-		.with_placement("top")
-		.with_hooks(func(): _switch_main_tab("history"))
+	var st_tab_history: TutorialStep = TutorialStep.create(
+		"tab_history",
+		"۳. بخش برترین‌ها",
+		"رتبه‌بندی برترین بازیکنان کافه فکر را اینجا ببینید و با کسب پیروزی‌های بیشتر، جایگاه خودتان را در جدول بالا ببرید."
 	)
+	st_tab_history.with_badge("تب‌های اصلی (۳ از ۵)")
+	st_tab_history.with_cta("بعدی")
+	st_tab_history.with_target(func(): return _get_bottom_nav_btn("btn_history"), 8.0, 16.0)
+	st_tab_history.with_placement("top")
+	st_tab_history.with_hooks(func(): _switch_main_tab("history"))
+	s.append(st_tab_history)
 
 	# 5. Tab: Library (کتابخانه)
-	s.append(
-		TutorialStep.create(
-			"tab_library",
-			"۴. بخش کتابخانه بازی‌ها",
-			"در کتابخانه می‌توانید با تمام بازی‌های فکری کافه فکر، قوانین، امتیازدهی و نکات هر بازی آشنا شوید."
-		).with_badge("تب‌های اصلی (۴ از ۵)")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_bottom_nav_btn("btn_library"), 8.0, 16.0)
-		.with_placement("top")
-		.with_hooks(func(): _switch_main_tab("library"))
+	var st_tab_library: TutorialStep = TutorialStep.create(
+		"tab_library",
+		"۴. بخش کتابخانه بازی‌ها",
+		"در کتابخانه می‌توانید با تمام بازی‌های فکری کافه فکر، قوانین، امتیازدهی و نکات هر بازی آشنا شوید."
 	)
+	st_tab_library.with_badge("تب‌های اصلی (۴ از ۵)")
+	st_tab_library.with_cta("بعدی")
+	st_tab_library.with_target(func(): return _get_bottom_nav_btn("btn_library"), 8.0, 16.0)
+	st_tab_library.with_placement("top")
+	st_tab_library.with_hooks(func(): _switch_main_tab("library"))
+	s.append(st_tab_library)
 
 	# 6. Tab: User Profile (کاربر)
-	s.append(
-		TutorialStep.create(
-			"tab_user",
-			"۵. بخش پروفایل کاربری",
-			"اینجا سطح، تجربه (XP)، سکه‌ها، آواتار و قاب اختصاصی خودتان را مدیریت می‌کنید و به فروشگاه و تنظیمات حساب دسترسی دارید."
-		).with_badge("تب‌های اصلی (۵ از ۵)")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_bottom_nav_btn("btn_user"), 8.0, 16.0)
-		.with_placement("top")
-		.with_hooks(func(): _switch_main_tab("user"))
+	var st_tab_user: TutorialStep = TutorialStep.create(
+		"tab_user",
+		"۵. بخش پروفایل کاربری",
+		"اینجا سطح، تجربه (XP)، سکه‌ها، آواتار و قاب اختصاصی خودتان را مدیریت می‌کنید و به فروشگاه و تنظیمات حساب دسترسی دارید."
 	)
+	st_tab_user.with_badge("تب‌های اصلی (۵ از ۵)")
+	st_tab_user.with_cta("بعدی")
+	st_tab_user.with_target(func(): return _get_bottom_nav_btn("btn_user"), 8.0, 16.0)
+	st_tab_user.with_placement("top")
+	st_tab_user.with_hooks(func(): _switch_main_tab("user"))
+	s.append(st_tab_user)
 
 	# --- TOP BUTTONS OF MAIN PAGE (PlayTab TopBarRow) ---
 
 	# 7. Top Button: Watch Live (تماشای زنده)
-	s.append(
-		TutorialStep.create(
-			"top_watch_live",
-			"تماشای زنده بازی‌ها",
-			"با این دکمه می‌توانید مسابقات زنده بازیکنان حرفه‌ای را تماشا کنید و استراتژی‌های جدید یاد بگیرید."
-		).with_badge("دکمه‌های بالای صفحه")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_play_tab_btn("btn_watch_live"), 8.0, 16.0)
-		.with_placement("bottom")
-		.with_hooks(func(): _switch_main_tab("play"))
+	var st_top_watch: TutorialStep = TutorialStep.create(
+		"top_watch_live",
+		"تماشای زنده بازی‌ها",
+		"با این دکمه می‌توانید مسابقات زنده بازیکنان حرفه‌ای را تماشا کنید و استراتژی‌های جدید یاد بگیرید."
 	)
+	st_top_watch.with_badge("دکمه‌های بالای صفحه")
+	st_top_watch.with_cta("بعدی")
+	st_top_watch.with_target(func(): return _get_play_tab_btn("btn_watch_live"), 8.0, 16.0)
+	st_top_watch.with_placement("bottom")
+	st_top_watch.with_hooks(func(): _switch_main_tab("play"))
+	s.append(st_top_watch)
 
 	# 8. Top Button: Match History (تاریخچه بازی‌ها)
-	s.append(
-		TutorialStep.create(
-			"top_history",
-			"تاریخچه بازی‌ها",
-			"نتایج، امتیازات و جزئیات بازی‌های قبلی خودتان را هر زمان که بخواهید از اینجا بررسی کنید."
-		).with_badge("دکمه‌های بالای صفحه")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_play_tab_btn("btn_history"), 8.0, 14.0)
-		.with_placement("bottom")
-		.with_hooks(func(): _switch_main_tab("play"))
+	var st_top_history: TutorialStep = TutorialStep.create(
+		"top_history",
+		"تاریخچه بازی‌ها",
+		"نتایج، امتیازات و جزئیات بازی‌های قبلی خودتان را هر زمان که بخواهید از اینجا بررسی کنید."
 	)
+	st_top_history.with_badge("دکمه‌های بالای صفحه")
+	st_top_history.with_cta("بعدی")
+	st_top_history.with_target(func(): return _get_play_tab_btn("btn_history"), 8.0, 14.0)
+	st_top_history.with_placement("bottom")
+	st_top_history.with_hooks(func(): _switch_main_tab("play"))
+	s.append(st_top_history)
 
 	# 9. Top Button: Friends & Direct Messages (دوستان و پیام‌ها)
-	s.append(
-		TutorialStep.create(
-			"top_friends",
-			"دوستان و پیام‌های خصوصی",
-			"لیست دوستان، درخواست‌های دوستی و گفتگوی خصوصی شما در این بخش قرار دارد. دوستانتان را به رقابت دعوت کنید!"
-		).with_badge("دکمه‌های بالای صفحه")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_play_tab_btn("btn_friends"), 8.0, 14.0)
-		.with_placement("bottom")
-		.with_hooks(func(): _switch_main_tab("play"))
+	var st_top_friends: TutorialStep = TutorialStep.create(
+		"top_friends",
+		"دوستان و پیام‌های خصوصی",
+		"لیست دوستان، درخواست‌های دوستی و گفتگوی خصوصی شما در این بخش قرار دارد. دوستانتان را به رقابت دعوت کنید!"
 	)
+	st_top_friends.with_badge("دکمه‌های بالای صفحه")
+	st_top_friends.with_cta("بعدی")
+	st_top_friends.with_target(func(): return _get_play_tab_btn("btn_friends"), 8.0, 14.0)
+	st_top_friends.with_placement("bottom")
+	st_top_friends.with_hooks(func(): _switch_main_tab("play"))
+	s.append(st_top_friends)
 
 	# 10. Top Button: Notifications (اعلان‌ها)
-	s.append(
-		TutorialStep.create(
-			"top_notifications",
-			"اعلان‌ها و دعوت‌نامه‌ها",
-			"همه دعوت‌های بازی، درخواست‌های دوستی و پیام‌های مهم سیستم در این بخش به شما اطلاع داده می‌شوند."
-		).with_badge("دکمه‌های بالای صفحه")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_play_tab_btn("btn_notifications"), 8.0, 14.0)
-		.with_placement("bottom")
-		.with_hooks(func(): _switch_main_tab("play"))
+	var st_top_notif: TutorialStep = TutorialStep.create(
+		"top_notifications",
+		"اعلان‌ها و دعوت‌نامه‌ها",
+		"همه دعوت‌های بازی، درخواست‌های دوستی و پیام‌های مهم سیستم در این بخش به شما اطلاع داده می‌شوند."
 	)
+	st_top_notif.with_badge("دکمه‌های بالای صفحه")
+	st_top_notif.with_cta("بعدی")
+	st_top_notif.with_target(func(): return _get_play_tab_btn("btn_notifications"), 8.0, 14.0)
+	st_top_notif.with_placement("bottom")
+	st_top_notif.with_hooks(func(): _switch_main_tab("play"))
+	s.append(st_top_notif)
 
 	# 11. Top Button: Exit (خروج)
-	s.append(
-		TutorialStep.create(
-			"top_exit",
-			"دکمه خروج",
-			"هر زمان خواستید از برنامه خارج شوید، از این دکمه استفاده کنید تا با تاییدیه ایمن از بازی خارج شوید."
-		).with_badge("دکمه‌های بالای صفحه")
-		.with_cta("بعدی")
-		.with_target(func(): return _get_play_tab_btn("btn_exit"), 8.0, 14.0)
-		.with_placement("bottom")
-		.with_hooks(func(): _switch_main_tab("play"))
+	var st_top_exit: TutorialStep = TutorialStep.create(
+		"top_exit",
+		"دکمه خروج",
+		"هر زمان خواستید از برنامه خارج شوید، از این دکمه استفاده کنید تا با تاییدیه ایمن از بازی خارج شوید."
 	)
+	st_top_exit.with_badge("دکمه‌های بالای صفحه")
+	st_top_exit.with_cta("بعدی")
+	st_top_exit.with_target(func(): return _get_play_tab_btn("btn_exit"), 8.0, 14.0)
+	st_top_exit.with_placement("bottom")
+	st_top_exit.with_hooks(func(): _switch_main_tab("play"))
+	s.append(st_top_exit)
 
 	# 12. Completion Card
-	s.append(
-		TutorialStep.create(
-			"main_done",
-			"آموزش کامل شد — آماده رقابتید!",
-			"اکنون با تمام بخش‌های کافه فکر آشنا شدید. اولین مسابقه واقعی خودتان را انتخاب کنید و لذت ببرید!"
-		).with_badge("پایان آموزش")
-		.with_cta("شروع رقابت!")
-		.with_placement("center")
-		.with_hooks(func(): _switch_main_tab("play"))
+	var st_main_done: TutorialStep = TutorialStep.create(
+		"main_done",
+		"آموزش کامل شد — آماده رقابتید!",
+		"اکنون با تمام بخش‌های کافه فکر آشنا شدید. اولین مسابقه واقعی خودتان را انتخاب کنید و لذت ببرید!"
 	)
+	st_main_done.with_badge("پایان آموزش")
+	st_main_done.with_cta("شروع رقابت!")
+	st_main_done.with_placement("center")
+	st_main_done.with_hooks(func(): _switch_main_tab("play"))
+	s.append(st_main_done)
 
 	return s
 
