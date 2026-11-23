@@ -130,9 +130,11 @@ var _social_badge_lbl: Label = null
 var btn_watch_live: Button = null
 var _active_invite_banner: Control = null
 var spectator_overlay: SpectatorOverlay = null
+var tutorial_coordinator: TutorialCoordinator = null
 
 func _ready() -> void:
 	user_header.shell = main_tab_shell
+	_setup_tutorial_coordinator()
 	_setup_signals()
 	_start_logo_animation()
 	_setup_button_juice()
@@ -160,6 +162,11 @@ func _ready() -> void:
 			_show_optional_update_dialog()
 	)
 	
+	# Pre-login completely offline Tic-Tac-Toe tutorial fast path:
+	# Whenever the player has not logged in yet, enter the offline tutorial immediately
+	# after splash even with zero internet connection.
+	var needs_prelogin_tutorial: bool = (not GameManager.is_logged_in) and GameManager.load_saved_token().is_empty()
+
 	# Safety fallback timer: ensure splash always dismisses even if offline or slow server response
 	get_tree().create_timer(2.6).timeout.connect(func():
 		if not _splash_dismissed and is_instance_valid(self):
@@ -169,11 +176,28 @@ func _ready() -> void:
 					return
 				elif GameManager.is_optional_update_available and not GameManager.optional_update_dismissed:
 					_show_optional_update_dialog()
+				if (not GameManager.is_logged_in) and GameManager.load_saved_token().is_empty():
+					_start_prelogin_offline_tutorial()
+					return
 				if not NetworkManager.is_online:
 					_show_offline_dialog()
 			)
 	)
-	
+
+	if needs_prelogin_tutorial:
+		get_tree().create_timer(0.75).timeout.connect(func():
+			if not is_instance_valid(self):
+				return
+			_dismiss_splash_overlay(func():
+				if GameManager.is_force_update_required:
+					_show_force_update_dialog()
+					return
+				_hide_offline_dialog()
+				_start_prelogin_offline_tutorial()
+			)
+		)
+		return
+
 	# Allow brief moment for initial socket connection before verifying online session
 	get_tree().create_timer(0.75).timeout.connect(func():
 		if not is_instance_valid(self):
@@ -190,13 +214,16 @@ func _ready() -> void:
 				elif GameManager.is_optional_update_available and not GameManager.optional_update_dismissed:
 					_show_optional_update_dialog()
 				if msg == "OFFLINE" or not NetworkManager.is_online:
+					if not GameManager.is_logged_in:
+						_hide_offline_dialog()
+						_start_prelogin_offline_tutorial()
+						return
 					NetworkManager.connect_to_game_server()
 					_show_offline_dialog()
 					return
 				_hide_offline_dialog()
 				if not restored and not GameManager.is_logged_in:
-					login_dialog.open()
-					_show_backdrop()
+					_start_prelogin_offline_tutorial()
 				else:
 					if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
 						print("[Main] Returning user has phone but no username. Enforcing username registration.")
@@ -204,6 +231,7 @@ func _ready() -> void:
 						_show_backdrop()
 						return
 					_check_and_auto_enter_active_game()
+					_maybe_start_post_auth_main_tour()
 			)
 		)
 	)
@@ -512,6 +540,8 @@ func _setup_signals() -> void:
 		_hide_backdrop()
 
 		_update_backdrop_state()
+
+		_maybe_start_post_auth_main_tour()
 
 	)
 
@@ -1152,6 +1182,8 @@ func _dismiss_all_menu_dialogs_for_match() -> void:
 
 
 func _start_game_match(game_id: String, requested_game_type: String = "", match_mode: String = "", is_reconnect: bool = false) -> void:
+	if is_instance_valid(tutorial_coordinator):
+		tutorial_coordinator.cancel_main_page_tutorial_if_active()
 	_match_start_serial += 1
 	var my_serial: int = _match_start_serial
 
@@ -1901,6 +1933,10 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 			base_game_hud.play_start_countdown(Callable(), 5)
 
 func _on_surrender_requested() -> void:
+	if is_instance_valid(tutorial_coordinator) and tutorial_coordinator.is_game_tutorial_active:
+		if is_instance_valid(base_game_hud):
+			base_game_hud.show_toast_hint("در بازی آموزشی نیازی به تسلیم نیست؛ با یک حرکت برنده شوید!")
+		return
 	print("[Main] User confirmed surrender. Sending command to backend...")
 	GameManager.local_player_surrendered = true
 	GameManager.opponent_player_surrendered = false
@@ -2395,6 +2431,8 @@ func _on_connection_status_changed(connected: bool) -> void:
 			base_game_hud.show_toast_hint("📡 اینترنت متصل شد! در حال بازیابی مسابقه...")
 	else:
 		if not connected:
+			if is_instance_valid(tutorial_coordinator) and tutorial_coordinator.is_game_tutorial_active:
+				return
 			if _splash_dismissed:
 				_show_offline_dialog()
 		else:
@@ -2588,6 +2626,9 @@ func _on_offline_retry_pressed() -> void:
 	_show_menu_toast("ناموفق")
 
 func _on_leave_game_pressed() -> void:
+	if is_instance_valid(tutorial_coordinator) and tutorial_coordinator.is_game_tutorial_active:
+		tutorial_coordinator.finish_offline_game_tutorial()
+		return
 	if GameManager.is_spectating:
 		_on_leave_spectate_pressed()
 		return
@@ -3814,6 +3855,8 @@ func _apply_spectator_snapshot_status(payload: Dictionary) -> void:
 
 
 func _handle_forced_or_manual_logout() -> void:
+	if is_instance_valid(tutorial_coordinator):
+		tutorial_coordinator.cancel_main_page_tutorial_if_active()
 	if GameManager.is_spectating:
 		_on_leave_spectate_pressed()
 	if is_instance_valid(social_dialog) and social_dialog.visible:
@@ -4001,3 +4044,56 @@ func _on_watch_live_pressed() -> void:
 		return
 	if is_instance_valid(live_games_dialog):
 		live_games_dialog.open("all")
+
+
+# ==============================================================================
+# ONBOARDING & TUTORIAL FLOW INTEGRATION
+# ==============================================================================
+
+func _setup_tutorial_coordinator() -> void:
+	if is_instance_valid(tutorial_coordinator):
+		return
+	tutorial_coordinator = TutorialCoordinator.new()
+	tutorial_coordinator.name = "TutorialCoordinator"
+	add_child(tutorial_coordinator)
+	tutorial_coordinator.game_tutorial_finished.connect(_on_offline_game_tutorial_finished)
+
+
+func _start_prelogin_offline_tutorial() -> void:
+	if not is_instance_valid(tutorial_coordinator):
+		_setup_tutorial_coordinator()
+	if tutorial_coordinator.is_game_tutorial_active:
+		return
+	_hide_backdrop()
+	_hide_offline_dialog()
+	if is_instance_valid(login_dialog):
+		login_dialog.visible = false
+	tutorial_coordinator.start_offline_game_tutorial(cafe_table, base_game_hud, menu_container)
+
+
+func _on_offline_game_tutorial_finished() -> void:
+	user_header.update_ui()
+	_update_ranked_button_state()
+	if is_instance_valid(login_dialog):
+		login_dialog.open()
+		_show_backdrop()
+	if not NetworkManager.is_online:
+		NetworkManager.connect_to_game_server()
+
+
+func _maybe_start_post_auth_main_tour() -> void:
+	if not GameManager.is_logged_in:
+		return
+	if not is_instance_valid(tutorial_coordinator):
+		return
+	if tutorial_coordinator.is_game_tutorial_active or tutorial_coordinator.is_main_tutorial_active:
+		return
+	if is_instance_valid(base_game_hud) and base_game_hud.visible:
+		return
+	if is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible:
+		return
+	if is_instance_valid(login_dialog) and login_dialog.visible:
+		return
+	if is_instance_valid(main_tab_shell) and main_tab_shell.visible:
+		tutorial_coordinator.try_start_main_page_tutorial(main_tab_shell)
+

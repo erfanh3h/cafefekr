@@ -363,6 +363,7 @@ var is_game_finished: bool = false
 var is_start_overlay_dismissed: bool = false
 
 var is_countdown_running: bool = false
+var is_offline_tutorial: bool = false
 
 
 
@@ -1051,7 +1052,8 @@ func _setup_connections() -> void:
 
 		_last_reaction_sent_msec = now_ms
 
-		NetworkManager.send_game_reaction(r_id)
+		if not is_offline_tutorial:
+			NetworkManager.send_game_reaction(r_id)
 
 		show_reaction(GameManager.my_player_index, r_id)
 

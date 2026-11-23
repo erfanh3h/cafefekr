@@ -360,3 +360,8 @@ func get_active_tab_instance() -> Control:
 	if not current_subpage_name.is_empty():
 		return _cached_subpages.get(current_subpage_name, null) as Control
 	return _cached_tabs.get(current_tab_name, null) as Control
+
+
+func get_tab_instance(tab_name: String) -> Control:
+	return _cached_tabs.get(tab_name, null) as Control
+
