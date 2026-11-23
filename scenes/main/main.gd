@@ -4096,4 +4096,3 @@ func _maybe_start_post_auth_main_tour() -> void:
 		return
 	if is_instance_valid(main_tab_shell) and main_tab_shell.visible:
 		tutorial_coordinator.try_start_main_page_tutorial(main_tab_shell)
-

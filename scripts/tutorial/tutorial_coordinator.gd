@@ -171,8 +171,8 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	# 1. Welcome modal
 	var st_welcome: TutorialStep = TutorialStep.create(
 		"game_welcome",
-		"سلام به کافه فکر!",
-		"آماده‌ای یه دست دوز سریع و باحال بزنیم؟ تو کمتر از یک دقیقه همه دکمه‌ها و قلق بازی رو یاد می‌گیری!"
+		"سلام به کافه فکر خوش اومدی",
+		"آماده‌ای یه دست دوز سریع و باحال بزنیم؟ تو کمتر از یک دقیقه همه دکمه‌ها و قلق بازی رو یاد می‌گیری"
 	)
 	st_welcome.with_badge("خوش اومدی!")
 	st_welcome.with_cta("بزن بریم!")
