@@ -63,7 +63,7 @@ func switch_lb_tab(t_name: String) -> void:
 
 
 func _style_lb_btn(btn: Button, is_act: bool) -> void:
-	CafeSocialTheme.style_parlor_tab_button(btn, is_act, 19)
+	CafeSocialTheme.style_parlor_tab_button(btn, is_act, 19, false, 24.0, 10.0)
 
 
 func _create_compact_row_style(is_me: bool, state: String = "normal") -> StyleBoxTexture:

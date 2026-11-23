@@ -556,18 +556,13 @@ func _update_local_turn_visuals(seconds_left: float, max_seconds: float, is_dang
 	lbl_local_turn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.84) if is_danger else HudTheme.COL_TEXT_GOLD)
 
 
-func _set_bottom_glow_active(active: bool) -> void:
+func _set_bottom_glow_active(_active: bool) -> void:
 	if is_instance_valid(_glow_tween):
 		_glow_tween.kill()
 		_glow_tween = null
-	bottom_turn_glow.visible = active
-	if not active:
+	if is_instance_valid(bottom_turn_glow):
+		bottom_turn_glow.visible = false
 		bottom_turn_glow.modulate.a = 0.0
-		return
-	bottom_turn_glow.modulate.a = 0.72
-	_glow_tween = create_tween().set_loops()
-	_glow_tween.tween_property(bottom_turn_glow, "modulate:a", 1.0, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_glow_tween.tween_property(bottom_turn_glow, "modulate:a", 0.58, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _spawn_reaction_bubble(sender_id: String, content: Variant, is_text: bool, hold_sec: float) -> void:

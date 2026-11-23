@@ -1292,8 +1292,8 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 	hero_sb.set_corner_radius_all(18)
 	hero_sb.content_margin_left = 24.0
 	hero_sb.content_margin_right = 24.0
-	hero_sb.content_margin_top = 18.0
-	hero_sb.content_margin_bottom = 18.0
+	hero_sb.content_margin_top = 22.0
+	hero_sb.content_margin_bottom = 22.0
 	hero_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
 	hero_sb.shadow_size = 0 if GameManager.is_mobile else 6
 	hero_sb.shadow_offset = Vector2(0, 3)

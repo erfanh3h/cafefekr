@@ -111,6 +111,13 @@ var _mat_goal_emerald: StandardMaterial3D
 var _mat_goal_crimson: StandardMaterial3D
 var _mat_goal_sapphire: StandardMaterial3D
 
+var _cached_legal_gid: int = -1
+var _cached_legal_pawn: Array = []
+var _cached_legal_opp: Array = []
+var _cached_legal_h_count: int = -1
+var _cached_legal_v_count: int = -1
+var _cached_legal_moves: Array[Vector2i] = []
+
 static func _fa_digits(val: Variant) -> String:
 	var s := str(val)
 	var fa := ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
@@ -938,6 +945,15 @@ func _has_v(wr: int, wc: int, extra_v: Dictionary) -> bool:
 func get_legal_pawn_moves(g_id: int) -> Array[Vector2i]:
 	var p_rc: Array = pawns[g_id - 1]
 	var opp_rc: Array = pawns[2 - g_id]
+	if (
+		g_id == _cached_legal_gid
+		and p_rc == _cached_legal_pawn
+		and opp_rc == _cached_legal_opp
+		and h_walls.size() == _cached_legal_h_count
+		and v_walls.size() == _cached_legal_v_count
+	):
+		return _cached_legal_moves
+
 	var r: int = int(p_rc[0])
 	var c: int = int(p_rc[1])
 	var orow: int = int(opp_rc[0])
@@ -965,6 +981,13 @@ func get_legal_pawn_moves(g_id: int) -> Array[Vector2i]:
 							legal.append(Vector2i(nr + sr, nc))
 		else:
 			legal.append(Vector2i(nr, nc))
+
+	_cached_legal_gid = g_id
+	_cached_legal_pawn = p_rc.duplicate()
+	_cached_legal_opp = opp_rc.duplicate()
+	_cached_legal_h_count = h_walls.size()
+	_cached_legal_v_count = v_walls.size()
+	_cached_legal_moves = legal
 	return legal
 
 func _has_path_to_goal(start_r: int, start_c: int, goal_row: int, extra_h: Dictionary, extra_v: Dictionary) -> bool:
@@ -1049,20 +1072,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseMotion:
+		if _is_mobile_gpu or GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios"):
+			return
 		if is_instance_valid(dock_panel) and dock_panel.visible and dock_panel.get_global_rect().has_point(event.position):
 			return
 		var local_hit: Variant = _raycast_board_plane(event.position)
 		if local_hit == null:
-			hovered_cell_rc = Vector2i(-1, -1)
+			if hovered_cell_rc != Vector2i(-1, -1):
+				hovered_cell_rc = Vector2i(-1, -1)
+				_refresh_highlights_and_preview()
 			return
 		var hit_v: Vector3 = local_hit
 		if current_mode == ACTION_MOVE:
-			hovered_cell_rc = _local_pos_to_canonical_cell(hit_v)
-			_refresh_highlights_and_preview()
+			var new_cell: Vector2i = _local_pos_to_canonical_cell(hit_v)
+			if new_cell != hovered_cell_rc:
+				hovered_cell_rc = new_cell
+				_refresh_highlights_and_preview()
 		else:
 			if preview_wall_rc.x < 0: # track hover smoothly only before user locks a tap target
 				var w_rc := _local_pos_to_canonical_wall(hit_v)
-				if w_rc.x >= 0:
+				if w_rc.x >= 0 and w_rc != preview_wall_rc:
 					_update_wall_preview_only(w_rc.x, w_rc.y)
 
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -1146,7 +1175,7 @@ func _attempt_pawn_move(r: int, c: int) -> void:
 
 	set_board_locked(true)
 	is_my_turn = false
-	_clear_legal_pads()
+	_clear_all_legal_pads()
 	NetworkManager.send_select_peace({
 		"action": "move",
 		"row": r,
@@ -1293,7 +1322,7 @@ func on_round_finished(payload: Variant) -> void:
 		if not _win_vfx_shown:
 			_win_vfx_shown = true
 			_trigger_victory_vfx(w)
-	_clear_legal_pads()
+	_clear_all_legal_pads()
 	if is_instance_valid(ghost_wall_node):
 		ghost_wall_node.visible = false
 	_refresh_dock_buttons()
@@ -1396,7 +1425,9 @@ func _sync_all_visuals(skip_pawn_snap: bool = false) -> void:
 				var rc: Array = pawns[p_id - 1]
 				node.position = _cell_to_local_pos(int(rc[0]), int(rc[1]), 0.0)
 
-	_rebuild_placed_walls_visual()
+	var total_walls := h_walls.size() + v_walls.size()
+	if total_walls != placed_wall_nodes.size() or placed_wall_nodes.is_empty():
+		_rebuild_placed_walls_visual()
 	_sync_wall_racks_visual()
 	_sync_top_header_walls()
 	_refresh_highlights_and_preview()
@@ -1458,22 +1489,29 @@ func _animate_pawn_hop(g_id: int, from_rc: Array, to_rc: Array) -> void:
 	var mid := (p_start + p_end) * 0.5
 	mid.y += 0.11
 
+	var hop_dur: float = 0.09 if _is_mobile_gpu else 0.13
 	var tw := create_tween()
-	tw.tween_property(node, "position", mid, 0.13).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(node, "position", p_end, 0.13).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(node, "position", mid, hop_dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(node, "position", p_end, hop_dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_callback(func():
 		if is_instance_valid(node) and is_instance_valid(fx_root):
 			ActionVFXManager.spawn_piece_impact_vfx(fx_root, p_end, g_id)
 	)
 
 func _clear_legal_pads() -> void:
+	for p: MeshInstance3D in _visible_legal_pads:
+		if is_instance_valid(p):
+			p.visible = false
+	_visible_legal_pads.clear()
+
+func _clear_all_legal_pads() -> void:
 	for p in legal_move_pads:
 		if is_instance_valid(p):
 			p.visible = false
+	_visible_legal_pads.clear()
 
 func _refresh_highlights_and_preview() -> void:
 	_clear_legal_pads()
-	_visible_legal_pads.clear()
 	if is_instance_valid(ghost_wall_node):
 		ghost_wall_node.visible = false
 

@@ -125,24 +125,24 @@ const KORIS: Array[String] = [
 @onready var lbl_match_meta: Label = $Margin/VBoxMain/MatchMetaRibbon/LblMatchMeta
 
 @onready var local_turn_bar_wrap: MarginContainer = $Margin/VBoxMain/LocalTurnBarWrap
-@onready var timer_bar_frame: Control = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame
-@onready var local_turn_bar: ProgressBar = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame/LocalTurnProgressBar
+@onready var timer_bar_frame: Control = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/LocalTurnBarCenter/TimerBarFrame
+@onready var local_turn_bar: ProgressBar = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/LocalTurnBarCenter/TimerBarFrame/LocalTurnProgressBar
 @onready var local_turn_pill: PanelContainer = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill
 @onready var lbl_local_turn: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnPillCenter/LocalTurnPill/LblLocalTurn
 
 @onready var edge_overlay: Control = $EdgeOverlay
 @onready var spectator_pill: PanelContainer = $EdgeOverlay/SpectatorPill
 @onready var lbl_spectator: Label = $EdgeOverlay/SpectatorPill/HBox/LblSpectator
-@onready var penalty_details_box: PanelContainer = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox
-@onready var opp_dot1: Panel = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot1
-@onready var opp_dot2: Panel = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot2
-@onready var lbl_opp_penalty: Label = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/LblOppCount
-@onready var my_dot1: Panel = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot1
-@onready var my_dot2: Panel = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot2
-@onready var lbl_my_penalty: Label = $Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/LblMyCount
-@onready var match_result_box: PanelContainer = $Margin/VBoxMain/BelowTimerRow/MatchResultBox
-@onready var lbl_result_title: Label = $Margin/VBoxMain/BelowTimerRow/MatchResultBox/HBox/LblResultTitle
-@onready var lbl_result_score: Label = $Margin/VBoxMain/BelowTimerRow/MatchResultBox/HBox/LblResultScore
+@onready var penalty_details_box: PanelContainer = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox
+@onready var opp_dot1: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot1
+@onready var opp_dot2: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot2
+@onready var lbl_opp_penalty: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow/LblOppCount
+@onready var my_dot1: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot1
+@onready var my_dot2: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot2
+@onready var lbl_my_penalty: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow/LblMyCount
+@onready var match_result_box: PanelContainer = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/MatchResultBox
+@onready var lbl_result_title: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/MatchResultBox/HBox/LblResultTitle
+@onready var lbl_result_score: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/MatchResultBox/HBox/LblResultScore
 var social_rail: VBoxContainer = null
 
 @onready var bottom_turn_glow: TextureRect = $BottomTurnGlow
@@ -810,15 +810,11 @@ func _setup_initial_result_display() -> void:
 
 
 func _pulse_bottom_glow() -> void:
-	if not is_instance_valid(bottom_turn_glow):
-		return
 	if is_instance_valid(_bottom_glow_tween):
 		_bottom_glow_tween.kill()
-	bottom_turn_glow.visible = true
-	bottom_turn_glow.modulate.a = 0.25
-	_bottom_glow_tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_bottom_glow_tween.tween_property(bottom_turn_glow, "modulate:a", 0.85, 0.9)
-	_bottom_glow_tween.tween_property(bottom_turn_glow, "modulate:a", 0.25, 0.9)
+		_bottom_glow_tween = null
+	if is_instance_valid(bottom_turn_glow):
+		bottom_turn_glow.visible = false
 
 
 func _is_simultaneous_turn() -> bool:

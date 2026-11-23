@@ -104,7 +104,7 @@ static func _build_conversation_card(host: Control, conv: Dictionary) -> Control
 	btn.custom_minimum_size = Vector2(0, 148)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	var st_norm := CafeSocialTheme.create_frame_style(true, 54.0, 24.0)
+	var st_norm := CafeSocialTheme.create_item_frame_style(46.0, 28.0)
 	btn.add_theme_stylebox_override("normal", st_norm)
 	btn.add_theme_stylebox_override("hover", st_norm)
 	btn.add_theme_stylebox_override("pressed", st_norm)
@@ -277,7 +277,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	var hdr := PanelContainer.new()
 	hdr.custom_minimum_size = Vector2(0, 140)
 	hdr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hdr.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 54.0, 24.0))
+	hdr.add_theme_stylebox_override("panel", CafeSocialTheme.create_header_banner_style(46.0, 26.0))
 	hdr_margin.add_child(hdr)
 
 	var hrow := HBoxContainer.new()

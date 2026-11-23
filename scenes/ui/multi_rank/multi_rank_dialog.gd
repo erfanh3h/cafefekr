@@ -89,6 +89,18 @@ func _ready() -> void:
 
 
 func _setup_styles() -> void:
+	var p4_sb := StyleBoxTexture.new()
+	p4_sb.texture = preload("res://assets/images/frames/frame4.png")
+	p4_sb.texture_margin_left = 48.0
+	p4_sb.texture_margin_right = 48.0
+	p4_sb.texture_margin_top = 42.0
+	p4_sb.texture_margin_bottom = 42.0
+	p4_sb.content_margin_left = 44.0
+	p4_sb.content_margin_right = 44.0
+	p4_sb.content_margin_top = 26.0
+	p4_sb.content_margin_bottom = 26.0
+	selected_preview_card.add_theme_stylebox_override("panel", p4_sb)
+
 	_style_card_normal = StyleBoxFlat.new()
 	_style_card_normal.bg_color = Color(0.14, 0.095, 0.06, 0.65)
 	_style_card_normal.set_corner_radius_all(18)

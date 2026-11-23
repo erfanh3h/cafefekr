@@ -121,9 +121,9 @@ func _make_modal_panel_style(modulate_col: Color = Color.WHITE) -> StyleBoxTextu
 	sb.texture_margin_right = 44.0
 	sb.texture_margin_bottom = 80.0
 	sb.content_margin_left = 50.0
-	sb.content_margin_top = 74.0
+	sb.content_margin_top = 90.0
 	sb.content_margin_right = 50.0
-	sb.content_margin_bottom = 68.0
+	sb.content_margin_bottom = 86.0
 	sb.modulate_color = modulate_col
 	return sb
 
@@ -148,8 +148,8 @@ func _setup_styles() -> void:
 	_style_winner.shadow_size = 0 if mobile_mode else 8
 	_style_winner.content_margin_left = 12
 	_style_winner.content_margin_right = 12
-	_style_winner.content_margin_top = 12
-	_style_winner.content_margin_bottom = 12
+	_style_winner.content_margin_top = 18
+	_style_winner.content_margin_bottom = 18
 
 	# Normal Card Style
 	_style_normal = StyleBoxFlat.new()
@@ -162,8 +162,8 @@ func _setup_styles() -> void:
 	_style_normal.set_corner_radius_all(16)
 	_style_normal.content_margin_left = 12
 	_style_normal.content_margin_right = 12
-	_style_normal.content_margin_top = 12
-	_style_normal.content_margin_bottom = 12
+	_style_normal.content_margin_top = 18
+	_style_normal.content_margin_bottom = 18
 
 	# Plaque Styles for Win, Lose, Draw
 	_style_plaque_win = StyleBoxFlat.new()
@@ -367,8 +367,8 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 		rsb.set_corner_radius_all(14)
 		rsb.content_margin_left = 12.0
 		rsb.content_margin_right = 12.0
-		rsb.content_margin_top = 7.0
-		rsb.content_margin_bottom = 7.0
+		rsb.content_margin_top = 14.0
+		rsb.content_margin_bottom = 14.0
 		row_card.add_theme_stylebox_override("panel", rsb)
 
 		var rh: HBoxContainer = HBoxContainer.new()
@@ -436,8 +436,8 @@ func _build_multiplayer_self_result(my_idx: int, winner_player_index: int) -> vo
 	ssb.set_corner_radius_all(16)
 	ssb.content_margin_left = 16.0
 	ssb.content_margin_right = 16.0
-	ssb.content_margin_top = 14.0
-	ssb.content_margin_bottom = 14.0
+	ssb.content_margin_top = 20.0
+	ssb.content_margin_bottom = 20.0
 	_self_result_box.add_theme_stylebox_override("panel", ssb)
 
 	var sv: VBoxContainer = VBoxContainer.new()
@@ -547,8 +547,8 @@ func _build_2p_hero_outcome(is_winner: bool, is_draw: bool, p1_score: int, p2_sc
 	hsb.shadow_size = 0 if _is_mobile() else 8
 	hsb.content_margin_left = 18.0
 	hsb.content_margin_right = 18.0
-	hsb.content_margin_top = 10.0
-	hsb.content_margin_bottom = 10.0
+	hsb.content_margin_top = 16.0
+	hsb.content_margin_bottom = 16.0
 	_hero_outcome_box.add_theme_stylebox_override("panel", hsb)
 
 	var hv: VBoxContainer = VBoxContainer.new()

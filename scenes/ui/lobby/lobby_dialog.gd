@@ -127,6 +127,30 @@ func _is_mobile() -> bool:
 	return GameManager.is_mobile
 
 func _ready() -> void:
+	var f2_tex: Texture2D = preload("res://assets/images/frames/frame2.png")
+	var make_f2_hdr := func() -> StyleBoxTexture:
+		var sb := StyleBoxTexture.new()
+		sb.texture = f2_tex
+		sb.texture_margin_left = 40.0
+		sb.texture_margin_right = 40.0
+		sb.texture_margin_top = 24.0
+		sb.texture_margin_bottom = 24.0
+		sb.content_margin_left = 32.0
+		sb.content_margin_right = 32.0
+		sb.content_margin_top = 12.0
+		sb.content_margin_bottom = 12.0
+		return sb
+
+	var lbl_c_title: Label = $Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/LblCreateTitle
+	if is_instance_valid(lbl_c_title):
+		lbl_c_title.add_theme_stylebox_override("normal", make_f2_hdr.call())
+		lbl_c_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	var lbl_s_section: Label = $Margin/VBox/ViewCreate/CreateScroll/CreateFormVBox/LblSettingsSection
+	if is_instance_valid(lbl_s_section):
+		lbl_s_section.add_theme_stylebox_override("normal", make_f2_hdr.call())
+		lbl_s_section.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
 	KenneyUI.style_button(btn_show_create, KenneyUI.COLOR_YELLOW)
 	KenneyUI.style_button(btn_show_join_code, KenneyUI.COLOR_BLUE)
 	KenneyUI.style_button(btn_create_confirm, KenneyUI.COLOR_GREEN)

@@ -411,8 +411,8 @@ static func _make_card_style(is_read: bool) -> StyleBoxTexture:
 	sb.texture_margin_bottom = 28.0
 	sb.content_margin_left = 46.0
 	sb.content_margin_right = 46.0
-	sb.content_margin_top = 14.0
-	sb.content_margin_bottom = 14.0
+	sb.content_margin_top = 28.0
+	sb.content_margin_bottom = 28.0
 	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	if is_read:

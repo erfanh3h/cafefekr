@@ -408,19 +408,127 @@ mouse_filter = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="LocalTurnBarCenter" type="CenterContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox"]
+[node name="TimerRow" type="HBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="PenaltyDetailsBox" type="PanelContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_penalty_box")
+
+[node name="VBox" type="VBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="OppRow" type="HBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 0
+
+[node name="LblOppTitle" type="Label" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92, 0.86, 0.78, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "حریف:"
+text_direction = 3
+
+[node name="OppDots" type="HBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="OppDot1" type="Panel" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
+
+[node name="OppDot2" type="Panel" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
+
+[node name="LblOppCount" type="Label" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "۰/۲"
+text_direction = 3
+
+[node name="MyRow" type="HBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 0
+
+[node name="LblMyTitle" type="Label" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92, 0.86, 0.78, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "شما:"
+text_direction = 3
+
+[node name="MyDots" type="HBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+alignment = 1
+
+[node name="MyDot1" type="Panel" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
+
+[node name="MyDot2" type="Panel" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
+
+[node name="LblMyCount" type="Label" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 10
+text = "۰/۲"
+text_direction = 3
+
+[node name="LocalTurnBarCenter" type="CenterContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="TimerBarFrame" type="Control" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter"]
+[node name="TimerBarFrame" type="Control" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/LocalTurnBarCenter"]
 custom_minimum_size = Vector2(268, 50)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 mouse_filter = 2
 
-[node name="TimerFrameTex" type="TextureRect" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame"]
+[node name="TimerFrameTex" type="TextureRect" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/LocalTurnBarCenter/TimerBarFrame"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -432,7 +540,7 @@ texture = ExtResource("9_timer_bar_tex")
 expand_mode = 1
 stretch_mode = 0
 
-[node name="LocalTurnProgressBar" type="ProgressBar" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/LocalTurnBarCenter/TimerBarFrame"]
+[node name="LocalTurnProgressBar" type="ProgressBar" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/LocalTurnBarCenter/TimerBarFrame"]
 layout_mode = 1
 anchor_left = 0.184
 anchor_top = 0.343
@@ -446,6 +554,38 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_local_bar_fill")
 step = 0.05
 value = 100.0
 show_percentage = false
+
+[node name="MatchResultBox" type="PanelContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_match_result")
+
+[node name="HBox" type="HBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/MatchResultBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="LblResultTitle" type="Label" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/MatchResultBox/HBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.85, 0.78, 0.68, 0.90)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 13
+text = "نتیجه:"
+text_direction = 3
+
+[node name="LblResultScore" type="Label" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/MatchResultBox/HBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 15
+text = "۲ - ۲"
+text_direction = 3
 
 [node name="LocalTurnPillCenter" type="CenterContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox"]
 layout_mode = 2
@@ -466,149 +606,6 @@ theme_override_font_sizes/font_size = 15
 text = "نوبت شما"
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="BelowTimerRow" type="HBoxContainer" parent="Margin/VBoxMain"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 4
-alignment = 0
-
-[node name="PenaltyDetailsBox" type="PanelContainer" parent="Margin/VBoxMain/BelowTimerRow"]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_penalty_box")
-
-[node name="VBox" type="VBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 2
-alignment = 1
-
-[node name="OppRow" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 4
-alignment = 0
-
-[node name="LblOppTitle" type="Label" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.92, 0.86, 0.78, 1)
-theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 10
-text = "حریف:"
-text_direction = 3
-
-[node name="OppDots" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 3
-alignment = 1
-
-[node name="OppDot1" type="Panel" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots"]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
-
-[node name="OppDot2" type="Panel" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots"]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
-
-[node name="LblOppCount" type="Label" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
-theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 10
-text = "۰/۲"
-text_direction = 3
-
-[node name="MyRow" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 4
-alignment = 0
-
-[node name="LblMyTitle" type="Label" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.92, 0.86, 0.78, 1)
-theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 10
-text = "شما:"
-text_direction = 3
-
-[node name="MyDots" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 3
-alignment = 1
-
-[node name="MyDot1" type="Panel" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots"]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
-
-[node name="MyDot2" type="Panel" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots"]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
-
-[node name="LblMyCount" type="Label" parent="Margin/VBoxMain/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
-theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 10
-text = "۰/۲"
-text_direction = 3
-
-[node name="BelowTimerSpacer" type="Control" parent="Margin/VBoxMain/BelowTimerRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="MatchResultBox" type="PanelContainer" parent="Margin/VBoxMain/BelowTimerRow"]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 8
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_match_result")
-
-[node name="HBox" type="HBoxContainer" parent="Margin/VBoxMain/BelowTimerRow/MatchResultBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 4
-alignment = 1
-
-[node name="LblResultTitle" type="Label" parent="Margin/VBoxMain/BelowTimerRow/MatchResultBox/HBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.85, 0.78, 0.68, 0.90)
-theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 13
-text = "نتیجه:"
-text_direction = 3
-
-[node name="LblResultScore" type="Label" parent="Margin/VBoxMain/BelowTimerRow/MatchResultBox/HBox"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
-theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 15
-text = "۲ - ۲"
-text_direction = 3
 
 [node name="PlayersRow" type="HBoxContainer" parent="Margin/VBoxMain"]
 visible = false

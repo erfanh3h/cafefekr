@@ -24,6 +24,8 @@ static func render(host: Control, body_vbox: VBoxContainer) -> void:
 		var sid: String = sd["id"]
 		var is_act: bool = (host.current_friends_subtab == sid)
 		var b := CafeSocialTheme.make_subtab(sd["label"], is_act, int(sd["badge"]))
+		b.custom_minimum_size = Vector2(0, 58)
+		CafeSocialTheme.style_parlor_tab_button(b, is_act, 22, false, 20.0, 12.0)
 		b.pressed.connect(func():
 			AudioManager.sfx_tap()
 			host.current_friends_subtab = sid
@@ -242,7 +244,7 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 				else:
 					results_box.add_child(CafeSocialTheme.make_ornate_section_header("نتایج جستجو", null))
 					for item in arr:
-						if typeof(item) == TYPE_DICTIONARY:
+						if typeof(item) == TYPE_DICTIONARY and not _is_bot_player(item):
 							results_box.add_child(_build_player_card(host, item, "search"))
 		)
 
@@ -273,23 +275,41 @@ static func _populate_search_and_discover(host: Control, list_vbox: VBoxContaine
 			discover_box.add_child(CafeSocialTheme.make_ornate_section_header(
 				"هم‌بازی‌های اخیر شما", null, "بازیکنانی که اخیراً با آن‌ها رقابت کرده‌اید"
 			))
-			if recent.is_empty():
+			var rendered_recent := 0
+			for r_u in recent:
+				if typeof(r_u) == TYPE_DICTIONARY and not _is_bot_player(r_u):
+					discover_box.add_child(_build_player_card(host, r_u, "search"))
+					rendered_recent += 1
+			if rendered_recent == 0:
 				discover_box.add_child(CafeSocialTheme.make_body("هنوز هم‌بازی اخیری ثبت نشده است.", 23, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
-			else:
-				for r_u in recent:
-					if typeof(r_u) == TYPE_DICTIONARY:
-						discover_box.add_child(_build_player_card(host, r_u, "search"))
 
 			discover_box.add_child(CafeSocialTheme.make_ornate_section_header(
 				"پیشنهادهای دوستی", null, "بر اساس دوستان مشترک و هم‌سطحی شما"
 			))
-			if suggested.is_empty():
+			var rendered_suggested := 0
+			for s_u in suggested:
+				if typeof(s_u) == TYPE_DICTIONARY and not _is_bot_player(s_u):
+					discover_box.add_child(_build_player_card(host, s_u, "search"))
+					rendered_suggested += 1
+			if rendered_suggested == 0:
 				discover_box.add_child(CafeSocialTheme.make_body("در حال حاضر پیشنهاد جدیدی موجود نیست.", 23, CafeSocialTheme.COL_MUTED_SAND, HORIZONTAL_ALIGNMENT_CENTER, true))
-			else:
-				for s_u in suggested:
-					if typeof(s_u) == TYPE_DICTIONARY:
-						discover_box.add_child(_build_player_card(host, s_u, "search"))
 	)
+
+
+static func _is_bot_player(u: Dictionary) -> bool:
+	if u.is_empty():
+		return true
+	if bool(u.get("is_bot", false)) or bool(u.get("bot", false)):
+		return true
+	var uid := str(u.get("user_id", u.get("_id", u.get("id", ""))))
+	if uid.begins_with("bot_") or uid.begins_with("test_bot") or uid == "0" or uid == "3goBRU":
+		return true
+	var uname := str(u.get("username", u.get("name", ""))).to_lower()
+	if uname.begins_with("bot_") or uname.begins_with("bot ") or uname == "bot":
+		return true
+	if str(u.get("type", "")).to_lower() == "bot":
+		return true
+	return false
 
 
 static func _build_player_card(host: Control, u: Dictionary, mode: String, req_id: String = "") -> PanelContainer:
@@ -307,7 +327,7 @@ static func _build_player_card(host: Control, u: Dictionary, mode: String, req_i
 
 	var is_online_active := (str(pres.get("status", "offline")) != "offline")
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(46.0, 28.0))
 
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 12)

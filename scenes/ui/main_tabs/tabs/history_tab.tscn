@@ -94,37 +94,33 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_board_shell")
 
 [node name="HBox" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="BtnLbScore" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "امتیاز کل"
 
 [node name="BtnLbWin" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "بیشترین پیروزی"
 
 [node name="BtnLbFriends" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "دوستان"
 
 [node name="BtnLbClans" type="Button" parent="OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar/HBox"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
 mouse_default_cursor_shape = 2
 text = "اتحادها"

@@ -190,7 +190,7 @@ static func create_dialog_frame_style(tall: bool = false) -> StyleBoxTexture:
 	return sb
 
 
-static func create_header_banner_style(pad_x: float = 44.0, pad_y: float = 14.0) -> StyleBoxTexture:
+static func create_header_banner_style(pad_x: float = 44.0, pad_y: float = 26.0) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	sb.texture = TEX_FRAME2
 	sb.texture_margin_left = 40.0
@@ -206,7 +206,7 @@ static func create_header_banner_style(pad_x: float = 44.0, pad_y: float = 14.0)
 	return sb
 
 
-static func create_item_frame_style(pad_x: float = 46.0, pad_y: float = 14.0) -> StyleBoxTexture:
+static func create_item_frame_style(pad_x: float = 46.0, pad_y: float = 28.0) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	sb.texture = TEX_FRAME
 	sb.texture_margin_left = 48.0
@@ -231,14 +231,14 @@ static func create_clan_top_header_style() -> StyleBoxTexture:
 	sb.texture_margin_bottom = 32.0
 	sb.content_margin_left = 56.0
 	sb.content_margin_right = 56.0
-	sb.content_margin_top = 58.0
-	sb.content_margin_bottom = 26.0
+	sb.content_margin_top = 82.0
+	sb.content_margin_bottom = 36.0
 	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	return sb
 
 
-static func create_panel_box_style(pad_x: float = 44.0, pad_y: float = 24.0) -> StyleBoxTexture:
+static func create_panel_box_style(pad_x: float = 44.0, pad_y: float = 44.0) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	sb.texture = TEX_FRAME4
 	sb.texture_margin_left = 48.0
@@ -761,7 +761,7 @@ static func make_subtab(label_txt: String, is_active: bool = false, badge_count:
 
 static func make_ornate_section_header(title_txt: String, icon_tex: Texture2D = null, subtitle_txt: String = "") -> PanelContainer:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", create_header_banner_style(46.0, 14.0))
+	p.add_theme_stylebox_override("panel", create_header_banner_style(46.0, 26.0))
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -2044,17 +2044,20 @@ static var _parlor_slider_grabber_cache: Dictionary = {}
 static var _parlor_toggle_icon_cache: Dictionary = {}
 
 
-static func style_parlor_tab_button(btn: Button, is_active: bool, font_size: int = 18) -> void:
+static func style_parlor_tab_button(btn: Button, is_active: bool, font_size: int = 18, clip: bool = false, pad_x: float = 24.0, pad_y: float = 10.0) -> void:
 	if not is_instance_valid(btn):
 		return
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.clip_text = true
-	btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	btn.clip_text = clip
+	if clip:
+		btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	else:
+		btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	btn.add_theme_font_override("font", FONT_TITLE)
 	btn.add_theme_font_size_override("font_size", font_size)
 
-	var make_frame_sb := func(mod_col: Color, pad_x: float = 16.0, pad_y: float = 8.0) -> StyleBoxTexture:
+	var make_frame_sb := func(mod_col: Color) -> StyleBoxTexture:
 		var sb := StyleBoxTexture.new()
 		sb.texture = TEX_FRAME2
 		sb.texture_margin_left = 40.0
