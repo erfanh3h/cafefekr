@@ -171,23 +171,23 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	# 1. Welcome modal
 	var st_welcome: TutorialStep = TutorialStep.create(
 		"game_welcome",
-		"به کافه فکر خوش آمدید!",
-		"قبل از ورود به حساب کاربری، بیایید در یک دست کوتاه و ساده دوز با تمام دکمه‌های صفحه بازی و روش بازی آشنا شویم."
+		"سلام به کافه فکر!",
+		"آماده‌ای یه دست دوز سریع و باحال بزنیم؟ تو کمتر از یک دقیقه همه دکمه‌ها و قلق بازی رو یاد می‌گیری!"
 	)
-	st_welcome.with_badge("آموزش تعاملی")
-	st_welcome.with_cta("شروع آموزش")
+	st_welcome.with_badge("خوش اومدی!")
+	st_welcome.with_cta("بزن بریم!")
 	st_welcome.with_placement("center")
 	s.append(st_welcome)
 
 	# 2. Top Button: 2D/3D Camera Toggle (interactive!)
 	var st_view: TutorialStep = TutorialStep.create(
 		"hud_view_2d3d",
-		"تغییر زاویه دوربین (۳D / ۲D)",
-		"با این دکمه می‌توانید هر زمان که بخواهید نمای میز بازی را بین حالت سه‌بعدی و نمای عمودی (دوبعدی) تغییر دهید. همین الان امتحانش کنید!"
+		"زاویه دوربین سه‌بعدی و دوبعدی",
+		"دوست داری میز رو از بالا ببینی یا زاویه سه‌بعدی؟ با این دکمه هر وقت خواستی نمای بازی رو عوض کن!"
 	)
-	st_view.with_badge("دکمه‌های بالای بازی")
+	st_view.with_badge("دکمه‌های بازی")
 	st_view.with_cta("بعدی")
-	st_view.with_hint("همین الان روی دکمه ۳D/۲D بزنید یا «بعدی» را لمس کنید")
+	st_view.with_hint("همین الان یه بار امتحانش کن یا بزن «بعدی»")
 	st_view.with_target(func(): return _get_top_header_node("btn_view_2d3d"), 8.0, 16.0)
 	st_view.with_avoid_rect(_get_game_header_avoid_rect)
 	st_view.with_scrim_alpha(0.56)
@@ -198,10 +198,10 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	# 3. Top Button: Quick Chat / Kori
 	var st_chat: TutorialStep = TutorialStep.create(
 		"hud_chat",
-		"چت و کُری‌خوانی",
-		"از این دکمه برای ارسال پیام‌های آماده، تشویق یا کُری‌خوانی دوستانه در طول مسابقه استفاده کنید."
+		"چت و کُری‌خوانی وسط بازی",
+		"وسط مسابقه حال و هوا رو گرم کن! از اینجا می‌تونی پیام‌های آماده بفرستی و برای حریف کُری بخونی."
 	)
-	st_chat.with_badge("دکمه‌های بالای بازی")
+	st_chat.with_badge("دکمه‌های بازی")
 	st_chat.with_cta("بعدی")
 	st_chat.with_target(func(): return _get_top_header_node("btn_chat"), 8.0, 16.0)
 	st_chat.with_avoid_rect(_get_game_header_avoid_rect)
@@ -213,10 +213,10 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	# 4. Top Button: Emoji & Stickers
 	var st_emoji: TutorialStep = TutorialStep.create(
 		"hud_emoji",
-		"استیکر و واکنش",
-		"با این دکمه می‌توانید استیکرهای جذاب و واکنش‌های لحظه‌ای برای حریف ارسال کنید تا هیجان بازی دوچندان شود."
+		"استیکر و واکنش‌های باحال",
+		"حرکت خفنی زدی یا حریف غافلگیرت کرد؟ با استیکرهای بامزه حس و حالت رو همون لحظه نشون بده!"
 	)
-	st_emoji.with_badge("دکمه‌های بالای بازی")
+	st_emoji.with_badge("دکمه‌های بازی")
 	st_emoji.with_cta("بعدی")
 	st_emoji.with_target(func(): return _get_top_header_node("btn_emoji"), 8.0, 16.0)
 	st_emoji.with_avoid_rect(_get_game_header_avoid_rect)
@@ -228,10 +228,10 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	# 5. Top Button: Settings / Menu Drawer
 	var st_settings: TutorialStep = TutorialStep.create(
 		"hud_settings",
-		"منو و تنظیمات بازی",
-		"در این منو به تنظیمات صدا و موسیقی، خواندن قوانین بازی، غیرفعال‌سازی چت و گزینه انصراف از مسابقه دسترسی دارید."
+		"تنظیمات و راهنمای میز",
+		"صدا و موزیک، قوانین بازی، بستن چت یا خروج از میز؛ همه‌چیز مرتب توی این منو دم دستته."
 	)
-	st_settings.with_badge("دکمه‌های بالای بازی")
+	st_settings.with_badge("دکمه‌های بازی")
 	st_settings.with_cta("بعدی")
 	st_settings.with_target(func(): return _get_top_header_node("btn_settings"), 8.0, 16.0)
 	st_settings.with_avoid_rect(_get_game_header_avoid_rect)
@@ -242,11 +242,11 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	# 6. Opponent Pod & Turn Timer Bar
 	var st_timer: TutorialStep = TutorialStep.create(
 		"hud_turn_and_timer",
-		"نوبت بازیکن و نوار زمان",
-		"در بالای صفحه مشخصات حریف دیده می‌شود و این نوار طلایی زمان باقی‌مانده نوبت شما را نشان می‌دهد. هرگاه نوار روشن باشد، نوبت حرکت شماست!"
+		"نوبت تو و تایمر طلایی!",
+		"بالای صفحه حریف رو می‌بینی و این نوار طلایی وقتِ حرکتت رو نشون می‌ده. هر وقت روشن شد، نوبت توئه!"
 	)
-	st_timer.with_badge("نوار زمان و نوبت")
-	st_timer.with_cta("بزن بریم بازی!")
+	st_timer.with_badge("نوبت و زمان")
+	st_timer.with_cta("آماده‌ام، شروع بازی!")
 	st_timer.with_target(_get_timer_bar_target, 10.0, 16.0)
 	st_timer.with_avoid_rect(_get_game_header_avoid_rect)
 	st_timer.with_scrim_alpha(0.56)
@@ -257,11 +257,11 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	# 7. Interactive Gameplay Move 1 — Guided Center Cell (Index 4)
 	var st_move1: TutorialStep = TutorialStep.create(
 		"play_move_1",
-		"نوبت شماست! حرکت اول",
-		"در بازی دوز باید ۳ مهره خودتان (X) را در یک ردیف افقی، عمودی یا مورب بچینید. برای شروع، خانه وسط را لمس کنید!"
+		"نوبت توئه! اولین حرکت",
+		"باید ۳ تا از مهره‌هات رو پشت سر هم (افقی، عمودی یا مورب) ردیف کنی. بیا با خونه وسط شروع کنیم!"
 	)
-	st_move1.with_badge("آموزش بازی دوز")
-	st_move1.with_hint("👆 روی خانه طلایی وسط صفحه لمس کنید")
+	st_move1.with_badge("دست تمرینی")
+	st_move1.with_hint("روی خونه طلایی وسط بزن!")
 	st_move1.with_target(func(): return _get_board_cell_rect(4), 8.0, 18.0)
 	st_move1.with_avoid_rect(_get_board_screen_rect)
 	st_move1.with_scrim_alpha(0.40)
@@ -275,7 +275,7 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 
 func _on_enter_chat_step() -> void:
 	if is_instance_valid(_base_game_hud):
-		_base_game_hud.show_toast_hint("💬 نمونه کُری‌خوانی: «عجب حرکت هوشمندانه‌ای بود!»")
+		_base_game_hud.show_toast_hint("عجب حرکت هوشمندانه‌ای بود!")
 
 
 func _on_enter_emoji_step() -> void:
@@ -315,7 +315,7 @@ func _on_tutorial_player_moved(cell_idx: int) -> void:
 		if is_instance_valid(_base_game_hud):
 			_base_game_hud.update_turn(2)
 			_base_game_hud.pause_turn_timer()
-			_base_game_hud.show_toast_hint("عالی بود! حالا نوبت استاد کافه است...")
+			_base_game_hud.show_toast_hint("ایول! حالا ببینیم استاد کافه چی می‌چینه...")
 		# Bot places O in top-left corner (0), keeping row 3-4-5 completely open
 		_board.trigger_easy_bot_move(0, 0.70)
 	elif _game_phase == "move_2":
@@ -323,7 +323,7 @@ func _on_tutorial_player_moved(cell_idx: int) -> void:
 		if is_instance_valid(_base_game_hud):
 			_base_game_hud.update_turn(2)
 			_base_game_hud.pause_turn_timer()
-			_base_game_hud.show_toast_hint("حرکت هوشمندانه! فقط یک قدم تا پیروزی...")
+			_base_game_hud.show_toast_hint("عالی زدی! فقط یه قدم تا پیروزی مونده...")
 		# Bot places O in top-right corner (2), leaving cell 5 wide open for player's easy win!
 		_board.trigger_easy_bot_move(2, 0.70)
 	elif _game_phase == "move_3":
@@ -358,11 +358,11 @@ func _on_tutorial_bot_moved(_cell_idx: int) -> void:
 		var next_cell: int = 3 if int(_board.board_state[3]) == 0 else _board.find_recommended_player_cell()
 		var step2: TutorialStep = TutorialStep.create(
 			"play_move_2",
-			"حرکت دوم — ساخت ردیف برنده",
-			"حریف مهره‌اش را گذاشت. حالا با انتخاب این خانه، دو مهره X کنار هم قرار می‌گیرند و برای پیروزی آماده می‌شوید!"
+			"ایول! حالا ردیف رو بساز",
+			"استاد کافه حرکتش رو زد. حالا این خونه طلایی رو بزن تا دو تا مهره‌ات کنار هم بیفتن و آماده بُرد بشی!"
 		)
-		step2.with_badge("آموزش بازی دوز")
-		step2.with_hint("👆 خانه طلایی مشخص‌شده را لمس کنید")
+		step2.with_badge("دست تمرینی")
+		step2.with_hint("خونه طلایی رو لمس کن!")
 		step2.with_target(func(): return _get_board_cell_rect(next_cell), 8.0, 18.0)
 		step2.with_avoid_rect(_get_board_screen_rect)
 		step2.with_scrim_alpha(0.40)
@@ -378,11 +378,11 @@ func _on_tutorial_bot_moved(_cell_idx: int) -> void:
 		_game_phase = "move_3" if win_cell >= 0 else "free_play"
 		var step3: TutorialStep = TutorialStep.create(
 			"play_move_3",
-			"ضربه نهایی — برنده شوید!",
-			"یک حرکت تا پیروزی باقی مانده! این خانه را لمس کنید تا سه مهره شما در یک ردیف کامل شوند و برنده مسابقه شوید."
+			"ضربه نهایی و بُرد!",
+			"فقط یه خونه تا پیروزی مونده! این خونه رو بزن تا ۳ تا مهره‌ات ردیف بشن و بازی رو ببری!"
 		)
 		step3.with_badge("حرکت پیروزی!")
-		step3.with_hint("🏆 روی خانه طلایی بزنید تا برنده شوید!")
+		step3.with_hint("بزن روی خونه طلایی و برنده شو!")
 		step3.with_target(func(): return _get_board_cell_rect(win_cell), 8.0, 18.0)
 		step3.with_avoid_rect(_get_board_screen_rect)
 		step3.with_scrim_alpha(0.40)
@@ -399,7 +399,7 @@ func _on_tutorial_bot_moved(_cell_idx: int) -> void:
 
 func _on_tutorial_wrong_cell_tapped(_cell_idx: int) -> void:
 	if is_instance_valid(_overlay):
-		_overlay.show_nudge("برای تکمیل آموزش، خانه روشن و طلایی را لمس کنید")
+		_overlay.show_nudge("برای ادامه آموزش، روی خونه طلایی روشن بزن!")
 
 
 func _on_tutorial_draw_reached() -> void:
@@ -407,7 +407,7 @@ func _on_tutorial_draw_reached() -> void:
 		return
 	# Safety net: guarantee the player always finishes with an easy victory
 	if is_instance_valid(_base_game_hud):
-		_base_game_hud.show_toast_hint("بیایید یک دست سریع دیگر برویم تا پیروز شوید!")
+		_base_game_hud.show_toast_hint("بیا یه دست سریع دیگه بریم تا این دفعه ببری!")
 	get_tree().create_timer(0.9).timeout.connect(func():
 		if not is_instance_valid(self) or not is_game_tutorial_active or not is_instance_valid(_board):
 			return
@@ -417,11 +417,11 @@ func _on_tutorial_draw_reached() -> void:
 		_board.set_guided_cells([4])
 		var retry_step: TutorialStep = TutorialStep.create(
 			"play_retry",
-			"شروع مجدد — خانه وسط را بزنید",
-			"خانه وسط را لمس کنید تا خیلی راحت برنده شوید!"
+			"یه دست سریع دیگه!",
+			"بیا از خونه وسط شروع کنیم تا این دفعه راحت برنده بشی!"
 		)
-		retry_step.with_badge("آموزش بازی دوز")
-		retry_step.with_hint("👆 خانه طلایی وسط را لمس کنید")
+		retry_step.with_badge("دوباره بریم!")
+		retry_step.with_hint("خونه طلایی وسط رو بزن!")
 		retry_step.with_target(func(): return _get_board_cell_rect(4), 8.0, 18.0)
 		retry_step.with_avoid_rect(_get_board_screen_rect)
 		retry_step.with_scrim_alpha(0.40)
@@ -443,7 +443,7 @@ func _on_tutorial_player_won(_winning_line: Array) -> void:
 	GameManager.p2_score = 0
 	if is_instance_valid(_base_game_hud):
 		_base_game_hud.update_scores(1, 0)
-		_base_game_hud.show_toast_hint("🎉 آفرین! شما برنده بازی آموزشی شدید!")
+		_base_game_hud.show_toast_hint("ایول قهرمان! اولین بُردت توی کافه فکر!")
 
 	# Let the golden winning laser beam & 3D victory effects shine briefly,
 	# then show the real GameResultDialog (Win Dialog).
@@ -457,10 +457,12 @@ func _on_tutorial_player_won(_winning_line: Array) -> void:
 			_base_game_hud.show_game_result(1, 1, 0, 50, 25, 0, true)
 			if is_instance_valid(rd):
 				if is_instance_valid(rd.lbl_title):
-					rd.lbl_title.text = "پیروزی درخشان!"
+					rd.lbl_title.text_direction = Control.TEXT_DIRECTION_RTL
+					rd.lbl_title.text = "ایول! برنده شدی!"
 				if is_instance_valid(rd.lbl_subtitle):
 					rd.lbl_subtitle.visible = true
-					rd.lbl_subtitle.text = "آفرین! بازی دوز و امکانات صفحه بازی را یاد گرفتید. حالا وارد حساب کاربری شوید!"
+					rd.lbl_subtitle.text_direction = Control.TEXT_DIRECTION_RTL
+					rd.lbl_subtitle.text = "هم بازی دوز رو قشنگ یاد گرفتی هم دکمه‌ها رو! حالا وارد کافه فکر شو و با بازیکنای واقعی رقابت کن!"
 				if is_instance_valid(rd.btn_return):
 					rd.btn_return.text = "ورود به کافه فکر"
 	)
@@ -513,13 +515,13 @@ func _connect_game_tutorial_hud_listeners() -> void:
 			if is_game_tutorial_active and _active_flow == "game" and _step_index >= 0 and _step_index < _steps.size():
 				if _steps[_step_index].id == "hud_view_2d3d":
 					if is_instance_valid(_base_game_hud):
-						_base_game_hud.show_toast_hint("عالی! هر زمان خواستید می‌توانید بین نمای ۲D و ۳D جابه‌جا شوید.")
+						_base_game_hud.show_toast_hint("باریکلا! هر وقت خواستی می‌تونی زاویه دوربین رو عوض کنی.")
 		if _base_game_hud.has_signal("top_view_requested") and not _base_game_hud.top_view_requested.is_connected(_view_toggle_cb):
 			_base_game_hud.top_view_requested.connect(_view_toggle_cb)
 
 		_reaction_cb = func(_r_id):
 			if is_game_tutorial_active and is_instance_valid(_base_game_hud):
-				_base_game_hud.show_toast_hint("آفرین! واکنش شما در بازی واقعی هم همین‌طور نمایش داده می‌شود.")
+				_base_game_hud.show_toast_hint("ایول! واکنشت توی مسابقه واقعی هم همین‌طور نشون داده می‌شه.")
 		if _base_game_hud.has_signal("reaction_sent") and not _base_game_hud.reaction_sent.is_connected(_reaction_cb):
 			_base_game_hud.reaction_sent.connect(_reaction_cb)
 
@@ -575,11 +577,11 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	# 1. Welcome to Main Lobby
 	var st_main_welcome: TutorialStep = TutorialStep.create(
 		"main_welcome",
-		"خوش آمدید به سالن کافه فکر!",
-		"حساب کاربری شما آماده است. بیایید یک گشت سریع و یک‌باره در ۵ بخش اصلی و دکمه‌های بالای صفحه بزنیم."
+		"به سالن کافه فکر خوش اومدی!",
+		"حسابت آماده شد! بیا یه گشت سریع و باحال تو بخش‌های اصلی و دکمه‌های بالای صفحه بزنیم تا همه‌جا رو بلد باشی."
 	)
-	st_main_welcome.with_badge("آشنایی با کافه فکر")
-	st_main_welcome.with_cta("شروع گشت")
+	st_main_welcome.with_badge("سالن کافه فکر")
+	st_main_welcome.with_cta("بزن بریم!")
 	st_main_welcome.with_placement("center")
 	s.append(st_main_welcome)
 
@@ -588,10 +590,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	# 2. Tab: Play (بازی)
 	var st_tab_play: TutorialStep = TutorialStep.create(
 		"tab_play",
-		"۱. بخش بازی (صفحه اصلی)",
-		"اینجا مرکز رقابت‌های کافه فکر است! می‌توانید وارد رقابت ۱ به ۱، بازی‌های چندنفره، کلاسیک یا لابی دوستانه شوید."
+		"۱. میز بازی و رقابت",
+		"قلب کافه فکر اینجاست! از رقابت ۱ به ۱ و بازی‌های چندنفره تا میزهای دوستانه، هر مدلی دوست داری انتخاب کن."
 	)
-	st_tab_play.with_badge("تب‌های اصلی (۱ از ۵)")
+	st_tab_play.with_badge("بخش‌های اصلی (۱ از ۵)")
 	st_tab_play.with_cta("بعدی")
 	st_tab_play.with_target(func(): return _get_bottom_nav_btn("btn_play"), 8.0, 16.0)
 	st_tab_play.with_placement("top")
@@ -601,10 +603,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	# 3. Tab: Social / Clan (اتحاد)
 	var st_tab_social: TutorialStep = TutorialStep.create(
 		"tab_social",
-		"۲. بخش اتحاد (کلن)",
-		"در بخش اتحاد می‌توانید کلن اختصاصی خودتان را بسازید یا به اتحاد دیگران بپیوندید، با هم‌تیمی‌ها چت کنید و با هم امتیاز بگیرید."
+		"۲. اتحاد و کلن",
+		"تیم خودت رو بساز یا به یه اتحاد باحال بپیوند! با هم‌تیمی‌هات گپ بزن و با هم امتیاز کلن رو بالا ببر."
 	)
-	st_tab_social.with_badge("تب‌های اصلی (۲ از ۵)")
+	st_tab_social.with_badge("بخش‌های اصلی (۲ از ۵)")
 	st_tab_social.with_cta("بعدی")
 	st_tab_social.with_target(func(): return _get_bottom_nav_btn("btn_social"), 8.0, 16.0)
 	st_tab_social.with_placement("top")
@@ -614,10 +616,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	# 4. Tab: Leaderboard (برترین‌ها)
 	var st_tab_history: TutorialStep = TutorialStep.create(
 		"tab_history",
-		"۳. بخش برترین‌ها",
-		"رتبه‌بندی برترین بازیکنان کافه فکر را اینجا ببینید و با کسب پیروزی‌های بیشتر، جایگاه خودتان را در جدول بالا ببرید."
+		"۳. جدول برترین‌ها",
+		"اینجا ستاره‌های کافه فکر صف کشیدن! با هر بُرد پله‌پله بالا برو و اسمت رو بین برترین‌ها ثبت کن."
 	)
-	st_tab_history.with_badge("تب‌های اصلی (۳ از ۵)")
+	st_tab_history.with_badge("بخش‌های اصلی (۳ از ۵)")
 	st_tab_history.with_cta("بعدی")
 	st_tab_history.with_target(func(): return _get_bottom_nav_btn("btn_history"), 8.0, 16.0)
 	st_tab_history.with_placement("top")
@@ -627,10 +629,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	# 5. Tab: Library (کتابخانه)
 	var st_tab_library: TutorialStep = TutorialStep.create(
 		"tab_library",
-		"۴. بخش کتابخانه بازی‌ها",
-		"در کتابخانه می‌توانید با تمام بازی‌های فکری کافه فکر، قوانین، امتیازدهی و نکات هر بازی آشنا شوید."
+		"۴. کتابخانه بازی‌ها",
+		"قانون یا قلقِ یه بازی رو می‌خوای بدونی؟ همه بازی‌های فکری کافه فکر با راهنمای کامل اینجان."
 	)
-	st_tab_library.with_badge("تب‌های اصلی (۴ از ۵)")
+	st_tab_library.with_badge("بخش‌های اصلی (۴ از ۵)")
 	st_tab_library.with_cta("بعدی")
 	st_tab_library.with_target(func(): return _get_bottom_nav_btn("btn_library"), 8.0, 16.0)
 	st_tab_library.with_placement("top")
@@ -640,10 +642,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	# 6. Tab: User Profile (کاربر)
 	var st_tab_user: TutorialStep = TutorialStep.create(
 		"tab_user",
-		"۵. بخش پروفایل کاربری",
-		"اینجا سطح، تجربه (XP)، سکه‌ها، آواتار و قاب اختصاصی خودتان را مدیریت می‌کنید و به فروشگاه و تنظیمات حساب دسترسی دارید."
+		"۵. پروفایل تو",
+		"سطح، تجربه، سکه‌ها، آواتار و قاب اختصاصی‌ات اینجاست؛ هرجور دوست داری کاراکترت رو خفن‌تر کن!"
 	)
-	st_tab_user.with_badge("تب‌های اصلی (۵ از ۵)")
+	st_tab_user.with_badge("بخش‌های اصلی (۵ از ۵)")
 	st_tab_user.with_cta("بعدی")
 	st_tab_user.with_target(func(): return _get_bottom_nav_btn("btn_user"), 8.0, 16.0)
 	st_tab_user.with_placement("top")
@@ -656,9 +658,9 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	var st_top_watch: TutorialStep = TutorialStep.create(
 		"top_watch_live",
 		"تماشای زنده بازی‌ها",
-		"با این دکمه می‌توانید مسابقات زنده بازیکنان حرفه‌ای را تماشا کنید و استراتژی‌های جدید یاد بگیرید."
+		"ببین حرفه‌ای‌ها چطور بازی می‌کنن! از اینجا می‌تونی مسابقات زنده رو ببینی و تاکتیک‌های جدید یاد بگیری."
 	)
-	st_top_watch.with_badge("دکمه‌های بالای صفحه")
+	st_top_watch.with_badge("دکمه‌های بالا")
 	st_top_watch.with_cta("بعدی")
 	st_top_watch.with_target(func(): return _get_play_tab_btn("btn_watch_live"), 8.0, 16.0)
 	st_top_watch.with_avoid_rect(_get_play_topbar_avoid_rect)
@@ -670,10 +672,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	# 8. Top Button: Match History (تاریخچه بازی‌ها)
 	var st_top_history: TutorialStep = TutorialStep.create(
 		"top_history",
-		"تاریخچه بازی‌ها",
-		"نتایج، امتیازات و جزئیات بازی‌های قبلی خودتان را هر زمان که بخواهید از اینجا بررسی کنید."
+		"تاریخچه بازی‌هات",
+		"نتیجه، امتیاز و جزئیات بازی‌های قبلیت همه اینجا ذخیره شدن؛ هر وقت خواستی برگرد و چکشون کن."
 	)
-	st_top_history.with_badge("دکمه‌های بالای صفحه")
+	st_top_history.with_badge("دکمه‌های بالا")
 	st_top_history.with_cta("بعدی")
 	st_top_history.with_target(func(): return _get_play_tab_btn("btn_history"), 8.0, 14.0)
 	st_top_history.with_avoid_rect(_get_play_topbar_avoid_rect)
@@ -685,10 +687,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	# 9. Top Button: Friends & Direct Messages (دوستان و پیام‌ها)
 	var st_top_friends: TutorialStep = TutorialStep.create(
 		"top_friends",
-		"دوستان و پیام‌های خصوصی",
-		"لیست دوستان، درخواست‌های دوستی و گفتگوی خصوصی شما در این بخش قرار دارد. دوستانتان را به رقابت دعوت کنید!"
+		"دوستان و پیام‌ها",
+		"رفیقات رو اینجا پیدا کن، باهاشون گپ بزن و یه راست دعوتشون کن سر میز مسابقه!"
 	)
-	st_top_friends.with_badge("دکمه‌های بالای صفحه")
+	st_top_friends.with_badge("دکمه‌های بالا")
 	st_top_friends.with_cta("بعدی")
 	st_top_friends.with_target(func(): return _get_play_tab_btn("btn_friends"), 8.0, 14.0)
 	st_top_friends.with_avoid_rect(_get_play_topbar_avoid_rect)
@@ -701,9 +703,9 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	var st_top_notif: TutorialStep = TutorialStep.create(
 		"top_notifications",
 		"اعلان‌ها و دعوت‌نامه‌ها",
-		"همه دعوت‌های بازی، درخواست‌های دوستی و پیام‌های مهم سیستم در این بخش به شما اطلاع داده می‌شوند."
+		"دعوت به بازی، درخواست دوستی یا خبرهای مهم؛ هیچ‌چیز از دستت درنمی‌ره و همه اینجا بهت خبر داده می‌شن."
 	)
-	st_top_notif.with_badge("دکمه‌های بالای صفحه")
+	st_top_notif.with_badge("دکمه‌های بالا")
 	st_top_notif.with_cta("بعدی")
 	st_top_notif.with_target(func(): return _get_play_tab_btn("btn_notifications"), 8.0, 14.0)
 	st_top_notif.with_avoid_rect(_get_play_topbar_avoid_rect)
@@ -716,9 +718,9 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	var st_top_exit: TutorialStep = TutorialStep.create(
 		"top_exit",
 		"دکمه خروج",
-		"هر زمان خواستید از برنامه خارج شوید، از این دکمه استفاده کنید تا با تاییدیه ایمن از بازی خارج شوید."
+		"هر وقت کارت تموم شد، از اینجا با خیال راحت و با تاییدیه ایمن از برنامه خارج شو."
 	)
-	st_top_exit.with_badge("دکمه‌های بالای صفحه")
+	st_top_exit.with_badge("دکمه‌های بالا")
 	st_top_exit.with_cta("بعدی")
 	st_top_exit.with_target(func(): return _get_play_tab_btn("btn_exit"), 8.0, 14.0)
 	st_top_exit.with_avoid_rect(_get_play_topbar_avoid_rect)
@@ -730,10 +732,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	# 12. Completion Card
 	var st_main_done: TutorialStep = TutorialStep.create(
 		"main_done",
-		"آموزش کامل شد — آماده رقابتید!",
-		"اکنون با تمام بخش‌های کافه فکر آشنا شدید. اولین مسابقه واقعی خودتان را انتخاب کنید و لذت ببرید!"
+		"همه‌چیز رو یاد گرفتی، قهرمان!",
+		"الان دیگه کافه فکر رو کامل بلدی! اولین مسابقه‌ات رو انتخاب کن و نشون بده کی رئیس میزه!"
 	)
-	st_main_done.with_badge("پایان آموزش")
+	st_main_done.with_badge("آماده رقابت!")
 	st_main_done.with_cta("شروع رقابت!")
 	st_main_done.with_placement("center")
 	st_main_done.with_hooks(func(): _switch_main_tab("play"))

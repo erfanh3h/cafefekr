@@ -137,9 +137,11 @@ func _build_ui() -> void:
 	_root.add_child(_pointer_lbl)
 
 	# Authentic Cafe Fekr `dialog.png` 9-slice Coach Card
+	# IMPORTANT: Keep LAYOUT_DIRECTION_LTR on container/labels and set TEXT_DIRECTION_RTL +
+	# HORIZONTAL_ALIGNMENT_RIGHT on each Label so Godot 4 does NOT mirror right-align to left.
 	_coach_card = PanelContainer.new()
 	_coach_card.name = "CoachCard"
-	_coach_card.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	_coach_card.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	_coach_card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_coach_card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_coach_card.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -157,19 +159,35 @@ func _build_ui() -> void:
 	_root.add_child(_coach_card)
 
 	_card_vbox = VBoxContainer.new()
-	_card_vbox.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	_card_vbox.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	_card_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_card_vbox.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_card_vbox.add_theme_constant_override("separation", 8)
 	_coach_card.add_child(_card_vbox)
 
-	# Top header row: Badge + Step Progress
+	# Top header row (RTL visual layout: step counter on LEFT, badge pill on RIGHT)
 	var header_row := HBoxContainer.new()
-	header_row.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	header_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	header_row.add_theme_constant_override("separation", 8)
 	_card_vbox.add_child(header_row)
 
+	_lbl_step_counter = Label.new()
+	_lbl_step_counter.text = ""
+	_lbl_step_counter.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	_lbl_step_counter.text_direction = Control.TEXT_DIRECTION_RTL
+	_lbl_step_counter.language = "fa"
+	_lbl_step_counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_lbl_step_counter.add_theme_font_override("font", FONT_VAZIR)
+	_lbl_step_counter.add_theme_font_size_override("font_size", 12)
+	_lbl_step_counter.add_theme_color_override("font_color", MUTED_GOLD)
+	header_row.add_child(_lbl_step_counter)
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_row.add_child(spacer)
+
 	var badge_panel := PanelContainer.new()
+	badge_panel.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	var badge_sb := StyleBoxFlat.new()
 	badge_sb.bg_color = Color(0.18, 0.13, 0.06, 0.92)
 	badge_sb.border_color = Color(0.86, 0.68, 0.28, 0.85)
@@ -184,24 +202,20 @@ func _build_ui() -> void:
 
 	_lbl_badge = Label.new()
 	_lbl_badge.text = "آموزش کافه فکر"
+	_lbl_badge.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	_lbl_badge.text_direction = Control.TEXT_DIRECTION_RTL
+	_lbl_badge.language = "fa"
+	_lbl_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_badge.add_theme_font_override("font", FONT_VAZIR)
 	_lbl_badge.add_theme_font_size_override("font_size", 12)
 	_lbl_badge.add_theme_color_override("font_color", GOLD_BRIGHT)
 	badge_panel.add_child(_lbl_badge)
 
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header_row.add_child(spacer)
-
-	_lbl_step_counter = Label.new()
-	_lbl_step_counter.text = ""
-	_lbl_step_counter.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_step_counter.add_theme_font_size_override("font_size", 12)
-	_lbl_step_counter.add_theme_color_override("font_color", MUTED_GOLD)
-	header_row.add_child(_lbl_step_counter)
-
-	# Title
+	# Title (RTL, aligned right)
 	_lbl_title = Label.new()
+	_lbl_title.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	_lbl_title.text_direction = Control.TEXT_DIRECTION_RTL
+	_lbl_title.language = "fa"
 	_lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -220,8 +234,11 @@ func _build_ui() -> void:
 	divider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_card_vbox.add_child(divider)
 
-	# Body
+	# Body (RTL, aligned right)
 	_lbl_body = Label.new()
+	_lbl_body.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	_lbl_body.text_direction = Control.TEXT_DIRECTION_RTL
+	_lbl_body.language = "fa"
 	_lbl_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -230,15 +247,16 @@ func _build_ui() -> void:
 	_lbl_body.add_theme_color_override("font_color", CREAM_TEXT)
 	_card_vbox.add_child(_lbl_body)
 
-	# Interactive prompt chip
+	# Interactive prompt chip (RTL, aligned right)
 	_hint_chip = PanelContainer.new()
+	_hint_chip.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	var hint_sb := StyleBoxFlat.new()
 	hint_sb.bg_color = Color(0.08, 0.28, 0.16, 0.94)
 	hint_sb.border_color = Color(0.45, 0.90, 0.58, 0.88)
 	hint_sb.set_border_width_all(1)
 	hint_sb.set_corner_radius_all(10)
-	hint_sb.content_margin_left = 10
-	hint_sb.content_margin_right = 10
+	hint_sb.content_margin_left = 12
+	hint_sb.content_margin_right = 12
 	hint_sb.content_margin_top = 6
 	hint_sb.content_margin_bottom = 6
 	_hint_chip.add_theme_stylebox_override("panel", hint_sb)
@@ -246,7 +264,10 @@ func _build_ui() -> void:
 	_card_vbox.add_child(_hint_chip)
 
 	_lbl_hint = Label.new()
-	_lbl_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_hint.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	_lbl_hint.text_direction = Control.TEXT_DIRECTION_RTL
+	_lbl_hint.language = "fa"
+	_lbl_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_hint.add_theme_font_override("font", FONT_VAZIR)
@@ -254,9 +275,12 @@ func _build_ui() -> void:
 	_lbl_hint.add_theme_color_override("font_color", Color(0.86, 1.0, 0.90, 1.0))
 	_hint_chip.add_child(_lbl_hint)
 
-	# Gentle inline nudge label (shown if user taps wrong spot)
+	# Gentle inline nudge label (RTL, aligned right)
 	_nudge_lbl = Label.new()
-	_nudge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_nudge_lbl.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	_nudge_lbl.text_direction = Control.TEXT_DIRECTION_RTL
+	_nudge_lbl.language = "fa"
+	_nudge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_nudge_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_nudge_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_nudge_lbl.add_theme_font_override("font", FONT_VAZIR)
@@ -265,21 +289,41 @@ func _build_ui() -> void:
 	_nudge_lbl.visible = false
 	_card_vbox.add_child(_nudge_lbl)
 
-	# Step progress dots
+	# Step progress dots (right-to-left progress order for Persian)
 	_dots_container = HBoxContainer.new()
+	_dots_container.layout_direction = Control.LAYOUT_DIRECTION_RTL
 	_dots_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	_dots_container.add_theme_constant_override("separation", 6)
 	_card_vbox.add_child(_dots_container)
 
-	# Action buttons row
+	# Action buttons row (Back on LEFT, primary Next CTA on RIGHT for RTL ergonomics)
 	_btn_row = HBoxContainer.new()
-	_btn_row.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	_btn_row.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	_btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_btn_row.add_theme_constant_override("separation", 12)
 	_card_vbox.add_child(_btn_row)
 
+	_btn_back = Button.new()
+	_btn_back.text = "قبلی"
+	_btn_back.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	_btn_back.text_direction = Control.TEXT_DIRECTION_RTL
+	_btn_back.language = "fa"
+	_btn_back.custom_minimum_size = Vector2(100, 48)
+	_btn_back.add_theme_font_override("font", FONT_HEKAYAT)
+	_btn_back.add_theme_font_size_override("font_size", 20)
+	KenneyUI.style_button(_btn_back, KenneyUI.COLOR_GREY)
+	ActionVFXManager.apply_button_juice(_btn_back, "tap_button")
+	_btn_back.pressed.connect(func():
+		AudioManager.sfx_tap()
+		back_pressed.emit()
+	)
+	_btn_row.add_child(_btn_back)
+
 	_btn_next = Button.new()
 	_btn_next.text = "بعدی"
+	_btn_next.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	_btn_next.text_direction = Control.TEXT_DIRECTION_RTL
+	_btn_next.language = "fa"
 	_btn_next.custom_minimum_size = Vector2(160, 48)
 	_btn_next.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_btn_next.add_theme_font_override("font", FONT_HEKAYAT)
@@ -291,19 +335,6 @@ func _build_ui() -> void:
 		next_pressed.emit()
 	)
 	_btn_row.add_child(_btn_next)
-
-	_btn_back = Button.new()
-	_btn_back.text = "قبلی"
-	_btn_back.custom_minimum_size = Vector2(100, 48)
-	_btn_back.add_theme_font_override("font", FONT_HEKAYAT)
-	_btn_back.add_theme_font_size_override("font_size", 20)
-	KenneyUI.style_button(_btn_back, KenneyUI.COLOR_GREY)
-	ActionVFXManager.apply_button_juice(_btn_back, "tap_button")
-	_btn_back.pressed.connect(func():
-		AudioManager.sfx_tap()
-		back_pressed.emit()
-	)
-	_btn_row.add_child(_btn_back)
 
 
 func _make_scrim_rect(node_name: String) -> ColorRect:
@@ -328,7 +359,7 @@ func _on_scrim_gui_input(event: InputEvent) -> void:
 	var is_tap: bool = (event is InputEventMouseButton and event.pressed) or (event is InputEventScreenTouch and event.pressed)
 	if is_tap:
 		if _current_step and _current_step.require_target_action:
-			show_nudge("ابتدا بخش روشن‌شده را لمس کنید")
+			show_nudge("اول بخش روشن‌شده رو لمس کن!")
 
 
 func _on_hole_gui_input(event: InputEvent) -> void:
