@@ -489,32 +489,7 @@ static func _build_clan_navigation_tabs(host: Control, has_clan: bool) -> PanelC
 		btn.name = "ClanTab_" + tid
 		btn.custom_minimum_size = Vector2(0, 48)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.focus_mode = Control.FOCUS_NONE
-		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-
-		var st_norm := StyleBoxFlat.new()
-		st_norm.set_corner_radius_all(11)
-		st_norm.content_margin_left = 6.0
-		st_norm.content_margin_right = 6.0
-		st_norm.content_margin_top = 4.0
-		st_norm.content_margin_bottom = 4.0
-
-		if is_active:
-			st_norm.bg_color = Color(0.14, 0.38, 0.23, 0.98)
-			st_norm.border_color = Color(0.92, 0.76, 0.32, 0.95)
-			st_norm.set_border_width_all(2)
-			st_norm.border_width_bottom = 3
-			if not _is_mobile_platform():
-				st_norm.shadow_color = Color(0, 0, 0, 0.35)
-				st_norm.shadow_size = 4
-		else:
-			st_norm.bg_color = Color(0.14, 0.09, 0.05, 0.90)
-			st_norm.border_color = Color(0.48, 0.36, 0.20, 0.65)
-			st_norm.set_border_width_all(1)
-
-		btn.add_theme_stylebox_override("normal", st_norm)
-		btn.add_theme_stylebox_override("hover", st_norm)
-		btn.add_theme_stylebox_override("pressed", st_norm)
+		CafeSocialTheme.style_parlor_tab_button(btn, is_active, 21 if has_clan else 22)
 
 		var h := HBoxContainer.new()
 		h.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -1830,7 +1805,7 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 	# A. FOCUSED CLAN STATUS & PROGRESS CARD (no duplicate emblem/name from header)
 	# --------------------------------------------------------------------------
 	var hero_card := PanelContainer.new()
-	hero_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_panel_box_style(24.0, 18.0))
+	hero_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_panel_box_style(46.0, 24.0))
 	vbox.add_child(hero_card)
 
 	var hv := VBoxContainer.new()
@@ -2031,7 +2006,7 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 static func _build_weekly_challenge_card(ch: Dictionary) -> PanelContainer:
 	var ch_card := PanelContainer.new()
 	var done := bool(ch.get("completed", false))
-	ch_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(24.0, 12.0))
+	ch_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(46.0, 14.0))
 
 	var cv := VBoxContainer.new()
 	cv.add_theme_constant_override("separation", 6)
@@ -2443,7 +2418,7 @@ static func _build_clan_member_card(host: Control, m_dict: Dictionary, my_uid: S
 	card.set_meta("contrib", m_contrib)
 	card.set_meta("score", m_score)
 
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(24.0, 10.0))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(48.0, 14.0))
 
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -3076,7 +3051,7 @@ static func _build_clan_directory_card(host: Control, cl: Dictionary, rank_num: 
 	var jtype_fa := "آزاد" if jtype == "open" else "با تایید"
 
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(24.0, 10.0))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(48.0, 14.0))
 
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 7)
@@ -3229,7 +3204,7 @@ static func _build_clan_leaderboard_inner(host: Control, holder: VBoxContainer) 
 		var mid: String = m["id"]
 		var act: bool = (str(host.current_clan_lb_mode) == mid)
 		var b := CafeSocialTheme.make_subtab(m["label"], act, 0)
-		var h_sb: StyleBoxTexture = CafeSocialTheme.create_header_banner_style(16.0, 8.0).duplicate()
+		var h_sb: StyleBoxTexture = CafeSocialTheme.create_header_banner_style(36.0, 10.0).duplicate()
 		if act:
 			h_sb.modulate_color = Color(1.18, 1.12, 0.92)
 		else:
@@ -3480,7 +3455,7 @@ static func _build_overview_challenge_card(host: Control, chal: Dictionary, my_u
 	var p_count: int = clampi(int(chal.get("player_count", 2)), 2, 4)
 
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(24.0, 12.0))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(46.0, 14.0))
 
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)

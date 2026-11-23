@@ -68,11 +68,11 @@ func _style_lb_btn(btn: Button, is_act: bool) -> void:
 
 func _create_compact_row_style(is_me: bool, state: String = "normal") -> StyleBoxTexture:
 	var sb: StyleBoxTexture = StyleBoxTexture.new()
-	sb.texture = CafeSocialTheme.TEX_FRAME_SMALL
-	sb.texture_margin_left = 44.0
-	sb.texture_margin_right = 44.0
-	sb.texture_margin_top = 14.0
-	sb.texture_margin_bottom = 14.0
+	sb.texture = CafeSocialTheme.TEX_FRAME
+	sb.texture_margin_left = 48.0
+	sb.texture_margin_right = 48.0
+	sb.texture_margin_top = 28.0
+	sb.texture_margin_bottom = 28.0
 	sb.content_margin_left = 0.0
 	sb.content_margin_right = 0.0
 	sb.content_margin_top = 0.0
@@ -235,7 +235,7 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 
 		# --- Enhanced Scannable Outer Card (Taller height +2px fonts) ---
 		var card: Button = Button.new()
-		card.custom_minimum_size = Vector2(0, 110)
+		card.custom_minimum_size = Vector2(0, 116)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.flat = false
 		card.focus_mode = Control.FOCUS_NONE
@@ -251,14 +251,13 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 		card.add_theme_stylebox_override("focus", style_normal)
 		card.add_theme_stylebox_override("disabled", style_normal)
 
-		# +20px inner left padding (56px vs 36px) so scores never collide with the left emerald diamond
 		var pad: MarginContainer = MarginContainer.new()
 		pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pad.add_theme_constant_override("margin_left", 56)
-		pad.add_theme_constant_override("margin_right", 34)
-		pad.add_theme_constant_override("margin_top", 10)
-		pad.add_theme_constant_override("margin_bottom", 10)
+		pad.add_theme_constant_override("margin_right", 44)
+		pad.add_theme_constant_override("margin_top", 12)
+		pad.add_theme_constant_override("margin_bottom", 12)
 		card.add_child(pad)
 
 		var row: HBoxContainer = HBoxContainer.new()

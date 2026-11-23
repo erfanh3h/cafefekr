@@ -250,20 +250,20 @@ func _extract_primary_game_type(game: Dictionary) -> String:
 	return ""
 
 
-func _make_match_card_style(bg: Color, border: Color, stripe_w: int, shadow_col: Color) -> StyleBoxFlat:
-	var sb: StyleBoxFlat = StyleBoxFlat.new()
-	sb.bg_color = bg
-	sb.border_color = border
-	sb.set_border_width_all(2)
-	sb.border_width_right = stripe_w
-	sb.set_corner_radius_all(16)
-	sb.shadow_color = shadow_col
-	sb.shadow_size = 0 if GameManager.is_mobile else 7
-	sb.shadow_offset = Vector2(0, 3)
-	sb.content_margin_left = 12.0
-	sb.content_margin_right = 14.0
-	sb.content_margin_top = 8.0
-	sb.content_margin_bottom = 8.0
+func _make_match_card_style(mod_col: Color) -> StyleBoxTexture:
+	var sb: StyleBoxTexture = StyleBoxTexture.new()
+	sb.texture = preload("res://assets/images/frames/frame.png")
+	sb.texture_margin_left = 48.0
+	sb.texture_margin_top = 28.0
+	sb.texture_margin_right = 48.0
+	sb.texture_margin_bottom = 28.0
+	sb.content_margin_left = 44.0
+	sb.content_margin_right = 44.0
+	sb.content_margin_top = 12.0
+	sb.content_margin_bottom = 12.0
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.modulate_color = mod_col
 	return sb
 
 
@@ -287,29 +287,21 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		else:
 			my_res = "unfinished"
 
-	var card_bg: Color = Color(0.15, 0.11, 0.08, 0.95)
-	var card_border: Color = Color(0.56, 0.44, 0.30, 0.88)
-	var card_shadow: Color = Color(0.0, 0.0, 0.0, 0.36)
-	var stripe_w: int = 4
+	var card_tint: Color = Color.WHITE
+	var card_border: Color = CafeSocialTheme.COL_BRONZE_BORDER
 	if my_res == "win":
-		card_bg = Color(0.09, 0.21, 0.13, 0.96)
+		card_tint = Color(0.92, 1.06, 0.94)
 		card_border = Color(0.27, 0.78, 0.44, 0.94)
-		card_shadow = Color(0.08, 0.35, 0.16, 0.36)
-		stripe_w = 6
 	elif my_res == "lose":
-		card_bg = Color(0.24, 0.09, 0.10, 0.96)
+		card_tint = Color(1.06, 0.90, 0.90)
 		card_border = Color(0.86, 0.34, 0.34, 0.92)
-		card_shadow = Color(0.38, 0.08, 0.08, 0.36)
-		stripe_w = 6
 	elif my_res == "draw":
-		card_bg = Color(0.21, 0.16, 0.07, 0.96)
+		card_tint = Color(1.05, 1.00, 0.88)
 		card_border = Color(0.90, 0.72, 0.30, 0.90)
-		card_shadow = Color(0.30, 0.22, 0.06, 0.34)
-		stripe_w = 6
 
-	var st_norm: StyleBoxFlat = _make_match_card_style(card_bg, card_border, stripe_w, card_shadow)
-	var st_hover: StyleBoxFlat = _make_match_card_style(card_bg.lightened(0.07), card_border.lightened(0.12), stripe_w, card_shadow)
-	var st_press: StyleBoxFlat = _make_match_card_style(card_bg.darkened(0.07), card_border, stripe_w, card_shadow)
+	var st_norm: StyleBoxTexture = _make_match_card_style(card_tint)
+	var st_hover: StyleBoxTexture = _make_match_card_style(card_tint.lightened(0.08))
+	var st_press: StyleBoxTexture = _make_match_card_style(card_tint.darkened(0.08))
 	btn.add_theme_stylebox_override("normal", st_norm)
 	btn.add_theme_stylebox_override("hover", st_hover)
 	btn.add_theme_stylebox_override("pressed", st_press)
@@ -318,8 +310,8 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	var pad: MarginContainer = MarginContainer.new()
 	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pad.add_theme_constant_override("margin_left", 18)
-	pad.add_theme_constant_override("margin_right", 20)
+	pad.add_theme_constant_override("margin_left", 36)
+	pad.add_theme_constant_override("margin_right", 36)
 	pad.add_theme_constant_override("margin_top", 10)
 	pad.add_theme_constant_override("margin_bottom", 10)
 	btn.add_child(pad)
@@ -1298,10 +1290,10 @@ func _populate_double_stats_matrix(holder: VBoxContainer, hist: Dictionary) -> v
 	hero_sb.border_width_bottom = 1
 	hero_sb.border_width_top = 2
 	hero_sb.set_corner_radius_all(18)
-	hero_sb.content_margin_left = 14.0
-	hero_sb.content_margin_right = 14.0
-	hero_sb.content_margin_top = 14.0
-	hero_sb.content_margin_bottom = 14.0
+	hero_sb.content_margin_left = 24.0
+	hero_sb.content_margin_right = 24.0
+	hero_sb.content_margin_top = 18.0
+	hero_sb.content_margin_bottom = 18.0
 	hero_sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
 	hero_sb.shadow_size = 0 if GameManager.is_mobile else 6
 	hero_sb.shadow_offset = Vector2(0, 3)

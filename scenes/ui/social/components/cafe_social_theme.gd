@@ -190,7 +190,7 @@ static func create_dialog_frame_style(tall: bool = false) -> StyleBoxTexture:
 	return sb
 
 
-static func create_header_banner_style(pad_x: float = 22.0, pad_y: float = 12.0) -> StyleBoxTexture:
+static func create_header_banner_style(pad_x: float = 44.0, pad_y: float = 14.0) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	sb.texture = TEX_FRAME2
 	sb.texture_margin_left = 40.0
@@ -206,7 +206,7 @@ static func create_header_banner_style(pad_x: float = 22.0, pad_y: float = 12.0)
 	return sb
 
 
-static func create_item_frame_style(pad_x: float = 24.0, pad_y: float = 12.0) -> StyleBoxTexture:
+static func create_item_frame_style(pad_x: float = 46.0, pad_y: float = 14.0) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	sb.texture = TEX_FRAME
 	sb.texture_margin_left = 48.0
@@ -229,16 +229,16 @@ static func create_clan_top_header_style() -> StyleBoxTexture:
 	sb.texture_margin_top = 74.0
 	sb.texture_margin_right = 68.0
 	sb.texture_margin_bottom = 32.0
-	sb.content_margin_left = 38.0
-	sb.content_margin_right = 38.0
-	sb.content_margin_top = 46.0
-	sb.content_margin_bottom = 22.0
+	sb.content_margin_left = 56.0
+	sb.content_margin_right = 56.0
+	sb.content_margin_top = 58.0
+	sb.content_margin_bottom = 26.0
 	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	return sb
 
 
-static func create_panel_box_style(pad_x: float = 24.0, pad_y: float = 18.0) -> StyleBoxTexture:
+static func create_panel_box_style(pad_x: float = 44.0, pad_y: float = 24.0) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	sb.texture = TEX_FRAME4
 	sb.texture_margin_left = 48.0
@@ -761,7 +761,7 @@ static func make_subtab(label_txt: String, is_active: bool = false, badge_count:
 
 static func make_ornate_section_header(title_txt: String, icon_tex: Texture2D = null, subtitle_txt: String = "") -> PanelContainer:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", create_header_banner_style(24.0, 10.0))
+	p.add_theme_stylebox_override("panel", create_header_banner_style(46.0, 14.0))
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -2054,32 +2054,30 @@ static func style_parlor_tab_button(btn: Button, is_active: bool, font_size: int
 	btn.add_theme_font_override("font", FONT_TITLE)
 	btn.add_theme_font_size_override("font_size", font_size)
 
-	var make_sb := func(bg: Color, border: Color, border_w: int, border_b: int, glow: Color, glow_sz: int, pad_top: float, pad_bot: float) -> StyleBoxFlat:
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = bg
-		sb.border_color = border
-		sb.set_border_width_all(border_w)
-		sb.border_width_bottom = border_b
-		sb.set_corner_radius_all(12)
-		sb.shadow_color = glow
-		sb.shadow_size = 0 if is_mobile() else glow_sz
-		sb.shadow_offset = Vector2(0, 2)
-		sb.content_margin_left = 8.0
-		sb.content_margin_right = 8.0
-		sb.content_margin_top = pad_top
-		sb.content_margin_bottom = pad_bot
+	var make_frame_sb := func(mod_col: Color, pad_x: float = 16.0, pad_y: float = 8.0) -> StyleBoxTexture:
+		var sb := StyleBoxTexture.new()
+		sb.texture = TEX_FRAME2
+		sb.texture_margin_left = 40.0
+		sb.texture_margin_top = 24.0
+		sb.texture_margin_right = 40.0
+		sb.texture_margin_bottom = 24.0
+		sb.content_margin_left = pad_x
+		sb.content_margin_right = pad_x
+		sb.content_margin_top = pad_y
+		sb.content_margin_bottom = pad_y
+		sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+		sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+		sb.modulate_color = mod_col
 		return sb
 
 	if is_active:
-		var gold_border := Color("#F5C542")
-		var amber_fill := Color("#7E4E14")
-		var amber_hover := Color("#965E19")
-		var amber_press := Color("#653D0E")
-		var gold_glow := Color(0.96, 0.77, 0.26, 0.34)
-		btn.add_theme_stylebox_override("normal", make_sb.call(amber_fill, gold_border, 2, 3, gold_glow, 7, 7.0, 7.0))
-		btn.add_theme_stylebox_override("hover", make_sb.call(amber_hover, Color("#FFE07A"), 2, 3, gold_glow, 8, 7.0, 7.0))
-		btn.add_theme_stylebox_override("pressed", make_sb.call(amber_press, gold_border, 2, 2, gold_glow, 4, 8.0, 6.0))
-		btn.add_theme_stylebox_override("focus", make_sb.call(amber_fill, gold_border, 2, 3, gold_glow, 7, 7.0, 7.0))
+		var col_active := Color(1.0, 0.98, 0.90, 1.0)
+		var col_hover := Color(1.10, 1.05, 0.95, 1.0)
+		var col_press := Color(0.85, 0.82, 0.78, 1.0)
+		btn.add_theme_stylebox_override("normal", make_frame_sb.call(col_active))
+		btn.add_theme_stylebox_override("hover", make_frame_sb.call(col_hover))
+		btn.add_theme_stylebox_override("pressed", make_frame_sb.call(col_press))
+		btn.add_theme_stylebox_override("focus", make_frame_sb.call(col_active))
 
 		var cream_txt := Color("#FFF7E0")
 		btn.add_theme_color_override("font_color", cream_txt)
@@ -2093,15 +2091,13 @@ static func style_parlor_tab_button(btn: Button, is_active: bool, font_size: int
 		btn.add_theme_color_override("font_outline_color", Color(0.11, 0.05, 0.01, 0.94))
 		btn.add_theme_constant_override("outline_size", 2)
 	else:
-		var muted_wood := Color("#2E1A10")
-		var muted_hover := Color("#3D2417")
-		var muted_press := Color("#22120A")
-		var bronze_bdr := Color("#634125")
-		var subtle_sh := Color(0.0, 0.0, 0.0, 0.35)
-		btn.add_theme_stylebox_override("normal", make_sb.call(muted_wood, bronze_bdr, 1, 2, subtle_sh, 3, 7.0, 7.0))
-		btn.add_theme_stylebox_override("hover", make_sb.call(muted_hover, Color("#9B6E36"), 1, 2, subtle_sh, 4, 7.0, 7.0))
-		btn.add_theme_stylebox_override("pressed", make_sb.call(muted_press, bronze_bdr, 1, 1, subtle_sh, 2, 8.0, 6.0))
-		btn.add_theme_stylebox_override("focus", make_sb.call(muted_wood, bronze_bdr, 1, 2, subtle_sh, 3, 7.0, 7.0))
+		var col_inactive := Color(0.58, 0.52, 0.46, 0.85)
+		var col_hover := Color(0.72, 0.65, 0.58, 0.92)
+		var col_press := Color(0.48, 0.44, 0.38, 0.80)
+		btn.add_theme_stylebox_override("normal", make_frame_sb.call(col_inactive))
+		btn.add_theme_stylebox_override("hover", make_frame_sb.call(col_hover))
+		btn.add_theme_stylebox_override("pressed", make_frame_sb.call(col_press))
+		btn.add_theme_stylebox_override("focus", make_frame_sb.call(col_inactive))
 
 		var tan_txt := Color("#CBB89D")
 		btn.add_theme_color_override("font_color", tan_txt)

@@ -120,10 +120,10 @@ func _make_modal_panel_style(modulate_col: Color = Color.WHITE) -> StyleBoxTextu
 	sb.texture_margin_top = 80.0
 	sb.texture_margin_right = 44.0
 	sb.texture_margin_bottom = 80.0
-	sb.content_margin_left = 24.0
-	sb.content_margin_top = 24.0
-	sb.content_margin_right = 24.0
-	sb.content_margin_bottom = 54.0
+	sb.content_margin_left = 50.0
+	sb.content_margin_top = 74.0
+	sb.content_margin_right = 50.0
+	sb.content_margin_bottom = 68.0
 	sb.modulate_color = modulate_col
 	return sb
 
@@ -655,6 +655,10 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 
 	if is_instance_valid(lbl_mode_tag):
 		lbl_mode_tag.visible = false
+	if is_instance_valid(emblem_box):
+		emblem_box.visible = false
+	if is_instance_valid(lbl_subtitle):
+		lbl_subtitle.visible = false
 
 	var my_idx: int = GameManager.my_player_index
 	var is_winner: bool = false
@@ -786,21 +790,12 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 	var matchup_box: Control = p1_card.get_parent() as Control
 	if is_instance_valid(matchup_box):
 		matchup_box.visible = false
-
-	var total_p: int = GameManager.match_players.size()
-	if total_p <= 2:
-		_build_2p_hero_outcome(is_winner, is_draw, p1_score, p2_score, my_idx)
-	else:
-		var really_finished: bool = is_match_finished
-		if GameManager.local_player_surrendered:
-			really_finished = false
-		elif winner_player_index == 0 and GameManager.is_game_active and GameManager.ludo_rank1 == 0:
-			really_finished = false
-
-		if really_finished:
-			_build_multiplayer_podium(winner_player_index, my_idx)
-		else:
-			_build_multiplayer_self_result(my_idx, winner_player_index)
+	if is_instance_valid(_hero_outcome_box):
+		_hero_outcome_box.visible = false
+	if is_instance_valid(_multi_podium_box):
+		_multi_podium_box.visible = false
+	if is_instance_valid(_self_result_box):
+		_self_result_box.visible = false
 
 	panel.scale = Vector2(0.72, 0.72)
 	panel.modulate.a = 0.0
@@ -810,10 +805,11 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 	tw.tween_property(panel, "scale", Vector2.ONE, 0.30)
 	tw.parallel().tween_property(panel, "modulate:a", 1.0, 0.20)
 
-	emblem_box.scale = Vector2.ZERO
-	emblem_box.pivot_offset = emblem_box.size / 2.0
-	var tw_emb: Tween = create_tween().set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-	tw_emb.tween_property(emblem_box, "scale", Vector2.ONE, 0.52)
+	if is_instance_valid(emblem_box) and emblem_box.visible:
+		emblem_box.scale = Vector2.ZERO
+		emblem_box.pivot_offset = emblem_box.size / 2.0
+		var tw_emb: Tween = create_tween().set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+		tw_emb.tween_property(emblem_box, "scale", Vector2.ONE, 0.52)
 
 	get_tree().create_timer(0.08).timeout.connect(func():
 		if is_instance_valid(panel):

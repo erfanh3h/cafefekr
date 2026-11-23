@@ -304,63 +304,38 @@ func _create_game_summary_card(game: Dictionary, my_uid: String) -> Button:
 		else:
 			my_res = "unfinished"
 	
-	# Outcome-based shadow color and padding from right and left
-	var style_normal = StyleBoxFlat.new()
-	style_normal.bg_color = Color(0.12, 0.08, 0.05, 0.94)
-	style_normal.set_border_width_all(2)
-	style_normal.set_corner_radius_all(14)
-	style_normal.content_margin_left = 18
-	style_normal.content_margin_right = 18
-	style_normal.content_margin_top = 10
-	style_normal.content_margin_bottom = 10
-	style_normal.shadow_size = 0 if GameManager.is_mobile else 14
-	style_normal.shadow_offset = Vector2(0, 3)
-	
-	var style_hover = StyleBoxFlat.new()
-	style_hover.bg_color = Color(0.16, 0.11, 0.07, 0.98)
-	style_hover.set_border_width_all(2)
-	style_hover.set_corner_radius_all(14)
-	style_hover.content_margin_left = 18
-	style_hover.content_margin_right = 18
-	style_hover.content_margin_top = 10
-	style_hover.content_margin_bottom = 10
-	style_hover.shadow_size = 0 if GameManager.is_mobile else 18
-	style_hover.shadow_offset = Vector2(0, 4)
-	
+	var card_tint: Color = Color.WHITE
 	if my_res == "win":
-		style_normal.bg_color = Color(0.09, 0.20, 0.12, 0.96)
-		style_normal.border_width_right = 6
-		style_normal.shadow_color = Color(0.14, 0.72, 0.28, 0.45)
-		style_normal.border_color = Color(0.28, 0.80, 0.44, 0.94)
-		style_hover.bg_color = Color(0.12, 0.25, 0.16, 0.98)
-		style_hover.border_width_right = 6
-		style_hover.shadow_color = Color(0.20, 0.85, 0.35, 0.60)
-		style_hover.border_color = Color(0.40, 0.95, 0.55, 1.0)
+		card_tint = Color(0.92, 1.06, 0.94)
 	elif my_res == "lose":
-		style_normal.bg_color = Color(0.24, 0.09, 0.10, 0.96)
-		style_normal.border_width_right = 6
-		style_normal.shadow_color = Color(0.82, 0.18, 0.18, 0.45)
-		style_normal.border_color = Color(0.86, 0.34, 0.34, 0.92)
-		style_hover.bg_color = Color(0.29, 0.12, 0.12, 0.98)
-		style_hover.border_width_right = 6
-		style_hover.shadow_color = Color(0.95, 0.24, 0.24, 0.60)
-		style_hover.border_color = Color(1.0, 0.42, 0.42, 1.0)
+		card_tint = Color(1.06, 0.90, 0.90)
 	elif my_res == "draw":
-		style_normal.shadow_color = Color(0.95, 0.85, 0.18, 0.80)
-		style_normal.border_color = Color(0.95, 0.85, 0.30, 0.85)
-		style_hover.shadow_color = Color(1.0, 0.92, 0.25, 0.95)
-		style_hover.border_color = Color(1.0, 0.92, 0.40, 1.0)
-	else:
-		style_normal.shadow_color = Color(0.45, 0.40, 0.35, 0.40)
-		style_normal.border_color = Color(0.60, 0.50, 0.38, 0.60)
-		style_hover.shadow_color = Color(0.55, 0.50, 0.45, 0.60)
-		style_hover.border_color = Color(0.80, 0.70, 0.55, 0.85)
-	
+		card_tint = Color(1.05, 1.00, 0.88)
+
+	var make_frame_card := func(tint: Color) -> StyleBoxTexture:
+		var sb := StyleBoxTexture.new()
+		sb.texture = preload("res://assets/images/frames/frame.png")
+		sb.texture_margin_left = 48.0
+		sb.texture_margin_top = 28.0
+		sb.texture_margin_right = 48.0
+		sb.texture_margin_bottom = 28.0
+		sb.content_margin_left = 44.0
+		sb.content_margin_right = 44.0
+		sb.content_margin_top = 12.0
+		sb.content_margin_bottom = 12.0
+		sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+		sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+		sb.modulate_color = tint
+		return sb
+
+	var style_normal = make_frame_card.call(card_tint)
+	var style_hover = make_frame_card.call(card_tint.lightened(0.08))
+
 	btn.add_theme_stylebox_override("normal", style_normal)
 	btn.add_theme_stylebox_override("hover", style_hover)
 	btn.add_theme_stylebox_override("pressed", style_normal)
 	btn.add_theme_stylebox_override("focus", style_normal)
-	
+
 	var row = HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE

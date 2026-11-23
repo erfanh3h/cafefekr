@@ -402,15 +402,24 @@ static func _get_notif_icon(ntype: String) -> Texture2D:
 	return CafeSocialTheme.ICO_SPARKLE
 
 
-static func _make_card_style(is_read: bool) -> StyleBoxFlat:
-	var card_style: StyleBoxFlat = CafeSocialTheme.create_card_style(
-		Color(0.14, 0.09, 0.05, 0.94) if is_read else Color(0.18, 0.12, 0.06, 0.97),
-		CafeSocialTheme.COL_BRONZE_BORDER if is_read else Color("#F5C542"),
-		16, 1 if is_read else 2, 16.0, 14.0
-	)
-	if not is_read:
-		card_style.border_width_right = 5
-	return card_style
+static func _make_card_style(is_read: bool) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = CafeSocialTheme.TEX_FRAME
+	sb.texture_margin_left = 48.0
+	sb.texture_margin_top = 28.0
+	sb.texture_margin_right = 48.0
+	sb.texture_margin_bottom = 28.0
+	sb.content_margin_left = 46.0
+	sb.content_margin_right = 46.0
+	sb.content_margin_top = 14.0
+	sb.content_margin_bottom = 14.0
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	if is_read:
+		sb.modulate_color = Color(0.88, 0.84, 0.80, 0.92)
+	else:
+		sb.modulate_color = Color(1.06, 1.02, 0.92, 1.0)
+	return sb
 
 
 static func _build_status_banner(text: String, kind: String) -> PanelContainer:

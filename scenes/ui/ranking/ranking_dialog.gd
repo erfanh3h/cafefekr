@@ -220,7 +220,7 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	card.focus_mode = Control.FOCUS_NONE
 	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-	var style_frame := CafeSocialTheme.create_item_frame_style(32.0, 12.0)
+	var style_frame := CafeSocialTheme.create_item_frame_style(46.0, 14.0)
 	card.add_theme_stylebox_override("normal", style_frame)
 	card.add_theme_stylebox_override("hover", style_frame)
 	card.add_theme_stylebox_override("pressed", style_frame)
@@ -230,8 +230,8 @@ func _create_rank_row(rank: int, username: String, subtitle: String, val_str: St
 	var pad := MarginContainer.new()
 	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pad.add_theme_constant_override("margin_left", 32)
-	pad.add_theme_constant_override("margin_right", 32)
+	pad.add_theme_constant_override("margin_left", 36)
+	pad.add_theme_constant_override("margin_right", 36)
 	pad.add_theme_constant_override("margin_top", 12)
 	pad.add_theme_constant_override("margin_bottom", 16)
 	card.add_child(pad)

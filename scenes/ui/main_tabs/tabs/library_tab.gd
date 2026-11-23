@@ -129,12 +129,7 @@ func _update_filter_button_styles() -> void:
 	for i in range(filter_row.get_child_count()):
 		var b: Button = filter_row.get_child(i)
 		var cid: String = CATEGORIES[i]["id"]
-		if cid == _current_filter:
-			KenneyUI.style_button(b, KenneyUI.COLOR_YELLOW)
-			b.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
-		else:
-			KenneyUI.style_button(b, KenneyUI.COLOR_GREY)
-			b.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+		CafeSocialTheme.style_parlor_tab_button(b, cid == _current_filter, 20)
 
 
 func _populate_grid() -> void:
@@ -163,7 +158,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(0, 140)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 20.0, 16.0))
+	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(46.0, 14.0))
 
 	var click_btn := Button.new()
 	click_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -379,9 +374,4 @@ func _render_game_guide() -> void:
 
 
 func _style_doc_subtab(btn: Button, is_act: bool) -> void:
-	if is_act:
-		KenneyUI.style_button(btn, KenneyUI.COLOR_YELLOW)
-		btn.add_theme_color_override("font_color", Color(0.18, 0.10, 0.02, 1.0))
-	else:
-		KenneyUI.style_button(btn, KenneyUI.COLOR_GREY)
-		btn.add_theme_color_override("font_color", Color(0.85, 0.80, 0.72, 0.85))
+	CafeSocialTheme.style_parlor_tab_button(btn, is_act, 19)

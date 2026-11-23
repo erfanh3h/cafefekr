@@ -555,9 +555,9 @@ func _render_privacy() -> void:
 	content_privacy.add_child(audio_margin)
 
 	var audio_card: PanelContainer = PanelContainer.new()
-	audio_card.custom_minimum_size = Vector2(0, 184)
+	audio_card.custom_minimum_size = Vector2(0, 196)
 	audio_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(true, 18.0, 16.0))
+	audio_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_panel_box_style(44.0, 24.0))
 	audio_margin.add_child(audio_card)
 
 	var a_vbox: VBoxContainer = VBoxContainer.new()
@@ -653,7 +653,7 @@ func _render_privacy() -> void:
 		var panel: PanelContainer = PanelContainer.new()
 		panel.custom_minimum_size = Vector2(0, 108)
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_frame_style(false, 16.0, 12.0))
+		panel.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(46.0, 14.0))
 		item_margin.add_child(panel)
 
 		var h: HBoxContainer = HBoxContainer.new()
