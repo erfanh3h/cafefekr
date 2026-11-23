@@ -59,6 +59,9 @@ var pawn_turn_rings: Array[MeshInstance3D] = [null, null]
 var legal_move_pads: Array[MeshInstance3D] = [] # 81 cell highlight pads
 var _visible_legal_pads: Array[MeshInstance3D] = []
 var _is_mobile_gpu: bool = false
+var _is_animating_move: bool = false
+var _last_tap_msec: int = 0
+var _dock_style_cache: Dictionary = {}
 var _hud_vis_accum: float = 0.0
 var _cached_hud: Node = null
 var _cached_start_ov: Control = null
@@ -148,7 +151,7 @@ func _ready() -> void:
 	call_deferred("_enforce_dock_geometry")
 
 func _process(delta: float) -> void:
-	if not visible or not is_inside_tree():
+	if not visible or not is_inside_tree() or _is_animating_move:
 		return
 
 	_pulse_time += delta
@@ -598,6 +601,9 @@ func _create_royal_pawn_node(g_id: int) -> Node3D:
 # ============================================================================
 
 func _make_dock_glass_style(bg: Color, border: Color, radius: int = 16, bw: int = 2) -> StyleBoxFlat:
+	var key := "%d_%d_%d_%d" % [bg.to_rgba32(), border.to_rgba32(), radius, bw]
+	if _dock_style_cache.has(key):
+		return _dock_style_cache[key]
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
 	sb.border_color = border
@@ -607,6 +613,7 @@ func _make_dock_glass_style(bg: Color, border: Color, radius: int = 16, bw: int 
 		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
 		sb.shadow_size = 6
 		sb.shadow_offset = Vector2(0, 2)
+	_dock_style_cache[key] = sb
 	return sb
 
 func _style_quoridor_btn(b: Button, bg: Color, border: Color, f_size: int = 22, is_active: bool = false) -> void:
@@ -867,7 +874,9 @@ func _resolve_cached_hud() -> Node:
 		return null
 	_cached_hud = tree.get_first_node_in_group("base_game_hud")
 	if not is_instance_valid(_cached_hud):
-		_cached_hud = tree.root.find_child("BaseGameHUD", true, false)
+		var cs = tree.current_scene
+		if is_instance_valid(cs):
+			_cached_hud = cs.get_node_or_null("CanvasLayer/BaseGameHUD")
 	if is_instance_valid(_cached_hud):
 		_cached_start_ov = _cached_hud.get_node_or_null("StartGameOverlay") as Control
 		_cached_result_dlg = _cached_hud.get_node_or_null("GameResultDialog") as Control
@@ -1068,7 +1077,7 @@ func _raycast_board_plane(screen_pos: Vector2) -> Variant:
 	return to_local(world_hit)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not GameManager.is_game_active or winner_id != 0 or _is_hud_overlay_blocking():
+	if not GameManager.is_game_active or winner_id != 0 or _is_animating_move or _is_hud_overlay_blocking():
 		return
 
 	if event is InputEventMouseMotion:
@@ -1094,56 +1103,65 @@ func _unhandled_input(event: InputEvent) -> void:
 				if w_rc.x >= 0 and w_rc != preview_wall_rc:
 					_update_wall_preview_only(w_rc.x, w_rc.y)
 
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		var vp_rect := get_viewport().get_visible_rect()
-		if event.position.y >= vp_rect.size.y - 90.0:
-			return
-		if is_instance_valid(dock_panel) and dock_panel.visible and dock_panel.get_global_rect().has_point(event.position):
-			return
-		var local_hit: Variant = _raycast_board_plane(event.position)
-		if local_hit == null:
-			return
-		var hit_v: Vector3 = local_hit
-		if absf(hit_v.x) > 0.44 or absf(hit_v.z) > 0.44:
-			return
+	elif (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed) or (event is InputEventScreenTouch and event.pressed):
+		_handle_board_tap(event.position)
 
-		if is_board_locked:
-			return
-		if not is_my_turn:
-			show_hint("نوبت شما نیست؛ لطفاً منتظر حرکت حریف بمانید.")
-			AudioManager.play_sound("miss_turn")
-			return
 
-		if current_mode == ACTION_MOVE:
-			# Check if tap is close to any legal pawn destination (generous mobile touch target snapping)
-			var legal_moves: Array[Vector2i] = get_legal_pawn_moves(my_player_index)
-			var best_legal: Vector2i = Vector2i(-1, -1)
-			var min_dist: float = CELL_STEP * 0.95
-			for lm: Vector2i in legal_moves:
-				var l_vpos: Vector2i = _canonical_to_visual_rc(lm.x, lm.y)
-				var l_cx: float = (float(l_vpos.y) - 4.0) * CELL_STEP
-				var l_cz: float = (float(l_vpos.x) - 4.0) * CELL_STEP
-				var d: float = Vector2(hit_v.x - l_cx, hit_v.z - l_cz).length()
-				if d < min_dist:
-					min_dist = d
-					best_legal = lm
+func _handle_board_tap(screen_pos: Vector2) -> void:
+	var now_msec := Time.get_ticks_msec()
+	if now_msec - _last_tap_msec < 140:
+		return
+	_last_tap_msec = now_msec
 
-			if best_legal.x >= 0:
-				_attempt_pawn_move(best_legal.x, best_legal.y)
-			else:
-				var rc := _local_pos_to_canonical_cell(hit_v)
-				if rc.x >= 0:
-					var my_pawn: Array = pawns[my_player_index - 1] if (my_player_index >= 1 and my_player_index <= pawns.size()) else []
-					if not my_pawn.is_empty() and rc.x == int(my_pawn[0]) and rc.y == int(my_pawn[1]):
-						_refresh_highlights_and_preview()
-						AudioManager.sfx_tap()
-						show_hint("یکی از خانه‌های روشن‌شده سبز را برای حرکت انتخاب کنید.")
-					else:
-						_attempt_pawn_move(rc.x, rc.y)
+	var vp_rect := get_viewport().get_visible_rect()
+	if screen_pos.y >= vp_rect.size.y - 90.0:
+		return
+	if is_instance_valid(dock_panel) and dock_panel.visible and dock_panel.get_global_rect().has_point(screen_pos):
+		return
+	var local_hit: Variant = _raycast_board_plane(screen_pos)
+	if local_hit == null:
+		return
+	var hit_v: Vector3 = local_hit
+	if absf(hit_v.x) > 0.44 or absf(hit_v.z) > 0.44:
+		return
+
+	if is_board_locked or _is_animating_move:
+		return
+	if not is_my_turn:
+		show_hint("نوبت شما نیست؛ لطفاً منتظر حرکت حریف بمانید.")
+		AudioManager.play_sound("miss_turn")
+		return
+
+	if current_mode == ACTION_MOVE:
+		# Check if tap is close to any legal pawn destination (generous mobile touch target snapping)
+		var legal_moves: Array[Vector2i] = get_legal_pawn_moves(my_player_index)
+		var best_legal: Vector2i = Vector2i(-1, -1)
+		var min_dist: float = CELL_STEP * 0.95
+		for lm: Vector2i in legal_moves:
+			var l_vpos: Vector2i = _canonical_to_visual_rc(lm.x, lm.y)
+			var l_cx: float = (float(l_vpos.y) - 4.0) * CELL_STEP
+			var l_cz: float = (float(l_vpos.x) - 4.0) * CELL_STEP
+			var d: float = Vector2(hit_v.x - l_cx, hit_v.z - l_cz).length()
+			if d < min_dist:
+				min_dist = d
+				best_legal = lm
+
+		if best_legal.x >= 0:
+			_attempt_pawn_move(best_legal.x, best_legal.y)
 		else:
-			var w_rc := _local_pos_to_canonical_wall(hit_v)
-			if w_rc.x >= 0:
-				_handle_wall_tap(w_rc.x, w_rc.y)
+			var rc := _local_pos_to_canonical_cell(hit_v)
+			if rc.x >= 0:
+				var my_pawn: Array = pawns[my_player_index - 1] if (my_player_index >= 1 and my_player_index <= pawns.size()) else []
+				if not my_pawn.is_empty() and rc.x == int(my_pawn[0]) and rc.y == int(my_pawn[1]):
+					_refresh_highlights_and_preview()
+					AudioManager.sfx_tap()
+					show_hint("یکی از خانه‌های روشن‌شده سبز را برای حرکت انتخاب کنید.")
+				else:
+					_attempt_pawn_move(rc.x, rc.y)
+	else:
+		var w_rc := _local_pos_to_canonical_wall(hit_v)
+		if w_rc.x >= 0:
+			_handle_wall_tap(w_rc.x, w_rc.y)
 
 func _local_pos_to_canonical_cell(local_v: Vector3) -> Vector2i:
 	var vc := int(round(local_v.x / CELL_STEP + 4.0))
@@ -1280,12 +1298,16 @@ func on_piece_selected(user_id: int, _target_peace: int, extra: Dictionary = {})
 	if act == "move" and g_id in [1, 2]:
 		var new_rc: Array = pawns[g_id - 1]
 		var old_rc: Array = prev_p1 if g_id == 1 else prev_p2
-		if old_rc != new_rc:
-			_animate_pawn_hop(g_id, old_rc, new_rc)
+		_clear_all_legal_pads()
 		if is_instance_valid(last_move_pad):
 			last_move_pad.position = _cell_to_local_pos(int(new_rc[0]), int(new_rc[1]), 0.002)
 			last_move_pad.visible = true
 		AudioManager.play_sound("add_peace")
+		if old_rc != new_rc:
+			_animate_pawn_hop(g_id, old_rc, new_rc)
+		else:
+			_refresh_dock_buttons()
+			_refresh_highlights_and_preview()
 	elif act == "wall":
 		AudioManager.play_sound("tap_button")
 		if (h_walls.size() > prev_h_count or v_walls.size() > prev_v_count):
@@ -1301,13 +1323,12 @@ func on_piece_selected(user_id: int, _target_peace: int, extra: Dictionary = {})
 						last_w.position = rest_pos + Vector3(0.0, 0.14, 0.0)
 						var wtw := create_tween()
 						wtw.tween_property(last_w, "position", rest_pos, 0.18).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		_refresh_dock_buttons()
+		_refresh_highlights_and_preview()
 
 	if winner_id != 0 and not _win_vfx_shown:
 		_win_vfx_shown = true
 		_trigger_victory_vfx(winner_id)
-
-	_refresh_dock_buttons()
-	_refresh_highlights_and_preview()
 
 func on_round_finished(payload: Variant) -> void:
 	is_board_locked = true
@@ -1426,12 +1447,13 @@ func _sync_all_visuals(skip_pawn_snap: bool = false) -> void:
 				node.position = _cell_to_local_pos(int(rc[0]), int(rc[1]), 0.0)
 
 	var total_walls := h_walls.size() + v_walls.size()
-	if total_walls != placed_wall_nodes.size() or placed_wall_nodes.is_empty():
+	if total_walls != placed_wall_nodes.size() or (total_walls > 0 and placed_wall_nodes.is_empty()):
 		_rebuild_placed_walls_visual()
 	_sync_wall_racks_visual()
 	_sync_top_header_walls()
-	_refresh_highlights_and_preview()
-	_refresh_dock_buttons()
+	if not skip_pawn_snap:
+		_refresh_highlights_and_preview()
+		_refresh_dock_buttons()
 
 func _rebuild_placed_walls_visual() -> void:
 	for n: Node3D in placed_wall_nodes:
@@ -1481,21 +1503,35 @@ func _sync_top_header_walls() -> void:
 func _animate_pawn_hop(g_id: int, from_rc: Array, to_rc: Array) -> void:
 	var node: Node3D = pawn_nodes[g_id - 1]
 	if not is_instance_valid(node):
+		_refresh_dock_buttons()
+		_refresh_highlights_and_preview()
 		return
 	var p_start := _cell_to_local_pos(int(from_rc[0]), int(from_rc[1]), 0.0)
 	var p_end := _cell_to_local_pos(int(to_rc[0]), int(to_rc[1]), 0.0)
 	node.position = p_start
 
 	var mid := (p_start + p_end) * 0.5
-	mid.y += 0.11
+	mid.y += 0.12
 
-	var hop_dur: float = 0.09 if _is_mobile_gpu else 0.13
-	var tw := create_tween()
-	tw.tween_property(node, "position", mid, hop_dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(node, "position", p_end, hop_dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.tween_callback(func():
-		if is_instance_valid(node) and is_instance_valid(fx_root):
-			ActionVFXManager.spawn_piece_impact_vfx(fx_root, p_end, g_id)
+	# Match the physical parabolic arc feel of Chess and Ludo for silky 60fps on mobile
+	var hop_dur: float = 0.18
+	_is_animating_move = true
+
+	var tw := create_tween().set_trans(Tween.TRANS_QUAD)
+	tw.tween_property(node, "position", mid, hop_dur).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_property(node, "position", p_end, hop_dur).set_ease(Tween.EASE_IN)
+	# Subtle settle bounce upon landing (same physical polish as chess)
+	tw.chain().tween_property(node, "position:y", p_end.y + 0.008, 0.04).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_property(node, "position:y", p_end.y, 0.06).set_ease(Tween.EASE_IN)
+
+	tw.finished.connect(func():
+		_is_animating_move = false
+		if is_instance_valid(node):
+			node.position = p_end
+			if is_instance_valid(fx_root):
+				ActionVFXManager.spawn_piece_impact_vfx(fx_root, p_end, g_id)
+		_refresh_dock_buttons()
+		_refresh_highlights_and_preview()
 	)
 
 func _clear_legal_pads() -> void:

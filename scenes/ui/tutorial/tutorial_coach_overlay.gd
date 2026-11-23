@@ -17,7 +17,7 @@ const FONT_HEKAYAT: FontFile = preload("res://assets/fonts/hekayat.ttf")
 const FONT_VAZIR: FontFile = preload("res://assets/fonts/Vazir.ttf")
 const DIALOG_FRAME_TEX: Texture2D = preload("res://assets/images/frames/dialog.png")
 
-const SCRIM_RGB: Color = Color(0.03, 0.015, 0.008, 1.0)
+const SCRIM_RGB: Color = Color(0.0, 0.0, 0.0, 1.0)
 const GOLD_BRIGHT: Color = Color(1.0, 0.88, 0.45, 1.0)
 const CREAM_TEXT: Color = Color(0.96, 0.92, 0.84, 1.0)
 const MUTED_GOLD: Color = Color(0.84, 0.74, 0.55, 1.0)
@@ -25,9 +25,9 @@ const MUTED_GOLD: Color = Color(0.84, 0.74, 0.55, 1.0)
 const CARD_SAFE_MARGIN: float = 16.0
 const CARD_GAP_FROM_TARGET: float = 34.0
 const CARD_GAP_FROM_AVOID: float = 16.0
-const DIALOG_CONTENT_PAD_X: float = 44.0
-const DIALOG_CONTENT_PAD_TOP: float = 86.0
-const DIALOG_CONTENT_PAD_BOTTOM: float = 80.0
+const DIALOG_CONTENT_PAD_X: float = 48.0
+const DIALOG_CONTENT_PAD_TOP: float = 92.0
+const DIALOG_CONTENT_PAD_BOTTOM: float = 88.0
 
 var _root: Control = null
 var _scrim_top: ColorRect = null
@@ -129,7 +129,7 @@ func _build_ui() -> void:
 	_pointer_lbl.custom_minimum_size = Vector2(44, 34)
 	_pointer_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_pointer_lbl.add_theme_font_override("font", FONT_VAZIR)
-	_pointer_lbl.add_theme_font_size_override("font_size", 26)
+	_pointer_lbl.add_theme_font_size_override("font_size", 28)
 	_pointer_lbl.add_theme_color_override("font_color", GOLD_BRIGHT)
 	_pointer_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
 	_pointer_lbl.add_theme_constant_override("shadow_offset_y", 2)
@@ -147,10 +147,10 @@ func _build_ui() -> void:
 	_coach_card.mouse_filter = Control.MOUSE_FILTER_STOP
 	var card_style := StyleBoxTexture.new()
 	card_style.texture = DIALOG_FRAME_TEX
-	card_style.texture_margin_left = 44.0
-	card_style.texture_margin_top = 80.0
-	card_style.texture_margin_right = 44.0
-	card_style.texture_margin_bottom = 80.0
+	card_style.texture_margin_left = 46.0
+	card_style.texture_margin_top = 84.0
+	card_style.texture_margin_right = 46.0
+	card_style.texture_margin_bottom = 84.0
 	card_style.content_margin_left = DIALOG_CONTENT_PAD_X
 	card_style.content_margin_right = DIALOG_CONTENT_PAD_X
 	card_style.content_margin_top = DIALOG_CONTENT_PAD_TOP
@@ -162,7 +162,7 @@ func _build_ui() -> void:
 	_card_vbox.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	_card_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_card_vbox.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	_card_vbox.add_theme_constant_override("separation", 8)
+	_card_vbox.add_theme_constant_override("separation", 10)
 	_coach_card.add_child(_card_vbox)
 
 	# Top header row (RTL visual layout: step counter on LEFT, badge pill on RIGHT)
@@ -178,7 +178,7 @@ func _build_ui() -> void:
 	_lbl_step_counter.language = "fa"
 	_lbl_step_counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_lbl_step_counter.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_step_counter.add_theme_font_size_override("font_size", 12)
+	_lbl_step_counter.add_theme_font_size_override("font_size", 14)
 	_lbl_step_counter.add_theme_color_override("font_color", MUTED_GOLD)
 	header_row.add_child(_lbl_step_counter)
 
@@ -193,10 +193,10 @@ func _build_ui() -> void:
 	badge_sb.border_color = Color(0.86, 0.68, 0.28, 0.85)
 	badge_sb.set_border_width_all(1)
 	badge_sb.set_corner_radius_all(10)
-	badge_sb.content_margin_left = 10
-	badge_sb.content_margin_right = 10
-	badge_sb.content_margin_top = 2
-	badge_sb.content_margin_bottom = 2
+	badge_sb.content_margin_left = 12
+	badge_sb.content_margin_right = 12
+	badge_sb.content_margin_top = 3
+	badge_sb.content_margin_bottom = 3
 	badge_panel.add_theme_stylebox_override("panel", badge_sb)
 	header_row.add_child(badge_panel)
 
@@ -207,7 +207,7 @@ func _build_ui() -> void:
 	_lbl_badge.language = "fa"
 	_lbl_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_badge.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_badge.add_theme_font_size_override("font_size", 12)
+	_lbl_badge.add_theme_font_size_override("font_size", 14)
 	_lbl_badge.add_theme_color_override("font_color", GOLD_BRIGHT)
 	badge_panel.add_child(_lbl_badge)
 
@@ -220,7 +220,7 @@ func _build_ui() -> void:
 	_lbl_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_title.add_theme_font_override("font", FONT_HEKAYAT)
-	_lbl_title.add_theme_font_size_override("font_size", 24)
+	_lbl_title.add_theme_font_size_override("font_size", 26)
 	_lbl_title.add_theme_color_override("font_color", GOLD_BRIGHT)
 	_lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 	_lbl_title.add_theme_constant_override("shadow_offset_y", 2)
@@ -243,7 +243,7 @@ func _build_ui() -> void:
 	_lbl_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_body.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_body.add_theme_font_size_override("font_size", 15)
+	_lbl_body.add_theme_font_size_override("font_size", 17)
 	_lbl_body.add_theme_color_override("font_color", CREAM_TEXT)
 	_card_vbox.add_child(_lbl_body)
 
@@ -255,10 +255,10 @@ func _build_ui() -> void:
 	hint_sb.border_color = Color(0.45, 0.90, 0.58, 0.88)
 	hint_sb.set_border_width_all(1)
 	hint_sb.set_corner_radius_all(10)
-	hint_sb.content_margin_left = 12
-	hint_sb.content_margin_right = 12
-	hint_sb.content_margin_top = 6
-	hint_sb.content_margin_bottom = 6
+	hint_sb.content_margin_left = 14
+	hint_sb.content_margin_right = 14
+	hint_sb.content_margin_top = 7
+	hint_sb.content_margin_bottom = 7
 	_hint_chip.add_theme_stylebox_override("panel", hint_sb)
 	_hint_chip.visible = false
 	_card_vbox.add_child(_hint_chip)
@@ -271,7 +271,7 @@ func _build_ui() -> void:
 	_lbl_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_hint.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_hint.add_theme_font_size_override("font_size", 13)
+	_lbl_hint.add_theme_font_size_override("font_size", 15)
 	_lbl_hint.add_theme_color_override("font_color", Color(0.86, 1.0, 0.90, 1.0))
 	_hint_chip.add_child(_lbl_hint)
 
@@ -284,7 +284,7 @@ func _build_ui() -> void:
 	_nudge_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_nudge_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_nudge_lbl.add_theme_font_override("font", FONT_VAZIR)
-	_nudge_lbl.add_theme_font_size_override("font_size", 13)
+	_nudge_lbl.add_theme_font_size_override("font_size", 15)
 	_nudge_lbl.add_theme_color_override("font_color", Color(1.0, 0.72, 0.42, 1.0))
 	_nudge_lbl.visible = false
 	_card_vbox.add_child(_nudge_lbl)
@@ -308,9 +308,9 @@ func _build_ui() -> void:
 	_btn_back.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	_btn_back.text_direction = Control.TEXT_DIRECTION_RTL
 	_btn_back.language = "fa"
-	_btn_back.custom_minimum_size = Vector2(100, 48)
+	_btn_back.custom_minimum_size = Vector2(110, 52)
 	_btn_back.add_theme_font_override("font", FONT_HEKAYAT)
-	_btn_back.add_theme_font_size_override("font_size", 20)
+	_btn_back.add_theme_font_size_override("font_size", 22)
 	KenneyUI.style_button(_btn_back, KenneyUI.COLOR_GREY)
 	ActionVFXManager.apply_button_juice(_btn_back, "tap_button")
 	_btn_back.pressed.connect(func():
@@ -324,10 +324,10 @@ func _build_ui() -> void:
 	_btn_next.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	_btn_next.text_direction = Control.TEXT_DIRECTION_RTL
 	_btn_next.language = "fa"
-	_btn_next.custom_minimum_size = Vector2(160, 48)
+	_btn_next.custom_minimum_size = Vector2(170, 52)
 	_btn_next.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_btn_next.add_theme_font_override("font", FONT_HEKAYAT)
-	_btn_next.add_theme_font_size_override("font_size", 22)
+	_btn_next.add_theme_font_size_override("font_size", 24)
 	KenneyUI.style_button(_btn_next, KenneyUI.COLOR_GREEN)
 	ActionVFXManager.apply_button_juice(_btn_next, "tap_button")
 	_btn_next.pressed.connect(func():
@@ -340,7 +340,7 @@ func _build_ui() -> void:
 func _make_scrim_rect(node_name: String) -> ColorRect:
 	var cr := ColorRect.new()
 	cr.name = node_name
-	cr.color = Color(SCRIM_RGB.r, SCRIM_RGB.g, SCRIM_RGB.b, 0.62)
+	cr.color = Color(SCRIM_RGB.r, SCRIM_RGB.g, SCRIM_RGB.b, 0.85)
 	cr.mouse_filter = Control.MOUSE_FILTER_STOP
 	cr.gui_input.connect(_on_scrim_gui_input)
 	_root.add_child(cr)
@@ -348,7 +348,7 @@ func _make_scrim_rect(node_name: String) -> ColorRect:
 
 
 func _apply_scrim_alpha(alpha: float) -> void:
-	var col := Color(SCRIM_RGB.r, SCRIM_RGB.g, SCRIM_RGB.b, clampf(alpha, 0.0, 0.90))
+	var col := Color(SCRIM_RGB.r, SCRIM_RGB.g, SCRIM_RGB.b, clampf(alpha, 0.0, 0.95))
 	_scrim_top.color = col
 	_scrim_bottom.color = col
 	_scrim_left.color = col
@@ -544,9 +544,9 @@ func _update_target_rect(snap_immediately: bool, delta: float = 0.016) -> void:
 
 
 func _fit_coach_card_size(vp: Vector2) -> Vector2:
-	var card_w: float = clampf(vp.x - 36.0, 320.0, 600.0)
+	var card_w: float = clampf(vp.x - 28.0, 340.0, 640.0)
 	var inner_w: float = maxf(200.0, card_w - (DIALOG_CONTENT_PAD_X * 2.0))
-	var hint_w: float = maxf(160.0, inner_w - 24.0)
+	var hint_w: float = maxf(160.0, inner_w - 28.0)
 
 	# Give autowrapped Labels an explicit horizontal width before measuring so
 	# Godot 4 calculates accurate wrapped line height even on frame 0.
@@ -573,8 +573,8 @@ func _fit_coach_card_size(vp: Vector2) -> Vector2:
 	# PanelContainer.get_combined_minimum_size() depends only on stylebox + child min sizes,
 	# never latching stale _coach_card.size.y.
 	var content_min_h: float = _coach_card.get_combined_minimum_size().y
-	var max_card_h: float = minf(vp.y * 0.48, 520.0)
-	var card_h: float = clampf(content_min_h, 240.0, max_card_h)
+	var max_card_h: float = minf(vp.y * 0.52, 560.0)
+	var card_h: float = clampf(content_min_h, 260.0, max_card_h)
 	var target_sz := Vector2(card_w, card_h)
 
 	if not _coach_card.size.is_equal_approx(target_sz):
@@ -623,12 +623,12 @@ func _layout_overlay() -> void:
 	_scrim_bottom.size = Vector2(vp.x, maxf(0.0, vp.y - bottom_y))
 
 	_scrim_left.visible = true
-	_scrim_left.position = Vector2(0.0, r.position.y)
-	_scrim_left.size = Vector2(maxf(0.0, r.position.x), r.size.y)
+	_scrim_left.position = Vector2(0.0, maxf(0.0, r.position.y - 0.5))
+	_scrim_left.size = Vector2(maxf(0.0, r.position.x), r.size.y + 1.0)
 
 	_scrim_right.visible = true
-	_scrim_right.position = Vector2(right_x, r.position.y)
-	_scrim_right.size = Vector2(maxf(0.0, vp.x - right_x), r.size.y)
+	_scrim_right.position = Vector2(right_x, maxf(0.0, r.position.y - 0.5))
+	_scrim_right.size = Vector2(maxf(0.0, vp.x - right_x), r.size.y + 1.0)
 
 	_hole_blocker.visible = true
 	_hole_blocker.position = r.position

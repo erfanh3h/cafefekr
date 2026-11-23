@@ -24,7 +24,7 @@ var avoid_rect_provider: Callable = Callable()
 var padding: float = 10.0
 var corner_radius: float = 18.0
 var card_placement: String = "auto" # "auto" | "top" | "bottom" | "center"
-var scrim_alpha: float = 0.62
+var scrim_alpha: float = 0.85
 
 ## Interaction model
 ## - allow_target_passthrough: lets touch/click events inside the spotlight reach the target control / 3D board.
@@ -75,7 +75,7 @@ func with_avoid_rect(provider: Callable) -> TutorialStep:
 
 
 func with_scrim_alpha(alpha: float) -> TutorialStep:
-	scrim_alpha = clampf(alpha, 0.0, 0.90)
+	scrim_alpha = clampf(alpha, 0.0, 0.95)
 	return self
 
 
