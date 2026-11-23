@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dal3girfu7ba2"
-path="res://.godot/imported/chair_damask_teal.jpg-e053a8230cf0f5d878eeb925bd4721db.ctex"
+uid="uid://c075oiyhv4s1y"
+path="res://.godot/imported/chair_velvet_emerald.jpg-24236862ce2ab435db6260c277ccc76b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/images/cafe_textures/chair_damask_teal.jpg"
-dest_files=["res://.godot/imported/chair_damask_teal.jpg-e053a8230cf0f5d878eeb925bd4721db.ctex"]
+source_file="res://assets/images/cafe_textures/chair_velvet_emerald.jpg"
+dest_files=["res://.godot/imported/chair_velvet_emerald.jpg-24236862ce2ab435db6260c277ccc76b.ctex"]
 
 [params]
 

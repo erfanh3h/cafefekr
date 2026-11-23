@@ -160,7 +160,7 @@ const CARPET_TEXTURES: Array[String] = [
 	"persian_carpet_kerman.jpg"
 ]
 
-const CHAIR_STYLE_COUNT: int = 4
+const CHAIR_STYLE_COUNT: int = 5
 
 
 func _ready() -> void:
@@ -1708,10 +1708,11 @@ func _init_lounge_materials() -> void:
 	var tex_book_abru: Texture2D = _load_cafe_tex("book_marbled_abru.jpg")
 	var tex_book_golestan: Texture2D = _load_cafe_tex("book_golestan_floral.jpg")
 	var tex_book_filigree: Texture2D = _load_cafe_tex("book_spine_filigree.jpg")
-	var tex_chair_emerald: Texture2D = _load_cafe_tex("chair_leather_emerald.jpg")
 	var tex_chair_crimson: Texture2D = _load_cafe_tex("chair_velvet_crimson.jpg")
-	var tex_chair_teal: Texture2D = _load_cafe_tex("chair_damask_teal.jpg")
-	var tex_chair_cognac: Texture2D = _load_cafe_tex("chair_leather_cognac.jpg")
+	var tex_chair_emerald: Texture2D = _load_cafe_tex("chair_velvet_emerald.jpg")
+	var tex_chair_amber: Texture2D = _load_cafe_tex("chair_velvet_amber.jpg")
+	var tex_chair_cobalt: Texture2D = _load_cafe_tex("chair_velvet_cobalt.jpg")
+	var tex_chair_ruby: Texture2D = _load_cafe_tex("chair_termeh_ruby.jpg")
 
 	# Mobile-friendly velvet-baize material (zero normal-map shader overhead, zero specular glare in 2D mode)
 	var mat_baize: StandardMaterial3D = StandardMaterial3D.new()
@@ -1845,16 +1846,23 @@ func _init_lounge_materials() -> void:
 	var mat_termeh_fabric: StandardMaterial3D = _make_mat(Color(0.88, 0.84, 0.80) if tex_termeh != null else Color(0.48, 0.10, 0.11), 0.86, 0.0, tex_termeh, Vector3(1.4, 1.4, 1.4))
 	mat_termeh_fabric.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 
-	# Rich textured upholstery materials for the 4 randomized 3D Persian parlor chairs
-	var mat_chair_emerald: StandardMaterial3D = _make_mat(Color(0.95, 0.96, 0.94) if tex_chair_emerald != null else Color(0.11, 0.28, 0.16), 0.42, 0.05, tex_chair_emerald, Vector3(1.15, 1.15, 1.15))
+	# Rich textured upholstery materials for the 5 randomized 3D Persian parlor chairs
 	var mat_chair_crimson: StandardMaterial3D = _make_mat(Color(0.96, 0.92, 0.90) if tex_chair_crimson != null else Color(0.48, 0.09, 0.12), 0.84, 0.02, tex_chair_crimson, Vector3(1.10, 1.10, 1.10))
 	mat_chair_crimson.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	var mat_chair_teal: StandardMaterial3D = _make_mat(Color(0.96, 0.97, 0.96) if tex_chair_teal != null else Color(0.09, 0.42, 0.46), 0.76, 0.03, tex_chair_teal, Vector3(1.0, 1.0, 1.0))
-	mat_chair_teal.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	var mat_chair_cognac: StandardMaterial3D = _make_mat(Color(0.96, 0.94, 0.90) if tex_chair_cognac != null else Color(0.56, 0.28, 0.12), 0.38, 0.06, tex_chair_cognac, Vector3(1.15, 1.15, 1.15))
+	var mat_chair_emerald: StandardMaterial3D = _make_mat(Color(0.95, 0.96, 0.94) if tex_chair_emerald != null else Color(0.10, 0.32, 0.18), 0.82, 0.02, tex_chair_emerald, Vector3(1.10, 1.10, 1.10))
+	mat_chair_emerald.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	var mat_chair_amber: StandardMaterial3D = _make_mat(Color(0.98, 0.95, 0.90) if tex_chair_amber != null else Color(0.68, 0.46, 0.16), 0.82, 0.02, tex_chair_amber, Vector3(1.10, 1.10, 1.10))
+	mat_chair_amber.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	var mat_chair_cobalt: StandardMaterial3D = _make_mat(Color(0.95, 0.95, 0.98) if tex_chair_cobalt != null else Color(0.11, 0.22, 0.48), 0.82, 0.02, tex_chair_cobalt, Vector3(1.10, 1.10, 1.10))
+	mat_chair_cobalt.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	var mat_chair_ruby: StandardMaterial3D = _make_mat(Color(0.96, 0.92, 0.90) if tex_chair_ruby != null else Color(0.52, 0.10, 0.14), 0.84, 0.02, tex_chair_ruby, Vector3(1.10, 1.10, 1.10))
+	mat_chair_ruby.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+
 	var mat_chair_crimson_trim: StandardMaterial3D = _make_mat(Color(0.32, 0.06, 0.08), 0.72, 0.03)
-	var mat_chair_teal_trim: StandardMaterial3D = _make_mat(Color(0.06, 0.26, 0.30), 0.64, 0.04)
-	var mat_chair_cognac_trim: StandardMaterial3D = _make_mat(Color(0.36, 0.17, 0.07), 0.44, 0.05)
+	var mat_chair_emerald_trim: StandardMaterial3D = _make_mat(Color(0.06, 0.20, 0.11), 0.72, 0.03)
+	var mat_chair_amber_trim: StandardMaterial3D = _make_mat(Color(0.46, 0.28, 0.08), 0.72, 0.03)
+	var mat_chair_cobalt_trim: StandardMaterial3D = _make_mat(Color(0.06, 0.12, 0.28), 0.72, 0.03)
+	var mat_chair_ruby_trim: StandardMaterial3D = _make_mat(Color(0.34, 0.06, 0.08), 0.72, 0.03)
 
 	_shared_mats = {
 		"baize_emerald": mat_baize,
@@ -1932,13 +1940,16 @@ func _init_lounge_materials() -> void:
 		"window_glass_glint": mat_window_glass_glint,
 		"left_lamp_shade": _left_lamp_shade_mat,
 		"right_lantern_glow": _right_lantern_glow_mat,
-		"chair_emerald": mat_chair_emerald,
 		"chair_crimson": mat_chair_crimson,
-		"chair_teal": mat_chair_teal,
-		"chair_cognac": mat_chair_cognac,
+		"chair_emerald": mat_chair_emerald,
+		"chair_amber": mat_chair_amber,
+		"chair_cobalt": mat_chair_cobalt,
+		"chair_ruby": mat_chair_ruby,
 		"chair_crimson_trim": mat_chair_crimson_trim,
-		"chair_teal_trim": mat_chair_teal_trim,
-		"chair_cognac_trim": mat_chair_cognac_trim
+		"chair_emerald_trim": mat_chair_emerald_trim,
+		"chair_amber_trim": mat_chair_amber_trim,
+		"chair_cobalt_trim": mat_chair_cobalt_trim,
+		"chair_ruby_trim": mat_chair_ruby_trim
 	}
 
 
@@ -2261,6 +2272,8 @@ func _get_or_build_chair_style_mesh(style_idx: int) -> ArrayMesh:
 			_populate_chair_style_2_isfahan_medallion(temp_chair)
 		3:
 			_populate_chair_style_3_orosi_lattice(temp_chair)
+		4:
+			_populate_chair_style_4_termeh_armchair(temp_chair)
 	var baked: ArrayMesh = _bake_node_tree_to_array_mesh(temp_chair)
 	temp_chair.free()
 	if baked != null:
@@ -2390,7 +2403,7 @@ func _populate_chair_style_0_chesterfield(chair: Node3D) -> void:
 	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
 	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
 	var mat_leather: Material = _shared_mats["chair_emerald"]
-	var mat_trim: Material = _shared_mats["leather_green_dark"]
+	var mat_trim: Material = _shared_mats["chair_emerald_trim"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
 
@@ -2496,8 +2509,8 @@ func _populate_chair_style_2_isfahan_medallion(chair: Node3D) -> void:
 	# STYLE 2: Isfahan Peacock-Teal Brocade Oval Medallion Salon Chair (Proportioned Sculpted Frame + Floral Medallion Texture)
 	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
 	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
-	var mat_teal: Material = _shared_mats["chair_teal"]
-	var mat_trim: Material = _shared_mats["chair_teal_trim"]
+	var mat_teal: Material = _shared_mats["chair_cobalt"]
+	var mat_trim: Material = _shared_mats["chair_cobalt_trim"]
 	var mat_khatam: Material = _shared_mats["khatam_inlay"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
@@ -2545,8 +2558,8 @@ func _populate_chair_style_3_orosi_lattice(chair: Node3D) -> void:
 	var mat_walnut_pol: Material = _shared_mats["walnut_polished"]
 	var mat_walnut_mid: Material = _shared_mats["walnut_mid"]
 	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
-	var mat_cognac: Material = _shared_mats["chair_cognac"]
-	var mat_trim: Material = _shared_mats["chair_cognac_trim"]
+	var mat_cognac: Material = _shared_mats["chair_amber"]
+	var mat_trim: Material = _shared_mats["chair_amber_trim"]
 	var mat_khatam: Material = _shared_mats["khatam_inlay"]
 	var mat_brass: Material = _shared_mats["brass"]
 	var mat_aged: Material = _shared_mats["aged_brass"]
@@ -2586,6 +2599,54 @@ func _populate_chair_style_3_orosi_lattice(chair: Node3D) -> void:
 		_add_box(chair, Vector3(0.115, 0.048, 0.082), Vector3(cx, cy, cz), mat_walnut_pol, Vector3(-6.0, 0.0, -rad_to_deg(cang) * 0.58))
 	_add_box(chair, Vector3(0.28, 0.032, 0.088), Vector3(0.0, 0.525, -0.038), mat_khatam, Vector3(-6.0, 0.0, 0.0))
 	_add_torus(chair, 0.016, 0.026, Vector3(0.0, 0.525, 0.008), mat_brass, Vector3(84.0, 0.0, 0.0), 10)
+
+
+func _populate_chair_style_4_termeh_armchair(chair: Node3D) -> void:
+	# STYLE 4: Royal Yazd Termeh Silk Brocade & Turned Mahogany Parlor Armchair (Arched Crown + Turned Balusters)
+	var mat_mahogany: Material = _shared_mats["mahogany"]
+	var mat_walnut_dark: Material = _shared_mats["walnut_dark"]
+	var mat_ruby: Material = _shared_mats["chair_ruby"]
+	var mat_trim: Material = _shared_mats["chair_ruby_trim"]
+	var mat_brass: Material = _shared_mats["brass"]
+	var mat_aged: Material = _shared_mats["aged_brass"]
+
+	_add_grounded_chair_base(chair, mat_mahogany, mat_walnut_dark, mat_brass, 0)
+
+	# Plush Rounded Termeh Ruby Seat Cushion with Antique Gold Piping
+	_add_box(chair, Vector3(0.72, 0.082, 0.39), Vector3(0.0, -0.092, 0.205), mat_trim)
+	_add_box(chair, Vector3(0.68, 0.068, 0.36), Vector3(0.0, -0.052, 0.205), mat_ruby)
+	_add_cyl(chair, 0.040, 0.040, 0.68, Vector3(0.0, -0.068, 0.388), mat_ruby, Vector3(0.0, 0.0, 90.0), 10)
+	_add_cyl(chair, 0.010, 0.010, 0.72, Vector3(0.0, -0.126, 0.405), mat_aged, Vector3(0.0, 0.0, 90.0), 8)
+
+	# Contoured Termeh Ruby Silk Brocade Backrest
+	_add_box(chair, Vector3(0.72, 0.44, 0.084), Vector3(0.0, 0.14, 0.002), mat_ruby, Vector3(-6.0, 0.0, 0.0))
+	_add_cyl(chair, 0.36, 0.36, 0.082, Vector3(0.0, 0.28, -0.014), mat_ruby, Vector3(84.0, 0.0, 0.0), 18)
+
+	# Continuous Carved Mahogany Arch with Brass Finials
+	var arch_segs: int = 11
+	for i: int in range(arch_segs):
+		var t: float = float(i) / float(arch_segs - 1)
+		var ang: float = lerpf(-1.38, 1.38, t)
+		var ax: float = sin(ang) * 0.395
+		var ay: float = 0.280 + cos(ang) * 0.360
+		var az: float = -0.014 - (ay - 0.280) * 0.105
+		_add_box(chair, Vector3(0.11, 0.044, 0.096), Vector3(ax, ay, az), mat_mahogany, Vector3(-6.0, 0.0, -rad_to_deg(ang)))
+		if i % 2 == 0:
+			var nx: float = sin(ang) * 0.365
+			var ny: float = 0.280 + cos(ang) * 0.330
+			_add_sphere(chair, 0.007, 0.009, Vector3(nx, ny, az + 0.048), mat_brass, Vector3.ZERO, 6)
+
+	_add_torus(chair, 0.020, 0.034, Vector3(0.0, 0.655, -0.052), mat_brass, Vector3(84.0, 0.0, 0.0), 10)
+	_add_sphere(chair, 0.014, 0.024, Vector3(0.0, 0.690, -0.056), mat_aged, Vector3.ZERO, 8)
+
+	# Swept Mahogany Stiles & Termeh Padded Armrests
+	for side_s: float in [-1.0, 1.0]:
+		_add_cyl(chair, 0.026, 0.028, 0.44, Vector3(side_s * 0.385, 0.08, 0.008), mat_mahogany, Vector3(-6.0, 0.0, 0.0), 10)
+		_add_box(chair, Vector3(0.054, 0.030, 0.35), Vector3(side_s * 0.378, 0.036, 0.195), mat_mahogany, Vector3(3.5, side_s * -3.5, 0.0))
+		_add_box(chair, Vector3(0.060, 0.024, 0.22), Vector3(side_s * 0.376, 0.058, 0.190), mat_ruby, Vector3(3.5, side_s * -3.5, 0.0))
+		_add_sphere(chair, 0.030, 0.034, Vector3(side_s * 0.368, 0.025, 0.368), mat_mahogany, Vector3.ZERO, 8)
+		_add_cyl(chair, 0.018, 0.022, 0.18, Vector3(side_s * 0.358, -0.062, 0.360), mat_walnut_dark, Vector3(6.0, 0.0, 0.0), 10)
+		_add_torus(chair, 0.015, 0.022, Vector3(side_s * 0.358, -0.052, 0.360), mat_brass, Vector3.ZERO, 8)
 
 
 # ============================================================================

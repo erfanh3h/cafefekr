@@ -420,7 +420,7 @@ size_flags_horizontal = 3
 mouse_filter = 2
 
 [node name="TimerBarFrame" type="Control" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/LocalTurnBarCenter"]
-custom_minimum_size = Vector2(340, 48)
+custom_minimum_size = Vector2(380, 71)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -453,18 +453,47 @@ step = 0.05
 value = 100.0
 show_percentage = false
 
-[node name="BelowTimerRow" type="HBoxContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox"]
+[node name="BelowTimerRow" type="Control" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
-alignment = 1
-layout_direction = 2
+
+[node name="LocalTurnPillCenter" type="CenterContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LocalTurnPill" type="PanelContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/LocalTurnPillCenter"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_local_pill")
+
+[node name="LblLocalTurn" type="Label" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/LocalTurnPillCenter/LocalTurnPill"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.984314, 0.952941, 0.894118, 1)
+theme_override_colors/font_shadow_color = Color(0.04, 0.02, 0.01, 0.85)
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("3_font_ui")
+theme_override_font_sizes/font_size = 15
+text = "نوبت شما"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="PenaltyDetailsBox" type="PanelContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow"]
 visible = false
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 4
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 4.0
+offset_top = -18.0
+offset_right = 104.0
+offset_bottom = 18.0
+grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_penalty_box")
 
@@ -562,32 +591,20 @@ theme_override_font_sizes/font_size = 10
 text = "۰/۲"
 text_direction = 3
 
-[node name="LocalTurnPillCenter" type="CenterContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="LocalTurnPill" type="PanelContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/LocalTurnPillCenter"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_local_pill")
-
-[node name="LblLocalTurn" type="Label" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/LocalTurnPillCenter/LocalTurnPill"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.984314, 0.952941, 0.894118, 1)
-theme_override_colors/font_shadow_color = Color(0.04, 0.02, 0.01, 0.85)
-theme_override_constants/shadow_offset_y = 1
-theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 15
-text = "نوبت شما"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="MatchResultBox" type="PanelContainer" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow"]
 visible = false
-layout_mode = 2
-size_flags_horizontal = 8
-size_flags_vertical = 4
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -104.0
+offset_top = -16.0
+offset_right = -4.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_match_result")
 

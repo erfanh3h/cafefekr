@@ -259,12 +259,12 @@ static func create_frame5_style(pad_x: float = 46.0, pad_y: float = 32.0) -> Sty
 	var sb := StyleBoxTexture.new()
 	sb.texture = TEX_FRAME5
 	sb.texture_margin_left = 54.0
-	sb.texture_margin_top = 54.0
+	sb.texture_margin_top = 96.0
 	sb.texture_margin_right = 54.0
-	sb.texture_margin_bottom = 54.0
+	sb.texture_margin_bottom = 44.0
 	sb.content_margin_left = pad_x
 	sb.content_margin_right = pad_x
-	sb.content_margin_top = pad_y
+	sb.content_margin_top = pad_y + 12.0
 	sb.content_margin_bottom = pad_y
 	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH

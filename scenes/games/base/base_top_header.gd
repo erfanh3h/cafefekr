@@ -325,7 +325,7 @@ func _apply_safe_area_insets() -> void:
 func _get_current_header_height() -> float:
 	var bar_h: float = 0.0
 	if is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible:
-		var frame_h: float = timer_bar_frame.custom_minimum_size.y if is_instance_valid(timer_bar_frame) else 48.0
+		var frame_h: float = timer_bar_frame.custom_minimum_size.y if is_instance_valid(timer_bar_frame) else 68.0
 		bar_h = frame_h + 6.0
 	var meta_h: float = 28.0 if (is_instance_valid(match_meta_ribbon) and match_meta_ribbon.visible) else 0.0
 	var has_below: bool = is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible
@@ -341,8 +341,9 @@ func _sync_timer_bar_layout() -> void:
 	var avail_w: float = local_turn_bar_wrap.size.x - 12.0
 	if avail_w <= 1.0:
 		avail_w = 480.0
-	var target_w: float = clampf(avail_w * 0.72, 300.0, 380.0)
-	var target_h: float = 48.0
+	var target_w: float = clampf(avail_w * 0.76, 320.0, 420.0)
+	var target_h: float = clampf(round(target_w / HudTheme.TIMER_BAR_ASPECT), 58.0, 76.0)
+	target_w = round(target_h * HudTheme.TIMER_BAR_ASPECT)
 	if not timer_bar_frame.custom_minimum_size.is_equal_approx(Vector2(target_w, target_h)):
 		timer_bar_frame.custom_minimum_size = Vector2(target_w, target_h)
 		_last_timer_fill_key = ""
@@ -1100,30 +1101,33 @@ func _spawn_floating_reaction(is_opponent: bool, reaction_id: int, spawn_pos: Ve
 	bubble.top_level = true
 	bubble.z_index = 100
 
-	var bubble_style := StyleBoxFlat.new()
-	bubble_style.bg_color = Color(0.12, 0.08, 0.05, 0.96)
-	bubble_style.border_color = HudTheme.COL_GOLD_ACTIVE if not is_opponent else HudTheme.COL_GOLD_BRUSHED
-	bubble_style.set_border_width_all(2)
-	bubble_style.border_width_bottom = 2
-	bubble_style.shadow_color = Color(0, 0, 0, 0.60)
-	bubble_style.shadow_size = 0 if GameManager.is_mobile else (14 if not is_opponent else (8 if is_kori else 12))
-	bubble_style.shadow_offset = Vector2(0, 4 if not is_opponent else 3)
+	if is_kori:
+		var bubble_style := StyleBoxFlat.new()
+		bubble_style.bg_color = Color(0.12, 0.08, 0.05, 0.96)
+		bubble_style.border_color = HudTheme.COL_GOLD_ACTIVE if not is_opponent else HudTheme.COL_GOLD_BRUSHED
+		bubble_style.set_border_width_all(2)
+		bubble_style.border_width_bottom = 2
+		bubble_style.shadow_color = Color(0, 0, 0, 0.60)
+		bubble_style.shadow_size = 0 if GameManager.is_mobile else (14 if not is_opponent else 8)
+		bubble_style.shadow_offset = Vector2(0, 4 if not is_opponent else 3)
 
-	if not is_opponent:
-		# Local player sent reaction: prominent speech bubble
-		bubble_style.set_corner_radius_all(18)
-		bubble_style.content_margin_left = 18
-		bubble_style.content_margin_right = 18
-		bubble_style.content_margin_top = 8 if is_kori else 10
-		bubble_style.content_margin_bottom = 8 if is_kori else 10
+		if not is_opponent:
+			# Local player sent reaction: prominent speech bubble
+			bubble_style.set_corner_radius_all(18)
+			bubble_style.content_margin_left = 18
+			bubble_style.content_margin_right = 18
+			bubble_style.content_margin_top = 8
+			bubble_style.content_margin_bottom = 8
+		else:
+			# Opponent reaction: compact and clean at bottom of pod
+			bubble_style.set_corner_radius_all(14)
+			bubble_style.content_margin_left = 12
+			bubble_style.content_margin_right = 12
+			bubble_style.content_margin_top = 4
+			bubble_style.content_margin_bottom = 4
+		bubble.add_theme_stylebox_override("panel", bubble_style)
 	else:
-		# Opponent reaction: compact and clean at bottom of pod
-		bubble_style.set_corner_radius_all(14 if is_kori else 20)
-		bubble_style.content_margin_left = 12
-		bubble_style.content_margin_right = 12
-		bubble_style.content_margin_top = 4 if is_kori else 10
-		bubble_style.content_margin_bottom = 4 if is_kori else 10
-	bubble.add_theme_stylebox_override("panel", bubble_style)
+		bubble.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 
 	if is_kori:
 		var k_idx: int = clampi(reaction_id - 101, 0, KORIS.size() - 1)
@@ -1154,16 +1158,16 @@ func _spawn_floating_reaction(is_opponent: bool, reaction_id: int, spawn_pos: Ve
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon_rect.texture = r_tex
 		bubble.add_child(icon_rect)
-		bubble.custom_minimum_size = Vector2(136, 136)
+		bubble.custom_minimum_size = Vector2(112, 112)
 
-	# Opponent reaction special VFX: luminous expanding golden aura shockwave
+	# Opponent reaction special VFX: luminous expanding golden aura shockwave for text koris only
 	var aura: Panel = null
-	if is_opponent:
+	if is_opponent and is_kori:
 		aura = Panel.new()
 		aura.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var aura_sb := StyleBoxFlat.new()
 		aura_sb.bg_color = Color(HudTheme.COL_GOLD_ACTIVE.r, HudTheme.COL_GOLD_ACTIVE.g, HudTheme.COL_GOLD_ACTIVE.b, 0.45)
-		aura_sb.set_corner_radius_all(18 if is_kori else 24)
+		aura_sb.set_corner_radius_all(18)
 		aura.add_theme_stylebox_override("panel", aura_sb)
 		aura.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		aura.show_behind_parent = true
@@ -1175,9 +1179,9 @@ func _spawn_floating_reaction(is_opponent: bool, reaction_id: int, spawn_pos: Ve
 	var bubble_w: float = bubble.size.x
 	var bubble_h: float = bubble.size.y
 	if bubble_w <= 0.0:
-		bubble_w = bubble.custom_minimum_size.x if bubble.custom_minimum_size.x > 0 else 136.0
+		bubble_w = bubble.custom_minimum_size.x if bubble.custom_minimum_size.x > 0 else (112.0 if not is_kori else 136.0)
 	if bubble_h <= 0.0:
-		bubble_h = bubble.custom_minimum_size.y if bubble.custom_minimum_size.y > 0 else ((38.0 if not is_opponent else 28.0) if is_kori else 136.0)
+		bubble_h = bubble.custom_minimum_size.y if bubble.custom_minimum_size.y > 0 else ((38.0 if not is_opponent else 28.0) if is_kori else 112.0)
 	var half_w: float = bubble_w * 0.5
 	var target_x: float = clampf(spawn_pos.x - half_w, 12.0, maxf(12.0, vp_sz.x - bubble_w - 12.0))
 	var target_y: float = spawn_pos.y

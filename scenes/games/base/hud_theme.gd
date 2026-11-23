@@ -415,20 +415,22 @@ static func apply_drawer_item_style(btn: Button, variant: String = "default") ->
 	btn.add_theme_color_override("font_pressed_color", COL_TEXT_GOLD)
 
 
-static func make_emote_bubble_style(is_kori: bool = true) -> StyleBoxFlat:
+static func make_emote_bubble_style(is_kori: bool = true) -> StyleBox:
+	if not is_kori:
+		return StyleBoxEmpty.new()
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.14, 0.09, 0.05, 0.96) if is_kori else Color(0.14, 0.09, 0.05, 0.88)
-	sb.border_color = COL_GOLD_ACTIVE if is_kori else Color(COL_GOLD_BRUSHED.r, COL_GOLD_BRUSHED.g, COL_GOLD_BRUSHED.b, 0.85)
+	sb.bg_color = Color(0.14, 0.09, 0.05, 0.96)
+	sb.border_color = COL_GOLD_ACTIVE
 	sb.set_border_width_all(2)
 	sb.border_width_bottom = 2
-	sb.set_corner_radius_all(14 if is_kori else 22)
+	sb.set_corner_radius_all(14)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.58)
-	sb.shadow_size = 0 if is_mobile() else (8 if is_kori else 12)
+	sb.shadow_size = 0 if is_mobile() else 8
 	sb.shadow_offset = Vector2(0, 3)
-	sb.content_margin_left = 12 if is_kori else 8
-	sb.content_margin_right = 12 if is_kori else 8
-	sb.content_margin_top = 4 if is_kori else 8
-	sb.content_margin_bottom = 4 if is_kori else 8
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 4
 	return sb
 
 

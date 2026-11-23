@@ -327,8 +327,9 @@ func _sync_timer_bar_layout() -> void:
 	var avail_w: float = local_turn_bar_wrap.size.x - 16.0
 	if avail_w <= 1.0:
 		avail_w = 480.0
-	var target_w: float = clampf(avail_w * 0.72, 300.0, 380.0)
-	var target_h: float = 48.0
+	var target_w: float = clampf(avail_w * 0.76, 320.0, 420.0)
+	var target_h: float = clampf(round(target_w / HudTheme.TIMER_BAR_ASPECT), 58.0, 76.0)
+	target_w = round(target_h * HudTheme.TIMER_BAR_ASPECT)
 	if not timer_bar_frame.custom_minimum_size.is_equal_approx(Vector2(target_w, target_h)):
 		timer_bar_frame.custom_minimum_size = Vector2(target_w, target_h)
 

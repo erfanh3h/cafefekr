@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bi7y7g5khslkn"
-path="res://.godot/imported/chair_leather_cognac.jpg-e1212a990479446b507c3596e0c9e2bc.ctex"
+uid="uid://ypid80cgrdsg"
+path="res://.godot/imported/chair_velvet_amber.jpg-3a085a8d3556bf27eec822ba27e828fd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/images/cafe_textures/chair_leather_cognac.jpg"
-dest_files=["res://.godot/imported/chair_leather_cognac.jpg-e1212a990479446b507c3596e0c9e2bc.ctex"]
+source_file="res://assets/images/cafe_textures/chair_velvet_amber.jpg"
+dest_files=["res://.godot/imported/chair_velvet_amber.jpg-3a085a8d3556bf27eec822ba27e828fd.ctex"]
 
 [params]
 

@@ -93,7 +93,7 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
 [node name="UserHeader" type="MarginContainer"]
-custom_minimum_size = Vector2(0, 276)
+custom_minimum_size = Vector2(0, 320)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 0
@@ -103,7 +103,7 @@ theme_override_constants/margin_bottom = 0
 script = ExtResource("1_header_script")
 
 [node name="PanelFrame" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(0, 272)
+custom_minimum_size = Vector2(0, 316)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_player_card")
@@ -118,9 +118,9 @@ stretch_mode = 0
 [node name="ContentMargin" type="MarginContainer" parent="PanelFrame"]
 layout_mode = 2
 theme_override_constants/margin_left = 46
-theme_override_constants/margin_top = 62
+theme_override_constants/margin_top = 100
 theme_override_constants/margin_right = 46
-theme_override_constants/margin_bottom = 66
+theme_override_constants/margin_bottom = 54
 
 [node name="VBoxMain" type="VBoxContainer" parent="PanelFrame/ContentMargin"]
 layout_mode = 2
