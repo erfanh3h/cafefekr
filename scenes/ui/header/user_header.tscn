@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" path="res://assets/images/frames/add.png" id="7_add_tex"]
 [ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="8_font_hekayat"]
 [ext_resource type="Texture2D" path="res://assets/icons/Avatars/0.png" id="9_default_avatar"]
-[ext_resource type="Texture2D" path="res://assets/images/frames/user_header_frame.png" id="10_frame_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/frames/frame5.png" id="10_frame_tex"]
 [ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="11_font_vazir"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_player_card"]
@@ -93,7 +93,7 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
 [node name="UserHeader" type="MarginContainer"]
-custom_minimum_size = Vector2(0, 256)
+custom_minimum_size = Vector2(0, 276)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 0
@@ -103,7 +103,7 @@ theme_override_constants/margin_bottom = 0
 script = ExtResource("1_header_script")
 
 [node name="PanelFrame" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(0, 252)
+custom_minimum_size = Vector2(0, 272)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_player_card")
@@ -117,10 +117,10 @@ stretch_mode = 0
 
 [node name="ContentMargin" type="MarginContainer" parent="PanelFrame"]
 layout_mode = 2
-theme_override_constants/margin_left = 42
-theme_override_constants/margin_top = 46
-theme_override_constants/margin_right = 42
-theme_override_constants/margin_bottom = 52
+theme_override_constants/margin_left = 46
+theme_override_constants/margin_top = 62
+theme_override_constants/margin_right = 46
+theme_override_constants/margin_bottom = 66
 
 [node name="VBoxMain" type="VBoxContainer" parent="PanelFrame/ContentMargin"]
 layout_mode = 2

@@ -186,11 +186,12 @@ func _style_start_button() -> void:
 
 	btn_start_game.flat = false
 	btn_start_game.focus_mode = Control.FOCUS_NONE
-	btn_start_game.custom_minimum_size.y = 80.0
-	btn_start_game.add_theme_stylebox_override("normal", make_btn_sb.call(Color(1.0, 1.0, 1.0, 1.0), 22.0, 22.0))
-	btn_start_game.add_theme_stylebox_override("hover", make_btn_sb.call(Color(1.12, 1.08, 1.02, 1.0), 22.0, 22.0))
-	btn_start_game.add_theme_stylebox_override("pressed", make_btn_sb.call(Color(0.85, 0.82, 0.78, 1.0), 25.0, 19.0))
-	btn_start_game.add_theme_stylebox_override("disabled", make_btn_sb.call(Color(0.55, 0.52, 0.5, 0.7), 22.0, 22.0))
+	btn_start_game.custom_minimum_size.y = 150.0
+	btn_start_game.add_theme_font_size_override("font_size", 34)
+	btn_start_game.add_theme_stylebox_override("normal", make_btn_sb.call(Color(1.0, 1.0, 1.0, 1.0), 42.0, 42.0))
+	btn_start_game.add_theme_stylebox_override("hover", make_btn_sb.call(Color(1.12, 1.08, 1.02, 1.0), 42.0, 42.0))
+	btn_start_game.add_theme_stylebox_override("pressed", make_btn_sb.call(Color(0.85, 0.82, 0.78, 1.0), 46.0, 38.0))
+	btn_start_game.add_theme_stylebox_override("disabled", make_btn_sb.call(Color(0.55, 0.52, 0.5, 0.7), 42.0, 42.0))
 	btn_start_game.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 	btn_start_game.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))

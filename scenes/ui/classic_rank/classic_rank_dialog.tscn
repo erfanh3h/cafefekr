@@ -382,7 +382,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnStartGame" type="Button" parent="InnerBezel/VBox/BottomRow"]
-custom_minimum_size = Vector2(0, 68)
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0

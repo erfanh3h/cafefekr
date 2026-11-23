@@ -16,6 +16,7 @@ const TEX_FRAME = preload("res://assets/images/frames/frame.png")
 const TEX_FRAME2 = preload("res://assets/images/frames/frame2.png")
 const TEX_FRAME3 = preload("res://assets/images/frames/frame3.png")
 const TEX_FRAME4 = preload("res://assets/images/frames/frame4.png")
+const TEX_FRAME5 = preload("res://assets/images/frames/frame5.png")
 const TEX_BUTTON = preload("res://assets/images/frames/button.png")
 const TEX_CLOSE = preload("res://assets/images/frames/close.png")
 const TEX_ADD = preload("res://assets/images/frames/add.png")
@@ -245,6 +246,22 @@ static func create_panel_box_style(pad_x: float = 44.0, pad_y: float = 44.0) -> 
 	sb.texture_margin_top = 42.0
 	sb.texture_margin_right = 48.0
 	sb.texture_margin_bottom = 42.0
+	sb.content_margin_left = pad_x
+	sb.content_margin_right = pad_x
+	sb.content_margin_top = pad_y
+	sb.content_margin_bottom = pad_y
+	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+	return sb
+
+
+static func create_frame5_style(pad_x: float = 46.0, pad_y: float = 32.0) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = TEX_FRAME5
+	sb.texture_margin_left = 54.0
+	sb.texture_margin_top = 54.0
+	sb.texture_margin_right = 54.0
+	sb.texture_margin_bottom = 54.0
 	sb.content_margin_left = pad_x
 	sb.content_margin_right = pad_x
 	sb.content_margin_top = pad_y

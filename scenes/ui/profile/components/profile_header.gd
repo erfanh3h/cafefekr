@@ -61,8 +61,8 @@ func _make_stat_crest(tex: Texture2D, font_sz: int, text_col: Color, y_top_off: 
 
 
 func _build_ui() -> void:
-	# Header banner using frame2.png with generous inset padding
-	add_theme_stylebox_override("panel", CafeSocialTheme.create_header_banner_style(36.0, 16.0))
+	# Header banner using frame5.png with generous vertical padding
+	add_theme_stylebox_override("panel", CafeSocialTheme.create_frame5_style(46.0, 32.0))
 
 	var main_vbox := VBoxContainer.new()
 	main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
