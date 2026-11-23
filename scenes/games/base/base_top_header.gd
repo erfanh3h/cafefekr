@@ -133,16 +133,16 @@ const KORIS: Array[String] = [
 @onready var edge_overlay: Control = $EdgeOverlay
 @onready var spectator_pill: PanelContainer = $EdgeOverlay/SpectatorPill
 @onready var lbl_spectator: Label = $EdgeOverlay/SpectatorPill/HBox/LblSpectator
-@onready var penalty_details_box: PanelContainer = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox
-@onready var opp_dot1: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot1
-@onready var opp_dot2: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot2
-@onready var lbl_opp_penalty: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/OppRow/LblOppCount
-@onready var my_dot1: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot1
-@onready var my_dot2: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot2
-@onready var lbl_my_penalty: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/PenaltyDetailsBox/VBox/MyRow/LblMyCount
-@onready var match_result_box: PanelContainer = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/MatchResultBox
-@onready var lbl_result_title: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/MatchResultBox/HBox/LblResultTitle
-@onready var lbl_result_score: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/TimerRow/MatchResultBox/HBox/LblResultScore
+@onready var penalty_details_box: PanelContainer = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox
+@onready var opp_dot1: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot1
+@onready var opp_dot2: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots/OppDot2
+@onready var lbl_opp_penalty: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/LblOppCount
+@onready var my_dot1: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot1
+@onready var my_dot2: Panel = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots/MyDot2
+@onready var lbl_my_penalty: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/LblMyCount
+@onready var match_result_box: PanelContainer = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/MatchResultBox
+@onready var lbl_result_title: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/MatchResultBox/HBox/LblResultTitle
+@onready var lbl_result_score: Label = $Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/MatchResultBox/HBox/LblResultScore
 var social_rail: VBoxContainer = null
 
 @onready var bottom_turn_glow: TextureRect = $BottomTurnGlow
@@ -325,11 +325,11 @@ func _apply_safe_area_insets() -> void:
 func _get_current_header_height() -> float:
 	var bar_h: float = 0.0
 	if is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible:
-		var frame_h: float = timer_bar_frame.custom_minimum_size.y if is_instance_valid(timer_bar_frame) else 50.0
+		var frame_h: float = timer_bar_frame.custom_minimum_size.y if is_instance_valid(timer_bar_frame) else 68.0
 		bar_h = frame_h + 32.0
 	var meta_h: float = 28.0 if (is_instance_valid(match_meta_ribbon) and match_meta_ribbon.visible) else 0.0
 	var has_below: bool = (is_instance_valid(penalty_details_box) and penalty_details_box.visible) or (is_instance_valid(match_result_box) and match_result_box.visible)
-	var below_h: float = 38.0 if has_below else 0.0
+	var below_h: float = 40.0 if has_below else 0.0
 	var row_h: float = 58.0 if _total_players <= 2 else 86.0
 	var padding: float = 8.0
 	return float(_safe_top_inset) + row_h + bar_h + meta_h + below_h + padding
@@ -341,8 +341,8 @@ func _sync_timer_bar_layout() -> void:
 	var avail_w: float = local_turn_bar_wrap.size.x - 12.0
 	if avail_w <= 1.0:
 		avail_w = 480.0
-	var target_w: float = clampf(avail_w * 0.56, 224.0, 278.0)
-	var target_h: float = clampf(round(target_w / HudTheme.TIMER_BAR_ASPECT), 42.0, 52.0)
+	var target_w: float = clampf(avail_w * 0.76, 320.0, 420.0)
+	var target_h: float = clampf(round(target_w / HudTheme.TIMER_BAR_ASPECT), 58.0, 76.0)
 	target_w = round(target_h * HudTheme.TIMER_BAR_ASPECT)
 	if not timer_bar_frame.custom_minimum_size.is_equal_approx(Vector2(target_w, target_h)):
 		timer_bar_frame.custom_minimum_size = Vector2(target_w, target_h)

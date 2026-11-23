@@ -312,33 +312,34 @@ func _init_materials() -> void:
 	mat_socket_well.roughness = 0.55
 
 	# Model 1: Player 1 (Red) Sculpted Commander Ring
+	# Model 1: Player 1 (White) Sculpted Commander Ring
 	mat_ring_p1_body = StandardMaterial3D.new()
-	mat_ring_p1_body.albedo_color = Color(0.86, 0.11, 0.16)
-	mat_ring_p1_body.metallic = 0.28
+	mat_ring_p1_body.albedo_color = Color(0.96, 0.95, 0.92)
+	mat_ring_p1_body.metallic = 0.08
 	mat_ring_p1_body.roughness = 0.16
 	mat_ring_p1_body.clearcoat_enabled = false
 	mat_ring_p1_body.clearcoat = 0.95
 	mat_ring_p1_body.clearcoat_roughness = 0.08
 	mat_ring_p1_body.emission_enabled = true
-	mat_ring_p1_body.emission = Color(0.55, 0.05, 0.08)
-	mat_ring_p1_body.emission_energy_multiplier = 0.35
+	mat_ring_p1_body.emission = Color(0.85, 0.85, 0.82)
+	mat_ring_p1_body.emission_energy_multiplier = 0.15
 
 	mat_ring_p1_gold = StandardMaterial3D.new()
 	mat_ring_p1_gold.albedo_color = Color(1.0, 0.82, 0.30)
 	mat_ring_p1_gold.metallic = 0.94
 	mat_ring_p1_gold.roughness = 0.16
 
-	# Model 2: Player 2 (Blue) Sculpted Commander Ring
+	# Model 2: Player 2 (Black) Sculpted Commander Ring
 	mat_ring_p2_body = StandardMaterial3D.new()
-	mat_ring_p2_body.albedo_color = Color(0.10, 0.42, 0.90)
-	mat_ring_p2_body.metallic = 0.30
+	mat_ring_p2_body.albedo_color = Color(0.12, 0.12, 0.12)
+	mat_ring_p2_body.metallic = 0.08
 	mat_ring_p2_body.roughness = 0.16
 	mat_ring_p2_body.clearcoat_enabled = false
 	mat_ring_p2_body.clearcoat = 0.95
 	mat_ring_p2_body.clearcoat_roughness = 0.08
 	mat_ring_p2_body.emission_enabled = true
-	mat_ring_p2_body.emission = Color(0.05, 0.22, 0.58)
-	mat_ring_p2_body.emission_energy_multiplier = 0.38
+	mat_ring_p2_body.emission = Color(0.18, 0.18, 0.20)
+	mat_ring_p2_body.emission_energy_multiplier = 0.15
 
 	mat_ring_p2_plat = StandardMaterial3D.new()
 	mat_ring_p2_plat.albedo_color = Color(0.86, 0.91, 0.98)
@@ -352,24 +353,24 @@ func _init_materials() -> void:
 	mat_disk_edge_gold.roughness = 0.22
 
 	mat_disk_p1_face = StandardMaterial3D.new()
-	mat_disk_p1_face.albedo_color = Color(0.92, 0.16, 0.20)
-	mat_disk_p1_face.metallic = 0.18
+	mat_disk_p1_face.albedo_color = Color(0.96, 0.95, 0.92)
+	mat_disk_p1_face.metallic = 0.08
 	mat_disk_p1_face.roughness = 0.20
 	mat_disk_p1_face.clearcoat_enabled = false
 	mat_disk_p1_face.clearcoat = 0.90
 	mat_disk_p1_face.emission_enabled = true
-	mat_disk_p1_face.emission = Color(0.50, 0.06, 0.08)
-	mat_disk_p1_face.emission_energy_multiplier = 0.28
+	mat_disk_p1_face.emission = Color(0.85, 0.85, 0.82)
+	mat_disk_p1_face.emission_energy_multiplier = 0.15
 
 	mat_disk_p2_face = StandardMaterial3D.new()
-	mat_disk_p2_face.albedo_color = Color(0.14, 0.52, 0.96)
-	mat_disk_p2_face.metallic = 0.18
+	mat_disk_p2_face.albedo_color = Color(0.12, 0.12, 0.12)
+	mat_disk_p2_face.metallic = 0.08
 	mat_disk_p2_face.roughness = 0.20
 	mat_disk_p2_face.clearcoat_enabled = false
 	mat_disk_p2_face.clearcoat = 0.90
 	mat_disk_p2_face.emission_enabled = true
-	mat_disk_p2_face.emission = Color(0.06, 0.24, 0.55)
-	mat_disk_p2_face.emission_energy_multiplier = 0.30
+	mat_disk_p2_face.emission = Color(0.18, 0.18, 0.20)
+	mat_disk_p2_face.emission_energy_multiplier = 0.15
 
 	# Interactive Halos & Previews
 	mat_halo_legal = StandardMaterial3D.new()
@@ -402,17 +403,17 @@ func _init_materials() -> void:
 
 	mat_ghost_p1 = StandardMaterial3D.new()
 	mat_ghost_p1.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ghost_p1.albedo_color = Color(1.0, 0.28, 0.32, 0.46)
+	mat_ghost_p1.albedo_color = Color(0.96, 0.95, 0.92, 0.46)
 	mat_ghost_p1.emission_enabled = true
-	mat_ghost_p1.emission = Color(1.0, 0.22, 0.26)
-	mat_ghost_p1.emission_energy_multiplier = 1.1
+	mat_ghost_p1.emission = Color(0.96, 0.95, 0.92)
+	mat_ghost_p1.emission_energy_multiplier = 0.8
 
 	mat_ghost_p2 = StandardMaterial3D.new()
 	mat_ghost_p2.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ghost_p2.albedo_color = Color(0.28, 0.68, 1.0, 0.46)
+	mat_ghost_p2.albedo_color = Color(0.12, 0.12, 0.12, 0.46)
 	mat_ghost_p2.emission_enabled = true
-	mat_ghost_p2.emission = Color(0.22, 0.58, 1.0)
-	mat_ghost_p2.emission_energy_multiplier = 1.1
+	mat_ghost_p2.emission = Color(0.20, 0.20, 0.22)
+	mat_ghost_p2.emission_energy_multiplier = 0.8
 
 	# Luxury Top Supply Box & 5-in-a-Row VFX Materials
 	mat_velvet_bed = StandardMaterial3D.new()

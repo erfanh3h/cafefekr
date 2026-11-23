@@ -167,41 +167,30 @@ func _setup_styles() -> void:
 func _style_start_button() -> void:
 	if not is_instance_valid(btn_start_game):
 		return
-	var sb_norm: StyleBoxFlat = StyleBoxFlat.new()
-	sb_norm.bg_color = Color(0.14, 0.46, 0.27, 0.99)
-	sb_norm.border_color = Color(0.92, 0.78, 0.34, 0.96)
-	sb_norm.border_width_left = 2
-	sb_norm.border_width_right = 2
-	sb_norm.border_width_top = 2
-	sb_norm.border_width_bottom = 3
-	sb_norm.set_corner_radius_all(16)
-	sb_norm.shadow_color = Color(0.0, 0.0, 0.0, 0.50)
-	sb_norm.shadow_size = 0 if _is_mobile() else 8
-	sb_norm.shadow_offset = Vector2(0, 4)
-	sb_norm.content_margin_left = 18.0
-	sb_norm.content_margin_right = 18.0
-	sb_norm.content_margin_top = 12.0
-	sb_norm.content_margin_bottom = 12.0
-
-	var sb_hover: StyleBoxFlat = sb_norm.duplicate() as StyleBoxFlat
-	sb_hover.bg_color = Color(0.18, 0.54, 0.33, 1.0)
-	sb_hover.border_color = Color(1.0, 0.88, 0.46, 1.0)
-
-	var sb_press: StyleBoxFlat = sb_norm.duplicate() as StyleBoxFlat
-	sb_press.bg_color = Color(0.11, 0.36, 0.21, 1.0)
-	sb_press.content_margin_top = 14.0
-	sb_press.content_margin_bottom = 10.0
-
-	var sb_dis: StyleBoxFlat = sb_norm.duplicate() as StyleBoxFlat
-	sb_dis.bg_color = Color(0.18, 0.18, 0.17, 0.75)
-	sb_dis.border_color = Color(0.45, 0.42, 0.38, 0.55)
+	var btn_tex = preload("res://assets/images/frames/button.png")
+	var make_btn_sb = func(mod: Color, pad_top: float, pad_bot: float) -> StyleBoxTexture:
+		var sb := StyleBoxTexture.new()
+		sb.texture = btn_tex
+		sb.modulate_color = mod
+		sb.texture_margin_left = 32.0
+		sb.texture_margin_right = 32.0
+		sb.texture_margin_top = 22.0
+		sb.texture_margin_bottom = 22.0
+		sb.content_margin_left = 28.0
+		sb.content_margin_right = 28.0
+		sb.content_margin_top = pad_top
+		sb.content_margin_bottom = pad_bot
+		sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+		sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
+		return sb
 
 	btn_start_game.flat = false
 	btn_start_game.focus_mode = Control.FOCUS_NONE
-	btn_start_game.add_theme_stylebox_override("normal", sb_norm)
-	btn_start_game.add_theme_stylebox_override("hover", sb_hover)
-	btn_start_game.add_theme_stylebox_override("pressed", sb_press)
-	btn_start_game.add_theme_stylebox_override("disabled", sb_dis)
+	btn_start_game.custom_minimum_size.y = 80.0
+	btn_start_game.add_theme_stylebox_override("normal", make_btn_sb.call(Color(1.0, 1.0, 1.0, 1.0), 22.0, 22.0))
+	btn_start_game.add_theme_stylebox_override("hover", make_btn_sb.call(Color(1.12, 1.08, 1.02, 1.0), 22.0, 22.0))
+	btn_start_game.add_theme_stylebox_override("pressed", make_btn_sb.call(Color(0.85, 0.82, 0.78, 1.0), 25.0, 19.0))
+	btn_start_game.add_theme_stylebox_override("disabled", make_btn_sb.call(Color(0.55, 0.52, 0.5, 0.7), 22.0, 22.0))
 	btn_start_game.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 	btn_start_game.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))
@@ -232,51 +221,13 @@ func _render_filter_bar() -> void:
 		var fd: Dictionary = f_item as Dictionary
 		var fid: String = str(fd["id"])
 		var flabel: String = str(fd["label"])
-		var faccent: Color = fd["accent"] as Color
 		var is_active: bool = (_difficulty_filter == fid)
 
 		var btn: Button = Button.new()
 		btn.text = flabel
-		btn.custom_minimum_size = Vector2(0, 42)
+		btn.custom_minimum_size = Vector2(0, 50)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.focus_mode = Control.FOCUS_NONE
-		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		btn.add_theme_font_override("font", FONT_VAZIR)
-		btn.add_theme_font_size_override("font_size", 16)
-
-		var sb: StyleBoxFlat = StyleBoxFlat.new()
-		sb.set_corner_radius_all(10)
-		sb.content_margin_left = 8.0
-		sb.content_margin_right = 8.0
-		sb.content_margin_top = 6.0
-		sb.content_margin_bottom = 6.0
-
-		var text_col: Color = Color(0.84, 0.78, 0.68, 0.90)
-		if is_active:
-			sb.bg_color = Color(0.24, 0.16, 0.07, 0.98)
-			sb.border_color = faccent
-			sb.set_border_width_all(2)
-			text_col = faccent
-		else:
-			sb.bg_color = Color(0.11, 0.068, 0.04, 0.85)
-			sb.border_color = Color(0.36, 0.26, 0.15, 0.45)
-			sb.set_border_width_all(1)
-
-		var sb_hover: StyleBoxFlat = sb.duplicate() as StyleBoxFlat
-		sb_hover.bg_color = sb.bg_color.lightened(0.08)
-
-		btn.add_theme_stylebox_override("normal", sb)
-		btn.add_theme_stylebox_override("hover", sb_hover)
-		btn.add_theme_stylebox_override("pressed", sb)
-		btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		btn.add_theme_stylebox_override("disabled", sb)
-
-		btn.add_theme_color_override("font_color", text_col)
-		btn.add_theme_color_override("font_hover_color", Color(1.0, 0.98, 0.92, 1.0))
-		btn.add_theme_color_override("font_pressed_color", text_col)
-		btn.add_theme_color_override("font_focus_color", text_col)
-		btn.add_theme_color_override("font_hover_pressed_color", text_col)
-		btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.50, 0.44, 0.6))
+		CafeSocialTheme.style_parlor_tab_button(btn, is_active, 18, false, 14.0, 10.0)
 
 		ActionVFXManager.apply_button_juice(btn, "tap_button")
 		btn.pressed.connect(func():

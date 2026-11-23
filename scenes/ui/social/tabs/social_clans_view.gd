@@ -1961,16 +1961,7 @@ static func _build_clan_overview_tab(host: Control, holder: VBoxContainer, cdict
 			"رویدادها و فعالیت‌های اخیر اتحاد", CafeSocialTheme.ICO_HISTORY, "ثبت خودکار پیوستن، ارتقای درجه و دستاوردهای اعضا"
 		))
 		var act_card := PanelContainer.new()
-		var ac_st := StyleBoxFlat.new()
-		ac_st.bg_color = Color(0.12, 0.08, 0.04, 0.95)
-		ac_st.border_color = Color(0.50, 0.36, 0.20, 0.65)
-		ac_st.set_border_width_all(1)
-		ac_st.set_corner_radius_all(14)
-		ac_st.content_margin_left = 14.0
-		ac_st.content_margin_right = 14.0
-		ac_st.content_margin_top = 10.0
-		ac_st.content_margin_bottom = 10.0
-		act_card.add_theme_stylebox_override("panel", ac_st)
+		act_card.add_theme_stylebox_override("panel", CafeSocialTheme.create_panel_box_style(46.0, 44.0))
 		vbox.add_child(act_card)
 
 		var ac_vbox := VBoxContainer.new()
@@ -2366,12 +2357,13 @@ static func _build_clan_members_tab(host: Control, holder: VBoxContainer, cdict:
 		for pk in pill_buttons.keys():
 			var pb: Button = pill_buttons[pk]
 			var act: bool = (pk == cur_filter[0])
-			pb.add_theme_stylebox_override("normal", CafeSocialTheme._get_flat_btn_style("emerald" if act else "muted", "normal", 10))
-			pb.add_theme_stylebox_override("hover", CafeSocialTheme._get_flat_btn_style("emerald" if act else "muted", "hover", 10))
+			CafeSocialTheme.style_parlor_tab_button(pb, act, 19, false, 16.0, 10.0)
 
 	for pd in pill_defs:
 		var pid: String = pd["id"]
-		var pb := CafeSocialTheme.make_button(pd["label"], "muted", Vector2(0, 38), 18)
+		var pb := Button.new()
+		pb.text = pd["label"]
+		pb.custom_minimum_size = Vector2(0, 52)
 		pb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		pb.pressed.connect(func():
 			AudioManager.sfx_tap()
@@ -2896,16 +2888,22 @@ static func _build_clan_discover_view(host: Control, holder: VBoxContainer) -> v
 	holder.add_child(mode_row)
 
 	var is_lb: bool = (str(host.current_clans_subtab) == "leaderboard")
-	var btn_dir := CafeSocialTheme.make_button("جستجوی اتحادها", "gold" if not is_lb else "muted", Vector2(0, 44), 20)
+	var btn_dir := Button.new()
+	btn_dir.text = "جستجوی اتحادها"
+	btn_dir.custom_minimum_size = Vector2(0, 56)
 	btn_dir.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CafeSocialTheme.style_parlor_tab_button(btn_dir, not is_lb, 21, false, 24.0, 12.0)
 	btn_dir.pressed.connect(func():
 		AudioManager.sfx_tap()
 		switch_subtab_in_place(host, "discover")
 	)
 	mode_row.add_child(btn_dir)
 
-	var btn_lb := CafeSocialTheme.make_button("برترین اتحادها", "gold" if is_lb else "muted", Vector2(0, 44), 20)
+	var btn_lb := Button.new()
+	btn_lb.text = "برترین اتحادها"
+	btn_lb.custom_minimum_size = Vector2(0, 56)
 	btn_lb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CafeSocialTheme.style_parlor_tab_button(btn_lb, is_lb, 21, false, 24.0, 12.0)
 	btn_lb.pressed.connect(func():
 		AudioManager.sfx_tap()
 		switch_subtab_in_place(host, "leaderboard")

@@ -121,9 +121,9 @@ func _make_modal_panel_style(modulate_col: Color = Color.WHITE) -> StyleBoxTextu
 	sb.texture_margin_right = 44.0
 	sb.texture_margin_bottom = 80.0
 	sb.content_margin_left = 50.0
-	sb.content_margin_top = 90.0
+	sb.content_margin_top = 112.0
 	sb.content_margin_right = 50.0
-	sb.content_margin_bottom = 86.0
+	sb.content_margin_bottom = 108.0
 	sb.modulate_color = modulate_col
 	return sb
 

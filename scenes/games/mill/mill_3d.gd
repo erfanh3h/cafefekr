@@ -188,34 +188,34 @@ func _init_materials() -> void:
 	mat_felt_base.roughness = 0.90
 	mat_felt_base.metallic = 0.0
 
-	# 6. Player 1 (Red) — Imperial Ruby Crimson Lacquer (Matches Checkers 3D)
+	# 6. Player 1 (White) — Imperial Ivory Pearl Lacquer
 	mat_piece_p1 = StandardMaterial3D.new()
-	mat_piece_p1.albedo_color = Color(0.76, 0.11, 0.15)
-	mat_piece_p1.metallic = 0.18
+	mat_piece_p1.albedo_color = Color(0.96, 0.95, 0.92)
+	mat_piece_p1.metallic = 0.04
 	mat_piece_p1.roughness = 0.22
 	mat_piece_p1.clearcoat_enabled = false
 	mat_piece_p1.clearcoat = 0.92
 	mat_piece_p1.clearcoat_roughness = 0.10
 
 	mat_piece_p1_well = StandardMaterial3D.new()
-	mat_piece_p1_well.albedo_color = Color(0.56, 0.07, 0.10)
-	mat_piece_p1_well.metallic = 0.22
+	mat_piece_p1_well.albedo_color = Color(0.86, 0.84, 0.80)
+	mat_piece_p1_well.metallic = 0.02
 	mat_piece_p1_well.roughness = 0.28
 	mat_piece_p1_well.clearcoat_enabled = false
 	mat_piece_p1_well.clearcoat = 0.85
 
-	# 7. Player 2 (Blue) — Royal Sapphire Cobalt Lacquer (Matches Checkers 3D)
+	# 7. Player 2 (Black) — Royal Obsidian Midnight Lacquer
 	mat_piece_p2 = StandardMaterial3D.new()
-	mat_piece_p2.albedo_color = Color(0.11, 0.36, 0.78)
-	mat_piece_p2.metallic = 0.20
-	mat_piece_p2.roughness = 0.22
+	mat_piece_p2.albedo_color = Color(0.12, 0.12, 0.12)
+	mat_piece_p2.metallic = 0.04
+	mat_piece_p2.roughness = 0.24
 	mat_piece_p2.clearcoat_enabled = false
 	mat_piece_p2.clearcoat = 0.92
 	mat_piece_p2.clearcoat_roughness = 0.10
 
 	mat_piece_p2_well = StandardMaterial3D.new()
-	mat_piece_p2_well.albedo_color = Color(0.07, 0.24, 0.58)
-	mat_piece_p2_well.metallic = 0.24
+	mat_piece_p2_well.albedo_color = Color(0.06, 0.06, 0.06)
+	mat_piece_p2_well.metallic = 0.02
 	mat_piece_p2_well.roughness = 0.28
 	mat_piece_p2_well.clearcoat_enabled = false
 	mat_piece_p2_well.clearcoat = 0.85

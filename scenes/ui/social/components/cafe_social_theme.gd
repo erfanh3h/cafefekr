@@ -1913,8 +1913,8 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 
 		# Hero Header
 		var hero := PanelContainer.new()
-		hero.custom_minimum_size = Vector2(0, 152)
-		hero.add_theme_stylebox_override("panel", create_frame_style(true, 38.0, 26.0))
+		hero.custom_minimum_size = Vector2(0, 184)
+		hero.add_theme_stylebox_override("panel", create_clan_top_header_style())
 		content_holder.add_child(hero)
 
 		var h_row := HBoxContainer.new()

@@ -2406,6 +2406,9 @@ func _on_connection_status_changed(connected: bool) -> void:
 					NetworkManager.restore_session(func(_restored: bool, _msg: String):
 						user_header.update_ui()
 					)
+				if is_instance_valid(login_dialog) and login_dialog.visible and GameManager.is_logged_in:
+					login_dialog.close()
+					_update_backdrop_state()
 				_show_menu_toast("✅ اتصال با سرور بازی برقرار شد!")
 
 func _show_offline_dialog() -> void:
@@ -2555,14 +2558,19 @@ func _on_offline_retry_pressed() -> void:
 				user_header.update_ui()
 				_update_ranked_button_state()
 				_show_menu_toast("✅ اتصال با سرور بازی برقرار شد!")
-				if not restored_ok or not GameManager.is_logged_in:
-					login_dialog.open()
-					_show_backdrop()
-				elif not GameManager.is_guest and not GameManager.has_username():
-					login_dialog.open_for_username_completion()
-					_show_backdrop()
+				if not GameManager.is_logged_in:
+					if GameManager.load_saved_token().is_empty():
+						login_dialog.open()
+						_show_backdrop()
 				else:
-					_check_and_auto_enter_active_game()
+					if is_instance_valid(login_dialog) and login_dialog.visible:
+						login_dialog.close()
+						_update_backdrop_state()
+					if not GameManager.is_guest and not GameManager.has_username():
+						login_dialog.open_for_username_completion()
+						_show_backdrop()
+					else:
+						_check_and_auto_enter_active_game()
 				return
 		else:
 			NetworkManager.connect_to_game_server()

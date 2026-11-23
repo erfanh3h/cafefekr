@@ -454,34 +454,34 @@ func _init_materials() -> void:
 	mat_point_dark.clearcoat_enabled = false
 	mat_point_dark.clearcoat = 0.40
 
-	# Player 1 (Red / شما) Checker Puck: Imperial Crimson Ruby Lacquer
+	# Player 1 (White / شما) Checker Puck: Imperial Ivory Pearl Lacquer
 	mat_piece_p1 = StandardMaterial3D.new()
-	mat_piece_p1.albedo_color = Color(0.88, 0.11, 0.15)
-	mat_piece_p1.metallic = 0.28
+	mat_piece_p1.albedo_color = Color(0.96, 0.95, 0.92)
+	mat_piece_p1.metallic = 0.04
 	mat_piece_p1.roughness = 0.15
 	mat_piece_p1.clearcoat_enabled = false
 	mat_piece_p1.clearcoat = 1.0
 	mat_piece_p1.clearcoat_roughness = 0.04
 
 	mat_piece_p1_well = StandardMaterial3D.new()
-	mat_piece_p1_well.albedo_color = Color(0.54, 0.05, 0.08)
-	mat_piece_p1_well.metallic = 0.34
+	mat_piece_p1_well.albedo_color = Color(0.86, 0.84, 0.80)
+	mat_piece_p1_well.metallic = 0.02
 	mat_piece_p1_well.roughness = 0.22
 	mat_piece_p1_well.clearcoat_enabled = false
 	mat_piece_p1_well.clearcoat = 0.85
 
-	# Player 2 (Blue / حریف) Checker Puck: Royal Cobalt Sapphire Lacquer
+	# Player 2 (Black / حریف) Checker Puck: Royal Obsidian Midnight Lacquer
 	mat_piece_p2 = StandardMaterial3D.new()
-	mat_piece_p2.albedo_color = Color(0.11, 0.42, 0.90)
-	mat_piece_p2.metallic = 0.28
+	mat_piece_p2.albedo_color = Color(0.12, 0.12, 0.12)
+	mat_piece_p2.metallic = 0.04
 	mat_piece_p2.roughness = 0.15
 	mat_piece_p2.clearcoat_enabled = false
 	mat_piece_p2.clearcoat = 1.0
 	mat_piece_p2.clearcoat_roughness = 0.04
 
 	mat_piece_p2_well = StandardMaterial3D.new()
-	mat_piece_p2_well.albedo_color = Color(0.05, 0.20, 0.54)
-	mat_piece_p2_well.metallic = 0.34
+	mat_piece_p2_well.albedo_color = Color(0.06, 0.06, 0.06)
+	mat_piece_p2_well.metallic = 0.02
 	mat_piece_p2_well.roughness = 0.22
 	mat_piece_p2_well.clearcoat_enabled = false
 	mat_piece_p2_well.clearcoat = 0.85

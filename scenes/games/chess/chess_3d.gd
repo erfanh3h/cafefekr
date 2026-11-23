@@ -141,21 +141,21 @@ func _setup_materials() -> void:
 	mat_felt_base.roughness = 0.96
 	mat_felt_base.metallic = 0.0
 
-	# Player 1 (Red / Host): Royal Carmine Mahogany Piano Lacquer
+	# Player 1 (White / Host): Royal Ivory Piano Lacquer
 	mat_piece_p1 = StandardMaterial3D.new()
-	mat_piece_p1.albedo_color = Color(0.60, 0.10, 0.13)
+	mat_piece_p1.albedo_color = Color(0.96, 0.95, 0.92)
 	mat_piece_p1.metallic = 0.04
-	mat_piece_p1.roughness = 0.28
+	mat_piece_p1.roughness = 0.22
 	mat_piece_p1.clearcoat_enabled = false
 	mat_piece_p1.clearcoat = 0.50
 	mat_piece_p1.clearcoat_roughness = 0.20
 	mat_piece_p1.rim_enabled = false
 
-	# Player 2 (Blue / Guest): Midnight Lapis Cobalt Piano Lacquer
+	# Player 2 (Black / Guest): Obsidian Midnight Piano Lacquer
 	mat_piece_p2 = StandardMaterial3D.new()
-	mat_piece_p2.albedo_color = Color(0.08, 0.16, 0.38)
+	mat_piece_p2.albedo_color = Color(0.12, 0.12, 0.12)
 	mat_piece_p2.metallic = 0.04
-	mat_piece_p2.roughness = 0.26
+	mat_piece_p2.roughness = 0.24
 	mat_piece_p2.clearcoat_enabled = false
 	mat_piece_p2.clearcoat = 0.50
 	mat_piece_p2.clearcoat_roughness = 0.20
