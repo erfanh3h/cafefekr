@@ -6,7 +6,10 @@ extends RefCounted
 ## `<game>_lesson.gd` are implemented.
 
 const _LESSONS: Dictionary = {
+	GameTypes.TIC_TAC_TOE: "res://scripts/tutorial/lessons/tictactoe_lesson.gd",
 	GameTypes.CHESS: "res://scripts/tutorial/lessons/chess_lesson.gd",
+	GameTypes.OTHELLO: "res://scripts/tutorial/lessons/othello_lesson.gd",
+	GameTypes.BACKGAMMON: "res://scripts/tutorial/lessons/backgammon_lesson.gd",
 }
 
 

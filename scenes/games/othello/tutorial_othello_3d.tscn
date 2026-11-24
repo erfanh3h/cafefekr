@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://ot8x93y0pqch5" path="res://scenes/games/othello/othello_3d.tscn" id="1_base_othello"]
+[ext_resource type="Script" path="res://scenes/games/othello/tutorial_othello_3d.gd" id="2_tut_othello"]
+
+[node name="TutorialOthello3D" instance=ExtResource("1_base_othello")]
+script = ExtResource("2_tut_othello")
