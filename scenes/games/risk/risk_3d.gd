@@ -3150,7 +3150,7 @@ func _process(delta: float) -> void:
 
 	var act_src: String = str(active_attack.get("source_continent", ""))
 	var act_tgt: String = str(active_attack.get("target_continent", ""))
-	for c_id: String in _continent_nodes.keys():
+	for c_id: String in _continent_nodes:
 		var c_ref: Dictionary = _continent_nodes[c_id]
 		var tok: Node3D = c_ref["token_node"]
 		if is_instance_valid(tok) and tok.visible:

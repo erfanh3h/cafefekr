@@ -56,11 +56,13 @@ func _process(delta: float) -> void:
 		var sc: float = 1.0 + sin(_anim_time * 3.2) * 0.06
 		_phase_halo_ring.scale = Vector3(sc, 1.0, sc)
 
-	for s_slot: int in _target_rings.keys():
-		var ring: MeshInstance3D = _target_rings[s_slot]
-		if is_instance_valid(ring) and ring.visible:
-			var pulse: float = 1.0 + sin(_anim_time * 6.0) * 0.08
-			ring.scale = Vector3(pulse, 1.0, pulse)
+	if not _target_rings.is_empty():
+		var pulse: float = 1.0 + sin(_anim_time * 6.0) * 0.08
+		var p_vec: Vector3 = Vector3(pulse, 1.0, pulse)
+		for s_slot: int in _target_rings:
+			var ring: MeshInstance3D = _target_rings[s_slot]
+			if is_instance_valid(ring) and ring.visible:
+				ring.scale = p_vec
 
 func _create_label_3d(txt: String, f_size: int = 40, col: Color = Color.WHITE, p_size: float = 0.00125) -> Label3D:
 	var lbl: Label3D = Label3D.new()
@@ -158,11 +160,15 @@ func _build_tabletop() -> void:
 	mat_shadow.roughness = 1.0
 
 	# 1. Royal Court Center Arena Ring
+	var ring_root: Node3D = Node3D.new()
+	ring_root.name = "CourtArenaRing"
+	add_child(ring_root)
 	var ring_center: Vector3 = Vector3(0.0, y_base + 0.002, -0.02)
-	_add_cyl(self, 0.345, 0.355, 0.003, ring_center, mat_crimson_velvet, Vector3.ZERO, 36)
-	_add_torus(self, 0.342, 0.356, ring_center + Vector3(0.0, 0.002, 0.0), mat_mahogany)
-	_add_torus(self, 0.332, 0.340, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
-	_add_torus(self, 0.240, 0.246, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
+	_add_cyl(ring_root, 0.345, 0.355, 0.003, ring_center, mat_crimson_velvet, Vector3.ZERO, 24 if GameManager.is_mobile else 36)
+	_add_torus(ring_root, 0.342, 0.356, ring_center + Vector3(0.0, 0.002, 0.0), mat_mahogany)
+	_add_torus(ring_root, 0.332, 0.340, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
+	_add_torus(ring_root, 0.240, 0.246, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
+	BaseGameBoard.bake_and_replace_static_meshes(ring_root, "BakedCoupArenaRing", true)
 
 	var crest_lbl: Label3D = _create_label_3d("👑 دیوان کودتا", 40, Color(0.98, 0.88, 0.50, 0.94), 0.0012)
 	crest_lbl.position = Vector3(0.0, y_base + 0.006, -0.20)
@@ -175,12 +181,16 @@ func _build_tabletop() -> void:
 	_deck_root.rotation_degrees = Vector3(0.0, 5.0, 0.0)
 	add_child(_deck_root)
 
-	_add_box(_deck_root, Vector3(0.186, 0.006, 0.258), Vector3(0.0, 0.002, 0.0), mat_walnut)
-	_add_box(_deck_root, Vector3(0.174, 0.003, 0.246), Vector3(0.0, 0.005, 0.0), mat_crimson_velvet)
-	_add_box(_deck_root, Vector3(0.170, 0.001, 0.240), Vector3(0.005, 0.0045, 0.005), mat_shadow)
+	var deck_base_static: Node3D = Node3D.new()
+	deck_base_static.name = "DeckBaseStatic"
+	_deck_root.add_child(deck_base_static)
+	_add_box(deck_base_static, Vector3(0.186, 0.006, 0.258), Vector3(0.0, 0.002, 0.0), mat_walnut)
+	_add_box(deck_base_static, Vector3(0.174, 0.003, 0.246), Vector3(0.0, 0.005, 0.0), mat_crimson_velvet)
 	for cx: float in [-0.086, 0.086]:
 		for cz: float in [-0.122, 0.122]:
-			_add_box(_deck_root, Vector3(0.020, 0.008, 0.020), Vector3(cx, 0.005, cz), mat_gold)
+			_add_box(deck_base_static, Vector3(0.020, 0.008, 0.020), Vector3(cx, 0.005, cz), mat_gold)
+	BaseGameBoard.bake_and_replace_static_meshes(deck_base_static, "BakedDeckBase", true)
+	_add_box(_deck_root, Vector3(0.170, 0.001, 0.240), Vector3(0.005, 0.0045, 0.005), mat_shadow)
 
 	_deck_stack_body = _add_box(_deck_root, Vector3(0.152, 0.030, 0.222), Vector3(0.0, 0.020, 0.0), mat_paper)
 	_deck_top_card = Node3D.new()
@@ -190,6 +200,7 @@ func _build_tabletop() -> void:
 	_add_box(_deck_top_card, Vector3(0.154, 0.003, 0.224), Vector3.ZERO, mat_gold)
 	_add_box(_deck_top_card, Vector3(0.142, 0.0035, 0.212), Vector3(0.0, 0.0005, 0.0), mat_card_back)
 	_add_torus(_deck_top_card, 0.036, 0.042, Vector3(0.0, 0.0025, 0.0), mat_gold)
+	BaseGameBoard.bake_and_replace_static_meshes(_deck_top_card, "BakedDeckTopCard", true)
 
 	var coup_logo: Label3D = _create_label_3d("COUP", 46, Color(1.0, 0.88, 0.36), 0.00125)
 	coup_logo.position = Vector3(0.0, 0.004, 0.0)
@@ -201,13 +212,13 @@ func _build_tabletop() -> void:
 	_deck_count_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_deck_root.add_child(_deck_count_lbl)
 
-	# 3. Treasury Coin Vault (Center-Right)
+	# 3. Treasury Coin Vault (Center-Right) - Bake bowl + all 25 decorative gold coins into 1 draw call
 	_treasury_root = Node3D.new()
 	_treasury_root.position = Vector3(0.135, y_base + 0.003, -0.02)
 	add_child(_treasury_root)
 
-	_add_cyl(_treasury_root, 0.095, 0.082, 0.014, Vector3(0.0, 0.007, 0.0), mat_walnut, Vector3.ZERO, 24)
-	_add_cyl(_treasury_root, 0.084, 0.084, 0.004, Vector3(0.0, 0.013, 0.0), mat_crimson_velvet, Vector3.ZERO, 24)
+	_add_cyl(_treasury_root, 0.095, 0.082, 0.014, Vector3(0.0, 0.007, 0.0), mat_walnut, Vector3.ZERO, 16 if GameManager.is_mobile else 24)
+	_add_cyl(_treasury_root, 0.084, 0.084, 0.004, Vector3(0.0, 0.013, 0.0), mat_crimson_velvet, Vector3.ZERO, 16 if GameManager.is_mobile else 24)
 	_add_torus(_treasury_root, 0.086, 0.096, Vector3(0.0, 0.015, 0.0), mat_gold)
 
 	var coin_piles: Array[Vector3] = [
@@ -228,9 +239,11 @@ func _build_tabletop() -> void:
 				p + Vector3(0.0, float(h_i) * 0.005, 0.0),
 				mat_gold,
 				Vector3.ZERO,
-				16
+				10 if GameManager.is_mobile else 16
 			)
 			_treasury_coins.append(c_mesh)
+	BaseGameBoard.bake_and_replace_static_meshes(_treasury_root, "BakedTreasuryVault", true)
+	_treasury_coins.clear()
 
 	var tr_lbl: Label3D = _create_label_3d("خزانه سکه", 34, Color(1.0, 0.90, 0.48), 0.0012)
 	tr_lbl.position = Vector3(0.0, 0.012, 0.125)
@@ -242,8 +255,12 @@ func _build_tabletop() -> void:
 	beacon_root.position = Vector3(0.0, y_base + 0.003, 0.195)
 	add_child(beacon_root)
 
-	_add_cyl(beacon_root, 0.056, 0.062, 0.009, Vector3(0.0, 0.0045, 0.0), mat_walnut, Vector3.ZERO, 8)
-	_add_cyl(beacon_root, 0.048, 0.052, 0.009, Vector3(0.0, 0.011, 0.0), mat_gold, Vector3.ZERO, 8)
+	var beacon_base: Node3D = Node3D.new()
+	beacon_base.name = "BeaconBaseStatic"
+	beacon_root.add_child(beacon_base)
+	_add_cyl(beacon_base, 0.056, 0.062, 0.009, Vector3(0.0, 0.0045, 0.0), mat_walnut, Vector3.ZERO, 8)
+	_add_cyl(beacon_base, 0.048, 0.052, 0.009, Vector3(0.0, 0.011, 0.0), mat_gold, Vector3.ZERO, 8)
+	BaseGameBoard.bake_and_replace_static_meshes(beacon_base, "BakedBeaconBase", true)
 
 	_phase_gem_mat = StandardMaterial3D.new()
 	_phase_gem_mat.albedo_color = Color(0.28, 0.92, 0.56)
@@ -439,15 +456,19 @@ func update_opponent_stations(seat_data: Dictionary, active_seat: int) -> void:
 				r_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 				flat_piv.add_child(r_lbl)
 
-		# 3. 3D Gold Coin Stack next to opponent rack
+		# 3. 3D Gold Coin Stack next to opponent rack (baked into 1 draw call per seat)
 		if alive and coins > 0:
+			var coin_stack_root: Node3D = Node3D.new()
+			coin_stack_root.name = "OppCoinStack"
+			holder.add_child(coin_stack_root)
 			var vis_coins: int = clampi(coins, 1, 10)
 			for ci: int in range(vis_coins):
 				var col_idx: int = ci / 5
 				var row_idx: int = ci % 5
 				var cx: float = 0.145 + float(col_idx) * 0.028
 				var cy: float = 0.006 + float(row_idx) * 0.005
-				_add_cyl(holder, 0.013, 0.013, 0.004, Vector3(cx, cy, 0.010), mat_gold, Vector3.ZERO, 12)
+				_add_cyl(coin_stack_root, 0.013, 0.013, 0.004, Vector3(cx, cy, 0.010), mat_gold, Vector3.ZERO, 10 if GameManager.is_mobile else 12)
+			BaseGameBoard.bake_and_replace_static_meshes(coin_stack_root, "BakedOppCoins", true)
 
 		# 4. Floating Seat Nameplate (Billboards cleanly above cards)
 		var hearts: String = "♥".repeat(max(0, alive_cards)) if alive else "💀"

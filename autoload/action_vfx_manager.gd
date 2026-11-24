@@ -117,10 +117,10 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 	shockwave.material_override = shock_mat
 	vfx_root.add_child(shockwave)
 	
-	# Animate shockwave expanding and fading out
-	var shock_tw = create_tween().set_parallel(true)
-	shock_tw.tween_property(shockwave, "scale", Vector3(3.4, 3.4, 3.4), 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	shock_tw.tween_property(shock_mat, "albedo_color:a", 0.0, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	# Animate shockwave, sparks, and flash inside ONE shared parallel Tween (eliminates 6-10 Tween objects per move)
+	var vfx_tw = vfx_root.create_tween().set_parallel(true)
+	vfx_tw.tween_property(shockwave, "scale", Vector3(3.4, 3.4, 3.4), 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	vfx_tw.tween_property(shock_mat, "albedo_color:a", 0.0, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	# B. Starburst Sparkle Particles
 	var spark_count = 4 if _is_mobile else 8
@@ -139,13 +139,13 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 		var height = randf_range(0.08, 0.28)
 		var target_pos = Vector3(cos(angle) * dist, height, sin(angle) * dist)
 		
-		var p_tw = create_tween().set_parallel(true)
-		p_tw.tween_property(p, "position", target_pos, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		p_tw.tween_property(p, "scale", Vector3.ZERO, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		p_tw.tween_property(p, "modulate:a", 0.0, 0.38)
+		vfx_tw.tween_property(p, "position", target_pos, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		vfx_tw.tween_property(p, "scale", Vector3.ZERO, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		vfx_tw.tween_property(p, "modulate:a", 0.0, 0.38)
 	
 	# C. Subtle Central Impact Flash
 	var flash = Sprite3D.new()
+	flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	flash.texture = tex_flare
 	flash.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	flash.modulate = glow_color
@@ -153,17 +153,11 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 	flash.position = Vector3(0, 0.04, 0)
 	vfx_root.add_child(flash)
 	
-	var f_tw = create_tween().set_parallel(true)
-	f_tw.tween_property(flash, "scale", Vector3(0.24, 0.24, 0.24), 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	f_tw.tween_property(flash, "modulate:a", 0.0, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	vfx_tw.tween_property(flash, "scale", Vector3(0.24, 0.24, 0.24), 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	vfx_tw.tween_property(flash, "modulate:a", 0.0, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
-	# Screen shake on regular piece placement/movement removed for smooth board experience
-	
-	# Cleanup VFX after animation finishes
-	get_tree().create_timer(0.5).timeout.connect(func():
-		if is_instance_valid(vfx_root):
-			vfx_root.queue_free()
-	)
+	# Cleanup VFX directly when tween finishes (no extra SceneTreeTimer allocation)
+	vfx_tw.chain().tween_callback(vfx_root.queue_free)
 
 func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant = null) -> void:
 	if not is_instance_valid(parent_node) or not parent_node.is_inside_tree():
@@ -198,9 +192,9 @@ func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant
 	shockwave.material_override = shock_mat
 	vfx_root.add_child(shockwave)
 	
-	var shock_tw = create_tween().set_parallel(true)
-	shock_tw.tween_property(shockwave, "scale", Vector3(3.2, 3.2, 3.2), 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	shock_tw.tween_property(shock_mat, "albedo_color:a", 0.0, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	var vfx_tw = vfx_root.create_tween().set_parallel(true)
+	vfx_tw.tween_property(shockwave, "scale", Vector3(3.2, 3.2, 3.2), 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	vfx_tw.tween_property(shock_mat, "albedo_color:a", 0.0, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	# Starburst Sparkles
 	var spark_count = 4 if _is_mobile else 6
@@ -219,14 +213,14 @@ func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant
 		var height = randf_range(0.06, 0.20)
 		var target_offset = Vector3(cos(angle) * dist, height, sin(angle) * dist)
 		
-		var p_tw = create_tween().set_parallel(true)
-		p_tw.tween_property(p, "position", target_offset, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		p_tw.tween_property(p, "scale", Vector3.ZERO, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		p_tw.tween_property(p, "modulate:a", 0.0, 0.34)
+		vfx_tw.tween_property(p, "position", target_offset, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		vfx_tw.tween_property(p, "scale", Vector3.ZERO, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		vfx_tw.tween_property(p, "modulate:a", 0.0, 0.34)
 	
 	# Subtle Flash
 	if tex_flare:
 		var flash = Sprite3D.new()
+		flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		flash.texture = tex_flare
 		flash.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		flash.modulate = glow_color
@@ -234,14 +228,10 @@ func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant
 		flash.position = Vector3(0, 0.03, 0)
 		vfx_root.add_child(flash)
 		
-		var f_tw = create_tween().set_parallel(true)
-		f_tw.tween_property(flash, "scale", Vector3(0.22, 0.22, 0.22), 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		f_tw.tween_property(flash, "modulate:a", 0.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		vfx_tw.tween_property(flash, "scale", Vector3(0.22, 0.22, 0.22), 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		vfx_tw.tween_property(flash, "modulate:a", 0.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
-	get_tree().create_timer(0.45).timeout.connect(func():
-		if is_instance_valid(vfx_root):
-			vfx_root.queue_free()
-	)
+	vfx_tw.chain().tween_callback(vfx_root.queue_free)
 
 func play_win_celebration_vfx(parent_node: Node3D, center_pos: Vector3, winner_id: int) -> void:
 	spawn_victory_celebration(parent_node, center_pos, winner_id)
@@ -287,10 +277,13 @@ func spawn_victory_celebration(parent_node: Node3D, center_pos: Vector3, winner_
 		Color(0.4, 0.95, 0.5)  # Emerald
 	]
 	
-	# Spawn bursting stars fountain
-	var total_stars = 14
+	# Spawn bursting stars fountain (shared parallel Tween for smooth mobile performance)
+	var total_stars = 8 if _is_mobile else 14
+	var rise_tw = win_root.create_tween().set_parallel(true)
+	var stars_meta: Array = []
 	for i in range(total_stars):
 		var star = Sprite3D.new()
+		star.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		star.texture = tex_star if (i % 2 == 0) else tex_sparkle
 		star.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		star.modulate = star_colors[i % star_colors.size()]
@@ -299,24 +292,26 @@ func spawn_victory_celebration(parent_node: Node3D, center_pos: Vector3, winner_
 		star.position = Vector3(randf_range(-0.15, 0.15), 0.05, randf_range(-0.15, 0.15))
 		win_root.add_child(star)
 		
-		# Launch upward in arc, then gently flutter down
 		var launch_x = randf_range(-0.6, 0.6)
 		var launch_z = randf_range(-0.6, 0.6)
 		var peak_y = randf_range(0.45, 0.85)
+		stars_meta.append({"node": star, "lx": launch_x, "lz": launch_z})
 		
-		var s_tw = create_tween()
-		# Rise
-		s_tw.tween_property(star, "position", Vector3(launch_x * 0.5, peak_y, launch_z * 0.5), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		s_tw.parallel().tween_property(star, "rotation_degrees:z", randf_range(-180, 180), 0.42)
-		# Fall
-		s_tw.chain().tween_property(star, "position", Vector3(launch_x, 0.02, launch_z), 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		s_tw.parallel().tween_property(star, "scale", Vector3.ZERO, 0.55)
-		s_tw.parallel().tween_property(star, "modulate:a", 0.0, 0.55)
-		
-	# Screen shake removed from board victory celebration
+		rise_tw.tween_property(star, "position", Vector3(launch_x * 0.5, peak_y, launch_z * 0.5), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		rise_tw.tween_property(star, "rotation_degrees:z", randf_range(-180, 180), 0.42)
 	
-	# Cleanup
-	get_tree().create_timer(1.6).timeout.connect(win_root.queue_free)
+	rise_tw.chain().tween_callback(func():
+		if not is_instance_valid(win_root):
+			return
+		var fall_tw = win_root.create_tween().set_parallel(true)
+		for item in stars_meta:
+			var st: Sprite3D = item["node"]
+			if is_instance_valid(st):
+				fall_tw.tween_property(st, "position", Vector3(float(item["lx"]), 0.02, float(item["lz"])), 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+				fall_tw.tween_property(st, "scale", Vector3.ZERO, 0.55)
+				fall_tw.tween_property(st, "modulate:a", 0.0, 0.55)
+		fall_tw.chain().tween_callback(win_root.queue_free)
+	)
 
 # --- 5. 2D UI TACTILE CLICK JUICE (Kenney / Rokojori UI Action) ---
 
@@ -549,9 +544,11 @@ func _register_scroll_container(sc: ScrollContainer) -> void:
 	)
 
 func _find_scroll_container_at(pos: Vector2) -> ScrollContainer:
+	if _registered_scrolls.is_empty():
+		return null
 	var candidates: Array[ScrollContainer] = []
 	for sc in _registered_scrolls:
-		if is_instance_valid(sc) and sc.is_inside_tree() and sc.is_visible_in_tree():
+		if is_instance_valid(sc) and sc.visible and sc.is_inside_tree() and sc.is_visible_in_tree():
 			var r = sc.get_global_rect()
 			if r.has_point(pos):
 				var vbar = sc.get_v_scroll_bar()

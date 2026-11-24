@@ -52,14 +52,12 @@ func _ready() -> void:
 
 
 func _init_radial_ring() -> void:
-	var ring_tex: ImageTexture = HudTheme.get_radial_ring_texture(128, 9.0)
-	turn_ring.texture_under = ring_tex
-	turn_ring.texture_progress = ring_tex
-	turn_ring.fill_mode = TextureProgressBar.FILL_CLOCKWISE
-	turn_ring.radial_initial_angle = 0.0
-	turn_ring.min_value = 0.0
-	turn_ring.max_value = 100.0
-	turn_ring.value = 100.0
+	# Radial progress ring is superseded by the universal horizontal timer bar;
+	# skip generating the unused 128x128 procedural ring texture on CPU.
+	if is_instance_valid(turn_ring):
+		turn_ring.visible = false
+	if is_instance_valid(ring_timer_badge):
+		ring_timer_badge.visible = false
 
 
 func _configure_bidi() -> void:
@@ -344,8 +342,10 @@ func set_active_turn(active: bool) -> void:
 
 func update_ring_timer(seconds_left: float, _max_seconds: float) -> void:
 	# Keep radial ring suppressed — all timers handled by universal horizontal bar
-	turn_ring.visible = false
-	ring_timer_badge.visible = false
+	if turn_ring.visible:
+		turn_ring.visible = false
+	if ring_timer_badge.visible:
+		ring_timer_badge.visible = false
 	if not _is_active:
 		return
 	var danger: bool = (seconds_left > 0.0 and seconds_left <= 4.0)

@@ -281,7 +281,7 @@ func _build_2d_action_dock() -> void:
 func _is_start_dialog_open() -> bool:
 	if not GameManager.is_game_active:
 		return true
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	var hud = get_base_game_hud()
 	if is_instance_valid(hud):
 		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
 			return true
@@ -311,26 +311,27 @@ func _process(delta: float) -> void:
 		_last_start_dialog_open = current_start_open
 		_refresh_ui_and_highlights()
 
-	# 1. Pulse selectable source rings, target rings & float top checkers on selectable points
-	var pulse = 0.5 + 0.5 * sin(_vfx_time * 5.2)
-	var float_y = sin(_vfx_time * 4.6) * 0.0055
+	# 1. Pulse selectable source rings, target rings & float top checkers on selectable points (only when active)
+	if is_my_turn and dices_rolled and not _is_animating_move:
+		var pulse = 0.5 + 0.5 * sin(_vfx_time * 5.2)
+		var float_y = sin(_vfx_time * 4.6) * 0.0055
 
-	if is_instance_valid(mat_ring_selectable):
-		mat_ring_selectable.emission_energy_multiplier = 0.70 + 0.30 * pulse
-	if is_instance_valid(mat_ring_target):
-		mat_ring_target.emission_energy_multiplier = 0.60 + 0.25 * pulse
-	if is_instance_valid(mat_ring_hit_danger):
-		mat_ring_hit_danger.emission_energy_multiplier = 0.75 + 0.30 * pulse
+		if is_instance_valid(mat_ring_selectable):
+			mat_ring_selectable.emission_energy_multiplier = 0.70 + 0.30 * pulse
+		if is_instance_valid(mat_ring_target):
+			mat_ring_target.emission_energy_multiplier = 0.60 + 0.25 * pulse
+		if is_instance_valid(mat_ring_hit_danger):
+			mat_ring_hit_danger.emission_energy_multiplier = 0.75 + 0.30 * pulse
 
-	if not _is_animating_move and not can_select_points.is_empty():
-		for pt in can_select_points:
-			if _point_piece_nodes.has(pt):
-				var arr: Array = _point_piece_nodes[pt]
-				if not arr.is_empty():
-					var top_piece: Node3D = arr[arr.size() - 1]
-					if is_instance_valid(top_piece) and top_piece.has_meta("base_y"):
-						var by: float = float(top_piece.get_meta("base_y"))
-						top_piece.position.y = by + float_y
+		if not can_select_points.is_empty():
+			for pt in can_select_points:
+				if _point_piece_nodes.has(pt):
+					var arr: Array = _point_piece_nodes[pt]
+					if not arr.is_empty():
+						var top_piece: Node3D = arr[arr.size() - 1]
+						if is_instance_valid(top_piece) and top_piece.has_meta("base_y"):
+							var by: float = float(top_piece.get_meta("base_y"))
+							top_piece.position.y = by + float_y
 
 	# 2. Float selected die in the bottom tray & pulse bottom Roll Dice button when ready
 	for d_idx in range(_dice_nodes.size()):
@@ -340,14 +341,15 @@ func _process(delta: float) -> void:
 			var pivot: Node3D = d_ui["pivot"]
 			if is_instance_valid(pivot):
 				var target_y = 0.052 + (0.008 + sin(_vfx_time * 5.2) * 0.004 if is_eq else 0.0)
-				pivot.position.y = lerpf(pivot.position.y, target_y, 12.0 * delta)
+				if absf(pivot.position.y - target_y) > 0.0002:
+					pivot.position.y = lerpf(pivot.position.y, target_y, 12.0 * delta)
 
 	if not _roll_btn_ui.is_empty() and is_instance_valid(_roll_btn_ui.get("root")):
 		var btn_root: Node3D = _roll_btn_ui["root"]
 		if is_my_turn and not dices_rolled and GameManager.is_game_active:
 			var s = 1.0 + 0.028 * sin(_vfx_time * 5.8)
 			btn_root.scale = Vector3(s, 1.0, s)
-		else:
+		elif btn_root.scale != Vector3.ONE:
 			btn_root.scale = Vector3.ONE
 
 	# 3. Periodic golden sparkle particles on selectable pieces

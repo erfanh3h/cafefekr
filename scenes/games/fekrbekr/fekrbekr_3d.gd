@@ -447,6 +447,7 @@ func _build_phase1_tray(root: Node3D) -> void:
 		root.add_child(num_lbl)
 
 		var piece = _create_piece_mesh(1)
+		piece.set_meta("skip_bake", true)
 		piece.scale = Vector3.ONE * PHASE1_PEG_SCALE
 		piece.position = Vector3(pos_x, 0.044, sock_z)
 		piece.visible = false
@@ -481,6 +482,9 @@ func _build_phase1_tray(root: Node3D) -> void:
 		phase1_palette_positions,
 		true
 	)
+
+	# Bake all static tray architecture, bezels, corners, sockets, and palette dishes into 1 draw call
+	BaseGameBoard.bake_and_replace_static_meshes(root, "BakedPhase1Tray", true)
 
 func _on_phase1_color_selected(color_id: int) -> void:
 	if not GameManager.is_game_active:
@@ -591,10 +595,12 @@ func _build_play_board(root: Node3D, slate_mat: Material, is_player_board: bool)
 		_build_12_rows(root, my_row_containers, my_row_pin_nodes, my_row_labels)
 
 		my_row_pointer = _create_pointer_mesh()
+		my_row_pointer.set_meta("skip_bake", true)
 		my_row_pointer.position = Vector3(-BOARD_W * 0.5 + 0.022, 0.018, _get_row_z(0))
 		root.add_child(my_row_pointer)
 
 		my_active_row_frame = _create_active_row_frame()
+		my_active_row_frame.set_meta("skip_bake", true)
 		my_active_row_frame.position = Vector3(0, 0.016, _get_row_z(0))
 		root.add_child(my_active_row_frame)
 
@@ -621,12 +627,17 @@ func _build_play_board(root: Node3D, slate_mat: Material, is_player_board: bool)
 		_build_12_rows(root, opp_row_containers, opp_row_pin_nodes, opp_row_labels)
 
 		opp_row_pointer = _create_pointer_mesh()
+		opp_row_pointer.set_meta("skip_bake", true)
 		opp_row_pointer.position = Vector3(-BOARD_W * 0.5 + 0.022, 0.018, _get_row_z(0))
 		root.add_child(opp_row_pointer)
 
 		opp_active_row_frame = _create_active_row_frame()
+		opp_active_row_frame.set_meta("skip_bake", true)
 		opp_active_row_frame.position = Vector3(0, 0.016, _get_row_z(0))
 		root.add_child(opp_active_row_frame)
+
+	# Bake all static plinths, bezels, corners, vault hood, 12-row sockets/dividers/pads/pin-sockets, and palette dishes
+	BaseGameBoard.bake_and_replace_static_meshes(root, "BakedPlayBoard", true)
 
 func _build_top_mystery_vault_hood(root: Node3D, is_player_board: bool) -> void:
 	var hood_z = -0.775
@@ -675,6 +686,7 @@ func _build_12_rows(root: Node3D, containers: Array[Node3D], pin_arrays: Array[A
 
 		var pieces_container = Node3D.new()
 		pieces_container.name = "PiecesContainer"
+		pieces_container.set_meta("skip_bake", true)
 		row_node.add_child(pieces_container)
 
 		# Large, High-Contrast 3D Row Number Badge (۱ .. ۱۲)
@@ -715,6 +727,7 @@ func _build_12_rows(root: Node3D, containers: Array[Node3D], pin_arrays: Array[A
 		row_node.add_child(pad_rim)
 
 		var pins_for_row: Array = []
+		var shared_pin_mesh := _get_shared_pin_mesh()
 		for p_idx in range(4):
 			var offset = pin_coords[p_idx]
 			var pin_x = PIN_GRID_X + offset.x
@@ -725,11 +738,9 @@ func _build_12_rows(root: Node3D, containers: Array[Node3D], pin_arrays: Array[A
 			row_node.add_child(p_sock)
 
 			var p_mesh = MeshInstance3D.new()
-			var sph = SphereMesh.new()
-			sph.radius = 0.015
-			sph.height = 0.018
-			sph.material = mat_pin_black
-			p_mesh.mesh = sph
+			p_mesh.set_meta("skip_bake", true)
+			p_mesh.mesh = shared_pin_mesh
+			p_mesh.material_override = mat_pin_black
 			p_mesh.position = Vector3(pin_x, 0.015, pin_z)
 			p_mesh.visible = false
 			row_node.add_child(p_mesh)
@@ -826,6 +837,7 @@ func _build_palette(
 
 		var peg_pos = Vector3(p_x, slab_y + peg_y_offset, p_z)
 		var piece = _create_piece_mesh(color_id)
+		piece.set_meta("skip_bake", true)
 		piece.scale = Vector3.ONE * peg_scale
 		piece.position = peg_pos
 		root.add_child(piece)
@@ -951,14 +963,29 @@ func _create_corner_brackets(root: Node3D, w: float, l: float, y_h: float) -> vo
 		stud.position = pos
 		root.add_child(stud)
 
+var _shared_peg_sphere_mesh: SphereMesh = null
+var _shared_pin_sphere_mesh: SphereMesh = null
+
+func _get_shared_pin_mesh() -> SphereMesh:
+	if _shared_pin_sphere_mesh == null:
+		var sph = SphereMesh.new()
+		sph.radius = 0.015
+		sph.height = 0.018
+		sph.radial_segments = 10 if GameManager.is_mobile else 16
+		sph.rings = 6 if GameManager.is_mobile else 10
+		_shared_pin_sphere_mesh = sph
+	return _shared_pin_sphere_mesh
+
 func _create_piece_mesh(color_id: int) -> MeshInstance3D:
+	if _shared_peg_sphere_mesh == null:
+		var sph = SphereMesh.new()
+		sph.radius = 0.024
+		sph.height = 0.025
+		sph.radial_segments = 14 if GameManager.is_mobile else 28
+		sph.rings = 8 if GameManager.is_mobile else 14
+		_shared_peg_sphere_mesh = sph
 	var inst = MeshInstance3D.new()
-	var sph = SphereMesh.new()
-	sph.radius = 0.024
-	sph.height = 0.025
-	sph.radial_segments = 32
-	sph.rings = 16
-	inst.mesh = sph
+	inst.mesh = _shared_peg_sphere_mesh
 	inst.material_override = piece_materials.get(color_id, mat_pin_white)
 	return inst
 

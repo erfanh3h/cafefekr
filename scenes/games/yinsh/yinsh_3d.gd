@@ -211,13 +211,16 @@ func _process(delta: float) -> void:
 		return
 
 	_pulse_time += delta
-	var pulse_fast = 1.0 + 0.08 * sin(_pulse_time * 5.5)
-	var pulse_slow = 1.0 + 0.05 * sin(_pulse_time * 3.8)
-	for i in range(NUM_SPOTS):
-		if i < node_legal_halos.size() and is_instance_valid(node_legal_halos[i]) and node_legal_halos[i].visible:
-			node_legal_halos[i].scale = Vector3(pulse_fast, 1.0, pulse_fast)
-		if i < node_select_halos.size() and is_instance_valid(node_select_halos[i]) and node_select_halos[i].visible:
-			node_select_halos[i].scale = Vector3(pulse_slow, 1.0, pulse_slow)
+	var pulse_fast: float = 1.0 + 0.08 * sin(_pulse_time * 5.5)
+	var pulse_slow: float = 1.0 + 0.05 * sin(_pulse_time * 3.8)
+	var vec_fast := Vector3(pulse_fast, 1.0, pulse_fast)
+	var vec_slow := Vector3(pulse_slow, 1.0, pulse_slow)
+	for h in node_legal_halos:
+		if h and h.visible:
+			h.scale = vec_fast
+	for h in node_select_halos:
+		if h and h.visible:
+			h.scale = vec_slow
 	if last_selected_piece_id >= 0 and last_selected_piece_id < board_ring_nodes.size():
 		var sel_ring = board_ring_nodes[last_selected_piece_id]
 		if is_instance_valid(sel_ring):

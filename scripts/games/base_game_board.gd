@@ -385,12 +385,26 @@ func reset_board() -> void:
 func cleanup_board() -> void:
 	pass
 
+var _cached_base_hud: Node = null
+
+func get_base_game_hud() -> Node:
+	if is_instance_valid(_cached_base_hud):
+		return _cached_base_hud
+	var tree := get_tree()
+	if tree and tree.root:
+		_cached_base_hud = tree.root.find_child("BaseGameHUD", true, false)
+	return _cached_base_hud
+
 # --- Shared Static 3D Mesh Baking Utility (Zero-regression draw-call reduction) ---
 
 static func _collect_bake_meshes(node: Node, out_list: Array[MeshInstance3D]) -> void:
+	if node.has_meta("skip_bake"):
+		return
+	if node is Node3D and not (node as Node3D).visible:
+		return
 	if node is MeshInstance3D:
 		var mi: MeshInstance3D = node as MeshInstance3D
-		if mi.visible and mi.mesh != null and not mi.has_meta("skip_bake"):
+		if mi.mesh != null:
 			out_list.append(mi)
 	for ch: Node in node.get_children():
 		_collect_bake_meshes(ch, out_list)
@@ -435,6 +449,11 @@ static func bake_node_tree_to_mesh(branch_root: Node3D, merge_vertex_colors: boo
 				if to.rings > 18 or to.ring_segments > 10:
 					to.rings = mini(to.rings, 16)
 					to.ring_segments = mini(to.ring_segments, 8)
+			elif m_res is CapsuleMesh:
+				var cap: CapsuleMesh = m_res as CapsuleMesh
+				if cap.radial_segments > 14 or cap.rings > 4:
+					cap.radial_segments = mini(cap.radial_segments, 12)
+					cap.rings = mini(cap.rings, 4)
 
 		var mat: Material = mi.material_override
 		if mat == null:
@@ -491,18 +510,15 @@ static func bake_node_tree_to_mesh(branch_root: Node3D, merge_vertex_colors: boo
 		var use_vc: bool = bool(b_data["use_vc"])
 		var entries: Array = b_data["items"]
 
-		var out_v := PackedVector3Array()
-		var out_n := PackedVector3Array()
-		var out_uv := PackedVector2Array()
-		var out_c := PackedColorArray()
-		var out_i := PackedInt32Array()
-
+		# Pass 1: Fetch surface arrays once and compute exact vertex/index counts for single-allocation baking
+		var surf_jobs: Array = []
+		var total_v: int = 0
+		var total_i: int = 0
 		for item_v in entries:
 			var item: Dictionary = item_v
 			var sub_mesh: Mesh = item["mesh"]
 			var sub_xf: Transform3D = item["xform"]
 			var v_col: Color = item["color"]
-
 			for surf_i in range(sub_mesh.get_surface_count()):
 				var src: Array = sub_mesh.surface_get_arrays(surf_i)
 				if src.is_empty():
@@ -511,46 +527,88 @@ static func bake_node_tree_to_mesh(branch_root: Node3D, merge_vertex_colors: boo
 				var vc: int = sv.size()
 				if vc == 0:
 					continue
-				var has_n: bool = src[Mesh.ARRAY_NORMAL] != null and (src[Mesh.ARRAY_NORMAL] as PackedVector3Array).size() == vc
-				var sn: PackedVector3Array = src[Mesh.ARRAY_NORMAL] if has_n else PackedVector3Array()
-				var has_uv: bool = src[Mesh.ARRAY_TEX_UV] != null and (src[Mesh.ARRAY_TEX_UV] as PackedVector2Array).size() == vc
-				var suv: PackedVector2Array = src[Mesh.ARRAY_TEX_UV] if has_uv else PackedVector2Array()
 				var si: PackedInt32Array = src[Mesh.ARRAY_INDEX] if src[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+				var ic: int = si.size() if not si.is_empty() else (vc - (vc % 3))
+				total_v += vc
+				total_i += ic
+				surf_jobs.append({
+					"src": src,
+					"sv": sv,
+					"si": si,
+					"vc": vc,
+					"xf": sub_xf,
+					"col": v_col
+				})
 
-				var det: float = sub_xf.basis.determinant()
-				var nb: Basis = sub_xf.basis.inverse().transposed() if absf(det) > 1e-8 else Basis.IDENTITY
-				var flip: bool = det < 0.0
-				var base_off: int = out_v.size()
-
-				for k in range(vc):
-					out_v.append(sub_xf * sv[k])
-					out_n.append((nb * sn[k]).normalized() if has_n else Vector3.UP)
-					out_uv.append(suv[k] if has_uv else Vector2.ZERO)
-					if use_vc:
-						out_c.append(v_col)
-
-				if si.is_empty():
-					for ti in range(0, vc - 2, 3):
-						if flip:
-							out_i.append(base_off + ti)
-							out_i.append(base_off + ti + 2)
-							out_i.append(base_off + ti + 1)
-						else:
-							out_i.append(base_off + ti)
-							out_i.append(base_off + ti + 1)
-							out_i.append(base_off + ti + 2)
-				else:
-					if flip:
-						for ti in range(0, si.size() - 2, 3):
-							out_i.append(base_off + si[ti])
-							out_i.append(base_off + si[ti + 2])
-							out_i.append(base_off + si[ti + 1])
-					else:
-						for ii in si:
-							out_i.append(base_off + ii)
-
-		if out_v.is_empty():
+		if total_v == 0:
 			continue
+
+		# Pass 2: Pre-size all Packed*Arrays once and write by index (eliminates O(N) reallocations)
+		var out_v := PackedVector3Array()
+		var out_n := PackedVector3Array()
+		var out_uv := PackedVector2Array()
+		var out_c := PackedColorArray()
+		var out_i := PackedInt32Array()
+		out_v.resize(total_v)
+		out_n.resize(total_v)
+		out_uv.resize(total_v)
+		if use_vc:
+			out_c.resize(total_v)
+		out_i.resize(total_i)
+
+		var v_cursor: int = 0
+		var i_cursor: int = 0
+		for job_v in surf_jobs:
+			var job: Dictionary = job_v
+			var src: Array = job["src"]
+			var sv: PackedVector3Array = job["sv"]
+			var si: PackedInt32Array = job["si"]
+			var vc: int = int(job["vc"])
+			var sub_xf: Transform3D = job["xf"]
+			var v_col: Color = job["col"]
+
+			var has_n: bool = src[Mesh.ARRAY_NORMAL] != null and (src[Mesh.ARRAY_NORMAL] as PackedVector3Array).size() == vc
+			var sn: PackedVector3Array = src[Mesh.ARRAY_NORMAL] if has_n else PackedVector3Array()
+			var has_uv: bool = src[Mesh.ARRAY_TEX_UV] != null and (src[Mesh.ARRAY_TEX_UV] as PackedVector2Array).size() == vc
+			var suv: PackedVector2Array = src[Mesh.ARRAY_TEX_UV] if has_uv else PackedVector2Array()
+
+			var det: float = sub_xf.basis.determinant()
+			var nb: Basis = sub_xf.basis.inverse().transposed() if absf(det) > 1e-8 else Basis.IDENTITY
+			var flip: bool = det < 0.0
+			var base_off: int = v_cursor
+
+			for k in range(vc):
+				var w: int = base_off + k
+				out_v[w] = sub_xf * sv[k]
+				out_n[w] = (nb * sn[k]).normalized() if has_n else Vector3.UP
+				out_uv[w] = suv[k] if has_uv else Vector2.ZERO
+				if use_vc:
+					out_c[w] = v_col
+			v_cursor += vc
+
+			if si.is_empty():
+				for ti in range(0, vc - 2, 3):
+					out_i[i_cursor] = base_off + ti
+					if flip:
+						out_i[i_cursor + 1] = base_off + ti + 2
+						out_i[i_cursor + 2] = base_off + ti + 1
+					else:
+						out_i[i_cursor + 1] = base_off + ti + 1
+						out_i[i_cursor + 2] = base_off + ti + 2
+					i_cursor += 3
+			else:
+				var idx_count: int = si.size()
+				if flip:
+					for ti in range(0, idx_count - 2, 3):
+						out_i[i_cursor] = base_off + si[ti]
+						out_i[i_cursor + 1] = base_off + si[ti + 2]
+						out_i[i_cursor + 2] = base_off + si[ti + 1]
+						i_cursor += 3
+				else:
+					for ii in range(idx_count):
+						out_i[i_cursor + ii] = base_off + si[ii]
+					i_cursor += idx_count
+
 		var arr: Array = []
 		arr.resize(Mesh.ARRAY_MAX)
 		arr[Mesh.ARRAY_VERTEX] = out_v
@@ -582,5 +640,7 @@ static func bake_and_replace_static_meshes(branch_root: Node3D, baked_name: Stri
 	var baked_mi := MeshInstance3D.new()
 	baked_mi.name = baked_name
 	baked_mi.mesh = merged
+	if OS.has_feature("mobile") or (OS.get_name() in ["Android", "iOS"]):
+		baked_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	branch_root.add_child(baked_mi)
 	return baked_mi

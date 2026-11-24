@@ -212,11 +212,15 @@ func _build_tabletop() -> void:
 	# =========================================================================
 	# 1. INLAID BRASS & MAHOGANY CENTER ARENA RING ON THE CAFE FEKR GREEN FELT
 	# =========================================================================
+	var ring_root: Node3D = Node3D.new()
+	ring_root.name = "CenterArenaRing"
+	add_child(ring_root)
 	var ring_center: Vector3 = Vector3(-0.03, y_base + 0.002, -0.02)
-	_add_cyl(self, 0.365, 0.375, 0.003, ring_center, mat_emerald_well, Vector3.ZERO, 36)
-	_add_torus(self, 0.358, 0.372, ring_center + Vector3(0.0, 0.002, 0.0), mat_mahogany)
-	_add_torus(self, 0.348, 0.356, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
-	_add_torus(self, 0.258, 0.264, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
+	_add_cyl(ring_root, 0.365, 0.375, 0.003, ring_center, mat_emerald_well, Vector3.ZERO, 24 if GameManager.is_mobile else 36)
+	_add_torus(ring_root, 0.358, 0.372, ring_center + Vector3(0.0, 0.002, 0.0), mat_mahogany)
+	_add_torus(ring_root, 0.348, 0.356, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
+	_add_torus(ring_root, 0.258, 0.264, ring_center + Vector3(0.0, 0.003, 0.0), mat_aged_brass)
+	BaseGameBoard.bake_and_replace_static_meshes(ring_root, "BakedUnoArenaRing", true)
 
 	# =========================================================================
 	# 2. 3D DIRECTION FLOW INDICATOR (Direction arrow and text removed per design request)
@@ -234,15 +238,19 @@ func _build_tabletop() -> void:
 	add_child(draw_pile_root)
 
 	# Walnut & Brass Dealer Shoe Base
-	_add_box(draw_pile_root, Vector3(0.206, 0.006, 0.288), Vector3(0.0, 0.002, 0.0), mat_walnut)
-	_add_box(draw_pile_root, Vector3(0.194, 0.003, 0.276), Vector3(0.0, 0.005, 0.0), mat_emerald_well)
+	var shoe_static: Node3D = Node3D.new()
+	shoe_static.name = "DealerShoeStatic"
+	draw_pile_root.add_child(shoe_static)
+	_add_box(shoe_static, Vector3(0.206, 0.006, 0.288), Vector3(0.0, 0.002, 0.0), mat_walnut)
+	_add_box(shoe_static, Vector3(0.194, 0.003, 0.276), Vector3(0.0, 0.005, 0.0), mat_emerald_well)
 	# Dealer Shoe Side Walls
-	_add_box(draw_pile_root, Vector3(0.010, 0.038, 0.240), Vector3(-0.096, 0.020, -0.010), mat_mahogany)
-	_add_box(draw_pile_root, Vector3(0.010, 0.038, 0.240), Vector3(0.096, 0.020, -0.010), mat_mahogany)
-	_add_box(draw_pile_root, Vector3(0.202, 0.042, 0.010), Vector3(0.0, 0.022, -0.132), mat_mahogany)
+	_add_box(shoe_static, Vector3(0.010, 0.038, 0.240), Vector3(-0.096, 0.020, -0.010), mat_mahogany)
+	_add_box(shoe_static, Vector3(0.010, 0.038, 0.240), Vector3(0.096, 0.020, -0.010), mat_mahogany)
+	_add_box(shoe_static, Vector3(0.202, 0.042, 0.010), Vector3(0.0, 0.022, -0.132), mat_mahogany)
 	for cx: float in [-0.096, 0.096]:
 		for cz: float in [-0.136, 0.136]:
-			_add_box(draw_pile_root, Vector3(0.024, 0.008, 0.024), Vector3(cx, 0.005, cz), mat_bronze)
+			_add_box(shoe_static, Vector3(0.024, 0.008, 0.024), Vector3(cx, 0.005, cz), mat_bronze)
+	BaseGameBoard.bake_and_replace_static_meshes(shoe_static, "BakedDealerShoe", true)
 
 	var draw_shadow: MeshInstance3D = _add_box(draw_pile_root, Vector3(0.188, 0.001, 0.270), Vector3(0.006, 0.0045, 0.006), mat_shadow)
 	draw_shadow.name = "DrawShadow"
@@ -273,13 +281,14 @@ func _build_tabletop() -> void:
 	dto_cyl.top_radius = 0.062
 	dto_cyl.bottom_radius = 0.062
 	dto_cyl.height = 0.002
-	dto_cyl.radial_segments = 24
+	dto_cyl.radial_segments = 16 if GameManager.is_mobile else 24
 	dt_oval.mesh = dto_cyl
 	dt_oval.scale = Vector3(1.0, 1.0, 1.42)
 	dt_oval.position = Vector3(0.0, 0.0022, 0.0)
 	dt_oval.rotation_degrees = Vector3(0.0, -18.0, 0.0)
 	dt_oval.material_override = mat_uno_red
 	_draw_top_card.add_child(dt_oval)
+	BaseGameBoard.bake_and_replace_static_meshes(_draw_top_card, "BakedDrawTopCard", true)
 
 	var uno_logo_3d: Label3D = _create_label_3d("UNO", 46, Color(1.0, 0.86, 0.18), 0.00115)
 	uno_logo_3d.outline_size = 12
@@ -319,11 +328,15 @@ func _build_tabletop() -> void:
 	discard_pile_root.position = Vector3(0.095, y_base + 0.003, -0.02)
 	add_child(discard_pile_root)
 
-	_add_box(discard_pile_root, Vector3(0.218, 0.004, 0.304), Vector3.ZERO, mat_walnut)
-	_add_box(discard_pile_root, Vector3(0.208, 0.002, 0.294), Vector3(0.0, 0.002, 0.0), mat_emerald_well)
+	var discard_tray_static: Node3D = Node3D.new()
+	discard_tray_static.name = "DiscardTrayStatic"
+	discard_pile_root.add_child(discard_tray_static)
+	_add_box(discard_tray_static, Vector3(0.218, 0.004, 0.304), Vector3.ZERO, mat_walnut)
+	_add_box(discard_tray_static, Vector3(0.208, 0.002, 0.294), Vector3(0.0, 0.002, 0.0), mat_emerald_well)
 	for cx: float in [-0.102, 0.102]:
 		for cz: float in [-0.145, 0.145]:
-			_add_box(discard_pile_root, Vector3(0.024, 0.006, 0.024), Vector3(cx, 0.004, cz), mat_bronze)
+			_add_box(discard_tray_static, Vector3(0.024, 0.006, 0.024), Vector3(cx, 0.004, cz), mat_bronze)
+	BaseGameBoard.bake_and_replace_static_meshes(discard_tray_static, "BakedDiscardTray", true)
 
 	_add_box(discard_pile_root, Vector3(0.202, 0.001, 0.288), Vector3(0.006, 0.0035, 0.006), mat_shadow)
 
@@ -408,7 +421,10 @@ func _build_tabletop() -> void:
 		var q_mat: StandardMaterial3D = StandardMaterial3D.new()
 		q_mat.albedo_color = qo["col"]
 		q_mat.roughness = 0.25
-		_add_cyl(_discard_wild_quads, 0.024, 0.024, 0.001, qo["pos"], q_mat, Vector3.ZERO, 18)
+		_add_cyl(_discard_wild_quads, 0.024, 0.024, 0.001, qo["pos"], q_mat, Vector3.ZERO, 12 if GameManager.is_mobile else 18)
+	_discard_wild_quads.visible = true
+	BaseGameBoard.bake_and_replace_static_meshes(_discard_wild_quads, "BakedWildQuads", true)
+	_discard_wild_quads.visible = false
 
 	_discard_corner_tl = _create_label_3d("۷", 32, Color.WHITE, 0.0011)
 	_discard_corner_tl.position = Vector3(-0.062, 0.0055, -0.098)
@@ -434,8 +450,12 @@ func _build_tabletop() -> void:
 	color_indicator_root.position = Vector3(0.315, y_base + 0.003, -0.06)
 	add_child(color_indicator_root)
 
-	_add_cyl(color_indicator_root, 0.064, 0.070, 0.010, Vector3(0.0, 0.005, 0.0), mat_walnut, Vector3.ZERO, 8)
-	_add_cyl(color_indicator_root, 0.054, 0.058, 0.010, Vector3(0.0, 0.012, 0.0), mat_bronze, Vector3.ZERO, 8)
+	var beacon_base: Node3D = Node3D.new()
+	beacon_base.name = "BeaconBaseStatic"
+	color_indicator_root.add_child(beacon_base)
+	_add_cyl(beacon_base, 0.064, 0.070, 0.010, Vector3(0.0, 0.005, 0.0), mat_walnut, Vector3.ZERO, 8)
+	_add_cyl(beacon_base, 0.054, 0.058, 0.010, Vector3(0.0, 0.012, 0.0), mat_bronze, Vector3.ZERO, 8)
+	BaseGameBoard.bake_and_replace_static_meshes(beacon_base, "BakedBeaconBase", true)
 
 	_color_gem_mat = StandardMaterial3D.new()
 	_color_gem_mat.albedo_color = UNO_COLORS["red"]
@@ -492,11 +512,15 @@ func _build_uno_bell_prop(pos: Vector3, mat_walnut: Material, mat_brass: Materia
 	_uno_bell_root.position = pos
 	add_child(_uno_bell_root)
 
-	_add_cyl(_uno_bell_root, 0.070, 0.076, 0.010, Vector3(0.0, 0.005, 0.0), mat_walnut, Vector3.ZERO, 20)
-	_add_cyl(_uno_bell_root, 0.058, 0.064, 0.008, Vector3(0.0, 0.013, 0.0), mat_brass, Vector3.ZERO, 24)
-	_add_cyl(_uno_bell_root, 0.046, 0.056, 0.026, Vector3(0.0, 0.028, 0.0), mat_brass, Vector3.ZERO, 24)
+	var bell_body_static: Node3D = Node3D.new()
+	bell_body_static.name = "BellHousingStatic"
+	_uno_bell_root.add_child(bell_body_static)
+	_add_cyl(bell_body_static, 0.070, 0.076, 0.010, Vector3(0.0, 0.005, 0.0), mat_walnut, Vector3.ZERO, 14 if GameManager.is_mobile else 20)
+	_add_cyl(bell_body_static, 0.058, 0.064, 0.008, Vector3(0.0, 0.013, 0.0), mat_brass, Vector3.ZERO, 16 if GameManager.is_mobile else 24)
+	_add_cyl(bell_body_static, 0.046, 0.056, 0.026, Vector3(0.0, 0.028, 0.0), mat_brass, Vector3.ZERO, 16 if GameManager.is_mobile else 24)
+	BaseGameBoard.bake_and_replace_static_meshes(bell_body_static, "BakedBellHousing", true)
 
-	_uno_bell_plunger = _add_cyl(_uno_bell_root, 0.024, 0.026, 0.015, Vector3(0.0, 0.046, 0.0), mat_red, Vector3.ZERO, 20)
+	_uno_bell_plunger = _add_cyl(_uno_bell_root, 0.024, 0.026, 0.015, Vector3(0.0, 0.046, 0.0), mat_red, Vector3.ZERO, 14 if GameManager.is_mobile else 20)
 
 	var alert_mat: StandardMaterial3D = StandardMaterial3D.new()
 	alert_mat.albedo_color = Color(1.0, 0.86, 0.22)

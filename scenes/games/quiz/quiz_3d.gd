@@ -145,7 +145,7 @@ func _process(delta: float) -> void:
 	if is_instance_valid(center_medallion):
 		center_medallion.rotate_y(delta * (1.5 if is_in_reveal_phase else 0.45))
 
-	for gid in player_crystals.keys():
+	for gid in player_crystals:
 		var crys: MeshInstance3D = player_crystals[gid]
 		if is_instance_valid(crys):
 			var is_locked: bool = bool(player_locked_in.get(gid, false))
@@ -255,6 +255,10 @@ func _build_3d_board() -> void:
 	stand_root.name = "StandRoot"
 	add_child(stand_root)
 
+	var chassis_static = Node3D.new()
+	chassis_static.name = "QuizChassisStatic"
+	stand_root.add_child(chassis_static)
+
 	# 1. Brass Outer Trim Base (1.28 x 1.34 footprint strictly within cafe_table safe zone)
 	var rim_mesh = BoxMesh.new()
 	rim_mesh.size = Vector3(1.28, 0.016, 1.34)
@@ -262,7 +266,7 @@ func _build_3d_board() -> void:
 	rim_inst.mesh = rim_mesh
 	rim_inst.material_override = _mat_brass
 	rim_inst.position = Vector3(0.0, 0.008, 0.0)
-	stand_root.add_child(rim_inst)
+	chassis_static.add_child(rim_inst)
 
 	# 2. Carved Mahogany Board Chassis
 	var chassis_mesh = BoxMesh.new()
@@ -271,7 +275,7 @@ func _build_3d_board() -> void:
 	chassis_inst.mesh = chassis_mesh
 	chassis_inst.material_override = _mat_mahogany
 	chassis_inst.position = Vector3(0.0, 0.022, 0.0)
-	stand_root.add_child(chassis_inst)
+	chassis_static.add_child(chassis_inst)
 
 	# 3. Recessed Emerald Velvet Felt Playing Bed
 	var felt_mesh = BoxMesh.new()
@@ -280,20 +284,24 @@ func _build_3d_board() -> void:
 	felt_inst.mesh = felt_mesh
 	felt_inst.material_override = _mat_emerald_felt
 	felt_inst.position = Vector3(0.0, 0.038, 0.0)
-	stand_root.add_child(felt_inst)
+	chassis_static.add_child(felt_inst)
 
 	# 4. Corner Brass Bolsters
 	var corner_mesh = CylinderMesh.new()
 	corner_mesh.top_radius = 0.022
 	corner_mesh.bottom_radius = 0.028
 	corner_mesh.height = 0.018
+	corner_mesh.radial_segments = 14 if GameManager.is_mobile else 24
+	corner_mesh.rings = 1
 	for sx in [-1.0, 1.0]:
 		for sz in [-1.0, 1.0]:
 			var bolster = MeshInstance3D.new()
 			bolster.mesh = corner_mesh
 			bolster.material_override = _mat_brass
 			bolster.position = Vector3(sx * 0.59, 0.044, sz * 0.61)
-			stand_root.add_child(bolster)
+			chassis_static.add_child(bolster)
+
+	BaseGameBoard.bake_and_replace_static_meshes(chassis_static, "BakedQuizChassis", true)
 
 	# 5. Top Crown Bar (10 Question Progress Sockets + Center Rotating Medallion)
 	_build_top_crown_bar()
@@ -347,6 +355,7 @@ func _build_top_crown_bar() -> void:
 	center_medallion.material_override = center_medallion_mat
 	center_medallion.position = Vector3(0.0, 0.026, -0.032)
 	center_medallion.rotation_degrees.x = 70.0
+	center_medallion.set_meta("skip_bake", true)
 	crown.add_child(center_medallion)
 
 	# 10 Physical Brass Sockets & Gems across the Crown Bar
@@ -355,6 +364,8 @@ func _build_top_crown_bar() -> void:
 	sock_mesh.top_radius = 0.015
 	sock_mesh.bottom_radius = 0.018
 	sock_mesh.height = 0.010
+	sock_mesh.radial_segments = 12 if GameManager.is_mobile else 20
+	sock_mesh.rings = 1
 
 	var gem_mesh = SphereMesh.new()
 	gem_mesh.radius = 0.011
@@ -374,8 +385,11 @@ func _build_top_crown_bar() -> void:
 		gem.mesh = gem_mesh
 		gem.material_override = _mat_gem_unlit
 		gem.position = Vector3(x_pos, 0.017, 0.014)
+		gem.set_meta("skip_bake", true)
 		crown.add_child(gem)
 		progress_gems.append(gem)
+
+	BaseGameBoard.bake_and_replace_static_meshes(crown, "BakedCrownBar", true)
 
 	lbl_crown_counter = Label3D.new()
 	lbl_crown_counter.text = "سوال ۱ از ۱۰"
@@ -442,6 +456,8 @@ func _build_question_lectern() -> void:
 	div_bar.material_override = _mat_brass
 	div_bar.position = Vector3(0.0, 0.023, -0.118)
 	lectern_root.add_child(div_bar)
+
+	BaseGameBoard.bake_and_replace_static_meshes(lectern_root, "BakedLectern", true)
 
 	# Question Counter Label3D (Left Top inside Lectern)
 	_lectern_cnt_lbl = Label3D.new()
@@ -1557,13 +1573,13 @@ func _clear_header_answered_states() -> void:
 		header.clear_answered_states()
 
 func _get_active_hud() -> Node:
+	var hud = get_base_game_hud()
+	if is_instance_valid(hud):
+		return hud
 	var tree = get_tree()
 	if not tree:
 		return null
-	var hud = tree.get_first_node_in_group("base_game_hud")
-	if is_instance_valid(hud):
-		return hud
-	return tree.root.find_child("BaseGameHUD", true, false)
+	return tree.get_first_node_in_group("base_game_hud")
 
 func _fa_digits(val: Variant) -> String:
 	var s = str(val)

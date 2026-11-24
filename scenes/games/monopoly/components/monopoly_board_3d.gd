@@ -286,6 +286,9 @@ func _build_cabinet_and_tiles() -> void:
 	for tid in range(32):
 		_build_single_tile(tid)
 
+	# Bake static walnut cabinet, brass bezels, felt, card stacks, and all 32 tile bases/color strips/corner trims (~76->1 draw call)
+	BaseGameBoard.bake_and_replace_static_meshes(_board_root, "BakedMonopolyBoard", true)
+
 	# Active tile highlight ring
 	_active_tile_marker = _create_ring_mesh(0.078, 0.010, _mat_highlight_gold)
 	_active_tile_marker.visible = false
@@ -412,6 +415,7 @@ func _build_single_tile(tid: int) -> void:
 
 	# Owner Faction Glowing Strip along outer edge (+Z local)
 	var owner_strip = MeshInstance3D.new()
+	owner_strip.set_meta("skip_bake", true)
 	var osm = BoxMesh.new()
 	osm.size = Vector3(w * 0.92, 0.006, 0.018)
 	owner_strip.mesh = osm
@@ -422,6 +426,7 @@ func _build_single_tile(tid: int) -> void:
 
 	# Mortgage Dark Veil
 	var veil = MeshInstance3D.new()
+	veil.set_meta("skip_bake", true)
 	var vm = BoxMesh.new()
 	vm.size = Vector3(w * 0.96, 0.003, d * 0.96)
 	veil.mesh = vm
@@ -434,6 +439,7 @@ func _build_single_tile(tid: int) -> void:
 	# Houses / Hotel Container (sits on top of the inward color band)
 	var h_root = Node3D.new()
 	h_root.name = "HousesRoot"
+	h_root.set_meta("skip_bake", true)
 	h_root.position = Vector3(0.0, 0.016, -d * 0.5 + 0.020)
 	tile_root.add_child(h_root)
 	_tile_house_roots[tid] = h_root
@@ -483,7 +489,11 @@ func _build_center_dice_sanctuary() -> void:
 	_dice_sanctuary.position = Vector3(0.0, SURFACE_Y, 0.0)
 	_board_root.add_child(_dice_sanctuary)
 
-	# Octagonal Brass & Emerald Arena Pedestal
+	# Octagonal Brass & Emerald Arena Pedestal (baked into 1 draw call)
+	var ped_root = Node3D.new()
+	ped_root.name = "PedestalStatic"
+	_dice_sanctuary.add_child(ped_root)
+
 	var base = MeshInstance3D.new()
 	var bm = CylinderMesh.new()
 	bm.top_radius = 0.145
@@ -493,7 +503,7 @@ func _build_center_dice_sanctuary() -> void:
 	base.mesh = bm
 	base.position = Vector3(0.0, 0.005, 0.0)
 	base.material_override = _mat_brass_gold
-	_dice_sanctuary.add_child(base)
+	ped_root.add_child(base)
 
 	var pad = MeshInstance3D.new()
 	var pm = CylinderMesh.new()
@@ -504,7 +514,9 @@ func _build_center_dice_sanctuary() -> void:
 	pad.mesh = pm
 	pad.position = Vector3(0.0, 0.006, 0.0)
 	pad.material_override = _mat_felt_emerald
-	_dice_sanctuary.add_child(pad)
+	ped_root.add_child(pad)
+
+	BaseGameBoard.bake_and_replace_static_meshes(ped_root, "BakedDicePedestal", true)
 
 	_dice_halo_ring = _create_ring_mesh(0.136, 0.010, _mat_highlight_gold)
 	_dice_halo_ring.position = Vector3(0.0, 0.013, 0.0)
@@ -548,28 +560,38 @@ func _build_center_dice_sanctuary() -> void:
 	_dice_sanctuary.add_child(_center_roll_label)
 
 
+var _cached_monopoly_die_mesh: ArrayMesh = null
+
 func _create_yatzy_die_model(sz: float) -> Node3D:
+	if _cached_monopoly_die_mesh == null:
+		var temp_die = Node3D.new()
+		var chamfer_core = MeshInstance3D.new()
+		var core_box = BoxMesh.new()
+		core_box.size = Vector3(sz * 0.94, sz * 0.94, sz * 0.94)
+		core_box.material = _mat_die_chamfer
+		chamfer_core.mesh = core_box
+		temp_die.add_child(chamfer_core)
+
+		for slab_size in [
+			Vector3(sz, sz * 0.86, sz * 0.86),
+			Vector3(sz * 0.86, sz, sz * 0.86),
+			Vector3(sz * 0.86, sz * 0.86, sz),
+		]:
+			var slab_inst = MeshInstance3D.new()
+			var slab_box = BoxMesh.new()
+			slab_box.size = slab_size
+			slab_box.material = _mat_die_ivory
+			slab_inst.mesh = slab_box
+			temp_die.add_child(slab_inst)
+
+		_add_3d_die_pips(temp_die, sz * 0.5)
+		_cached_monopoly_die_mesh = BaseGameBoard.bake_node_tree_to_mesh(temp_die, true)
+		temp_die.free()
+
 	var root = Node3D.new()
-	var chamfer_core = MeshInstance3D.new()
-	var core_box = BoxMesh.new()
-	core_box.size = Vector3(sz * 0.94, sz * 0.94, sz * 0.94)
-	core_box.material = _mat_die_chamfer
-	chamfer_core.mesh = core_box
-	root.add_child(chamfer_core)
-
-	for slab_size in [
-		Vector3(sz, sz * 0.86, sz * 0.86),
-		Vector3(sz * 0.86, sz, sz * 0.86),
-		Vector3(sz * 0.86, sz * 0.86, sz),
-	]:
-		var slab_inst = MeshInstance3D.new()
-		var slab_box = BoxMesh.new()
-		slab_box.size = slab_size
-		slab_box.material = _mat_die_ivory
-		slab_inst.mesh = slab_box
-		root.add_child(slab_inst)
-
-	_add_3d_die_pips(root, sz * 0.5)
+	var die_mi = MeshInstance3D.new()
+	die_mi.mesh = _cached_monopoly_die_mesh
+	root.add_child(die_mi)
 	return root
 
 
@@ -687,6 +709,9 @@ func _create_royal_pawn(gamer_id: int) -> Node3D:
 	head.position = Vector3(0.0, 0.059, 0.0)
 	head.material_override = p_mat
 	root.add_child(head)
+
+	# Bake 4-part royal pawn into 1 single draw call
+	BaseGameBoard.bake_and_replace_static_meshes(root, "BakedPawnMesh", true)
 
 	return root
 

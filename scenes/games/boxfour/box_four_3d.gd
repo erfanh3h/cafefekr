@@ -117,16 +117,19 @@ func _process(delta: float) -> void:
 
 	_pulse_time += delta
 	var pulse_scale = 1.0 + 0.065 * sin(_pulse_time * 5.2)
+	var crit_scale_vec = Vector3(pulse_scale, 1.0, pulse_scale)
 	var arrow_bob = 0.004 * sin(_pulse_time * 6.5)
+	var crit_count = cell_critical_roots.size()
+	var legal_count = cell_legal_frames.size()
 	for i in range(MAX_CELLS):
-		if i < cell_critical_roots.size() and is_instance_valid(cell_critical_roots[i]):
+		if i < crit_count:
 			var c_root = cell_critical_roots[i]
-			if c_root.visible:
-				c_root.scale = Vector3(pulse_scale, 1.0, pulse_scale)
+			if is_instance_valid(c_root) and c_root.visible:
+				c_root.scale = crit_scale_vec
 				c_root.position.y = arrow_bob
-		if i < cell_legal_frames.size() and is_instance_valid(cell_legal_frames[i]):
+		if i < legal_count:
 			var l_frame = cell_legal_frames[i]
-			if l_frame.visible:
+			if is_instance_valid(l_frame) and l_frame.visible:
 				var l_s = 1.0 + 0.025 * sin(_pulse_time * 4.4 + float(i) * 0.35)
 				l_frame.scale = Vector3(l_s, 1.0, l_s)
 
@@ -386,7 +389,10 @@ func _build_board_3d() -> void:
 		v_line.position = Vector3(offset, 0.040, 0.0)
 		board_root.add_child(v_line)
 
-	# 6. Build the 25 3D Pedestal Cells (5x5)
+	# Bake static walnut plinth, obsidian well, rim walls, gold trims, corner turrets/gems, and brass conduits (26->1 draw call)
+	BaseGameBoard.bake_and_replace_static_meshes(board_root, "BakedBoxFourBoard", true)
+
+	# 6. Build the 25 3D Pedestal Cells (5x5) with shared meshes, collision shape & baked hollow frames
 	cells_root = Node3D.new()
 	cells_root.name = "CellsRoot"
 	add_child(cells_root)
@@ -394,6 +400,30 @@ func _build_board_3d() -> void:
 	fx_root = Node3D.new()
 	fx_root.name = "FXRoot"
 	add_child(fx_root)
+
+	var is_mob := GameManager.is_mobile
+	var shared_bp_box := BoxMesh.new()
+	shared_bp_box.size = Vector3(cell_size, 0.018, cell_size)
+
+	var shared_cm_box := BoxMesh.new()
+	shared_cm_box.size = Vector3(cell_size - 0.016, 0.022, cell_size - 0.016)
+
+	var shared_ir_torus := TorusMesh.new()
+	shared_ir_torus.inner_radius = 0.064
+	shared_ir_torus.outer_radius = 0.072
+	shared_ir_torus.rings = 14 if is_mob else 24
+	shared_ir_torus.ring_segments = 8 if is_mob else 12
+
+	var shared_col_box := BoxShape3D.new()
+	shared_col_box.size = Vector3(cell_size, 0.06, cell_size)
+
+	var tmp_legal := _create_hollow_frame(cell_size - 0.008, 0.010, 0.008, mat_legal_glow)
+	var shared_legal_frame_mesh: ArrayMesh = BaseGameBoard.bake_node_tree_to_mesh(tmp_legal, false)
+	tmp_legal.free()
+
+	var tmp_last := _create_hollow_frame(cell_size + 0.004, 0.009, 0.010, mat_last_move_gold)
+	var shared_last_frame_mesh: ArrayMesh = BaseGameBoard.bake_node_tree_to_mesh(tmp_last, false)
+	tmp_last.free()
 
 	for idx in range(MAX_CELLS):
 		var r_idx = idx % GRID_SIZE
@@ -408,9 +438,7 @@ func _build_board_3d() -> void:
 
 		# Pedestal Lower Plinth
 		var base_plinth = MeshInstance3D.new()
-		var bp_box = BoxMesh.new()
-		bp_box.size = Vector3(cell_size, 0.018, cell_size)
-		base_plinth.mesh = bp_box
+		base_plinth.mesh = shared_bp_box
 		base_plinth.material_override = mat_rim_neutral
 		base_plinth.position = Vector3(0.0, 0.046, 0.0)
 		c_node.add_child(base_plinth)
@@ -424,34 +452,29 @@ func _build_board_3d() -> void:
 		cell_cap_nodes.append(cap_node)
 
 		var cap_mesh = MeshInstance3D.new()
-		var cm_box = BoxMesh.new()
-		cm_box.size = Vector3(cell_size - 0.016, 0.022, cell_size - 0.016)
-		cap_mesh.mesh = cm_box
+		cap_mesh.mesh = shared_cm_box
 		cap_mesh.material_override = mat_cap_neutral_light if ((r_idx + c_idx) % 2 == 0) else mat_cap_neutral_dark
 		cap_node.add_child(cap_mesh)
 		cell_cap_meshes.append(cap_mesh)
 
-		# Recessed Inner Sanctum Ring on every tile
+		# Recessed Inner Sanctum Ring on every tile (shared TorusMesh)
 		var inner_ring = MeshInstance3D.new()
-		var ir_torus = TorusMesh.new()
-		ir_torus.inner_radius = 0.064
-		ir_torus.outer_radius = 0.072
-		ir_torus.rings = 24
-		ir_torus.ring_segments = 12
-		inner_ring.mesh = ir_torus
+		inner_ring.mesh = shared_ir_torus
 		inner_ring.material_override = mat_brass_inlay
 		inner_ring.position = Vector3(0.0, 0.012, 0.0)
 		cap_node.add_child(inner_ring)
 
-		# Legal Move Selection Frame (Hollow 4-bar glowing emerald-gold frame)
-		var legal_frame = _create_hollow_frame(cell_size - 0.008, 0.010, 0.008, mat_legal_glow)
+		# Legal Move Selection Frame (1 baked draw call instead of 4 bars)
+		var legal_frame = MeshInstance3D.new()
+		legal_frame.mesh = shared_legal_frame_mesh
 		legal_frame.position = Vector3(0.0, 0.014, 0.0)
 		legal_frame.visible = false
 		cap_node.add_child(legal_frame)
 		cell_legal_frames.append(legal_frame)
 
-		# Last-Played Move Frame (Hollow 4-bar glowing 24K gold frame)
-		var last_frame = _create_hollow_frame(cell_size + 0.004, 0.009, 0.010, mat_last_move_gold)
+		# Last-Played Move Frame (1 baked draw call instead of 4 bars)
+		var last_frame = MeshInstance3D.new()
+		last_frame.mesh = shared_last_frame_mesh
 		last_frame.position = Vector3(0.0, 0.016, 0.0)
 		last_frame.visible = false
 		cap_node.add_child(last_frame)
@@ -470,14 +493,12 @@ func _build_board_3d() -> void:
 		token_root.add_child(crit_root)
 		cell_critical_roots.append(crit_root)
 
-		# Physics Area3D for Click / Touch Input
+		# Physics Area3D for Click / Touch Input (shared BoxShape3D)
 		var area = Area3D.new()
 		area.name = "Area_%d" % idx
 		area.position = Vector3(0.0, 0.065, 0.0)
 		var col = CollisionShape3D.new()
-		var box_shape = BoxShape3D.new()
-		box_shape.size = Vector3(cell_size, 0.06, cell_size)
-		col.shape = box_shape
+		col.shape = shared_col_box
 		area.add_child(col)
 		var bound_idx = idx
 		area.input_event.connect(func(_cam, event, _pos, _normal, _shape_idx):
@@ -899,22 +920,26 @@ func _spawn_four_way_burst_vfx(c_idx: int, r_idx: int, targets: Array, gamer_id:
 	var origin = _cell_pos(c_idx, r_idx) + Vector3(0.0, 0.095, 0.0)
 	var burst_col = Color(1.0, 0.30, 0.22) if gamer_id == 1 else Color(0.24, 0.68, 1.0)
 
-	# 1. Dynamic OmniLight3D Flash at Exploding Cell
-	var light = OmniLight3D.new()
-	light.light_color = burst_col
-	light.light_energy = 4.2
-	light.omni_range = 0.65
-	light.position = origin + Vector3(0.0, 0.08, 0.0)
-	fx_root.add_child(light)
-	var tw_l = light.create_tween()
-	tw_l.tween_property(light, "light_energy", 0.0, 0.34)
-	tw_l.chain().tween_callback(light.queue_free)
+	# 1. Dynamic OmniLight3D Flash at Exploding Cell (desktop only — avoids mobile dynamic light stall)
+	if not GameManager.is_mobile:
+		var light = OmniLight3D.new()
+		light.light_color = burst_col
+		light.light_energy = 4.2
+		light.omni_range = 0.65
+		light.position = origin + Vector3(0.0, 0.08, 0.0)
+		fx_root.add_child(light)
+		var tw_l = light.create_tween()
+		tw_l.tween_property(light, "light_energy", 0.0, 0.34)
+		tw_l.chain().tween_callback(light.queue_free)
 
 	# 2. Expanding 3D Shockwave Torus Ring
 	var wave = MeshInstance3D.new()
 	var w_torus = TorusMesh.new()
 	w_torus.inner_radius = 0.055
 	w_torus.outer_radius = 0.075
+	if GameManager.is_mobile:
+		w_torus.rings = 14
+		w_torus.ring_segments = 8
 	wave.mesh = w_torus
 	var w_mat = StandardMaterial3D.new()
 	w_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -933,17 +958,20 @@ func _spawn_four_way_burst_vfx(c_idx: int, r_idx: int, targets: Array, gamer_id:
 	tw_w.tween_property(w_mat, "albedo_color:a", 0.0, 0.32)
 	tw_w.chain().tween_callback(wave.queue_free)
 
-	# 3. Launch 4 Parabolic 3D Energy Orbs into Orthogonal Neighbors
+	# 3. Launch 4 Parabolic 3D Energy Orbs into Orthogonal Neighbors (shared SphereMesh)
+	var shared_orb_sph = SphereMesh.new()
+	shared_orb_sph.radius = 0.024
+	shared_orb_sph.height = 0.048
+	if GameManager.is_mobile:
+		shared_orb_sph.radial_segments = 10
+		shared_orb_sph.rings = 5
 	for t_coord in targets:
 		var tc: int = t_coord.x
 		var tr: int = t_coord.y
 		var dest = _cell_pos(tc, tr) + Vector3(0.0, 0.095, 0.0)
 
 		var orb = MeshInstance3D.new()
-		var sph = SphereMesh.new()
-		sph.radius = 0.024
-		sph.height = 0.048
-		orb.mesh = sph
+		orb.mesh = shared_orb_sph
 		orb.material_override = mat_orb_p1_critical if gamer_id == 1 else mat_orb_p2_critical
 		orb.position = origin
 		fx_root.add_child(orb)

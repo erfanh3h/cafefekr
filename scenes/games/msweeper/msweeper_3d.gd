@@ -426,6 +426,9 @@ func _build_master_cabinet() -> void:
 		bar.position = gb["pos"]
 		board_decor_root.add_child(bar)
 
+	# Bake plinth, bed, 4 mahogany walls, 4 brass trims, and 4 grid border bars into 1 draw call
+	BaseGameBoard.bake_and_replace_static_meshes(board_decor_root, "BakedCabinetMesh", true)
+
 func _get_cell_pos(row: int, col: int) -> Vector3:
 	var start_x = -((GRID_SIZE - 1) * CELL_STEP) * 0.5
 	var start_z = GRID_CENTER_Z - ((GRID_SIZE - 1) * CELL_STEP) * 0.5
@@ -1259,14 +1262,17 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 	var fx = Node3D.new()
 	fx.position = pos + Vector3(0.0, 0.022, 0.0)
 	vfx_root.add_child(fx)
+	var is_mob := GameManager.is_mobile
 
-	# 1. Dynamic 3D OmniLight3D Explosion Flash illuminating the board
-	var blast_light = OmniLight3D.new()
-	blast_light.light_color = Color(1.0, 0.58, 0.16)
-	blast_light.light_energy = 7.5
-	blast_light.omni_range = 1.45
-	blast_light.position = Vector3(0.0, 0.14, 0.0)
-	fx.add_child(blast_light)
+	# 1. Dynamic 3D OmniLight3D Explosion Flash illuminating the board (desktop only to prevent mobile shader stall)
+	var blast_light: OmniLight3D = null
+	if not is_mob:
+		blast_light = OmniLight3D.new()
+		blast_light.light_color = Color(1.0, 0.58, 0.16)
+		blast_light.light_energy = 7.5
+		blast_light.omni_range = 1.45
+		blast_light.position = Vector3(0.0, 0.14, 0.0)
+		fx.add_child(blast_light)
 
 	# 2. White-Hot Inner Plasma Core Sphere
 	var core_mat = StandardMaterial3D.new()
@@ -1280,6 +1286,9 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 	var core_sph = SphereMesh.new()
 	core_sph.radius = 0.052
 	core_sph.height = 0.104
+	if is_mob:
+		core_sph.radial_segments = 10
+		core_sph.rings = 5
 	core_mi.mesh = core_sph
 	core_mi.material_override = core_mat
 	core_mi.scale = Vector3(0.2, 0.2, 0.2)
@@ -1297,6 +1306,9 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 	var fb_mesh = SphereMesh.new()
 	fb_mesh.radius = 0.072
 	fb_mesh.height = 0.144
+	if is_mob:
+		fb_mesh.radial_segments = 10
+		fb_mesh.rings = 5
 	fireball.mesh = fb_mesh
 	fireball.material_override = fb_mat
 	fireball.scale = Vector3(0.2, 0.2, 0.2)
@@ -1314,6 +1326,9 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 	var r_torus = TorusMesh.new()
 	r_torus.inner_radius = 0.042
 	r_torus.outer_radius = 0.062
+	if is_mob:
+		r_torus.rings = 14
+		r_torus.ring_segments = 8
 	ring1.mesh = r_torus
 	ring1.material_override = ring1_mat
 	ring1.scale = Vector3(0.3, 1.0, 0.3)
@@ -1332,12 +1347,16 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 	ring2.scale = Vector3(0.2, 1.0, 0.2)
 	fx.add_child(ring2)
 
-	# 5. Rising Mushroom Smoke Plume Cloud Spheres (7 billowing puffs)
+	# 5. Rising Mushroom Smoke Plume Cloud Spheres
 	var smoke_puffs: Array = []
+	var puff_count: int = 4 if is_mob else 7
 	var puff_sph = SphereMesh.new()
 	puff_sph.radius = 0.036
 	puff_sph.height = 0.072
-	for p_i in range(7):
+	if is_mob:
+		puff_sph.radial_segments = 8
+		puff_sph.rings = 4
+	for p_i in range(puff_count):
 		var sm_mat = StandardMaterial3D.new()
 		sm_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		sm_mat.albedo_color = Color(0.18, 0.14, 0.13, 0.85)
@@ -1352,7 +1371,7 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 		puff_mi.scale = Vector3.ONE * 0.3
 		fx.add_child(puff_mi)
 
-		var ang = float(p_i) * TAU / 7.0
+		var ang = float(p_i) * TAU / float(puff_count)
 		var rad = 0.045 if p_i > 0 else 0.0
 		smoke_puffs.append({
 			"node": puff_mi,
@@ -1361,22 +1380,26 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 			"target_scale": randf_range(1.25, 1.75)
 		})
 
-	# 6. 20 Ballistic Shrapnel & Glowing Ember Fragments
+	# 6. Ballistic Shrapnel & Glowing Ember Fragments
 	var shrapnel_list: Array = []
+	var shrapnel_count: int = 10 if is_mob else 20
 	var frag_box = BoxMesh.new()
 	frag_box.size = Vector3(0.015, 0.012, 0.018)
 	var ember_sph = SphereMesh.new()
 	ember_sph.radius = 0.008
 	ember_sph.height = 0.016
+	if is_mob:
+		ember_sph.radial_segments = 6
+		ember_sph.rings = 3
 
-	for i in range(20):
+	for i in range(shrapnel_count):
 		var is_ember = (i % 2) == 0
 		var sh = MeshInstance3D.new()
 		sh.mesh = ember_sph if is_ember else frag_box
 		sh.material_override = mat_lava_glow if is_ember else mat_mine_iron
 		fx.add_child(sh)
 
-		var ang = (float(i) / 20.0) * TAU + randf_range(-0.18, 0.18)
+		var ang = (float(i) / float(shrapnel_count)) * TAU + randf_range(-0.18, 0.18)
 		var dist = randf_range(0.14, 0.38)
 		var peak_h = randf_range(0.14, 0.36)
 		var rot_spd = Vector3(randf_range(-14.0, 14.0), randf_range(-14.0, 14.0), randf_range(-14.0, 14.0))
@@ -1388,7 +1411,8 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 		})
 
 	var tw = fx.create_tween().set_parallel(true)
-	tw.tween_property(blast_light, "light_energy", 0.0, 0.65).set_ease(Tween.EASE_OUT)
+	if is_instance_valid(blast_light):
+		tw.tween_property(blast_light, "light_energy", 0.0, 0.65).set_ease(Tween.EASE_OUT)
 	tw.tween_property(core_mi, "scale", Vector3(2.2, 2.0, 2.2), 0.18).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 	tw.tween_property(core_mat, "albedo_color:a", 0.0, 0.26)
 	tw.tween_property(fireball, "scale", Vector3(2.8, 2.5, 2.8), 0.36).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -1427,32 +1451,49 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 # ==============================================================================
 # Input, Raycasting & Hold-to-Flag Detection
 # ==============================================================================
+var _flag_anim_accum: float = 0.0
+
 func _process(delta: float) -> void:
 	if not visible or not is_inside_tree():
 		return
 
+	var has_flags := not waving_flag_segments.is_empty()
+	var is_holding := _raycast_is_down and not _long_press_triggered and _down_cell_idx >= 0 and not is_board_locked and not is_hit_mine
+	if not has_flags and not is_holding and GameManager.is_mobile:
+		return
+
 	var now = Time.get_ticks_msec() / 1000.0
 
-	# 1. Animate 3D waving royal pennant flags on flagged cells
-	for item in waving_flag_segments:
-		var seg_node: Node3D = item.get("node")
-		if is_instance_valid(seg_node):
-			var phase: float = float(item.get("phase", 0.0))
-			var seg_idx: int = int(item.get("seg", 0))
-			var wave = sin(now * 6.5 + phase - float(seg_idx) * 0.95)
-			seg_node.position.z = -0.010 + wave * (0.0022 * float(seg_idx + 1))
-			seg_node.rotation.y = cos(now * 6.5 + phase - float(seg_idx) * 0.8) * 0.14
+	# 1. Animate 3D waving royal pennant flags on flagged cells (throttled to ~30Hz on mobile)
+	if has_flags:
+		var do_flags := true
+		if GameManager.is_mobile:
+			_flag_anim_accum += delta
+			if _flag_anim_accum < 0.033:
+				do_flags = false
+			else:
+				_flag_anim_accum = 0.0
+		if do_flags:
+			for item in waving_flag_segments:
+				var seg_node: Node3D = item.get("node")
+				if is_instance_valid(seg_node):
+					var phase: float = float(item.get("phase", 0.0))
+					var seg_idx: int = int(item.get("seg", 0))
+					var wave = sin(now * 6.5 + phase - float(seg_idx) * 0.95)
+					seg_node.position.z = -0.010 + wave * (0.0022 * float(seg_idx + 1))
+					seg_node.rotation.y = cos(now * 6.5 + phase - float(seg_idx) * 0.8) * 0.14
 
 	# 2. Spawn continuous smoldering smoke puffs from exploded bomb craters
-	_smoke_spawn_accum += delta
-	if not GameManager.is_mobile and _smoke_spawn_accum >= 0.25:
-		_smoke_spawn_accum = 0.0
-		for i in range(TOTAL_CELLS):
-			if cell_state[i] == STATE_MINE_HIT:
-				_spawn_crater_smolder_puff(cell_centers[i])
+	if not GameManager.is_mobile:
+		_smoke_spawn_accum += delta
+		if _smoke_spawn_accum >= 0.25:
+			_smoke_spawn_accum = 0.0
+			for i in range(TOTAL_CELLS):
+				if cell_state[i] == STATE_MINE_HIT:
+					_spawn_crater_smolder_puff(cell_centers[i])
 
 	# 3. Hold-to-Flag progress reticle & rising flag preview
-	if _raycast_is_down and not _long_press_triggered and _down_cell_idx >= 0 and not is_board_locked and not is_hit_mine:
+	if is_holding:
 		var elapsed = now - _raycast_down_time
 		if elapsed >= 0.08 and not cell_selected[_down_cell_idx]:
 			if is_instance_valid(_hold_ring_mesh):

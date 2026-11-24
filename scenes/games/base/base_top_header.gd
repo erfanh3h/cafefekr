@@ -216,6 +216,7 @@ var _turn_toast_persistent: bool = false
 var _bottom_glow_tween: Tween = null
 var _last_timer_ratio: float = 1.0
 var _last_timer_fill_key: String = ""
+var _last_turn_pill_key: String = ""
 
 static var _pod_scene: PackedScene = preload(POD_SCENE_PATH)
 static var _avatar_cache: Dictionary = {}
@@ -834,10 +835,6 @@ func _get_simultaneous_turn_text() -> String:
 func _get_player_color_for_turn(turn: int) -> Color:
 	if _is_simultaneous_turn():
 		return Color.WHITE
-	var p_data := _get_player_data_for_index(turn)
-	var col_val: Variant = p_data.get("color", null)
-	if col_val is Color:
-		return col_val as Color
 	return HudTheme.get_seat_accent(turn)
 
 
@@ -860,25 +857,28 @@ func _apply_turn_bar_colors(turn: int, is_danger: bool) -> void:
 			_last_timer_fill_key = fill_key
 			local_turn_bar.add_theme_stylebox_override("fill", HudTheme.make_local_turn_bar_fill_style(is_danger, fill_color, trough_w, trough_h, _last_timer_ratio))
 
-	if is_instance_valid(turn_timer_bar):
-		var sb_timer_fill := StyleBoxFlat.new()
-		sb_timer_fill.bg_color = fill_color
-		sb_timer_fill.set_corner_radius_all(4)
-		turn_timer_bar.add_theme_stylebox_override("fill", sb_timer_fill)
+	var pill_key: String = "%s|%d" % [fill_color.to_html(false), int(is_danger)]
+	if pill_key != _last_turn_pill_key:
+		_last_turn_pill_key = pill_key
+		if is_instance_valid(turn_timer_bar) and turn_timer_bar.is_visible_in_tree():
+			var sb_timer_fill := StyleBoxFlat.new()
+			sb_timer_fill.bg_color = fill_color
+			sb_timer_fill.set_corner_radius_all(4)
+			turn_timer_bar.add_theme_stylebox_override("fill", sb_timer_fill)
 
-	if is_instance_valid(local_turn_pill):
-		var sb_pill := StyleBoxFlat.new()
-		sb_pill.content_margin_left = 12.0
-		sb_pill.content_margin_top = 2.0
-		sb_pill.content_margin_right = 12.0
-		sb_pill.content_margin_bottom = 2.0
-		sb_pill.bg_color = Color(0.10, 0.07, 0.04, 0.94)
-		sb_pill.border_color = Color(fill_color.r, fill_color.g, fill_color.b, 0.85)
-		sb_pill.set_border_width_all(1)
-		sb_pill.set_corner_radius_all(10)
-		sb_pill.shadow_color = Color(0, 0, 0, 0.4)
-		sb_pill.shadow_size = 0 if GameManager.is_mobile else 3
-		local_turn_pill.add_theme_stylebox_override("panel", sb_pill)
+		if is_instance_valid(local_turn_pill):
+			var sb_pill := StyleBoxFlat.new()
+			sb_pill.content_margin_left = 12.0
+			sb_pill.content_margin_top = 2.0
+			sb_pill.content_margin_right = 12.0
+			sb_pill.content_margin_bottom = 2.0
+			sb_pill.bg_color = Color(0.10, 0.07, 0.04, 0.94)
+			sb_pill.border_color = Color(fill_color.r, fill_color.g, fill_color.b, 0.85)
+			sb_pill.set_border_width_all(1)
+			sb_pill.set_corner_radius_all(10)
+			sb_pill.shadow_color = Color(0, 0, 0, 0.4)
+			sb_pill.shadow_size = 0 if GameManager.is_mobile else 3
+			local_turn_pill.add_theme_stylebox_override("panel", sb_pill)
 
 
 func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
@@ -920,6 +920,7 @@ func update_turn(turn: int, my_idx: int, p1_n: String, p2_n: String) -> void:
 
 	_last_timer_ratio = 1.0
 	_last_timer_fill_key = ""
+	_last_turn_pill_key = ""
 	if is_instance_valid(local_turn_bar):
 		local_turn_bar.value = 100.0
 	_apply_turn_bar_colors(turn, false)
@@ -954,23 +955,23 @@ func update_timer(remaining_sec: float, total_sec: float, turn: int) -> void:
 	_last_timer_ratio = ratio
 
 	# Universal Turn Bar progress for all players
-	if is_instance_valid(local_turn_bar_wrap):
-		local_turn_bar_wrap.visible = GameManager.is_game_active
+	var show_wrap := GameManager.is_game_active
+	if is_instance_valid(local_turn_bar_wrap) and local_turn_bar_wrap.visible != show_wrap:
+		local_turn_bar_wrap.visible = show_wrap
 	if is_instance_valid(local_turn_bar):
 		local_turn_bar.value = pct
 
 	_apply_turn_bar_colors(turn, is_danger)
 
-	for idx in _pods_by_idx:
-		var pod: PlayerPod = _pods_by_idx[idx]
-		if is_instance_valid(pod) and idx == turn:
-			pod.update_ring_timer(remaining_sec, total_sec)
+	var active_pod: PlayerPod = _pods_by_idx.get(turn, null) as PlayerPod
+	if is_instance_valid(active_pod):
+		active_pod.update_ring_timer(remaining_sec, total_sec)
 
-	# Clean silent timer: ticking numbers suppressed
-	if is_instance_valid(lbl_timer):
+	# Clean silent timer: only touch legacy nodes if visible
+	if is_instance_valid(lbl_timer) and lbl_timer.visible:
 		lbl_timer.text = ""
 		lbl_timer.visible = false
-	if is_instance_valid(turn_timer_bar):
+	if is_instance_valid(turn_timer_bar) and turn_timer_bar.is_visible_in_tree():
 		turn_timer_bar.value = pct
 
 

@@ -123,6 +123,10 @@ var _shared_shard_box: BoxMesh
 var _shared_ember_sphere: SphereMesh
 var _shared_ripple_torus: TorusMesh
 var _shared_drop_sphere: SphereMesh
+var _cached_warship_meshes: Dictionary = {} # key "len_sunk_ghost" -> ArrayMesh
+var _shared_smoke_puff_mesh: SphereMesh = null
+var _shared_smoke_scale_curve: Curve = null
+var _shared_smoke_gradient: Gradient = null
 
 func _init() -> void:
 	game_type = GameTypes.BATTLESHIP
@@ -137,9 +141,9 @@ func _mark_piece_interaction() -> void:
 	_last_piece_interaction_time = Time.get_ticks_msec() / 1000.0
 
 func _get_hud() -> Control:
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	var hud = get_base_game_hud()
 	if hud and is_instance_valid(hud):
-		return hud
+		return hud as Control
 	return null
 
 func _is_gui_blocking_at(screen_pos: Vector2) -> bool:
@@ -436,6 +440,10 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 	var frame_z: float = board_span + 0.19 + extra_bottom
 	var z_center_offset: float = (extra_bottom - 0.04) * 0.5
 
+	var frame_static = Node3D.new()
+	frame_static.name = "NavalFrameStatic"
+	container.add_child(frame_static)
+
 	# Layer 1: Outer Mahogany Base (top = 0.016)
 	var base_box = MeshInstance3D.new()
 	var b_mesh = BoxMesh.new()
@@ -443,7 +451,7 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 	base_box.mesh = b_mesh
 	base_box.position = Vector3(0, 0.008, z_center_offset)
 	base_box.material_override = _mat_mahogany
-	container.add_child(base_box)
+	frame_static.add_child(base_box)
 
 	# Layer 2: Brass Trim Rim (top = 0.020)
 	var brass_rim = MeshInstance3D.new()
@@ -452,7 +460,7 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 	brass_rim.mesh = r_mesh
 	brass_rim.position = Vector3(0, 0.011, 0.0)
 	brass_rim.material_override = _mat_brass
-	container.add_child(brass_rim)
+	frame_static.add_child(brass_rim)
 
 	# Layer 3: Deep Basin Grout Floor (top = 0.024)
 	var basin = MeshInstance3D.new()
@@ -464,7 +472,7 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 	mat_basin.albedo_color = Color(0.02, 0.08, 0.14) if is_radar else Color(0.02, 0.10, 0.18)
 	mat_basin.roughness = 0.30
 	basin.material_override = mat_basin
-	container.add_child(basin)
+	frame_static.add_child(basin)
 
 	# Top Title Plaque (Large & Bold!)
 	var lbl_title = _create_3d_label(title_text, 32, title_color, 0.00185)
@@ -510,7 +518,10 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 			post.mesh = _shared_bollard_mesh
 			post.position = Vector3(sx * corner_x, 0.018, zp)
 			post.material_override = _mat_brass
-			container.add_child(post)
+			frame_static.add_child(post)
+
+	# Bake mahogany base + brass rim + deep basin + 4 corner bollards into a single draw call
+	BaseGameBoard.bake_and_replace_static_meshes(frame_static, "BakedNavalFrame", true)
 
 	return container
 
@@ -716,99 +727,115 @@ func _create_warship_3d_model(ship_len: int, is_enemy_sunk: bool = false, is_gho
 	var hull_width: float = CELL_PITCH * 0.66
 	var hull_height: float = 0.030
 
-	var mat_hull: Material = _mat_ship_hull
-	var mat_deck: Material = _mat_ship_deck
-	var mat_dark: Material = _mat_ship_dark
-	var mat_accent: Material = _mat_brass
+	var cache_key: String = "%d_%d_%d" % [ship_len, int(is_enemy_sunk), int(is_ghost)]
+	if not _cached_warship_meshes.has(cache_key):
+		var temp_ship = Node3D.new()
+		var mat_hull: Material = _mat_ship_hull
+		var mat_deck: Material = _mat_ship_deck
+		var mat_dark: Material = _mat_ship_dark
+		var mat_accent: Material = _mat_brass
 
-	if is_enemy_sunk:
-		mat_hull = _mat_ship_sunk_hull
-		mat_deck = _mat_ship_sunk_deck
-		mat_dark = _mat_ship_sunk_dark
-		mat_accent = _mat_ship_sunk_rust
-	elif is_ghost:
-		mat_hull = _mat_ghost_valid
-		mat_deck = _mat_ghost_valid
-		mat_dark = _mat_ghost_valid
-		mat_accent = _mat_ghost_valid
+		if is_enemy_sunk:
+			mat_hull = _mat_ship_sunk_hull
+			mat_deck = _mat_ship_sunk_deck
+			mat_dark = _mat_ship_sunk_dark
+			mat_accent = _mat_ship_sunk_rust
+		elif is_ghost:
+			mat_hull = _mat_ghost_valid
+			mat_deck = _mat_ghost_valid
+			mat_dark = _mat_ghost_valid
+			mat_accent = _mat_ghost_valid
 
-	var main_len: float = maxf(0.06, total_len - 0.075)
-	var hull_mesh = MeshInstance3D.new()
-	var hm = BoxMesh.new()
-	hm.size = Vector3(hull_width, hull_height, main_len)
-	hull_mesh.mesh = hm
-	hull_mesh.position = Vector3(0, hull_height * 0.5, 0)
-	hull_mesh.material_override = mat_hull
-	ship_root.add_child(hull_mesh)
+		var main_len: float = maxf(0.06, total_len - 0.075)
+		var hull_mesh = MeshInstance3D.new()
+		var hm = BoxMesh.new()
+		hm.size = Vector3(hull_width, hull_height, main_len)
+		hull_mesh.mesh = hm
+		hull_mesh.position = Vector3(0, hull_height * 0.5, 0)
+		hull_mesh.material_override = mat_hull
+		temp_ship.add_child(hull_mesh)
 
-	var bow_prism = MeshInstance3D.new()
-	var bpm = CylinderMesh.new()
-	bpm.top_radius = hull_width * 0.48
-	bpm.bottom_radius = hull_width * 0.36
-	bpm.height = hull_height
-	bpm.radial_segments = 6
-	bow_prism.mesh = bpm
-	bow_prism.position = Vector3(0, hull_height * 0.5, main_len * 0.5 + 0.016)
-	bow_prism.material_override = mat_hull
-	ship_root.add_child(bow_prism)
+		var bow_prism = MeshInstance3D.new()
+		var bpm = CylinderMesh.new()
+		bpm.top_radius = hull_width * 0.48
+		bpm.bottom_radius = hull_width * 0.36
+		bpm.height = hull_height
+		bpm.radial_segments = 6
+		bow_prism.mesh = bpm
+		bow_prism.position = Vector3(0, hull_height * 0.5, main_len * 0.5 + 0.016)
+		bow_prism.material_override = mat_hull
+		temp_ship.add_child(bow_prism)
 
-	var stern_prism = MeshInstance3D.new()
-	stern_prism.mesh = bpm
-	stern_prism.position = Vector3(0, hull_height * 0.5, -main_len * 0.5 - 0.014)
-	stern_prism.material_override = mat_hull
-	ship_root.add_child(stern_prism)
+		var stern_prism = MeshInstance3D.new()
+		stern_prism.mesh = bpm
+		stern_prism.position = Vector3(0, hull_height * 0.5, -main_len * 0.5 - 0.014)
+		stern_prism.material_override = mat_hull
+		temp_ship.add_child(stern_prism)
 
-	var deck_mesh = MeshInstance3D.new()
-	var dm = BoxMesh.new()
-	dm.size = Vector3(hull_width * 0.84, 0.008, main_len * 0.94)
-	deck_mesh.mesh = dm
-	deck_mesh.position = Vector3(0, hull_height + 0.004, 0)
-	deck_mesh.material_override = mat_deck
-	ship_root.add_child(deck_mesh)
+		var deck_mesh = MeshInstance3D.new()
+		var dm = BoxMesh.new()
+		dm.size = Vector3(hull_width * 0.84, 0.008, main_len * 0.94)
+		deck_mesh.mesh = dm
+		deck_mesh.position = Vector3(0, hull_height + 0.004, 0)
+		deck_mesh.material_override = mat_deck
+		temp_ship.add_child(deck_mesh)
 
-	if ship_len == 2:
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.018, -0.018), Vector3(hull_width * 0.58, 0.026, 0.062), mat_hull)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.010, 0.044), mat_dark, mat_accent, 1)
-	elif ship_len == 3:
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.022, 0.0), Vector3(hull_width * 0.52, 0.034, 0.092), mat_dark)
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.048, -0.006), Vector3(0.012, 0.028, 0.012), mat_accent)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.010, 0.095), mat_hull, mat_accent, 2)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.010, -0.095), mat_hull, mat_accent, 1)
-	elif ship_len == 4:
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.026, 0.020), Vector3(hull_width * 0.62, 0.038, 0.090), mat_hull)
-		_add_ship_box(ship_root, Vector3(0, hull_height + 0.048, 0.026), Vector3(hull_width * 0.42, 0.024, 0.052), mat_dark)
-		var funnel = MeshInstance3D.new()
-		var fm = CylinderMesh.new()
-		fm.top_radius = 0.016
-		fm.bottom_radius = 0.020
-		fm.height = 0.042
-		funnel.mesh = fm
-		funnel.position = Vector3(0, hull_height + 0.026, -0.044)
-		funnel.material_override = mat_dark
-		ship_root.add_child(funnel)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.011, 0.135), mat_dark, mat_accent, 2)
-		_add_ship_turret(ship_root, Vector3(0, hull_height + 0.011, -0.135), mat_dark, mat_accent, 2)
-	else:
-		var flight_deck = MeshInstance3D.new()
-		var fdm = BoxMesh.new()
-		fdm.size = Vector3(hull_width * 1.12, 0.010, total_len * 0.94)
-		flight_deck.mesh = fdm
-		flight_deck.position = Vector3(0, hull_height + 0.010, 0)
-		flight_deck.material_override = mat_dark
-		ship_root.add_child(flight_deck)
+		if ship_len == 2:
+			_add_ship_box(temp_ship, Vector3(0, hull_height + 0.018, -0.018), Vector3(hull_width * 0.58, 0.026, 0.062), mat_hull)
+			_add_ship_turret(temp_ship, Vector3(0, hull_height + 0.010, 0.044), mat_dark, mat_accent, 1)
+		elif ship_len == 3:
+			_add_ship_box(temp_ship, Vector3(0, hull_height + 0.022, 0.0), Vector3(hull_width * 0.52, 0.034, 0.092), mat_dark)
+			_add_ship_box(temp_ship, Vector3(0, hull_height + 0.048, -0.006), Vector3(0.012, 0.028, 0.012), mat_accent)
+			_add_ship_turret(temp_ship, Vector3(0, hull_height + 0.010, 0.095), mat_hull, mat_accent, 2)
+			_add_ship_turret(temp_ship, Vector3(0, hull_height + 0.010, -0.095), mat_hull, mat_accent, 1)
+		elif ship_len == 4:
+			_add_ship_box(temp_ship, Vector3(0, hull_height + 0.026, 0.020), Vector3(hull_width * 0.62, 0.038, 0.090), mat_hull)
+			_add_ship_box(temp_ship, Vector3(0, hull_height + 0.048, 0.026), Vector3(hull_width * 0.42, 0.024, 0.052), mat_dark)
+			var funnel = MeshInstance3D.new()
+			var fm = CylinderMesh.new()
+			fm.top_radius = 0.016
+			fm.bottom_radius = 0.020
+			fm.height = 0.042
+			funnel.mesh = fm
+			funnel.position = Vector3(0, hull_height + 0.026, -0.044)
+			funnel.material_override = mat_dark
+			temp_ship.add_child(funnel)
+			_add_ship_turret(temp_ship, Vector3(0, hull_height + 0.011, 0.135), mat_dark, mat_accent, 2)
+			_add_ship_turret(temp_ship, Vector3(0, hull_height + 0.011, -0.135), mat_dark, mat_accent, 2)
+		else:
+			var flight_deck = MeshInstance3D.new()
+			var fdm = BoxMesh.new()
+			fdm.size = Vector3(hull_width * 1.12, 0.010, total_len * 0.94)
+			flight_deck.mesh = fdm
+			flight_deck.position = Vector3(0, hull_height + 0.010, 0)
+			flight_deck.material_override = mat_dark
+			temp_ship.add_child(flight_deck)
 
-		_add_ship_box(ship_root, Vector3(-0.008, hull_height + 0.016, 0), Vector3(0.008, 0.003, total_len * 0.84), mat_accent)
-		_add_ship_box(ship_root, Vector3(hull_width * 0.36, hull_height + 0.032, -0.025), Vector3(0.024, 0.040, 0.115), mat_hull)
-		_add_ship_box(ship_root, Vector3(hull_width * 0.36, hull_height + 0.058, -0.025), Vector3(0.014, 0.024, 0.034), mat_accent)
-		_add_ship_box(ship_root, Vector3(-0.014, hull_height + 0.020, 0.13), Vector3(0.032, 0.008, 0.038), mat_hull)
-		_add_ship_box(ship_root, Vector3(-0.014, hull_height + 0.020, -0.14), Vector3(0.032, 0.008, 0.038), mat_hull)
+			_add_ship_box(temp_ship, Vector3(-0.008, hull_height + 0.016, 0), Vector3(0.008, 0.003, total_len * 0.84), mat_accent)
+			_add_ship_box(temp_ship, Vector3(hull_width * 0.36, hull_height + 0.032, -0.025), Vector3(0.024, 0.040, 0.115), mat_hull)
+			_add_ship_box(temp_ship, Vector3(hull_width * 0.36, hull_height + 0.058, -0.025), Vector3(0.014, 0.024, 0.034), mat_accent)
+			_add_ship_box(temp_ship, Vector3(-0.014, hull_height + 0.020, 0.13), Vector3(0.032, 0.008, 0.038), mat_hull)
+			_add_ship_box(temp_ship, Vector3(-0.014, hull_height + 0.020, -0.14), Vector3(0.032, 0.008, 0.038), mat_hull)
+
+		if is_enemy_sunk:
+			_add_destroyed_ship_damage_geometry(temp_ship, ship_len, total_len, hull_height)
+
+		_cached_warship_meshes[cache_key] = BaseGameBoard.bake_node_tree_to_mesh(temp_ship, not is_ghost)
+		temp_ship.free()
+
+	var ship_mi = MeshInstance3D.new()
+	ship_mi.name = "BakedWarship"
+	ship_mi.mesh = _cached_warship_meshes[cache_key]
+	if GameManager.is_mobile:
+		ship_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	ship_root.add_child(ship_mi)
 
 	if is_enemy_sunk:
 		_add_destroyed_ship_damage_and_smoke(ship_root, ship_len, total_len, hull_width, hull_height)
 
 	return ship_root
 
-func _add_destroyed_ship_damage_and_smoke(ship_root: Node3D, ship_len: int, total_len: float, hull_width: float, hull_height: float) -> void:
+func _add_destroyed_ship_damage_geometry(target_root: Node3D, ship_len: int, total_len: float, hull_height: float) -> void:
 	var vent_count: int = clampi(ship_len - 1, 2, 4)
 	var span: float = total_len * 0.66
 	for i in range(vent_count):
@@ -819,48 +846,72 @@ func _add_destroyed_ship_damage_and_smoke(ship_root: Node3D, ship_len: int, tota
 
 		# Scorched shell-breach crater rim
 		var crater_rim = MeshInstance3D.new()
-		var crm = TorusMesh.new()
-		crm.inner_radius = 0.011
-		crm.outer_radius = 0.021
-		crater_rim.mesh = crm
+		crater_rim.mesh = _shared_crater_torus
 		crater_rim.position = breach_pos
 		crater_rim.material_override = _mat_ship_sunk_dark
-		ship_root.add_child(crater_rim)
+		target_root.add_child(crater_rim)
 
 		# Jagged twisted hull plates around breach
 		for s_idx in range(3):
 			var shard = MeshInstance3D.new()
-			var sbm = BoxMesh.new()
-			sbm.size = Vector3(0.010, 0.014, 0.005)
-			shard.mesh = sbm
+			shard.mesh = _shared_shard_box
 			var ang: float = float(s_idx) * (TAU / 3.0) + float(i) * 0.7
 			shard.position = breach_pos + Vector3(cos(ang) * 0.013, 0.005, sin(ang) * 0.013)
 			shard.rotation = Vector3(0.45, ang, -0.35)
 			shard.material_override = _mat_ship_sunk_rust if (s_idx == 0) else _mat_ship_sunk_dark
-			ship_root.add_child(shard)
+			target_root.add_child(shard)
 
-		# Subtle deep-crimson glowing ember crack inside the dark crater (never flat yellow)
+		# Subtle deep-crimson glowing ember crack inside the dark crater
 		var ember_core = MeshInstance3D.new()
-		var ecm = SphereMesh.new()
-		ecm.radius = 0.009
-		ecm.height = 0.008
-		ember_core.mesh = ecm
+		ember_core.mesh = _shared_ember_sphere
 		ember_core.position = breach_pos + Vector3(0, 0.001, 0)
 		ember_core.material_override = _mat_ship_sunk_fire
-		ship_root.add_child(ember_core)
+		target_root.add_child(ember_core)
+
+func _add_destroyed_ship_damage_and_smoke(ship_root: Node3D, ship_len: int, total_len: float, _hull_width: float, hull_height: float) -> void:
+	var vent_count: int = clampi(ship_len - 1, 2, 4)
+	var max_plumes: int = mini(vent_count, 2) if GameManager.is_mobile else vent_count
+	var span: float = total_len * 0.66
+	for i in range(max_plumes):
+		var t: float = 0.0 if max_plumes <= 1 else (float(i) / float(max_plumes - 1)) - 0.5
+		var z_off: float = t * span
+		var x_off: float = (-0.007 if (i % 2 == 0) else 0.007)
+		var breach_pos: Vector3 = Vector3(x_off, hull_height + 0.014, z_off)
 
 		# Continuous rising 3D dark naval smoke plume + ember sparks
 		var smoke_plume = _create_continuous_smoke_plume_node(1.0)
 		smoke_plume.position = breach_pos + Vector3(0, 0.006, 0)
 		ship_root.add_child(smoke_plume)
 
+func _ensure_shared_smoke_resources(is_mobile: bool) -> void:
+	if _shared_smoke_puff_mesh == null:
+		_shared_smoke_puff_mesh = SphereMesh.new()
+		_shared_smoke_puff_mesh.radius = 0.016
+		_shared_smoke_puff_mesh.height = 0.028
+		_shared_smoke_puff_mesh.radial_segments = 4 if is_mobile else 8
+		_shared_smoke_puff_mesh.rings = 3 if is_mobile else 5
+	if _shared_smoke_scale_curve == null:
+		_shared_smoke_scale_curve = Curve.new()
+		_shared_smoke_scale_curve.add_point(Vector2(0.0, 0.42))
+		_shared_smoke_scale_curve.add_point(Vector2(0.45, 1.05))
+		_shared_smoke_scale_curve.add_point(Vector2(1.0, 1.55))
+	if _shared_smoke_gradient == null:
+		_shared_smoke_gradient = Gradient.new()
+		_shared_smoke_gradient.set_offset(0, 0.0)
+		_shared_smoke_gradient.set_color(0, Color(0.09, 0.10, 0.12, 0.88))
+		_shared_smoke_gradient.add_point(0.30, Color(0.16, 0.18, 0.21, 0.74))
+		_shared_smoke_gradient.add_point(0.70, Color(0.26, 0.28, 0.32, 0.42))
+		_shared_smoke_gradient.set_offset(1, 1.0)
+		_shared_smoke_gradient.set_color(1, Color(0.34, 0.36, 0.40, 0.0))
+
 func _create_continuous_smoke_plume_node(intensity_scale: float = 1.0) -> Node3D:
 	var plume_root = Node3D.new()
 	var is_mobile = GameManager.is_mobile
+	_ensure_shared_smoke_resources(is_mobile)
 
-	# 1. CPUParticles3D billowing dark charcoal/ash 3D smoke spheres
+	# 1. CPUParticles3D billowing dark charcoal/ash 3D smoke spheres (shared mesh/curve/gradient)
 	var smoke_particles = CPUParticles3D.new()
-	smoke_particles.amount = maxi(4, int(round((6.0 if is_mobile else 18.0) * intensity_scale)))
+	smoke_particles.amount = maxi(4, int(round((5.0 if is_mobile else 18.0) * intensity_scale)))
 	smoke_particles.lifetime = 1.5 if is_mobile else 1.75
 	smoke_particles.preprocess = 0.5 if is_mobile else 0.85
 	smoke_particles.speed_scale = 1.0
@@ -868,12 +919,7 @@ func _create_continuous_smoke_plume_node(intensity_scale: float = 1.0) -> Node3D
 	smoke_particles.randomness = 0.35
 	smoke_particles.local_coords = false
 
-	var puff_mesh = SphereMesh.new()
-	puff_mesh.radius = 0.016 * intensity_scale
-	puff_mesh.height = 0.028 * intensity_scale
-	puff_mesh.radial_segments = 4 if is_mobile else 8
-	puff_mesh.rings = 3 if is_mobile else 5
-	smoke_particles.mesh = puff_mesh
+	smoke_particles.mesh = _shared_smoke_puff_mesh
 	smoke_particles.material_override = _mat_smoke_puff
 
 	smoke_particles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
@@ -885,23 +931,10 @@ func _create_continuous_smoke_plume_node(intensity_scale: float = 1.0) -> Node3D
 	smoke_particles.initial_velocity_max = 0.082
 	smoke_particles.damping_min = 0.02
 	smoke_particles.damping_max = 0.05
-	smoke_particles.scale_amount_min = 0.70
-	smoke_particles.scale_amount_max = 1.45
-
-	var scale_curve = Curve.new()
-	scale_curve.add_point(Vector2(0.0, 0.42))
-	scale_curve.add_point(Vector2(0.45, 1.05))
-	scale_curve.add_point(Vector2(1.0, 1.55))
-	smoke_particles.scale_amount_curve = scale_curve
-
-	var grad = Gradient.new()
-	grad.set_offset(0, 0.0)
-	grad.set_color(0, Color(0.09, 0.10, 0.12, 0.88))
-	grad.add_point(0.30, Color(0.16, 0.18, 0.21, 0.74))
-	grad.add_point(0.70, Color(0.26, 0.28, 0.32, 0.42))
-	grad.set_offset(1, 1.0)
-	grad.set_color(1, Color(0.34, 0.36, 0.40, 0.0))
-	smoke_particles.color_ramp = grad
+	smoke_particles.scale_amount_min = 0.70 * intensity_scale
+	smoke_particles.scale_amount_max = 1.45 * intensity_scale
+	smoke_particles.scale_amount_curve = _shared_smoke_scale_curve
+	smoke_particles.color_ramp = _shared_smoke_gradient
 	smoke_particles.emitting = true
 	plume_root.add_child(smoke_particles)
 

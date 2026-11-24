@@ -231,7 +231,7 @@ func _process(delta: float) -> void:
 
 	# Periodically sync chair count with active match players (e.g. 2, 3, or 4 players)
 	_chair_poll_timer += delta
-	if _chair_poll_timer >= 0.35:
+	if _chair_poll_timer >= 1.0:
 		_chair_poll_timer = 0.0
 		var desired_chairs: int = _get_active_player_count()
 		if desired_chairs != _current_chair_count:
@@ -654,12 +654,12 @@ func set_top_down_view(enabled: bool, duration: float = 0.55) -> void:
 			focus.y + target_distance * sin_pitch,
 			focus.z + target_distance * cos(target_yaw) * cos_pitch
 		)
-		var temp_cam: Camera3D = Camera3D.new()
-		add_child(temp_cam)
-		temp_cam.position = end_pos
-		temp_cam.look_at(focus, Vector3.UP)
-		end_rot_deg = temp_cam.rotation_degrees
-		temp_cam.queue_free()
+		var look_dir: Vector3 = focus - end_pos
+		if look_dir.length_squared() > 1e-8:
+			var look_basis: Basis = Basis.looking_at(look_dir.normalized(), Vector3.UP)
+			end_rot_deg = look_basis.get_euler() * (180.0 / PI)
+		else:
+			end_rot_deg = camera.rotation_degrees
 
 	_camera_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_camera_tween.tween_property(camera, "position", end_pos, duration)
@@ -903,6 +903,8 @@ func _on_tree_node_added(node: Node) -> void:
 func _optimize_single_node_for_mobile(node: Node) -> void:
 	if not is_instance_valid(node):
 		return
+	if node.has_meta("_mob_opt"):
+		return
 	if node is GeometryInstance3D:
 		(node as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if node is MeshInstance3D:
@@ -911,7 +913,9 @@ func _optimize_single_node_for_mobile(node: Node) -> void:
 			call_deferred("_optimize_mesh_instance_deferred", mi)
 		else:
 			_optimize_primitive_mesh_for_mobile(mi.mesh)
+			mi.set_meta("_mob_opt", true)
 	elif node is Area3D:
+		node.set_meta("_mob_opt", true)
 		call_deferred("_optimize_area3d_deferred", node as Area3D)
 
 
@@ -921,6 +925,7 @@ func _optimize_mesh_instance_deferred(mi: MeshInstance3D) -> void:
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if mi.mesh != null:
 		_optimize_primitive_mesh_for_mobile(mi.mesh)
+		mi.set_meta("_mob_opt", true)
 
 
 func _optimize_area3d_deferred(area: Area3D) -> void:
@@ -948,6 +953,11 @@ func _optimize_primitive_mesh_for_mobile(mesh_res: Mesh) -> void:
 		if tm.rings > 18 or tm.ring_segments > 10:
 			tm.rings = mini(tm.rings, 16)
 			tm.ring_segments = mini(tm.ring_segments, 8)
+	elif mesh_res is CapsuleMesh:
+		var cap: CapsuleMesh = mesh_res as CapsuleMesh
+		if cap.radial_segments > 14 or cap.rings > 4:
+			cap.radial_segments = mini(cap.radial_segments, 12)
+			cap.rings = mini(cap.rings, 4)
 
 
 func _optimize_board_for_mobile(node: Node) -> void:
@@ -1109,19 +1119,13 @@ func _bake_node_tree_to_array_mesh(branch_root: Node3D) -> ArrayMesh:
 		var bucket_mat: Material = b_data["mat"] as Material
 		var entries: Array = b_data["items"] as Array
 
-		var out_verts: PackedVector3Array = PackedVector3Array()
-		var out_norms: PackedVector3Array = PackedVector3Array()
-		var out_uvs: PackedVector2Array = PackedVector2Array()
-		var out_colors: PackedColorArray = PackedColorArray()
-		var out_indices: PackedInt32Array = PackedInt32Array()
-
+		# Pass 1: Fetch surface arrays once and compute exact vertex/index counts for single-allocation baking
+		var surf_jobs: Array = []
+		var total_verts: int = 0
+		var total_indices: int = 0
 		for item_v: Variant in entries:
 			var item: Dictionary = item_v as Dictionary
 			var sub_mesh: Mesh = item["mesh"] as Mesh
-			var sub_xf: Transform3D = item["xform"] as Transform3D
-			var v_col: Color = item["color"] as Color
-			var uv_sc: Vector2 = item["uv_scale"] as Vector2
-
 			var src_arrays: Array = sub_mesh.surface_get_arrays(0)
 			if src_arrays.is_empty():
 				continue
@@ -1129,53 +1133,95 @@ func _bake_node_tree_to_array_mesh(branch_root: Node3D) -> ArrayMesh:
 			var v_count: int = src_verts.size()
 			if v_count == 0:
 				continue
+			var src_idx: PackedInt32Array = src_arrays[Mesh.ARRAY_INDEX] if src_arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			var i_count: int = src_idx.size() if not src_idx.is_empty() else (v_count - (v_count % 3))
+			total_verts += v_count
+			total_indices += i_count
+			surf_jobs.append({
+				"src": src_arrays,
+				"verts": src_verts,
+				"idx": src_idx,
+				"v_count": v_count,
+				"xf": item["xform"],
+				"col": item["color"],
+				"uv_sc": item["uv_scale"]
+			})
+
+		if total_verts == 0:
+			continue
+
+		# Pass 2: Pre-size all Packed*Arrays once and write by index
+		var out_verts: PackedVector3Array = PackedVector3Array()
+		var out_norms: PackedVector3Array = PackedVector3Array()
+		var out_uvs: PackedVector2Array = PackedVector2Array()
+		var out_colors: PackedColorArray = PackedColorArray()
+		var out_indices: PackedInt32Array = PackedInt32Array()
+		out_verts.resize(total_verts)
+		out_norms.resize(total_verts)
+		out_uvs.resize(total_verts)
+		out_colors.resize(total_verts)
+		out_indices.resize(total_indices)
+
+		var v_cursor: int = 0
+		var i_cursor: int = 0
+		for job_v: Variant in surf_jobs:
+			var job: Dictionary = job_v as Dictionary
+			var src_arrays: Array = job["src"] as Array
+			var src_verts: PackedVector3Array = job["verts"] as PackedVector3Array
+			var src_idx: PackedInt32Array = job["idx"] as PackedInt32Array
+			var v_count: int = int(job["v_count"])
+			var sub_xf: Transform3D = job["xf"] as Transform3D
+			var v_col: Color = job["col"] as Color
+			var uv_sc: Vector2 = job["uv_sc"] as Vector2
+
 			var has_norms: bool = src_arrays[Mesh.ARRAY_NORMAL] != null and (src_arrays[Mesh.ARRAY_NORMAL] as PackedVector3Array).size() == v_count
 			var src_norms: PackedVector3Array = src_arrays[Mesh.ARRAY_NORMAL] if has_norms else PackedVector3Array()
 			var has_uvs: bool = src_arrays[Mesh.ARRAY_TEX_UV] != null and (src_arrays[Mesh.ARRAY_TEX_UV] as PackedVector2Array).size() == v_count
 			var src_uvs: PackedVector2Array = src_arrays[Mesh.ARRAY_TEX_UV] if has_uvs else PackedVector2Array()
-			var src_idx: PackedInt32Array = src_arrays[Mesh.ARRAY_INDEX] if src_arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 
 			var det: float = sub_xf.basis.determinant()
 			var norm_basis: Basis = sub_xf.basis.inverse().transposed() if absf(det) > 1e-8 else Basis.IDENTITY
 			var flip_winding: bool = det < 0.0
-			var base_offset: int = out_verts.size()
+			var base_offset: int = v_cursor
 
 			for vi: int in range(v_count):
-				out_verts.append(sub_xf * src_verts[vi])
+				var w: int = base_offset + vi
+				out_verts[w] = sub_xf * src_verts[vi]
 				if has_norms:
-					out_norms.append((norm_basis * src_norms[vi]).normalized())
+					out_norms[w] = (norm_basis * src_norms[vi]).normalized()
 				else:
-					out_norms.append(Vector3.UP)
+					out_norms[w] = Vector3.UP
 				if has_uvs:
 					var uv0: Vector2 = src_uvs[vi]
-					out_uvs.append(Vector2(uv0.x * uv_sc.x, uv0.y * uv_sc.y))
+					out_uvs[w] = Vector2(uv0.x * uv_sc.x, uv0.y * uv_sc.y)
 				else:
-					out_uvs.append(Vector2.ZERO)
-				out_colors.append(v_col)
+					out_uvs[w] = Vector2.ZERO
+				out_colors[w] = v_col
+			v_cursor += v_count
 
 			if src_idx.is_empty():
 				for ti: int in range(0, v_count - 2, 3):
+					out_indices[i_cursor] = base_offset + ti
 					if flip_winding:
-						out_indices.append(base_offset + ti)
-						out_indices.append(base_offset + ti + 2)
-						out_indices.append(base_offset + ti + 1)
+						out_indices[i_cursor + 1] = base_offset + ti + 2
+						out_indices[i_cursor + 2] = base_offset + ti + 1
 					else:
-						out_indices.append(base_offset + ti)
-						out_indices.append(base_offset + ti + 1)
-						out_indices.append(base_offset + ti + 2)
+						out_indices[i_cursor + 1] = base_offset + ti + 1
+						out_indices[i_cursor + 2] = base_offset + ti + 2
+					i_cursor += 3
 			else:
 				var idx_count: int = src_idx.size()
 				if flip_winding:
 					for ti: int in range(0, idx_count - 2, 3):
-						out_indices.append(base_offset + src_idx[ti])
-						out_indices.append(base_offset + src_idx[ti + 2])
-						out_indices.append(base_offset + src_idx[ti + 1])
+						out_indices[i_cursor] = base_offset + src_idx[ti]
+						out_indices[i_cursor + 1] = base_offset + src_idx[ti + 2]
+						out_indices[i_cursor + 2] = base_offset + src_idx[ti + 1]
+						i_cursor += 3
 				else:
 					for ii: int in range(idx_count):
-						out_indices.append(base_offset + src_idx[ii])
+						out_indices[i_cursor + ii] = base_offset + src_idx[ii]
+					i_cursor += idx_count
 
-		if out_verts.is_empty():
-			continue
 		var surf_arrays: Array = []
 		surf_arrays.resize(Mesh.ARRAY_MAX)
 		surf_arrays[Mesh.ARRAY_VERTEX] = out_verts

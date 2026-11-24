@@ -1561,17 +1561,20 @@ func get_king_checks(gamer_id: int) -> Array[Vector2i]:
 
 func _on_cell_clicked(cell_idx: int) -> void:
 	if not GameManager.is_game_active:
-		print("[Chess3D] Move rejected: Game is not started yet!")
+		if OS.is_debug_build():
+			print("[Chess3D] Move rejected: Game is not started yet!")
 		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
 		AudioManager.play_sound("miss_turn")
 		return
 
 	if is_board_locked:
-		print("[Chess3D] Click ignored: Board is locked waiting for server ACK")
+		if OS.is_debug_build():
+			print("[Chess3D] Click ignored: Board is locked waiting for server ACK")
 		return
 
 	if not is_my_turn:
-		print("[Chess3D] Click rejected: Not my turn!")
+		if OS.is_debug_build():
+			print("[Chess3D] Click rejected: Not my turn!")
 		show_hint("نوبتت نیست!")
 		AudioManager.play_sound("miss_turn")
 		return
@@ -1621,7 +1624,8 @@ func _on_cell_clicked(cell_idx: int) -> void:
 			"t_c_index": tgt_coord.x,
 			"t_r_index": tgt_coord.y
 		}
-		print("[Chess3D] Sending move: %s -> %s" % [str(src_coord), str(tgt_coord)])
+		if OS.is_debug_build():
+			print("[Chess3D] Sending move: %s -> %s" % [str(src_coord), str(tgt_coord)])
 		ActionVFXManager.spawn_ui_click_burst(get_viewport().get_mouse_position(), Color(1.0, 0.85, 0.35))
 		set_board_locked(true)
 		send_move(Commands.Select_Peace, payload)
@@ -1792,7 +1796,8 @@ func on_piece_selected(user_id: int, _target_peace: int, extra: Dictionary = {})
 	var src_idx = coord_to_index(src_coord)
 	var tgt_idx = coord_to_index(tgt_coord)
 
-	print("[Chess3D] Move confirmed by server: P%d %s -> %s (Type: %s)" % [user_id, str(src_coord), str(tgt_coord), move_type])
+	if OS.is_debug_build():
+		print("[Chess3D] Move confirmed by server: P%d %s -> %s (Type: %s)" % [user_id, str(src_coord), str(tgt_coord), move_type])
 	_execute_move_animation(src_idx, tgt_idx, user_id, move_type == "hit")
 
 func _execute_move_animation(src_idx: int, tgt_idx: int, user_id: int, is_hit: bool) -> void:
@@ -1957,7 +1962,8 @@ func sync_board_state(new_board: Variant) -> void:
 	update_board_orientation(GameManager.my_player_index)
 	super._ready()
 	var b_arr = new_board as Array
-	print("[Chess3D] Synchronizing board from server state...")
+	if OS.is_debug_build():
+		print("[Chess3D] Synchronizing board from server state...")
 	_clear_markers()
 
 	for i in range(64):

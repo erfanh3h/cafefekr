@@ -102,13 +102,20 @@ static func get_safe_insets(viewport: Viewport) -> Dictionary:
 
 # --- StyleBoxFlat Builders ---
 
+static var _is_mobile_cached: int = -1
+
 static func is_mobile() -> bool:
+	if _is_mobile_cached != -1:
+		return _is_mobile_cached == 1
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree and tree.root and tree.root.has_node("GameManager"):
 		var gm = tree.root.get_node("GameManager")
 		if gm and "is_mobile" in gm:
-			return bool(gm.is_mobile)
-	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or (OS.get_name() in ["Android", "iOS"])
+			_is_mobile_cached = 1 if bool(gm.is_mobile) else 0
+			return _is_mobile_cached == 1
+	var res := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or (OS.get_name() in ["Android", "iOS"])
+	_is_mobile_cached = 1 if res else 0
+	return res
 
 static func make_player_card_style(active: bool, is_danger: bool = false, compact: bool = false) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()

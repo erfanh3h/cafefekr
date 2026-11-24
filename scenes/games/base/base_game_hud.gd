@@ -1113,10 +1113,12 @@ func _setup_connections() -> void:
 
 func _show_player_profile(player_index: int) -> void:
 	if not GameManager.is_game_active or is_countdown_running or not is_start_overlay_dismissed or not is_game_started:
-		print("[HUD] Profile popup suppressed during game start / countdown.")
+		if OS.is_debug_build():
+			print("[HUD] Profile popup suppressed during game start / countdown.")
 		return
 	if is_instance_valid(start_overlay) and start_overlay.visible:
-		print("[HUD] Profile popup suppressed: start overlay is visible.")
+		if OS.is_debug_build():
+			print("[HUD] Profile popup suppressed: start overlay is visible.")
 		return
 
 	AudioManager.sfx_tap()
@@ -1220,67 +1222,47 @@ var _last_reconnect_remaining_time: float = -1.0
 
 
 
+static var _cached_fekr_clear_tex: ImageTexture = null
+static var _cached_fekr_dual_tex: ImageTexture = null
+
 func _ensure_clean_white_fekr_icons() -> void:
-
 	# Guarantees FekrBekr Clear and Dual icons render as crisp white on transparent background
-
 	# even if local .godot/imported/*.ctex cache was generated from older icon files.
-
 	var clear_icon = btn_fekr_clear.get_node_or_null("Icon") as TextureRect if is_instance_valid(btn_fekr_clear) else null
-
 	if clear_icon and clear_icon.texture:
-
-		var img = clear_icon.texture.get_image()
-
-		if img and not img.is_empty():
-
-			img.decompress()
-
-			img.convert(Image.FORMAT_RGBA8)
-
-			for y in range(img.get_height()):
-
-				for x in range(img.get_width()):
-
-					var c = img.get_pixel(x, y)
-
-					if c.a > 0.01:
-
-						img.set_pixel(x, y, Color(1.0, 1.0, 1.0, c.a))
-
-			clear_icon.texture = ImageTexture.create_from_image(img)
+		if _cached_fekr_clear_tex == null:
+			var img = clear_icon.texture.get_image()
+			if img and not img.is_empty():
+				img.decompress()
+				img.convert(Image.FORMAT_RGBA8)
+				for y in range(img.get_height()):
+					for x in range(img.get_width()):
+						var c = img.get_pixel(x, y)
+						if c.a > 0.01:
+							img.set_pixel(x, y, Color(1.0, 1.0, 1.0, c.a))
+				_cached_fekr_clear_tex = ImageTexture.create_from_image(img)
+		if _cached_fekr_clear_tex != null:
+			clear_icon.texture = _cached_fekr_clear_tex
 
 	var dual_icon = btn_fekr_dual.get_node_or_null("Icon") as TextureRect if is_instance_valid(btn_fekr_dual) else null
-
 	if dual_icon and dual_icon.texture:
-
-		var img2 = dual_icon.texture.get_image()
-
-		if img2 and not img2.is_empty():
-
-			img2.decompress()
-
-			img2.convert(Image.FORMAT_RGBA8)
-
-			for y in range(img2.get_height()):
-
-				for x in range(img2.get_width()):
-
-					var c2 = img2.get_pixel(x, y)
-
-					var lum = (c2.r + c2.g + c2.b) / 3.0
-
-					if c2.a < 0.08 or lum <= 0.30:
-
-						img2.set_pixel(x, y, Color(1.0, 1.0, 1.0, 0.0))
-
-					else:
-
-						var alpha_out = clampf((lum - 0.30) / 0.32, 0.0, 1.0) * c2.a
-
-						img2.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha_out))
-
-			dual_icon.texture = ImageTexture.create_from_image(img2)
+		if _cached_fekr_dual_tex == null:
+			var img2 = dual_icon.texture.get_image()
+			if img2 and not img2.is_empty():
+				img2.decompress()
+				img2.convert(Image.FORMAT_RGBA8)
+				for y in range(img2.get_height()):
+					for x in range(img2.get_width()):
+						var c2 = img2.get_pixel(x, y)
+						var lum = (c2.r + c2.g + c2.b) / 3.0
+						if c2.a < 0.08 or lum <= 0.30:
+							img2.set_pixel(x, y, Color(1.0, 1.0, 1.0, 0.0))
+						else:
+							var alpha_out = clampf((lum - 0.30) / 0.32, 0.0, 1.0) * c2.a
+							img2.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha_out))
+				_cached_fekr_dual_tex = ImageTexture.create_from_image(img2)
+		if _cached_fekr_dual_tex != null:
+			dual_icon.texture = _cached_fekr_dual_tex
 
 
 
@@ -3135,7 +3117,8 @@ func show_surrender_notification(surrendered_gamer_id: int) -> void:
 
 	if is_ranked_series:
 
-		print("[HUD] Ranked series: player surrendered current round. Awaiting transition to next game...")
+		if OS.is_debug_build():
+			print("[HUD] Ranked series: player surrendered current round. Awaiting transition to next game...")
 
 		return
 

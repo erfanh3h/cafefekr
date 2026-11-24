@@ -102,6 +102,9 @@ var _action_dock_panel: Panel
 var _action_choice_buttons: Dictionary = {}
 var _last_start_dialog_open: bool = true
 var _last_game_active: bool = false
+var _sb_choice_normal: StyleBoxFlat
+var _sb_choice_selected: StyleBoxFlat
+var _cached_rpc_meshes: Dictionary = {}
 
 func _ready() -> void:
 	game_type = GameTypes.RPC
@@ -126,31 +129,36 @@ func _process(delta: float) -> void:
 		_refresh_choice_buttons()
 
 	# Gentle idle floating bob and rotation on pedestal objects
-	for k in pedestal_objects.keys():
-		var obj = pedestal_objects[k]
-		if is_instance_valid(obj):
-			var is_selected: bool = (k == my_selected_choice)
-			if is_selected:
-				obj.position.y = 0.082 + sin(_anim_time * 2.2) * 0.008
-				obj.rotation_degrees.y += delta * 35.0
-			else:
-				obj.position.y = 0.050 + sin(_anim_time * 1.5 + (0.0 if k == "rock" else (1.8 if k == "paper" else 3.6))) * 0.003
-				obj.rotation_degrees.y = 0.0
+	if not pedestal_objects.is_empty():
+		for k in pedestal_objects:
+			var obj = pedestal_objects[k]
+			if is_instance_valid(obj):
+				var is_selected: bool = (k == my_selected_choice)
+				if is_selected:
+					obj.position.y = 0.082 + sin(_anim_time * 2.2) * 0.008
+					obj.rotation_degrees.y += delta * 35.0
+				else:
+					obj.position.y = 0.050 + sin(_anim_time * 1.5 + (0.0 if k == "rock" else (1.8 if k == "paper" else 3.6))) * 0.003
+					obj.rotation_degrees.y = 0.0
 
 	# Pulsing and rotating selection halos and light pillars
-	for k in selection_halos.keys():
-		var halo = selection_halos[k]
-		if is_instance_valid(halo) and halo.visible:
-			var s: float = 1.0 + sin(_anim_time * 2.0) * 0.06
-			halo.scale = Vector3(s, 1.0, s)
-			halo.rotation_degrees.y += delta * 45.0
+	if not selection_halos.is_empty():
+		var s: float = 1.0 + sin(_anim_time * 2.0) * 0.06
+		var s_vec := Vector3(s, 1.0, s)
+		for k in selection_halos:
+			var halo = selection_halos[k]
+			if is_instance_valid(halo) and halo.visible:
+				halo.scale = s_vec
+				halo.rotation_degrees.y += delta * 45.0
 
-	for k in selection_aura_rings.keys():
-		var aura = selection_aura_rings[k]
-		if is_instance_valid(aura) and aura.visible:
-			var s_a: float = 1.0 + sin(_anim_time * 2.0 + 1.2) * 0.08
-			aura.scale = Vector3(s_a, 1.0, s_a)
-			aura.rotation_degrees.y -= delta * 30.0
+	if not selection_aura_rings.is_empty():
+		var s_a: float = 1.0 + sin(_anim_time * 2.0 + 1.2) * 0.08
+		var sa_vec := Vector3(s_a, 1.0, s_a)
+		for k in selection_aura_rings:
+			var aura = selection_aura_rings[k]
+			if is_instance_valid(aura) and aura.visible:
+				aura.scale = sa_vec
+				aura.rotation_degrees.y -= delta * 30.0
 
 
 # --- Materials Setup ---
@@ -498,7 +506,7 @@ func _build_action_dock() -> void:
 func _is_start_dialog_open() -> bool:
 	if not GameManager.is_game_active:
 		return true
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	var hud = get_base_game_hud()
 	if is_instance_valid(hud):
 		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
 			return true
@@ -511,38 +519,37 @@ func _refresh_choice_buttons() -> void:
 	var is_locked: bool = not GameManager.is_game_active or is_board_locked or _is_start_dialog_open() or is_choice_confirmed
 	if is_instance_valid(_action_dock_panel):
 		_action_dock_panel.visible = not is_locked
-	for c_type in _action_choice_buttons.keys():
+	if _sb_choice_selected == null:
+		_sb_choice_selected = StyleBoxFlat.new()
+		_sb_choice_selected.bg_color = Color(0.12, 0.44, 0.24, 0.98)
+		_sb_choice_selected.border_color = Color(1.0, 0.90, 0.38, 1.0)
+		_sb_choice_selected.set_border_width_all(3)
+		_sb_choice_selected.set_corner_radius_all(14)
+		_sb_choice_selected.shadow_color = Color(1.0, 0.85, 0.30, 0.50)
+		_sb_choice_selected.shadow_size = 6
+		_sb_choice_selected.content_margin_left = 20
+		_sb_choice_selected.content_margin_right = 20
+		_sb_choice_selected.content_margin_top = 8
+		_sb_choice_selected.content_margin_bottom = 8
+	if _sb_choice_normal == null:
+		_sb_choice_normal = StyleBoxFlat.new()
+		_sb_choice_normal.bg_color = Color(0.14, 0.10, 0.08, 0.95)
+		_sb_choice_normal.border_color = Color(0.84, 0.68, 0.35, 0.75)
+		_sb_choice_normal.set_border_width_all(3)
+		_sb_choice_normal.set_corner_radius_all(14)
+		_sb_choice_normal.shadow_color = Color(0, 0, 0, 0.45)
+		_sb_choice_normal.shadow_size = 4
+		_sb_choice_normal.content_margin_left = 20
+		_sb_choice_normal.content_margin_right = 20
+		_sb_choice_normal.content_margin_top = 8
+		_sb_choice_normal.content_margin_bottom = 8
+	for c_type in _action_choice_buttons:
 		var btn: Button = _action_choice_buttons[c_type]
 		if not is_instance_valid(btn):
 			continue
 		btn.disabled = is_locked
 		var is_sel: bool = (c_type == my_selected_choice)
-		if is_sel:
-			var sel_sb = StyleBoxFlat.new()
-			sel_sb.bg_color = Color(0.12, 0.44, 0.24, 0.98)
-			sel_sb.border_color = Color(1.0, 0.90, 0.38, 1.0)
-			sel_sb.set_border_width_all(3)
-			sel_sb.set_corner_radius_all(14)
-			sel_sb.shadow_color = Color(1.0, 0.85, 0.30, 0.50)
-			sel_sb.shadow_size = 6
-			sel_sb.content_margin_left = 20
-			sel_sb.content_margin_right = 20
-			sel_sb.content_margin_top = 8
-			sel_sb.content_margin_bottom = 8
-			btn.add_theme_stylebox_override("normal", sel_sb)
-		else:
-			var normal_sb = StyleBoxFlat.new()
-			normal_sb.bg_color = Color(0.14, 0.10, 0.08, 0.95)
-			normal_sb.border_color = Color(0.84, 0.68, 0.35, 0.75)
-			normal_sb.set_border_width_all(3)
-			normal_sb.set_corner_radius_all(14)
-			normal_sb.shadow_color = Color(0, 0, 0, 0.45)
-			normal_sb.shadow_size = 4
-			normal_sb.content_margin_left = 20
-			normal_sb.content_margin_right = 20
-			normal_sb.content_margin_top = 8
-			normal_sb.content_margin_bottom = 8
-			btn.add_theme_stylebox_override("normal", normal_sb)
+		btn.add_theme_stylebox_override("normal", _sb_choice_selected if is_sel else _sb_choice_normal)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_SIZE_CHANGED:
@@ -564,27 +571,35 @@ func _build_score_trackers() -> void:
 	tracker_group.position = Vector3(0, 0.040, -0.42)
 	add_child(tracker_group)
 
+	var is_mob: bool = GameManager.is_mobile
+	var shared_sc = CylinderMesh.new()
+	shared_sc.top_radius = 0.025
+	shared_sc.bottom_radius = 0.027
+	shared_sc.height = 0.015
+	shared_sc.radial_segments = 14 if is_mob else 24
+	shared_sc.rings = 1
+
+	var shared_gc = SphereMesh.new()
+	shared_gc.radius = 0.017
+	shared_gc.height = 0.020
+	shared_gc.radial_segments = 12 if is_mob else 20
+	shared_gc.rings = 6 if is_mob else 12
+
 	# 1. Player 1 (Red) Turn-Round Sockets (3 pips on Left - first to 3 wins round)
 	for i in range(3):
 		var sx: float = -0.38 + float(i) * 0.075
 		var sock = MeshInstance3D.new()
-		var sc = CylinderMesh.new()
-		sc.top_radius = 0.025
-		sc.bottom_radius = 0.027
-		sc.height = 0.015
-		sock.mesh = sc
+		sock.mesh = shared_sc
 		sock.material_override = mat_gold_trim
 		sock.position = Vector3(sx, 0.007, 0)
 		tracker_group.add_child(sock)
 		p1_sockets.append(sock)
 
 		var gem = MeshInstance3D.new()
-		var gc = SphereMesh.new()
-		gc.radius = 0.017
-		gc.height = 0.020
-		gem.mesh = gc
+		gem.mesh = shared_gc
 		gem.material_override = mat_socket_unlit
 		gem.position = Vector3(sx, 0.017, 0)
+		gem.set_meta("skip_bake", true)
 		tracker_group.add_child(gem)
 		p1_gems.append(gem)
 
@@ -592,25 +607,21 @@ func _build_score_trackers() -> void:
 	for i in range(3):
 		var sx: float = 0.23 + float(i) * 0.075
 		var sock = MeshInstance3D.new()
-		var sc = CylinderMesh.new()
-		sc.top_radius = 0.025
-		sc.bottom_radius = 0.027
-		sc.height = 0.015
-		sock.mesh = sc
+		sock.mesh = shared_sc
 		sock.material_override = mat_platinum_trim
 		sock.position = Vector3(sx, 0.007, 0)
 		tracker_group.add_child(sock)
 		p2_sockets.append(sock)
 
 		var gem = MeshInstance3D.new()
-		var gc = SphereMesh.new()
-		gc.radius = 0.017
-		gc.height = 0.020
-		gem.mesh = gc
+		gem.mesh = shared_gc
 		gem.material_override = mat_socket_unlit
 		gem.position = Vector3(sx, 0.017, 0)
+		gem.set_meta("skip_bake", true)
 		tracker_group.add_child(gem)
 		p2_gems.append(gem)
+
+	BaseGameBoard.bake_and_replace_static_meshes(tracker_group, "BakedScoreSockets", true)
 
 	# Center Turn-Round Progress Label ("دست ۱ از ۵")
 	lbl_turn_round_status = Label3D.new()
@@ -647,54 +658,74 @@ func _create_object_by_type(choice_type: String, gamer_id: int) -> Node3D:
 		_:
 			return _create_rock_node(gamer_id)
 
+func _make_baked_rpc_part(cache_key: String, builder: Callable) -> MeshInstance3D:
+	var baked_mesh: ArrayMesh = _cached_rpc_meshes.get(cache_key, null)
+	if baked_mesh == null:
+		var tmp_root := Node3D.new()
+		builder.call(tmp_root)
+		baked_mesh = BaseGameBoard.bake_node_tree_to_mesh(tmp_root, true)
+		tmp_root.free()
+		if baked_mesh != null:
+			_cached_rpc_meshes[cache_key] = baked_mesh
+	var mi := MeshInstance3D.new()
+	mi.mesh = baked_mesh
+	if GameManager.is_mobile:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return mi
+
 func _create_rock_node(gamer_id: int) -> Node3D:
 	var rock = Node3D.new()
+	var gid_key: int = 1 if gamer_id == 1 else 2
+	var baked_rock = _make_baked_rpc_part("rock_%d" % gid_key, func(parent_node: Node3D) -> void:
+		# 1. Main Granite Polyhedral Boulder with crisp facets
+		var body = MeshInstance3D.new()
+		var sphere = SphereMesh.new()
+		sphere.radius = 0.070
+		sphere.height = 0.118
+		sphere.radial_segments = 12 if GameManager.is_mobile else 16
+		sphere.rings = 7 if GameManager.is_mobile else 10
+		body.mesh = sphere
+		body.material_override = mat_rock_obsidian
+		body.position = Vector3(0, 0.055, 0)
+		parent_node.add_child(body)
 
-	# 1. Main Granite Polyhedral Boulder with crisp facets
-	var body = MeshInstance3D.new()
-	var sphere = SphereMesh.new()
-	sphere.radius = 0.070
-	sphere.height = 0.118
-	sphere.radial_segments = 16
-	sphere.rings = 10
-	body.mesh = sphere
-	body.material_override = mat_rock_obsidian
-	body.position = Vector3(0, 0.055, 0)
-	rock.add_child(body)
+		# 2. Raised Secondary Mineral Facet Shell
+		var shell = MeshInstance3D.new()
+		var prism_body = PrismMesh.new()
+		prism_body.size = Vector3(0.088, 0.062, 0.088)
+		shell.mesh = prism_body
+		shell.material_override = mat_rock_obsidian
+		shell.position = Vector3(0, 0.062, 0)
+		shell.rotation_degrees = Vector3(15, 45, 10)
+		parent_node.add_child(shell)
 
-	# 2. Raised Secondary Mineral Facet Shell
-	var shell = MeshInstance3D.new()
-	var prism_body = PrismMesh.new()
-	prism_body.size = Vector3(0.088, 0.062, 0.088)
-	shell.mesh = prism_body
-	shell.material_override = mat_rock_obsidian
-	shell.position = Vector3(0, 0.062, 0)
-	shell.rotation_degrees = Vector3(15, 45, 10)
-	rock.add_child(shell)
-
-	# 3. Glowing Geode Crystalline Clusters
-	var mat_crystal = mat_rock_crystal_p1 if gamer_id == 1 else mat_rock_crystal_p2
-	for ang in [0.4, 2.2, 4.3]:
-		var crystal = MeshInstance3D.new()
+		# 3. Glowing Geode Crystalline Clusters
+		var mat_crystal = mat_rock_crystal_p1 if gid_key == 1 else mat_rock_crystal_p2
 		var prism = PrismMesh.new()
 		prism.size = Vector3(0.030, 0.052, 0.030)
-		crystal.mesh = prism
-		crystal.material_override = mat_crystal
-		crystal.position = Vector3(cos(ang) * 0.046, 0.068, sin(ang) * 0.046)
-		crystal.rotation = Vector3(0.2, ang, 0.3)
-		rock.add_child(crystal)
+		for ang in [0.4, 2.2, 4.3]:
+			var crystal = MeshInstance3D.new()
+			crystal.mesh = prism
+			crystal.material_override = mat_crystal
+			crystal.position = Vector3(cos(ang) * 0.046, 0.068, sin(ang) * 0.046)
+			crystal.rotation = Vector3(0.2, ang, 0.3)
+			parent_node.add_child(crystal)
 
-	# 4. 24K Gold Inlaid Runic Band with Metallic Highlights
-	var band = MeshInstance3D.new()
-	var torus = TorusMesh.new()
-	torus.inner_radius = 0.058
-	torus.outer_radius = 0.070
-	torus.rings = 24
-	band.mesh = torus
-	band.material_override = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
-	band.position = Vector3(0, 0.052, 0)
-	band.rotation_degrees = Vector3(18, 25, 0)
-	rock.add_child(band)
+		# 4. 24K Gold Inlaid Runic Band with Metallic Highlights
+		var band = MeshInstance3D.new()
+		var torus = TorusMesh.new()
+		torus.inner_radius = 0.058
+		torus.outer_radius = 0.070
+		torus.rings = 16 if GameManager.is_mobile else 24
+		torus.ring_segments = 8 if GameManager.is_mobile else 12
+		band.mesh = torus
+		band.material_override = mat_gold_trim if gid_key == 1 else mat_platinum_trim
+		band.position = Vector3(0, 0.052, 0)
+		band.rotation_degrees = Vector3(18, 25, 0)
+		parent_node.add_child(band)
+	)
+	baked_rock.name = "BakedRock"
+	rock.add_child(baked_rock)
 
 	# 5. Distinct 3D Stone Emoji Crest for instant recognition
 	var rock_lbl = Label3D.new()
@@ -709,319 +740,341 @@ func _create_rock_node(gamer_id: int) -> Node3D:
 
 func _create_paper_node(gamer_id: int) -> Node3D:
 	var paper = Node3D.new()
-	var seal_mat = mat_paper_seal_p1 if gamer_id == 1 else mat_paper_seal_p2
-	var trim_mat = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
+	var gid_key: int = 1 if gamer_id == 1 else 2
+	var seal_mat = mat_paper_seal_p1 if gid_key == 1 else mat_paper_seal_p2
+	var trim_mat = mat_gold_trim if gid_key == 1 else mat_platinum_trim
 
-	# 1. LEFT HALF of the Illuminated Manuscript Scroll
+	# 1. LEFT HALF of the Illuminated Manuscript Scroll (baked to 1 draw call, preserves LeftHalf node for split VFX)
 	var left_half = Node3D.new()
 	left_half.name = "LeftHalf"
 	paper.add_child(left_half)
+	var left_mi = _make_baked_rpc_part("paper_l_%d" % gid_key, func(p_node: Node3D) -> void:
+		var left_sheet = MeshInstance3D.new()
+		var left_box = BoxMesh.new()
+		left_box.size = Vector3(0.068, 0.005, 0.164)
+		left_sheet.mesh = left_box
+		left_sheet.material_override = mat_paper_parchment
+		left_sheet.position = Vector3(-0.034, 0.052, 0)
+		p_node.add_child(left_sheet)
 
-	# Left parchment sheet body
-	var left_sheet = MeshInstance3D.new()
-	var left_box = BoxMesh.new()
-	left_box.size = Vector3(0.068, 0.005, 0.164)
-	left_sheet.mesh = left_box
-	left_sheet.material_override = mat_paper_parchment
-	left_sheet.position = Vector3(-0.034, 0.052, 0)
-	left_half.add_child(left_sheet)
+		var left_border = MeshInstance3D.new()
+		var lb_box = BoxMesh.new()
+		lb_box.size = Vector3(0.006, 0.006, 0.166)
+		left_border.mesh = lb_box
+		left_border.material_override = mat_paper_gold_leaf
+		left_border.position = Vector3(-0.066, 0.0525, 0)
+		p_node.add_child(left_border)
 
-	# Gold Leaf Filigree Border on Left Outer Edge
-	var left_border = MeshInstance3D.new()
-	var lb_box = BoxMesh.new()
-	lb_box.size = Vector3(0.006, 0.006, 0.166)
-	left_border.mesh = lb_box
-	left_border.material_override = mat_paper_gold_leaf
-	left_border.position = Vector3(-0.066, 0.0525, 0)
-	left_half.add_child(left_border)
-
-	# Top and Bottom Gold Trim Strips (Left)
-	for z_end in [-0.080, 0.080]:
-		var strip = MeshInstance3D.new()
 		var s_box = BoxMesh.new()
 		s_box.size = Vector3(0.068, 0.006, 0.006)
-		strip.mesh = s_box
-		strip.material_override = mat_paper_gold_leaf
-		strip.position = Vector3(-0.034, 0.0525, z_end)
-		left_half.add_child(strip)
+		for z_end in [-0.080, 0.080]:
+			var strip = MeshInstance3D.new()
+			strip.mesh = s_box
+			strip.material_override = mat_paper_gold_leaf
+			strip.position = Vector3(-0.034, 0.0525, z_end)
+			p_node.add_child(strip)
 
-	# Persian Calligraphy Ink Lines on Left Page
-	for l_z in [-0.050, -0.025, 0.0, 0.025, 0.050]:
-		var ink_line = MeshInstance3D.new()
 		var il_box = BoxMesh.new()
 		il_box.size = Vector3(0.046, 0.002, 0.0035)
-		ink_line.mesh = il_box
-		ink_line.material_override = mat_paper_ink
-		ink_line.position = Vector3(-0.034, 0.055, l_z)
-		left_half.add_child(ink_line)
+		for l_z in [-0.050, -0.025, 0.0, 0.025, 0.050]:
+			var ink_line = MeshInstance3D.new()
+			ink_line.mesh = il_box
+			ink_line.material_override = mat_paper_ink
+			ink_line.position = Vector3(-0.034, 0.055, l_z)
+			p_node.add_child(ink_line)
 
-	# Left Turned Walnut Spindle Rod
-	var left_rod = MeshInstance3D.new()
-	var l_cyl = CylinderMesh.new()
-	l_cyl.top_radius = 0.008
-	l_cyl.bottom_radius = 0.008
-	l_cyl.height = 0.190
-	left_rod.mesh = l_cyl
-	left_rod.material_override = mat_walnut_frame
-	left_rod.position = Vector3(-0.071, 0.053, 0)
-	left_rod.rotation_degrees = Vector3(90, 0, 0)
-	left_half.add_child(left_rod)
+		var left_rod = MeshInstance3D.new()
+		var l_cyl = CylinderMesh.new()
+		l_cyl.top_radius = 0.008
+		l_cyl.bottom_radius = 0.008
+		l_cyl.height = 0.190
+		l_cyl.radial_segments = 10
+		l_cyl.rings = 1
+		left_rod.mesh = l_cyl
+		left_rod.material_override = mat_walnut_frame
+		left_rod.position = Vector3(-0.071, 0.053, 0)
+		left_rod.rotation_degrees = Vector3(90, 0, 0)
+		p_node.add_child(left_rod)
 
-	# Left Gilded Spindle Finials
-	for z_finial in [-0.098, 0.098]:
-		var finial = MeshInstance3D.new()
 		var f_sph = SphereMesh.new()
 		f_sph.radius = 0.012
 		f_sph.height = 0.022
-		finial.mesh = f_sph
-		finial.material_override = trim_mat
-		finial.position = Vector3(-0.071, 0.053, z_finial)
-		left_half.add_child(finial)
+		f_sph.radial_segments = 10
+		f_sph.rings = 5
+		for z_finial in [-0.098, 0.098]:
+			var finial = MeshInstance3D.new()
+			finial.mesh = f_sph
+			finial.material_override = trim_mat
+			finial.position = Vector3(-0.071, 0.053, z_finial)
+			p_node.add_child(finial)
 
-	# Left Half of Imperial Wax Seal Medallion
-	var left_seal = MeshInstance3D.new()
-	var ls_cyl = CylinderMesh.new()
-	ls_cyl.top_radius = 0.018
-	ls_cyl.bottom_radius = 0.018
-	ls_cyl.height = 0.008
-	left_seal.mesh = ls_cyl
-	left_seal.material_override = seal_mat
-	left_seal.position = Vector3(-0.009, 0.057, 0.005)
-	left_half.add_child(left_seal)
+		var left_seal = MeshInstance3D.new()
+		var ls_cyl = CylinderMesh.new()
+		ls_cyl.top_radius = 0.018
+		ls_cyl.bottom_radius = 0.018
+		ls_cyl.height = 0.008
+		ls_cyl.radial_segments = 14
+		ls_cyl.rings = 1
+		left_seal.mesh = ls_cyl
+		left_seal.material_override = seal_mat
+		left_seal.position = Vector3(-0.009, 0.057, 0.005)
+		p_node.add_child(left_seal)
 
-	# Left Cascading Silk Ribbon
-	var left_ribbon = MeshInstance3D.new()
-	var lr_box = BoxMesh.new()
-	lr_box.size = Vector3(0.010, 0.003, 0.040)
-	left_ribbon.mesh = lr_box
-	left_ribbon.material_override = seal_mat
-	left_ribbon.position = Vector3(-0.016, 0.055, 0.026)
-	left_ribbon.rotation_degrees = Vector3(0, -18, 0)
-	left_half.add_child(left_ribbon)
+		var left_ribbon = MeshInstance3D.new()
+		var lr_box = BoxMesh.new()
+		lr_box.size = Vector3(0.010, 0.003, 0.040)
+		left_ribbon.mesh = lr_box
+		left_ribbon.material_override = seal_mat
+		left_ribbon.position = Vector3(-0.016, 0.055, 0.026)
+		left_ribbon.rotation_degrees = Vector3(0, -18, 0)
+		p_node.add_child(left_ribbon)
+	)
+	left_half.add_child(left_mi)
 
-	# 2. RIGHT HALF of the Illuminated Manuscript Scroll
+	# 2. RIGHT HALF of the Illuminated Manuscript Scroll (baked to 1 draw call, preserves RightHalf node for split VFX)
 	var right_half = Node3D.new()
 	right_half.name = "RightHalf"
 	paper.add_child(right_half)
+	var right_mi = _make_baked_rpc_part("paper_r_%d" % gid_key, func(p_node: Node3D) -> void:
+		var right_sheet = MeshInstance3D.new()
+		var right_box = BoxMesh.new()
+		right_box.size = Vector3(0.068, 0.005, 0.164)
+		right_sheet.mesh = right_box
+		right_sheet.material_override = mat_paper_parchment
+		right_sheet.position = Vector3(0.034, 0.052, 0)
+		p_node.add_child(right_sheet)
 
-	# Right parchment sheet body
-	var right_sheet = MeshInstance3D.new()
-	var right_box = BoxMesh.new()
-	right_box.size = Vector3(0.068, 0.005, 0.164)
-	right_sheet.mesh = right_box
-	right_sheet.material_override = mat_paper_parchment
-	right_sheet.position = Vector3(0.034, 0.052, 0)
-	right_half.add_child(right_sheet)
+		var right_border = MeshInstance3D.new()
+		var rb_box = BoxMesh.new()
+		rb_box.size = Vector3(0.006, 0.006, 0.166)
+		right_border.mesh = rb_box
+		right_border.material_override = mat_paper_gold_leaf
+		right_border.position = Vector3(0.066, 0.0525, 0)
+		p_node.add_child(right_border)
 
-	# Gold Leaf Filigree Border on Right Outer Edge
-	var right_border = MeshInstance3D.new()
-	var rb_box = BoxMesh.new()
-	rb_box.size = Vector3(0.006, 0.006, 0.166)
-	right_border.mesh = rb_box
-	right_border.material_override = mat_paper_gold_leaf
-	right_border.position = Vector3(0.066, 0.0525, 0)
-	right_half.add_child(right_border)
-
-	# Top and Bottom Gold Trim Strips (Right)
-	for z_end in [-0.080, 0.080]:
-		var strip = MeshInstance3D.new()
 		var s_box = BoxMesh.new()
 		s_box.size = Vector3(0.068, 0.006, 0.006)
-		strip.mesh = s_box
-		strip.material_override = mat_paper_gold_leaf
-		strip.position = Vector3(0.034, 0.0525, z_end)
-		right_half.add_child(strip)
+		for z_end in [-0.080, 0.080]:
+			var strip = MeshInstance3D.new()
+			strip.mesh = s_box
+			strip.material_override = mat_paper_gold_leaf
+			strip.position = Vector3(0.034, 0.0525, z_end)
+			p_node.add_child(strip)
 
-	# Persian Calligraphy Ink Lines on Right Page
-	for l_z in [-0.050, -0.025, 0.0, 0.025, 0.050]:
-		var ink_line = MeshInstance3D.new()
 		var il_box = BoxMesh.new()
 		il_box.size = Vector3(0.046, 0.002, 0.0035)
-		ink_line.mesh = il_box
-		ink_line.material_override = mat_paper_ink
-		ink_line.position = Vector3(0.034, 0.055, l_z)
-		right_half.add_child(ink_line)
+		for l_z in [-0.050, -0.025, 0.0, 0.025, 0.050]:
+			var ink_line = MeshInstance3D.new()
+			ink_line.mesh = il_box
+			ink_line.material_override = mat_paper_ink
+			ink_line.position = Vector3(0.034, 0.055, l_z)
+			p_node.add_child(ink_line)
 
-	# Right Turned Walnut Spindle Rod
-	var right_rod = MeshInstance3D.new()
-	var r_cyl = CylinderMesh.new()
-	r_cyl.top_radius = 0.008
-	r_cyl.bottom_radius = 0.008
-	r_cyl.height = 0.190
-	right_rod.mesh = r_cyl
-	right_rod.material_override = mat_walnut_frame
-	right_rod.position = Vector3(0.071, 0.053, 0)
-	right_rod.rotation_degrees = Vector3(90, 0, 0)
-	right_half.add_child(right_rod)
+		var right_rod = MeshInstance3D.new()
+		var r_cyl = CylinderMesh.new()
+		r_cyl.top_radius = 0.008
+		r_cyl.bottom_radius = 0.008
+		r_cyl.height = 0.190
+		r_cyl.radial_segments = 10
+		r_cyl.rings = 1
+		right_rod.mesh = r_cyl
+		right_rod.material_override = mat_walnut_frame
+		right_rod.position = Vector3(0.071, 0.053, 0)
+		right_rod.rotation_degrees = Vector3(90, 0, 0)
+		p_node.add_child(right_rod)
 
-	# Right Gilded Spindle Finials
-	for z_finial in [-0.098, 0.098]:
-		var finial = MeshInstance3D.new()
 		var f_sph = SphereMesh.new()
 		f_sph.radius = 0.012
 		f_sph.height = 0.022
-		finial.mesh = f_sph
-		finial.material_override = trim_mat
-		finial.position = Vector3(0.071, 0.053, z_finial)
-		right_half.add_child(finial)
+		f_sph.radial_segments = 10
+		f_sph.rings = 5
+		for z_finial in [-0.098, 0.098]:
+			var finial = MeshInstance3D.new()
+			finial.mesh = f_sph
+			finial.material_override = trim_mat
+			finial.position = Vector3(0.071, 0.053, z_finial)
+			p_node.add_child(finial)
 
-	# Right Half of Imperial Wax Seal Medallion
-	var right_seal = MeshInstance3D.new()
-	var rs_cyl = CylinderMesh.new()
-	rs_cyl.top_radius = 0.018
-	rs_cyl.bottom_radius = 0.018
-	rs_cyl.height = 0.008
-	right_seal.mesh = rs_cyl
-	right_seal.material_override = seal_mat
-	right_seal.position = Vector3(0.009, 0.057, 0.005)
-	right_half.add_child(right_seal)
+		var right_seal = MeshInstance3D.new()
+		var rs_cyl = CylinderMesh.new()
+		rs_cyl.top_radius = 0.018
+		rs_cyl.bottom_radius = 0.018
+		rs_cyl.height = 0.008
+		rs_cyl.radial_segments = 14
+		rs_cyl.rings = 1
+		right_seal.mesh = rs_cyl
+		right_seal.material_override = seal_mat
+		right_seal.position = Vector3(0.009, 0.057, 0.005)
+		p_node.add_child(right_seal)
 
-	# Right Cascading Silk Ribbon
-	var right_ribbon = MeshInstance3D.new()
-	var rr_box = BoxMesh.new()
-	rr_box.size = Vector3(0.010, 0.003, 0.040)
-	right_ribbon.mesh = rr_box
-	right_ribbon.material_override = seal_mat
-	right_ribbon.position = Vector3(0.016, 0.055, 0.026)
-	right_ribbon.rotation_degrees = Vector3(0, 18, 0)
-	right_half.add_child(right_ribbon)
+		var right_ribbon = MeshInstance3D.new()
+		var rr_box = BoxMesh.new()
+		rr_box.size = Vector3(0.010, 0.003, 0.040)
+		right_ribbon.mesh = rr_box
+		right_ribbon.material_override = seal_mat
+		right_ribbon.position = Vector3(0.016, 0.055, 0.026)
+		right_ribbon.rotation_degrees = Vector3(0, 18, 0)
+		p_node.add_child(right_ribbon)
+	)
+	right_half.add_child(right_mi)
 
 	return paper
 
 func _create_scissors_node(gamer_id: int) -> Node3D:
 	var shears = Node3D.new()
-	var mat_handle = mat_scissors_handle_p1 if gamer_id == 1 else mat_scissors_handle_p2
-	var trim_mat = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
+	var gid_key: int = 1 if gamer_id == 1 else 2
+	var mat_handle = mat_scissors_handle_p1 if gid_key == 1 else mat_scissors_handle_p2
+	var trim_mat = mat_gold_trim if gid_key == 1 else mat_platinum_trim
 
-	# 1. Left Blade & Royal Handle (BladeLeft)
+	# 1. Left Blade & Royal Handle (BladeLeft - baked to 1 draw call, preserves BladeLeft node)
 	var left_half = Node3D.new()
 	left_half.name = "BladeLeft"
 	shears.add_child(left_half)
+	var bl_mi = _make_baked_rpc_part("scis_l_%d" % gid_key, func(p_node: Node3D) -> void:
+		var b_left = MeshInstance3D.new()
+		var b_box = BoxMesh.new()
+		b_box.size = Vector3(0.015, 0.005, 0.132)
+		b_left.mesh = b_box
+		b_left.material_override = mat_scissors_damascus
+		b_left.position = Vector3(-0.013, 0.050, -0.054)
+		b_left.rotation_degrees = Vector3(0, -11, 0)
+		p_node.add_child(b_left)
 
-	# Damascus Steel Tapered Blade
-	var b_left = MeshInstance3D.new()
-	var b_box = BoxMesh.new()
-	b_box.size = Vector3(0.015, 0.005, 0.132)
-	b_left.mesh = b_box
-	b_left.material_override = mat_scissors_damascus
-	b_left.position = Vector3(-0.013, 0.050, -0.054)
-	b_left.rotation_degrees = Vector3(0, -11, 0)
-	left_half.add_child(b_left)
+		var edge_left = MeshInstance3D.new()
+		var e_box = BoxMesh.new()
+		e_box.size = Vector3(0.003, 0.004, 0.128)
+		edge_left.mesh = e_box
+		edge_left.material_override = mat_scissors_edge
+		edge_left.position = Vector3(-0.006, 0.050, -0.054)
+		edge_left.rotation_degrees = Vector3(0, -11, 0)
+		p_node.add_child(edge_left)
 
-	# Mirror-Polished Chrome Razor Cutting Bevel Edge
-	var edge_left = MeshInstance3D.new()
-	var e_box = BoxMesh.new()
-	e_box.size = Vector3(0.003, 0.004, 0.128)
-	edge_left.mesh = e_box
-	edge_left.material_override = mat_scissors_edge
-	edge_left.position = Vector3(-0.006, 0.050, -0.054)
-	edge_left.rotation_degrees = Vector3(0, -11, 0)
-	left_half.add_child(edge_left)
+		var shank_left = MeshInstance3D.new()
+		var s_cyl = CylinderMesh.new()
+		s_cyl.top_radius = 0.006
+		s_cyl.bottom_radius = 0.007
+		s_cyl.height = 0.046
+		s_cyl.radial_segments = 10
+		s_cyl.rings = 1
+		shank_left.mesh = s_cyl
+		shank_left.material_override = trim_mat
+		shank_left.position = Vector3(-0.020, 0.050, 0.024)
+		shank_left.rotation_degrees = Vector3(90, 20, 0)
+		p_node.add_child(shank_left)
 
-	# Left Shank Arm
-	var shank_left = MeshInstance3D.new()
-	var s_cyl = CylinderMesh.new()
-	s_cyl.top_radius = 0.006
-	s_cyl.bottom_radius = 0.007
-	s_cyl.height = 0.046
-	shank_left.mesh = s_cyl
-	shank_left.material_override = trim_mat
-	shank_left.position = Vector3(-0.020, 0.050, 0.024)
-	shank_left.rotation_degrees = Vector3(90, 20, 0)
-	left_half.add_child(shank_left)
+		var h_left = MeshInstance3D.new()
+		var h_torus = TorusMesh.new()
+		h_torus.inner_radius = 0.020
+		h_torus.outer_radius = 0.032
+		h_torus.rings = 16 if GameManager.is_mobile else 28
+		h_torus.ring_segments = 8 if GameManager.is_mobile else 12
+		h_left.mesh = h_torus
+		h_left.material_override = mat_handle
+		h_left.position = Vector3(-0.038, 0.050, 0.060)
+		h_left.rotation_degrees = Vector3(0, 0, 90)
+		p_node.add_child(h_left)
 
-	# Left Royal Enamelled Bow Finger Ring
-	var h_left = MeshInstance3D.new()
-	var h_torus = TorusMesh.new()
-	h_torus.inner_radius = 0.020
-	h_torus.outer_radius = 0.032
-	h_torus.rings = 28
-	h_left.mesh = h_torus
-	h_left.material_override = mat_handle
-	h_left.position = Vector3(-0.038, 0.050, 0.060)
-	h_left.rotation_degrees = Vector3(0, 0, 90)
-	left_half.add_child(h_left)
+		var tang_left = MeshInstance3D.new()
+		var t_prism = PrismMesh.new()
+		t_prism.size = Vector3(0.008, 0.022, 0.008)
+		tang_left.mesh = t_prism
+		tang_left.material_override = trim_mat
+		tang_left.position = Vector3(-0.052, 0.050, 0.088)
+		tang_left.rotation_degrees = Vector3(180, 30, 0)
+		p_node.add_child(tang_left)
+	)
+	left_half.add_child(bl_mi)
 
-	# Left Finger Rest Tang / Spur
-	var tang_left = MeshInstance3D.new()
-	var t_prism = PrismMesh.new()
-	t_prism.size = Vector3(0.008, 0.022, 0.008)
-	tang_left.mesh = t_prism
-	tang_left.material_override = trim_mat
-	tang_left.position = Vector3(-0.052, 0.050, 0.088)
-	tang_left.rotation_degrees = Vector3(180, 30, 0)
-	left_half.add_child(tang_left)
-
-	# 2. Right Blade & Royal Handle (BladeRight)
+	# 2. Right Blade & Royal Handle (BladeRight - baked to 1 draw call, preserves BladeRight node)
 	var right_half = Node3D.new()
 	right_half.name = "BladeRight"
 	shears.add_child(right_half)
+	var br_mi = _make_baked_rpc_part("scis_r_%d" % gid_key, func(p_node: Node3D) -> void:
+		var b_right = MeshInstance3D.new()
+		var b_box = BoxMesh.new()
+		b_box.size = Vector3(0.015, 0.005, 0.132)
+		b_right.mesh = b_box
+		b_right.material_override = mat_scissors_damascus
+		b_right.position = Vector3(0.013, 0.052, -0.054)
+		b_right.rotation_degrees = Vector3(0, 11, 0)
+		p_node.add_child(b_right)
 
-	# Damascus Steel Tapered Blade
-	var b_right = MeshInstance3D.new()
-	b_right.mesh = b_box
-	b_right.material_override = mat_scissors_damascus
-	b_right.position = Vector3(0.013, 0.052, -0.054)
-	b_right.rotation_degrees = Vector3(0, 11, 0)
-	right_half.add_child(b_right)
+		var edge_right = MeshInstance3D.new()
+		var e_box = BoxMesh.new()
+		e_box.size = Vector3(0.003, 0.004, 0.128)
+		edge_right.mesh = e_box
+		edge_right.material_override = mat_scissors_edge
+		edge_right.position = Vector3(0.006, 0.052, -0.054)
+		edge_right.rotation_degrees = Vector3(0, 11, 0)
+		p_node.add_child(edge_right)
 
-	# Mirror-Polished Chrome Razor Cutting Bevel Edge
-	var edge_right = MeshInstance3D.new()
-	edge_right.mesh = e_box
-	edge_right.material_override = mat_scissors_edge
-	edge_right.position = Vector3(0.006, 0.052, -0.054)
-	edge_right.rotation_degrees = Vector3(0, 11, 0)
-	right_half.add_child(edge_right)
+		var shank_right = MeshInstance3D.new()
+		var s_cyl = CylinderMesh.new()
+		s_cyl.top_radius = 0.006
+		s_cyl.bottom_radius = 0.007
+		s_cyl.height = 0.046
+		s_cyl.radial_segments = 10
+		s_cyl.rings = 1
+		shank_right.mesh = s_cyl
+		shank_right.material_override = trim_mat
+		shank_right.position = Vector3(0.020, 0.052, 0.024)
+		shank_right.rotation_degrees = Vector3(90, -20, 0)
+		p_node.add_child(shank_right)
 
-	# Right Shank Arm
-	var shank_right = MeshInstance3D.new()
-	shank_right.mesh = s_cyl
-	shank_right.material_override = trim_mat
-	shank_right.position = Vector3(0.020, 0.052, 0.024)
-	shank_right.rotation_degrees = Vector3(90, -20, 0)
-	right_half.add_child(shank_right)
+		var h_right = MeshInstance3D.new()
+		var h_torus = TorusMesh.new()
+		h_torus.inner_radius = 0.020
+		h_torus.outer_radius = 0.032
+		h_torus.rings = 16 if GameManager.is_mobile else 28
+		h_torus.ring_segments = 8 if GameManager.is_mobile else 12
+		h_right.mesh = h_torus
+		h_right.material_override = mat_handle
+		h_right.position = Vector3(0.038, 0.050, 0.060)
+		h_right.rotation_degrees = Vector3(0, 0, 90)
+		p_node.add_child(h_right)
+	)
+	right_half.add_child(br_mi)
 
-	# Right Royal Enamelled Bow Finger Ring
-	var h_right = MeshInstance3D.new()
-	h_right.mesh = h_torus
-	h_right.material_override = mat_handle
-	h_right.position = Vector3(0.038, 0.050, 0.060)
-	h_right.rotation_degrees = Vector3(0, 0, 90)
-	right_half.add_child(h_right)
-
-	# 3. Central Gold Pivot Joint & Gemstone Bolt (PivotJoint)
+	# 3. Central Gold Pivot Joint & Gemstone Bolt (PivotJoint - baked to 1 draw call, preserves PivotJoint node)
 	var pivot_node = Node3D.new()
 	pivot_node.name = "PivotJoint"
 	shears.add_child(pivot_node)
+	var pj_mi = _make_baked_rpc_part("scis_p_%d" % gid_key, func(p_node: Node3D) -> void:
+		var pivot = MeshInstance3D.new()
+		var p_cyl = CylinderMesh.new()
+		p_cyl.top_radius = 0.015
+		p_cyl.bottom_radius = 0.015
+		p_cyl.height = 0.014
+		p_cyl.radial_segments = 12
+		p_cyl.rings = 1
+		pivot.mesh = p_cyl
+		pivot.material_override = trim_mat
+		pivot.position = Vector3(0, 0.051, 0)
+		p_node.add_child(pivot)
 
-	var pivot = MeshInstance3D.new()
-	var p_cyl = CylinderMesh.new()
-	p_cyl.top_radius = 0.015
-	p_cyl.bottom_radius = 0.015
-	p_cyl.height = 0.014
-	pivot.mesh = p_cyl
-	pivot.material_override = trim_mat
-	pivot.position = Vector3(0, 0.051, 0)
-	pivot_node.add_child(pivot)
+		var jewel = MeshInstance3D.new()
+		var j_sph = SphereMesh.new()
+		j_sph.radius = 0.010
+		j_sph.height = 0.015
+		j_sph.radial_segments = 10
+		j_sph.rings = 5
+		jewel.mesh = j_sph
+		jewel.material_override = mat_ruby_gem if gid_key == 1 else mat_sapphire_gem
+		jewel.position = Vector3(0, 0.059, 0)
+		p_node.add_child(jewel)
 
-	var jewel = MeshInstance3D.new()
-	var j_sph = SphereMesh.new()
-	j_sph.radius = 0.010
-	j_sph.height = 0.015
-	jewel.mesh = j_sph
-	jewel.material_override = mat_ruby_gem if gamer_id == 1 else mat_sapphire_gem
-	jewel.position = Vector3(0, 0.059, 0)
-	pivot_node.add_child(jewel)
-
-	var washer = MeshInstance3D.new()
-	var w_torus = TorusMesh.new()
-	w_torus.inner_radius = 0.014
-	w_torus.outer_radius = 0.019
-	w_torus.rings = 20
-	washer.mesh = w_torus
-	washer.material_override = trim_mat
-	washer.position = Vector3(0, 0.046, 0)
-	pivot_node.add_child(washer)
+		var washer = MeshInstance3D.new()
+		var w_torus = TorusMesh.new()
+		w_torus.inner_radius = 0.014
+		w_torus.outer_radius = 0.019
+		w_torus.rings = 14 if GameManager.is_mobile else 20
+		w_torus.ring_segments = 8
+		washer.mesh = w_torus
+		washer.material_override = trim_mat
+		washer.position = Vector3(0, 0.046, 0)
+		p_node.add_child(washer)
+	)
+	pivot_node.add_child(pj_mi)
 
 	return shears
 

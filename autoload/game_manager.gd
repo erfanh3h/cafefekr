@@ -93,7 +93,8 @@ var is_my_turn: bool:
 func set_game_type(new_game_type: String) -> void:
 	current_game_type = GameRegistry.normalize_type(new_game_type)
 	max_rounds = GameRegistry.get_max_rounds(current_game_type)
-	print("[GameManager] Match Game Type set to: %s (Max Rounds: %d)" % [current_game_type, max_rounds])
+	if OS.is_debug_build():
+		print("[GameManager] Match Game Type set to: %s (Max Rounds: %d)" % [current_game_type, max_rounds])
 
 func get_game_display_name() -> String:
 	return GameRegistry.get_display_name_fa(current_game_type)
@@ -128,7 +129,8 @@ func clear_open_game_id() -> void:
 		changed = true
 	if changed:
 		_save_session_config()
-		print("[GameManager] Cleared open_game_id from cached session.")
+		if OS.is_debug_build():
+			print("[GameManager] Cleared open_game_id from cached session.")
 
 func set_active_game(game_id: String) -> void:
 	active_game_id = game_id
@@ -144,12 +146,14 @@ func set_active_game(game_id: String) -> void:
 		is_game_active = false
 		clear_open_game_id()
 	_save_session_config()
-	print("[GameManager] Set active match game_id: %s" % game_id)
+	if OS.is_debug_build():
+		print("[GameManager] Set active match game_id: %s" % game_id)
 
 func set_active_pre_game(pre_id: String) -> void:
 	# Only allow setting active pre-game if NOT currently in an active game!
 	if is_game_active or not active_game_id.is_empty() or not get_open_game_id().is_empty():
-		print("[GameManager] Ignored set_active_pre_game because match is already active!")
+		if OS.is_debug_build():
+			print("[GameManager] Ignored set_active_pre_game because match is already active!")
 		return
 	active_pre_game_id = pre_id
 	is_in_pre_game = not pre_id.is_empty()
@@ -158,7 +162,8 @@ func set_active_pre_game(pre_id: String) -> void:
 	else:
 		user_data.erase("open_pre_game_id")
 	_save_session_config()
-	print("[GameManager] Set active pre-game draft: %s" % pre_id)
+	if OS.is_debug_build():
+		print("[GameManager] Set active pre-game draft: %s" % pre_id)
 
 func get_open_pre_game_id() -> String:
 	# If a match is active or open_game_id is set, pre_game_id is invalid!
@@ -172,7 +177,8 @@ func clear_open_pre_game_id() -> void:
 	if user_data.has("open_pre_game_id"):
 		user_data.erase("open_pre_game_id")
 	_save_session_config()
-	print("[GameManager] Cleared open_pre_game_id from cached session.")
+	if OS.is_debug_build():
+		print("[GameManager] Cleared open_pre_game_id from cached session.")
 
 func _save_session_config() -> void:
 	if not token.is_empty():
@@ -214,7 +220,8 @@ func set_match_gamers(gamers_list: Array) -> void:
 		
 		if (not my_uid.is_empty() and uid == my_uid) or (not my_uname.is_empty() and uname == my_uname):
 			my_player_index = gid if gid > 0 else (i + 1)
-			print("[GameManager] Assigned local player index: Player %d" % my_player_index)
+			if OS.is_debug_build():
+				print("[GameManager] Assigned local player index: Player %d" % my_player_index)
 			break
 
 func start_spectating_session(game_id: String, game_type: String, gamers_list: Array, spec_count: int = 1) -> void:
@@ -304,9 +311,10 @@ func _load_saved_session_on_boot() -> void:
 		if not saved_data.is_empty():
 			user_data = saved_data
 			is_logged_in = true
-			print("[GameManager] Boot: Restored local session for '%s' (Level: %d, XP: %d, Score: %d, Coins: %d)" % [
-				get_username(), get_user_level(), get_xp(), get_score(), get_coins()
-			])
+			if OS.is_debug_build():
+				print("[GameManager] Boot: Restored local session for '%s' (Level: %d, XP: %d, Score: %d, Coins: %d)" % [
+					get_username(), get_user_level(), get_xp(), get_score(), get_coins()
+				])
 			user_logged_in.emit(user_data)
 
 func _load_or_create_device_id() -> void:
@@ -374,7 +382,8 @@ func start_guest_session() -> void:
 	config.set_value("auth", "user_data", user_data)
 	config.set_value("auth", "is_guest", true)
 	config.save(SESSION_PATH)
-	print("[GameManager] Guest session initiated.")
+	if OS.is_debug_build():
+		print("[GameManager] Guest session initiated.")
 	user_logged_in.emit(user_data)
 
 func set_session(new_token: String, new_user_data: Dictionary, save_to_disk: bool = true) -> void:
@@ -400,7 +409,8 @@ func set_session(new_token: String, new_user_data: Dictionary, save_to_disk: boo
 	
 	if save_to_disk:
 		_save_session_config()
-		print("[GameManager] Session saved locally.")
+		if OS.is_debug_build():
+			print("[GameManager] Session saved locally.")
 		
 	user_logged_in.emit(user_data)
 
@@ -413,7 +423,8 @@ func logout() -> void:
 	# Delete local session file
 	if FileAccess.file_exists(SESSION_PATH):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SESSION_PATH))
-	print("[GameManager] Logged out. Session cleared.")
+	if OS.is_debug_build():
+		print("[GameManager] Logged out. Session cleared.")
 	
 	user_logged_out.emit()
 
@@ -617,7 +628,8 @@ func add_xp(amount: int) -> void:
 		config.set_value("auth", "user_data", user_data)
 		config.set_value("auth", "is_guest", is_guest)
 		config.save(SESSION_PATH)
-	print("[GameManager] Added %d XP. New total: %d" % [amount, user_data["xp"]])
+	if OS.is_debug_build():
+		print("[GameManager] Added %d XP. New total: %d" % [amount, user_data["xp"]])
 	user_data_updated.emit(user_data)
 	user_logged_in.emit(user_data)
 
@@ -627,7 +639,8 @@ func add_coins(amount: int) -> void:
 	var cur_coin = int(user_data.get("coin", 0))
 	user_data["coin"] = max(0, cur_coin + amount)
 	_save_session_config()
-	print("[GameManager] Added %d Coins. New total: %d" % [amount, user_data["coin"]])
+	if OS.is_debug_build():
+		print("[GameManager] Added %d Coins. New total: %d" % [amount, user_data["coin"]])
 	user_data_updated.emit(user_data)
 	user_logged_in.emit(user_data)
 
@@ -639,7 +652,8 @@ func apply_ranked_rewards(score_delta: int, xp_delta: int, coin_delta: int) -> v
 	if coin_delta != 0:
 		user_data["coin"] = max(0, int(user_data.get("coin", 0)) + coin_delta)
 	_save_session_config()
-	print("[GameManager] Applied ranked rewards: score %+d, xp +%d, coin %+d" % [score_delta, xp_delta, coin_delta])
+	if OS.is_debug_build():
+		print("[GameManager] Applied ranked rewards: score %+d, xp +%d, coin %+d" % [score_delta, xp_delta, coin_delta])
 	user_data_updated.emit(user_data)
 	user_logged_in.emit(user_data)
 

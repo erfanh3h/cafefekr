@@ -18,6 +18,7 @@ var board_state: Array = [0, 0, 0, 0, 0, 0, 0, 0, 0] # 0 = empty, 1 = P1 (X), 2 
 var pieces_nodes: Dictionary = {} # cell_index -> Node3D
 var winning_line_node: Node3D = null
 var last_click_time: float = 0.0
+var _cached_piece_meshes: Dictionary = {}
 
 # Luxury Materials
 var mat_cell_light: StandardMaterial3D
@@ -309,6 +310,8 @@ func _build_royal_architecture() -> void:
 			collar.position = Vector3(cx, 0.054, cz)
 			arch_root.add_child(collar)
 
+	BaseGameBoard.bake_and_replace_static_meshes(arch_root, "BakedRoyalArch", true)
+
 
 
 func _generate_3d_board() -> void:
@@ -521,7 +524,8 @@ func _raycast_board_click(screen_pos: Vector2) -> void:
 
 func _attempt_move(cell_idx: int) -> void:
 	if not GameManager.is_game_active:
-		print("[TicTacToe] Move rejected: Game is not started yet!")
+		if OS.is_debug_build():
+			print("[TicTacToe] Move rejected: Game is not started yet!")
 		show_hint("لطفاً تا شروع مسابقه صبر کنید...")
 		AudioManager.play_sound("miss_turn")
 		return
@@ -529,12 +533,14 @@ func _attempt_move(cell_idx: int) -> void:
 		return
 	# 1. Silently ignore clicks while board is locked waiting for server ACK or animating
 	if is_board_locked:
-		print("[TicTacToe] Move ignored: Board is locked waiting for server ACK")
+		if OS.is_debug_build():
+			print("[TicTacToe] Move ignored: Board is locked waiting for server ACK")
 		return
 
 	# 2. Only show 'نوبتت نیست!' if it is legitimately the opponent's turn
 	if not is_my_turn:
-		print("[TicTacToe] Move rejected: not my turn! (Turn: %d, My Role: %d)" % [current_turn, my_player_index])
+		if OS.is_debug_build():
+			print("[TicTacToe] Move rejected: not my turn! (Turn: %d, My Role: %d)" % [current_turn, my_player_index])
 		show_hint("نوبتت نیست!")
 		AudioManager.play_sound("miss_turn")
 		return
@@ -551,7 +557,8 @@ func _attempt_move(cell_idx: int) -> void:
 	last_click_time = Time.get_ticks_msec() / 1000.0
 	_set_cell_hover(cell_idx, false)
 
-	print("[TicTacToe] Attempting move on cell %d as Player %d..." % [cell_idx, my_player_index])
+	if OS.is_debug_build():
+		print("[TicTacToe] Attempting move on cell %d as Player %d..." % [cell_idx, my_player_index])
 	ActionVFXManager.spawn_ui_click_burst(get_viewport().get_mouse_position(), Color(1.0, 0.85, 0.35))
 	cell_clicked.emit(cell_idx)
 	send_move(Commands.Select_Peace, cell_idx)
@@ -560,7 +567,8 @@ func on_piece_selected(user_id: int, target_peace: int, _extra: Dictionary = {})
 	if target_peace < 0 or target_peace >= 9:
 		return
 
-	print("[TicTacToe] Piece placed on cell %d by Player %d" % [target_peace, user_id])
+	if OS.is_debug_build():
+		print("[TicTacToe] Piece placed on cell %d by Player %d" % [target_peace, user_id])
 	board_state[target_peace] = user_id
 	_set_cell_hover(target_peace, false)
 	_spawn_3d_piece(target_peace, user_id)
@@ -580,135 +588,158 @@ func _spawn_3d_piece(cell_idx: int, user_id: int) -> void:
 	var piece_root = Node3D.new()
 	piece_root.name = "Piece_%d" % cell_idx
 
-	var final_y: float = area.position.y + 0.025
+	var final_y: float = area.position.y + (0.025 if user_id == 1 else 0.0265)
+	var piece_key: int = 1 if user_id == 1 else 2
+	var baked_piece: ArrayMesh = _cached_piece_meshes.get(piece_key, null)
+	if baked_piece == null:
+		var tmp_root = Node3D.new()
+		var is_mob: bool = GameManager.is_mobile
 
-	# Shared Royal Medallion Token Pedestal Base
-	var pedestal = MeshInstance3D.new()
-	var ped_cyl = CylinderMesh.new()
-	ped_cyl.top_radius = 0.128
-	ped_cyl.bottom_radius = 0.136
-	ped_cyl.height = 0.010
-	ped_cyl.radial_segments = 36
-	ped_cyl.material = mat_piece_base
-	pedestal.mesh = ped_cyl
-	pedestal.position.y = -0.014
-	piece_root.add_child(pedestal)
+		# Shared Royal Medallion Token Pedestal Base
+		var pedestal = MeshInstance3D.new()
+		var ped_cyl = CylinderMesh.new()
+		ped_cyl.top_radius = 0.128
+		ped_cyl.bottom_radius = 0.136
+		ped_cyl.height = 0.010
+		ped_cyl.radial_segments = 20 if is_mob else 36
+		ped_cyl.rings = 1
+		ped_cyl.material = mat_piece_base
+		pedestal.mesh = ped_cyl
+		pedestal.position.y = -0.014
+		tmp_root.add_child(pedestal)
 
-	var ped_rim = MeshInstance3D.new()
-	var ped_torus = TorusMesh.new()
-	ped_torus.inner_radius = 0.120
-	ped_torus.outer_radius = 0.134
-	ped_torus.rings = 32
-	ped_torus.ring_segments = 32
-	ped_torus.material = mat_gold_trim
-	ped_rim.mesh = ped_torus
-	ped_rim.position.y = -0.009
-	piece_root.add_child(ped_rim)
+		var ped_rim = MeshInstance3D.new()
+		var ped_torus = TorusMesh.new()
+		ped_torus.inner_radius = 0.120
+		ped_torus.outer_radius = 0.134
+		ped_torus.rings = 20 if is_mob else 32
+		ped_torus.ring_segments = 10 if is_mob else 32
+		ped_torus.material = mat_gold_trim
+		ped_rim.mesh = ped_torus
+		ped_rim.position.y = -0.009
+		tmp_root.add_child(ped_rim)
 
-	if user_id == 1:
-		# P1: Royal Sculpted Crimson Ruby & Gold X Cross with Faceted Center Crown
-		final_y = area.position.y + 0.025
-		var cross_container = Node3D.new()
+		if user_id == 1:
+			# P1: Royal Sculpted Crimson Ruby & Gold X Cross with Faceted Center Crown
+			var cross_container = Node3D.new()
 
-		var box1 = BoxMesh.new()
-		box1.size = Vector3(0.228, 0.042, 0.048)
-		box1.material = mat_piece_x
+			var box1 = BoxMesh.new()
+			box1.size = Vector3(0.228, 0.042, 0.048)
+			box1.material = mat_piece_x
 
-		var b1 = MeshInstance3D.new()
-		b1.mesh = box1
-		b1.rotation_degrees.y = 45.0
-		cross_container.add_child(b1)
+			var b1 = MeshInstance3D.new()
+			b1.mesh = box1
+			b1.rotation_degrees.y = 45.0
+			cross_container.add_child(b1)
 
-		var b2 = MeshInstance3D.new()
-		b2.mesh = box1
-		b2.rotation_degrees.y = -45.0
-		cross_container.add_child(b2)
+			var b2 = MeshInstance3D.new()
+			b2.mesh = box1
+			b2.rotation_degrees.y = -45.0
+			cross_container.add_child(b2)
 
-		# Golden spine inlay strips along the top of both X blades
-		var gold_strip_mesh = BoxMesh.new()
-		gold_strip_mesh.size = Vector3(0.205, 0.006, 0.014)
-		gold_strip_mesh.material = mat_gold_trim
+			# Golden spine inlay strips along the top of both X blades
+			var gold_strip_mesh = BoxMesh.new()
+			gold_strip_mesh.size = Vector3(0.205, 0.006, 0.014)
+			gold_strip_mesh.material = mat_gold_trim
 
-		var gs1 = MeshInstance3D.new()
-		gs1.mesh = gold_strip_mesh
-		gs1.position.y = 0.021
-		gs1.rotation_degrees.y = 45.0
-		cross_container.add_child(gs1)
+			var gs1 = MeshInstance3D.new()
+			gs1.mesh = gold_strip_mesh
+			gs1.position.y = 0.021
+			gs1.rotation_degrees.y = 45.0
+			cross_container.add_child(gs1)
 
-		var gs2 = MeshInstance3D.new()
-		gs2.mesh = gold_strip_mesh
-		gs2.position.y = 0.021
-		gs2.rotation_degrees.y = -45.0
-		cross_container.add_child(gs2)
+			var gs2 = MeshInstance3D.new()
+			gs2.mesh = gold_strip_mesh
+			gs2.position.y = 0.021
+			gs2.rotation_degrees.y = -45.0
+			cross_container.add_child(gs2)
 
-		# Center Golden Bezel Ring & Glowing Ruby Cabochon
-		var center_bezel = MeshInstance3D.new()
-		var cb_torus = TorusMesh.new()
-		cb_torus.inner_radius = 0.018
-		cb_torus.outer_radius = 0.030
-		cb_torus.rings = 24
-		cb_torus.ring_segments = 24
-		cb_torus.material = mat_gold_trim
-		center_bezel.mesh = cb_torus
-		center_bezel.position.y = 0.023
-		cross_container.add_child(center_bezel)
+			# Center Golden Bezel Ring & Glowing Ruby Cabochon
+			var center_bezel = MeshInstance3D.new()
+			var cb_torus = TorusMesh.new()
+			cb_torus.inner_radius = 0.018
+			cb_torus.outer_radius = 0.030
+			cb_torus.rings = 16 if is_mob else 24
+			cb_torus.ring_segments = 10 if is_mob else 24
+			cb_torus.material = mat_gold_trim
+			center_bezel.mesh = cb_torus
+			center_bezel.position.y = 0.023
+			cross_container.add_child(center_bezel)
 
-		var ruby_stud = MeshInstance3D.new()
-		var sph_stud = SphereMesh.new()
-		sph_stud.radius = 0.020
-		sph_stud.height = 0.020
-		sph_stud.material = mat_ruby_gem
-		ruby_stud.mesh = sph_stud
-		ruby_stud.position.y = 0.025
-		cross_container.add_child(ruby_stud)
+			var ruby_stud = MeshInstance3D.new()
+			var sph_stud = SphereMesh.new()
+			sph_stud.radius = 0.020
+			sph_stud.height = 0.020
+			sph_stud.radial_segments = 12 if is_mob else 18
+			sph_stud.rings = 6 if is_mob else 10
+			sph_stud.material = mat_ruby_gem
+			ruby_stud.mesh = sph_stud
+			ruby_stud.position.y = 0.025
+			cross_container.add_child(ruby_stud)
 
-		piece_root.add_child(cross_container)
-	else:
-		# P2: Polished Royal Sapphire Gemstone Ring with Concentric Gold Crown & Center Medallion
-		final_y = area.position.y + 0.0265
-		var ring = MeshInstance3D.new()
-		var torus = TorusMesh.new()
-		torus.inner_radius = 0.068
-		torus.outer_radius = 0.118
-		torus.rings = 36
-		torus.ring_segments = 36
-		torus.material = mat_piece_o
-		ring.mesh = torus
-		piece_root.add_child(ring)
+			tmp_root.add_child(cross_container)
+		else:
+			# P2: Polished Royal Sapphire Gemstone Ring with Concentric Gold Crown & Center Medallion
+			var ring = MeshInstance3D.new()
+			var torus = TorusMesh.new()
+			torus.inner_radius = 0.068
+			torus.outer_radius = 0.118
+			torus.rings = 22 if is_mob else 36
+			torus.ring_segments = 12 if is_mob else 36
+			torus.material = mat_piece_o
+			ring.mesh = torus
+			tmp_root.add_child(ring)
 
-		# Inner concentric gold inlay ring
-		var inner_gold = MeshInstance3D.new()
-		var torus_inner = TorusMesh.new()
-		torus_inner.inner_radius = 0.058
-		torus_inner.outer_radius = 0.072
-		torus_inner.rings = 28
-		torus_inner.ring_segments = 28
-		torus_inner.material = mat_gold_trim
-		inner_gold.mesh = torus_inner
-		inner_gold.position.y = 0.004
-		piece_root.add_child(inner_gold)
+			# Inner concentric gold inlay ring
+			var inner_gold = MeshInstance3D.new()
+			var torus_inner = TorusMesh.new()
+			torus_inner.inner_radius = 0.058
+			torus_inner.outer_radius = 0.072
+			torus_inner.rings = 18 if is_mob else 28
+			torus_inner.ring_segments = 10 if is_mob else 28
+			torus_inner.material = mat_gold_trim
+			inner_gold.mesh = torus_inner
+			inner_gold.position.y = 0.004
+			tmp_root.add_child(inner_gold)
 
-		# Center Sapphire Cabochon Jewel
-		var center_sapphire = MeshInstance3D.new()
-		var sap_sph = SphereMesh.new()
-		sap_sph.radius = 0.024
-		sap_sph.height = 0.018
-		sap_sph.material = mat_sapphire_gem
-		center_sapphire.mesh = sap_sph
-		center_sapphire.position.y = 0.002
-		piece_root.add_child(center_sapphire)
+			# Center Sapphire Cabochon Jewel
+			var center_sapphire = MeshInstance3D.new()
+			var sap_sph = SphereMesh.new()
+			sap_sph.radius = 0.024
+			sap_sph.height = 0.018
+			sap_sph.radial_segments = 12 if is_mob else 18
+			sap_sph.rings = 6 if is_mob else 10
+			sap_sph.material = mat_sapphire_gem
+			center_sapphire.mesh = sap_sph
+			center_sapphire.position.y = 0.002
+			tmp_root.add_child(center_sapphire)
 
-		# 4 Cardinal Gold Studs on top of the Sapphire Ring
-		var r_mid = 0.093
-		for stud_pos in [Vector3(r_mid, 0.016, 0), Vector3(-r_mid, 0.016, 0), Vector3(0, 0.016, r_mid), Vector3(0, 0.016, -r_mid)]:
-			var c_stud = MeshInstance3D.new()
+			# 4 Cardinal Gold Studs on top of the Sapphire Ring
+			var r_mid = 0.093
 			var s_sph = SphereMesh.new()
 			s_sph.radius = 0.010
 			s_sph.height = 0.010
+			s_sph.radial_segments = 10 if is_mob else 16
+			s_sph.rings = 5 if is_mob else 8
 			s_sph.material = mat_gold_trim
-			c_stud.mesh = s_sph
-			c_stud.position = stud_pos
-			piece_root.add_child(c_stud)
+			for stud_pos in [Vector3(r_mid, 0.016, 0), Vector3(-r_mid, 0.016, 0), Vector3(0, 0.016, r_mid), Vector3(0, 0.016, -r_mid)]:
+				var c_stud = MeshInstance3D.new()
+				c_stud.mesh = s_sph
+				c_stud.position = stud_pos
+				tmp_root.add_child(c_stud)
+
+		baked_piece = BaseGameBoard.bake_node_tree_to_mesh(tmp_root, true)
+		tmp_root.free()
+		if baked_piece != null:
+			_cached_piece_meshes[piece_key] = baked_piece
+
+	if baked_piece != null:
+		var baked_mi = MeshInstance3D.new()
+		baked_mi.name = "BakedPieceMesh"
+		baked_mi.mesh = baked_piece
+		if GameManager.is_mobile:
+			baked_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		piece_root.add_child(baked_mi)
 
 	# Elevated spawn position with physical squash & stretch drop animation (no hands in TicTacToe)
 	piece_root.position = Vector3(area.position.x, final_y, area.position.z)
@@ -843,7 +874,8 @@ func sync_board_state(new_board: Variant) -> void:
 	if typeof(new_board) != TYPE_ARRAY or (new_board as Array).size() != 9:
 		return
 	var b_arr = new_board as Array
-	print("[TicTacToe 3D] Synchronizing board pieces from server state: %s" % str(b_arr))
+	if OS.is_debug_build():
+		print("[TicTacToe 3D] Synchronizing board pieces from server state: %s" % str(b_arr))
 	for i in range(9):
 		var target_user = int(b_arr[i])
 		board_state[i] = target_user

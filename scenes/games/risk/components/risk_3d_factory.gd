@@ -148,6 +148,9 @@ static func fa_digits(input: Variant) -> String:
 		s = s.replace(en[i], fa[i])
 	return s
 
+static var _cached_risk_die_meshes: Dictionary = {}
+static var _cached_domination_meshes: Dictionary = {}
+
 static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, font: Font) -> Dictionary:
 	var refs: Dictionary = {}
 	var root: Node3D = Node3D.new()
@@ -158,6 +161,9 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 	var y_felt: float = 0.059
 
 	# 1. Inlaid Brass & Mahogany War-Map Frame directly on the Cafe Fekr Green Felt
+	var frame_root: Node3D = Node3D.new()
+	frame_root.name = "WarMapFrame"
+	root.add_child(frame_root)
 	var bezel_specs: Array[Dictionary] = [
 		{"pos": Vector3(0.0, y_felt + 0.003, -0.355), "size": Vector3(1.12, 0.006, 0.014)},
 		{"pos": Vector3(0.0, y_felt + 0.003, 0.365), "size": Vector3(1.12, 0.006, 0.014)},
@@ -172,7 +178,7 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 		bz_mi.mesh = bz_bm
 		bz_mi.position = bspec["pos"]
 		bz_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(bz_mi)
+		frame_root.add_child(bz_mi)
 
 	# 4 Corner Brass Bolsters around the War-Map Perimeter
 	for cx: float in [-0.555, 0.555]:
@@ -187,7 +193,8 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 			bolster.mesh = bl_cyl
 			bolster.position = Vector3(cx, y_felt + 0.005, cz)
 			bolster.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			root.add_child(bolster)
+			frame_root.add_child(bolster)
+	BaseGameBoard.bake_and_replace_static_meshes(frame_root, "BakedWarMapFrame", true)
 
 	# 2. Clean Emerald Felt Playing Bed (No noisy grid lines or twin compass roses competing with sea-lanes)
 
@@ -200,35 +207,41 @@ static func build_tabletop_and_board_frame(parent: Node3D, mats: Dictionary, fon
 	root.add_child(dice_arena)
 	refs["dice_arena"] = dice_arena
 
+	var arena_base: Node3D = Node3D.new()
+	arena_base.name = "ArenaBase"
+	dice_arena.add_child(arena_base)
+
 	var arena_rim: MeshInstance3D = MeshInstance3D.new()
 	var ar_cyl: CylinderMesh = CylinderMesh.new()
 	ar_cyl.top_radius = 0.148
 	ar_cyl.bottom_radius = 0.158
 	ar_cyl.height = 0.016
-	ar_cyl.radial_segments = 20
+	ar_cyl.radial_segments = 16 if HudTheme.is_mobile() else 20
 	ar_cyl.material = mats["bronze"]
 	arena_rim.mesh = ar_cyl
 	arena_rim.position = Vector3(0.0, 0.008, 0.0)
-	dice_arena.add_child(arena_rim)
+	arena_base.add_child(arena_rim)
 
 	var arena_bed: MeshInstance3D = MeshInstance3D.new()
 	var ab_cyl: CylinderMesh = CylinderMesh.new()
 	ab_cyl.top_radius = 0.134
 	ab_cyl.bottom_radius = 0.134
 	ab_cyl.height = 0.018
-	ab_cyl.radial_segments = 20
+	ab_cyl.radial_segments = 16 if HudTheme.is_mobile() else 20
 	ab_cyl.material = mats["emerald_velvet"]
 	arena_bed.mesh = ab_cyl
 	arena_bed.position = Vector3(0.0, 0.009, 0.0)
-	dice_arena.add_child(arena_bed)
+	arena_base.add_child(arena_bed)
+	BaseGameBoard.bake_and_replace_static_meshes(arena_base, "BakedDiceArenaBase", true)
 
-	var dice_light: OmniLight3D = OmniLight3D.new()
-	dice_light.name = "DiceSpotlight"
-	dice_light.light_color = Color(1.0, 0.95, 0.82)
-	dice_light.light_energy = 1.15
-	dice_light.omni_range = 0.65
-	dice_light.position = Vector3(0.0, 0.24, 0.0)
-	dice_arena.add_child(dice_light)
+	if not HudTheme.is_mobile():
+		var dice_light: OmniLight3D = OmniLight3D.new()
+		dice_light.name = "DiceSpotlight"
+		dice_light.light_color = Color(1.0, 0.95, 0.82)
+		dice_light.light_energy = 1.15
+		dice_light.omni_range = 0.65
+		dice_light.position = Vector3(0.0, 0.24, 0.0)
+		dice_arena.add_child(dice_light)
 
 	var dice_area: Area3D = Area3D.new()
 	dice_area.name = "DiceArenaHitArea"
@@ -372,6 +385,7 @@ static func _build_war_room_surround_props(parent: Node3D, mats: Dictionary, y_f
 	barrel.position = Vector3(0.0, 0.030, -0.010)
 	barrel.rotation_degrees = Vector3(82.0, 0.0, 0.0)
 	cannon.add_child(barrel)
+	BaseGameBoard.bake_and_replace_static_meshes(props, "BakedWarRoomProps", true)
 
 static func _build_draw_deck(
 	parent: Node3D,
@@ -623,13 +637,18 @@ static func build_continent_node(
 	root.position = pos
 	parent.add_child(root)
 
+	var is_mob: bool = HudTheme.is_mobile()
+	var seg_cont: int = 18 if is_mob else 28
+	var seg_tor_ring: int = 6 if is_mob else 8
+
 	# 1. Contact Shadow Plinth
 	var shadow_plinth: MeshInstance3D = MeshInstance3D.new()
 	var sp_cyl: CylinderMesh = CylinderMesh.new()
 	sp_cyl.top_radius = rad + 0.013
 	sp_cyl.bottom_radius = rad + 0.017
 	sp_cyl.height = 0.006
-	sp_cyl.radial_segments = 28
+	sp_cyl.radial_segments = seg_cont
+	sp_cyl.rings = 1
 	sp_cyl.material = mats["charcoal"]
 	shadow_plinth.mesh = sp_cyl
 	shadow_plinth.position = Vector3(0.0, 0.003, 0.0)
@@ -642,7 +661,8 @@ static func build_continent_node(
 	bz_cyl.top_radius = rad + 0.008
 	bz_cyl.bottom_radius = rad + 0.011
 	bz_cyl.height = 0.016
-	bz_cyl.radial_segments = 28
+	bz_cyl.radial_segments = seg_cont
+	bz_cyl.rings = 1
 	bz_cyl.material = mats["bronze"]
 	ownership_bezel.mesh = bz_cyl
 	ownership_bezel.position = Vector3(0.0, 0.008, 0.0)
@@ -655,7 +675,8 @@ static func build_continent_node(
 	pl_cyl.top_radius = rad
 	pl_cyl.bottom_radius = rad + 0.003
 	pl_cyl.height = 0.022
-	pl_cyl.radial_segments = 28
+	pl_cyl.radial_segments = seg_cont
+	pl_cyl.rings = 1
 	pl_cyl.material = cont_mat
 	plateau.mesh = pl_cyl
 	plateau.position = Vector3(0.0, 0.012, 0.0)
@@ -666,8 +687,8 @@ static func build_continent_node(
 	var ir_tor: TorusMesh = TorusMesh.new()
 	ir_tor.inner_radius = rad - 0.006
 	ir_tor.outer_radius = rad - 0.002
-	ir_tor.rings = 28
-	ir_tor.ring_segments = 8
+	ir_tor.rings = seg_cont
+	ir_tor.ring_segments = seg_tor_ring
 	ir_tor.material = mats["bronze"]
 	inner_rim.mesh = ir_tor
 	inner_rim.position = Vector3(0.0, 0.023, 0.0)
@@ -683,8 +704,8 @@ static func build_continent_node(
 	var torus: TorusMesh = TorusMesh.new()
 	torus.inner_radius = rad + 0.009
 	torus.outer_radius = rad + 0.020
-	torus.rings = 28
-	torus.ring_segments = 10
+	torus.rings = seg_cont
+	torus.ring_segments = 8 if is_mob else 10
 	torus.material = mats["glow_gold"]
 	aura_ring.mesh = torus
 	aura_ring.position = Vector3(0.0, 0.014, 0.0)
@@ -736,6 +757,17 @@ static func build_continent_node(
 		3: Vector3(-0.044, 0.023, -0.042),
 		4: Vector3(0.044, 0.023, -0.042),
 	}
+	var shared_disc_cyl: CylinderMesh = CylinderMesh.new()
+	shared_disc_cyl.top_radius = 0.019
+	shared_disc_cyl.bottom_radius = 0.020
+	shared_disc_cyl.height = 0.005
+	shared_disc_cyl.radial_segments = 12 if is_mob else 18
+	shared_disc_cyl.rings = 1
+
+	var shared_bb_box: BoxMesh = BoxMesh.new()
+	shared_bb_box.size = Vector3(0.050, 0.005, 0.028)
+	shared_bb_box.material = mats["charcoal"]
+
 	var garrisons: Dictionary = {}
 	for p_idx: int in [1, 2, 3, 4]:
 		var g_node: Node3D = Node3D.new()
@@ -749,13 +781,8 @@ static func build_continent_node(
 		var stack_discs: Array[MeshInstance3D] = []
 		for s_i: int in range(3):
 			var disc_mi: MeshInstance3D = MeshInstance3D.new()
-			var disc_cyl: CylinderMesh = CylinderMesh.new()
-			disc_cyl.top_radius = 0.019
-			disc_cyl.bottom_radius = 0.020
-			disc_cyl.height = 0.005
-			disc_cyl.radial_segments = 18
-			disc_cyl.material = f_mat
-			disc_mi.mesh = disc_cyl
+			disc_mi.mesh = shared_disc_cyl
+			disc_mi.material_override = f_mat
 			disc_mi.position = Vector3(0.0, 0.0025 + float(s_i) * 0.0052, -0.008)
 			g_node.add_child(disc_mi)
 			stack_discs.append(disc_mi)
@@ -769,16 +796,15 @@ static func build_continent_node(
 			var sc: SphereMesh = SphereMesh.new()
 			sc.radius = 0.012
 			sc.height = 0.024
+			sc.radial_segments = 10
+			sc.rings = 6
 			piece_mi.mesh = sc
 			piece_mi.position = Vector3(0.0, 0.018, -0.008)
 		piece_mi.material_override = f_mat
 		g_node.add_child(piece_mi)
 
 		var badge_bg: MeshInstance3D = MeshInstance3D.new()
-		var bb_box: BoxMesh = BoxMesh.new()
-		bb_box.size = Vector3(0.050, 0.005, 0.028)
-		bb_box.material = mats["charcoal"]
-		badge_bg.mesh = bb_box
+		badge_bg.mesh = shared_bb_box
 		badge_bg.position = Vector3(0.0, 0.010, 0.024)
 		badge_bg.rotation_degrees = Vector3(20.0, 0.0, 0.0)
 		g_node.add_child(badge_bg)
@@ -885,34 +911,53 @@ static func build_domination_token_3d(
 	token.name = "DominationToken_" + c_id
 	token.scale = Vector3.ONE * scale_mult
 
-	var coin_mi: MeshInstance3D = MeshInstance3D.new()
-	var coin_cyl: CylinderMesh = CylinderMesh.new()
-	coin_cyl.top_radius = 0.019
-	coin_cyl.bottom_radius = 0.021
-	coin_cyl.height = 0.005
-	coin_cyl.radial_segments = 18
-	coin_cyl.material = mats["gold"]
-	coin_mi.mesh = coin_cyl
-	token.add_child(coin_mi)
+	var cache_key: String = "%s_%d" % [c_id, 1 if crown_mesh != null else 0]
+	var baked_mesh: ArrayMesh = _cached_domination_meshes.get(cache_key, null)
+	if baked_mesh == null:
+		var tmp_root: Node3D = Node3D.new()
+		var coin_mi: MeshInstance3D = MeshInstance3D.new()
+		var coin_cyl: CylinderMesh = CylinderMesh.new()
+		coin_cyl.top_radius = 0.019
+		coin_cyl.bottom_radius = 0.021
+		coin_cyl.height = 0.005
+		coin_cyl.radial_segments = 14 if HudTheme.is_mobile() else 18
+		coin_cyl.rings = 1
+		coin_cyl.material = mats["gold"]
+		coin_mi.mesh = coin_cyl
+		tmp_root.add_child(coin_mi)
 
-	var jewel_mi: MeshInstance3D = MeshInstance3D.new()
-	var jewel_cyl: CylinderMesh = CylinderMesh.new()
-	jewel_cyl.top_radius = 0.013
-	jewel_cyl.bottom_radius = 0.013
-	jewel_cyl.height = 0.006
-	jewel_cyl.radial_segments = 16
-	jewel_cyl.material = RiskMaterials.get_continent_material(c_id, false)
-	jewel_mi.mesh = jewel_cyl
-	jewel_mi.position = Vector3(0.0, 0.001, 0.0)
-	token.add_child(jewel_mi)
+		var jewel_mi: MeshInstance3D = MeshInstance3D.new()
+		var jewel_cyl: CylinderMesh = CylinderMesh.new()
+		jewel_cyl.top_radius = 0.013
+		jewel_cyl.bottom_radius = 0.013
+		jewel_cyl.height = 0.006
+		jewel_cyl.radial_segments = 12 if HudTheme.is_mobile() else 16
+		jewel_cyl.rings = 1
+		jewel_cyl.material = RiskMaterials.get_continent_material(c_id, false)
+		jewel_mi.mesh = jewel_cyl
+		jewel_mi.position = Vector3(0.0, 0.001, 0.0)
+		tmp_root.add_child(jewel_mi)
 
-	if crown_mesh:
-		var cr_mi: MeshInstance3D = MeshInstance3D.new()
-		cr_mi.mesh = crown_mesh
-		cr_mi.scale = Vector3(0.55, 0.65, 0.55)
-		cr_mi.position = Vector3(0.0, 0.004, 0.0)
-		cr_mi.material_override = mats["gold"]
-		token.add_child(cr_mi)
+		if crown_mesh:
+			var cr_mi: MeshInstance3D = MeshInstance3D.new()
+			cr_mi.mesh = crown_mesh
+			cr_mi.scale = Vector3(0.55, 0.65, 0.55)
+			cr_mi.position = Vector3(0.0, 0.004, 0.0)
+			cr_mi.material_override = mats["gold"]
+			tmp_root.add_child(cr_mi)
+
+		baked_mesh = BaseGameBoard.bake_node_tree_to_mesh(tmp_root, true)
+		tmp_root.free()
+		if baked_mesh != null:
+			_cached_domination_meshes[cache_key] = baked_mesh
+
+	if baked_mesh != null:
+		var tok_mi: MeshInstance3D = MeshInstance3D.new()
+		tok_mi.name = "BakedDominationToken"
+		tok_mi.mesh = baked_mesh
+		if HudTheme.is_mobile():
+			tok_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		token.add_child(tok_mi)
 
 	return token
 
@@ -1128,81 +1173,108 @@ static func build_3d_die(is_attacker: bool, mats: Dictionary, _font: Font = null
 	cube_pivot.name = "CubePivot"
 	die_root.add_child(cube_pivot)
 
-	var body_mi: MeshInstance3D = MeshInstance3D.new()
-	var bm: BoxMesh = BoxMesh.new()
-	bm.size = Vector3(s, s, s)
-	bm.material = mats["die_attacker"] if is_attacker else mats["die_defender"]
-	body_mi.mesh = bm
-	cube_pivot.add_child(body_mi)
+	var die_key: int = 1 if is_attacker else 0
+	var baked_die: ArrayMesh = _cached_risk_die_meshes.get(die_key, null)
+	if baked_die == null:
+		var tmp_pivot: Node3D = Node3D.new()
+		var body_mi: MeshInstance3D = MeshInstance3D.new()
+		var bm: BoxMesh = BoxMesh.new()
+		bm.size = Vector3(s, s, s)
+		bm.material = mats["die_attacker"] if is_attacker else mats["die_defender"]
+		body_mi.mesh = bm
+		tmp_pivot.add_child(body_mi)
 
-	for cx: float in [-half * 0.94, half * 0.94]:
-		for cy: float in [-half * 0.94, half * 0.94]:
-			for cz: float in [-half * 0.94, half * 0.94]:
-				var stud_mi: MeshInstance3D = MeshInstance3D.new()
-				var sm: SphereMesh = SphereMesh.new()
-				sm.radius = 0.0064
-				sm.height = 0.0128
-				sm.material = mats["gold"] if is_attacker else mats["brass"]
-				stud_mi.mesh = sm
-				stud_mi.position = Vector3(cx, cy, cz)
-				cube_pivot.add_child(stud_mi)
+		var stud_sph: SphereMesh = SphereMesh.new()
+		stud_sph.radius = 0.0064
+		stud_sph.height = 0.0128
+		stud_sph.radial_segments = 8
+		stud_sph.rings = 4
+		stud_sph.material = mats["gold"] if is_attacker else mats["brass"]
+		for cx: float in [-half * 0.94, half * 0.94]:
+			for cy: float in [-half * 0.94, half * 0.94]:
+				for cz: float in [-half * 0.94, half * 0.94]:
+					var stud_mi: MeshInstance3D = MeshInstance3D.new()
+					stud_mi.mesh = stud_sph
+					stud_mi.position = Vector3(cx, cy, cz)
+					tmp_pivot.add_child(stud_mi)
 
-	var edge_t: float = 0.0046
-	var edge_l: float = s * 0.94
-	var trim_mat: Material = mats["gold"] if is_attacker else mats["brass"]
-	for s1: float in [-half * 0.96, half * 0.96]:
-		for s2: float in [-half * 0.96, half * 0.96]:
-			var ex: MeshInstance3D = MeshInstance3D.new()
-			var bx: BoxMesh = BoxMesh.new()
-			bx.size = Vector3(edge_l, edge_t, edge_t)
-			bx.material = trim_mat
-			ex.mesh = bx
-			ex.position = Vector3(0.0, s1, s2)
-			cube_pivot.add_child(ex)
+		var edge_t: float = 0.0046
+		var edge_l: float = s * 0.94
+		var trim_mat: Material = mats["gold"] if is_attacker else mats["brass"]
+		var bx: BoxMesh = BoxMesh.new()
+		bx.size = Vector3(edge_l, edge_t, edge_t)
+		bx.material = trim_mat
+		var by: BoxMesh = BoxMesh.new()
+		by.size = Vector3(edge_t, edge_l, edge_t)
+		by.material = trim_mat
+		var bz: BoxMesh = BoxMesh.new()
+		bz.size = Vector3(edge_t, edge_t, edge_l)
+		bz.material = trim_mat
+		for s1: float in [-half * 0.96, half * 0.96]:
+			for s2: float in [-half * 0.96, half * 0.96]:
+				var ex: MeshInstance3D = MeshInstance3D.new()
+				ex.mesh = bx
+				ex.position = Vector3(0.0, s1, s2)
+				tmp_pivot.add_child(ex)
 
-			var ey: MeshInstance3D = MeshInstance3D.new()
-			var by: BoxMesh = BoxMesh.new()
-			by.size = Vector3(edge_t, edge_l, edge_t)
-			by.material = trim_mat
-			ey.mesh = by
-			ey.position = Vector3(s1, 0.0, s2)
-			cube_pivot.add_child(ey)
+				var ey: MeshInstance3D = MeshInstance3D.new()
+				ey.mesh = by
+				ey.position = Vector3(s1, 0.0, s2)
+				tmp_pivot.add_child(ey)
 
-			var ez: MeshInstance3D = MeshInstance3D.new()
-			var bz: BoxMesh = BoxMesh.new()
-			bz.size = Vector3(edge_t, edge_t, edge_l)
-			bz.material = trim_mat
-			ez.mesh = bz
-			ez.position = Vector3(s1, s2, 0.0)
-			cube_pivot.add_child(ez)
+				var ez: MeshInstance3D = MeshInstance3D.new()
+				ez.mesh = bz
+				ez.position = Vector3(s1, s2, 0.0)
+				tmp_pivot.add_child(ez)
 
-	var d: float = s * 0.265
-	var face_pips: Dictionary = {
-		Vector3(0, 1, 0): [Vector2(0, 0)],
-		Vector3(0, -1, 0): [Vector2(-d, -d), Vector2(-d, 0), Vector2(-d, d), Vector2(d, -d), Vector2(d, 0), Vector2(d, d)],
-		Vector3(0, 0, 1): [Vector2(-d, -d), Vector2(d, d)],
-		Vector3(0, 0, -1): [Vector2(-d, -d), Vector2(d, -d), Vector2(0, 0), Vector2(-d, d), Vector2(d, d)],
-		Vector3(1, 0, 0): [Vector2(-d, -d), Vector2(0, 0), Vector2(d, d)],
-		Vector3(-1, 0, 0): [Vector2(-d, -d), Vector2(d, -d), Vector2(-d, d), Vector2(d, d)],
-	}
-	for normal: Vector3 in face_pips.keys():
-		var is_one_face: bool = (normal == Vector3(0, 1, 0))
-		for uv: Vector2 in face_pips[normal]:
-			var pip_mi: MeshInstance3D = MeshInstance3D.new()
-			var pm: SphereMesh = SphereMesh.new()
-			pm.radius = 0.0086 if is_one_face else 0.0068
-			pm.height = 0.0172 if is_one_face else 0.0136
-			pm.material = mats["pip_ivory"]
-			pip_mi.mesh = pm
-			var p3: Vector3 = Vector3.ZERO
-			if absf(normal.y) > 0.5:
-				p3 = Vector3(uv.x, normal.y * (half + 0.0018), uv.y)
-			elif absf(normal.z) > 0.5:
-				p3 = Vector3(uv.x, uv.y, normal.z * (half + 0.0018))
-			else:
-				p3 = Vector3(normal.x * (half + 0.0018), uv.y, uv.x)
-			pip_mi.position = p3
-			cube_pivot.add_child(pip_mi)
+		var d: float = s * 0.265
+		var face_pips: Dictionary = {
+			Vector3(0, 1, 0): [Vector2(0, 0)],
+			Vector3(0, -1, 0): [Vector2(-d, -d), Vector2(-d, 0), Vector2(-d, d), Vector2(d, -d), Vector2(d, 0), Vector2(d, d)],
+			Vector3(0, 0, 1): [Vector2(-d, -d), Vector2(d, d)],
+			Vector3(0, 0, -1): [Vector2(-d, -d), Vector2(d, -d), Vector2(0, 0), Vector2(-d, d), Vector2(d, d)],
+			Vector3(1, 0, 0): [Vector2(-d, -d), Vector2(0, 0), Vector2(d, d)],
+			Vector3(-1, 0, 0): [Vector2(-d, -d), Vector2(d, -d), Vector2(-d, d), Vector2(d, d)],
+		}
+		var pm_one: SphereMesh = SphereMesh.new()
+		pm_one.radius = 0.0086
+		pm_one.height = 0.0172
+		pm_one.radial_segments = 10
+		pm_one.rings = 5
+		pm_one.material = mats["pip_ivory"]
+		var pm_std: SphereMesh = SphereMesh.new()
+		pm_std.radius = 0.0068
+		pm_std.height = 0.0136
+		pm_std.radial_segments = 10
+		pm_std.rings = 5
+		pm_std.material = mats["pip_ivory"]
+		for normal: Vector3 in face_pips.keys():
+			var is_one_face: bool = (normal == Vector3(0, 1, 0))
+			for uv: Vector2 in face_pips[normal]:
+				var pip_mi: MeshInstance3D = MeshInstance3D.new()
+				pip_mi.mesh = pm_one if is_one_face else pm_std
+				var p3: Vector3 = Vector3.ZERO
+				if absf(normal.y) > 0.5:
+					p3 = Vector3(uv.x, normal.y * (half + 0.0018), uv.y)
+				elif absf(normal.z) > 0.5:
+					p3 = Vector3(uv.x, uv.y, normal.z * (half + 0.0018))
+				else:
+					p3 = Vector3(normal.x * (half + 0.0018), uv.y, uv.x)
+				pip_mi.position = p3
+				tmp_pivot.add_child(pip_mi)
+
+		baked_die = BaseGameBoard.bake_node_tree_to_mesh(tmp_pivot, true)
+		tmp_pivot.free()
+		if baked_die != null:
+			_cached_risk_die_meshes[die_key] = baked_die
+
+	if baked_die != null:
+		var die_mi: MeshInstance3D = MeshInstance3D.new()
+		die_mi.name = "BakedBattleDie"
+		die_mi.mesh = baked_die
+		if HudTheme.is_mobile():
+			die_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		cube_pivot.add_child(die_mi)
 
 	return die_root
 

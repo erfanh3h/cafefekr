@@ -180,40 +180,54 @@ func _on_pentago_socket_event(_ns: String, event_name: String, data: Variant) ->
 	if cmd_id == Commands.Peace_Rotated and typeof(payload) == TYPE_DICTIONARY:
 		on_peace_rotated(payload)
 
+var _was_rot_phase_active: bool = true
+
 func _process(delta: float) -> void:
 	if not visible or not is_inside_tree():
 		return
 
 	_pulse_time += delta
 	var pulse_fast: float = 1.0 + 0.08 * sin(_pulse_time * 6.0)
-	var pulse_rot: float = 1.0 + 0.07 * sin(_pulse_time * 5.2)
+	var vec_fast := Vector3(pulse_fast, 1.0, pulse_fast)
 
-	for i in range(NUM_CELLS):
-		if i < cell_legal_halos.size() and is_instance_valid(cell_legal_halos[i]) and cell_legal_halos[i].visible:
-			cell_legal_halos[i].scale = Vector3(pulse_fast, 1.0, pulse_fast)
+	for h in cell_legal_halos:
+		if h and h.visible:
+			h.scale = vec_fast
 
 	var rot_phase_active: bool = GameManager.is_game_active and is_my_turn and is_selection_played and not is_rotation_played and not is_animating_rotation
-	for r_idx in range(8):
-		if r_idx < rotation_btn_nodes.size() and is_instance_valid(rotation_btn_nodes[r_idx]):
+	if rot_phase_active:
+		_was_rot_phase_active = true
+		var pulse_rot: float = 1.0 + 0.07 * sin(_pulse_time * 5.2)
+		var sin_rot: float = sin(_pulse_time * 5.2)
+		var sin_dial: float = sin(_pulse_time * 4.8)
+		var r_count: int = mini(8, rotation_btn_nodes.size())
+		var d_count: int = rotation_btn_dials.size()
+		for r_idx in range(r_count):
 			var btn_node = rotation_btn_nodes[r_idx]
+			if not btn_node:
+				continue
 			var rot_id: int = r_idx + 1
-			var is_ccw: bool = (rot_id % 2 == 1)
-			var dir_sign: float = 1.0 if is_ccw else -1.0
-			if rot_phase_active:
-				var is_hov: bool = (hovered_rotation_id == rot_id)
-				var s_val: float = 1.14 if is_hov else pulse_rot
-				btn_node.scale = Vector3(s_val, 1.0, s_val)
-				btn_node.position.y = BOARD_SURFACE_Y + (0.018 if is_hov else 0.011 + 0.003 * sin(_pulse_time * 5.2))
-				if r_idx < rotation_btn_dials.size() and is_instance_valid(rotation_btn_dials[r_idx]):
-					if is_hov:
-						rotation_btn_dials[r_idx].rotation.y += delta * 2.8 * dir_sign
-					else:
-						rotation_btn_dials[r_idx].rotation.y = dir_sign * 0.36 * sin(_pulse_time * 4.8)
-			else:
+			var dir_sign: float = 1.0 if (rot_id % 2 == 1) else -1.0
+			var is_hov: bool = (hovered_rotation_id == rot_id)
+			var s_val: float = 1.14 if is_hov else pulse_rot
+			btn_node.scale = Vector3(s_val, 1.0, s_val)
+			btn_node.position.y = BOARD_SURFACE_Y + (0.018 if is_hov else 0.011 + 0.003 * sin_rot)
+			if r_idx < d_count and rotation_btn_dials[r_idx]:
+				if is_hov:
+					rotation_btn_dials[r_idx].rotation.y += delta * 2.8 * dir_sign
+				else:
+					rotation_btn_dials[r_idx].rotation.y = dir_sign * 0.36 * sin_dial
+	elif _was_rot_phase_active:
+		_was_rot_phase_active = false
+		var r_count: int = mini(8, rotation_btn_nodes.size())
+		var d_count: int = rotation_btn_dials.size()
+		for r_idx in range(r_count):
+			var btn_node = rotation_btn_nodes[r_idx]
+			if btn_node:
 				btn_node.scale = Vector3.ONE
 				btn_node.position.y = BOARD_SURFACE_Y + 0.004
-				if r_idx < rotation_btn_dials.size() and is_instance_valid(rotation_btn_dials[r_idx]):
-					rotation_btn_dials[r_idx].rotation.y = 0.0
+			if r_idx < d_count and rotation_btn_dials[r_idx]:
+				rotation_btn_dials[r_idx].rotation.y = 0.0
 
 	if is_instance_valid(quadrant_spin_preview) and quadrant_spin_preview.visible:
 		var dir_sign: float = 1.0 if (hovered_rotation_id % 2 == 1) else -1.0

@@ -41,7 +41,8 @@ func connect_url(url: String) -> Error:
 	if err != OK:
 		push_error("[SocketIO] Failed to connect to URL: %s, Error: %d" % [url, err])
 	else:
-		print("[SocketIO] Connecting to %s ..." % url)
+		if OS.is_debug_build():
+			print("[SocketIO] Connecting to %s ..." % url)
 	return err
 
 func disconnect_from_host() -> void:
@@ -68,7 +69,8 @@ func _process(delta: float) -> void:
 				connected_namespaces.clear()
 				connecting_namespaces.clear()
 				disconnected_from_server.emit()
-				print("[SocketIO] Connection closed.")
+				if OS.is_debug_build():
+					print("[SocketIO] Connection closed.")
 
 func connect_namespace(ns: String, auth: Dictionary = {}) -> void:
 	var prev_auth = pending_auth.get(ns, null)
@@ -136,7 +138,8 @@ func _handle_packet(packet: String) -> void:
 				ping_timeout = data.get("pingTimeout", 20000) / 1000.0
 				is_connected_to_server = true
 				connected_to_server.emit()
-				print("[SocketIO] Connected. Handshake received. SID: %s" % data.get("sid", ""))
+				if OS.is_debug_build():
+					print("[SocketIO] Connected. Handshake received. SID: %s" % data.get("sid", ""))
 				
 				# Connect any pending namespaces that were not already triggered by connected_to_server
 				for ns in pending_auth.keys():
@@ -179,14 +182,16 @@ func _handle_socketio_packet(body: String) -> void:
 				return
 			connected_namespaces[ns] = true
 			namespace_connected.emit(ns)
-			print("[SocketIO] Namespace '%s' connected." % ns)
+			if OS.is_debug_build():
+				print("[SocketIO] Namespace '%s' connected." % ns)
 
 		"1": # Disconnect ACK for namespace
 			connecting_namespaces.erase(ns)
 			connected_namespaces.erase(ns)
 			pending_auth.erase(ns)
 			namespace_disconnected.emit(ns)
-			print("[SocketIO] Namespace '%s' disconnected." % ns)
+			if OS.is_debug_build():
+				print("[SocketIO] Namespace '%s' disconnected." % ns)
 
 		"2": # Event
 			var json = JSON.new()

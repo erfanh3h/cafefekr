@@ -299,7 +299,7 @@ func _build_2d_action_dock() -> void:
 func _is_start_dialog_open() -> bool:
 	if not GameManager.is_game_active:
 		return true
-	var hud = get_tree().root.find_child("BaseGameHUD", true, false)
+	var hud = get_base_game_hud()
 	if is_instance_valid(hud):
 		if "is_start_overlay_dismissed" in hud and not hud.is_start_overlay_dismissed:
 			return true
