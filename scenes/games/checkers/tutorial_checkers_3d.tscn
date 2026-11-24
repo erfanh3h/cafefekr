@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://ck8x93y0pqch4" path="res://scenes/games/checkers/checkers_3d.tscn" id="1_base_chk"]
+[ext_resource type="Script" path="res://scenes/games/checkers/tutorial_checkers_3d.gd" id="2_tut_chk"]
+
+[node name="TutorialCheckers3D" instance=ExtResource("1_base_chk")]
+script = ExtResource("2_tut_chk")

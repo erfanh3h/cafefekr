@@ -38,6 +38,7 @@ var _active_lesson: GameTutorialLesson = null
 var _lesson_board: Node3D = null
 var _lesson_game_type: String = ""
 var _is_final_lesson_step: bool = false
+var _suppress_next_show: bool = false
 
 var _steps: Array[TutorialStep] = []
 var _step_index: int = -1
@@ -707,9 +708,20 @@ func show_final_lesson_step(step: TutorialStep, idx: int, total: int) -> void:
 
 
 func hide_overlay_temporarily() -> void:
+	_suppress_next_show = true
 	if is_instance_valid(_overlay):
 		_overlay.set_exit_button_visible(false)
 		_overlay.hide_overlay()
+
+
+func reshow_current_step() -> void:
+	_suppress_next_show = false
+	if is_library_game_tutorial_active() and _step_index >= 0 and _step_index < _steps.size() and is_instance_valid(_overlay):
+		_overlay.set_exit_button_visible(true)
+		var step: TutorialStep = _steps[_step_index]
+		var total_display: int = _active_lesson.get_total_display_steps(_steps.size()) if _active_lesson != null else _steps.size()
+		var display_idx: int = _active_lesson.get_display_step_index(_step_index) if _active_lesson != null else _step_index
+		_overlay.show_step(step, display_idx, total_display, false)
 
 
 func nudge_overlay(msg: String) -> void:
@@ -1025,9 +1037,13 @@ func _go_back_step() -> void:
 func _present_current_step() -> void:
 	if _step_index < 0 or _step_index >= _steps.size():
 		return
+	_suppress_next_show = false
 	var step: TutorialStep = _steps[_step_index]
 	if step.on_enter.is_valid():
 		step.on_enter.call()
+	if _suppress_next_show:
+		_suppress_next_show = false
+		return
 
 	var total_display: int = 9 if _active_flow == "game" else _steps.size()
 	var display_idx: int = _step_index
@@ -1066,6 +1082,7 @@ func _stop_any_active_tour() -> void:
 	_lesson_board = null
 	_lesson_game_type = ""
 	_is_final_lesson_step = false
+	_suppress_next_show = false
 	is_game_tutorial_active = false
 	is_main_tutorial_active = false
 	_active_flow = ""
