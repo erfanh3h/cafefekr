@@ -108,8 +108,8 @@ var server_host: String:
 			return str(config.get_value("network", "host"))
 		if OS.get_name() == "Android":
 			# Default host on Android, can be configured via user://server.cfg
-			return "85.133.205.107"
-		return "85.133.205.107"
+			return "192.168.1.2"
+		return "192.168.1.2"
 
 var is_online: bool:
 	get:
@@ -403,9 +403,9 @@ func send_select_mine(piece_data: Variant) -> void:
 	send_game_command(Commands.Select_Mine, piece_data)
 
 func send_game_command(command_id: String, data: Variant = null) -> void:
-	if GameManager.is_spectating:
+	if GameManager.is_spectating or GameManager.is_tutorial_mode:
 		if OS.is_debug_build():
-			print("[NetworkManager] Blocked outbound game command (%s) while in spectator mode." % command_id)
+			print("[NetworkManager] Blocked outbound game command (%s) while in spectator/tutorial mode." % command_id)
 		return
 	var payload = {
 		"id": command_id,
@@ -414,7 +414,7 @@ func send_game_command(command_id: String, data: Variant = null) -> void:
 	socket.emit_event("/game", "user_command", payload)
 
 func send_game_reaction(reaction_id: Variant) -> void:
-	if GameManager.is_spectating:
+	if GameManager.is_spectating or GameManager.is_tutorial_mode:
 		return
 	socket.emit_event("/game", "user_reaction", reaction_id)
 

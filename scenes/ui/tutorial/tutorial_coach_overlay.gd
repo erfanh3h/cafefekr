@@ -11,6 +11,7 @@ extends CanvasLayer
 
 signal next_pressed()
 signal back_pressed()
+signal exit_pressed()
 signal target_area_tapped()
 
 const FONT_HEKAYAT: FontFile = preload("res://assets/fonts/hekayat.ttf")
@@ -54,6 +55,7 @@ var _nudge_lbl: Label = null
 var _btn_row: HBoxContainer = null
 var _btn_next: Button = null
 var _btn_back: Button = null
+var _btn_exit: Button = null
 var _dots_container: HBoxContainer = null
 
 var _current_step: TutorialStep = null
@@ -135,6 +137,35 @@ func _build_ui() -> void:
 	_pointer_lbl.add_theme_constant_override("shadow_offset_y", 2)
 	_pointer_lbl.add_theme_constant_override("shadow_outline_size", 4)
 	_root.add_child(_pointer_lbl)
+
+	# Optional compact Exit pill (used for Library game tutorials where game HUD top header is hidden)
+	_btn_exit = Button.new()
+	_btn_exit.name = "BtnTutorialExit"
+	_btn_exit.text = "✕ خروج از آموزش"
+	_btn_exit.visible = false
+	_btn_exit.focus_mode = Control.FOCUS_NONE
+	_btn_exit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_btn_exit.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_btn_exit.offset_left = -210.0
+	_btn_exit.offset_top = 48.0
+	_btn_exit.offset_right = -24.0
+	_btn_exit.offset_bottom = 100.0
+	_btn_exit.add_theme_font_override("font", FONT_VAZIR)
+	_btn_exit.add_theme_font_size_override("font_size", 20)
+	_btn_exit.add_theme_color_override("font_color", CREAM_TEXT)
+	var exit_sb := StyleBoxFlat.new()
+	exit_sb.bg_color = Color(0.18, 0.11, 0.08, 0.90)
+	exit_sb.border_color = Color(0.86, 0.68, 0.32, 0.85)
+	exit_sb.set_border_width_all(2)
+	exit_sb.set_corner_radius_all(14)
+	_btn_exit.add_theme_stylebox_override("normal", exit_sb)
+	_btn_exit.add_theme_stylebox_override("hover", exit_sb)
+	_btn_exit.add_theme_stylebox_override("pressed", exit_sb)
+	_btn_exit.pressed.connect(func():
+		AudioManager.sfx_tap()
+		exit_pressed.emit()
+	)
+	_root.add_child(_btn_exit)
 
 	# Authentic Cafe Fekr `dialog.png` 9-slice Coach Card
 	# IMPORTANT: Keep LAYOUT_DIRECTION_LTR on container/labels and set TEXT_DIRECTION_RTL +
@@ -424,6 +455,11 @@ func hide_overlay() -> void:
 	_has_target = false
 	visible = false
 	set_process(false)
+
+
+func set_exit_button_visible(show_exit: bool) -> void:
+	if is_instance_valid(_btn_exit):
+		_btn_exit.visible = show_exit
 
 
 func show_nudge(text: String) -> void:

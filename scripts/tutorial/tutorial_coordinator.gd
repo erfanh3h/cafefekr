@@ -19,6 +19,7 @@ extends Node
 ##      Match History, Friends, Notifications, Exit).
 
 signal game_tutorial_finished()
+signal library_tutorial_finished(game_type: String)
 signal main_tutorial_finished()
 
 const TUTORIAL_BOARD_SCENE: PackedScene = preload("res://scenes/games/tictactoe/tutorial_tictactoe_3d.tscn")
@@ -33,10 +34,14 @@ var _base_game_hud: Control = null
 var _menu_container: Control = null
 var _main_tab_shell: Control = null
 var _board: TutorialTicTacToe3D = null
+var _active_lesson: GameTutorialLesson = null
+var _lesson_board: Node3D = null
+var _lesson_game_type: String = ""
+var _is_final_lesson_step: bool = false
 
 var _steps: Array[TutorialStep] = []
 var _step_index: int = -1
-var _active_flow: String = "" # "" | "game" | "main"
+var _active_flow: String = "" # "" | "game" | "library_game" | "main"
 var _game_phase: String = ""  # "" | "hud_tour" | "move_1" | "move_2" | "move_3" | "win"
 var _saved_return_btn_text: String = DEFAULT_RETURN_BTN_TEXT
 var _session_token: int = 0
@@ -52,6 +57,7 @@ func _ready() -> void:
 	add_child(_overlay)
 	_overlay.next_pressed.connect(_on_overlay_next)
 	_overlay.back_pressed.connect(_on_overlay_back)
+	_overlay.exit_pressed.connect(_on_overlay_exit)
 
 
 # ==============================================================================
@@ -509,6 +515,221 @@ func finish_offline_game_tutorial() -> void:
 	game_tutorial_finished.emit()
 
 
+# ==============================================================================
+# PHASE 1B: LIBRARY INTERACTIVE GAME TUTORIALS (EXTENSIBLE PER-GAME LESSONS)
+# ==============================================================================
+
+func start_library_game_tutorial(game_type: String, cafe_table: Node, base_game_hud: Control, menu_container: Control) -> bool:
+	if is_game_tutorial_active:
+		return false
+	var lesson: GameTutorialLesson = GameTutorialRegistry.create_lesson(game_type)
+	if lesson == null:
+		return false
+	var board_scene: PackedScene = lesson.get_tutorial_board_scene()
+	if board_scene == null:
+		return false
+
+	_stop_any_active_tour()
+
+	_session_token += 1
+	var my_token: int = _session_token
+	is_game_tutorial_active = true
+	_active_flow = "library_game"
+	_game_phase = "lesson"
+	_active_lesson = lesson
+	_lesson_game_type = GameRegistry.normalize_type(game_type)
+	_is_final_lesson_step = false
+
+	_cafe_table = cafe_table
+	_base_game_hud = base_game_hud
+	_menu_container = menu_container
+
+	# 1. Configure pure local offline match state in GameManager
+	GameManager.reset_match_state()
+	GameManager.is_tutorial_mode = true
+	GameManager.active_game_id = ""
+	GameManager.set_game_type(_lesson_game_type)
+	GameManager.current_round = 1
+	GameManager.max_rounds = 1
+	GameManager.p1_score = 0
+	GameManager.p2_score = 0
+	GameManager.my_player_index = 1
+	GameManager.current_turn = 1
+	GameManager.is_game_active = true
+	GameManager.is_spectating = false
+
+	var my_name: String = GameManager.get_username()
+	if my_name.is_empty():
+		my_name = "شما"
+	var my_image: int = int(GameManager.user_data.get("image", GameManager.user_data.get("user_image", 0)))
+	var my_level: int = GameManager.get_user_level()
+	GameManager.match_players = [
+		{
+			"gamer_id": 1,
+			"team_id": 1,
+			"user_id": "tutorial_player",
+			"name": my_name,
+			"username": my_name,
+			"image": my_image,
+			"level": my_level,
+			"score": 0,
+			"not_played_turns": 0
+		},
+		{
+			"gamer_id": 2,
+			"team_id": 2,
+			"user_id": "tutorial_bot",
+			"name": "استاد کافه",
+			"username": "استاد کافه",
+			"image": 1,
+			"level": 5,
+			"score": 0,
+			"not_played_turns": 0
+		}
+	]
+
+	# 2. Switch UI cleanly into the 3D game table scene
+	if is_instance_valid(_menu_container):
+		_menu_container.visible = false
+	if is_instance_valid(_cafe_table):
+		_cafe_table.visible = true
+		if _cafe_table.has_method("update_opponent_avatar"):
+			_cafe_table.update_opponent_avatar(1)
+
+	# 3. Prepare BaseGameHUD in library tutorial mode (hide top header & sub-header rail)
+	if is_instance_valid(_base_game_hud):
+		if "is_offline_tutorial" in _base_game_hud:
+			_base_game_hud.set("is_offline_tutorial", true)
+		_base_game_hud.reset_for_new_match(false)
+		_base_game_hud.visible = true
+		_base_game_hud.setup_match(lesson.get_tutorial_title_fa(), lesson.get_tutorial_subtitle_fa())
+		_base_game_hud.is_game_started = true
+		_base_game_hud.is_start_overlay_dismissed = true
+		_base_game_hud.force_dismiss_start_overlay(false)
+		_base_game_hud.hide_turn_banner()
+		_base_game_hud.pause_turn_timer()
+		if is_instance_valid(_base_game_hud.top_header_slot):
+			_base_game_hud.top_header_slot.visible = false
+		if is_instance_valid(_base_game_hud.sub_header_rail):
+			_base_game_hud.sub_header_rail.visible = false
+
+	if is_instance_valid(_overlay):
+		_overlay.set_exit_button_visible(true)
+
+	# 4. Spawn inherited Tutorial<Game>3D board onto CafeTable
+	if is_instance_valid(_cafe_table) and _cafe_table.has_method("spawn_board"):
+		_lesson_board = _cafe_table.spawn_board(board_scene)
+
+	if is_instance_valid(_lesson_board):
+		_active_lesson.on_board_ready(_lesson_board, self)
+
+	AudioManager.play_game_music()
+
+	# Wait briefly for the 3D camera intro glide & header layout to settle
+	get_tree().create_timer(1.05).timeout.connect(func():
+		if not is_instance_valid(self) or not is_game_tutorial_active or _session_token != my_token:
+			return
+		if _active_lesson == null:
+			return
+		_steps = _active_lesson.build_steps(self)
+		_step_index = -1
+		_advance_step()
+	)
+	return true
+
+
+func finish_library_game_tutorial() -> void:
+	if not is_game_tutorial_active or _active_flow != "library_game":
+		return
+	var finished_type: String = _lesson_game_type
+	_session_token += 1
+	is_game_tutorial_active = false
+	_active_flow = ""
+	_game_phase = ""
+	_is_final_lesson_step = false
+	_lesson_game_type = ""
+
+	if _active_lesson != null:
+		_active_lesson.cleanup()
+		_active_lesson = null
+
+	if is_instance_valid(_overlay):
+		_overlay.set_exit_button_visible(false)
+		_overlay.hide_overlay()
+
+	if is_instance_valid(_cafe_table):
+		if _cafe_table.has_method("clear_board"):
+			_cafe_table.clear_board()
+		if _cafe_table.has_method("reset_table_state"):
+			_cafe_table.reset_table_state()
+		if _cafe_table.has_method("transition_to_menu_view"):
+			_cafe_table.transition_to_menu_view(0.4)
+		_cafe_table.visible = false
+	_lesson_board = null
+
+	if is_instance_valid(_base_game_hud):
+		if is_instance_valid(_base_game_hud.top_header_slot):
+			_base_game_hud.top_header_slot.visible = true
+		if is_instance_valid(_base_game_hud.sub_header_rail):
+			_base_game_hud.sub_header_rail.visible = true
+		if "is_offline_tutorial" in _base_game_hud:
+			_base_game_hud.set("is_offline_tutorial", false)
+		_base_game_hud.reset_for_new_match(false)
+		_base_game_hud.visible = false
+
+	if is_instance_valid(_menu_container):
+		_menu_container.visible = true
+	GameManager.reset_match_state()
+	AudioManager.play_theme_music()
+
+	library_tutorial_finished.emit(finished_type)
+
+
+func is_library_game_tutorial_active() -> bool:
+	return is_game_tutorial_active and _active_flow == "library_game"
+
+
+func advance_lesson_step() -> void:
+	if is_library_game_tutorial_active():
+		_advance_step()
+
+
+func show_custom_step(step: TutorialStep, idx: int, total: int) -> void:
+	if is_library_game_tutorial_active() and is_instance_valid(_overlay):
+		_is_final_lesson_step = false
+		_overlay.show_step(step, idx, total, false)
+
+
+func show_final_lesson_step(step: TutorialStep, idx: int, total: int) -> void:
+	if is_library_game_tutorial_active() and is_instance_valid(_overlay):
+		_is_final_lesson_step = true
+		_overlay.show_step(step, idx, total, false)
+
+
+func hide_overlay_temporarily() -> void:
+	if is_instance_valid(_overlay):
+		_overlay.set_exit_button_visible(false)
+		_overlay.hide_overlay()
+
+
+func nudge_overlay(msg: String) -> void:
+	if is_instance_valid(_overlay):
+		_overlay.show_nudge(msg)
+
+
+func show_hud_turn(turn: int, toast_msg: String = "") -> void:
+	if is_instance_valid(_base_game_hud):
+		_base_game_hud.update_turn(turn)
+		_base_game_hud.pause_turn_timer()
+		if not toast_msg.is_empty():
+			_base_game_hud.show_toast_hint(toast_msg)
+
+
+func show_hud_toast(msg: String) -> void:
+	if is_instance_valid(_base_game_hud) and not msg.is_empty():
+		_base_game_hud.show_toast_hint(msg)
+
+
 func _connect_game_tutorial_hud_listeners() -> void:
 	_disconnect_game_tutorial_hud_listeners()
 	if is_instance_valid(_base_game_hud):
@@ -784,6 +1005,8 @@ func _advance_step() -> void:
 	if _step_index >= _steps.size():
 		if _active_flow == "main":
 			_finish_main_page_tutorial()
+		elif _active_flow == "library_game":
+			finish_library_game_tutorial()
 		return
 
 	_present_current_step()
@@ -807,22 +1030,42 @@ func _present_current_step() -> void:
 		step.on_enter.call()
 
 	var total_display: int = 9 if _active_flow == "game" else _steps.size()
+	var display_idx: int = _step_index
+	if _active_flow == "library_game" and _active_lesson != null:
+		total_display = _active_lesson.get_total_display_steps(_steps.size())
+		display_idx = _active_lesson.get_display_step_index(_step_index)
 	var can_back: bool = (_active_flow == "main" and _step_index > 0) or (_active_flow == "game" and _step_index > 0 and _game_phase == "hud_tour")
-	_overlay.show_step(step, _step_index, total_display, can_back)
+	_overlay.show_step(step, display_idx, total_display, can_back)
 
 
 func _on_overlay_next() -> void:
-	if _active_flow == "game" or _active_flow == "main":
+	if _active_flow == "library_game":
+		if _is_final_lesson_step:
+			finish_library_game_tutorial()
+		else:
+			_advance_step()
+	elif _active_flow == "game" or _active_flow == "main":
 		_advance_step()
 
 
 func _on_overlay_back() -> void:
-	if _active_flow == "game" or _active_flow == "main":
+	if _active_flow == "game" or _active_flow == "main" or _active_flow == "library_game":
 		_go_back_step()
+
+
+func _on_overlay_exit() -> void:
+	if _active_flow == "library_game":
+		finish_library_game_tutorial()
 
 
 func _stop_any_active_tour() -> void:
 	_disconnect_game_tutorial_hud_listeners()
+	if _active_lesson != null:
+		_active_lesson.cleanup()
+		_active_lesson = null
+	_lesson_board = null
+	_lesson_game_type = ""
+	_is_final_lesson_step = false
 	is_game_tutorial_active = false
 	is_main_tutorial_active = false
 	_active_flow = ""
@@ -830,6 +1073,7 @@ func _stop_any_active_tour() -> void:
 	_steps.clear()
 	_step_index = -1
 	if is_instance_valid(_overlay):
+		_overlay.set_exit_button_visible(false)
 		_overlay.hide_overlay()
 
 

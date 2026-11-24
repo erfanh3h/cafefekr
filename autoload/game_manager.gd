@@ -81,6 +81,7 @@ func set_chat_and_stickers_disabled(disabled: bool) -> void:
 var is_spectating: bool = false
 var spectated_game_id: String = ""
 var spectator_count: int = 0
+var is_tutorial_mode: bool = false
 
 var is_my_turn: bool:
 	get:
@@ -103,6 +104,7 @@ func reset_match_state() -> void:
 	active_game_id = ""
 	is_game_active = false
 	is_spectating = false
+	is_tutorial_mode = false
 	spectated_game_id = ""
 	spectator_count = 0
 	match_players.clear()

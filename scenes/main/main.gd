@@ -459,6 +459,8 @@ func _setup_signals() -> void:
 			if not gid.is_empty():
 				NetworkManager.request_spectate_game(gid)
 		)
+		if main_tab_shell.has_signal("game_tutorial_requested"):
+			main_tab_shell.game_tutorial_requested.connect(_on_library_game_tutorial_requested)
 
 	# Legacy Menu Button Connections (if present)
 	if is_instance_valid(btn_ranked):
@@ -2627,7 +2629,10 @@ func _on_offline_retry_pressed() -> void:
 
 func _on_leave_game_pressed() -> void:
 	if is_instance_valid(tutorial_coordinator) and tutorial_coordinator.is_game_tutorial_active:
-		tutorial_coordinator.finish_offline_game_tutorial()
+		if tutorial_coordinator.is_library_game_tutorial_active():
+			tutorial_coordinator.finish_library_game_tutorial()
+		else:
+			tutorial_coordinator.finish_offline_game_tutorial()
 		return
 	if GameManager.is_spectating:
 		_on_leave_spectate_pressed()
@@ -4057,6 +4062,22 @@ func _setup_tutorial_coordinator() -> void:
 	tutorial_coordinator.name = "TutorialCoordinator"
 	add_child(tutorial_coordinator)
 	tutorial_coordinator.game_tutorial_finished.connect(_on_offline_game_tutorial_finished)
+	tutorial_coordinator.library_tutorial_finished.connect(_on_library_game_tutorial_finished)
+
+
+func _on_library_game_tutorial_requested(game_id: String) -> void:
+	if not is_instance_valid(tutorial_coordinator):
+		_setup_tutorial_coordinator()
+	if tutorial_coordinator.is_game_tutorial_active:
+		return
+	_hide_backdrop()
+	tutorial_coordinator.start_library_game_tutorial(game_id, cafe_table, base_game_hud, menu_container)
+
+
+func _on_library_game_tutorial_finished(_game_type: String) -> void:
+	user_header.update_ui()
+	if is_instance_valid(main_tab_shell):
+		main_tab_shell.switch_to_tab("library")
 
 
 func _start_prelogin_offline_tutorial() -> void:

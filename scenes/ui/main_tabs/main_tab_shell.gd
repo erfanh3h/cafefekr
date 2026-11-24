@@ -22,6 +22,7 @@ signal multi_rank_pressed()
 signal classic_rank_pressed()
 signal lobby_pressed()
 signal spectate_match_requested(game_id: String, game_type: String)
+signal game_tutorial_requested(game_id: String)
 
 @onready var bg_rect: TextureRect = $BackgroundLayer/BgRect
 @onready var bg_rect_fade: TextureRect = $BackgroundLayer/BgRectFade
@@ -284,6 +285,11 @@ func _wire_tab_signals(tab_name: String, tab_inst: Control) -> void:
 			tab_inst.user_profile_requested.connect(func(u_dict: Dictionary):
 				UserProfileDialog.show_user(u_dict, "", self)
 			)
+		"library":
+			if tab_inst.has_signal("game_tutorial_requested"):
+				tab_inst.game_tutorial_requested.connect(func(gid: String):
+					game_tutorial_requested.emit(gid)
+				)
 
 
 func _wire_subpage_signals(_page_name: String, page_inst: Control) -> void:

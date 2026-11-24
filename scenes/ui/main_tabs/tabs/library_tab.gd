@@ -4,6 +4,8 @@ extends Control
 ## Browses all 25 board games with category filtering, instant search,
 ## rich thumbnails, narratives, complete rules, and gameplay instructions.
 
+signal game_tutorial_requested(game_id: String)
+
 const GameRegistry = preload("res://scripts/games/game_registry.gd")
 
 @onready var grid_container: GridContainer = $OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/Scroll/GridContainer
@@ -160,6 +162,8 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(46.0, 14.0))
 
+	var has_tutorial: bool = GameTutorialRegistry.has_interactive_tutorial(g["id"])
+
 	var click_btn := Button.new()
 	click_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
 	click_btn.flat = true
@@ -180,10 +184,17 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	margin.add_theme_constant_override("margin_bottom", 12)
 	card.add_child(margin)
 
+	var icon_path = str(g["icon"])
+	var icon_tex: Texture2D = load(icon_path) if ResourceLoader.exists(icon_path) else CafeSocialTheme.get_game_thumb(g["id"])
+
 	var hbox := HBoxContainer.new()
 	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_theme_constant_override("separation", 14)
 	margin.add_child(hbox)
+
+	if has_tutorial:
+		var tut_btn := _create_tutorial_row_button(g["id"])
+		hbox.add_child(tut_btn)
 
 	var text_col := VBoxContainer.new()
 	text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -228,14 +239,51 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	var icon_path = str(g["icon"])
-	if ResourceLoader.exists(icon_path):
-		icon.texture = load(icon_path)
-	else:
-		icon.texture = CafeSocialTheme.get_game_thumb(g["id"])
+	icon.texture = icon_tex
 	hbox.add_child(icon)
 
 	return card
+
+
+func _create_tutorial_row_button(game_id: String) -> PanelContainer:
+	var box := PanelContainer.new()
+	box.custom_minimum_size = Vector2(72, 72)
+	box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.14, 0.09, 0.06, 0.92)
+	sb.border_color = Color(0.78, 0.60, 0.28, 0.85)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(14)
+	sb.content_margin_left = 4.0
+	sb.content_margin_right = 4.0
+	sb.content_margin_top = 4.0
+	sb.content_margin_bottom = 4.0
+	box.add_theme_stylebox_override("panel", sb)
+
+	var btn := Button.new()
+	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn.flat = true
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ActionVFXManager.apply_button_juice(btn, "tap_button")
+	btn.pressed.connect(func():
+		AudioManager.sfx_tap()
+		game_tutorial_requested.emit(game_id)
+	)
+	box.add_child(btn)
+
+	var tut_icon := TextureRect.new()
+	tut_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tut_icon.custom_minimum_size = Vector2(58, 58)
+	tut_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	tut_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tut_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tut_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if ResourceLoader.exists("res://assets/images/game.png"):
+		tut_icon.texture = load("res://assets/images/game.png")
+	box.add_child(tut_icon)
+
+	return box
 
 
 func show_browse_view() -> void:
