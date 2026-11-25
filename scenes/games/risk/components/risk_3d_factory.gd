@@ -140,6 +140,15 @@ const STRATEGY_META: Dictionary = {
 	},
 }
 
+static func disable_shadows_recursive(node: Node) -> void:
+	if not is_instance_valid(node):
+		return
+	if node is GeometryInstance3D:
+		(node as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for ch: Node in node.get_children():
+		disable_shadows_recursive(ch)
+
+
 static func fa_digits(input: Variant) -> String:
 	var s: String = str(input)
 	var en: Array[String] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]

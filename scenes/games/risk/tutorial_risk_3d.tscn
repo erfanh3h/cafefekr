@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://risk3dscene01" path="res://scenes/games/risk/risk_3d.tscn" id="1_base_risk"]
+[ext_resource type="Script" path="res://scenes/games/risk/tutorial_risk_3d.gd" id="2_tut_risk"]
+
+[node name="TutorialRisk3D" instance=ExtResource("1_base_risk")]
+script = ExtResource("2_tut_risk")

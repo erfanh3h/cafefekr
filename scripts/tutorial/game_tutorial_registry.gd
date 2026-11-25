@@ -19,6 +19,9 @@ const _LESSONS: Dictionary = {
 	GameTypes.YATZY: "res://scripts/tutorial/lessons/yatzy_lesson.gd",
 	GameTypes.BATTLESHIP: "res://scripts/tutorial/lessons/battleship_lesson.gd",
 	GameTypes.QUIZ: "res://scripts/tutorial/lessons/quiz_lesson.gd",
+	GameTypes.UNO: "res://scripts/tutorial/lessons/uno_lesson.gd",
+	GameTypes.RISK: "res://scripts/tutorial/lessons/risk_lesson.gd",
+	GameTypes.COUP: "res://scripts/tutorial/lessons/coup_lesson.gd",
 }
 
 

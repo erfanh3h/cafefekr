@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://uno3dscene0001" path="res://scenes/games/uno/uno_3d.tscn" id="1_base_uno"]
+[ext_resource type="Script" path="res://scenes/games/uno/tutorial_uno_3d.gd" id="2_tut_uno"]
+
+[node name="TutorialUNO3D" instance=ExtResource("1_base_uno")]
+script = ExtResource("2_tut_uno")

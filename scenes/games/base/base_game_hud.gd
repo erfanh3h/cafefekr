@@ -661,7 +661,7 @@ func _process(delta: float) -> void:
 	if is_game_finished or is_round_finished or (round_finish_banner and round_finish_banner.visible):
 		return
 
-	if is_timer_active and is_game_started and not is_pause_active and not is_round_finished:
+	if is_timer_active and is_game_started and not is_pause_active and not is_round_finished and not is_offline_tutorial:
 		turn_time_left = max(0.0, turn_time_left - delta)
 		var sec = int(ceil(turn_time_left))
 
@@ -675,7 +675,7 @@ func _process(delta: float) -> void:
 
 				last_second_ticked = sec
 
-				if is_start_overlay_dismissed and not is_countdown_running and (GameManager.is_my_turn or not GameManager.is_game_active) and not is_game_finished and not is_round_finished:
+				if not is_offline_tutorial and is_start_overlay_dismissed and not is_countdown_running and (GameManager.is_my_turn or not GameManager.is_game_active) and not is_game_finished and not is_round_finished:
 
 					AudioManager.play_sound("time")
 

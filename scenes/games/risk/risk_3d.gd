@@ -261,6 +261,7 @@ func _build_3d_war_room() -> void:
 
 	# 5. 3D Commander Bastion Stations Around the Table
 	_rebuild_player_stations_3d()
+	Risk3DFactory.disable_shadows_recursive(_board_root)
 
 func _rebuild_player_stations_3d() -> void:
 	if not is_instance_valid(_board_root):
@@ -323,6 +324,8 @@ func _rebuild_player_stations_3d() -> void:
 			FontHekayat,
 			_king_mesh
 		)
+
+	Risk3DFactory.disable_shadows_recursive(st_group)
 
 	var table: Node = get_tree().get_first_node_in_group("cafe_table")
 	if is_instance_valid(table):
@@ -3099,6 +3102,7 @@ func _animate_returned_continent_cards_to_table(from_continent_id: String, count
 		var fly_card: Node3D = Node3D.new()
 		fly_card.name = "ReturnedContinentCard_%d" % i
 		var card_mesh: MeshInstance3D = MeshInstance3D.new()
+		card_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var b_mesh: BoxMesh = BoxMesh.new()
 		b_mesh.size = Vector3(0.11, 0.006, 0.15)
 		card_mesh.mesh = b_mesh
@@ -3106,6 +3110,7 @@ func _animate_returned_continent_cards_to_table(from_continent_id: String, count
 		fly_card.add_child(card_mesh)
 
 		var rim_mesh: MeshInstance3D = MeshInstance3D.new()
+		rim_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var r_box: BoxMesh = BoxMesh.new()
 		r_box.size = Vector3(0.116, 0.004, 0.156)
 		rim_mesh.mesh = r_box

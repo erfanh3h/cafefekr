@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://coup3dscene0001" path="res://scenes/games/coup/coup_3d.tscn" id="1_base_coup"]
+[ext_resource type="Script" path="res://scenes/games/coup/tutorial_coup_3d.gd" id="2_tut_coup"]
+
+[node name="TutorialCoup3D" instance=ExtResource("1_base_coup")]
+script = ExtResource("2_tut_coup")
