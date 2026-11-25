@@ -673,7 +673,7 @@ static func _populate_live_games_discovery(host: Control, list_vbox: VBoxContain
 	var game_filters: Array = [
 		{"id": "", "label": "همه"},
 		{"id": "Ludo", "label": "منچ"},
-		{"id": "Monopoly", "label": "مونوپولی"},
+		{"id": "Monopoly", "label": "روپولی"},
 		{"id": "Chess", "label": "شطرنج"},
 		{"id": "Backgammon", "label": "تخته‌نرد"},
 		{"id": "Risk", "label": "ریسک"},

@@ -315,65 +315,64 @@ func _init_materials() -> void:
 	mat_socket_well.roughness = 0.55
 
 	# Model 1: Player 1 (Red) Sculpted Commander Ring
-	# Model 1: Player 1 (White) Sculpted Commander Ring
 	mat_ring_p1_body = StandardMaterial3D.new()
-	mat_ring_p1_body.albedo_color = Color(0.96, 0.95, 0.92)
+	mat_ring_p1_body.albedo_color = Color(0.88, 0.14, 0.18)
 	mat_ring_p1_body.metallic = 0.08
 	mat_ring_p1_body.roughness = 0.16
 	mat_ring_p1_body.clearcoat_enabled = false
 	mat_ring_p1_body.clearcoat = 0.95
 	mat_ring_p1_body.clearcoat_roughness = 0.08
 	mat_ring_p1_body.emission_enabled = true
-	mat_ring_p1_body.emission = Color(0.85, 0.85, 0.82)
-	mat_ring_p1_body.emission_energy_multiplier = 0.15
+	mat_ring_p1_body.emission = Color(0.76, 0.10, 0.14)
+	mat_ring_p1_body.emission_energy_multiplier = 0.18
 
 	mat_ring_p1_gold = StandardMaterial3D.new()
 	mat_ring_p1_gold.albedo_color = Color(1.0, 0.82, 0.30)
 	mat_ring_p1_gold.metallic = 0.94
 	mat_ring_p1_gold.roughness = 0.16
 
-	# Model 2: Player 2 (Black) Sculpted Commander Ring
+	# Model 2: Player 2 (Blue) Sculpted Commander Ring
 	mat_ring_p2_body = StandardMaterial3D.new()
-	mat_ring_p2_body.albedo_color = Color(0.12, 0.12, 0.12)
+	mat_ring_p2_body.albedo_color = Color(0.12, 0.42, 0.94)
 	mat_ring_p2_body.metallic = 0.08
 	mat_ring_p2_body.roughness = 0.16
 	mat_ring_p2_body.clearcoat_enabled = false
 	mat_ring_p2_body.clearcoat = 0.95
 	mat_ring_p2_body.clearcoat_roughness = 0.08
 	mat_ring_p2_body.emission_enabled = true
-	mat_ring_p2_body.emission = Color(0.18, 0.18, 0.20)
-	mat_ring_p2_body.emission_energy_multiplier = 0.15
+	mat_ring_p2_body.emission = Color(0.10, 0.34, 0.82)
+	mat_ring_p2_body.emission_energy_multiplier = 0.18
 
 	mat_ring_p2_plat = StandardMaterial3D.new()
 	mat_ring_p2_plat.albedo_color = Color(0.86, 0.91, 0.98)
 	mat_ring_p2_plat.metallic = 0.92
 	mat_ring_p2_plat.roughness = 0.16
 
-	# Model 3: Reversible Dual-Sided Yinsh Disk
+	# Model 3: Reversible Dual-Sided Yinsh Disk (Red / Blue)
 	mat_disk_edge_gold = StandardMaterial3D.new()
 	mat_disk_edge_gold.albedo_color = Color(0.92, 0.76, 0.32)
 	mat_disk_edge_gold.metallic = 0.88
 	mat_disk_edge_gold.roughness = 0.22
 
 	mat_disk_p1_face = StandardMaterial3D.new()
-	mat_disk_p1_face.albedo_color = Color(0.96, 0.95, 0.92)
+	mat_disk_p1_face.albedo_color = Color(0.88, 0.14, 0.18)
 	mat_disk_p1_face.metallic = 0.08
 	mat_disk_p1_face.roughness = 0.20
 	mat_disk_p1_face.clearcoat_enabled = false
 	mat_disk_p1_face.clearcoat = 0.90
 	mat_disk_p1_face.emission_enabled = true
-	mat_disk_p1_face.emission = Color(0.85, 0.85, 0.82)
-	mat_disk_p1_face.emission_energy_multiplier = 0.15
+	mat_disk_p1_face.emission = Color(0.76, 0.10, 0.14)
+	mat_disk_p1_face.emission_energy_multiplier = 0.18
 
 	mat_disk_p2_face = StandardMaterial3D.new()
-	mat_disk_p2_face.albedo_color = Color(0.12, 0.12, 0.12)
+	mat_disk_p2_face.albedo_color = Color(0.12, 0.42, 0.94)
 	mat_disk_p2_face.metallic = 0.08
 	mat_disk_p2_face.roughness = 0.20
 	mat_disk_p2_face.clearcoat_enabled = false
 	mat_disk_p2_face.clearcoat = 0.90
 	mat_disk_p2_face.emission_enabled = true
-	mat_disk_p2_face.emission = Color(0.18, 0.18, 0.20)
-	mat_disk_p2_face.emission_energy_multiplier = 0.15
+	mat_disk_p2_face.emission = Color(0.10, 0.34, 0.82)
+	mat_disk_p2_face.emission_energy_multiplier = 0.18
 
 	# Interactive Halos & Previews
 	mat_halo_legal = StandardMaterial3D.new()
@@ -406,16 +405,16 @@ func _init_materials() -> void:
 
 	mat_ghost_p1 = StandardMaterial3D.new()
 	mat_ghost_p1.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ghost_p1.albedo_color = Color(0.96, 0.95, 0.92, 0.46)
+	mat_ghost_p1.albedo_color = Color(0.88, 0.14, 0.18, 0.46)
 	mat_ghost_p1.emission_enabled = true
-	mat_ghost_p1.emission = Color(0.96, 0.95, 0.92)
+	mat_ghost_p1.emission = Color(0.88, 0.14, 0.18)
 	mat_ghost_p1.emission_energy_multiplier = 0.8
 
 	mat_ghost_p2 = StandardMaterial3D.new()
 	mat_ghost_p2.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ghost_p2.albedo_color = Color(0.12, 0.12, 0.12, 0.46)
+	mat_ghost_p2.albedo_color = Color(0.12, 0.42, 0.94, 0.46)
 	mat_ghost_p2.emission_enabled = true
-	mat_ghost_p2.emission = Color(0.20, 0.20, 0.22)
+	mat_ghost_p2.emission = Color(0.12, 0.42, 0.94)
 	mat_ghost_p2.emission_energy_multiplier = 0.8
 
 	# Luxury Top Supply Box & 5-in-a-Row VFX Materials
@@ -2151,11 +2150,11 @@ func _spawn_five_in_row_beam_vfx(disk_ids: Array, gamer_id: int) -> void:
 	s_cyl.bottom_radius = 0.034
 	s_cyl.height = dist + 0.04
 	s_cyl.radial_segments = 24
-	s_cyl.mesh = s_cyl
-	s_cyl.position = center_pos
-	s_cyl.rotation.y = rot_y
-	s_cyl.rotation.x = PI * 0.5
-	s_cyl.material_override = mat_beam_sheath
+	sheath.mesh = s_cyl
+	sheath.position = center_pos
+	sheath.rotation.y = rot_y
+	sheath.rotation.x = PI * 0.5
+	sheath.material_override = mat_beam_sheath
 	fx_root.add_child(sheath)
 
 	var tw_s = sheath.create_tween()

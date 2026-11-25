@@ -22,7 +22,7 @@ const GAMES_LIST: Array[Dictionary] = [
 	{"id": "Risk", "key": "risk", "name_fa": "ریسک استرایک", "multi": true},
 	{"id": "Uno", "key": "uno", "name_fa": "اونو", "multi": true},
 	{"id": "Coup", "key": "coup", "name_fa": "کودتا", "multi": true},
-	{"id": "Monopoly", "key": "monopoly", "name_fa": "مونوپولی", "multi": true},
+	{"id": "Monopoly", "key": "monopoly", "name_fa": "روپولی", "multi": true},
 	{"id": "Quiz", "key": "quiz", "name_fa": "کوییز", "multi": true},
 	{"id": "Pentago", "key": "pentago", "name_fa": "پنتاگو", "multi": false},
 	{"id": "FekrBekr", "key": "fekrbekr", "name_fa": "فکر بکر", "multi": false},

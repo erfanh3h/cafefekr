@@ -255,7 +255,7 @@ static func _get_game_icon_texture(game_type: String) -> Texture2D:
 		norm = "uno"
 	elif norm == "coup" or norm == "کودتا":
 		norm = "coup"
-	elif norm == "monopoly" or norm == "مونوپولی" or norm == "منوپولی":
+	elif norm == "monopoly" or norm == "روپولی" or norm == "مونوپولی" or norm == "منوپولی":
 		norm = "monopoly"
 	elif norm == "quoridor" or norm == "کوریدور":
 		norm = "quoridor"

@@ -610,7 +610,7 @@ func _normalize_game_icon_slug(g_type: String) -> String:
 			return "backgammon"
 		"منچ":
 			return "ludo"
-		"مونوپولی", "منوپولی":
+		"روپولی", "مونوپولی", "منوپولی":
 			return "monopoly"
 		"دوز", "تیکتاکتو":
 			return "tictactoe"
@@ -685,7 +685,7 @@ func _get_game_fa_name(g_type: String) -> String:
 		"uno": return "اونو"
 		"quiz": return "کوییز"
 		"coup": return "کودتا"
-		"monopoly": return "مونوپولی"
+		"monopoly": return "روپولی"
 		_: return "بازی فکری"
 
 

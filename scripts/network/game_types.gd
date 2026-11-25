@@ -54,6 +54,6 @@ static func get_display_name_fa(game_type: String) -> String:
 		QUIZ: return "کوییز"
 		QUORIDOR: return "کوریدور"
 		COUP: return "کودتا"
-		MONOPOLY: return "مونوپولی"
+		MONOPOLY: return "روپولی"
 		_: return game_type
 

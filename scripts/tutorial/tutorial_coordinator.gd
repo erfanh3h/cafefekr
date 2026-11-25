@@ -1051,6 +1051,9 @@ func _present_current_step() -> void:
 		_suppress_next_show = false
 		return
 
+	if _active_flow == "library_game" and is_instance_valid(_overlay):
+		_overlay.set_exit_button_visible(true)
+
 	var total_display: int = 9 if _active_flow == "game" else _steps.size()
 	var display_idx: int = _step_index
 	if _active_flow == "library_game" and _active_lesson != null:

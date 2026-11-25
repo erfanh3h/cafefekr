@@ -535,7 +535,7 @@ func _build_center_dice_sanctuary() -> void:
 
 	# Title Crest Above Dice
 	var crest = Label3D.new()
-	crest.text = "مونوپولی"
+	crest.text = "روپولی"
 	crest.font = FontHekayat
 	crest.font_size = 60
 	crest.outline_size = 14
@@ -783,7 +783,7 @@ func sync_board_visuals(players_arr: Array, tiles_arr: Array, active_turn: int, 
 			var sum_d: int = d1 + d2
 			_center_roll_label.text = "تاس %s + %s = %s" % [MonopolyData.fa_num(d1), MonopolyData.fa_num(d2), MonopolyData.fa_num(sum_d)]
 	elif not _is_animating and is_instance_valid(_center_roll_label):
-		_center_roll_label.text = "نوبت پرتاب تاس" if can_roll else "مونوپولی کافه فکر"
+		_center_roll_label.text = "نوبت پرتاب تاس" if can_roll else "روپولی کافه فکر"
 
 	for pv in players_arr:
 		if typeof(pv) != TYPE_DICTIONARY:

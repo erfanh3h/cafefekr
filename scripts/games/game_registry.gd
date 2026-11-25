@@ -435,7 +435,7 @@ static var _registry: Dictionary = {
 	},
 	GameTypes.MONOPOLY: {
 		"id": GameTypes.MONOPOLY,
-		"name_fa": "مونوپولی",
+		"name_fa": "روپولی",
 		"narrative": "ساختمان‌ها را تصاحب کنید، با هوش اقتصادی معامله و مزایده ببندید و به بزرگ‌ترین سرمایه‌دار پایتخت تبدیل شوید!",
 		"board_scene": MONOPOLY_SCENE,
 		"top_header_scene": MONOPOLY_TOP_HEADER_SCENE,

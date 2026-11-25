@@ -103,7 +103,7 @@ func setup_match(game_name_fa: String, mode_title: String, round_num: int, max_r
 	_apply_layout_for_player_count(total_players)
 	if is_instance_valid(lbl_round):
 		lbl_round.text = "%s (%s نفره)" % [game_name_fa, _fa_digits(total_players)]
-	set_match_meta_text("🎲 مونوپولی (%s نفره)" % _fa_digits(total_players))
+	set_match_meta_text("🎲 روپولی (%s نفره)" % _fa_digits(total_players))
 	_render_player_badges(0, 0)
 
 

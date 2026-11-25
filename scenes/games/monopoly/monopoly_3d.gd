@@ -1,6 +1,6 @@
 extends BaseGameBoard
 
-# Monopoly3D - Monopoly (مونوپولی) 3D Tabletop & Gamer-Friendly Large-Font HUD
+# Monopoly3D - Roopoly (روپولی) 3D Tabletop & Gamer-Friendly Large-Font HUD
 # - Ludo-inspired walnut & brass 3D cabinet, 32 perimeter tiles, 3D houses/hotels, dual Yatzy dice, and royal clearcoat pawns.
 # - Complete 2-4 player Monopoly rules: Buy/Auction, Houses/Hotels, Mortgage/Unmortgage, Jail options, Debt resolution, and Player Trade.
 # - Gamer-friendly high-contrast typography (24px-38px UI, 34px-54px 3D).
@@ -947,7 +947,7 @@ func _refresh_hud_dock() -> void:
 		trade_btn.disabled = not can_open_trade
 
 	if not GameManager.is_game_active:
-		_set_step_guidance("⏳ آماده‌سازی", "⏳ در حال آماده‌سازی تخته مونوپولی...", false)
+		_set_step_guidance("⏳ آماده‌سازی", "⏳ در حال آماده‌سازی تخته روپولی...", false)
 		return
 
 	if am_bankrupt:
@@ -1838,8 +1838,8 @@ func _build_banner_text() -> String:
 				return "🏗️ مدیریت املاک یا پایان نوبت"
 			return "⏳ %s در حال مدیریت املاک..." % _get_player_name(current_turn)
 		"finished":
-			return "🏆 پایان مسابقه مونوپولی!"
-	return "مونوپولی"
+			return "🏆 پایان مسابقه روپولی!"
+	return "روپولی"
 
 
 func _describe_event(ev: Dictionary) -> String:
