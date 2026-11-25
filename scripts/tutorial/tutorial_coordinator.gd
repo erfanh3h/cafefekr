@@ -742,6 +742,12 @@ func show_hud_toast(msg: String) -> void:
 		_base_game_hud.show_toast_hint(msg)
 
 
+func zoom_table_in(steps: int = 2) -> void:
+	if is_instance_valid(_cafe_table) and _cafe_table.has_method("zoom_in"):
+		for _i in range(steps):
+			_cafe_table.zoom_in()
+
+
 func _connect_game_tutorial_hud_listeners() -> void:
 	_disconnect_game_tutorial_hud_listeners()
 	if is_instance_valid(_base_game_hud):

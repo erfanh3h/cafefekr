@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://battleship3d01" path="res://scenes/games/battleship/battleship_3d.tscn" id="1_base_bs"]
+[ext_resource type="Script" path="res://scenes/games/battleship/tutorial_battleship_3d.gd" id="2_tut_bs"]
+
+[node name="TutorialBattleShip3D" instance=ExtResource("1_base_bs")]
+script = ExtResource("2_tut_bs")
