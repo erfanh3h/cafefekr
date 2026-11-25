@@ -28,6 +28,9 @@ const _LESSONS: Dictionary = {
 	GameTypes.QUORIDOR: "res://scripts/tutorial/lessons/quoridor_lesson.gd",
 	GameTypes.RPC: "res://scripts/tutorial/lessons/rpc_lesson.gd",
 	GameTypes.MNUMBERS: "res://scripts/tutorial/lessons/mnumbers_lesson.gd",
+	GameTypes.FEKRBEKR: "res://scripts/tutorial/lessons/fekrbekr_lesson.gd",
+	GameTypes.BOXFOUR: "res://scripts/tutorial/lessons/boxfour_lesson.gd",
+	GameTypes.MSWEEPER: "res://scripts/tutorial/lessons/msweeper_lesson.gd",
 }
 
 
