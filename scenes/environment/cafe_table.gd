@@ -1738,8 +1738,8 @@ func _trigger_cafe_prop_interaction(entry: Dictionary) -> void:
 
 func _init_lounge_materials() -> void:
 	var wood_tex: Texture2D = null
-	if ResourceLoader.exists("res://assets/images/background2.png"):
-		wood_tex = load("res://assets/images/background2.png") as Texture2D
+	if ResourceLoader.exists("res://assets/images/background2.jpg"):
+		wood_tex = load("res://assets/images/background2.jpg") as Texture2D
 
 	# Lightweight mobile-optimized Persian craft & antique book textures (128-512px, VRAM-compressed)
 	var tex_baize: Texture2D = _load_cafe_tex("parlor_baize_felt.jpg")

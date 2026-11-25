@@ -1,7 +1,7 @@
 [gd_scene load_steps=18 format=3 uid="uid://df7x83y0pqch3"]
 
 [ext_resource type="Script" path="res://scenes/games/chess/chess_3d.gd" id="1_chess_script"]
-[ext_resource type="Texture2D" path="res://assets/images/background2.png" id="2_wood_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/background2.jpg" id="2_wood_tex"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_plinth"]
 albedo_color = Color(0.16, 0.10, 0.06, 1)
