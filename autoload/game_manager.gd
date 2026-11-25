@@ -9,6 +9,7 @@ signal user_data_updated(user_data: Dictionary)
 signal game_started(game_id: String, game_data: Dictionary)
 signal game_finished(winner_id: Variant)
 signal chat_and_stickers_toggled(disabled: bool)
+signal server_config_updated(config: Dictionary)
 
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SESSION_PATH: String = "user://session.cfg"
@@ -29,6 +30,7 @@ var optional_update_dismissed: bool = false
 var allowed_version: String = ""
 var latest_version: String = ""
 var update_download_url: String = ""
+var windows_link: String = ""
 var last_auth_error: String = ""
 
 func get_app_version() -> String:

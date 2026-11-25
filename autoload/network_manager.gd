@@ -214,6 +214,8 @@ func fetch_server_config(callback: Callable = Callable()) -> void:
 				GameManager.latest_version = str(cfg.get("latest_version", ""))
 				GameManager.allowed_version = str(cfg.get("allowed_version", ""))
 				GameManager.update_download_url = str(cfg.get("download_url", cfg.get("update_url", "")))
+				GameManager.windows_link = str(cfg.get("windows_link", "")).strip_edges()
+				GameManager.server_config_updated.emit(cfg)
 				var app_ver = GameManager.get_app_version()
 				if not GameManager.is_version_ok(app_ver, GameManager.allowed_version):
 					GameManager.is_force_update_required = true
