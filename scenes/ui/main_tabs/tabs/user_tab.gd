@@ -34,6 +34,14 @@ var _selected_frame_id: int = 1
 var _font_hekayat: Font = preload("res://assets/fonts/hekayat.ttf")
 var _font_vazir: Font = preload("res://assets/fonts/Vazir.ttf")
 
+var _cosmetic_tile_styles: Dictionary = {}
+var _cosmetic_check_style: StyleBoxFlat = null
+var _cosmetic_lock_style: StyleBoxFlat = null
+var _cosmetics_built: bool = false
+var _avatar_entries: Array[Dictionary] = []
+var _frames_built: bool = false
+var _frame_entries: Array[Dictionary] = []
+
 
 func _ready() -> void:
 	var subnav_bar: PanelContainer = get_node_or_null("OuterMargin/MainPanel/InnerMargin/VBox/SubnavBar") as PanelContainer
@@ -147,6 +155,9 @@ func _is_cosmetic_locked(kind: String, item_id: int) -> bool:
 
 
 func _make_cosmetic_tile_style(is_selected: bool, is_locked: bool) -> StyleBoxFlat:
+	var key: String = "locked" if is_locked else ("selected" if is_selected else "normal")
+	if _cosmetic_tile_styles.has(key):
+		return _cosmetic_tile_styles[key] as StyleBoxFlat
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.set_corner_radius_all(16)
 	sb.content_margin_left = 5.0
@@ -168,10 +179,35 @@ func _make_cosmetic_tile_style(is_selected: bool, is_locked: bool) -> StyleBoxFl
 		sb.bg_color = Color(0.14, 0.08, 0.05, 0.92)
 		sb.border_color = Color(0.38, 0.25, 0.14, 0.85)
 		sb.set_border_width_all(1)
+	_cosmetic_tile_styles[key] = sb
 	return sb
 
 
-func _create_cosmetic_tile(tex: Texture2D, is_selected: bool, is_locked: bool, on_tap: Callable) -> Dictionary:
+func _get_cosmetic_check_style() -> StyleBoxFlat:
+	if _cosmetic_check_style != null:
+		return _cosmetic_check_style
+	var chk_sb: StyleBoxFlat = StyleBoxFlat.new()
+	chk_sb.bg_color = Color("#1F7A3E")
+	chk_sb.border_color = Color("#FFD86B")
+	chk_sb.set_border_width_all(2)
+	chk_sb.set_corner_radius_all(13)
+	_cosmetic_check_style = chk_sb
+	return chk_sb
+
+
+func _get_cosmetic_lock_style() -> StyleBoxFlat:
+	if _cosmetic_lock_style != null:
+		return _cosmetic_lock_style
+	var lck_sb: StyleBoxFlat = StyleBoxFlat.new()
+	lck_sb.bg_color = Color(0.11, 0.06, 0.03, 0.94)
+	lck_sb.border_color = Color("#A87C44")
+	lck_sb.set_border_width_all(1)
+	lck_sb.set_corner_radius_all(14)
+	_cosmetic_lock_style = lck_sb
+	return lck_sb
+
+
+func _create_cosmetic_tile(item_id: int, tex: Texture2D, is_selected: bool, is_locked: bool, on_tap: Callable) -> Dictionary:
 	var tile: PanelContainer = PanelContainer.new()
 	tile.custom_minimum_size = Vector2(108, 108)
 	tile.pivot_offset = Vector2(54, 54)
@@ -190,6 +226,7 @@ func _create_cosmetic_tile(tex: Texture2D, is_selected: bool, is_locked: bool, o
 	btn.mouse_default_cursor_shape = Control.CURSOR_ARROW if is_locked else Control.CURSOR_POINTING_HAND
 	if not is_locked:
 		ActionVFXManager.apply_button_juice(btn, "tap_button")
+		btn.set_meta("_juiced", true)
 	btn.pressed.connect(on_tap)
 	inner.add_child(btn)
 
@@ -204,12 +241,7 @@ func _create_cosmetic_tile(tex: Texture2D, is_selected: bool, is_locked: bool, o
 	check_badge.offset_right = 2.0
 	check_badge.offset_bottom = 24.0
 	check_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var chk_sb: StyleBoxFlat = StyleBoxFlat.new()
-	chk_sb.bg_color = Color("#1F7A3E")
-	chk_sb.border_color = Color("#FFD86B")
-	chk_sb.set_border_width_all(2)
-	chk_sb.set_corner_radius_all(13)
-	check_badge.add_theme_stylebox_override("panel", chk_sb)
+	check_badge.add_theme_stylebox_override("panel", _get_cosmetic_check_style())
 
 	var lbl_chk: Label = Label.new()
 	lbl_chk.text = "✓"
@@ -233,12 +265,7 @@ func _create_cosmetic_tile(tex: Texture2D, is_selected: bool, is_locked: bool, o
 	lock_badge.offset_right = 26.0
 	lock_badge.offset_bottom = 26.0
 	lock_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var lck_sb: StyleBoxFlat = StyleBoxFlat.new()
-	lck_sb.bg_color = Color(0.11, 0.06, 0.03, 0.94)
-	lck_sb.border_color = Color("#A87C44")
-	lck_sb.set_border_width_all(1)
-	lck_sb.set_corner_radius_all(14)
-	lock_badge.add_theme_stylebox_override("panel", lck_sb)
+	lock_badge.add_theme_stylebox_override("panel", _get_cosmetic_lock_style())
 
 	var lbl_lck: Label = Label.new()
 	lbl_lck.text = "🔒"
@@ -250,11 +277,13 @@ func _create_cosmetic_tile(tex: Texture2D, is_selected: bool, is_locked: bool, o
 	inner.add_child(lock_badge)
 
 	var entry: Dictionary = {
+		"id": item_id,
 		"tile": tile,
 		"btn": btn,
 		"check": check_badge,
 		"lock": lock_badge,
-		"locked": is_locked
+		"locked": is_locked,
+		"active": false
 	}
 	_apply_cosmetic_tile_state(entry, is_selected, false)
 	return entry
@@ -270,6 +299,7 @@ func _apply_cosmetic_tile_state(entry: Dictionary, is_selected: bool, animate: b
 		return
 
 	var active: bool = is_selected and not is_locked
+	entry["active"] = active
 	tile.add_theme_stylebox_override("panel", _make_cosmetic_tile_style(active, is_locked))
 	tile.z_index = 2 if active else 0
 	if is_instance_valid(check_badge):
@@ -277,6 +307,10 @@ func _apply_cosmetic_tile_state(entry: Dictionary, is_selected: bool, animate: b
 	if is_instance_valid(lock_badge):
 		lock_badge.visible = is_locked
 	if is_instance_valid(btn):
+		btn.mouse_default_cursor_shape = Control.CURSOR_ARROW if is_locked else Control.CURSOR_POINTING_HAND
+		if not is_locked and not btn.has_meta("_juiced"):
+			ActionVFXManager.apply_button_juice(btn, "tap_button")
+			btn.set_meta("_juiced", true)
 		if is_locked:
 			btn.modulate = Color(0.75, 0.72, 0.68, 0.50)
 		elif active:
@@ -294,11 +328,25 @@ func _apply_cosmetic_tile_state(entry: Dictionary, is_selected: bool, animate: b
 		tile.scale = target_scale
 
 
+func _sync_cosmetic_entries(entries: Array[Dictionary], kind: String, selected_id: int) -> void:
+	for entry in entries:
+		var item_id: int = int(entry["id"])
+		var locked_now: bool = _is_cosmetic_locked(kind, item_id)
+		var active_now: bool = (item_id == selected_id) and not locked_now
+		if bool(entry["locked"]) != locked_now or bool(entry["active"]) != active_now:
+			entry["locked"] = locked_now
+			_apply_cosmetic_tile_state(entry, item_id == selected_id, false)
+
+
 func _render_cosmetics() -> void:
+	_selected_avatar_id = GameManager.get_avatar_id()
+	if _cosmetics_built and not _avatar_entries.is_empty():
+		_sync_cosmetic_entries(_avatar_entries, "avatar", _selected_avatar_id)
+		return
+
 	for c in content_cosmetics.get_children():
 		c.queue_free()
-
-	_selected_avatar_id = GameManager.get_avatar_id()
+	_avatar_entries.clear()
 
 	var center_wrap: CenterContainer = CenterContainer.new()
 	center_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -315,13 +363,11 @@ func _render_cosmetics() -> void:
 	grid.add_theme_constant_override("v_separation", 14)
 	grid_margin.add_child(grid)
 
-	var avatar_entries: Array[Dictionary] = []
-
 	for i in range(72):
 		var path: String = "res://assets/icons/Avatars/%d.png" % i
 		if not ResourceLoader.exists(path):
 			continue
-		var tex: Texture2D = load(path) as Texture2D
+		var tex: Texture2D = CafeSocialTheme.get_avatar_texture(i)
 		if tex == null:
 			continue
 
@@ -329,18 +375,23 @@ func _render_cosmetics() -> void:
 		var is_locked: bool = _is_cosmetic_locked("avatar", current_i)
 		var entry_ref: Array[Dictionary] = []
 		var on_tap: Callable = func():
-			if is_locked:
+			var cur_entry: Dictionary = entry_ref[0]
+			if bool(cur_entry["locked"]):
 				AudioManager.sfx_tap()
 				show_toast("این تصویر نمایه هنوز آزاد نشده است.", CafeSocialTheme.COL_GOLD_ANTIQUE)
 				return
 			AudioManager.sfx_tap()
+			if _selected_avatar_id == current_i and bool(cur_entry["active"]):
+				return
 			_selected_avatar_id = current_i
-			for other in avatar_entries:
-				_apply_cosmetic_tile_state(other, other == entry_ref[0], true)
+			for other in _avatar_entries:
+				var should_select: bool = (other == cur_entry)
+				if bool(other["active"]) != should_select:
+					_apply_cosmetic_tile_state(other, should_select, true)
 
-		var entry: Dictionary = _create_cosmetic_tile(tex, current_i == _selected_avatar_id, is_locked, on_tap)
+		var entry: Dictionary = _create_cosmetic_tile(current_i, tex, current_i == _selected_avatar_id, is_locked, on_tap)
 		entry_ref.append(entry)
-		avatar_entries.append(entry)
+		_avatar_entries.append(entry)
 		grid.add_child(entry["tile"] as PanelContainer)
 
 	var save_box: HBoxContainer = HBoxContainer.new()
@@ -380,6 +431,7 @@ func _render_cosmetics() -> void:
 	av_spacer.custom_minimum_size = Vector2(0, 44)
 	av_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content_cosmetics.add_child(av_spacer)
+	_cosmetics_built = true
 
 
 # ==============================================================================
@@ -387,10 +439,14 @@ func _render_cosmetics() -> void:
 # ==============================================================================
 
 func _render_frames() -> void:
+	_selected_frame_id = GameManager.get_frame_id()
+	if _frames_built and not _frame_entries.is_empty():
+		_sync_cosmetic_entries(_frame_entries, "frame", _selected_frame_id)
+		return
+
 	for c in content_frames.get_children():
 		c.queue_free()
-
-	_selected_frame_id = GameManager.get_frame_id()
+	_frame_entries.clear()
 
 	var center_wrap: CenterContainer = CenterContainer.new()
 	center_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -407,8 +463,6 @@ func _render_frames() -> void:
 	grid.add_theme_constant_override("v_separation", 14)
 	grid_margin.add_child(grid)
 
-	var frame_entries: Array[Dictionary] = []
-
 	for fid in range(1, 21):
 		var f_tex: Texture2D = CafeSocialTheme.get_frame_texture(fid)
 		if f_tex == null:
@@ -418,18 +472,23 @@ func _render_frames() -> void:
 		var is_locked: bool = _is_cosmetic_locked("frame", cur_fid)
 		var entry_ref: Array[Dictionary] = []
 		var on_tap: Callable = func():
-			if is_locked:
+			var cur_entry: Dictionary = entry_ref[0]
+			if bool(cur_entry["locked"]):
 				AudioManager.sfx_tap()
 				show_toast("این قاب آواتار هنوز آزاد نشده است.", CafeSocialTheme.COL_GOLD_ANTIQUE)
 				return
 			AudioManager.sfx_tap()
+			if _selected_frame_id == cur_fid and bool(cur_entry["active"]):
+				return
 			_selected_frame_id = cur_fid
-			for other in frame_entries:
-				_apply_cosmetic_tile_state(other, other == entry_ref[0], true)
+			for other in _frame_entries:
+				var should_select: bool = (other == cur_entry)
+				if bool(other["active"]) != should_select:
+					_apply_cosmetic_tile_state(other, should_select, true)
 
-		var entry: Dictionary = _create_cosmetic_tile(f_tex, cur_fid == _selected_frame_id, is_locked, on_tap)
+		var entry: Dictionary = _create_cosmetic_tile(cur_fid, f_tex, cur_fid == _selected_frame_id, is_locked, on_tap)
 		entry_ref.append(entry)
-		frame_entries.append(entry)
+		_frame_entries.append(entry)
 		grid.add_child(entry["tile"] as PanelContainer)
 
 	var save_box: HBoxContainer = HBoxContainer.new()
@@ -470,6 +529,7 @@ func _render_frames() -> void:
 	fr_spacer.custom_minimum_size = Vector2(0, 44)
 	fr_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content_frames.add_child(fr_spacer)
+	_frames_built = true
 
 
 # ==============================================================================

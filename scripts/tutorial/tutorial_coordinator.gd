@@ -24,6 +24,7 @@ signal main_tutorial_finished()
 
 const TUTORIAL_BOARD_SCENE: PackedScene = preload("res://scenes/games/tictactoe/tutorial_tictactoe_3d.tscn")
 const DEFAULT_RETURN_BTN_TEXT: String = "بازگشت به کافه"
+const GAME_TUTORIAL_TOTAL_STEPS: int = 10
 
 var is_game_tutorial_active: bool = false
 var is_main_tutorial_active: bool = false
@@ -46,6 +47,7 @@ var _active_flow: String = "" # "" | "game" | "library_game" | "main"
 var _game_phase: String = ""  # "" | "hud_tour" | "move_1" | "move_2" | "move_3" | "win"
 var _saved_return_btn_text: String = DEFAULT_RETURN_BTN_TEXT
 var _session_token: int = 0
+var _zoom_demo_seq: int = 0
 
 # Bound temporary signal callables for clean disconnect
 var _view_toggle_cb: Callable = Callable()
@@ -203,7 +205,35 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	st_view.with_placement("bottom")
 	s.append(st_view)
 
-	# 3. Top Button: Quick Chat / Kori
+	# 3. Camera Zoom In / Out (interactive pinch / mouse wheel on the 3D table)
+	var zoom_body: String = (
+		"می‌خوای مهره‌ها و صفحه رو نزدیک‌تر یا کامل‌تر ببینی؟ دو انگشتت رو روی میز بذار و از هم باز کن تا زوم بشه، یا به هم نزدیک کن تا نمای میز دورتر بشه!"
+		if GameManager.is_mobile else
+		"می‌خوای مهره‌ها و صفحه رو نزدیک‌تر یا کامل‌تر ببینی؟ با چرخ ماوس (یا دو انگشت روی صفحه لمسی) می‌تونی هر وقت خواستی روی میز زوم کنی یا نمای میز رو دورتر ببری!"
+	)
+	var zoom_hint: String = (
+		"همین الان با دو انگشت روی میز زوم رو امتحان کن یا بزن «بعدی»"
+		if GameManager.is_mobile else
+		"همین الان با چرخ ماوس زوم رو امتحان کن یا بزن «بعدی»"
+	)
+	var st_zoom: TutorialStep = TutorialStep.create(
+		"hud_camera_zoom",
+		"بزرگ‌نمایی و زوم روی میز",
+		zoom_body
+	)
+	st_zoom.with_badge("دوربین و زوم")
+	st_zoom.with_cta("بعدی")
+	st_zoom.with_hint(zoom_hint)
+	st_zoom.with_target(_get_board_screen_rect, 24.0, 22.0)
+	st_zoom.with_avoid_rect(_get_board_screen_rect)
+	st_zoom.with_scrim_alpha(0.76)
+	st_zoom.with_interactive(false, true)
+	st_zoom.with_scene_passthrough(true)
+	st_zoom.with_placement("auto")
+	st_zoom.with_hooks(_on_enter_zoom_step, _on_exit_zoom_step)
+	s.append(st_zoom)
+
+	# 4. Top Button: Quick Chat / Kori
 	var st_chat: TutorialStep = TutorialStep.create(
 		"hud_chat",
 		"چت و کُری‌خوانی وسط بازی",
@@ -279,6 +309,52 @@ func _build_game_tutorial_steps() -> Array[TutorialStep]:
 	s.append(st_move1)
 
 	return s
+
+
+func _on_enter_zoom_step() -> void:
+	_zoom_demo_seq += 1
+	var my_seq: int = _zoom_demo_seq
+	var my_token: int = _session_token
+	if is_instance_valid(_board):
+		_board.tutorial_input_enabled = false
+	if not is_instance_valid(_cafe_table):
+		return
+	if _cafe_table.has_method("_cancel_intro_glide_for_user_input"):
+		_cafe_table.call("_cancel_intro_glide_for_user_input")
+
+	var is_td_start: bool = bool(_cafe_table.get("is_top_down_view"))
+	var start_val: float = float(_cafe_table.get("top_down_target_height")) if is_td_start else float(_cafe_table.get("target_distance"))
+
+	# Gentle non-intrusive zoom-in then zoom-out preview (auto-skips if user zooms manually)
+	get_tree().create_timer(0.35).timeout.connect(func():
+		if not is_instance_valid(self) or not is_game_tutorial_active or _session_token != my_token or _zoom_demo_seq != my_seq:
+			return
+		if not is_instance_valid(_cafe_table) or not _cafe_table.has_method("zoom_in"):
+			return
+		var td_now: bool = bool(_cafe_table.get("is_top_down_view"))
+		var cur_val: float = float(_cafe_table.get("top_down_target_height")) if td_now else float(_cafe_table.get("target_distance"))
+		if td_now != is_td_start or absf(cur_val - start_val) > 0.04:
+			return
+		_cafe_table.zoom_in(0.55)
+		var after_in_val: float = float(_cafe_table.get("top_down_target_height")) if td_now else float(_cafe_table.get("target_distance"))
+		get_tree().create_timer(0.95).timeout.connect(func():
+			if not is_instance_valid(self) or not is_game_tutorial_active or _session_token != my_token or _zoom_demo_seq != my_seq:
+				return
+			if not is_instance_valid(_cafe_table) or not _cafe_table.has_method("zoom_out"):
+				return
+			var td_after: bool = bool(_cafe_table.get("is_top_down_view"))
+			var now_val: float = float(_cafe_table.get("top_down_target_height")) if td_after else float(_cafe_table.get("target_distance"))
+			if td_after != td_now or absf(now_val - after_in_val) > 0.04:
+				return
+			_cafe_table.zoom_out(0.55)
+		)
+	)
+
+
+func _on_exit_zoom_step() -> void:
+	_zoom_demo_seq += 1
+	if is_instance_valid(_cafe_table) and _cafe_table.has_method("reset_camera_orbit"):
+		_cafe_table.reset_camera_orbit()
 
 
 func _on_enter_chat_step() -> void:
@@ -379,7 +455,7 @@ func _on_tutorial_bot_moved(_cell_idx: int) -> void:
 
 		_board.tutorial_input_enabled = true
 		_board.set_guided_cells([next_cell])
-		_overlay.show_step(step2, 7, 9, false)
+		_overlay.show_step(step2, 8, GAME_TUTORIAL_TOTAL_STEPS, false)
 
 	elif _game_phase == "bot_2" or _game_phase == "bot_free":
 		var win_cell: int = _board.find_recommended_player_cell()
@@ -402,7 +478,7 @@ func _on_tutorial_bot_moved(_cell_idx: int) -> void:
 			_board.set_guided_cells([win_cell])
 		else:
 			_board.clear_guided_cells()
-		_overlay.show_step(step3, 8, 9, false)
+		_overlay.show_step(step3, 9, GAME_TUTORIAL_TOTAL_STEPS, false)
 
 
 func _on_tutorial_wrong_cell_tapped(_cell_idx: int) -> void:
@@ -435,7 +511,7 @@ func _on_tutorial_draw_reached() -> void:
 		retry_step.with_scrim_alpha(0.85)
 		retry_step.with_interactive(true, false)
 		retry_step.with_placement("auto")
-		_overlay.show_step(retry_step, 6, 9, false)
+		_overlay.show_step(retry_step, 7, GAME_TUTORIAL_TOTAL_STEPS, false)
 	)
 
 
@@ -480,6 +556,7 @@ func finish_offline_game_tutorial() -> void:
 	if not is_game_tutorial_active:
 		return
 	_session_token += 1
+	_zoom_demo_seq += 1
 	is_game_tutorial_active = false
 	_active_flow = ""
 	_game_phase = ""
@@ -1054,7 +1131,7 @@ func _present_current_step() -> void:
 	if _active_flow == "library_game" and is_instance_valid(_overlay):
 		_overlay.set_exit_button_visible(true)
 
-	var total_display: int = 9 if _active_flow == "game" else _steps.size()
+	var total_display: int = GAME_TUTORIAL_TOTAL_STEPS if _active_flow == "game" else _steps.size()
 	var display_idx: int = _step_index
 	if _active_flow == "library_game" and _active_lesson != null:
 		total_display = _active_lesson.get_total_display_steps(_steps.size())
@@ -1084,6 +1161,7 @@ func _on_overlay_exit() -> void:
 
 
 func _stop_any_active_tour() -> void:
+	_zoom_demo_seq += 1
 	_disconnect_game_tutorial_hud_listeners()
 	if _active_lesson != null:
 		_active_lesson.cleanup()

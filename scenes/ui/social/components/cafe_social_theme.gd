@@ -807,6 +807,31 @@ static func make_ornate_section_header(title_txt: String, icon_tex: Texture2D = 
 
 
 static var _frame_texture_cache: Dictionary = {}
+static var _avatar_texture_cache: Dictionary = {}
+static var _game_thumb_cache: Dictionary = {}
+
+static func get_avatar_texture(avatar_id: int) -> Texture2D:
+	var safe_id: int = clampi(avatar_id, 0, 71)
+	if _avatar_texture_cache.has(safe_id):
+		return _avatar_texture_cache[safe_id] as Texture2D
+	var path: String = "res://assets/icons/Avatars/%d.png" % safe_id
+	if ResourceLoader.exists(path):
+		var tex: Texture2D = load(path) as Texture2D
+		_avatar_texture_cache[safe_id] = tex
+		return tex
+	if safe_id != 0 and _avatar_texture_cache.has(0):
+		var fb0: Texture2D = _avatar_texture_cache[0] as Texture2D
+		_avatar_texture_cache[safe_id] = fb0
+		return fb0
+	var fallback_path: String = "res://assets/icons/Avatars/0.png"
+	if ResourceLoader.exists(fallback_path):
+		var fb_tex: Texture2D = load(fallback_path) as Texture2D
+		_avatar_texture_cache[0] = fb_tex
+		_avatar_texture_cache[safe_id] = fb_tex
+		return fb_tex
+	_avatar_texture_cache[safe_id] = null
+	return null
+
 
 static func get_frame_texture(frame_id: int) -> Texture2D:
 	var fid: int = frame_id if frame_id >= 1 else 1
@@ -967,12 +992,7 @@ static func make_avatar_badge(
 	av.stretch_mode = TextureRect.STRETCH_SCALE
 	av.material = _get_avatar_aperture_material(safe_fid)
 	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var safe_av_id := clampi(avatar_id, 0, 71)
-	var av_path := "res://assets/icons/Avatars/%d.png" % safe_av_id
-	if ResourceLoader.exists(av_path):
-		av.texture = load(av_path)
-	elif ResourceLoader.exists("res://assets/icons/Avatars/0.png"):
-		av.texture = load("res://assets/icons/Avatars/0.png")
+	av.texture = get_avatar_texture(avatar_id)
 	holder.add_child(av)
 
 	# 2. Frame Overlay Texture (Locked 1:1 to holder rect so aperture coordinates align cleanly)
@@ -1570,13 +1590,18 @@ static func get_game_thumb(game_type: String) -> Texture2D:
 	var key := game_type.strip_edges().to_lower()
 	if key.is_empty():
 		return null
+	if _game_thumb_cache.has(key):
+		return _game_thumb_cache[key] as Texture2D
+	var tex: Texture2D = null
 	var png_p := "res://assets/images/games/%s.png" % key
 	if ResourceLoader.exists(png_p):
-		return load(png_p)
-	var jpg_p := "res://assets/images/games/%s.jpg" % key
-	if ResourceLoader.exists(jpg_p):
-		return load(jpg_p)
-	return null
+		tex = load(png_p) as Texture2D
+	else:
+		var jpg_p := "res://assets/images/games/%s.jpg" % key
+		if ResourceLoader.exists(jpg_p):
+			tex = load(jpg_p) as Texture2D
+	_game_thumb_cache[key] = tex
+	return tex
 
 
 static func show_game_invite_modal(host: Node, target_uid: String, target_name: String, on_sent: Callable = Callable()) -> Control:

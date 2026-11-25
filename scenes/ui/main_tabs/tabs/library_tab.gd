@@ -25,6 +25,14 @@ var _game_docs: Dictionary = {}
 var _selected_game_id: String = ""
 var _current_filter: String = "all"
 var _all_games_data: Array[Dictionary] = []
+var _game_cards_built: bool = false
+var _game_card_entries: Array[Dictionary] = []
+var _game_icon_cache: Dictionary = {}
+var _shared_card_style: StyleBoxTexture = null
+var _shared_tut_btn_style: StyleBoxFlat = null
+var _shared_section_style: StyleBoxFlat = null
+var _tut_btn_tex: Texture2D = null
+var _tut_btn_tex_loaded: bool = false
 
 const CATEGORIES := [
 	{"id": "all", "label": "همه (۲۵)"},
@@ -134,33 +142,58 @@ func _update_filter_button_styles() -> void:
 		CafeSocialTheme.style_parlor_tab_button(b, cid == _current_filter, 20)
 
 
-func _populate_grid() -> void:
+func _get_cached_game_icon(game_id: String, icon_path: String) -> Texture2D:
+	if _game_icon_cache.has(game_id):
+		return _game_icon_cache[game_id] as Texture2D
+	var tex: Texture2D = load(icon_path) as Texture2D if (not icon_path.is_empty() and ResourceLoader.exists(icon_path)) else CafeSocialTheme.get_game_thumb(game_id)
+	_game_icon_cache[game_id] = tex
+	return tex
+
+
+func _ensure_grid_cards_built() -> void:
+	if _game_cards_built:
+		return
 	for c in grid_container.get_children():
 		c.queue_free()
-
-	var query = search_input.text.strip_edges()
-
+	_game_card_entries.clear()
 	for g in _all_games_data:
-		var gid: String = g["id"]
-		var name_fa: String = g["name_fa"]
-
-		if not query.is_empty() and query not in name_fa and query not in gid:
-			continue
-
-		if _current_filter != "all":
-			var allowed = CATEGORY_MAP.get(_current_filter, [])
-			if gid not in allowed:
-				continue
-
-		var card = _create_game_card(g)
+		var card: PanelContainer = _create_game_card(g)
 		grid_container.add_child(card)
+		_game_card_entries.append({
+			"id": str(g["id"]),
+			"name_fa": str(g["name_fa"]),
+			"card": card
+		})
+	_game_cards_built = true
+
+
+func _populate_grid() -> void:
+	_ensure_grid_cards_built()
+
+	var query: String = search_input.text.strip_edges()
+	var allowed: Array = CATEGORY_MAP.get(_current_filter, []) if _current_filter != "all" else []
+
+	for entry in _game_card_entries:
+		var card: PanelContainer = entry["card"] as PanelContainer
+		if not is_instance_valid(card):
+			continue
+		var gid: String = str(entry["id"])
+		var name_fa: String = str(entry["name_fa"])
+		var visible_match: bool = true
+		if not query.is_empty() and query not in name_fa and query not in gid:
+			visible_match = false
+		elif _current_filter != "all" and gid not in allowed:
+			visible_match = false
+		card.visible = visible_match
 
 
 func _create_game_card(g: Dictionary) -> PanelContainer:
+	if _shared_card_style == null:
+		_shared_card_style = CafeSocialTheme.create_item_frame_style(46.0, 14.0)
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(0, 140)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.add_theme_stylebox_override("panel", CafeSocialTheme.create_item_frame_style(46.0, 14.0))
+	card.add_theme_stylebox_override("panel", _shared_card_style)
 
 	var has_tutorial: bool = GameTutorialRegistry.has_interactive_tutorial(g["id"])
 
@@ -185,7 +218,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	card.add_child(margin)
 
 	var icon_path = str(g["icon"])
-	var icon_tex: Texture2D = load(icon_path) if ResourceLoader.exists(icon_path) else CafeSocialTheme.get_game_thumb(g["id"])
+	var icon_tex: Texture2D = _get_cached_game_icon(str(g["id"]), icon_path)
 
 	var hbox := HBoxContainer.new()
 	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -246,19 +279,26 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 
 
 func _create_tutorial_row_button(game_id: String) -> PanelContainer:
+	if _shared_tut_btn_style == null:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.14, 0.09, 0.06, 0.92)
+		sb.border_color = Color(0.78, 0.60, 0.28, 0.85)
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(14)
+		sb.content_margin_left = 4.0
+		sb.content_margin_right = 4.0
+		sb.content_margin_top = 4.0
+		sb.content_margin_bottom = 4.0
+		_shared_tut_btn_style = sb
+	if not _tut_btn_tex_loaded:
+		_tut_btn_tex_loaded = true
+		if ResourceLoader.exists("res://assets/images/game.png"):
+			_tut_btn_tex = load("res://assets/images/game.png") as Texture2D
+
 	var box := PanelContainer.new()
 	box.custom_minimum_size = Vector2(72, 72)
 	box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.14, 0.09, 0.06, 0.92)
-	sb.border_color = Color(0.78, 0.60, 0.28, 0.85)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(14)
-	sb.content_margin_left = 4.0
-	sb.content_margin_right = 4.0
-	sb.content_margin_top = 4.0
-	sb.content_margin_bottom = 4.0
-	box.add_theme_stylebox_override("panel", sb)
+	box.add_theme_stylebox_override("panel", _shared_tut_btn_style)
 
 	var btn := Button.new()
 	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -279,8 +319,8 @@ func _create_tutorial_row_button(game_id: String) -> PanelContainer:
 	tut_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	tut_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tut_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	if ResourceLoader.exists("res://assets/images/game.png"):
-		tut_icon.texture = load("res://assets/images/game.png")
+	if _tut_btn_tex != null:
+		tut_icon.texture = _tut_btn_tex
 	box.add_child(tut_icon)
 
 	return box
@@ -314,10 +354,7 @@ func open_game_details(game_id: String) -> void:
 	detail_meta.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	detail_meta.text = "%s • سختی: %s • زمان: %s" % [p_str, diff_fa, time_str]
 
-	if ResourceLoader.exists(icon_path):
-		detail_icon.texture = load(icon_path)
-	else:
-		detail_icon.texture = CafeSocialTheme.get_game_thumb(game_id)
+	detail_icon.texture = _get_cached_game_icon(game_id, icon_path)
 
 	_render_game_guide()
 	if is_instance_valid(content_scroll):
@@ -343,19 +380,21 @@ func _make_rtl_label(txt: String, font_res: Font, font_sz: int, col: Color, line
 
 
 func _make_section_card(title_txt: String, body_lines: Array[String]) -> PanelContainer:
+	if _shared_section_style == null:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.14, 0.09, 0.06, 0.88)
+		sb.border_color = Color(0.70, 0.54, 0.28, 0.55)
+		sb.set_border_width_all(1)
+		sb.border_width_right = 4
+		sb.set_corner_radius_all(12)
+		sb.content_margin_left = 14.0
+		sb.content_margin_right = 14.0
+		sb.content_margin_top = 12.0
+		sb.content_margin_bottom = 12.0
+		_shared_section_style = sb
 	var card := PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.14, 0.09, 0.06, 0.88)
-	sb.border_color = Color(0.70, 0.54, 0.28, 0.55)
-	sb.set_border_width_all(1)
-	sb.border_width_right = 4
-	sb.set_corner_radius_all(12)
-	sb.content_margin_left = 14.0
-	sb.content_margin_right = 14.0
-	sb.content_margin_top = 12.0
-	sb.content_margin_bottom = 12.0
-	card.add_theme_stylebox_override("panel", sb)
+	card.add_theme_stylebox_override("panel", _shared_section_style)
 
 	var vb := VBoxContainer.new()
 	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL

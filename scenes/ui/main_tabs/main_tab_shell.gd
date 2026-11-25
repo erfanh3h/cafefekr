@@ -105,6 +105,8 @@ var _subpage_return_tab: String = "play"
 var active_tab_name: String:
 	get: return current_tab_name
 var _bg_tween: Tween = null
+var _current_bg_key: String = ""
+var _sparkles_node: CPUParticles2D = null
 
 
 func _ready() -> void:
@@ -114,14 +116,26 @@ func _ready() -> void:
 
 	_apply_bg_shader(bg_rect, BG_CONFIG["play"])
 	_apply_bg_shader(bg_rect_fade, BG_CONFIG["play"])
+	bg_rect.texture = BG_MAP["play"]
+	bg_rect_fade.modulate.a = 0.0
+	bg_rect_fade.visible = false
+	_current_bg_key = "play"
 
 	if has_node("BackgroundLayer/Sparkles"):
-		var sp: CPUParticles2D = get_node("BackgroundLayer/Sparkles") as CPUParticles2D
-		if sp and GameManager.is_mobile:
-			sp.amount = 6
-			sp.lifetime = 3.0
+		_sparkles_node = get_node("BackgroundLayer/Sparkles") as CPUParticles2D
+		if is_instance_valid(_sparkles_node) and GameManager.is_mobile:
+			_sparkles_node.amount = 6
+			_sparkles_node.lifetime = 3.0
+
+	visibility_changed.connect(_on_visibility_changed)
+	_on_visibility_changed()
 
 	switch_to_tab("play")
+
+
+func _on_visibility_changed() -> void:
+	if is_instance_valid(_sparkles_node):
+		_sparkles_node.emitting = is_visible_in_tree()
 
 
 func _notification(what: int) -> void:
@@ -325,9 +339,12 @@ func _apply_bg_shader(rect: TextureRect, cfg: Dictionary) -> void:
 func _crossfade_background(target_tex: Texture2D, tab_name: String = "play") -> void:
 	if not is_instance_valid(bg_rect) or not is_instance_valid(bg_rect_fade):
 		return
+	if _current_bg_key == tab_name and bg_rect.texture == target_tex and not bg_rect_fade.visible:
+		return
 	if _bg_tween and _bg_tween.is_valid():
 		_bg_tween.kill()
 
+	_current_bg_key = tab_name
 	var cfg: Dictionary = BG_CONFIG.get(tab_name, BG_CONFIG["play"])
 	_apply_bg_shader(bg_rect_fade, cfg)
 	bg_rect_fade.texture = target_tex

@@ -1528,8 +1528,6 @@ func _animate_pawn_hop(g_id: int, from_rc: Array, to_rc: Array) -> void:
 		_is_animating_move = false
 		if is_instance_valid(node):
 			node.position = p_end
-			if is_instance_valid(fx_root):
-				ActionVFXManager.spawn_piece_impact_vfx(fx_root, p_end, g_id)
 		_refresh_dock_buttons()
 		_refresh_highlights_and_preview()
 	)

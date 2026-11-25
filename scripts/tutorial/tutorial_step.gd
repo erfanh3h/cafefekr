@@ -28,9 +28,11 @@ var scrim_alpha: float = 0.85
 
 ## Interaction model
 ## - allow_target_passthrough: lets touch/click events inside the spotlight reach the target control / 3D board.
+## - allow_full_scene_passthrough: lets multi-touch/wheel gestures (like 2-finger pinch zoom) pass through the scene scrim to the 3D table while still blocking top HUD buttons and the coach card.
 ## - require_target_action: hides the primary CTA button so the user advances by performing the highlighted action.
 ## - show_next_with_passthrough: keeps the CTA button visible even while target passthrough is enabled.
 var allow_target_passthrough: bool = false
+var allow_full_scene_passthrough: bool = false
 var require_target_action: bool = false
 var show_next_with_passthrough: bool = false
 
@@ -88,6 +90,11 @@ func with_interactive(require_action: bool = true, allow_next_button: bool = fal
 	allow_target_passthrough = true
 	require_target_action = require_action
 	show_next_with_passthrough = allow_next_button
+	return self
+
+
+func with_scene_passthrough(enabled: bool = true) -> TutorialStep:
+	allow_full_scene_passthrough = enabled
 	return self
 
 

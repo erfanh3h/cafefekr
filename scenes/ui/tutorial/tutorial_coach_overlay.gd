@@ -428,7 +428,13 @@ func show_step(step: TutorialStep, step_index: int, total_steps: int, can_go_bac
 	_btn_back.visible = can_go_back and (not step.require_target_action)
 	_btn_row.visible = _btn_next.visible or _btn_back.visible
 
-	_hole_blocker.mouse_filter = Control.MOUSE_FILTER_IGNORE if step.allow_target_passthrough else Control.MOUSE_FILTER_STOP
+	var scene_pass: bool = step.allow_full_scene_passthrough
+	_hole_blocker.mouse_filter = Control.MOUSE_FILTER_IGNORE if (step.allow_target_passthrough or scene_pass) else Control.MOUSE_FILTER_STOP
+	var side_scrim_filter: Control.MouseFilter = Control.MOUSE_FILTER_IGNORE if scene_pass else Control.MOUSE_FILTER_STOP
+	_scrim_top.mouse_filter = Control.MOUSE_FILTER_STOP
+	_scrim_bottom.mouse_filter = side_scrim_filter
+	_scrim_left.mouse_filter = side_scrim_filter
+	_scrim_right.mouse_filter = side_scrim_filter
 
 	# Corner radius matching highlighted target
 	var rad: int = int(clampf(step.corner_radius, 8.0, 36.0))
@@ -453,6 +459,14 @@ func hide_overlay() -> void:
 	_current_step = null
 	_rect_initialized = false
 	_has_target = false
+	if is_instance_valid(_scrim_top):
+		_scrim_top.mouse_filter = Control.MOUSE_FILTER_STOP
+	if is_instance_valid(_scrim_bottom):
+		_scrim_bottom.mouse_filter = Control.MOUSE_FILTER_STOP
+	if is_instance_valid(_scrim_left):
+		_scrim_left.mouse_filter = Control.MOUSE_FILTER_STOP
+	if is_instance_valid(_scrim_right):
+		_scrim_right.mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
 	set_process(false)
 

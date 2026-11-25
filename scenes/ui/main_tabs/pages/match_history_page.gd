@@ -12,6 +12,9 @@ var _body_vbox: VBoxContainer = null
 
 var _font_hekayat: Font = preload("res://assets/fonts/hekayat.ttf")
 var _font_vazir: Font = preload("res://assets/fonts/Vazir.ttf")
+var _game_icon_cache: Dictionary = {}
+var _card_style_cache: Dictionary = {}
+var _icon_frame_style_cache: Dictionary = {}
 
 
 func _ready() -> void:
@@ -251,6 +254,9 @@ func _extract_primary_game_type(game: Dictionary) -> String:
 
 
 func _make_match_card_style(mod_col: Color) -> StyleBoxTexture:
+	var key: String = mod_col.to_html(true)
+	if _card_style_cache.has(key):
+		return _card_style_cache[key] as StyleBoxTexture
 	var sb: StyleBoxTexture = StyleBoxTexture.new()
 	sb.texture = preload("res://assets/images/frames/frame.png")
 	sb.texture_margin_left = 48.0
@@ -264,7 +270,25 @@ func _make_match_card_style(mod_col: Color) -> StyleBoxTexture:
 	sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
 	sb.modulate_color = mod_col
+	_card_style_cache[key] = sb
 	return sb
+
+
+func _get_icon_frame_style(border_col: Color) -> StyleBoxFlat:
+	var key: String = border_col.to_html(true)
+	if _icon_frame_style_cache.has(key):
+		return _icon_frame_style_cache[key] as StyleBoxFlat
+	var g_if_style: StyleBoxFlat = StyleBoxFlat.new()
+	g_if_style.bg_color = Color(0.09, 0.05, 0.03, 0.96)
+	g_if_style.border_color = border_col
+	g_if_style.set_border_width_all(2)
+	g_if_style.set_corner_radius_all(14)
+	g_if_style.content_margin_left = 4.0
+	g_if_style.content_margin_right = 4.0
+	g_if_style.content_margin_top = 4.0
+	g_if_style.content_margin_bottom = 4.0
+	_icon_frame_style_cache[key] = g_if_style
+	return g_if_style
 
 
 func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
@@ -367,8 +391,7 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 		av_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		av_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		av_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var av_path: String = "res://assets/icons/Avatars/%d.png" % opp_avatar_id
-		av_img.texture = load(av_path) if ResourceLoader.exists(av_path) else preload("res://assets/icons/Avatars/0.png")
+		av_img.texture = CafeSocialTheme.get_avatar_texture(opp_avatar_id)
 		av_panel.add_child(av_img)
 		CafeSocialTheme.apply_frame_to_container(av_panel, av_img, opp_frame_id)
 
@@ -475,16 +498,8 @@ func _create_authentic_summary_card(game: Dictionary, my_uid: String) -> Button:
 	g_icon_frame.custom_minimum_size = Vector2(72, 72)
 	g_icon_frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	g_icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var g_if_style: StyleBoxFlat = StyleBoxFlat.new()
-	g_if_style.bg_color = Color(0.09, 0.05, 0.03, 0.96)
-	g_if_style.border_color = card_border if (my_res == "win" or my_res == "lose") else CafeSocialTheme.COL_GOLD_ANTIQUE
-	g_if_style.set_border_width_all(2)
-	g_if_style.set_corner_radius_all(14)
-	g_if_style.content_margin_left = 4.0
-	g_if_style.content_margin_right = 4.0
-	g_if_style.content_margin_top = 4.0
-	g_if_style.content_margin_bottom = 4.0
-	g_icon_frame.add_theme_stylebox_override("panel", g_if_style)
+	var g_bdr: Color = card_border if (my_res == "win" or my_res == "lose") else CafeSocialTheme.COL_GOLD_ANTIQUE
+	g_icon_frame.add_theme_stylebox_override("panel", _get_icon_frame_style(g_bdr))
 
 	var game_icon: TextureRect = TextureRect.new()
 	game_icon.custom_minimum_size = Vector2(62, 62)
@@ -642,17 +657,25 @@ func _normalize_game_icon_slug(g_type: String) -> String:
 
 func _get_game_icon_texture(g_type: String) -> Texture2D:
 	var norm: String = _normalize_game_icon_slug(g_type)
+	if _game_icon_cache.has(norm):
+		return _game_icon_cache[norm] as Texture2D
+	var tex: Texture2D = null
 	var p_jpg: String = "res://assets/images/games/%s.jpg" % norm
 	if ResourceLoader.exists(p_jpg):
-		return load(p_jpg) as Texture2D
-	var p_png: String = "res://assets/images/games/%s.png" % norm
-	if ResourceLoader.exists(p_png):
-		return load(p_png) as Texture2D
-	var info: Dictionary = GameRegistry.get_game_info(g_type)
-	var reg_icon: String = str(info.get("icon", ""))
-	if not reg_icon.is_empty() and ResourceLoader.exists(reg_icon):
-		return load(reg_icon) as Texture2D
-	return preload("res://assets/images/games/rpc.jpg")
+		tex = load(p_jpg) as Texture2D
+	else:
+		var p_png: String = "res://assets/images/games/%s.png" % norm
+		if ResourceLoader.exists(p_png):
+			tex = load(p_png) as Texture2D
+		else:
+			var info: Dictionary = GameRegistry.get_game_info(g_type)
+			var reg_icon: String = str(info.get("icon", ""))
+			if not reg_icon.is_empty() and ResourceLoader.exists(reg_icon):
+				tex = load(reg_icon) as Texture2D
+			else:
+				tex = preload("res://assets/images/games/rpc.jpg")
+	_game_icon_cache[norm] = tex
+	return tex
 
 
 func _get_game_fa_name(g_type: String) -> String:

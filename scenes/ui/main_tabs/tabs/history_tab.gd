@@ -22,6 +22,10 @@ var active_section: String = "leaderboard" # compatibility
 const _HEKAYAT_FONT: FontFile = preload("res://assets/fonts/hekayat.ttf")
 const _DEFAULT_AVATAR: Texture2D = preload("res://assets/icons/Avatars/0.png")
 
+var _row_style_cache: Dictionary = {}
+var _rank_badge_style_cache: Dictionary = {}
+var _empty_panel_style: StyleBoxEmpty = null
+
 func _ready() -> void:
 	ActionVFXManager.apply_button_juice(btn_lb_score, "tap_button")
 	ActionVFXManager.apply_button_juice(btn_lb_win, "tap_button")
@@ -67,6 +71,9 @@ func _style_lb_btn(btn: Button, is_act: bool) -> void:
 
 
 func _create_compact_row_style(is_me: bool, state: String = "normal") -> StyleBoxTexture:
+	var key: String = "%s_%s" % [str(is_me), state]
+	if _row_style_cache.has(key):
+		return _row_style_cache[key] as StyleBoxTexture
 	var sb: StyleBoxTexture = StyleBoxTexture.new()
 	sb.texture = CafeSocialTheme.TEX_FRAME
 	sb.texture_margin_left = 48.0
@@ -85,6 +92,7 @@ func _create_compact_row_style(is_me: bool, state: String = "normal") -> StyleBo
 		sb.modulate_color = Color(1.14, 1.09, 0.98, 1.0) if not is_me else Color(1.18, 1.12, 0.92, 1.0)
 	elif is_me:
 		sb.modulate_color = Color(1.10, 1.04, 0.86, 1.0)
+	_row_style_cache[key] = sb
 	return sb
 
 
@@ -284,11 +292,12 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 		av_frame.add_child(avatar)
 
 		if lb_type == "clans":
-			av_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+			if _empty_panel_style == null:
+				_empty_panel_style = StyleBoxEmpty.new()
+			av_frame.add_theme_stylebox_override("panel", _empty_panel_style)
 			avatar.texture = CafeSocialTheme.get_clan_emblem_texture(img_id)
 		else:
-			var av_path: String = "res://assets/icons/Avatars/%d.png" % img_id
-			var av_tex: Texture2D = load(av_path) as Texture2D if ResourceLoader.exists(av_path) else _DEFAULT_AVATAR
+			var av_tex: Texture2D = CafeSocialTheme.get_avatar_texture(img_id)
 			avatar.texture = av_tex if av_tex != null else _DEFAULT_AVATAR
 			var u_fid: int = GameManager.get_player_frame_id(entry_dict if not entry_dict.is_empty() else raw_item)
 			CafeSocialTheme.apply_frame_to_container(av_frame, avatar, u_fid)
@@ -376,12 +385,10 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 	lb_list_vbox.add_child(bottom_spacer)
 
 
-func _build_rank_badge(rank: int, highlight: bool = false) -> PanelContainer:
-	var rank_frame: PanelContainer = PanelContainer.new()
-	rank_frame.custom_minimum_size = Vector2(48, 48)
-	rank_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	rank_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
+func _get_rank_badge_style(rank: int, highlight: bool) -> StyleBoxFlat:
+	var key: String = str(rank) if (rank >= 1 and rank <= 3) else ("other_hi" if highlight else "other")
+	if _rank_badge_style_cache.has(key):
+		return _rank_badge_style_cache[key] as StyleBoxFlat
 	var rf_style: StyleBoxFlat = StyleBoxFlat.new()
 	if rank == 1:
 		rf_style.bg_color = Color(0.32, 0.22, 0.05, 0.94)
@@ -400,7 +407,16 @@ func _build_rank_badge(rank: int, highlight: bool = false) -> PanelContainer:
 		rf_style.border_color = Color("#F5C542") if highlight else Color(0.56, 0.41, 0.21, 0.65)
 		rf_style.set_border_width_all(1)
 	rf_style.set_corner_radius_all(10)
-	rank_frame.add_theme_stylebox_override("panel", rf_style)
+	_rank_badge_style_cache[key] = rf_style
+	return rf_style
+
+
+func _build_rank_badge(rank: int, highlight: bool = false) -> PanelContainer:
+	var rank_frame: PanelContainer = PanelContainer.new()
+	rank_frame.custom_minimum_size = Vector2(48, 48)
+	rank_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rank_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rank_frame.add_theme_stylebox_override("panel", _get_rank_badge_style(rank, highlight))
 
 	var rank_lbl: Label = Label.new()
 	rank_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
