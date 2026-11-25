@@ -108,48 +108,37 @@ shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_top_btn"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_store_frame"]
-content_margin_left = 10.0
-content_margin_top = 8.0
-content_margin_right = 10.0
-content_margin_bottom = 8.0
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_store_frame"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_store_btn"]
 bg_color = Color(0.14, 0.08, 0.04, 0.92)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.92, 0.74, 0.3, 0.92)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 shadow_color = Color(0, 0, 0, 0.45)
 shadow_size = 6
 shadow_offset = Vector2(0, 2)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_store_btn"]
-bg_color = Color(0.24, 0.14, 0.07, 0.72)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.88, 0.7, 0.28, 0.65)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_store_btn_hover"]
-bg_color = Color(0.32, 0.19, 0.1, 0.9)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 0.85, 0.42, 0.95)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
+bg_color = Color(0.22, 0.13, 0.06, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.85, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.96, 0.77, 0.26, 0.3)
+shadow_size = 8
+shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_top_badge"]
 content_margin_left = 5.0
@@ -832,21 +821,21 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -164.0
-offset_top = -92.0
+offset_left = -152.0
+offset_top = -78.0
 offset_right = -16.0
 offset_bottom = -14.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_store_frame")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_store_frame")
 
 [node name="HBox" type="HBoxContainer" parent="PlatformLinksFrame"]
 layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 1
+theme_override_constants/separation = 10
+alignment = 2
 
 [node name="BtnBazaar" type="Button" parent="PlatformLinksFrame/HBox"]
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 tooltip_text = "دریافت از کافه‌بازار"
 focus_mode = 0
@@ -862,10 +851,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -3.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -874,7 +863,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnMyket" type="Button" parent="PlatformLinksFrame/HBox"]
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 tooltip_text = "دریافت از مایکت"
 focus_mode = 0
@@ -890,10 +879,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -3.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -902,7 +891,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="BtnWindows" type="Button" parent="PlatformLinksFrame/HBox"]
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 tooltip_text = "دریافت نسخه ویندوز"
 focus_mode = 0
@@ -918,10 +907,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 7.0
-offset_right = -7.0
-offset_bottom = -7.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -3.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

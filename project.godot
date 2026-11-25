@@ -53,6 +53,7 @@ gdscript/warnings/narrowing_conversion=0
 
 window/size/viewport_width=720
 window/size/viewport_height=1280
+window/size/resizable=false
 window/size/window_width_override=500
 window/size/window_height_override=950
 window/stretch/mode="canvas_items"

@@ -13,6 +13,9 @@ signal server_config_updated(config: Dictionary)
 
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SESSION_PATH: String = "user://session.cfg"
+const SINGLE_INSTANCE_PORT: int = 48765
+
+var _single_instance_server: TCPServer = null
 
 var device_id: String = ""
 var token: String = ""
@@ -293,10 +296,38 @@ func get_player_not_played_turns(gamer_id: int) -> int:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	if not _setup_windows_desktop_guard():
+		return
 	is_mobile = OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or (OS.get_name() in ["Android", "iOS"])
 	get_tree().set_quit_on_go_back(false)
 	_load_or_create_device_id()
 	_load_saved_session_on_boot()
+
+
+func _setup_windows_desktop_guard() -> bool:
+	if OS.get_name() != "Windows" or DisplayServer.get_name() == "headless":
+		set_process(false)
+		return true
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_RESIZE_DISABLED, true)
+	_single_instance_server = TCPServer.new()
+	var err := _single_instance_server.listen(SINGLE_INSTANCE_PORT, "127.0.0.1")
+	if err != OK:
+		var peer := StreamPeerTCP.new()
+		peer.connect_to_host("127.0.0.1", SINGLE_INSTANCE_PORT)
+		peer.disconnect_from_host()
+		get_tree().quit()
+		return false
+	set_process(true)
+	return true
+
+
+func _process(_delta: float) -> void:
+	if _single_instance_server != null and _single_instance_server.is_listening():
+		if _single_instance_server.is_connection_available():
+			var client := _single_instance_server.take_connection()
+			if client != null:
+				client.disconnect_from_host()
+			DisplayServer.window_move_to_foreground()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
