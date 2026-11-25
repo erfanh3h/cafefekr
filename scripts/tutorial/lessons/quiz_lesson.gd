@@ -60,7 +60,7 @@ func build_steps(_coordinator: Node) -> Array[TutorialStep]:
 		"امتیازدهی هر سوال: جواب درست (+۱ امتیاز) • بدون پاسخ (۰ امتیاز) • جواب غلط (-۱ امتیاز منفی!). بعد از ۱۰ سوال، بیشترین امتیاز برنده‌ست!"
 	)
 	st_done.with_badge("پایان آموزش")
-	st_done.with_cta("بازگشت به کتابخانه")
+	st_done.with_cta("بازگشت به راهنما")
 	st_done.with_placement("center")
 	st_done.with_scrim_alpha(0.75)
 	s.append(st_done)

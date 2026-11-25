@@ -103,7 +103,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("2_font_hekayat")
 theme_override_font_sizes/font_size = 30
-text = "کتابخانه بازی‌های کافه فکر"
+text = "راهنمای بازی‌های کافه فکر"
 horizontal_alignment = 2
 
 [node name="SearchRow" type="HBoxContainer" parent="OuterMargin/MainPanel/InnerMargin/VBox/BrowseView"]

@@ -94,7 +94,7 @@ func build_steps(_coordinator: Node) -> Array[TutorialStep]:
 		"آفرین! هر راند ۵ دست رقابتی داره و در مساوی امتیاز تقسیم نمی‌شه — حدس حرکت بعدی حریف راز بردنه!"
 	)
 	st_done.with_badge("پایان آموزش")
-	st_done.with_cta("بازگشت به کتابخانه")
+	st_done.with_cta("بازگشت به راهنما")
 	st_done.with_placement("center")
 	st_done.with_scrim_alpha(0.78)
 	s.append(st_done)

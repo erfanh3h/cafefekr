@@ -112,7 +112,7 @@ func build_steps(_coordinator: Node) -> Array[TutorialStep]:
 		"این نوار پایین رادار، وضعیت کشتی‌های باقی‌مانده حریف رو نشون می‌ده. هرکی زودتر تمام کشتی‌های حریف رو غرق کنه برنده‌ست!"
 	)
 	st_done.with_badge("پایان آموزش")
-	st_done.with_cta("بازگشت به کتابخانه")
+	st_done.with_cta("بازگشت به راهنما")
 	st_done.with_target(func(): return _get_fleet_bar_rect(), 8.0, 14.0)
 	st_done.with_avoid_rect(func(): return _get_board_rect())
 	st_done.with_placement("auto")

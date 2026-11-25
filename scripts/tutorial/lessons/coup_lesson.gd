@@ -137,7 +137,7 @@ func build_steps(_coordinator: Node) -> Array[TutorialStep]:
 		"• اگر حریف بلوف بزنه می‌تونی «چالش» بدی (دروغگو ۱ کارت می‌سوزونه؛ اگه راست گفته باشه چالش‌دهنده می‌سوزونه!).\n• با ۷ سکه «کودتا» بزن (غیرقابل دفاع) و در ۱۰ سکه اجباریه.\nدکمه «نقش‌ها» این بالا همیشه کمکت می‌کنه!"
 	)
 	st_done.with_badge("پایان آموزش")
-	st_done.with_cta("بازگشت به کتابخانه")
+	st_done.with_cta("بازگشت به راهنما")
 	st_done.with_target(func(): return _get_roles_btn(), 8.0, 14.0)
 	st_done.with_scrim_alpha(0.72)
 	st_done.with_placement("bottom")

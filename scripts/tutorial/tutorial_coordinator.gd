@@ -947,10 +947,10 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	st_tab_history.with_hooks(func(): _switch_main_tab("history"))
 	s.append(st_tab_history)
 
-	# 5. Tab: Library (کتابخانه)
+	# 5. Tab: Library (راهنما)
 	var st_tab_library: TutorialStep = TutorialStep.create(
 		"tab_library",
-		"۴. کتابخانه بازی‌ها",
+		"۴. راهنمای بازی‌ها",
 		"قانون یا قلقِ یه بازی رو می‌خوای بدونی؟ همه بازی‌های فکری کافه فکر با راهنمای کامل اینجان."
 	)
 	st_tab_library.with_badge("بخش‌های اصلی (۴ از ۵)")
@@ -960,6 +960,20 @@ func _build_main_page_tutorial_steps() -> Array[TutorialStep]:
 	st_tab_library.with_placement("top")
 	st_tab_library.with_hooks(func(): _switch_main_tab("library"))
 	s.append(st_tab_library)
+
+	# 5b. Library Game Simulation / Interactive Training Icon
+	var st_library_sim: TutorialStep = TutorialStep.create(
+		"tab_library_sim",
+		"تمرین تعاملی و شبیه‌سازی بازی‌ها",
+		"روی هر کارت بازی، با زدن این آیکون می‌تونی وارد میز تمرینی و شبیه‌سازی سه‌بعدی همون بازی بشی و قوانینش رو عملی تمرین کنی!"
+	)
+	st_library_sim.with_badge("آموزش عملی بازی‌ها")
+	st_library_sim.with_cta("بعدی")
+	st_library_sim.with_target(func(): return _get_library_first_tut_btn(), 8.0, 14.0)
+	st_library_sim.with_scrim_alpha(0.82)
+	st_library_sim.with_placement("bottom")
+	st_library_sim.with_hooks(_focus_library_tab_top)
+	s.append(st_library_sim)
 
 	# 6. Tab: User Profile (کاربر)
 	var st_tab_user: TutorialStep = TutorialStep.create(
@@ -1216,6 +1230,30 @@ func _get_game_header_avoid_rect() -> Rect2:
 		if tr.size.x > 1.0 and tr.size.y > 1.0:
 			combined = tr if combined.size.x <= 1.0 else combined.merge(tr)
 	return combined
+
+
+func _focus_library_tab_top() -> void:
+	_switch_main_tab("library")
+	if not is_instance_valid(_main_tab_shell):
+		return
+	var lib_tab: Control = null
+	if _main_tab_shell.has_method("get_tab_instance"):
+		lib_tab = _main_tab_shell.call("get_tab_instance", "library") as Control
+	if is_instance_valid(lib_tab):
+		if lib_tab.has_method("show_browse_view"):
+			lib_tab.call("show_browse_view")
+		var sc: ScrollContainer = lib_tab.get_node_or_null("OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/Scroll") as ScrollContainer
+		if is_instance_valid(sc):
+			sc.scroll_vertical = 0
+
+
+func _get_library_first_tut_btn() -> Control:
+	if not is_instance_valid(_main_tab_shell) or not _main_tab_shell.has_method("get_tab_instance"):
+		return null
+	var lib_tab: Control = _main_tab_shell.call("get_tab_instance", "library") as Control
+	if is_instance_valid(lib_tab) and lib_tab.has_method("get_first_tutorial_button_control"):
+		return lib_tab.call("get_first_tutorial_button_control") as Control
+	return null
 
 
 func _focus_play_tab_top() -> void:

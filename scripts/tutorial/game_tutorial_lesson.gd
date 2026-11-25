@@ -33,7 +33,7 @@ func get_tutorial_title_fa() -> String:
 
 
 func get_tutorial_subtitle_fa() -> String:
-	return "میز تمرینی کتابخانه کافه فکر"
+	return "میز تمرینی راهنمای کافه فکر"
 
 
 func get_hud_turn_time() -> float:

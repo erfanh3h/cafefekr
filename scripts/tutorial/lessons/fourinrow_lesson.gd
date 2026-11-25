@@ -109,7 +109,7 @@ func build_steps(_coordinator: Node) -> Array[TutorialStep]:
 		"ستون وسط همیشه بهترین جای شروعِ بازیه، چون بیشترین مسیرهای افقی و مورب ازش رد می‌شن. آماده رقابت شو!"
 	)
 	st_done.with_badge("پایان آموزش")
-	st_done.with_cta("بازگشت به کتابخانه")
+	st_done.with_cta("بازگشت به راهنما")
 	st_done.with_placement("center")
 	st_done.with_scrim_alpha(0.82)
 	s.append(st_done)

@@ -114,7 +114,7 @@ func build_steps(_coordinator: Node) -> Array[TutorialStep]:
 		"عالی بود! حالا با قوانین مین‌یاب کاملاً آشنایی: باز کردن خانه‌های امن، استنتاج تعداد مین‌ها در ۸ همسایگی، باز شدن زنجیروار ۰، پرچم زدن با لمس طولانی یا دکمه «پرچم»، و پرهیز از پرچم اشتباه و انفجار!"
 	)
 	st_done.with_badge("پایان آموزش")
-	st_done.with_cta("بازگشت به کتابخانه")
+	st_done.with_cta("بازگشت به راهنما")
 	st_done.with_placement("center")
 	st_done.with_scrim_alpha(0.78)
 	st_done.with_hooks(func(): _enter_phase("done"))

@@ -174,7 +174,7 @@ func build_steps(_coordinator: Node) -> Array[TutorialStep]:
 		"در پایان ۱۲ راند، هرکی جمع امتیازش بیشتر باشه برنده‌ست. آماده رقابت شو!"
 	)
 	st_done.with_badge("پایان آموزش")
-	st_done.with_cta("بازگشت به کتابخانه")
+	st_done.with_cta("بازگشت به راهنما")
 	st_done.with_placement("center")
 	st_done.with_scrim_alpha(0.75)
 	s.append(st_done)

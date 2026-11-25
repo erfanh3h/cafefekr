@@ -162,9 +162,20 @@ func _ensure_grid_cards_built() -> void:
 		_game_card_entries.append({
 			"id": str(g["id"]),
 			"name_fa": str(g["name_fa"]),
-			"card": card
+			"card": card,
+			"tut_btn": card.get_meta("tut_btn", null)
 		})
 	_game_cards_built = true
+
+
+func get_first_tutorial_button_control() -> Control:
+	_ensure_grid_cards_built()
+	for entry in _game_card_entries:
+		var card: Control = entry.get("card") as Control
+		var tb: Control = entry.get("tut_btn") as Control
+		if is_instance_valid(card) and card.visible and is_instance_valid(tb) and tb.is_visible_in_tree():
+			return tb
+	return null
 
 
 func _populate_grid() -> void:
@@ -228,6 +239,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	if has_tutorial:
 		var tut_btn := _create_tutorial_row_button(g["id"])
 		hbox.add_child(tut_btn)
+		card.set_meta("tut_btn", tut_btn)
 
 	var text_col := VBoxContainer.new()
 	text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE

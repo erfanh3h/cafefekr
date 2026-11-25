@@ -145,7 +145,7 @@ func _on_player_won(_winning_line: Array) -> void:
 			"به همین سادگی! توی مسابقات واقعی حواست به بستن مسیر حریف هم باشه."
 		)
 		st_done.with_badge("پایان آموزش")
-		st_done.with_cta("بازگشت به کتابخانه")
+		st_done.with_cta("بازگشت به راهنما")
 		st_done.with_placement("center")
 		st_done.with_scrim_alpha(0.82)
 		_coordinator.show_final_lesson_step(st_done, 4, 5)

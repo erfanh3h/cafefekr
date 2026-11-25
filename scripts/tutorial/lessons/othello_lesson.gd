@@ -89,7 +89,7 @@ func build_steps(_coordinator: Node) -> Array[TutorialStep]:
 		"حالا محاصره مهره‌ها و اهمیت گوشه‌ها رو بلدی. وقتشه بری سر میز و حریفات رو غافلگیر کنی!"
 	)
 	st_done.with_badge("پایان آموزش")
-	st_done.with_cta("بازگشت به کتابخانه")
+	st_done.with_cta("بازگشت به راهنما")
 	st_done.with_placement("center")
 	st_done.with_scrim_alpha(0.82)
 	s.append(st_done)

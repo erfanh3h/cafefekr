@@ -97,7 +97,7 @@ func build_steps(_coordinator: Node) -> Array[TutorialStep]:
 		"آفرین! حالا چیدن رمز غیرتکراری و کشف رمز حریف با تحلیل پین‌های سیاه و سفید رو بلدی. هر کی زودتر رمز حریف رو بشکنه برنده‌ست!"
 	)
 	st_done.with_badge("پایان آموزش")
-	st_done.with_cta("بازگشت به کتابخانه")
+	st_done.with_cta("بازگشت به راهنما")
 	st_done.with_placement("center")
 	st_done.with_scrim_alpha(0.78)
 	s.append(st_done)
