@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" uid="uid://pentago3d0001" path="res://scenes/games/pentago/pentago_3d.tscn" id="1_base_pen"]
+[ext_resource type="Script" path="res://scenes/games/pentago/tutorial_pentago_3d.gd" id="2_tut_pen"]
+
+[node name="TutorialPentago3D" instance=ExtResource("1_base_pen")]
+script = ExtResource("2_tut_pen")
