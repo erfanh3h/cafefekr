@@ -24,7 +24,7 @@ var pending_auth: Dictionary = {} # namespace -> auth_dict
 func _ready() -> void:
 	set_process(true)
 
-func connect_to_host(host: String = "192.168.1.2", port: int = 5000, ssl: bool = false) -> Error:
+func connect_to_host(host: String = "85.133.205.107", port: int = 5000, ssl: bool = false) -> Error:
 	var protocol = "wss://" if ssl else "ws://"
 	var url = "%s%s:%d/socket.io/?EIO=4&transport=websocket" % [protocol, host, port]
 	return connect_url(url)
