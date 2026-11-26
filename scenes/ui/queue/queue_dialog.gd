@@ -95,6 +95,7 @@ func _ready() -> void:
 	NetworkManager.ranked_locked_received.connect(func(_data):
 		stop_queue()
 	)
+	ResponsiveUI.register_dialog(self, 580.0, 740.0, 320.0, 380.0)
 
 
 func _setup_accept_ui() -> void:
@@ -330,7 +331,7 @@ func _make_slot_card(title_txt: String, sub_txt: String, is_filled: bool, is_me:
 	t_lbl.clip_text = true
 	t_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	t_lbl.add_theme_font_override("font", FONT_HEKAYAT)
-	t_lbl.add_theme_font_size_override("font_size", 16 if is_compact else 19)
+	ResponsiveUI.apply_text(t_lbl, UITypography.Role.SUBTITLE if is_compact else UITypography.Role.TITLE_SM, {"min_px": 17, "max_px": 25})
 	t_lbl.add_theme_color_override("font_color", Color(0.984, 0.953, 0.894) if is_filled else Color(0.82, 0.74, 0.62, 0.84))
 	v.add_child(t_lbl)
 
@@ -342,7 +343,7 @@ func _make_slot_card(title_txt: String, sub_txt: String, is_filled: bool, is_me:
 		s_lbl.clip_text = true
 		s_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		s_lbl.add_theme_font_override("font", FONT_VAZIR)
-		s_lbl.add_theme_font_size_override("font_size", 11 if is_compact else 12)
+		ResponsiveUI.apply_text(s_lbl, UITypography.Role.MICRO, {"min_px": 14, "max_px": 18})
 		var sub_col: Color = Color(0.45, 0.98, 0.65) if is_confirmed else (Color(0.48, 0.90, 1.0) if is_me else (Color(0.45, 0.98, 0.65) if is_filled else Color(0.74, 0.65, 0.53, 0.78)))
 		s_lbl.add_theme_color_override("font_color", sub_col)
 		v.add_child(s_lbl)

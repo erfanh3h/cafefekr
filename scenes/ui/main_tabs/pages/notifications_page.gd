@@ -74,7 +74,7 @@ func _build_ui() -> void:
 	var title_lbl: Label = Label.new()
 	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	title_lbl.add_theme_font_size_override("font_size", 34)
+	ResponsiveUI.apply_text(title_lbl, UITypography.Role.TITLE_LG, {"min_px": 24, "max_px": 40})
 	title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	title_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 	title_lbl.add_theme_constant_override("shadow_outline_size", 2)

@@ -67,37 +67,12 @@ static func fa_digits(val: Variant) -> String:
 static func configure_bidi_label(lbl: Label, clip_with_ellipsis: bool = true) -> void:
 	if not is_instance_valid(lbl):
 		return
-	lbl.text_direction = Control.TEXT_DIRECTION_AUTO
-	if clip_with_ellipsis:
-		lbl.clip_text = true
-		lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	UITypography.configure_bidi(lbl, clip_with_ellipsis, false)
 
 
 # Computes mobile-safe canvas insets (supports 9:16 and 9:19.5 tall notch displays)
 static func get_safe_insets(viewport: Viewport) -> Dictionary:
-	var result := {"top": 16, "bottom": 16, "left": 12, "right": 12}
-	if viewport == null:
-		return result
-	var screen_size := DisplayServer.screen_get_size()
-	if screen_size.x <= 0 or screen_size.y <= 0:
-		return result
-	var safe_rect := DisplayServer.get_display_safe_area()
-	if safe_rect.size.x <= 0 or safe_rect.size.y <= 0:
-		return result
-	var vp_rect := viewport.get_visible_rect()
-	if vp_rect.size.x <= 0.0 or vp_rect.size.y <= 0.0:
-		return result
-	var scale_x: float = vp_rect.size.x / float(screen_size.x)
-	var scale_y: float = vp_rect.size.y / float(screen_size.y)
-	var top_px := int(ceil(float(safe_rect.position.y) * scale_y))
-	var bottom_raw := int(ceil(float(screen_size.y - safe_rect.end.y) * scale_y))
-	var left_px := int(ceil(float(safe_rect.position.x) * scale_x))
-	var right_px := int(ceil(float(screen_size.x - safe_rect.end.x) * scale_x))
-	result["top"] = clampi(maxi(14, top_px + 6), 14, 54)
-	result["bottom"] = clampi(maxi(14, bottom_raw + 6), 14, 48)
-	result["left"] = clampi(maxi(10, left_px + 8), 10, 28)
-	result["right"] = clampi(maxi(10, right_px + 8), 10, 28)
-	return result
+	return UITypography.get_safe_insets(viewport)
 
 
 # --- StyleBoxFlat Builders ---
@@ -415,7 +390,10 @@ static func apply_drawer_item_style(btn: Button, variant: String = "default") ->
 	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	if _font_ui:
 		btn.add_theme_font_override("font", _font_ui)
-	btn.add_theme_font_size_override("font_size", 18)
+	btn.set_meta(&"_resp_base_px", 20)
+	btn.set_meta(&"_resp_min_px", 17)
+	btn.set_meta(&"_resp_max_px", 26)
+	btn.add_theme_font_size_override("font_size", UITypography.scale_px(20, 17, 26))
 	var text_col := Color(1.0, 0.86, 0.86) if variant == "danger" else (COL_TEXT_GOLD if variant == "primary" else COL_TEXT_IVORY)
 	btn.add_theme_color_override("font_color", text_col)
 	btn.add_theme_color_override("font_hover_color", Color.WHITE)
@@ -445,7 +423,7 @@ static func build_theme() -> Theme:
 	var theme := Theme.new()
 	if _font_ui:
 		theme.default_font = _font_ui
-	theme.default_font_size = 18
+	theme.default_font_size = UITypography.scale_px(19, 16, 24)
 
 	theme.set_stylebox("panel", "PanelContainer", make_player_card_style(false))
 	theme.set_stylebox("normal", "Button", make_floating_btn_style("normal"))

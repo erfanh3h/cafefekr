@@ -28,6 +28,7 @@ func _ready() -> void:
 	)
 	btn_free_coin.pressed.connect(_on_claim_free_coin)
 	_populate_avatars()
+	ResponsiveUI.register_dialog(self, 660.0, 1160.0, 320.0, 480.0)
 
 func open() -> void:
 	ActionVFXManager.animate_dialog_open(self, null, true)

@@ -263,7 +263,7 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_roll_btn.text = "پرتاب تاس"
 	_action_roll_btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	_action_roll_btn.add_theme_font_size_override("font_size", 26)
+	ResponsiveUI.apply_scaled_font(_action_roll_btn, 28, 22, 34)
 	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_roll_btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	_action_roll_btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72))
@@ -1002,9 +1002,9 @@ func _create_royal_pawn_node(g_id: int, stack_count: int = 1) -> Node3D:
 		lbl.position = Vector3(0.0, 0.78 * S, 0.0)
 		lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		lbl.no_depth_test = true
-		lbl.pixel_size = 0.0009
+		lbl.pixel_size = 0.00105
 		lbl.font = preload("res://assets/fonts/hekayat.ttf")
-		lbl.font_size = 44
+		lbl.font_size = 48
 		lbl.outline_size = 10
 		lbl.modulate = Color(1.0, 0.95, 0.40)
 		lbl.outline_modulate = Color(0.08, 0.04, 0.02, 0.98)

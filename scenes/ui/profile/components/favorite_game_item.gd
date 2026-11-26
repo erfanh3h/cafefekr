@@ -84,7 +84,7 @@ func _build_ui() -> void:
 	_lbl_matches.text = "۰ مسابقه"
 	_lbl_matches.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_matches.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_matches.add_theme_font_size_override("font_size", 13)
+	ResponsiveUI.apply_text(_lbl_matches, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
 	_lbl_matches.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 	vb.add_child(_lbl_matches)
 
@@ -111,7 +111,7 @@ func _build_ui() -> void:
 	_lbl_winrate.text = "۰٪ برد"
 	_lbl_winrate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_winrate.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_winrate.add_theme_font_size_override("font_size", 13)
+	ResponsiveUI.apply_text(_lbl_winrate, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
 	_win_pill.add_child(_lbl_winrate)
 
 

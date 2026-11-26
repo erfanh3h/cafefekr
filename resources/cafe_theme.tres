@@ -1,0 +1,47 @@
+[gd_resource type="Theme" format=3]
+
+[ext_resource type="FontFile" path="res://assets/fonts/Vazir.ttf" id="1_vazir"]
+[ext_resource type="FontFile" path="res://assets/fonts/hekayat.ttf" id="2_hekayat"]
+
+[resource]
+default_font = ExtResource("1_vazir")
+default_font_size = 19
+Button/font_sizes/font_size = 21
+Button/fonts/font = ExtResource("1_vazir")
+CheckBox/font_sizes/font_size = 19
+CheckBox/fonts/font = ExtResource("1_vazir")
+Label/colors/font_color = Color(0.98, 0.95, 0.89, 1)
+Label/colors/font_shadow_color = Color(0.04, 0.02, 0.01, 0.8)
+Label/constants/shadow_offset_y = 1
+Label/font_sizes/font_size = 19
+Label/fonts/font = ExtResource("1_vazir")
+LineEdit/font_sizes/font_size = 22
+LineEdit/fonts/font = ExtResource("1_vazir")
+OptionButton/font_sizes/font_size = 20
+OptionButton/fonts/font = ExtResource("1_vazir")
+RichTextLabel/font_sizes/bold_font_size = 21
+RichTextLabel/font_sizes/italics_font_size = 19
+RichTextLabel/font_sizes/normal_font_size = 19
+RichTextLabel/fonts/normal_font = ExtResource("1_vazir")
+TabBar/font_sizes/font_size = 20
+TabBar/fonts/font = ExtResource("2_hekayat")
+TextEdit/font_sizes/font_size = 21
+TextEdit/fonts/font = ExtResource("1_vazir")
+TitleDisplay/base_type = &"Label"
+TitleDisplay/font_sizes/font_size = 32
+TitleDisplay/fonts/font = ExtResource("2_hekayat")
+HeadingLarge/base_type = &"Label"
+HeadingLarge/font_sizes/font_size = 27
+HeadingLarge/fonts/font = ExtResource("2_hekayat")
+HeadingSmall/base_type = &"Label"
+HeadingSmall/font_sizes/font_size = 23
+HeadingSmall/fonts/font = ExtResource("2_hekayat")
+BodyLarge/base_type = &"Label"
+BodyLarge/font_sizes/font_size = 22
+BodyLarge/fonts/font = ExtResource("1_vazir")
+BodySmall/base_type = &"Label"
+BodySmall/font_sizes/font_size = 17
+BodySmall/fonts/font = ExtResource("1_vazir")
+CaptionLabel/base_type = &"Label"
+CaptionLabel/font_sizes/font_size = 16
+CaptionLabel/fonts/font = ExtResource("1_vazir")

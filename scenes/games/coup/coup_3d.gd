@@ -210,7 +210,7 @@ func _make_glass_style(bg: Color, border: Color, radius: int = 18, border_w: int
 
 func _style_action_button(btn: Button, bg: Color, border: Color, text_col: Color = Color.WHITE, f_size: int = 20, disabled: bool = false, radius: int = 14) -> void:
 	btn.add_theme_font_override("font", FontHekayat)
-	btn.add_theme_font_size_override("font_size", f_size)
+	ResponsiveUI.apply_scaled_font(btn, f_size, 16, 34)
 	btn.add_theme_color_override("font_color", text_col)
 	btn.add_theme_color_override("font_hover_color", text_col.lightened(0.12))
 	btn.add_theme_color_override("font_pressed_color", text_col)
@@ -284,7 +284,7 @@ func _make_gamer_action_btn(
 		var b_lbl: Label = Label.new()
 		b_lbl.text = badge_txt
 		b_lbl.add_theme_font_override("font", FontHekayat)
-		b_lbl.add_theme_font_size_override("font_size", 17)
+		ResponsiveUI.apply_scaled_font(b_lbl, 19, 16, 23)
 		b_lbl.add_theme_color_override("font_color", Color(0.98, 0.98, 0.94) if not is_dis else Color(0.80, 0.72, 0.70))
 		b_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 		b_lbl.add_theme_constant_override("outline_size", 2)
@@ -311,7 +311,7 @@ func _make_gamer_action_btn(
 		var c_lbl: Label = Label.new()
 		c_lbl.text = cost_txt
 		c_lbl.add_theme_font_override("font", FontHekayat)
-		c_lbl.add_theme_font_size_override("font_size", 18)
+		ResponsiveUI.apply_scaled_font(c_lbl, 20, 16, 24)
 		c_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.44) if not is_dis else Color(0.66, 0.66, 0.70))
 		c_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 		c_lbl.add_theme_constant_override("outline_size", 2)
@@ -327,7 +327,7 @@ func _make_gamer_action_btn(
 	t_lbl.clip_text = true
 	t_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	t_lbl.add_theme_font_override("font", FontHekayat)
-	t_lbl.add_theme_font_size_override("font_size", title_size)
+	ResponsiveUI.apply_scaled_font(t_lbl, maxi(title_size, 22), 18, 30)
 	t_lbl.add_theme_color_override("font_color", Color.WHITE if not is_dis else Color(0.66, 0.66, 0.70))
 	t_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.88))
 	t_lbl.add_theme_constant_override("outline_size", 2)

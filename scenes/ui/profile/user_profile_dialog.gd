@@ -181,6 +181,7 @@ func _build_shell() -> void:
 	panel.clip_contents = false
 	panel.add_theme_stylebox_override("panel", _make_parlor_outer_frame_style())
 	outer.add_child(panel)
+	ResponsiveUI.register_dialog(panel, 680.0, 1200.0, 320.0, 480.0, false)
 
 	# 3b. Inner Gold-Hairline Inlay Chamber
 	_inner_bezel = PanelContainer.new()

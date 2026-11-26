@@ -86,6 +86,7 @@ func _ready() -> void:
 
 	_populate_games_grid()
 	_update_selected_preview()
+	ResponsiveUI.register_dialog(self, 680.0, 1180.0, 320.0, 480.0)
 
 
 func _setup_styles() -> void:
@@ -259,7 +260,7 @@ func _create_game_card(g_type: String, initial_h: float = 240.0) -> Control:
 	var d_lbl: Label = Label.new()
 	d_lbl.text = "۴ نفره"
 	d_lbl.add_theme_font_override("font", FONT_VAZIR)
-	d_lbl.add_theme_font_size_override("font_size", 12)
+	ResponsiveUI.apply_text(d_lbl, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
 	d_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42))
 	cap_pill.add_child(d_lbl)
 	card.add_child(cap_pill)

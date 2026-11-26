@@ -467,13 +467,17 @@ static func make_title(
 	l.text = txt
 	l.horizontal_alignment = align
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var norm_sz: int = UITypography.normalize_raw_px(font_size)
+	l.set_meta(&"_resp_base_px", norm_sz)
+	l.set_meta(&"_resp_min_px", 18)
+	l.set_meta(&"_resp_max_px", maxi(48, norm_sz))
 	l.add_theme_font_override("font", FONT_TITLE)
-	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_font_size_override("font_size", UITypography.scale_px(norm_sz, 18, maxi(48, norm_sz)))
 	l.add_theme_color_override("font_color", col)
 	l.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.90))
 	l.add_theme_constant_override("shadow_offset_y", 2)
 	l.add_theme_constant_override("shadow_outline_size", 3)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
+	UITypography.configure_bidi(l, false, wrap)
 	return l
 
 
@@ -488,12 +492,16 @@ static func make_body(
 	l.text = txt
 	l.horizontal_alignment = align
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var norm_sz: int = UITypography.normalize_raw_px(font_size)
+	l.set_meta(&"_resp_base_px", norm_sz)
+	l.set_meta(&"_resp_min_px", 16)
+	l.set_meta(&"_resp_max_px", maxi(36, norm_sz))
 	l.add_theme_font_override("font", FONT_BODY)
-	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_font_size_override("font_size", UITypography.scale_px(norm_sz, 16, maxi(36, norm_sz)))
 	l.add_theme_color_override("font_color", col)
 	l.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.72))
 	l.add_theme_constant_override("shadow_outline_size", 2)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
+	UITypography.configure_bidi(l, false, wrap)
 	return l
 
 
@@ -507,12 +515,17 @@ static func make_line_edit(
 	le.placeholder_text = placeholder
 	le.custom_minimum_size = Vector2(0, min_height)
 	le.alignment = align
+	var norm_sz: int = UITypography.normalize_raw_px(font_size)
+	le.set_meta(&"_resp_base_px", norm_sz)
+	le.set_meta(&"_resp_min_px", 18)
+	le.set_meta(&"_resp_max_px", maxi(32, norm_sz))
 	le.add_theme_font_override("font", FONT_BODY)
-	le.add_theme_font_size_override("font_size", font_size)
+	le.add_theme_font_size_override("font_size", UITypography.scale_px(norm_sz, 18, maxi(32, norm_sz)))
 	le.add_theme_color_override("font_color", COL_IVORY)
 	le.add_theme_color_override("font_placeholder_color", Color(0.68, 0.60, 0.48, 0.78))
 	le.add_theme_stylebox_override("normal", create_input_style(false))
 	le.add_theme_stylebox_override("focus", create_input_style(true))
+	UITypography.configure_bidi(le, false, false)
 	return le
 
 
@@ -588,8 +601,13 @@ static func make_button(
 	b.custom_minimum_size = min_size
 	b.focus_mode = Control.FOCUS_NONE
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var norm_sz: int = UITypography.normalize_raw_px(font_size)
+	var min_sz: int = 16 if use_title_font else 15
+	b.set_meta(&"_resp_base_px", norm_sz)
+	b.set_meta(&"_resp_min_px", min_sz)
+	b.set_meta(&"_resp_max_px", maxi(36, norm_sz))
 	b.add_theme_font_override("font", FONT_TITLE if use_title_font else FONT_BODY)
-	b.add_theme_font_size_override("font_size", font_size)
+	b.add_theme_font_size_override("font_size", UITypography.scale_px(norm_sz, min_sz, maxi(36, norm_sz)))
 	b.add_theme_color_override("font_color", COL_IVORY)
 	b.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
 	b.add_theme_color_override("font_pressed_color", COL_WARM_CREAM)
@@ -629,7 +647,7 @@ static func make_wood_hero_button(
 	b.focus_mode = Control.FOCUS_NONE
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.add_theme_font_override("font", FONT_TITLE)
-	b.add_theme_font_size_override("font_size", font_size)
+	b.add_theme_font_size_override("font_size", UITypography.scale_px(font_size, 22, 42))
 	KenneyUI.style_button(b, color_name)
 	return b
 
@@ -1413,7 +1431,8 @@ static func show_confirm_modal(
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(620, 0)
+	var dlg_sz: Vector2 = UITypography.compute_dialog_size(620.0, 0.0, Vector2.ZERO, UITypography.get_safe_insets())
+	card.custom_minimum_size = Vector2(dlg_sz.x, 0)
 	card.add_theme_stylebox_override("panel", create_dialog_frame_style())
 	center.add_child(card)
 
@@ -1624,7 +1643,8 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(640, 0)
+	var dlg_sz: Vector2 = UITypography.compute_dialog_size(640.0, 960.0, Vector2.ZERO, UITypography.get_safe_insets())
+	card.custom_minimum_size = Vector2(dlg_sz.x, 0)
 	card.add_theme_stylebox_override("panel", create_dialog_frame_style())
 	center.add_child(card)
 
@@ -1667,7 +1687,7 @@ static func show_game_invite_modal(host: Node, target_uid: String, target_name: 
 	vbox.add_child(make_body("بازی مورد نظر خود را برای ارسال دعوت‌نامه مستقیم انتخاب کنید:", 19, COL_WARM_CREAM, HORIZONTAL_ALIGNMENT_CENTER, true))
 
 	var g_scroll := ScrollContainer.new()
-	g_scroll.custom_minimum_size = Vector2(0, 500)
+	g_scroll.custom_minimum_size = Vector2(0, clampf(UITypography.get_viewport_size().y * 0.40, 260.0, 520.0))
 	g_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	g_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vbox.add_child(g_scroll)
@@ -1791,7 +1811,8 @@ static func show_report_modal(host: Node, target_type: String, target_id: String
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(620, 0)
+	var dlg_sz: Vector2 = UITypography.compute_dialog_size(620.0, 0.0, Vector2.ZERO, UITypography.get_safe_insets())
+	card.custom_minimum_size = Vector2(dlg_sz.x, 0)
 	card.add_theme_stylebox_override("panel", create_dialog_frame_style())
 	center.add_child(card)
 
@@ -1891,7 +1912,8 @@ static func show_clan_details_modal(host: Node, clan_id: String, initial_data: D
 	overlay.add_child(center)
 
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(640, 0)
+	var dlg_sz: Vector2 = UITypography.compute_dialog_size(640.0, 960.0, Vector2.ZERO, UITypography.get_safe_insets())
+	card.custom_minimum_size = Vector2(dlg_sz.x, 0)
 	card.add_theme_stylebox_override("panel", create_dialog_frame_style())
 	center.add_child(card)
 
@@ -2096,8 +2118,12 @@ static func style_parlor_tab_button(btn: Button, is_active: bool, font_size: int
 		btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	else:
 		btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	var norm_sz: int = UITypography.normalize_raw_px(font_size)
+	btn.set_meta(&"_resp_base_px", norm_sz)
+	btn.set_meta(&"_resp_min_px", 16)
+	btn.set_meta(&"_resp_max_px", maxi(28, norm_sz))
 	btn.add_theme_font_override("font", FONT_TITLE)
-	btn.add_theme_font_size_override("font_size", font_size)
+	btn.add_theme_font_size_override("font_size", UITypography.scale_px(norm_sz, 16, maxi(28, norm_sz)))
 
 	var make_frame_sb := func(mod_col: Color) -> StyleBoxTexture:
 		var sb := StyleBoxTexture.new()

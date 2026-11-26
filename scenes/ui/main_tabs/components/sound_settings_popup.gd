@@ -37,6 +37,7 @@ func _ready() -> void:
 	check_music.toggled.connect(_on_music_toggled)
 	slider_sfx.value_changed.connect(_on_sfx_slider_changed)
 	check_sfx.toggled.connect(_on_sfx_toggled)
+	ResponsiveUI.register_dialog(panel, 620.0, 440.0, 300.0, 280.0, false)
 
 
 func open() -> void:

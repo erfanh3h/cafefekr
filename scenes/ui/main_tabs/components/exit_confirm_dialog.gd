@@ -35,6 +35,7 @@ func _ready() -> void:
 		if event is InputEventMouseButton and event.pressed:
 			close()
 	)
+	ResponsiveUI.register_dialog(panel, 620.0, 340.0, 300.0, 240.0, false)
 
 
 func open() -> void:

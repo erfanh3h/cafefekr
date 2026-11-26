@@ -1741,7 +1741,7 @@ func _ensure_intro_extra_col(idx: int) -> Dictionary:
 	rl.name = "Role"
 	rl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	rl.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
-	rl.add_theme_font_size_override("font_size", 12)
+	ResponsiveUI.apply_text(rl, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
 	rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(rl)
 
@@ -1782,9 +1782,9 @@ func _sync_multiplayer_intro_columns() -> void:
 	if is_instance_valid(intro_p2_avatar):
 		intro_p2_avatar.custom_minimum_size = compact_av
 	if is_instance_valid(intro_p1_name):
-		intro_p1_name.add_theme_font_size_override("font_size", 17 if total_p >= 4 else 19)
+		ResponsiveUI.apply_scaled_font(intro_p1_name, 19 if total_p >= 4 else 21, 16, 26)
 	if is_instance_valid(intro_p2_name):
-		intro_p2_name.add_theme_font_size_override("font_size", 17 if total_p >= 4 else 19)
+		ResponsiveUI.apply_scaled_font(intro_p2_name, 19 if total_p >= 4 else 21, 16, 26)
 
 	for idx in [3, 4]:
 		var col_info: Dictionary = _ensure_intro_extra_col(idx)
@@ -3331,7 +3331,7 @@ func _style_monopoly_action_button(btn: Button, bg_col: Color, border_col: Color
 
 	var base_fg: Color = Color(1.0, 0.98, 0.92) if is_primary else Color(0.96, 0.94, 0.90)
 	btn.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	btn.add_theme_font_size_override("font_size", 24 if is_primary else 22)
+	ResponsiveUI.apply_text(btn, UITypography.Role.BUTTON_LG if is_primary else UITypography.Role.BUTTON_MD, {"min_px": 18, "max_px": 28})
 	btn.add_theme_color_override("font_color", base_fg)
 	btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72))

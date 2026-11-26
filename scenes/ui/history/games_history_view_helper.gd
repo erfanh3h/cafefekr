@@ -264,7 +264,7 @@ static func _create_toolbar_chip(txt: String, is_active: bool) -> Button:
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.custom_minimum_size = Vector2(0, 36)
 	btn.add_theme_font_override("font", _font_vazir)
-	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_font_size_override("font_size", UITypography.scale_px(17, 15, 22))
 	_style_toolbar_chip(btn, is_active)
 	return btn
 
@@ -347,7 +347,7 @@ static func _create_game_stat_card(info: Dictionary) -> PanelContainer:
 	var lbl_matches: Label = Label.new()
 	lbl_matches.text = "%s بازی" % GameManager.to_fa_num(total_count)
 	lbl_matches.add_theme_font_override("font", _font_vazir)
-	lbl_matches.add_theme_font_size_override("font_size", 13)
+	lbl_matches.add_theme_font_size_override("font_size", UITypography.scale_px(16, 15, 20))
 	lbl_matches.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 	row1.add_child(lbl_matches)
 
@@ -358,7 +358,7 @@ static func _create_game_stat_card(info: Dictionary) -> PanelContainer:
 	lbl_name.clip_text = true
 	lbl_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl_name.add_theme_font_override("font", _font_hekayat)
-	lbl_name.add_theme_font_size_override("font_size", 22)
+	lbl_name.add_theme_font_size_override("font_size", UITypography.scale_px(22, 18, 28))
 	lbl_name.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 	row1.add_child(lbl_name)
 
@@ -470,7 +470,7 @@ static func _create_unplayed_chip(info: Dictionary) -> PanelContainer:
 	lbl.clip_text = true
 	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl.add_theme_font_override("font", _font_vazir)
-	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_font_size_override("font_size", UITypography.scale_px(16, 15, 20))
 	lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 	hb.add_child(lbl)
 
@@ -487,7 +487,7 @@ static func _create_unplayed_chip(info: Dictionary) -> PanelContainer:
 	return p
 
 
-static func _create_stat_pill(text_content: String, text_color: Color, bg_color: Color, font_size: int = 14) -> PanelContainer:
+static func _create_stat_pill(text_content: String, text_color: Color, bg_color: Color, font_size: int = 16) -> PanelContainer:
 	var pill: PanelContainer = PanelContainer.new()
 	pill.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
@@ -506,7 +506,7 @@ static func _create_stat_pill(text_content: String, text_color: Color, bg_color:
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_override("font", _font_vazir)
-	lbl.add_theme_font_size_override("font_size", font_size)
+	lbl.add_theme_font_size_override("font_size", UITypography.scale_px(font_size, 15, 22))
 	lbl.add_theme_color_override("font_color", text_color)
 	pill.add_child(lbl)
 

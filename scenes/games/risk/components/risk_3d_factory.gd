@@ -464,8 +464,8 @@ static func _build_draw_deck(
 	title_lbl.text = title_fa
 	if font:
 		title_lbl.font = font
-	title_lbl.font_size = 36
-	title_lbl.pixel_size = 0.0011
+	title_lbl.font_size = 42
+	title_lbl.pixel_size = 0.00118
 	title_lbl.modulate = Color(0.98, 0.90, 0.68)
 	title_lbl.outline_size = 10
 	title_lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98)
@@ -750,8 +750,8 @@ static func build_continent_node(
 	name_lbl.text = "%s (%s👑)" % [str(meta["fa"]), fa_digits(dom_req)]
 	if font:
 		name_lbl.font = font
-	name_lbl.font_size = 38
-	name_lbl.pixel_size = 0.00102
+	name_lbl.font_size = 42
+	name_lbl.pixel_size = 0.00112
 	name_lbl.modulate = Color(0.99, 0.96, 0.88)
 	name_lbl.outline_size = 10
 	name_lbl.outline_modulate = Color(0.03, 0.02, 0.01, 0.98)
@@ -1069,8 +1069,8 @@ static func build_player_station(
 	stats_lbl.text = "👑۰  🃏۰"
 	if font:
 		stats_lbl.font = font
-	stats_lbl.font_size = 34
-	stats_lbl.pixel_size = 0.00095
+	stats_lbl.font_size = 38
+	stats_lbl.pixel_size = 0.00108
 	stats_lbl.modulate = RiskMaterials.FACTION_COLORS.get(p_idx, Color.WHITE).lightened(0.45)
 	stats_lbl.outline_size = 10
 	stats_lbl.outline_modulate = Color(0.02, 0.01, 0.01, 0.98)

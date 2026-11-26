@@ -130,7 +130,29 @@ func _ready() -> void:
 	visibility_changed.connect(_on_visibility_changed)
 	_on_visibility_changed()
 
+	if ResponsiveUI != null and not ResponsiveUI.layout_changed.is_connected(_on_responsive_layout_changed):
+		ResponsiveUI.layout_changed.connect(_on_responsive_layout_changed)
+	_sync_responsive_shell()
+
 	switch_to_tab("play")
+
+
+func _on_responsive_layout_changed(_metrics: Dictionary) -> void:
+	_sync_responsive_shell()
+
+
+func _sync_responsive_shell() -> void:
+	var insets: Dictionary = ResponsiveUI.get_safe_insets() if ResponsiveUI != null else {"top": 14, "bottom": 14, "left": 12, "right": 12}
+	if is_instance_valid(tab_content_container):
+		var top_pad: int = maxi(0, int(insets.get("top", 14)) - 10)
+		var side_pad: int = maxi(0, int(insets.get("left", 12)) - 12)
+		tab_content_container.add_theme_constant_override("margin_top", top_pad)
+		tab_content_container.add_theme_constant_override("margin_left", side_pad)
+		tab_content_container.add_theme_constant_override("margin_right", side_pad)
+	if is_instance_valid(_sparkles_node):
+		var vp_sz: Vector2 = ResponsiveUI.get_viewport_size() if ResponsiveUI != null else Vector2(720, 1280)
+		_sparkles_node.position = vp_sz * 0.5
+		_sparkles_node.emission_rect_extents = vp_sz * 0.48
 
 
 func _on_visibility_changed() -> void:

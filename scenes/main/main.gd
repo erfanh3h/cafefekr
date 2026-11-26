@@ -2522,7 +2522,8 @@ func _show_offline_dialog() -> void:
 		_offline_dialog.add_child(center)
 
 		var panel = PanelContainer.new()
-		panel.custom_minimum_size = Vector2(620, 440)
+		panel.custom_minimum_size = UITypography.compute_dialog_size(620.0, 440.0, Vector2.ZERO, UITypography.get_safe_insets())
+		ResponsiveUI.register_dialog(panel, 620.0, 440.0, 300.0, 300.0, false)
 		panel.mouse_filter = Control.MOUSE_FILTER_STOP
 		var style = StyleBoxTexture.new()
 		style.texture = preload("res://assets/images/frames/dialog.png")
@@ -2750,7 +2751,8 @@ func _show_menu_toast(msg: String) -> void:
 
 		_menu_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-		_menu_toast_label.custom_minimum_size = Vector2(580, 64)
+		var toast_w: float = clampf(ResponsiveUI.get_viewport_size().x - 48.0, 280.0, 620.0)
+		_menu_toast_label.custom_minimum_size = Vector2(toast_w, 64)
 
 		_menu_toast_label.anchors_preset = Control.PRESET_CENTER_BOTTOM
 
@@ -2762,7 +2764,7 @@ func _show_menu_toast(msg: String) -> void:
 
 		_menu_toast_label.anchor_bottom = 1.0
 
-		_menu_toast_label.offset_left = -290.0
+		_menu_toast_label.offset_left = -toast_w * 0.5
 
 		_menu_toast_label.offset_right = 290.0
 
@@ -3194,7 +3196,8 @@ func _show_force_update_dialog() -> void:
 	_force_update_overlay.add_child(center)
 
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(620, 420)
+	panel.custom_minimum_size = UITypography.compute_dialog_size(620.0, 420.0, Vector2.ZERO, UITypography.get_safe_insets())
+	ResponsiveUI.register_dialog(panel, 620.0, 420.0, 300.0, 280.0, false)
 	var panel_sb = StyleBoxTexture.new()
 	panel_sb.texture = preload("res://assets/images/frames/dialog.png")
 	panel_sb.texture_margin_left = 44.0
@@ -3285,7 +3288,8 @@ func _show_optional_update_dialog() -> void:
 	_optional_update_overlay.add_child(center)
 
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(620, 420)
+	panel.custom_minimum_size = UITypography.compute_dialog_size(620.0, 420.0, Vector2.ZERO, UITypography.get_safe_insets())
+	ResponsiveUI.register_dialog(panel, 620.0, 420.0, 300.0, 280.0, false)
 	var panel_sb = StyleBoxTexture.new()
 	panel_sb.texture = preload("res://assets/images/frames/dialog.png")
 	panel_sb.texture_margin_left = 44.0
@@ -3396,7 +3400,8 @@ func _show_queue_closed_dialog() -> void:
 	_queue_closed_overlay.add_child(center)
 
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(620, 380)
+	panel.custom_minimum_size = UITypography.compute_dialog_size(620.0, 380.0, Vector2.ZERO, UITypography.get_safe_insets())
+	ResponsiveUI.register_dialog(panel, 620.0, 380.0, 300.0, 260.0, false)
 	var panel_sb = StyleBoxTexture.new()
 	panel_sb.texture = preload("res://assets/images/frames/dialog.png")
 	panel_sb.texture_margin_left = 44.0
@@ -3489,7 +3494,8 @@ func _show_change_username_dialog() -> void:
 	_change_username_dialog.add_child(center)
 
 	var panel = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(620, 440)
+	panel.custom_minimum_size = UITypography.compute_dialog_size(620.0, 440.0, Vector2.ZERO, UITypography.get_safe_insets())
+	ResponsiveUI.register_dialog(panel, 620.0, 440.0, 300.0, 300.0, false)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var style = StyleBoxTexture.new()
 	style.texture = preload("res://assets/images/frames/dialog.png")
@@ -3531,8 +3537,8 @@ func _show_change_username_dialog() -> void:
 	vbox.add_child(lbl_desc)
 
 	var input_name = LineEdit.new()
-	input_name.custom_minimum_size = Vector2(460, 58)
-	input_name.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	input_name.custom_minimum_size = Vector2(minf(460.0, ResponsiveUI.get_viewport_size().x - 120.0), 58)
+	input_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	input_name.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	input_name.text = GameManager.get_username()
 	input_name.placeholder_text = "نام کاربری جدید..."

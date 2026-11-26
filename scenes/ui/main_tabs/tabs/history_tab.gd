@@ -319,7 +319,7 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 		name_lbl.clip_text = true
 		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		name_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		name_lbl.add_theme_font_size_override("font_size", 24)
+		ResponsiveUI.apply_text(name_lbl, UITypography.Role.TITLE_SM, {"min_px": 19, "max_px": 28, "ellipsis": true})
 		name_lbl.add_theme_color_override("font_color", Color("#FFF7E0") if not is_me else Color("#FFD86B"))
 		name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
 		name_lbl.add_theme_constant_override("shadow_offset_y", 2)
@@ -345,7 +345,7 @@ func _render_leaderboard_list(list: Array, lb_type: String, extra_meta: Dictiona
 		sub_lbl.clip_text = true
 		sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		sub_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-		sub_lbl.add_theme_font_size_override("font_size", 18)
+		ResponsiveUI.apply_text(sub_lbl, UITypography.Role.BODY_SM, {"min_px": 16, "max_px": 22, "ellipsis": true})
 		sub_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 		sub_lbl.add_theme_constant_override("shadow_offset_y", 1)
 		sub_lbl.add_theme_constant_override("shadow_outline_size", 1)
@@ -427,20 +427,20 @@ func _build_rank_badge(rank: int, highlight: bool = false) -> PanelContainer:
 
 	if rank == 1:
 		rank_lbl.text = "🥇"
-		rank_lbl.add_theme_font_size_override("font_size", 26)
+		ResponsiveUI.apply_scaled_font(rank_lbl, 26, 20, 32)
 	elif rank == 2:
 		rank_lbl.text = "🥈"
-		rank_lbl.add_theme_font_size_override("font_size", 26)
+		ResponsiveUI.apply_scaled_font(rank_lbl, 26, 20, 32)
 	elif rank == 3:
 		rank_lbl.text = "🥉"
-		rank_lbl.add_theme_font_size_override("font_size", 26)
+		ResponsiveUI.apply_scaled_font(rank_lbl, 26, 20, 32)
 	elif rank > 0:
 		rank_lbl.text = GameManager.to_fa_num(int(rank))
-		rank_lbl.add_theme_font_size_override("font_size", 23)
+		ResponsiveUI.apply_scaled_font(rank_lbl, 23, 18, 28)
 		rank_lbl.add_theme_color_override("font_color", Color("#FFD86B") if highlight else Color("#EFE2CB"))
 	else:
 		rank_lbl.text = "—"
-		rank_lbl.add_theme_font_size_override("font_size", 22)
+		ResponsiveUI.apply_scaled_font(rank_lbl, 22, 18, 26)
 		rank_lbl.add_theme_color_override("font_color", Color("#CBB89D"))
 
 	rank_frame.add_child(rank_lbl)
@@ -468,7 +468,7 @@ func _build_metric_box(metric_val: int, icon_tex: Texture2D, show_dash: bool = f
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	val_lbl.add_theme_font_override("font", _HEKAYAT_FONT)
-	val_lbl.add_theme_font_size_override("font_size", 27)
+	ResponsiveUI.apply_text(val_lbl, UITypography.Role.TITLE, {"min_px": 20, "max_px": 32})
 	val_lbl.add_theme_color_override("font_color", Color("#FFD86B"))
 	val_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
 	val_lbl.add_theme_constant_override("shadow_offset_y", 2)

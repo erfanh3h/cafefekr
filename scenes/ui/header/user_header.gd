@@ -207,13 +207,15 @@ func _sync_exp_bar_layout() -> void:
 	# Fit level numeral cleanly inside the circular left medallion
 	if is_instance_valid(lbl_level):
 		var digit_count: int = _last_level_text.length()
-		var scale_factor: float = 0.34 if digit_count <= 2 else 0.26
-		var lvl_font_sz: int = clampi(int(round(target_h * scale_factor)), 14, 24)
+		var scale_factor: float = 0.36 if digit_count <= 2 else 0.28
+		var lvl_font_sz: int = clampi(int(round(target_h * scale_factor)), 15, 26)
+		lbl_level.set_meta(&"_resp_managed", true)
 		lbl_level.add_theme_font_size_override("font_size", lvl_font_sz)
 
 	# Fit XP text crisply inside the dark recessed trough
 	if is_instance_valid(lbl_xp_value):
-		var xp_font_sz: int = clampi(int(round(trough_h * 0.74)), 12, 16)
+		var xp_font_sz: int = clampi(int(round(trough_h * 0.78)), 14, 18)
+		lbl_xp_value.set_meta(&"_resp_managed", true)
 		lbl_xp_value.add_theme_font_size_override("font_size", xp_font_sz)
 
 	_apply_xp_fill_style(trough_w, trough_h, _last_progress_pct / 100.0)
@@ -257,7 +259,10 @@ func _sync_username_layout() -> void:
 		text_w = font.get_string_size(lbl_username.text, HORIZONTAL_ALIGNMENT_RIGHT, -1, font_sz).x
 	if row_w > 0.0 and text_w > max_lbl_w:
 		lbl_username.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl_username.set_meta(&"_resp_managed", true)
+		UITypography.fit_label_to_width(lbl_username, max_lbl_w, 26, 17)
 		lbl_username.clip_text = true
+		lbl_username.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		lbl_username.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	else:
 		lbl_username.size_flags_horizontal = Control.SIZE_SHRINK_END

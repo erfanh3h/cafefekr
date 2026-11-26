@@ -279,7 +279,7 @@ func _make_glass_style(bg: Color, border: Color, radius: int = 18, border_w: int
 
 func _style_action_button(btn: Button, bg: Color, border: Color, text_col: Color = Color.WHITE, f_size: int = 20, radius: int = 16) -> void:
 	btn.add_theme_font_override("font", FontHekayat)
-	btn.add_theme_font_size_override("font_size", f_size)
+	ResponsiveUI.apply_scaled_font(btn, f_size, 17, 30)
 	btn.add_theme_color_override("font_color", text_col)
 	btn.add_theme_color_override("font_hover_color", text_col.lightened(0.12))
 	btn.add_theme_color_override("font_pressed_color", text_col)
@@ -370,7 +370,7 @@ func _build_hud() -> void:
 
 	# Active Color Swatch Pill
 	active_color_chip = PanelContainer.new()
-	active_color_chip.custom_minimum_size = Vector2(92, 30)
+	active_color_chip.custom_minimum_size = Vector2(104, 34)
 	active_color_chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	active_color_chip_style = StyleBoxFlat.new()
 	active_color_chip_style.bg_color = UNO_COLORS["red"]
@@ -385,21 +385,21 @@ func _build_hud() -> void:
 	active_color_chip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	active_color_chip_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	active_color_chip_label.add_theme_font_override("font", FontHekayat)
-	active_color_chip_label.add_theme_font_size_override("font_size", 17)
+	ResponsiveUI.apply_scaled_font(active_color_chip_label, 19, 16, 24)
 	active_color_chip_label.add_theme_color_override("font_color", Color.WHITE)
 	active_color_chip.add_child(active_color_chip_label)
 
 	direction_chip_label = Label.new()
 	direction_chip_label.text = "↻ ساعتگرد"
 	direction_chip_label.add_theme_font_override("font", FontHekayat)
-	direction_chip_label.add_theme_font_size_override("font_size", 17)
+	ResponsiveUI.apply_scaled_font(direction_chip_label, 19, 16, 24)
 	direction_chip_label.add_theme_color_override("font_color", Color(0.98, 0.90, 0.64))
 	pill_hbox.add_child(direction_chip_label)
 
 	deck_count_chip_label = Label.new()
 	deck_count_chip_label.text = "🃏 ۸۰"
 	deck_count_chip_label.add_theme_font_override("font", FontHekayat)
-	deck_count_chip_label.add_theme_font_size_override("font_size", 16)
+	ResponsiveUI.apply_scaled_font(deck_count_chip_label, 18, 16, 22)
 	deck_count_chip_label.add_theme_color_override("font_color", Color(0.78, 0.88, 0.96))
 	pill_hbox.add_child(deck_count_chip_label)
 
@@ -429,9 +429,9 @@ func _build_hud() -> void:
 	# Left Utility Group: Sort & Hand Count
 	sort_hand_btn = Button.new()
 	sort_hand_btn.text = "⇅ رنگ"
-	sort_hand_btn.custom_minimum_size = Vector2(84, 38)
+	sort_hand_btn.custom_minimum_size = Vector2(92, 40)
 	sort_hand_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_style_action_button(sort_hand_btn, Color(0.10, 0.18, 0.14, 0.88), Color(0.45, 0.78, 0.58, 0.68), Color(0.92, 0.98, 0.94), 19, 14)
+	_style_action_button(sort_hand_btn, Color(0.10, 0.18, 0.14, 0.88), Color(0.45, 0.78, 0.58, 0.68), Color(0.92, 0.98, 0.94), 21, 14)
 	sort_hand_btn.pressed.connect(_on_sort_hand_pressed)
 	contextual_action_bar.add_child(sort_hand_btn)
 
@@ -449,7 +449,7 @@ func _build_hud() -> void:
 	hand_count_badge_lbl = Label.new()
 	hand_count_badge_lbl.text = "۷ کارت"
 	hand_count_badge_lbl.add_theme_font_override("font", FontHekayat)
-	hand_count_badge_lbl.add_theme_font_size_override("font_size", 19)
+	ResponsiveUI.apply_scaled_font(hand_count_badge_lbl, 21, 17, 26)
 	hand_count_badge_lbl.add_theme_color_override("font_color", Color(0.98, 0.90, 0.66))
 	hand_count_badge_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	count_pill.add_child(hand_count_badge_lbl)
@@ -462,17 +462,17 @@ func _build_hud() -> void:
 	# Right Thumb-Zone Primary Action Pills (Draw / Pass)
 	draw_action_btn = Button.new()
 	draw_action_btn.text = "🃏 کشیدن کارت"
-	draw_action_btn.custom_minimum_size = Vector2(150, 44)
-	draw_action_btn.pivot_offset = Vector2(75, 22)
-	_style_action_button(draw_action_btn, Color(0.11, 0.42, 0.78, 0.96), Color(0.50, 0.82, 1.0), Color.WHITE, 21, 18)
+	draw_action_btn.custom_minimum_size = Vector2(158, 46)
+	draw_action_btn.pivot_offset = Vector2(79, 23)
+	_style_action_button(draw_action_btn, Color(0.11, 0.42, 0.78, 0.96), Color(0.50, 0.82, 1.0), Color.WHITE, 23, 18)
 	draw_action_btn.visible = false
 	draw_action_btn.pressed.connect(_on_draw_action_pressed)
 	contextual_action_bar.add_child(draw_action_btn)
 
 	pass_turn_btn = Button.new()
 	pass_turn_btn.text = "⏭️ رد نوبت"
-	pass_turn_btn.custom_minimum_size = Vector2(142, 44)
-	_style_action_button(pass_turn_btn, Color(0.76, 0.46, 0.08, 0.98), Color(1.0, 0.86, 0.36), Color.WHITE, 21, 18)
+	pass_turn_btn.custom_minimum_size = Vector2(148, 46)
+	_style_action_button(pass_turn_btn, Color(0.76, 0.46, 0.08, 0.98), Color(1.0, 0.86, 0.36), Color.WHITE, 23, 18)
 	pass_turn_btn.visible = false
 	pass_turn_btn.pressed.connect(_on_pass_turn_pressed)
 	contextual_action_bar.add_child(pass_turn_btn)
@@ -486,7 +486,7 @@ func _build_hud() -> void:
 	call_uno_btn.offset_top = -init_bottom_pad - 326.0
 	call_uno_btn.offset_bottom = -init_bottom_pad - 252.0
 	call_uno_btn.pivot_offset = Vector2(37, 37)
-	_style_action_button(call_uno_btn, Color(0.86, 0.14, 0.18, 0.98), Color(1.0, 0.88, 0.32), Color(1.0, 0.98, 0.86), 18, 37)
+	_style_action_button(call_uno_btn, Color(0.86, 0.14, 0.18, 0.98), Color(1.0, 0.88, 0.32), Color(1.0, 0.98, 0.86), 20, 37)
 	call_uno_btn.visible = false
 	call_uno_btn.pressed.connect(_on_uno_button_pressed)
 	hud_root.add_child(call_uno_btn)

@@ -475,18 +475,18 @@ func _build_naval_grid_frame(parent_node: Node3D, title_text: String, title_colo
 	frame_static.add_child(basin)
 
 	# Top Title Plaque (Large & Bold!)
-	var lbl_title = _create_3d_label(title_text, 32, title_color, 0.00185)
+	var lbl_title = _create_3d_label(title_text, 38, title_color, 0.00192)
 	lbl_title.position = Vector3(0, 0.026, -board_span * 0.5 - 0.075)
 	container.add_child(lbl_title)
 
 	# Column Coordinate Labels (A..H) and Row Coordinate Labels (۱..۸)
 	var cols_text = ["A", "B", "C", "D", "E", "F", "G", "H"]
 	for i in range(GRID_SIZE):
-		var lbl_c = _create_3d_label(cols_text[i], 26, Color(0.96, 0.84, 0.48), 0.00170)
+		var lbl_c = _create_3d_label(cols_text[i], 32, Color(0.96, 0.84, 0.48), 0.00180)
 		lbl_c.position = Vector3((float(i) - 3.5) * CELL_PITCH, 0.026, -board_span * 0.5 - 0.034)
 		container.add_child(lbl_c)
 
-		var lbl_r = _create_3d_label(_fa_num(i + 1), 28, Color(0.96, 0.84, 0.48), 0.00175)
+		var lbl_r = _create_3d_label(_fa_num(i + 1), 34, Color(0.96, 0.84, 0.48), 0.00185)
 		lbl_r.position = Vector3(-board_span * 0.5 - 0.042, 0.026, (float(i) - 3.5) * CELL_PITCH)
 		container.add_child(lbl_r)
 
@@ -608,7 +608,7 @@ func _create_drydock_3d_button(pos: Vector3, sz: Vector3, text_str: String, bg_c
 	btn_mesh.material_override = mat
 	drydock_root.add_child(btn_mesh)
 
-	var lbl = _create_3d_label(text_str, 26, Color.WHITE, 0.00165)
+	var lbl = _create_3d_label(text_str, 32, Color.WHITE, 0.00175)
 	lbl.position = pos + Vector3(0, 0.008, 0)
 	drydock_root.add_child(lbl)
 
@@ -672,7 +672,7 @@ func _build_fleet_status_strip(parent_board: Node3D, badge_dict: Dictionary) -> 
 		pill.material_override = pmat
 		parent_board.add_child(pill)
 
-		var slbl = _create_3d_label("ناو %s" % _fa_num(s_len), 26, Color(0.84, 1.0, 0.90), 0.00165)
+		var slbl = _create_3d_label("ناو %s" % _fa_num(s_len), 32, Color(0.84, 1.0, 0.90), 0.00175)
 		slbl.position = Vector3(x_positions[i], 0.029, strip_z)
 		parent_board.add_child(slbl)
 

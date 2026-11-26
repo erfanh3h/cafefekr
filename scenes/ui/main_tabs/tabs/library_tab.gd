@@ -251,7 +251,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var title_lbl := Label.new()
 	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	title_lbl.add_theme_font_size_override("font_size", 26)
+	ResponsiveUI.apply_text(title_lbl, UITypography.Role.TITLE, {"min_px": 20, "max_px": 30, "ellipsis": true})
 	title_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	title_lbl.text = g["name_fa"]
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -261,7 +261,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var meta_lbl := Label.new()
 	meta_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	meta_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	meta_lbl.add_theme_font_size_override("font_size", 17)
+	ResponsiveUI.apply_text(meta_lbl, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 21})
 	meta_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_EMERALD_TEXT)
 	meta_lbl.text = p_str
 	meta_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -270,11 +270,10 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	var desc_lbl := Label.new()
 	desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	desc_lbl.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	desc_lbl.add_theme_font_size_override("font_size", 15)
+	ResponsiveUI.apply_text(desc_lbl, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 20, "ellipsis": true})
 	desc_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
 	desc_lbl.text = str(g["narrative"]).substr(0, 56) + "..."
 	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	desc_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	text_col.add_child(desc_lbl)
 
 	# Icon
@@ -384,7 +383,7 @@ func _make_rtl_label(txt: String, font_res: Font, font_sz: int, col: Color, line
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lbl.add_theme_font_override("font", font_res)
-	lbl.add_theme_font_size_override("font_size", font_sz)
+	ResponsiveUI.apply_scaled_font(lbl, font_sz, 16, 36)
 	lbl.add_theme_color_override("font_color", col)
 	lbl.add_theme_constant_override("line_spacing", line_sp)
 	lbl.text = "\u200F" + txt

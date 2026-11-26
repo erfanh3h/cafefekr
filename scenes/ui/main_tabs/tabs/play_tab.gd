@@ -130,6 +130,49 @@ func _ready() -> void:
 	update_top_badges()
 	_update_platform_links_visibility()
 	_update_version_label()
+	if ResponsiveUI != null and not ResponsiveUI.layout_changed.is_connected(_on_responsive_layout_changed):
+		ResponsiveUI.layout_changed.connect(_on_responsive_layout_changed)
+	resized.connect(_sync_responsive_layout)
+	call_deferred("_sync_responsive_layout")
+
+
+func _on_responsive_layout_changed(_metrics: Dictionary) -> void:
+	_sync_responsive_layout()
+
+
+func _sync_responsive_layout() -> void:
+	if not is_inside_tree():
+		return
+	var lbl_watch: Label = get_node_or_null("Scroll/Content/TopBarRow/HBox/BtnWatchLive/WatchRow/LblWatch") as Label
+	if is_instance_valid(lbl_watch):
+		ResponsiveUI.apply_text(lbl_watch, UITypography.Role.BUTTON_MD, {"min_px": 18, "max_px": 26})
+	if is_instance_valid(lbl_badge_friends):
+		ResponsiveUI.apply_text(lbl_badge_friends, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
+	if is_instance_valid(lbl_badge_notifications):
+		ResponsiveUI.apply_text(lbl_badge_notifications, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
+	if is_instance_valid(lbl_version):
+		ResponsiveUI.apply_text(lbl_version, UITypography.Role.TITLE_SM, {"min_px": 18, "max_px": 28})
+
+	var card_specs: Array[Dictionary] = [
+		{"btn": btn_ranked, "title_role": UITypography.Role.TITLE_LG, "base_h": 160.0},
+		{"btn": btn_multi, "title_role": UITypography.Role.TITLE, "base_h": 134.0},
+		{"btn": btn_classic, "title_role": UITypography.Role.TITLE, "base_h": 134.0},
+		{"btn": btn_lobby, "title_role": UITypography.Role.TITLE, "base_h": 134.0},
+	]
+	for spec in card_specs:
+		var card_btn: Button = spec["btn"] as Button
+		if not is_instance_valid(card_btn):
+			continue
+		var t_lbl: Label = card_btn.get_node_or_null("Margin/HBox/TextBacking/TextCol/CardTitle") as Label
+		var s_lbl: Label = card_btn.get_node_or_null("Margin/HBox/TextBacking/TextCol/CardSubtitle") as Label
+		var t_col: Control = card_btn.get_node_or_null("Margin/HBox/TextBacking/TextCol") as Control
+		if is_instance_valid(t_lbl):
+			ResponsiveUI.apply_text(t_lbl, int(spec["title_role"]), {"min_px": 22, "max_px": 34})
+		if is_instance_valid(s_lbl):
+			ResponsiveUI.apply_text(s_lbl, UITypography.Role.SUBTITLE, {"min_px": 16, "max_px": 23, "wrap": true})
+		if is_instance_valid(t_col):
+			var min_content_h: float = t_col.get_combined_minimum_size().y + 44.0
+			card_btn.custom_minimum_size.y = maxf(float(spec["base_h"]), min_content_h)
 
 
 func _update_version_label() -> void:

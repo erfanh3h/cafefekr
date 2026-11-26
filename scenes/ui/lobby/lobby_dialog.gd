@@ -129,10 +129,14 @@ func _is_mobile() -> bool:
 	return GameManager.is_mobile
 
 func _ready() -> void:
-	CafeSocialTheme.style_parlor_tab_button(btn_show_create, true, 22, false, 24.0, 12.0)
-	btn_show_create.custom_minimum_size = Vector2(0, 58)
-	CafeSocialTheme.style_parlor_tab_button(btn_show_join_code, false, 22, false, 24.0, 12.0)
-	btn_show_join_code.custom_minimum_size = Vector2(0, 58)
+	KenneyUI.style_button(btn_show_create, KenneyUI.COLOR_GREEN)
+	btn_show_create.clip_text = true
+	btn_show_create.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	ResponsiveUI.apply_scaled_font(btn_show_create, 24, 19, 28)
+	KenneyUI.style_button(btn_show_join_code, KenneyUI.COLOR_BLUE)
+	btn_show_join_code.clip_text = true
+	btn_show_join_code.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	ResponsiveUI.apply_scaled_font(btn_show_join_code, 23, 18, 27)
 	KenneyUI.style_button(btn_create_confirm, KenneyUI.COLOR_GREEN)
 	KenneyUI.style_button(btn_create_cancel, KenneyUI.COLOR_RED)
 	KenneyUI.style_button(btn_join_confirm, KenneyUI.COLOR_GREEN)
@@ -207,6 +211,7 @@ func _ready() -> void:
 					btn_copy_code.text = "کپی کد"
 			)
 	)
+	ResponsiveUI.register_dialog(self, 688.0, 1200.0, 320.0, 480.0)
 
 	btn_select_game.pressed.connect(func():
 		AudioManager.sfx_tap()

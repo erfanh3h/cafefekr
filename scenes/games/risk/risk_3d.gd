@@ -532,8 +532,8 @@ func _build_floating_ui() -> void:
 	btn_log.pressed.connect(_toggle_battle_log_panel)
 	top_hbox.add_child(btn_log)
 
-	var btn_inspect: Button = _make_styled_button("بازیکنان", Color(0.18, 0.12, 0.08, 0.95), Color(0.76, 0.58, 0.28), 16, 12)
-	btn_inspect.custom_minimum_size = Vector2(88, 32)
+	var btn_inspect: Button = _make_styled_button("بازیکنان", Color(0.18, 0.12, 0.08, 0.95), Color(0.76, 0.58, 0.28), 18, 12)
+	btn_inspect.custom_minimum_size = Vector2(96, 36)
 	btn_inspect.pressed.connect(func() -> void: _toggle_opponent_inspector(0))
 	top_hbox.add_child(btn_inspect)
 
@@ -544,7 +544,7 @@ func _build_floating_ui() -> void:
 	_top_decks_lbl.clip_text = true
 	_top_decks_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_top_decks_lbl.add_theme_font_override("font", FontHekayat)
-	_top_decks_lbl.add_theme_font_size_override("font_size", 16)
+	ResponsiveUI.apply_scaled_font(_top_decks_lbl, 18, 16, 22)
 	_top_decks_lbl.add_theme_color_override("font_color", Color(0.98, 0.90, 0.68))
 	top_hbox.add_child(_top_decks_lbl)
 
@@ -618,7 +618,7 @@ func _build_floating_ui() -> void:
 	_tactical_details_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_tactical_details_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_tactical_details_lbl.add_theme_font_override("font", FontHekayat)
-	_tactical_details_lbl.add_theme_font_size_override("font_size", 16)
+	ResponsiveUI.apply_scaled_font(_tactical_details_lbl, 18, 16, 22)
 	_tactical_details_lbl.add_theme_color_override("font_color", Color(0.92, 0.89, 0.80))
 	header_vbox.add_child(_tactical_details_lbl)
 
@@ -971,7 +971,7 @@ func _build_hand_card_widget(
 	ic_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	ic_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	ic_lbl.add_theme_font_override("font", FontHekayat)
-	ic_lbl.add_theme_font_size_override("font_size", 14 if compact_combat else 15)
+	ResponsiveUI.apply_text(ic_lbl, UITypography.Role.CAPTION, {"min_px": 15, "max_px": 20})
 	ic_lbl.add_theme_color_override("font_color", Color(0.98, 0.94, 0.84, 0.94))
 	ic_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_hbox.add_child(ic_lbl)
@@ -984,7 +984,7 @@ func _build_hand_card_widget(
 	title_lbl.clip_text = true
 	title_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	title_lbl.add_theme_font_override("font", FontHekayat)
-	title_lbl.add_theme_font_size_override("font_size", 18 if compact_combat else 21)
+	ResponsiveUI.apply_scaled_font(title_lbl, 20 if compact_combat else 22, 16, 26)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72) if (is_selected or highlight_combat) else Color(0.96, 0.93, 0.86))
 	title_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(title_lbl)
@@ -995,7 +995,7 @@ func _build_hand_card_widget(
 	sub_lbl.clip_text = true
 	sub_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	sub_lbl.add_theme_font_override("font", FontHekayat)
-	sub_lbl.add_theme_font_size_override("font_size", 15 if compact_combat else 17)
+	ResponsiveUI.apply_scaled_font(sub_lbl, 17 if compact_combat else 19, 15, 22)
 	sub_lbl.add_theme_color_override("font_color", Color(0.55, 0.98, 0.68) if highlight_combat else (Color(1.0, 0.90, 0.42) if is_selected else accent_col.lightened(0.45)))
 	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(sub_lbl)
@@ -3518,7 +3518,7 @@ func _build_inspector_card_widget(
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.clip_text = true
 	sub_lbl.add_theme_font_override("font", FontHekayat)
-	sub_lbl.add_theme_font_size_override("font_size", 14)
+	ResponsiveUI.apply_text(sub_lbl, UITypography.Role.CAPTION, {"min_px": 15, "max_px": 19})
 	sub_lbl.add_theme_color_override("font_color", Color(0.94, 0.80, 0.48) if is_mystery_back else accent_col.lightened(0.42))
 	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(sub_lbl)

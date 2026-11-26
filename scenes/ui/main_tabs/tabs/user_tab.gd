@@ -248,7 +248,7 @@ func _create_cosmetic_tile(item_id: int, tex: Texture2D, is_selected: bool, is_l
 	lbl_chk.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_chk.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl_chk.add_theme_font_override("font", _font_vazir)
-	lbl_chk.add_theme_font_size_override("font_size", 14)
+	ResponsiveUI.apply_text(lbl_chk, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
 	lbl_chk.add_theme_color_override("font_color", Color(1.0, 0.99, 0.94, 1.0))
 	lbl_chk.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	check_badge.add_child(lbl_chk)
@@ -271,7 +271,7 @@ func _create_cosmetic_tile(item_id: int, tex: Texture2D, is_selected: bool, is_l
 	lbl_lck.text = "🔒"
 	lbl_lck.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_lck.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	lbl_lck.add_theme_font_size_override("font_size", 13)
+	ResponsiveUI.apply_text(lbl_lck, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
 	lbl_lck.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lock_badge.add_child(lbl_lck)
 	inner.add_child(lock_badge)
@@ -562,7 +562,7 @@ func _build_aligned_audio_row(
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	lbl_name.text = label_text
 	lbl_name.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	lbl_name.add_theme_font_size_override("font_size", 21)
+	ResponsiveUI.apply_text(lbl_name, UITypography.Role.TITLE_SM, {"min_px": 18, "max_px": 26})
 	lbl_name.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 	row.add_child(lbl_name)
 
@@ -583,7 +583,7 @@ func _build_aligned_audio_row(
 	lbl_val.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	lbl_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_val.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-	lbl_val.add_theme_font_size_override("font_size", 18)
+	ResponsiveUI.apply_text(lbl_val, UITypography.Role.BODY, {"min_px": 16, "max_px": 22})
 	lbl_val.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	lbl_val.text = "%s٪" % GameManager.to_fa_num(int(round(initial_volume_pct)))
 	lbl_val.modulate.a = 1.0 if initial_enabled else 0.55
@@ -626,7 +626,7 @@ func _render_privacy() -> void:
 
 	var a_title: Label = Label.new()
 	a_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	a_title.add_theme_font_size_override("font_size", 25)
+	ResponsiveUI.apply_text(a_title, UITypography.Role.TITLE, {"min_px": 20, "max_px": 30})
 	a_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	a_title.text = "تنظیمات صدا و موسیقی کافه فکر"
 	a_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -658,7 +658,7 @@ func _render_privacy() -> void:
 
 	var p_title: Label = Label.new()
 	p_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-	p_title.add_theme_font_size_override("font_size", 25)
+	ResponsiveUI.apply_text(p_title, UITypography.Role.TITLE, {"min_px": 20, "max_px": 30})
 	p_title.add_theme_color_override("font_color", CafeSocialTheme.COL_GOLD_BRIGHT)
 	p_title.text = "حریم خصوصی و دسترسی‌ها"
 	p_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -739,7 +739,7 @@ func _render_privacy() -> void:
 
 		var lbl_title: Label = Label.new()
 		lbl_title.add_theme_font_override("font", CafeSocialTheme.FONT_TITLE)
-		lbl_title.add_theme_font_size_override("font_size", 22)
+		ResponsiveUI.apply_text(lbl_title, UITypography.Role.TITLE_SM, {"min_px": 18, "max_px": 26, "wrap": true})
 		lbl_title.add_theme_color_override("font_color", CafeSocialTheme.COL_IVORY)
 		lbl_title.text = str(item["label"])
 		lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -748,7 +748,7 @@ func _render_privacy() -> void:
 
 		var lbl_desc: Label = Label.new()
 		lbl_desc.add_theme_font_override("font", CafeSocialTheme.FONT_BODY)
-		lbl_desc.add_theme_font_size_override("font_size", 17)
+		ResponsiveUI.apply_text(lbl_desc, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 21, "wrap": true})
 		lbl_desc.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 		lbl_desc.text = str(item["desc"])
 		lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

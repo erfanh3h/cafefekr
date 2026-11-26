@@ -77,7 +77,7 @@ func _create_stat_card(title: String, accent_col: Color) -> Dictionary:
 	tit_lbl.text = title
 	tit_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tit_lbl.add_theme_font_override("font", FONT_VAZIR)
-	tit_lbl.add_theme_font_size_override("font_size", 14)
+	ResponsiveUI.apply_text(tit_lbl, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 20})
 	tit_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 	vb.add_child(tit_lbl)
 

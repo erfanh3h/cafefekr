@@ -51,7 +51,33 @@ func _ready() -> void:
 	if GameManager.has_signal("user_data_updated"):
 		GameManager.user_data_updated.connect(func(_u): update_ui())
 
+	if ResponsiveUI != null and not ResponsiveUI.layout_changed.is_connected(_on_responsive_layout_changed):
+		ResponsiveUI.layout_changed.connect(_on_responsive_layout_changed)
+	resized.connect(_sync_responsive_typography)
 	update_ui()
+	call_deferred("_sync_responsive_typography")
+
+
+func _on_responsive_layout_changed(_metrics: Dictionary) -> void:
+	_sync_responsive_typography()
+
+
+func _sync_responsive_typography() -> void:
+	if not is_inside_tree():
+		return
+	if is_instance_valid(lbl_username):
+		ResponsiveUI.apply_text(lbl_username, UITypography.Role.TITLE_SM, {"min_px": 18, "max_px": 28, "ellipsis": true})
+		var avail_w: float = maxf(80.0, lbl_username.size.x)
+		if avail_w > 80.0:
+			UITypography.fit_label_to_width(lbl_username, avail_w, 24, 17)
+	if is_instance_valid(lbl_level):
+		ResponsiveUI.apply_text(lbl_level, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 21})
+	if is_instance_valid(lbl_xp):
+		ResponsiveUI.apply_text(lbl_xp, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
+	if is_instance_valid(lbl_coins):
+		ResponsiveUI.apply_text(lbl_coins, UITypography.Role.SUBTITLE, {"min_px": 17, "max_px": 24})
+	if is_instance_valid(lbl_score):
+		ResponsiveUI.apply_text(lbl_score, UITypography.Role.SUBTITLE, {"min_px": 17, "max_px": 24})
 
 
 func update_ui() -> void:

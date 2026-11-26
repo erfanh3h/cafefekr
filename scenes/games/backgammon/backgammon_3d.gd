@@ -230,7 +230,7 @@ func _build_2d_action_dock() -> void:
 	_action_roll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_action_roll_btn.text = "پرتاب تاس"
 	_action_roll_btn.add_theme_font_override("font", _FONT_FA)
-	_action_roll_btn.add_theme_font_size_override("font_size", 26)
+	ResponsiveUI.apply_scaled_font(_action_roll_btn, 28, 22, 34)
 	_action_roll_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_roll_btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	_action_roll_btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72))
@@ -912,7 +912,7 @@ func _build_24_points() -> void:
 
 		# 4. Larger Persian Point Number (۱..۲۴) on the outer wooden rail
 		var pt_num_fa = _fa_digits(24 - i)
-		var num_lbl = _create_3d_label(pt_num_fa, 24, Color(1.0, 0.90, 0.62))
+		var num_lbl = _create_3d_label(pt_num_fa, 30, Color(1.0, 0.90, 0.62))
 		num_lbl.position = Vector3(0, 0.030, -dir_z * 0.026)
 		pt_root.add_child(num_lbl)
 

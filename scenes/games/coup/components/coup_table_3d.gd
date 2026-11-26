@@ -207,7 +207,7 @@ func _build_tabletop() -> void:
 	coup_logo.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_deck_top_card.add_child(coup_logo)
 
-	_deck_count_lbl = _create_label_3d("۷ کارت دربار", 34, Color(0.98, 0.95, 0.86), 0.0012)
+	_deck_count_lbl = _create_label_3d("۷ کارت دربار", 40, Color(0.98, 0.95, 0.86), 0.00128)
 	_deck_count_lbl.position = Vector3(0.0, 0.007, 0.155)
 	_deck_count_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_deck_root.add_child(_deck_count_lbl)
@@ -245,7 +245,7 @@ func _build_tabletop() -> void:
 	BaseGameBoard.bake_and_replace_static_meshes(_treasury_root, "BakedTreasuryVault", true)
 	_treasury_coins.clear()
 
-	var tr_lbl: Label3D = _create_label_3d("خزانه سکه", 34, Color(1.0, 0.90, 0.48), 0.0012)
+	var tr_lbl: Label3D = _create_label_3d("خزانه سکه", 40, Color(1.0, 0.90, 0.48), 0.00128)
 	tr_lbl.position = Vector3(0.0, 0.012, 0.125)
 	tr_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_treasury_root.add_child(tr_lbl)
@@ -283,7 +283,7 @@ func _build_tabletop() -> void:
 	_phase_crystal.material_override = _phase_gem_mat
 	beacon_root.add_child(_phase_crystal)
 
-	_phase_name_3d = _create_label_3d("نوبت اقدام", 36, Color(0.95, 0.98, 0.92), 0.0012)
+	_phase_name_3d = _create_label_3d("نوبت اقدام", 42, Color(0.95, 0.98, 0.92), 0.00130)
 	_phase_name_3d.position = Vector3(0.0, 0.014, 0.080)
 	_phase_name_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	beacon_root.add_child(_phase_name_3d)
@@ -451,7 +451,7 @@ func update_opponent_stations(seat_data: Dictionary, active_seat: int) -> void:
 				_add_box(flat_piv, Vector3(0.072, 0.003, 0.098), Vector3.ZERO, mat_dead_back)
 				_add_box(flat_piv, Vector3(0.064, 0.0036, 0.090), Vector3(0.0, 0.0005, 0.0), role_mat)
 
-				var r_lbl: Label3D = _create_label_3d("💀 " + CoupCardWidgetScript.get_role_name_fa(role_str), 28, Color(1.0, 0.82, 0.82), 0.0011)
+				var r_lbl: Label3D = _create_label_3d("💀 " + CoupCardWidgetScript.get_role_name_fa(role_str), 34, Color(1.0, 0.82, 0.82), 0.00122)
 				r_lbl.position = Vector3(0.0, 0.004, 0.0)
 				r_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 				flat_piv.add_child(r_lbl)

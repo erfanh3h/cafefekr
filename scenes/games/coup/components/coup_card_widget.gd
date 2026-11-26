@@ -189,7 +189,7 @@ func _build_compact_horizontal_body(meta: Dictionary, base_col: Color, accent_co
 	ab_lbl.clip_text = true
 	ab_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	ab_lbl.add_theme_font_override("font", FontHekayat)
-	ab_lbl.add_theme_font_size_override("font_size", 18)
+	ResponsiveUI.apply_scaled_font(ab_lbl, 20, 16, 24)
 	ab_lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.62) if is_revealed else Color(0.96, 0.94, 0.86, 0.94))
 	ab_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.84))
 	ab_lbl.add_theme_constant_override("outline_size", 2)
@@ -290,7 +290,7 @@ func _build_tall_portrait_body(card_size: Vector2, meta: Dictionary, base_col: C
 	desc_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc_lbl.add_theme_font_override("font", FontHekayat)
-	desc_lbl.add_theme_font_size_override("font_size", 17 if is_large else (15 if is_medium else 14))
+	ResponsiveUI.apply_scaled_font(desc_lbl, 18 if is_large else (16 if is_medium else 15), 15, 22)
 	desc_lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.62) if is_revealed else Color(0.98, 0.96, 0.90))
 	desc_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	desc_lbl.add_theme_constant_override("outline_size", 2)
@@ -317,7 +317,7 @@ func _build_tall_portrait_body(card_size: Vector2, meta: Dictionary, base_col: C
 		b_lbl.text = "✓ انتخاب شد" if is_selected else "👆 انتخاب"
 		b_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		b_lbl.add_theme_font_override("font", FontHekayat)
-		b_lbl.add_theme_font_size_override("font_size", 16 if is_medium else 15)
+		ResponsiveUI.apply_scaled_font(b_lbl, 17 if is_medium else 16, 15, 20)
 		b_lbl.add_theme_color_override("font_color", Color.WHITE)
 		b_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 		b_lbl.add_theme_constant_override("outline_size", 2)

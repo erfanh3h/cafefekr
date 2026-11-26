@@ -317,9 +317,9 @@ func _build_center_card_stack(pos: Vector3, col: Color, title_fa: String) -> voi
 	var lbl = Label3D.new()
 	lbl.text = title_fa
 	lbl.font = FontHekayat
-	lbl.font_size = 52
+	lbl.font_size = 58
 	lbl.outline_size = 14
-	lbl.pixel_size = 0.00095
+	lbl.pixel_size = 0.00108
 	lbl.modulate = Color(1.0, 0.97, 0.86)
 	lbl.outline_modulate = Color(0.05, 0.03, 0.02, 0.96)
 	lbl.position = Vector3(0.0, 0.017, 0.0)
@@ -447,9 +447,9 @@ func _build_single_tile(tid: int) -> void:
 	# Tile Name + Price Label3D (Crisp, Horizontal & Right-Side-Up on All 4 Board Sides)
 	var lbl = Label3D.new()
 	lbl.font = FontHekayat
-	lbl.font_size = 56 if is_corner else 48
+	lbl.font_size = 62 if is_corner else 54
 	lbl.outline_size = 14 if is_corner else 12
-	lbl.pixel_size = 0.00070 if is_corner else 0.00058
+	lbl.pixel_size = 0.00080 if is_corner else 0.00068
 	lbl.line_spacing = -8.0
 	lbl.modulate = Color(1.0, 0.98, 0.92) if is_corner else Color(0.08, 0.05, 0.03)
 	lbl.outline_modulate = Color(0.04, 0.02, 0.01, 0.98) if is_corner else Color(1.0, 0.98, 0.90, 0.96)
@@ -537,9 +537,9 @@ func _build_center_dice_sanctuary() -> void:
 	var crest = Label3D.new()
 	crest.text = "روپولی"
 	crest.font = FontHekayat
-	crest.font_size = 60
+	crest.font_size = 64
 	crest.outline_size = 14
-	crest.pixel_size = 0.00092
+	crest.pixel_size = 0.00100
 	crest.modulate = Color(1.0, 0.88, 0.38)
 	crest.outline_modulate = Color(0.06, 0.03, 0.01, 0.98)
 	crest.position = Vector3(0.0, 0.016, -0.215)
@@ -550,9 +550,9 @@ func _build_center_dice_sanctuary() -> void:
 	_center_roll_label = Label3D.new()
 	_center_roll_label.text = "آماده پرتاب تاس"
 	_center_roll_label.font = FontHekayat
-	_center_roll_label.font_size = 48
+	_center_roll_label.font_size = 56
 	_center_roll_label.outline_size = 12
-	_center_roll_label.pixel_size = 0.00080
+	_center_roll_label.pixel_size = 0.00095
 	_center_roll_label.modulate = Color(0.99, 0.96, 0.88)
 	_center_roll_label.outline_modulate = Color(0.04, 0.02, 0.01, 0.96)
 	_center_roll_label.position = Vector3(0.0, 0.016, 0.205)

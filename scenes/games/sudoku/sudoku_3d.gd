@@ -587,7 +587,7 @@ func _build_action_dock() -> void:
 	_action_dock_panel.offset_left = 10.0
 	_action_dock_panel.offset_right = -10.0
 	_action_dock_panel.offset_bottom = -bottom_pad
-	_action_dock_panel.offset_top = -bottom_pad - 134.0
+	_action_dock_panel.offset_top = -bottom_pad - 142.0
 	_action_dock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_action_dock_panel.visible = false
 	_action_dock_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
@@ -602,7 +602,7 @@ func _build_action_dock() -> void:
 	# Row 1: 1..9 Digits + Erase button (10 buttons)
 	var hbox_digits = HBoxContainer.new()
 	hbox_digits.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox_digits.custom_minimum_size = Vector2(0, 64)
+	hbox_digits.custom_minimum_size = Vector2(0, 68)
 	hbox_digits.add_theme_constant_override("separation", 4)
 	hbox_digits.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(hbox_digits)
@@ -630,7 +630,7 @@ func _build_action_dock() -> void:
 		var btn = Button.new()
 		btn.name = "BtnDigit_%d" % d
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.custom_minimum_size = Vector2(0, 64)
+		btn.custom_minimum_size = Vector2(0, 68)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		btn.text = ""
@@ -649,7 +649,7 @@ func _build_action_dock() -> void:
 		lbl_main.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		if _game_font:
 			lbl_main.add_theme_font_override("font", _game_font)
-		lbl_main.add_theme_font_size_override("font_size", 27)
+		ResponsiveUI.apply_scaled_font(lbl_main, 29, 22, 34)
 		lbl_main.add_theme_color_override("font_color", Color(1.0, 0.95, 0.82))
 		lbl_main.add_theme_color_override("font_shadow_color", Color(0.04, 0.02, 0.01, 0.95))
 		lbl_main.add_theme_constant_override("shadow_offset_y", 1)
@@ -663,7 +663,7 @@ func _build_action_dock() -> void:
 		lbl_sub.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		if _game_font:
 			lbl_sub.add_theme_font_override("font", _game_font)
-		lbl_sub.add_theme_font_size_override("font_size", 15)
+		ResponsiveUI.apply_scaled_font(lbl_sub, 17, 14, 20)
 		lbl_sub.add_theme_color_override("font_color", Color(0.85, 0.82, 0.75, 0.88))
 		lbl_sub.add_theme_color_override("font_shadow_color", Color(0.04, 0.02, 0.01, 0.90))
 		lbl_sub.add_theme_constant_override("shadow_offset_y", 1)
@@ -701,13 +701,13 @@ func _build_action_dock() -> void:
 	var btn_erase = Button.new()
 	btn_erase.name = "BtnDigit_Erase"
 	btn_erase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_erase.custom_minimum_size = Vector2(0, 64)
+	btn_erase.custom_minimum_size = Vector2(0, 68)
 	btn_erase.focus_mode = Control.FOCUS_NONE
 	btn_erase.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	btn_erase.text = "✕\nپاک"
 	if _game_font:
 		btn_erase.add_theme_font_override("font", _game_font)
-	btn_erase.add_theme_font_size_override("font_size", 22)
+	ResponsiveUI.apply_scaled_font(btn_erase, 22, 16, 26)
 	btn_erase.add_theme_color_override("font_color", Color(1.0, 0.70, 0.70))
 	btn_erase.add_theme_color_override("font_outline_color", Color(0.08, 0.02, 0.02, 0.95))
 	btn_erase.add_theme_constant_override("outline_size", 3)
@@ -749,7 +749,7 @@ func _build_action_dock() -> void:
 	_action_solve_btn.text = "✨ بررسی و ثبت حل سودوکو"
 	if _game_font:
 		_action_solve_btn.add_theme_font_override("font", _game_font)
-	_action_solve_btn.add_theme_font_size_override("font_size", 25)
+	ResponsiveUI.apply_scaled_font(_action_solve_btn, 27, 21, 32)
 	_action_solve_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 	_action_solve_btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 	_action_solve_btn.add_theme_constant_override("outline_size", 3)

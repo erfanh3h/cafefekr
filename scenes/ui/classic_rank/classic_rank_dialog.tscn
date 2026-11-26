@@ -8,6 +8,10 @@
 [ext_resource type="Texture2D" path="res://assets/images/frames/dialog_tall.png" id="6_dialog_tall_tex"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_parlor_outer"]
+content_margin_left = 34.0
+content_margin_top = 64.0
+content_margin_right = 34.0
+content_margin_bottom = 44.0
 texture = ExtResource("6_dialog_tall_tex")
 texture_margin_left = 40.0
 texture_margin_top = 80.0
@@ -15,10 +19,10 @@ texture_margin_right = 40.0
 texture_margin_bottom = 60.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_parlor_inner"]
-content_margin_left = 14.0
-content_margin_top = 14.0
-content_margin_right = 14.0
-content_margin_bottom = 14.0
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
 bg_color = Color(0, 0, 0, 0)
 border_color = Color(0, 0, 0, 0)
 corner_radius_top_left = 20
@@ -226,7 +230,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.72, 0.6, 0.95)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 15
 text = "رقابت تک‌نفره با هوش مصنوعی و کسب تجربه"
 horizontal_alignment = 1
 
@@ -239,7 +243,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_count_pill")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.83, 0.36, 1)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 15
 text = "۲۵ بازی"
 horizontal_alignment = 1
 
@@ -313,7 +317,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_xp_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.84, 0.76, 0.64, 1)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 text = "باخت
 +۳ XP"
 horizontal_alignment = 1
@@ -328,7 +332,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_xp_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.84, 0.38, 1)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 text = "مساوی
 +۷ XP • +۲ سکه"
 horizontal_alignment = 1
@@ -343,7 +347,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_xp_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.94, 0.64, 1)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 text = "برد
 +۱۵ XP • +۵ سکه"
 horizontal_alignment = 1
@@ -379,7 +383,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.84, 0.76, 0.62, 0.92)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 text = "حریف متعادل و استاندارد (پیش‌فرض)"
 horizontal_alignment = 0
 clip_text = true
@@ -388,7 +392,7 @@ clip_text = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.83, 0.36, 1)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 15
 text = "سطح هوش مصنوعی حریف:"
 horizontal_alignment = 2
 
@@ -423,7 +427,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="BtnStartGame" type="Button" parent="InnerBezel/VBox/BottomRow"]
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
@@ -437,5 +441,5 @@ theme_override_colors/font_disabled_color = Color(0.7, 0.66, 0.6, 0.65)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_y = 2
 theme_override_fonts/font = ExtResource("3_font_hekayat")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 text = "شروع مسابقه"

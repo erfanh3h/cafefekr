@@ -73,6 +73,7 @@ func _ready() -> void:
 		AudioManager.sfx_tap()
 		show_list_view()
 	)
+	ResponsiveUI.register_dialog(self, 660.0, 1160.0, 320.0, 480.0)
 
 func _update_tab_styles() -> void:
 	CafeSocialTheme.style_parlor_tab_button(btn_tab_matches, _active_tab == 0, 21)

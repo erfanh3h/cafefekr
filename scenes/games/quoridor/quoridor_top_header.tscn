@@ -18,7 +18,7 @@ theme_override_colors/font_color = Color(0.961, 0.769, 0.318, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.72)
 theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 text = "🧱 ۱۰ دیوار"
 
 [node name="P1MissedTurns" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox" index="3"]
@@ -27,12 +27,12 @@ theme_override_constants/separation = 4
 alignment = 0
 
 [node name="P1Dot1" type="Panel" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="0"]
-custom_minimum_size = Vector2(9, 9)
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="P1Dot2" type="Panel" parent="Margin/VBoxMain/PlayersRow/P1Card/HBox/InfoBox/P1MissedTurns" index="1"]
-custom_minimum_size = Vector2(9, 9)
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
@@ -40,7 +40,7 @@ size_flags_vertical = 4
 layout_mode = 2
 theme_override_colors/font_color = Color(0.847, 0.761, 0.651, 1)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 15
 text = "خطا: ۰/۲"
 
 [node name="P2QuoridorRow" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox" index="2"]
@@ -54,7 +54,7 @@ theme_override_colors/font_color = Color(0.847, 0.761, 0.651, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.72)
 theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 text = "🧱 ۱۰ دیوار"
 
 [node name="P2MissedTurns" type="HBoxContainer" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox" index="3"]
@@ -63,12 +63,12 @@ theme_override_constants/separation = 4
 alignment = 0
 
 [node name="P2Dot1" type="Panel" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="0"]
-custom_minimum_size = Vector2(9, 9)
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
 [node name="P2Dot2" type="Panel" parent="Margin/VBoxMain/PlayersRow/P2Card/HBox/InfoBox/P2MissedTurns" index="1"]
-custom_minimum_size = Vector2(9, 9)
+custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 size_flags_vertical = 4
 
@@ -76,7 +76,7 @@ size_flags_vertical = 4
 layout_mode = 2
 theme_override_colors/font_color = Color(0.847, 0.761, 0.651, 1)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 15
 text = "خطا: ۰/۲"
 
 [node name="AfkRuleRow" type="HBoxContainer" parent="Margin/VBoxMain/MatchDetailsBox/VBox" index="4"]
@@ -88,6 +88,6 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.961, 0.769, 0.318, 0.95)
 theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 text = "هر نوبت: ۳۰ ثانیه | ۱۰ دیوار برای هر بازیکن"
 horizontal_alignment = 1

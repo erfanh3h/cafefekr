@@ -218,7 +218,7 @@ func _make_glass_style(bg: Color, border: Color, radius: int = 18, border_w: int
 
 func _style_btn(btn: Button, bg: Color, border: Color, text_col: Color = Color.WHITE, f_size: int = 26, disabled: bool = false) -> void:
 	btn.add_theme_font_override("font", FontHekayat)
-	btn.add_theme_font_size_override("font_size", f_size)
+	ResponsiveUI.apply_scaled_font(btn, f_size, 16, 36)
 	btn.add_theme_color_override("font_color", text_col)
 	btn.add_theme_color_override("font_hover_color", text_col.lightened(0.12))
 	btn.add_theme_color_override("font_pressed_color", text_col)
@@ -240,7 +240,7 @@ func _make_lbl(txt: String, f_size: int = 26, col: Color = Color(0.98, 0.96, 0.9
 	var l := Label.new()
 	l.text = txt
 	l.add_theme_font_override("font", FontHekayat)
-	l.add_theme_font_size_override("font_size", f_size)
+	ResponsiveUI.apply_scaled_font(l, f_size, 17, 40)
 	l.add_theme_color_override("font_color", col)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
 	l.add_theme_constant_override("outline_size", outline)
@@ -285,14 +285,14 @@ func _make_gamer_action_btn(title_txt: String, sub_txt: String, bg: Color, borde
 
 	var t_col: Color = Color(0.62, 0.62, 0.66, 0.80) if disabled else Color.WHITE
 	var s_col: Color = Color(0.54, 0.54, 0.58, 0.75) if disabled else Color(1.0, 0.94, 0.74, 0.96)
-	var t_lbl := _make_lbl(title_txt, 28 if is_primary else 25, t_col, HORIZONTAL_ALIGNMENT_CENTER, 3, false)
+	var t_lbl := _make_lbl(title_txt, 29 if is_primary else 26, t_col, HORIZONTAL_ALIGNMENT_CENTER, 3, false)
 	t_lbl.clip_text = true
 	t_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	t_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vb.add_child(t_lbl)
 
 	if not sub_txt.is_empty():
-		var s_lbl := _make_lbl(sub_txt, 20, s_col, HORIZONTAL_ALIGNMENT_CENTER, 2, false)
+		var s_lbl := _make_lbl(sub_txt, 22, s_col, HORIZONTAL_ALIGNMENT_CENTER, 2, false)
 		s_lbl.clip_text = true
 		s_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		s_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -464,7 +464,7 @@ func _build_hud() -> void:
 	portfolio_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	portfolio_btn.size_flags_stretch_ratio = 1.15
 	portfolio_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_style_btn(portfolio_btn, Color(0.15, 0.34, 0.52, 0.96), Color(0.52, 0.82, 1.0, 0.90), Color(0.96, 0.99, 1.0), 22)
+	_style_btn(portfolio_btn, Color(0.15, 0.34, 0.52, 0.96), Color(0.52, 0.82, 1.0, 0.90), Color(0.96, 0.99, 1.0), 24)
 	portfolio_btn.pressed.connect(_open_portfolio_modal)
 	stats_hb.add_child(portfolio_btn)
 
@@ -474,7 +474,7 @@ func _build_hud() -> void:
 	trade_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	trade_btn.size_flags_stretch_ratio = 0.88
 	trade_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_style_btn(trade_btn, Color(0.42, 0.25, 0.08, 0.96), Color(0.98, 0.76, 0.28, 0.90), Color(1.0, 0.96, 0.86), 22)
+	_style_btn(trade_btn, Color(0.42, 0.25, 0.08, 0.96), Color(0.98, 0.76, 0.28, 0.90), Color(1.0, 0.96, 0.86), 24)
 	trade_btn.pressed.connect(_open_trade_builder_modal)
 	stats_hb.add_child(trade_btn)
 

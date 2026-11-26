@@ -55,7 +55,7 @@ func _build_overlays() -> void:
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_toast_label.add_theme_font_override("font", FontHekayat)
-	_toast_label.add_theme_font_size_override("font_size", 19)
+	ResponsiveUI.apply_scaled_font(_toast_label, 21, 17, 26)
 	_toast_label.add_theme_color_override("font_color", Color(0.98, 0.96, 0.90))
 	_toast_panel.add_child(_toast_label)
 

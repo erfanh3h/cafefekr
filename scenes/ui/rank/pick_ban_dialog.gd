@@ -451,7 +451,7 @@ func _build_timeline() -> void:
 	var sys_title_lbl = Label.new()
 	sys_title_lbl.text = "🚫 حذف سیستم:"
 	sys_title_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	sys_title_lbl.add_theme_font_size_override("font_size", 15)
+	ResponsiveUI.apply_text(sys_title_lbl, UITypography.Role.BODY_SM, {"min_px": 16, "max_px": 20})
 	sys_title_lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.62))
 	sys_strip.add_child(sys_title_lbl)
 
@@ -487,7 +487,7 @@ func _build_timeline() -> void:
 		sys_name.text = "..."
 		sys_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sys_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		sys_name.add_theme_font_size_override("font_size", 14)
+		ResponsiveUI.apply_text(sys_name, UITypography.Role.CAPTION, {"min_px": 15, "max_px": 19})
 		sys_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		sys_name.clip_text = true
 		sys_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -561,7 +561,7 @@ func _build_timeline() -> void:
 		lbl_tag.clip_text = true
 		lbl_tag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		lbl_tag.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_tag.add_theme_font_size_override("font_size", 13)
+		ResponsiveUI.apply_text(lbl_tag, UITypography.Role.MICRO, {"min_px": 14, "max_px": 18})
 		lbl_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		
 		if t_type == "ban":
@@ -619,7 +619,7 @@ func _build_timeline() -> void:
 		lbl_name.text = "شما" if t_owner == my_player_index else ("سیستم" if t_owner == 0 else "حریف")
 		lbl_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		lbl_name.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		lbl_name.add_theme_font_size_override("font_size", 13)
+		ResponsiveUI.apply_text(lbl_name, UITypography.Role.MICRO, {"min_px": 14, "max_px": 18})
 		lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl_name.clip_text = true
 		lbl_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS

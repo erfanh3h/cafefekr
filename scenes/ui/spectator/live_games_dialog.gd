@@ -386,6 +386,7 @@ func _build_ui() -> void:
 	main_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	main_panel.add_theme_stylebox_override("panel", _make_parlor_outer_frame_style())
 	screen_margin.add_child(main_panel)
+	ResponsiveUI.register_dialog(main_panel, 680.0, 1200.0, 320.0, 480.0, false)
 
 	_inner_bezel = PanelContainer.new()
 	_inner_bezel.size_flags_horizontal = Control.SIZE_EXPAND_FILL

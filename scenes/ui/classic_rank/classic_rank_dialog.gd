@@ -118,6 +118,9 @@ func _ready() -> void:
 
 	_render_ai_level_bar()
 	_render_filter_bar()
+	ResponsiveUI.register_dialog(self, 672.0, 1170.0, 320.0, 480.0)
+	if is_instance_valid(btn_start_game) and not btn_start_game.resized.is_connected(_fit_start_button_text):
+		btn_start_game.resized.connect(_fit_start_button_text)
 	_populate_games_grid()
 	_update_selected_preview()
 
@@ -173,41 +176,12 @@ func _setup_styles() -> void:
 func _style_start_button() -> void:
 	if not is_instance_valid(btn_start_game):
 		return
-	var btn_tex = preload("res://assets/images/frames/button.png")
-	var make_btn_sb = func(mod: Color, pad_top: float, pad_bot: float) -> StyleBoxTexture:
-		var sb := StyleBoxTexture.new()
-		sb.texture = btn_tex
-		sb.modulate_color = mod
-		sb.texture_margin_left = 32.0
-		sb.texture_margin_right = 32.0
-		sb.texture_margin_top = 22.0
-		sb.texture_margin_bottom = 22.0
-		sb.content_margin_left = 28.0
-		sb.content_margin_right = 28.0
-		sb.content_margin_top = pad_top
-		sb.content_margin_bottom = pad_bot
-		sb.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
-		sb.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_STRETCH
-		return sb
-
-	btn_start_game.flat = false
+	KenneyUI.style_button(btn_start_game, KenneyUI.COLOR_GREEN)
 	btn_start_game.focus_mode = Control.FOCUS_NONE
-	btn_start_game.custom_minimum_size.y = 150.0
-	btn_start_game.add_theme_font_size_override("font_size", 34)
-	btn_start_game.add_theme_stylebox_override("normal", make_btn_sb.call(Color(1.0, 1.0, 1.0, 1.0), 42.0, 42.0))
-	btn_start_game.add_theme_stylebox_override("hover", make_btn_sb.call(Color(1.12, 1.08, 1.02, 1.0), 42.0, 42.0))
-	btn_start_game.add_theme_stylebox_override("pressed", make_btn_sb.call(Color(0.85, 0.82, 0.78, 1.0), 46.0, 38.0))
-	btn_start_game.add_theme_stylebox_override("disabled", make_btn_sb.call(Color(0.55, 0.52, 0.5, 0.7), 42.0, 42.0))
-	btn_start_game.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-
-	btn_start_game.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92, 1.0))
-	btn_start_game.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
-	btn_start_game.add_theme_color_override("font_pressed_color", Color(0.95, 0.90, 0.78, 1.0))
-	btn_start_game.add_theme_color_override("font_focus_color", Color(1.0, 0.98, 0.92, 1.0))
-	btn_start_game.add_theme_color_override("font_hover_pressed_color", Color(0.95, 0.90, 0.78, 1.0))
-	btn_start_game.add_theme_color_override("font_disabled_color", Color(0.72, 0.68, 0.62, 0.65))
-	btn_start_game.add_theme_color_override("font_outline_color", Color(0.05, 0.08, 0.04, 0.82))
-	btn_start_game.add_theme_constant_override("outline_size", 2)
+	btn_start_game.clip_text = true
+	btn_start_game.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	btn_start_game.custom_minimum_size.y = 100.0
+	ResponsiveUI.apply_scaled_font(btn_start_game, 28, 22, 32)
 
 
 func _render_ai_level_bar() -> void:
@@ -235,12 +209,12 @@ func _render_ai_level_bar() -> void:
 
 		var btn: Button = Button.new()
 		btn.text = label_txt
-		btn.custom_minimum_size = Vector2(0, 46)
+		btn.custom_minimum_size = Vector2(0, 48)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		btn.add_theme_font_override("font", FONT_VAZIR)
-		btn.add_theme_font_size_override("font_size", 15 if is_active else 14)
+		ResponsiveUI.apply_scaled_font(btn, 16 if is_active else 15, 14, 18)
 
 		var sb_norm: StyleBoxFlat = StyleBoxFlat.new()
 		sb_norm.set_corner_radius_all(12)
@@ -490,7 +464,7 @@ func _create_game_card(g_type: String, initial_h: float = 250.0) -> Control:
 	d_lbl.text = diff_name
 	d_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	d_lbl.add_theme_font_override("font", FONT_VAZIR)
-	d_lbl.add_theme_font_size_override("font_size", 10)
+	ResponsiveUI.apply_text(d_lbl, UITypography.Role.MICRO, {"min_px": 14, "max_px": 17})
 	d_lbl.add_theme_color_override("font_color", diff_pal["text"] as Color)
 	d_pill.add_child(d_lbl)
 
@@ -688,3 +662,19 @@ func _update_selected_preview() -> void:
 	if is_instance_valid(btn_start_game):
 		var ai_lvl_fa: String = GameRegistry.get_classic_ai_level_name_fa(selected_ai_level)
 		btn_start_game.text = "شروع %s • حریف %s" % [game_name_fa, ai_lvl_fa]
+		_fit_start_button_text()
+
+
+func _fit_start_button_text() -> void:
+	if not is_instance_valid(btn_start_game):
+		return
+	var base_px: int = UITypography.scale_px(28, 22, 32)
+	var avail_w: float = maxf(260.0, btn_start_game.size.x - 80.0)
+	if btn_start_game.size.x <= 10.0:
+		avail_w = 500.0
+	var chosen: int = base_px
+	while chosen > 21:
+		if FONT_HEKAYAT.get_string_size(btn_start_game.text, HORIZONTAL_ALIGNMENT_CENTER, -1, chosen).x <= avail_w:
+			break
+		chosen -= 1
+	ResponsiveUI.apply_scaled_font(btn_start_game, chosen, 21, 32)

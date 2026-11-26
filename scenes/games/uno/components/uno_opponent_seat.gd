@@ -107,7 +107,7 @@ func _build_ui() -> void:
 	_turn_tag = Label.new()
 	_turn_tag.text = "در انتظار نوبت"
 	_turn_tag.add_theme_font_override("font", FontHekayat)
-	_turn_tag.add_theme_font_size_override("font_size", 17)
+	ResponsiveUI.apply_scaled_font(_turn_tag, 19, 16, 23)
 	_turn_tag.add_theme_color_override("font_color", Color(0.68, 0.76, 0.72))
 	info_vbox.add_child(_turn_tag)
 

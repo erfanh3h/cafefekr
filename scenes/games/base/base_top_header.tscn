@@ -514,7 +514,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.92, 0.86, 0.78, 1)
 theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 14
 text = "حریف:"
 text_direction = 3
 
@@ -525,14 +525,14 @@ theme_override_constants/separation = 3
 alignment = 1
 
 [node name="OppDot1" type="Panel" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots"]
-custom_minimum_size = Vector2(8, 8)
+custom_minimum_size = Vector2(9, 9)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
 
 [node name="OppDot2" type="Panel" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/OppRow/OppDots"]
-custom_minimum_size = Vector2(8, 8)
+custom_minimum_size = Vector2(9, 9)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -543,7 +543,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 14
 text = "۰/۲"
 text_direction = 3
 
@@ -558,7 +558,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.92, 0.86, 0.78, 1)
 theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 14
 text = "شما:"
 text_direction = 3
 
@@ -569,14 +569,14 @@ theme_override_constants/separation = 3
 alignment = 1
 
 [node name="MyDot1" type="Panel" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots"]
-custom_minimum_size = Vector2(8, 8)
+custom_minimum_size = Vector2(9, 9)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_strike_empty")
 
 [node name="MyDot2" type="Panel" parent="Margin/VBoxMain/LocalTurnBarWrap/LocalTurnVBox/BelowTimerRow/PenaltyDetailsBox/VBox/MyRow/MyDots"]
-custom_minimum_size = Vector2(8, 8)
+custom_minimum_size = Vector2(9, 9)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -587,7 +587,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 14
 text = "۰/۲"
 text_direction = 3
 
@@ -619,7 +619,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.85, 0.78, 0.68, 0.90)
 theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 15
 text = "نتیجه:"
 text_direction = 3
 
@@ -628,7 +628,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.980392, 0.831373, 0.419608, 1)
 theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 17
 text = "۲ - ۲"
 text_direction = 3
 
@@ -933,8 +933,8 @@ visible = false
 layout_mode = 1
 offset_left = 10.0
 offset_top = 58.0
-offset_right = 96.0
-offset_bottom = 86.0
+offset_right = 116.0
+offset_bottom = 92.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_spectator_pill")
 
@@ -947,7 +947,7 @@ alignment = 1
 [node name="Icon" type="Label" parent="EdgeOverlay/SpectatorPill/HBox"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 15
 text = "👁"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -957,7 +957,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.788235, 0.94902, 0.858824, 1)
 theme_override_fonts/font = ExtResource("3_font_ui")
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 14
 text = "تماشاچی"
 horizontal_alignment = 1
 vertical_alignment = 1

@@ -114,7 +114,7 @@ func _build_ui() -> void:
 	_lbl_winrate = Label.new()
 	_lbl_winrate.text = "نرخ برد: ۰٪"
 	_lbl_winrate.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_winrate.add_theme_font_size_override("font_size", 14)
+	ResponsiveUI.apply_text(_lbl_winrate, UITypography.Role.CAPTION, {"min_px": 15, "max_px": 20})
 	_lbl_winrate.add_theme_color_override("font_color", CafeSocialTheme.COL_EMERALD_TEXT)
 	footer_row.add_child(_lbl_winrate)
 
@@ -123,7 +123,7 @@ func _build_ui() -> void:
 	_lbl_total.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_total.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_total.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_total.add_theme_font_size_override("font_size", 14)
+	ResponsiveUI.apply_text(_lbl_total, UITypography.Role.CAPTION, {"min_px": 15, "max_px": 20})
 	_lbl_total.add_theme_color_override("font_color", CafeSocialTheme.COL_MUTED_SAND)
 	footer_row.add_child(_lbl_total)
 
@@ -269,7 +269,7 @@ func _create_metric_tile(label_txt: String, value: int, text_col: Color, bg_col:
 	cap_lbl.text = label_txt
 	cap_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cap_lbl.add_theme_font_override("font", FONT_VAZIR)
-	cap_lbl.add_theme_font_size_override("font_size", 13)
+	ResponsiveUI.apply_text(cap_lbl, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
 	cap_lbl.add_theme_color_override("font_color", CafeSocialTheme.COL_WARM_CREAM)
 	vb.add_child(cap_lbl)
 	return p

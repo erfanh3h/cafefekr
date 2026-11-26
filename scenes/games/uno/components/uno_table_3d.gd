@@ -296,12 +296,12 @@ func _build_tabletop() -> void:
 	uno_logo_3d.rotation_degrees = Vector3(-90.0, 0.0, -15.0)
 	_draw_top_card.add_child(uno_logo_3d)
 
-	_draw_count_label = _create_label_3d("۸۰ کارت", 26, Color(0.95, 0.96, 0.90), 0.00105)
+	_draw_count_label = _create_label_3d("۸۰ کارت", 34, Color(0.95, 0.96, 0.90), 0.00118)
 	_draw_count_label.position = Vector3(0.0, 0.007, 0.168)
 	_draw_count_label.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	draw_pile_root.add_child(_draw_count_label)
 
-	_draw_prompt_badge = _create_label_3d("🃏 ضربه بزنید و بکشید", 30, Color(1.0, 0.94, 0.42), 0.00108)
+	_draw_prompt_badge = _create_label_3d("🃏 ضربه بزنید و بکشید", 36, Color(1.0, 0.94, 0.42), 0.00118)
 	_draw_prompt_badge.position = Vector3(0.0, 0.095, 0.0)
 	_draw_prompt_badge.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_draw_prompt_badge.no_depth_test = true
@@ -478,7 +478,7 @@ func _build_tabletop() -> void:
 	_color_crystal_node.material_override = _color_gem_mat
 	color_indicator_root.add_child(_color_crystal_node)
 
-	_color_name_3d = _create_label_3d("قرمز", 28, Color.WHITE, 0.00108)
+	_color_name_3d = _create_label_3d("قرمز", 36, Color.WHITE, 0.00120)
 	_color_name_3d.position = Vector3(0.0, 0.018, 0.088)
 	_color_name_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	color_indicator_root.add_child(_color_name_3d)
@@ -530,7 +530,7 @@ func _build_uno_bell_prop(pos: Vector3, mat_walnut: Material, mat_brass: Materia
 	_uno_bell_alert_ring = _add_torus(_uno_bell_root, 0.066, 0.076, Vector3(0.0, 0.011, 0.0), alert_mat)
 	_uno_bell_alert_ring.visible = false
 
-	var bell_lbl: Label3D = _create_label_3d("🔥 UNO!", 28, Color(1.0, 0.90, 0.35), 0.0010)
+	var bell_lbl: Label3D = _create_label_3d("🔥 UNO!", 36, Color(1.0, 0.90, 0.35), 0.00115)
 	bell_lbl.position = Vector3(0.0, 0.014, 0.092)
 	bell_lbl.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	_uno_bell_root.add_child(bell_lbl)

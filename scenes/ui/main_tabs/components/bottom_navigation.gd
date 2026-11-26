@@ -49,6 +49,34 @@ func _ready() -> void:
 
 	select_tab("play", false)
 	update_social_badge()
+	if ResponsiveUI != null and not ResponsiveUI.layout_changed.is_connected(_on_responsive_layout_changed):
+		ResponsiveUI.layout_changed.connect(_on_responsive_layout_changed)
+	resized.connect(_sync_responsive_nav)
+	call_deferred("_sync_responsive_nav")
+
+
+func _on_responsive_layout_changed(_metrics: Dictionary) -> void:
+	_sync_responsive_nav()
+
+
+func _sync_responsive_nav() -> void:
+	var is_short: bool = UITypography.is_short_height()
+	var insets: Dictionary = ResponsiveUI.get_safe_insets() if ResponsiveUI != null else {"bottom": 14}
+	var extra_bottom: float = maxf(0.0, float(int(insets.get("bottom", 14)) - 14) * 0.45)
+	custom_minimum_size.y = (148.0 if is_short else 164.0) + extra_bottom
+
+	var tab_w: float = (size.x - 64.0) / maxf(1.0, float(_tab_buttons.size()))
+	for t_key: Variant in _tab_buttons.keys():
+		var btn: Button = _tab_buttons[t_key] as Button
+		if not is_instance_valid(btn):
+			continue
+		var lbl: Label = btn.get_node_or_null("VBox/Lbl") as Label
+		if is_instance_valid(lbl):
+			ResponsiveUI.apply_text(lbl, UITypography.Role.TITLE_SM, {"min_px": 16, "max_px": 25})
+			if tab_w > 40.0:
+				UITypography.fit_label_to_width(lbl, tab_w - 8.0, 23, 16)
+	if is_instance_valid(lbl_badge_social):
+		ResponsiveUI.apply_text(lbl_badge_social, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 20})
 
 
 func _on_tab_pressed(tab_name: String) -> void:

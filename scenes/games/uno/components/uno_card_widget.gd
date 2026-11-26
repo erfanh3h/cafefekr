@@ -247,6 +247,7 @@ func _build_ui() -> void:
 		lbl4.text = "+۴"
 		lbl4.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl4.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl4.set_meta(&"_resp_raw", true)
 		lbl4.add_theme_font_override("font", FontHekayat)
 		lbl4.add_theme_font_size_override("font_size", maxi(28, int(roundf(38.0 * sc))))
 		lbl4.add_theme_color_override("font_color", Color.WHITE)
@@ -258,6 +259,7 @@ func _build_ui() -> void:
 		center_lbl.text = format_center_symbol(card_value)
 		center_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		center_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		center_lbl.set_meta(&"_resp_raw", true)
 		center_lbl.add_theme_font_override("font", FontHekayat)
 		var base_c_sz: float = 40.0 if card_value.length() <= 2 else 30.0
 		center_lbl.add_theme_font_size_override("font_size", maxi(24, int(roundf(base_c_sz * sc))))
@@ -275,8 +277,9 @@ func _build_ui() -> void:
 	sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	sub_lbl.clip_text = true
+	sub_lbl.set_meta(&"_resp_raw", true)
 	sub_lbl.add_theme_font_override("font", FontHekayat)
-	sub_lbl.add_theme_font_size_override("font_size", maxi(11, int(roundf(13.0 * sc))))
+	sub_lbl.add_theme_font_size_override("font_size", maxi(13, int(roundf(14.0 * sc))))
 	sub_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.92) if card_color != "yellow" else Color(0.14, 0.12, 0.05))
 	sub_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bot_row.add_child(sub_lbl)
@@ -284,8 +287,9 @@ func _build_ui() -> void:
 	var bot_corner: Label = Label.new()
 	bot_corner.text = format_corner_symbol(card_value)
 	bot_corner.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	bot_corner.set_meta(&"_resp_raw", true)
 	bot_corner.add_theme_font_override("font", FontHekayat)
-	bot_corner.add_theme_font_size_override("font_size", maxi(14, int(roundf(17.0 * sc))))
+	bot_corner.add_theme_font_size_override("font_size", maxi(15, int(roundf(17.0 * sc))))
 	bot_corner.add_theme_color_override("font_color", Color.WHITE if card_color != "yellow" else Color(0.14, 0.12, 0.05))
 	bot_corner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bot_row.add_child(bot_corner)

@@ -81,6 +81,7 @@ func _ready() -> void:
 		AudioManager.sfx_button()
 		close()
 	)
+	ResponsiveUI.register_dialog(self, 660.0, 1160.0, 320.0, 480.0)
 
 
 func _update_tab_styles() -> void:

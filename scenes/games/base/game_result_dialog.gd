@@ -96,6 +96,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if panel and is_instance_valid(panel):
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ResponsiveUI.register_dialog(panel, 640.0, 1080.0, 320.0, 460.0, false)
 	coin_chip.visible = false
 	_setup_styles()
 	if _is_mobile():
@@ -502,7 +503,7 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 		var badge_lbl: Label = Label.new()
 		badge_lbl.custom_minimum_size = Vector2(88, 0)
 		badge_lbl.add_theme_font_override("font", FONT_VAZIR)
-		badge_lbl.add_theme_font_size_override("font_size", 13)
+		ResponsiveUI.apply_text(badge_lbl, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 19})
 		badge_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_style_tag_pill(
 			badge_lbl,
@@ -581,7 +582,7 @@ func _build_multiplayer_self_result(my_idx: int, winner_player_index: int) -> vo
 	var status_tag: Label = Label.new()
 	status_tag.custom_minimum_size = Vector2(96, 0)
 	status_tag.add_theme_font_override("font", FONT_VAZIR)
-	status_tag.add_theme_font_size_override("font_size", 13)
+	ResponsiveUI.apply_text(status_tag, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 19})
 	status_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 	if GameManager.local_player_surrendered:
@@ -624,7 +625,7 @@ func _build_multiplayer_self_result(my_idx: int, winner_player_index: int) -> vo
 	var notice_lbl: Label = Label.new()
 	notice_lbl.text = "⏳ رقابت سایر بازیکنان روی میز مسابقه همچنان ادامه دارد...\nامتیاز و دستاوردهای شما با موفقیت ثبت شد."
 	notice_lbl.add_theme_font_override("font", FONT_VAZIR)
-	notice_lbl.add_theme_font_size_override("font_size", 13)
+	ResponsiveUI.apply_text(notice_lbl, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 20, "wrap": true})
 	notice_lbl.add_theme_color_override("font_color", Color(0.82, 0.88, 0.96))
 	notice_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1021,6 +1022,7 @@ func close() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if panel and is_instance_valid(panel):
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ResponsiveUI.register_dialog(panel, 640.0, 1080.0, 320.0, 460.0, false)
 	ActionVFXManager.animate_dialog_close(panel, self)
 
 
@@ -1043,6 +1045,7 @@ func close_immediate() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if panel and is_instance_valid(panel):
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ResponsiveUI.register_dialog(panel, 640.0, 1080.0, 320.0, 460.0, false)
 		panel.visible = false
 
 

@@ -202,14 +202,14 @@ func _build_kori_list() -> void:
 	for idx in range(KORIS.size()):
 		var card := PanelContainer.new()
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.custom_minimum_size = Vector2(0, 38)
+		card.custom_minimum_size = Vector2(0, 46)
 		card.mouse_filter = Control.MOUSE_FILTER_PASS
 		card.add_theme_stylebox_override("panel", normal_style)
 
 		var lbl := Label.new()
 		lbl.text = KORIS[idx]
 		lbl.add_theme_font_override("font", FONT_UI)
-		lbl.add_theme_font_size_override("font_size", 12)
+		ResponsiveUI.apply_text(lbl, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 20, "wrap": true})
 		lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 		lbl.add_theme_constant_override("shadow_offset_y", 1)

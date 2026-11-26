@@ -586,14 +586,14 @@ func _spawn_reaction_bubble(sender_id: String, content: Variant, is_text: bool, 
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		lbl.text = str(content)
 		lbl.add_theme_font_override("font", HudTheme.get_ui_font())
-		lbl.add_theme_font_size_override("font_size", 15 if is_local else 12)
+		ResponsiveUI.apply_scaled_font(lbl, 18 if is_local else 15, 14, 22)
 		lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		lbl.text_direction = Control.TEXT_DIRECTION_RTL if locale_code == "fa" else Control.TEXT_DIRECTION_LTR
 		lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 		bubble.add_child(lbl)
-		bubble.custom_minimum_size = Vector2(0, 38 if is_local else 28)
+		bubble.custom_minimum_size = Vector2(0, 42 if is_local else 34)
 	elif content is Texture2D:
 		var tex_rect := TextureRect.new()
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -675,9 +675,9 @@ func _open_picker_popover(mode: String, anchor_btn: Button) -> void:
 			var chat_btn := Button.new()
 			chat_btn.text = msg
 			chat_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			chat_btn.custom_minimum_size = Vector2(0, 42)
+			chat_btn.custom_minimum_size = Vector2(0, 48)
 			HudTheme.apply_drawer_item_style(chat_btn, "default")
-			chat_btn.add_theme_font_size_override("font_size", 13)
+			ResponsiveUI.apply_text(chat_btn, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 20})
 			var captured_i: int = i
 			chat_btn.pressed.connect(func() -> void:
 				_close_picker_popover()

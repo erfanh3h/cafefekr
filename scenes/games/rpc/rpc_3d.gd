@@ -458,7 +458,7 @@ func _build_action_dock() -> void:
 		btn.clip_text = false
 		btn.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 		btn.add_theme_font_override("font", _FONT_FA)
-		btn.add_theme_font_size_override("font_size", 28)
+		ResponsiveUI.apply_scaled_font(btn, 30, 23, 36)
 		btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.92))
 		btn.add_theme_color_override("font_outline_color", Color(0.04, 0.02, 0.01, 0.95))
 		btn.add_theme_constant_override("outline_size", 3)
@@ -627,8 +627,8 @@ func _build_score_trackers() -> void:
 	lbl_turn_round_status = Label3D.new()
 	lbl_turn_round_status.text = "دست %s از ۵" % _fa_digits(1)
 	lbl_turn_round_status.font = _FONT_FA
-	lbl_turn_round_status.font_size = 40
-	lbl_turn_round_status.pixel_size = 0.00075
+	lbl_turn_round_status.font_size = 46
+	lbl_turn_round_status.pixel_size = 0.00095
 	lbl_turn_round_status.modulate = Color(1.0, 0.88, 0.45)
 	lbl_turn_round_status.outline_size = 4
 	lbl_turn_round_status.outline_modulate = Color(0.10, 0.05, 0.02)

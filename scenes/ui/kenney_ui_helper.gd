@@ -96,10 +96,13 @@ static func style_button(btn: BaseButton, color: String = "wood", sound: String 
 	if _font_hekayat:
 		btn.add_theme_font_override("font", _font_hekayat)
 		
-	# Generous, thumb-friendly font sizing & touch target view
-	var cur_size = btn.get_theme_font_size("font_size")
-	if cur_size < 28:
-		btn.add_theme_font_size_override("font_size", 28)
+	# Generous, thumb-friendly font sizing & responsive scaling
+	var cur_size: int = btn.get_theme_font_size("font_size")
+	var base_sz: int = maxi(cur_size, 28)
+	btn.set_meta(&"_resp_base_px", base_sz)
+	btn.set_meta(&"_resp_min_px", 22)
+	btn.set_meta(&"_resp_max_px", maxi(38, base_sz))
+	btn.add_theme_font_size_override("font_size", UITypography.scale_px(base_sz, 22, maxi(38, base_sz)))
 		
 	if btn.custom_minimum_size.y == 0:
 		btn.custom_minimum_size.y = 104

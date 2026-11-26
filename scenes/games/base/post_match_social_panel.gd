@@ -268,7 +268,7 @@ func _build_ui() -> void:
 	var arch_lbl := Label.new()
 	arch_lbl.text = "🔥 رقیب دیرینه"
 	arch_lbl.add_theme_font_override("font", FONT_VAZIR)
-	arch_lbl.add_theme_font_size_override("font_size", 11)
+	ResponsiveUI.apply_text(arch_lbl, UITypography.Role.MICRO, {"min_px": 14, "max_px": 17})
 	arch_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.48))
 	_arch_rival_badge.add_child(arch_lbl)
 	name_row.add_child(_arch_rival_badge)
@@ -291,7 +291,7 @@ func _build_ui() -> void:
 	_lbl_rivalry_score.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_lbl_rivalry_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_rivalry_score.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_rivalry_score.add_theme_font_size_override("font_size", 13)
+	ResponsiveUI.apply_text(_lbl_rivalry_score, UITypography.Role.CAPTION, {"min_px": 15, "max_px": 19})
 	_lbl_rivalry_score.add_theme_color_override("font_color", Color(0.96, 0.84, 0.52))
 	info_col.add_child(_lbl_rivalry_score)
 
@@ -406,9 +406,9 @@ func _build_ui() -> void:
 
 	var btn_close_picker := Button.new()
 	btn_close_picker.text = "بستن"
-	btn_close_picker.custom_minimum_size = Vector2(64, 30)
+	btn_close_picker.custom_minimum_size = Vector2(72, 36)
 	btn_close_picker.add_theme_font_override("font", FONT_VAZIR)
-	btn_close_picker.add_theme_font_size_override("font_size", 12)
+	ResponsiveUI.apply_text(btn_close_picker, UITypography.Role.BUTTON_SM, {"min_px": 15, "max_px": 19})
 	KenneyUI.style_button(btn_close_picker, KenneyUI.COLOR_GREY)
 	btn_close_picker.pressed.connect(func():
 		AudioManager.sfx_tap()

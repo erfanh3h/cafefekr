@@ -497,7 +497,7 @@ func _make_reward_card(title_txt: String, val_txt: String, accent: Color, bg_col
 	t_lbl.clip_text = true
 	t_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	t_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	t_lbl.add_theme_font_size_override("font_size", 15)
+	ResponsiveUI.apply_text(t_lbl, UITypography.Role.BODY_SM, {"min_px": 16, "max_px": 20})
 	t_lbl.add_theme_color_override("font_color", Color(0.86, 0.80, 0.72))
 	v.add_child(t_lbl)
 
@@ -505,7 +505,7 @@ func _make_reward_card(title_txt: String, val_txt: String, accent: Color, bg_col
 	v_lbl.text = val_txt
 	v_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-	v_lbl.add_theme_font_size_override("font_size", 24)
+	ResponsiveUI.apply_text(v_lbl, UITypography.Role.TITLE_SM, {"min_px": 20, "max_px": 30})
 	v_lbl.add_theme_color_override("font_color", accent)
 	v.add_child(v_lbl)
 
@@ -514,7 +514,7 @@ func _make_reward_card(title_txt: String, val_txt: String, accent: Color, bg_col
 		s_lbl.text = sub_txt
 		s_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		s_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
-		s_lbl.add_theme_font_size_override("font_size", 14)
+		ResponsiveUI.apply_text(s_lbl, UITypography.Role.CAPTION, {"min_px": 15, "max_px": 19})
 		s_lbl.add_theme_color_override("font_color", Color(0.80, 0.78, 0.74, 0.90))
 		v.add_child(s_lbl)
 

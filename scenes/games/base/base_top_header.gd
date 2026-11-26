@@ -440,7 +440,7 @@ func _setup_styles() -> void:
 		local_turn_pill.add_theme_stylebox_override("panel", HudTheme.make_local_turn_pill_style(false))
 	if is_instance_valid(lbl_local_turn):
 		lbl_local_turn.text = "نوبت شما"
-		lbl_local_turn.add_theme_font_size_override("font_size", 15)
+		ResponsiveUI.apply_text(lbl_local_turn, UITypography.Role.BODY_SM, {"min_px": 16, "max_px": 21})
 		HudTheme.configure_bidi_label(lbl_local_turn, false)
 
 
@@ -463,7 +463,7 @@ func _build_turn_toast() -> void:
 	_lbl_turn_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _font_vazir:
 		_lbl_turn_toast.add_theme_font_override("font", _font_vazir)
-	_lbl_turn_toast.add_theme_font_size_override("font_size", 17)
+	ResponsiveUI.apply_text(_lbl_turn_toast, UITypography.Role.BODY, {"min_px": 17, "max_px": 24})
 	_lbl_turn_toast.add_theme_color_override("font_color", HudTheme.COL_TEXT_GOLD)
 	_lbl_turn_toast.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
 	_lbl_turn_toast.add_theme_constant_override("shadow_offset_y", 1)
@@ -763,7 +763,7 @@ func set_current_result_scores(p1_s: int, p2_s: int) -> void:
 	var opp_score: int = p1_s if my_idx == 2 else p2_s
 
 	if is_instance_valid(lbl_result_score):
-		lbl_result_score.add_theme_font_size_override("font_size", 14)
+		ResponsiveUI.apply_text(lbl_result_score, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 20})
 		if is_spec:
 			var n1: String = _get_player_name(1)
 			var n2: String = _get_player_name(2)
@@ -771,7 +771,7 @@ func set_current_result_scores(p1_s: int, p2_s: int) -> void:
 		else:
 			lbl_result_score.text = "شما: %s  |  حریف: %s" % [_fa_digits(my_score), _fa_digits(opp_score)]
 	if is_instance_valid(lbl_result_title):
-		lbl_result_title.add_theme_font_size_override("font_size", 12)
+		ResponsiveUI.apply_text(lbl_result_title, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
 		lbl_result_title.text = "نتیجه:"
 	if is_instance_valid(match_result_box):
 		match_result_box.visible = true
@@ -785,10 +785,10 @@ func set_current_result_text(text: String) -> void:
 	if clean.is_empty():
 		match_result_box.visible = false
 	else:
-		lbl_result_score.add_theme_font_size_override("font_size", 15)
+		ResponsiveUI.apply_text(lbl_result_score, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 20})
 		lbl_result_score.text = clean
 		if is_instance_valid(lbl_result_title):
-			lbl_result_title.add_theme_font_size_override("font_size", 13)
+			ResponsiveUI.apply_text(lbl_result_title, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
 		match_result_box.visible = true
 	_sync_header_height()
 
@@ -1136,8 +1136,7 @@ func _spawn_floating_reaction(is_opponent: bool, reaction_id: int, spawn_pos: Ve
 		var lbl := Label.new()
 		if _font_vazir:
 			lbl.add_theme_font_override("font", _font_vazir)
-		# Local player chat gets larger font size 15, opponent gets 14 (was 12)
-		lbl.add_theme_font_size_override("font_size", 15 if not is_opponent else 14)
+		ResponsiveUI.apply_scaled_font(lbl, 18 if not is_opponent else 16, 15, 22)
 		lbl.add_theme_color_override("font_color", HudTheme.COL_TEXT_IVORY)
 		lbl.add_theme_color_override("font_shadow_color", HudTheme.COL_SHADOW_DARK)
 		lbl.add_theme_constant_override("shadow_offset_y", 1)

@@ -461,9 +461,9 @@ func _build_board_3d() -> void:
 	lbl_top_goal_3d.text = "🏁 خط پایان شما"
 	lbl_top_goal_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.030, -0.465)
 	lbl_top_goal_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	lbl_top_goal_3d.pixel_size = 0.0011
+	lbl_top_goal_3d.pixel_size = 0.00125
 	lbl_top_goal_3d.font = _font_hekayat
-	lbl_top_goal_3d.font_size = 34
+	lbl_top_goal_3d.font_size = 42
 	lbl_top_goal_3d.outline_size = 14
 	lbl_top_goal_3d.modulate = Color(0.55, 1.0, 0.68)
 	lbl_top_goal_3d.outline_modulate = Color(0.06, 0.03, 0.01, 0.98)
@@ -473,9 +473,9 @@ func _build_board_3d() -> void:
 	lbl_bottom_start_3d.text = "▲ مسیر حرکت شما ▲"
 	lbl_bottom_start_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.030, 0.465)
 	lbl_bottom_start_3d.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	lbl_bottom_start_3d.pixel_size = 0.0010
+	lbl_bottom_start_3d.pixel_size = 0.00120
 	lbl_bottom_start_3d.font = _font_hekayat
-	lbl_bottom_start_3d.font_size = 30
+	lbl_bottom_start_3d.font_size = 38
 	lbl_bottom_start_3d.outline_size = 14
 	lbl_bottom_start_3d.modulate = Color(1.0, 0.90, 0.55)
 	lbl_bottom_start_3d.outline_modulate = Color(0.06, 0.03, 0.01, 0.98)
@@ -706,7 +706,7 @@ func _build_action_dock() -> void:
 	dock_status_lbl.clip_text = true
 	dock_status_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	dock_status_lbl.add_theme_font_override("font", _font_hekayat)
-	dock_status_lbl.add_theme_font_size_override("font_size", 21)
+	ResponsiveUI.apply_scaled_font(dock_status_lbl, 23, 18, 28)
 	dock_status_lbl.add_theme_color_override("font_color", Color(1.0, 0.94, 0.68))
 	dock_status_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.90))
 	dock_status_lbl.add_theme_constant_override("outline_size", 2)
@@ -775,8 +775,8 @@ func _make_dock_button(label_text: String) -> Button:
 	var b := Button.new()
 	b.text = label_text
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.custom_minimum_size = Vector2(0, 56)
-	_style_quoridor_btn(b, Color(0.22, 0.14, 0.08, 0.96), Color(0.76, 0.58, 0.28, 0.85), 22, false)
+	b.custom_minimum_size = Vector2(0, 58)
+	_style_quoridor_btn(b, Color(0.22, 0.14, 0.08, 0.96), Color(0.76, 0.58, 0.28, 0.85), 24, false)
 	return b
 
 func _set_action_mode(mode: int) -> void:
@@ -806,13 +806,13 @@ func _refresh_dock_buttons() -> void:
 		btn_mode_move,
 		Color(0.12, 0.44, 0.24, 0.98) if current_mode == ACTION_MOVE else Color(0.18, 0.13, 0.09, 0.92),
 		Color(0.46, 0.96, 0.62) if current_mode == ACTION_MOVE else Color(0.62, 0.48, 0.26, 0.72),
-		22, current_mode == ACTION_MOVE
+		24, current_mode == ACTION_MOVE
 	)
 	_style_quoridor_btn(
 		btn_mode_wall_h,
 		Color(0.46, 0.26, 0.08, 0.98) if current_mode == ACTION_WALL_H else Color(0.18, 0.13, 0.09, 0.92),
 		Color(1.0, 0.84, 0.34) if current_mode == ACTION_WALL_H else Color(0.62, 0.48, 0.26, 0.72),
-		22, current_mode == ACTION_WALL_H
+		24, current_mode == ACTION_WALL_H
 	)
 	_style_quoridor_btn(
 		btn_mode_wall_v,

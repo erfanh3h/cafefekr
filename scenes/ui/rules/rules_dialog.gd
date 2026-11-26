@@ -89,6 +89,7 @@ func _ready() -> void:
 	_load_docs()
 	_update_selected_game_display()
 	_render_content()
+	ResponsiveUI.register_dialog(self, 660.0, 1160.0, 320.0, 480.0)
 
 func _load_docs() -> void:
 	var path = "res://scripts/games/game_docs.json"

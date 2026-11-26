@@ -209,7 +209,7 @@ func _build_ui() -> void:
 	_lbl_step_counter.language = "fa"
 	_lbl_step_counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_lbl_step_counter.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_step_counter.add_theme_font_size_override("font_size", 14)
+	ResponsiveUI.apply_text(_lbl_step_counter, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 20})
 	_lbl_step_counter.add_theme_color_override("font_color", MUTED_GOLD)
 	header_row.add_child(_lbl_step_counter)
 
@@ -238,7 +238,7 @@ func _build_ui() -> void:
 	_lbl_badge.language = "fa"
 	_lbl_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_lbl_badge.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_badge.add_theme_font_size_override("font_size", 14)
+	ResponsiveUI.apply_text(_lbl_badge, UITypography.Role.BODY_SM, {"min_px": 15, "max_px": 20})
 	_lbl_badge.add_theme_color_override("font_color", GOLD_BRIGHT)
 	badge_panel.add_child(_lbl_badge)
 
@@ -251,7 +251,7 @@ func _build_ui() -> void:
 	_lbl_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_title.add_theme_font_override("font", FONT_HEKAYAT)
-	_lbl_title.add_theme_font_size_override("font_size", 26)
+	ResponsiveUI.apply_text(_lbl_title, UITypography.Role.TITLE, {"min_px": 22, "max_px": 34, "wrap": true})
 	_lbl_title.add_theme_color_override("font_color", GOLD_BRIGHT)
 	_lbl_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 	_lbl_title.add_theme_constant_override("shadow_offset_y", 2)
@@ -274,7 +274,7 @@ func _build_ui() -> void:
 	_lbl_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_body.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_body.add_theme_font_size_override("font_size", 17)
+	ResponsiveUI.apply_text(_lbl_body, UITypography.Role.BODY, {"min_px": 17, "max_px": 24, "wrap": true})
 	_lbl_body.add_theme_color_override("font_color", CREAM_TEXT)
 	_card_vbox.add_child(_lbl_body)
 
@@ -302,7 +302,7 @@ func _build_ui() -> void:
 	_lbl_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_hint.add_theme_font_override("font", FONT_VAZIR)
-	_lbl_hint.add_theme_font_size_override("font_size", 15)
+	ResponsiveUI.apply_text(_lbl_hint, UITypography.Role.BODY_SM, {"min_px": 16, "max_px": 22, "wrap": true})
 	_lbl_hint.add_theme_color_override("font_color", Color(0.86, 1.0, 0.90, 1.0))
 	_hint_chip.add_child(_lbl_hint)
 
@@ -315,7 +315,7 @@ func _build_ui() -> void:
 	_nudge_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_nudge_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_nudge_lbl.add_theme_font_override("font", FONT_VAZIR)
-	_nudge_lbl.add_theme_font_size_override("font_size", 15)
+	ResponsiveUI.apply_text(_nudge_lbl, UITypography.Role.BODY_SM, {"min_px": 16, "max_px": 22, "wrap": true})
 	_nudge_lbl.add_theme_color_override("font_color", Color(1.0, 0.72, 0.42, 1.0))
 	_nudge_lbl.visible = false
 	_card_vbox.add_child(_nudge_lbl)

@@ -133,6 +133,10 @@ func _ready() -> void:
 
 
 func _clamp_dialog_bounds() -> void:
+	if ResponsiveUI != null:
+		ResponsiveUI.fit_dialog(self, 616.0, 560.0, 320.0, 320.0, true)
+		_recenter_vertical()
+		return
 	var vp: Viewport = get_viewport()
 	if not is_instance_valid(vp):
 		return
@@ -155,8 +159,8 @@ func _recenter_vertical() -> void:
 	if is_instance_valid(vp):
 		var vp_h: float = vp.get_visible_rect().size.y
 		if vp_h > 0.0:
-			h = minf(h, minf(520.0, vp_h - 40.0))
-	h = clampf(h, 320.0, 540.0)
+			h = minf(h, minf(560.0, vp_h - 40.0))
+	h = clampf(h, 320.0, 580.0)
 	offset_top = -h * 0.5
 	offset_bottom = h * 0.5
 	pivot_offset = Vector2(custom_minimum_size.x * 0.5, h * 0.5)

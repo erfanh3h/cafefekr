@@ -658,13 +658,13 @@ func _create_rotation_paddle_3d(rot_id: int, pos: Vector3, is_ccw: bool, label_f
 	var lbl = Label3D.new()
 	lbl.name = "DirLabel"
 	lbl.font = _font_hekayat
-	lbl.font_size = 28
-	lbl.outline_size = 8
+	lbl.font_size = 36
+	lbl.outline_size = 9
 	lbl.modulate = Color(1.0, 0.96, 0.74)
 	lbl.outline_modulate = Color(0.04, 0.03, 0.02, 0.98)
 	lbl.position = Vector3(0.024 if is_ccw else -0.024, 0.015, 0.0)
 	lbl.rotation.x = -PI * 0.5
-	lbl.pixel_size = 0.00075
+	lbl.pixel_size = 0.00088
 	lbl.text = label_fa
 	root.add_child(lbl)
 
@@ -1042,13 +1042,13 @@ func _build_side_trays_and_plaques() -> void:
 		# Header Label on Tray
 		var lbl = Label3D.new()
 		lbl.font = _font_hekayat
-		lbl.font_size = 36
-		lbl.outline_size = 10
+		lbl.font_size = 42
+		lbl.outline_size = 11
 		lbl.modulate = Color(1.0, 0.52, 0.55) if side == 1 else Color(0.52, 0.82, 1.0)
 		lbl.outline_modulate = Color(0.05, 0.03, 0.02, 0.96)
 		lbl.position = Vector3(x_center, BOARD_SURFACE_Y + 0.014, -0.365)
 		lbl.rotation.x = -PI * 0.5
-		lbl.pixel_size = 0.0010
+		lbl.pixel_size = 0.00110
 		lbl.text = "گوی قرمز: ۱۸" if side == 1 else "گوی آبی: ۱۸"
 		trays_root.add_child(lbl)
 		if side == 1:
@@ -1098,13 +1098,13 @@ func _build_side_trays_and_plaques() -> void:
 
 	lbl_title_3d = Label3D.new()
 	lbl_title_3d.font = _font_hekayat
-	lbl_title_3d.font_size = 40
-	lbl_title_3d.outline_size = 10
+	lbl_title_3d.font_size = 46
+	lbl_title_3d.outline_size = 11
 	lbl_title_3d.modulate = Color(1.0, 0.90, 0.45)
 	lbl_title_3d.outline_modulate = Color(0.06, 0.03, 0.02, 0.98)
 	lbl_title_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.012, -0.555)
 	lbl_title_3d.rotation.x = -PI * 0.5
-	lbl_title_3d.pixel_size = 0.00105
+	lbl_title_3d.pixel_size = 0.00115
 	lbl_title_3d.text = "پنتاگو — نبرد ۵ گوی در یک ردیف"
 	trays_root.add_child(lbl_title_3d)
 
@@ -1127,13 +1127,13 @@ func _build_side_trays_and_plaques() -> void:
 
 	lbl_phase_3d = Label3D.new()
 	lbl_phase_3d.font = _font_hekayat
-	lbl_phase_3d.font_size = 40
-	lbl_phase_3d.outline_size = 10
+	lbl_phase_3d.font_size = 46
+	lbl_phase_3d.outline_size = 11
 	lbl_phase_3d.modulate = Color(0.95, 0.96, 1.0)
 	lbl_phase_3d.outline_modulate = Color(0.05, 0.03, 0.02, 0.98)
 	lbl_phase_3d.position = Vector3(0.0, BOARD_SURFACE_Y + 0.012, 0.555)
 	lbl_phase_3d.rotation.x = -PI * 0.5
-	lbl_phase_3d.pixel_size = 0.00105
+	lbl_phase_3d.pixel_size = 0.00115
 	lbl_phase_3d.text = "فاز ۱ از ۲: یک گوی در یکی از خانه‌های خالی قرار دهید"
 	trays_root.add_child(lbl_phase_3d)
 
