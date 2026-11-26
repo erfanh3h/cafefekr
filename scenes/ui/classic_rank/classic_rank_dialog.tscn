@@ -313,9 +313,11 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_xp_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.84, 0.76, 0.64, 1)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 13
-text = "باخت +۴ XP"
+theme_override_font_sizes/font_size = 12
+text = "باخت
++۳ XP"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="DrawChip" type="PanelContainer" parent="InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow"]
 layout_mode = 2
@@ -326,9 +328,11 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_xp_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.84, 0.38, 1)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 13
-text = "مساوی +۸ XP"
+theme_override_font_sizes/font_size = 12
+text = "مساوی
++۷ XP • +۲ سکه"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="WinChip" type="PanelContainer" parent="InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow"]
 layout_mode = 2
@@ -339,9 +343,11 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_xp_chip")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.94, 0.64, 1)
 theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 13
-text = "برد +۱۵ XP"
+theme_override_font_sizes/font_size = 12
+text = "برد
++۱۵ XP • +۵ سکه"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="IconFrame" type="PanelContainer" parent="InnerBezel/VBox/SelectedPreviewCard/Margin/HBox"]
 custom_minimum_size = Vector2(84, 84)
@@ -355,6 +361,41 @@ mouse_filter = 2
 texture = ExtResource("5_preview_tex")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="AiLevelTrack" type="PanelContainer" parent="InnerBezel/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_filter_track")
+
+[node name="AiLevelCol" type="VBoxContainer" parent="InnerBezel/VBox/AiLevelTrack"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AiLevelHeader" type="HBoxContainer" parent="InnerBezel/VBox/AiLevelTrack/AiLevelCol"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LblAiLevelDesc" type="Label" parent="InnerBezel/VBox/AiLevelTrack/AiLevelCol/AiLevelHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.84, 0.76, 0.62, 0.92)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 12
+text = "حریف متعادل و استاندارد (پیش‌فرض)"
+horizontal_alignment = 0
+clip_text = true
+
+[node name="LblAiLevelTitle" type="Label" parent="InnerBezel/VBox/AiLevelTrack/AiLevelCol/AiLevelHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.83, 0.36, 1)
+theme_override_fonts/font = ExtResource("4_font_vazir")
+theme_override_font_sizes/font_size = 13
+text = "سطح هوش مصنوعی حریف:"
+horizontal_alignment = 2
+
+[node name="AiLevelRow" type="HBoxContainer" parent="InnerBezel/VBox/AiLevelTrack/AiLevelCol"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
 
 [node name="FilterTrack" type="PanelContainer" parent="InnerBezel/VBox"]
 layout_mode = 2

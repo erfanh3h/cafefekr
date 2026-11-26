@@ -341,16 +341,18 @@ func send_lobby_command(command_id: String, data: Variant = null) -> void:
 
 # --- CLASSIC RANK MATCHMAKING ---
 
-func start_classic_rank(game_type: String) -> void:
+func start_classic_rank(game_type: String, ai_level: int = GameRegistry.DEFAULT_CLASSIC_AI_LEVEL) -> void:
+	var normalized_lvl: int = GameRegistry.normalize_classic_ai_level(ai_level)
 	var auth = {
 		"token": GameManager.token,
 		"game_type": game_type,
+		"ai_level": normalized_lvl,
 		"username": GameManager.get_username(),
 		"user_image": GameManager.get_avatar_id(),
 		"version": GameManager.get_app_version()
 	}
 	if OS.is_debug_build():
-		print("[NetworkManager] Requesting Classic Rank match for %s..." % game_type)
+		print("[NetworkManager] Requesting Classic Rank match for %s (AI Level %d)..." % [game_type, normalized_lvl])
 	socket.connect_namespace("/classic-rank", auth)
 
 # --- MULTIPLAYER RANK MATCHMAKING (4-PLAYER LUDO / RISK) ---
@@ -633,9 +635,11 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 				if typeof(payload) == TYPE_DICTIONARY and payload.has("game_id"):
 					var c_gid = str(payload["game_id"])
 					var c_gtype = str(payload.get("game_type", ""))
+					if payload.has("ai_level") and payload["ai_level"] != null:
+						GameManager.current_classic_ai_level = GameRegistry.normalize_classic_ai_level(payload["ai_level"])
 					socket.disconnect_namespace("/classic-rank")
 					if OS.is_debug_build():
-						print("[NetworkManager] Classic Rank match found: %s (%s)" % [c_gid, c_gtype])
+						print("[NetworkManager] Classic Rank match found: %s (%s, AI Lvl %d)" % [c_gid, c_gtype, GameManager.current_classic_ai_level])
 					classic_rank_match_ready.emit(c_gid, c_gtype)
 				return
 			if ns == "/queue":

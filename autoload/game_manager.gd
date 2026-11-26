@@ -64,6 +64,7 @@ var is_game_active: bool = false
 var active_pre_game_id: String = ""
 var is_in_pre_game: bool = false
 var current_match_mode: String = ""
+var current_classic_ai_level: int = GameRegistry.DEFAULT_CLASSIC_AI_LEVEL
 var current_game_type: String = GameRegistry.DEFAULT_GAME_TYPE
 var current_turn: int = 0 # 0 before start / setup phase; 1 or 2 during play
 var my_player_index: int = 1 # 1 (Player 1) or 2 (Player 2)
@@ -157,6 +158,7 @@ func reset_match_state() -> void:
 	ludo_rank2 = 0
 	last_rivalry_data.clear()
 	last_post_match_data.clear()
+	current_classic_ai_level = GameRegistry.DEFAULT_CLASSIC_AI_LEVEL
 	current_game_type = GameRegistry.DEFAULT_GAME_TYPE
 	max_rounds = GameRegistry.get_max_rounds(current_game_type)
 	clear_open_game_id()

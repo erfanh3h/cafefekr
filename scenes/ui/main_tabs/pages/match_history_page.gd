@@ -712,9 +712,14 @@ func _get_game_fa_name(g_type: String) -> String:
 		_: return "بازی فکری"
 
 
-func _get_mode_fa_name(mode_raw: String) -> String:
+func _get_mode_fa_name(mode_raw: String, ai_level: Variant = null) -> String:
 	match mode_raw:
-		"ClassicRank": return "رنک کلاسیک"
+		"ClassicRank":
+			if ai_level != null and str(ai_level).is_valid_int():
+				var lvl: int = int(ai_level)
+				if lvl in [1, 2, 3]:
+					return "رنک کلاسیک (%s)" % GameRegistry.get_classic_ai_level_name_fa(lvl)
+			return "رنک کلاسیک"
 		"Lobby": return "لابی دوستانه"
 		"MultiRank": return "رنک چندنفره"
 		"Rank": return "مسابقه رنکینگ"
@@ -828,7 +833,7 @@ func _show_game_details_dialog(game: Dictionary) -> void:
 
 	var game_fa_title: String = _get_game_fa_name(main_game_type)
 	var mode_raw: String = str(game.get("game_score_type", "Rank"))
-	var mode_fa: String = _get_mode_fa_name(mode_raw)
+	var mode_fa: String = _get_mode_fa_name(mode_raw, game.get("ai_level", null))
 	var s_date: String = _format_shamsi_date_ltr(str(game.get("start_date", "")))
 
 	var hero_plaque: PanelContainer = PanelContainer.new()

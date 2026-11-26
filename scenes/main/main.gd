@@ -929,17 +929,19 @@ func _on_classic_rank_pressed() -> void:
 		return
 	classic_rank_dialog.open()
 
-func _on_classic_rank_start_requested(game_type: String) -> void:
+func _on_classic_rank_start_requested(game_type: String, ai_level: int = GameRegistry.DEFAULT_CLASSIC_AI_LEVEL) -> void:
 	if not NetworkManager.is_online:
 		NetworkManager.connect_to_game_server()
 		_show_offline_dialog()
 		return
-	print("[Main] Classic rank match requested for game: %s" % game_type)
+	var resolved_ai_level: int = GameRegistry.normalize_classic_ai_level(ai_level)
+	print("[Main] Classic rank match requested for game: %s (AI level %d)" % [game_type, resolved_ai_level])
 	_match_start_serial += 1
 	var req_serial: int = _match_start_serial
 	GameManager.reset_match_state()
 	current_match_mode = "classic_rank"
 	GameManager.current_match_mode = "classic_rank"
+	GameManager.current_classic_ai_level = resolved_ai_level
 	GameManager.set_game_type(game_type)
 	var game_info = GameRegistry.get_game_info(GameManager.current_game_type)
 	var game_name_fa = game_info.get("name_fa", "بازی")
@@ -952,9 +954,9 @@ func _on_classic_rank_start_requested(game_type: String) -> void:
 	base_game_hud.visible = true
 	base_game_hud.reset_for_new_match()
 	base_game_hud.setup_match(game_name_fa, _get_mode_title())
-	base_game_hud.show_match_loading("در حال آماده‌سازی میز مسابقه...", true)
+	base_game_hud.show_match_loading("در حال آماده‌سازی میز مسابقه (حریف %s)..." % GameRegistry.get_classic_ai_level_name_fa(resolved_ai_level), true)
 
-	NetworkManager.start_classic_rank(game_type)
+	NetworkManager.start_classic_rank(game_type, resolved_ai_level)
 
 	# Safety guard: if server does not respond to /classic-rank within 15s, return cleanly to menu
 	get_tree().create_timer(15.0).timeout.connect(func():
@@ -1135,7 +1137,7 @@ func _get_mode_title() -> String:
 
 	elif current_match_mode == "classic_rank":
 
-		return "رنک کلاسیک"
+		return "رنک کلاسیک • حریف %s" % GameRegistry.get_classic_ai_level_name_fa(GameManager.current_classic_ai_level)
 
 	else:
 
@@ -1687,6 +1689,11 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 		current_match_mode = "lobby"
 		GameManager.current_match_mode = "lobby"
 
+	if payload.has("ai_level") and payload["ai_level"] != null:
+		GameManager.current_classic_ai_level = GameRegistry.normalize_classic_ai_level(payload["ai_level"])
+		if current_match_mode == "classic_rank" and is_instance_valid(base_game_hud):
+			base_game_hud.setup_match(GameManager.get_game_display_name(), _get_mode_title())
+
 	if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 		GameManager.set_match_gamers(payload["gamers"])
 		_update_table_opponent_avatar()
@@ -2136,16 +2143,23 @@ func _on_game_finished(data: Dictionary) -> void:
 
 				winner = 0
 
+	if data.has("ai_level") and data["ai_level"] != null:
+		GameManager.current_classic_ai_level = GameRegistry.normalize_classic_ai_level(data["ai_level"])
+
 	var xp_earned: int = int(data.get("xp_earned", data.get("xp_awarded", 0)))
 	var coin_earned: int = int(data.get("coin_earned", data.get("coin_awarded", 0)))
 	var score_earned: int = int(data.get("score_earned", data.get("score_awarded", 0)))
 
-	# Fallback XP if not provided by backend
+	# Fallback XP/Coin if not provided by backend
 	if xp_earned <= 0:
 		var is_win = (winner == GameManager.my_player_index)
 		var is_draw = (winner == 0)
 		if current_match_mode == "classic_rank":
-			xp_earned = GameRegistry.get_classic_rank_xp(GameManager.current_game_type, is_win, is_draw)
+			var srv_cfg: Dictionary = GameManager.server_config.get("classic_rank_config", {}) if typeof(GameManager.server_config) == TYPE_DICTIONARY else {}
+			var cr_rewards: Dictionary = GameRegistry.get_classic_rank_rewards(GameManager.current_game_type, is_win, is_draw, GameManager.current_classic_ai_level, srv_cfg)
+			xp_earned = int(cr_rewards.get("xp", 0))
+			if coin_earned <= 0:
+				coin_earned = int(cr_rewards.get("coin", 0))
 		elif current_match_mode == "multi_rank":
 			var is_second = (GameManager.ludo_rank2 == GameManager.my_player_index)
 			xp_earned = GameRegistry.get_multi_rank_xp(GameManager.current_game_type, is_win, is_second)

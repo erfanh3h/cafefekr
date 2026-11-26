@@ -597,14 +597,89 @@ static func create_game_name_frame_style(game_type: Variant = "", pad_x: float =
 	sb.content_margin_bottom = pad_y
 	return sb
 
-static func get_classic_rank_xp(game_type: Variant = "", is_win: bool = false, is_draw: bool = false) -> int:
-	var diff = get_difficulty(game_type)
-	if diff == "easy":
-		return 8 if is_win else (4 if is_draw else 2)
-	elif diff == "normal":
-		return 14 if is_win else (7 if is_draw else 3)
-	else:
-		return 20 if is_win else (10 if is_draw else 5)
+const CLASSIC_AI_LEVEL_EASY: int = 1
+const CLASSIC_AI_LEVEL_MEDIUM: int = 2
+const CLASSIC_AI_LEVEL_HARD: int = 3
+const DEFAULT_CLASSIC_AI_LEVEL: int = 2
+
+const CLASSIC_RANK_REWARDS_TABLE: Dictionary = {
+	1: {
+		"easy": {"win_xp": 6, "draw_xp": 3, "lose_xp": 1, "win_coin": 2, "draw_coin": 0, "lose_coin": 0},
+		"normal": {"win_xp": 9, "draw_xp": 4, "lose_xp": 2, "win_coin": 2, "draw_coin": 1, "lose_coin": 0},
+		"hard": {"win_xp": 12, "draw_xp": 6, "lose_xp": 2, "win_coin": 3, "draw_coin": 1, "lose_coin": 0},
+	},
+	2: {
+		"easy": {"win_xp": 10, "draw_xp": 5, "lose_xp": 2, "win_coin": 4, "draw_coin": 1, "lose_coin": 0},
+		"normal": {"win_xp": 15, "draw_xp": 7, "lose_xp": 3, "win_coin": 5, "draw_coin": 2, "lose_coin": 0},
+		"hard": {"win_xp": 22, "draw_xp": 11, "lose_xp": 5, "win_coin": 6, "draw_coin": 2, "lose_coin": 0},
+	},
+	3: {
+		"easy": {"win_xp": 16, "draw_xp": 8, "lose_xp": 4, "win_coin": 7, "draw_coin": 3, "lose_coin": 0},
+		"normal": {"win_xp": 24, "draw_xp": 12, "lose_xp": 5, "win_coin": 9, "draw_coin": 4, "lose_coin": 0},
+		"hard": {"win_xp": 35, "draw_xp": 17, "lose_xp": 8, "win_coin": 12, "draw_coin": 5, "lose_coin": 0},
+	},
+}
+
+static func normalize_classic_ai_level(level: Variant = DEFAULT_CLASSIC_AI_LEVEL) -> int:
+	if typeof(level) == TYPE_INT or typeof(level) == TYPE_FLOAT:
+		var iv: int = int(level)
+		if iv in [1, 2, 3]:
+			return iv
+		return DEFAULT_CLASSIC_AI_LEVEL
+	if typeof(level) == TYPE_STRING:
+		var s: String = str(level).strip_edges().to_lower()
+		if s in ["1", "easy", "beginner", "lvl1", "level1"]:
+			return 1
+		if s in ["2", "medium", "normal", "intermediate", "lvl2", "level2"]:
+			return 2
+		if s in ["3", "hard", "master", "expert", "lvl3", "level3"]:
+			return 3
+		if s.is_valid_int():
+			var parsed: int = s.to_int()
+			if parsed in [1, 2, 3]:
+				return parsed
+	return DEFAULT_CLASSIC_AI_LEVEL
+
+static func get_classic_ai_level_name_fa(level: Variant = DEFAULT_CLASSIC_AI_LEVEL) -> String:
+	match normalize_classic_ai_level(level):
+		1: return "آسان"
+		3: return "سخت"
+		_: return "متوسط"
+
+static func get_classic_ai_level_desc_fa(level: Variant = DEFAULT_CLASSIC_AI_LEVEL) -> String:
+	match normalize_classic_ai_level(level):
+		1: return "حریف ساده برای تمرین و شروع"
+		3: return "حریف حرفه‌ای با بیشترین تجربه و سکه"
+		_: return "حریف متعادل و استاندارد (پیش‌فرض)"
+
+static func get_classic_rank_reward_profile(game_type: Variant = "", ai_level: Variant = DEFAULT_CLASSIC_AI_LEVEL, server_classic_cfg: Dictionary = {}) -> Dictionary:
+	var lvl: int = normalize_classic_ai_level(ai_level)
+	var diff: String = get_difficulty(game_type)
+	if not server_classic_cfg.is_empty():
+		var srv_rewards: Variant = server_classic_cfg.get("rewards", {})
+		if typeof(srv_rewards) == TYPE_DICTIONARY:
+			var lvl_dict: Variant = (srv_rewards as Dictionary).get(str(lvl), (srv_rewards as Dictionary).get(lvl, {}))
+			if typeof(lvl_dict) == TYPE_DICTIONARY:
+				var diff_title: String = "Easy" if diff == "easy" else ("Hard" if diff == "hard" else "Normal")
+				var prof: Variant = (lvl_dict as Dictionary).get(diff_title, (lvl_dict as Dictionary).get(diff, {}))
+				if typeof(prof) == TYPE_DICTIONARY and not (prof as Dictionary).is_empty():
+					return (prof as Dictionary).duplicate()
+	var lvl_table: Dictionary = CLASSIC_RANK_REWARDS_TABLE.get(lvl, CLASSIC_RANK_REWARDS_TABLE[DEFAULT_CLASSIC_AI_LEVEL])
+	return (lvl_table.get(diff, lvl_table["normal"]) as Dictionary).duplicate()
+
+static func get_classic_rank_rewards(game_type: Variant = "", is_win: bool = false, is_draw: bool = false, ai_level: Variant = DEFAULT_CLASSIC_AI_LEVEL, server_classic_cfg: Dictionary = {}) -> Dictionary:
+	var prof: Dictionary = get_classic_rank_reward_profile(game_type, ai_level, server_classic_cfg)
+	if is_win:
+		return {"xp": int(prof.get("win_xp", 0)), "coin": int(prof.get("win_coin", 0))}
+	if is_draw:
+		return {"xp": int(prof.get("draw_xp", 0)), "coin": int(prof.get("draw_coin", 0))}
+	return {"xp": int(prof.get("lose_xp", 0)), "coin": int(prof.get("lose_coin", 0))}
+
+static func get_classic_rank_xp(game_type: Variant = "", is_win: bool = false, is_draw: bool = false, ai_level: Variant = DEFAULT_CLASSIC_AI_LEVEL) -> int:
+	return int(get_classic_rank_rewards(game_type, is_win, is_draw, ai_level).get("xp", 0))
+
+static func get_classic_rank_coin(game_type: Variant = "", is_win: bool = false, is_draw: bool = false, ai_level: Variant = DEFAULT_CLASSIC_AI_LEVEL) -> int:
+	return int(get_classic_rank_rewards(game_type, is_win, is_draw, ai_level).get("coin", 0))
 
 static func get_lobby_xp(game_type: Variant = "", is_win: bool = false, is_draw: bool = false) -> int:
 	var diff = get_difficulty(game_type)

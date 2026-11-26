@@ -1,11 +1,11 @@
 extends PanelContainer
 
 # Classic Rank Game Selection Dialog
-# Allows the gamer to filter & pick any game from the cafe and start an immediate match
-# against an AI bot (difficulty level 2) to earn XP based on game difficulty.
+# Allows the gamer to filter & pick any game from the cafe, choose AI opponent difficulty
+# (1: Easy, 2: Medium [default], 3: Hard), and earn XP & Coins scaled to opponent level & game difficulty.
 
 signal closed()
-signal start_game_requested(game_type: String)
+signal start_game_requested(game_type: String, ai_level: int)
 
 const FONT_HEKAYAT: FontFile = preload("res://assets/fonts/hekayat.ttf")
 const FONT_VAZIR: FontFile = preload("res://assets/fonts/Vazir.ttf")
@@ -29,6 +29,10 @@ const TEX_CHECK_SEAL: Texture2D = preload("res://assets/images/frames/check.png"
 @onready var lbl_draw_xp: Label = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow/DrawChip/LblDrawXp
 @onready var lbl_lose_xp: Label = $InnerBezel/VBox/SelectedPreviewCard/Margin/HBox/VBoxInfo/RewardsRow/LoseChip/LblLoseXp
 
+# AI opponent difficulty selector
+@onready var lbl_ai_level_desc: Label = $InnerBezel/VBox/AiLevelTrack/AiLevelCol/AiLevelHeader/LblAiLevelDesc
+@onready var ai_level_row: HBoxContainer = $InnerBezel/VBox/AiLevelTrack/AiLevelCol/AiLevelRow
+
 # Difficulty filter row
 @onready var filter_row: HBoxContainer = $InnerBezel/VBox/FilterTrack/FilterRow
 
@@ -40,6 +44,7 @@ const TEX_CHECK_SEAL: Texture2D = preload("res://assets/images/frames/check.png"
 @onready var btn_start_game: Button = $InnerBezel/VBox/BottomRow/BtnStartGame
 
 var selected_game_type: String = GameTypes.TIC_TAC_TOE
+var selected_ai_level: int = GameRegistry.DEFAULT_CLASSIC_AI_LEVEL
 var _difficulty_filter: String = "all" # "all" | "easy" | "normal" | "hard"
 var _game_cards: Dictionary = {} # game_type -> Button card
 
@@ -111,6 +116,7 @@ func _ready() -> void:
 	btn_close.pressed.connect(_on_close_pressed)
 	btn_start_game.pressed.connect(_on_start_game_pressed)
 
+	_render_ai_level_bar()
 	_render_filter_bar()
 	_populate_games_grid()
 	_update_selected_preview()
@@ -204,6 +210,80 @@ func _style_start_button() -> void:
 	btn_start_game.add_theme_constant_override("outline_size", 2)
 
 
+func _render_ai_level_bar() -> void:
+	if not is_instance_valid(ai_level_row):
+		return
+	for c in ai_level_row.get_children():
+		c.queue_free()
+
+	if is_instance_valid(lbl_ai_level_desc):
+		lbl_ai_level_desc.text = GameRegistry.get_classic_ai_level_desc_fa(selected_ai_level)
+
+	# RTL visual order (rightmost = Easy [1], Medium [2], Hard [3])
+	var levels: Array[Dictionary] = [
+		{"level": GameRegistry.CLASSIC_AI_LEVEL_HARD, "diff": "hard", "label": "سخت"},
+		{"level": GameRegistry.CLASSIC_AI_LEVEL_MEDIUM, "diff": "normal", "label": "متوسط (پیش‌فرض)"},
+		{"level": GameRegistry.CLASSIC_AI_LEVEL_EASY, "diff": "easy", "label": "آسان"}
+	]
+
+	for item in levels:
+		var lvl: int = int(item["level"])
+		var diff_key: String = str(item["diff"])
+		var label_txt: String = str(item["label"])
+		var is_active: bool = (selected_ai_level == lvl)
+		var pal: Dictionary = _get_difficulty_palette(diff_key)
+
+		var btn: Button = Button.new()
+		btn.text = label_txt
+		btn.custom_minimum_size = Vector2(0, 46)
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.add_theme_font_override("font", FONT_VAZIR)
+		btn.add_theme_font_size_override("font_size", 15 if is_active else 14)
+
+		var sb_norm: StyleBoxFlat = StyleBoxFlat.new()
+		sb_norm.set_corner_radius_all(12)
+		sb_norm.content_margin_left = 10.0
+		sb_norm.content_margin_right = 10.0
+		sb_norm.content_margin_top = 8.0
+		sb_norm.content_margin_bottom = 8.0
+		if is_active:
+			sb_norm.bg_color = pal["bg"] as Color
+			sb_norm.border_color = pal["border"] as Color
+			sb_norm.set_border_width_all(2)
+			btn.add_theme_color_override("font_color", pal["text"] as Color)
+			btn.add_theme_color_override("font_hover_color", pal["text"] as Color)
+			btn.add_theme_color_override("font_pressed_color", pal["text"] as Color)
+		else:
+			sb_norm.bg_color = Color(0.11, 0.068, 0.038, 0.92)
+			sb_norm.border_color = Color(0.48, 0.36, 0.20, 0.55)
+			sb_norm.set_border_width_all(1)
+			btn.add_theme_color_override("font_color", Color(0.82, 0.74, 0.62, 0.92))
+			btn.add_theme_color_override("font_hover_color", Color(0.98, 0.92, 0.78, 1.0))
+			btn.add_theme_color_override("font_pressed_color", pal["text"] as Color)
+
+		var sb_hover: StyleBoxFlat = sb_norm.duplicate() as StyleBoxFlat
+		sb_hover.bg_color = (sb_norm.bg_color as Color).lightened(0.08)
+		sb_hover.border_color = pal["border"] as Color
+
+		btn.add_theme_stylebox_override("normal", sb_norm)
+		btn.add_theme_stylebox_override("hover", sb_hover)
+		btn.add_theme_stylebox_override("pressed", sb_norm)
+		btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		btn.add_theme_stylebox_override("disabled", sb_norm)
+
+		ActionVFXManager.apply_button_juice(btn, "tap_button")
+		btn.pressed.connect(func():
+			AudioManager.sfx_tap()
+			if selected_ai_level != lvl:
+				selected_ai_level = lvl
+				_render_ai_level_bar()
+				_update_selected_preview()
+		)
+		ai_level_row.add_child(btn)
+
+
 func _render_filter_bar() -> void:
 	if not is_instance_valid(filter_row):
 		return
@@ -252,12 +332,14 @@ func _get_filtered_games() -> Array[String]:
 	return out
 
 
-func open(default_game: String = "") -> void:
+func open(default_game: String = "", default_ai_level: int = GameRegistry.DEFAULT_CLASSIC_AI_LEVEL) -> void:
+	selected_ai_level = GameRegistry.normalize_classic_ai_level(default_ai_level)
 	if not default_game.is_empty():
 		selected_game_type = GameRegistry.normalize_type(default_game)
 		_difficulty_filter = "all"
 		_render_filter_bar()
 		_populate_games_grid()
+	_render_ai_level_bar()
 	ActionVFXManager.animate_dialog_open(self, null, true)
 	_update_selected_preview()
 	_update_grid_selection_visuals()
@@ -279,7 +361,7 @@ func _on_start_game_pressed() -> void:
 	AudioManager.sfx_button()
 	visible = false
 	closed.emit()
-	start_game_requested.emit(selected_game_type)
+	start_game_requested.emit(selected_game_type, selected_ai_level)
 
 
 func _calculate_game_card_height() -> float:
@@ -576,18 +658,33 @@ func _update_selected_preview() -> void:
 		d_sb.content_margin_bottom = 3.0
 		diff_badge.add_theme_stylebox_override("panel", d_sb)
 
-	# 3-Chip XP Breakdown (Persian digits, zero raw emojis)
-	var win_xp: int = 15 if diff == "easy" else (25 if diff == "normal" else 40)
-	var draw_xp: int = 8 if diff == "easy" else (14 if diff == "normal" else 20)
-	var lose_xp: int = 4 if diff == "easy" else (7 if diff == "normal" else 10)
+	# 3-Chip Reward Breakdown (XP + Coins scaled by AI opponent level & game difficulty)
+	var srv_classic_cfg: Dictionary = {}
+	if typeof(GameManager.server_config) == TYPE_DICTIONARY:
+		var raw_cfg: Variant = GameManager.server_config.get("classic_rank_config", {})
+		if typeof(raw_cfg) == TYPE_DICTIONARY:
+			srv_classic_cfg = raw_cfg as Dictionary
+	var reward_prof: Dictionary = GameRegistry.get_classic_rank_reward_profile(selected_game_type, selected_ai_level, srv_classic_cfg)
+	var win_xp: int = int(reward_prof.get("win_xp", 0))
+	var draw_xp: int = int(reward_prof.get("draw_xp", 0))
+	var lose_xp: int = int(reward_prof.get("lose_xp", 0))
+	var win_coin: int = int(reward_prof.get("win_coin", 0))
+	var draw_coin: int = int(reward_prof.get("draw_coin", 0))
+	var lose_coin: int = int(reward_prof.get("lose_coin", 0))
 
-	lbl_win_xp.text = "برد +%s XP" % GameManager.to_fa_num(win_xp)
-	lbl_draw_xp.text = "مساوی +%s XP" % GameManager.to_fa_num(draw_xp)
-	lbl_lose_xp.text = "باخت +%s XP" % GameManager.to_fa_num(lose_xp)
+	var format_chip := func(title_fa: String, xp_val: int, coin_val: int) -> String:
+		if coin_val > 0:
+			return "%s\n+%s XP • +%s سکه" % [title_fa, GameManager.to_fa_num(xp_val), GameManager.to_fa_num(coin_val)]
+		return "%s\n+%s XP" % [title_fa, GameManager.to_fa_num(xp_val)]
+
+	lbl_win_xp.text = format_chip.call("برد", win_xp, win_coin)
+	lbl_draw_xp.text = format_chip.call("مساوی", draw_xp, draw_coin)
+	lbl_lose_xp.text = format_chip.call("باخت", lose_xp, lose_coin)
 
 	_style_xp_chip(win_chip, Color(0.36, 0.80, 0.50, 0.62))
 	_style_xp_chip(draw_chip, Color(0.84, 0.68, 0.28, 0.60))
 	_style_xp_chip(lose_chip, Color(0.56, 0.44, 0.30, 0.52))
 
 	if is_instance_valid(btn_start_game):
-		btn_start_game.text = "شروع مسابقه %s" % game_name_fa
+		var ai_lvl_fa: String = GameRegistry.get_classic_ai_level_name_fa(selected_ai_level)
+		btn_start_game.text = "شروع %s • حریف %s" % [game_name_fa, ai_lvl_fa]
