@@ -75,6 +75,7 @@ var p1_score: int = 0
 var p2_score: int = 0
 var local_player_surrendered: bool = false
 var opponent_player_surrendered: bool = false
+var last_early_surrender_no_reward: bool = false
 var ludo_rank1: int = 0
 var ludo_rank2: int = 0
 var chat_and_stickers_disabled: bool = false
@@ -154,6 +155,7 @@ func reset_match_state() -> void:
 	my_player_index = 1
 	local_player_surrendered = false
 	opponent_player_surrendered = false
+	last_early_surrender_no_reward = false
 	ludo_rank1 = 0
 	ludo_rank2 = 0
 	last_rivalry_data.clear()

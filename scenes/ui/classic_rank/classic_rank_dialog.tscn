@@ -414,9 +414,9 @@ horizontal_scroll_mode = 0
 [node name="GameGrid" type="GridContainer" parent="InnerBezel/VBox/ScrollGames"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
-columns = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 3
 
 [node name="BottomRow" type="HBoxContainer" parent="InnerBezel/VBox"]
 layout_mode = 2

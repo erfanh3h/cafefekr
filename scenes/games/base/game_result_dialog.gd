@@ -904,7 +904,10 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		if GameManager.local_player_surrendered:
 			lbl_title.text = "انصراف از مسابقه"
 			lbl_title.add_theme_color_override("font_color", Color(1.0, 0.52, 0.52))
-			lbl_subtitle.text = "شما از ادامه مسابقه انصراف دادید و بازی به حریف واگذار شد."
+			if GameManager.last_early_surrender_no_reward:
+				lbl_subtitle.text = "به دلیل تسلیم زودهنگام، پاداشی برای این مسابقه ثبت نشد."
+			else:
+				lbl_subtitle.text = "شما از ادامه مسابقه انصراف دادید و بازی به حریف واگذار شد."
 		elif GameManager.match_players.size() > 2 and GameManager.ludo_rank2 == my_idx and my_idx > 0:
 			lbl_title.text = "کسب مقام دوم!"
 			lbl_title.add_theme_color_override("font_color", Color(0.84, 0.92, 1.0))

@@ -370,12 +370,12 @@ func _calculate_game_card_height() -> float:
 		total_w = scroll_games.size.x - 14.0
 	elif is_instance_valid(game_grid) and game_grid.size.x > 100.0:
 		total_w = game_grid.size.x
-	var cell_w: float = floor((total_w - 12.0) / 2.0)
-	return maxf(160.0, cell_w)
+	var cell_w: float = floor((total_w - 20.0) / 3.0)
+	return maxf(120.0, cell_w)
 
 
 func _populate_games_grid() -> void:
-	game_grid.columns = 2
+	game_grid.columns = 3
 	for child in game_grid.get_children():
 		child.queue_free()
 	_game_cards.clear()
@@ -434,7 +434,7 @@ func _create_game_card(g_type: String, initial_h: float = 250.0) -> Control:
 
 	card.item_rect_changed.connect(func():
 		var w: float = card.size.x
-		if w > 80.0:
+		if w > 60.0:
 			var target_h: float = floor(w)
 			if absf(card.custom_minimum_size.y - target_h) > 2.0:
 				card.set_deferred("custom_minimum_size", Vector2(0, target_h))
@@ -471,18 +471,18 @@ func _create_game_card(g_type: String, initial_h: float = 250.0) -> Control:
 	# 2. Compact Difficulty Pill (Top-Left)
 	var d_pill: PanelContainer = PanelContainer.new()
 	d_pill.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	d_pill.offset_left = 10.0
-	d_pill.offset_top = 10.0
+	d_pill.offset_left = 7.0
+	d_pill.offset_top = 7.0
 	d_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var d_sb: StyleBoxFlat = StyleBoxFlat.new()
 	d_sb.bg_color = diff_pal["bg"] as Color
 	d_sb.border_color = diff_pal["border"] as Color
 	d_sb.set_border_width_all(1)
-	d_sb.set_corner_radius_all(9)
-	d_sb.content_margin_left = 8.0
-	d_sb.content_margin_right = 8.0
-	d_sb.content_margin_top = 2.0
-	d_sb.content_margin_bottom = 2.0
+	d_sb.set_corner_radius_all(8)
+	d_sb.content_margin_left = 6.0
+	d_sb.content_margin_right = 6.0
+	d_sb.content_margin_top = 1.0
+	d_sb.content_margin_bottom = 1.0
 	d_pill.add_theme_stylebox_override("panel", d_sb)
 	card.add_child(d_pill)
 
@@ -490,7 +490,7 @@ func _create_game_card(g_type: String, initial_h: float = 250.0) -> Control:
 	d_lbl.text = diff_name
 	d_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	d_lbl.add_theme_font_override("font", FONT_VAZIR)
-	d_lbl.add_theme_font_size_override("font_size", 12)
+	d_lbl.add_theme_font_size_override("font_size", 10)
 	d_lbl.add_theme_color_override("font_color", diff_pal["text"] as Color)
 	d_pill.add_child(d_lbl)
 
@@ -498,21 +498,21 @@ func _create_game_card(g_type: String, initial_h: float = 250.0) -> Control:
 	var sel_badge: PanelContainer = PanelContainer.new()
 	sel_badge.name = "SelectionBadge"
 	sel_badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	sel_badge.offset_left = -42.0
-	sel_badge.offset_top = 10.0
-	sel_badge.offset_right = -10.0
-	sel_badge.offset_bottom = 42.0
+	sel_badge.offset_left = -33.0
+	sel_badge.offset_top = 7.0
+	sel_badge.offset_right = -7.0
+	sel_badge.offset_bottom = 33.0
 	sel_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	sel_badge.pivot_offset = Vector2(16.0, 16.0)
+	sel_badge.pivot_offset = Vector2(13.0, 13.0)
 	var badge_sb: StyleBoxFlat = StyleBoxFlat.new()
 	badge_sb.bg_color = Color(0.98, 0.82, 0.28, 0.98)
 	badge_sb.border_color = Color(0.18, 0.12, 0.04, 0.95)
 	badge_sb.set_border_width_all(2)
-	badge_sb.set_corner_radius_all(16)
-	badge_sb.content_margin_left = 5.0
-	badge_sb.content_margin_right = 5.0
-	badge_sb.content_margin_top = 5.0
-	badge_sb.content_margin_bottom = 5.0
+	badge_sb.set_corner_radius_all(13)
+	badge_sb.content_margin_left = 4.0
+	badge_sb.content_margin_right = 4.0
+	badge_sb.content_margin_top = 4.0
+	badge_sb.content_margin_bottom = 4.0
 	badge_sb.shadow_color = Color(0, 0, 0, 0.45)
 	badge_sb.shadow_size = 0 if _is_mobile() else 4
 	sel_badge.add_theme_stylebox_override("panel", badge_sb)
@@ -528,14 +528,14 @@ func _create_game_card(g_type: String, initial_h: float = 250.0) -> Control:
 
 	# 4. Bottom Title Ribbon Banner
 	var banner: PanelContainer = PanelContainer.new()
-	banner.anchor_top = 0.74
+	banner.anchor_top = 0.70
 	banner.anchor_right = 1.0
 	banner.anchor_bottom = 1.0
-	banner.offset_left = 5.0
-	banner.offset_right = -5.0
-	banner.offset_bottom = -5.0
+	banner.offset_left = 4.0
+	banner.offset_right = -4.0
+	banner.offset_bottom = -4.0
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(g_type, 36.0, 4.0))
+	banner.add_theme_stylebox_override("panel", GameRegistry.create_game_name_frame_style(g_type, 20.0, 3.0))
 
 	var lbl: Label = Label.new()
 	lbl.text = GameTypes.get_display_name_fa(g_type)
@@ -543,7 +543,7 @@ func _create_game_card(g_type: String, initial_h: float = 250.0) -> Control:
 	lbl.clip_text = true
 	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl.add_theme_font_override("font", FONT_HEKAYAT)
-	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_font_size_override("font_size", 18)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.96, 0.88, 1.0))
 	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
 	lbl.add_theme_constant_override("shadow_outline_size", 2)

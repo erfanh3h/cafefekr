@@ -2146,12 +2146,26 @@ func _on_game_finished(data: Dictionary) -> void:
 	if data.has("ai_level") and data["ai_level"] != null:
 		GameManager.current_classic_ai_level = GameRegistry.normalize_classic_ai_level(data["ai_level"])
 
+	var early_surrender_no_reward: bool = bool(data.get("early_surrender_no_reward", false))
+	GameManager.last_early_surrender_no_reward = early_surrender_no_reward
+
+	var has_explicit_rewards: bool = (
+		early_surrender_no_reward
+		or data.has("xp_earned")
+		or data.has("xp_awarded")
+		or data.has("coin_earned")
+		or data.has("coin_awarded")
+	)
 	var xp_earned: int = int(data.get("xp_earned", data.get("xp_awarded", 0)))
 	var coin_earned: int = int(data.get("coin_earned", data.get("coin_awarded", 0)))
 	var score_earned: int = int(data.get("score_earned", data.get("score_awarded", 0)))
 
-	# Fallback XP/Coin if not provided by backend
-	if xp_earned <= 0:
+	if early_surrender_no_reward:
+		xp_earned = 0
+		coin_earned = 0
+
+	# Fallback XP/Coin only when backend did not supply explicit rewards
+	if not has_explicit_rewards and xp_earned <= 0:
 		var is_win = (winner == GameManager.my_player_index)
 		var is_draw = (winner == 0)
 		if current_match_mode == "classic_rank":

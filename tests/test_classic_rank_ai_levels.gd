@@ -43,6 +43,7 @@ func _run_tests() -> void:
 	await process_frame
 
 	assert(dlg.selected_ai_level == 2, "Dialog must default to AI level 2")
+	assert(dlg.game_grid.columns == 3, "GameGrid must display 3 items per row")
 	var captured: Array = []
 	dlg.start_game_requested.connect(func(g_type: String, ai_lvl: int):
 		captured.append({"game_type": g_type, "ai_level": ai_lvl})
