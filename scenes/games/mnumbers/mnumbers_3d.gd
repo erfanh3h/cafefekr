@@ -27,6 +27,9 @@ const GRID_MIN_XZ: float = -0.420 # -2.5 * 0.168
 const TRAY_RED_X: float = -0.765
 const TRAY_BLUE_X: float = 0.765
 
+var start_in_2d_view: bool = true
+var top_down_camera_height: float = 3.25
+
 static var _font_hekayat: FontFile = preload("res://assets/fonts/hekayat.ttf")
 
 # Logical State

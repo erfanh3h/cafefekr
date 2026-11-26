@@ -38,6 +38,8 @@ const ACTION_BTN_Z: float = 0.575
 # Camera framing hints for CafeTable
 var camera_pitch: float = -0.733
 var camera_distance: float = 3.35
+var start_in_2d_view: bool = true
+var top_down_camera_height: float = 2.55
 var _game_font: Font = null
 
 # Logical Board State

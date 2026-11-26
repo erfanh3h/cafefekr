@@ -11,10 +11,7 @@ const FONT_HEKAYAT: FontFile = preload("res://assets/fonts/hekayat.ttf")
 const FONT_VAZIR: FontFile = preload("res://assets/fonts/Vazir.ttf")
 const TEX_CHECK_SEAL: Texture2D = preload("res://assets/images/frames/check.png")
 
-@onready var btn_close: TextureButton = $InnerBezel/VBox/HeaderCrown/TopRow/CloseWrap/BtnClose
-@onready var lbl_title: Label = $InnerBezel/VBox/HeaderCrown/TopRow/TitleBox/LblTitle
-@onready var lbl_subtitle: Label = $InnerBezel/VBox/HeaderCrown/TopRow/TitleBox/LblSubtitle
-@onready var lbl_count: Label = $InnerBezel/VBox/HeaderCrown/TopRow/CountPill/LblCount
+@onready var btn_close: TextureButton = $InnerBezel/VBox/TopRow/CloseWrap/BtnClose
 
 # Preview card for currently selected game
 @onready var selected_preview_card: PanelContainer = $InnerBezel/VBox/SelectedPreviewCard
@@ -355,8 +352,6 @@ func _populate_games_grid() -> void:
 	_game_cards.clear()
 
 	var filtered: Array[String] = _get_filtered_games()
-	if is_instance_valid(lbl_count):
-		lbl_count.text = "%s بازی" % GameManager.to_fa_num(filtered.size())
 
 	if not filtered.is_empty() and not (selected_game_type in filtered):
 		selected_game_type = filtered[0]

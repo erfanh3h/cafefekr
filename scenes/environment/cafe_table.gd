@@ -428,6 +428,33 @@ func _resolve_board_camera_framing() -> Dictionary:
 	return {"pitch": desired_pitch, "distance": desired_dist}
 
 
+func _should_start_in_top_down_view() -> bool:
+	if current_board_node and is_instance_valid(current_board_node):
+		if "start_in_2d_view" in current_board_node:
+			return bool(current_board_node.get("start_in_2d_view"))
+	return false
+
+
+func _resolve_top_down_height() -> float:
+	var desired_h: float = TOP_DOWN_HEIGHT_DEFAULT
+	if current_board_node and is_instance_valid(current_board_node):
+		if "top_down_camera_height" in current_board_node:
+			var bh: float = float(current_board_node.get("top_down_camera_height"))
+			if bh >= TOP_DOWN_HEIGHT_MIN and bh <= TOP_DOWN_HEIGHT_MAX:
+				desired_h = bh
+
+	# Scale height proportionally on narrower portrait screens (aspect < 9:16) so wide boards stay fully visible
+	var vp: Viewport = get_viewport()
+	if vp:
+		var vp_size: Vector2 = vp.get_visible_rect().size
+		if vp_size.y > 0.0:
+			var aspect: float = vp_size.x / vp_size.y
+			if aspect < 0.5625:
+				desired_h *= 0.5625 / maxf(aspect, 0.42)
+
+	return clampf(desired_h, TOP_DOWN_HEIGHT_MIN, TOP_DOWN_HEIGHT_MAX)
+
+
 func _apply_intro_glide_progress(t: float) -> void:
 	# Smooth curved spherical dolly-in & downward tilt from the wide cafe parlor toward the gaming desk
 	var s_pos: float = clampf(t, 0.0, 1.0)
@@ -475,16 +502,38 @@ func transition_to_board_view(duration: float = INTRO_GLIDE_DURATION) -> void:
 	set_menu_showcase_visible(false)
 	update_player_chairs(_get_active_player_count())
 
-	is_top_down_view = false
-	_sync_2d_3d_visibility_and_lighting(false)
-	top_down_target_height = TOP_DOWN_HEIGHT_DEFAULT
-	top_down_current_height = TOP_DOWN_HEIGHT_DEFAULT
-	camera_mode_changed.emit(is_top_down_view)
-
 	var framing: Dictionary = _resolve_board_camera_framing()
 	target_pitch = float(framing["pitch"])
 	target_distance = float(framing["distance"])
 	target_yaw = YAW_DEFAULT
+
+	var resolved_2d_h: float = _resolve_top_down_height()
+	top_down_target_height = resolved_2d_h
+	top_down_current_height = resolved_2d_h
+
+	if _should_start_in_top_down_view():
+		is_top_down_view = true
+		_sync_2d_3d_visibility_and_lighting(true)
+		if _lounge_backdrop_root and is_instance_valid(_lounge_backdrop_root):
+			_lounge_backdrop_root.visible = true
+		camera_mode_changed.emit(true)
+
+		current_distance = target_distance
+		current_pitch = target_pitch
+		current_yaw = target_yaw
+		camera.position = Vector3(TARGET_FOCUS.x, TARGET_FOCUS.y + top_down_current_height, TARGET_FOCUS.z)
+		camera.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+
+		_intro_glide_pending = false
+		_intro_glide_played_for_board = true
+		_intro_glide_active = false
+		is_board_view_active = true
+		is_transitioning = false
+		return
+
+	is_top_down_view = false
+	_sync_2d_3d_visibility_and_lighting(false)
+	camera_mode_changed.emit(is_top_down_view)
 
 	# Establish the wide warm Cafe Parlor pose first so the camera always smoothly closes in toward the desk
 	_intro_start_distance = maxf(INTRO_START_DISTANCE, target_distance + 0.72)
@@ -672,7 +721,7 @@ func set_top_down_view(enabled: bool, duration: float = 0.55) -> void:
 
 
 func reset_camera_orbit() -> void:
-	top_down_target_height = TOP_DOWN_HEIGHT_DEFAULT
+	top_down_target_height = _resolve_top_down_height()
 	var framing: Dictionary = _resolve_board_camera_framing()
 	target_yaw = YAW_DEFAULT
 	target_pitch = float(framing["pitch"])

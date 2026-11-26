@@ -32,14 +32,14 @@ signal rematch_requested()
 # Player 1
 @onready var p1_card: PanelContainer = $CenterContainer/Panel/VBox/MatchupBox/P1Card
 @onready var p1_winner_tag: Label = $CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox/WinnerTag
-@onready var img_p1_avatar: TextureRect = $CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox/Avatar
+@onready var img_p1_avatar: TextureRect = $CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox/AvatarSlot/Avatar
 @onready var lbl_p1_name: Label = $CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox/Name
 @onready var lbl_p1_score: Label = $CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox/Score
 
 # Player 2
 @onready var p2_card: PanelContainer = $CenterContainer/Panel/VBox/MatchupBox/P2Card
 @onready var p2_winner_tag: Label = $CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox/WinnerTag
-@onready var img_p2_avatar: TextureRect = $CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox/Avatar
+@onready var img_p2_avatar: TextureRect = $CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox/AvatarSlot/Avatar
 @onready var lbl_p2_name: Label = $CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox/Name
 @onready var lbl_p2_score: Label = $CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox/Score
 
@@ -125,10 +125,10 @@ func _make_modal_panel_style(modulate_col: Color = Color.WHITE, compact: bool = 
 	sb.texture_margin_top = 80.0
 	sb.texture_margin_right = 44.0
 	sb.texture_margin_bottom = 80.0
-	sb.content_margin_left = 42.0 if compact else 48.0
-	sb.content_margin_top = 90.0 if compact else 104.0
-	sb.content_margin_right = 42.0 if compact else 48.0
-	sb.content_margin_bottom = 86.0 if compact else 100.0
+	sb.content_margin_left = 30.0 if compact else 34.0
+	sb.content_margin_top = 52.0 if compact else 60.0
+	sb.content_margin_right = 30.0 if compact else 34.0
+	sb.content_margin_bottom = 48.0 if compact else 54.0
 	sb.modulate_color = modulate_col
 	return sb
 
@@ -179,20 +179,20 @@ func _populate_2p_matchup(winner_player_index: int, p1_score: int, p2_score: int
 		var pid: int = i + 1
 		var card: PanelContainer = cards[i]
 		if is_instance_valid(card):
-			card.custom_minimum_size.y = 122.0
+			card.custom_minimum_size.y = 0.0
 		var pd: Dictionary = GameManager.get_player_data_by_gamer_id(pid)
 		var base_name: String = _get_player_display_name(pid)
 		var suffix: String = _get_side_suffix(GameManager.current_game_type, pid)
 		var is_me: bool = (not GameManager.is_spectating) and (pid == my_idx)
 		if is_instance_valid(name_lbls[i]):
 			name_lbls[i].text = "%s%s%s" % [base_name, suffix, " (شما)" if is_me else ""]
-			name_lbls[i].add_theme_font_size_override("font_size", 17)
+			name_lbls[i].add_theme_font_size_override("font_size", 19)
 
 		var av_id: int = int(pd.get("image", pd.get("user_image", 0)))
 		var fid: int = GameManager.get_player_frame_id(pd)
 		if is_instance_valid(avatars[i]):
 			avatars[i].texture = _load_avatar_tex(av_id)
-			_apply_avatar_frame_safe(avatars[i], fid, 54.0)
+			_apply_avatar_frame_safe(avatars[i], fid, 92.0)
 
 		if is_instance_valid(score_lbls[i]):
 			score_lbls[i].visible = show_round_scores
@@ -225,33 +225,33 @@ func _setup_styles() -> void:
 
 	# Winner Card Style
 	_style_winner = StyleBoxFlat.new()
-	_style_winner.bg_color = Color(0.20, 0.135, 0.070, 0.96)
+	_style_winner.bg_color = Color(0.18, 0.12, 0.064, 0.96)
 	_style_winner.border_color = Color(0.98, 0.82, 0.30, 0.96)
-	_style_winner.border_width_left = 2
-	_style_winner.border_width_top = 3
-	_style_winner.border_width_right = 2
-	_style_winner.border_width_bottom = 2
-	_style_winner.set_corner_radius_all(16)
-	_style_winner.shadow_color = Color(1.0, 0.8, 0.2, 0.28)
+	_style_winner.border_width_left = 1
+	_style_winner.border_width_top = 2
+	_style_winner.border_width_right = 1
+	_style_winner.border_width_bottom = 1
+	_style_winner.set_corner_radius_all(14)
+	_style_winner.shadow_color = Color(1.0, 0.8, 0.2, 0.25)
 	_style_winner.shadow_size = 0 if mobile_mode else 8
-	_style_winner.content_margin_left = 12
-	_style_winner.content_margin_right = 12
-	_style_winner.content_margin_top = 18
-	_style_winner.content_margin_bottom = 18
+	_style_winner.content_margin_left = 8
+	_style_winner.content_margin_right = 8
+	_style_winner.content_margin_top = 10
+	_style_winner.content_margin_bottom = 10
 
 	# Normal Card Style
 	_style_normal = StyleBoxFlat.new()
-	_style_normal.bg_color = Color(0.145, 0.095, 0.06, 0.92)
+	_style_normal.bg_color = Color(0.135, 0.088, 0.055, 0.92)
 	_style_normal.border_color = Color(0.45, 0.33, 0.20, 0.72)
 	_style_normal.border_width_left = 1
 	_style_normal.border_width_top = 2
 	_style_normal.border_width_right = 1
-	_style_normal.border_width_bottom = 2
-	_style_normal.set_corner_radius_all(16)
-	_style_normal.content_margin_left = 12
-	_style_normal.content_margin_right = 12
-	_style_normal.content_margin_top = 18
-	_style_normal.content_margin_bottom = 18
+	_style_normal.border_width_bottom = 1
+	_style_normal.set_corner_radius_all(14)
+	_style_normal.content_margin_left = 8
+	_style_normal.content_margin_right = 8
+	_style_normal.content_margin_top = 10
+	_style_normal.content_margin_bottom = 10
 
 	# Plaque Styles for Win, Lose, Draw
 	_style_plaque_win = StyleBoxFlat.new()
@@ -284,11 +284,12 @@ func _style_tag_pill(lbl: Label, txt: String, fg: Color, bg: Color, border_col: 
 		return
 	lbl.text = txt
 	lbl.add_theme_color_override("font_color", fg)
+	lbl.add_theme_font_size_override("font_size", 14)
 	var sb: StyleBoxFlat = StyleBoxFlat.new()
 	sb.content_margin_left = 10.0
 	sb.content_margin_right = 10.0
-	sb.content_margin_top = 3.0
-	sb.content_margin_bottom = 3.0
+	sb.content_margin_top = 2.0
+	sb.content_margin_bottom = 2.0
 	sb.bg_color = bg
 	sb.border_color = border_col
 	sb.set_border_width_all(1)
@@ -322,13 +323,15 @@ func _ensure_score_chip() -> void:
 	rewards_hbox.move_child(_score_chip, 0)
 
 
-func _apply_avatar_frame_safe(avatar_rect: TextureRect, frame_id: int, slot_sz: float = 70.0) -> void:
+func _apply_avatar_frame_safe(avatar_rect: TextureRect, frame_id: int, slot_sz: float = 92.0) -> void:
 	if not is_instance_valid(avatar_rect):
 		return
 	var p: Node = avatar_rect.get_parent()
 	var slot: Control = null
-	if p is Control and p.name.ends_with("_AvatarSlot"):
+	if p is Control and (p.name == "AvatarSlot" or p.name.ends_with("_AvatarSlot")):
 		slot = p as Control
+		slot.custom_minimum_size = Vector2(slot_sz, slot_sz)
+		slot.set_meta("_av_box_boosted", true)
 	elif p is Container:
 		var idx: int = avatar_rect.get_index()
 		slot = Control.new()
@@ -336,6 +339,7 @@ func _apply_avatar_frame_safe(avatar_rect: TextureRect, frame_id: int, slot_sz: 
 		slot.custom_minimum_size = Vector2(slot_sz, slot_sz)
 		slot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		slot.set_meta("_av_box_boosted", true)
 		p.add_child(slot)
 		p.move_child(slot, idx)
 		p.remove_child(avatar_rect)
@@ -488,11 +492,11 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 		rsb.bg_color = Color(0.21, 0.145, 0.068, 0.96) if rank_i == 0 else (Color(0.11, 0.21, 0.14, 0.94) if is_me else Color(0.14, 0.095, 0.06, 0.90))
 		rsb.border_color = ac if rank_i == 0 else (Color(0.36, 0.88, 0.54, 0.90) if is_me else Color(0.45, 0.34, 0.20, 0.65))
 		rsb.set_border_width_all(2 if (rank_i == 0 or is_me) else 1)
-		rsb.set_corner_radius_all(14)
-		rsb.content_margin_left = 12.0
-		rsb.content_margin_right = 12.0
-		rsb.content_margin_top = 14.0
-		rsb.content_margin_bottom = 14.0
+		rsb.set_corner_radius_all(12)
+		rsb.content_margin_left = 10.0
+		rsb.content_margin_right = 10.0
+		rsb.content_margin_top = 8.0
+		rsb.content_margin_bottom = 8.0
 		row_card.add_theme_stylebox_override("panel", rsb)
 
 		var rh: HBoxContainer = HBoxContainer.new()
@@ -527,7 +531,7 @@ func _build_multiplayer_podium(winner_player_index: int, my_idx: int) -> void:
 
 		var av_id: int = int(pd.get("image", pd.get("user_image", 0)))
 		var fid: int = GameManager.get_player_frame_id(pd)
-		var av_ctrl: Control = CafeSocialTheme.make_avatar_badge(av_id, fid, 54.0)
+		var av_ctrl: Control = CafeSocialTheme.make_avatar_badge(av_id, fid, 68.0)
 		rh.add_child(av_ctrl)
 
 		_multi_podium_box.add_child(row_card)
@@ -557,11 +561,11 @@ func _build_multiplayer_self_result(my_idx: int, winner_player_index: int) -> vo
 	ssb.bg_color = Color(0.14, 0.095, 0.06, 0.94)
 	ssb.border_color = Color(0.88, 0.72, 0.35, 0.85)
 	ssb.set_border_width_all(2)
-	ssb.set_corner_radius_all(16)
-	ssb.content_margin_left = 16.0
-	ssb.content_margin_right = 16.0
-	ssb.content_margin_top = 20.0
-	ssb.content_margin_bottom = 20.0
+	ssb.set_corner_radius_all(14)
+	ssb.content_margin_left = 12.0
+	ssb.content_margin_right = 12.0
+	ssb.content_margin_top = 12.0
+	ssb.content_margin_bottom = 12.0
 	_self_result_box.add_theme_stylebox_override("panel", ssb)
 
 	var sv: VBoxContainer = VBoxContainer.new()
@@ -606,7 +610,7 @@ func _build_multiplayer_self_result(my_idx: int, winner_player_index: int) -> vo
 	name_lbl.add_theme_color_override("font_color", Color(0.55, 0.98, 0.68))
 	row_h.add_child(name_lbl)
 
-	var av_ctrl: Control = CafeSocialTheme.make_avatar_badge(my_av_id, my_fid, 56.0)
+	var av_ctrl: Control = CafeSocialTheme.make_avatar_badge(my_av_id, my_fid, 74.0)
 	row_h.add_child(av_ctrl)
 
 	var notice_panel: PanelContainer = PanelContainer.new()
@@ -759,7 +763,7 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		btn_return.custom_minimum_size.y = 62.0
 	var root_vbox_rst: VBoxContainer = get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
 	if is_instance_valid(root_vbox_rst):
-		root_vbox_rst.add_theme_constant_override("separation", 18)
+		root_vbox_rst.add_theme_constant_override("separation", 12)
 	if is_instance_valid(_post_match_panel):
 		_post_match_panel.reset_and_hide()
 
@@ -788,7 +792,7 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		lbl_mode_tag.visible = false
 	if is_instance_valid(emblem_box):
 		emblem_box.visible = true
-		emblem_box.custom_minimum_size = Vector2(124, 102)
+		emblem_box.custom_minimum_size = Vector2(116, 94)
 	if is_instance_valid(lbl_subtitle):
 		lbl_subtitle.visible = true
 	if is_instance_valid(lbl_title):
@@ -994,13 +998,12 @@ func configure_post_match(post_match_data: Dictionary) -> void:
 	var root_vbox: VBoxContainer = get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
 	if shown:
 		if is_instance_valid(root_vbox):
-			root_vbox.add_theme_constant_override("separation", 10)
+			root_vbox.add_theme_constant_override("separation", 8)
 		if is_instance_valid(emblem_box):
-			emblem_box.custom_minimum_size = Vector2(110, 88)
-		if is_instance_valid(p1_card):
-			p1_card.custom_minimum_size.y = 112.0
-		if is_instance_valid(p2_card):
-			p2_card.custom_minimum_size.y = 112.0
+			emblem_box.custom_minimum_size = Vector2(104, 82)
+		for av_rect in [img_p1_avatar, img_p2_avatar]:
+			if is_instance_valid(av_rect) and av_rect.get_parent() is Control:
+				(av_rect.get_parent() as Control).custom_minimum_size = Vector2(82, 82)
 		if is_instance_valid(btn_return):
 			btn_return.custom_minimum_size.y = 48.0
 			btn_return.text = "خروج به منو"

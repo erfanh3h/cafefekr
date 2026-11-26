@@ -14,6 +14,9 @@ const FontHekayat: Font = preload("res://assets/fonts/hekayat.ttf")
 const DRAG_THRESHOLD: float = 16.0
 const OPTION_LETTERS: Array[String] = ["الف", "ب", "ج", "د"]
 
+var start_in_2d_view: bool = true
+var top_down_camera_height: float = 2.60
+
 const FACTION_COLORS: Dictionary = {
 	1: Color(0.95, 0.25, 0.30), # Ruby Red
 	2: Color(0.25, 0.65, 1.00), # Sapphire Blue

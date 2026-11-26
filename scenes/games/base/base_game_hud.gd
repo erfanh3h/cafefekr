@@ -286,7 +286,9 @@ var btn_p2_profile: Button:
 
 @onready var intro_p1_card: PanelContainer = $StartGameOverlay/Card/VBox/VSBox/IntroP1Card
 
-@onready var intro_p1_avatar: TextureRect = $StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1/Avatar
+@onready var intro_p1_avatar_slot: Control = $StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1/AvatarSlot
+
+@onready var intro_p1_avatar: TextureRect = $StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1/AvatarSlot/Avatar
 
 @onready var intro_p1_name: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP1Card/IntroP1/Name
 
@@ -296,7 +298,9 @@ var btn_p2_profile: Button:
 
 @onready var intro_p2_card: PanelContainer = $StartGameOverlay/Card/VBox/VSBox/IntroP2Card
 
-@onready var intro_p2_avatar: TextureRect = $StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2/Avatar
+@onready var intro_p2_avatar_slot: Control = $StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2/AvatarSlot
+
+@onready var intro_p2_avatar: TextureRect = $StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2/AvatarSlot/Avatar
 
 @onready var intro_p2_name: Label = $StartGameOverlay/Card/VBox/VSBox/IntroP2Card/IntroP2/Name
 
@@ -1556,6 +1560,7 @@ func reset_for_new_match(keep_start_overlay: bool = false) -> void:
 
 
 
+var _intro_multi_grid: GridContainer = null
 var _intro_extra_cols: Dictionary = {}
 var _intro_rivalry_pill: PanelContainer = null
 var _intro_rivalry_lbl: Label = null
@@ -1622,11 +1627,12 @@ func _apply_intro_role_pill(role_lbl: Label, card_panel: PanelContainer, text_st
 		role_lbl.text = text_str
 		role_lbl.visible = true
 		role_lbl.add_theme_color_override("font_color", accent_col.lightened(0.28))
+		role_lbl.add_theme_font_size_override("font_size", 14)
 		var pill_sb: StyleBoxFlat = StyleBoxFlat.new()
 		pill_sb.content_margin_left = 10.0
 		pill_sb.content_margin_right = 10.0
-		pill_sb.content_margin_top = 3.0
-		pill_sb.content_margin_bottom = 3.0
+		pill_sb.content_margin_top = 2.0
+		pill_sb.content_margin_bottom = 2.0
 		pill_sb.bg_color = Color(accent_col.r * 0.24, accent_col.g * 0.24, accent_col.b * 0.24, 0.92)
 		pill_sb.border_color = Color(accent_col.r, accent_col.g, accent_col.b, 0.72)
 		pill_sb.set_border_width_all(1)
@@ -1634,17 +1640,17 @@ func _apply_intro_role_pill(role_lbl: Label, card_panel: PanelContainer, text_st
 		role_lbl.add_theme_stylebox_override("normal", pill_sb)
 	if is_instance_valid(card_panel):
 		var c_sb: StyleBoxFlat = StyleBoxFlat.new()
-		c_sb.content_margin_left = 10.0
-		c_sb.content_margin_top = 14.0
-		c_sb.content_margin_right = 10.0
-		c_sb.content_margin_bottom = 12.0
-		c_sb.bg_color = Color(0.16, 0.105, 0.065, 0.95)
+		c_sb.content_margin_left = 8.0
+		c_sb.content_margin_top = 10.0
+		c_sb.content_margin_right = 8.0
+		c_sb.content_margin_bottom = 10.0
+		c_sb.bg_color = Color(0.135, 0.088, 0.052, 0.94)
 		c_sb.border_width_left = 1
-		c_sb.border_width_top = 3
+		c_sb.border_width_top = 2
 		c_sb.border_width_right = 1
-		c_sb.border_width_bottom = 2
+		c_sb.border_width_bottom = 1
 		c_sb.border_color = Color(accent_col.r, accent_col.g, accent_col.b, 0.72)
-		c_sb.set_corner_radius_all(16)
+		c_sb.set_corner_radius_all(14)
 		card_panel.add_theme_stylebox_override("panel", c_sb)
 
 
@@ -1652,12 +1658,12 @@ func _set_intro_countdown_ring_style(is_go: bool) -> void:
 	if not is_instance_valid(intro_countdown_ring):
 		return
 	var r_sb: StyleBoxFlat = StyleBoxFlat.new()
-	r_sb.content_margin_left = 12.0
-	r_sb.content_margin_right = 12.0
-	r_sb.content_margin_top = 8.0
-	r_sb.content_margin_bottom = 8.0
+	r_sb.content_margin_left = 10.0
+	r_sb.content_margin_right = 10.0
+	r_sb.content_margin_top = 6.0
+	r_sb.content_margin_bottom = 6.0
 	r_sb.set_border_width_all(3)
-	r_sb.set_corner_radius_all(56)
+	r_sb.set_corner_radius_all(46)
 	if is_go:
 		r_sb.bg_color = Color(0.08, 0.23, 0.14, 0.98)
 		r_sb.border_color = Color(0.32, 0.96, 0.54, 1.0)
@@ -1665,6 +1671,17 @@ func _set_intro_countdown_ring_style(is_go: bool) -> void:
 		r_sb.bg_color = Color(0.155, 0.095, 0.048, 0.98)
 		r_sb.border_color = Color(0.96, 0.78, 0.30, 0.95)
 	intro_countdown_ring.add_theme_stylebox_override("panel", r_sb)
+
+
+func _apply_intro_avatar_slot(slot: Control, avatar_rect: TextureRect, av_id: int, fid: int, slot_sz: float) -> void:
+	if is_instance_valid(slot):
+		slot.custom_minimum_size = Vector2(slot_sz, slot_sz)
+		slot.set_meta("_av_box_boosted", true)
+	if is_instance_valid(avatar_rect):
+		var tex: Texture2D = BaseTopHeaderClass._get_cached_avatar(av_id)
+		if tex:
+			avatar_rect.texture = tex
+		CafeSocialTheme.apply_frame_to_container(slot if is_instance_valid(slot) else avatar_rect, avatar_rect, fid)
 
 
 func _apply_intro_roles_for_game() -> void:
@@ -1702,29 +1719,61 @@ func _apply_intro_roles_for_game() -> void:
 	_apply_intro_role_pill(intro_p2_role, intro_p2_card, p2_txt, p2_col)
 
 
+func _ensure_intro_multi_grid() -> GridContainer:
+	if is_instance_valid(_intro_multi_grid):
+		return _intro_multi_grid
+	var card_vbox: VBoxContainer = get_node_or_null("StartGameOverlay/Card/VBox") as VBoxContainer
+	var vs_box: Control = get_node_or_null("StartGameOverlay/Card/VBox/VSBox") as Control
+	if not is_instance_valid(card_vbox):
+		return null
+	_intro_multi_grid = GridContainer.new()
+	_intro_multi_grid.name = "IntroMultiGrid"
+	_intro_multi_grid.columns = 2
+	_intro_multi_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_intro_multi_grid.add_theme_constant_override("h_separation", 8)
+	_intro_multi_grid.add_theme_constant_override("v_separation", 8)
+	card_vbox.add_child(_intro_multi_grid)
+	if is_instance_valid(vs_box):
+		card_vbox.move_child(_intro_multi_grid, vs_box.get_index() + 1)
+	return _intro_multi_grid
+
+
 func _ensure_intro_extra_col(idx: int) -> Dictionary:
 	if _intro_extra_cols.has(idx) and is_instance_valid(_intro_extra_cols[idx].get("box")):
 		return _intro_extra_cols[idx]
-	var vs_box: HBoxContainer = get_node_or_null("StartGameOverlay/Card/VBox/VSBox") as HBoxContainer
-	if not vs_box:
+	var grid: GridContainer = _ensure_intro_multi_grid()
+	if not is_instance_valid(grid):
 		return {}
 	var card: PanelContainer = PanelContainer.new()
-	card.name = "IntroP%dCard" % idx
+	card.name = "IntroMultiP%dCard" % idx
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	var col: VBoxContainer = VBoxContainer.new()
-	col.name = "IntroP%d" % idx
-	col.add_theme_constant_override("separation", 6)
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	card.add_child(col)
+	var row: HBoxContainer = HBoxContainer.new()
+	row.name = "Row"
+	row.add_theme_constant_override("separation", 8)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	card.add_child(row)
+
+	var slot: Control = Control.new()
+	slot.name = "AvatarSlot"
+	slot.custom_minimum_size = Vector2(74, 74)
+	slot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slot.set_meta("_av_box_boosted", true)
+	row.add_child(slot)
 
 	var av: TextureRect = TextureRect.new()
 	av.name = "Avatar"
-	av.custom_minimum_size = Vector2(64, 64)
-	av.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	av.set_anchors_preset(Control.PRESET_FULL_RECT)
 	av.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	av.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	col.add_child(av)
+	slot.add_child(av)
+
+	var info_col: VBoxContainer = VBoxContainer.new()
+	info_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	info_col.add_theme_constant_override("separation", 4)
+	row.add_child(info_col)
 
 	var nm: Label = Label.new()
 	nm.name = "Name"
@@ -1734,19 +1783,19 @@ func _ensure_intro_extra_col(idx: int) -> Dictionary:
 	nm.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
 	nm.add_theme_font_size_override("font_size", 18)
 	nm.add_theme_color_override("font_color", Color(0.984, 0.953, 0.894, 1.0))
-	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(nm)
+	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	info_col.add_child(nm)
 
 	var rl: Label = Label.new()
 	rl.name = "Role"
-	rl.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	rl.size_flags_horizontal = Control.SIZE_SHRINK_END
 	rl.add_theme_font_override("font", preload("res://assets/fonts/Vazir.ttf"))
-	ResponsiveUI.apply_text(rl, UITypography.Role.CAPTION, {"min_px": 14, "max_px": 18})
+	rl.add_theme_font_size_override("font_size", 14)
 	rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(rl)
+	info_col.add_child(rl)
 
-	vs_box.add_child(card)
-	var info: Dictionary = {"box": card, "vbox": col, "avatar": av, "name": nm, "role": rl}
+	grid.add_child(card)
+	var info: Dictionary = {"box": card, "slot": slot, "avatar": av, "name": nm, "role": rl}
 	_intro_extra_cols[idx] = info
 	return info
 
@@ -1757,36 +1806,46 @@ func _sync_multiplayer_intro_columns() -> void:
 		return
 	var total_p: int = GameManager.match_players.size()
 	if total_p <= 2:
-		vs_box.add_theme_constant_override("separation", 12)
+		vs_box.visible = true
+		vs_box.add_theme_constant_override("separation", 6)
 		if is_instance_valid(intro_vs_medallion):
 			intro_vs_medallion.visible = true
-		if is_instance_valid(intro_p1_avatar):
-			intro_p1_avatar.custom_minimum_size = Vector2(84, 84)
-		if is_instance_valid(intro_p2_avatar):
-			intro_p2_avatar.custom_minimum_size = Vector2(84, 84)
+		if is_instance_valid(intro_p1_avatar_slot):
+			intro_p1_avatar_slot.custom_minimum_size = Vector2(102, 102)
+		if is_instance_valid(intro_p2_avatar_slot):
+			intro_p2_avatar_slot.custom_minimum_size = Vector2(102, 102)
 		if is_instance_valid(intro_p1_name):
-			intro_p1_name.add_theme_font_size_override("font_size", 21)
+			intro_p1_name.add_theme_font_size_override("font_size", 20)
 		if is_instance_valid(intro_p2_name):
-			intro_p2_name.add_theme_font_size_override("font_size", 21)
-		for idx in [3, 4]:
-			if _intro_extra_cols.has(idx) and is_instance_valid(_intro_extra_cols[idx].get("box")):
-				_intro_extra_cols[idx]["box"].visible = false
+			intro_p2_name.add_theme_font_size_override("font_size", 20)
+		if is_instance_valid(_intro_multi_grid):
+			_intro_multi_grid.visible = false
 		return
 
-	vs_box.add_theme_constant_override("separation", 8 if total_p == 4 else 10)
-	if is_instance_valid(intro_vs_medallion):
-		intro_vs_medallion.visible = false
-	var compact_av: Vector2 = Vector2(62, 62) if total_p >= 4 else Vector2(72, 72)
-	if is_instance_valid(intro_p1_avatar):
-		intro_p1_avatar.custom_minimum_size = compact_av
-	if is_instance_valid(intro_p2_avatar):
-		intro_p2_avatar.custom_minimum_size = compact_av
-	if is_instance_valid(intro_p1_name):
-		ResponsiveUI.apply_scaled_font(intro_p1_name, 19 if total_p >= 4 else 21, 16, 26)
-	if is_instance_valid(intro_p2_name):
-		ResponsiveUI.apply_scaled_font(intro_p2_name, 19 if total_p >= 4 else 21, 16, 26)
+	vs_box.visible = false
+	var grid: GridContainer = _ensure_intro_multi_grid()
+	if is_instance_valid(grid):
+		grid.visible = true
+		grid.columns = 2
 
-	for idx in [3, 4]:
+	var multi_roles: Array[String] = ["مهره قرمز", "مهره آبی", "مهره سبز", "مهره زرد"]
+	var multi_cols: Array[Color] = [
+		Color(0.96, 0.38, 0.38),
+		Color(0.36, 0.74, 1.0),
+		Color(0.32, 0.90, 0.50),
+		Color(0.98, 0.84, 0.28),
+	]
+	if GameManager.current_game_type == GameTypes.QUIZ:
+		multi_roles = ["بازیکن ۱", "بازیکن ۲", "بازیکن ۳", "بازیکن ۴"]
+		multi_cols = [
+			Color(0.96, 0.78, 0.32),
+			Color(0.38, 0.82, 0.98),
+			Color(0.32, 0.90, 0.50),
+			Color(0.96, 0.45, 0.65),
+		]
+
+	var my_idx: int = GameManager.my_player_index
+	for idx in [1, 2, 3, 4]:
 		var col_info: Dictionary = _ensure_intro_extra_col(idx)
 		if col_info.is_empty():
 			continue
@@ -1794,22 +1853,13 @@ func _sync_multiplayer_intro_columns() -> void:
 			col_info["box"].visible = true
 			var p_data: Dictionary = GameManager.get_player_data_by_gamer_id(idx)
 			var p_name: String = str(p_data.get("name", p_data.get("username", "بازیکن %s" % _fa_digits(idx))))
+			if idx == my_idx and not GameManager.is_spectating:
+				p_name = "%s (شما)" % p_name
 			col_info["name"].text = p_name
-			col_info["name"].add_theme_font_size_override("font_size", 17 if total_p >= 4 else 19)
 			var av_id: int = int(p_data.get("image", p_data.get("user_image", 0)))
 			var p_fid: int = GameManager.get_player_frame_id(p_data)
-			var tex: Texture2D = BaseTopHeaderClass._get_cached_avatar(av_id)
-			if tex:
-				col_info["avatar"].texture = tex
-			var av_ctrl: TextureRect = col_info["avatar"] as TextureRect
-			if is_instance_valid(av_ctrl):
-				av_ctrl.custom_minimum_size = compact_av
-				var av_p: Node = av_ctrl.get_parent()
-				CafeSocialTheme.apply_frame_to_container(av_p if av_p is Control else av_ctrl, av_ctrl, p_fid)
-			if idx == 3:
-				_apply_intro_role_pill(col_info["role"] as Label, col_info["box"] as PanelContainer, "مهره سبز", Color(0.32, 0.90, 0.50))
-			else:
-				_apply_intro_role_pill(col_info["role"] as Label, col_info["box"] as PanelContainer, "مهره زرد", Color(0.98, 0.84, 0.28))
+			_apply_intro_avatar_slot(col_info["slot"] as Control, col_info["avatar"] as TextureRect, av_id, p_fid, 74.0)
+			_apply_intro_role_pill(col_info["role"] as Label, col_info["box"] as PanelContainer, multi_roles[idx - 1], multi_cols[idx - 1])
 		else:
 			col_info["box"].visible = false
 
@@ -1857,21 +1907,11 @@ func setup_match(game_title: String = "تیک تاک تو", mode_title: String =
 
 	var av1_id: int = int(p1_data.get("image", p1_data.get("user_image", 0)))
 	var p1_fid: int = GameManager.get_player_frame_id(p1_data)
-	var tex1: Texture2D = BaseTopHeaderClass._get_cached_avatar(av1_id)
-	if is_instance_valid(intro_p1_avatar):
-		if tex1:
-			intro_p1_avatar.texture = tex1
-		var p1_p: Node = intro_p1_avatar.get_parent()
-		CafeSocialTheme.apply_frame_to_container(p1_p if p1_p is Control else intro_p1_avatar, intro_p1_avatar, p1_fid)
+	_apply_intro_avatar_slot(intro_p1_avatar_slot, intro_p1_avatar, av1_id, p1_fid, 102.0)
 
 	var av2_id: int = int(p2_data.get("image", p2_data.get("user_image", 0)))
 	var p2_fid: int = GameManager.get_player_frame_id(p2_data)
-	var tex2: Texture2D = BaseTopHeaderClass._get_cached_avatar(av2_id)
-	if is_instance_valid(intro_p2_avatar):
-		if tex2:
-			intro_p2_avatar.texture = tex2
-		var p2_p: Node = intro_p2_avatar.get_parent()
-		CafeSocialTheme.apply_frame_to_container(p2_p if p2_p is Control else intro_p2_avatar, intro_p2_avatar, p2_fid)
+	_apply_intro_avatar_slot(intro_p2_avatar_slot, intro_p2_avatar, av2_id, p2_fid, 102.0)
 
 	# Initial clean state before game actually starts
 	is_game_finished = false
@@ -2073,7 +2113,7 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 	_stop_loading_pulse()
 	_clamp_intro_card_size()
 	_set_intro_countdown_ring_style(false)
-	intro_countdown_lbl.add_theme_font_size_override("font_size", 62)
+	intro_countdown_lbl.add_theme_font_size_override("font_size", 50)
 	intro_countdown_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.30))
 	if immediate or start_overlay.visible:
 		_show_start_overlay_immediately()
@@ -2106,7 +2146,7 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 
 	if start_overlay.visible and not is_start_overlay_dismissed:
 		intro_countdown_lbl.text = "شروع!"
-		intro_countdown_lbl.add_theme_font_size_override("font_size", 36)
+		intro_countdown_lbl.add_theme_font_size_override("font_size", 30)
 		intro_countdown_lbl.add_theme_color_override("font_color", Color(0.42, 0.98, 0.62))
 		_set_intro_countdown_ring_style(true)
 		_pulse_countdown_label()

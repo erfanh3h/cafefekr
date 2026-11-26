@@ -297,8 +297,9 @@ func _build_ui() -> void:
 
 	# Right: Framed Opponent Avatar
 	_opp_avatar_slot = Control.new()
-	_opp_avatar_slot.custom_minimum_size = Vector2(46, 46)
+	_opp_avatar_slot.custom_minimum_size = Vector2(62, 62)
 	_opp_avatar_slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_opp_avatar_slot.set_meta("_av_box_boosted", true)
 	rival_row.add_child(_opp_avatar_slot)
 
 	_opp_avatar = TextureRect.new()

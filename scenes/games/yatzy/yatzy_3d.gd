@@ -22,6 +22,8 @@ extends "res://scripts/games/base_game_board.gd"
 # --- Camera Tuning for Rectangular Portrait Board (1.06m x 1.68m) ---
 @export var camera_distance: float = 3.28
 @export var camera_pitch: float = -1.14
+var start_in_2d_view: bool = true
+var top_down_camera_height: float = 2.35
 
 # --- Rectangular Board Geometry Constants ---
 const BOARD_W: float = 1.06

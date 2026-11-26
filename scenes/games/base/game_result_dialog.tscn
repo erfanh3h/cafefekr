@@ -16,10 +16,10 @@ texture_margin_left = 44.0
 texture_margin_top = 80.0
 texture_margin_right = 44.0
 texture_margin_bottom = 80.0
-content_margin_left = 50.0
-content_margin_top = 112.0
-content_margin_right = 50.0
-content_margin_bottom = 108.0
+content_margin_left = 34.0
+content_margin_top = 60.0
+content_margin_right = 34.0
+content_margin_bottom = 54.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_plaque"]
 content_margin_left = 10.0
@@ -38,36 +38,36 @@ corner_radius_bottom_right = 46
 corner_radius_bottom_left = 46
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_winner"]
-content_margin_left = 12.0
-content_margin_top = 18.0
-content_margin_right = 12.0
-content_margin_bottom = 18.0
-bg_color = Color(0.20, 0.135, 0.072, 0.96)
-border_width_left = 2
-border_width_top = 3
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.98, 0.82, 0.30, 0.96)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_normal"]
-content_margin_left = 12.0
-content_margin_top = 18.0
-content_margin_right = 12.0
-content_margin_bottom = 18.0
-bg_color = Color(0.145, 0.095, 0.06, 0.92)
+content_margin_left = 8.0
+content_margin_top = 10.0
+content_margin_right = 8.0
+content_margin_bottom = 10.0
+bg_color = Color(0.18, 0.12, 0.064, 0.96)
 border_width_left = 1
 border_width_top = 2
 border_width_right = 1
-border_width_bottom = 2
+border_width_bottom = 1
+border_color = Color(0.98, 0.82, 0.30, 0.96)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_normal"]
+content_margin_left = 8.0
+content_margin_top = 10.0
+content_margin_right = 8.0
+content_margin_bottom = 10.0
+bg_color = Color(0.135, 0.088, 0.055, 0.92)
+border_width_left = 1
+border_width_top = 2
+border_width_right = 1
+border_width_bottom = 1
 border_color = Color(0.45, 0.33, 0.20, 0.72)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vs_disc"]
 content_margin_left = 4.0
@@ -80,10 +80,10 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.84, 0.67, 0.30, 0.85)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
+corner_radius_top_left = 19
+corner_radius_top_right = 19
+corner_radius_bottom_right = 19
+corner_radius_bottom_left = 19
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_score_well"]
 content_margin_left = 10.0
@@ -220,7 +220,7 @@ theme_override_styles/panel = SubResource("StyleBoxTexture_panel_base")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="LblModeTag" type="Label" parent="CenterContainer/Panel/VBox"]
@@ -365,18 +365,17 @@ color = Color(0.84, 0.67, 0.30, 0.30)
 [node name="MatchupBox" type="HBoxContainer" parent="CenterContainer/Panel/VBox"]
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="P1Card" type="PanelContainer" parent="CenterContainer/Panel/VBox/MatchupBox"]
-custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_player_winner")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card"]
 layout_mode = 2
-theme_override_constants/separation = 7
+theme_override_constants/separation = 5
 alignment = 1
 
 [node name="WinnerTag" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
@@ -384,14 +383,23 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.85, 0.28, 1)
 theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "برنده مسابقه"
 horizontal_alignment = 1
 
-[node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
-custom_minimum_size = Vector2(68, 68)
+[node name="AvatarSlot" type="Control" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox"]
+custom_minimum_size = Vector2(92, 92)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P1Card/VBox/AvatarSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 expand_mode = 1
 stretch_mode = 5
 
@@ -400,7 +408,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.984, 0.953, 0.894, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 text = "بازیکن ۱"
 horizontal_alignment = 1
 clip_text = true
@@ -412,13 +420,13 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 0.88, 0.30, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("StyleBoxFlat_score_well")
 text = "۳"
 horizontal_alignment = 1
 
 [node name="VSMedallion" type="PanelContainer" parent="CenterContainer/Panel/VBox/MatchupBox"]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(38, 38)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_vs_disc")
@@ -427,20 +435,19 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_vs_disc")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.80, 0.36, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 16
 text = "VS"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="P2Card" type="PanelContainer" parent="CenterContainer/Panel/VBox/MatchupBox"]
-custom_minimum_size = Vector2(0, 160)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_player_normal")
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card"]
 layout_mode = 2
-theme_override_constants/separation = 7
+theme_override_constants/separation = 5
 alignment = 1
 
 [node name="WinnerTag" type="Label" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
@@ -448,14 +455,23 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.72, 0.64, 0.54, 1)
 theme_override_fonts/font = ExtResource("3_font_vazir")
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 text = "بازیکن ۲"
 horizontal_alignment = 1
 
-[node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
-custom_minimum_size = Vector2(68, 68)
+[node name="AvatarSlot" type="Control" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox"]
+custom_minimum_size = Vector2(92, 92)
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Avatar" type="TextureRect" parent="CenterContainer/Panel/VBox/MatchupBox/P2Card/VBox/AvatarSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 expand_mode = 1
 stretch_mode = 5
 
@@ -464,7 +480,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92, 0.87, 0.80, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 text = "بازیکن ۲"
 horizontal_alignment = 1
 clip_text = true
@@ -476,7 +492,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0.86, 0.80, 0.70, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("StyleBoxFlat_score_well")
 text = "۰"
 horizontal_alignment = 1

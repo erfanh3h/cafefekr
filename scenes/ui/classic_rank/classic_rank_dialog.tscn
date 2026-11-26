@@ -185,22 +185,17 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_parlor_inner")
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="HeaderCrown" type="PanelContainer" parent="InnerBezel/VBox"]
+[node name="TopRow" type="HBoxContainer" parent="InnerBezel/VBox"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_header_crown")
+alignment = 0
 
-[node name="TopRow" type="HBoxContainer" parent="InnerBezel/VBox/HeaderCrown"]
-layout_mode = 2
-theme_override_constants/separation = 10
-alignment = 1
-
-[node name="CloseWrap" type="PanelContainer" parent="InnerBezel/VBox/HeaderCrown/TopRow"]
+[node name="CloseWrap" type="PanelContainer" parent="InnerBezel/VBox/TopRow"]
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_close_medallion")
 
-[node name="BtnClose" type="TextureButton" parent="InnerBezel/VBox/HeaderCrown/TopRow/CloseWrap"]
+[node name="BtnClose" type="TextureButton" parent="InnerBezel/VBox/TopRow/CloseWrap"]
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 focus_mode = 0
@@ -208,49 +203,6 @@ mouse_default_cursor_shape = 2
 texture_normal = ExtResource("2_close_tex")
 ignore_texture_size = true
 stretch_mode = 5
-
-[node name="TitleBox" type="VBoxContainer" parent="InnerBezel/VBox/HeaderCrown/TopRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 1
-alignment = 1
-
-[node name="LblTitle" type="Label" parent="InnerBezel/VBox/HeaderCrown/TopRow/TitleBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.98, 0.83, 0.36, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
-theme_override_constants/shadow_offset_y = 2
-theme_override_constants/shadow_outline_size = 2
-theme_override_fonts/font = ExtResource("3_font_hekayat")
-theme_override_font_sizes/font_size = 28
-text = "رنک کلاسیک"
-horizontal_alignment = 1
-
-[node name="LblSubtitle" type="Label" parent="InnerBezel/VBox/HeaderCrown/TopRow/TitleBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.72, 0.6, 0.95)
-theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 15
-text = "رقابت تک‌نفره با هوش مصنوعی و کسب تجربه"
-horizontal_alignment = 1
-
-[node name="CountPill" type="PanelContainer" parent="InnerBezel/VBox/HeaderCrown/TopRow"]
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_count_pill")
-
-[node name="LblCount" type="Label" parent="InnerBezel/VBox/HeaderCrown/TopRow/CountPill"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.98, 0.83, 0.36, 1)
-theme_override_fonts/font = ExtResource("4_font_vazir")
-theme_override_font_sizes/font_size = 15
-text = "۲۵ بازی"
-horizontal_alignment = 1
-
-[node name="GoldDivider" type="ColorRect" parent="InnerBezel/VBox"]
-custom_minimum_size = Vector2(0, 2)
-layout_mode = 2
-color = Color(0.84, 0.66, 0.28, 0.32)
 
 [node name="SelectedPreviewCard" type="PanelContainer" parent="InnerBezel/VBox"]
 layout_mode = 2
