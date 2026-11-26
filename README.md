@@ -135,7 +135,7 @@ cafefekr/
 │       │       ├── bottom_navigation.tscn  # Persistent 5-button wooden dock
 │       │       └── sound_settings_popup.tscn
 │       ├── auth/               # LoginDialog (Redesigned mobile phone & OTP dialog)
-│       ├── classic_rank/       # ClassicRankDialog (Overhauled AI bot match selector)
+│       ├── classic_rank/       # ClassicRankDialog (3-col 1:1 grid, 3-level AI selector & XP/Coin preview)
 │       ├── spectator/          # Live Spectator UI components
 │       │   ├── live_games_dialog.gd # Match discovery browser modal
 │       │   └── spectator_overlay.gd # In-game live spectator HUD
@@ -144,7 +144,7 @@ cafefekr/
 ├── scripts/                    # Shared utility scripts and networking clients
 │   ├── games/
 │   │   ├── base_game_board.gd  # Abstract base class for all 3D game boards
-│   │   ├── game_registry.gd    # Central registry for all 25 game rules and assets
+│   │   ├── game_registry.gd    # Central registry for all 25 games, Classic Rank AI tiers & rewards
 │   │   └── game_docs.json      # Persian game rule descriptions
 │   ├── network/
 │   │   ├── api_client.gd       # REST HTTP client (kafehfekrserver:5001)
@@ -154,7 +154,7 @@ cafefekr/
 │   └── shaders/
 │       └── solid_white_tint.gdshader
 │
-└── tests/                      # Integration and tab navigation test scripts
+└── tests/                      # Headless GDScript unit & integration tests (classic rank, tabs, main)
 ```
 
 ---
@@ -163,7 +163,7 @@ cafefekr/
 
 ### 4.1. `GameManager` (`autoload/game_manager.gd`)
 - **Session & Device:** Persists token and profile data in `user://session.cfg`; generates persistent UUID device identifier in `user://settings.cfg`.
-- **Match State:** Tracks `active_game_id`, `current_game_type`, `current_turn`, `my_player_index`, `p1_score`, `p2_score`, `match_players`, and surrender states.
+- **Match State:** Tracks `active_game_id`, `current_game_type`, `current_classic_ai_level` (`1`–`3`, default `2`), `current_turn`, `my_player_index`, `p1_score`, `p2_score`, `match_players`, surrender states, and `last_early_surrender_no_reward`.
 - **Spectator State:** Tracks `is_spectating: bool`, `spectated_game_id: String`, and `spectator_count: int`. Methods: `start_spectating_session(...)`, `stop_spectating_session()`.
 - **Progressive Level & XP Curve:**
   $$\text{Level}(\text{XP}) = \left\lfloor\sqrt{\frac{\text{XP}}{20} + 1}\right\rfloor$$
@@ -178,6 +178,7 @@ cafefekr/
   - Manages `SocketIOClient` for WebSocket connections to `ws://<host>:5000/socket.io/?EIO=4&transport=websocket`.
 - **Dynamic Host Resolution:** Host resolved from `user://server.cfg` (`[network] host`, default `192.168.1.2`).
 - **Signal Hub:** Declares ~80 signals dispatching all incoming Socket.IO events directly to UI and game boards.
+- **Classic Rank Matchmaking:** `start_classic_rank(game_type, ai_level)` connects to `/classic-rank` with the normalized `ai_level` (`1`, `2`, or `3`) and syncs `GameManager.current_classic_ai_level` from `Start_Game` / `GamePlayData`.
 - **Spectator Controls & Safety:**
   - `request_spectate_game(game_id, player_id)`: Sends `RequestSpectate` on `/social`.
   - `leave_spectate_game()`: Sends `LeaveSpectate` and cleans up spectator room.
@@ -210,6 +211,16 @@ The client main menu uses a portrait-first, 5-tab application architecture (`sce
    - Top player profile banner, level/XP progress bar, personal match history with replay/review modals, doubled stats matrix, 20-frame avatar selector, sound volume sliders, privacy settings, and notification center.
 - **`BottomNavigation`:**
    - Persistent 5-button bottom bar styled with a single, continuous antique wooden frame plaque (9-slice stretched, non-tiled) with 15–20px content padding.
+
+### 5.1. Classic Rank AI Selector & Reward System (`ClassicRankDialog`)
+- **3-Column 1:1 Square Grid:** Displays all 25 games in a 3-per-row square card layout (`GameGrid.columns = 3`, `1:1` aspect ratio) with difficulty filter tabs (`همه بازی‌ها`, `آسان`, `متوسط`, `سخت`).
+- **3-Level AI Opponent Selector:** Players can choose between **Level 1 (`آسان` / Easy)**, **Level 2 (`متوسط` / Medium — Default)**, and **Level 3 (`سخت` / Hard)**.
+- **Dynamic XP & Coin Preview:** `GameRegistry.get_classic_rank_reward_profile()` (also synced from server `/config` `classic_rank_config` when available) updates the Win / Draw / Lose XP and Coin chips live per selected game difficulty and AI opponent level:
+  - **Level 1 (Easy AI):** Easy `6/3/1 XP, 2/0/0 Coin` · Normal `9/4/2 XP, 2/1/0 Coin` · Hard `12/6/2 XP, 3/1/0 Coin`
+  - **Level 2 (Medium AI — Default):** Easy `10/5/2 XP, 4/1/0 Coin` · Normal `15/7/3 XP, 5/2/0 Coin` · Hard `22/11/5 XP, 6/2/0 Coin`
+  - **Level 3 (Hard AI):** Easy `16/8/4 XP, 7/3/0 Coin` · Normal `24/12/5 XP, 9/4/0 Coin` · Hard `35/17/8 XP, 12/5/0 Coin`
+- **Early-Surrender Anti-Farming Handling:** `main.gd` honors explicit server `0` / `early_surrender_no_reward` responses without applying client-side fallback XP/Coins, and `GameResultDialog` displays a clear Persian notice when an early surrender forfeits rewards.
+- **Match HUD & History Integration:** Shows the active AI opponent level in the match mode title (`رنک کلاسیک • حریف <سطح>`) and on `ClassicRank` cards in `MatchHistoryPage`.
 
 ---
 
@@ -307,3 +318,9 @@ The 3D environment (`scenes/environment/cafe_table.tscn` / `cafe_table.gd`) rema
    - **Android:** Generates `cafefekr.apk` (or architecture-specific APKs: `v7`, `v8`, `x86_64`).
    - **Windows Desktop:** Generates `cafefekr.exe` and `cafefekr.pck`.
 4. Click **Export Project**.
+
+### Running Headless Automated Tests
+```powershell
+Godot_v4.7.2-stable_win64_console.exe --headless --path d:\game\cafefekr -s res://tests/test_classic_rank_ai_levels.gd
+Godot_v4.7.2-stable_win64_console.exe --headless --path d:\game\cafefekr res://tests/test_main_integration.tscn --quit-after 3
+```
