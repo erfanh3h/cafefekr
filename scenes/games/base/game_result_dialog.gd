@@ -117,19 +117,102 @@ func _ready() -> void:
 	)
 
 
-func _make_modal_panel_style(modulate_col: Color = Color.WHITE) -> StyleBoxTexture:
+func _make_modal_panel_style(modulate_col: Color = Color.WHITE, compact: bool = false) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
 	sb.texture = preload("res://assets/images/frames/dialog.png")
 	sb.texture_margin_left = 44.0
 	sb.texture_margin_top = 80.0
 	sb.texture_margin_right = 44.0
 	sb.texture_margin_bottom = 80.0
-	sb.content_margin_left = 50.0
-	sb.content_margin_top = 112.0
-	sb.content_margin_right = 50.0
-	sb.content_margin_bottom = 108.0
+	sb.content_margin_left = 42.0 if compact else 48.0
+	sb.content_margin_top = 90.0 if compact else 104.0
+	sb.content_margin_right = 42.0 if compact else 48.0
+	sb.content_margin_bottom = 86.0 if compact else 100.0
 	sb.modulate_color = modulate_col
 	return sb
+
+
+func _load_avatar_tex(avatar_id: int) -> Texture2D:
+	var path: String = "res://assets/icons/Avatars/%d.png" % avatar_id
+	if ResourceLoader.exists(path):
+		return load(path)
+	var fallback: String = "res://assets/icons/Avatars/0.png"
+	if ResourceLoader.exists(fallback):
+		return load(fallback)
+	return null
+
+
+func _format_mode_tag(is_friendly: bool) -> String:
+	var gname: String = GameRegistry.get_display_name_fa(GameManager.current_game_type)
+	if gname.is_empty():
+		gname = str(GameManager.current_game_type)
+	var mode_str: String = "تماشای زنده" if GameManager.is_spectating else ("بازی با ربات" if GameManager.is_bot_match() else ("رقابت دوستانه" if is_friendly else "رقابت رنک"))
+	return "🎮 %s  •  %s" % [gname, mode_str]
+
+
+func _get_player_display_name(pid: int) -> String:
+	var pd: Dictionary = GameManager.get_player_data_by_gamer_id(pid)
+	var nm: String = str(pd.get("name", pd.get("username", ""))).strip_edges()
+	if nm.is_empty():
+		return "بازیکن %s" % _fa_digits(pid)
+	return nm
+
+
+func _populate_2p_matchup(winner_player_index: int, p1_score: int, p2_score: int, is_draw: bool, my_idx: int) -> void:
+	var matchup_box: Control = p1_card.get_parent() as Control
+	if not is_instance_valid(matchup_box):
+		return
+	matchup_box.visible = true
+
+	var cards: Array[PanelContainer] = [p1_card, p2_card]
+	var name_lbls: Array[Label] = [lbl_p1_name, lbl_p2_name]
+	var score_lbls: Array[Label] = [lbl_p1_score, lbl_p2_score]
+	var tag_lbls: Array[Label] = [p1_winner_tag, p2_winner_tag]
+	var avatars: Array[TextureRect] = [img_p1_avatar, img_p2_avatar]
+	var scores: Array[int] = [p1_score, p2_score]
+
+	var show_round_scores: bool = GameRegistry.has_round_score(GameManager.current_game_type) and ((GameManager.current_game_type == GameTypes.QUIZ) or (GameManager.max_rounds > 1) or (p1_score > 0 or p2_score > 0))
+	var score_prefix: String = "امتیاز: %s" if GameRegistry.is_cumulative_score(GameManager.current_game_type) else "دست‌ها: %s"
+
+	for i in range(2):
+		var pid: int = i + 1
+		var card: PanelContainer = cards[i]
+		if is_instance_valid(card):
+			card.custom_minimum_size.y = 122.0
+		var pd: Dictionary = GameManager.get_player_data_by_gamer_id(pid)
+		var base_name: String = _get_player_display_name(pid)
+		var suffix: String = _get_side_suffix(GameManager.current_game_type, pid)
+		var is_me: bool = (not GameManager.is_spectating) and (pid == my_idx)
+		if is_instance_valid(name_lbls[i]):
+			name_lbls[i].text = "%s%s%s" % [base_name, suffix, " (شما)" if is_me else ""]
+			name_lbls[i].add_theme_font_size_override("font_size", 17)
+
+		var av_id: int = int(pd.get("image", pd.get("user_image", 0)))
+		var fid: int = GameManager.get_player_frame_id(pd)
+		if is_instance_valid(avatars[i]):
+			avatars[i].texture = _load_avatar_tex(av_id)
+			_apply_avatar_frame_safe(avatars[i], fid, 54.0)
+
+		if is_instance_valid(score_lbls[i]):
+			score_lbls[i].visible = show_round_scores
+			if show_round_scores:
+				score_lbls[i].text = score_prefix % _fa_digits(scores[i])
+
+		var is_p_winner: bool = (not is_draw) and (winner_player_index == pid)
+		if is_draw:
+			if is_instance_valid(card):
+				card.add_theme_stylebox_override("panel", _style_normal)
+			_style_tag_pill(tag_lbls[i], "🤝 مساوی", Color(1.0, 0.90, 0.55), Color(0.24, 0.18, 0.08, 0.92), Color(0.80, 0.65, 0.32, 0.72))
+		elif is_p_winner:
+			if is_instance_valid(card):
+				card.add_theme_stylebox_override("panel", _style_winner)
+			_style_tag_pill(tag_lbls[i], "🏆 برنده", Color(1.0, 0.92, 0.38), Color(0.30, 0.21, 0.05, 0.95), Color(1.0, 0.82, 0.28, 0.90))
+		else:
+			if is_instance_valid(card):
+				card.add_theme_stylebox_override("panel", _style_normal)
+			var did_surrender: bool = (is_me and GameManager.local_player_surrendered) or ((not is_me) and GameManager.opponent_player_surrendered)
+			var lose_txt: String = "🏳️ انصراف" if did_surrender else "نفر دوم"
+			_style_tag_pill(tag_lbls[i], lose_txt, Color(0.76, 0.80, 0.88), Color(0.14, 0.16, 0.22, 0.88), Color(0.42, 0.48, 0.62, 0.55))
 
 
 func _setup_styles() -> void:
@@ -299,6 +382,42 @@ func _apply_rewards_ui(xp_earned: int, coin_earned: int, score_earned: int) -> v
 			coin_chip.visible = false
 
 	rewards_hbox.visible = has_reward
+	if has_reward:
+		_animate_rewards_countup(xp_earned, coin_earned, score_earned)
+
+
+func _animate_rewards_countup(xp_earned: int, coin_earned: int, score_earned: int) -> void:
+	var dur: float = 0.52
+	var tw: Tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	var has_any: bool = false
+	if coin_earned > 0 and is_instance_valid(lbl_coin):
+		has_any = true
+		tw.tween_method(func(v: int):
+			if is_instance_valid(lbl_coin):
+				lbl_coin.text = "+%s سکه" % _fa_digits(v)
+		, 0, coin_earned, dur)
+	if xp_earned > 0 and is_instance_valid(lbl_xp):
+		has_any = true
+		if tw.is_running() or coin_earned > 0:
+			tw.parallel().tween_method(func(v: int):
+				if is_instance_valid(lbl_xp):
+					lbl_xp.text = "+%s تجربه" % _fa_digits(v)
+			, 0, xp_earned, dur)
+		else:
+			tw.tween_method(func(v: int):
+				if is_instance_valid(lbl_xp):
+					lbl_xp.text = "+%s تجربه" % _fa_digits(v)
+			, 0, xp_earned, dur)
+	if score_earned != 0 and is_instance_valid(_lbl_score_delta):
+		has_any = true
+		var sign_s: String = "+" if score_earned > 0 else "-"
+		var target_abs: int = abs(score_earned)
+		tw.parallel().tween_method(func(v: int):
+			if is_instance_valid(_lbl_score_delta):
+				_lbl_score_delta.text = "%s%s امتیاز رنک" % [sign_s, _fa_digits(v)]
+		, 0, target_abs, dur)
+	if not has_any:
+		tw.kill()
 
 
 func _get_side_suffix(game_type: String, p_idx: int) -> String:
@@ -603,8 +722,8 @@ func _build_2p_hero_outcome(is_winner: bool, is_draw: bool, p1_score: int, p2_sc
 		_hero_score_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 		if is_spec:
-			var p1_name: String = str(GameManager.get_player_name(1))
-			var p2_name: String = str(GameManager.get_player_name(2))
+			var p1_name: String = _get_player_display_name(1)
+			var p2_name: String = _get_player_display_name(2)
 			_hero_score_lbl.text = "نتیجه: %s: %s  |  %s: %s" % [p1_name, _fa_digits(p1_score), p2_name, _fa_digits(p2_score)]
 		else:
 			_hero_score_lbl.text = "امتیاز نهایی: شما %s  —  %s حریف" % [_fa_digits(my_s), _fa_digits(opp_s)]
@@ -667,9 +786,14 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 	if is_instance_valid(lbl_mode_tag):
 		lbl_mode_tag.visible = false
 	if is_instance_valid(emblem_box):
-		emblem_box.visible = false
+		emblem_box.visible = true
+		emblem_box.custom_minimum_size = Vector2(124, 102)
 	if is_instance_valid(lbl_subtitle):
-		lbl_subtitle.visible = false
+		lbl_subtitle.visible = true
+	if is_instance_valid(lbl_title):
+		lbl_title.add_theme_font_size_override("font_size", 30)
+		lbl_title.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02, 0.92))
+		lbl_title.add_theme_constant_override("outline_size", 4)
 
 	var my_idx: int = GameManager.my_player_index
 	var is_winner: bool = false
@@ -798,15 +922,16 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		defeat_particles.emitting = true
 		ActionVFXManager.shake_camera(0.18, 0.22)
 
-	var matchup_box: Control = p1_card.get_parent() as Control
-	if is_instance_valid(matchup_box):
-		matchup_box.visible = false
-	if is_instance_valid(_hero_outcome_box):
-		_hero_outcome_box.visible = false
-	if is_instance_valid(_multi_podium_box):
-		_multi_podium_box.visible = false
-	if is_instance_valid(_self_result_box):
-		_self_result_box.visible = false
+	if GameManager.match_players.size() > 2:
+		_build_multiplayer_podium(winner_player_index, my_idx)
+	else:
+		if is_instance_valid(_multi_podium_box):
+			_multi_podium_box.visible = false
+		if is_instance_valid(_hero_outcome_box):
+			_hero_outcome_box.visible = false
+		if is_instance_valid(_self_result_box):
+			_self_result_box.visible = false
+		_populate_2p_matchup(winner_player_index, p1_score, p2_score, is_draw, my_idx)
 
 	panel.scale = Vector2(0.72, 0.72)
 	panel.modulate.a = 0.0
@@ -866,6 +991,12 @@ func configure_post_match(post_match_data: Dictionary) -> void:
 	if shown:
 		if is_instance_valid(root_vbox):
 			root_vbox.add_theme_constant_override("separation", 10)
+		if is_instance_valid(emblem_box):
+			emblem_box.custom_minimum_size = Vector2(110, 88)
+		if is_instance_valid(p1_card):
+			p1_card.custom_minimum_size.y = 112.0
+		if is_instance_valid(p2_card):
+			p2_card.custom_minimum_size.y = 112.0
 		if is_instance_valid(btn_return):
 			btn_return.custom_minimum_size.y = 48.0
 			btn_return.text = "خروج به منو"
@@ -941,8 +1072,8 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 		var my_s: int = p1_score if my_i == 1 else p2_score
 		var opp_s: int = p2_score if my_i == 1 else p1_score
 		if GameManager.is_spectating:
-			var p1_name: String = str(GameManager.get_player_name(1))
-			var p2_name: String = str(GameManager.get_player_name(2))
+			var p1_name: String = _get_player_display_name(1)
+			var p2_name: String = _get_player_display_name(2)
 			_hero_score_lbl.text = "نتیجه: %s: %s  |  %s: %s" % [p1_name, _fa_digits(p1_score), p2_name, _fa_digits(p2_score)]
 		else:
 			_hero_score_lbl.text = "نتیجه مسابقه: شما %s  —  %s حریف" % [_fa_digits(my_s), _fa_digits(opp_s)]
@@ -976,4 +1107,4 @@ func update_scores(p1_score: int, p2_score: int) -> void:
 						lbl_title.add_theme_color_override("font_color", Color(0.88, 0.90, 0.96))
 
 					if GameManager.match_players.size() <= 2:
-						_build_2p_hero_outcome(won_now, draw_now, p1_score, p2_score, my_i)
+						_populate_2p_matchup(score_winner, p1_score, p2_score, draw_now, my_i)

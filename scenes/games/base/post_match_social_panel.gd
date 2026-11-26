@@ -555,7 +555,7 @@ func configure(post_match_data: Dictionary) -> bool:
 	# Refresh rivalry/friend state in background if backend payload had minimal defaults
 	if not post_match_data.has("friend_status") and NetworkManager.api != null:
 		var req_opp_uid: String = _opponent_user_id
-		NetworkManager.api.get_rivalry(req_opp_uid, func(success: bool, resp: Variant):
+		NetworkManager.api.get_rivalry(req_opp_uid, func(success: bool, _status_code: int, resp: Variant):
 			_on_rivalry_api_loaded(req_opp_uid, success, resp)
 		)
 	return true
@@ -653,7 +653,7 @@ func _on_add_friend_pressed() -> void:
 
 	var req_opp_uid: String = _opponent_user_id
 	if _friend_status == "incoming_pending" and not _incoming_request_id.is_empty():
-		NetworkManager.api.respond_friend_request(_incoming_request_id, "accept", func(ok: bool, _resp: Variant):
+		NetworkManager.api.respond_friend_request(_incoming_request_id, "accept", func(ok: bool, _status_code: int, _resp: Variant):
 			if not is_instance_valid(self) or not _is_configured_active or _opponent_user_id != req_opp_uid:
 				return
 			_friend_request_busy = false
@@ -663,7 +663,7 @@ func _on_add_friend_pressed() -> void:
 			_apply_friend_button_state()
 		)
 	else:
-		NetworkManager.api.send_friend_request(req_opp_uid, "", func(ok: bool, resp: Variant):
+		NetworkManager.api.send_friend_request(req_opp_uid, "", func(ok: bool, _status_code: int, resp: Variant):
 			if not is_instance_valid(self) or not _is_configured_active or _opponent_user_id != req_opp_uid:
 				return
 			_friend_request_busy = false
