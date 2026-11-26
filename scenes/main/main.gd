@@ -1693,6 +1693,16 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 		if GameManager.is_game_active and GameManager.current_game_type == GameTypes.QUIZ and is_instance_valid(base_game_hud):
 			base_game_hud.refresh_players_only()
 
+	if payload.has("rivalry") and typeof(payload["rivalry"]) == TYPE_DICTIONARY:
+		GameManager.last_rivalry_data = (payload["rivalry"] as Dictionary).duplicate(true)
+		if is_instance_valid(base_game_hud) and base_game_hud.has_method("update_intro_rivalry"):
+			base_game_hud.update_intro_rivalry(GameManager.last_rivalry_data)
+	elif is_instance_valid(base_game_hud) and base_game_hud.has_method("update_intro_rivalry"):
+		base_game_hud.update_intro_rivalry({})
+
+	if payload.has("post_match") and typeof(payload["post_match"]) == TYPE_DICTIONARY:
+		GameManager.last_post_match_data = (payload["post_match"] as Dictionary).duplicate(true)
+
 	var current_idx = int(payload.get("current_game_index", 0))
 	var games_arr = payload.get("games", []) as Array
 	if not games_arr.is_empty():
@@ -2145,11 +2155,23 @@ func _on_game_finished(data: Dictionary) -> void:
 	if board and is_instance_valid(board) and board.has_method("set_board_locked"):
 		board.set_board_locked(true)
 
+	var post_match_payload: Dictionary = {}
+	if data.has("post_match") and typeof(data["post_match"]) == TYPE_DICTIONARY:
+		post_match_payload = (data["post_match"] as Dictionary).duplicate(true)
+		GameManager.last_post_match_data = post_match_payload.duplicate(true)
+	elif not GameManager.last_post_match_data.is_empty():
+		post_match_payload = GameManager.last_post_match_data.duplicate(true)
+	elif not GameManager.is_bot_match() and GameManager.match_players.size() == 2 and not GameManager.last_rivalry_data.is_empty():
+		post_match_payload = GameManager.last_rivalry_data.duplicate(true)
+
+	if GameManager.is_bot_match() or current_match_mode == "classic_rank" or current_match_mode == "multi_rank" or GameManager.match_players.size() != 2:
+		post_match_payload = {"eligible": false, "is_bot_match": GameManager.is_bot_match()}
+
 	if current_match_mode == "multi_rank":
 		if not _ranked_rewards_applied:
 			_ranked_rewards_applied = true
 			GameManager.apply_ranked_rewards(score_earned, xp_earned, coin_earned)
-		base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned)
+		base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned, true, {})
 		return
 
 	if current_match_mode == "ranked":
@@ -2164,6 +2186,7 @@ func _on_game_finished(data: Dictionary) -> void:
 			for k in data.keys():
 				payload[k] = data[k]
 			payload["is_game_finished"] = true
+			payload["post_match"] = post_match_payload
 			if data.has("game_winner_id") and data["game_winner_id"] != null:
 				payload["game_winner_id"] = data["game_winner_id"]
 			_last_game_play_payload = payload
@@ -2178,7 +2201,7 @@ func _on_game_finished(data: Dictionary) -> void:
 	if coin_earned > 0:
 		GameManager.add_coins(coin_earned)
 
-	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned)
+	base_game_hud.show_game_result(winner, GameManager.p1_score, GameManager.p2_score, xp_earned, coin_earned, score_earned, true, post_match_payload)
 
 
 
@@ -3664,6 +3687,8 @@ func _setup_social_hub_integration() -> void:
 	NetworkManager.social_badges_changed.connect(update_social_badge)
 	NetworkManager.social_game_invite_received.connect(_on_social_game_invite_received)
 	NetworkManager.social_game_invite_result.connect(_on_social_game_invite_result)
+	NetworkManager.rematch_accepted.connect(_on_post_match_rematch_accepted)
+	NetworkManager.switch_game_accepted.connect(_on_post_match_switch_game_accepted)
 	NetworkManager.social_spectate_data_received.connect(_on_social_spectate_data_received)
 	NetworkManager.spectate_accepted.connect(_on_spectate_accepted)
 	NetworkManager.spectate_rejected.connect(_on_spectate_rejected)
@@ -3770,6 +3795,38 @@ func _on_social_game_invite_result(payload: Dictionary) -> void:
 		_start_game_match(gid, gtype, "lobby", false)
 	elif not lobby_id.is_empty() and is_instance_valid(lobby_dialog):
 		lobby_dialog.open()
+
+
+func _on_post_match_rematch_accepted(payload: Dictionary) -> void:
+	var new_gid: String = str(payload.get("new_game_id", payload.get("game_id", ""))).strip_edges()
+	var gtype: String = str(payload.get("game_type", GameManager.current_game_type)).strip_edges()
+	var mode_str: String = str(payload.get("match_mode", "lobby")).strip_edges()
+	if new_gid.is_empty():
+		return
+	if is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.is_open():
+		ranked_breakout_dialog.dismiss()
+	elif is_instance_valid(ranked_breakout_dialog):
+		ranked_breakout_dialog.visible = false
+	if is_instance_valid(base_game_hud) and is_instance_valid(base_game_hud.result_dialog):
+		base_game_hud.result_dialog.close_immediate()
+	NetworkManager.leave_game()
+	GameManager.reset_match_state()
+	_start_game_match(new_gid, gtype, mode_str if not mode_str.is_empty() else "lobby", false)
+
+
+func _on_post_match_switch_game_accepted(payload: Dictionary) -> void:
+	var mode: String = str(payload.get("mode", "direct")).strip_edges()
+	if mode == "lobby":
+		var lid: String = str(payload.get("lobby_id", "")).strip_edges()
+		var lpwd: String = str(payload.get("lobby_password", "")).strip_edges()
+		if lid.is_empty():
+			return
+		_on_ranked_breakout_exit_requested()
+		if is_instance_valid(lobby_dialog):
+			_show_backdrop()
+			lobby_dialog.open_and_auto_join(lid, lpwd)
+		return
+	_on_post_match_rematch_accepted(payload)
 
 
 func _on_social_spectate_data_received(payload: Dictionary) -> void:

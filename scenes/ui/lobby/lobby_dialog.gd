@@ -84,6 +84,8 @@ var active_lobbies_data: Array = []
 var active_lobby_game_type: String = GameTypes.TIC_TAC_TOE
 var active_lobby_max_players: int = 2
 var _lobbies_loaded_once: bool = false
+var _pending_auto_join_lobby_id: String = ""
+var _pending_auto_join_password: String = ""
 
 # Game types
 var available_games: Array[String] = [
@@ -248,13 +250,34 @@ func open() -> void:
 	NetworkManager.socket.connect_namespace("/lobby", {"token": GameManager.token})
 
 	if NetworkManager.socket.connected_namespaces.has("/lobby"):
-		_request_lobbies()
+		if not _pending_auto_join_lobby_id.is_empty():
+			var lid := _pending_auto_join_lobby_id
+			var lpwd := _pending_auto_join_password
+			_pending_auto_join_lobby_id = ""
+			_pending_auto_join_password = ""
+			_join_lobby_by_id(lid, lpwd)
+		else:
+			_request_lobbies()
+
+func open_and_auto_join(lobby_id: String, password: String = "") -> void:
+	_pending_auto_join_lobby_id = lobby_id.strip_edges()
+	_pending_auto_join_password = password.strip_edges()
+	open()
 
 func _on_lobby_namespace_connected(ns: String) -> void:
 	if ns == "/lobby" and visible:
-		_request_lobbies()
+		if not _pending_auto_join_lobby_id.is_empty():
+			var lid := _pending_auto_join_lobby_id
+			var lpwd := _pending_auto_join_password
+			_pending_auto_join_lobby_id = ""
+			_pending_auto_join_password = ""
+			_join_lobby_by_id(lid, lpwd)
+		else:
+			_request_lobbies()
 
 func close() -> void:
+	_pending_auto_join_lobby_id = ""
+	_pending_auto_join_password = ""
 	ActionVFXManager.animate_dialog_close(self, null, func():
 		if active_lobby_id != "":
 			_on_leave_lobby_pressed()
@@ -267,6 +290,8 @@ func close() -> void:
 	)
 
 func close_immediate() -> void:
+	_pending_auto_join_lobby_id = ""
+	_pending_auto_join_password = ""
 	visible = false
 	if active_lobby_id != "":
 		_on_leave_lobby_pressed()

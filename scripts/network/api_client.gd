@@ -187,6 +187,9 @@ func get_social_discover(callback: Callable) -> void:
 func get_public_profile(user_id: String, callback: Callable) -> void:
 	_http_get("/social/profile/" + user_id.uri_encode(), _get_auth_headers(), callback)
 
+func get_rivalry(opponent_user_id: String, callback: Callable) -> void:
+	_http_get("/social/rivalry/" + opponent_user_id.uri_encode(), _get_auth_headers(), callback)
+
 func customize_my_profile(payload: Dictionary, callback: Callable = Callable()) -> void:
 	_post_json("/social/profile/customize", payload, _get_auth_headers(), callback)
 

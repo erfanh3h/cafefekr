@@ -58,6 +58,7 @@ var _icon_lose: Texture2D = preload("res://assets/icons/General/lose_white.png")
 var _icon_draw: Texture2D = preload("res://assets/icons/General/draw.png")
 const FONT_HEKAYAT: FontFile = preload("res://assets/fonts/hekayat.ttf")
 const FONT_VAZIR: FontFile = preload("res://assets/fonts/Vazir.ttf")
+const PostMatchSocialPanelScript = preload("res://scenes/games/base/post_match_social_panel.gd")
 
 var _style_panel_win: StyleBox
 var _style_panel_lose: StyleBox
@@ -83,6 +84,7 @@ var _multi_podium_box: VBoxContainer = null
 var _hero_outcome_box: PanelContainer = null
 var _hero_score_lbl: Label = null
 var _self_result_box: PanelContainer = null
+var _post_match_panel: VBoxContainer = null
 
 
 func _is_mobile() -> bool:
@@ -108,6 +110,8 @@ func _ready() -> void:
 
 	btn_return.pressed.connect(func():
 		AudioManager.sfx_button()
+		if is_instance_valid(_post_match_panel):
+			_post_match_panel.notify_leave_if_active()
 		close()
 		return_to_menu_requested.emit()
 	)
@@ -631,6 +635,9 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 	if btn_return and is_instance_valid(btn_return):
 		btn_return.mouse_filter = Control.MOUSE_FILTER_STOP
 		btn_return.disabled = false
+		btn_return.text = "بازگشت به منو"
+	if is_instance_valid(_post_match_panel):
+		_post_match_panel.reset_and_hide()
 
 	var resolved_winner: int = winner_player_index
 	if not GameManager.local_player_surrendered and not GameManager.opponent_player_surrendered and GameManager.get_player_not_played_turns(1) < 2 and GameManager.get_player_not_played_turns(2) < 2:
@@ -827,7 +834,38 @@ func update_xp(xp: int, coins: int = 0, score_delta: int = 0) -> void:
 	_apply_rewards_ui(_current_xp_earned, _current_coin_earned, _current_score_earned)
 
 
+func _ensure_post_match_panel() -> VBoxContainer:
+	if is_instance_valid(_post_match_panel):
+		return _post_match_panel
+	var vbox: VBoxContainer = get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
+	if not is_instance_valid(vbox):
+		return null
+	_post_match_panel = PostMatchSocialPanelScript.new()
+	_post_match_panel.name = "PostMatchSocialPanel"
+	vbox.add_child(_post_match_panel)
+	var btn_row: Node = vbox.get_node_or_null("ButtonsRow")
+	if is_instance_valid(btn_row):
+		vbox.move_child(_post_match_panel, btn_row.get_index())
+	return _post_match_panel
+
+
+func configure_post_match(post_match_data: Dictionary) -> void:
+	if GameManager.is_bot_match() or GameManager.match_players.size() != 2 or post_match_data.is_empty():
+		if is_instance_valid(_post_match_panel):
+			_post_match_panel.reset_and_hide()
+		return
+	var pm_panel: VBoxContainer = _ensure_post_match_panel()
+	if not is_instance_valid(pm_panel):
+		return
+	var shown: bool = pm_panel.configure(post_match_data)
+	if shown and is_instance_valid(btn_return):
+		btn_return.text = "خروج به منو"
+		KenneyUI.style_button(btn_return, KenneyUI.COLOR_GREY)
+
+
 func close() -> void:
+	if is_instance_valid(_post_match_panel):
+		_post_match_panel.reset_and_hide()
 	if _aura_tween and _aura_tween.is_valid():
 		_aura_tween.kill()
 		_aura_tween = null
@@ -844,6 +882,8 @@ func close() -> void:
 
 
 func close_immediate() -> void:
+	if is_instance_valid(_post_match_panel):
+		_post_match_panel.reset_and_hide()
 	if _aura_tween and _aura_tween.is_valid():
 		_aura_tween.kill()
 		_aura_tween = null

@@ -88,6 +88,39 @@ var spectated_game_id: String = ""
 var spectator_count: int = 0
 var is_tutorial_mode: bool = false
 
+# Post-Match Rivalry & Rematch State
+var last_rivalry_data: Dictionary = {}
+var last_post_match_data: Dictionary = {}
+
+static func is_bot_user_id(user_id: String) -> bool:
+	var low: String = user_id.strip_edges().to_lower()
+	if low.is_empty() or low == "0" or low == "3gobru":
+		return true
+	return low.begins_with("bot_") or low.begins_with("test_bot") or low.begins_with("ai_")
+
+func is_bot_match() -> bool:
+	if is_tutorial_mode or is_spectating:
+		return true
+	if current_match_mode.to_lower() == "classic_rank":
+		return true
+	for p in match_players:
+		if typeof(p) == TYPE_DICTIONARY:
+			if bool(p.get("is_bot", false)):
+				return true
+			var pid: String = str(p.get("user_id", p.get("_id", "")))
+			if not pid.is_empty() and is_bot_user_id(pid):
+				return true
+	return false
+
+func get_opponent_user_id() -> String:
+	var my_uid: String = str(get_user_id())
+	for p in match_players:
+		if typeof(p) == TYPE_DICTIONARY:
+			var pid: String = str(p.get("user_id", p.get("_id", "")))
+			if not pid.is_empty() and pid != my_uid:
+				return pid
+	return ""
+
 var is_my_turn: bool:
 	get:
 		if is_spectating or not is_game_active:
@@ -122,6 +155,8 @@ func reset_match_state() -> void:
 	opponent_player_surrendered = false
 	ludo_rank1 = 0
 	ludo_rank2 = 0
+	last_rivalry_data.clear()
+	last_post_match_data.clear()
 	current_game_type = GameRegistry.DEFAULT_GAME_TYPE
 	max_rounds = GameRegistry.get_max_rounds(current_game_type)
 	clear_open_game_id()

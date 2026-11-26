@@ -5,6 +5,7 @@ signal dismissed()
 
 const GameRegistry = preload("res://scripts/games/game_registry.gd")
 const KenneyUI = preload("res://scenes/ui/kenney_ui_helper.gd")
+const PostMatchSocialPanelScript = preload("res://scenes/games/base/post_match_social_panel.gd")
 
 # Nodes
 @onready var backdrop: ColorRect = $Backdrop
@@ -51,6 +52,7 @@ var _pulse_tween: Tween = null
 var _is_dismissing: bool = false
 var _rewards_cards_row: HBoxContainer = null
 var _my_current_rating: int = 1000
+var _post_match_panel: VBoxContainer = null
 
 func _is_mobile() -> bool:
 	return GameManager.is_mobile or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
@@ -136,6 +138,12 @@ func _setup_rtl_game_rows_and_scroll() -> void:
 		_rewards_cards_row.visible = false
 		fin_vbox.add_child(_rewards_cards_row)
 		fin_vbox.move_child(_rewards_cards_row, finished_xp_label.get_index() + 1)
+	if fin_vbox is VBoxContainer and not is_instance_valid(_post_match_panel):
+		_post_match_panel = PostMatchSocialPanelScript.new()
+		_post_match_panel.name = "RankedPostMatchSocialPanel"
+		fin_vbox.add_child(_post_match_panel)
+		if is_instance_valid(btn_exit_match):
+			fin_vbox.move_child(_post_match_panel, btn_exit_match.get_index())
 	set_process(false)
 
 func _process(delta: float) -> void:
@@ -227,6 +235,8 @@ func update_data(payload: Dictionary) -> void:
 			AudioManager.play_sound("lose")
 
 func dismiss() -> void:
+	if is_instance_valid(_post_match_panel):
+		_post_match_panel.reset_and_hide()
 	if not visible or _is_dismissing:
 		return
 	_is_dismissing = true
@@ -636,7 +646,14 @@ func _setup_finish_state(payload: Dictionary) -> void:
 				any_card = true
 			_rewards_cards_row.visible = any_card
 
+		if is_instance_valid(_post_match_panel):
+			var pm_val: Variant = payload.get("post_match", payload.get("rivalry", GameManager.last_post_match_data))
+			var pm_dict: Dictionary = pm_val if typeof(pm_val) == TYPE_DICTIONARY else {}
+			_post_match_panel.configure(pm_dict)
+
 	else:
+		if is_instance_valid(_post_match_panel):
+			_post_match_panel.reset_and_hide()
 		footer_waiting_box.visible = true
 		footer_finished_box.visible = false
 		timer_container.visible = true
@@ -647,6 +664,8 @@ func _setup_finish_state(payload: Dictionary) -> void:
 
 func _on_exit_pressed() -> void:
 	AudioManager.sfx_button()
+	if is_instance_valid(_post_match_panel):
+		_post_match_panel.notify_leave_if_active()
 	dismiss()
 	exit_match_requested.emit()
 

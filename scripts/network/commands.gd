@@ -162,7 +162,25 @@ const Spectator_Count_Updated = "SpectatorCountUpdated"
 const LiveGamesList = "LiveGamesList"
 const Live_Games_List = "LiveGamesList"
 
+# Post-Match Rematch & Switch Game Together Commands (Client -> Server)
+const Rematch_Request = "RematchRequest"
+const Rematch_Respond = "RematchRespond"
+const Switch_Game_Request = "SwitchGameRequest"
+const Switch_Game_Respond = "SwitchGameRespond"
+const PostMatch_Leave = "PostMatchLeave"
+
+# Post-Match Rematch & Switch Game Together Commands (Server -> Client)
+const Rematch_Offered = "RematchOffered"
+const Rematch_State = "RematchState"
+const Rematch_Accepted = "RematchAccepted"
+const Rematch_Declined = "RematchDeclined"
+const Switch_Game_Offered = "SwitchGameOffered"
+const Switch_Game_State = "SwitchGameState"
+const Switch_Game_Accepted = "SwitchGameAccepted"
+const Switch_Game_Declined = "SwitchGameDeclined"
+
 const Social_Error = "SocialError"
 const Social_Ack = "SocialAck"
+
 
 

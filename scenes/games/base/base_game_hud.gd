@@ -1545,6 +1545,9 @@ func reset_for_new_match(keep_start_overlay: bool = false) -> void:
 
 		current_top_header.reset_header()
 
+	if is_instance_valid(_intro_rivalry_pill):
+		_intro_rivalry_pill.visible = false
+
 	if _turn_glow_tween and is_instance_valid(_turn_glow_tween):
 
 		_turn_glow_tween.kill()
@@ -1554,6 +1557,64 @@ func reset_for_new_match(keep_start_overlay: bool = false) -> void:
 
 
 var _intro_extra_cols: Dictionary = {}
+var _intro_rivalry_pill: PanelContainer = null
+var _intro_rivalry_lbl: Label = null
+
+
+func update_intro_rivalry(rivalry_data: Dictionary) -> void:
+	if GameManager.is_bot_match() or GameManager.match_players.size() != 2 or rivalry_data.is_empty():
+		if is_instance_valid(_intro_rivalry_pill):
+			_intro_rivalry_pill.visible = false
+		return
+	if bool(rivalry_data.get("is_bot_match", false)):
+		if is_instance_valid(_intro_rivalry_pill):
+			_intro_rivalry_pill.visible = false
+		return
+	var total_m: int = int(rivalry_data.get("total_matches", 0))
+	if total_m <= 0:
+		if is_instance_valid(_intro_rivalry_pill):
+			_intro_rivalry_pill.visible = false
+		return
+
+	if not is_instance_valid(_intro_rivalry_pill):
+		var card_vbox: VBoxContainer = get_node_or_null("StartGameOverlay/Card/VBox") as VBoxContainer
+		if not is_instance_valid(card_vbox):
+			return
+		_intro_rivalry_pill = PanelContainer.new()
+		_intro_rivalry_pill.name = "IntroRivalryPill"
+		_intro_rivalry_pill.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		var sb: StyleBoxFlat = StyleBoxFlat.new()
+		sb.bg_color = Color(0.22, 0.14, 0.05, 0.96)
+		sb.border_color = Color(0.96, 0.78, 0.30, 0.92)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(12)
+		sb.content_margin_left = 14.0
+		sb.content_margin_right = 14.0
+		sb.content_margin_top = 5.0
+		sb.content_margin_bottom = 5.0
+		_intro_rivalry_pill.add_theme_stylebox_override("panel", sb)
+
+		_intro_rivalry_lbl = Label.new()
+		_intro_rivalry_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_intro_rivalry_lbl.add_theme_font_override("font", preload("res://assets/fonts/hekayat.ttf"))
+		_intro_rivalry_lbl.add_theme_font_size_override("font_size", 17)
+		_intro_rivalry_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.50))
+		_intro_rivalry_pill.add_child(_intro_rivalry_lbl)
+
+		card_vbox.add_child(_intro_rivalry_pill)
+		var vs_node: Node = card_vbox.get_node_or_null("VSBox")
+		if is_instance_valid(vs_node):
+			card_vbox.move_child(_intro_rivalry_pill, vs_node.get_index() + 1)
+
+	var my_w: int = int(rivalry_data.get("my_wins", 0))
+	var opp_w: int = int(rivalry_data.get("opp_wins", 0))
+	var is_arch: bool = bool(rivalry_data.get("is_arch_rival", false)) or total_m >= 5
+	var txt: String = "⚔️ سابقه رقابت: شما %s — %s حریف" % [_fa_digits(my_w), _fa_digits(opp_w)]
+	if is_arch:
+		txt += "  •  🔥 رقیب دیرینه"
+	if is_instance_valid(_intro_rivalry_lbl):
+		_intro_rivalry_lbl.text = txt
+	_intro_rivalry_pill.visible = true
 
 
 func _apply_intro_role_pill(role_lbl: Label, card_panel: PanelContainer, text_str: String, accent_col: Color) -> void:
@@ -3141,13 +3202,17 @@ func show_surrender_notification(surrendered_gamer_id: int) -> void:
 
 
 
-func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int = 0, coin_earned: int = 0, score_earned: int = 0, is_match_finished: bool = true) -> void:
+func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int = 0, coin_earned: int = 0, score_earned: int = 0, is_match_finished: bool = true, post_match_data: Dictionary = {}) -> void:
 
 	if _result_shown:
 
 		if (xp_earned > 0 or coin_earned > 0 or score_earned != 0) and is_instance_valid(result_dialog) and result_dialog.has_method("update_xp"):
 
 			result_dialog.update_xp(xp_earned, coin_earned, score_earned)
+
+		if is_match_finished and not post_match_data.is_empty() and is_instance_valid(result_dialog) and result_dialog.has_method("configure_post_match"):
+
+			result_dialog.configure_post_match(post_match_data)
 
 		return
 
@@ -3191,6 +3256,8 @@ func show_game_result(winner: int, p1_score: int, p2_score: int, xp_earned: int 
 
 	AudioManager.play_theme_music()
 	result_dialog.show_result(final_winner, p1_score, p2_score, is_friendly, xp_earned, coin_earned, score_earned, is_match_finished)
+	if is_match_finished and is_instance_valid(result_dialog) and result_dialog.has_method("configure_post_match"):
+		result_dialog.configure_post_match(post_match_data)
 
 
 

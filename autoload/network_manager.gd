@@ -73,6 +73,14 @@ signal spectator_game_state_received(payload: Dictionary)
 signal spectator_game_ended(payload: Dictionary)
 signal spectator_count_updated(game_id: String, spectator_count: int)
 signal live_games_list_received(payload: Dictionary)
+signal rematch_offered(payload: Dictionary)
+signal rematch_state_changed(payload: Dictionary)
+signal rematch_accepted(payload: Dictionary)
+signal rematch_declined(payload: Dictionary)
+signal switch_game_offered(payload: Dictionary)
+signal switch_game_state_changed(payload: Dictionary)
+signal switch_game_accepted(payload: Dictionary)
+signal switch_game_declined(payload: Dictionary)
 signal social_error_received(message: String)
 signal social_badges_changed()
 
@@ -503,6 +511,35 @@ func request_spectator_state(game_id: String = "") -> void:
 
 func request_live_games_realtime(scope: String = "all", game_type: String = "", game_mode: String = "") -> void:
 	send_social_command(Commands.RequestLiveGames, {"scope": scope, "game_type": game_type, "game_mode": game_mode})
+
+func send_rematch_request(game_id: String) -> void:
+	if game_id.is_empty():
+		return
+	send_social_command(Commands.Rematch_Request, {"game_id": game_id})
+
+func send_rematch_respond(game_id: String, action: String) -> void:
+	if game_id.is_empty():
+		return
+	send_social_command(Commands.Rematch_Respond, {"game_id": game_id, "action": action})
+
+func send_switch_game_request(game_id: String, target_game_type: String, open_lobby: bool = false) -> void:
+	if game_id.is_empty() or target_game_type.is_empty():
+		return
+	send_social_command(Commands.Switch_Game_Request, {
+		"game_id": game_id,
+		"target_game_type": target_game_type,
+		"open_lobby": open_lobby
+	})
+
+func send_switch_game_respond(game_id: String, action: String) -> void:
+	if game_id.is_empty():
+		return
+	send_social_command(Commands.Switch_Game_Respond, {"game_id": game_id, "action": action})
+
+func send_post_match_leave(game_id: String) -> void:
+	if game_id.is_empty():
+		return
+	send_social_command(Commands.PostMatch_Leave, {"game_id": game_id})
 
 func _on_socket_connected() -> void:
 	if OS.is_debug_build():
@@ -1044,6 +1081,30 @@ func _handle_server_command(ns: String, cmd_id: String, payload: Variant) -> voi
 		Commands.LiveGamesList:
 			if typeof(payload) == TYPE_DICTIONARY:
 				live_games_list_received.emit(payload)
+		Commands.Rematch_Offered:
+			if typeof(payload) == TYPE_DICTIONARY:
+				rematch_offered.emit(payload)
+		Commands.Rematch_State:
+			if typeof(payload) == TYPE_DICTIONARY:
+				rematch_state_changed.emit(payload)
+		Commands.Rematch_Accepted:
+			if typeof(payload) == TYPE_DICTIONARY:
+				rematch_accepted.emit(payload)
+		Commands.Rematch_Declined:
+			if typeof(payload) == TYPE_DICTIONARY:
+				rematch_declined.emit(payload)
+		Commands.Switch_Game_Offered:
+			if typeof(payload) == TYPE_DICTIONARY:
+				switch_game_offered.emit(payload)
+		Commands.Switch_Game_State:
+			if typeof(payload) == TYPE_DICTIONARY:
+				switch_game_state_changed.emit(payload)
+		Commands.Switch_Game_Accepted:
+			if typeof(payload) == TYPE_DICTIONARY:
+				switch_game_accepted.emit(payload)
+		Commands.Switch_Game_Declined:
+			if typeof(payload) == TYPE_DICTIONARY:
+				switch_game_declined.emit(payload)
 		Commands.Social_Error:
 			var err_msg = str(payload.get("message", "خطای اجتماعی")) if typeof(payload) == TYPE_DICTIONARY else str(payload)
 			social_error_received.emit(err_msg)
