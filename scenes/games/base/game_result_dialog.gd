@@ -636,6 +636,10 @@ func show_result(winner_player_index: int, p1_score: int, p2_score: int, is_frie
 		btn_return.mouse_filter = Control.MOUSE_FILTER_STOP
 		btn_return.disabled = false
 		btn_return.text = "بازگشت به منو"
+		btn_return.custom_minimum_size.y = 62.0
+	var root_vbox_rst: VBoxContainer = get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
+	if is_instance_valid(root_vbox_rst):
+		root_vbox_rst.add_theme_constant_override("separation", 18)
 	if is_instance_valid(_post_match_panel):
 		_post_match_panel.reset_and_hide()
 
@@ -858,9 +862,14 @@ func configure_post_match(post_match_data: Dictionary) -> void:
 	if not is_instance_valid(pm_panel):
 		return
 	var shown: bool = pm_panel.configure(post_match_data)
-	if shown and is_instance_valid(btn_return):
-		btn_return.text = "خروج به منو"
-		KenneyUI.style_button(btn_return, KenneyUI.COLOR_GREY)
+	var root_vbox: VBoxContainer = get_node_or_null("CenterContainer/Panel/VBox") as VBoxContainer
+	if shown:
+		if is_instance_valid(root_vbox):
+			root_vbox.add_theme_constant_override("separation", 10)
+		if is_instance_valid(btn_return):
+			btn_return.custom_minimum_size.y = 48.0
+			btn_return.text = "خروج به منو"
+			KenneyUI.style_button(btn_return, KenneyUI.COLOR_GREY)
 
 
 func close() -> void:

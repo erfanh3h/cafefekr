@@ -251,6 +251,17 @@ func dismiss() -> void:
 		dismissed.emit()
 	)
 
+func close_immediate() -> void:
+	if is_instance_valid(_post_match_panel):
+		_post_match_panel.reset_and_hide()
+	_is_dismissing = false
+	_timer_running = false
+	if _pulse_tween and _pulse_tween.is_valid():
+		_pulse_tween.kill()
+		_pulse_tween = null
+	visible = false
+	modulate.a = 1.0
+
 func update_timer(time_val: int, max_time_val: int = 10) -> void:
 	_max_time = float(max(1, max_time_val))
 	_remaining_seconds = max(0, time_val)

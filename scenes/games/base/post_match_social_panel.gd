@@ -94,8 +94,11 @@ var _btn_rematch: Button
 var _btn_switch_game: Button
 
 var _switch_picker_panel: PanelContainer
+var _picker_scroll: ScrollContainer
 var _switch_grid: GridContainer
 var _picker_built_for_game: String = ""
+# Buffer early /social rematch/switch/leave events arriving slightly before configure() opens the modal
+var _buffered_events: Dictionary = {} # game_id -> { "kind": String, "payload": Dictionary, "ts_msec": int }
 
 
 func _is_mobile() -> bool:
@@ -422,18 +425,18 @@ func _build_ui() -> void:
 	picker_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.45))
 	picker_hdr.add_child(picker_title)
 
-	var picker_scroll := ScrollContainer.new()
-	picker_scroll.custom_minimum_size = Vector2(0, 158)
-	picker_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	picker_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	picker_vbox.add_child(picker_scroll)
+	_picker_scroll = ScrollContainer.new()
+	_picker_scroll.custom_minimum_size = Vector2(0, 140)
+	_picker_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_picker_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	picker_vbox.add_child(_picker_scroll)
 
 	_switch_grid = GridContainer.new()
 	_switch_grid.columns = 3
 	_switch_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_switch_grid.add_theme_constant_override("h_separation", 6)
 	_switch_grid.add_theme_constant_override("v_separation", 6)
-	picker_scroll.add_child(_switch_grid)
+	_picker_scroll.add_child(_switch_grid)
 
 
 func _connect_network_signals() -> void:
@@ -466,36 +469,61 @@ func _disconnect_network_signals() -> void:
 		NetworkManager.switch_game_declined.disconnect(_on_switch_game_declined)
 
 
-func configure(post_match_data: Dictionary) -> bool:
-	reset_and_hide()
+func _update_picker_scroll_height() -> void:
+	if not is_instance_valid(_picker_scroll):
+		return
+	var vp_h: float = get_viewport_rect().size.y if get_viewport() != null else 800.0
+	_picker_scroll.custom_minimum_size = Vector2(0.0, clampf(vp_h * 0.20, 112.0, 158.0))
 
+
+func configure(post_match_data: Dictionary) -> bool:
 	# Strict bot / tutorial / spectator / >2P exclusion
 	if GameManager.is_bot_match() or GameManager.match_players.size() != 2:
+		reset_and_hide()
 		return false
 	if post_match_data.is_empty():
+		reset_and_hide()
 		return false
 	if bool(post_match_data.get("is_bot_match", false)) or not bool(post_match_data.get("eligible", false)):
+		reset_and_hide()
 		return false
 
 	var opp_uid: String = str(post_match_data.get("opponent_user_id", "")).strip_edges()
 	var my_uid: String = str(GameManager.get_user_id()).strip_edges()
 	if opp_uid.is_empty() or opp_uid == my_uid or GameManager.is_bot_user_id(opp_uid):
+		reset_and_hide()
 		return false
 
-	_game_id = str(post_match_data.get("game_id", GameManager.active_game_id)).strip_edges()
+	var new_gid: String = str(post_match_data.get("game_id", GameManager.active_game_id)).strip_edges()
+	var is_same_active_session: bool = (
+		_is_configured_active
+		and visible
+		and not new_gid.is_empty()
+		and new_gid == _game_id
+		and opp_uid == _opponent_user_id
+	)
+
+	if not is_same_active_session:
+		reset_and_hide()
+		_game_id = new_gid
+		_opponent_user_id = opp_uid
+		_friend_request_busy = false
+		_opponent_left = false
+		_leave_notified = false
+		_is_configured_active = true
+
 	_current_game_type = str(post_match_data.get("game_type", GameManager.current_game_type)).strip_edges()
-	_opponent_user_id = opp_uid
-	_opponent_username = str(post_match_data.get("opponent_username", "حریف")).strip_edges()
+	_opponent_username = str(post_match_data.get("opponent_username", _opponent_username if is_same_active_session else "حریف")).strip_edges()
 	if _opponent_username.is_empty():
 		_opponent_username = "حریف"
-	_opponent_image = int(post_match_data.get("opponent_image", 0))
-	_opponent_frame = int(post_match_data.get("opponent_profile_frame", 1))
-	_friend_status = str(post_match_data.get("friend_status", "none")).strip_edges()
-	_incoming_request_id = str(post_match_data.get("incoming_request_id", "")).strip_edges()
-	_friend_request_busy = false
-	_opponent_left = false
-	_leave_notified = false
-	_is_configured_active = true
+	_opponent_image = int(post_match_data.get("opponent_image", _opponent_image))
+	_opponent_frame = int(post_match_data.get("opponent_profile_frame", _opponent_frame))
+	if not _friend_request_busy and post_match_data.has("friend_status"):
+		_friend_status = str(post_match_data.get("friend_status", "none")).strip_edges()
+		_incoming_request_id = str(post_match_data.get("incoming_request_id", "")).strip_edges()
+	elif not is_same_active_session:
+		_friend_status = str(post_match_data.get("friend_status", "none")).strip_edges()
+		_incoming_request_id = str(post_match_data.get("incoming_request_id", "")).strip_edges()
 
 	_lbl_opp_name.text = _opponent_username
 	_opp_avatar.texture = _load_avatar(_opponent_image)
@@ -510,28 +538,44 @@ func configure(post_match_data: Dictionary) -> bool:
 	)
 	_apply_friend_button_state()
 	_rebuild_switch_picker()
-	_set_actions_enabled(not _game_id.is_empty())
+	_update_picker_scroll_height()
+	if not is_same_active_session:
+		_set_actions_enabled(not _game_id.is_empty())
 
 	visible = true
 
+	# Ensure /social namespace is connected for real-time Rematch & Switch-Game events
+	if NetworkManager.is_online and not NetworkManager.is_social_connected:
+		NetworkManager.connect_social_namespace()
+
+	# Replay any early Rematch/Switch/Leave event that arrived right before the result modal opened
+	if not is_same_active_session and not _game_id.is_empty():
+		_replay_buffered_event(_game_id)
+
 	# Refresh rivalry/friend state in background if backend payload had minimal defaults
 	if not post_match_data.has("friend_status") and NetworkManager.api != null:
-		NetworkManager.api.get_rivalry(_opponent_user_id, _on_rivalry_api_loaded)
+		var req_opp_uid: String = _opponent_user_id
+		NetworkManager.api.get_rivalry(req_opp_uid, func(success: bool, resp: Variant):
+			_on_rivalry_api_loaded(req_opp_uid, success, resp)
+		)
 	return true
 
 
-func _on_rivalry_api_loaded(success: bool, resp: Variant) -> void:
-	if not _is_configured_active or not success or typeof(resp) != TYPE_DICTIONARY:
+func _on_rivalry_api_loaded(expected_opp_uid: String, success: bool, resp: Variant) -> void:
+	if not is_instance_valid(self) or not _is_configured_active or _opponent_user_id != expected_opp_uid:
+		return
+	if not success or typeof(resp) != TYPE_DICTIONARY:
 		return
 	var res: Variant = resp.get("result", resp)
 	if typeof(res) != TYPE_DICTIONARY:
 		return
 	var d: Dictionary = res as Dictionary
-	if bool(d.get("is_bot", false)):
+	if bool(d.get("is_bot", false)) or not bool(d.get("eligible", true)):
 		reset_and_hide()
 		return
-	_friend_status = str(d.get("friend_status", _friend_status))
-	_incoming_request_id = str(d.get("incoming_request_id", _incoming_request_id))
+	if not _friend_request_busy:
+		_friend_status = str(d.get("friend_status", _friend_status))
+		_incoming_request_id = str(d.get("incoming_request_id", _incoming_request_id))
 	_apply_rivalry_stats(
 		int(d.get("my_wins", 0)),
 		int(d.get("opp_wins", 0)),
@@ -599,13 +643,19 @@ func _on_add_friend_pressed() -> void:
 		return
 	if _friend_status in ["friends", "outgoing_pending", "blocked", "bot", "self"]:
 		return
+	if not NetworkManager.is_online or NetworkManager.api == null:
+		_show_notice("اتصال به سرور برقرار نیست.")
+		return
 	AudioManager.sfx_button()
 	_friend_request_busy = true
 	_btn_add_friend.disabled = true
 	_btn_add_friend.text = "در حال ارسال..."
 
+	var req_opp_uid: String = _opponent_user_id
 	if _friend_status == "incoming_pending" and not _incoming_request_id.is_empty():
 		NetworkManager.api.respond_friend_request(_incoming_request_id, "accept", func(ok: bool, _resp: Variant):
+			if not is_instance_valid(self) or not _is_configured_active or _opponent_user_id != req_opp_uid:
+				return
 			_friend_request_busy = false
 			if ok:
 				_friend_status = "friends"
@@ -613,7 +663,9 @@ func _on_add_friend_pressed() -> void:
 			_apply_friend_button_state()
 		)
 	else:
-		NetworkManager.api.send_friend_request(_opponent_user_id, "", func(ok: bool, resp: Variant):
+		NetworkManager.api.send_friend_request(req_opp_uid, "", func(ok: bool, resp: Variant):
+			if not is_instance_valid(self) or not _is_configured_active or _opponent_user_id != req_opp_uid:
+				return
 			_friend_request_busy = false
 			if ok:
 				var status_str: String = ""
@@ -696,6 +748,9 @@ func _set_actions_enabled(enabled: bool) -> void:
 func _on_rematch_pressed() -> void:
 	if _opponent_left or _game_id.is_empty():
 		return
+	if not NetworkManager.is_online:
+		_show_notice("اتصال اینترنت برقرار نیست.")
+		return
 	AudioManager.sfx_button()
 	_switch_picker_panel.visible = false
 	NetworkManager.send_rematch_request(_game_id)
@@ -706,11 +761,15 @@ func _on_switch_game_toggle_pressed() -> void:
 	if _opponent_left or _game_id.is_empty():
 		return
 	AudioManager.sfx_tap()
+	_update_picker_scroll_height()
 	_switch_picker_panel.visible = not _switch_picker_panel.visible
 
 
 func _on_switch_game_selected(target_gt: String) -> void:
 	if _opponent_left or _game_id.is_empty():
+		return
+	if not NetworkManager.is_online:
+		_show_notice("اتصال اینترنت برقرار نیست.")
 		return
 	AudioManager.sfx_button()
 	_switch_picker_panel.visible = false
@@ -720,6 +779,9 @@ func _on_switch_game_selected(target_gt: String) -> void:
 
 func _on_offer_accept_pressed() -> void:
 	if _game_id.is_empty():
+		return
+	if not NetworkManager.is_online:
+		_show_notice("اتصال اینترنت برقرار نیست.")
 		return
 	AudioManager.sfx_button()
 	if _offer_mode == "incoming_rematch":
@@ -746,6 +808,45 @@ func _on_offer_decline_pressed() -> void:
 	_clear_offer_banner()
 
 
+func _buffer_early_event(kind: String, payload: Dictionary) -> void:
+	var gid: String = str(payload.get("game_id", "")).strip_edges()
+	if gid.is_empty():
+		return
+	if _buffered_events.size() >= 8:
+		_buffered_events.clear()
+	_buffered_events[gid] = {
+		"kind": kind,
+		"payload": payload.duplicate(true),
+		"ts_msec": Time.get_ticks_msec(),
+	}
+
+
+func _replay_buffered_event(gid: String) -> void:
+	if not _buffered_events.has(gid):
+		return
+	var entry: Dictionary = _buffered_events[gid] as Dictionary
+	_buffered_events.erase(gid)
+	var elapsed_sec: float = float(Time.get_ticks_msec() - int(entry.get("ts_msec", 0))) / 1000.0
+	if elapsed_sec > 25.0:
+		return
+	var kind: String = str(entry.get("kind", ""))
+	var payload: Dictionary = entry.get("payload", {}) as Dictionary
+	if kind == "rematch_offered":
+		var adjusted: Dictionary = payload.duplicate(true)
+		var rem: float = float(int(adjusted.get("timeout", 15))) - elapsed_sec
+		if rem > 1.0:
+			adjusted["timeout"] = int(ceil(rem))
+			_on_rematch_offered(adjusted)
+	elif kind == "switch_offered":
+		var adjusted: Dictionary = payload.duplicate(true)
+		var rem: float = float(int(adjusted.get("timeout", 20))) - elapsed_sec
+		if rem > 1.0:
+			adjusted["timeout"] = int(ceil(rem))
+			_on_switch_game_offered(adjusted)
+	elif kind == "opponent_left":
+		_handle_offer_closed(payload)
+
+
 func _matches_session(payload: Dictionary) -> bool:
 	if not _is_configured_active or not visible:
 		return false
@@ -755,6 +856,7 @@ func _matches_session(payload: Dictionary) -> bool:
 
 func _on_rematch_offered(payload: Dictionary) -> void:
 	if not _matches_session(payload):
+		_buffer_early_event("rematch_offered", payload)
 		return
 	var from_name: String = str(payload.get("from_username", _opponent_username))
 	var t_sec: float = float(max(3, int(payload.get("timeout", 15))))
@@ -773,12 +875,15 @@ func _on_rematch_state_changed(payload: Dictionary) -> void:
 
 func _on_rematch_declined(payload: Dictionary) -> void:
 	if not _matches_session(payload):
+		if str(payload.get("reason", "")) == "opponent_left":
+			_buffer_early_event("opponent_left", payload)
 		return
 	_handle_offer_closed(payload)
 
 
 func _on_switch_game_offered(payload: Dictionary) -> void:
 	if not _matches_session(payload):
+		_buffer_early_event("switch_offered", payload)
 		return
 	var from_name: String = str(payload.get("from_username", _opponent_username))
 	var target_gt: String = str(payload.get("target_game_type", ""))
@@ -798,6 +903,8 @@ func _on_switch_game_state_changed(payload: Dictionary) -> void:
 
 func _on_switch_game_declined(payload: Dictionary) -> void:
 	if not _matches_session(payload):
+		if str(payload.get("reason", "")) == "opponent_left":
+			_buffer_early_event("opponent_left", payload)
 		return
 	_handle_offer_closed(payload)
 

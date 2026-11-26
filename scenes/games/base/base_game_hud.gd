@@ -3197,7 +3197,8 @@ func show_surrender_notification(surrendered_gamer_id: int) -> void:
 
 	_surrender_result_tween.tween_callback(func():
 		var is_multi: bool = GameManager.match_players.size() > 2
-		show_game_result(winner_idx, GameManager.p1_score, GameManager.p2_score, 0, 0, 0, not is_multi)
+		var pm_fallback: Dictionary = {} if (is_multi or GameManager.is_bot_match()) else GameManager.last_post_match_data
+		show_game_result(winner_idx, GameManager.p1_score, GameManager.p2_score, 0, 0, 0, not is_multi, pm_fallback)
 	)
 
 

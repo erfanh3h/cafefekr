@@ -3799,16 +3799,21 @@ func _on_social_game_invite_result(payload: Dictionary) -> void:
 
 func _on_post_match_rematch_accepted(payload: Dictionary) -> void:
 	var new_gid: String = str(payload.get("new_game_id", payload.get("game_id", ""))).strip_edges()
+	var old_gid: String = str(payload.get("old_game_id", "")).strip_edges()
 	var gtype: String = str(payload.get("game_type", GameManager.current_game_type)).strip_edges()
 	var mode_str: String = str(payload.get("match_mode", "lobby")).strip_edges()
 	if new_gid.is_empty():
 		return
-	if is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.is_open():
-		ranked_breakout_dialog.dismiss()
-	elif is_instance_valid(ranked_breakout_dialog):
-		ranked_breakout_dialog.visible = false
+	# Ignore if the player already joined an unrelated active match
+	if GameManager.is_game_active and not GameManager.active_game_id.is_empty() and GameManager.active_game_id != old_gid and GameManager.active_game_id != new_gid:
+		return
+	if is_instance_valid(ranked_breakout_dialog):
+		ranked_breakout_dialog.close_immediate()
 	if is_instance_valid(base_game_hud) and is_instance_valid(base_game_hud.result_dialog):
 		base_game_hud.result_dialog.close_immediate()
+	if is_instance_valid(cafe_table):
+		cafe_table.clear_board()
+		cafe_table.reset_table_state()
 	NetworkManager.leave_game()
 	GameManager.reset_match_state()
 	_start_game_match(new_gid, gtype, mode_str if not mode_str.is_empty() else "lobby", false)
