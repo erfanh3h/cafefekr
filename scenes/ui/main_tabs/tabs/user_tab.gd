@@ -654,6 +654,7 @@ func _render_privacy() -> void:
 				AudioManager.sfx_tap(),
 		func(v: float):
 			AudioManager.set_sfx_volume(v / 100.0)
+			AudioManager.play_sfx_preview()
 	))
 
 	var p_title: Label = Label.new()

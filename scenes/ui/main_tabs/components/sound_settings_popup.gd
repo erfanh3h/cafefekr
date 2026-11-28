@@ -85,6 +85,7 @@ func _on_sfx_slider_changed(val: float) -> void:
 		return
 	lbl_sfx_pct.text = "%s%%" % GameManager.to_fa_num(int(val))
 	AudioManager.set_sfx_volume(val / 100.0)
+	AudioManager.play_sfx_preview()
 
 
 func _on_sfx_toggled(pressed: bool) -> void:

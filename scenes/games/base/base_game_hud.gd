@@ -681,7 +681,7 @@ func _process(delta: float) -> void:
 
 				if not is_offline_tutorial and is_start_overlay_dismissed and not is_countdown_running and (GameManager.is_my_turn or not GameManager.is_game_active) and not is_game_finished and not is_round_finished:
 
-					AudioManager.play_sound("time")
+					AudioManager.play_sound_pitched("time", 1.0 + float(clampi(3 - sec, 0, 3)) * 0.12)
 
 
 
@@ -2138,7 +2138,7 @@ func play_start_countdown(on_finished: Callable = Callable(), total_seconds: int
 			return
 		intro_countdown_lbl.text = _fa_digits(i)
 		_pulse_countdown_label()
-		AudioManager.play_sound("time")
+		AudioManager.play_sound_pitched("time", 0.94 + float(clampi(total_seconds - i, 0, 6)) * 0.08)
 		await get_tree().create_timer(1.0).timeout
 
 	if my_run_id != _countdown_run_id:
