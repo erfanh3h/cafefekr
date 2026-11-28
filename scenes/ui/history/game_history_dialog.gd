@@ -20,6 +20,8 @@ extends PanelContainer
 signal closed()
 signal user_profile_requested(user_data: Dictionary)
 
+static var _game_tex_cache: Dictionary = {}
+
 @onready var btn_close_top: TextureButton = $Margin/VBox/TopRow/BtnCloseTop
 @onready var lbl_title: Label = $Margin/VBox/TopRow/LblTitle
 @onready var lbl_loading: Label = $Margin/VBox/LblLoading
@@ -260,20 +262,30 @@ static func _get_game_icon_texture(game_type: String) -> Texture2D:
 		norm = "monopoly"
 	elif norm == "quoridor" or norm == "کوریدور":
 		norm = "quoridor"
-	
+
+	if _game_tex_cache.has(norm):
+		return _game_tex_cache[norm] as Texture2D
+
+	var resolved: Texture2D = null
 	var png_path = "res://assets/images/games/%s.png" % norm
 	if ResourceLoader.exists(png_path):
-		return load(png_path)
-	var jpg_path = "res://assets/images/games/%s.jpg" % norm
-	if ResourceLoader.exists(jpg_path):
-		return load(jpg_path)
-	for ext in ["png", "jpg"]:
-		var raw_path = ProjectSettings.globalize_path("res://assets/images/games/%s.%s" % [norm, ext])
-		if FileAccess.file_exists(raw_path):
-			var img = Image.load_from_file(raw_path)
-			if img and not img.is_empty():
-				return ImageTexture.create_from_image(img)
-	return load("res://assets/images/games/tictactoe.png")
+		resolved = load(png_path)
+	else:
+		var jpg_path = "res://assets/images/games/%s.jpg" % norm
+		if ResourceLoader.exists(jpg_path):
+			resolved = load(jpg_path)
+	if not resolved:
+		for ext in ["png", "jpg"]:
+			var raw_path = ProjectSettings.globalize_path("res://assets/images/games/%s.%s" % [norm, ext])
+			if FileAccess.file_exists(raw_path):
+				var img = Image.load_from_file(raw_path)
+				if img and not img.is_empty():
+					resolved = ImageTexture.create_from_image(img)
+					break
+	if not resolved:
+		resolved = load("res://assets/images/games/tictactoe.png")
+	_game_tex_cache[norm] = resolved
+	return resolved
 
 static func _get_mode_badge_texture(mode_raw: String) -> Texture2D:
 	if mode_raw == "ClassicRank":

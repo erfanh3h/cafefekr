@@ -16,6 +16,7 @@ var _user_text_scale: float = 1.0
 var _last_vp_size: Vector2 = Vector2.ZERO
 var _refresh_queued: bool = false
 var _is_mobile_cached: int = -1
+var _prune_countdown: int = 256
 
 
 func is_mobile() -> bool:
@@ -235,8 +236,18 @@ func _scan_subtree(node: Node) -> void:
 
 
 func _on_node_added(node: Node) -> void:
-	if node is Control:
-		call_deferred("_instrument_text_control", node)
+	if node is Control and _is_text_control(node as Control):
+		if node.has_meta(&"_resp_raw") and bool(node.get_meta(&"_resp_raw")):
+			return
+		if node.has_meta(&"_resp_instrumented"):
+			return
+		call_deferred("_instrument_text_control_by_id", node.get_instance_id())
+
+
+func _instrument_text_control_by_id(iid: int) -> void:
+	var obj: Object = instance_from_id(iid)
+	if obj != null and is_instance_valid(obj) and obj is Control:
+		_instrument_text_control(obj as Control)
 
 
 func _is_text_control(ctrl: Control) -> bool:
@@ -249,6 +260,22 @@ func _track_text_control(ctrl: Control) -> void:
 		return
 	_tracked_ids[iid] = true
 	_tracked_text_controls.append(weakref(ctrl))
+	_prune_countdown -= 1
+	if _prune_countdown <= 0:
+		_prune_dead_tracked_controls()
+
+
+func _prune_dead_tracked_controls() -> void:
+	var alive_ctrls: Array[WeakRef] = []
+	var new_ids: Dictionary = {}
+	for wr in _tracked_text_controls:
+		var obj: Object = wr.get_ref()
+		if obj != null and is_instance_valid(obj) and obj is Control:
+			alive_ctrls.append(wr)
+			new_ids[obj.get_instance_id()] = true
+	_tracked_text_controls = alive_ctrls
+	_tracked_ids = new_ids
+	_prune_countdown = maxi(256, _tracked_text_controls.size())
 
 
 func _instrument_text_control(ctrl: Control) -> void:
@@ -256,6 +283,9 @@ func _instrument_text_control(ctrl: Control) -> void:
 		return
 	if ctrl.has_meta(&"_resp_raw") and bool(ctrl.get_meta(&"_resp_raw")):
 		return
+	if ctrl.has_meta(&"_resp_instrumented"):
+		return
+	ctrl.set_meta(&"_resp_instrumented", true)
 
 	UITypography.configure_bidi(ctrl, false, false)
 
@@ -316,10 +346,14 @@ func _refresh_single_text_control(ctrl: Control) -> void:
 
 	if ctrl is RichTextLabel:
 		var rtl := ctrl as RichTextLabel
+		if rtl.has_theme_font_size_override("normal_font_size") and rtl.get_theme_font_size("normal_font_size") == target_px:
+			return
 		rtl.add_theme_font_size_override("normal_font_size", target_px)
 		rtl.add_theme_font_size_override("bold_font_size", target_px + 2)
 		rtl.add_theme_font_size_override("italics_font_size", target_px)
 	else:
+		if ctrl.has_theme_font_size_override("font_size") and ctrl.get_theme_font_size("font_size") == target_px:
+			return
 		ctrl.add_theme_font_size_override("font_size", target_px)
 
 

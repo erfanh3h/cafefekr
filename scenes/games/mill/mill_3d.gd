@@ -260,43 +260,57 @@ func _init_materials() -> void:
 # --- 3D Concentric Nine Men's Morris Board Construction ---
 
 func _build_board_3d() -> void:
+	BaseGameBoard.bake_scene_static_cabinet(self, ["PlinthBase", "BoardFrame", "PlayingBed", "GoldBorderN", "GoldBorderS", "GoldBorderW", "GoldBorderE", "CornerTL", "CornerTR", "CornerBL", "CornerBR", "FrontPlaque"], "BakedMillCabinet")
+
+	var static_board = Node3D.new()
+	static_board.name = "StaticMillBoard"
+	add_child(static_board)
+
 	# 1. Build 3 Concentric Squares (Outer, Middle, Inner)
 	for r in [R_OUTER, R_MID, R_INNER]:
 		var len_side = r * 2.0
 		# Top & Bottom horizontal tracks
-		_add_track_segment(Vector3(0.0, 0.048, -r), Vector3(len_side, 1.0, 1.0), true)
-		_add_track_segment(Vector3(0.0, 0.048, r), Vector3(len_side, 1.0, 1.0), true)
+		_add_track_segment(Vector3(0.0, 0.048, -r), Vector3(len_side, 1.0, 1.0), true, static_board)
+		_add_track_segment(Vector3(0.0, 0.048, r), Vector3(len_side, 1.0, 1.0), true, static_board)
 		# Left & Right vertical tracks
-		_add_track_segment(Vector3(-r, 0.048, 0.0), Vector3(1.0, 1.0, len_side), false)
-		_add_track_segment(Vector3(r, 0.048, 0.0), Vector3(1.0, 1.0, len_side), false)
+		_add_track_segment(Vector3(-r, 0.048, 0.0), Vector3(1.0, 1.0, len_side), false, static_board)
+		_add_track_segment(Vector3(r, 0.048, 0.0), Vector3(1.0, 1.0, len_side), false, static_board)
 
 	# 2. Build 4 Cross Spokes connecting Outer -> Middle -> Inner midpoints
 	var spoke_len = R_OUTER - R_INNER # 0.29m
 	var spoke_mid = (R_OUTER + R_INNER) * 0.5 # 0.295m
 	# North spoke (1 - 4 - 7)
-	_add_track_segment(Vector3(0.0, 0.048, -spoke_mid), Vector3(1.0, 1.0, spoke_len), false)
+	_add_track_segment(Vector3(0.0, 0.048, -spoke_mid), Vector3(1.0, 1.0, spoke_len), false, static_board)
 	# South spoke (16 - 19 - 22)
-	_add_track_segment(Vector3(0.0, 0.048, spoke_mid), Vector3(1.0, 1.0, spoke_len), false)
+	_add_track_segment(Vector3(0.0, 0.048, spoke_mid), Vector3(1.0, 1.0, spoke_len), false, static_board)
 	# West spoke (9 - 10 - 11)
-	_add_track_segment(Vector3(-spoke_mid, 0.048, 0.0), Vector3(spoke_len, 1.0, 1.0), true)
+	_add_track_segment(Vector3(-spoke_mid, 0.048, 0.0), Vector3(spoke_len, 1.0, 1.0), true, static_board)
 	# East spoke (12 - 13 - 14)
-	_add_track_segment(Vector3(spoke_mid, 0.048, 0.0), Vector3(spoke_len, 1.0, 1.0), true)
+	_add_track_segment(Vector3(spoke_mid, 0.048, 0.0), Vector3(spoke_len, 1.0, 1.0), true, static_board)
 
 	# 3. Build Decorative Center Court Medallion at (0, 0)
-	_build_center_medallion()
+	_build_center_medallion(static_board)
 
 	# 4. Build 24 Brass & Obsidian Node Sockets (0..23)
 	node_sockets.resize(MAX_NODES)
 	for i in range(MAX_NODES):
 		var pt = NODE_COORDS[i]
-		var sock = _build_single_node_socket(i, Vector3(pt.x, 0.048, pt.y))
+		var sock_pos = Vector3(pt.x, 0.048, pt.y)
+		var sock = Node3D.new()
+		sock.name = "NodeSocket_%d" % i
+		sock.position = sock_pos
 		add_child(sock)
 		node_sockets[i] = sock
+
+		var sock_mesh = _build_single_node_socket(i, sock_pos)
+		static_board.add_child(sock_mesh)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_board, "BakedMillBoard", true)
 
 	# 5. Build Left & Right Mahogany Side Trays (Reserve + Captured Graveyard)
 	_build_side_trays()
 
-func _add_track_segment(pos: Vector3, scale_vec: Vector3, is_horizontal: bool) -> void:
+func _add_track_segment(pos: Vector3, scale_vec: Vector3, is_horizontal: bool, target_parent: Node3D = self) -> void:
 	# Recessed Ebony Channel
 	var groove = MeshInstance3D.new()
 	var g_box = BoxMesh.new()
@@ -307,7 +321,7 @@ func _add_track_segment(pos: Vector3, scale_vec: Vector3, is_horizontal: bool) -
 	g_box.material = mat_ebony_groove
 	groove.mesh = g_box
 	groove.position = pos
-	add_child(groove)
+	target_parent.add_child(groove)
 
 	# Raised 24K Gold Rail Bar
 	var rail = MeshInstance3D.new()
@@ -319,13 +333,13 @@ func _add_track_segment(pos: Vector3, scale_vec: Vector3, is_horizontal: bool) -
 	r_box.material = mat_gold_rail
 	rail.mesh = r_box
 	rail.position = pos + Vector3(0.0, 0.002, 0.0)
-	add_child(rail)
+	target_parent.add_child(rail)
 
-func _build_center_medallion() -> void:
+func _build_center_medallion(target_parent: Node3D = self) -> void:
 	var med_root = Node3D.new()
 	med_root.name = "CenterCourtMedallion"
 	med_root.position = Vector3(0.0, 0.048, 0.0)
-	add_child(med_root)
+	target_parent.add_child(med_root)
 
 	var outer_ring = MeshInstance3D.new()
 	var torus_out = TorusMesh.new()
@@ -426,6 +440,9 @@ func _build_side_trays() -> void:
 func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: String) -> Node3D:
 	var root = Node3D.new()
 	root.name = tray_name
+	var static_tray = Node3D.new()
+	static_tray.name = "StaticTray"
+	root.add_child(static_tray)
 
 	const TRAY_W: float = 0.178
 	const TRAY_L: float = 0.98
@@ -445,7 +462,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	base_box.size = Vector3(TRAY_W, TRAY_H, TRAY_L)
 	base_box.material = mat_wood
 	base_inst.mesh = base_box
-	root.add_child(base_inst)
+	static_tray.add_child(base_inst)
 
 	var mat_felt = StandardMaterial3D.new()
 	mat_felt.albedo_color = felt_color
@@ -457,7 +474,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	felt_box.material = mat_felt
 	felt_inst.mesh = felt_box
 	felt_inst.position = Vector3(0.0, TRAY_H * 0.5 + 0.001, 0.0)
-	root.add_child(felt_inst)
+	static_tray.add_child(felt_inst)
 
 	var wall_long_mesh = BoxMesh.new()
 	wall_long_mesh.size = Vector3(WALL_T, WALL_H, TRAY_L)
@@ -466,7 +483,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 		var w_side = MeshInstance3D.new()
 		w_side.mesh = wall_long_mesh
 		w_side.position = Vector3(sx * (TRAY_W * 0.5 - WALL_T * 0.5), TRAY_H * 0.5 + WALL_H * 0.5 - 0.002, 0.0)
-		root.add_child(w_side)
+		static_tray.add_child(w_side)
 
 	var wall_short_mesh = BoxMesh.new()
 	wall_short_mesh.size = Vector3(TRAY_W, WALL_H, WALL_T)
@@ -475,7 +492,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 		var w_end = MeshInstance3D.new()
 		w_end.mesh = wall_short_mesh
 		w_end.position = Vector3(0.0, TRAY_H * 0.5 + WALL_H * 0.5 - 0.002, sz * (TRAY_L * 0.5 - WALL_T * 0.5))
-		root.add_child(w_end)
+		static_tray.add_child(w_end)
 
 	# Horizontal Brass Divider separating Reserve (Upper) from Captured (Lower)
 	var div_h_mesh = BoxMesh.new()
@@ -484,7 +501,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	var div_h = MeshInstance3D.new()
 	div_h.mesh = div_h_mesh
 	div_h.position = Vector3(0.0, TRAY_H * 0.5 + 0.005, 0.02)
-	root.add_child(div_h)
+	static_tray.add_child(div_h)
 
 	var corner_cap_mesh = BoxMesh.new()
 	corner_cap_mesh.size = Vector3(0.026, WALL_H + 0.006, 0.026)
@@ -494,7 +511,9 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 			var cap = MeshInstance3D.new()
 			cap.mesh = corner_cap_mesh
 			cap.position = Vector3(sx * (TRAY_W * 0.5 - 0.008), TRAY_H * 0.5 + WALL_H * 0.5, sz * (TRAY_L * 0.5 - 0.008))
-			root.add_child(cap)
+			static_tray.add_child(cap)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_tray, "BakedTrayMesh", true)
 
 	var lbl = Label3D.new()
 	lbl.name = "TrayLabel"

@@ -167,6 +167,7 @@ var wild_preview_holder: CenterContainer
 
 var _pid_to_seat_slot: Dictionary = {} # gamer_id -> 1 (Top), 2 (Left), 3 (Right)
 var _card_widgets_by_uid: Dictionary = {}
+var _card_widget_pool: Array[UnoCardWidget] = []
 var _sort_by_value_first: bool = false
 var _uno_pulse_tween: Tween
 var _draw_pulse_tween: Tween
@@ -867,9 +868,17 @@ func _refresh_3d_opponents() -> void:
 func _rebuild_hand_cards(_playable_cnt: int) -> void:
 	if not is_instance_valid(hand_cards_box):
 		return
+	var prev_widgets: Dictionary = {}
 	for ch: Node in hand_cards_box.get_children():
 		hand_cards_box.remove_child(ch)
-		ch.queue_free()
+		if ch is UnoCardWidget:
+			var w := ch as UnoCardWidget
+			if w.card_uid >= 0 and not prev_widgets.has(w.card_uid):
+				prev_widgets[w.card_uid] = w
+			else:
+				_card_widget_pool.append(w)
+		else:
+			ch.queue_free()
 	_card_widgets_by_uid.clear()
 
 	var total_cards: int = my_hand.size()
@@ -879,6 +888,9 @@ func _rebuild_hand_cards(_playable_cnt: int) -> void:
 		hand_empty_label.visible = (total_cards == 0)
 
 	if total_cards == 0:
+		for prev_w in prev_widgets.values():
+			if is_instance_valid(prev_w):
+				_card_widget_pool.append(prev_w)
 		selected_card_uid = -1
 		return
 
@@ -921,12 +933,28 @@ func _rebuild_hand_cards(_playable_cnt: int) -> void:
 		var angle_deg: float = clampf(norm_offset * 5.5, -7.0, 7.0)
 		var arc_y: float = absf(norm_offset) * absf(norm_offset) * 9.0
 
-		var card_widget: UnoCardWidget = UnoCardWidgetScript.new()
+		var card_widget: UnoCardWidget = null
+		if prev_widgets.has(uid):
+			card_widget = prev_widgets[uid] as UnoCardWidget
+			prev_widgets.erase(uid)
+		elif not _card_widget_pool.is_empty():
+			card_widget = _card_widget_pool.pop_back()
+		else:
+			card_widget = UnoCardWidgetScript.new()
 		card_widget.setup_card(c_dict, playable, selected, is_my_turn, angle_deg, arc_y, confirm_tap, card_w, is_new_card)
-		card_widget.card_tapped.connect(_on_hand_card_tapped)
-		card_widget.card_play_confirmed.connect(_on_hand_card_play_confirmed)
+		if not card_widget.card_tapped.is_connected(_on_hand_card_tapped):
+			card_widget.card_tapped.connect(_on_hand_card_tapped)
+		if not card_widget.card_play_confirmed.is_connected(_on_hand_card_play_confirmed):
+			card_widget.card_play_confirmed.connect(_on_hand_card_play_confirmed)
 		hand_cards_box.add_child(card_widget)
 		_card_widgets_by_uid[uid] = card_widget
+
+	for unused_w in prev_widgets.values():
+		if is_instance_valid(unused_w):
+			if _card_widget_pool.size() < 24:
+				_card_widget_pool.append(unused_w)
+			else:
+				unused_w.queue_free()
 
 	if _last_drawn_uid >= 0 and _card_widgets_by_uid.has(_last_drawn_uid):
 		call_deferred("_scroll_to_card_uid", _last_drawn_uid)
@@ -1514,6 +1542,11 @@ func reset_board() -> void:
 	_update_hud_visibility()
 
 func cleanup_board() -> void:
+	for w in _card_widget_pool:
+		if is_instance_valid(w):
+			w.queue_free()
+	_card_widget_pool.clear()
+	_card_widgets_by_uid.clear()
 	if hud_root and is_instance_valid(hud_root):
 		hud_root.queue_free()
 	if hud_layer and is_instance_valid(hud_layer):

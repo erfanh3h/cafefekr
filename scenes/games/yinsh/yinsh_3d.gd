@@ -376,6 +376,7 @@ func _init_materials() -> void:
 
 	# Interactive Halos & Previews
 	mat_halo_legal = StandardMaterial3D.new()
+	mat_halo_legal.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_halo_legal.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_halo_legal.albedo_color = Color(0.25, 0.98, 0.52, 0.88)
 	mat_halo_legal.emission_enabled = true
@@ -383,6 +384,7 @@ func _init_materials() -> void:
 	mat_halo_legal.emission_energy_multiplier = 1.65
 
 	mat_halo_select = StandardMaterial3D.new()
+	mat_halo_select.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_halo_select.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_halo_select.albedo_color = Color(1.0, 0.86, 0.28, 0.88)
 	mat_halo_select.emission_enabled = true
@@ -390,6 +392,7 @@ func _init_materials() -> void:
 	mat_halo_select.emission_energy_multiplier = 1.55
 
 	mat_halo_last = StandardMaterial3D.new()
+	mat_halo_last.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_halo_last.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_halo_last.albedo_color = Color(0.98, 0.76, 0.24, 0.72)
 	mat_halo_last.emission_enabled = true
@@ -699,14 +702,18 @@ func _build_board_3d() -> void:
 	fx_root.name = "FXRoot"
 	board_root.add_child(fx_root)
 
-	# 1. Luxury Carved Walnut Plinth & Recessed Ebony Arena
+	# 1. Luxury Carved Walnut Plinth & Recessed Ebony Arena (baked into 1 static node)
+	var static_base = Node3D.new()
+	static_base.name = "StaticYinshBase"
+	board_root.add_child(static_base)
+
 	var plinth = MeshInstance3D.new()
 	var plinth_box = BoxMesh.new()
 	plinth_box.size = Vector3(1.42, 0.028, 1.12)
 	plinth.mesh = plinth_box
 	plinth.position = Vector3(0.0, 0.014, 0.0)
 	plinth.material_override = mat_walnut_plinth
-	board_root.add_child(plinth)
+	static_base.add_child(plinth)
 
 	var playfield = MeshInstance3D.new()
 	var pf_cyl = CylinderMesh.new()
@@ -717,7 +724,7 @@ func _build_board_3d() -> void:
 	playfield.mesh = pf_cyl
 	playfield.position = Vector3(0.0, 0.029, 0.0)
 	playfield.material_override = mat_ebony_surface
-	board_root.add_child(playfield)
+	static_base.add_child(playfield)
 
 	var outer_gold_ring = MeshInstance3D.new()
 	var ogr_torus = TorusMesh.new()
@@ -729,7 +736,9 @@ func _build_board_3d() -> void:
 	outer_gold_ring.position = Vector3(0.0, 0.035, 0.0)
 	outer_gold_ring.scale = Vector3(1.0, 0.55, 1.0)
 	outer_gold_ring.material_override = mat_gold_rail
-	board_root.add_child(outer_gold_ring)
+	static_base.add_child(outer_gold_ring)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_base, "BakedYinshBase", true)
 
 	# 2. Build Inlaid 24K Gold Lattice Rails along Directions 1, 2, 3 (baked into 1 single draw call)
 	var rails_temp = Node3D.new()
@@ -771,6 +780,16 @@ func _build_board_3d() -> void:
 	shared_well_cyl.radial_segments = 12
 	shared_well_cyl.rings = 1
 
+	var rims_mm = MultiMesh.new()
+	rims_mm.transform_format = MultiMesh.TRANSFORM_3D
+	rims_mm.mesh = shared_sock_cyl
+	rims_mm.instance_count = NUM_SPOTS
+	var rims_mmi = MultiMeshInstance3D.new()
+	rims_mmi.name = "BakedSocketRims"
+	rims_mmi.multimesh = rims_mm
+	rims_mmi.material_override = mat_brass_socket
+	nodes_root.add_child(rims_mmi)
+
 	var wells_mm = MultiMesh.new()
 	wells_mm.transform_format = MultiMesh.TRANSFORM_3D
 	wells_mm.mesh = shared_well_cyl
@@ -799,20 +818,13 @@ func _build_board_3d() -> void:
 
 	for pid in range(NUM_SPOTS):
 		var pos: Vector3 = spot_positions[pid]
+		rims_mm.set_instance_transform(pid, Transform3D(Basis.IDENTITY, pos + Vector3(0.0, 0.001, 0.0)))
 		wells_mm.set_instance_transform(pid, Transform3D(Basis.IDENTITY, pos + Vector3(0.0, 0.0012, 0.0)))
 
 		var n_holder = Node3D.new()
 		n_holder.name = "Spot_%d" % pid
 		n_holder.position = pos
 		nodes_root.add_child(n_holder)
-
-		# Brass outer rim
-		var sock_rim = MeshInstance3D.new()
-		sock_rim.mesh = shared_sock_cyl
-		sock_rim.position = Vector3(0.0, 0.001, 0.0)
-		sock_rim.material_override = mat_brass_socket
-		n_holder.add_child(sock_rim)
-		node_socket_meshes.append(sock_rim)
 
 		# Legal landing halo (emerald green)
 		var legal_halo = MeshInstance3D.new()
@@ -880,6 +892,10 @@ func _build_side_trays_and_plaques() -> void:
 	p1_trophy_positions.clear()
 	p2_trophy_positions.clear()
 
+	var static_trays = Node3D.new()
+	static_trays.name = "StaticTrays"
+	trays_root.add_child(static_trays)
+
 	# Left Tray (P1 Red) at X = -0.60, Right Tray (P2 Blue) at X = +0.60
 	for side in [1, 2]:
 		var x_center: float = -0.605 if side == 1 else 0.605
@@ -889,7 +905,7 @@ func _build_side_trays_and_plaques() -> void:
 		tray_base.mesh = t_box
 		tray_base.position = Vector3(x_center, BOARD_SURFACE_Y + 0.002, 0.0)
 		tray_base.material_override = mat_ebony_surface
-		trays_root.add_child(tray_base)
+		static_trays.add_child(tray_base)
 
 		var tray_rim = MeshInstance3D.new()
 		var r_box = BoxMesh.new()
@@ -897,7 +913,7 @@ func _build_side_trays_and_plaques() -> void:
 		tray_rim.mesh = r_box
 		tray_rim.position = Vector3(x_center, BOARD_SURFACE_Y - 0.001, 0.0)
 		tray_rim.material_override = mat_ring_p1_gold if side == 1 else mat_ring_p2_plat
-		trays_root.add_child(tray_rim)
+		static_trays.add_child(tray_rim)
 
 		# 3 Trophy Score Pedestals (Top section of tray: Z = -0.34, -0.23, -0.12)
 		for t_idx in range(3):
@@ -917,7 +933,7 @@ func _build_side_trays_and_plaques() -> void:
 			ped.mesh = p_cyl
 			ped.position = Vector3(x_center, BOARD_SURFACE_Y + 0.011, z_pos)
 			ped.material_override = mat_ring_p1_gold if side == 1 else mat_ring_p2_plat
-			trays_root.add_child(ped)
+			static_trays.add_child(ped)
 
 		# 5 Reserve Ring Pegs (Bottom section of tray: Z = 0.04 .. 0.38)
 		for r_idx in range(5):
@@ -937,7 +953,7 @@ func _build_side_trays_and_plaques() -> void:
 			peg.mesh = pg_cyl
 			peg.position = Vector3(x_center, BOARD_SURFACE_Y + 0.012, z_pos)
 			peg.material_override = mat_brass_socket
-			trays_root.add_child(peg)
+			static_trays.add_child(peg)
 
 		# Tray Score Label
 		var lbl = Label3D.new()
@@ -966,7 +982,9 @@ func _build_side_trays_and_plaques() -> void:
 	bot_plaque.mesh = bp_box
 	bot_plaque.position = Vector3(0.0, BOARD_SURFACE_Y + 0.006, 0.508)
 	bot_plaque.material_override = mat_ebony_surface
-	trays_root.add_child(bot_plaque)
+	static_trays.add_child(bot_plaque)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_trays, "BakedYinshTrays", true)
 
 	lbl_phase_3d = Label3D.new()
 	lbl_phase_3d.font = _font_hekayat
@@ -992,6 +1010,9 @@ func _build_disk_box() -> void:
 
 	# Grand Luxury Disk Supply Casket (enlarged width = 0.960, depth = 0.215)
 	var box_z_center: float = -0.605
+	var static_box = Node3D.new()
+	static_box.name = "StaticDiskBox"
+	disk_box_root.add_child(static_box)
 
 	# 1. Stepped Antique Mahogany/Walnut Plinth Base
 	var base_plinth = MeshInstance3D.new()
@@ -1000,7 +1021,7 @@ func _build_disk_box() -> void:
 	base_plinth.mesh = bp_box
 	base_plinth.position = Vector3(0.0, BOARD_SURFACE_Y + 0.005, box_z_center)
 	base_plinth.material_override = mat_walnut_plinth
-	disk_box_root.add_child(base_plinth)
+	static_box.add_child(base_plinth)
 
 	# 2. Main Walnut Casket Frame
 	var box_frame = MeshInstance3D.new()
@@ -1009,7 +1030,7 @@ func _build_disk_box() -> void:
 	box_frame.mesh = frame_mesh
 	box_frame.position = Vector3(0.0, BOARD_SURFACE_Y + 0.015, box_z_center)
 	box_frame.material_override = mat_walnut_plinth
-	disk_box_root.add_child(box_frame)
+	static_box.add_child(box_frame)
 
 	# 3. Burnished Brass Raised Lip / Coaming
 	var box_rim = MeshInstance3D.new()
@@ -1018,7 +1039,7 @@ func _build_disk_box() -> void:
 	box_rim.mesh = rim_mesh
 	box_rim.position = Vector3(0.0, BOARD_SURFACE_Y + 0.021, box_z_center)
 	box_rim.material_override = mat_brass_socket
-	disk_box_root.add_child(box_rim)
+	static_box.add_child(box_rim)
 
 	# 4. Four Gilded Antique Corner Guards with Rounded Brass Rivets
 	var c_xs = [-0.472, 0.472]
@@ -1034,7 +1055,7 @@ func _build_disk_box() -> void:
 			bracket.mesh = b_cyl
 			bracket.position = Vector3(cx, BOARD_SURFACE_Y + 0.017, cz)
 			bracket.material_override = mat_brass_bracket
-			disk_box_root.add_child(bracket)
+			static_box.add_child(bracket)
 
 			var rivet = MeshInstance3D.new()
 			var r_sph = SphereMesh.new()
@@ -1043,7 +1064,7 @@ func _build_disk_box() -> void:
 			rivet.mesh = r_sph
 			rivet.position = Vector3(cx, BOARD_SURFACE_Y + 0.033, cz)
 			rivet.material_override = mat_gold_inlay
-			disk_box_root.add_child(rivet)
+			static_box.add_child(rivet)
 
 	# 5. Inner Midnight Royal Sapphire Velvet Bed
 	var velvet_bed = MeshInstance3D.new()
@@ -1052,7 +1073,7 @@ func _build_disk_box() -> void:
 	velvet_bed.mesh = bed_mesh
 	velvet_bed.position = Vector3(0.0, BOARD_SURFACE_Y + 0.022, box_z_center + 0.014)
 	velvet_bed.material_override = mat_velvet_bed
-	disk_box_root.add_child(velvet_bed)
+	static_box.add_child(velvet_bed)
 
 	# 6. Gilded Brass Cartouche Plaque for Disc Count
 	var plaque_z: float = box_z_center - 0.088
@@ -1062,7 +1083,7 @@ func _build_disk_box() -> void:
 	plaque.mesh = pq_box
 	plaque.position = Vector3(0.0, BOARD_SURFACE_Y + 0.028, plaque_z)
 	plaque.material_override = mat_gold_inlay
-	disk_box_root.add_child(plaque)
+	static_box.add_child(plaque)
 
 	# Flanking rosette rivets on plaque
 	for rox in [-0.275, 0.275]:
@@ -1073,7 +1094,9 @@ func _build_disk_box() -> void:
 		ro_rivet.mesh = ro_sph
 		ro_rivet.position = Vector3(rox, BOARD_SURFACE_Y + 0.033, plaque_z)
 		ro_rivet.material_override = mat_brass_socket
-		disk_box_root.add_child(ro_rivet)
+		static_box.add_child(ro_rivet)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_box, "BakedDiskSupplyBox", true)
 
 	lbl_disks_3d = Label3D.new()
 	lbl_disks_3d.font = _font_hekayat

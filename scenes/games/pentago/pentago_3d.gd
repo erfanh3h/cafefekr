@@ -366,6 +366,7 @@ func _init_materials() -> void:
 
 	# Halos & Ghost Previews
 	mat_halo_legal = StandardMaterial3D.new()
+	mat_halo_legal.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_halo_legal.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_halo_legal.albedo_color = Color(0.25, 0.98, 0.54, 0.86)
 	mat_halo_legal.emission_enabled = true
@@ -373,6 +374,7 @@ func _init_materials() -> void:
 	mat_halo_legal.emission_energy_multiplier = 1.65
 
 	mat_halo_last = StandardMaterial3D.new()
+	mat_halo_last.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_halo_last.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_halo_last.albedo_color = Color(1.0, 0.84, 0.28, 0.82)
 	mat_halo_last.emission_enabled = true
@@ -717,14 +719,18 @@ func _build_board_3d() -> void:
 	hover_preview_root.name = "HoverPreviewRoot"
 	board_root.add_child(hover_preview_root)
 
-	# 1. Stepped Royal Walnut Outer Plinth & Obsidian Mechanical Bed
+	# 1. Stepped Royal Walnut Outer Plinth & Obsidian Mechanical Bed (baked into 1 static node)
+	var static_chassis = Node3D.new()
+	static_chassis.name = "StaticChassis"
+	board_root.add_child(static_chassis)
+
 	var plinth_low = MeshInstance3D.new()
 	var pl_box1 = BoxMesh.new()
 	pl_box1.size = Vector3(0.92, 0.020, 0.92)
 	plinth_low.mesh = pl_box1
 	plinth_low.position = Vector3(0.0, 0.010, 0.0)
 	plinth_low.material_override = mat_walnut_chassis
-	board_root.add_child(plinth_low)
+	static_chassis.add_child(plinth_low)
 
 	var plinth_mid = MeshInstance3D.new()
 	var pl_box2 = BoxMesh.new()
@@ -732,7 +738,7 @@ func _build_board_3d() -> void:
 	plinth_mid.mesh = pl_box2
 	plinth_mid.position = Vector3(0.0, 0.024, 0.0)
 	plinth_mid.material_override = mat_mahogany_trim
-	board_root.add_child(plinth_mid)
+	static_chassis.add_child(plinth_mid)
 
 	var gold_border = MeshInstance3D.new()
 	var gb_box = BoxMesh.new()
@@ -740,7 +746,7 @@ func _build_board_3d() -> void:
 	gold_border.mesh = gb_box
 	gold_border.position = Vector3(0.0, 0.028, 0.0)
 	gold_border.material_override = mat_gold_rail
-	board_root.add_child(gold_border)
+	static_chassis.add_child(gold_border)
 
 	var inner_bed = MeshInstance3D.new()
 	var ib_box = BoxMesh.new()
@@ -748,7 +754,7 @@ func _build_board_3d() -> void:
 	inner_bed.mesh = ib_box
 	inner_bed.position = Vector3(0.0, 0.031, 0.0)
 	inner_bed.material_override = mat_obsidian_bed
-	board_root.add_child(inner_bed)
+	static_chassis.add_child(inner_bed)
 
 	# Central Mechanical Brass Compass Hub (between the 4 rotating quadrants)
 	var center_hub = MeshInstance3D.new()
@@ -760,7 +766,7 @@ func _build_board_3d() -> void:
 	center_hub.mesh = ch_cyl
 	center_hub.position = Vector3(0.0, BOARD_SURFACE_Y + 0.002, 0.0)
 	center_hub.material_override = mat_brass_gear
-	board_root.add_child(center_hub)
+	static_chassis.add_child(center_hub)
 
 	var center_jewel = MeshInstance3D.new()
 	var cj_sph = SphereMesh.new()
@@ -769,7 +775,7 @@ func _build_board_3d() -> void:
 	center_jewel.mesh = cj_sph
 	center_jewel.position = Vector3(0.0, BOARD_SURFACE_Y + 0.010, 0.0)
 	center_jewel.material_override = mat_gold_rail
-	board_root.add_child(center_jewel)
+	static_chassis.add_child(center_jewel)
 
 	# 4 Corner Brass Boss Rivets on Outer Chassis
 	for cx in [-0.405, 0.405]:
@@ -781,7 +787,9 @@ func _build_board_3d() -> void:
 			boss.mesh = b_sph
 			boss.position = Vector3(cx, BOARD_SURFACE_Y, cz)
 			boss.material_override = mat_gold_rail
-			board_root.add_child(boss)
+			static_chassis.add_child(boss)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_chassis, "BakedPentagoChassis", true)
 
 	# 2. Build the 4 Rotating 3x3 Quadrants (0..3) and 36 Sockets (0..35)
 	quadrant_pivots.clear()
@@ -799,6 +807,10 @@ func _build_board_3d() -> void:
 		quadrants_root.add_child(q_pivot)
 		quadrant_pivots.append(q_pivot)
 
+		var static_quad = Node3D.new()
+		static_quad.name = "StaticQuadMeshes"
+		q_pivot.add_child(static_quad)
+
 		# Brass Turntable Gear Under-Ring
 		var gear_ring = MeshInstance3D.new()
 		var gr_cyl = CylinderMesh.new()
@@ -809,7 +821,7 @@ func _build_board_3d() -> void:
 		gear_ring.mesh = gr_cyl
 		gear_ring.position = Vector3(0.0, -0.002, 0.0)
 		gear_ring.material_override = mat_brass_gear
-		q_pivot.add_child(gear_ring)
+		static_quad.add_child(gear_ring)
 
 		# Quadrant Gold Beveled Outer Frame
 		var q_rim = MeshInstance3D.new()
@@ -829,7 +841,7 @@ func _build_board_3d() -> void:
 		q_block.mesh = qb_box
 		q_block.position = Vector3(0.0, 0.005, 0.0)
 		q_block.material_override = mat_quad_slate
-		q_pivot.add_child(q_block)
+		static_quad.add_child(q_block)
 
 		# Decorative Gold Corner Studs on each Quadrant
 		for qcx in [-0.165, 0.165]:
@@ -841,7 +853,7 @@ func _build_board_3d() -> void:
 				q_stud.mesh = qs_sph
 				q_stud.position = Vector3(qcx, 0.014, qcz)
 				q_stud.material_override = mat_gold_rail
-				q_pivot.add_child(q_stud)
+				static_quad.add_child(q_stud)
 
 		# 9 Recessed Marble Sockets inside Quadrant q_idx
 		for local_i in range(CELLS_PER_QUADRANT):
@@ -865,7 +877,7 @@ func _build_board_3d() -> void:
 			s_rim.position = loc_pos + Vector3(0.0, 0.001, 0.0)
 			s_rim.scale = Vector3(1.0, 0.55, 1.0)
 			s_rim.material_override = mat_brass_gear
-			q_pivot.add_child(s_rim)
+			static_quad.add_child(s_rim)
 
 			# Dark Recessed Socket Well
 			var s_well = MeshInstance3D.new()
@@ -877,7 +889,7 @@ func _build_board_3d() -> void:
 			s_well.mesh = sw_cyl
 			s_well.position = loc_pos + Vector3(0.0, -0.001, 0.0)
 			s_well.material_override = mat_socket_well
-			q_pivot.add_child(s_well)
+			static_quad.add_child(s_well)
 
 			# Legal Move / Hover Halo Ring
 			var leg_halo = MeshInstance3D.new()
@@ -926,6 +938,8 @@ func _build_board_3d() -> void:
 			q_pivot.add_child(c_area)
 			cell_areas[cell_id] = c_area
 
+		BaseGameBoard.bake_and_replace_static_meshes(static_quad, "BakedQuad_%d" % q_idx, true)
+
 	# 3. Build the 8 Sculpted 3D Rotation Paddles around the Quadrants (1..8)
 	# Exact parity with Flutter PentagoBoardWidget & Backend rotate_piece(1..8):
 	# - Top Row (above Q0 & Q1, Z = -0.458):
@@ -939,8 +953,9 @@ func _build_board_3d() -> void:
 	#   8: Q3 CW  (↻ ساعتگرد)    at X = +0.285  (Wait: let's place CCW ↺ on left and CW ↻ on right or match exact rotation_id!)
 	_build_rotation_paddles()
 
-	# 4. Build Side Reserve Trays & Top/Bottom Status Plaques
+	# 4. Build Side Reserve Trays & Top/Bottom Status Plaques (baked into 1 static node; Label3Ds preserved)
 	_build_side_trays_and_plaques()
+	BaseGameBoard.bake_and_replace_static_meshes(trays_root, "BakedPentagoTrays", true)
 
 	# 5. Build Hover Ghost Marbles & Quadrant Spin Preview Ring
 	_build_hover_previews()

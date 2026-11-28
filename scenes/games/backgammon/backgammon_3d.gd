@@ -311,17 +311,9 @@ func _process(delta: float) -> void:
 		_last_start_dialog_open = current_start_open
 		_refresh_ui_and_highlights()
 
-	# 1. Pulse selectable source rings, target rings & float top checkers on selectable points (only when active)
+	# 1. Float top checkers on selectable points (transform-only; avoids 60Hz material uniform dirtying)
 	if is_my_turn and dices_rolled and not _is_animating_move:
-		var pulse = 0.5 + 0.5 * sin(_vfx_time * 5.2)
 		var float_y = sin(_vfx_time * 4.6) * 0.0055
-
-		if is_instance_valid(mat_ring_selectable):
-			mat_ring_selectable.emission_energy_multiplier = 0.70 + 0.30 * pulse
-		if is_instance_valid(mat_ring_target):
-			mat_ring_target.emission_energy_multiplier = 0.60 + 0.25 * pulse
-		if is_instance_valid(mat_ring_hit_danger):
-			mat_ring_hit_danger.emission_energy_multiplier = 0.75 + 0.30 * pulse
 
 		if not can_select_points.is_empty():
 			for pt in can_select_points:
@@ -554,38 +546,33 @@ func _init_materials() -> void:
 	mat_die_badge_selected.emission = Color(0.95, 0.70, 0.15)
 	mat_die_badge_selected.emission_energy_multiplier = 0.55
 
-	# Highlight Rings (Selectable Source: Rich Deep Antique Dark Gold, Matte & Glare-Free)
+	# Highlight Rings (Selectable Source: Rich Deep Antique Dark Gold, Unshaded on mobile-friendly pipeline)
 	mat_ring_selectable = StandardMaterial3D.new()
+	mat_ring_selectable.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_ring_selectable.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ring_selectable.albedo_color = Color(0.72, 0.44, 0.02, 0.95)
-	mat_ring_selectable.metallic = 0.20
-	mat_ring_selectable.roughness = 0.50
-	mat_ring_selectable.clearcoat_enabled = false
+	mat_ring_selectable.albedo_color = Color(0.95, 0.65, 0.12, 0.95)
 	mat_ring_selectable.emission_enabled = true
 	mat_ring_selectable.emission = Color(0.55, 0.32, 0.01)
-	mat_ring_selectable.emission_energy_multiplier = 0.85
+	mat_ring_selectable.emission_energy_multiplier = 0.90
 
 	mat_ring_target = StandardMaterial3D.new()
+	mat_ring_target.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_ring_target.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ring_target.albedo_color = Color(0.06, 0.62, 0.24, 0.90)
-	mat_ring_target.metallic = 0.15
-	mat_ring_target.roughness = 0.50
-	mat_ring_target.clearcoat_enabled = false
+	mat_ring_target.albedo_color = Color(0.16, 0.88, 0.42, 0.92)
 	mat_ring_target.emission_enabled = true
 	mat_ring_target.emission = Color(0.04, 0.42, 0.16)
-	mat_ring_target.emission_energy_multiplier = 0.75
+	mat_ring_target.emission_energy_multiplier = 0.80
 
 	mat_ring_hit_danger = StandardMaterial3D.new()
+	mat_ring_hit_danger.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_ring_hit_danger.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_ring_hit_danger.albedo_color = Color(0.85, 0.16, 0.18, 0.92)
-	mat_ring_hit_danger.metallic = 0.15
-	mat_ring_hit_danger.roughness = 0.50
-	mat_ring_hit_danger.clearcoat_enabled = false
+	mat_ring_hit_danger.albedo_color = Color(0.96, 0.24, 0.24, 0.92)
 	mat_ring_hit_danger.emission_enabled = true
 	mat_ring_hit_danger.emission = Color(0.60, 0.10, 0.12)
-	mat_ring_hit_danger.emission_energy_multiplier = 0.85
+	mat_ring_hit_danger.emission_energy_multiplier = 0.90
 
 	mat_ring_last_move = StandardMaterial3D.new()
+	mat_ring_last_move.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_ring_last_move.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_ring_last_move.albedo_color = Color(0.38, 0.82, 1.0, 0.85)
 	mat_ring_last_move.emission_enabled = true
@@ -649,6 +636,10 @@ func _compute_point_anchors() -> void:
 # ==============================================================================
 
 func _build_3d_backgammon_board() -> void:
+	var static_root = Node3D.new()
+	static_root.name = "StaticBackgammonBoard"
+	add_child(static_root)
+
 	# 1. Master Portrait Carved Walnut Plinth (1.16m wide x 1.38m long)
 	var base_plinth = MeshInstance3D.new()
 	var bp_box = BoxMesh.new()
@@ -656,7 +647,7 @@ func _build_3d_backgammon_board() -> void:
 	bp_box.material = mat_wood_case
 	base_plinth.mesh = bp_box
 	base_plinth.position = Vector3(0, BOARD_H * 0.5, ARENA_CENTER_Z)
-	add_child(base_plinth)
+	static_root.add_child(base_plinth)
 
 	# Outer Mahogany Frame Moulding around entire Arena
 	for rim_cfg in [
@@ -671,7 +662,7 @@ func _build_3d_backgammon_board() -> void:
 		r_box.material = mat_wood_rail
 		r_inst.mesh = r_box
 		r_inst.position = rim_cfg["pos"]
-		add_child(r_inst)
+		static_root.add_child(r_inst)
 
 	# 4 Ornate 24K Gold Corner Medallions on the Master Arena
 	for cx in [-ARENA_W * 0.5 + 0.024, ARENA_W * 0.5 - 0.024]:
@@ -684,20 +675,22 @@ func _build_3d_backgammon_board() -> void:
 			cyl.material = mat_gold_trim
 			med.mesh = cyl
 			med.position = Vector3(cx, BOARD_H + 0.008, cz)
-			add_child(med)
+			static_root.add_child(med)
 
-	_build_top_bear_off_vaults()
-	_build_main_playing_cabinet()
-	_build_24_points()
-	_build_bar_zones()
-	_build_bottom_dice_and_roll_console()
+	_build_top_bear_off_vaults(static_root)
+	_build_main_playing_cabinet(static_root)
+	_build_24_points(static_root)
+	_build_bar_zones(static_root)
+	_build_bottom_dice_and_roll_console(static_root)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_root, "BakedBackgammonBoard", true)
 
 	_pieces_container = Node3D.new()
 	_pieces_container.name = "PiecesContainer"
 	add_child(_pieces_container)
 
 
-func _build_top_bear_off_vaults() -> void:
+func _build_top_bear_off_vaults(static_target: Node3D = self) -> void:
 	# Clean Top Bear-Off Vaults at Z = -0.715 (Left = P2 Blue, Right = P1 Red) — NO text clutter!
 	var vault_configs = [
 		{"gamer": 2, "x": BEAR_P2_X},
@@ -712,6 +705,10 @@ func _build_top_bear_off_vaults() -> void:
 		v_root.position = Vector3(vx, SURFACE_Y, BEAR_VAULT_Z)
 		add_child(v_root)
 
+		var s_v_root = Node3D.new()
+		s_v_root.position = v_root.position
+		static_target.add_child(s_v_root)
+
 		# Gold Outer Frame
 		var frame = MeshInstance3D.new()
 		var f_box = BoxMesh.new()
@@ -719,7 +716,7 @@ func _build_top_bear_off_vaults() -> void:
 		f_box.material = mat_gold_trim
 		frame.mesh = f_box
 		frame.position = Vector3(0, 0.007, 0)
-		v_root.add_child(frame)
+		s_v_root.add_child(frame)
 
 		# Recessed Velvet Trough
 		var bed = MeshInstance3D.new()
@@ -728,7 +725,7 @@ func _build_top_bear_off_vaults() -> void:
 		b_box.material = mat_velvet_well
 		bed.mesh = b_box
 		bed.position = Vector3(0, 0.008, 0)
-		v_root.add_child(bed)
+		s_v_root.add_child(bed)
 
 		# 15 Subtle Golden Slot Dividers inside the Bear-Off Trough
 		for s_i in range(14):
@@ -738,7 +735,7 @@ func _build_top_bear_off_vaults() -> void:
 			d_box.material = mat_bronze_bevel
 			div.mesh = d_box
 			div.position = Vector3(-0.210 + float(s_i + 1) * 0.030, 0.009, 0.0)
-			v_root.add_child(div)
+			s_v_root.add_child(div)
 
 		# Glowing Target Border (Lights up in Emerald when player can Bear Off!)
 		var ring = MeshInstance3D.new()
@@ -769,7 +766,7 @@ func _build_top_bear_off_vaults() -> void:
 			_bear_p2_ring = ring
 
 
-func _build_main_playing_cabinet() -> void:
+func _build_main_playing_cabinet(static_target: Node3D = self) -> void:
 	# Left & Right Recessed Royal Emerald Velvet Playing Courts
 	for court_x in [-0.286, 0.286]:
 		var court = MeshInstance3D.new()
@@ -778,7 +775,7 @@ func _build_main_playing_cabinet() -> void:
 		c_box.material = mat_velvet_court
 		court.mesh = c_box
 		court.position = Vector3(court_x, SURFACE_Y - 0.001, CABINET_CENTER_Z)
-		add_child(court)
+		static_target.add_child(court)
 
 		# Gold Inner Filigree Frame around each court
 		for c_rim in [
@@ -793,10 +790,10 @@ func _build_main_playing_cabinet() -> void:
 			g_box.material = mat_gold_trim
 			g_inst.mesh = g_box
 			g_inst.position = c_rim["pos"]
-			add_child(g_inst)
+			static_target.add_child(g_inst)
 
 		# Persian Khatamkari Star Medallion in the center of each court
-		_build_court_marquetry_emblem(Vector3(court_x, SURFACE_Y + 0.002, CABINET_CENTER_Z))
+		_build_court_marquetry_emblem(Vector3(court_x, SURFACE_Y + 0.002, CABINET_CENTER_Z), static_target)
 
 	# Raised Mahogany Rails framing the Backgammon Cabinet (Top, Bottom, Left, Right)
 	var rail_h: float = 0.026
@@ -816,7 +813,7 @@ func _build_main_playing_cabinet() -> void:
 		box.material = mat_wood_rail
 		m.mesh = box
 		m.position = r["pos"]
-		add_child(m)
+		static_target.add_child(m)
 
 		var trim = MeshInstance3D.new()
 		var t_box = BoxMesh.new()
@@ -824,7 +821,7 @@ func _build_main_playing_cabinet() -> void:
 		t_box.material = mat_gold_trim
 		trim.mesh = t_box
 		trim.position = r["pos"] + Vector3(0, r["size"].y * 0.5 + 0.0015, 0)
-		add_child(trim)
+		static_target.add_child(trim)
 
 	# Twin 3D Brass Hinges on the Center Bar
 	for hz in [CABINET_TOP_Z + 0.14, CABINET_BOT_Z - 0.14]:
@@ -837,13 +834,13 @@ func _build_main_playing_cabinet() -> void:
 		hinge.mesh = h_cyl
 		hinge.rotation_degrees = Vector3(90, 0, 0)
 		hinge.position = Vector3(BAR_X, rail_y + 0.016, hz)
-		add_child(hinge)
+		static_target.add_child(hinge)
 
 
-func _build_court_marquetry_emblem(center_pos: Vector3) -> void:
+func _build_court_marquetry_emblem(center_pos: Vector3, static_target: Node3D = self) -> void:
 	var emblem_root = Node3D.new()
 	emblem_root.position = center_pos
-	add_child(emblem_root)
+	static_target.add_child(emblem_root)
 
 	for rot_y in [0.0, 45.0]:
 		var sq = MeshInstance3D.new()
@@ -864,7 +861,7 @@ func _build_court_marquetry_emblem(center_pos: Vector3) -> void:
 	emblem_root.add_child(core)
 
 
-func _build_24_points() -> void:
+func _build_24_points(static_target: Node3D = self) -> void:
 	_point_source_rings.resize(24)
 	_point_target_rings.resize(24)
 	_point_last_rings.resize(24)
@@ -886,18 +883,22 @@ func _build_24_points() -> void:
 		pt_root.position = anchor
 		add_child(pt_root)
 
+		var s_pt_root = Node3D.new()
+		s_pt_root.position = anchor
+		static_target.add_child(s_pt_root)
+
 		# 1. Raised Bronze/Gold Bevel Triangle Base
 		var bevel_inst = MeshInstance3D.new()
 		bevel_inst.mesh = bevel_top_mesh if is_top else bevel_bot_mesh
 		bevel_inst.material_override = mat_bronze_bevel
-		pt_root.add_child(bevel_inst)
+		s_pt_root.add_child(bevel_inst)
 
 		# 2. Inner Satin Ivory or Royal Ruby-Garnet Inlaid Point Spear
 		var tri_inst = MeshInstance3D.new()
 		tri_inst.mesh = dir_top_mesh if is_top else dir_bot_mesh
 		tri_inst.material_override = mat_point_light if (i % 2 == 0) else mat_point_dark
 		tri_inst.position = Vector3(0, 0.001, 0)
-		pt_root.add_child(tri_inst)
+		s_pt_root.add_child(tri_inst)
 
 		# 3. 24K Gold Base Stud at the root of each point
 		var stud = MeshInstance3D.new()
@@ -908,7 +909,7 @@ func _build_24_points() -> void:
 		s_cyl.material = mat_gold_trim
 		stud.mesh = s_cyl
 		stud.position = Vector3(0, 0.004, dir_z * 0.012)
-		pt_root.add_child(stud)
+		s_pt_root.add_child(stud)
 
 		# 4. Larger Persian Point Number (۱..۲۴) on the outer wooden rail
 		var pt_num_fa = _fa_digits(24 - i)
@@ -992,7 +993,7 @@ func _create_point_triangle_mesh(half_w: float, length: float, height: float, di
 	return st.commit()
 
 
-func _build_bar_zones() -> void:
+func _build_bar_zones(static_target: Node3D = self) -> void:
 	# Center Bar Prison Wells for Hit Checkers (No text labels on top of pieces)
 	var bar_configs = [
 		{"gamer": 2, "z": CABINET_CENTER_Z - 0.175},
@@ -1007,6 +1008,10 @@ func _build_bar_zones() -> void:
 		bar_node.position = Vector3(BAR_X, SURFACE_Y + 0.028, bz)
 		add_child(bar_node)
 
+		var s_bar = Node3D.new()
+		s_bar.position = bar_node.position
+		static_target.add_child(s_bar)
+
 		var well = MeshInstance3D.new()
 		var w_cyl = CylinderMesh.new()
 		w_cyl.top_radius = PIECE_RADIUS + 0.004
@@ -1014,7 +1019,7 @@ func _build_bar_zones() -> void:
 		w_cyl.height = 0.005
 		w_cyl.material = mat_velvet_well
 		well.mesh = w_cyl
-		bar_node.add_child(well)
+		s_bar.add_child(well)
 
 		var ring = MeshInstance3D.new()
 		var r_cyl = CylinderMesh.new()
@@ -1061,7 +1066,7 @@ func _build_bar_zones() -> void:
 	ros_cyl.material = mat_gold_trim
 	rosette.mesh = ros_cyl
 	rosette.position = Vector3(BAR_X, SURFACE_Y + 0.030, CABINET_CENTER_Z)
-	add_child(rosette)
+	static_target.add_child(rosette)
 
 	var ros_inner = MeshInstance3D.new()
 	var ri_cyl = CylinderMesh.new()
@@ -1071,7 +1076,7 @@ func _build_bar_zones() -> void:
 	ri_cyl.material = mat_obsidian_bed
 	ros_inner.mesh = ri_cyl
 	ros_inner.position = Vector3(BAR_X, SURFACE_Y + 0.031, CABINET_CENTER_Z)
-	add_child(ros_inner)
+	static_target.add_child(ros_inner)
 
 	_center_rosette_lbl = _create_3d_label("🎲", 30, Color(1.0, 0.90, 0.45))
 	_center_rosette_lbl.position = Vector3(BAR_X, SURFACE_Y + 0.038, CABINET_CENTER_Z)
@@ -1082,7 +1087,7 @@ func _build_bar_zones() -> void:
 # BOTTOM 3D DICE TRAY & ALWAYS-VISIBLE TACTILE ROLL BUTTON CONSOLE
 # ==============================================================================
 
-func _build_bottom_dice_and_roll_console() -> void:
+func _build_bottom_dice_and_roll_console(static_target: Node3D = self) -> void:
 	# 1. Recessed Emerald Velvet 3D Dice Tray (Z = +0.445, Width = 1.06m, Length = 0.25m)
 	var felt_bed = MeshInstance3D.new()
 	var fb_mesh = BoxMesh.new()
@@ -1090,7 +1095,7 @@ func _build_bottom_dice_and_roll_console() -> void:
 	fb_mesh.material = mat_velvet_tray
 	felt_bed.mesh = fb_mesh
 	felt_bed.position = Vector3(0, SURFACE_Y + 0.004, DICE_TRAY_Z)
-	add_child(felt_bed)
+	static_target.add_child(felt_bed)
 
 	# Carved Mahogany & 24K Gold Walls around the Bottom Dice Tray
 	for wall_cfg in [
@@ -1105,7 +1110,7 @@ func _build_bottom_dice_and_roll_console() -> void:
 		w_box.material = mat_wood_rail
 		w_inst.mesh = w_box
 		w_inst.position = wall_cfg["pos"]
-		add_child(w_inst)
+		static_target.add_child(w_inst)
 
 		var trim_inst = MeshInstance3D.new()
 		var trim_box = BoxMesh.new()
@@ -1113,7 +1118,7 @@ func _build_bottom_dice_and_roll_console() -> void:
 		trim_box.material = mat_gold_trim
 		trim_inst.mesh = trim_box
 		trim_inst.position = wall_cfg["pos"] + Vector3(0, 0.012, 0)
-		add_child(trim_inst)
+		static_target.add_child(trim_inst)
 
 	# 4 Precision-Molded 3D Yatzy-Style Dice Slots inside the Bottom Dice Tray
 	_dice_nodes.clear()

@@ -60,32 +60,37 @@ var user_header = _UserHeaderProxy.new()
 
 
 
-# Dialogs
+# Dialogs (lazy-instantiated on first use to keep startup fast and RAM low on mobile)
+
+const LAZY_DIALOG_SCENES: Dictionary = {
+	"login": "res://scenes/ui/auth/login_dialog.tscn",
+	"queue": "res://scenes/ui/queue/queue_dialog.tscn",
+	"lobby": "res://scenes/ui/lobby/lobby_dialog.tscn",
+	"classic_rank": "res://scenes/ui/classic_rank/classic_rank_dialog.tscn",
+	"multi_rank": "res://scenes/ui/multi_rank/multi_rank_dialog.tscn",
+	"ranking": "res://scenes/ui/ranking/ranking_dialog.tscn",
+	"game_history": "res://scenes/ui/history/game_history_dialog.tscn",
+	"store": "res://scenes/ui/store/store_dialog.tscn",
+	"rules": "res://scenes/ui/rules/rules_dialog.tscn",
+	"user_profile": "res://scenes/ui/profile/user_profile_dialog.tscn",
+	"pick_ban": "res://scenes/ui/rank/pick_ban_dialog.tscn",
+	"ranked_breakout": "res://scenes/ui/rank/ranked_breakout_dialog.tscn",
+}
 
 @onready var dialog_backdrop: ColorRect = $CanvasLayer/DialogBackdrop
 
-@onready var login_dialog = $CanvasLayer/LoginDialog
-
-@onready var queue_dialog = $CanvasLayer/QueueDialog
-
-@onready var lobby_dialog = $CanvasLayer/LobbyDialog
-
-@onready var classic_rank_dialog = $CanvasLayer/ClassicRankDialog
-
-@onready var multi_rank_dialog = $CanvasLayer/MultiRankDialog
-
-@onready var ranking_dialog = $CanvasLayer/RankingDialog
-
-@onready var game_history_dialog = $CanvasLayer/GameHistoryDialog
-
-@onready var store_dialog = $CanvasLayer/StoreDialog
-
-@onready var rules_dialog = $CanvasLayer/RulesDialog
-
-@onready var user_profile_dialog = $CanvasLayer/UserProfileDialog
-
-@onready var pick_ban_dialog = $CanvasLayer/PickBanDialog
-@onready var ranked_breakout_dialog = $CanvasLayer/RankedBreakoutDialog
+var login_dialog: Control = null
+var queue_dialog: Control = null
+var lobby_dialog: Control = null
+var classic_rank_dialog: Control = null
+var multi_rank_dialog: Control = null
+var ranking_dialog: Control = null
+var game_history_dialog: Control = null
+var store_dialog: Control = null
+var rules_dialog: Control = null
+var user_profile_dialog: Control = null
+var pick_ban_dialog: Control = null
+var ranked_breakout_dialog: Control = null
 var _ranked_series_games: Array = []
 var _active_series_game_index: int = -1
 var _last_game_play_payload: Dictionary = {}
@@ -227,8 +232,9 @@ func _ready() -> void:
 					_start_prelogin_offline_tutorial()
 				else:
 					if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
-						print("[Main] Returning user has phone but no username. Enforcing username registration.")
-						login_dialog.open_for_username_completion()
+						if OS.is_debug_build():
+							print("[Main] Returning user has phone but no username. Enforcing username registration.")
+						_ensure_login_dialog().open_for_username_completion()
 						_show_backdrop()
 						return
 					_check_and_auto_enter_active_game()
@@ -447,14 +453,14 @@ func _setup_signals() -> void:
 		main_tab_shell.login_requested.connect(func():
 			_show_backdrop()
 			if not GameManager.is_logged_in:
-				login_dialog.open()
+				_ensure_login_dialog().open()
 			else:
-				login_dialog.open_for_phone_upgrade("برای ذخیره دائمی حساب و شرکت در رقابت‌ها، لطفاً شماره موبایل خود را ثبت کنید.")
+				_ensure_login_dialog().open_for_phone_upgrade("برای ذخیره دائمی حساب و شرکت در رقابت‌ها، لطفاً شماره موبایل خود را ثبت کنید.")
 		)
 		main_tab_shell.change_username_requested.connect(_show_change_username_dialog)
 		main_tab_shell.phone_upgrade_requested.connect(func():
 			_show_backdrop()
-			login_dialog.open_for_phone_upgrade("برای ذخیره دائمی حساب، لطفاً شماره موبایل خود را ثبت کنید.")
+			_ensure_login_dialog().open_for_phone_upgrade("برای ذخیره دائمی حساب، لطفاً شماره موبایل خود را ثبت کنید.")
 		)
 		main_tab_shell.spectate_match_requested.connect(func(gid: String, _gtype: String):
 			if not gid.is_empty():
@@ -499,9 +505,9 @@ func _setup_signals() -> void:
 			user_header.login_requested.connect(func():
 				_show_backdrop()
 				if not GameManager.is_logged_in:
-					login_dialog.open()
+					_ensure_login_dialog().open()
 				else:
-					login_dialog.open_for_phone_upgrade("برای ذخیره دائمی حساب و شرکت در رقابت‌ها، لطفاً شماره موبایل خود را ثبت کنید.")
+					_ensure_login_dialog().open_for_phone_upgrade("برای ذخیره دائمی حساب و شرکت در رقابت‌ها، لطفاً شماره موبایل خود را ثبت کنید.")
 			)
 
 	# User State & Progression Listeners
@@ -523,143 +529,17 @@ func _setup_signals() -> void:
 
 	
 
-	# Dialog events
-
-	login_dialog.login_completed.connect(func():
-
-		user_header.update_ui()
-		_update_ranked_button_state()
-
-		if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
-
-			login_dialog.open_for_username_completion()
-
-			_show_backdrop()
-
-			return
-
-		_check_and_auto_enter_active_game()
-
-		_hide_backdrop()
-
-		_update_backdrop_state()
-
-		_maybe_start_post_auth_main_tour()
-
-	)
-
-	login_dialog.closed.connect(_update_backdrop_state)
-
-	
-
-	queue_dialog.match_ready.connect(func(gid, gtype = ""):
-		var mode_to_use = "multi_rank" if current_match_mode == "multi_rank" else "ranked"
-		_start_game_match(gid, gtype, mode_to_use)
-	)
-
-	queue_dialog.queue_cancelled.connect(func():
-
-		_hide_backdrop()
-
-	)
-
-	queue_dialog.pre_game_ready.connect(func(pre_game_id, queuers):
-		if GameManager.is_game_active or not GameManager.active_game_id.is_empty() or not GameManager.get_open_game_id().is_empty():
-			print("[Main] Blocked pre_game_ready: Game match is already active.")
-			if is_instance_valid(pick_ban_dialog):
-				pick_ban_dialog.visible = false
-			return
-		_hide_backdrop()
-		GameManager.set_active_pre_game(pre_game_id)
-		current_match_mode = "ranked"
-		if is_instance_valid(pick_ban_dialog):
-			pick_ban_dialog.open(pre_game_id, queuers)
-			_show_backdrop()
-	)
-
-	if is_instance_valid(pick_ban_dialog):
-		pick_ban_dialog.pick_ban_finished.connect(func(gid, first_gtype):
-			print("[Main] Pick & Ban finished! Navigating to game scene: %s (%s)..." % [gid, first_gtype])
-			GameManager.clear_open_pre_game_id()
-			_start_game_match(gid, first_gtype, "ranked")
-		)
-		pick_ban_dialog.pick_ban_cancelled.connect(func():
-			AudioManager.play_theme_music()
-			GameManager.clear_open_pre_game_id()
-			_hide_backdrop()
-			menu_container.visible = true
-			user_header.visible = true
-			if is_instance_valid(cafe_table):
-				cafe_table.visible = false
-		)
-
-	if is_instance_valid(ranked_breakout_dialog):
-		ranked_breakout_dialog.exit_match_requested.connect(_on_ranked_breakout_exit_requested)
-
-	NetworkManager.queue_reconnect_data_received.connect(func(data: Dictionary):
-		if GameManager.is_game_active or not GameManager.active_game_id.is_empty() or not GameManager.get_open_game_id().is_empty():
-			print("[Main] Ignored Pick & Ban reconnect data: Game match is already active.")
-			if is_instance_valid(pick_ban_dialog):
-				pick_ban_dialog.visible = false
-			return
-		print("[Main] Reconnect Data received for Pick & Ban: %s" % str(data))
-		current_match_mode = "ranked"
-		_hide_backdrop()
-		if is_instance_valid(pick_ban_dialog):
-			pick_ban_dialog.open_from_reconnect(data)
-			_show_backdrop()
-	)
-	NetworkManager.queue_user_disconnected.connect(func(user_id: String, wait_time: int):
-		if is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible:
-			pick_ban_dialog.show_opponent_disconnected(user_id, wait_time)
-	)
-	NetworkManager.queue_user_reconnected.connect(func(user_id: String, remaining_time: int):
-		if is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible:
-			pick_ban_dialog.show_opponent_reconnected(user_id, remaining_time)
-	)
-
-	lobby_dialog.match_ready.connect(func(gid, gtype = ""):
-
-		_start_game_match(gid, gtype, "lobby")
-
-	)
-
-	lobby_dialog.closed.connect(_update_backdrop_state)
-
-	classic_rank_dialog.start_game_requested.connect(_on_classic_rank_start_requested)
-
-	classic_rank_dialog.closed.connect(_update_backdrop_state)
-
-	if is_instance_valid(multi_rank_dialog):
-		multi_rank_dialog.start_multi_rank_requested.connect(_on_multi_rank_start_requested)
-		multi_rank_dialog.closed.connect(_update_backdrop_state)
-
-	NetworkManager.classic_rank_match_ready.connect(func(gid, gtype = ""):
-
-		_start_game_match(gid, gtype, "classic_rank")
-
-	)
-
-	ranking_dialog.closed.connect(_update_backdrop_state)
-
-	game_history_dialog.closed.connect(_update_backdrop_state)
-
-	store_dialog.closed.connect(_update_backdrop_state)
-
-	rules_dialog.closed.connect(_update_backdrop_state)
-
-	user_profile_dialog.closed.connect(_update_backdrop_state)
-
-	
+	_setup_lazy_dialog_network_listeners()
 
 	if is_instance_valid(dialog_backdrop):
 		dialog_backdrop.gui_input.connect(func(event: InputEvent):
 			if event is InputEventMouseButton and event.pressed:
-				# Non-dismissible modal dialogs: area around dialog must NOT be tappable!
-				if (is_instance_valid(queue_dialog) and queue_dialog.visible) 					or (is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible) 					or (is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.visible) 					or (is_instance_valid(lobby_dialog) and lobby_dialog.visible):
+				if (is_instance_valid(queue_dialog) and queue_dialog.visible) \
+					or (is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible) \
+					or (is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.visible) \
+					or (is_instance_valid(lobby_dialog) and lobby_dialog.visible):
 					return
 				if is_instance_valid(login_dialog) and login_dialog.visible:
-					# Auth dialog is non-closable!
 					AudioManager.sfx_tap()
 					return
 				elif is_instance_valid(user_profile_dialog) and user_profile_dialog.visible:
@@ -682,19 +562,186 @@ func _setup_signals() -> void:
 					_hide_backdrop()
 		)
 
-	ranking_dialog.user_selected.connect(func(u_dict):
-		user_profile_dialog.open_for_user(u_dict)
+	_setup_hud_and_network_signals()
+
+func _create_lazy_dialog(key: String) -> Control:
+	var ps: PackedScene = load(LAZY_DIALOG_SCENES[key]) as PackedScene
+	var dlg: Control = ps.instantiate() as Control
+	dlg.visible = false
+	ui_canvas.add_child(dlg)
+	ResponsiveUI.strip_mobile_shadows(dlg)
+	return dlg
+
+func _ensure_login_dialog() -> Control:
+	if is_instance_valid(login_dialog):
+		return login_dialog
+	login_dialog = _create_lazy_dialog("login")
+	login_dialog.login_completed.connect(func():
+		user_header.update_ui()
+		_update_ranked_button_state()
+		if GameManager.is_logged_in and not GameManager.is_guest and not GameManager.has_username():
+			login_dialog.open_for_username_completion()
+			_show_backdrop()
+			return
+		_check_and_auto_enter_active_game()
+		_hide_backdrop()
+		_update_backdrop_state()
+		_maybe_start_post_auth_main_tour()
+	)
+	login_dialog.closed.connect(_update_backdrop_state)
+	return login_dialog
+
+func _ensure_queue_dialog() -> Control:
+	if is_instance_valid(queue_dialog):
+		return queue_dialog
+	queue_dialog = _create_lazy_dialog("queue")
+	queue_dialog.match_ready.connect(func(gid, gtype = ""):
+		var mode_to_use = "multi_rank" if current_match_mode == "multi_rank" else "ranked"
+		_start_game_match(gid, gtype, mode_to_use)
+	)
+	queue_dialog.queue_cancelled.connect(func():
+		_hide_backdrop()
+	)
+	queue_dialog.pre_game_ready.connect(func(pre_game_id, queuers):
+		if GameManager.is_game_active or not GameManager.active_game_id.is_empty() or not GameManager.get_open_game_id().is_empty():
+			if OS.is_debug_build():
+				print("[Main] Blocked pre_game_ready: Game match is already active.")
+			if is_instance_valid(pick_ban_dialog):
+				pick_ban_dialog.visible = false
+			return
+		_hide_backdrop()
+		GameManager.set_active_pre_game(pre_game_id)
+		current_match_mode = "ranked"
+		_ensure_pick_ban_dialog().open(pre_game_id, queuers)
 		_show_backdrop()
 	)
+	return queue_dialog
 
+func _ensure_pick_ban_dialog() -> Control:
+	if is_instance_valid(pick_ban_dialog):
+		return pick_ban_dialog
+	pick_ban_dialog = _create_lazy_dialog("pick_ban")
+	pick_ban_dialog.pick_ban_finished.connect(func(gid, first_gtype):
+		if OS.is_debug_build():
+			print("[Main] Pick & Ban finished! Navigating to game scene: %s (%s)..." % [gid, first_gtype])
+		GameManager.clear_open_pre_game_id()
+		_start_game_match(gid, first_gtype, "ranked")
+	)
+	pick_ban_dialog.pick_ban_cancelled.connect(func():
+		AudioManager.play_theme_music()
+		GameManager.clear_open_pre_game_id()
+		_hide_backdrop()
+		menu_container.visible = true
+		user_header.visible = true
+		if is_instance_valid(cafe_table):
+			cafe_table.visible = false
+	)
+	return pick_ban_dialog
+
+func _ensure_ranked_breakout_dialog() -> Control:
+	if is_instance_valid(ranked_breakout_dialog):
+		return ranked_breakout_dialog
+	ranked_breakout_dialog = _create_lazy_dialog("ranked_breakout")
+	ranked_breakout_dialog.exit_match_requested.connect(_on_ranked_breakout_exit_requested)
+	return ranked_breakout_dialog
+
+func _ensure_lobby_dialog() -> Control:
+	if is_instance_valid(lobby_dialog):
+		return lobby_dialog
+	lobby_dialog = _create_lazy_dialog("lobby")
+	lobby_dialog.match_ready.connect(func(gid, gtype = ""):
+		_start_game_match(gid, gtype, "lobby")
+	)
+	lobby_dialog.closed.connect(_update_backdrop_state)
+	return lobby_dialog
+
+func _ensure_classic_rank_dialog() -> Control:
+	if is_instance_valid(classic_rank_dialog):
+		return classic_rank_dialog
+	classic_rank_dialog = _create_lazy_dialog("classic_rank")
+	classic_rank_dialog.start_game_requested.connect(_on_classic_rank_start_requested)
+	classic_rank_dialog.closed.connect(_update_backdrop_state)
+	return classic_rank_dialog
+
+func _ensure_multi_rank_dialog() -> Control:
+	if is_instance_valid(multi_rank_dialog):
+		return multi_rank_dialog
+	multi_rank_dialog = _create_lazy_dialog("multi_rank")
+	multi_rank_dialog.start_multi_rank_requested.connect(_on_multi_rank_start_requested)
+	multi_rank_dialog.closed.connect(_update_backdrop_state)
+	return multi_rank_dialog
+
+func _ensure_ranking_dialog() -> Control:
+	if is_instance_valid(ranking_dialog):
+		return ranking_dialog
+	ranking_dialog = _create_lazy_dialog("ranking")
+	ranking_dialog.closed.connect(_update_backdrop_state)
+	ranking_dialog.user_selected.connect(func(u_dict):
+		_ensure_user_profile_dialog().open_for_user(u_dict)
+		_show_backdrop()
+	)
+	return ranking_dialog
+
+func _ensure_game_history_dialog() -> Control:
 	if is_instance_valid(game_history_dialog):
-		game_history_dialog.user_profile_requested.connect(func(u_dict):
-			user_profile_dialog.open_for_user(u_dict)
-			_show_backdrop()
-		)
+		return game_history_dialog
+	game_history_dialog = _create_lazy_dialog("game_history")
+	game_history_dialog.closed.connect(_update_backdrop_state)
+	game_history_dialog.user_profile_requested.connect(func(u_dict):
+		_ensure_user_profile_dialog().open_for_user(u_dict)
+		_show_backdrop()
+	)
+	return game_history_dialog
 
-	
+func _ensure_store_dialog() -> Control:
+	if is_instance_valid(store_dialog):
+		return store_dialog
+	store_dialog = _create_lazy_dialog("store")
+	store_dialog.closed.connect(_update_backdrop_state)
+	return store_dialog
 
+func _ensure_rules_dialog() -> Control:
+	if is_instance_valid(rules_dialog):
+		return rules_dialog
+	rules_dialog = _create_lazy_dialog("rules")
+	rules_dialog.closed.connect(_update_backdrop_state)
+	return rules_dialog
+
+func _ensure_user_profile_dialog() -> Control:
+	if is_instance_valid(user_profile_dialog):
+		return user_profile_dialog
+	user_profile_dialog = _create_lazy_dialog("user_profile")
+	user_profile_dialog.closed.connect(_update_backdrop_state)
+	return user_profile_dialog
+
+func _setup_lazy_dialog_network_listeners() -> void:
+	NetworkManager.queue_reconnect_data_received.connect(func(data: Dictionary):
+		if GameManager.is_game_active or not GameManager.active_game_id.is_empty() or not GameManager.get_open_game_id().is_empty():
+			if OS.is_debug_build():
+				print("[Main] Ignored Pick & Ban reconnect data: Game match is already active.")
+			if is_instance_valid(pick_ban_dialog):
+				pick_ban_dialog.visible = false
+			return
+		if OS.is_debug_build():
+			print("[Main] Reconnect Data received for Pick & Ban: %s" % str(data))
+		current_match_mode = "ranked"
+		_hide_backdrop()
+		_ensure_pick_ban_dialog().open_from_reconnect(data)
+		_show_backdrop()
+	)
+	NetworkManager.queue_user_disconnected.connect(func(user_id: String, wait_time: int):
+		if is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible:
+			pick_ban_dialog.show_opponent_disconnected(user_id, wait_time)
+	)
+	NetworkManager.queue_user_reconnected.connect(func(user_id: String, remaining_time: int):
+		if is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible:
+			pick_ban_dialog.show_opponent_reconnected(user_id, remaining_time)
+	)
+	NetworkManager.classic_rank_match_ready.connect(func(gid, gtype = ""):
+		_start_game_match(gid, gtype, "classic_rank")
+	)
+
+func _setup_hud_and_network_signals() -> void:
 	base_game_hud.leave_game_requested.connect(_on_leave_game_pressed)
 
 	base_game_hud.surrender_requested.connect(_on_surrender_requested)
@@ -858,20 +905,20 @@ func _on_ranked_pressed() -> void:
 		return
 	_show_backdrop()
 	if not GameManager.is_logged_in:
-		login_dialog.open()
+		_ensure_login_dialog().open()
 		return
 	if GameManager.is_guest or not GameManager.has_phone():
-		login_dialog.open_for_phone_upgrade("برای شرکت در مسابقات رده‌بندی (Ranked)، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
+		_ensure_login_dialog().open_for_phone_upgrade("برای شرکت در مسابقات رده‌بندی (Ranked)، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
 		return
 	if not GameManager.has_username():
-		login_dialog.open_for_username_completion()
+		_ensure_login_dialog().open_for_username_completion()
 		return
 	if not GameManager.is_ranked_unlocked():
 		_hide_backdrop()
 		_show_ranked_locked_dialog()
 		return
 	current_match_mode = "ranked"
-	queue_dialog.start_queue()
+	_ensure_queue_dialog().start_queue()
 
 func _on_multi_rank_pressed() -> void:
 	AudioManager.sfx_button()
@@ -887,27 +934,27 @@ func _on_multi_rank_pressed() -> void:
 		return
 	_show_backdrop()
 	if not GameManager.is_logged_in:
-		login_dialog.open()
+		_ensure_login_dialog().open()
 		return
 	if GameManager.is_guest or not GameManager.has_phone():
-		login_dialog.open_for_phone_upgrade("برای شرکت در مسابقات رنک چهارنفره، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
+		_ensure_login_dialog().open_for_phone_upgrade("برای شرکت در مسابقات رنک چهارنفره، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
 		return
 	if not GameManager.has_username():
-		login_dialog.open_for_username_completion()
+		_ensure_login_dialog().open_for_username_completion()
 		return
-	if is_instance_valid(multi_rank_dialog):
-		multi_rank_dialog.open()
+	_ensure_multi_rank_dialog().open()
 
 func _on_multi_rank_start_requested(game_type: String) -> void:
 	if not NetworkManager.is_online:
 		NetworkManager.connect_to_game_server()
 		_show_offline_dialog()
 		return
-	print("[Main] Multi-Rank 4-player queue requested for game: %s" % game_type)
+	if OS.is_debug_build():
+		print("[Main] Multi-Rank 4-player queue requested for game: %s" % game_type)
 	current_match_mode = "multi_rank"
 	GameManager.current_match_mode = "multi_rank"
 	_show_backdrop()
-	queue_dialog.start_multi_rank_queue(game_type)
+	_ensure_queue_dialog().start_multi_rank_queue(game_type)
 
 func _on_classic_rank_pressed() -> void:
 	AudioManager.sfx_button()
@@ -920,15 +967,15 @@ func _on_classic_rank_pressed() -> void:
 		return
 	_show_backdrop()
 	if not GameManager.is_logged_in:
-		login_dialog.open()
+		_ensure_login_dialog().open()
 		return
 	if GameManager.is_guest or not GameManager.has_phone():
-		login_dialog.open_for_phone_upgrade("برای شرکت در مسابقات رنک کلاسیک، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
+		_ensure_login_dialog().open_for_phone_upgrade("برای شرکت در مسابقات رنک کلاسیک، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
 		return
 	if not GameManager.has_username():
-		login_dialog.open_for_username_completion()
+		_ensure_login_dialog().open_for_username_completion()
 		return
-	classic_rank_dialog.open()
+	_ensure_classic_rank_dialog().open()
 
 func _on_classic_rank_start_requested(game_type: String, ai_level: int = GameRegistry.DEFAULT_CLASSIC_AI_LEVEL) -> void:
 	if not NetworkManager.is_online:
@@ -936,7 +983,8 @@ func _on_classic_rank_start_requested(game_type: String, ai_level: int = GameReg
 		_show_offline_dialog()
 		return
 	var resolved_ai_level: int = GameRegistry.normalize_classic_ai_level(ai_level)
-	print("[Main] Classic rank match requested for game: %s (AI level %d)" % [game_type, resolved_ai_level])
+	if OS.is_debug_build():
+		print("[Main] Classic rank match requested for game: %s (AI level %d)" % [game_type, resolved_ai_level])
 	_match_start_serial += 1
 	var req_serial: int = _match_start_serial
 	GameManager.reset_match_state()
@@ -988,15 +1036,15 @@ func _on_lobby_pressed() -> void:
 		return
 	_show_backdrop()
 	if not GameManager.is_logged_in:
-		login_dialog.open()
+		_ensure_login_dialog().open()
 		return
 	if GameManager.is_guest or not GameManager.has_phone():
-		login_dialog.open_for_phone_upgrade("برای ورود به اتاق دوستانه (لابی)، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
+		_ensure_login_dialog().open_for_phone_upgrade("برای ورود به اتاق دوستانه (لابی)، لطفاً ابتدا شماره موبایل خود را ثبت کنید.")
 		return
 	if not GameManager.has_username():
-		login_dialog.open_for_username_completion()
+		_ensure_login_dialog().open_for_username_completion()
 		return
-	lobby_dialog.open()
+	_ensure_lobby_dialog().open()
 
 func _on_ranking_pressed() -> void:
 	AudioManager.sfx_button()
@@ -1011,7 +1059,7 @@ func _on_ranking_pressed() -> void:
 		_show_offline_dialog()
 		return
 	_show_backdrop()
-	ranking_dialog.open()
+	_ensure_ranking_dialog().open()
 
 func _on_history_pressed() -> void:
 	AudioManager.sfx_button()
@@ -1024,9 +1072,9 @@ func _on_history_pressed() -> void:
 		return
 	_show_backdrop()
 	if not GameManager.is_logged_in:
-		login_dialog.open()
+		_ensure_login_dialog().open()
 		return
-	game_history_dialog.open()
+	_ensure_game_history_dialog().open()
 
 func _on_store_pressed() -> void:
 	AudioManager.sfx_button()
@@ -1041,7 +1089,7 @@ func _on_store_pressed() -> void:
 		_show_offline_dialog()
 		return
 	_show_backdrop()
-	store_dialog.open()
+	_ensure_store_dialog().open()
 
 func _on_rules_pressed() -> void:
 	AudioManager.sfx_button()
@@ -1049,7 +1097,7 @@ func _on_rules_pressed() -> void:
 		main_tab_shell.switch_to_tab("library")
 		return
 	_show_backdrop()
-	rules_dialog.open()
+	_ensure_rules_dialog().open()
 
 func _show_backdrop() -> void:
 	if not is_instance_valid(dialog_backdrop):
@@ -1210,7 +1258,8 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 	var game_info = GameRegistry.get_game_info(GameManager.current_game_type)
 	var game_name_fa = game_info.get("name_fa", "بازی")
 
-	print("[Main] Match confirmed: %s (Game: %s / %s, Mode: %s). Spawning 3D table..." % [game_id, GameManager.current_game_type, game_name_fa, current_match_mode])
+	if OS.is_debug_build():
+		print("[Main] Match confirmed: %s (Game: %s / %s, Mode: %s). Spawning 3D table..." % [game_id, GameManager.current_game_type, game_name_fa, current_match_mode])
 
 	GameManager.current_match_mode = current_match_mode
 	GameManager.is_game_active = is_reconnect
@@ -1239,7 +1288,8 @@ func _start_game_match(game_id: String, requested_game_type: String = "", match_
 		_spawn_board_for_game(GameManager.current_game_type)
 		AudioManager.play_game_music()
 		NetworkManager.join_active_game(game_id)
-		print("[Main] Reconnecting to active game: skipping 5-second start countdown.")
+		if OS.is_debug_build():
+			print("[Main] Reconnecting to active game: skipping 5-second start countdown.")
 		base_game_hud.is_game_started = true
 		base_game_hud.is_start_overlay_dismissed = true
 		base_game_hud.force_dismiss_start_overlay(false)
@@ -1299,7 +1349,8 @@ func _spawn_board_for_game(game_type: String) -> void:
 
 func _switch_active_game(new_game_type: String) -> void:
 
-	print("[Main] Switching active game to: %s" % new_game_type)
+	if OS.is_debug_build():
+		print("[Main] Switching active game to: %s" % new_game_type)
 
 	GameManager.set_game_type(new_game_type)
 
@@ -1321,7 +1372,8 @@ var _current_round_scored: bool = false
 
 func _on_start_game_received() -> void:
 
-	print("[Main] Server Start_Game received!")
+	if OS.is_debug_build():
+		print("[Main] Server Start_Game received!")
 
 	var was_active = GameManager.is_game_active
 
@@ -1379,7 +1431,8 @@ func _activate_start_game() -> void:
 
 func _on_start_countdown_finished() -> void:
 
-	print("[Main] Pre-game countdown dialog finished! Waiting for server game start...")
+	if OS.is_debug_build():
+		print("[Main] Pre-game countdown dialog finished! Waiting for server game start...")
 
 	if _pending_start_game:
 
@@ -1403,7 +1456,8 @@ func _on_start_countdown_finished() -> void:
 
 func _on_wait_time_received(wait_sec: int) -> void:
 
-	print("[Main] Server Wait_Time received: %d sec" % wait_sec)
+	if OS.is_debug_build():
+		print("[Main] Server Wait_Time received: %d sec" % wait_sec)
 
 	base_game_hud.start_wait_timer(wait_sec)
 
@@ -1738,7 +1792,8 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 
 		var prev_game_finished = (current_idx > 0 and not winners_arr.is_empty() and int(winners_arr[current_idx - 1]) != -1)
 		if is_finished or (prev_game_finished and is_between_games):
-			print("[Main] Ranked breakout view shown: Game %d/3 (is_finished=%s)" % [current_idx + 1, str(is_finished)])
+			if OS.is_debug_build():
+				print("[Main] Ranked breakout view shown: Game %d/3 (is_finished=%s)" % [current_idx + 1, str(is_finished)])
 			GameManager.is_game_active = false
 			GameManager.local_player_surrendered = false
 			GameManager.opponent_player_surrendered = false
@@ -1752,8 +1807,7 @@ func _on_game_play_data_received(payload: Dictionary) -> void:
 			var cur_board = cafe_table.current_board_node
 			if cur_board and is_instance_valid(cur_board) and cur_board.has_method("set_board_locked"):
 				cur_board.set_board_locked(true)
-			if is_instance_valid(ranked_breakout_dialog):
-				ranked_breakout_dialog.open(payload)
+			_ensure_ranked_breakout_dialog().open(payload)
 			return
 		else:
 			if not games_arr.is_empty() and current_idx < games_arr.size():
@@ -1798,7 +1852,8 @@ func _on_game_play_time_received(time: int) -> void:
 
 func _on_game_data_received(payload: Dictionary) -> void:
 	if GameManager.is_game_active:
-		print("[Main] Game_Data received while match is active (reconnect). Dismissing overlays.")
+		if OS.is_debug_build():
+			print("[Main] Game_Data received while match is active (reconnect). Dismissing overlays.")
 		if payload.has("gamers") and typeof(payload["gamers"]) == TYPE_ARRAY:
 			GameManager.set_match_gamers(payload["gamers"])
 			_update_table_opponent_avatar()
@@ -1881,7 +1936,8 @@ func _on_game_data_received(payload: Dictionary) -> void:
 
 
 func _on_game_play_navigate_received(payload: Dictionary) -> void:
-	print("[Main] Server Game_Play_Navigate received: %s" % str(payload))
+	if OS.is_debug_build():
+		print("[Main] Server Game_Play_Navigate received: %s" % str(payload))
 	_hide_backdrop()
 	if is_instance_valid(ranked_breakout_dialog) and ranked_breakout_dialog.is_open():
 		ranked_breakout_dialog.dismiss()
@@ -1906,7 +1962,8 @@ func _on_game_play_navigate_received(payload: Dictionary) -> void:
 
 	var is_reconnect = bool(payload.get("is_reconnect", false))
 	if is_reconnect:
-		print("[Main] Game_Play_Navigate received during reconnect. Bypassing start countdown.")
+		if OS.is_debug_build():
+			print("[Main] Game_Play_Navigate received during reconnect. Bypassing start countdown.")
 		_active_series_game_index = current_idx
 		if not target_norm.is_empty() and target_norm.to_lower() != GameManager.current_game_type.to_lower():
 			_switch_active_game(target_norm)
@@ -1961,7 +2018,8 @@ func _on_surrender_requested() -> void:
 		if is_instance_valid(base_game_hud):
 			base_game_hud.show_toast_hint("در بازی آموزشی نیازی به تسلیم نیست؛ با یک حرکت برنده شوید!")
 		return
-	print("[Main] User confirmed surrender. Sending command to backend...")
+	if OS.is_debug_build():
+		print("[Main] User confirmed surrender. Sending command to backend...")
 	GameManager.local_player_surrendered = true
 	GameManager.opponent_player_surrendered = false
 	if current_match_mode != "ranked":
@@ -2039,14 +2097,16 @@ func _on_game_finished(data: Dictionary) -> void:
 
 	# If pick_ban_dialog is currently active, show game finished dialog and return cleanly
 	if is_instance_valid(pick_ban_dialog) and pick_ban_dialog.visible:
-		print("[Main] Game_Finished received while Pick & Ban dialog is open. Showing dialog...")
+		if OS.is_debug_build():
+			print("[Main] Game_Finished received while Pick & Ban dialog is open. Showing dialog...")
 		pick_ban_dialog.show_game_finished_dialog("این بازی به پایان رسیده است.")
 		return
 
 	# If match was terminated/canceled before start (e.g. connection timeout / player left)
 	if data.get("is_terminated", false) or data.get("reason", "") == "terminated":
 		var term_msg: String = str(data.get("message", "مسابقه به دلیل عدم اتصال تمام بازیکنان لغو شد."))
-		print("[Main] Match terminated before start: %s" % term_msg)
+		if OS.is_debug_build():
+			print("[Main] Match terminated before start: %s" % term_msg)
 		_hide_backdrop()
 		menu_container.visible = true
 		user_header.visible = true
@@ -2059,7 +2119,8 @@ func _on_game_finished(data: Dictionary) -> void:
 
 	var board = cafe_table.current_board_node
 	if not board or not is_instance_valid(board):
-		print("[Main] Game_Finished received without an active board. Returning to main menu.")
+		if OS.is_debug_build():
+			print("[Main] Game_Finished received without an active board. Returning to main menu.")
 		_hide_backdrop()
 		menu_container.visible = true
 		user_header.visible = true
@@ -2214,7 +2275,8 @@ func _on_game_finished(data: Dictionary) -> void:
 			var r_sc = int(data.get("score_earned", data.get("score_awarded", 0)))
 			var r_cn = int(data.get("coin_earned", data.get("coin_awarded", 0)))
 			GameManager.apply_ranked_rewards(r_sc, r_xp, r_cn)
-		if is_instance_valid(ranked_breakout_dialog):
+		var breakout_dlg = _ensure_ranked_breakout_dialog()
+		if is_instance_valid(breakout_dlg):
 			var payload = _last_game_play_payload.duplicate() if not _last_game_play_payload.is_empty() else {}
 			for k in data.keys():
 				payload[k] = data[k]
@@ -2223,10 +2285,10 @@ func _on_game_finished(data: Dictionary) -> void:
 			if data.has("game_winner_id") and data["game_winner_id"] != null:
 				payload["game_winner_id"] = data["game_winner_id"]
 			_last_game_play_payload = payload
-			if not ranked_breakout_dialog.is_open():
-				ranked_breakout_dialog.open(payload)
+			if not breakout_dlg.is_open():
+				breakout_dlg.open(payload)
 			else:
-				ranked_breakout_dialog.update_data(payload)
+				breakout_dlg.update_data(payload)
 		return
 
 	if xp_earned > 0:
@@ -2245,7 +2307,8 @@ func _check_and_auto_enter_active_game() -> void:
 	var open_id = GameManager.get_open_game_id()
 	if not open_id.is_empty() or GameManager.is_game_active or not GameManager.active_game_id.is_empty():
 		var target_gid = open_id if not open_id.is_empty() else GameManager.active_game_id
-		print("[Main] Active ongoing game session found (%s). Suppressing Pick & Ban and auto-joining match..." % target_gid)
+		if OS.is_debug_build():
+			print("[Main] Active ongoing game session found (%s). Suppressing Pick & Ban and auto-joining match..." % target_gid)
 		GameManager.clear_open_pre_game_id()
 		if is_instance_valid(pick_ban_dialog):
 			pick_ban_dialog.visible = false
@@ -2257,19 +2320,20 @@ func _check_and_auto_enter_active_game() -> void:
 	# Priority 2: Only show pick & ban if we are truly still in pick & ban phase!
 	var open_pre_id = GameManager.get_open_pre_game_id()
 	if not open_pre_id.is_empty():
-		print("[Main] Active Pick & Ban draft session found on server: %s. Auto-rejoining..." % open_pre_id)
+		if OS.is_debug_build():
+			print("[Main] Active Pick & Ban draft session found on server: %s. Auto-rejoining..." % open_pre_id)
 		current_match_mode = "ranked"
 		NetworkManager.join_matchmaking_queue(open_pre_id)
-		if is_instance_valid(pick_ban_dialog):
-			pick_ban_dialog.show_reconnecting_state(open_pre_id)
-			_show_backdrop()
+		_ensure_pick_ban_dialog().show_reconnecting_state(open_pre_id)
+		_show_backdrop()
 		return
 
 
 
 func _on_user_disconnected(user_id: String, wait_time: int) -> void:
 
-	print("[Main] Opponent disconnected (%s). Pausing match for %d seconds..." % [user_id, wait_time])
+	if OS.is_debug_build():
+		print("[Main] Opponent disconnected (%s). Pausing match for %d seconds..." % [user_id, wait_time])
 
 	var board = cafe_table.current_board_node
 
@@ -2292,7 +2356,8 @@ func _on_user_disconnected(user_id: String, wait_time: int) -> void:
 
 func _on_user_reconnected(user_id: String, remaining_time: int) -> void:
 
-	print("[Main] User reconnected (%s, remaining_time=%ds). Resuming match..." % [user_id, remaining_time])
+	if OS.is_debug_build():
+		print("[Main] User reconnected (%s, remaining_time=%ds). Resuming match..." % [user_id, remaining_time])
 
 	_pending_start_game = false
 
@@ -2323,7 +2388,8 @@ func _on_user_reconnected(user_id: String, remaining_time: int) -> void:
 
 func _on_reconnect_data_received(payload: Dictionary) -> void:
 	var is_silent_sync: bool = NetworkManager.consume_silent_quiz_sync()
-	print("[Main] Received Reconnect_Data from server (silent_quiz_sync=%s). Restoring match state..." % str(is_silent_sync))
+	if OS.is_debug_build():
+		print("[Main] Received Reconnect_Data from server (silent_quiz_sync=%s). Restoring match state..." % str(is_silent_sync))
 	_pending_start_game = false
 	_pending_turn = -1
 	GameManager.is_game_active = true
@@ -2455,7 +2521,8 @@ func _on_reconnect_data_received(payload: Dictionary) -> void:
 	_apply_spectator_snapshot_status(payload)
 
 func _on_finish_reconnect_time(user_id: String) -> void:
-	print("[Main] Opponent reconnect time expired for user: %s." % user_id)
+	if OS.is_debug_build():
+		print("[Main] Opponent reconnect time expired for user: %s." % user_id)
 	base_game_hud.hide_pause_dialog()
 	if GameManager.match_players.size() > 2 or current_match_mode == "multi_rank":
 		base_game_hud.show_toast_hint("⏱️ مهلت اتصال بازیکن قطع‌شده به پایان رسید!")
@@ -2657,14 +2724,14 @@ func _on_offline_retry_pressed() -> void:
 				_show_menu_toast("✅ اتصال با سرور بازی برقرار شد!")
 				if not GameManager.is_logged_in:
 					if GameManager.load_saved_token().is_empty():
-						login_dialog.open()
+						_ensure_login_dialog().open()
 						_show_backdrop()
 				else:
 					if is_instance_valid(login_dialog) and login_dialog.visible:
 						login_dialog.close()
 						_update_backdrop_state()
 					if not GameManager.is_guest and not GameManager.has_username():
-						login_dialog.open_for_username_completion()
+						_ensure_login_dialog().open_for_username_completion()
 						_show_backdrop()
 					else:
 						_check_and_auto_enter_active_game()
@@ -2852,7 +2919,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_ranked_breakout_exit_requested() -> void:
-	print("[Main] User exited ranked match series.")
+	if OS.is_debug_build():
+		print("[Main] User exited ranked match series.")
 	_match_start_serial += 1
 	_hide_backdrop()
 	if is_instance_valid(ranked_breakout_dialog):
@@ -3832,8 +3900,8 @@ func _on_social_game_invite_result(payload: Dictionary) -> void:
 		social_dialog.close()
 	if not gid.is_empty():
 		_start_game_match(gid, gtype, "lobby", false)
-	elif not lobby_id.is_empty() and is_instance_valid(lobby_dialog):
-		lobby_dialog.open()
+	elif not lobby_id.is_empty():
+		_ensure_lobby_dialog().open()
 
 
 func _on_post_match_rematch_accepted(payload: Dictionary) -> void:
@@ -3866,9 +3934,8 @@ func _on_post_match_switch_game_accepted(payload: Dictionary) -> void:
 		if lid.is_empty():
 			return
 		_on_ranked_breakout_exit_requested()
-		if is_instance_valid(lobby_dialog):
-			_show_backdrop()
-			lobby_dialog.open_and_auto_join(lid, lpwd)
+		_show_backdrop()
+		_ensure_lobby_dialog().open_and_auto_join(lid, lpwd)
 		return
 	_on_post_match_rematch_accepted(payload)
 
@@ -3995,9 +4062,10 @@ func _handle_forced_or_manual_logout() -> void:
 		user_header.visible = true
 	if is_instance_valid(user_header):
 		user_header.update_ui()
-	if is_instance_valid(login_dialog) and not login_dialog.visible:
+	var ld: Control = _ensure_login_dialog()
+	if is_instance_valid(ld) and not ld.visible:
 		_show_backdrop()
-		login_dialog.open()
+		ld.open()
 		var toast_msg = GameManager.last_auth_error if not GameManager.last_auth_error.is_empty() else "نشست شما پایان یافت. لطفاً دوباره وارد شوید."
 		_show_menu_toast(toast_msg)
 		GameManager.last_auth_error = ""
@@ -4146,7 +4214,7 @@ func _on_watch_live_pressed() -> void:
 		return
 	if not GameManager.is_logged_in:
 		_show_backdrop()
-		login_dialog.open()
+		_ensure_login_dialog().open()
 		return
 	if is_instance_valid(live_games_dialog):
 		live_games_dialog.open("all")
@@ -4196,9 +4264,8 @@ func _start_prelogin_offline_tutorial() -> void:
 func _on_offline_game_tutorial_finished() -> void:
 	user_header.update_ui()
 	_update_ranked_button_state()
-	if is_instance_valid(login_dialog):
-		login_dialog.open()
-		_show_backdrop()
+	_ensure_login_dialog().open()
+	_show_backdrop()
 	if not NetworkManager.is_online:
 		NetworkManager.connect_to_game_server()
 

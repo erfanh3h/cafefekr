@@ -197,6 +197,12 @@ func _init_materials() -> void:
 	mat_flipped_highlight.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
 func _build_board_3d() -> void:
+	BaseGameBoard.bake_scene_static_cabinet(self, ["PlinthBase", "BoardFrame", "AlgebraicBed", "GoldBorderN", "GoldBorderS", "GoldBorderW", "GoldBorderE", "CornerTL", "CornerTR", "CornerBL", "CornerBR", "FrontPlaque"], "BakedOthelloCabinet")
+
+	var static_board = Node3D.new()
+	static_board.name = "StaticOthelloBoard"
+	add_child(static_board)
+
 	cells.resize(64)
 	cell_meshes.resize(64)
 
@@ -222,10 +228,11 @@ func _build_board_3d() -> void:
 
 			var pos_x = -half_board + (r_index * cell_size) + (cell_size * 0.5)
 			var pos_z = half_board - (c_index * cell_size) - (cell_size * 0.5)
+			var cell_pos = Vector3(pos_x, 0.041, pos_z)
 
 			var area = Area3D.new()
 			area.name = "Cell_%d" % idx
-			area.position = Vector3(pos_x, 0.041, pos_z)
+			area.position = cell_pos
 
 			var col = CollisionShape3D.new()
 			col.shape = col_shape
@@ -233,18 +240,20 @@ func _build_board_3d() -> void:
 
 			var m_inst = MeshInstance3D.new()
 			m_inst.mesh = tile_mesh_light if is_light else tile_mesh_dark
-			area.add_child(m_inst)
+			m_inst.position = cell_pos
+			static_board.add_child(m_inst)
 
 			add_child(area)
 			cells[idx] = area
-			cell_meshes[idx] = m_inst
+			cell_meshes[idx] = null
 
-	_build_grid_wire_lines()
-	_build_hoshi_star_points()
+	_build_grid_wire_lines(static_board)
+	_build_hoshi_star_points(static_board)
+	BaseGameBoard.bake_and_replace_static_meshes(static_board, "BakedOthelloBoard", true)
 	_build_algebraic_coordinates()
 	_build_reserve_trays()
 
-func _build_grid_wire_lines() -> void:
+func _build_grid_wire_lines(target_parent: Node3D = self) -> void:
 	var wire_h = BoxMesh.new()
 	wire_h.size = Vector3(board_width, 0.003, 0.0035)
 	wire_h.material = mat_gold_grid
@@ -259,14 +268,14 @@ func _build_grid_wire_lines() -> void:
 		var line_h = MeshInstance3D.new()
 		line_h.mesh = wire_h
 		line_h.position = Vector3(0.0, 0.0482, offset)
-		add_child(line_h)
+		target_parent.add_child(line_h)
 
 		var line_v = MeshInstance3D.new()
 		line_v.mesh = wire_v
 		line_v.position = Vector3(offset, 0.0482, 0.0)
-		add_child(line_v)
+		target_parent.add_child(line_v)
 
-func _build_hoshi_star_points() -> void:
+func _build_hoshi_star_points(target_parent: Node3D = self) -> void:
 	# 4 Classic Tournament Othello Quadrant Star-Points at intersections (2,2), (2,6), (6,2), (6,6)
 	var dot_mesh = CylinderMesh.new()
 	dot_mesh.top_radius = 0.0065
@@ -283,7 +292,7 @@ func _build_hoshi_star_points() -> void:
 			dot.name = "HoshiDot_%d_%d" % [ix, iz]
 			dot.mesh = dot_mesh
 			dot.position = Vector3(px, 0.0485, pz)
-			add_child(dot)
+			target_parent.add_child(dot)
 
 func _build_algebraic_coordinates() -> void:
 	coord_labels.clear()
@@ -351,6 +360,9 @@ func _build_reserve_trays() -> void:
 func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: String) -> Node3D:
 	var root = Node3D.new()
 	root.name = tray_name
+	var static_tray = Node3D.new()
+	static_tray.name = "StaticTray"
+	root.add_child(static_tray)
 
 	const TRAY_W: float = 0.178
 	const TRAY_L: float = 0.98
@@ -371,7 +383,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	base_box.material = mat_wood
 	base_inst.mesh = base_box
 	base_inst.position = Vector3(0.0, 0.0, 0.0)
-	root.add_child(base_inst)
+	static_tray.add_child(base_inst)
 
 	var mat_felt = StandardMaterial3D.new()
 	mat_felt.albedo_color = felt_color
@@ -384,7 +396,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	felt_box.material = mat_felt
 	felt_inst.mesh = felt_box
 	felt_inst.position = Vector3(0.0, TRAY_H * 0.5 + 0.001, 0.0)
-	root.add_child(felt_inst)
+	static_tray.add_child(felt_inst)
 
 	var wall_long_mesh = BoxMesh.new()
 	wall_long_mesh.size = Vector3(WALL_T, WALL_H, TRAY_L)
@@ -394,7 +406,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 		var w_side = MeshInstance3D.new()
 		w_side.mesh = wall_long_mesh
 		w_side.position = Vector3(sx * (TRAY_W * 0.5 - WALL_T * 0.5), TRAY_H * 0.5 + WALL_H * 0.5 - 0.002, 0.0)
-		root.add_child(w_side)
+		static_tray.add_child(w_side)
 
 	var wall_short_mesh = BoxMesh.new()
 	wall_short_mesh.size = Vector3(TRAY_W, WALL_H, WALL_T)
@@ -404,7 +416,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 		var w_end = MeshInstance3D.new()
 		w_end.mesh = wall_short_mesh
 		w_end.position = Vector3(0.0, TRAY_H * 0.5 + WALL_H * 0.5 - 0.002, sz * (TRAY_L * 0.5 - WALL_T * 0.5))
-		root.add_child(w_end)
+		static_tray.add_child(w_end)
 
 	var divider_mesh = BoxMesh.new()
 	divider_mesh.size = Vector3(0.004, 0.005, TRAY_L - WALL_T * 2.2)
@@ -412,7 +424,7 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	var divider = MeshInstance3D.new()
 	divider.mesh = divider_mesh
 	divider.position = Vector3(0.0, TRAY_H * 0.5 + 0.003, 0.0)
-	root.add_child(divider)
+	static_tray.add_child(divider)
 
 	var corner_cap_mesh = BoxMesh.new()
 	corner_cap_mesh.size = Vector3(0.026, WALL_H + 0.006, 0.026)
@@ -423,7 +435,9 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 			var cap = MeshInstance3D.new()
 			cap.mesh = corner_cap_mesh
 			cap.position = Vector3(sx * (TRAY_W * 0.5 - 0.008), TRAY_H * 0.5 + WALL_H * 0.5, sz * (TRAY_L * 0.5 - 0.008))
-			root.add_child(cap)
+			static_tray.add_child(cap)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_tray, "BakedTrayMesh", true)
 
 	var plaque_mesh = BoxMesh.new()
 	plaque_mesh.size = Vector3(0.012, 0.005, 0.24)

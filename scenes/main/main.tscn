@@ -1,21 +1,9 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/main.gd" id="1_main_script"]
 [ext_resource type="PackedScene" path="res://scenes/environment/cafe_table.tscn" id="2_cafe_table"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/main_tab_shell.tscn" id="3_main_tab_shell"]
-[ext_resource type="PackedScene" path="res://scenes/ui/auth/login_dialog.tscn" id="4_login_dialog"]
-[ext_resource type="PackedScene" path="res://scenes/ui/queue/queue_dialog.tscn" id="5_queue_dialog"]
-[ext_resource type="PackedScene" path="res://scenes/ui/lobby/lobby_dialog.tscn" id="6_lobby_dialog"]
-[ext_resource type="PackedScene" path="res://scenes/ui/ranking/ranking_dialog.tscn" id="7_ranking_dialog"]
-[ext_resource type="PackedScene" path="res://scenes/ui/store/store_dialog.tscn" id="8_store_dialog"]
-[ext_resource type="PackedScene" path="res://scenes/ui/rules/rules_dialog.tscn" id="9_rules_dialog"]
 [ext_resource type="PackedScene" uid="uid://basehudscene01" path="res://scenes/games/base/base_game_hud.tscn" id="24_base_hud"]
-[ext_resource type="PackedScene" uid="uid://cxprofiledialog01" path="res://scenes/ui/profile/user_profile_dialog.tscn" id="25_profile_dlg"]
-[ext_resource type="PackedScene" path="res://scenes/ui/classic_rank/classic_rank_dialog.tscn" id="29_classic_rank_dialog"]
-[ext_resource type="PackedScene" path="res://scenes/ui/rank/pick_ban_dialog.tscn" id="30_pick_ban_dialog"]
-[ext_resource type="PackedScene" path="res://scenes/ui/rank/ranked_breakout_dialog.tscn" id="31_breakout_dialog"]
-[ext_resource type="PackedScene" path="res://scenes/ui/history/game_history_dialog.tscn" id="33_history_dialog"]
-[ext_resource type="PackedScene" path="res://scenes/ui/multi_rank/multi_rank_dialog.tscn" id="35_multi_rank_dialog"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main_script")
@@ -37,40 +25,4 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.65)
 
 [node name="BaseGameHUD" parent="CanvasLayer" instance=ExtResource("24_base_hud")]
-visible = false
-
-[node name="QueueDialog" parent="CanvasLayer" instance=ExtResource("5_queue_dialog")]
-visible = false
-
-[node name="LobbyDialog" parent="CanvasLayer" instance=ExtResource("6_lobby_dialog")]
-visible = false
-
-[node name="ClassicRankDialog" parent="CanvasLayer" instance=ExtResource("29_classic_rank_dialog")]
-visible = false
-
-[node name="MultiRankDialog" parent="CanvasLayer" instance=ExtResource("35_multi_rank_dialog")]
-visible = false
-
-[node name="PickBanDialog" parent="CanvasLayer" instance=ExtResource("30_pick_ban_dialog")]
-visible = false
-
-[node name="RankedBreakoutDialog" parent="CanvasLayer" instance=ExtResource("31_breakout_dialog")]
-visible = false
-
-[node name="RankingDialog" parent="CanvasLayer" instance=ExtResource("7_ranking_dialog")]
-visible = false
-
-[node name="GameHistoryDialog" parent="CanvasLayer" instance=ExtResource("33_history_dialog")]
-visible = false
-
-[node name="StoreDialog" parent="CanvasLayer" instance=ExtResource("8_store_dialog")]
-visible = false
-
-[node name="RulesDialog" parent="CanvasLayer" instance=ExtResource("9_rules_dialog")]
-visible = false
-
-[node name="LoginDialog" parent="CanvasLayer" instance=ExtResource("4_login_dialog")]
-visible = false
-
-[node name="UserProfileDialog" parent="CanvasLayer" instance=ExtResource("25_profile_dlg")]
 visible = false

@@ -4,7 +4,7 @@ extends Node
 # REST API Client for kafehfekrserver (Port 5001)
 signal request_completed(endpoint: String, success: bool, data: Variant)
 
-var base_url: String = "http://85.133.205.107:5001"
+var base_url: String = "http://192.168.1.2:5001"
 var auth_token: String = ""
 
 func set_base_url(url: String) -> void:
@@ -99,67 +99,54 @@ func _handle_unauthorized_if_needed(response_code: int, custom_headers: PackedSt
 		auth_token = ""
 		GameManager.logout()
 
-func _http_get(endpoint: String, custom_headers: PackedStringArray, callback: Callable) -> void:
-	var http = HTTPRequest.new()
+var _http_pool: Array[HTTPRequest] = []
+
+func _acquire_http_request() -> HTTPRequest:
+	while not _http_pool.is_empty():
+		var cached: HTTPRequest = _http_pool.pop_back()
+		if is_instance_valid(cached):
+			return cached
+	var http := HTTPRequest.new()
 	add_child(http)
-	
-	http.request_completed.connect(func(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
-		var success = (response_code >= 200 and response_code < 300)
-		var json = JSON.new()
+	return http
+
+func _release_http_request(http: HTTPRequest) -> void:
+	if not is_instance_valid(http):
+		return
+	if _http_pool.size() < 6:
+		_http_pool.append(http)
+	else:
+		http.queue_free()
+
+func _execute_http_request(endpoint: String, method: HTTPClient.Method, headers: PackedStringArray, auth_headers: PackedStringArray, body_str: String, callback: Callable) -> void:
+	var http: HTTPRequest = _acquire_http_request()
+	http.request_completed.connect(func(_result: int, response_code: int, _resp_headers: PackedStringArray, body: PackedByteArray):
+		var success: bool = (response_code >= 200 and response_code < 300)
 		var parsed_data = null
+		var json := JSON.new()
 		if json.parse(body.get_string_from_utf8()) == OK:
 			parsed_data = json.data
-		_handle_unauthorized_if_needed(response_code, custom_headers)
+		_handle_unauthorized_if_needed(response_code, auth_headers)
+		_release_http_request(http)
 		if callback.is_valid():
 			callback.call(success, response_code, parsed_data)
-		http.queue_free()
-	)
-	
-	var url = base_url + endpoint
-	http.request(url, custom_headers, HTTPClient.METHOD_GET)
+	, CONNECT_ONE_SHOT)
+	http.request(base_url + endpoint, headers, method, body_str)
+
+func _http_get(endpoint: String, custom_headers: PackedStringArray, callback: Callable) -> void:
+	_execute_http_request(endpoint, HTTPClient.METHOD_GET, custom_headers, custom_headers, "", callback)
 
 func _post_form(endpoint: String, body_str: String, custom_headers: PackedStringArray, callback: Callable) -> void:
-	var http = HTTPRequest.new()
-	add_child(http)
-	
-	var headers = custom_headers.duplicate()
+	var headers := custom_headers.duplicate()
 	headers.append("Content-Type: application/x-www-form-urlencoded")
-	
-	http.request_completed.connect(func(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
-		var success = (response_code >= 200 and response_code < 300)
-		var json = JSON.new()
-		var parsed_data = null
-		if json.parse(body.get_string_from_utf8()) == OK:
-			parsed_data = json.data
-		_handle_unauthorized_if_needed(response_code, custom_headers)
-		if callback.is_valid():
-			callback.call(success, response_code, parsed_data)
-		http.queue_free()
-	)
-	
-	var url = base_url + endpoint
-	http.request(url, headers, HTTPClient.METHOD_POST, body_str)
+	_execute_http_request(endpoint, HTTPClient.METHOD_POST, headers, custom_headers, body_str, callback)
 
 # --- SOCIAL, FRIENDS, PROFILES, CLANS, MESSAGES & NOTIFICATIONS ENDPOINTS ---
 
 func _post_json(endpoint: String, payload: Dictionary, custom_headers: PackedStringArray, callback: Callable) -> void:
-	var http = HTTPRequest.new()
-	add_child(http)
-	var headers = custom_headers.duplicate()
+	var headers := custom_headers.duplicate()
 	headers.append("Content-Type: application/json")
-	http.request_completed.connect(func(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray):
-		var success = (response_code >= 200 and response_code < 300)
-		var json = JSON.new()
-		var parsed_data = null
-		if json.parse(body.get_string_from_utf8()) == OK:
-			parsed_data = json.data
-		_handle_unauthorized_if_needed(response_code, custom_headers)
-		if callback.is_valid():
-			callback.call(success, response_code, parsed_data)
-		http.queue_free()
-	)
-	var url = base_url + endpoint
-	http.request(url, headers, HTTPClient.METHOD_POST, JSON.stringify(payload))
+	_execute_http_request(endpoint, HTTPClient.METHOD_POST, headers, custom_headers, JSON.stringify(payload), callback)
 
 # Friends & Search
 func search_social_players(query: String, callback: Callable) -> void:

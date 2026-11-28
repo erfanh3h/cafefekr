@@ -186,7 +186,8 @@ func _is_mobile() -> bool:
 func open(p_pre_game_id: String, queuers: Array) -> void:
 	set_process(true)
 	if is_match_active():
-		print("[PickBan] Suppressed open(): Game match is already active.")
+		if OS.is_debug_build():
+			print("[PickBan] Suppressed open(): Game match is already active.")
 		visible = false
 		return
 	pre_game_id = p_pre_game_id
@@ -243,7 +244,8 @@ func open(p_pre_game_id: String, queuers: Array) -> void:
 
 func show_reconnecting_state(p_pre_game_id: String) -> void:
 	if is_match_active():
-		print("[PickBan] Suppressed show_reconnecting_state(): Game match is already active.")
+		if OS.is_debug_build():
+			print("[PickBan] Suppressed show_reconnecting_state(): Game match is already active.")
 		visible = false
 		return
 	pre_game_id = p_pre_game_id
@@ -264,7 +266,8 @@ func show_reconnecting_state(p_pre_game_id: String) -> void:
 	reconnect_timeout_timer.wait_time = 6.0
 	reconnect_timeout_timer.one_shot = true
 	reconnect_timeout_timer.timeout.connect(func():
-		print("[PickBan] Reconnect timeout reached. Game or draft has finished on server.")
+		if OS.is_debug_build():
+			print("[PickBan] Reconnect timeout reached. Game or draft has finished on server.")
 		show_game_finished_dialog("این بازی به پایان رسیده است.")
 	)
 	add_child(reconnect_timeout_timer)
@@ -273,7 +276,8 @@ func show_reconnecting_state(p_pre_game_id: String) -> void:
 func open_from_reconnect(data: Dictionary) -> void:
 	set_process(true)
 	if is_match_active():
-		print("[PickBan] Suppressed open_from_reconnect(): Game match is already active.")
+		if OS.is_debug_build():
+			print("[PickBan] Suppressed open_from_reconnect(): Game match is already active.")
 		visible = false
 		return
 	if is_instance_valid(reconnect_timeout_timer):
@@ -918,7 +922,8 @@ func _on_confirm_pressed() -> void:
 	btn_confirm.text = "در حال ارسال انتخاب..."
 	AudioManager.play_sound("tap_button")
 	
-	print("[PickBan] User confirmed selection: %s for turn %d" % [currently_selected_card_game, turn_index])
+	if OS.is_debug_build():
+		print("[PickBan] User confirmed selection: %s for turn %d" % [currently_selected_card_game, turn_index])
 	NetworkManager.send_pre_game_select(pre_game_id, currently_selected_card_game)
 
 func _update_timeline_active_step(active_step_num: int) -> void:
@@ -1218,7 +1223,8 @@ func _mark_card_picked(game_type: String, series_title: String) -> void:
 # ==============================================================================
 
 func _on_system_banned_games_received(banned_games: Array) -> void:
-	print("[PickBan] System banned 3 games: %s" % str(banned_games))
+	if OS.is_debug_build():
+		print("[PickBan] System banned 3 games: %s" % str(banned_games))
 	system_banned = banned_games.duplicate()
 	
 	for idx in range(min(3, system_banned.size())):
@@ -1348,7 +1354,8 @@ func _highlight_active_player(p_num: int) -> void:
 		sb1.set_border_width_all(3)
 
 func _on_selected_game_received(active_index: int, game_type: String) -> void:
-	print("[PickBan] Turn %d result: %s" % [active_index, game_type])
+	if OS.is_debug_build():
+		print("[PickBan] Turn %d result: %s" % [active_index, game_type])
 	_apply_game_selection(active_index, game_type)
 	
 	if active_index == 3:
@@ -1362,7 +1369,8 @@ func _on_selected_game_received(active_index: int, game_type: String) -> void:
 		_show_draft_complete_transition()
 
 func _on_queue_start_game_received(game_id: String) -> void:
-	print("[PickBan] Server Start_Game received on /queue. Match Game ID: %s. Leaving Pick & Ban..." % game_id)
+	if OS.is_debug_build():
+		print("[PickBan] Server Start_Game received on /queue. Match Game ID: %s. Leaving Pick & Ban..." % game_id)
 	_stop_timer()
 	if not game_id.is_empty():
 		GameManager.set_active_game(game_id)
@@ -1580,7 +1588,8 @@ func _on_start_game_received() -> void:
 	pass
 
 func _on_queue_game_finished() -> void:
-	print("[PickBan] Game_Finished received on /queue. Showing finished notice...")
+	if OS.is_debug_build():
+		print("[PickBan] Game_Finished received on /queue. Showing finished notice...")
 	_stop_timer()
 	if is_instance_valid(reconnect_timeout_timer):
 		reconnect_timeout_timer.stop()
@@ -1589,7 +1598,8 @@ func _on_queue_game_finished() -> void:
 	show_game_finished_dialog("این بازی به پایان رسیده است.")
 
 func _on_game_canceled() -> void:
-	print("[PickBan] Match draft cancelled.")
+	if OS.is_debug_build():
+		print("[PickBan] Match draft cancelled.")
 	_stop_timer()
 	if is_instance_valid(reconnect_timeout_timer):
 		reconnect_timeout_timer.stop()
@@ -1599,7 +1609,8 @@ func _on_game_canceled() -> void:
 
 func show_game_finished_dialog(message: String = "این بازی به پایان رسیده است.") -> void:
 	if is_match_active():
-		print("[PickBan] Suppressed show_game_finished_dialog(): Game match is already active.")
+		if OS.is_debug_build():
+			print("[PickBan] Suppressed show_game_finished_dialog(): Game match is already active.")
 		visible = false
 		return
 	_stop_timer()
@@ -1727,7 +1738,8 @@ func _on_modal_close_pressed() -> void:
 # ==============================================================================
 
 func show_opponent_disconnected(user_id: String, wait_time: int) -> void:
-	print("[PickBan] Opponent disconnected (%s). Pausing draft for %ds..." % [user_id, wait_time])
+	if OS.is_debug_build():
+		print("[PickBan] Opponent disconnected (%s). Pausing draft for %ds..." % [user_id, wait_time])
 	is_timer_active = false
 	dc_time_left = float(wait_time)
 	is_dc_active = true
@@ -1739,7 +1751,8 @@ func show_opponent_disconnected(user_id: String, wait_time: int) -> void:
 	btn_confirm.disabled = true
 
 func show_opponent_reconnected(user_id: String, remaining_time: int) -> void:
-	print("[PickBan] Opponent reconnected (%s). Resuming draft with %ds..." % [user_id, remaining_time])
+	if OS.is_debug_build():
+		print("[PickBan] Opponent reconnected (%s). Resuming draft with %ds..." % [user_id, remaining_time])
 	is_dc_active = false
 	disconnect_banner.visible = true
 	lbl_disconnect.text = "✅ حریف مجدداً متصل شد! ادامه درفت..."

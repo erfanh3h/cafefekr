@@ -591,6 +591,10 @@ func _init_materials() -> void:
 # ==============================================================================
 
 func _build_3d_arena() -> void:
+	var static_arena = Node3D.new()
+	static_arena.name = "StaticYatzyArena"
+	add_child(static_arena)
+
 	# 1. Outer Carved Walnut Rectangular Plinth (1.06m wide x 1.36m long)
 	var plinth = MeshInstance3D.new()
 	var plinth_mesh = BoxMesh.new()
@@ -598,7 +602,7 @@ func _build_3d_arena() -> void:
 	plinth_mesh.material = mat_wood_base
 	plinth.mesh = plinth_mesh
 	plinth.position = Vector3(0, BOARD_H * 0.5, BOARD_CENTER_Z)
-	add_child(plinth)
+	static_arena.add_child(plinth)
 
 	# Raised Mahogany Outer Frame Border
 	for rim_cfg in [
@@ -613,7 +617,7 @@ func _build_3d_arena() -> void:
 		r_box.material = mat_wood_rim
 		r_inst.mesh = r_box
 		r_inst.position = rim_cfg["pos"]
-		add_child(r_inst)
+		static_arena.add_child(r_inst)
 
 	# Inner Gold Filigree Inlay Frame
 	for border_cfg in [
@@ -628,7 +632,7 @@ func _build_3d_arena() -> void:
 		b_box.material = mat_gold_trim
 		b_inst.mesh = b_box
 		b_inst.position = border_cfg["pos"]
-		add_child(b_inst)
+		static_arena.add_child(b_inst)
 
 	# 4 Brass Corner Medallions
 	for cx in [-BOARD_W * 0.5 + 0.028, BOARD_W * 0.5 - 0.028]:
@@ -641,7 +645,7 @@ func _build_3d_arena() -> void:
 			cyl.material = mat_gold_trim
 			med.mesh = cyl
 			med.position = Vector3(cx, BOARD_H + 0.008, cz)
-			add_child(med)
+			static_arena.add_child(med)
 
 	# 2. Upper Obsidian Scorecard Bed (Z = -0.79 to +0.18, width = 0.99m, length = 0.97m)
 	var score_bed = MeshInstance3D.new()
@@ -650,7 +654,7 @@ func _build_3d_arena() -> void:
 	sb_mesh.material = mat_obsidian_bed
 	score_bed.mesh = sb_mesh
 	score_bed.position = Vector3(0, BOARD_H + 0.003, -0.305)
-	add_child(score_bed)
+	static_arena.add_child(score_bed)
 
 	# Center Brass Divider between Left Column (0..5) and Right Column (6..11)
 	var col_div = MeshInstance3D.new()
@@ -659,7 +663,7 @@ func _build_3d_arena() -> void:
 	cd_mesh.material = mat_gold_trim
 	col_div.mesh = cd_mesh
 	col_div.position = Vector3(0, BOARD_H + 0.006, -0.305)
-	add_child(col_div)
+	static_arena.add_child(col_div)
 
 	# Column Headers for Both Columns
 	_col_header_labels.clear()
@@ -687,7 +691,7 @@ func _build_3d_arena() -> void:
 		var row_in_col = idx % 6
 		var col_center_x = -0.248 if col_idx == 0 else 0.248
 		var row_z = -0.635 + float(row_in_col) * 0.146
-		var row_dict = _build_category_row(idx, col_center_x, row_z)
+		var row_dict = _build_category_row(idx, col_center_x, row_z, static_arena)
 		_cat_row_nodes.append(row_dict)
 
 	# 3. Recessed Emerald Baize 3D Dice Rolling Arena (Z = +0.21 to +0.58)
@@ -701,7 +705,7 @@ func _build_3d_arena() -> void:
 	fb_mesh.material = mat_felt_tray
 	felt_bed.mesh = fb_mesh
 	felt_bed.position = Vector3(0, BOARD_H + 0.004, tray_center_z)
-	add_child(felt_bed)
+	static_arena.add_child(felt_bed)
 
 	# Carved Mahogany & Brass Walls around the Dice Tray
 	for wall_cfg in [
@@ -716,7 +720,7 @@ func _build_3d_arena() -> void:
 		w_box.material = mat_wood_rim
 		w_inst.mesh = w_box
 		w_inst.position = wall_cfg["pos"]
-		add_child(w_inst)
+		static_arena.add_child(w_inst)
 
 		var trim_inst = MeshInstance3D.new()
 		var trim_box = BoxMesh.new()
@@ -724,7 +728,9 @@ func _build_3d_arena() -> void:
 		trim_box.material = mat_gold_trim
 		trim_inst.mesh = trim_box
 		trim_inst.position = wall_cfg["pos"] + Vector3(0, 0.014, 0)
-		add_child(trim_inst)
+		static_arena.add_child(trim_inst)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_arena, "BakedYatzyArena", true)
 
 	# Status / Guidance Label inside the Top Rim of the Dice Tray
 	_status_lbl_3d = _create_3d_label("تاس‌ها را لمس کنید تا برای پرتاب بعدی قفل شوند", 31, Color(0.98, 0.92, 0.72))
@@ -746,7 +752,7 @@ func _build_3d_arena() -> void:
 # 3D SCULPTED CATEGORY ROW (خانه امتیاز) BUILDER — NO TEXT OVERFLOW
 # ==============================================================================
 
-func _build_category_row(cat_idx: int, col_x: float, row_z: float) -> Dictionary:
+func _build_category_row(cat_idx: int, col_x: float, row_z: float, static_target: Node3D = self) -> Dictionary:
 	var row_root = Node3D.new()
 	row_root.name = "CategoryRow_%d" % cat_idx
 	row_root.position = Vector3(col_x, BOARD_H + 0.008, row_z)
@@ -763,6 +769,10 @@ func _build_category_row(cat_idx: int, col_x: float, row_z: float) -> Dictionary
 	cat_card.position = Vector3(0.100, 0, 0)
 	row_root.add_child(cat_card)
 
+	var s_card = Node3D.new()
+	s_card.position = row_root.position + cat_card.position
+	static_target.add_child(s_card)
+
 	# Category Card Outer Gold Rim (0.244m wide x 0.122m tall)
 	var card_rim = MeshInstance3D.new()
 	var cr_box = BoxMesh.new()
@@ -770,7 +780,7 @@ func _build_category_row(cat_idx: int, col_x: float, row_z: float) -> Dictionary
 	cr_box.material = mat_gold_trim
 	card_rim.mesh = cr_box
 	card_rim.position = Vector3(0, 0.002, 0)
-	cat_card.add_child(card_rim)
+	s_card.add_child(card_rim)
 
 	# Category Card Dark Walnut-Obsidian Inner Face (0.236m wide x 0.114m tall)
 	var card_bg = MeshInstance3D.new()
@@ -779,7 +789,7 @@ func _build_category_row(cat_idx: int, col_x: float, row_z: float) -> Dictionary
 	cb_box.material = mat_cat_card_bg
 	card_bg.mesh = cb_box
 	card_bg.position = Vector3(0, 0.005, 0)
-	cat_card.add_child(card_bg)
+	s_card.add_child(card_bg)
 
 	# Internal Vertical Brass Divider separating Text Compartment (-0.118..+0.042) & 3D Emblem (+0.042..+0.118)
 	var inner_div = MeshInstance3D.new()
@@ -788,12 +798,12 @@ func _build_category_row(cat_idx: int, col_x: float, row_z: float) -> Dictionary
 	id_box.material = mat_gold_trim
 	inner_div.mesh = id_box
 	inner_div.position = Vector3(0.042, 0.006, 0)
-	cat_card.add_child(inner_div)
+	s_card.add_child(inner_div)
 
 	# 3D Sculpted Category Emblem in the right compartment (x = +0.080)
 	var emblem_root = Node3D.new()
 	emblem_root.position = Vector3(0.080, 0.012, 0)
-	cat_card.add_child(emblem_root)
+	s_card.add_child(emblem_root)
 	_build_3d_category_emblem(emblem_root, cat_idx)
 
 	# Cleanly Proportioned Persian Category Name centered in the 0.160m left compartment (x = -0.038)

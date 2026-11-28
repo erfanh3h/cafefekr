@@ -648,7 +648,8 @@ func _on_send_code_pressed() -> void:
 		btn_send_code.text = "دریافت کد تأیید"
 		_on_phone_text_changed(input_phone.text)
 		if success:
-			print("[Login] Code sent successfully to %s" % current_phone)
+			if OS.is_debug_build():
+				print("[Login] Code sent successfully to %s" % current_phone)
 			_show_step2()
 		else:
 			var err_detail: String = "خطا در برقراری ارتباط با سرور. لطفاً اتصال اینترنت را بررسی کنید."
@@ -661,7 +662,8 @@ func _on_send_code_pressed() -> void:
 
 func _on_guest_login_pressed() -> void:
 	AudioManager.sfx_button()
-	print("[Login] User chose Guest login.")
+	if OS.is_debug_build():
+		print("[Login] User chose Guest login.")
 	GameManager.start_guest_session()
 	ActionVFXManager.animate_dialog_close(self, null, func():
 		closed.emit()
@@ -702,12 +704,14 @@ func _on_verify_code_pressed() -> void:
 
 			var uname: String = str(user_data.get("username", user_data.get("name", ""))).strip_edges()
 			if uname.is_empty() or uname == "Guest" or uname == "کاربر مهمان":
-				print("[Login] New user registered without username. Demanding username in Step 3.")
+				if OS.is_debug_build():
+					print("[Login] New user registered without username. Demanding username in Step 3.")
 				is_mandatory_username = true
 				btn_close_top.visible = false
 				_show_step3_username()
 			else:
-				print("[Login] Existing user %s logged in successfully." % uname)
+				if OS.is_debug_build():
+					print("[Login] Existing user %s logged in successfully." % uname)
 				_stop_resend_countdown()
 				ActionVFXManager.animate_dialog_close(self, null, func():
 					closed.emit()
@@ -747,7 +751,8 @@ func _on_submit_username_pressed() -> void:
 		btn_submit_username.text = "ثبت نام و شروع بازی"
 		_on_username_text_changed(input_username.text)
 		if success:
-			print("[Login] Username '%s' registered successfully!" % uname)
+			if OS.is_debug_build():
+				print("[Login] Username '%s' registered successfully!" % uname)
 			GameManager.user_data["username"] = uname
 			GameManager.user_data["name"] = uname
 			GameManager.set_session(GameManager.token, GameManager.user_data, true)

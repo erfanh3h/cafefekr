@@ -45,6 +45,7 @@ var _base_face_y: float = 28.0
 var _is_pointer_pressed: bool = false
 var _is_dragging_up: bool = false
 var _swipe_played: bool = false
+var _built_key: String = ""
 
 class WildColorOval extends Control:
 	func _ready() -> void:
@@ -97,7 +98,13 @@ func setup_card(
 	fan_arc_y = arc_y
 	_card_w = clampf(card_width, 68.0, 112.0)
 	_card_h = roundf(_card_w * 1.42)
-	_build_ui()
+	_is_pointer_pressed = false
+	_is_dragging_up = false
+	_swipe_played = false
+	var next_key: String = "%s|%s|%d" % [card_color, card_value, int(roundf(_card_w))]
+	if _built_key != next_key or not is_instance_valid(_card_face):
+		_built_key = next_key
+		_build_ui()
 	_apply_visual_state(false)
 
 func _build_ui() -> void:

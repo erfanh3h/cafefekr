@@ -205,6 +205,10 @@ func _ready() -> void:
 				sun_mob.light_specular = 0.16
 				sun_mob.light_color = Color(1.0, 0.91, 0.78)
 		if env_node and env_node.environment:
+			env_node.environment.background_mode = Environment.BG_COLOR
+			env_node.environment.background_color = Color(0.16, 0.10, 0.06, 1.0)
+			env_node.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+			env_node.environment.ambient_light_color = Color(0.92, 0.76, 0.56, 1.0)
 			env_node.environment.ambient_light_energy = 0.88
 			env_node.environment.tonemap_exposure = 0.98
 
@@ -1850,6 +1854,8 @@ func _init_lounge_materials() -> void:
 	mat_window_glass.roughness = 0.08
 	mat_window_glass.metallic = 0.14
 	mat_window_glass.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if _is_mobile_gpu:
+		mat_window_glass.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
 	var mat_window_glass_glint: StandardMaterial3D = StandardMaterial3D.new()
 	mat_window_glass_glint.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA

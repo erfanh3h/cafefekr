@@ -190,6 +190,7 @@ func _init_shared_materials() -> void:
 
 	# Selection / Hover Rings
 	_mat_select_red = StandardMaterial3D.new()
+	_mat_select_red.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_mat_select_red.albedo_color = Color(1.0, 0.26, 0.28, 0.92)
 	_mat_select_red.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_select_red.emission_enabled = true
@@ -197,6 +198,7 @@ func _init_shared_materials() -> void:
 	_mat_select_red.emission_energy_multiplier = 1.45
 
 	_mat_select_blue = StandardMaterial3D.new()
+	_mat_select_blue.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_mat_select_blue.albedo_color = Color(0.26, 0.68, 1.0, 0.92)
 	_mat_select_blue.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_select_blue.emission_enabled = true
@@ -204,6 +206,7 @@ func _init_shared_materials() -> void:
 	_mat_select_blue.emission_energy_multiplier = 1.45
 
 	_mat_hover_red = StandardMaterial3D.new()
+	_mat_hover_red.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_mat_hover_red.albedo_color = Color(1.0, 0.32, 0.34, 0.55)
 	_mat_hover_red.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_hover_red.emission_enabled = true
@@ -211,6 +214,7 @@ func _init_shared_materials() -> void:
 	_mat_hover_red.emission_energy_multiplier = 0.75
 
 	_mat_hover_blue = StandardMaterial3D.new()
+	_mat_hover_blue.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_mat_hover_blue.albedo_color = Color(0.32, 0.72, 1.0, 0.55)
 	_mat_hover_blue.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_hover_blue.emission_enabled = true
@@ -218,6 +222,7 @@ func _init_shared_materials() -> void:
 	_mat_hover_blue.emission_energy_multiplier = 0.75
 
 	_mat_reveal_ring = StandardMaterial3D.new()
+	_mat_reveal_ring.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_mat_reveal_ring.albedo_color = Color(0.96, 0.78, 0.28, 0.88)
 	_mat_reveal_ring.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mat_reveal_ring.emission_enabled = true
@@ -236,6 +241,8 @@ func _precompute_geometry() -> void:
 
 
 func _build_board_3d() -> void:
+	BaseGameBoard.bake_scene_static_cabinet(self, ["PlinthBase", "BoardFrame", "PlayingBed", "GoldBorderN", "GoldBorderS", "GoldBorderW", "GoldBorderE", "CornerTL", "CornerTR", "CornerBL", "CornerBR", "FrontPlaque"], "BakedMNumbersCabinet")
+
 	board_decor_root = Node3D.new()
 	board_decor_root.name = "BoardDecorRoot"
 	add_child(board_decor_root)
@@ -253,6 +260,7 @@ func _build_board_3d() -> void:
 	add_child(vfx_root)
 
 	_build_grid_wire_lines()
+	BaseGameBoard.bake_and_replace_static_meshes(board_decor_root, "BakedMNumbersGrid", true)
 	_build_36_memory_wells_and_medallions()
 	_build_side_reserve_trays()
 
@@ -536,6 +544,7 @@ func _create_single_tray(tray_name: String, pos_x: float, gamer_id: int) -> Node
 		trim.position = Vector3(0.0, 0.021, z_sign * 0.438)
 		root.add_child(trim)
 
+	BaseGameBoard.bake_and_replace_static_meshes(root, "BakedTrayMesh", true)
 	return root
 
 

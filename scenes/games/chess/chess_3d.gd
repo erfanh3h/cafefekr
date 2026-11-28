@@ -74,6 +74,7 @@ func _ready() -> void:
 	half_board = board_size / 2.0
 	_load_3d_meshes()
 	_setup_materials()
+	BaseGameBoard.bake_scene_static_cabinet(self, ["PlinthBase", "BoardFrame", "AlgebraicBed", "GoldBorderN", "GoldBorderS", "GoldBorderW", "GoldBorderE", "CornerTL", "CornerTR", "CornerBL", "CornerBR", "FrontPlaque"], "BakedChessCabinet")
 	_generate_3d_board()
 	_create_graveyard_trays()
 	_init_board_data()
@@ -106,9 +107,8 @@ func _setup_materials() -> void:
 
 	# Gentle golden radiance on hover
 	mat_cell_hover = StandardMaterial3D.new()
+	mat_cell_hover.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_cell_hover.albedo_color = Color(0.96, 0.82, 0.32, 0.85)
-	mat_cell_hover.metallic = 0.4
-	mat_cell_hover.roughness = 0.22
 	mat_cell_hover.emission_enabled = true
 	mat_cell_hover.emission = Color(0.92, 0.72, 0.22)
 	mat_cell_hover.emission_energy_multiplier = 0.75
@@ -182,6 +182,7 @@ func _setup_materials() -> void:
 
 	# Move Marker (Emerald Green glow disc)
 	mat_marker_move = StandardMaterial3D.new()
+	mat_marker_move.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_marker_move.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_marker_move.albedo_color = Color(0.20, 0.92, 0.45, 0.88)
 	mat_marker_move.emission_enabled = true
@@ -190,6 +191,7 @@ func _setup_materials() -> void:
 
 	# Hit / Capture Marker (Crimson Target Ring)
 	mat_marker_hit = StandardMaterial3D.new()
+	mat_marker_hit.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_marker_hit.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_marker_hit.albedo_color = Color(1.0, 0.25, 0.25, 0.92)
 	mat_marker_hit.emission_enabled = true
@@ -198,6 +200,7 @@ func _setup_materials() -> void:
 
 	# Check (Kish) Warning Aura
 	mat_marker_check = StandardMaterial3D.new()
+	mat_marker_check.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_marker_check.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_marker_check.albedo_color = Color(1.0, 0.15, 0.15, 0.85)
 	mat_marker_check.emission_enabled = true
@@ -206,6 +209,7 @@ func _setup_materials() -> void:
 
 	# Last Move Indicator
 	mat_last_move = StandardMaterial3D.new()
+	mat_last_move.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat_last_move.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_last_move.albedo_color = Color(1.0, 0.88, 0.32, 0.45)
 	mat_last_move.emission_enabled = true
@@ -383,6 +387,9 @@ func _create_graveyard_trays() -> void:
 
 func _build_graveyard_tray(gamer_id: int) -> Node3D:
 	var root = Node3D.new()
+	var static_tray = Node3D.new()
+	static_tray.name = "StaticTray"
+	root.add_child(static_tray)
 
 	# 1. Outer Dark Mahogany Plinth Frame
 	var frame = MeshInstance3D.new()
@@ -391,7 +398,7 @@ func _build_graveyard_tray(gamer_id: int) -> Node3D:
 	box_frame.size = Vector3(0.160, 0.024, 1.100)
 	frame.mesh = box_frame
 	frame.material_override = mat_tray_wood
-	root.add_child(frame)
+	static_tray.add_child(frame)
 
 	# 2. Recessed Velvet Cushion Pad (Crimson for Red, Cobalt for Blue)
 	var pad = MeshInstance3D.new()
@@ -401,7 +408,7 @@ func _build_graveyard_tray(gamer_id: int) -> Node3D:
 	pad.mesh = box_pad
 	pad.material_override = mat_tray_velvet_red if gamer_id == 1 else mat_tray_velvet_blue
 	pad.position.y = 0.010
-	root.add_child(pad)
+	static_tray.add_child(pad)
 
 	# 3. Gold Trim Inlay Strips along Velvet Pad Edges
 	for sx in [-1.0, 1.0]:
@@ -411,7 +418,7 @@ func _build_graveyard_tray(gamer_id: int) -> Node3D:
 		strip_z.mesh = box_sz
 		strip_z.material_override = mat_gold_trim
 		strip_z.position = Vector3(sx * 0.068, 0.012, 0.0)
-		root.add_child(strip_z)
+		static_tray.add_child(strip_z)
 
 	for sz in [-1.0, 1.0]:
 		var strip_x = MeshInstance3D.new()
@@ -420,7 +427,7 @@ func _build_graveyard_tray(gamer_id: int) -> Node3D:
 		strip_x.mesh = box_sx
 		strip_x.material_override = mat_gold_trim
 		strip_x.position = Vector3(0.0, 0.012, sz * 0.530)
-		root.add_child(strip_x)
+		static_tray.add_child(strip_x)
 
 	# 4. Polished Brass Corner Brackets
 	for cx in [-1.0, 1.0]:
@@ -431,7 +438,7 @@ func _build_graveyard_tray(gamer_id: int) -> Node3D:
 			bracket.mesh = b_mesh
 			bracket.material_override = mat_gold_trim
 			bracket.position = Vector3(cx * 0.072, 0.014, cz * 0.540)
-			root.add_child(bracket)
+			static_tray.add_child(bracket)
 
 			var rivet = MeshInstance3D.new()
 			var r_sph = SphereMesh.new()
@@ -441,6 +448,8 @@ func _build_graveyard_tray(gamer_id: int) -> Node3D:
 			rivet.material_override = mat_gold_trim
 			rivet.position.y = 0.003
 			bracket.add_child(rivet)
+
+	BaseGameBoard.bake_and_replace_static_meshes(static_tray, "BakedTrayMesh", true)
 
 	# 5. Front/Center Brass Plaque with Label
 	var plaque = MeshInstance3D.new()

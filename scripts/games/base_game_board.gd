@@ -644,3 +644,16 @@ static func bake_and_replace_static_meshes(branch_root: Node3D, baked_name: Stri
 		baked_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	branch_root.add_child(baked_mi)
 	return baked_mi
+
+## Reparents named static cabinet nodes under a branch and bakes them into one static mesh.
+static func bake_scene_static_cabinet(board_root: Node3D, node_names: Array[String], baked_name: String = "BakedCabinet") -> void:
+	if not is_instance_valid(board_root):
+		return
+	var static_cab := Node3D.new()
+	static_cab.name = baked_name + "Branch"
+	board_root.add_child(static_cab)
+	for n_name: String in node_names:
+		var child := board_root.get_node_or_null(n_name)
+		if is_instance_valid(child):
+			child.reparent(static_cab, true)
+	bake_and_replace_static_meshes(static_cab, baked_name, true)
