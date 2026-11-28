@@ -71,6 +71,7 @@ var cell_local_positions: Array[Vector3] = [] # 36 local positions inside their 
 var cell_areas: Array[Area3D] = [] # 36 cell raycast areas
 var cell_legal_halos: Array[MeshInstance3D] = [] # 36 legal/hover halos
 var cell_last_halos: Array[MeshInstance3D] = [] # 36 last-move halos
+var _visible_legal_halos: Array[MeshInstance3D] = []
 var board_marble_nodes: Array[Node3D] = [] # 36 active marble 3D nodes (children of quadrant_pivots)
 
 # 8 Sculpted 3D Rotation Buttons (index 0..7 -> rotation_id 1..8)
@@ -186,15 +187,19 @@ func _process(delta: float) -> void:
 	if not visible or not is_inside_tree():
 		return
 
-	_pulse_time += delta
-	var pulse_fast: float = 1.0 + 0.08 * sin(_pulse_time * 6.0)
-	var vec_fast := Vector3(pulse_fast, 1.0, pulse_fast)
-
-	for h in cell_legal_halos:
-		if h and h.visible:
-			h.scale = vec_fast
-
 	var rot_phase_active: bool = GameManager.is_game_active and is_my_turn and is_selection_played and not is_rotation_played and not is_animating_rotation
+	if _visible_legal_halos.is_empty() and not rot_phase_active and not _was_rot_phase_active:
+		set_process(false)
+		return
+
+	_pulse_time += delta
+	if not _visible_legal_halos.is_empty():
+		var pulse_fast: float = 1.0 + 0.08 * sin(_pulse_time * 6.0)
+		var vec_fast := Vector3(pulse_fast, 1.0, pulse_fast)
+		for h in _visible_legal_halos:
+			if is_instance_valid(h) and h.visible:
+				h.scale = vec_fast
+
 	if rot_phase_active:
 		_was_rot_phase_active = true
 		var pulse_rot: float = 1.0 + 0.07 * sin(_pulse_time * 5.2)
@@ -228,6 +233,8 @@ func _process(delta: float) -> void:
 				btn_node.position.y = BOARD_SURFACE_Y + 0.004
 			if r_idx < d_count and rotation_btn_dials[r_idx]:
 				rotation_btn_dials[r_idx].rotation.y = 0.0
+		if _visible_legal_halos.is_empty():
+			set_process(false)
 
 	if is_instance_valid(quadrant_spin_preview) and quadrant_spin_preview.visible:
 		var dir_sign: float = 1.0 if (hovered_rotation_id % 2 == 1) else -1.0
@@ -1309,11 +1316,15 @@ func _update_3d_labels_and_highlights() -> void:
 			lbl_phase_3d.modulate = Color(1.0, 0.78, 0.42)
 
 	# Update 36 cell halos
+	_visible_legal_halos.clear()
 	for i in range(NUM_CELLS):
 		if i < cell_last_halos.size() and is_instance_valid(cell_last_halos[i]):
 			cell_last_halos[i].visible = (i == last_placed_cell_id)
 		if i < cell_legal_halos.size() and is_instance_valid(cell_legal_halos[i]):
-			cell_legal_halos[i].visible = (can_place and board_state[i] == 0 and (hovered_cell_id == i or hovered_cell_id == -1))
+			var show_leg: bool = (can_place and board_state[i] == 0 and (hovered_cell_id == i or hovered_cell_id == -1))
+			cell_legal_halos[i].visible = show_leg
+			if show_leg:
+				_visible_legal_halos.append(cell_legal_halos[i])
 
 	# Update 8 rotation button visuals (all pill meshes + outer glow ring)
 	for r_idx in range(8):
@@ -1336,6 +1347,7 @@ func _update_3d_labels_and_highlights() -> void:
 		if is_instance_valid(quadrant_rim_meshes[q_idx]):
 			quadrant_rim_meshes[q_idx].material_override = mat_gold_highlight if q_idx == hov_quad else mat_gold_rail
 
+	set_process(not _visible_legal_halos.is_empty() or can_rotate or _was_rot_phase_active)
 	_update_hover_preview()
 
 func _update_hover_preview() -> void:

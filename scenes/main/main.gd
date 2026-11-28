@@ -868,16 +868,25 @@ func _setup_hud_and_network_signals() -> void:
 
 
 
+var _logo_tween: Tween = null
+
 func _start_logo_animation() -> void:
 	if not is_instance_valid(logo_plate):
 		return
-	logo_plate.pivot_offset = logo_plate.size / 2.0
+	if not logo_plate.visibility_changed.is_connected(_sync_logo_animation):
+		logo_plate.visibility_changed.connect(_sync_logo_animation)
+	_sync_logo_animation()
 
-	var tw = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	tw.tween_property(logo_plate, "scale", Vector2(1.05, 1.05), 1.8)
-
-	tw.tween_property(logo_plate, "scale", Vector2(0.97, 0.97), 1.8)
+func _sync_logo_animation() -> void:
+	if _logo_tween and _logo_tween.is_valid():
+		_logo_tween.kill()
+		_logo_tween = null
+	if not is_instance_valid(logo_plate) or not logo_plate.is_visible_in_tree():
+		return
+	logo_plate.pivot_offset = logo_plate.size * 0.5
+	_logo_tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_logo_tween.tween_property(logo_plate, "scale", Vector2(1.05, 1.05), 1.8)
+	_logo_tween.tween_property(logo_plate, "scale", Vector2(0.97, 0.97), 1.8)
 
 
 

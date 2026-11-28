@@ -1014,6 +1014,7 @@ func _refresh_action_buttons(playable_cnt: int) -> void:
 		_uno_pulse_tween.kill()
 		call_uno_btn.scale = Vector2.ONE
 	if can_uno and is_inside_tree():
+		call_uno_btn.pivot_offset = call_uno_btn.size * 0.5
 		_uno_pulse_tween = create_tween().set_loops()
 		_uno_pulse_tween.tween_property(call_uno_btn, "scale", Vector2(1.10, 1.10), 0.45).set_trans(Tween.TRANS_SINE)
 		_uno_pulse_tween.tween_property(call_uno_btn, "scale", Vector2.ONE, 0.45).set_trans(Tween.TRANS_SINE)

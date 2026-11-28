@@ -60,6 +60,7 @@ var cell_legal_frames: Array[Node3D] = []
 var cell_last_frames: Array[Node3D] = []
 var cell_token_roots: Array[Node3D] = []
 var cell_critical_roots: Array[Node3D] = []
+var _visible_legal_frames: Array[Node3D] = []
 
 # --- Luxury Procedural Materials ---
 var mat_walnut_base: StandardMaterial3D
@@ -112,26 +113,23 @@ func _ready() -> void:
 	super._ready()
 
 func _process(delta: float) -> void:
-	if not visible or not is_inside_tree():
+	if not visible or not is_inside_tree() or not GameManager.is_game_active:
 		return
 
 	_pulse_time += delta
 	var pulse_scale = 1.0 + 0.065 * sin(_pulse_time * 5.2)
 	var crit_scale_vec = Vector3(pulse_scale, 1.0, pulse_scale)
 	var arrow_bob = 0.004 * sin(_pulse_time * 6.5)
-	var crit_count = cell_critical_roots.size()
-	var legal_count = cell_legal_frames.size()
-	for i in range(MAX_CELLS):
-		if i < crit_count:
-			var c_root = cell_critical_roots[i]
-			if is_instance_valid(c_root) and c_root.visible:
-				c_root.scale = crit_scale_vec
-				c_root.position.y = arrow_bob
-		if i < legal_count:
-			var l_frame = cell_legal_frames[i]
-			if is_instance_valid(l_frame) and l_frame.visible:
-				var l_s = 1.0 + 0.025 * sin(_pulse_time * 4.4 + float(i) * 0.35)
-				l_frame.scale = Vector3(l_s, 1.0, l_s)
+	for i in range(cell_critical_roots.size()):
+		var c_root = cell_critical_roots[i]
+		if is_instance_valid(c_root) and c_root.visible:
+			c_root.scale = crit_scale_vec
+			c_root.position.y = arrow_bob
+	for i in range(_visible_legal_frames.size()):
+		var l_frame = _visible_legal_frames[i]
+		if is_instance_valid(l_frame) and l_frame.visible:
+			var l_s = 1.0 + 0.025 * sin(_pulse_time * 4.4 + float(i) * 0.35)
+			l_frame.scale = Vector3(l_s, 1.0, l_s)
 
 func _init_materials() -> void:
 	# 1. Board Plinth & Frame Materials
@@ -613,9 +611,13 @@ func _refresh_all_cells_visual(animate: bool = false) -> void:
 func _refresh_highlights() -> void:
 	var show_legal = GameManager.is_game_active and is_my_turn and not is_board_locked
 	var my_id = GameManager.my_player_index
+	_visible_legal_frames.clear()
 	for idx in range(MAX_CELLS):
 		if idx < cell_legal_frames.size() and is_instance_valid(cell_legal_frames[idx]):
-			cell_legal_frames[idx].visible = show_legal and (cell_owners[idx] == my_id)
+			var is_leg: bool = show_legal and (cell_owners[idx] == my_id)
+			cell_legal_frames[idx].visible = is_leg
+			if is_leg:
+				_visible_legal_frames.append(cell_legal_frames[idx])
 		if idx < cell_last_frames.size() and is_instance_valid(cell_last_frames[idx]):
 			cell_last_frames[idx].visible = (idx == last_played_index)
 

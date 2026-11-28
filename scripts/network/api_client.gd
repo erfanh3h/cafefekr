@@ -99,14 +99,17 @@ func _handle_unauthorized_if_needed(response_code: int, custom_headers: PackedSt
 		auth_token = ""
 		GameManager.logout()
 
+const REQUEST_TIMEOUT_SEC: float = 12.0
 var _http_pool: Array[HTTPRequest] = []
 
 func _acquire_http_request() -> HTTPRequest:
 	while not _http_pool.is_empty():
 		var cached: HTTPRequest = _http_pool.pop_back()
 		if is_instance_valid(cached):
+			cached.timeout = REQUEST_TIMEOUT_SEC
 			return cached
 	var http := HTTPRequest.new()
+	http.timeout = REQUEST_TIMEOUT_SEC
 	add_child(http)
 	return http
 
@@ -120,7 +123,8 @@ func _release_http_request(http: HTTPRequest) -> void:
 
 func _execute_http_request(endpoint: String, method: HTTPClient.Method, headers: PackedStringArray, auth_headers: PackedStringArray, body_str: String, callback: Callable) -> void:
 	var http: HTTPRequest = _acquire_http_request()
-	http.request_completed.connect(func(_result: int, response_code: int, _resp_headers: PackedStringArray, body: PackedByteArray):
+	var on_completed: Callable
+	on_completed = func(_result: int, response_code: int, _resp_headers: PackedStringArray, body: PackedByteArray) -> void:
 		var success: bool = (response_code >= 200 and response_code < 300)
 		var parsed_data = null
 		var json := JSON.new()
@@ -130,8 +134,14 @@ func _execute_http_request(endpoint: String, method: HTTPClient.Method, headers:
 		_release_http_request(http)
 		if callback.is_valid():
 			callback.call(success, response_code, parsed_data)
-	, CONNECT_ONE_SHOT)
-	http.request(base_url + endpoint, headers, method, body_str)
+	http.request_completed.connect(on_completed, CONNECT_ONE_SHOT)
+	var err: Error = http.request(base_url + endpoint, headers, method, body_str)
+	if err != OK:
+		if http.request_completed.is_connected(on_completed):
+			http.request_completed.disconnect(on_completed)
+		_release_http_request(http)
+		if callback.is_valid():
+			callback.call(false, 0, null)
 
 func _http_get(endpoint: String, custom_headers: PackedStringArray, callback: Callable) -> void:
 	_execute_http_request(endpoint, HTTPClient.METHOD_GET, custom_headers, custom_headers, "", callback)

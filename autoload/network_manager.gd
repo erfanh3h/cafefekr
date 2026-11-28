@@ -107,17 +107,29 @@ var api_port: int = 5001
 
 var _reconnect_timer: Timer
 var _presence_heartbeat_timer: Timer
+const RECONNECT_BACKOFF_SEC: Array[float] = [2.0, 4.0, 8.0, 15.0]
+var _reconnect_attempt: int = 0
+var _should_auto_reconnect: bool = false
+var _app_paused: bool = false
+var _cached_server_host: String = ""
 
-# Automatically resolve the server host based on platform and user configuration
+# Cached server host loaded once from user://server.cfg to avoid repeated disk reads
 var server_host: String:
 	get:
-		var config = ConfigFile.new()
-		if config.load("user://server.cfg") == OK and config.has_section_key("network", "host"):
-			return str(config.get_value("network", "host"))
-		if OS.get_name() == "Android":
-			# Default host on Android, can be configured via user://server.cfg
-			return "192.168.1.2"
-		return "192.168.1.2"
+		if _cached_server_host.is_empty():
+			_cached_server_host = _load_server_host()
+		return _cached_server_host
+
+func _load_server_host() -> String:
+	var config = ConfigFile.new()
+	if config.load("user://server.cfg") == OK and config.has_section_key("network", "host"):
+		return str(config.get_value("network", "host"))
+	return "192.168.1.2"
+
+func refresh_server_host() -> void:
+	_cached_server_host = _load_server_host()
+	if is_instance_valid(api):
+		api.set_base_url("http://%s:%d" % [server_host, api_port])
 
 var is_online: bool:
 	get:
@@ -148,10 +160,10 @@ func _ready() -> void:
 			connect_social_namespace()
 	)
 	
-	# Background reconnection timer
+	# Background reconnection timer (uses exponential backoff in _schedule_next_reconnect)
 	_reconnect_timer = Timer.new()
-	_reconnect_timer.wait_time = 4.0
-	_reconnect_timer.one_shot = false
+	_reconnect_timer.wait_time = RECONNECT_BACKOFF_SEC[0]
+	_reconnect_timer.one_shot = true
 	_reconnect_timer.autostart = false
 	add_child(_reconnect_timer)
 	_reconnect_timer.timeout.connect(_on_reconnect_timeout)
@@ -244,20 +256,47 @@ func fetch_server_config(callback: Callable = Callable()) -> void:
 			callback.call(success, GameManager.server_config)
 	)
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED:
+		_app_paused = true
+		if is_instance_valid(_reconnect_timer):
+			_reconnect_timer.stop()
+	elif what == NOTIFICATION_APPLICATION_RESUMED:
+		_app_paused = false
+		if _should_auto_reconnect and not is_online:
+			_reconnect_attempt = 0
+			_schedule_next_reconnect(0.5)
+
 func connect_to_game_server() -> void:
+	_should_auto_reconnect = true
 	socket.connect_to_host(server_host, game_port, false)
-	if _reconnect_timer and _reconnect_timer.is_stopped():
-		_reconnect_timer.start()
+	if not is_online:
+		_schedule_next_reconnect()
 
 func disconnect_from_game_server() -> void:
-	_reconnect_timer.stop()
+	_should_auto_reconnect = false
+	_reconnect_attempt = 0
+	if is_instance_valid(_reconnect_timer):
+		_reconnect_timer.stop()
 	socket.disconnect_from_host()
 
+func _schedule_next_reconnect(override_delay: float = -1.0) -> void:
+	if _app_paused or not _should_auto_reconnect or not is_instance_valid(_reconnect_timer):
+		return
+	var delay: float = override_delay
+	if delay < 0.0:
+		var idx: int = mini(_reconnect_attempt, RECONNECT_BACKOFF_SEC.size() - 1)
+		delay = RECONNECT_BACKOFF_SEC[idx]
+		_reconnect_attempt = mini(_reconnect_attempt + 1, RECONNECT_BACKOFF_SEC.size())
+	_reconnect_timer.wait_time = delay
+	_reconnect_timer.start()
+
 func _on_reconnect_timeout() -> void:
-	if not is_online:
+	if not is_online and _should_auto_reconnect and not _app_paused:
 		if OS.is_debug_build():
 			print("[NetworkManager] Attempting to reconnect to game backend (%s:%d)..." % [server_host, game_port])
-		connect_to_game_server()
+		socket.connect_to_host(server_host, game_port, false)
+		_schedule_next_reconnect()
 
 func _on_presence_heartbeat() -> void:
 	if not is_online or not GameManager.is_logged_in or GameManager.token.is_empty():
@@ -546,7 +585,9 @@ func send_post_match_leave(game_id: String) -> void:
 func _on_socket_connected() -> void:
 	if OS.is_debug_build():
 		print("[NetworkManager] Connected to game backend!")
-	_reconnect_timer.stop()
+	_reconnect_attempt = 0
+	if is_instance_valid(_reconnect_timer):
+		_reconnect_timer.stop()
 	connection_status_changed.emit(true)
 	if GameManager.is_logged_in and not GameManager.token.is_empty():
 		connect_social_namespace()
@@ -581,8 +622,8 @@ func _on_socket_disconnected() -> void:
 	if OS.is_debug_build():
 		print("[NetworkManager] Disconnected from game backend.")
 	connection_status_changed.emit(false)
-	if _reconnect_timer.is_stopped():
-		_reconnect_timer.start()
+	if _should_auto_reconnect and not _app_paused:
+		_schedule_next_reconnect()
 
 func _on_namespace_connected(ns: String) -> void:
 	if OS.is_debug_build():

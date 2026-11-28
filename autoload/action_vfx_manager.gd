@@ -315,35 +315,41 @@ func spawn_victory_celebration(parent_node: Node3D, center_pos: Vector3, winner_
 
 # --- 5. 2D UI TACTILE CLICK JUICE (Kenney / Rokojori UI Action) ---
 
+func _tween_button_scale(btn: BaseButton, target_scale: Vector2, duration: float, trans: Tween.TransitionType) -> void:
+	if not is_instance_valid(btn):
+		return
+	btn.pivot_offset = btn.size * 0.5
+	if btn.has_meta(&"_vfx_juice_tween"):
+		var prev_tw = btn.get_meta(&"_vfx_juice_tween")
+		if prev_tw is Tween and prev_tw.is_valid():
+			prev_tw.kill()
+	var tw = btn.create_tween().set_trans(trans).set_ease(Tween.EASE_OUT)
+	tw.tween_property(btn, "scale", target_scale, duration)
+	btn.set_meta(&"_vfx_juice_tween", tw)
+
 func apply_button_juice(btn: BaseButton, click_sound: String = "tap_button") -> void:
 	if not is_instance_valid(btn):
 		return
-		
-	btn.pivot_offset = btn.size / 2.0
-	
+	btn.pivot_offset = btn.size * 0.5
+
 	if not _is_mobile:
 		btn.mouse_entered.connect(func():
-			var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.12)
+			_tween_button_scale(btn, Vector2(1.05, 1.05), 0.12, Tween.TRANS_BACK)
 		)
-		
 		btn.mouse_exited.connect(func():
-			var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.12)
+			_tween_button_scale(btn, Vector2(1.0, 1.0), 0.12, Tween.TRANS_QUAD)
 		)
-	
+
 	btn.button_down.connect(func():
-		var tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tw.tween_property(btn, "scale", Vector2(0.94, 0.94), 0.06)
+		_tween_button_scale(btn, Vector2(0.94, 0.94), 0.06, Tween.TRANS_QUAD)
 		if not click_sound.is_empty():
 			AudioManager.play_sound(click_sound)
 	)
-	
+
 	btn.button_up.connect(func():
-		var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tw.tween_property(btn, "scale", Vector2(1.0, 1.0) if _is_mobile else Vector2(1.05, 1.05), 0.12)
+		_tween_button_scale(btn, Vector2(1.0, 1.0) if _is_mobile else Vector2(1.05, 1.05), 0.12, Tween.TRANS_BACK)
 	)
-	
+
 	btn.pressed.connect(func():
 		if not _is_mobile:
 			spawn_ui_click_burst(btn.get_global_mouse_position())

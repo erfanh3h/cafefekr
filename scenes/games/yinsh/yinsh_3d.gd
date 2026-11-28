@@ -75,6 +75,8 @@ var node_socket_meshes: Array[MeshInstance3D] = []
 var node_legal_halos: Array[MeshInstance3D] = []
 var node_select_halos: Array[MeshInstance3D] = []
 var node_last_halos: Array[MeshInstance3D] = []
+var _visible_legal_halos: Array[MeshInstance3D] = []
+var _visible_select_halos: Array[MeshInstance3D] = []
 
 # Active 3D piece instances on the 85 board spots (null when empty)
 var board_ring_nodes: Array[Node3D] = []
@@ -209,17 +211,20 @@ func _on_yinsh_socket_event(_ns: String, event_name: String, data: Variant) -> v
 func _process(delta: float) -> void:
 	if not visible or not is_inside_tree():
 		return
+	if _visible_legal_halos.is_empty() and _visible_select_halos.is_empty() and last_selected_piece_id < 0:
+		set_process(false)
+		return
 
 	_pulse_time += delta
 	var pulse_fast: float = 1.0 + 0.08 * sin(_pulse_time * 5.5)
 	var pulse_slow: float = 1.0 + 0.05 * sin(_pulse_time * 3.8)
 	var vec_fast := Vector3(pulse_fast, 1.0, pulse_fast)
 	var vec_slow := Vector3(pulse_slow, 1.0, pulse_slow)
-	for h in node_legal_halos:
-		if h and h.visible:
+	for h in _visible_legal_halos:
+		if is_instance_valid(h) and h.visible:
 			h.scale = vec_fast
-	for h in node_select_halos:
-		if h and h.visible:
+	for h in _visible_select_halos:
+		if is_instance_valid(h) and h.visible:
 			h.scale = vec_slow
 	if last_selected_piece_id >= 0 and last_selected_piece_id < board_ring_nodes.size():
 		var sel_ring = board_ring_nodes[last_selected_piece_id]
@@ -1435,6 +1440,8 @@ func _update_3d_labels_and_highlights() -> void:
 				lbl_phase_3d.modulate = Color(0.78, 0.84, 0.94)
 
 	var my_idx: int = GameManager.my_player_index
+	_visible_select_halos.clear()
+	_visible_legal_halos.clear()
 	for i in range(NUM_SPOTS):
 		if i < node_last_halos.size() and is_instance_valid(node_last_halos[i]):
 			node_last_halos[i].visible = (i == last_move_from or i == last_move_to or i == last_selected_piece_id)
@@ -1449,6 +1456,8 @@ func _update_3d_labels_and_highlights() -> void:
 				elif i == last_selected_piece_id:
 					can_sel = true
 			node_select_halos[i].visible = can_sel
+			if can_sel:
+				_visible_select_halos.append(node_select_halos[i])
 
 		if i < node_legal_halos.size() and is_instance_valid(node_legal_halos[i]):
 			var is_leg: bool = false
@@ -1458,7 +1467,10 @@ func _update_3d_labels_and_highlights() -> void:
 				elif not is_setup_ring_phase and current_remover == 0 and last_selected_piece_id != -1 and possible_moves.has(i):
 					is_leg = true
 			node_legal_halos[i].visible = is_leg
+			if is_leg:
+				_visible_legal_halos.append(node_legal_halos[i])
 
+	set_process(not _visible_legal_halos.is_empty() or not _visible_select_halos.is_empty() or last_selected_piece_id >= 0)
 	_update_hover_preview()
 
 func _update_hover_preview() -> void:
