@@ -512,11 +512,13 @@ func _create_single_tray(tray_name: String, pos_x: float, gamer_id: int) -> Node
 	root.name = tray_name
 	root.position = Vector3(pos_x, 0.0, 0.0)
 
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
 	var mat_wood := StandardMaterial3D.new()
-	mat_wood.albedo_color = Color(0.20, 0.11, 0.07)
-	mat_wood.roughness = 0.40
+	mat_wood.albedo_color = Color(0.52, 0.34, 0.22) if wood_tex != null else Color(0.20, 0.11, 0.07)
+	mat_wood.albedo_texture = wood_tex
+	mat_wood.uv1_scale = Vector3(1.5, 3.0, 1.5)
+	mat_wood.roughness = 0.44
 	mat_wood.clearcoat_enabled = false
-	mat_wood.clearcoat = 0.55
 
 	var base_mesh := BoxMesh.new()
 	base_mesh.size = Vector3(0.165, 0.022, 0.90)

@@ -367,21 +367,26 @@ func _fa_digits(val: Variant) -> String:
 # ==============================================================================
 
 func _init_materials() -> void:
+	var wood_tex: Texture2D = BaseGameBoard.get_shared_wood_texture()
+	var felt_tex: Texture2D = BaseGameBoard.get_shared_felt_texture()
+
 	# Outer Cabinet: Hand-Rubbed Royal Persian Walnut
 	mat_wood_case = StandardMaterial3D.new()
-	mat_wood_case.albedo_color = Color(0.19, 0.10, 0.05)
-	mat_wood_case.roughness = 0.34
-	mat_wood_case.metallic = 0.06
+	mat_wood_case.albedo_color = Color(0.46, 0.28, 0.16) if wood_tex != null else Color(0.19, 0.10, 0.05)
+	mat_wood_case.albedo_texture = wood_tex
+	mat_wood_case.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_wood_case.roughness = 0.48
+	mat_wood_case.metallic = 0.04
 	mat_wood_case.clearcoat_enabled = false
-	mat_wood_case.clearcoat = 0.50
 
 	# Raised Rails & Center Bar: Roasted Mahogany / Rosewood
 	mat_wood_rail = StandardMaterial3D.new()
-	mat_wood_rail.albedo_color = Color(0.30, 0.15, 0.08)
-	mat_wood_rail.roughness = 0.28
-	mat_wood_rail.metallic = 0.08
+	mat_wood_rail.albedo_color = Color(0.66, 0.40, 0.24) if wood_tex != null else Color(0.30, 0.15, 0.08)
+	mat_wood_rail.albedo_texture = wood_tex
+	mat_wood_rail.uv1_scale = Vector3(2.2, 2.2, 2.2)
+	mat_wood_rail.roughness = 0.40
+	mat_wood_rail.metallic = 0.05
 	mat_wood_rail.clearcoat_enabled = false
-	mat_wood_rail.clearcoat = 0.62
 
 	# Obsidian Backing
 	mat_obsidian_bed = StandardMaterial3D.new()
@@ -391,19 +396,25 @@ func _init_materials() -> void:
 
 	# Recessed Playing Court Baize: Deep Royal Emerald-Obsidian Velvet
 	mat_velvet_court = StandardMaterial3D.new()
-	mat_velvet_court.albedo_color = Color(0.05, 0.19, 0.14)
-	mat_velvet_court.roughness = 0.86
+	mat_velvet_court.albedo_color = Color(0.36, 0.64, 0.50) if felt_tex != null else Color(0.05, 0.19, 0.14)
+	mat_velvet_court.albedo_texture = felt_tex
+	mat_velvet_court.uv1_scale = Vector3(2.4, 2.4, 2.4)
+	mat_velvet_court.roughness = 0.88
 	mat_velvet_court.metallic = 0.02
 
 	# Bottom Dice Tray Baize: Lush Casino Emerald Felt
 	mat_velvet_tray = StandardMaterial3D.new()
-	mat_velvet_tray.albedo_color = Color(0.06, 0.26, 0.17)
-	mat_velvet_tray.roughness = 0.85
+	mat_velvet_tray.albedo_color = Color(0.44, 0.80, 0.60) if felt_tex != null else Color(0.06, 0.26, 0.17)
+	mat_velvet_tray.albedo_texture = felt_tex
+	mat_velvet_tray.uv1_scale = Vector3(2.4, 2.4, 2.4)
+	mat_velvet_tray.roughness = 0.86
 	mat_velvet_tray.metallic = 0.0
 
 	# Deep Velvet Wells (Bar, Bear-Off & Dice Wells)
 	mat_velvet_well = StandardMaterial3D.new()
-	mat_velvet_well.albedo_color = Color(0.04, 0.13, 0.10)
+	mat_velvet_well.albedo_color = Color(0.28, 0.48, 0.38) if felt_tex != null else Color(0.04, 0.13, 0.10)
+	mat_velvet_well.albedo_texture = felt_tex
+	mat_velvet_well.uv1_scale = Vector3(2.0, 2.0, 2.0)
 	mat_velvet_well.roughness = 0.90
 
 	# 24K Royal Gold Filigree, Hinges & P1 Inlays
@@ -1337,6 +1348,8 @@ func _build_3d_checker_piece_raw(gamer_id: int) -> Node3D:
 
 	var r: float = PIECE_RADIUS
 	var h: float = PIECE_HEIGHT
+
+	BaseGameBoard.add_baked_contact_shadow(root, r * 2.35, 0.0004)
 
 	# 1. Green Billiard Felt Base Pad
 	var felt = MeshInstance3D.new()

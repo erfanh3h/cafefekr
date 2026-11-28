@@ -399,6 +399,7 @@ func _build_single_node_socket(idx: int, pos: Vector3) -> Node3D:
 	cyl.material = mat_obsidian_well
 	well.mesh = cyl
 	well.position.y = 0.0015
+	well.set_meta(&"bake_ao", 0.72)
 	sock.add_child(well)
 
 	# Center Brass Pin Dot
@@ -450,12 +451,14 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	const WALL_T: float = 0.015
 	const WALL_H: float = 0.015
 
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
 	var mat_wood = StandardMaterial3D.new()
-	mat_wood.albedo_color = Color(0.20, 0.11, 0.06)
+	mat_wood.albedo_color = Color(0.52, 0.34, 0.22) if wood_tex != null else Color(0.20, 0.11, 0.06)
+	mat_wood.albedo_texture = wood_tex
+	mat_wood.uv1_scale = Vector3(1.5, 3.0, 1.5)
 	mat_wood.metallic = 0.04
-	mat_wood.roughness = 0.36
+	mat_wood.roughness = 0.42
 	mat_wood.clearcoat_enabled = false
-	mat_wood.clearcoat = 0.55
 
 	var base_inst = MeshInstance3D.new()
 	var base_box = BoxMesh.new()
@@ -464,9 +467,12 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	base_inst.mesh = base_box
 	static_tray.add_child(base_inst)
 
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
 	var mat_felt = StandardMaterial3D.new()
-	mat_felt.albedo_color = felt_color
-	mat_felt.roughness = 0.88
+	mat_felt.albedo_color = felt_color.lightened(0.28) if felt_tex != null else felt_color
+	mat_felt.albedo_texture = felt_tex
+	mat_felt.uv1_scale = Vector3(1.5, 4.0, 1.5)
+	mat_felt.roughness = 0.90
 
 	var felt_inst = MeshInstance3D.new()
 	var felt_box = BoxMesh.new()
@@ -643,6 +649,8 @@ func _build_3d_checker_piece_raw(gamer_id: int) -> Node3D:
 	var mat_main = mat_piece_p1 if gamer_id == 1 else mat_piece_p2
 	var mat_well = mat_piece_p1_well if gamer_id == 1 else mat_piece_p2_well
 	var mat_trim = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
+
+	BaseGameBoard.add_baked_contact_shadow(root, 0.104, 0.0004)
 
 	# 1. Weighted Velvet Green Felt Base Pad
 	var felt_pad = MeshInstance3D.new()

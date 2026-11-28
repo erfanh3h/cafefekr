@@ -138,6 +138,7 @@ var _hovered_move_idx: int = -999
 
 # Active 3D Pawn Nodes on the table
 var _yard_pawn_nodes: Dictionary = {}             # gamer_id -> Array[Node3D] (up to 4)
+var _cached_ludo_pawn_meshes: Dictionary = {}     # gamer_id -> ArrayMesh (baked pawn + contact shadow)
 var _start_portal_pawn_nodes: Dictionary = {}     # gamer_id -> Node3D
 var _board_spot_pawn_nodes: Dictionary = {}       # spot_idx (0..51) -> Node3D
 
@@ -350,19 +351,28 @@ func _init_empty_state(p_count: int) -> void:
 	available_moves.clear()
 
 func _init_materials() -> void:
+	var wood_tex: Texture2D = BaseGameBoard.get_shared_wood_texture()
+	var felt_tex: Texture2D = BaseGameBoard.get_shared_felt_texture()
+
 	_mat_wood_dark = StandardMaterial3D.new()
-	_mat_wood_dark.albedo_color = Color(0.18, 0.10, 0.06)
-	_mat_wood_dark.roughness = 0.42
-	_mat_wood_dark.metallic = 0.08
+	_mat_wood_dark.albedo_color = Color(0.46, 0.28, 0.16) if wood_tex != null else Color(0.18, 0.10, 0.06)
+	_mat_wood_dark.albedo_texture = wood_tex
+	_mat_wood_dark.uv1_scale = Vector3(2.2, 2.2, 2.2)
+	_mat_wood_dark.roughness = 0.48
+	_mat_wood_dark.metallic = 0.05
 
 	_mat_wood_trim = StandardMaterial3D.new()
-	_mat_wood_trim.albedo_color = Color(0.28, 0.16, 0.09)
-	_mat_wood_trim.roughness = 0.36
-	_mat_wood_trim.metallic = 0.10
+	_mat_wood_trim.albedo_color = Color(0.64, 0.40, 0.24) if wood_tex != null else Color(0.28, 0.16, 0.09)
+	_mat_wood_trim.albedo_texture = wood_tex
+	_mat_wood_trim.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	_mat_wood_trim.roughness = 0.40
+	_mat_wood_trim.metallic = 0.06
 
 	_mat_felt_emerald = StandardMaterial3D.new()
-	_mat_felt_emerald.albedo_color = Color(0.08, 0.16, 0.13)
-	_mat_felt_emerald.roughness = 0.85
+	_mat_felt_emerald.albedo_color = Color(0.40, 0.72, 0.56) if felt_tex != null else Color(0.08, 0.16, 0.13)
+	_mat_felt_emerald.albedo_texture = felt_tex
+	_mat_felt_emerald.uv1_scale = Vector3(2.4, 2.4, 2.4)
+	_mat_felt_emerald.roughness = 0.88
 	_mat_felt_emerald.metallic = 0.02
 
 	_mat_brass_gold = StandardMaterial3D.new()
@@ -925,8 +935,38 @@ func _get_die_target_rotation(val: int) -> Vector3:
 		_: return Vector3.ZERO
 
 func _create_royal_pawn_node(g_id: int, stack_count: int = 1) -> Node3D:
+	if not _cached_ludo_pawn_meshes.has(g_id):
+		var temp := _create_royal_pawn_node_raw(g_id)
+		_cached_ludo_pawn_meshes[g_id] = BaseGameBoard.bake_node_tree_to_mesh(temp, true)
+		temp.free()
+
+	var pawn = Node3D.new()
+	var mi = MeshInstance3D.new()
+	mi.mesh = _cached_ludo_pawn_meshes[g_id]
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	pawn.add_child(mi)
+
+	# Stack Count Badge (if > 1 pawn stacked on same spot)
+	if stack_count > 1:
+		var lbl = Label3D.new()
+		lbl.position = Vector3(0.0, 0.78 * S, 0.0)
+		lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		lbl.no_depth_test = true
+		lbl.pixel_size = 0.00105
+		lbl.font = preload("res://assets/fonts/hekayat.ttf")
+		lbl.font_size = 48
+		lbl.outline_size = 10
+		lbl.modulate = Color(1.0, 0.95, 0.40)
+		lbl.outline_modulate = Color(0.08, 0.04, 0.02, 0.98)
+		lbl.text = "×%s" % _fa_int(stack_count)
+		pawn.add_child(lbl)
+
+	return pawn
+
+func _create_royal_pawn_node_raw(g_id: int) -> Node3D:
 	var pawn = Node3D.new()
 	var mat: StandardMaterial3D = _mat_faction_pawn.get(g_id, _mat_faction_pawn[1])
+	BaseGameBoard.add_baked_contact_shadow(pawn, 0.44 * S, 0.0004)
 
 	# 1. Brass Base Rim
 	var rim = MeshInstance3D.new()
@@ -995,25 +1035,7 @@ func _create_royal_pawn_node(g_id: int, stack_count: int = 1) -> Node3D:
 	tip.position = Vector3(0.0, 0.60 * S, 0.0)
 	tip.material_override = _mat_brass_gold
 	pawn.add_child(tip)
-
-	# 7. Stack Count Badge (if > 1 pawn stacked on same spot)
-	if stack_count > 1:
-		var lbl = Label3D.new()
-		lbl.position = Vector3(0.0, 0.78 * S, 0.0)
-		lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		lbl.no_depth_test = true
-		lbl.pixel_size = 0.00105
-		lbl.font = preload("res://assets/fonts/hekayat.ttf")
-		lbl.font_size = 48
-		lbl.outline_size = 10
-		lbl.modulate = Color(1.0, 0.95, 0.40)
-		lbl.outline_modulate = Color(0.08, 0.04, 0.02, 0.98)
-		lbl.text = "×%s" % _fa_int(stack_count)
-		pawn.add_child(lbl)
-
-	for child in pawn.get_children():
-		if child is GeometryInstance3D:
-			child.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return pawn
 
 	return pawn
 

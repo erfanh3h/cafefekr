@@ -101,23 +101,22 @@ func _ready() -> void:
 	super._ready()
 
 func _init_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
 	# 1. Light Square — Warm Satin Maple / Honey Walnut
 	mat_cell_light = StandardMaterial3D.new()
 	mat_cell_light.albedo_color = Color(0.84, 0.72, 0.54)
 	mat_cell_light.metallic = 0.04
-	mat_cell_light.roughness = 0.34
+	mat_cell_light.roughness = 0.42
 	mat_cell_light.clearcoat_enabled = false
-	mat_cell_light.clearcoat = 0.45
-	mat_cell_light.clearcoat_roughness = 0.22
 
 	# 2. Dark Square — Rich Smoked Rosewood / Tournament Walnut
 	mat_cell_dark = StandardMaterial3D.new()
-	mat_cell_dark.albedo_color = Color(0.28, 0.16, 0.10)
-	mat_cell_dark.metallic = 0.05
-	mat_cell_dark.roughness = 0.38
+	mat_cell_dark.albedo_color = Color(0.56, 0.36, 0.24) if wood_tex != null else Color(0.28, 0.16, 0.10)
+	mat_cell_dark.albedo_texture = wood_tex
+	mat_cell_dark.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_cell_dark.metallic = 0.04
+	mat_cell_dark.roughness = 0.46
 	mat_cell_dark.clearcoat_enabled = false
-	mat_cell_dark.clearcoat = 0.50
-	mat_cell_dark.clearcoat_roughness = 0.24
 
 	# 3. 24K Gold Wire Grid & Borders
 	mat_gold_grid = StandardMaterial3D.new()
@@ -370,12 +369,14 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	const WALL_T: float = 0.015
 	const WALL_H: float = 0.015
 
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
 	var mat_wood = StandardMaterial3D.new()
-	mat_wood.albedo_color = Color(0.20, 0.11, 0.06)
+	mat_wood.albedo_color = Color(0.52, 0.34, 0.22) if wood_tex != null else Color(0.20, 0.11, 0.06)
+	mat_wood.albedo_texture = wood_tex
+	mat_wood.uv1_scale = Vector3(1.5, 3.0, 1.5)
 	mat_wood.metallic = 0.04
-	mat_wood.roughness = 0.36
+	mat_wood.roughness = 0.42
 	mat_wood.clearcoat_enabled = false
-	mat_wood.clearcoat = 0.55
 
 	var base_inst = MeshInstance3D.new()
 	var base_box = BoxMesh.new()
@@ -385,9 +386,12 @@ func _create_single_tray_mesh(tray_name: String, felt_color: Color, label_fa: St
 	base_inst.position = Vector3(0.0, 0.0, 0.0)
 	static_tray.add_child(base_inst)
 
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
 	var mat_felt = StandardMaterial3D.new()
-	mat_felt.albedo_color = felt_color
-	mat_felt.roughness = 0.88
+	mat_felt.albedo_color = felt_color.lightened(0.28) if felt_tex != null else felt_color
+	mat_felt.albedo_texture = felt_tex
+	mat_felt.uv1_scale = Vector3(1.5, 4.0, 1.5)
+	mat_felt.roughness = 0.90
 	mat_felt.metallic = 0.0
 
 	var felt_inst = MeshInstance3D.new()

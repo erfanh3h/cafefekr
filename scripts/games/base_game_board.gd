@@ -18,6 +18,69 @@ var is_my_turn: bool = false
 var current_turn: int = 1
 var my_player_index: int = 1
 
+static var _shared_wood_tex: Texture2D = null
+static var _shared_felt_tex: Texture2D = null
+static var _shared_khatam_tex: Texture2D = null
+static var _contact_shadow_mat: StandardMaterial3D = null
+static var _contact_shadow_quad: PlaneMesh = null
+
+static func get_shared_wood_texture() -> Texture2D:
+	if _shared_wood_tex == null and ResourceLoader.exists("res://assets/images/background2.jpg"):
+		_shared_wood_tex = load("res://assets/images/background2.jpg") as Texture2D
+	return _shared_wood_tex
+
+static func get_shared_felt_texture() -> Texture2D:
+	if _shared_felt_tex == null and ResourceLoader.exists("res://assets/images/cafe_textures/parlor_baize_felt.jpg"):
+		_shared_felt_tex = load("res://assets/images/cafe_textures/parlor_baize_felt.jpg") as Texture2D
+	return _shared_felt_tex
+
+static func get_shared_khatam_texture() -> Texture2D:
+	if _shared_khatam_tex == null and ResourceLoader.exists("res://assets/images/cafe_textures/persian_khatam.jpg"):
+		_shared_khatam_tex = load("res://assets/images/cafe_textures/persian_khatam.jpg") as Texture2D
+	return _shared_khatam_tex
+
+static func get_contact_shadow_material() -> StandardMaterial3D:
+	if _contact_shadow_mat != null:
+		return _contact_shadow_mat
+	const SZ: int = 64
+	var img := Image.create(SZ, SZ, false, Image.FORMAT_RGBA8)
+	var center: float = (float(SZ) - 1.0) * 0.5
+	var inv_r: float = 1.0 / (center - 1.0)
+	for y in range(SZ):
+		var dy: float = (float(y) - center) * inv_r
+		for x in range(SZ):
+			var dx: float = (float(x) - center) * inv_r
+			var r2: float = dx * dx + dy * dy
+			var alpha: float = 0.0
+			if r2 < 1.0:
+				var t: float = 1.0 - r2
+				alpha = t * t * 0.44
+			img.set_pixel(x, y, Color(0.03, 0.015, 0.005, alpha))
+	var tex := ImageTexture.create_from_image(img)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_texture = tex
+	mat.albedo_color = Color.WHITE
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
+	mat.cull_mode = BaseMaterial3D.CULL_BACK
+	_contact_shadow_mat = mat
+	return _contact_shadow_mat
+
+static func add_baked_contact_shadow(parent: Node3D, diameter: float, y_pos: float = 0.0004) -> MeshInstance3D:
+	if _contact_shadow_quad == null:
+		var pm := PlaneMesh.new()
+		pm.size = Vector2(1.0, 1.0)
+		_contact_shadow_quad = pm
+	var mi := MeshInstance3D.new()
+	mi.mesh = _contact_shadow_quad
+	mi.material_override = get_contact_shadow_material()
+	mi.scale = Vector3(diameter, 1.0, diameter)
+	mi.position = Vector3(0.0, y_pos, 0.0)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(mi)
+	return mi
+
 func _enter_tree() -> void:
 	_connect_network_signals()
 
@@ -468,7 +531,8 @@ static func bake_node_tree_to_mesh(branch_root: Node3D, merge_vertex_colors: boo
 			var sm: StandardMaterial3D = mat as StandardMaterial3D
 			if sm.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED and sm.albedo_texture == null and not sm.emission_enabled and not sm.rim_enabled:
 				use_vc = true
-				v_col = sm.albedo_color
+				var ao_factor: float = clampf(float(mi.get_meta(&"bake_ao", 1.0)), 0.45, 1.0)
+				v_col = Color(sm.albedo_color.r * ao_factor, sm.albedo_color.g * ao_factor, sm.albedo_color.b * ao_factor, sm.albedo_color.a)
 				if sm.metallic >= 0.5:
 					b_key = "vc_metal"
 					if not vc_mats.has(b_key):

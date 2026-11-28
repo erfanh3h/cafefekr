@@ -94,22 +94,24 @@ static func is_mobile() -> bool:
 
 static func make_player_card_style(active: bool, is_danger: bool = false, compact: bool = false) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
+	var mobile_mode: bool = is_mobile()
 	if active:
 		sb.bg_color = Color(0.24, 0.09, 0.09, 0.96) if is_danger else Color(COL_LEATHER_ACTIVE.r, COL_LEATHER_ACTIVE.g, COL_LEATHER_ACTIVE.b, 0.96)
 		sb.border_color = COL_DANGER if is_danger else COL_GOLD_ACTIVE
 		sb.set_border_width_all(2)
-		sb.border_width_bottom = 3
+		sb.border_width_top = 1 if mobile_mode else 2
+		sb.border_width_bottom = 4 if mobile_mode else 3
 		var glow := COL_DANGER if is_danger else COL_AMBER_GLOW
 		sb.shadow_color = Color(glow.r, glow.g, glow.b, 0.42 if is_danger else 0.34)
-		sb.shadow_size = 0 if is_mobile() else 12
+		sb.shadow_size = 0 if mobile_mode else 12
 		sb.shadow_offset = Vector2(0, 3)
 	else:
 		sb.bg_color = Color(COL_LEATHER_IDLE.r, COL_LEATHER_IDLE.g, COL_LEATHER_IDLE.b, 0.86)
 		sb.border_color = Color(COL_BRONZE_MUTED.r, COL_BRONZE_MUTED.g, COL_BRONZE_MUTED.b, 0.72)
 		sb.set_border_width_all(1)
-		sb.border_width_bottom = 2
+		sb.border_width_bottom = 3 if mobile_mode else 2
 		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
-		sb.shadow_size = 0 if is_mobile() else 5
+		sb.shadow_size = 0 if mobile_mode else 5
 		sb.shadow_offset = Vector2(0, 2)
 	sb.set_corner_radius_all(14 if compact else 16)
 	sb.content_margin_left = 8 if compact else 10
@@ -539,13 +541,14 @@ static func make_local_turn_bar_fill_style(is_danger: bool = false, custom_color
 
 static func make_local_turn_pill_style(is_danger: bool = false) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
+	var mobile_mode: bool = is_mobile()
 	sb.bg_color = Color(0.28, 0.08, 0.09, 0.94) if is_danger else Color(COL_WALNUT_DEEP.r, COL_WALNUT_DEEP.g, COL_WALNUT_DEEP.b, 0.92)
 	sb.border_color = COL_DANGER if is_danger else Color(COL_GOLD_ACTIVE.r, COL_GOLD_ACTIVE.g, COL_GOLD_ACTIVE.b, 0.90)
 	sb.set_border_width_all(1)
-	sb.border_width_bottom = 2
+	sb.border_width_bottom = 3 if mobile_mode else 2
 	sb.set_corner_radius_all(13)
 	sb.shadow_color = Color(COL_AMBER_GLOW.r, COL_AMBER_GLOW.g, COL_AMBER_GLOW.b, 0.28)
-	sb.shadow_size = 0 if is_mobile() else 8
+	sb.shadow_size = 0 if mobile_mode else 8
 	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 14
 	sb.content_margin_right = 14

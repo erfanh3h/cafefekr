@@ -92,18 +92,23 @@ func _ready() -> void:
 	super._ready()
 
 func _setup_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
+
 	# Light Square: Luxurious Antique Maple / Sycamore Ivory Wood (Satin Hand-Rubbed Oil)
 	mat_cell_light = StandardMaterial3D.new()
 	mat_cell_light.albedo_color = Color(0.91, 0.86, 0.78)
 	mat_cell_light.metallic = 0.0
-	mat_cell_light.roughness = 0.62
+	mat_cell_light.roughness = 0.56
 	mat_cell_light.clearcoat_enabled = false
 
 	# Dark Square: Rich Roasted Espresso Walnut / Rosewood (Playable Checkers Squares)
 	mat_cell_dark = StandardMaterial3D.new()
-	mat_cell_dark.albedo_color = Color(0.24, 0.14, 0.09)
+	mat_cell_dark.albedo_color = Color(0.56, 0.36, 0.24) if wood_tex != null else Color(0.24, 0.14, 0.09)
+	mat_cell_dark.albedo_texture = wood_tex
+	mat_cell_dark.uv1_scale = Vector3(2.0, 2.0, 2.0)
 	mat_cell_dark.metallic = 0.0
-	mat_cell_dark.roughness = 0.58
+	mat_cell_dark.roughness = 0.50
 	mat_cell_dark.clearcoat_enabled = false
 
 	# Gentle golden radiance on hover
@@ -138,8 +143,9 @@ func _setup_materials() -> void:
 
 	# Weighted Felt Base Pad (Tournament Green Baize)
 	mat_felt_base = StandardMaterial3D.new()
-	mat_felt_base.albedo_color = Color(0.08, 0.18, 0.10)
-	mat_felt_base.roughness = 0.96
+	mat_felt_base.albedo_color = Color(0.36, 0.54, 0.40) if felt_tex != null else Color(0.08, 0.18, 0.10)
+	mat_felt_base.albedo_texture = felt_tex
+	mat_felt_base.roughness = 0.94
 	mat_felt_base.metallic = 0.0
 
 	# Player 1 (White / Host): Royal Ivory Piano Lacquer
@@ -178,19 +184,25 @@ func _setup_materials() -> void:
 
 	# Side Graveyard Trays (Hardwood & Plush Velvet Lining)
 	mat_tray_wood = StandardMaterial3D.new()
-	mat_tray_wood.albedo_color = Color(0.22, 0.13, 0.08)
+	mat_tray_wood.albedo_color = Color(0.52, 0.34, 0.22) if wood_tex != null else Color(0.22, 0.13, 0.08)
+	mat_tray_wood.albedo_texture = wood_tex
+	mat_tray_wood.uv1_scale = Vector3(1.5, 3.0, 1.5)
 	mat_tray_wood.metallic = 0.02
 	mat_tray_wood.roughness = 0.45
 
 	mat_tray_velvet_red = StandardMaterial3D.new()
-	mat_tray_velvet_red.albedo_color = Color(0.36, 0.08, 0.10)
+	mat_tray_velvet_red.albedo_color = Color(0.86, 0.22, 0.26) if felt_tex != null else Color(0.36, 0.08, 0.10)
+	mat_tray_velvet_red.albedo_texture = felt_tex
+	mat_tray_velvet_red.uv1_scale = Vector3(1.5, 4.0, 1.5)
 	mat_tray_velvet_red.metallic = 0.0
-	mat_tray_velvet_red.roughness = 0.88
+	mat_tray_velvet_red.roughness = 0.90
 
 	mat_tray_velvet_blue = StandardMaterial3D.new()
-	mat_tray_velvet_blue.albedo_color = Color(0.08, 0.14, 0.32)
+	mat_tray_velvet_blue.albedo_color = Color(0.24, 0.42, 0.82) if felt_tex != null else Color(0.08, 0.14, 0.32)
+	mat_tray_velvet_blue.albedo_texture = felt_tex
+	mat_tray_velvet_blue.uv1_scale = Vector3(1.5, 4.0, 1.5)
 	mat_tray_velvet_blue.metallic = 0.0
-	mat_tray_velvet_blue.roughness = 0.88
+	mat_tray_velvet_blue.roughness = 0.90
 
 	# Normal Move Marker (Emerald Green glow disc)
 	mat_marker_move = StandardMaterial3D.new()
@@ -730,6 +742,8 @@ func _get_baked_checker_base_mesh(gamer_id: int) -> ArrayMesh:
 	var mat_main = mat_piece_p1 if gamer_id == 1 else mat_piece_p2
 	var mat_well = mat_piece_p1_well if gamer_id == 1 else mat_piece_p2_well
 	var mat_trim = mat_gold_trim if gamer_id == 1 else mat_platinum_trim
+
+	BaseGameBoard.add_baked_contact_shadow(temp_root, 0.106, 0.0004)
 
 	var felt_pad = MeshInstance3D.new()
 	var cyl_felt = CylinderMesh.new()

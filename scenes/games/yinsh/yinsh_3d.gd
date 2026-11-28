@@ -275,12 +275,15 @@ func _build_lattice_topology() -> void:
 # ============================================================================
 
 func _init_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
 	mat_walnut_plinth = StandardMaterial3D.new()
-	mat_walnut_plinth.albedo_color = Color(0.19, 0.10, 0.05)
-	mat_walnut_plinth.metallic = 0.08
-	mat_walnut_plinth.roughness = 0.34
+	mat_walnut_plinth.albedo_color = Color(0.50, 0.30, 0.18) if wood_tex != null else Color(0.19, 0.10, 0.05)
+	mat_walnut_plinth.albedo_texture = wood_tex
+	mat_walnut_plinth.uv1_scale = Vector3(3.0, 3.0, 3.0)
+	mat_walnut_plinth.metallic = 0.04
+	mat_walnut_plinth.roughness = 0.42
 	mat_walnut_plinth.clearcoat_enabled = false
-	mat_walnut_plinth.clearcoat = 0.55
 
 	mat_ebony_surface = StandardMaterial3D.new()
 	mat_ebony_surface.albedo_color = Color(0.08, 0.07, 0.09)
@@ -422,9 +425,11 @@ func _init_materials() -> void:
 
 	# Luxury Top Supply Box & 5-in-a-Row VFX Materials
 	mat_velvet_bed = StandardMaterial3D.new()
-	mat_velvet_bed.albedo_color = Color(0.042, 0.072, 0.145)
-	mat_velvet_bed.metallic = 0.06
-	mat_velvet_bed.roughness = 0.82
+	mat_velvet_bed.albedo_color = Color(0.16, 0.26, 0.44) if felt_tex != null else Color(0.042, 0.072, 0.145)
+	mat_velvet_bed.albedo_texture = felt_tex
+	mat_velvet_bed.uv1_scale = Vector3(3.0, 1.5, 3.0)
+	mat_velvet_bed.metallic = 0.04
+	mat_velvet_bed.roughness = 0.88
 
 	mat_gold_inlay = StandardMaterial3D.new()
 	mat_gold_inlay.albedo_color = Color(1.0, 0.84, 0.30)

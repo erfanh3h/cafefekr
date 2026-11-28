@@ -238,20 +238,24 @@ func _process(delta: float) -> void:
 # ============================================================================
 
 func _init_materials() -> void:
+	var wood_tex: Texture2D = BaseGameBoard.get_shared_wood_texture()
+	var felt_tex: Texture2D = BaseGameBoard.get_shared_felt_texture()
+
 	mat_walnut_chassis = StandardMaterial3D.new()
-	mat_walnut_chassis.albedo_color = Color(0.22, 0.11, 0.06)
-	mat_walnut_chassis.metallic = 0.08
-	mat_walnut_chassis.roughness = 0.36
+	mat_walnut_chassis.albedo_color = Color(0.50, 0.30, 0.18) if wood_tex != null else Color(0.22, 0.11, 0.06)
+	mat_walnut_chassis.albedo_texture = wood_tex
+	mat_walnut_chassis.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_walnut_chassis.metallic = 0.05
+	mat_walnut_chassis.roughness = 0.46
 	mat_walnut_chassis.clearcoat_enabled = false
-	mat_walnut_chassis.clearcoat = 0.60
-	mat_walnut_chassis.clearcoat_roughness = 0.22
 
 	mat_mahogany_trim = StandardMaterial3D.new()
-	mat_mahogany_trim.albedo_color = Color(0.30, 0.14, 0.08)
-	mat_mahogany_trim.metallic = 0.12
-	mat_mahogany_trim.roughness = 0.30
+	mat_mahogany_trim.albedo_color = Color(0.66, 0.40, 0.24) if wood_tex != null else Color(0.30, 0.14, 0.08)
+	mat_mahogany_trim.albedo_texture = wood_tex
+	mat_mahogany_trim.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_mahogany_trim.metallic = 0.08
+	mat_mahogany_trim.roughness = 0.38
 	mat_mahogany_trim.clearcoat_enabled = false
-	mat_mahogany_trim.clearcoat = 0.65
 
 	mat_obsidian_bed = StandardMaterial3D.new()
 	mat_obsidian_bed.albedo_color = Color(0.06, 0.06, 0.08)
@@ -290,9 +294,11 @@ func _init_materials() -> void:
 	mat_socket_well.roughness = 0.55
 
 	mat_velvet_tray = StandardMaterial3D.new()
-	mat_velvet_tray.albedo_color = Color(0.05, 0.08, 0.15)
-	mat_velvet_tray.metallic = 0.05
-	mat_velvet_tray.roughness = 0.82
+	mat_velvet_tray.albedo_color = Color(0.34, 0.48, 0.72) if felt_tex != null else Color(0.05, 0.08, 0.15)
+	mat_velvet_tray.albedo_texture = felt_tex
+	mat_velvet_tray.uv1_scale = Vector3(2.2, 2.2, 2.2)
+	mat_velvet_tray.metallic = 0.04
+	mat_velvet_tray.roughness = 0.86
 
 	# Model 1: Player 1 (Red) Imperial Ruby Orb
 	mat_marble_p1_body = StandardMaterial3D.new()
@@ -450,6 +456,7 @@ func _create_marble_3d_model_raw(gamer_id: int, is_ghost: bool = false) -> Node3
 	else:
 		body_mat = mat_marble_p1_body if gamer_id == 1 else mat_marble_p2_body
 		trim_mat = mat_marble_p1_gold if gamer_id == 1 else mat_marble_p2_plat
+		BaseGameBoard.add_baked_contact_shadow(root, 0.082, 0.0005)
 
 	# 1. Core Lacquered Gemstone Sphere
 	var orb_inst = MeshInstance3D.new()
@@ -889,6 +896,7 @@ func _build_board_3d() -> void:
 			s_well.mesh = sw_cyl
 			s_well.position = loc_pos + Vector3(0.0, -0.001, 0.0)
 			s_well.material_override = mat_socket_well
+			s_well.set_meta(&"bake_ao", 0.72)
 			static_quad.add_child(s_well)
 
 			# Legal Move / Hover Halo Ring

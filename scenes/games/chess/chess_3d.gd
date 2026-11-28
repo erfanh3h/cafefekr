@@ -909,7 +909,8 @@ func _build_3d_piece_mesh_raw(gamer_id: int, piece_name: String, cell_idx: int =
 
 	root.add_child(mesh_inst)
 
-	# 2. Tournament Weighted Velvet Green Felt Base Pad
+	# 2. Tournament Weighted Velvet Green Felt Base Pad & Baked Contact Shadow
+	BaseGameBoard.add_baked_contact_shadow(root, 0.094, 0.0004)
 	var felt_pad = MeshInstance3D.new()
 	felt_pad.name = "FeltBase"
 	var cyl_felt = CylinderMesh.new()

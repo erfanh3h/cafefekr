@@ -52,23 +52,25 @@ func _ready() -> void:
 	_generate_3d_board()
 
 func _setup_materials() -> void:
-	# Warm Royal Cream-Ivory Marble Inlay (Corners & Center)
+	var wood_tex: Texture2D = BaseGameBoard.get_shared_wood_texture()
+
+	# Warm Royal Cream-Ivory Maple Wood Inlay (Corners & Center)
 	mat_cell_light = StandardMaterial3D.new()
-	mat_cell_light.albedo_color = Color(0.84, 0.75, 0.60)
-	mat_cell_light.metallic = 0.05
-	mat_cell_light.roughness = 0.28
+	mat_cell_light.albedo_color = Color(0.95, 0.86, 0.72) if wood_tex != null else Color(0.84, 0.75, 0.60)
+	mat_cell_light.albedo_texture = wood_tex
+	mat_cell_light.uv1_scale = Vector3(1.5, 1.5, 1.5)
+	mat_cell_light.metallic = 0.02
+	mat_cell_light.roughness = 0.48
 	mat_cell_light.clearcoat_enabled = false
-	mat_cell_light.clearcoat = 0.55
-	mat_cell_light.clearcoat_roughness = 0.14
 
 	# Rich Roasted Persian Walnut-Teak Inlay (Cardinal Edge Cells)
 	mat_cell_dark = StandardMaterial3D.new()
-	mat_cell_dark.albedo_color = Color(0.42, 0.26, 0.16)
-	mat_cell_dark.metallic = 0.06
-	mat_cell_dark.roughness = 0.30
+	mat_cell_dark.albedo_color = Color(0.68, 0.46, 0.30) if wood_tex != null else Color(0.42, 0.26, 0.16)
+	mat_cell_dark.albedo_texture = wood_tex
+	mat_cell_dark.uv1_scale = Vector3(1.6, 1.6, 1.6)
+	mat_cell_dark.metallic = 0.03
+	mat_cell_dark.roughness = 0.48
 	mat_cell_dark.clearcoat_enabled = false
-	mat_cell_dark.clearcoat = 0.55
-	mat_cell_dark.clearcoat_roughness = 0.15
 
 	# Gentle Golden Radiance on Hover
 	mat_cell_hover = StandardMaterial3D.new()
@@ -103,12 +105,12 @@ func _setup_materials() -> void:
 
 	# Sculpted Royal Walnut Perimeter Rails
 	mat_walnut_rail = StandardMaterial3D.new()
-	mat_walnut_rail.albedo_color = Color(0.24, 0.13, 0.07)
-	mat_walnut_rail.metallic = 0.08
-	mat_walnut_rail.roughness = 0.26
+	mat_walnut_rail.albedo_color = Color(0.56, 0.34, 0.20) if wood_tex != null else Color(0.24, 0.13, 0.07)
+	mat_walnut_rail.albedo_texture = wood_tex
+	mat_walnut_rail.uv1_scale = Vector3(2.2, 2.2, 2.2)
+	mat_walnut_rail.metallic = 0.04
+	mat_walnut_rail.roughness = 0.44
 	mat_walnut_rail.clearcoat_enabled = false
-	mat_walnut_rail.clearcoat = 0.75
-	mat_walnut_rail.clearcoat_roughness = 0.14
 
 	# Deep Obsidian-Emerald Slate Deck
 	mat_obsidian_slate = StandardMaterial3D.new()

@@ -378,19 +378,24 @@ func _init_board_arrays() -> void:
 	is_rolling_dice = false
 
 func _init_materials() -> void:
+	var wood_tex: Texture2D = BaseGameBoard.get_shared_wood_texture()
+	var felt_tex: Texture2D = BaseGameBoard.get_shared_felt_texture()
+
 	mat_wood_base = StandardMaterial3D.new()
-	mat_wood_base.albedo_color = Color(0.18, 0.10, 0.05)
-	mat_wood_base.roughness = 0.34
-	mat_wood_base.metallic = 0.05
+	mat_wood_base.albedo_color = Color(0.46, 0.28, 0.16) if wood_tex != null else Color(0.18, 0.10, 0.05)
+	mat_wood_base.albedo_texture = wood_tex
+	mat_wood_base.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_wood_base.roughness = 0.48
+	mat_wood_base.metallic = 0.04
 	mat_wood_base.clearcoat_enabled = false
-	mat_wood_base.clearcoat = 0.45
 
 	mat_wood_rim = StandardMaterial3D.new()
-	mat_wood_rim.albedo_color = Color(0.28, 0.14, 0.07)
-	mat_wood_rim.roughness = 0.30
-	mat_wood_rim.metallic = 0.06
+	mat_wood_rim.albedo_color = Color(0.64, 0.38, 0.22) if wood_tex != null else Color(0.28, 0.14, 0.07)
+	mat_wood_rim.albedo_texture = wood_tex
+	mat_wood_rim.uv1_scale = Vector3(2.2, 2.2, 2.2)
+	mat_wood_rim.roughness = 0.40
+	mat_wood_rim.metallic = 0.05
 	mat_wood_rim.clearcoat_enabled = false
-	mat_wood_rim.clearcoat = 0.55
 
 	mat_gold_trim = StandardMaterial3D.new()
 	mat_gold_trim.albedo_color = Color(0.92, 0.74, 0.26)
@@ -399,16 +404,20 @@ func _init_materials() -> void:
 
 	mat_obsidian_bed = StandardMaterial3D.new()
 	mat_obsidian_bed.albedo_color = Color(0.08, 0.09, 0.12)
-	mat_obsidian_bed.roughness = 0.26
+	mat_obsidian_bed.roughness = 0.32
 	mat_obsidian_bed.metallic = 0.18
 
 	mat_felt_tray = StandardMaterial3D.new()
-	mat_felt_tray.albedo_color = Color(0.06, 0.25, 0.16)
-	mat_felt_tray.roughness = 0.86
+	mat_felt_tray.albedo_color = Color(0.44, 0.78, 0.58) if felt_tex != null else Color(0.06, 0.25, 0.16)
+	mat_felt_tray.albedo_texture = felt_tex
+	mat_felt_tray.uv1_scale = Vector3(2.4, 2.4, 2.4)
+	mat_felt_tray.roughness = 0.88
 	mat_felt_tray.metallic = 0.0
 
 	mat_felt_well = StandardMaterial3D.new()
-	mat_felt_well.albedo_color = Color(0.04, 0.16, 0.11)
+	mat_felt_well.albedo_color = Color(0.28, 0.50, 0.38) if felt_tex != null else Color(0.04, 0.16, 0.11)
+	mat_felt_well.albedo_texture = felt_tex
+	mat_felt_well.uv1_scale = Vector3(2.0, 2.0, 2.0)
 	mat_felt_well.roughness = 0.90
 
 	mat_cat_card_bg = StandardMaterial3D.new()
