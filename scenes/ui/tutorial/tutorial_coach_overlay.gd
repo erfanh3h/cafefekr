@@ -138,35 +138,6 @@ func _build_ui() -> void:
 	_pointer_lbl.add_theme_constant_override("shadow_outline_size", 4)
 	_root.add_child(_pointer_lbl)
 
-	# Optional compact Exit pill (used for Library game tutorials where game HUD top header is hidden)
-	_btn_exit = Button.new()
-	_btn_exit.name = "BtnTutorialExit"
-	_btn_exit.text = "✕ خروج از آموزش"
-	_btn_exit.visible = false
-	_btn_exit.focus_mode = Control.FOCUS_NONE
-	_btn_exit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	_btn_exit.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_btn_exit.offset_left = -210.0
-	_btn_exit.offset_top = 48.0
-	_btn_exit.offset_right = -24.0
-	_btn_exit.offset_bottom = 100.0
-	_btn_exit.add_theme_font_override("font", FONT_VAZIR)
-	_btn_exit.add_theme_font_size_override("font_size", 20)
-	_btn_exit.add_theme_color_override("font_color", CREAM_TEXT)
-	var exit_sb := StyleBoxFlat.new()
-	exit_sb.bg_color = Color(0.18, 0.11, 0.08, 0.90)
-	exit_sb.border_color = Color(0.86, 0.68, 0.32, 0.85)
-	exit_sb.set_border_width_all(2)
-	exit_sb.set_corner_radius_all(14)
-	_btn_exit.add_theme_stylebox_override("normal", exit_sb)
-	_btn_exit.add_theme_stylebox_override("hover", exit_sb)
-	_btn_exit.add_theme_stylebox_override("pressed", exit_sb)
-	_btn_exit.pressed.connect(func():
-		AudioManager.sfx_tap()
-		exit_pressed.emit()
-	)
-	_root.add_child(_btn_exit)
-
 	# Authentic Cafe Fekr `dialog.png` 9-slice Coach Card
 	# IMPORTANT: Keep LAYOUT_DIRECTION_LTR on container/labels and set TEXT_DIRECTION_RTL +
 	# HORIZONTAL_ALIGNMENT_RIGHT on each Label so Godot 4 does NOT mirror right-align to left.
@@ -367,6 +338,37 @@ func _build_ui() -> void:
 	)
 	_btn_row.add_child(_btn_next)
 
+	# Top-right Exit pill stacked above all scrims, spotlights, and coach card
+	_btn_exit = Button.new()
+	_btn_exit.name = "BtnTutorialExit"
+	_btn_exit.text = "✕ خروج از آموزش"
+	_btn_exit.visible = false
+	_btn_exit.disabled = false
+	_btn_exit.focus_mode = Control.FOCUS_NONE
+	_btn_exit.mouse_filter = Control.MOUSE_FILTER_STOP
+	_btn_exit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_btn_exit.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_btn_exit.offset_left = -210.0
+	_btn_exit.offset_top = 48.0
+	_btn_exit.offset_right = -24.0
+	_btn_exit.offset_bottom = 100.0
+	_btn_exit.add_theme_font_override("font", FONT_VAZIR)
+	_btn_exit.add_theme_font_size_override("font_size", 20)
+	_btn_exit.add_theme_color_override("font_color", CREAM_TEXT)
+	var exit_sb := StyleBoxFlat.new()
+	exit_sb.bg_color = Color(0.18, 0.11, 0.08, 0.92)
+	exit_sb.border_color = Color(0.86, 0.68, 0.32, 0.88)
+	exit_sb.set_border_width_all(2)
+	exit_sb.set_corner_radius_all(14)
+	_btn_exit.add_theme_stylebox_override("normal", exit_sb)
+	_btn_exit.add_theme_stylebox_override("hover", exit_sb)
+	_btn_exit.add_theme_stylebox_override("pressed", exit_sb)
+	_btn_exit.pressed.connect(func():
+		AudioManager.sfx_tap()
+		exit_pressed.emit()
+	)
+	_root.add_child(_btn_exit)
+
 
 func _make_scrim_rect(node_name: String) -> ColorRect:
 	var cr := ColorRect.new()
@@ -404,6 +406,11 @@ func show_step(step: TutorialStep, step_index: int, total_steps: int, can_go_bac
 	_anim_time = 0.0
 	visible = true
 	set_process(true)
+	if is_instance_valid(_coach_card):
+		_coach_card.visible = true
+	if is_instance_valid(_btn_exit):
+		_btn_exit.disabled = false
+		_root.move_child(_btn_exit, _root.get_child_count() - 1)
 
 	_apply_scrim_alpha(step.scrim_alpha)
 
@@ -455,10 +462,21 @@ func _deferred_relayout() -> void:
 	_layout_overlay()
 
 
-func hide_overlay() -> void:
+func hide_overlay(keep_exit: bool = false) -> void:
 	_current_step = null
 	_rect_initialized = false
 	_has_target = false
+	if keep_exit:
+		for ctrl in [_scrim_top, _scrim_bottom, _scrim_left, _scrim_right, _hole_blocker, _spotlight_ring, _spotlight_outer_glow, _pointer_lbl, _coach_card, _nudge_lbl]:
+			if is_instance_valid(ctrl):
+				ctrl.visible = false
+		if is_instance_valid(_btn_exit):
+			_btn_exit.visible = true
+			_btn_exit.disabled = false
+			_root.move_child(_btn_exit, _root.get_child_count() - 1)
+		visible = true
+		set_process(false)
+		return
 	if is_instance_valid(_scrim_top):
 		_scrim_top.mouse_filter = Control.MOUSE_FILTER_STOP
 	if is_instance_valid(_scrim_bottom):
@@ -474,6 +492,9 @@ func hide_overlay() -> void:
 func set_exit_button_visible(show_exit: bool) -> void:
 	if is_instance_valid(_btn_exit):
 		_btn_exit.visible = show_exit
+		_btn_exit.disabled = false
+		if show_exit and is_instance_valid(_root):
+			_root.move_child(_btn_exit, _root.get_child_count() - 1)
 
 
 func show_nudge(text: String) -> void:

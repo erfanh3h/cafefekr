@@ -1,11 +1,9 @@
-[gd_resource type="AudioBusLayout" load_steps=2 format=3]
+[gd_resource type="AudioBusLayout" format=3 uid="uid://bro4er6r3un0c"]
 
 [sub_resource type="AudioEffectLimiter" id="AudioEffectLimiter_master"]
 resource_name = "Limiter"
 ceiling_db = -0.3
 threshold_db = -1.5
-soft_clip_db = 2.0
-soft_clip_ratio = 10.0
 
 [resource]
 bus/0/effect/0/effect = SubResource("AudioEffectLimiter_master")

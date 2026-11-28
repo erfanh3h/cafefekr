@@ -775,20 +775,25 @@ func advance_lesson_step() -> void:
 func show_custom_step(step: TutorialStep, idx: int, total: int) -> void:
 	if is_library_game_tutorial_active() and is_instance_valid(_overlay):
 		_is_final_lesson_step = false
+		_overlay.set_exit_button_visible(true)
 		_overlay.show_step(step, idx, total, false)
 
 
 func show_final_lesson_step(step: TutorialStep, idx: int, total: int) -> void:
 	if is_library_game_tutorial_active() and is_instance_valid(_overlay):
 		_is_final_lesson_step = true
+		_overlay.set_exit_button_visible(true)
 		_overlay.show_step(step, idx, total, false)
 
 
 func hide_overlay_temporarily() -> void:
 	_suppress_next_show = true
 	if is_instance_valid(_overlay):
-		_overlay.set_exit_button_visible(false)
-		_overlay.hide_overlay()
+		if is_library_game_tutorial_active():
+			_overlay.hide_overlay(true)
+		else:
+			_overlay.set_exit_button_visible(false)
+			_overlay.hide_overlay()
 
 
 func reshow_current_step() -> void:

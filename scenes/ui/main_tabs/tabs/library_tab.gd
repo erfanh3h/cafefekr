@@ -8,6 +8,7 @@ signal game_tutorial_requested(game_id: String)
 
 const GameRegistry = preload("res://scripts/games/game_registry.gd")
 
+@onready var browse_scroll: ScrollContainer = $OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/Scroll
 @onready var grid_container: GridContainer = $OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/Scroll/GridContainer
 @onready var search_input: LineEdit = $OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/SearchRow/SearchInput
 @onready var filter_row: HBoxContainer = $OuterMargin/MainPanel/InnerMargin/VBox/BrowseView/FilterScroll/FilterHBox
@@ -55,6 +56,9 @@ func _ready() -> void:
 	_load_game_docs()
 	_init_games_list()
 	_build_category_buttons()
+
+	if is_instance_valid(browse_scroll):
+		browse_scroll.scroll_deadzone = 12
 
 	ActionVFXManager.apply_button_juice(btn_back_library, "tap_button")
 
@@ -198,12 +202,54 @@ func _populate_grid() -> void:
 		card.visible = visible_match
 
 
+func _bind_scroll_safe_tap(btn: BaseButton, on_tap: Callable) -> void:
+	btn.mouse_filter = Control.MOUSE_FILTER_PASS
+	var state: Dictionary = {
+		"down": false,
+		"cancelled": false,
+		"start_pos": Vector2.ZERO,
+		"start_scroll": 0,
+		"start_msec": 0
+	}
+	btn.button_down.connect(func():
+		state["down"] = true
+		state["cancelled"] = false
+		state["start_pos"] = btn.get_viewport().get_mouse_position() if btn.get_viewport() else Vector2.ZERO
+		state["start_scroll"] = browse_scroll.scroll_vertical if is_instance_valid(browse_scroll) else 0
+		state["start_msec"] = Time.get_ticks_msec()
+	)
+	btn.gui_input.connect(func(ev: InputEvent):
+		if not bool(state["down"]) or bool(state["cancelled"]):
+			return
+		if ev is InputEventMouseMotion or ev is InputEventScreenDrag:
+			var cur_pos: Vector2 = btn.get_viewport().get_mouse_position() if btn.get_viewport() else Vector2.ZERO
+			if cur_pos.distance_to(state["start_pos"] as Vector2) > 14.0:
+				state["cancelled"] = true
+	)
+	btn.pressed.connect(func():
+		var was_down: bool = bool(state["down"])
+		var was_cancelled: bool = bool(state["cancelled"])
+		state["down"] = false
+		state["cancelled"] = false
+		if not was_down or was_cancelled:
+			return
+		var cur_pos: Vector2 = btn.get_viewport().get_mouse_position() if btn.get_viewport() else Vector2.ZERO
+		var moved: float = cur_pos.distance_to(state["start_pos"] as Vector2)
+		var scroll_delta: int = absi((browse_scroll.scroll_vertical if is_instance_valid(browse_scroll) else 0) - int(state["start_scroll"]))
+		var elapsed_ms: int = Time.get_ticks_msec() - int(state["start_msec"])
+		if moved > 16.0 or scroll_delta > 6 or elapsed_ms >= 420:
+			return
+		on_tap.call()
+	)
+
+
 func _create_game_card(g: Dictionary) -> PanelContainer:
 	if _shared_card_style == null:
 		_shared_card_style = CafeSocialTheme.create_item_frame_style(46.0, 14.0)
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(0, 140)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	card.add_theme_stylebox_override("panel", _shared_card_style)
 
 	var has_tutorial: bool = GameTutorialRegistry.has_interactive_tutorial(g["id"])
@@ -213,8 +259,7 @@ func _create_game_card(g: Dictionary) -> PanelContainer:
 	click_btn.flat = true
 	click_btn.focus_mode = Control.FOCUS_NONE
 	click_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	ActionVFXManager.apply_button_juice(click_btn, "tap_button")
-	click_btn.pressed.connect(func():
+	_bind_scroll_safe_tap(click_btn, func():
 		AudioManager.sfx_tap()
 		open_game_details(g["id"])
 	)
@@ -309,6 +354,7 @@ func _create_tutorial_row_button(game_id: String) -> PanelContainer:
 	var box := PanelContainer.new()
 	box.custom_minimum_size = Vector2(72, 72)
 	box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	box.mouse_filter = Control.MOUSE_FILTER_PASS
 	box.add_theme_stylebox_override("panel", _shared_tut_btn_style)
 
 	var btn := Button.new()
@@ -316,8 +362,7 @@ func _create_tutorial_row_button(game_id: String) -> PanelContainer:
 	btn.flat = true
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	ActionVFXManager.apply_button_juice(btn, "tap_button")
-	btn.pressed.connect(func():
+	_bind_scroll_safe_tap(btn, func():
 		AudioManager.sfx_tap()
 		game_tutorial_requested.emit(game_id)
 	)
