@@ -1,8 +1,9 @@
-[gd_scene load_steps=21 format=3 uid="uid://c8yfqe2l1f0j1"]
+[gd_scene load_steps=22 format=3 uid="uid://c8yfqe2l1f0j1"]
 
 [ext_resource type="Script" path="res://scenes/environment/cafe_table.gd" id="1_table_script"]
 [ext_resource type="Texture2D" path="res://assets/images/background2.jpg" id="2_wood_tex"]
 [ext_resource type="Texture2D" path="res://assets/images/background1.jpg" id="3_wall_tex"]
+[ext_resource type="Texture2D" path="res://assets/images/cafe_textures/parlor_baize_felt.jpg" id="4_baize_tex"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.14, 0.09, 1)
@@ -37,16 +38,20 @@ material = SubResource("StandardMaterial3D_table_wood")
 size = Vector3(2.04, 0.09, 1.92)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_wood"]
-albedo_color = Color(0.28, 0.16, 0.08, 1)
-roughness = 0.42
+albedo_color = Color(0.50, 0.30, 0.17, 1)
+albedo_texture = ExtResource("2_wood_tex")
+uv1_scale = Vector3(2.5, 2.5, 2.5)
+roughness = 0.46
 
 [sub_resource type="BoxMesh" id="BoxMesh_table_rim"]
 material = SubResource("StandardMaterial3D_dark_wood")
 size = Vector3(2.12, 0.06, 2.00)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_table_mat"]
-albedo_color = Color(0.08, 0.28, 0.16, 1)
-roughness = 0.88
+albedo_color = Color(0.26, 0.48, 0.32, 1)
+albedo_texture = ExtResource("4_baize_tex")
+uv1_scale = Vector3(4.5, 4.5, 4.5)
+roughness = 0.90
 
 [sub_resource type="BoxMesh" id="BoxMesh_table_mat"]
 material = SubResource("StandardMaterial3D_table_mat")

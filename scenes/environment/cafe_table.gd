@@ -98,7 +98,6 @@ var _chair_south: MeshInstance3D = null # Local Player (Front / My Side)
 var _chair_west: MeshInstance3D = null  # Player 3 (Left Side)
 var _chair_east: MeshInstance3D = null  # Player 4 (Right Side)
 var _current_chair_count: int = 0
-var _chair_poll_timer: float = 0.0
 
 var _dynamic_props_root: Node3D = null
 var _menu_showcase_root: Node3D = null
@@ -130,6 +129,9 @@ var _last_prop_interact_ms: int = 0
 var _desk_lamp_shade_mat: StandardMaterial3D = null
 var _left_lamp_shade_mat: StandardMaterial3D = null
 var _right_lantern_glow_mat: StandardMaterial3D = null
+var _desk_lamp_glow_pool: MeshInstance3D = null
+var _right_lantern_glow_pool: MeshInstance3D = null
+var _warm_glow_pool_mat: StandardMaterial3D = null
 var _desk_lamp_on: bool = true
 var _left_lamp_on: bool = true
 var _right_lantern_on: bool = true
@@ -223,7 +225,17 @@ func _ready() -> void:
 			if n is GeometryInstance3D:
 				(n as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
+	var tbl_root := get_node_or_null("TableRoot") as Node3D
+	if tbl_root:
+		BaseGameBoard.bake_scene_static_cabinet(tbl_root, ["TablePedestal", "Foot1", "Foot2"], "BakedTablePedestal")
+
+	if NetworkManager and NetworkManager.has_signal("game_data_received") and not NetworkManager.game_data_received.is_connected(_on_cafe_game_data_received):
+		NetworkManager.game_data_received.connect(_on_cafe_game_data_received)
+
 	transition_to_menu_view(0.1)
+
+func _on_cafe_game_data_received(_payload: Dictionary) -> void:
+	update_player_chairs(_get_active_player_count())
 
 
 func _process(delta: float) -> void:
@@ -232,14 +244,6 @@ func _process(delta: float) -> void:
 	if _mouse_pressed and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_mouse_pressed = false
 		_is_dragging = false
-
-	# Periodically sync chair count with active match players (e.g. 2, 3, or 4 players)
-	_chair_poll_timer += delta
-	if _chair_poll_timer >= 1.0:
-		_chair_poll_timer = 0.0
-		var desired_chairs: int = _get_active_player_count()
-		if desired_chairs != _current_chair_count:
-			update_player_chairs(desired_chairs)
 
 	if _intro_glide_active:
 		_intro_glide_elapsed += delta
@@ -1136,7 +1140,7 @@ func _get_baked_bucket_info(mat: Material) -> Dictionary:
 	return {"key": k_sol, "mat": _baked_bucket_mats[k_sol], "color": sm.albedo_color, "uv_scale": Vector2.ONE}
 
 
-func _bake_node_tree_to_array_mesh(branch_root: Node3D) -> ArrayMesh:
+func _bake_node_tree_to_array_mesh(branch_root: Node3D, box_project_tex_uv: bool = false) -> ArrayMesh:
 	var mesh_nodes: Array[MeshInstance3D] = []
 	_collect_static_meshes_recursive(branch_root, branch_root, mesh_nodes)
 	if mesh_nodes.is_empty():
@@ -1239,12 +1243,21 @@ func _bake_node_tree_to_array_mesh(branch_root: Node3D) -> ArrayMesh:
 
 			for vi: int in range(v_count):
 				var w: int = base_offset + vi
-				out_verts[w] = sub_xf * src_verts[vi]
-				if has_norms:
-					out_norms[w] = (norm_basis * src_norms[vi]).normalized()
-				else:
-					out_norms[w] = Vector3.UP
-				if has_uvs:
+				var out_v: Vector3 = sub_xf * src_verts[vi]
+				var out_n: Vector3 = (norm_basis * src_norms[vi]).normalized() if has_norms else Vector3.UP
+				out_verts[w] = out_v
+				out_norms[w] = out_n
+				if box_project_tex_uv and b_key.begins_with("vc_tex_"):
+					var an: Vector3 = Vector3(absf(out_n.x), absf(out_n.y), absf(out_n.z))
+					var proj: Vector2
+					if an.y >= an.x and an.y >= an.z:
+						proj = Vector2(out_v.x, out_v.z)
+					elif an.x >= an.z:
+						proj = Vector2(out_v.z, out_v.y)
+					else:
+						proj = Vector2(out_v.x, out_v.y)
+					out_uvs[w] = Vector2(proj.x * uv_sc.x, proj.y * uv_sc.y)
+				elif has_uvs:
 					var uv0: Vector2 = src_uvs[vi]
 					out_uvs[w] = Vector2(uv0.x * uv_sc.x, uv0.y * uv_sc.y)
 				else:
@@ -1630,6 +1643,8 @@ func _trigger_cafe_prop_interaction(entry: Dictionary) -> void:
 				prop_id, _desk_lamp_shade_mat, _desk_lamp_on,
 				Color(0.96, 0.84, 0.60), Color(1.0, 0.75, 0.36), 1.28, Color(0.46, 0.38, 0.28)
 			)
+			if is_instance_valid(_desk_lamp_glow_pool):
+				_desk_lamp_glow_pool.visible = _desk_lamp_on
 			if not _is_mobile_gpu and has_node("TableLampLight"):
 				var tl: OmniLight3D = get_node("TableLampLight") as OmniLight3D
 				if tl:
@@ -1787,6 +1802,8 @@ func _trigger_cafe_prop_interaction(entry: Dictionary) -> void:
 				prop_id, _right_lantern_glow_mat, _right_lantern_on,
 				Color(0.98, 0.76, 0.34), Color(1.0, 0.70, 0.22), 1.55, Color(0.36, 0.28, 0.20)
 			)
+			if is_instance_valid(_right_lantern_glow_pool):
+				_right_lantern_glow_pool.visible = _right_lantern_on
 
 
 func _init_lounge_materials() -> void:
@@ -1807,11 +1824,7 @@ func _init_lounge_materials() -> void:
 	var tex_book_abru: Texture2D = _load_cafe_tex("book_marbled_abru.jpg")
 	var tex_book_golestan: Texture2D = _load_cafe_tex("book_golestan_floral.jpg")
 	var tex_book_filigree: Texture2D = _load_cafe_tex("book_spine_filigree.jpg")
-	var tex_chair_crimson: Texture2D = _load_cafe_tex("chair_velvet_crimson.jpg")
-	var tex_chair_emerald: Texture2D = _load_cafe_tex("chair_velvet_emerald.jpg")
-	var tex_chair_amber: Texture2D = _load_cafe_tex("chair_velvet_amber.jpg")
-	var tex_chair_cobalt: Texture2D = _load_cafe_tex("chair_velvet_cobalt.jpg")
-	var tex_chair_ruby: Texture2D = _load_cafe_tex("chair_termeh_ruby.jpg")
+	# Chair upholstery textures are lazy-loaded per active style in _ensure_chair_style_material()
 
 	# Mobile-friendly velvet-baize material (zero normal-map shader overhead, zero specular glare in 2D mode)
 	var mat_baize: StandardMaterial3D = StandardMaterial3D.new()
@@ -1947,16 +1960,14 @@ func _init_lounge_materials() -> void:
 	var mat_termeh_fabric: StandardMaterial3D = _make_mat(Color(0.88, 0.84, 0.80) if tex_termeh != null else Color(0.48, 0.10, 0.11), 0.86, 0.0, tex_termeh, Vector3(1.4, 1.4, 1.4))
 	mat_termeh_fabric.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 
-	# Rich textured upholstery materials for the 5 randomized 3D Persian parlor chairs
-	var mat_chair_crimson: StandardMaterial3D = _make_mat(Color(0.96, 0.92, 0.90) if tex_chair_crimson != null else Color(0.48, 0.09, 0.12), 0.84, 0.02, tex_chair_crimson, Vector3(1.10, 1.10, 1.10))
+	# Placeholder entries for lazy-loaded chair upholstery materials (only the active style texture is loaded)
+	var mat_chair_crimson: StandardMaterial3D = _make_mat(Color(0.48, 0.09, 0.12), 0.84, 0.02)
 	mat_chair_crimson.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	var mat_chair_emerald: StandardMaterial3D = _make_mat(Color(0.95, 0.96, 0.94) if tex_chair_emerald != null else Color(0.10, 0.32, 0.18), 0.82, 0.02, tex_chair_emerald, Vector3(1.10, 1.10, 1.10))
-	mat_chair_emerald.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	var mat_chair_amber: StandardMaterial3D = _make_mat(Color(0.98, 0.95, 0.90) if tex_chair_amber != null else Color(0.68, 0.46, 0.16), 0.82, 0.02, tex_chair_amber, Vector3(1.10, 1.10, 1.10))
-	mat_chair_amber.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	var mat_chair_cobalt: StandardMaterial3D = _make_mat(Color(0.95, 0.95, 0.98) if tex_chair_cobalt != null else Color(0.11, 0.22, 0.48), 0.82, 0.02, tex_chair_cobalt, Vector3(1.10, 1.10, 1.10))
+	var mat_chair_emerald: StandardMaterial3D = _make_mat(Color(0.10, 0.32, 0.18), 0.46, 0.04)
+	var mat_chair_amber: StandardMaterial3D = _make_mat(Color(0.68, 0.46, 0.16), 0.46, 0.04)
+	var mat_chair_cobalt: StandardMaterial3D = _make_mat(Color(0.11, 0.22, 0.48), 0.82, 0.02)
 	mat_chair_cobalt.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	var mat_chair_ruby: StandardMaterial3D = _make_mat(Color(0.96, 0.92, 0.90) if tex_chair_ruby != null else Color(0.52, 0.10, 0.14), 0.84, 0.02, tex_chair_ruby, Vector3(1.10, 1.10, 1.10))
+	var mat_chair_ruby: StandardMaterial3D = _make_mat(Color(0.52, 0.10, 0.14), 0.84, 0.02)
 	mat_chair_ruby.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 
 	var mat_chair_crimson_trim: StandardMaterial3D = _make_mat(Color(0.32, 0.06, 0.08), 0.72, 0.03)
@@ -2350,12 +2361,84 @@ func _build_desk_abajour(table_root: Node3D) -> void:
 
 	# Bake the Desk Abajour into a single multi-surface MeshInstance3D & register interactive lamp toggle
 	_bake_interactive_prop_branch(abajour, "BakedDeskAbajourMesh")
+	_desk_lamp_glow_pool = _create_warm_glow_pool(Vector2(0.58, 0.58), Vector3(0.0, 0.002, 0.0))
+	_desk_lamp_glow_pool.visible = _desk_lamp_on
+	abajour.add_child(_desk_lamp_glow_pool)
 	_register_interactive_prop("desk_abajour", abajour, Vector3(0.0, 0.18, 0.0), 0.17)
+
+
+func _get_warm_glow_pool_material() -> StandardMaterial3D:
+	if _warm_glow_pool_mat != null:
+		return _warm_glow_pool_mat
+	const SZ: int = 64
+	var img := Image.create(SZ, SZ, false, Image.FORMAT_RGBA8)
+	var center: float = (float(SZ) - 1.0) * 0.5
+	var inv_r: float = 1.0 / (center - 1.0)
+	for y in range(SZ):
+		var dy: float = (float(y) - center) * inv_r
+		for x in range(SZ):
+			var dx: float = (float(x) - center) * inv_r
+			var r2: float = dx * dx + dy * dy
+			var alpha: float = 0.0
+			if r2 < 1.0:
+				var t: float = 1.0 - r2
+				alpha = t * t * 0.24
+			img.set_pixel(x, y, Color(1.0, 0.78, 0.36, alpha))
+	var tex := ImageTexture.create_from_image(img)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_texture = tex
+	mat.albedo_color = Color.WHITE
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
+	mat.cull_mode = BaseMaterial3D.CULL_BACK
+	_warm_glow_pool_mat = mat
+	return _warm_glow_pool_mat
+
+
+func _create_warm_glow_pool(pool_size: Vector2, local_pos: Vector3) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var pm := PlaneMesh.new()
+	pm.size = pool_size
+	mi.mesh = pm
+	mi.material_override = _get_warm_glow_pool_material()
+	mi.position = local_pos
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.set_meta("skip_bake", true)
+	return mi
 
 
 # ============================================================================
 # 2. MULTI-PLAYER PERSIAN PARLOR CHAIRS (4 RANDOMIZED STYLES + GROUNDED BASES)
 # ============================================================================
+
+const CHAIR_STYLE_SPECS: Array[Dictionary] = [
+	{"key": "chair_emerald", "file": "chair_velvet_emerald.jpg", "fallback": Color(0.10, 0.32, 0.18), "albedo": Color(0.95, 0.96, 0.94), "rough": 0.46, "spec": BaseMaterial3D.SPECULAR_SCHLICK_GGX},
+	{"key": "chair_crimson", "file": "chair_velvet_crimson.jpg", "fallback": Color(0.48, 0.09, 0.12), "albedo": Color(0.96, 0.92, 0.90), "rough": 0.84, "spec": BaseMaterial3D.SPECULAR_DISABLED},
+	{"key": "chair_cobalt", "file": "chair_velvet_cobalt.jpg", "fallback": Color(0.11, 0.22, 0.48), "albedo": Color(0.95, 0.95, 0.98), "rough": 0.82, "spec": BaseMaterial3D.SPECULAR_DISABLED},
+	{"key": "chair_amber", "file": "chair_velvet_amber.jpg", "fallback": Color(0.68, 0.46, 0.16), "albedo": Color(0.98, 0.95, 0.90), "rough": 0.46, "spec": BaseMaterial3D.SPECULAR_SCHLICK_GGX},
+	{"key": "chair_ruby", "file": "chair_termeh_ruby.jpg", "fallback": Color(0.52, 0.10, 0.14), "albedo": Color(0.96, 0.92, 0.90), "rough": 0.84, "spec": BaseMaterial3D.SPECULAR_DISABLED},
+]
+
+func _ensure_chair_style_material(idx: int) -> void:
+	if idx < 0 or idx >= CHAIR_STYLE_SPECS.size():
+		return
+	var spec: Dictionary = CHAIR_STYLE_SPECS[idx]
+	var key: String = spec["key"]
+	var mat: StandardMaterial3D = _shared_mats.get(key) as StandardMaterial3D
+	if mat == null:
+		return
+	if mat.albedo_texture == null:
+		var tex: Texture2D = _load_cafe_tex(spec["file"])
+		if tex != null:
+			mat.albedo_texture = tex
+			mat.albedo_color = spec["albedo"]
+			mat.uv1_scale = Vector3(2.2, 2.2, 2.2)
+		else:
+			mat.albedo_color = spec["fallback"]
+		mat.roughness = float(spec["rough"])
+		mat.specular_mode = int(spec["spec"])
 
 func _get_or_build_chair_style_mesh(style_idx: int) -> ArrayMesh:
 	var idx: int = clampi(style_idx, 0, CHAIR_STYLE_COUNT - 1)
@@ -2363,6 +2446,10 @@ func _get_or_build_chair_style_mesh(style_idx: int) -> ArrayMesh:
 		var cached: ArrayMesh = _chair_style_meshes[idx] as ArrayMesh
 		if cached != null:
 			return cached
+	_ensure_chair_style_material(idx)
+	# Keep at most 1 built chair style in memory on mobile to minimize VRAM
+	if _is_mobile_gpu:
+		_chair_style_meshes.clear()
 	var temp_chair: Node3D = Node3D.new()
 	match idx:
 		0:
@@ -2375,7 +2462,7 @@ func _get_or_build_chair_style_mesh(style_idx: int) -> ArrayMesh:
 			_populate_chair_style_3_orosi_lattice(temp_chair)
 		4:
 			_populate_chair_style_4_termeh_armchair(temp_chair)
-	var baked: ArrayMesh = _bake_node_tree_to_array_mesh(temp_chair)
+	var baked: ArrayMesh = _bake_node_tree_to_array_mesh(temp_chair, true)
 	temp_chair.free()
 	if baked != null:
 		_chair_style_meshes[idx] = baked
@@ -2480,9 +2567,11 @@ func _add_grounded_chair_base(chair: Node3D, mat_wood_main: Material, mat_wood_d
 		# Subtle refined brass ankle collar near upper third
 		var ring_t: float = 0.28
 		_add_torus(chair, 0.015, 0.024, Vector3(lerpf(lx, foot_x, ring_t), -0.360, lerpf(lz, foot_z, ring_t)), mat_aged, Vector3.ZERO, 10)
-		# Polished Antique-Brass Sabot Foot Cap Resting Flush at y = -0.77
+		# Polished Antique-Brass Sabot Foot Cap Resting Flush at y = -0.77 + baked contact shadow
 		_add_cyl(chair, 0.017, 0.021, 0.046, Vector3(foot_x, -0.747, foot_z), mat_brass, Vector3.ZERO, 10)
 		_add_torus(chair, 0.015, 0.021, Vector3(foot_x, -0.724, foot_z), mat_aged, Vector3.ZERO, 10)
+		var foot_shadow := BaseGameBoard.add_baked_contact_shadow(chair, 0.16, -0.767)
+		foot_shadow.position = Vector3(foot_x, -0.767, foot_z)
 
 	# Delicate Turned Structural Stretchers (y = -0.58)
 	var st_y: float = -0.58
@@ -2516,9 +2605,9 @@ func _populate_chair_style_0_chesterfield(chair: Node3D) -> void:
 	_add_cyl(chair, 0.040, 0.040, 0.68, Vector3(0.0, -0.068, 0.388), mat_leather, Vector3(0.0, 0.0, 90.0), 10)
 	_add_cyl(chair, 0.010, 0.010, 0.72, Vector3(0.0, -0.126, 0.405), mat_aged, Vector3(0.0, 0.0, 90.0), 8)
 
-	# Contoured Arched Chesterfield Backrest (Smooth Textured Cushion Panel — Zero Blocky Primitives!)
+	# Contoured Arched Chesterfield Backrest (offset cylinder thickness eliminates Z-fighting seam)
 	_add_box(chair, Vector3(0.74, 0.42, 0.088), Vector3(0.0, 0.13, 0.004), mat_leather, Vector3(-6.0, 0.0, 0.0))
-	_add_cyl(chair, 0.37, 0.37, 0.086, Vector3(0.0, 0.22, -0.008), mat_leather, Vector3(84.0, 0.0, 0.0), 18)
+	_add_cyl(chair, 0.37, 0.37, 0.082, Vector3(0.0, 0.22, -0.008), mat_leather, Vector3(84.0, 0.0, 0.0), 18)
 	# Soft padded leather bolsters on left/right inner edges
 	for side_s: float in [-1.0, 1.0]:
 		_add_cyl(chair, 0.044, 0.044, 0.42, Vector3(side_s * 0.36, 0.13, 0.006), mat_trim, Vector3(-6.0, 0.0, 0.0), 10)
@@ -2570,9 +2659,9 @@ func _populate_chair_style_1_qajar_wingback(chair: Node3D) -> void:
 	_add_cyl(chair, 0.042, 0.042, 0.68, Vector3(0.0, -0.064, 0.390), mat_velvet, Vector3(0.0, 0.0, 90.0), 10)
 	_add_box(chair, Vector3(0.73, 0.012, 0.415), Vector3(0.0, -0.132, 0.205), mat_aged)
 
-	# Seamless Tall Sculpted Crimson Damask Backrest (Rounded Crown Silhouette — No Disconnected Cylinders!)
+	# Seamless Tall Sculpted Crimson Damask Backrest (offset cylinder eliminates coplanar seam)
 	_add_box(chair, Vector3(0.70, 0.48, 0.086), Vector3(0.0, 0.16, 0.002), mat_velvet, Vector3(-6.0, 0.0, 0.0))
-	_add_cyl(chair, 0.35, 0.35, 0.084, Vector3(0.0, 0.36, -0.020), mat_velvet, Vector3(84.0, 0.0, 0.0), 18)
+	_add_cyl(chair, 0.35, 0.35, 0.080, Vector3(0.0, 0.36, -0.020), mat_velvet, Vector3(84.0, 0.0, 0.0), 18)
 
 	# Smooth Continuous Mahogany Crown Arch Wrapping the Backrest
 	var crown_segs: int = 11
@@ -2719,9 +2808,9 @@ func _populate_chair_style_4_termeh_armchair(chair: Node3D) -> void:
 	_add_cyl(chair, 0.040, 0.040, 0.68, Vector3(0.0, -0.068, 0.388), mat_ruby, Vector3(0.0, 0.0, 90.0), 10)
 	_add_cyl(chair, 0.010, 0.010, 0.72, Vector3(0.0, -0.126, 0.405), mat_aged, Vector3(0.0, 0.0, 90.0), 8)
 
-	# Contoured Termeh Ruby Silk Brocade Backrest
+	# Contoured Termeh Ruby Silk Brocade Backrest (offset cylinder eliminates coplanar seam)
 	_add_box(chair, Vector3(0.72, 0.44, 0.084), Vector3(0.0, 0.14, 0.002), mat_ruby, Vector3(-6.0, 0.0, 0.0))
-	_add_cyl(chair, 0.36, 0.36, 0.082, Vector3(0.0, 0.28, -0.014), mat_ruby, Vector3(84.0, 0.0, 0.0), 18)
+	_add_cyl(chair, 0.36, 0.36, 0.078, Vector3(0.0, 0.28, -0.014), mat_ruby, Vector3(84.0, 0.0, 0.0), 18)
 
 	# Continuous Carved Mahogany Arch with Brass Finials
 	var arch_segs: int = 11
@@ -3767,6 +3856,9 @@ func _build_mini_brass_candle_lantern(parent: Node3D, pos: Vector3) -> void:
 	_add_torus(lan, 0.012, 0.018, Vector3(0.0, 0.190, 0.0), mat_brass, Vector3(90.0, 0.0, 0.0), 8)
 
 	_bake_interactive_prop_branch(lan, "BakedRightTableLanternMesh")
+	_right_lantern_glow_pool = _create_warm_glow_pool(Vector2(0.46, 0.46), Vector3(0.0, 0.002, 0.0))
+	_right_lantern_glow_pool.visible = _right_lantern_on
+	lan.add_child(_right_lantern_glow_pool)
 	_register_interactive_prop("right_table_lantern", lan, Vector3(0.0, 0.09, 0.0), 0.13)
 
 

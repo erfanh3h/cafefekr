@@ -124,7 +124,7 @@ func _load_server_host() -> String:
 	var config = ConfigFile.new()
 	if config.load("user://server.cfg") == OK and config.has_section_key("network", "host"):
 		return str(config.get_value("network", "host"))
-	return "192.168.1.2"
+	return "85.133.205.107"
 
 func refresh_server_host() -> void:
 	_cached_server_host = _load_server_host()

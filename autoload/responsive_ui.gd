@@ -230,18 +230,37 @@ func _scan_subtree(node: Node) -> void:
 	if not is_instance_valid(node):
 		return
 	if node is Control:
-		_instrument_text_control(node as Control)
+		var ctrl := node as Control
+		_enforce_top_level_ltr(ctrl)
+		_instrument_text_control(ctrl)
 	for ch in node.get_children():
 		_scan_subtree(ch)
 
 
 func _on_node_added(node: Node) -> void:
-	if node is Control and _is_text_control(node as Control):
+	if not (node is Control):
+		return
+	var ctrl := node as Control
+	_enforce_top_level_ltr(ctrl)
+	if _is_text_control(ctrl):
 		if node.has_meta(&"_resp_raw") and bool(node.get_meta(&"_resp_raw")):
 			return
 		if node.has_meta(&"_resp_instrumented"):
 			return
 		call_deferred("_instrument_text_control_by_id", node.get_instance_id())
+
+
+func _enforce_top_level_ltr(ctrl: Control) -> void:
+	# Lock top-level Control roots (under Window, CanvasLayer, Node, etc.) to LTR so
+	# Persian/Arabic OS locales never mirror layout geometry, while keeping TranslationServer
+	# locale intact and preserving explicit RTL overrides on nested child controls.
+	if not is_instance_valid(ctrl) or not ctrl.is_inside_tree():
+		return
+	if ctrl.layout_direction != Control.LAYOUT_DIRECTION_INHERITED:
+		return
+	var parent: Node = ctrl.get_parent()
+	if parent != null and not (parent is Control):
+		ctrl.layout_direction = Control.LAYOUT_DIRECTION_LTR
 
 
 func _instrument_text_control_by_id(iid: int) -> void:
