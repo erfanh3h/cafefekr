@@ -1773,6 +1773,8 @@ func _show_coup_event_feedback(ev: Dictionary) -> void:
 			var actor_n2: String = _get_player_short_name(int(ev.get("actor_id", 0)))
 			var target_n2: String = _get_player_short_name(int(ev.get("target_id", 0)))
 			AudioManager.sfx_lose()
+			ActionVFXManager.play_piece_drop_vfx(self, Vector3(0.0, 0.08, 0.0), Color(0.95, 0.30, 0.18))
+			ActionVFXManager.shake_camera(0.018, 0.16)
 			vfx_layer.play_special_effect_badge("💥 کودتا علیه %s!" % target_n2, Color(0.95, 0.30, 0.18), 1.55)
 			vfx_layer.show_contextual_toast("💥 %s علیه %s کودتا کرد!" % [actor_n2, target_n2], Color(1.0, 0.45, 0.32), 2.5)
 		"block_declared":
@@ -1915,6 +1917,7 @@ func _on_win_happened(payload: Dictionary) -> void:
 		GameManager.ludo_rank1 = rank1_player
 	if rank2_player > 0:
 		GameManager.ludo_rank2 = rank2_player
+	ActionVFXManager.spawn_victory_celebration(self, Vector3(0.0, 0.08, 0.0), rank1_player if rank1_player > 0 else my_player_index)
 	_refresh_all_visuals()
 
 func reset_board() -> void:

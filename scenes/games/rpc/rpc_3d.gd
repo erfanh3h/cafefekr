@@ -164,23 +164,30 @@ func _process(delta: float) -> void:
 # --- Materials Setup ---
 
 func _setup_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
+
 	mat_felt_base = StandardMaterial3D.new()
-	mat_felt_base.albedo_color = Color(0.06, 0.16, 0.09)
-	mat_felt_base.roughness = 0.95
+	mat_felt_base.albedo_color = Color(0.30, 0.48, 0.34) if felt_tex != null else Color(0.06, 0.16, 0.09)
+	mat_felt_base.albedo_texture = felt_tex
+	mat_felt_base.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_felt_base.roughness = 0.94
 
 	mat_mahogany_dark = StandardMaterial3D.new()
-	mat_mahogany_dark.albedo_color = Color(0.15, 0.08, 0.05)
+	mat_mahogany_dark.albedo_color = Color(0.46, 0.27, 0.16) if wood_tex != null else Color(0.15, 0.08, 0.05)
+	mat_mahogany_dark.albedo_texture = wood_tex
+	mat_mahogany_dark.uv1_scale = Vector3(2.0, 2.0, 2.0)
 	mat_mahogany_dark.metallic = 0.04
-	mat_mahogany_dark.roughness = 0.38
+	mat_mahogany_dark.roughness = 0.44
 	mat_mahogany_dark.clearcoat_enabled = false
-	mat_mahogany_dark.clearcoat = 0.60
 
 	mat_walnut_frame = StandardMaterial3D.new()
-	mat_walnut_frame.albedo_color = Color(0.24, 0.14, 0.08)
-	mat_walnut_frame.metallic = 0.05
-	mat_walnut_frame.roughness = 0.32
+	mat_walnut_frame.albedo_color = Color(0.54, 0.34, 0.20) if wood_tex != null else Color(0.24, 0.14, 0.08)
+	mat_walnut_frame.albedo_texture = wood_tex
+	mat_walnut_frame.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_walnut_frame.metallic = 0.04
+	mat_walnut_frame.roughness = 0.40
 	mat_walnut_frame.clearcoat_enabled = false
-	mat_walnut_frame.clearcoat = 0.68
 
 	mat_gold_trim = StandardMaterial3D.new()
 	mat_gold_trim.albedo_color = Color(0.96, 0.80, 0.28)

@@ -202,15 +202,22 @@ func _sync_hud_scores() -> void:
 
 # --- Materials ---
 func _setup_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
+
 	_mat_mahogany = StandardMaterial3D.new()
-	_mat_mahogany.albedo_color = Color(0.16, 0.085, 0.05)
-	_mat_mahogany.roughness = 0.36
-	_mat_mahogany.metallic = 0.06
+	_mat_mahogany.albedo_color = Color(0.46, 0.27, 0.16) if wood_tex != null else Color(0.16, 0.085, 0.05)
+	_mat_mahogany.albedo_texture = wood_tex
+	_mat_mahogany.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	_mat_mahogany.roughness = 0.44
+	_mat_mahogany.metallic = 0.05
 
 	_mat_walnut = StandardMaterial3D.new()
-	_mat_walnut.albedo_color = Color(0.24, 0.135, 0.075)
-	_mat_walnut.roughness = 0.32
-	_mat_walnut.metallic = 0.05
+	_mat_walnut.albedo_color = Color(0.54, 0.34, 0.20) if wood_tex != null else Color(0.24, 0.135, 0.075)
+	_mat_walnut.albedo_texture = wood_tex
+	_mat_walnut.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	_mat_walnut.roughness = 0.40
+	_mat_walnut.metallic = 0.04
 
 	_mat_brass = StandardMaterial3D.new()
 	_mat_brass.albedo_color = Color(0.86, 0.69, 0.28)
@@ -218,7 +225,9 @@ func _setup_materials() -> void:
 	_mat_brass.roughness = 0.24
 
 	_mat_emerald_felt = StandardMaterial3D.new()
-	_mat_emerald_felt.albedo_color = Color(0.055, 0.165, 0.11)
+	_mat_emerald_felt.albedo_color = Color(0.28, 0.48, 0.34) if felt_tex != null else Color(0.055, 0.165, 0.11)
+	_mat_emerald_felt.albedo_texture = felt_tex
+	_mat_emerald_felt.uv1_scale = Vector3(2.5, 2.5, 2.5)
 	_mat_emerald_felt.roughness = 0.92
 
 	_mat_obsidian_slate = StandardMaterial3D.new()
@@ -1298,6 +1307,7 @@ func _apply_finish_turn_round(data: Dictionary, play_sfx: bool = true) -> void:
 	if my_corr:
 		if play_sfx:
 			AudioManager.play_sound("win")
+			ActionVFXManager.play_piece_drop_vfx(self, Vector3(0.0, 0.12, 0.0), Color(0.45, 1.0, 0.62))
 		_lectern_status_text = "🎉 آفرین! پاسخ درست بود (+۱) • گزینه صحیح: «%s»" % correct_letter
 		_lectern_status_color = Color(0.48, 1.0, 0.66)
 		_set_header_banner("🎉 آفرین! پاسخ شما صحیح بود (+۱)", Color(0.35, 0.98, 0.52))

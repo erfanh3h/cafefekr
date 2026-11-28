@@ -592,6 +592,17 @@ func _get_baked_ring_mesh(gamer_id: int, is_ghost: bool) -> ArrayMesh:
 		baked.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, s1)
 		baked.surface_set_material(1, trim_mat)
 
+		# Surface 2: Baked radial contact shadow under non-ghost ring
+		var shadow_pm := PlaneMesh.new()
+		shadow_pm.size = Vector2(0.098, 0.098)
+		var shadow_arr: Array = shadow_pm.get_mesh_arrays()
+		var s_verts: PackedVector3Array = shadow_arr[Mesh.ARRAY_VERTEX]
+		for si in range(s_verts.size()):
+			s_verts[si].y += 0.0005
+		shadow_arr[Mesh.ARRAY_VERTEX] = s_verts
+		baked.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, shadow_arr)
+		baked.surface_set_material(2, BaseGameBoard.get_contact_shadow_material())
+
 	_cached_ring_meshes[cache_key] = baked
 	return baked
 
@@ -2094,6 +2105,8 @@ func on_win_happened(payload: Dictionary) -> void:
 							stagger_idx += 1
 		if any_new_win:
 			AudioManager.sfx_win()
+			ActionVFXManager.spawn_victory_celebration(fx_root if is_instance_valid(fx_root) else self, Vector3(0.0, BOARD_SURFACE_Y + 0.02, 0.0), fallback_gamer_id)
+			ActionVFXManager.shake_camera(0.018, 0.16)
 
 	var my_idx: int = GameManager.my_player_index
 	if typeof(rem_rings) == TYPE_ARRAY and not rem_rings.is_empty():

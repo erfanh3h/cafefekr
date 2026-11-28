@@ -178,15 +178,20 @@ func _init_data_structures() -> void:
 	_long_press_triggered = false
 
 func _init_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
 	mat_plinth = StandardMaterial3D.new()
-	mat_plinth.albedo_color = Color(0.15, 0.09, 0.05)
-	mat_plinth.roughness = 0.42
-	mat_plinth.metallic = 0.08
+	mat_plinth.albedo_color = Color(0.45, 0.27, 0.16) if wood_tex != null else Color(0.15, 0.09, 0.05)
+	mat_plinth.albedo_texture = wood_tex
+	mat_plinth.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	mat_plinth.roughness = 0.46
+	mat_plinth.metallic = 0.05
 
 	mat_frame = StandardMaterial3D.new()
-	mat_frame.albedo_color = Color(0.24, 0.13, 0.07)
-	mat_frame.roughness = 0.34
-	mat_frame.metallic = 0.12
+	mat_frame.albedo_color = Color(0.56, 0.34, 0.20) if wood_tex != null else Color(0.24, 0.13, 0.07)
+	mat_frame.albedo_texture = wood_tex
+	mat_frame.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	mat_frame.roughness = 0.40
+	mat_frame.metallic = 0.06
 
 	mat_brass_trim = StandardMaterial3D.new()
 	mat_brass_trim.albedo_color = Color(0.88, 0.70, 0.28)
@@ -1266,7 +1271,7 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 	vfx_root.add_child(fx)
 	var is_mob := GameManager.is_mobile
 
-	# 1. Dynamic 3D OmniLight3D Explosion Flash illuminating the board (desktop only to prevent mobile shader stall)
+	# 1. Dynamic 3D OmniLight3D Explosion Flash on desktop, lightweight blast glow on mobile
 	var blast_light: OmniLight3D = null
 	if not is_mob:
 		blast_light = OmniLight3D.new()
@@ -1275,6 +1280,8 @@ func _spawn_mine_explosion_vfx(pos: Vector3) -> void:
 		blast_light.omni_range = 1.45
 		blast_light.position = Vector3(0.0, 0.14, 0.0)
 		fx.add_child(blast_light)
+	else:
+		ActionVFXManager.spawn_mobile_blast_glow(vfx_root, fx.position, Color(1.0, 0.58, 0.16), 3.6, 0.28)
 
 	# 2. White-Hot Inner Plasma Core Sphere
 	var core_mat = StandardMaterial3D.new()

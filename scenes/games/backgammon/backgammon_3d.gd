@@ -2225,11 +2225,13 @@ func _animate_checker_flight(gamer_id: int, start_pos: Vector3, end_pos: Vector3
 
 		if was_blot_hit:
 			AudioManager.play_sound("hit")
+			ActionVFXManager.shake_camera(0.016, 0.14)
 			var bar_dest = _get_bar_piece_world_pos(hit_enemy_id, maxi((p1_out_pieces if hit_enemy_id == 1 else p2_out_pieces) - 1, 0))
 			_spawn_hit_explosion_vfx(end_pos, hit_enemy_id, bar_dest, hidden_bar_piece)
 		elif target_idx == 24 or target_idx == -1:
 			AudioManager.sfx_add_piece()
 			_spawn_bear_off_celebration_vfx(end_pos, gamer_id)
+			ActionVFXManager.play_piece_drop_vfx(self, end_pos, gamer_id)
 		else:
 			var land_col = Color(1.0, 0.36, 0.32) if gamer_id == 1 else Color(0.32, 0.68, 1.0)
 			_spawn_3d_ring_burst(end_pos, land_col, 0.10)

@@ -1788,6 +1788,8 @@ func _animate_pawn_move(gamer_id: int, src_index: int, target_index: int, move_t
 
 func _spawn_capture_vfx(hit_pos: Vector3, enemy_gamer_id: int) -> void:
 	AudioManager.play_sound("bell")
+	ActionVFXManager.play_piece_drop_vfx(_vfx_root if is_instance_valid(_vfx_root) else self, hit_pos, enemy_gamer_id)
+	ActionVFXManager.shake_camera(0.018, 0.15)
 	if enemy_gamer_id == GameManager.my_player_index:
 		show_hint("💥 مهره شما زده شد و به خانه شروع بازگشت!")
 	else:
@@ -1833,6 +1835,7 @@ func _on_win_happened(payload: Dictionary) -> void:
 
 	_sync_header_home_counts()
 	AudioManager.play_sound("bell")
+	ActionVFXManager.spawn_victory_celebration(_vfx_root if is_instance_valid(_vfx_root) else self, Vector3(0.0, SURFACE_Y + 0.02, 0.0), winner_id)
 
 	var p_data = GameManager.get_player_data_by_gamer_id(winner_id)
 	var p_name = str(p_data.get("name", p_data.get("username", "بازیکن %d" % winner_id)))

@@ -1021,6 +1021,10 @@ func _update_all_tile_rings() -> void:
 
 
 func _spawn_match_vfx(idx1: int, idx2: int, gamer_id: int) -> void:
+	if idx1 >= 0 and idx1 < cell_centers.size():
+		ActionVFXManager.play_piece_drop_vfx(vfx_root if is_instance_valid(vfx_root) else self, cell_centers[idx1] + Vector3(0.0, BOARD_SURFACE_Y, 0.0), gamer_id)
+	if idx2 >= 0 and idx2 < cell_centers.size():
+		ActionVFXManager.play_piece_drop_vfx(vfx_root if is_instance_valid(vfx_root) else self, cell_centers[idx2] + Vector3(0.0, BOARD_SURFACE_Y, 0.0), gamer_id)
 	var ring_mat := StandardMaterial3D.new()
 	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring_mat.albedo_color = Color(1.0, 0.32, 0.30, 0.90) if gamer_id == 1 else Color(0.30, 0.72, 1.0, 0.90)

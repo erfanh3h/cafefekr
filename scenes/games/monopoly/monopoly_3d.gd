@@ -1658,7 +1658,7 @@ func _on_roll_pressed() -> void:
 		return
 	if current_turn != GameManager.my_player_index or phase != "roll":
 		_show_monopoly_hint("⏳ اکنون نوبت پرتاب تاس شما نیست!", Color(1.0, 0.56, 0.42))
-		AudioManager.play_sound("wrong_Touch")
+		AudioManager.sfx_invalid()
 		return
 	AudioManager.play_sound("dice")
 	send_move(Commands.Monopoly_Roll, {})
@@ -1854,6 +1854,7 @@ func _describe_event(ev: Dictionary) -> String:
 			return "🎲 %s به «%s» رسید ($%s)" % [p_name, t_name, MonopolyData.fa_num(amt if amt > 0 else int(ev.get("price", 0)))]
 		"property_bought":
 			AudioManager.play_sound("bell")
+			ActionVFXManager.play_piece_drop_vfx(self, Vector3(0.0, 0.08, 0.0), Color(0.96, 0.80, 0.28))
 			return "🏠 %s ملک «%s» را خرید ($%s)" % [p_name, t_name, MonopolyData.fa_num(amt)]
 		"rent_paid":
 			var o_id := int(ev.get("owner_id", 0))
@@ -1864,7 +1865,8 @@ func _describe_event(ev: Dictionary) -> String:
 			var c: Dictionary = ev.get("card", {})
 			return "🎴 %s: %s" % [p_name, str(c.get("title", "کارت شانس"))]
 		"go_to_jail", "three_doubles_jail":
-			AudioManager.play_sound("wrong_Touch")
+			AudioManager.sfx_invalid()
+			ActionVFXManager.shake_camera(0.015, 0.14)
 			return "🚓 %s راهی زندان شد!" % p_name
 		"bail_paid":
 			return "💰 %s با پرداخت ۵۰$ از زندان آزاد شد" % p_name
@@ -1897,7 +1899,8 @@ func _describe_event(ev: Dictionary) -> String:
 		"trade_rejected":
 			return "❌ پیشنهاد معامله رد شد"
 		"bankrupt":
-			AudioManager.play_sound("wrong_Touch")
+			AudioManager.sfx_invalid()
+			ActionVFXManager.shake_camera(0.018, 0.16)
 			return "💀 %s ورشکسته شد!" % p_name
 		"turn_ended":
 			return "🎲 نوبت %s آغاز شد" % _get_player_name(int(ev.get("next_turn", current_turn)))
@@ -1959,6 +1962,7 @@ func _on_win_happened(payload: Dictionary) -> void:
 		rank2_player = int(payload["rank2"])
 		GameManager.ludo_rank2 = rank2_player
 	phase = "finished"
+	ActionVFXManager.spawn_victory_celebration(self, Vector3(0.0, 0.08, 0.0), rank1_player if rank1_player > 0 else my_player_index)
 	_update_header_players()
 	_refresh_hud_dock()
 

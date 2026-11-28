@@ -82,20 +82,29 @@ func _process(delta: float) -> void:
 
 
 func _init_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
+
 	_mat_wood_dark = StandardMaterial3D.new()
-	_mat_wood_dark.albedo_color = Color(0.14, 0.08, 0.05)
-	_mat_wood_dark.roughness = 0.42
-	_mat_wood_dark.metallic = 0.08
+	_mat_wood_dark.albedo_color = Color(0.46, 0.28, 0.18) if wood_tex != null else Color(0.14, 0.08, 0.05)
+	_mat_wood_dark.albedo_texture = wood_tex
+	_mat_wood_dark.uv1_scale = Vector3(3.0, 3.0, 3.0)
+	_mat_wood_dark.roughness = 0.44
+	_mat_wood_dark.metallic = 0.05
 
 	_mat_wood_trim = StandardMaterial3D.new()
-	_mat_wood_trim.albedo_color = Color(0.26, 0.14, 0.08)
-	_mat_wood_trim.roughness = 0.34
-	_mat_wood_trim.metallic = 0.12
+	_mat_wood_trim.albedo_color = Color(0.60, 0.36, 0.22) if wood_tex != null else Color(0.26, 0.14, 0.08)
+	_mat_wood_trim.albedo_texture = wood_tex
+	_mat_wood_trim.uv1_scale = Vector3(3.0, 3.0, 3.0)
+	_mat_wood_trim.roughness = 0.40
+	_mat_wood_trim.metallic = 0.08
 
 	_mat_felt_emerald = StandardMaterial3D.new()
-	_mat_felt_emerald.albedo_color = Color(0.07, 0.18, 0.13)
-	_mat_felt_emerald.roughness = 0.86
-	_mat_felt_emerald.metallic = 0.02
+	_mat_felt_emerald.albedo_color = Color(0.32, 0.50, 0.38) if felt_tex != null else Color(0.07, 0.18, 0.13)
+	_mat_felt_emerald.albedo_texture = felt_tex
+	_mat_felt_emerald.uv1_scale = Vector3(4.0, 4.0, 4.0)
+	_mat_felt_emerald.roughness = 0.90
+	_mat_felt_emerald.metallic = 0.0
 
 	_mat_brass_gold = StandardMaterial3D.new()
 	_mat_brass_gold.albedo_color = Color(0.94, 0.78, 0.32)

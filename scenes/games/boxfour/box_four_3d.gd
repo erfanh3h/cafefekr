@@ -132,14 +132,15 @@ func _process(delta: float) -> void:
 			l_frame.scale = Vector3(l_s, 1.0, l_s)
 
 func _init_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
 	# 1. Board Plinth & Frame Materials
 	mat_walnut_base = StandardMaterial3D.new()
-	mat_walnut_base.albedo_color = Color(0.20, 0.11, 0.06)
-	mat_walnut_base.metallic = 0.08
-	mat_walnut_base.roughness = 0.34
+	mat_walnut_base.albedo_color = Color(0.50, 0.30, 0.18) if wood_tex != null else Color(0.20, 0.11, 0.06)
+	mat_walnut_base.albedo_texture = wood_tex
+	mat_walnut_base.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	mat_walnut_base.metallic = 0.05
+	mat_walnut_base.roughness = 0.42
 	mat_walnut_base.clearcoat_enabled = false
-	mat_walnut_base.clearcoat = 0.55
-	mat_walnut_base.clearcoat_roughness = 0.22
 
 	mat_ebony_well = StandardMaterial3D.new()
 	mat_ebony_well.albedo_color = Color(0.09, 0.07, 0.06)
@@ -758,6 +759,7 @@ func _update_single_cell_visual(idx: int, animate: bool = false) -> void:
 		var tw_t = token_root.create_tween()
 		tw_t.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 		tw_t.tween_property(token_root, "scale", Vector3.ONE, 0.38)
+		ActionVFXManager.play_piece_drop_vfx(fx_root if is_instance_valid(fx_root) else self, cap_node.position, owner_id)
 
 # --- Move Execution & Chain-Reaction Explosion Logic ---
 
@@ -922,7 +924,7 @@ func _spawn_four_way_burst_vfx(c_idx: int, r_idx: int, targets: Array, gamer_id:
 	var origin = _cell_pos(c_idx, r_idx) + Vector3(0.0, 0.095, 0.0)
 	var burst_col = Color(1.0, 0.30, 0.22) if gamer_id == 1 else Color(0.24, 0.68, 1.0)
 
-	# 1. Dynamic OmniLight3D Flash at Exploding Cell (desktop only — avoids mobile dynamic light stall)
+	# 1. Dynamic OmniLight3D Flash on desktop, lightweight unshaded blast glow on mobile
 	if not GameManager.is_mobile:
 		var light = OmniLight3D.new()
 		light.light_color = burst_col
@@ -933,6 +935,8 @@ func _spawn_four_way_burst_vfx(c_idx: int, r_idx: int, targets: Array, gamer_id:
 		var tw_l = light.create_tween()
 		tw_l.tween_property(light, "light_energy", 0.0, 0.34)
 		tw_l.chain().tween_callback(light.queue_free)
+	else:
+		ActionVFXManager.spawn_mobile_blast_glow(fx_root, origin, burst_col, 2.8, 0.24)
 
 	# 2. Expanding 3D Shockwave Torus Ring
 	var wave = MeshInstance3D.new()

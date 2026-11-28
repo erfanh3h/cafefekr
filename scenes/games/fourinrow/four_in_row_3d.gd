@@ -122,29 +122,34 @@ func _init_empty_board_state() -> void:
 # --- Materials Setup ---
 
 func _setup_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
+
 	# Weighted Green Tournament Felt Pad
 	mat_felt_base = StandardMaterial3D.new()
-	mat_felt_base.albedo_color = Color(0.07, 0.17, 0.10)
-	mat_felt_base.roughness = 0.95
+	mat_felt_base.albedo_color = Color(0.32, 0.50, 0.36) if felt_tex != null else Color(0.07, 0.17, 0.10)
+	mat_felt_base.albedo_texture = felt_tex
+	mat_felt_base.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_felt_base.roughness = 0.94
 	mat_felt_base.metallic = 0.0
 
 	# Deep Roasted Mahogany Plinth
 	mat_mahogany_dark = StandardMaterial3D.new()
-	mat_mahogany_dark.albedo_color = Color(0.16, 0.09, 0.05)
+	mat_mahogany_dark.albedo_color = Color(0.46, 0.27, 0.16) if wood_tex != null else Color(0.16, 0.09, 0.05)
+	mat_mahogany_dark.albedo_texture = wood_tex
+	mat_mahogany_dark.uv1_scale = Vector3(2.0, 2.0, 2.0)
 	mat_mahogany_dark.metallic = 0.04
-	mat_mahogany_dark.roughness = 0.36
+	mat_mahogany_dark.roughness = 0.44
 	mat_mahogany_dark.clearcoat_enabled = false
-	mat_mahogany_dark.clearcoat = 0.60
-	mat_mahogany_dark.clearcoat_roughness = 0.18
 
 	# Hand-Rubbed Royal Walnut Frame & Pillars
 	mat_walnut_frame = StandardMaterial3D.new()
-	mat_walnut_frame.albedo_color = Color(0.26, 0.15, 0.09)
-	mat_walnut_frame.metallic = 0.05
-	mat_walnut_frame.roughness = 0.30
+	mat_walnut_frame.albedo_color = Color(0.56, 0.36, 0.22) if wood_tex != null else Color(0.26, 0.15, 0.09)
+	mat_walnut_frame.albedo_texture = wood_tex
+	mat_walnut_frame.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_walnut_frame.metallic = 0.04
+	mat_walnut_frame.roughness = 0.40
 	mat_walnut_frame.clearcoat_enabled = false
-	mat_walnut_frame.clearcoat = 0.68
-	mat_walnut_frame.clearcoat_roughness = 0.15
 
 	# Classic Royal Connect-4 Deep Prussian Navy-Slate Cage Body
 	mat_rack_royal_blue = StandardMaterial3D.new()
@@ -757,6 +762,9 @@ func _create_disc_node_raw(gamer_id: int, is_ghost: bool = false) -> Node3D:
 	var mat_body: Material = (mat_piece_p1_ghost if gamer_id == 1 else mat_piece_p2_ghost) if is_ghost else (mat_piece_p1 if gamer_id == 1 else mat_piece_p2)
 	var mat_well: Material = mat_body if is_ghost else (mat_piece_p1_well if gamer_id == 1 else mat_piece_p2_well)
 	var mat_metal: Material = mat_body if is_ghost else (mat_gold_trim if gamer_id == 1 else mat_platinum_trim)
+
+	if not is_ghost:
+		BaseGameBoard.add_baked_contact_shadow(disc, 0.092, 0.0004)
 
 	# 1. Outer Ribbed Tire Body
 	var outer = MeshInstance3D.new()

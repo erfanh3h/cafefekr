@@ -120,6 +120,7 @@ var _cached_legal_opp: Array = []
 var _cached_legal_h_count: int = -1
 var _cached_legal_v_count: int = -1
 var _cached_legal_moves: Array[Vector2i] = []
+var _cached_quoridor_pawn_meshes: Dictionary = {}
 
 static func _fa_digits(val: Variant) -> String:
 	var s := str(val)
@@ -219,25 +220,33 @@ func _wall_to_local_pos(wr: int, wc: int, y_offset: float = 0.0) -> Vector3:
 # ============================================================================
 
 func _init_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+
 	_mat_walnut = StandardMaterial3D.new()
-	_mat_walnut.albedo_color = Color(0.20, 0.11, 0.06)
-	_mat_walnut.metallic = 0.06
-	_mat_walnut.roughness = 0.36
+	_mat_walnut.albedo_color = Color(0.50, 0.30, 0.18) if wood_tex != null else Color(0.20, 0.11, 0.06)
+	_mat_walnut.albedo_texture = wood_tex
+	_mat_walnut.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	_mat_walnut.metallic = 0.04
+	_mat_walnut.roughness = 0.44
 
 	_mat_mahogany = StandardMaterial3D.new()
-	_mat_mahogany.albedo_color = Color(0.32, 0.14, 0.07)
-	_mat_mahogany.metallic = 0.10
-	_mat_mahogany.roughness = 0.30
+	_mat_mahogany.albedo_color = Color(0.64, 0.34, 0.20) if wood_tex != null else Color(0.32, 0.14, 0.07)
+	_mat_mahogany.albedo_texture = wood_tex
+	_mat_mahogany.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	_mat_mahogany.metallic = 0.06
+	_mat_mahogany.roughness = 0.40
 
 	_mat_tile_light = StandardMaterial3D.new()
 	_mat_tile_light.albedo_color = Color(0.79, 0.65, 0.46)
-	_mat_tile_light.roughness = 0.34
-	_mat_tile_light.metallic = 0.04
+	_mat_tile_light.roughness = 0.42
+	_mat_tile_light.metallic = 0.02
 
 	_mat_tile_dark = StandardMaterial3D.new()
-	_mat_tile_dark.albedo_color = Color(0.30, 0.19, 0.12)
-	_mat_tile_dark.roughness = 0.36
-	_mat_tile_dark.metallic = 0.05
+	_mat_tile_dark.albedo_color = Color(0.56, 0.36, 0.24) if wood_tex != null else Color(0.30, 0.19, 0.12)
+	_mat_tile_dark.albedo_texture = wood_tex
+	_mat_tile_dark.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	_mat_tile_dark.roughness = 0.46
+	_mat_tile_dark.metallic = 0.03
 
 	_mat_groove_gold = StandardMaterial3D.new()
 	_mat_groove_gold.albedo_color = Color(0.11, 0.07, 0.04)
@@ -559,11 +568,24 @@ func _create_fence_3d(main_mat: Material, length: float = WALL_LENGTH, height: f
 	_add_box_mesh(fence, Vector3(0.012, height + 0.008, thick + 0.004), Vector3(length * 0.5, height * 0.5 + 0.004, 0.0), _mat_brass_gold)
 	return fence
 
-# Exact Ludo Royal Pawn 3D geometry (ported from scenes/games/ludo/ludo_3d.gd)
+# Exact Ludo Royal Pawn 3D geometry (cached baked ArrayMesh + contact shadow)
 func _create_royal_pawn_node(g_id: int) -> Node3D:
+	if not _cached_quoridor_pawn_meshes.has(g_id):
+		var temp := _create_royal_pawn_node_raw(g_id)
+		_cached_quoridor_pawn_meshes[g_id] = BaseGameBoard.bake_node_tree_to_mesh(temp, true)
+		temp.free()
+	var pawn := Node3D.new()
+	var mi := MeshInstance3D.new()
+	mi.mesh = _cached_quoridor_pawn_meshes[g_id]
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	pawn.add_child(mi)
+	return pawn
+
+func _create_royal_pawn_node_raw(g_id: int) -> Node3D:
 	var pawn := Node3D.new()
 	var mat: StandardMaterial3D = _mat_faction_pawn.get(g_id, _mat_faction_pawn[1])
 	var s := PAWN_SCALE
+	BaseGameBoard.add_baked_contact_shadow(pawn, 0.44 * s, 0.0004)
 
 	# 1. Brass Base Rim
 	_add_cyl_mesh(pawn, 0.165 * s, 0.185 * s, 0.04 * s, Vector3(0.0, 0.02 * s, 0.0), _mat_brass_gold, 20)

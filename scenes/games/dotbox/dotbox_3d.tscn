@@ -1,9 +1,12 @@
-[gd_scene load_steps=17 format=3 uid="uid://db8x93y0pqch7"]
+[gd_scene load_steps=18 format=3 uid="uid://db8x93y0pqch7"]
 
 [ext_resource type="Script" path="res://scenes/games/dotbox/dotbox_3d.gd" id="1_dotbox_script"]
+[ext_resource type="Texture2D" path="res://assets/images/background2.jpg" id="2_wood_tex"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_plinth"]
-albedo_color = Color(0.15, 0.09, 0.06, 1)
+albedo_color = Color(0.45, 0.27, 0.16, 1)
+albedo_texture = ExtResource("2_wood_tex")
+uv1_scale = Vector3(2.5, 2.5, 2.5)
 metallic = 0.02
 roughness = 0.50
 
@@ -12,24 +15,24 @@ material = SubResource("StandardMaterial3D_plinth")
 size = Vector3(1.36, 0.025, 1.36)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_outer_rim"]
-albedo_color = Color(0.24, 0.14, 0.09, 1)
+albedo_color = Color(0.56, 0.34, 0.20, 1)
+albedo_texture = ExtResource("2_wood_tex")
+uv1_scale = Vector3(2.5, 2.5, 2.5)
 metallic = 0.03
-roughness = 0.36
+roughness = 0.42
 clearcoat_enabled = false
-clearcoat = 0.65
-clearcoat_roughness = 0.2
 
 [sub_resource type="BoxMesh" id="BoxMesh_outer_rim"]
 material = SubResource("StandardMaterial3D_outer_rim")
 size = Vector3(1.28, 0.042, 1.28)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_playing_bed"]
-albedo_color = Color(0.18, 0.12, 0.08, 1)
+albedo_color = Color(0.50, 0.30, 0.18, 1)
+albedo_texture = ExtResource("2_wood_tex")
+uv1_scale = Vector3(2.5, 2.5, 2.5)
 metallic = 0.04
-roughness = 0.38
+roughness = 0.44
 clearcoat_enabled = false
-clearcoat = 0.52
-clearcoat_roughness = 0.22
 
 [sub_resource type="BoxMesh" id="BoxMesh_playing_bed"]
 material = SubResource("StandardMaterial3D_playing_bed")

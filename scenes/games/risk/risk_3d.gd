@@ -1600,6 +1600,8 @@ func _announce_token_events_and_victory(data: Dictionary) -> void:
 	var is_fin: bool = bool(data.get("is_game_finished", false))
 	var win_id: int = _to_int(data.get("winner", 0))
 	if is_fin and win_id > 0:
+		ActionVFXManager.spawn_victory_celebration(_board_root if is_instance_valid(_board_root) else self, Vector3(0.0, 0.08, 0.0), win_id)
+		ActionVFXManager.shake_camera(0.018, 0.16)
 		var win_toks: Array = players_state.get(win_id, {}).get("tokens", [])
 		var tok_names: Array[String] = []
 		for t: Variant in win_toks:

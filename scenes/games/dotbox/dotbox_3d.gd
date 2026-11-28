@@ -1000,6 +1000,8 @@ func on_piece_selected(user_id: int, target_peace: int, _extra: Dictionary = {})
 			if boxes_board[box_id] == 0:
 				boxes_board[box_id] = gamer_id
 				_spawn_or_animate_box_crest(box_id, gamer_id, true, float(i) * 0.12)
+				if i == 0 and box_id < box_centers.size():
+					ActionVFXManager.play_piece_drop_vfx(pieces_root if is_instance_valid(pieces_root) else self, box_centers[box_id], gamer_id)
 
 		_recalculate_scores_from_boxes()
 		_sync_hud_scores()

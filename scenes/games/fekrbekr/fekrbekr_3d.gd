@@ -191,17 +191,21 @@ func _ready() -> void:
 	set_phase(is_play_phase)
 
 func _init_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
 	# Royal Walnut Plinth with warm satin sheen
 	mat_wood_base = StandardMaterial3D.new()
-	mat_wood_base.albedo_color = Color(0.20, 0.11, 0.05)
-	mat_wood_base.roughness = 0.38
-	mat_wood_base.metallic = 0.08
+	mat_wood_base.albedo_color = Color(0.50, 0.30, 0.18) if wood_tex != null else Color(0.20, 0.11, 0.05)
+	mat_wood_base.albedo_texture = wood_tex
+	mat_wood_base.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	mat_wood_base.roughness = 0.44
+	mat_wood_base.metallic = 0.05
 	mat_wood_base.clearcoat_enabled = false
-	mat_wood_base.clearcoat = 0.35
 
 	mat_wood_rim = StandardMaterial3D.new()
-	mat_wood_rim.albedo_color = Color(0.13, 0.07, 0.03)
-	mat_wood_rim.roughness = 0.35
+	mat_wood_rim.albedo_color = Color(0.42, 0.24, 0.14) if wood_tex != null else Color(0.13, 0.07, 0.03)
+	mat_wood_rim.albedo_texture = wood_tex
+	mat_wood_rim.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	mat_wood_rim.roughness = 0.42
 
 	# Player Slate (deep emerald-obsidian satin)
 	mat_slate_player = StandardMaterial3D.new()
@@ -1717,6 +1721,7 @@ func on_piece_selected(user_id: int, _target_peace: int, extra: Dictionary = {})
 		var is_cracked = (result_data.size() == 4 and result_data[0] == 2 and result_data[1] == 2 and result_data[2] == 2 and result_data[3] == 2)
 		if is_cracked:
 			AudioManager.play_sound("win")
+			ActionVFXManager.spawn_victory_celebration(self, Vector3(0.0, 0.10, 0.0), my_player_index)
 			show_hint("🎉 آفرین! رمز مخفی حریف را کشف کردید!")
 	else:
 		opp_choices.append(guess_data)

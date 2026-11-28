@@ -1381,12 +1381,15 @@ func _on_uno_event_received(event_type: String, payload: Variant) -> void:
 					var tp2: int = int(effect.get("target_player", p.get("penalty_target", 0)))
 					if is_instance_valid(table_3d) and tp2 > 0:
 						vfx_layer.animate_penalty_cards(table_3d.get_draw_pile_screen_pos(), _get_player_screen_anchor(tp2), 2)
+					ActionVFXManager.play_piece_drop_vfx(self, Vector3(0.0, 0.08, 0.0), act_col)
 					vfx_layer.play_special_effect_badge("+۲ جریمه", act_col, 1.45)
 					vfx_layer.show_contextual_toast("💥 ۲ کارت جریمه برای %s" % _get_player_short_name(tp2), act_col, 2.2)
 				elif eff_type == "wild_draw4":
 					var tp4: int = int(effect.get("target_player", p.get("penalty_target", 0)))
 					if is_instance_valid(table_3d) and tp4 > 0:
 						vfx_layer.animate_penalty_cards(table_3d.get_draw_pile_screen_pos(), _get_player_screen_anchor(tp4), 4)
+					ActionVFXManager.play_piece_drop_vfx(self, Vector3(0.0, 0.08, 0.0), act_col)
+					ActionVFXManager.shake_camera(0.015, 0.14)
 					vfx_layer.play_special_effect_badge("🎨 +۴ (%s)" % cname, act_col, 1.55)
 					vfx_layer.show_contextual_toast("🔥 رنگ «%s» + ۴ کارت جریمه برای %s" % [cname, _get_player_short_name(tp4)], act_col, 2.4)
 				elif eff_type == "wild":
@@ -1525,6 +1528,7 @@ func _on_win_happened(payload: Dictionary) -> void:
 		GameManager.ludo_rank1 = rank1_player
 	if rank2_player > 0:
 		GameManager.ludo_rank2 = rank2_player
+	ActionVFXManager.spawn_victory_celebration(self, Vector3(0.0, 0.08, 0.0), rank1_player if rank1_player > 0 else my_player_index)
 	_refresh_all_visuals()
 
 func reset_board() -> void:

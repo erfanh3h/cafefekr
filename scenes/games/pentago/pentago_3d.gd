@@ -1741,6 +1741,8 @@ func _spawn_five_in_row_vfx(win_cells: Array, _winner_id: int) -> void:
 	if win_cells.size() < 5 or not is_instance_valid(fx_root):
 		return
 	AudioManager.sfx_win()
+	ActionVFXManager.spawn_victory_celebration(fx_root, Vector3(0.0, BOARD_SURFACE_Y + 0.03, 0.0), _winner_id)
+	ActionVFXManager.shake_camera(0.018, 0.16)
 
 	var p_start: Vector3 = _get_cell_world_pos(int(win_cells[0]))
 	var p_end: Vector3 = _get_cell_world_pos(int(win_cells[win_cells.size() - 1]))

@@ -25,6 +25,25 @@ var _is_shaking: bool = false
 var _ui_canvas_layer: CanvasLayer = null
 var _is_mobile: bool = false
 var _shared_shockwave_quad: QuadMesh = null
+var _shock_mat_pool: Array[StandardMaterial3D] = []
+var _flare_mat_pool: Array[StandardMaterial3D] = []
+
+func _acquire_unshaded_add_mat(pool: Array[StandardMaterial3D], tex: Texture2D, col: Color) -> StandardMaterial3D:
+	var mat: StandardMaterial3D = null
+	if not pool.is_empty():
+		mat = pool.pop_back()
+	else:
+		mat = StandardMaterial3D.new()
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		mat.albedo_texture = tex
+	mat.albedo_color = col
+	return mat
+
+func _release_unshaded_add_mat(pool: Array[StandardMaterial3D], mat: StandardMaterial3D) -> void:
+	if mat != null and pool.size() < 12:
+		pool.append(mat)
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -108,12 +127,7 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 	shockwave.rotation_degrees.x = -90.0 # Lay flat on board
 	shockwave.position.y = 0.005 # Just above surface
 	
-	var shock_mat = StandardMaterial3D.new()
-	shock_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	shock_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	shock_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	shock_mat.albedo_texture = tex_circle_shockwave
-	shock_mat.albedo_color = primary_color
+	var shock_mat := _acquire_unshaded_add_mat(_shock_mat_pool, tex_circle_shockwave, primary_color)
 	shockwave.material_override = shock_mat
 	vfx_root.add_child(shockwave)
 	
@@ -156,8 +170,12 @@ func spawn_piece_impact_vfx(parent_node: Node3D, pos: Vector3, player_id: int) -
 	vfx_tw.tween_property(flash, "scale", Vector3(0.24, 0.24, 0.24), 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	vfx_tw.tween_property(flash, "modulate:a", 0.0, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
-	# Cleanup VFX directly when tween finishes (no extra SceneTreeTimer allocation)
-	vfx_tw.chain().tween_callback(vfx_root.queue_free)
+	# Cleanup VFX & recycle material directly when tween finishes
+	vfx_tw.chain().tween_callback(func() -> void:
+		_release_unshaded_add_mat(_shock_mat_pool, shock_mat)
+		if is_instance_valid(vfx_root):
+			vfx_root.queue_free()
+	)
 
 func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant = null) -> void:
 	if not is_instance_valid(parent_node) or not parent_node.is_inside_tree():
@@ -182,13 +200,7 @@ func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant
 	shockwave.rotation_degrees.x = -90.0
 	shockwave.position.y = 0.005
 	
-	var shock_mat = StandardMaterial3D.new()
-	shock_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	shock_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	shock_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	if tex_circle_shockwave:
-		shock_mat.albedo_texture = tex_circle_shockwave
-	shock_mat.albedo_color = primary_color
+	var shock_mat := _acquire_unshaded_add_mat(_shock_mat_pool, tex_circle_shockwave, primary_color)
 	shockwave.material_override = shock_mat
 	vfx_root.add_child(shockwave)
 	
@@ -231,7 +243,33 @@ func play_piece_drop_vfx(parent_node: Node3D, pos: Vector3, color_or_id: Variant
 		vfx_tw.tween_property(flash, "scale", Vector3(0.22, 0.22, 0.22), 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		vfx_tw.tween_property(flash, "modulate:a", 0.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
-	vfx_tw.chain().tween_callback(vfx_root.queue_free)
+	vfx_tw.chain().tween_callback(func() -> void:
+		_release_unshaded_add_mat(_shock_mat_pool, shock_mat)
+		if is_instance_valid(vfx_root):
+			vfx_root.queue_free()
+	)
+
+func spawn_mobile_blast_glow(parent_node: Node3D, pos: Vector3, glow_color: Color, max_scale: float = 0.65, duration: float = 0.24) -> void:
+	if not is_instance_valid(parent_node) or not parent_node.is_inside_tree():
+		return
+	var glow_mi := MeshInstance3D.new()
+	glow_mi.mesh = _shared_shockwave_quad
+	glow_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	glow_mi.rotation_degrees.x = -90.0
+	glow_mi.position = pos + Vector3(0.0, 0.006, 0.0)
+	glow_mi.scale = Vector3(max_scale * 0.25, max_scale * 0.25, max_scale * 0.25)
+	var glow_mat := _acquire_unshaded_add_mat(_flare_mat_pool, tex_flare, Color(glow_color.r, glow_color.g, glow_color.b, 0.92))
+	glow_mi.material_override = glow_mat
+	parent_node.add_child(glow_mi)
+
+	var tw := glow_mi.create_tween().set_parallel(true)
+	tw.tween_property(glow_mi, "scale", Vector3(max_scale, max_scale, max_scale), duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(glow_mat, "albedo_color:a", 0.0, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.chain().tween_callback(func() -> void:
+		_release_unshaded_add_mat(_flare_mat_pool, glow_mat)
+		if is_instance_valid(glow_mi):
+			glow_mi.queue_free()
+	)
 
 func play_win_celebration_vfx(parent_node: Node3D, center_pos: Vector3, winner_id: int) -> void:
 	spawn_victory_celebration(parent_node, center_pos, winner_id)
@@ -239,24 +277,24 @@ func play_win_celebration_vfx(parent_node: Node3D, center_pos: Vector3, winner_i
 # --- 3. JUICY PIECE LANDING (Squash & Stretch Action) ---
 
 func animate_piece_drop(piece_node: Node3D, target_y: float, on_landed: Callable = Callable()) -> void:
-	if not is_instance_valid(piece_node):
+	if not is_instance_valid(piece_node) or not piece_node.is_inside_tree():
 		return
-		
+
 	piece_node.position.y = target_y + 0.42
 	piece_node.scale = Vector3(0.75, 1.35, 0.75) # Stretched while falling
-	
-	var drop_tw = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	var drop_tw = piece_node.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	drop_tw.tween_property(piece_node, "position:y", target_y, 0.18)
 	drop_tw.parallel().tween_property(piece_node, "scale", Vector3(1.0, 1.0, 1.0), 0.18)
-	
+
 	drop_tw.finished.connect(func():
-		if not is_instance_valid(piece_node):
+		if not is_instance_valid(piece_node) or not piece_node.is_inside_tree():
 			return
 		if on_landed.is_valid():
 			on_landed.call()
-			
+
 		# Squash upon hitting the board
-		var bounce_tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		var bounce_tw = piece_node.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		piece_node.scale = Vector3(1.28, 0.68, 1.28) # Squash
 		bounce_tw.tween_property(piece_node, "scale", Vector3(0.92, 1.15, 0.92), 0.1) # Rebound stretch
 		bounce_tw.tween_property(piece_node, "scale", Vector3.ONE, 0.16) # Settle

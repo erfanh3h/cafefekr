@@ -122,19 +122,28 @@ func _add_torus(parent: Node3D, inner_r: float, outer_r: float, pos: Vector3, ma
 func _build_tabletop() -> void:
 	var y_base: float = 0.059
 
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
+
 	var mat_walnut: StandardMaterial3D = StandardMaterial3D.new()
-	mat_walnut.albedo_color = Color(0.15, 0.08, 0.045)
-	mat_walnut.roughness = 0.30
-	mat_walnut.metallic = 0.06
+	mat_walnut.albedo_color = Color(0.46, 0.27, 0.16) if wood_tex != null else Color(0.15, 0.08, 0.045)
+	mat_walnut.albedo_texture = wood_tex
+	mat_walnut.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_walnut.roughness = 0.42
+	mat_walnut.metallic = 0.04
 
 	var mat_mahogany: StandardMaterial3D = StandardMaterial3D.new()
-	mat_mahogany.albedo_color = Color(0.24, 0.10, 0.06)
-	mat_mahogany.roughness = 0.28
-	mat_mahogany.metallic = 0.08
+	mat_mahogany.albedo_color = Color(0.60, 0.28, 0.18) if wood_tex != null else Color(0.24, 0.10, 0.06)
+	mat_mahogany.albedo_texture = wood_tex
+	mat_mahogany.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_mahogany.roughness = 0.38
+	mat_mahogany.metallic = 0.06
 
 	var mat_crimson_velvet: StandardMaterial3D = StandardMaterial3D.new()
-	mat_crimson_velvet.albedo_color = Color(0.24, 0.05, 0.07)
-	mat_crimson_velvet.roughness = 0.85
+	mat_crimson_velvet.albedo_color = Color(0.76, 0.18, 0.22) if felt_tex != null else Color(0.24, 0.05, 0.07)
+	mat_crimson_velvet.albedo_texture = felt_tex
+	mat_crimson_velvet.uv1_scale = Vector3(2.0, 2.0, 2.0)
+	mat_crimson_velvet.roughness = 0.90
 
 	var mat_gold: StandardMaterial3D = StandardMaterial3D.new()
 	mat_gold.albedo_color = Color(0.92, 0.74, 0.24)

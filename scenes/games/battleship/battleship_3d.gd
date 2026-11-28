@@ -217,10 +217,13 @@ func _create_3d_label(text_str: String, font_px: int, col: Color, px_size: float
 	return lbl
 
 func _init_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
 	_mat_mahogany = StandardMaterial3D.new()
-	_mat_mahogany.albedo_color = Color(0.16, 0.09, 0.06)
-	_mat_mahogany.roughness = 0.35
-	_mat_mahogany.metallic = 0.15
+	_mat_mahogany.albedo_color = Color(0.46, 0.27, 0.16) if wood_tex != null else Color(0.16, 0.09, 0.06)
+	_mat_mahogany.albedo_texture = wood_tex
+	_mat_mahogany.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	_mat_mahogany.roughness = 0.44
+	_mat_mahogany.metallic = 0.06
 
 	_mat_brass = StandardMaterial3D.new()
 	_mat_brass.albedo_color = Color(0.85, 0.68, 0.28)

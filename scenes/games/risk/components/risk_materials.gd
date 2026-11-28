@@ -27,19 +27,25 @@ static var _faction_mat_cache: Dictionary = {}
 
 static func create_palette() -> Dictionary:
 	var mats: Dictionary = {}
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
 
 	# Deep Dark Walnut Wood
 	var walnut = StandardMaterial3D.new()
-	walnut.albedo_color = Color(0.15, 0.085, 0.05)
-	walnut.roughness = 0.34
-	walnut.metallic = 0.06
+	walnut.albedo_color = Color(0.45, 0.26, 0.15) if wood_tex != null else Color(0.15, 0.085, 0.05)
+	walnut.albedo_texture = wood_tex
+	walnut.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	walnut.roughness = 0.42
+	walnut.metallic = 0.04
 	mats["walnut"] = walnut
 
 	# Carved Dark Mahogany Trim
 	var dark_wood = StandardMaterial3D.new()
-	dark_wood.albedo_color = Color(0.10, 0.055, 0.032)
-	dark_wood.roughness = 0.38
-	dark_wood.metallic = 0.05
+	dark_wood.albedo_color = Color(0.38, 0.21, 0.12) if wood_tex != null else Color(0.10, 0.055, 0.032)
+	dark_wood.albedo_texture = wood_tex
+	dark_wood.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	dark_wood.roughness = 0.44
+	dark_wood.metallic = 0.04
 	mats["dark_wood"] = dark_wood
 	mats["mahogany"] = dark_wood
 
@@ -52,9 +58,11 @@ static func create_palette() -> Dictionary:
 
 	# Dark Emerald Green Baize Velvet (Central Board Playing Bed)
 	var emerald_velvet = StandardMaterial3D.new()
-	emerald_velvet.albedo_color = Color(0.045, 0.175, 0.115)
-	emerald_velvet.roughness = 0.84
-	emerald_velvet.metallic = 0.02
+	emerald_velvet.albedo_color = Color(0.28, 0.48, 0.34) if felt_tex != null else Color(0.045, 0.175, 0.115)
+	emerald_velvet.albedo_texture = felt_tex
+	emerald_velvet.uv1_scale = Vector3(3.0, 3.0, 3.0)
+	emerald_velvet.roughness = 0.90
+	emerald_velvet.metallic = 0.0
 	mats["emerald_velvet"] = emerald_velvet
 
 	# Deep Espresso Leather Inlay (Dice Arena & Card Shoes)

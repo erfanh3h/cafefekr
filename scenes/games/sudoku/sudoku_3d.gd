@@ -183,20 +183,25 @@ func _apply_default_starter_puzzle() -> void:
 		is_base_number[i] = (val > 0)
 
 func _init_materials() -> void:
+	var wood_tex := BaseGameBoard.get_shared_wood_texture()
+	var felt_tex := BaseGameBoard.get_shared_felt_texture()
+
 	# Base Plinth: Dark Walnut
 	mat_plinth = StandardMaterial3D.new()
-	mat_plinth.albedo_color = Color(0.12, 0.08, 0.05, 1.0)
-	mat_plinth.metallic = 0.05
-	mat_plinth.roughness = 0.58
+	mat_plinth.albedo_color = Color(0.42, 0.25, 0.15, 1.0) if wood_tex != null else Color(0.12, 0.08, 0.05, 1.0)
+	mat_plinth.albedo_texture = wood_tex
+	mat_plinth.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	mat_plinth.metallic = 0.04
+	mat_plinth.roughness = 0.52
 
 	# Polished Frame: Rich Warm Mahogany
 	mat_frame = StandardMaterial3D.new()
-	mat_frame.albedo_color = Color(0.25, 0.14, 0.08, 1.0)
-	mat_frame.metallic = 0.08
-	mat_frame.roughness = 0.32
+	mat_frame.albedo_color = Color(0.56, 0.34, 0.20, 1.0) if wood_tex != null else Color(0.25, 0.14, 0.08, 1.0)
+	mat_frame.albedo_texture = wood_tex
+	mat_frame.uv1_scale = Vector3(2.5, 2.5, 2.5)
+	mat_frame.metallic = 0.05
+	mat_frame.roughness = 0.42
 	mat_frame.clearcoat_enabled = false
-	mat_frame.clearcoat = 0.65
-	mat_frame.clearcoat_roughness = 0.20
 
 	# Polished Antique Gold & Brass Trim
 	mat_brass_trim = StandardMaterial3D.new()
@@ -206,9 +211,11 @@ func _init_materials() -> void:
 
 	# Playing Bed: Persian Obsidian Velvet Tray
 	mat_playing_bed = StandardMaterial3D.new()
-	mat_playing_bed.albedo_color = Color(0.08, 0.10, 0.12, 1.0)
-	mat_playing_bed.metallic = 0.04
-	mat_playing_bed.roughness = 0.75
+	mat_playing_bed.albedo_color = Color(0.18, 0.22, 0.26, 1.0) if felt_tex != null else Color(0.08, 0.10, 0.12, 1.0)
+	mat_playing_bed.albedo_texture = felt_tex
+	mat_playing_bed.uv1_scale = Vector3(3.0, 3.0, 3.0)
+	mat_playing_bed.metallic = 0.02
+	mat_playing_bed.roughness = 0.88
 
 	# Recessed Well Socket (3D Well Base)
 	mat_well_socket = StandardMaterial3D.new()

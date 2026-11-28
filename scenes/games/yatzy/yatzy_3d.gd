@@ -1839,6 +1839,8 @@ func on_piece_selected(user_id: int, target_peace: int, extra: Dictionary = {}) 
 		var cell_key = "p1" if user_id == 1 else "p2"
 		var cell_node: Node3D = _cat_row_nodes[sel_idx][cell_key]["root"]
 		ActionVFXManager.spawn_piece_impact_vfx(self, cell_node.global_position - global_position, user_id)
+		if sel_idx == 12 and sc >= 50:
+			ActionVFXManager.spawn_victory_celebration(self, Vector3(0.0, 0.08, 0.0), user_id)
 		var tw = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tw.tween_property(cell_node, "scale", Vector3(1.16, 1.16, 1.16), 0.14)
 		tw.tween_property(cell_node, "scale", Vector3.ONE, 0.14)
