@@ -38,7 +38,7 @@ func _build_overlays() -> void:
 	_toast_style.set_border_width_all(2)
 	_toast_style.set_corner_radius_all(18)
 	_toast_style.shadow_color = Color(0, 0, 0, 0.55)
-	_toast_style.shadow_size = 10
+	_toast_style.shadow_size = 0 if ResponsiveUI.is_mobile() else 10
 	_toast_style.content_margin_left = 14
 	_toast_style.content_margin_right = 14
 	_toast_style.content_margin_top = 8
@@ -76,7 +76,7 @@ func _build_overlays() -> void:
 	_special_badge_style.set_border_width_all(3)
 	_special_badge_style.set_corner_radius_all(24)
 	_special_badge_style.shadow_color = Color(0, 0, 0, 0.65)
-	_special_badge_style.shadow_size = 14
+	_special_badge_style.shadow_size = 0 if ResponsiveUI.is_mobile() else 14
 	_special_badge_style.content_margin_left = 18
 	_special_badge_style.content_margin_right = 18
 	_special_badge_style.content_margin_top = 8

@@ -637,6 +637,7 @@ func _rebuild_pods() -> void:
 		var p_data := _get_player_data_for_index(idx)
 		var pod: PlayerPod = _pod_scene.instantiate() as PlayerPod
 		players_container.add_child(pod)
+		ResponsiveUI.strip_mobile_shadows(pod)
 		pod.setup_pod(p_data, mode, true)
 		if _cached_counters.has(idx):
 			pod.set_counter(str(_cached_counters[idx]))

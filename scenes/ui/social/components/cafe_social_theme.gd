@@ -915,16 +915,30 @@ uniform float portrait_fit = 0.93;
 
 void fragment() {
 	vec2 p = abs(UV * 2.0 - vec2(1.0));
-	float d = pow(max(p.x, 0.0001), shape_pow) + pow(max(p.y, 0.0001), shape_pow);
+	vec2 p2 = p * p;
+	float d;
+	if (shape_pow <= 2.05) {
+		d = p2.x + p2.y;
+	} else if (shape_pow <= 3.0) {
+		vec2 p3 = p2 * p;
+		vec2 pv = mix(p2, p3, shape_pow - 2.0);
+		d = pv.x + pv.y;
+	} else {
+		vec2 p3 = p2 * p;
+		vec2 p4 = p2 * p2;
+		vec2 pv = mix(p3, p4, clamp(shape_pow - 3.0, 0.0, 1.0));
+		d = pv.x + pv.y;
+	}
 	float mask = 1.0 - smoothstep(0.94, 1.0, d);
 
 	vec2 hole_center = vec2(0.5 * (hole_uv.x + hole_uv.z), 0.5 * (hole_uv.y + hole_uv.w));
 	vec2 hole_half = max(vec2(0.1), 0.5 * (hole_uv.zw - hole_uv.xy));
-	float r_hole = length((UV - hole_center) / hole_half);
+	vec2 hv = (UV - hole_center) / hole_half;
+	float r_hole_sq = dot(hv, hv);
 	vec3 bg_center = vec3(0.22, 0.128, 0.072);
 	vec3 bg_edge = vec3(0.105, 0.056, 0.030);
-	vec3 bg = mix(bg_center, bg_edge, smoothstep(0.0, 1.05, r_hole));
-	bg *= mix(1.0, 0.80, smoothstep(0.76, 1.05, r_hole));
+	vec3 bg = mix(bg_center, bg_edge, smoothstep(0.0, 1.1025, r_hole_sq));
+	bg *= mix(1.0, 0.80, smoothstep(0.5776, 1.1025, r_hole_sq));
 
 	float px_w = max(TEXTURE_PIXEL_SIZE.x, 0.0001);
 	float px_h = max(TEXTURE_PIXEL_SIZE.y, 0.0001);

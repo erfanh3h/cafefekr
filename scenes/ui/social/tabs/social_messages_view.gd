@@ -380,7 +380,7 @@ static func _render_thread_stage(host: Control, body_vbox: VBoxContainer) -> voi
 	comp_st.set_border_width_all(1)
 	comp_st.set_corner_radius_all(14)
 	comp_st.shadow_color = Color(0, 0, 0, 0.40)
-	comp_st.shadow_size = 6
+	comp_st.shadow_size = 0 if ResponsiveUI.is_mobile() else 6
 	comp_st.shadow_offset = Vector2(0, -2)
 	comp_st.content_margin_left = 10.0
 	comp_st.content_margin_right = 10.0

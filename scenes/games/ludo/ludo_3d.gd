@@ -279,7 +279,7 @@ func _build_2d_action_dock() -> void:
 	normal_sb.set_border_width_all(3)
 	normal_sb.set_corner_radius_all(16)
 	normal_sb.shadow_color = Color(0, 0, 0, 0.50)
-	normal_sb.shadow_size = 5
+	normal_sb.shadow_size = 0 if ResponsiveUI.is_mobile() else 5
 	normal_sb.content_margin_left = 28
 	normal_sb.content_margin_right = 28
 	normal_sb.content_margin_top = 8

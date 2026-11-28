@@ -35,11 +35,11 @@ var compact_user_header: Variant = null
 @onready var exit_confirm_dialog: Variant = $OverlayLayer/ExitConfirmDialog
 
 const BG_MAP: Dictionary = {
-	"social": preload("res://assets/images/tabs/social_bg.jpg"),
-	"history": preload("res://assets/images/tabs/history_bg.jpg"),
-	"play": preload("res://assets/images/menu_bg.jpg"),
-	"library": preload("res://assets/images/tabs/library_bg.jpg"),
-	"user": preload("res://assets/images/tabs/user_bg.jpg")
+	"social": preload("res://assets/images/tabs/social_bg_graded.jpg"),
+	"history": preload("res://assets/images/tabs/history_bg_graded.jpg"),
+	"play": preload("res://assets/images/tabs/play_bg_graded.jpg"),
+	"library": preload("res://assets/images/tabs/library_bg_graded.jpg"),
+	"user": preload("res://assets/images/tabs/user_bg_graded.jpg")
 }
 
 const TAB_SCENES: Dictionary = {
@@ -62,41 +62,6 @@ const SUBPAGE_BG_KEY: Dictionary = {
 	"friends": "social"
 }
 
-const BG_SHADER: Shader = preload("res://scenes/ui/main_tabs/shaders/tab_bg_color_grade.gdshader")
-
-const BG_CONFIG: Dictionary = {
-	"play": {
-		"saturation": 0.85,
-		"brightness": 0.88,
-		"tint": Color(0.10, 0.06, 0.03, 0.20),
-		"vignette": 0.25
-	},
-	"social": {
-		"saturation": 0.36,
-		"brightness": 0.52,
-		"tint": Color(0.10, 0.06, 0.03, 0.45),
-		"vignette": 0.38
-	},
-	"history": {
-		"saturation": 0.36,
-		"brightness": 0.52,
-		"tint": Color(0.10, 0.06, 0.03, 0.45),
-		"vignette": 0.38
-	},
-	"library": {
-		"saturation": 0.36,
-		"brightness": 0.52,
-		"tint": Color(0.10, 0.06, 0.03, 0.45),
-		"vignette": 0.38
-	},
-	"user": {
-		"saturation": 0.36,
-		"brightness": 0.52,
-		"tint": Color(0.10, 0.06, 0.03, 0.45),
-		"vignette": 0.38
-	}
-}
-
 var _cached_tabs: Dictionary = {}
 var _cached_subpages: Dictionary = {}
 var current_tab_name: String = ""
@@ -107,6 +72,7 @@ var active_tab_name: String:
 var _bg_tween: Tween = null
 var _current_bg_key: String = ""
 var _sparkles_node: CPUParticles2D = null
+var _sparkles_paused_by_modal: bool = false
 
 
 func _ready() -> void:
@@ -114,8 +80,8 @@ func _ready() -> void:
 		switch_to_tab(t_name)
 	)
 
-	_apply_bg_shader(bg_rect, BG_CONFIG["play"])
-	_apply_bg_shader(bg_rect_fade, BG_CONFIG["play"])
+	bg_rect.material = null
+	bg_rect_fade.material = null
 	bg_rect.texture = BG_MAP["play"]
 	bg_rect_fade.modulate.a = 0.0
 	bg_rect_fade.visible = false
@@ -156,8 +122,17 @@ func _sync_responsive_shell() -> void:
 
 
 func _on_visibility_changed() -> void:
+	_sync_sparkles_emitting()
+
+
+func set_sparkles_paused(paused: bool) -> void:
+	_sparkles_paused_by_modal = paused
+	_sync_sparkles_emitting()
+
+
+func _sync_sparkles_emitting() -> void:
 	if is_instance_valid(_sparkles_node):
-		_sparkles_node.emitting = is_visible_in_tree()
+		_sparkles_node.emitting = is_visible_in_tree() and not _sparkles_paused_by_modal
 
 
 func _notification(what: int) -> void:
@@ -204,6 +179,7 @@ func switch_to_tab(tab_name: String) -> void:
 		tab_instance.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tab_instance.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		tab_content_container.add_child(tab_instance)
+		ResponsiveUI.strip_mobile_shadows(tab_instance)
 		_cached_tabs[tab_name] = tab_instance
 		_wire_tab_signals(tab_name, tab_instance)
 	else:
@@ -253,6 +229,7 @@ func open_subpage(page_name: String) -> Control:
 		page_inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		page_inst.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		tab_content_container.add_child(page_inst)
+		ResponsiveUI.strip_mobile_shadows(page_inst)
 		_cached_subpages[page_name] = page_inst
 		_wire_subpage_signals(page_name, page_inst)
 	else:
@@ -343,21 +320,6 @@ func _wire_subpage_signals(_page_name: String, page_inst: Control) -> void:
 		)
 
 
-func _apply_bg_shader(rect: TextureRect, cfg: Dictionary) -> void:
-	if not is_instance_valid(rect):
-		return
-	if rect.material == null or not (rect.material is ShaderMaterial):
-		var mat: ShaderMaterial = ShaderMaterial.new()
-		mat.shader = BG_SHADER
-		rect.material = mat
-	var sm: ShaderMaterial = rect.material as ShaderMaterial
-	sm.set_shader_parameter("saturation", cfg.get("saturation", 0.5))
-	sm.set_shader_parameter("brightness", cfg.get("brightness", 0.6))
-	sm.set_shader_parameter("contrast", 1.05)
-	sm.set_shader_parameter("tint_color", cfg.get("tint", Color(0.1, 0.06, 0.03, 0.4)))
-	sm.set_shader_parameter("vignette_strength", cfg.get("vignette", 0.35))
-
-
 func _crossfade_background(target_tex: Texture2D, tab_name: String = "play") -> void:
 	if not is_instance_valid(bg_rect) or not is_instance_valid(bg_rect_fade):
 		return
@@ -367,8 +329,6 @@ func _crossfade_background(target_tex: Texture2D, tab_name: String = "play") -> 
 		_bg_tween.kill()
 
 	_current_bg_key = tab_name
-	var cfg: Dictionary = BG_CONFIG.get(tab_name, BG_CONFIG["play"])
-	_apply_bg_shader(bg_rect_fade, cfg)
 	bg_rect_fade.texture = target_tex
 	bg_rect_fade.modulate.a = 0.0
 	bg_rect_fade.visible = true
@@ -377,7 +337,6 @@ func _crossfade_background(target_tex: Texture2D, tab_name: String = "play") -> 
 	_bg_tween.tween_property(bg_rect_fade, "modulate:a", 1.0, 0.28)
 	_bg_tween.tween_callback(func():
 		bg_rect.texture = target_tex
-		_apply_bg_shader(bg_rect, cfg)
 		bg_rect_fade.modulate.a = 0.0
 		bg_rect_fade.visible = false
 	)

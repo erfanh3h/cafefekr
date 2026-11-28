@@ -193,7 +193,7 @@ func _build_kori_list() -> void:
 	normal_style.content_margin_top = 4
 	normal_style.content_margin_bottom = 4
 	normal_style.shadow_color = Color(0, 0, 0, 0.30)
-	normal_style.shadow_size = 3
+	normal_style.shadow_size = 0 if ResponsiveUI.is_mobile() else 3
 
 	var hover_style: StyleBoxFlat = normal_style.duplicate() as StyleBoxFlat
 	hover_style.bg_color = Color(0.28, 0.18, 0.08, 0.96)

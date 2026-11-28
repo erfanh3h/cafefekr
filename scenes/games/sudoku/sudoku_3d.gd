@@ -617,7 +617,7 @@ func _build_action_dock() -> void:
 	_digit_selected_style.set_border_width_all(3)
 	_digit_selected_style.set_corner_radius_all(10)
 	_digit_selected_style.shadow_color = Color(1.0, 0.85, 0.30, 0.45)
-	_digit_selected_style.shadow_size = 5
+	_digit_selected_style.shadow_size = 0 if ResponsiveUI.is_mobile() else 5
 
 	_digit_completed_style = StyleBoxFlat.new()
 	_digit_completed_style.bg_color = Color(0.10, 0.22, 0.14, 0.90)
@@ -625,7 +625,7 @@ func _build_action_dock() -> void:
 	_digit_completed_style.set_border_width_all(2)
 	_digit_completed_style.set_corner_radius_all(10)
 	_digit_completed_style.shadow_color = Color(0, 0, 0, 0.35)
-	_digit_completed_style.shadow_size = 2
+	_digit_completed_style.shadow_size = 0 if ResponsiveUI.is_mobile() else 2
 
 	# Digits 1 to 9
 	for d in range(1, 10):
@@ -680,7 +680,7 @@ func _build_action_dock() -> void:
 		normal_sb.set_border_width_all(2)
 		normal_sb.set_corner_radius_all(10)
 		normal_sb.shadow_color = Color(0, 0, 0, 0.40)
-		normal_sb.shadow_size = 3
+		normal_sb.shadow_size = 0 if ResponsiveUI.is_mobile() else 3
 		btn.add_theme_stylebox_override("normal", normal_sb)
 
 		var hover_sb = normal_sb.duplicate() as StyleBoxFlat
@@ -762,7 +762,7 @@ func _build_action_dock() -> void:
 	solve_normal.set_border_width_all(3)
 	solve_normal.set_corner_radius_all(14)
 	solve_normal.shadow_color = Color(0, 0, 0, 0.45)
-	solve_normal.shadow_size = 4
+	solve_normal.shadow_size = 0 if ResponsiveUI.is_mobile() else 4
 	solve_normal.content_margin_left = 28
 	solve_normal.content_margin_right = 28
 	solve_normal.content_margin_top = 8

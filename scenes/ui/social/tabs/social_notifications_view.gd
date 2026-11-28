@@ -159,7 +159,7 @@ static func _show_bottom_center_toast(host: Control, msg: String) -> void:
 	sb.set_border_width_all(2)
 	sb.set_corner_radius_all(14)
 	sb.shadow_color = Color(0, 0, 0, 0.55)
-	sb.shadow_size = 6
+	sb.shadow_size = 0 if ResponsiveUI.is_mobile() else 6
 	sb.content_margin_left = 20
 	sb.content_margin_right = 20
 	sb.content_margin_top = 10

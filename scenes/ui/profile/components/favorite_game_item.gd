@@ -36,7 +36,7 @@ func _build_ui() -> void:
 	sb.content_margin_top = 10.0
 	sb.content_margin_bottom = 10.0
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.35)
-	sb.shadow_size = 4
+	sb.shadow_size = 0 if ResponsiveUI.is_mobile() else 4
 	sb.shadow_offset = Vector2(0, 2)
 	add_theme_stylebox_override("panel", sb)
 

@@ -173,7 +173,7 @@ func _make_cosmetic_tile_style(is_selected: bool, is_locked: bool) -> StyleBoxFl
 		sb.border_color = Color("#FFD86B")
 		sb.set_border_width_all(3)
 		sb.shadow_color = Color(1.0, 0.85, 0.42, 0.52)
-		sb.shadow_size = 10
+		sb.shadow_size = 0 if ResponsiveUI.is_mobile() else 10
 		sb.shadow_offset = Vector2(0, 2)
 	else:
 		sb.bg_color = Color(0.14, 0.08, 0.05, 0.92)

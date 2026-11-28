@@ -258,7 +258,7 @@ func _apply_mode_metrics() -> void:
 	sb_dot.set_border_width_all(2)
 	sb_dot.set_corner_radius_all(int(ceil(dot_size * 0.5)))
 	sb_dot.shadow_color = Color(0, 0, 0, 0.3)
-	sb_dot.shadow_size = 2
+	sb_dot.shadow_size = 0 if ResponsiveUI.is_mobile() else 2
 	seat_dot.add_theme_stylebox_override("panel", sb_dot)
 	role_dot.add_theme_stylebox_override("panel", sb_dot)
 

@@ -139,6 +139,7 @@ func _ready() -> void:
 	_start_logo_animation()
 	_setup_button_juice()
 	_update_audio_button_visual()
+	ResponsiveUI.strip_mobile_shadows(ui_canvas)
 	
 	# Start in Menu Mode
 	base_game_hud.visible = false
@@ -1058,11 +1059,15 @@ func _show_backdrop() -> void:
 		return
 	dialog_backdrop.visible = true
 	dialog_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	if is_instance_valid(main_tab_shell) and main_tab_shell.has_method("set_sparkles_paused"):
+		main_tab_shell.set_sparkles_paused(true)
 
 func _hide_backdrop() -> void:
 	if is_instance_valid(dialog_backdrop):
 		dialog_backdrop.visible = false
 		dialog_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if is_instance_valid(main_tab_shell) and main_tab_shell.has_method("set_sparkles_paused"):
+		main_tab_shell.set_sparkles_paused(false)
 
 func _update_backdrop_state() -> void:
 	get_tree().create_timer(0.22).timeout.connect(func():

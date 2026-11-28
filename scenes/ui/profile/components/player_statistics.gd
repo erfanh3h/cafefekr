@@ -57,7 +57,7 @@ func _create_stat_card(title: String, accent_col: Color) -> Dictionary:
 	sb.border_width_top = 2
 	sb.set_corner_radius_all(14)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
-	sb.shadow_size = 4
+	sb.shadow_size = 0 if ResponsiveUI.is_mobile() else 4
 	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 6.0
 	sb.content_margin_right = 6.0

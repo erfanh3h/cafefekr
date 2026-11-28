@@ -15,6 +15,39 @@ var _tracked_dialog_ids: Dictionary = {} # instance_id -> true
 var _user_text_scale: float = 1.0
 var _last_vp_size: Vector2 = Vector2.ZERO
 var _refresh_queued: bool = false
+var _is_mobile_cached: int = -1
+
+
+func is_mobile() -> bool:
+	if _is_mobile_cached != -1:
+		return _is_mobile_cached == 1
+	var res: bool = (GameManager != null and GameManager.is_mobile) or OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or (OS.get_name() in ["Android", "iOS"])
+	_is_mobile_cached = 1 if res else 0
+	return res
+
+
+func sanitize_mobile_stylebox(sb: StyleBoxFlat) -> StyleBoxFlat:
+	if sb != null and is_mobile():
+		sb.shadow_size = 0
+	return sb
+
+
+func strip_mobile_shadows(root: Node) -> void:
+	if not is_mobile() or not is_instance_valid(root):
+		return
+	var stack: Array[Node] = [root]
+	const STYLE_KEYS := ["panel", "normal", "hover", "pressed", "disabled", "focus", "fill", "background"]
+	while not stack.is_empty():
+		var cur: Node = stack.pop_back()
+		if cur is Control:
+			var ctrl := cur as Control
+			for k in STYLE_KEYS:
+				if ctrl.has_theme_stylebox_override(k):
+					var sb := ctrl.get_theme_stylebox(k)
+					if sb is StyleBoxFlat and (sb as StyleBoxFlat).shadow_size > 0:
+						(sb as StyleBoxFlat).shadow_size = 0
+		for ch in cur.get_children():
+			stack.append(ch)
 
 
 func _ready() -> void:

@@ -458,7 +458,7 @@ func _refresh_otp_slots() -> void:
 			sb.bg_color = Color(0.15, 0.10, 0.05, 0.98)
 			sb.border_color = Color(1.0, 0.86, 0.36, 1.0)
 			sb.shadow_color = Color(1.0, 0.82, 0.30, 0.25)
-			sb.shadow_size = 6
+			sb.shadow_size = 0 if ResponsiveUI.is_mobile() else 6
 		elif is_filled:
 			sb.bg_color = Color(0.12, 0.18, 0.11, 0.96)
 			sb.border_color = Color(0.42, 0.84, 0.52, 0.90)

@@ -42,7 +42,7 @@ func _build_overlays() -> void:
 	_toast_style.set_border_width_all(2)
 	_toast_style.set_corner_radius_all(18)
 	_toast_style.shadow_color = Color(0, 0, 0, 0.45)
-	_toast_style.shadow_size = 8
+	_toast_style.shadow_size = 0 if ResponsiveUI.is_mobile() else 8
 	_toast_style.content_margin_left = 14
 	_toast_style.content_margin_right = 14
 	_toast_style.content_margin_top = 6
@@ -78,7 +78,7 @@ func _build_overlays() -> void:
 	_special_badge_style.set_border_width_all(3)
 	_special_badge_style.set_corner_radius_all(24)
 	_special_badge_style.shadow_color = Color(0, 0, 0, 0.55)
-	_special_badge_style.shadow_size = 12
+	_special_badge_style.shadow_size = 0 if ResponsiveUI.is_mobile() else 12
 	_special_badge_style.content_margin_left = 18
 	_special_badge_style.content_margin_right = 18
 	_special_badge_style.content_margin_top = 6
@@ -160,7 +160,7 @@ func animate_card_flight(from_global: Vector2, to_global: Vector2, card_data: Di
 	st.set_border_width_all(4)
 	st.set_corner_radius_all(14)
 	st.shadow_color = Color(0, 0, 0, 0.45)
-	st.shadow_size = 10
+	st.shadow_size = 0 if ResponsiveUI.is_mobile() else 10
 	flyer.add_theme_stylebox_override("panel", st)
 
 	var lbl = Label.new()

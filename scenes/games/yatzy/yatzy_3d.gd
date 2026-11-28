@@ -220,7 +220,7 @@ func _build_2d_action_dock() -> void:
 	roll_normal.set_border_width_all(3)
 	roll_normal.set_corner_radius_all(14)
 	roll_normal.shadow_color = Color(0, 0, 0, 0.45)
-	roll_normal.shadow_size = 4
+	roll_normal.shadow_size = 0 if ResponsiveUI.is_mobile() else 4
 	roll_normal.content_margin_left = 20
 	roll_normal.content_margin_right = 20
 	roll_normal.content_margin_top = 8
@@ -278,7 +278,7 @@ func _build_2d_action_dock() -> void:
 	sub_normal.set_border_width_all(3)
 	sub_normal.set_corner_radius_all(14)
 	sub_normal.shadow_color = Color(0, 0, 0, 0.45)
-	sub_normal.shadow_size = 4
+	sub_normal.shadow_size = 0 if ResponsiveUI.is_mobile() else 4
 	sub_normal.content_margin_left = 12
 	sub_normal.content_margin_right = 12
 	sub_normal.content_margin_top = 8

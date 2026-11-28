@@ -469,7 +469,7 @@ func _build_action_dock() -> void:
 		normal_sb.set_border_width_all(3)
 		normal_sb.set_corner_radius_all(14)
 		normal_sb.shadow_color = Color(0, 0, 0, 0.45)
-		normal_sb.shadow_size = 4
+		normal_sb.shadow_size = 0 if ResponsiveUI.is_mobile() else 4
 		normal_sb.content_margin_left = 20
 		normal_sb.content_margin_right = 20
 		normal_sb.content_margin_top = 8
@@ -526,7 +526,7 @@ func _refresh_choice_buttons() -> void:
 		_sb_choice_selected.set_border_width_all(3)
 		_sb_choice_selected.set_corner_radius_all(14)
 		_sb_choice_selected.shadow_color = Color(1.0, 0.85, 0.30, 0.50)
-		_sb_choice_selected.shadow_size = 6
+		_sb_choice_selected.shadow_size = 0 if ResponsiveUI.is_mobile() else 6
 		_sb_choice_selected.content_margin_left = 20
 		_sb_choice_selected.content_margin_right = 20
 		_sb_choice_selected.content_margin_top = 8
@@ -538,7 +538,7 @@ func _refresh_choice_buttons() -> void:
 		_sb_choice_normal.set_border_width_all(3)
 		_sb_choice_normal.set_corner_radius_all(14)
 		_sb_choice_normal.shadow_color = Color(0, 0, 0, 0.45)
-		_sb_choice_normal.shadow_size = 4
+		_sb_choice_normal.shadow_size = 0 if ResponsiveUI.is_mobile() else 4
 		_sb_choice_normal.content_margin_left = 20
 		_sb_choice_normal.content_margin_right = 20
 		_sb_choice_normal.content_margin_top = 8

@@ -1,7 +1,7 @@
 [gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/main_tabs/main_tab_shell.gd" id="1_shell_script"]
-[ext_resource type="Texture2D" path="res://assets/images/menu_bg.jpg" id="2_menu_bg"]
+[ext_resource type="Texture2D" path="res://assets/images/tabs/play_bg_graded.jpg" id="2_menu_bg"]
 [ext_resource type="Texture2D" path="res://assets/particles/star_01.png" id="3_star_tex"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/bottom_navigation.tscn" id="6_bottom_nav"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_tabs/components/sound_settings_popup.tscn" id="7_sound_popup"]
